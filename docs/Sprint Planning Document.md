@@ -16,7 +16,7 @@ core app infrastructure.
 
 - Flutter project scaffolding (mobile + web)
 
-- Firebase/Supabase auth integration (email & anonymous)
+- Supabase auth integration (email & anonymous)
 
 - Backend: Initial OpenAI/Claude LLM integration
 
@@ -143,7 +143,7 @@ core app infrastructure.
 
 **Dependencies / Risks:**
 
-- Firebase/Supabase limits (free tier)
+- Supabase limits (free tier)
 
 ### **🕸 Version 1.2 -- Daily Devotion & Regional Reach (Oct 11 -- Nov 7)**
 
