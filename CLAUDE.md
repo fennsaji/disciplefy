@@ -11,28 +11,32 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 Load ALL documents from the `docs/` folder into memory, including:
 
 1. **Core Specifications:**
-   - `Product Requirements Document.md` (PRD)
-   - `Technical Architecture Document.md`
-   - `Security Design Plan.md`
-   - `Data Model.md`
-   - `API Contract Documentation.md`
+   - `specs/Product Requirements Document.md` (PRD)
+   - `architecture/Technical Architecture Document.md`
+   - `security/Security Design Plan.md`
+   - `architecture/Data Model.md`
+   - `specs/API Contract Documentation.md`
 
 2. **Implementation Plans:**
-   - `Sprint Planning Document.md` (v1.0 to latest)
-   - `DevOps & Deployment Plan.md`
-   - `Error Handling Strategy.md`
-   - `LLM Input Validation Specification.md`
+   - `planning/Technical Docs/sprints/Sprint_Planning_Document.md` (v1.0 to latest)
+   - `specs/DevOps & Deployment Plan.md`
+   - `architecture/Error Handling Strategy.md`
+   - `specs/LLM Input Validation Specification.md`
 
 3. **Quality Assurance:**
-   - `Dev QA Test Specs.md`
-   - `Admin Panel Specification.md`
-   - `Offline Strategy.md`
-   - `Anonymous User Data Lifecycle.md`
-   - `Migration Strategy.md`
+   - `specs/Dev QA Test Specs.md`
+   - `specs/Admin Panel Specification.md`
+   - `architecture/Offline Strategy.md`
+   - `security/Anonymous User Data Lifecycle.md`
+   - `architecture/Migration Strategy.md`
 
 4. **Version Documentation:**
-   - Any tagged document sets like `v1.0-docs-stable`
-   - All version-specific files (Version 1.0.md through Version 2.3.md)
+   - All sprint and version files in `docs/planning/Technical Docs/sprints/` directory:
+     - `planning/Technical Docs/sprints/Version_1.0.md` through `planning/Technical Docs/sprints/Version_2.3.md`
+     - `planning/Technical Docs/sprints/Sprint_1_Human_Tasks.md`
+
+5. **LLM Development Standards:**
+   - `internal/LLM_Development_Guide.md` - **MANDATORY** for all LLM-related tasks
 
 ### 🎯 Purpose
 
@@ -44,7 +48,7 @@ Ensure all decisions, outputs, suggestions, or code follow the **finalized and m
 
 ## Project Overview
 
-This is the Defeah Bible Study app project with **100% production-ready documentation** (v1.0-docs-stable). The repository contains comprehensive specifications that have undergone complete audit resolution and quality assurance validation.
+This is the Disciplefy Bible Study app project with **100% production-ready documentation** (v1.0-docs-stable). The repository contains comprehensive specifications that have undergone complete audit resolution and quality assurance validation.
 
 ## Repository Structure
 
@@ -89,6 +93,64 @@ When implementing any feature:
 5. Follow the API contracts exactly as specified
 6. Use the QA test specifications for validation
 
+## 🤖 LLM Development Requirements
+
+**CRITICAL**: Before executing ANY LLM-related task, you MUST:
+
+### ⚠️ Pre-Task Mandatory Requirements
+
+1. **Read and Apply LLM Development Guide**: Load `docs/internal/LLM_Development_Guide.md` and strictly follow all guidelines
+2. **Security First**: Never proceed without input sanitization and output validation
+3. **Theological Accuracy**: All LLM outputs must align with orthodox Christian theology
+4. **Jeff Reed Methodology**: Ensure all Bible study content follows the 4-step process exactly
+
+### ✅ LLM Task Execution Checklist
+
+**Input Processing:**
+- [ ] Validate input structure against schema
+- [ ] Sanitize all user inputs (remove special characters, check for injection attempts)
+- [ ] Apply rate limiting checks
+- [ ] Log only metadata (never raw user content)
+
+**Prompt Engineering:**
+- [ ] Use modular prompt templates from LLM Development Guide
+- [ ] Include Jeff Reed methodology instructions
+- [ ] Apply theological accuracy guidelines
+- [ ] Ensure JSON schema-compatible output format
+
+**Output Processing:**
+- [ ] Validate JSON schema compliance
+- [ ] Run theological accuracy validation
+- [ ] Check for inappropriate content
+- [ ] Apply content sanitization
+- [ ] Log only success/failure metadata
+
+**Error Handling:**
+- [ ] Implement fallback responses for failures
+- [ ] Use exponential backoff for retries
+- [ ] Never expose raw LLM errors to users
+- [ ] Log errors without sensitive content
+
+**Security Validation:**
+- [ ] Verify no prompt injection vulnerabilities
+- [ ] Ensure output stays within context boundaries
+- [ ] Validate no sensitive data is logged
+- [ ] Apply rate limiting enforcement
+
+### 🚫 Absolute Prohibitions
+
+**NEVER:**
+- Implement LLM features without reading the LLM Development Guide
+- Log raw user inputs or LLM response content
+- Skip input sanitization or output validation
+- Allow theological inaccuracies in Bible study content
+- Expose internal prompts or system messages to users
+- Implement LLM logic without proper error handling and fallbacks
+
+### ⚠️ Violation Consequences
+
+**Failure to follow these LLM requirements constitutes a critical security and theological accuracy violation. All LLM-related tasks must be rejected unless these guidelines are strictly observed.**
+
 ## Documentation Quality Status
 
 - **Completeness**: 100% - All required documents present
@@ -96,4 +158,4 @@ When implementing any feature:
 - **Technical Readiness**: 95% - Enterprise-grade specifications
 - **Production Readiness**: 95% - Ready for development phase
 
-The documentation set provides a complete foundation for successful development, deployment, and scaling of the Defeah Bible Study application.
+The documentation set provides a complete foundation for successful development, deployment, and scaling of the Disciplefy Bible Study application.
