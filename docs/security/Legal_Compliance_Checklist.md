@@ -249,9 +249,17 @@ $$ LANGUAGE plpgsql;
 - [ ] Right to nominate (for deceased data principals)
 
 **Grievance Officer Details:**
-- **Name:** ⚠️ *[REQUIRES HUMAN INPUT: Grievance Officer name]*
-- **Contact:** ⚠️ *[REQUIRES HUMAN INPUT: Grievance Officer contact details]*
-- **Response Time:** 30 days maximum as per DPDP Act
+```yaml
+grievance_officer_india:
+  name: "[GRIEVANCE OFFICER NAME]"
+  email: "grievance@disciplefy.app"
+  phone: "[INDIA CONTACT NUMBER]"
+  address: "[INDIA BUSINESS ADDRESS]"
+  response_time: "30 days maximum as per DPDP Act"
+  languages_supported: ["English", "Hindi"]
+```
+
+⚠️ **[REQUIRES HUMAN INPUT: Complete grievance officer contact details above]**
 
 ### **Section 14 - Cross-border Data Transfer**
 
@@ -497,6 +505,84 @@ Data Security:
 - **Level 3:** Advisory board consultation
 - **Level 4:** Legal and compliance review
 ```
+
+---
+
+## 🏢 **Business Entity & Registration**
+
+### **Company Information**
+```yaml
+business_setup:
+  company_registration:
+    jurisdiction: "[COUNTRY/STATE]"
+    business_name: "Disciplefy [Corp/LLC/Ltd]"
+    registration_number: "[BUSINESS REG NUMBER]"
+    business_address: "[REGISTERED BUSINESS ADDRESS]"
+    
+  tax_identification:
+    tax_id: "[TAX ID NUMBER]"
+    vat_number: "[VAT NUMBER IF EU]"
+    business_license: "[LICENSE NUMBER]"
+    
+  regulatory_registrations:
+    gdpr_rep: "[EU REPRESENTATIVE IF NON-EU]"
+    dpdp_registration: "[INDIA REGISTRATION IF APPLICABLE]"
+    app_store_registrations:
+      apple_developer_id: "[APPLE DEVELOPER TEAM ID]"
+      google_play_developer: "[GOOGLE PLAY DEVELOPER ACCOUNT]"
+```
+
+⚠️ **[REQUIRES HUMAN INPUT: Complete business registration and tax information above]**
+
+### **Legal Counsel & Professional Services**
+```yaml
+legal_contacts:
+  data_protection_officer:
+    name: "[DPO NAME or External Consultant]"
+    email: "dpo@disciplefy.app"
+    phone: "[CONTACT NUMBER]"
+    certification: "[GDPR DPO CERTIFICATION]"
+    
+  legal_counsel:
+    firm: "[LAW FIRM NAME]"
+    contact: "[LAWYER NAME]"
+    email: "[EMAIL]"
+    phone: "[CONTACT NUMBER]"
+    speciality: "Data Privacy, Technology Law"
+    retainer_status: "[ACTIVE/PENDING]"
+    
+  compliance_consultant:
+    firm: "[CONSULTING FIRM]"
+    contact: "[CONSULTANT NAME]"
+    email: "[EMAIL]"
+    specialities: ["GDPR", "CCPA", "DPDP", "App Store Compliance"]
+```
+
+⚠️ **[REQUIRES HUMAN INPUT: Complete legal counsel and professional services information above]**
+
+### **Insurance Coverage**
+```yaml
+insurance_requirements:
+  cyber_liability:
+    coverage: "$1M minimum"
+    provider: "[INSURANCE COMPANY]"
+    policy_number: "[POLICY NUMBER]"
+    renewal_date: "[RENEWAL DATE]"
+    
+  errors_omissions:
+    coverage: "$500K minimum"
+    provider: "[INSURANCE COMPANY]"
+    policy_number: "[POLICY NUMBER]"
+    renewal_date: "[RENEWAL DATE]"
+    
+  general_liability:
+    coverage: "$1M minimum"
+    provider: "[INSURANCE COMPANY]"
+    policy_number: "[POLICY NUMBER]"
+    renewal_date: "[RENEWAL DATE]"
+```
+
+⚠️ **[REQUIRES HUMAN INPUT: Complete insurance policy information above]**
 
 ---
 
