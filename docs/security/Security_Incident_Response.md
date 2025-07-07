@@ -767,23 +767,113 @@ INSERT INTO security_improvements (
 ## 📞 **Emergency Contacts**
 
 ### **Internal Response Team**
-- **Security Officer:** ⚠️ *[REQUIRES HUMAN INPUT: Name, phone, email]*
-- **Technical Lead:** ⚠️ *[REQUIRES HUMAN INPUT: Name, phone, email]*
-- **DevOps Engineer:** ⚠️ *[REQUIRES HUMAN INPUT: Name, phone, email]*
-- **Legal Counsel:** ⚠️ *[REQUIRES HUMAN INPUT: Name, phone, email]*
-- **Management:** ⚠️ *[REQUIRES HUMAN INPUT: Name, phone, email]*
+```yaml
+incident_response_team:
+  incident_commander:
+    role: "Overall response coordination"
+    primary: "[NAME]"
+    backup: "[NAME]"
+    phone: "[24/7 CONTACT NUMBER]"
+    email: "[EMAIL]@disciplefy.app"
+    
+  technical_lead:
+    role: "Technical investigation and remediation"
+    primary: "[NAME]"
+    backup: "[NAME]"
+    phone: "[24/7 CONTACT NUMBER]"
+    email: "[EMAIL]@disciplefy.app"
+    
+  communications_lead:
+    role: "Internal and external communications"
+    primary: "[NAME]"
+    backup: "[NAME]"
+    phone: "[CONTACT NUMBER]"
+    email: "[EMAIL]@disciplefy.app"
+    
+  legal_compliance:
+    role: "Regulatory notification and legal guidance"
+    primary: "[LEGAL COUNSEL]"
+    backup: "[DPO]"
+    phone: "[CONTACT NUMBER]"
+    email: "legal@disciplefy.app"
+    
+  security_officer:
+    role: "Security incident coordination"
+    primary: "[SECURITY LEAD NAME]"
+    backup: "[BACKUP SECURITY LEAD]"
+    phone: "[24/7 CONTACT NUMBER]"
+    email: "security@disciplefy.app"
+```
+
+⚠️ **[REQUIRES HUMAN INPUT: Complete incident response team contact information above]**
 
 ### **External Contacts**
-- **Supabase Support:** support@supabase.com
-- **Cybersecurity Consultant:** ⚠️ *[REQUIRES HUMAN INPUT: Consultant contact]*
-- **Legal Firm (Data Privacy):** ⚠️ *[REQUIRES HUMAN INPUT: Law firm contact]*
-- **Public Relations:** ⚠️ *[REQUIRES HUMAN INPUT: PR firm contact]*
+```yaml
+external_support:
+  legal_counsel:
+    firm: "[LAW FIRM NAME]"
+    contact: "[LAWYER NAME]"
+    email: "[EMAIL]"
+    phone: "[CONTACT NUMBER]"
+    speciality: "Data Privacy, Technology Law"
+    
+  data_protection_officer:
+    name: "[DPO NAME or External Consultant]"
+    email: "dpo@disciplefy.app"
+    phone: "[CONTACT NUMBER]"
+    certification: "[GDPR DPO CERTIFICATION]"
+    
+  vendor_support:
+    supabase:
+      contact: "support@supabase.com"
+      plan: "Pro/Team/Enterprise"
+      emergency_escalation: "[ENTERPRISE SUPPORT CONTACT]"
+    openai:
+      contact: "support@openai.com"
+      plan: "[API PLAN LEVEL]"
+    cybersecurity_consultant:
+      firm: "[SECURITY CONSULTANT FIRM]"
+      contact: "[CONSULTANT NAME]"
+      phone: "[EMERGENCY CONTACT]"
+```
+
+⚠️ **[REQUIRES HUMAN INPUT: Update external support contact information]**
 
 ### **Regulatory Authorities**
-- **Data Protection Authority (GDPR):** ⚠️ *[REQUIRES HUMAN INPUT: Regional DPA contact]*
-- **Data Protection Board (India DPDP):** ⚠️ *[REQUIRES HUMAN INPUT: India DPB contact]*
-- **National CERT:** ⚠️ *[REQUIRES HUMAN INPUT: National cybersecurity contact]*
-- **Law Enforcement:** ⚠️ *[REQUIRES HUMAN INPUT: Cybercrime unit contact]*
+```yaml
+regulatory_contacts:
+  gdpr_authorities:
+    data_protection_authority:
+      region: "[YOUR REGION - EU MEMBER STATE]"
+      contact: "[DPA BREACH NOTIFICATION EMAIL]"
+      phone: "[DPA PHONE NUMBER]"
+      notification_deadline: "72 hours from awareness"
+      
+  india_dpdp_authorities:
+    data_protection_board:
+      contact: "[INDIA DPB CONTACT]"
+      grievance_officer:
+        name: "[GRIEVANCE OFFICER NAME]"
+        email: "grievance@disciplefy.app"
+        phone: "[INDIA CONTACT NUMBER]"
+        address: "[INDIA BUSINESS ADDRESS]"
+        
+  cybersecurity_authorities:
+    national_cert:
+      country: "[YOUR COUNTRY]"
+      contact: "[NATIONAL CERT EMAIL]"
+      phone: "[CERT PHONE NUMBER]"
+      reporting_portal: "[CERT INCIDENT REPORTING URL]"
+      
+  law_enforcement:
+    cybercrime_unit:
+      jurisdiction: "[LOCAL JURISDICTION]"
+      contact: "[CYBERCRIME UNIT EMAIL]"
+      phone: "[EMERGENCY NUMBER]"
+      non_emergency: "[NON-EMERGENCY NUMBER]"
+```
+
+⚠️ **[REQUIRES HUMAN INPUT: Add regulatory authority contact information for your specific jurisdictions]**
 
 ---
 

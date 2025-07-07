@@ -115,7 +115,25 @@ psql "postgresql://[CONNECTION-STRING]" -c "
 # 3. Restore from backup (Supabase automatic backups)
 # Access Supabase Dashboard > Settings > Database > Backups
 # Select most recent uncorrupted backup
-# ⚠️ [REQUIRES HUMAN INPUT: Supabase dashboard access credentials]
+
+# Production configuration
+production_config:
+  supabase_project:
+    url: "https://[PROJECT-ID].supabase.co"
+    plan: "Pro/Team"
+    backup_frequency: "6 hours"
+    dashboard_access: "[SUPABASE DASHBOARD LOGIN]"
+    
+  domain_setup:
+    primary: "disciplefy.app"
+    api: "api.disciplefy.app"
+    admin: "admin.disciplefy.app"
+    
+  ssl_certificates:
+    provider: "Let's Encrypt / CloudFlare"
+    auto_renewal: "enabled"
+
+# ⚠️ [REQUIRES HUMAN INPUT: Update production Supabase project details and dashboard access credentials]
 ```
 
 **Scenario 2: Data Loss Recovery**
@@ -275,19 +293,73 @@ psql "postgresql://[CONNECTION-STRING]" -c "
 ## 📞 **Emergency Contacts**
 
 ### **Internal Team**
-- **Technical Lead:** ⚠️ *[REQUIRES HUMAN INPUT: Name and contact]*
-- **DevOps Engineer:** ⚠️ *[REQUIRES HUMAN INPUT: Name and contact]*
-- **Security Officer:** ⚠️ *[REQUIRES HUMAN INPUT: Name and contact]*
-- **Product Manager:** ⚠️ *[REQUIRES HUMAN INPUT: Name and contact]*
+```yaml
+emergency_contacts:
+  technical_lead:
+    name: "[YOUR NAME]"
+    phone: "[24/7 CONTACT NUMBER]"
+    email: "[EMAIL]@disciplefy.app"
+    role: "Primary technical incident response"
+    
+  security_officer:
+    name: "[SECURITY LEAD NAME]"
+    phone: "[24/7 CONTACT NUMBER]"
+    email: "security@disciplefy.app"
+    role: "Security incident coordination"
+    
+  management_escalation:
+    name: "[CTO/FOUNDER NAME]"
+    phone: "[EMERGENCY CONTACT]"
+    email: "[EMAIL]@disciplefy.app"
+    role: "Executive decision making"
+    
+  devops_engineer:
+    name: "[DEVOPS ENGINEER NAME]"
+    phone: "[CONTACT NUMBER]"
+    email: "[EMAIL]@disciplefy.app"
+    role: "Infrastructure recovery"
+```
+
+⚠️ **[REQUIRES HUMAN INPUT: Complete emergency contact information above]**
 
 ### **External Vendors**
-- **Supabase Support:** support@supabase.com (Enterprise support channel)
-- **Cloud Infrastructure:** ⚠️ *[REQUIRES HUMAN INPUT: Additional provider contacts]*
-- **Legal Counsel:** ⚠️ *[REQUIRES HUMAN INPUT: Legal team contact for breach notifications]*
+```yaml
+vendor_contacts:
+  supabase_support:
+    plan: "Pro/Team/Enterprise"
+    contact: "support@supabase.com"
+    emergency_escalation: "[ENTERPRISE SUPPORT CONTACT]"
+    response_time: "4 hours (Pro), 1 hour (Enterprise)"
+    
+  openai_support:
+    plan: "[API PLAN LEVEL]"
+    contact: "support@openai.com"
+    rate_limits: "[YOUR RATE LIMITS]"
+    
+  infrastructure_providers:
+    primary: "Supabase"
+    backup: "[BACKUP PROVIDER IF ANY]"
+    monitoring: "[MONITORING SERVICE]"
+```
+
+⚠️ **[REQUIRES HUMAN INPUT: Update vendor support plan levels and contacts]**
 
 ### **Regulatory Bodies**
-- **Data Protection Authority:** ⚠️ *[REQUIRES HUMAN INPUT: Regional DPA contact for GDPR]*
-- **CERT/Cybersecurity:** ⚠️ *[REQUIRES HUMAN INPUT: National cybersecurity contact]*
+```yaml
+regulatory_contacts:
+  data_protection_authority:
+    region: "[YOUR REGION - EU/US/INDIA]"
+    contact: "[DPA BREACH NOTIFICATION EMAIL]"
+    phone: "[DPA PHONE NUMBER]"
+    notification_deadline: "72 hours (GDPR)"
+    
+  cybersecurity_authority:
+    national_cert: "[NATIONAL CERT CONTACT]"
+    email: "[CERT EMAIL]"
+    reporting_requirements: "[SECTOR-SPECIFIC REQUIREMENTS]"
+```
+
+⚠️ **[REQUIRES HUMAN INPUT: Add regulatory contact information for your jurisdiction]**
 
 ---
 
