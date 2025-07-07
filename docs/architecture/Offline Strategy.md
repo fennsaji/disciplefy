@@ -54,7 +54,7 @@ class OfflineDataManager {
 const CACHE_LIMITS = {
   'study_guides': 50, // Last 50 generated guides
   'bible_verses': 500, // Most referenced verses
-  'max_storage': '100MB', // Total offline storage limit
+  'max_storage': '2GB', // Total offline storage limit (1GB cache + 1GB data)
   'cleanup_threshold': '80MB' // Trigger cleanup at 80% capacity
 };
 ```
