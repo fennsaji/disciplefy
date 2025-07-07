@@ -39,7 +39,7 @@ The following tasks need manual completion to finalize Sprint 1 and begin user t
 - [ ] Set monthly spending limits on API provider dashboards
 
 ### **1.3 OAuth Provider Setup**
-- [ ] **Google OAuth**: Create Google Cloud project and OAuth credentials
+- [ ] **Google Sign-In**: Create Google Cloud project and Sign-In credentials
   - Set authorized redirect URIs for local development
   - Configure OAuth consent screen
 - [ ] **Apple Sign In**: Set up Apple Developer account and Sign in with Apple
@@ -161,7 +161,7 @@ The following tasks need manual completion to finalize Sprint 1 and begin user t
 - [ ] **Google Play Setup**:
   - Create app bundle ID: `com.disciplefy.biblestudy`
   - Configure app signing
-  - Set up Google OAuth for Android
+  - Set up Google Sign-In for Android
 
 - [ ] **Android-Specific Features**:
   - Test Google Sign In integration

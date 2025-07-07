@@ -12,7 +12,7 @@
 Production Infrastructure:
 │
 ├── Supabase Project (Primary Backend)
-│   ├── PostgreSQL Database (with RLS)
+│   ├── Supabase PostgreSQL Database (with RLS)
 │   ├── Edge Functions (API Layer)
 │   ├── Auth Service (Google, Apple, Anonymous)
 │   ├── Storage (if needed for future features)

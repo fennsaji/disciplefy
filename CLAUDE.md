@@ -2,6 +2,14 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## 📂 Document Preloading Protocol
+
+Before executing any task or writing code, Claude MUST:
+1. Load all documents under the `docs/` folder (recursively)
+2. Follow the navigation flow described in `docs/Developer Documentation Guide.md`
+3. Use `claude-docs-analysis-report.md` to verify if relevant issues have been resolved
+4. Adhere strictly to all security, rate-limiting, and architectural specifications
+
 ## 🔁 Pre-Execution Behavior - MANDATORY INITIALIZATION
 
 **CRITICAL RULE**: Before executing any task or prompt, you MUST perform the following initialization step:
@@ -159,3 +167,10 @@ When implementing any feature:
 - **Production Readiness**: 95% - Ready for development phase
 
 The documentation set provides a complete foundation for successful development, deployment, and scaling of the Disciplefy Bible Study application.
+
+## 📘 Developer Documentation Reference
+
+Claude should always consult the official guide at:
+📄 `docs/Developer Documentation Guide.md`
+
+This guide defines the correct order, grouping, and context management for all files in the documentation set.

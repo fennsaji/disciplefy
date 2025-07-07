@@ -144,8 +144,8 @@ const SECURITY_POLICIES = {
     /forget\s+everything|new\s+instructions/i
   ],
   rateLimit: {
-    anonymous: { requests: 3, window: 3600 },
-    authenticated: { requests: 30, window: 3600 }
+    anonymous: { requests: 10, window: 3600 },
+    authenticated: { requests: 100, window: 3600 }
   }
 };
 ```
