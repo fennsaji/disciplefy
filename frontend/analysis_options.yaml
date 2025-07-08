@@ -1,0 +1,43 @@
+include: package:flutter_lints/flutter.yaml
+
+analyzer:
+  strong-mode:
+    implicit-casts: false
+    implicit-dynamic: false
+  errors:
+    missing_required_param: error
+    missing_return: error
+    todo: ignore
+
+linter:
+  rules:
+    # Style
+    prefer_const_constructors: true
+    prefer_const_declarations: true
+    prefer_final_fields: true
+    prefer_final_locals: true
+    prefer_final_in_for_each: true
+    
+    # Documentation
+    public_member_api_docs: true
+    
+    # Design
+    avoid_function_literals_in_foreach_calls: true
+    avoid_redundant_argument_values: true
+    prefer_expression_function_bodies: true
+    
+    # Errors
+    avoid_slow_async_io: true
+    cancel_subscriptions: true
+    close_sinks: true
+    
+    # Pub
+    sort_pub_dependencies: true
+    
+    # Additional quality rules
+    avoid_print: true
+    prefer_single_quotes: true
+    always_declare_return_types: true
+    avoid_empty_else: true
+    avoid_returning_null_for_future: true
+    curly_braces_in_flow_control_structures: true

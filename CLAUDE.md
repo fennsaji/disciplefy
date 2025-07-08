@@ -7,8 +7,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 Before executing any task or writing code, Claude MUST:
 1. Load all documents under the `docs/` folder (recursively)
 2. Follow the navigation flow described in `docs/Developer Documentation Guide.md`
-3. Use `claude-docs-analysis-report.md` to verify if relevant issues have been resolved
-4. Adhere strictly to all security, rate-limiting, and architectural specifications
+3. Adhere strictly to all security, rate-limiting, and architectural specifications
 
 ## 🔁 Pre-Execution Behavior - MANDATORY INITIALIZATION
 
@@ -174,3 +173,182 @@ Claude should always consult the official guide at:
 📄 `docs/Developer Documentation Guide.md`
 
 This guide defines the correct order, grouping, and context management for all files in the documentation set.
+
+---
+
+## 🧭 **Code Quality Rules**
+
+### ⚠️ **MANDATORY COMPLIANCE**
+
+All contributors MUST strictly adhere to the following code quality standards. **Zero tolerance policy** for violations.
+
+### 📋 **Required Pre-Development Actions**
+
+**Before writing ANY code, contributors MUST:**
+
+1. **Load Coding Standards**: Read and understand `docs/standards/Coding_Standards.md` completely
+2. **Setup Development Environment**: Configure all required linters, formatters, and pre-commit hooks
+3. **Review Architecture**: Understand Clean Architecture patterns for Flutter and modular design for JavaScript/TypeScript
+4. **Verify Dependencies**: Ensure all required development tools are installed and configured
+
+### 🔧 **Development Standards Enforcement**
+
+**Every line of code MUST follow:**
+
+- **Clean Code Principles** (Robert Martin): Self-documenting, intention-revealing names
+- **DRY Principle**: No code duplication - extract common functionality into reusable components
+- **SOLID Principles**: Especially Single Responsibility, Open/Closed, and Dependency Inversion
+- **Separation of Concerns**: Clear architectural boundaries between layers
+- **Test-Driven Development**: Minimum 80% test coverage for critical paths, 100% for business logic
+
+### 📱 **Flutter/Dart Requirements**
+
+**Mandatory architecture patterns:**
+- **Clean Architecture**: Presentation → Domain ← Data layers with proper dependency direction
+- **BLoC Pattern**: Event-driven state management with immutable states
+- **Dependency Injection**: Use GetIt for proper dependency management and testability
+- **Feature-First Structure**: Organize code by features, not by file types
+- **Dartdoc Documentation**: 100% public API documentation coverage
+
+### 🌐 **JavaScript/TypeScript Requirements**
+
+**Mandatory patterns:**
+- **Single Responsibility Functions**: Maximum 20 lines per function
+- **Proper Async/Await**: No callback hell, comprehensive error handling
+- **Type Safety**: No `any` types, explicit return types for all functions
+- **Security First**: Input validation, sanitization, and prompt injection prevention
+- **JSDoc Documentation**: Complete documentation for all public interfaces
+
+### 🧪 **Testing Requirements**
+
+**Non-negotiable test standards:**
+- **Unit Tests**: Every business logic function must have comprehensive unit tests
+- **Integration Tests**: Critical user flows must be covered end-to-end
+- **Security Tests**: All input validation and security measures must be tested
+- **Performance Tests**: API endpoints and UI components must meet performance benchmarks
+- **Accessibility Tests**: WCAG AA compliance verification for all UI components
+
+### 🔍 **Code Review Process**
+
+**Every PR MUST pass:**
+
+1. **Automated Checks**: All linting, formatting, and test suites must pass
+2. **Architecture Review**: Code follows Clean Architecture and separation of concerns
+3. **Security Review**: Input validation, authentication, and authorization properly implemented
+4. **Performance Review**: No memory leaks, efficient algorithms, proper async patterns
+5. **Documentation Review**: Code is self-documenting with proper API documentation
+
+### 🚨 **Quality Gates**
+
+**PRs will be REJECTED for:**
+- Failing lint or format checks
+- Missing or inadequate test coverage
+- Architecture violations (wrong dependency direction, god objects, tight coupling)
+- Security vulnerabilities (missing validation, hardcoded secrets, XSS/injection risks)
+- Performance issues (memory leaks, inefficient queries, blocking operations)
+- Missing documentation for public APIs
+
+### 🔧 **Pre-Commit Requirements**
+
+**MANDATORY automated checks before every commit:**
+
+```bash
+# Flutter checks
+flutter analyze --fatal-infos
+flutter test --coverage
+dart format --set-exit-if-changed .
+
+# JavaScript/TypeScript checks
+npm run lint
+npm run type-check
+npm run test
+npm run format:check
+npm run security-audit
+```
+
+### 📊 **Code Quality Metrics**
+
+**Required standards:**
+- **Test Coverage**: 80% minimum (critical paths), 100% (business logic)
+- **Cyclomatic Complexity**: Maximum 10 per function
+- **Function Length**: Maximum 20 lines (excluding documentation)
+- **File Length**: Maximum 300 lines
+- **Documentation Coverage**: 100% public APIs
+
+### 🏗️ **Refactoring Requirements**
+
+**When modifying existing code, contributors MUST:**
+- Improve code quality to current standards if touching legacy code
+- Add missing tests for modified functionality
+- Update documentation to reflect changes
+- Ensure no regression in performance or security
+- Follow the Boy Scout Rule: "Leave the code cleaner than you found it"
+
+### ⚡ **Performance Standards**
+
+**All code must meet:**
+- **API Response Times**: < 2 seconds for LLM calls, < 500ms for data queries
+- **Memory Usage**: No memory leaks, efficient data structures
+- **Bundle Size**: Frontend bundles optimized for web performance
+- **Database Queries**: Optimized with proper indexing and minimal N+1 queries
+
+### 🔒 **Security Requirements**
+
+**Every contribution must include:**
+- Input validation and sanitization for all user data
+- Proper authentication and authorization checks
+- Prevention of SQL injection, XSS, and prompt injection attacks
+- Secure handling of API keys and sensitive data
+- Rate limiting and abuse prevention measures
+
+### 📝 **Commit Message Standards**
+
+**Required format:**
+```
+type(scope): brief description
+
+- Detailed explanation of changes
+- Why the change was made
+- Any breaking changes or migration notes
+
+Fixes #issue-number
+```
+
+**Types:** `feat`, `fix`, `docs`, `style`, `refactor`, `test`, `chore`
+
+### 🚫 **Violations and Consequences**
+
+**Immediate PR rejection for:**
+- Code that doesn't compile or pass tests
+- Security vulnerabilities or missing validation
+- Architecture violations or tight coupling
+- Missing documentation or inadequate test coverage
+- Code that violates DRY or SOLID principles
+
+**Escalation process:**
+1. **First violation**: Code review feedback and education
+2. **Second violation**: Mandatory coding standards training
+3. **Repeated violations**: Temporary development access suspension
+
+### 📚 **Required Reading**
+
+**Before contributing, study:**
+- `docs/standards/Coding_Standards.md` - **MANDATORY**
+- `docs/architecture/Technical Architecture Document.md`
+- `docs/security/Security Design Plan.md`
+- `docs/internal/LLM_Development_Guide.md` (for LLM-related work)
+
+### 🎯 **Success Criteria**
+
+**A successful contribution:**
+- Passes all automated quality checks
+- Follows all architectural patterns and principles
+- Includes comprehensive tests and documentation
+- Improves overall codebase quality
+- Demonstrates understanding of domain requirements
+
+**Remember**: Code quality is not optional. It's a fundamental requirement for maintaining a production-ready, scalable, and secure application.
+
+---
+
+*This code quality section is **mandatory** and **strictly enforced**. All contributors must comply without exception.*
