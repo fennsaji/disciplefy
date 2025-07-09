@@ -1,6 +1,9 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/usecases/usecase.dart';
+import '../../../auth/data/services/auth_service.dart';
 import '../../domain/usecases/get_settings.dart';
 import '../../domain/usecases/update_theme_mode.dart' as use_case;
 import '../../domain/usecases/get_app_version.dart';
@@ -14,6 +17,7 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
   final GetAppVersion getAppVersion;
   final SettingsRepository settingsRepository;
   final SupabaseClient supabaseClient;
+  final AuthService authService;
 
   SettingsBloc({
     required this.getSettings,
@@ -21,6 +25,7 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
     required this.getAppVersion,
     required this.settingsRepository,
     required this.supabaseClient,
+    required this.authService,
   }) : super(SettingsInitial()) {
     on<LoadSettings>(_onLoadSettings);
     on<UpdateThemeMode>(_onUpdateThemeMode);
@@ -162,8 +167,37 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
     Emitter<SettingsState> emit,
   ) async {
     try {
-      await supabaseClient.auth.signOut();
+      // 1. Sign out from auth service (handles both Google and Supabase)
+      await authService.signOut();
+      
+      // 2. Clear all settings from SharedPreferences
       await settingsRepository.clearAllSettings();
+      
+      // 3. Clear all auth tokens from secure storage
+      const secureStorage = FlutterSecureStorage();
+      await secureStorage.delete(key: 'auth_token');
+      await secureStorage.delete(key: 'user_type');
+      await secureStorage.delete(key: 'user_id');
+      await secureStorage.delete(key: 'onboarding_completed');
+      
+      // 4. Clear Hive storage (app settings)
+      try {
+        final box = Hive.box('app_settings');
+        await box.clear();
+      } catch (e) {
+        // Hive box might not be open, that's okay
+        print('Hive box clear error (non-critical): $e');
+      }
+      
+      // 5. Clear any other app-specific storage
+      try {
+        final savedGuidesBox = Hive.box('saved_guides');
+        await savedGuidesBox.clear();
+      } catch (e) {
+        // Box might not exist, that's okay
+        print('Saved guides box clear error (non-critical): $e');
+      }
+      
       if (!emit.isDone) {
         emit(LogoutSuccess());
       }

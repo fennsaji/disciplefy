@@ -18,6 +18,7 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
     // Register event handlers
     on<AuthInitializeRequested>(_onAuthInitialize);
     on<GoogleSignInRequested>(_onGoogleSignIn);
+    on<GoogleOAuthCallbackRequested>(_onGoogleOAuthCallback);
     on<AnonymousSignInRequested>(_onAnonymousSignIn);
     on<SignOutRequested>(_onSignOut);
     on<AuthStateChanged>(_onAuthStateChanged);
@@ -114,12 +115,85 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
       // Handle specific error cases
       String errorMessage = 'Sign-in failed';
       
-      if (e.toString().contains('cancelled')) {
-        errorMessage = 'Sign-in was cancelled';
+      if (e.toString().contains('cancelled') || e.toString().contains('canceled')) {
+        errorMessage = 'Google login canceled';
       } else if (e.toString().contains('network')) {
         errorMessage = 'Network error. Please check your connection';
       } else if (e.toString().contains('not configured')) {
         errorMessage = 'Google Sign-In not configured for this platform';
+      } else if (e.toString().contains('Rate limited') || e.toString().contains('RATE_LIMITED')) {
+        errorMessage = 'Too many login attempts. Please try again later.';
+      } else if (e.toString().contains('CSRF_VALIDATION_FAILED')) {
+        errorMessage = 'Security validation failed. Please try again.';
+      } else if (e.toString().contains('Invalid login request') || e.toString().contains('INVALID_REQUEST')) {
+        errorMessage = 'Invalid login request. Please try again.';
+      }
+      
+      emit(auth_states.AuthErrorState(message: errorMessage));
+    }
+  }
+
+  /// Handles Google OAuth callback with authorization code
+  Future<void> _onGoogleOAuthCallback(
+    GoogleOAuthCallbackRequested event,
+    Emitter<auth_states.AuthState> emit,
+  ) async {
+    try {
+      emit(auth_states.AuthLoadingState());
+      
+      if (kDebugMode) {
+        print('Processing Google OAuth callback with code: ${event.code.substring(0, 10)}...');
+      }
+
+      // Process the OAuth callback using AuthService
+      final success = await _authService.processGoogleOAuthCallback(
+        code: event.code,
+        state: event.state,
+      );
+
+      if (success && _authService.isAuthenticated) {
+        final user = _authService.currentUser;
+        if (user != null) {
+          // Load user profile data
+          final profile = await _authService.getUserProfile();
+          
+          emit(auth_states.AuthenticatedState(
+            user: user,
+            isAnonymous: user.isAnonymous,
+            profile: profile,
+          ));
+          
+          if (kDebugMode) {
+            print('Google OAuth callback processed successfully');
+          }
+        } else {
+          throw Exception('Authentication succeeded but user is null');
+        }
+      } else {
+        throw Exception('OAuth callback processing failed');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('Google OAuth callback error: $e');
+      }
+      
+      // Handle specific error cases
+      String errorMessage = 'Authentication failed';
+      
+      if (e.toString().contains('cancelled') || e.toString().contains('canceled')) {
+        errorMessage = 'Google login was cancelled';
+      } else if (e.toString().contains('network')) {
+        errorMessage = 'Network error. Please check your connection';
+      } else if (e.toString().contains('Rate limited') || e.toString().contains('RATE_LIMITED')) {
+        errorMessage = 'Too many login attempts. Please try again later.';
+      } else if (e.toString().contains('CSRF_VALIDATION_FAILED')) {
+        errorMessage = 'Security validation failed. Please try again.';
+      } else if (e.toString().contains('Invalid login request') || e.toString().contains('INVALID_REQUEST')) {
+        errorMessage = 'Invalid login request. Please try again.';
+      } else if (e.toString().contains('OAUTH_EXCHANGE_FAILED')) {
+        errorMessage = 'Google authentication failed. Please try again.';
+      } else if (e.toString().contains('OAUTH_SESSION_FAILED')) {
+        errorMessage = 'Failed to create session. Please try again.';
       }
       
       emit(auth_states.AuthErrorState(message: errorMessage));

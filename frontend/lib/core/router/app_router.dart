@@ -2,7 +2,6 @@ import 'package:go_router/go_router.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 
 import '../../features/onboarding/presentation/pages/onboarding_screen.dart';
-import '../../features/onboarding/presentation/pages/onboarding_welcome_page.dart';
 import '../../features/onboarding/presentation/pages/onboarding_language_page.dart';
 import '../../features/onboarding/presentation/pages/onboarding_purpose_page.dart';
 import '../../features/home/presentation/pages/home_screen.dart';
@@ -14,12 +13,12 @@ import '../../features/study_generation/domain/entities/study_guide.dart';
 import '../../features/settings/presentation/pages/settings_screen.dart';
 import '../../features/saved_guides/presentation/pages/saved_screen.dart';
 import '../../features/auth/presentation/pages/login_screen.dart';
+import '../../features/auth/presentation/pages/auth_callback_page.dart';
 import '../presentation/widgets/app_shell.dart';
 import '../error/error_page.dart';
 
 class AppRoutes {
   static const String onboarding = '/onboarding';
-  static const String onboardingWelcome = '/onboarding/welcome';
   static const String onboardingLanguage = '/onboarding/language';
   static const String onboardingPurpose = '/onboarding/purpose';
   static const String home = '/';
@@ -29,6 +28,7 @@ class AppRoutes {
   static const String settings = '/settings';
   static const String saved = '/saved';
   static const String login = '/login';
+  static const String authCallback = '/auth/callback';
   static const String error = '/error';
 }
 
@@ -41,11 +41,6 @@ class AppRouter {
         path: AppRoutes.onboarding,
         name: 'onboarding',
         builder: (context, state) => const OnboardingScreen(),
-      ),
-      GoRoute(
-        path: AppRoutes.onboardingWelcome,
-        name: 'onboarding_welcome',
-        builder: (context, state) => const OnboardingWelcomePage(),
       ),
       GoRoute(
         path: AppRoutes.onboardingLanguage,
@@ -85,6 +80,24 @@ class AppRouter {
         path: AppRoutes.login,
         name: 'login',
         builder: (context, state) => const LoginScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.authCallback,
+        name: 'auth_callback',
+        builder: (context, state) {
+          // Extract OAuth parameters from query parameters
+          final code = state.uri.queryParameters['code'];
+          final stateParam = state.uri.queryParameters['state'];
+          final error = state.uri.queryParameters['error'];
+          final errorDescription = state.uri.queryParameters['error_description'];
+          
+          return AuthCallbackPage(
+            code: code,
+            state: stateParam,
+            error: error,
+            errorDescription: errorDescription,
+          );
+        },
       ),
       
       // Full Screen Routes (outside shell)
@@ -138,10 +151,10 @@ class AppRouter {
       final box = Hive.box('app_settings');
       final onboardingCompleted = box.get('onboarding_completed', defaultValue: false);
       
-      return onboardingCompleted ? AppRoutes.home : AppRoutes.onboarding;
+      return onboardingCompleted ? AppRoutes.home : AppRoutes.login;
     } catch (e) {
-      // If Hive is not ready, default to onboarding
-      return AppRoutes.onboardingWelcome;
+      // If Hive is not ready, default to login
+      return AppRoutes.login;
     }
   }
 }
@@ -149,7 +162,6 @@ class AppRouter {
 // Navigation Extensions
 extension AppRouterExtension on GoRouter {
   void goToOnboarding() => go(AppRoutes.onboarding);
-  void goToOnboardingWelcome() => go(AppRoutes.onboardingWelcome);
   void goToOnboardingLanguage() => go(AppRoutes.onboardingLanguage);
   void goToOnboardingPurpose() => go(AppRoutes.onboardingPurpose);
   void goToHome() => go(AppRoutes.home);
@@ -160,5 +172,6 @@ extension AppRouterExtension on GoRouter {
   void goToSettings() => go(AppRoutes.settings);
   void goToSaved() => go(AppRoutes.saved);
   void goToLogin() => go(AppRoutes.login);
+  void goToAuthCallback() => go(AppRoutes.authCallback);
   void goToError(String error) => go(AppRoutes.error, extra: error);
 }

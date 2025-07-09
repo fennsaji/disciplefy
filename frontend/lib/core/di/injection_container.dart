@@ -78,6 +78,7 @@ Future<void> initializeDependencies() async {
         getAppVersion: sl(),
         settingsRepository: sl(),
         supabaseClient: sl(),
+        authService: sl(),
       ));
 
   //! Saved Guides

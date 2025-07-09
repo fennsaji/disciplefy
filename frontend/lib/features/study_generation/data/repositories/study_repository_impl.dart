@@ -3,6 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 
+import '../../../../core/config/app_config.dart';
 import '../../../../core/error/failures.dart';
 import '../../../../core/error/exceptions.dart';
 import '../../../../core/constants/app_constants.dart';
@@ -60,11 +61,15 @@ class StudyRepositoryImpl implements StudyRepository {
       // Prepare headers
       final headers = <String, String>{
         'Content-Type': 'application/json',
+        'apikey': AppConfig.supabaseAnonKey, // Supabase anon key
       };
       
       // Add authorization header if available
       if (authToken != null) {
         headers['Authorization'] = 'Bearer $authToken';
+      } else {
+        // For anonymous access, use the Supabase anon key as Bearer token
+        headers['Authorization'] = 'Bearer ${AppConfig.supabaseAnonKey}';
       }
 
       // Call Supabase Edge Function for study generation

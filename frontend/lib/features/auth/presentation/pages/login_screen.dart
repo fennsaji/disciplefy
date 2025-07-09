@@ -9,8 +9,30 @@ import '../bloc/auth_state.dart' as auth_states;
 
 /// Login screen with Google OAuth and anonymous sign-in options
 /// Follows Material Design 3 guidelines and brand theme
-class LoginScreen extends StatelessWidget {
+class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
+
+  @override
+  State<LoginScreen> createState() => _LoginScreenState();
+}
+
+class _LoginScreenState extends State<LoginScreen> {
+  @override
+  void initState() {
+    super.initState();
+    _checkAuthenticationStatus();
+  }
+
+  /// Check if user is already authenticated and redirect if needed
+  void _checkAuthenticationStatus() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final authState = context.read<AuthBloc>().state;
+      if (authState is auth_states.AuthenticatedState) {
+        // User is already authenticated, redirect to home
+        context.go('/');
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -20,15 +42,28 @@ class LoginScreen extends StatelessWidget {
           // Navigate to home screen on successful authentication
           context.go('/');
         } else if (state is auth_states.AuthErrorState) {
-          // Show error message to user
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(state.message),
-              backgroundColor: Theme.of(context).colorScheme.error,
-              behavior: SnackBarBehavior.floating,
-              duration: const Duration(seconds: 4),
-            ),
-          );
+          // Handle different types of errors
+          if (state.message.contains('canceled') || state.message.contains('cancelled')) {
+            // Show neutral snackbar for cancelled operations
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(state.message),
+                backgroundColor: AppTheme.onSurfaceVariant,
+                behavior: SnackBarBehavior.floating,
+                duration: const Duration(seconds: 2),
+              ),
+            );
+          } else {
+            // Show error message for actual errors
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(state.message),
+                backgroundColor: Theme.of(context).colorScheme.error,
+                behavior: SnackBarBehavior.floating,
+                duration: const Duration(seconds: 4),
+              ),
+            );
+          }
         }
       },
       child: Scaffold(
@@ -70,7 +105,12 @@ class LoginScreen extends StatelessWidget {
                       // Welcome text
                       _buildWelcomeText(context),
                       
-                      const SizedBox(height: 48),
+                      const SizedBox(height: 32),
+                      
+                      // Features Preview Section
+                      _buildFeaturesSection(context),
+                      
+                      const SizedBox(height: 32),
                       
                       // Sign-in buttons
                       _buildSignInButtons(context),
@@ -192,7 +232,7 @@ class LoginScreen extends StatelessWidget {
                     height: 20,
                     decoration: const BoxDecoration(
                       image: DecorationImage(
-                        image: AssetImage('assets/images/google_logo.png'),
+                        image: AssetImage('images/google_logo.png'),
                         fit: BoxFit.contain,
                       ),
                     ),
@@ -255,6 +295,60 @@ class LoginScreen extends StatelessWidget {
     );
   }
 
+  /// Builds the features preview section
+  Widget _buildFeaturesSection(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: AppTheme.surfaceColor,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: AppTheme.primaryColor.withOpacity(0.08),
+            blurRadius: 16,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          Text(
+            'What you\'ll get:',
+            style: GoogleFonts.inter(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: AppTheme.textPrimary,
+            ),
+          ),
+          
+          const SizedBox(height: 16),
+          
+          _FeatureItem(
+            icon: Icons.auto_awesome,
+            title: 'AI-Powered Study Guides',
+            subtitle: 'Personalized insights for any verse or topic',
+          ),
+          
+          const SizedBox(height: 12),
+          
+          _FeatureItem(
+            icon: Icons.school,
+            title: 'Structured Learning',
+            subtitle: 'Follow proven biblical study methodology',
+          ),
+          
+          const SizedBox(height: 12),
+          
+          _FeatureItem(
+            icon: Icons.language,
+            title: 'Multi-Language Support',
+            subtitle: 'Study in English, Hindi, and Malayalam',
+          ),
+        ],
+      ),
+    );
+  }
+
   /// Builds the privacy policy text
   Widget _buildPrivacyText(BuildContext context) {
     return Text(
@@ -276,5 +370,74 @@ class LoginScreen extends StatelessWidget {
   /// Handles guest sign-in button tap
   void _handleGuestSignIn(BuildContext context) {
     context.read<AuthBloc>().add(const AnonymousSignInRequested());
+  }
+}
+
+/// Individual feature item widget for the login screen
+class _FeatureItem extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String subtitle;
+
+  const _FeatureItem({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        // Icon container
+        Container(
+          width: 44,
+          height: 44,
+          decoration: BoxDecoration(
+            color: AppTheme.primaryColor.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(
+              color: AppTheme.primaryColor.withOpacity(0.2),
+              width: 1,
+            ),
+          ),
+          child: Icon(
+            icon,
+            size: 22,
+            color: AppTheme.primaryColor,
+          ),
+        ),
+        
+        const SizedBox(width: 14),
+        
+        // Text content
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: GoogleFonts.inter(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: AppTheme.textPrimary,
+                ),
+              ),
+              
+              const SizedBox(height: 2),
+              
+              Text(
+                subtitle,
+                style: GoogleFonts.inter(
+                  fontSize: 12,
+                  color: AppTheme.onSurfaceVariant,
+                  height: 1.3,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
   }
 }
