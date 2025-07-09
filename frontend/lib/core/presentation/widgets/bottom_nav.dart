@@ -18,12 +18,13 @@ class NavTab {
   });
 }
 
-/// Disciplefy Bottom Navigation Bar - Fixed for Overflow Issues
+/// Disciplefy Bottom Navigation Bar - Light Theme
 /// 
 /// Features:
 /// ✅ Fixed overflow issues with proper SafeArea usage
-/// ✅ Dark background (#1E1E1E) with rounded top corners
-/// ✅ Correct theme colors: Active (#6A4FB6), Inactive (#5E5E5E)
+/// ✅ Light background (#FAFAFA) with rounded top corners
+/// ✅ Correct theme colors: Active (#7A56DB), Inactive (#999999)
+/// ✅ Top border for visual separation
 /// ✅ No unnecessary padding or margins
 /// ✅ No swipe animations - uses IndexedStack
 /// ✅ Proper positioning to prevent bottom gaps
@@ -73,10 +74,16 @@ class DisciplefyBottomNav extends StatelessWidget {
       borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
       child: Container(
         decoration: const BoxDecoration(
-          color: Color(0xFF1E1E1E), // Dark background as specified
+          color: Color(0xFFFAFAFA), // Light background
+          border: Border(
+            top: BorderSide(
+              color: Color(0xFFE5E5E5), // Top border for separation
+              width: 1,
+            ),
+          ),
           boxShadow: [
             BoxShadow(
-              color: Color(0x1A000000), // Subtle shadow
+              color: Color(0x0A000000), // Very subtle shadow for light theme
               blurRadius: 8,
               offset: Offset(0, -2),
             ),
@@ -131,9 +138,9 @@ class _BottomNavItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Theme colors as specified
-    const activeColor = Color(0xFF6A4FB6); // Active icon color
-    const inactiveColor = Color(0xFF5E5E5E); // Inactive color
+    // Light theme colors as specified
+    const activeColor = Color(0xFF7A56DB); // Active icon color (primary purple)
+    const inactiveColor = Color(0xFF999999); // Inactive color (neutral gray)
 
     return Material(
       color: Colors.transparent,

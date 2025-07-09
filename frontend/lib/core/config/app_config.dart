@@ -45,9 +45,14 @@ class AppConfig {
   // OAuth Redirect URLs
   static String get authRedirectUrl {
     if (kIsWeb) {
-      return '${Uri.base.origin}/auth/callback';
+      // Use localhost callback for development, Supabase callback for production
+      if (isDevelopment) {
+        return 'http://localhost:59641/auth/callback';
+      }
+      return '${supabaseUrl}/auth/v1/callback';
     }
-    return '$packageName://auth/callback';
+    // Use deep link scheme for mobile apps (both development and production)
+    return 'com.disciplefy.bible_study_app://auth/callback';
   }
   
   // Rate Limiting (from API Contract Documentation)

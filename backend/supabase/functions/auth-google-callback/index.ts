@@ -81,8 +81,8 @@ serve(async (req: Request) => {
       requireValidReferer: true,
       allowedReferers: [
         'https://accounts.google.com',
-        'http://127.0.0.1:3000',
-        'http://localhost:3000',
+        'http://127.0.0.1:59641',
+        'http://localhost:59641',
         'https://disciplefy.com'
       ]
     })
@@ -345,10 +345,18 @@ function determineRedirectUrl(req: Request, user: any): string {
     return customRedirect
   }
 
-  // Default redirect based on environment
+  // Check if request is from mobile app (no referer or mobile user agent)
   const referer = req.headers.get('referer')
+  const userAgent = req.headers.get('user-agent') || ''
+  
+  // For mobile apps (no referer or mobile user agent), use deep link
+  if (!referer || userAgent.includes('Mobile') || userAgent.includes('Android') || userAgent.includes('iOS')) {
+    return 'com.disciplefy.bible_study_app://auth/callback'
+  }
+
+  // Default redirect based on environment (web only)
   if (referer?.includes('localhost') || referer?.includes('127.0.0.1')) {
-    return 'http://localhost:3000/auth/callback'
+    return 'http://localhost:59641/auth/callback'
   }
 
   return 'https://disciplefy.com/auth/callback'

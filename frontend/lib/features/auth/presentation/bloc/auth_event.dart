@@ -46,6 +46,20 @@ class DeleteAccountRequested extends AuthEvent {
   const DeleteAccountRequested();
 }
 
+/// Event to process Google OAuth callback with authorization code
+class GoogleOAuthCallbackRequested extends AuthEvent {
+  final String code;
+  final String? state;
+
+  const GoogleOAuthCallbackRequested({
+    required this.code,
+    this.state,
+  });
+
+  @override
+  List<Object?> get props => [code, state];
+}
+
 /// Event to update user profile preferences
 class UpdateUserProfileRequested extends AuthEvent {
   final String languagePreference;

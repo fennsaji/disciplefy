@@ -368,26 +368,23 @@ export class LLMService {
   private createPrompt(params: LLMGenerationParams): string {
     const { inputType, inputValue, language } = params
     
-    const basePrompt = `Generate a comprehensive Bible study guide following Jeff Reed's 4-step methodology for ${inputType === 'scripture' ? 'the scripture reference' : 'the topic'}: "${inputValue}".
+    const basePrompt = `You are a Bible scholar generating a comprehensive Bible study guide using the Inductive Bible Study Method. The user has submitted a ${inputType === 'scripture' ? 'scripture reference' : 'topic'}: "${inputValue}". Your task is to return ONLY valid JSON in the following format:
 
-    Please provide your response in JSON format with the following structure:
-    {
-      "summary": "Brief overview of the main theme (2-3 sentences)",
-      "interpretation": "Original meaning, teachings and interpretation (4-5 paragraphs)",
-      "context": "Historical, cultural, and literary context (1-2 paragraphs)",
-      "relatedVerses": ["Array of 3-5 related Bible verses with references"],
-      "reflectionQuestions": ["Array of 4-6 thoughtful discussion questions"],
-      "prayerPoints": ["Array of 3-4 prayer points for application"]
-    }
+      {
+        "summary": "Brief (2-3 sentence) overview capturing the main message or theme.",
+        "interpretation": "In-depth theological interpretation explaining the intended meaning, key teachings, and how they relate to broader biblical themes. Use 4-5 well-structured paragraphs.",
+        "context": "Historical, cultural, and literary background to help the reader understand the setting and authorship. Use 1-2 concise paragraphs.",
+        "relatedVerses": ["3-5 relevant Bible verses with references that support or expand the message."],
+        "reflectionQuestions": ["4-6 practical questions to help apply the message in personal or group life."],
+        "prayerPoints": ["3-4 prayer suggestions aligned with the message and reflection."]
+      }
 
-    Guidelines:
-    - Maintain theological accuracy and protestant (especially Pentecoastal) Christian doctrine
-    - Use ${language === 'en' ? 'English' : language === 'hi' ? 'Hindi' : 'Malayalam'} language
-    - Include specific verse references in related verses
-    - Make reflection questions practical and applicable
-    - Ensure content is appropriate for small group study
-    - Focus on life transformation and spiritual growth
-    - Return ONLY valid JSON, no additional text or markdown formatting`
+      Instructions:
+      - Maintain Protestant (especially Pentecostal) theological alignment.
+      - Output only in ${language === 'en' ? 'English' : language === 'hi' ? 'Hindi' : 'Malayalam'}.
+      - Do NOT include markdown, headers, commentary, or extra text. Return strictly valid JSON only.
+      - Keep the tone pastoral, clear, and applicable to real-life spiritual growth.
+      - Ensure every section is biblically rooted, Christ-centered, and practically useful for group or individual study.`
 
     return basePrompt
   }

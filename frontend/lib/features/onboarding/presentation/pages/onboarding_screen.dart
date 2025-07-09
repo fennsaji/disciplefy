@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 
 import '../../../../core/theme/app_theme.dart';
+import '../../../auth/presentation/bloc/auth_bloc.dart';
+import '../../../auth/presentation/bloc/auth_state.dart' as auth_states;
 
 /// Onboarding carousel screen with 3 intro slides.
 /// 
@@ -19,6 +22,23 @@ class OnboardingScreen extends StatefulWidget {
 class _OnboardingScreenState extends State<OnboardingScreen> {
   final PageController _pageController = PageController();
   int _currentPage = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkAuthenticationStatus();
+  }
+
+  /// Check if user is already authenticated and redirect if needed
+  void _checkAuthenticationStatus() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final authState = context.read<AuthBloc>().state;
+      if (authState is auth_states.AuthenticatedState) {
+        // User is already authenticated, redirect to home
+        context.go('/');
+      }
+    });
+  }
 
   static const List<OnboardingSlide> _slides = [
     OnboardingSlide(

@@ -40,6 +40,8 @@ flutter pub get
 # Run Flutter app with environment variables
 echo -e "${BLUE}🔧 Starting Flutter app with local configuration...${NC}"
 flutter run -d chrome \
+  --web-port=59641 \
+  --web-browser-flag="--profile-directory=Default" \
   --dart-define=SUPABASE_URL="$SUPABASE_URL" \
   --dart-define=SUPABASE_ANON_KEY="$SUPABASE_ANON_KEY" \
   --dart-define=GOOGLE_CLIENT_ID="$GOOGLE_CLIENT_ID" \

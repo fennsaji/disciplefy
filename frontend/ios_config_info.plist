@@ -25,7 +25,7 @@
             <string>disciplefy-oauth</string>
             <key>CFBundleURLSchemes</key>
             <array>
-                <string>com.disciplefy.bible-study-app</string>
+                <string>com.disciplefy.bible_study_app</string>
             </array>
         </dict>
     </array>

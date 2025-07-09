@@ -452,29 +452,8 @@ class _OnboardingWelcomePageState extends State<OnboardingWelcomePage> {
   }
 
   void _handleGoogleLogin(BuildContext context) async {
-    setState(() {
-      _isGoogleLoginLoading = true;
-    });
-    
-    // TODO: Implement Google login with Supabase auth
-    await Future.delayed(const Duration(seconds: 1)); // Simulate API call
-    
-    if (mounted) {
-      setState(() {
-        _isGoogleLoginLoading = false;
-      });
-      
-      // Show loading state while authenticating
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Google authentication coming soon!',
-            style: GoogleFonts.inter(),
-          ),
-          backgroundColor: AppTheme.primaryColor,
-        ),
-      );
-    }
+    // Navigate to the proper login screen with Google OAuth
+    context.go('/login');
   }
 
   /// Shows an error dialog with the given title and message.
