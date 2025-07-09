@@ -381,7 +381,7 @@ export class LLMService {
     }
 
     Guidelines:
-    - Maintain theological accuracy and orthodox Christian doctrine
+    - Maintain theological accuracy and protestant (especially Pentecoastal) Christian doctrine
     - Use ${language === 'en' ? 'English' : language === 'hi' ? 'Hindi' : 'Malayalam'} language
     - Include specific verse references in related verses
     - Make reflection questions practical and applicable
