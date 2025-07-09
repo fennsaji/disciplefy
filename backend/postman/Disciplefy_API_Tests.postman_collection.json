@@ -1,0 +1,228 @@
+{
+  "info": {
+    "name": "Disciplefy API Tests",
+    "description": "Test collection for Disciplefy Bible Study App APIs",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:54321/functions/v1",
+      "type": "string"
+    },
+    {
+      "key": "anonKey",
+      "value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0",
+      "type": "string"
+    },
+    {
+      "key": "studyGuideId",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Jeff Reed Topics",
+      "item": [
+        {
+          "name": "Get All Topics",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{anonKey}}"
+              },
+              {
+                "key": "apikey",
+                "value": "{{anonKey}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/topics-jeffreed",
+              "host": ["{{baseUrl}}"],
+              "path": ["topics-jeffreed"]
+            }
+          }
+        },
+        {
+          "name": "Get Topics (Filtered)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{anonKey}}"
+              },
+              {
+                "key": "apikey",
+                "value": "{{anonKey}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/topics-jeffreed?category=Spiritual Growth&difficulty=beginner&limit=5",
+              "host": ["{{baseUrl}}"],
+              "path": ["topics-jeffreed"],
+              "query": [
+                {
+                  "key": "category",
+                  "value": "Spiritual Growth"
+                },
+                {
+                  "key": "difficulty",
+                  "value": "beginner"
+                },
+                {
+                  "key": "limit",
+                  "value": "5"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Study Generation",
+      "item": [
+        {
+          "name": "Generate Scripture Study",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{anonKey}}"
+              },
+              {
+                "key": "apikey",
+                "value": "{{anonKey}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"input_type\": \"scripture\",\n  \"input_value\": \"John 3:16\",\n  \"language\": \"en\",\n  \"user_context\": {\n    \"is_authenticated\": false,\n    \"session_id\": \"test-session-{{$randomUUID}}\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/study-generate",
+              "host": ["{{baseUrl}}"],
+              "path": ["study-generate"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const responseJson = pm.response.json();",
+                  "    if (responseJson.data && responseJson.data.id) {",
+                  "        pm.collectionVariables.set('studyGuideId', responseJson.data.id);",
+                  "    }",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Generate Topic Study",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{anonKey}}"
+              },
+              {
+                "key": "apikey",
+                "value": "{{anonKey}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"input_type\": \"topic\",\n  \"input_value\": \"faith\",\n  \"language\": \"en\",\n  \"user_context\": {\n    \"is_authenticated\": false,\n    \"session_id\": \"test-session-{{$randomUUID}}\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/study-generate",
+              "host": ["{{baseUrl}}"],
+              "path": ["study-generate"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Feedback",
+      "item": [
+        {
+          "name": "Submit Positive Feedback",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{anonKey}}"
+              },
+              {
+                "key": "apikey",
+                "value": "{{anonKey}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"study_guide_id\": \"{{studyGuideId}}\",\n  \"was_helpful\": true,\n  \"message\": \"This study guide was very helpful and provided great insights!\",\n  \"category\": \"content\",\n  \"user_context\": {\n    \"is_authenticated\": false,\n    \"session_id\": \"test-session-{{$randomUUID}}\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/feedback",
+              "host": ["{{baseUrl}}"],
+              "path": ["feedback"]
+            }
+          }
+        },
+        {
+          "name": "Submit Negative Feedback",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{anonKey}}"
+              },
+              {
+                "key": "apikey",
+                "value": "{{anonKey}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"study_guide_id\": \"{{studyGuideId}}\",\n  \"was_helpful\": false,\n  \"message\": \"The content was confusing and didn't provide clear guidance.\",\n  \"category\": \"content\",\n  \"user_context\": {\n    \"is_authenticated\": false,\n    \"session_id\": \"test-session-{{$randomUUID}}\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/feedback",
+              "host": ["{{baseUrl}}"],
+              "path": ["feedback"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

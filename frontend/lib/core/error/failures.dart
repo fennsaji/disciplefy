@@ -98,3 +98,12 @@ class ClientFailure extends Failure {
     super.context,
   });
 }
+
+/// Failure related to cache operations.
+class CacheFailure extends Failure {
+  const CacheFailure({
+    super.message = 'Cache operation failed.',
+    super.code = 'CACHE_ERROR',
+    super.context,
+  });
+}

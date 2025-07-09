@@ -140,16 +140,8 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen> {
             // Navigate to study guide screen with generated content
             context.go('/study-guide', extra: state.studyGuide);
           } else if (state is StudyGenerationFailure) {
-            // Show error message
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(
-                  state.failure.message,
-                  style: GoogleFonts.inter(color: Colors.white),
-                ),
-                backgroundColor: AppTheme.accentColor,
-              ),
-            );
+            // Show error message with retry option
+            _showErrorDialog(context, state.failure.message, state.isRetryable);
           }
         },
         child: SafeArea(
@@ -363,27 +355,44 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen> {
               color: AppTheme.primaryColor.withOpacity(0.1),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: Row(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    valueColor: AlwaysStoppedAnimation<Color>(
-                      AppTheme.primaryColor,
+                Row(
+                  children: [
+                    SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          AppTheme.primaryColor,
+                        ),
+                      ),
                     ),
-                  ),
+                    
+                    const SizedBox(width: 16),
+                    
+                    Expanded(
+                      child: Text(
+                        'Generating your study guide...',
+                        style: GoogleFonts.inter(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                          color: AppTheme.primaryColor,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
                 
-                const SizedBox(width: 16),
+                const SizedBox(height: 8),
                 
                 Text(
-                  'Generating your study guide...',
+                  'This may take a few moments.',
                   style: GoogleFonts.inter(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                    color: AppTheme.primaryColor,
+                    fontSize: 12,
+                    color: AppTheme.onSurfaceVariant,
                   ),
                 ),
               ],
@@ -444,6 +453,102 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen> {
         inputType: inputType,
         language: 'en', // TODO: Get from user preferences
       ),
+    );
+  }
+
+  void _showErrorDialog(BuildContext context, String message, bool isRetryable) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          title: Row(
+            children: [
+              Icon(
+                Icons.error_outline,
+                color: AppTheme.accentColor,
+                size: 24,
+              ),
+              const SizedBox(width: 12),
+              Text(
+                'Generation Failed',
+                style: GoogleFonts.inter(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                  color: AppTheme.textPrimary,
+                ),
+              ),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                message,
+                style: GoogleFonts.inter(
+                  fontSize: 14,
+                  color: AppTheme.onSurfaceVariant,
+                  height: 1.4,
+                ),
+              ),
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AppTheme.backgroundColor,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  'We couldn\'t generate a study guide right now. Please try again later.',
+                  style: GoogleFonts.inter(
+                    fontSize: 12,
+                    color: AppTheme.onSurfaceVariant,
+                    fontStyle: FontStyle.italic,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text(
+                'OK',
+                style: GoogleFonts.inter(
+                  fontWeight: FontWeight.w500,
+                  color: AppTheme.onSurfaceVariant,
+                ),
+              ),
+            ),
+            if (isRetryable) ...[
+              const SizedBox(width: 8),
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                  _generateStudyGuide();
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.primaryColor,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  elevation: 0,
+                ),
+                child: Text(
+                  'Try Again',
+                  style: GoogleFonts.inter(
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
+          ],
+        );
+      },
     );
   }
 }

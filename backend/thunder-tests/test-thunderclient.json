@@ -1,0 +1,35 @@
+{
+    "clientName": "Thunder Client",
+    "collectionName": "Test Collection",
+    "collectionId": "c1d2e3f4-a5b6-7890-1234-567890abcdef",
+    "dateExported": "2025-07-08T12:56:45.038Z",
+    "version": "1.2",
+    "folders": [],
+    "requests": [
+        {
+            "_id": "e1f2g3h4-i5j6-7890-1234-567890abcdef",
+            "colId": "c1d2e3f4-a5b6-7890-1234-567890abcdef",
+            "containerId": "",
+            "name": "Test Request",
+            "url": "http://127.0.0.1:54321/functions/v1/study-generate",
+            "method": "POST",
+            "sortNum": 10000,
+            "created": "2025-07-08T12:56:45.038Z",
+            "modified": "2025-07-08T12:56:45.038Z",
+            "headers": [
+                {
+                    "name": "Content-Type",
+                    "value": "application/json"
+                }
+            ],
+            "params": [],
+            "body": {
+                "type": "json",
+                "raw": "{\"test\": \"data\"}",
+                "form": []
+            },
+            "tests": []
+        }
+    ],
+    "ref": "some-random-ref-string-generated-by-thunder-client"
+}

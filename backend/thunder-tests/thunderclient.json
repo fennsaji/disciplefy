@@ -1,212 +1,325 @@
 {
-  "client": "Thunder Client",
-  "collectionName": "Disciplefy API Tests",
-  "dateExported": "2024-01-08",
-  "version": "1.1",
-  "folders": [
-    {
-      "_id": "topics-folder",
-      "name": "Jeff Reed Topics",
-      "containerId": "",
-      "created": "2024-01-08T10:00:00.000Z",
-      "sortNum": 10000
-    },
-    {
-      "_id": "study-folder", 
-      "name": "Study Generation",
-      "containerId": "",
-      "created": "2024-01-08T10:00:00.000Z",
-      "sortNum": 20000
-    },
-    {
-      "_id": "feedback-folder",
-      "name": "Feedback",
-      "containerId": "",
-      "created": "2024-01-08T10:00:00.000Z", 
-      "sortNum": 30000
-    }
-  ],
-  "requests": [
-    {
-      "_id": "get-all-topics",
-      "colId": "disciplefy-api",
-      "containerId": "topics-folder",
-      "name": "Get All Topics",
-      "url": "{{baseUrl}}/topics-jeffreed",
-      "method": "GET",
-      "sortNum": 10000,
-      "created": "2024-01-08T10:00:00.000Z",
-      "modified": "2024-01-08T10:00:00.000Z",
-      "headers": [
+    "client": "Thunder Client",
+    "collectionName": "Disciplefy Bible Study API",
+    "collectionId": "disciplefy-bible-study-api",
+    "dateExported": "2025-07-08T12:56:45.038Z",
+    "version": "1.1",
+    "folders": [
         {
-          "name": "Authorization",
-          "value": "Bearer {{anonKey}}"
+            "_id": "study-generation-folder",
+            "name": "Study Generation",
+            "containerId": "",
+            "created": "2025-07-08T12:56:45.038Z",
+            "sortNum": 10000
         },
         {
-          "name": "apikey", 
-          "value": "{{anonKey}}"
+            "_id": "topics-folder", 
+            "name": "Jeff Reed Topics",
+            "containerId": "",
+            "created": "2025-07-08T12:56:45.038Z",
+            "sortNum": 20000
+        },
+        {
+            "_id": "feedback-folder",
+            "name": "Feedback System", 
+            "containerId": "",
+            "created": "2025-07-08T12:56:45.038Z",
+            "sortNum": 30000
+        },
+        {
+            "_id": "auth-folder",
+            "name": "Authentication",
+            "containerId": "",
+            "created": "2025-07-08T12:56:45.038Z", 
+            "sortNum": 40000
         }
-      ],
-      "params": [],
-      "tests": []
-    },
-    {
-      "_id": "get-topics-filtered",
-      "colId": "disciplefy-api",
-      "containerId": "topics-folder", 
-      "name": "Get Topics (Filtered)",
-      "url": "{{baseUrl}}/topics-jeffreed?category=Spiritual Growth&difficulty=beginner&limit=5",
-      "method": "GET",
-      "sortNum": 20000,
-      "created": "2024-01-08T10:00:00.000Z",
-      "modified": "2024-01-08T10:00:00.000Z",
-      "headers": [
+    ],
+    "requests": [
         {
-          "name": "Authorization",
-          "value": "Bearer {{anonKey}}"
+            "_id": "generate-scripture-study",
+            "colId": "disciplefy-bible-study-api",
+            "containerId": "study-generation-folder",
+            "name": "Generate Scripture Study Guide",
+            "url": "http://127.0.0.1:54321/functions/v1/study-generate",
+            "method": "POST",
+            "sortNum": 10000,
+            "created": "2025-07-08T12:56:45.038Z",
+            "modified": "2025-07-08T12:56:45.038Z",
+            "headers": [
+                {
+                    "name": "Authorization",
+                    "value": "Bearer {{authToken}}"
+                },
+                {
+                    "name": "Content-Type", 
+                    "value": "application/json"
+                }
+            ],
+            "body": {
+                "type": "json",
+                "raw": "{\n  \"input_type\": \"scripture\",\n  \"input_value\": \"John 3:16\",\n  \"language\": \"en\",\n  \"user_context\": {\n    \"is_authenticated\": false,\n    \"session_id\": \"test-session-12345\"\n  }\n}",
+                "form": []
+            },
+            "params": [],
+            "tests": []
         },
         {
-          "name": "apikey",
-          "value": "{{anonKey}}"
+            "_id": "generate-topic-study",
+            "colId": "disciplefy-bible-study-api",
+            "containerId": "study-generation-folder",
+            "name": "Generate Topic Study Guide",
+            "url": "http://127.0.0.1:54321/functions/v1/study-generate",
+            "method": "POST",
+            "sortNum": 20000,
+            "created": "2025-07-08T12:56:45.038Z",
+            "modified": "2025-07-08T12:56:45.038Z",
+            "headers": [
+                {
+                    "name": "Authorization",
+                    "value": "Bearer {{authToken}}"
+                },
+                {
+                    "name": "Content-Type",
+                    "value": "application/json"
+                }
+            ],
+            "body": {
+                "type": "json",
+                "raw": "{\n  \"input_type\": \"topic\",\n  \"input_value\": \"faith\",\n  \"language\": \"en\",\n  \"user_context\": {\n    \"is_authenticated\": false,\n    \"session_id\": \"test-session-12345\"\n  }\n}",
+                "form": []
+            },
+            "params": [],
+            "tests": []
+        },
+        {
+            "_id": "generate-multilingual-study",
+            "colId": "disciplefy-bible-study-api", 
+            "containerId": "study-generation-folder",
+            "name": "Generate Study (Hindi)",
+            "url": "http://127.0.0.1:54321/functions/v1/study-generate",
+            "method": "POST",
+            "sortNum": 30000,
+            "created": "2025-07-08T12:56:45.038Z",
+            "modified": "2025-07-08T12:56:45.038Z",
+            "headers": [
+                {
+                    "name": "Authorization",
+                    "value": "Bearer {{authToken}}"
+                },
+                {
+                    "name": "Content-Type",
+                    "value": "application/json"
+                }
+            ],
+            "body": {
+                "type": "json",
+                "raw": "{\n  \"input_type\": \"scripture\",\n  \"input_value\": \"Romans 8:28\",\n  \"language\": \"hi\",\n  \"user_context\": {\n    \"is_authenticated\": false,\n    \"session_id\": \"test-session-12345\"\n  }\n}",
+                "form": []
+            },
+            "params": [],
+            "tests": []
+        },
+        {
+            "_id": "get-all-topics",
+            "colId": "disciplefy-bible-study-api",
+            "containerId": "topics-folder",
+            "name": "Get All Jeff Reed Topics", 
+            "url": "http://127.0.0.1:54321/functions/v1/topics-jeffreed",
+            "method": "GET",
+            "sortNum": 40000,
+            "created": "2025-07-08T12:56:45.038Z",
+            "modified": "2025-07-08T12:56:45.038Z",
+            "headers": [
+                {
+                    "name": "Authorization",
+                    "value": "Bearer {{authToken}}"
+                }
+            ],
+            "params": [],
+            "tests": []
+        },
+        {
+            "_id": "get-topics-filtered",
+            "colId": "disciplefy-bible-study-api",
+            "containerId": "topics-folder",
+            "name": "Get Filtered Topics",
+            "url": "http://127.0.0.1:54321/functions/v1/topics-jeffreed?category=Spiritual Growth&difficulty=beginner&limit=5",
+            "method": "GET",
+            "sortNum": 50000,
+            "created": "2025-07-08T12:56:45.038Z",
+            "modified": "2025-07-08T12:56:45.038Z",
+            "headers": [
+                {
+                    "name": "Authorization",
+                    "value": "Bearer {{authToken}}"
+                }
+            ],
+            "params": [],
+            "tests": []
+        },
+        {
+            "_id": "get-topics-by-category",
+            "colId": "disciplefy-bible-study-api",
+            "containerId": "topics-folder", 
+            "name": "Get Topics by Category",
+            "url": "http://127.0.0.1:54321/functions/v1/topics-jeffreed?category=Faith Foundations",
+            "method": "GET",
+            "sortNum": 60000,
+            "created": "2025-07-08T12:56:45.038Z",
+            "modified": "2025-07-08T12:56:45.038Z",
+            "headers": [
+                {
+                    "name": "Authorization",
+                    "value": "Bearer {{authToken}}"
+                }
+            ],
+            "params": [],
+            "tests": []
+        },
+        {
+            "_id": "submit-positive-feedback",
+            "colId": "disciplefy-bible-study-api",
+            "containerId": "feedback-folder",
+            "name": "Submit Positive Feedback",
+            "url": "http://127.0.0.1:54321/functions/v1/feedback",
+            "method": "POST",
+            "sortNum": 70000,
+            "created": "2025-07-08T12:56:45.038Z",
+            "modified": "2025-07-08T12:56:45.038Z",
+            "headers": [
+                {
+                    "name": "Authorization",
+                    "value": "Bearer {{authToken}}"
+                },
+                {
+                    "name": "Content-Type",
+                    "value": "application/json"
+                }
+            ],
+            "body": {
+                "type": "json",
+                "raw": "{\n  \"study_guide_id\": \"test-guide-id-123\",\n  \"was_helpful\": true,\n  \"message\": \"This study guide was incredibly insightful and helped me understand the scripture better!\",\n  \"category\": \"content\",\n  \"user_context\": {\n    \"is_authenticated\": false,\n    \"session_id\": \"test-session-12345\"\n  }\n}",
+                "form": []
+            }
+        },
+        {
+            "_id": "submit-negative-feedback",
+            "colId": "disciplefy-bible-study-api",
+            "containerId": "feedback-folder",
+            "name": "Submit Constructive Feedback",
+            "url": "http://127.0.0.1:54321/functions/v1/feedback",
+            "method": "POST",
+            "sortNum": 80000,
+            "created": "2025-07-08T12:56:45.038Z",
+            "modified": "2025-07-08T12:56:45.038Z",
+            "headers": [
+                {
+                    "name": "Authorization",
+                    "value": "Bearer {{authToken}}"
+                },
+                {
+                    "name": "Content-Type",
+                    "value": "application/json"
+                }
+            ],
+            "body": {
+                "type": "json",
+                "raw": "{\n  \"study_guide_id\": \"test-guide-id-456\",\n  \"was_helpful\": false,\n  \"message\": \"The content was a bit confusing. Could use more practical examples for daily application.\",\n  \"category\": \"clarity\",\n  \"user_context\": {\n    \"is_authenticated\": false,\n    \"session_id\": \"test-session-12345\"\n  }\n}",
+                "form": []
+            }
+        },
+        {
+            "_id": "submit-bug-report",
+            "colId": "disciplefy-bible-study-api",
+            "containerId": "feedback-folder",
+            "name": "Submit Bug Report",
+            "url": "http://127.0.0.1:54321/functions/v1/feedback",
+            "method": "POST",
+            "sortNum": 90000,
+            "created": "2025-07-08T12:56:45.038Z",
+            "modified": "2025-07-08T12:56:45.038Z",
+            "headers": [
+                {
+                    "name": "Authorization",
+                    "value": "Bearer {{authToken}}"
+                },
+                {
+                    "name": "Content-Type",
+                    "value": "application/json"
+                }
+            ],
+            "body": {
+                "type": "json",
+                "raw": "{\n  \"study_guide_id\": \"test-guide-id-789\",\n  \"was_helpful\": false,\n  \"message\": \"The app crashed when I tried to save the study guide.\",\n  \"category\": \"technical\",\n  \"user_context\": {\n    \"is_authenticated\": false,\n    \"session_id\": \"test-session-12345\"\n  }\n}",
+                "form": []
+            }
+        },
+        {
+            "_id": "create-anonymous-session",
+            "colId": "disciplefy-bible-study-api",
+            "containerId": "auth-folder",
+            "name": "Create Anonymous Session",
+            "url": "http://127.0.0.1:54321/auth/v1/signup",
+            "method": "POST",
+            "sortNum": 100000,
+            "created": "2025-07-08T12:56:45.038Z",
+            "modified": "2025-07-08T12:56:45.038Z",
+            "headers": [
+                {
+                    "name": "Content-Type",
+                    "value": "application/json"
+                },
+                {
+                    "name": "apikey",
+                    "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0"
+                }
+            ],
+            "body": {
+                "type": "json",
+                "raw": "{}",
+                "form": []
+            }
+        },
+        {
+            "_id": "validate-session",
+            "colId": "disciplefy-bible-study-api",
+            "containerId": "auth-folder",
+            "name": "Validate Auth Session",
+            "url": "http://127.0.0.1:54321/functions/v1/auth-session",
+            "method": "GET",
+            "sortNum": 110000,
+            "created": "2025-07-08T12:56:45.038Z",
+            "modified": "2025-07-08T12:56:45.038Z",
+            "headers": [
+                {
+                    "name": "Authorization",
+                    "value": "Bearer {{authToken}}"
+                }
+            ],
+            "params": [],
+            "tests": []
+        },
+        {
+            "_id": "options-preflight-study",
+            "colId": "disciplefy-bible-study-api",
+            "containerId": "",
+            "name": "CORS Preflight - Study Generate",
+            "url": "http://127.0.0.1:54321/functions/v1/study-generate",
+            "method": "OPTIONS",
+            "sortNum": 120000,
+            "created": "2025-07-08T12:56:45.038Z",
+            "modified": "2025-07-08T12:56:45.038Z",
+            "headers": [
+                {
+                    "name": "Access-Control-Request-Method",
+                    "value": "POST"
+                },
+                {
+                    "name": "Access-Control-Request-Headers", 
+                    "value": "authorization, content-type"
+                }
+            ]
         }
-      ],
-      "params": [],
-      "tests": []
-    },
-    {
-      "_id": "generate-scripture-study",
-      "colId": "disciplefy-api", 
-      "containerId": "study-folder",
-      "name": "Generate Scripture Study",
-      "url": "{{baseUrl}}/study-generate",
-      "method": "POST",
-      "sortNum": 10000,
-      "created": "2024-01-08T10:00:00.000Z",
-      "modified": "2024-01-08T10:00:00.000Z",
-      "headers": [
-        {
-          "name": "Authorization",
-          "value": "Bearer {{anonKey}}"
-        },
-        {
-          "name": "apikey",
-          "value": "{{anonKey}}"
-        },
-        {
-          "name": "Content-Type",
-          "value": "application/json"
-        }
-      ],
-      "params": [],
-      "body": {
-        "type": "json",
-        "raw": "{\n  \"input_type\": \"scripture\",\n  \"input_value\": \"John 3:16\",\n  \"language\": \"en\",\n  \"user_context\": {\n    \"is_authenticated\": false,\n    \"session_id\": \"test-session-{{$randomUUID}}\"\n  }\n}",
-        "form": []
-      },
-      "tests": [
-        {
-          "type": "set-env-var",
-          "custom": "json.data.id",
-          "action": "setto",
-          "value": "{{studyGuideId}}"
-        }
-      ]
-    },
-    {
-      "_id": "generate-topic-study",
-      "colId": "disciplefy-api",
-      "containerId": "study-folder",
-      "name": "Generate Topic Study", 
-      "url": "{{baseUrl}}/study-generate",
-      "method": "POST",
-      "sortNum": 20000,
-      "created": "2024-01-08T10:00:00.000Z",
-      "modified": "2024-01-08T10:00:00.000Z",
-      "headers": [
-        {
-          "name": "Authorization",
-          "value": "Bearer {{anonKey}}"
-        },
-        {
-          "name": "apikey",
-          "value": "{{anonKey}}"
-        },
-        {
-          "name": "Content-Type",
-          "value": "application/json"
-        }
-      ],
-      "params": [],
-      "body": {
-        "type": "json",
-        "raw": "{\n  \"input_type\": \"topic\",\n  \"input_value\": \"faith\",\n  \"language\": \"en\",\n  \"user_context\": {\n    \"is_authenticated\": false,\n    \"session_id\": \"test-session-{{$randomUUID}}\"\n  }\n}",
-        "form": []
-      },
-      "tests": []
-    },
-    {
-      "_id": "submit-positive-feedback",
-      "colId": "disciplefy-api",
-      "containerId": "feedback-folder",
-      "name": "Submit Positive Feedback",
-      "url": "{{baseUrl}}/feedback", 
-      "method": "POST",
-      "sortNum": 10000,
-      "created": "2024-01-08T10:00:00.000Z",
-      "modified": "2024-01-08T10:00:00.000Z",
-      "headers": [
-        {
-          "name": "Authorization",
-          "value": "Bearer {{anonKey}}"
-        },
-        {
-          "name": "apikey",
-          "value": "{{anonKey}}"
-        },
-        {
-          "name": "Content-Type",
-          "value": "application/json"
-        }
-      ],
-      "params": [],
-      "body": {
-        "type": "json",
-        "raw": "{\n  \"study_guide_id\": \"{{studyGuideId}}\",\n  \"was_helpful\": true,\n  \"message\": \"This study guide was very helpful and provided great insights!\",\n  \"category\": \"content\",\n  \"user_context\": {\n    \"is_authenticated\": false,\n    \"session_id\": \"test-session-{{$randomUUID}}\"\n  }\n}",
-        "form": []
-      },
-      "tests": []
-    },
-    {
-      "_id": "submit-negative-feedback",
-      "colId": "disciplefy-api",
-      "containerId": "feedback-folder",
-      "name": "Submit Negative Feedback",
-      "url": "{{baseUrl}}/feedback",
-      "method": "POST", 
-      "sortNum": 20000,
-      "created": "2024-01-08T10:00:00.000Z",
-      "modified": "2024-01-08T10:00:00.000Z",
-      "headers": [
-        {
-          "name": "Authorization",
-          "value": "Bearer {{anonKey}}"
-        },
-        {
-          "name": "apikey",
-          "value": "{{anonKey}}"
-        },
-        {
-          "name": "Content-Type",
-          "value": "application/json"
-        }
-      ],
-      "params": [],
-      "body": {
-        "type": "json",
-        "raw": "{\n  \"study_guide_id\": \"{{studyGuideId}}\",\n  \"was_helpful\": false,\n  \"message\": \"The content was confusing and didn't provide clear guidance.\",\n  \"category\": \"content\",\n  \"user_context\": {\n    \"is_authenticated\": false,\n    \"session_id\": \"test-session-{{$randomUUID}}\"\n  }\n}",
-        "form": []
-      },
-      "tests": []
-    }
-  ]
+    ],
+    "ref": "disciplefy-bible-study-api-collection-2025"
 }

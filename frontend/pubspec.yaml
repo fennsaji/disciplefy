@@ -27,6 +27,7 @@ dependencies:
   hive_flutter: ^1.1.0
   sqflite: ^2.3.0
   flutter_secure_storage: ^9.0.0
+  shared_preferences: ^2.2.2
   
   # Authentication
   google_sign_in: ^6.1.5
@@ -44,6 +45,7 @@ dependencies:
   google_fonts: ^6.1.0
   smooth_page_indicator: ^1.1.0
   share_plus: ^7.2.1
+  url_launcher: ^6.2.1
   
   # Utilities
   get_it: ^7.6.4

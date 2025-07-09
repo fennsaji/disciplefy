@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../../../core/theme/app_theme.dart';
+import '../../data/services/recommended_guides_service.dart';
+import '../../domain/entities/recommended_guide_topic.dart';
 
 /// Home screen displaying daily verse, navigation options, and study recommendations.
 /// 
@@ -16,8 +19,17 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  final String _currentUserName = 'John'; // TODO: Get from auth service
-  final bool _hasResumeableStudy = true; // TODO: Check from storage/database
+  // Services and storage
+  static const FlutterSecureStorage _secureStorage = FlutterSecureStorage();
+  late final RecommendedGuidesService _topicsService;
+  
+  // State variables
+  String _currentUserName = 'Guest';
+  String _userType = 'guest';
+  bool _hasResumeableStudy = false;
+  bool _isLoadingTopics = true;
+  String? _topicsError;
+  List<RecommendedGuideTopic> _recommendedTopics = [];
   
   // Sample verse of the day - TODO: Fetch from Bible API
   final VerseOfTheDay _verseOfTheDay = const VerseOfTheDay(
@@ -25,45 +37,68 @@ class _HomeScreenState extends State<HomeScreen> {
     text: 'For God so loved the world that he gave his one and only Son, that whoever believes in him shall not perish but have eternal life.',
   );
 
-  // Predefined study topics
-  static const List<StudyTopic> _recommendedTopics = [
-    StudyTopic(
-      title: 'Faith',
-      subtitle: 'Understanding trust in God',
-      icon: Icons.favorite,
-      color: Color(0xFF6A4FB6),
-    ),
-    StudyTopic(
-      title: 'Prayer',
-      subtitle: 'Communication with God',
-      icon: Icons.favorite,
-      color: Color(0xFF8B7FB8),
-    ),
-    StudyTopic(
-      title: 'Baptism',
-      subtitle: 'Spiritual rebirth and commitment',
-      icon: Icons.water_drop,
-      color: Color(0xFF6A4FB6),
-    ),
-    StudyTopic(
-      title: 'Grace',
-      subtitle: 'God\'s unmerited favor',
-      icon: Icons.volunteer_activism,
-      color: Color(0xFF8B7FB8),
-    ),
-    StudyTopic(
-      title: 'Gospel',
-      subtitle: 'The good news of Jesus Christ',
-      icon: Icons.auto_awesome,
-      color: Color(0xFF6A4FB6),
-    ),
-    StudyTopic(
-      title: 'Faith in Trials',
-      subtitle: 'Trusting God through difficulty',
-      icon: Icons.shield,
-      color: Color(0xFF8B7FB8),
-    ),
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _topicsService = RecommendedGuidesService();
+    _initializeScreen();
+  }
+
+  @override
+  void dispose() {
+    _topicsService.dispose();
+    super.dispose();
+  }
+
+  /// Initializes the screen by loading user data and topics
+  Future<void> _initializeScreen() async {
+    await _loadUserData();
+    await _loadRecommendedTopics();
+  }
+
+  /// Loads user data from secure storage
+  Future<void> _loadUserData() async {
+    try {
+      final userType = await _secureStorage.read(key: 'user_type') ?? 'guest';
+      final userId = await _secureStorage.read(key: 'user_id');
+      
+      setState(() {
+        _userType = userType;
+        _currentUserName = userType == 'guest' ? 'Guest' : 'User';
+      });
+      
+      print('👤 [HOME] User loaded: $_currentUserName (type: $_userType)');
+    } catch (e) {
+      print('⚠️ [HOME] Error loading user data: $e');
+    }
+  }
+
+  /// Loads recommended topics from the API
+  Future<void> _loadRecommendedTopics() async {
+    setState(() {
+      _isLoadingTopics = true;
+      _topicsError = null;
+    });
+
+    final result = await _topicsService.getFilteredTopics(limit: 6);
+    
+    result.fold(
+      (failure) {
+        setState(() {
+          _isLoadingTopics = false;
+          _topicsError = failure.message;
+        });
+        print('❌ [HOME] Failed to load topics: ${failure.message}');
+      },
+      (topics) {
+        setState(() {
+          _isLoadingTopics = false;
+          _recommendedTopics = topics;
+        });
+        print('✅ [HOME] Loaded ${topics.length} topics');
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -119,8 +154,6 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
             
-            // Bottom Navigation
-            _buildBottomNavigation(),
           ],
         ),
       ),
@@ -169,7 +202,7 @@ class _HomeScreenState extends State<HomeScreen> {
         // Settings Icon
         IconButton(
           onPressed: () {
-            // TODO: Navigate to settings
+            context.go('/settings');
           },
           icon: Icon(
             Icons.settings_outlined,
@@ -368,100 +401,323 @@ class _HomeScreenState extends State<HomeScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'Recommended Study Topics',
-          style: GoogleFonts.inter(
-            fontSize: 20,
-            fontWeight: FontWeight.w600,
-            color: AppTheme.textPrimary,
-          ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              'Recommended Study Topics',
+              style: GoogleFonts.inter(
+                fontSize: 20,
+                fontWeight: FontWeight.w600,
+                color: AppTheme.textPrimary,
+              ),
+            ),
+            if (_isLoadingTopics)
+              const SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primaryColor),
+                ),
+              ),
+          ],
         ),
         
         const SizedBox(height: 16),
         
-        GridView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 2,
-            crossAxisSpacing: 16,
-            mainAxisSpacing: 16,
-            childAspectRatio: 1.2,
-          ),
-          itemCount: _recommendedTopics.length,
-          itemBuilder: (context, index) {
-            final topic = _recommendedTopics[index];
-            return _StudyTopicCard(
-              topic: topic,
-              onTap: () => _navigateToStudyGuide(topic.title),
-            );
-          },
-        ),
+        if (_topicsError != null)
+          _buildTopicsErrorWidget()
+        else if (_isLoadingTopics)
+          _buildTopicsLoadingWidget()
+        else if (_recommendedTopics.isEmpty)
+          _buildNoTopicsWidget()
+        else
+          _buildTopicsGrid(),
       ],
     );
   }
 
-  Widget _buildBottomNavigation() {
+  Widget _buildTopicsErrorWidget() {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+      padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: AppTheme.surfaceColor,
-        boxShadow: [
-          BoxShadow(
-            color: AppTheme.primaryColor.withOpacity(0.1),
-            blurRadius: 10,
-            offset: const Offset(0, -2),
-          ),
-        ],
+        color: AppTheme.accentColor.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: AppTheme.accentColor.withOpacity(0.3),
+          width: 1,
+        ),
       ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
+      child: Column(
         children: [
-          _BottomNavItem(
-            icon: Icons.home,
-            label: 'Home',
-            isActive: true,
-            onTap: () {},
+          Icon(
+            Icons.error_outline,
+            color: AppTheme.accentColor,
+            size: 32,
           ),
-          _BottomNavItem(
-            icon: Icons.history,
-            label: 'History',
-            isActive: false,
-            onTap: () {
-              // TODO: Navigate to history
-            },
+          const SizedBox(height: 12),
+          Text(
+            'Failed to load topics',
+            style: GoogleFonts.inter(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: AppTheme.textPrimary,
+            ),
           ),
-          _BottomNavItem(
-            icon: Icons.settings,
-            label: 'Settings',
-            isActive: false,
-            onTap: () {
-              // TODO: Navigate to settings
-            },
+          const SizedBox(height: 8),
+          Text(
+            _topicsError!,
+            style: GoogleFonts.inter(
+              fontSize: 14,
+              color: AppTheme.onSurfaceVariant,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 16),
+          ElevatedButton(
+            onPressed: _loadRecommendedTopics,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.primaryColor,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            child: Text(
+              'Retry',
+              style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+            ),
           ),
         ],
       ),
     );
   }
 
-  void _navigateToStudyGuide(String topic) {
-    // TODO: Navigate to study guide with predefined topic
-    context.go('/study-guide', extra: {'topic': topic, 'isPredefiend': true});
+  Widget _buildTopicsLoadingWidget() {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        const double spacing = 16.0;
+        final double cardWidth = (constraints.maxWidth - spacing) / 2;
+        
+        return Wrap(
+          spacing: spacing,
+          runSpacing: spacing,
+          children: List.generate(6, (index) {
+            return SizedBox(
+              width: cardWidth,
+              child: _buildLoadingTopicCard(),
+            );
+          }),
+        );
+      },
+    );
+  }
+
+  Widget _buildLoadingTopicCard() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppTheme.surfaceColor,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: AppTheme.primaryColor.withOpacity(0.1),
+          width: 1,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min, // Match the real card
+        children: [
+          // Header row skeleton
+          Row(
+            children: [
+              Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  color: AppTheme.primaryColor.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Center(
+                  child: SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primaryColor),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Container(
+                height: 20,
+                width: 60,
+                decoration: BoxDecoration(
+                  color: AppTheme.primaryColor.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+            ],
+          ),
+          
+          const SizedBox(height: 12),
+          
+          // Title skeleton
+          Container(
+            height: 14,
+            width: double.infinity,
+            decoration: BoxDecoration(
+              color: AppTheme.primaryColor.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(4),
+            ),
+          ),
+          
+          const SizedBox(height: 6),
+          
+          // Description skeleton
+          Container(
+            height: 11,
+            width: double.infinity,
+            decoration: BoxDecoration(
+              color: AppTheme.primaryColor.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(4),
+            ),
+          ),
+          
+          const SizedBox(height: 4),
+          
+          Container(
+            height: 11,
+            width: MediaQuery.of(context).size.width * 0.6,
+            decoration: BoxDecoration(
+              color: AppTheme.primaryColor.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(4),
+            ),
+          ),
+          
+          const SizedBox(height: 12),
+          
+          // Footer skeleton
+          Row(
+            children: [
+              Container(
+                height: 10,
+                width: 40,
+                decoration: BoxDecoration(
+                  color: AppTheme.primaryColor.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Container(
+                height: 10,
+                width: 20,
+                decoration: BoxDecoration(
+                  color: AppTheme.primaryColor.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildNoTopicsWidget() {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: AppTheme.surfaceColor,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: AppTheme.primaryColor.withOpacity(0.2),
+          width: 1,
+        ),
+      ),
+      child: Column(
+        children: [
+          Icon(
+            Icons.topic_outlined,
+            color: AppTheme.onSurfaceVariant,
+            size: 32,
+          ),
+          const SizedBox(height: 12),
+          Text(
+            'No topics available',
+            style: GoogleFonts.inter(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: AppTheme.textPrimary,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Check your connection and try again.',
+            style: GoogleFonts.inter(
+              fontSize: 14,
+              color: AppTheme.onSurfaceVariant,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTopicsGrid() {
+    // Use a different approach: Wrap or ListView instead of fixed-height GridView
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // Calculate optimal card width (accounting for spacing)
+        const double spacing = 16.0;
+        final double cardWidth = (constraints.maxWidth - spacing) / 2;
+        
+        return Wrap(
+          spacing: spacing,
+          runSpacing: spacing,
+          children: _recommendedTopics.map((topic) {
+            return SizedBox(
+              width: cardWidth,
+              child: _RecommendedGuideTopicCard(
+                topic: topic,
+                onTap: () => _navigateToStudyGuide(topic),
+              ),
+            );
+          }).toList(),
+        );
+      },
+    );
+  }
+
+
+  void _navigateToStudyGuide(RecommendedGuideTopic topic) {
+    // Navigate to generate study screen with predefined topic
+    context.go('/generate-study', extra: {
+      'input_type': 'topic',
+      'input_value': topic.title,
+      'predefined_topic': topic,
+    });
   }
 }
 
-/// Study topic card widget for recommended topics grid.
-class _StudyTopicCard extends StatelessWidget {
-  final StudyTopic topic;
+/// Recommended guide topic card widget for API-based topics.
+class _RecommendedGuideTopicCard extends StatelessWidget {
+  final RecommendedGuideTopic topic;
   final VoidCallback onTap;
 
-  const _StudyTopicCard({
+  const _RecommendedGuideTopicCard({
     required this.topic,
     required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
+    final iconData = _getIconForCategory(topic.category);
+    final color = _getColorForDifficulty(topic.difficulty);
+    
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -470,12 +726,12 @@ class _StudyTopicCard extends StatelessWidget {
           color: AppTheme.surfaceColor,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: topic.color.withOpacity(0.2),
+            color: color.withOpacity(0.2),
             width: 1,
           ),
           boxShadow: [
             BoxShadow(
-              color: topic.color.withOpacity(0.1),
+              color: color.withOpacity(0.1),
               blurRadius: 8,
               offset: const Offset(0, 2),
             ),
@@ -483,95 +739,164 @@ class _StudyTopicCard extends StatelessWidget {
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min, // Important: Don't expand unnecessarily
           children: [
-            Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: topic.color.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Icon(
-                topic.icon,
-                color: topic.color,
-                size: 20,
-              ),
+            // Header row with icon and difficulty badge
+            Row(
+              children: [
+                Container(
+                  width: 36, // Slightly smaller for better proportions
+                  height: 36,
+                  decoration: BoxDecoration(
+                    color: color.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(
+                    iconData,
+                    color: color,
+                    size: 18,
+                  ),
+                ),
+                const SizedBox(width: 8), // Fixed spacing instead of Spacer
+                Flexible( // Use Flexible instead of Spacer
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: color.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      topic.difficulty.toUpperCase(),
+                      style: GoogleFonts.inter(
+                        fontSize: 9,
+                        fontWeight: FontWeight.w600,
+                        color: color,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ),
+              ],
             ),
             
             const SizedBox(height: 12),
             
+            // Title with proper constraints
             Text(
               topic.title,
               style: GoogleFonts.inter(
-                fontSize: 16,
+                fontSize: 14, // Slightly smaller for better fit
                 fontWeight: FontWeight.w600,
                 color: AppTheme.textPrimary,
+                height: 1.2, // Tighter line height
+              ),
+              maxLines: 2, // Allow 2 lines for longer titles
+              overflow: TextOverflow.ellipsis,
+            ),
+            
+            const SizedBox(height: 6), // Reduced spacing
+            
+            // Description with flexible height
+            Flexible(
+              child: Text(
+                topic.description,
+                style: GoogleFonts.inter(
+                  fontSize: 11, // Smaller font for more content
+                  color: AppTheme.onSurfaceVariant,
+                  height: 1.3,
+                ),
+                maxLines: 3, // Allow up to 3 lines
+                overflow: TextOverflow.ellipsis,
               ),
             ),
             
-            const SizedBox(height: 4),
+            const SizedBox(height: 12), // Fixed spacing instead of Spacer
             
-            Text(
-              topic.subtitle,
-              style: GoogleFonts.inter(
-                fontSize: 12,
-                color: AppTheme.onSurfaceVariant,
-                height: 1.3,
-              ),
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
+            // Footer with metadata - use Wrap for overflow protection
+            Wrap(
+              spacing: 8,
+              runSpacing: 4,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: [
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.schedule,
+                      size: 12,
+                      color: AppTheme.onSurfaceVariant,
+                    ),
+                    const SizedBox(width: 3),
+                    Text(
+                      '${topic.estimatedMinutes}min',
+                      style: GoogleFonts.inter(
+                        fontSize: 10,
+                        color: AppTheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.book_outlined,
+                      size: 12,
+                      color: AppTheme.onSurfaceVariant,
+                    ),
+                    const SizedBox(width: 3),
+                    Text(
+                      '${topic.scriptureCount}',
+                      style: GoogleFonts.inter(
+                        fontSize: 10,
+                        color: AppTheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ),
           ],
         ),
       ),
     );
   }
-}
 
-/// Bottom navigation item widget.
-class _BottomNavItem extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final bool isActive;
-  final VoidCallback onTap;
+  IconData _getIconForCategory(String category) {
+    switch (category.toLowerCase()) {
+      case 'faith foundations':
+        return Icons.foundation;
+      case 'spiritual disciplines':
+        return Icons.self_improvement;
+      case 'salvation':
+        return Icons.favorite;
+      case 'christian living':
+        return Icons.directions_walk;
+      case 'character of god':
+        return Icons.auto_awesome;
+      case 'relationships':
+        return Icons.people;
+      case 'spiritual growth':
+        return Icons.trending_up;
+      default:
+        return Icons.menu_book;
+    }
+  }
 
-  const _BottomNavItem({
-    required this.icon,
-    required this.label,
-    required this.isActive,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final color = isActive ? AppTheme.primaryColor : AppTheme.onSurfaceVariant;
-    
-    return GestureDetector(
-      onTap: onTap,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            icon,
-            color: color,
-            size: 24,
-          ),
-          
-          const SizedBox(height: 4),
-          
-          Text(
-            label,
-            style: GoogleFonts.inter(
-              fontSize: 12,
-              fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
-              color: color,
-            ),
-          ),
-        ],
-      ),
-    );
+  Color _getColorForDifficulty(String difficulty) {
+    switch (difficulty.toLowerCase()) {
+      case 'beginner':
+        return const Color(0xFF4CAF50); // Green
+      case 'intermediate':
+        return const Color(0xFF6A4FB6); // Primary purple
+      case 'advanced':
+        return const Color(0xFFFF6B6B); // Accent red
+      default:
+        return AppTheme.primaryColor;
+    }
   }
 }
+
 
 /// Data model for verse of the day.
 class VerseOfTheDay {
@@ -581,20 +906,5 @@ class VerseOfTheDay {
   const VerseOfTheDay({
     required this.reference,
     required this.text,
-  });
-}
-
-/// Data model for study topic.
-class StudyTopic {
-  final String title;
-  final String subtitle;
-  final IconData icon;
-  final Color color;
-
-  const StudyTopic({
-    required this.title,
-    required this.subtitle,
-    required this.icon,
-    required this.color,
   });
 }

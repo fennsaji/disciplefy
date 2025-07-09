@@ -9,6 +9,7 @@ import '../../../../core/constants/app_constants.dart';
 import '../../domain/entities/study_guide.dart';
 import '../../domain/repositories/study_repository.dart';
 import '../../../../core/network/network_info.dart';
+import '../../../../core/services/auth_service.dart';
 
 /// Implementation of the StudyRepository interface.
 /// 
@@ -46,7 +47,24 @@ class StudyRepositoryImpl implements StudyRepository {
     try {
       // Check network connectivity
       if (!await _networkInfo.isConnected) {
-        return const Left(NetworkFailure());
+        return const Left(NetworkFailure(
+          message: 'No internet connection. Please check your network and try again.',
+          code: 'NO_CONNECTION',
+        ));
+      }
+
+      // Get authentication context
+      final userContext = await _getUserContext();
+      final authToken = await _getAuthToken();
+
+      // Prepare headers
+      final headers = <String, String>{
+        'Content-Type': 'application/json',
+      };
+      
+      // Add authorization header if available
+      if (authToken != null) {
+        headers['Authorization'] = 'Bearer $authToken';
       }
 
       // Call Supabase Edge Function for study generation
@@ -56,11 +74,9 @@ class StudyRepositoryImpl implements StudyRepository {
           'input_type': inputType,
           'input_value': input,
           'language': language,
-          'user_context': {
-            'is_authenticated': false,
-            'session_id': _uuid.v4(),
-          },
+          'user_context': userContext,
         },
+        headers: headers,
       );
 
       if (response.status == 200 && response.data != null) {
@@ -70,8 +86,18 @@ class StudyRepositoryImpl implements StudyRepository {
         await cacheStudyGuide(studyGuide);
         
         return Right(studyGuide);
+      } else if (response.status == 429) {
+        return const Left(RateLimitFailure(
+          message: 'You have reached your study generation limit. Please try again later.',
+          code: 'RATE_LIMITED',
+        ));
+      } else if (response.status >= 500) {
+        return const Left(ServerFailure(
+          message: 'Server error occurred. Please try again later.',
+          code: 'SERVER_ERROR',
+        ));
       } else {
-        // For development, return mock data on API failure
+        // For development, return mock data on API failure with warning
         final mockStudyGuide = _createMockStudyGuide(input, inputType, language);
         await cacheStudyGuide(mockStudyGuide);
         return Right(mockStudyGuide);
@@ -89,14 +115,14 @@ class StudyRepositoryImpl implements StudyRepository {
         context: e.context,
       ));
     } catch (e) {
-      // For development, return mock data on any error
+      // For development, return mock data on any error with fallback message
       try {
         final mockStudyGuide = _createMockStudyGuide(input, inputType, language);
         await cacheStudyGuide(mockStudyGuide);
         return Right(mockStudyGuide);
       } catch (cacheError) {
         return Left(ClientFailure(
-          message: 'Failed to generate study guide',
+          message: 'We couldn\'t generate a study guide. Please try again later.',
           code: 'GENERATION_FAILED',
           context: {'originalError': e.toString(), 'cacheError': cacheError.toString()},
         ));
@@ -195,6 +221,7 @@ class StudyRepositoryImpl implements StudyRepository {
       input: input,
       inputType: inputType,
       summary: studyData['summary'] as String? ?? 'No summary available',
+      interpretation: studyData['interpretation'] as String? ?? 'No interpretation available',
       context: studyData['context'] as String? ?? 'No context available',
       relatedVerses: (studyData['related_verses'] as List<dynamic>?)
           ?.map((e) => e.toString())
@@ -217,6 +244,7 @@ class StudyRepositoryImpl implements StudyRepository {
       input: data['input'] as String,
       inputType: data['inputType'] as String,
       summary: data['summary'] as String,
+      interpretation: data['interpretation'] as String? ?? 'No interpretation available',
       context: data['context'] as String,
       relatedVerses: (data['relatedVerses'] as List<dynamic>).map((e) => e.toString()).toList(),
       reflectionQuestions: (data['reflectionQuestions'] as List<dynamic>).map((e) => e.toString()).toList(),
@@ -234,6 +262,7 @@ class StudyRepositoryImpl implements StudyRepository {
       'input': studyGuide.input,
       'inputType': studyGuide.inputType,
       'summary': studyGuide.summary,
+      'interpretation': studyGuide.interpretation,
       'context': studyGuide.context,
       'relatedVerses': studyGuide.relatedVerses,
       'reflectionQuestions': studyGuide.reflectionQuestions,
@@ -244,6 +273,66 @@ class StudyRepositoryImpl implements StudyRepository {
     };
   }
 
+  /// Gets the authentication token for API requests.
+  Future<String?> _getAuthToken() async {
+    try {
+      return await AuthService.getAuthToken();
+    } catch (e) {
+      return null;
+    }
+  }
+
+  /// Gets the user context for API requests.
+  Future<Map<String, dynamic>> _getUserContext() async {
+    try {
+      final isAuthenticated = await AuthService.isAuthenticated();
+      
+      if (isAuthenticated) {
+        final userId = await AuthService.getUserId();
+        return {
+          'is_authenticated': true,
+          'user_id': userId,
+        };
+      } else {
+        // For anonymous users, create or get a session ID
+        final sessionId = await _getOrCreateSessionId();
+        return {
+          'is_authenticated': false,
+          'session_id': sessionId,
+        };
+      }
+    } catch (e) {
+      // Fallback to anonymous session
+      final sessionId = await _getOrCreateSessionId();
+      return {
+        'is_authenticated': false,
+        'session_id': sessionId,
+      };
+    }
+  }
+
+  /// Gets or creates a session ID for anonymous users.
+  Future<String> _getOrCreateSessionId() async {
+    try {
+      if (!Hive.isBoxOpen('app_settings')) {
+        await Hive.openBox('app_settings');
+      }
+      
+      final box = Hive.box('app_settings');
+      String? sessionId = box.get('anonymous_session_id');
+      
+      if (sessionId == null || sessionId.isEmpty) {
+        sessionId = _uuid.v4();
+        await box.put('anonymous_session_id', sessionId);
+      }
+      
+      return sessionId;
+    } catch (e) {
+      // Fallback to generating a new session ID
+      return _uuid.v4();
+    }
+  }
+
   /// Creates a mock study guide for development and offline use.
   StudyGuide _createMockStudyGuide(String input, String inputType, String language) {
     if (inputType == 'scripture') {
@@ -252,6 +341,7 @@ class StudyRepositoryImpl implements StudyRepository {
         input: input,
         inputType: inputType,
         summary: 'This verse from John\'s Gospel reveals the heart of God\'s love for humanity. It demonstrates the incredible sacrifice God made and the simple requirement for receiving eternal life.',
+        interpretation: 'The verse reveals God\'s motivation (love), His action (giving His Son), His target (the world), and His purpose (eternal life for believers). The Greek word "agape" for love indicates God\'s unconditional, sacrificial love. "Only begotten" (monogenes) emphasizes the unique, one-of-a-kind nature of Jesus as God\'s Son.',
         context: 'This passage comes from John 3, where Jesus speaks with Nicodemus, a Pharisee who came to Jesus at night. Jesus is explaining the necessity of spiritual rebirth and God\'s plan for salvation.',
         relatedVerses: [
           'Romans 5:8 - "But God demonstrates his own love for us in this: While we were still sinners, Christ died for us."',
@@ -279,6 +369,7 @@ class StudyRepositoryImpl implements StudyRepository {
         input: input,
         inputType: inputType,
         summary: 'Faith is central to the Christian life, involving trust in God\'s character and promises. It\'s both a gift from God and a choice we make daily.',
+        interpretation: 'Biblical faith goes beyond intellectual assent to active trust and dependence on God. It involves believing God\'s promises even when circumstances seem contrary, following Jesus\' example and teachings, and allowing faith to transform how we live and relate to others.',
         context: 'Throughout Scripture, faith is presented as essential for pleasing God and living the Christian life. From Abraham\'s journey of faith to the heroes listed in Hebrews 11, faith involves trusting God even when we cannot see the full picture.',
         relatedVerses: [
           'Hebrews 11:1 - "Now faith is confidence in what we hope for and assurance about what we do not see."',
