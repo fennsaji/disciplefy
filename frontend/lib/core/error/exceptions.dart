@@ -93,3 +93,12 @@ class ClientException extends AppException {
     super.context,
   });
 }
+
+/// Exception thrown when cache operations fail.
+class CacheException extends AppException {
+  const CacheException({
+    required super.message,
+    super.code = 'CACHE_ERROR',
+    super.context,
+  });
+}

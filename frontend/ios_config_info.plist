@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <!-- Add these URL schemes to your existing Info.plist -->
+    <!-- This configuration goes in ios/Runner/Info.plist -->
+    
+    <!-- Add this to the existing CFBundleURLTypes array, or create it if it doesn't exist -->
+    <key>CFBundleURLTypes</key>
+    <array>
+        <!-- Supabase OAuth redirect URL scheme -->
+        <dict>
+            <key>CFBundleURLName</key>
+            <string>supabase-oauth</string>
+            <key>CFBundleURLSchemes</key>
+            <array>
+                <!-- Replace YOUR_SUPABASE_URL with your actual Supabase URL -->
+                <string>https</string>
+            </array>
+        </dict>
+        
+        <!-- Custom app scheme for OAuth redirects (fallback) -->
+        <dict>
+            <key>CFBundleURLName</key>
+            <string>disciplefy-oauth</string>
+            <key>CFBundleURLSchemes</key>
+            <array>
+                <string>com.disciplefy.bible-study-app</string>
+            </array>
+        </dict>
+    </array>
+    
+    <!-- Add LSApplicationQueriesSchemes to allow opening external URLs -->
+    <key>LSApplicationQueriesSchemes</key>
+    <array>
+        <string>https</string>
+        <string>http</string>
+        <string>googlechromes</string>
+        <string>googlechrome</string>
+    </array>
+    
+    <!-- Add these permissions for network access -->
+    <key>NSAppTransportSecurity</key>
+    <dict>
+        <key>NSAllowsArbitraryLoads</key>
+        <true/>
+        <key>NSExceptionDomains</key>
+        <dict>
+            <!-- Replace YOUR_SUPABASE_URL with your actual Supabase URL -->
+            <key>wzdcwxvyjuxjgzpnukvm.supabase.co</key>
+            <dict>
+                <key>NSExceptionAllowsInsecureHTTPLoads</key>
+                <false/>
+                <key>NSExceptionMinimumTLSVersion</key>
+                <string>TLSv1.2</string>
+                <key>NSExceptionRequiresForwardSecrecy</key>
+                <false/>
+            </dict>
+        </dict>
+    </dict>
+    
+    <!-- Add these for Google Sign-In (if using Google OAuth) -->
+    <key>CFBundleURLTypes</key>
+    <array>
+        <!-- Google Sign-In URL scheme -->
+        <dict>
+            <key>CFBundleURLName</key>
+            <string>google-signin</string>
+            <key>CFBundleURLSchemes</key>
+            <array>
+                <!-- Replace with your Google OAuth client ID -->
+                <string>587108000155-af542dhgo9rmp5hvsm1vepgqsgil438d.apps.googleusercontent.com</string>
+            </array>
+        </dict>
+    </array>
+</dict>
+</plist>
+
+<!-- 
+INTEGRATION INSTRUCTIONS:
+1. Replace YOUR_SUPABASE_URL with your actual Supabase project URL
+2. Replace YOUR_GOOGLE_CLIENT_ID with your Google OAuth client ID
+3. Copy the relevant sections to your ios/Runner/Info.plist file
+4. Ensure you don't duplicate CFBundleURLTypes - merge the arrays if it already exists
+-->

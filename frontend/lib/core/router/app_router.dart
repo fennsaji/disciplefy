@@ -11,6 +11,10 @@ import '../../features/study_generation/presentation/pages/generate_study_screen
 import '../../features/study_generation/presentation/pages/study_guide_screen.dart';
 import '../../features/study_generation/presentation/pages/study_result_page.dart';
 import '../../features/study_generation/domain/entities/study_guide.dart';
+import '../../features/settings/presentation/pages/settings_screen.dart';
+import '../../features/saved_guides/presentation/pages/saved_screen.dart';
+import '../../features/auth/presentation/pages/login_screen.dart';
+import '../presentation/widgets/app_shell.dart';
 import '../error/error_page.dart';
 
 class AppRoutes {
@@ -22,6 +26,9 @@ class AppRoutes {
   static const String generateStudy = '/generate-study';
   static const String studyGuide = '/study-guide';
   static const String studyResult = '/study-result';
+  static const String settings = '/settings';
+  static const String saved = '/saved';
+  static const String login = '/login';
   static const String error = '/error';
 }
 
@@ -29,7 +36,7 @@ class AppRouter {
   static final GoRouter router = GoRouter(
     initialLocation: _getInitialRoute(),
     routes: [
-      // Onboarding Flow
+      // Onboarding Flow (outside app shell)
       GoRoute(
         path: AppRoutes.onboarding,
         name: 'onboarding',
@@ -51,23 +58,50 @@ class AppRouter {
         builder: (context, state) => const OnboardingPurposePage(),
       ),
       
-      // Main App Flow
+      // Main App Routes (using AppShell directly)
       GoRoute(
         path: AppRoutes.home,
         name: 'home',
-        builder: (context, state) => const HomeScreen(),
+        builder: (context, state) => const AppShell(),
       ),
       GoRoute(
         path: AppRoutes.generateStudy,
         name: 'generate_study',
-        builder: (context, state) => const GenerateStudyScreen(),
+        builder: (context, state) => const AppShell(),
       ),
+      GoRoute(
+        path: AppRoutes.saved,
+        name: 'saved',
+        builder: (context, state) => const AppShell(),
+      ),
+      GoRoute(
+        path: AppRoutes.settings,
+        name: 'settings',
+        builder: (context, state) => const AppShell(),
+      ),
+      
+      // Authentication Routes (outside app shell)
+      GoRoute(
+        path: AppRoutes.login,
+        name: 'login',
+        builder: (context, state) => const LoginScreen(),
+      ),
+      
+      // Full Screen Routes (outside shell)
       GoRoute(
         path: AppRoutes.studyGuide,
         name: 'study_guide',
         builder: (context, state) {
-          final studyGuide = state.extra as StudyGuide?;
-          final routeExtra = state.extra as Map<String, dynamic>?;
+          // Handle different types of navigation data
+          StudyGuide? studyGuide;
+          Map<String, dynamic>? routeExtra;
+          
+          if (state.extra is StudyGuide) {
+            studyGuide = state.extra as StudyGuide;
+          } else if (state.extra is Map<String, dynamic>) {
+            routeExtra = state.extra as Map<String, dynamic>;
+          }
+          
           return StudyGuideScreen(
             studyGuide: studyGuide,
             routeExtra: routeExtra,
@@ -123,5 +157,8 @@ extension AppRouterExtension on GoRouter {
   void goToStudyGuide(StudyGuide studyGuide) => go(AppRoutes.studyGuide, extra: studyGuide);
   void goToStudyGuideWithExtra(Map<String, dynamic> extra) => go(AppRoutes.studyGuide, extra: extra);
   void goToStudyResult(StudyGuide studyGuide) => go(AppRoutes.studyResult, extra: studyGuide);
+  void goToSettings() => go(AppRoutes.settings);
+  void goToSaved() => go(AppRoutes.saved);
+  void goToLogin() => go(AppRoutes.login);
   void goToError(String error) => go(AppRoutes.error, extra: error);
 }

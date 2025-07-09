@@ -1,0 +1,9 @@
+{
+  "version": "1",
+  "name": "Disciplefy API Tests",
+  "type": "collection",
+  "ignore": [
+    "node_modules",
+    ".git"
+  ]
+}

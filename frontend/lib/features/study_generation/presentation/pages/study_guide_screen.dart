@@ -70,6 +70,7 @@ class _StudyGuideScreenState extends State<StudyGuideScreen> {
       input: topic,
       inputType: 'topic',
       summary: 'A comprehensive study on $topic',
+      interpretation: 'This topic reveals God\'s character and His relationship with humanity. The original meaning emphasizes themes of faith, redemption, and spiritual growth. Understanding the context helps us apply these timeless truths to our modern lives, encouraging us to deepen our relationship with God and live according to His will.',
       context: 'Understanding the biblical foundation and historical context of $topic in Christian theology. This topic appears throughout Scripture and has been central to Christian teaching since the early church.',
       relatedVerses: [
         'John 3:16 - "For God so loved the world..."',
@@ -265,6 +266,24 @@ class _StudyGuideScreenState extends State<StudyGuideScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        // Summary Section
+        _StudySection(
+          title: 'Summary',
+          icon: Icons.summarize,
+          content: _currentStudyGuide.summary,
+        ),
+        
+        const SizedBox(height: 24),
+        
+        // Interpretation Section
+        _StudySection(
+          title: 'Interpretation',
+          icon: Icons.lightbulb_outline,
+          content: _currentStudyGuide.interpretation,
+        ),
+        
+        const SizedBox(height: 24),
+        
         // Context Section
         _StudySection(
           title: 'Context',
@@ -279,15 +298,6 @@ class _StudyGuideScreenState extends State<StudyGuideScreen> {
           title: 'Related Verses',
           icon: Icons.menu_book,
           content: _currentStudyGuide.relatedVerses.join('\n\n'),
-        ),
-        
-        const SizedBox(height: 24),
-        
-        // Life Application Section
-        _StudySection(
-          title: 'Life Application',
-          icon: Icons.lightbulb_outline,
-          content: 'Apply these biblical principles to your daily walk with God. Consider how these truths can transform your perspective, relationships, and actions. Let God\'s word guide your decisions and shape your character.',
         ),
         
         const SizedBox(height: 24),
@@ -478,6 +488,12 @@ class _StudyGuideScreenState extends State<StudyGuideScreen> {
   void _shareStudyGuide() {
     final shareText = '''
 ${_getDisplayTitle()}
+
+Summary:
+${_currentStudyGuide.summary}
+
+Interpretation:
+${_currentStudyGuide.interpretation}
 
 Context:
 ${_currentStudyGuide.context}

@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Welcome to Disciplefy - Disciplefy</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f8f9fa;
+        }
+        .container {
+            background-color: white;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .logo {
+            font-size: 28px;
+            font-weight: bold;
+            color: #2563eb;
+            margin-bottom: 10px;
+        }
+        .subtitle {
+            color: #6b7280;
+            font-size: 16px;
+        }
+        .content {
+            margin-bottom: 30px;
+        }
+        .button {
+            display: inline-block;
+            background-color: #2563eb;
+            color: white;
+            padding: 12px 24px;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 600;
+            text-align: center;
+            margin: 20px 0;
+        }
+        .button:hover {
+            background-color: #1d4ed8;
+        }
+        .footer {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #e5e7eb;
+            text-align: center;
+            color: #6b7280;
+            font-size: 14px;
+        }
+        .verse {
+            background-color: #f3f4f6;
+            padding: 20px;
+            border-radius: 8px;
+            font-style: italic;
+            margin: 20px 0;
+            border-left: 4px solid #2563eb;
+        }
+        .feature-list {
+            background-color: #f8fafc;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        .feature-item {
+            margin-bottom: 10px;
+            padding-left: 20px;
+            position: relative;
+        }
+        .feature-item::before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            color: #2563eb;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">Disciplefy</div>
+            <div class="subtitle">Your Bible Study Journey Begins!</div>
+        </div>
+
+        <div class="content">
+            <h2>Welcome to Disciplefy!</h2>
+            <p>You've been invited to join our Bible study community - a place where faith grows, understanding deepens, and spiritual relationships flourish.</p>
+            
+            <div style="text-align: center;">
+                <a href="{{ .ConfirmationURL }}" class="button">Accept Invitation</a>
+            </div>
+            
+            <p>If the button above doesn't work, you can copy and paste this link into your browser:</p>
+            <p style="word-break: break-all; color: #2563eb;">{{ .ConfirmationURL }}</p>
+            
+            <div class="verse">
+                <p>"As iron sharpens iron, so one person sharpens another."</p>
+                <p style="text-align: right; margin-top: 10px;"><strong>- Proverbs 27:17</strong></p>
+            </div>
+            
+            <h3>What awaits you in Disciplefy:</h3>
+            <div class="feature-list">
+                <div class="feature-item">Personalized Bible study guides using proven methodologies</div>
+                <div class="feature-item">AI-powered insights that respect biblical truth</div>
+                <div class="feature-item">Community discussions and shared learning</div>
+                <div class="feature-item">Track your spiritual growth journey</div>
+                <div class="feature-item">Access to premium study materials</div>
+                <div class="feature-item">Daily verses and inspiration</div>
+            </div>
+            
+            <p>Our approach follows time-tested Bible study methods that have helped millions grow in their faith. Whether you're a new believer or have walked with God for years, Disciplefy adapts to your spiritual journey.</p>
+            
+            <p>Join thousands of believers who are already discovering deeper truths in God's Word through Disciplefy.</p>
+        </div>
+
+        <div class="footer">
+            <p>This invitation was sent to {{ .Email }}. If you have any questions, please contact us at support@disciplefy.com</p>
+            <p>© 2024 Disciplefy. All rights reserved.</p>
+        </div>
+    </div>
+</body>
+</html>

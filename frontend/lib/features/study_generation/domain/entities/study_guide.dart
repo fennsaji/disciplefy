@@ -17,6 +17,9 @@ class StudyGuide extends Equatable {
   /// The main content/summary of the study guide.
   final String summary;
   
+  /// Interpretation and meaning of the passage or topic.
+  final String interpretation;
+  
   /// Historical and literary context of the passage.
   final String context;
   
@@ -47,6 +50,7 @@ class StudyGuide extends Equatable {
     required this.input,
     required this.inputType,
     required this.summary,
+    required this.interpretation,
     required this.context,
     required this.relatedVerses,
     required this.reflectionQuestions,
@@ -65,6 +69,7 @@ class StudyGuide extends Equatable {
     String? input,
     String? inputType,
     String? summary,
+    String? interpretation,
     String? context,
     List<String>? relatedVerses,
     List<String>? reflectionQuestions,
@@ -78,6 +83,7 @@ class StudyGuide extends Equatable {
       input: input ?? this.input,
       inputType: inputType ?? this.inputType,
       summary: summary ?? this.summary,
+      interpretation: interpretation ?? this.interpretation,
       context: context ?? this.context,
       relatedVerses: relatedVerses ?? this.relatedVerses,
       reflectionQuestions: reflectionQuestions ?? this.reflectionQuestions,
@@ -105,6 +111,7 @@ class StudyGuide extends Equatable {
   /// A complete study guide must have non-empty content for all sections.
   bool get isComplete {
     return summary.isNotEmpty &&
+           interpretation.isNotEmpty &&
            context.isNotEmpty &&
            relatedVerses.isNotEmpty &&
            reflectionQuestions.isNotEmpty &&
@@ -116,6 +123,7 @@ class StudyGuide extends Equatable {
   /// Based on average reading speed of 200 words per minute.
   int get estimatedReadingTimeMinutes {
     final totalWords = _countWords(summary) +
+                      _countWords(interpretation) +
                       _countWords(context) +
                       relatedVerses.fold(0, (sum, verse) => sum + _countWords(verse)) +
                       reflectionQuestions.fold(0, (sum, q) => sum + _countWords(q)) +
@@ -135,6 +143,7 @@ class StudyGuide extends Equatable {
         input,
         inputType,
         summary,
+        interpretation,
         context,
         relatedVerses,
         reflectionQuestions,
