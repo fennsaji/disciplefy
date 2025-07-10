@@ -27,6 +27,13 @@ import '../../features/saved_guides/domain/usecases/save_guide.dart';
 import '../../features/saved_guides/domain/usecases/remove_guide.dart';
 import '../../features/saved_guides/domain/usecases/add_to_recent.dart';
 import '../../features/saved_guides/presentation/bloc/saved_guides_bloc.dart';
+import '../../features/daily_verse/data/services/daily_verse_api_service.dart';
+import '../../features/daily_verse/data/services/daily_verse_cache_service.dart';
+import '../../features/daily_verse/domain/repositories/daily_verse_repository.dart';
+import '../../features/daily_verse/data/repositories/daily_verse_repository_impl.dart';
+import '../../features/daily_verse/domain/usecases/get_daily_verse.dart';
+import '../../features/daily_verse/domain/usecases/manage_verse_preferences.dart';
+import '../../features/daily_verse/presentation/bloc/daily_verse_bloc.dart';
 
 final sl = GetIt.instance;
 
@@ -103,5 +110,35 @@ Future<void> initializeDependencies() async {
         removeGuide: sl(),
         addToRecent: sl(),
         repository: sl(),
+      ));
+
+  //! Daily Verse
+  sl.registerLazySingleton<DailyVerseApiService>(
+    () => DailyVerseApiService(httpClient: sl()),
+  );
+
+  sl.registerLazySingleton<DailyVerseCacheService>(
+    () => DailyVerseCacheService(),
+  );
+
+  sl.registerLazySingleton<DailyVerseRepository>(
+    () => DailyVerseRepositoryImpl(
+      apiService: sl(),
+      cacheService: sl(),
+    ),
+  );
+
+  sl.registerLazySingleton(() => GetDailyVerse(sl()));
+  sl.registerLazySingleton(() => GetPreferredLanguage(sl()));
+  sl.registerLazySingleton(() => SetPreferredLanguage(sl()));
+  sl.registerLazySingleton(() => GetCacheStats(sl()));
+  sl.registerLazySingleton(() => ClearVerseCache(sl()));
+
+  sl.registerFactory(() => DailyVerseBloc(
+        getDailyVerse: sl(),
+        getPreferredLanguage: sl(),
+        setPreferredLanguage: sl(),
+        getCacheStats: sl(),
+        clearVerseCache: sl(),
       ));
 }

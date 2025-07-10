@@ -145,18 +145,18 @@ serve(async (req: Request) => {
     }
 
     // Log analytics event
-    await AnalyticsLogger.logEvent(supabaseClient, {
-      event_type: 'oauth_login_success',
-      user_id: sessionData.user.id,
-      event_data: {
+    const analyticsLogger = new AnalyticsLogger(supabaseClient)
+    await analyticsLogger.logEvent(
+      'oauth_login_success',
+      {
         provider: 'google',
         email_verified: response.session.user.email_verified,
         migration_performed: migrationResult.migrated,
-        guides_migrated: migrationResult.guides_migrated
+        guides_migrated: migrationResult.guides_migrated,
+        user_id: sessionData.user.id,
       },
-      ip_address: req.headers.get('x-forwarded-for'),
-      user_agent: req.headers.get('user-agent')
-    })
+      req.headers.get('x-forwarded-for')
+    )
 
     return new Response(
       JSON.stringify(response),

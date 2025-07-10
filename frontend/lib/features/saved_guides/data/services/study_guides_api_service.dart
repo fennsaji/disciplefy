@@ -1,0 +1,171 @@
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+
+import '../../../../core/config/app_config.dart';
+import '../../../../core/error/exceptions.dart';
+import '../../../../core/services/auth_service.dart';
+import '../models/saved_guide_model.dart';
+
+/// API service for managing study guides (saved/recent)
+class StudyGuidesApiService {
+  static String get _baseUrl => AppConfig.baseApiUrl.replaceAll('/functions/v1', '');
+  static const String _studyGuidesEndpoint = '/functions/v1/study-guides';
+  
+  static const FlutterSecureStorage _secureStorage = FlutterSecureStorage();
+  
+  final http.Client _httpClient;
+
+  StudyGuidesApiService({http.Client? httpClient}) 
+      : _httpClient = httpClient ?? http.Client();
+
+  /// Fetch study guides from API
+  /// [savedOnly] - if true, only fetch saved guides
+  /// [limit] - maximum number of guides to fetch
+  /// [offset] - offset for pagination
+  Future<List<SavedGuideModel>> getStudyGuides({
+    bool savedOnly = false,
+    int limit = 20,
+    int offset = 0,
+  }) async {
+    try {
+      // Build query parameters
+      final queryParams = <String, String>{
+        'limit': limit.toString(),
+        'offset': offset.toString(),
+      };
+      
+      if (savedOnly) {
+        queryParams['saved'] = 'true';
+      }
+
+      final uri = Uri.parse('$_baseUrl$_studyGuidesEndpoint')
+          .replace(queryParameters: queryParams);
+
+      // Prepare headers
+      final headers = await _getApiHeaders();
+      
+      final response = await _httpClient.get(
+        uri,
+        headers: headers,
+      ).timeout(const Duration(seconds: 10));
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> jsonData = json.decode(response.body);
+        
+        if (jsonData['success'] == true && jsonData['data'] != null) {
+          final guidesData = jsonData['data']['guides'] as List<dynamic>? ?? [];
+          
+          return guidesData.map((guideJson) => 
+            SavedGuideModel.fromApiResponse(guideJson as Map<String, dynamic>)
+          ).toList();
+        } else {
+          throw ServerException(
+            message: 'API returned failure response',
+            code: 'API_ERROR',
+          );
+        }
+      } else if (response.statusCode == 401) {
+        throw AuthenticationException(
+          message: 'Authentication required',
+          code: 'UNAUTHORIZED',
+        );
+      } else {
+        throw ServerException(
+          message: 'Failed to fetch study guides: ${response.statusCode}',
+          code: 'SERVER_ERROR',
+        );
+      }
+    } catch (e) {
+      if (e is ServerException || e is AuthenticationException) {
+        rethrow;
+      }
+      throw NetworkException(
+        message: 'Failed to connect to study guides service: $e',
+        code: 'NETWORK_ERROR',
+      );
+    }
+  }
+
+  /// Save or unsave a study guide
+  Future<SavedGuideModel> saveUnsaveGuide({
+    required String guideId,
+    required bool save,
+  }) async {
+    try {
+      final headers = await _getApiHeaders();
+      
+      final body = json.encode({
+        'guide_id': guideId,
+        'action': save ? 'save' : 'unsave',
+      });
+
+      final response = await _httpClient.post(
+        Uri.parse('$_baseUrl$_studyGuidesEndpoint'),
+        headers: headers,
+        body: body,
+      ).timeout(const Duration(seconds: 10));
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> jsonData = json.decode(response.body);
+        
+        if (jsonData['success'] == true && jsonData['data'] != null) {
+          final guideData = jsonData['data']['guide'] as Map<String, dynamic>;
+          return SavedGuideModel.fromApiResponse(guideData);
+        } else {
+          throw ServerException(
+            message: 'API returned failure response',
+            code: 'API_ERROR',
+          );
+        }
+      } else if (response.statusCode == 401) {
+        throw AuthenticationException(
+          message: 'Authentication required to save guides',
+          code: 'UNAUTHORIZED',
+        );
+      } else if (response.statusCode == 404) {
+        throw ServerException(
+          message: 'Study guide not found',
+          code: 'NOT_FOUND',
+        );
+      } else {
+        throw ServerException(
+          message: 'Failed to ${save ? 'save' : 'unsave'} study guide: ${response.statusCode}',
+          code: 'SERVER_ERROR',
+        );
+      }
+    } catch (e) {
+      if (e is ServerException || e is AuthenticationException) {
+        rethrow;
+      }
+      throw NetworkException(
+        message: 'Failed to connect to study guides service: $e',
+        code: 'NETWORK_ERROR',
+      );
+    }
+  }
+
+  /// Get API headers with authentication
+  Future<Map<String, String>> _getApiHeaders() async {
+    final headers = <String, String>{
+      'Content-Type': 'application/json',
+      'apikey': AppConfig.supabaseAnonKey,
+    };
+
+    // Get auth token from secure storage if available
+    final authToken = await _secureStorage.read(key: 'auth_token');
+    if (authToken != null && authToken.isNotEmpty) {
+      headers['Authorization'] = 'Bearer $authToken';
+    } else {
+      // For anonymous access, use the Supabase anon key
+      headers['Authorization'] = 'Bearer ${AppConfig.supabaseAnonKey}';
+    }
+
+    return headers;
+  }
+
+  /// Dispose HTTP client
+  void dispose() {
+    _httpClient.close();
+  }
+}

@@ -1,11 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/di/injection_container.dart';
 import '../../data/services/recommended_guides_service.dart';
 import '../../domain/entities/recommended_guide_topic.dart';
+import '../../../daily_verse/presentation/bloc/daily_verse_bloc.dart';
+import '../../../daily_verse/presentation/bloc/daily_verse_event.dart';
+import '../../../daily_verse/presentation/bloc/daily_verse_state.dart';
+import '../../../daily_verse/presentation/widgets/daily_verse_card.dart';
 
 /// Home screen displaying daily verse, navigation options, and study recommendations.
 /// 
@@ -30,12 +36,6 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _isLoadingTopics = true;
   String? _topicsError;
   List<RecommendedGuideTopic> _recommendedTopics = [];
-  
-  // Sample verse of the day - TODO: Fetch from Bible API
-  final VerseOfTheDay _verseOfTheDay = const VerseOfTheDay(
-    reference: 'John 3:16',
-    text: 'For God so loved the world that he gave his one and only Son, that whoever believes in him shall not perish but have eternal life.',
-  );
 
   @override
   void initState() {
@@ -50,10 +50,21 @@ class _HomeScreenState extends State<HomeScreen> {
     super.dispose();
   }
 
-  /// Initializes the screen by loading user data and topics
+  /// Initializes the screen by loading user data, topics, and daily verse
   Future<void> _initializeScreen() async {
     await _loadUserData();
     await _loadRecommendedTopics();
+    // Load daily verse only once on screen initialization
+    _loadDailyVerse();
+  }
+  
+  /// Load daily verse - called only once during initialization
+  void _loadDailyVerse() {
+    // Auto-load daily verse on home screen initialization
+    // BLoC will handle caching and avoid redundant calls
+    final bloc = sl<DailyVerseBloc>();
+    // Always trigger load - the BLoC will handle daily caching logic
+    bloc.add(const LoadTodaysVerse());
   }
 
   /// Loads user data from secure storage
@@ -105,56 +116,61 @@ class _HomeScreenState extends State<HomeScreen> {
     final screenHeight = MediaQuery.of(context).size.height;
     final isLargeScreen = screenHeight > 700;
 
-    return Scaffold(
-      backgroundColor: AppTheme.backgroundColor,
-      body: SafeArea(
-        child: Column(
-          children: [
-            // Main content
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 24),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    SizedBox(height: isLargeScreen ? 32 : 24),
-                    
-                    // App Header with Logo
-                    _buildAppHeader(),
-                    
-                    SizedBox(height: isLargeScreen ? 32 : 24),
-                    
-                    // Welcome Message
-                    _buildWelcomeMessage(),
-                    
-                    SizedBox(height: isLargeScreen ? 32 : 24),
-                    
-                    // Verse of the Day
-                    _buildVerseOfTheDay(),
-                    
-                    SizedBox(height: isLargeScreen ? 40 : 32),
-                    
-                    // Generate Study Guide Button
-                    _buildGenerateStudyButton(),
-                    
-                    SizedBox(height: isLargeScreen ? 32 : 24),
-                    
-                    // Resume Last Study (conditional)
-                    if (_hasResumeableStudy) ...[
-                      _buildResumeStudyBanner(),
+    return BlocProvider(
+      create: (context) => sl<DailyVerseBloc>(),
+      child: Scaffold(
+        backgroundColor: AppTheme.backgroundColor,
+        body: SafeArea(
+          child: Column(
+            children: [
+              // Main content
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      SizedBox(height: isLargeScreen ? 32 : 24),
+                      
+                      // App Header with Logo
+                      _buildAppHeader(),
+                      
+                      SizedBox(height: isLargeScreen ? 32 : 24),
+                      
+                      // Welcome Message
+                      _buildWelcomeMessage(),
+                      
+                      SizedBox(height: isLargeScreen ? 32 : 24),
+                      
+                      // Daily Verse Card
+                      const DailyVerseCard(
+                        margin: EdgeInsets.zero,
+                      ),
+                      
+                      SizedBox(height: isLargeScreen ? 40 : 32),
+                      
+                      // Generate Study Guide Button
+                      _buildGenerateStudyButton(),
+                      
+                      SizedBox(height: isLargeScreen ? 32 : 24),
+                      
+                      // Resume Last Study (conditional)
+                      if (_hasResumeableStudy) ...[
+                        _buildResumeStudyBanner(),
+                        SizedBox(height: isLargeScreen ? 32 : 24),
+                      ],
+                      
+                      // Recommended Study Topics
+                      _buildRecommendedTopics(),
+                      
                       SizedBox(height: isLargeScreen ? 32 : 24),
                     ],
-                    
-                    // Recommended Study Topics
-                    _buildRecommendedTopics(),
-                    
-                    SizedBox(height: isLargeScreen ? 32 : 24),
-                  ],
+                  ),
                 ),
               ),
-            ),
-            
-          ],
+              
+            ],
+          ),
         ),
       ),
     );
@@ -242,74 +258,6 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildVerseOfTheDay() {
-    return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            AppTheme.secondaryColor.withOpacity(0.4),
-            AppTheme.secondaryColor.withOpacity(0.6),
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: AppTheme.secondaryColor.withOpacity(0.8),
-          width: 1,
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(
-                Icons.wb_sunny_outlined,
-                color: AppTheme.primaryColor,
-                size: 20,
-              ),
-              
-              const SizedBox(width: 8),
-              
-              Text(
-                'Verse of the Day',
-                style: GoogleFonts.inter(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: AppTheme.primaryColor,
-                ),
-              ),
-            ],
-          ),
-          
-          const SizedBox(height: 16),
-          
-          Text(
-            '"${_verseOfTheDay.text}"',
-            style: GoogleFonts.inter(
-              fontSize: 16,
-              fontStyle: FontStyle.italic,
-              color: AppTheme.textPrimary,
-              height: 1.6,
-            ),
-          ),
-          
-          const SizedBox(height: 12),
-          
-          Text(
-            '- ${_verseOfTheDay.reference}',
-            style: GoogleFonts.inter(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: AppTheme.primaryColor,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 
   Widget _buildGenerateStudyButton() {
     return SizedBox(
@@ -898,13 +846,3 @@ class _RecommendedGuideTopicCard extends StatelessWidget {
 }
 
 
-/// Data model for verse of the day.
-class VerseOfTheDay {
-  final String reference;
-  final String text;
-
-  const VerseOfTheDay({
-    required this.reference,
-    required this.text,
-  });
-}

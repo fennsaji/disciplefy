@@ -1,0 +1,525 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter/services.dart';
+
+import '../../domain/entities/daily_verse_entity.dart';
+import '../bloc/daily_verse_bloc.dart';
+import '../bloc/daily_verse_event.dart';
+import '../bloc/daily_verse_state.dart';
+
+/// Light gold highlight color for selected tabs and icons
+const Color _highlightColor = Color(0xFFFFEEC0);
+/// Primary purple color for text elements
+const Color _primaryPurple = Color(0xFF6A4FB6);
+
+/// Daily verse card widget for home screen
+class DailyVerseCard extends StatelessWidget {
+  final VoidCallback? onTap;
+  final bool showLanguageTabs;
+  final EdgeInsetsGeometry? margin;
+
+  const DailyVerseCard({
+    super.key,
+    this.onTap,
+    this.showLanguageTabs = true,
+    this.margin,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    
+    return BlocBuilder<DailyVerseBloc, DailyVerseState>(
+      builder: (context, state) {
+        return Container(
+          margin: margin ?? const EdgeInsets.symmetric(horizontal: 20),
+          child: Card(
+            elevation: 2,
+            shadowColor: theme.colorScheme.primary.withValues(alpha: 0.1),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(16),
+                // Use a clean white background for better readability
+                color: theme.colorScheme.surface,
+                border: Border.all(
+                  color: theme.colorScheme.primary.withValues(alpha: 0.12),
+                  width: 1,
+                ),
+              ),
+              child: _buildCardContent(context, state),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildCardContent(BuildContext context, DailyVerseState state) {
+    if (state is DailyVerseLoading) {
+      return _buildLoadingState(context, state.isRefreshing);
+    } else if (state is DailyVerseLoaded) {
+      return _buildLoadedState(context, state);
+    } else if (state is DailyVerseOffline) {
+      return _buildOfflineState(context, state);
+    } else if (state is DailyVerseError) {
+      return _buildErrorState(context, state);
+    } else {
+      return _buildEmptyState(context);
+    }
+  }
+
+  Widget _buildLoadingState(BuildContext context, bool isRefreshing) {
+    final theme = Theme.of(context);
+    
+    return Padding(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              Icon(
+                Icons.menu_book,
+                color: theme.colorScheme.primary,
+                size: 24,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  isRefreshing ? 'Refreshing...' : 'Loading Verse of the Day...',
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    color: theme.colorScheme.primary,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          LinearProgressIndicator(
+            valueColor: AlwaysStoppedAnimation<Color>(theme.colorScheme.primary),
+            backgroundColor: theme.colorScheme.surface,
+          ),
+          const SizedBox(height: 16),
+          _buildShimmerText(context),
+          const SizedBox(height: 12),
+          _buildShimmerText(context, width: 0.7),
+          const SizedBox(height: 12),
+          _buildShimmerText(context, width: 0.5),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLoadedState(BuildContext context, DailyVerseLoaded state) {
+    final theme = Theme.of(context);
+    
+    return GestureDetector(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Header with date - improved spacing
+            _buildHeader(context, state.formattedDate, state.isFromCache),
+            
+            const SizedBox(height: 20),
+            
+            // Language tabs with better spacing
+            if (showLanguageTabs) ...[
+              _buildLanguageTabs(context, state.currentLanguage),
+              const SizedBox(height: 20),
+            ],
+            
+            // Verse reference with highlight color and better spacing
+            Padding(
+              padding: const EdgeInsets.only(bottom: 16),
+              child: Text(
+                state.verse.reference,
+                style: theme.textTheme.titleMedium?.copyWith(
+                  color: _primaryPurple,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 16,
+                  letterSpacing: 0.5,
+                ),
+              ),
+            ),
+            
+            // Verse text with improved background and spacing
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(20),
+              margin: const EdgeInsets.only(bottom: 20),
+              decoration: BoxDecoration(
+                color: _highlightColor.withValues(alpha: 0.3),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: _highlightColor.withValues(alpha: 0.6),
+                  width: 1,
+                ),
+              ),
+              child: Text(
+                state.currentVerseText,
+                style: theme.textTheme.bodyLarge?.copyWith(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w500,
+                  color: theme.colorScheme.onSurface,
+                  height: 1.7,
+                  letterSpacing: 0.3,
+                ),
+                textAlign: TextAlign.start,
+              ),
+            ),
+            
+            // Action buttons with improved spacing
+            _buildActionButtons(context, state),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildOfflineState(BuildContext context, DailyVerseOffline state) {
+    final theme = Theme.of(context);
+    
+    return Padding(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Offline indicator
+          Row(
+            children: [
+              Icon(
+                Icons.wifi_off,
+                color: theme.colorScheme.error,
+                size: 20,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                'Offline Mode',
+                style: theme.textTheme.labelMedium?.copyWith(
+                  color: theme.colorScheme.error,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              const Spacer(),
+              Text(
+                state.formattedDate,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ],
+          ),
+          
+          const SizedBox(height: 16),
+          
+          // Language tabs
+          if (showLanguageTabs) ...[
+            _buildLanguageTabs(context, state.currentLanguage),
+            const SizedBox(height: 16),
+          ],
+          
+          // Verse content
+          Text(
+            state.verse.reference,
+            style: theme.textTheme.labelLarge?.copyWith(
+              color: theme.colorScheme.primary,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 0.5,
+            ),
+          ),
+          
+          const SizedBox(height: 12),
+          
+          // Verse text with background for better readability
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: theme.colorScheme.primaryContainer.withValues(alpha: 0.05),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: theme.colorScheme.primary.withValues(alpha: 0.08),
+                width: 1,
+              ),
+            ),
+            child: Text(
+              state.currentVerseText,
+              style: theme.textTheme.headlineSmall?.copyWith(
+                fontSize: 18,
+                fontWeight: FontWeight.w500,
+                color: theme.colorScheme.onSurface,
+                height: 1.6,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildErrorState(BuildContext context, DailyVerseError state) {
+    final theme = Theme.of(context);
+    
+    return Padding(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        children: [
+          Icon(
+            Icons.error_outline,
+            color: theme.colorScheme.error,
+            size: 48,
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'Unable to Load Verse',
+            style: theme.textTheme.headlineSmall?.copyWith(
+              fontWeight: FontWeight.w600,
+              color: theme.colorScheme.onSurface,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            state.message,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 16),
+          ElevatedButton.icon(
+            onPressed: () {
+              context.read<DailyVerseBloc>().add(const RefreshVerse());
+            },
+            icon: const Icon(Icons.refresh),
+            label: const Text('Try Again'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: theme.colorScheme.primary,
+              foregroundColor: theme.colorScheme.onPrimary,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEmptyState(BuildContext context) {
+    // Auto-load should happen in initState, so empty state shows loading
+    return _buildLoadingState(context, false);
+  }
+
+  Widget _buildHeader(BuildContext context, String date, bool isFromCache) {
+    final theme = Theme.of(context);
+    
+    return Row(
+      children: [
+        Icon(
+          Icons.menu_book,
+          color: theme.colorScheme.primary,
+          size: 24,
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Verse of the Day',
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w600,
+                  color: theme.colorScheme.primary,
+                ),
+              ),
+              Text(
+                date,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ],
+          ),
+        ),
+        if (isFromCache)
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(
+              color: theme.colorScheme.primary.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Text(
+              'Cached',
+              style: theme.textTheme.labelSmall?.copyWith(
+                fontWeight: FontWeight.w500,
+                color: theme.colorScheme.primary,
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildLanguageTabs(BuildContext context, VerseLanguage currentLanguage) {
+    final theme = Theme.of(context);
+    
+    return Row(
+      children: VerseLanguage.values.map((language) {
+        final isSelected = language == currentLanguage;
+        return Expanded(
+          child: GestureDetector(
+            onTap: () {
+              context.read<DailyVerseBloc>().add(
+                ChangeVerseLanguage(language: language),
+              );
+            },
+            child: Container(
+              margin: const EdgeInsets.symmetric(horizontal: 8),
+              padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 18),
+              decoration: BoxDecoration(
+                color: isSelected 
+                    ? _highlightColor 
+                    : theme.colorScheme.surface,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: isSelected 
+                      ? _highlightColor 
+                      : _primaryPurple.withValues(alpha: 0.3),
+                  width: 1.5,
+                ),
+                boxShadow: isSelected ? [
+                  BoxShadow(
+                    color: _highlightColor.withValues(alpha: 0.4),
+                    blurRadius: 6,
+                    offset: const Offset(0, 3),
+                  ),
+                ] : null,
+              ),
+              child: Text(
+                '${language.flag} ${language.displayName}',
+                style: theme.textTheme.labelMedium?.copyWith(
+                  fontWeight: FontWeight.w600,
+                  color: isSelected 
+                      ? _primaryPurple 
+                      : _primaryPurple,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ),
+          ),
+        );
+      }).toList(),
+    );
+  }
+
+  Widget _buildActionButtons(BuildContext context, DailyVerseLoaded state) {
+    final theme = Theme.of(context);
+    
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        // Copy button
+        TextButton.icon(
+          onPressed: () => _copyVerseToClipboard(context, state),
+          icon: Icon(
+            Icons.copy,
+            size: 20,
+            color: _primaryPurple,
+          ),
+          label: Text(
+            'Copy',
+            style: theme.textTheme.labelLarge?.copyWith(
+              color: _primaryPurple,
+            ),
+          ),
+          style: TextButton.styleFrom(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            minimumSize: const Size(0, 44),
+          ),
+        ),
+        
+        const SizedBox(width: 12),
+        
+        // Share button
+        TextButton.icon(
+          onPressed: () => _shareVerse(state),
+          icon: Icon(
+            Icons.share,
+            size: 20,
+            color: _primaryPurple,
+          ),
+          label: Text(
+            'Share',
+            style: theme.textTheme.labelLarge?.copyWith(
+              color: _primaryPurple,
+            ),
+          ),
+          style: TextButton.styleFrom(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            minimumSize: const Size(0, 44),
+          ),
+        ),
+        
+        const SizedBox(width: 12),
+        
+        // Refresh button
+        IconButton(
+          onPressed: () {
+            context.read<DailyVerseBloc>().add(const RefreshVerse());
+          },
+          icon: Icon(
+            Icons.refresh,
+            color: _primaryPurple,
+            size: 24,
+          ),
+          style: IconButton.styleFrom(
+            minimumSize: const Size(44, 44),
+            padding: const EdgeInsets.all(10),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildShimmerText(BuildContext context, {double width = 1.0}) {
+    final theme = Theme.of(context);
+    
+    return Container(
+      height: 16,
+      width: double.infinity * width,
+      decoration: BoxDecoration(
+        color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.2),
+        borderRadius: BorderRadius.circular(4),
+      ),
+    );
+  }
+
+  void _copyVerseToClipboard(BuildContext context, DailyVerseLoaded state) {
+    final text = '${state.verse.reference}\n\n${state.currentVerseText}';
+    Clipboard.setData(ClipboardData(text: text));
+    
+    final theme = Theme.of(context);
+    
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          'Verse copied to clipboard',
+          style: theme.textTheme.bodyMedium?.copyWith(
+            color: theme.colorScheme.onPrimary,
+          ),
+        ),
+        backgroundColor: theme.colorScheme.primary,
+        behavior: SnackBarBehavior.floating,
+        duration: const Duration(seconds: 2),
+      ),
+    );
+  }
+
+  void _shareVerse(DailyVerseLoaded state) {
+    // TODO: Implement share functionality using share_plus package
+    // final text = '${state.verse.reference}\n\n${state.currentVerseText}\n\n- Shared from Disciplefy';
+    // Share.share(text);
+  }
+}

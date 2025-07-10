@@ -26,11 +26,12 @@ This document outlines the sprint planning for versions **v1.0 through v2.3** of
 
 ✅ Backend Tasks
 
-* Task 1: Set up Supabase Auth (Google/Apple OAuth + anonymous) 
-* Task 2: Integrate LLM API (OpenAI/Claude) via Supabase Edge Function 
-* Task 3: Create prompt templates with validation pipeline 
+* Task 1: Set up Supabase Auth (Google/Apple OAuth + anonymous)  ✅
+* Task 2: Integrate LLM API (OpenAI/Claude) via Supabase Edge Function  ✅
+* Task 3: Create prompt templates with validation pipeline  ✅
 * Task 4: Integrate Daily Bible Verse API (open-source, free license) for daily verse feed
 * Task 5: Implement cache table for recent guides in Supabase and local cache 
+* Task 6: Create API for saving Guides, fetching saved guides
 
 ✅ DevOps Tasks
 
@@ -63,8 +64,8 @@ This document outlines the sprint planning for versions **v1.0 through v2.3** of
 * Task 1: Build Generate Guide screen (input toggle, suggestions, generate button)
 * Task 2: Build Study Guide screen with sections (Context, Interpretation, Life Application, Questions, Related Verses), notes field, Save & Share buttons
 * Task 3: Implement collapsible section cards and error/retry states
-* Task 4: Save study guides locally and via Supabase when user clicks Save ✅
-* Task 5: Add Saved Guides bottom navigation tab showing saved list ✅
+* Task 4: Save study guides locally and via Supabase when user clicks Save
+* Task 5: Add Saved Guides bottom navigation tab showing saved list and Integrate API
 
 ✅ Backend Tasks
 

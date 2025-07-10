@@ -134,6 +134,9 @@ export class StudyGuideRepository {
     this.validateAnonymousStudyGuideData(studyGuideData)
 
     try {
+      // First, ensure the anonymous session exists
+      await this.ensureAnonymousSessionExists(sessionId)
+
       const { data, error } = await this.supabaseClient
         .from('anonymous_study_guides')
         .insert({
@@ -308,6 +311,67 @@ export class StudyGuideRepository {
       throw new AppError(
         'DATABASE_ERROR',
         'Unexpected error deleting study guide',
+        500
+      )
+    }
+  }
+
+  /**
+   * Ensures an anonymous session exists, creating it if necessary.
+   * 
+   * @param sessionId - Anonymous session ID
+   * @throws {AppError} When session creation fails
+   */
+  private async ensureAnonymousSessionExists(sessionId: string): Promise<void> {
+    try {
+      // Check if session already exists
+      const { data: existingSession, error: selectError } = await this.supabaseClient
+        .from('anonymous_sessions')
+        .select('session_id')
+        .eq('session_id', sessionId)
+        .single()
+
+      if (selectError && selectError.code !== 'PGRST116') {
+        // PGRST116 is "not found" error, which is expected if session doesn't exist
+        throw new AppError(
+          'DATABASE_ERROR',
+          `Failed to check anonymous session: ${selectError.message}`,
+          500
+        )
+      }
+
+      // If session doesn't exist, create it
+      if (!existingSession) {
+        const { error: insertError } = await this.supabaseClient
+          .from('anonymous_sessions')
+          .insert({
+            session_id: sessionId,
+            device_fingerprint_hash: null,
+            ip_address_hash: null,
+            created_at: new Date().toISOString(),
+            last_activity: new Date().toISOString(),
+            expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), // 24 hours
+            study_guides_count: 0,
+            recommended_guide_sessions_count: 0,
+            is_migrated: false
+          })
+
+        if (insertError) {
+          throw new AppError(
+            'DATABASE_ERROR',
+            `Failed to create anonymous session: ${insertError.message}`,
+            500
+          )
+        }
+      }
+    } catch (error) {
+      if (error instanceof AppError) {
+        throw error
+      }
+      
+      throw new AppError(
+        'DATABASE_ERROR',
+        'Unexpected error ensuring anonymous session exists',
         500
       )
     }
