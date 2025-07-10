@@ -5,7 +5,9 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/services/auth_service.dart';
 import '../../domain/entities/study_guide.dart';
+import '../../data/services/save_guide_api_service.dart';
 
 /// Study Guide Screen displaying generated content with sections and user interactions.
 /// 
@@ -28,11 +30,14 @@ class StudyGuideScreen extends StatefulWidget {
 class _StudyGuideScreenState extends State<StudyGuideScreen> {
   final TextEditingController _notesController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
+  final SaveGuideApiService _saveGuideService = SaveGuideApiService();
   
   late StudyGuide _currentStudyGuide;
-  bool _isLoading = false;
   bool _hasError = false;
   String _errorMessage = '';
+  bool _isSaving = false;
+  bool _isSaved = false;
+  DateTime? _lastSaveAttempt;
 
   @override
   void initState() {
@@ -44,55 +49,18 @@ class _StudyGuideScreenState extends State<StudyGuideScreen> {
   void dispose() {
     _notesController.dispose();
     _scrollController.dispose();
+    _saveGuideService.dispose();
     super.dispose();
   }
 
   void _initializeStudyGuide() {
     if (widget.studyGuide != null) {
       _currentStudyGuide = widget.studyGuide!;
-    } else if (widget.routeExtra != null) {
-      // Handle predefined topics or other route data
-      final topic = widget.routeExtra!['topic'] as String?;
-      if (topic != null) {
-        _generateMockStudyGuide(topic);
-      } else {
-        _showError('No study guide data provided');
-      }
     } else {
-      _showError('No study guide data provided');
+      _showError('No study guide data provided. Please generate a study guide first.');
     }
   }
 
-  void _generateMockStudyGuide(String topic) {
-    // Mock study guide for demonstration - TODO: Replace with actual API call
-    _currentStudyGuide = StudyGuide(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
-      input: topic,
-      inputType: 'topic',
-      summary: 'A comprehensive study on $topic',
-      interpretation: 'This topic reveals God\'s character and His relationship with humanity. The original meaning emphasizes themes of faith, redemption, and spiritual growth. Understanding the context helps us apply these timeless truths to our modern lives, encouraging us to deepen our relationship with God and live according to His will.',
-      context: 'Understanding the biblical foundation and historical context of $topic in Christian theology. This topic appears throughout Scripture and has been central to Christian teaching since the early church.',
-      relatedVerses: [
-        'John 3:16 - "For God so loved the world..."',
-        'Romans 8:28 - "And we know that in all things..."',
-        '1 Corinthians 13:4-7 - "Love is patient, love is kind..."',
-      ],
-      reflectionQuestions: [
-        'How does this biblical principle apply to your daily life?',
-        'What challenges do you face in living out this truth?',
-        'How can you share this understanding with others?',
-        'What practical steps can you take this week?',
-      ],
-      prayerPoints: [
-        'Pray for deeper understanding of God\'s truth',
-        'Ask for wisdom in application',
-        'Seek strength to live out these principles',
-        'Pray for opportunities to share with others',
-      ],
-      language: 'en',
-      createdAt: DateTime.now(),
-    );
-  }
 
   void _showError(String message) {
     setState(() {
@@ -361,7 +329,7 @@ class _StudyGuideScreenState extends State<StudyGuideScreen> {
             color: AppTheme.surfaceColor,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: AppTheme.primaryColor.withOpacity(0.2),
+              color: AppTheme.primaryColor.withValues(alpha: 0.2),
               width: 1,
             ),
           ),
@@ -394,7 +362,7 @@ class _StudyGuideScreenState extends State<StudyGuideScreen> {
         color: AppTheme.surfaceColor,
         boxShadow: [
           BoxShadow(
-            color: AppTheme.primaryColor.withOpacity(0.1),
+            color: AppTheme.primaryColor.withValues(alpha: 0.1),
             blurRadius: 10,
             offset: const Offset(0, -2),
           ),
@@ -403,28 +371,58 @@ class _StudyGuideScreenState extends State<StudyGuideScreen> {
       child: Row(
         children: [
           Expanded(
-            child: OutlinedButton.icon(
-              onPressed: _saveStudyGuide,
-              icon: const Icon(Icons.bookmark_border),
-              label: Text(
-                'Save Study',
-                style: GoogleFonts.inter(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: AppTheme.primaryColor,
-                side: BorderSide(
-                  color: AppTheme.primaryColor,
-                  width: 2,
-                ),
-                minimumSize: const Size.fromHeight(56),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-            ),
+            child: _isSaving
+                ? OutlinedButton.icon(
+                    onPressed: null,
+                    icon: const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primaryColor),
+                      ),
+                    ),
+                    label: Text(
+                      'Saving...',
+                      style: GoogleFonts.inter(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AppTheme.primaryColor.withValues(alpha: 0.6),
+                      side: BorderSide(
+                        color: AppTheme.primaryColor.withValues(alpha: 0.6),
+                        width: 2,
+                      ),
+                      minimumSize: const Size.fromHeight(56),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  )
+                : OutlinedButton.icon(
+                    onPressed: _saveStudyGuide,
+                    icon: Icon(_isSaved ? Icons.bookmark : Icons.bookmark_border),
+                    label: Text(
+                      _isSaved ? 'Saved' : 'Save Study',
+                      style: GoogleFonts.inter(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: _isSaved ? AppTheme.successColor : AppTheme.primaryColor,
+                      side: BorderSide(
+                        color: _isSaved ? AppTheme.successColor : AppTheme.primaryColor,
+                        width: 2,
+                      ),
+                      minimumSize: const Size.fromHeight(56),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  ),
           ),
           
           const SizedBox(width: 16),
@@ -465,24 +463,177 @@ class _StudyGuideScreenState extends State<StudyGuideScreen> {
     }
   }
 
-  void _saveStudyGuide() {
-    // TODO: Implement save functionality with local storage or Supabase
-    final notes = _notesController.text.trim();
-    
-    // Show success message
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
+  /// Save the current study guide via API
+  void _saveStudyGuide() async {
+    // Debounce rapid taps - prevent multiple requests within 2 seconds
+    final now = DateTime.now();
+    if (_lastSaveAttempt != null && 
+        now.difference(_lastSaveAttempt!).inSeconds < 2) {
+      return;
+    }
+    _lastSaveAttempt = now;
+
+    // Check if already saving
+    if (_isSaving) return;
+
+    // Check authentication
+    final isAuthenticated = await AuthService.isAuthenticated();
+    if (!isAuthenticated) {
+      _showAuthenticationRequiredDialog();
+      return;
+    }
+
+    // Already saved check
+    if (_isSaved) {
+      _showSnackBar(
+        'Study guide is already saved!',
+        AppTheme.primaryColor,
+        icon: Icons.bookmark,
+      );
+      return;
+    }
+
+    setState(() {
+      _isSaving = true;
+    });
+
+    try {
+      // Call the API to save the guide
+      final success = await _saveGuideService.toggleSaveGuide(
+        guideId: _currentStudyGuide.id,
+        save: true,
+      );
+
+      if (success) {
+        setState(() {
+          _isSaved = true;
+          _isSaving = false;
+        });
+
+        _showSnackBar(
           'Study guide saved successfully!',
-          style: GoogleFonts.inter(color: Colors.white),
+          AppTheme.successColor,
+          icon: Icons.check_circle,
+        );
+
+        // TODO: Save notes locally if needed
+        final notes = _notesController.text.trim();
+        if (notes.isNotEmpty) {
+          debugPrint('Notes to save locally: $notes');
+        }
+      } else {
+        throw Exception('Save operation returned false');
+      }
+    } catch (e) {
+      setState(() {
+        _isSaving = false;
+      });
+
+      _handleSaveError(e);
+    }
+  }
+
+  /// Show authentication required dialog
+  void _showAuthenticationRequiredDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(
+          'Authentication Required',
+          style: GoogleFonts.inter(
+            fontWeight: FontWeight.w600,
+            color: AppTheme.textPrimary,
+          ),
         ),
-        backgroundColor: AppTheme.successColor,
-        behavior: SnackBarBehavior.floating,
+        content: Text(
+          'You need to be signed in to save study guides. Would you like to sign in now?',
+          style: GoogleFonts.inter(
+            color: AppTheme.textPrimary,
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: Text(
+              'Cancel',
+              style: GoogleFonts.inter(
+                color: AppTheme.onSurfaceVariant,
+              ),
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              context.go('/login');
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.primaryColor,
+              foregroundColor: Colors.white,
+            ),
+            child: Text(
+              'Sign In',
+              style: GoogleFonts.inter(
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
       ),
     );
-    
-    // TODO: Save to database with notes
-    debugPrint('Saving study guide: ${_currentStudyGuide.id} with notes: $notes');
+  }
+
+  /// Handle save operation errors
+  void _handleSaveError(dynamic error) {
+    String message = 'Failed to save study guide. Please try again.';
+    Color backgroundColor = AppTheme.errorColor;
+
+    if (error.toString().contains('UNAUTHORIZED')) {
+      message = 'Authentication expired. Please sign in again.';
+    } else if (error.toString().contains('NETWORK_ERROR')) {
+      message = 'Network error. Please check your connection.';
+    } else if (error.toString().contains('NOT_FOUND')) {
+      message = 'Study guide not found. It may have been deleted.';
+    } else if (error.toString().contains('already saved')) {
+      message = 'This study guide is already saved!';
+      backgroundColor = AppTheme.primaryColor;
+      setState(() {
+        _isSaved = true;
+      });
+    }
+
+    _showSnackBar(message, backgroundColor, icon: Icons.error_outline);
+  }
+
+  /// Show snackbar with consistent styling
+  void _showSnackBar(String message, Color backgroundColor, {IconData? icon}) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            if (icon != null) ...[
+              Icon(icon, color: Colors.white, size: 20),
+              const SizedBox(width: 8),
+            ],
+            Expanded(
+              child: Text(
+                message,
+                style: GoogleFonts.inter(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+          ],
+        ),
+        backgroundColor: backgroundColor,
+        behavior: SnackBarBehavior.floating,
+        duration: const Duration(seconds: 3),
+        margin: const EdgeInsets.all(16),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8),
+        ),
+      ),
+    );
   }
 
   void _shareStudyGuide() {
@@ -537,12 +688,12 @@ class _StudySection extends StatelessWidget {
         color: AppTheme.surfaceColor,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: AppTheme.primaryColor.withOpacity(0.1),
+          color: AppTheme.primaryColor.withValues(alpha: 0.1),
           width: 1,
         ),
         boxShadow: [
           BoxShadow(
-            color: AppTheme.primaryColor.withOpacity(0.05),
+            color: AppTheme.primaryColor.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -558,7 +709,7 @@ class _StudySection extends StatelessWidget {
                 width: 40,
                 height: 40,
                 decoration: BoxDecoration(
-                  color: AppTheme.primaryColor.withOpacity(0.1),
+                  color: AppTheme.primaryColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Icon(

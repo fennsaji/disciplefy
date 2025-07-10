@@ -122,9 +122,10 @@ Authorization: Bearer YOUR_ACCESS_TOKEN (optional)
 
 **Notes**:
 - Includes prompt injection detection and content filtering
-- Falls back to mock data if LLM service is unavailable
+- Returns proper error responses if LLM service is unavailable (no mock data fallback)
 - Anonymous users' input is hashed for privacy
 - Authenticated users' studies are saved to their account
+- Anonymous sessions are automatically created if they don't exist when saving guides
 
 ---
 
@@ -504,6 +505,149 @@ Authorization: Bearer SUPABASE_ANON_KEY (creation) or Bearer USER_ACCESS_TOKEN (
 
 ---
 
+### 6. Manage Study Guides
+
+**Endpoint**: `GET /functions/v1/study-guides` and `POST /functions/v1/study-guides`
+
+**Description**: Retrieve, save, and manage user study guides with support for both authenticated and anonymous users.
+
+**Authentication**: Required for saving/unsaving guides, optional for retrieval
+
+#### 6.1 Get Study Guides
+
+**Method**: `GET /functions/v1/study-guides`
+
+**Request Headers**:
+```
+Content-Type: application/json
+Authorization: Bearer YOUR_ACCESS_TOKEN (required for authenticated users)
+```
+
+**Query Parameters**:
+- `saved` (optional): If "true", returns only saved guides
+- `limit` (optional): Number of guides to return (default: 20, max: 100)
+- `offset` (optional): Number of guides to skip for pagination (default: 0)
+
+**Example Request**:
+```
+GET /functions/v1/study-guides?saved=true&limit=10&offset=0
+```
+
+**Response Body**:
+```json
+{
+  "success": true,
+  "data": {
+    "guides": [
+      {
+        "id": "string",
+        "input_type": "scripture | topic",
+        "input_value": "string (for authenticated users)",
+        "input_value_hash": "string (for anonymous users)",
+        "summary": "string",
+        "interpretation": "string",
+        "context": "string",
+        "related_verses": ["string"],
+        "reflection_questions": ["string"],
+        "prayer_points": ["string"],
+        "language": "string",
+        "is_saved": "boolean",
+        "created_at": "string (ISO 8601)",
+        "updated_at": "string (ISO 8601)"
+      }
+    ],
+    "total": "number",
+    "hasMore": "boolean"
+  }
+}
+```
+
+#### 6.2 Save/Unsave Study Guide
+
+**Method**: `POST /functions/v1/study-guides`
+
+**Request Headers**:
+```
+Content-Type: application/json
+Authorization: Bearer YOUR_ACCESS_TOKEN (required)
+```
+
+**Request Body**:
+```json
+{
+  "guide_id": "string (required)",
+  "action": "save | unsave (required)"
+}
+```
+
+**Field Definitions**:
+- `guide_id`: UUID of the study guide to save/unsave
+- `action`: Either "save" to mark as saved or "unsave" to remove saved status
+
+**Response Body**:
+```json
+{
+  "success": true,
+  "message": "Guide saved successfully",
+  "data": {
+    "guide": {
+      "id": "string",
+      "input_type": "scripture | topic",
+      "input_value": "string",
+      "summary": "string",
+      "interpretation": "string",
+      "context": "string",
+      "related_verses": ["string"],
+      "reflection_questions": ["string"],
+      "prayer_points": ["string"],
+      "language": "string",
+      "is_saved": "boolean",
+      "created_at": "string (ISO 8601)",
+      "updated_at": "string (ISO 8601)"
+    }
+  }
+}
+```
+
+**Error Responses**:
+
+**401 Unauthorized** (Save/Unsave only):
+```json
+{
+  "success": false,
+  "error": "UNAUTHORIZED",
+  "message": "Authentication required to save guides"
+}
+```
+
+**404 Not Found**:
+```json
+{
+  "success": false,
+  "error": "NOT_FOUND",
+  "message": "Study guide not found or you do not have permission to modify it"
+}
+```
+
+**400 Bad Request**:
+```json
+{
+  "success": false,
+  "error": "INVALID_REQUEST",
+  "message": "guide_id and action are required"
+}
+```
+
+**Notes**:
+- GET requests work for both authenticated and anonymous users
+- Anonymous users see guides from their session only
+- Authenticated users can save/unsave guides and see all their guides
+- Supports pagination for large result sets
+- Filters ensure users only see their own data
+- Input validation prevents access to other users' guides
+
+---
+
 ## Common Response Patterns
 
 ### Success Response Structure
@@ -584,7 +728,7 @@ Access-Control-Allow-Headers: authorization, x-client-info, apikey, content-type
 
 ### JavaScript/TypeScript
 ```typescript
-// Using Supabase client
+// Generate study guide
 const { data, error } = await supabase.functions.invoke('study-generate', {
   body: {
     input_type: 'scripture',
@@ -592,11 +736,25 @@ const { data, error } = await supabase.functions.invoke('study-generate', {
     language: 'en'
   }
 });
+
+// Get saved study guides
+const { data: guides } = await supabase.functions.invoke('study-guides', {
+  body: {},
+  method: 'GET'
+});
+
+// Save a study guide
+const { data: savedGuide } = await supabase.functions.invoke('study-guides', {
+  body: {
+    guide_id: 'guide-uuid',
+    action: 'save'
+  }
+});
 ```
 
 ### Flutter/Dart
 ```dart
-// Using Supabase Flutter client
+// Generate study guide
 final response = await Supabase.instance.client.functions.invoke(
   'study-generate',
   body: {
@@ -605,10 +763,27 @@ final response = await Supabase.instance.client.functions.invoke(
     'language': 'en'
   },
 );
+
+// Get saved study guides
+final guidesResponse = await Supabase.instance.client.functions.invoke(
+  'study-guides',
+  headers: {'Content-Type': 'application/json'},
+  queryParameters: {'saved': 'true', 'limit': '10'},
+);
+
+// Save a study guide
+final saveResponse = await Supabase.instance.client.functions.invoke(
+  'study-guides',
+  body: {
+    'guide_id': 'guide-uuid',
+    'action': 'save'
+  },
+);
 ```
 
 ### Direct HTTP
 ```bash
+# Generate study guide
 curl -X POST "https://your-project.supabase.co/functions/v1/study-generate" \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
@@ -616,6 +791,20 @@ curl -X POST "https://your-project.supabase.co/functions/v1/study-generate" \
     "input_type": "scripture",
     "input_value": "John 3:16",
     "language": "en"
+  }'
+
+# Get saved study guides
+curl -X GET "https://your-project.supabase.co/functions/v1/study-guides?saved=true&limit=10" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+
+# Save a study guide
+curl -X POST "https://your-project.supabase.co/functions/v1/study-guides" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -d '{
+    "guide_id": "guide-uuid",
+    "action": "save"
   }'
 ```
 
@@ -649,6 +838,6 @@ All endpoints include comprehensive logging:
 
 ---
 
-**Last Updated**: January 2025  
-**API Version**: 1.0  
+**Last Updated**: July 2025  
+**API Version**: 1.1  
 **Support**: support@disciplefy.com

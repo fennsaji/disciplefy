@@ -89,6 +89,20 @@ class AuthService {
     final token = await getAuthToken();
     return token != null && token.isNotEmpty;
   }
+  
+  /// Checks if the user is authenticated and not a guest user.
+  /// This is used for features that require full authentication.
+  static Future<bool> isFullyAuthenticated() async {
+    final token = await getAuthToken();
+    final userType = await getUserType();
+    return token != null && token.isNotEmpty && userType != 'guest';
+  }
+  
+  /// Checks if the current user is a guest.
+  static Future<bool> isGuestUser() async {
+    final userType = await getUserType();
+    return userType == 'guest';
+  }
 
   /// Signs out the user by clearing all stored data.
   static Future<void> signOut() async {

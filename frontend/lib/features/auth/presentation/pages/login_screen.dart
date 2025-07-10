@@ -31,6 +31,7 @@ class _LoginScreenState extends State<LoginScreen> {
         // User is already authenticated, redirect to home
         context.go('/');
       }
+      // No automatic sign-in - users must explicitly choose authentication method
     });
   }
 

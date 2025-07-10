@@ -4,12 +4,14 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'core/config/app_config.dart';
 import 'core/di/injection_container.dart';
+import 'features/daily_verse/data/services/daily_verse_cache_service.dart';
 import 'core/router/app_router.dart';
 import 'core/theme/app_theme.dart';
 import 'core/localization/app_localizations.dart';
 import 'features/study_generation/presentation/bloc/study_bloc.dart';
 import 'features/saved_guides/data/models/saved_guide_model.dart';
 import 'features/auth/presentation/bloc/auth_bloc.dart';
+import 'features/auth/presentation/bloc/auth_event.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -38,6 +40,9 @@ void main() async {
     // Initialize dependency injection
     await initializeDependencies();
     
+    // Initialize daily verse cache service
+    await sl<DailyVerseCacheService>().initialize();
+    
     runApp(const DisciplefyBibleStudyApp());
   } catch (e) {
     runApp(const ErrorApp());
@@ -55,7 +60,7 @@ class DisciplefyBibleStudyApp extends StatelessWidget {
           create: (context) => sl<StudyBloc>(),
         ),
         BlocProvider<AuthBloc>(
-          create: (context) => sl<AuthBloc>(),
+          create: (context) => sl<AuthBloc>()..add(AuthInitializeRequested()),
         ),
       ],
       child: MaterialApp.router(

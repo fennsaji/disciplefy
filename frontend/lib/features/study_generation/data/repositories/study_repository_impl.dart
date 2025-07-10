@@ -102,10 +102,10 @@ class StudyRepositoryImpl implements StudyRepository {
           code: 'SERVER_ERROR',
         ));
       } else {
-        // For development, return mock data on API failure with warning
-        final mockStudyGuide = _createMockStudyGuide(input, inputType, language);
-        await cacheStudyGuide(mockStudyGuide);
-        return Right(mockStudyGuide);
+        return const Left(ServerFailure(
+          message: 'Failed to generate study guide. Please try again later.',
+          code: 'GENERATION_FAILED',
+        ));
       }
     } on NetworkException catch (e) {
       return Left(NetworkFailure(
@@ -120,18 +120,11 @@ class StudyRepositoryImpl implements StudyRepository {
         context: e.context,
       ));
     } catch (e) {
-      // For development, return mock data on any error with fallback message
-      try {
-        final mockStudyGuide = _createMockStudyGuide(input, inputType, language);
-        await cacheStudyGuide(mockStudyGuide);
-        return Right(mockStudyGuide);
-      } catch (cacheError) {
-        return Left(ClientFailure(
-          message: 'We couldn\'t generate a study guide. Please try again later.',
-          code: 'GENERATION_FAILED',
-          context: {'originalError': e.toString(), 'cacheError': cacheError.toString()},
-        ));
-      }
+      return Left(ClientFailure(
+        message: 'We couldn\'t generate a study guide. Please try again later.',
+        code: 'GENERATION_FAILED',
+        context: {'originalError': e.toString()},
+      ));
     }
   }
 
@@ -338,66 +331,4 @@ class StudyRepositoryImpl implements StudyRepository {
     }
   }
 
-  /// Creates a mock study guide for development and offline use.
-  StudyGuide _createMockStudyGuide(String input, String inputType, String language) {
-    if (inputType == 'scripture') {
-      return StudyGuide(
-        id: _uuid.v4(),
-        input: input,
-        inputType: inputType,
-        summary: 'This verse from John\'s Gospel reveals the heart of God\'s love for humanity. It demonstrates the incredible sacrifice God made and the simple requirement for receiving eternal life.',
-        interpretation: 'The verse reveals God\'s motivation (love), His action (giving His Son), His target (the world), and His purpose (eternal life for believers). The Greek word "agape" for love indicates God\'s unconditional, sacrificial love. "Only begotten" (monogenes) emphasizes the unique, one-of-a-kind nature of Jesus as God\'s Son.',
-        context: 'This passage comes from John 3, where Jesus speaks with Nicodemus, a Pharisee who came to Jesus at night. Jesus is explaining the necessity of spiritual rebirth and God\'s plan for salvation.',
-        relatedVerses: [
-          'Romans 5:8 - "But God demonstrates his own love for us in this: While we were still sinners, Christ died for us."',
-          '1 John 4:9 - "This is how God showed his love among us: He sent his one and only Son into the world that we might live through him."',
-          'Ephesians 2:8-9 - "For it is by grace you have been saved, through faith—and this is not from yourselves, it is the gift of God—not by works, so that no one can boast."'
-        ],
-        reflectionQuestions: [
-          'What does it mean that God "loved" the world? How does this shape your understanding of God\'s character?',
-          'How does the phrase "one and only Son" emphasize the magnitude of God\'s sacrifice?',
-          'What is the difference between believing about Jesus and believing in Jesus?',
-          'How can understanding God\'s love impact the way you view yourself and others?'
-        ],
-        prayerPoints: [
-          'Thank God for His incredible love that motivated Him to send Jesus',
-          'Ask for a deeper understanding of what it means to truly believe in Jesus',
-          'Pray for opportunities to share God\'s love with others who need to hear this message',
-          'Express gratitude for the gift of eternal life through faith in Jesus'
-        ],
-        language: language,
-        createdAt: DateTime.now(),
-      );
-    } else {
-      return StudyGuide(
-        id: _uuid.v4(),
-        input: input,
-        inputType: inputType,
-        summary: 'Faith is central to the Christian life, involving trust in God\'s character and promises. It\'s both a gift from God and a choice we make daily.',
-        interpretation: 'Biblical faith goes beyond intellectual assent to active trust and dependence on God. It involves believing God\'s promises even when circumstances seem contrary, following Jesus\' example and teachings, and allowing faith to transform how we live and relate to others.',
-        context: 'Throughout Scripture, faith is presented as essential for pleasing God and living the Christian life. From Abraham\'s journey of faith to the heroes listed in Hebrews 11, faith involves trusting God even when we cannot see the full picture.',
-        relatedVerses: [
-          'Hebrews 11:1 - "Now faith is confidence in what we hope for and assurance about what we do not see."',
-          'Romans 10:17 - "Consequently, faith comes from hearing the message, and the message is heard through the word about Christ."',
-          'James 2:17 - "In the same way, faith by itself, if it is not accompanied by action, is dead."',
-          'Hebrews 11:6 - "And without faith it is impossible to please God, because anyone who comes to him must believe that he exists and that he rewards those who earnestly seek him."'
-        ],
-        reflectionQuestions: [
-          'How would you define faith in your own words?',
-          'What areas of your life require more faith and trust in God?',
-          'How does faith impact your daily decisions and actions?',
-          'What helps strengthen your faith during difficult times?',
-          'How can you demonstrate your faith through your actions?'
-        ],
-        prayerPoints: [
-          'Ask God to increase your faith and help you trust Him more completely',
-          'Pray for strength to act on your faith, even when it\'s difficult',
-          'Thank God for being faithful and trustworthy in all circumstances',
-          'Ask for wisdom to know how to live out your faith in practical ways'
-        ],
-        language: language,
-        createdAt: DateTime.now(),
-      );
-    }
-  }
 }

@@ -81,27 +81,6 @@ class RecommendedGuideTopicModel extends RecommendedGuideTopic {
     );
   }
 
-  /// Creates a model with mock data for testing/fallback purposes.
-  factory RecommendedGuideTopicModel.mock({
-    String? id,
-    String? title,
-    String? description,
-    String? category,
-    String? difficulty,
-  }) {
-    return RecommendedGuideTopicModel(
-      id: id ?? 'mock-topic-${DateTime.now().millisecondsSinceEpoch}',
-      title: title ?? 'Sample Topic',
-      description: description ?? 'This is a sample topic description for testing purposes.',
-      category: category ?? 'Faith Foundations',
-      difficulty: difficulty ?? 'beginner',
-      estimatedMinutes: 30,
-      scriptureCount: 5,
-      tags: ['faith', 'foundation', 'beginner'],
-      isFeatured: true,
-      createdAt: DateTime.now(),
-    );
-  }
 }
 
 /// Response model for the recommended guide topics API endpoint.
@@ -138,56 +117,4 @@ class RecommendedGuideTopicsResponse {
     return topics.map((model) => model.toEntity()).toList();
   }
 
-  /// Creates a mock response for testing/fallback purposes.
-  factory RecommendedGuideTopicsResponse.mock() {
-    return RecommendedGuideTopicsResponse(
-      topics: [
-        RecommendedGuideTopicModel.mock(
-          id: 'topic-faith',
-          title: 'Understanding Faith',
-          description: 'Explore the biblical foundations of faith and trust in God.',
-          category: 'Faith Foundations',
-          difficulty: 'beginner',
-        ),
-        RecommendedGuideTopicModel.mock(
-          id: 'topic-prayer',
-          title: 'The Power of Prayer',
-          description: 'Learn how to communicate effectively with God through prayer.',
-          category: 'Spiritual Disciplines',
-          difficulty: 'beginner',
-        ),
-        RecommendedGuideTopicModel.mock(
-          id: 'topic-grace',
-          title: 'God\'s Amazing Grace',
-          description: 'Understand the depth and breadth of God\'s unmerited favor.',
-          category: 'Salvation',
-          difficulty: 'intermediate',
-        ),
-        RecommendedGuideTopicModel.mock(
-          id: 'topic-discipleship',
-          title: 'Following Jesus',
-          description: 'What it means to be a disciple in today\'s world.',
-          category: 'Christian Living',
-          difficulty: 'intermediate',
-        ),
-        RecommendedGuideTopicModel.mock(
-          id: 'topic-love',
-          title: 'God\'s Love',
-          description: 'Experience and understand the depth of God\'s love for humanity.',
-          category: 'Character of God',
-          difficulty: 'beginner',
-        ),
-        RecommendedGuideTopicModel.mock(
-          id: 'topic-forgiveness',
-          title: 'Forgiveness and Healing',
-          description: 'Learn to forgive others as God has forgiven us.',
-          category: 'Relationships',
-          difficulty: 'intermediate',
-        ),
-      ],
-      total: 6,
-      page: 1,
-      totalPages: 1,
-    );
-  }
 }

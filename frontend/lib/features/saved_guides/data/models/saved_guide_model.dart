@@ -84,6 +84,69 @@ class SavedGuideModel extends SavedGuideEntity {
     );
   }
 
+  /// Create model from API response
+  factory SavedGuideModel.fromApiResponse(Map<String, dynamic> json) {
+    return SavedGuideModel(
+      id: json['id'] as String,
+      title: json['input_value'] as String? ?? 'Study Guide',
+      content: _formatContentFromApi(json),
+      typeString: json['input_type'] as String? ?? 'topic',
+      createdAt: DateTime.parse(json['created_at'] as String),
+      lastAccessedAt: DateTime.parse(json['updated_at'] as String),
+      isSaved: json['is_saved'] as bool? ?? false,
+      verseReference: json['input_type'] == 'scripture' ? json['input_value'] as String? : null,
+      topicName: json['input_type'] == 'topic' ? json['input_value'] as String? : null,
+    );
+  }
+
+  static String _formatContentFromApi(Map<String, dynamic> json) {
+    final summary = json['summary'] as String? ?? '';
+    final interpretation = json['interpretation'] as String? ?? '';
+    final context = json['context'] as String? ?? '';
+    final relatedVerses = (json['related_verses'] as List<dynamic>?)?.cast<String>() ?? [];
+    final reflectionQuestions = (json['reflection_questions'] as List<dynamic>?)?.cast<String>() ?? [];
+    final prayerPoints = (json['prayer_points'] as List<dynamic>?)?.cast<String>() ?? [];
+
+    final content = StringBuffer();
+    
+    if (summary.isNotEmpty) {
+      content.writeln('**Summary:**\n$summary\n');
+    }
+    
+    if (interpretation.isNotEmpty) {
+      content.writeln('**Interpretation:**\n$interpretation\n');
+    }
+    
+    if (context.isNotEmpty) {
+      content.writeln('**Context:**\n$context\n');
+    }
+    
+    if (relatedVerses.isNotEmpty) {
+      content.writeln('**Related Verses:**');
+      for (final verse in relatedVerses) {
+        content.writeln('• $verse');
+      }
+      content.writeln();
+    }
+    
+    if (reflectionQuestions.isNotEmpty) {
+      content.writeln('**Reflection Questions:**');
+      for (final question in reflectionQuestions) {
+        content.writeln('• $question');
+      }
+      content.writeln();
+    }
+    
+    if (prayerPoints.isNotEmpty) {
+      content.writeln('**Prayer Points:**');
+      for (final point in prayerPoints) {
+        content.writeln('• $point');
+      }
+    }
+    
+    return content.toString().trim();
+  }
+
   SavedGuideEntity toEntity() {
     return SavedGuideEntity(
       id: id,

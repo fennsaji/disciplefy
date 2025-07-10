@@ -67,6 +67,20 @@ This is the Disciplefy Bible Study app project with **100% production-ready docu
   - Comprehensive API contracts and data models
   - Complete error handling and QA specifications
   - User lifecycle and migration strategies
+- `frontend/docs/project_structure.md` - Detailed breakdown of the frontend codebase structure.
+- `backend/docs/project_structure.md` - Detailed breakdown of the backend codebase structure.
+
+### Project Structure Guidelines
+
+When working on the codebase, it is **MANDATORY** to adhere to the project structure outlined in the `frontend/docs/project_structure.md` and `backend/docs/project_structure.md` documents. These documents provide a comprehensive overview of the architecture and organization of the frontend and backend codebases, respectively.
+
+**Before writing any code, you MUST:**
+
+1.  **Review the relevant project structure document**:
+    *   For frontend tasks, read `frontend/docs/project_structure.md`.
+    *   For backend tasks, read `backend/docs/project_structure.md`.
+2.  **Follow the established patterns**: Adhere to the architectural patterns, directory structures, and file organization described in the documentation.
+3.  **Maintain consistency**: Ensure that any new code or modifications align with the existing project structure.
 
 ## Development Status
 
@@ -352,3 +366,271 @@ Fixes #issue-number
 ---
 
 *This code quality section is **mandatory** and **strictly enforced**. All contributors must comply without exception.*
+
+## 🪙 **Token‑Saving Best Practices**
+
+**Optimize Claude Code CLI interactions for efficiency:**
+
+### ⚡ **Prompt Optimization**
+- **Be concise**: Remove filler words, use specific technical terms
+- **Batch operations**: Group similar tasks in single prompts
+- **Reference, don't paste**: Use Context7 MCP for large documents instead of including full text
+
+### 🔄 **Context Management**
+- **Leverage caching**: Reuse established context rather than resending
+- **Modular requests**: Break complex tasks into focused, cacheable segments
+- **Smart referencing**: Point to existing documentation instead of repeating content
+
+### 📏 **Implementation Rules**
+- **Specific prompts**: "Fix auth error in login.dart" vs "help with authentication"
+- **Document offloading**: Reference `docs/architecture/` instead of copying specifications
+- **Efficient batching**: "Analyze these 5 files for security issues" vs separate requests
+
+**Result**: Reduced token usage while maintaining response quality and effectiveness.
+
+## 🧠 **Supabase MCP Context (Memory)**
+
+**Claude has access to Supabase MCP with the following abilities for all backend tasks:**
+
+### 🛠️ **Core Capabilities**
+
+- **Execute Project SQL**: Can run raw SQL queries on the project's PostgreSQL database. Must validate queries for safety and ensure proper sanitation. Use only when REST endpoints are insufficient for complex operations.
+
+- **Create Organization**: Can create a new Supabase organization to group projects, billing, and team access under a unified scope for better project management.
+
+- **Create Project**: Can create a new Supabase project under an organization. Project name must be unique (no dots allowed). Note: creation process is asynchronous.
+
+- **List Organizations**: Can fetch all Supabase organizations (name + ID) linked to current user context for organization management.
+
+- **List Projects**: Can retrieve full list of projects across organizations (id, name, region, status) for project oversight and management.
+
+### 🧩 **Usage Guidance**
+
+**Best Practices:**
+- **Prefer REST APIs** for standard data flow operations (CRUD, simple queries)
+- **Use SQL queries** only when querying complex relationships, system views, or advanced PostgreSQL features
+- **Persist organization and project state** in memory for use across prompts and sessions
+- **Validate all SQL queries** for injection risks and performance impact before execution
+- **Follow security protocols** per the Security Design Plan when accessing database directly
+
+**When to Use Each Method:**
+- **REST APIs**: User authentication, simple CRUD operations, standard application flow
+- **SQL Queries**: Complex joins, analytical queries, database administration, schema modifications
+- **Organization Management**: Setting up new environments, team access control
+- **Project Management**: Multi-environment setups, staging/production separation
+
+### 📝 **Memory Persistence**
+
+**Automatically save and reference:**
+- Active organization IDs and names
+- Current project configurations
+- Database schema context
+- Recent query patterns and optimizations
+- Environment-specific settings
+
+### ⚠️ **Security Requirements**
+
+**All Supabase MCP operations MUST:**
+- Follow the established Security Design Plan
+- Validate and sanitize all SQL inputs
+- Use parameterized queries when possible
+- Log operations without exposing sensitive data
+- Implement proper error handling and fallbacks
+- Respect rate limits and connection pooling
+
+### 🎯 **Integration with Project Architecture**
+
+**When working with Supabase MCP, always:**
+1. Reference the current Data Model (`docs/architecture/Data Model.md`)
+2. Follow API Contract specifications (`docs/specs/API Contract Documentation.md`)
+3. Implement proper error handling per Error Handling Strategy
+4. Maintain consistency with existing Edge Functions
+5. Ensure compliance with deployment and DevOps plans
+
+---
+
+📝 **This Supabase MCP context is now permanently stored in memory and will be automatically applied to all future backend-related tasks and prompts.**
+
+## 🧠 **Memory Context Providers (MCP)**
+
+**Claude has access to the following MCP integrations for enhanced project capabilities:**
+
+### 🎯 **MCP Server Registry**
+
+#### **1. Context7 - Architecture & Standards**
+- **Use for**: Coding standards, app-wide constants, styles, and architecture documents
+- **URL**: `https://mcp.context7.com/mcp`
+- **When to use**: Referencing project conventions, design patterns, coding guidelines
+
+#### **2. Playwright - UI Testing & Automation**
+- **Use for**: Automated UI testing, screenshots, browser actions, and auth flows
+- **Command**: `npx @playwright/mcp@latest`
+- **When to use**: E2E testing, visual regression testing, automated browser interactions
+
+#### **3. Figma - Design System Integration**
+- **Use for**: UI layouts, design tokens, spacing, colors, and component structure from Figma
+- **Command**: 
+  ```bash
+  /Users/fennsaji/.nvm/versions/node/v20.18.0/bin/node \
+  /Users/fennsaji/.nvm/versions/node/v20.18.0/lib/node_modules/@composio/mcp/dist/index \
+  start --url https://mcp.composio.dev/partner/composio/figma/mcp?customerId=839e4037-a996-4031-a2aa-7139dadd986e
+  ```
+- **When to use**: Implementing UI components, extracting design tokens, maintaining design consistency
+
+#### **4. Supabase - Backend Operations**
+- **Use for**: Executing Supabase queries, managing tables/functions, retrieving org/project info
+- **Command**:
+  ```bash
+  /Users/fennsaji/.nvm/versions/node/v20.18.0/bin/node \
+  /Users/fennsaji/.nvm/versions/node/v20.18.0/lib/node_modules/@composio/mcp/dist/index \
+  start --url https://mcp.composio.dev/partner/composio/supabase/mcp?customerId=839e4037-a996-4031-a2aa-7139dadd986e
+  ```
+- **When to use**: Database operations, API debugging, backend configuration
+
+#### **5. GitHub - Repository Management**
+- **Use for**: Repo operations, issues, pull requests, commits, and workflows in GitHub projects
+- **Command**:
+  ```bash
+  /Users/fennsaji/.nvm/versions/node/v20.18.0/bin/node \
+  /Users/fennsaji/.nvm/versions/node/v20.18.0/lib/node_modules/@composio/mcp/dist/index \
+  start --url https://mcp.composio.dev/partner/composio/github/mcp?customerId=839e4037-a996-4031-a2aa-7139dadd986e
+  ```
+- **When to use**: Managing PRs, tracking issues, automating workflows, repository analytics
+
+#### **6. Filesystem - Local File Operations**
+- **Use for**: Reading/writing files on local filesystem (project files, logs, docs)
+- **Command**:
+  ```bash
+  /Users/fennsaji/.nvm/versions/node/v20.18.0/bin/npx \
+  -y @modelcontextprotocol/server-filesystem \
+  /Users/fennsaji/Desktop /Users/fennsaji/Downloads
+  ```
+- **When to use**: File management, log analysis, documentation updates
+
+#### **7. Memory - Short-term Context**
+- **Use for**: Persisting short-term Claude memories for recent tasks, sprints, bugs, and team notes
+- **Command**:
+  ```bash
+  /Users/fennsaji/.nvm/versions/node/v20.18.0/bin/npx \
+  -y @modelcontextprotocol/server-memory
+  ```
+- **When to use**: Session continuity, temporary task tracking, cross-prompt context
+
+#### **8. PostgreSQL - Direct Database Access**
+- **Use for**: Executing raw SQL queries in local PostgreSQL databases
+- **Command**:
+  ```bash
+  /Users/fennsaji/.nvm/versions/node/v20.18.0/bin/npx \
+  -y @modelcontextprotocol/server-postgres \
+  postgresql://localhost/mydb
+  ```
+- **When to use**: Local database debugging, complex queries, schema operations
+
+#### **9. Memory Bank - Long-term Knowledge Storage**
+- **Use for**: Long-term knowledge storage and recall via structured memory banks (dev logs, docs, history)
+- **Command**:
+  ```bash
+  /Users/fennsaji/.nvm/versions/node/v20.18.0/bin/node \
+  /Users/fennsaji/.nvm/versions/node/v20.18.0/lib/node_modules/@smithery/cli/dist/index.js \
+  run @alioshr/memory-bank-mcp \
+  --config "{\"memoryBankRoot\":\"/Users/fennsaji/ClaudeMemory/memory-bank\"}"
+  ```
+- **When to use**: Architectural decision records, historical context, knowledge preservation
+
+### 🎯 **MCP Usage Strategy**
+
+**Automatic Context Selection:**
+- **Frontend UI Tasks**: Use `figma` for design specs, `context7` for standards
+- **Backend Tasks**: Use `supabase` for database ops, `postgres` for local testing
+- **Testing Tasks**: Use `playwright` for E2E testing, `github` for CI/CD
+- **Documentation**: Use `memory-bank` for historical context, `filesystem` for file ops
+- **Project Management**: Use `github` for issues/PRs, `memory` for session tracking
+
+**Best Practices:**
+- **Always reference relevant MCP** before starting major tasks
+- **Use Context7** for consistency with established patterns
+- **Leverage Memory Bank** for architectural decisions and lessons learned
+- **Combine MCPs** when tasks span multiple domains (e.g., UI + backend)
+- **Persist important discoveries** in appropriate memory systems
+
+### ⚠️ **MCP Integration Requirements**
+
+**When using MCPs, ensure:**
+- Validate data retrieved from external sources
+- Follow security protocols for sensitive operations
+- Maintain consistency with project architecture
+- Document any new patterns or decisions in Memory Bank
+- Use appropriate MCP for each specific task domain
+
+### 🔄 **Context Persistence Strategy**
+
+**Short-term (Memory MCP):**
+- Current sprint tasks and blockers
+- Recent bug fixes and workarounds
+- Team communications and decisions
+- Temporary configuration changes
+
+**Long-term (Memory Bank MCP):**
+- Architectural decision records (ADRs)
+- Design pattern implementations
+- Performance optimization insights
+- Security implementation details
+- Historical context and evolution
+
+---
+
+📝 **All MCP integrations are now permanently registered and will be automatically utilized based on task relevance and context requirements.**
+
+## 📱 **Daily Verse Component Refactor Summary**
+
+**Date**: July 10, 2025  
+**Component**: `frontend/lib/features/daily_verse/presentation/widgets/daily_verse_card.dart`
+
+### ✅ **Improvements Implemented:**
+
+#### **1. Auto-Loading Logic**
+- **Removed user-triggered loading state** - Eliminated "Load Verse" placeholder button
+- **Added automatic fetch-once-per-day logic** - Verse loads automatically on Home screen initialization
+- **Prevented redundant API calls** - BLoC handles daily caching to avoid re-fetching on tab switches
+- **Improved UX flow** - Users no longer need to manually trigger verse loading
+
+#### **2. Visual Design Enhancement**
+- **Applied light theme consistency** - Clean white/light background with proper contrast
+- **Integrated highlight color (#FFEEC0)** - Light gold used for:
+  - Selected language tab backgrounds with elevated shadow
+  - Bible verse reference (Philippians 4:13) styling
+  - Verse content container background (subtle alpha)
+- **Enhanced typography** - Improved font weights, sizes, and spacing for better readability
+- **Primary purple (#6A4FB6)** - Used for action buttons (Copy, Share, Refresh) and text elements
+
+#### **3. Layout & Spacing Improvements**
+- **Increased padding and margins** - Better breathing room between components:
+  - Header to language tabs: 20px (was 16px)
+  - Language tabs to verse reference: 20px (was 16px) 
+  - Verse reference bottom margin: 16px
+  - Verse container margins: 20px
+- **Enhanced touch targets** - Buttons now have 44px minimum height for better accessibility
+- **Improved button spacing** - 12px gaps between action buttons (was 8px)
+- **Better language tab spacing** - 8px horizontal margins with 14px vertical padding
+
+#### **4. Code Quality & Architecture**
+- **Consistent theming** - Removed hardcoded colors in favor of defined constants
+- **Better component separation** - Clear visual hierarchy with improved styling
+- **Enhanced accessibility** - Proper contrast ratios and touch target sizes
+- **Maintained state management** - All existing BLoC functionality preserved
+
+### 🎨 **Design System Integration**
+- **Light theme compliance** - Aligns with app-wide scaffold background
+- **Color palette consistency** - Uses defined primary purple and highlight gold
+- **Typography standards** - Leverages theme text styles with appropriate customizations
+- **Spacing units** - Follows consistent 4px grid system for margins and padding
+
+### 🔄 **User Experience Impact**
+- **Seamless loading** - Verse appears automatically without user intervention
+- **Visual appeal** - Improved readability with light gold highlighting
+- **Better interaction** - Enhanced button sizing and spacing for easier tapping
+- **Performance optimization** - Reduced unnecessary API calls through smart caching
+
+---
+
+📝 **This refactor successfully transformed the Daily Verse component from a manual-load system to an elegant, auto-loading card with improved visual design and user experience.**

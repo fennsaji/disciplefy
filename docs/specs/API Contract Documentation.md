@@ -42,7 +42,40 @@
 }
 ```
 
-## **📤 2. Save Study Guide to Profile**
+## **📖 2. Daily Verse**
+
+**Endpoint**: GET /functions/v1/daily-verse  
+**Auth Required**: ❌ No (works for anonymous users)
+
+**Description**: Returns daily Bible verse in multiple translations with caching support
+
+### **Query Parameters**
+- `date` (optional): YYYY-MM-DD format. If not provided, returns today's verse
+
+### **Response**
+```json
+{
+  "success": true,
+  "data": {
+    "reference": "John 3:16",
+    "translations": {
+      "esv": "For God so loved the world...",
+      "hi": "क्योंकि परमेश्वर ने जगत से ऐसा प्रेम किया...",
+      "ml": "കാരണം ദൈവം ലോകത്തെ ഇങ്ങനെ സ്നേഹിച്ചു..."
+    },
+    "date": "2025-07-09T00:00:00.000Z"
+  }
+}
+```
+
+### **Features**
+- Multi-language support (ESV, Hindi, Malayalam)
+- Daily caching for performance
+- Deterministic verse selection (same verse for same date)
+- Offline fallback with pre-selected verses
+- No external API dependencies for reliability
+
+## **📤 3. Save Study Guide to Profile**
 
 **Endpoint**: POST /api/study/save  
 **Auth Required**: ✅ Yes

@@ -44,19 +44,17 @@ class RecommendedGuidesService {
       if (response.statusCode == 200) {
         return _parseTopicsResponse(response.body);
       } else if (response.statusCode == 401) {
-        print('🔒 [TOPICS] Unauthorized - using mock data for demo');
-        return Right(_getMockTopics());
+        print('🔒 [TOPICS] Unauthorized access');
+        return const Left(AuthenticationFailure(message: 'Unauthorized access to topics'));
       } else {
         print('❌ [TOPICS] API error: ${response.statusCode} - ${response.body}');
-        return Right(_getMockTopics()); // Use mock data instead of error
+        return Left(ServerFailure(message: 'Failed to fetch topics: ${response.statusCode}'));
       }
     } catch (e, stackTrace) {
       print('💥 [TOPICS] Exception: $e');
       print('📚 [TOPICS] Stack trace: $stackTrace');
       
-      // Return mock data as fallback
-      print('🔄 [TOPICS] Falling back to mock data');
-      return Right(_getMockTopics());
+      return Left(NetworkFailure(message: 'Failed to connect to topics service: $e'));
     }
   }
 
@@ -93,12 +91,12 @@ class RecommendedGuidesService {
       if (response.statusCode == 200) {
         return _parseTopicsResponse(response.body);
       } else {
-        print('💥 [TOPICS] API error ${response.statusCode}, using mock data');
-        return Right(_getMockTopics().take(limit ?? 6).toList());
+        print('💥 [TOPICS] API error ${response.statusCode}');
+        return Left(ServerFailure(message: 'Failed to fetch filtered topics: ${response.statusCode}'));
       }
     } catch (e) {
       print('💥 [TOPICS] Filtered topics error: $e');
-      return Right(_getMockTopics().take(limit ?? 6).toList());
+      return Left(NetworkFailure(message: 'Failed to fetch filtered topics: $e'));
     }
   }
 
@@ -145,83 +143,6 @@ class RecommendedGuidesService {
     }
   }
 
-  /// Returns mock topics for fallback/offline use.
-  List<RecommendedGuideTopic> _getMockTopics() {
-    return [
-      RecommendedGuideTopic(
-        id: 'mock-1',
-        title: 'Understanding Faith',
-        description: 'Explore the biblical foundations of faith and trust in God.',
-        category: 'Faith Foundations',
-        difficulty: 'beginner',
-        estimatedMinutes: 30,
-        scriptureCount: 5,
-        tags: ['faith', 'foundation', 'beginner'],
-        isFeatured: true,
-        createdAt: DateTime.now(),
-      ),
-      RecommendedGuideTopic(
-        id: 'mock-2',
-        title: 'The Power of Prayer',
-        description: 'Learn how to communicate effectively with God through prayer.',
-        category: 'Spiritual Disciplines',
-        difficulty: 'beginner',
-        estimatedMinutes: 35,
-        scriptureCount: 4,
-        tags: ['prayer', 'communication', 'discipline'],
-        isFeatured: true,
-        createdAt: DateTime.now(),
-      ),
-      RecommendedGuideTopic(
-        id: 'mock-3',
-        title: 'God\'s Amazing Grace',
-        description: 'Understand the depth and breadth of God\'s unmerited favor.',
-        category: 'Salvation',
-        difficulty: 'intermediate',
-        estimatedMinutes: 45,
-        scriptureCount: 6,
-        tags: ['grace', 'salvation', 'mercy'],
-        isFeatured: true,
-        createdAt: DateTime.now(),
-      ),
-      RecommendedGuideTopic(
-        id: 'mock-4',
-        title: 'Following Jesus',
-        description: 'What it means to be a disciple in today\'s world.',
-        category: 'Christian Living',
-        difficulty: 'intermediate',
-        estimatedMinutes: 50,
-        scriptureCount: 7,
-        tags: ['discipleship', 'following', 'obedience'],
-        isFeatured: false,
-        createdAt: DateTime.now(),
-      ),
-      RecommendedGuideTopic(
-        id: 'mock-5',
-        title: 'God\'s Love',
-        description: 'Experience and understand the depth of God\'s love for humanity.',
-        category: 'Character of God',
-        difficulty: 'beginner',
-        estimatedMinutes: 40,
-        scriptureCount: 5,
-        tags: ['love', 'character', 'relationship'],
-        isFeatured: true,
-        createdAt: DateTime.now(),
-      ),
-      RecommendedGuideTopic(
-        id: 'mock-6',
-        title: 'Forgiveness and Healing',
-        description: 'Learn to forgive others as God has forgiven us.',
-        category: 'Relationships',
-        difficulty: 'intermediate',
-        estimatedMinutes: 55,
-        scriptureCount: 8,
-        tags: ['forgiveness', 'healing', 'relationships'],
-        isFeatured: false,
-        createdAt: DateTime.now(),
-      ),
-    ];
-  }
 
   /// Disposes of the HTTP client.
   void dispose() {

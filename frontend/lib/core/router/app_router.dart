@@ -1,5 +1,6 @@
 import 'package:go_router/go_router.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../features/onboarding/presentation/pages/onboarding_screen.dart';
 import '../../features/onboarding/presentation/pages/onboarding_language_page.dart';
@@ -35,6 +36,36 @@ class AppRoutes {
 class AppRouter {
   static final GoRouter router = GoRouter(
     initialLocation: _getInitialRoute(),
+    redirect: (context, state) {
+      final user = Supabase.instance.client.auth.currentUser;
+      final isAuthenticated = user != null;
+      final currentPath = state.uri.path;
+      
+      // Debug logging
+      print('🔐 [ROUTER] Auth check: ${isAuthenticated ? "✅ Authenticated" : "❌ Not authenticated"} | Route: $currentPath');
+      if (user != null) {
+        print('👤 [ROUTER] User: ${user.email ?? "Anonymous"} (${user.isAnonymous ? "anonymous" : "authenticated"})');
+      }
+      
+      // Public routes that don't require authentication
+      final publicRoutes = ['/login', '/onboarding', '/onboarding/language', '/onboarding/purpose', '/auth/callback'];
+      final isPublicRoute = publicRoutes.contains(currentPath) || 
+                           currentPath.startsWith('/auth/callback');
+      
+      // If not authenticated and trying to access protected route, redirect to login
+      if (!isAuthenticated && !isPublicRoute) {
+        print('🚫 [ROUTER] Blocking access to $currentPath, redirecting to /login');
+        return '/login';
+      }
+      
+      // If authenticated and on login page, redirect to home
+      if (isAuthenticated && currentPath == '/login') {
+        print('🏠 [ROUTER] User authenticated, redirecting to home');
+        return '/';
+      }
+      
+      return null; // No redirect needed
+    },
     routes: [
       // Onboarding Flow (outside app shell)
       GoRoute(
@@ -151,7 +182,20 @@ class AppRouter {
       final box = Hive.box('app_settings');
       final onboardingCompleted = box.get('onboarding_completed', defaultValue: false);
       
-      return onboardingCompleted ? AppRoutes.home : AppRoutes.login;
+      // Check if user is authenticated
+      final user = Supabase.instance.client.auth.currentUser;
+      final isAuthenticated = user != null;
+      
+      if (isAuthenticated) {
+        // User is authenticated, go to home
+        return AppRoutes.home;
+      } else if (onboardingCompleted) {
+        // Onboarding completed but not authenticated, go to login
+        return AppRoutes.login;
+      } else {
+        // First time user, go to onboarding
+        return AppRoutes.onboarding;
+      }
     } catch (e) {
       // If Hive is not ready, default to login
       return AppRoutes.login;

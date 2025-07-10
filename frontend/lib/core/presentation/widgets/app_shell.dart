@@ -7,7 +7,7 @@ import '../cubit/navigation_cubit.dart';
 import 'bottom_nav.dart' as bottom_nav;
 import '../../../features/home/presentation/pages/home_screen.dart';
 import '../../../features/study_generation/presentation/pages/generate_study_screen.dart';
-import '../../../features/saved_guides/presentation/pages/saved_screen.dart';
+import '../../../features/saved_guides/presentation/pages/saved_screen_api.dart';
 import '../../../features/settings/presentation/pages/settings_screen.dart';
 
 /// Main App Shell with Bottom Navigation
@@ -172,8 +172,8 @@ class _SavedScreenWrapper extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Note: We'll need to create a version without app bar
-    return const SavedScreen();
+    // Using API-integrated version for saved guides
+    return const SavedScreenApi();
   }
 }
 
