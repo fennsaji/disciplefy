@@ -223,7 +223,7 @@ class _HomeScreenState extends State<HomeScreen> {
           onPressed: () {
             context.go('/settings');
           },
-          icon: Icon(
+          icon: const Icon(
             Icons.settings_outlined,
             color: AppTheme.onSurfaceVariant,
             size: 24,
@@ -293,12 +293,11 @@ class _HomeScreenState extends State<HomeScreen> {
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: AppTheme.accentColor.withOpacity(0.3),
-          width: 1,
         ),
       ),
       child: Row(
         children: [
-          Icon(
+          const Icon(
             Icons.bookmark,
             color: AppTheme.accentColor,
             size: 24,
@@ -332,7 +331,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
           
-          Icon(
+          const Icon(
             Icons.arrow_forward_ios,
             color: AppTheme.accentColor,
             size: 16,
@@ -387,12 +386,11 @@ class _HomeScreenState extends State<HomeScreen> {
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: AppTheme.accentColor.withOpacity(0.3),
-          width: 1,
         ),
       ),
       child: Column(
         children: [
-          Icon(
+          const Icon(
             Icons.error_outline,
             color: AppTheme.accentColor,
             size: 32,
@@ -442,12 +440,10 @@ class _HomeScreenState extends State<HomeScreen> {
         return Wrap(
           spacing: spacing,
           runSpacing: spacing,
-          children: List.generate(6, (index) {
-            return SizedBox(
+          children: List.generate(6, (index) => SizedBox(
               width: cardWidth,
               child: _buildLoadingTopicCard(),
-            );
-          }),
+            )),
         );
       },
     );
@@ -459,7 +455,6 @@ class _HomeScreenState extends State<HomeScreen> {
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: AppTheme.primaryColor.withOpacity(0.1),
-          width: 1,
         ),
       ),
       child: Column(
@@ -569,12 +564,11 @@ class _HomeScreenState extends State<HomeScreen> {
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: AppTheme.primaryColor.withOpacity(0.2),
-          width: 1,
         ),
       ),
       child: Column(
         children: [
-          Icon(
+          const Icon(
             Icons.topic_outlined,
             color: AppTheme.onSurfaceVariant,
             size: 32,

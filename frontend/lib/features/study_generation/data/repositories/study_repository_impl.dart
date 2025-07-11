@@ -98,7 +98,7 @@ class StudyRepositoryImpl implements StudyRepository {
         ));
       } else if (response.status >= 500) {
         return const Left(ServerFailure(
-          code: 'SERVER_ERROR',
+          
         ));
       } else {
         return const Left(ServerFailure(

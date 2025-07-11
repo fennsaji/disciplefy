@@ -77,7 +77,6 @@ class DisciplefyBottomNav extends StatelessWidget {
           border: Border(
             top: BorderSide(
               color: Color(0xFFE5E5E5), // Top border for separation
-              width: 1,
             ),
           ),
           boxShadow: [

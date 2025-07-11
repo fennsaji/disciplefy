@@ -7,7 +7,6 @@ import '../bloc/daily_verse_bloc.dart';
 import '../bloc/daily_verse_event.dart';
 import '../bloc/daily_verse_state.dart';
 
-
 /// Daily verse card widget for home screen
 class DailyVerseCard extends StatelessWidget {
   final VoidCallback? onTap;
@@ -24,30 +23,29 @@ class DailyVerseCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    
+
     return BlocBuilder<DailyVerseBloc, DailyVerseState>(
       builder: (context, state) => Container(
-          margin: margin ?? const EdgeInsets.symmetric(horizontal: 20),
-          child: Card(
-            elevation: 2,
-            shadowColor: theme.colorScheme.primary.withValues(alpha: 0.1),
-            shape: RoundedRectangleBorder(
+        margin: margin ?? const EdgeInsets.symmetric(horizontal: 20),
+        child: Card(
+          elevation: 2,
+          shadowColor: theme.colorScheme.primary.withValues(alpha: 0.1),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Container(
+            decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(16),
-            ),
-            child: Container(
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(16),
-                // Use secondary theme color (light gold) for consistent theming
-                color: theme.colorScheme.secondary,
-                border: Border.all(
-                  color: theme.colorScheme.primary.withValues(alpha: 0.12),
-                  width: 1,
-                ),
+              // Use secondary theme color (light gold) for consistent theming
+              color: theme.colorScheme.secondary,
+              border: Border.all(
+                color: theme.colorScheme.primary.withValues(alpha: 0.12),
               ),
-              child: _buildCardContent(context, state),
             ),
+            child: _buildCardContent(context, state),
           ),
         ),
+      ),
     );
   }
 
@@ -67,7 +65,7 @@ class DailyVerseCard extends StatelessWidget {
 
   Widget _buildLoadingState(BuildContext context, bool isRefreshing) {
     final theme = Theme.of(context);
-    
+
     return Padding(
       padding: const EdgeInsets.all(20),
       child: Column(
@@ -82,7 +80,9 @@ class DailyVerseCard extends StatelessWidget {
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
-                  isRefreshing ? 'Refreshing...' : 'Loading Verse of the Day...',
+                  isRefreshing
+                      ? 'Refreshing...'
+                      : 'Loading Verse of the Day...',
                   style: theme.textTheme.titleMedium?.copyWith(
                     color: theme.colorScheme.onSecondary,
                   ),
@@ -92,7 +92,8 @@ class DailyVerseCard extends StatelessWidget {
           ),
           const SizedBox(height: 20),
           LinearProgressIndicator(
-            valueColor: AlwaysStoppedAnimation<Color>(theme.colorScheme.onSecondary),
+            valueColor:
+                AlwaysStoppedAnimation<Color>(theme.colorScheme.onSecondary),
             backgroundColor: theme.colorScheme.surface,
           ),
           const SizedBox(height: 16),
@@ -108,7 +109,7 @@ class DailyVerseCard extends StatelessWidget {
 
   Widget _buildLoadedState(BuildContext context, DailyVerseLoaded state) {
     final theme = Theme.of(context);
-    
+
     return GestureDetector(
       onTap: onTap,
       child: Padding(
@@ -118,15 +119,15 @@ class DailyVerseCard extends StatelessWidget {
           children: [
             // Header with date - improved spacing
             _buildHeader(context, state.formattedDate, state.isFromCache),
-            
+
             const SizedBox(height: 20),
-            
+
             // Language tabs with better spacing
             if (showLanguageTabs) ...[
               _buildLanguageTabs(context, state.currentLanguage),
               const SizedBox(height: 20),
             ],
-            
+
             // Verse reference with highlight color and better spacing
             Padding(
               padding: const EdgeInsets.only(bottom: 16),
@@ -140,7 +141,7 @@ class DailyVerseCard extends StatelessWidget {
                 ),
               ),
             ),
-            
+
             // Verse text with improved background and spacing
             Container(
               width: double.infinity,
@@ -165,7 +166,7 @@ class DailyVerseCard extends StatelessWidget {
                 textAlign: TextAlign.start,
               ),
             ),
-            
+
             // Action buttons with improved spacing
             _buildActionButtons(context, state),
           ],
@@ -176,7 +177,7 @@ class DailyVerseCard extends StatelessWidget {
 
   Widget _buildOfflineState(BuildContext context, DailyVerseOffline state) {
     final theme = Theme.of(context);
-    
+
     return Padding(
       padding: const EdgeInsets.all(20),
       child: Column(
@@ -207,15 +208,15 @@ class DailyVerseCard extends StatelessWidget {
               ),
             ],
           ),
-          
+
           const SizedBox(height: 16),
-          
+
           // Language tabs
           if (showLanguageTabs) ...[
             _buildLanguageTabs(context, state.currentLanguage),
             const SizedBox(height: 16),
           ],
-          
+
           // Verse content
           Text(
             state.verse.reference,
@@ -225,9 +226,9 @@ class DailyVerseCard extends StatelessWidget {
               letterSpacing: 0.5,
             ),
           ),
-          
+
           const SizedBox(height: 12),
-          
+
           // Verse text with background for better readability
           Container(
             width: double.infinity,
@@ -256,7 +257,7 @@ class DailyVerseCard extends StatelessWidget {
 
   Widget _buildErrorState(BuildContext context, DailyVerseError state) {
     final theme = Theme.of(context);
-    
+
     return Padding(
       padding: const EdgeInsets.all(20),
       child: Column(
@@ -309,7 +310,7 @@ class DailyVerseCard extends StatelessWidget {
 
   Widget _buildHeader(BuildContext context, String date, bool isFromCache) {
     final theme = Theme.of(context);
-    
+
     return Row(
       children: [
         Icon(
@@ -357,48 +358,59 @@ class DailyVerseCard extends StatelessWidget {
     );
   }
 
-  Widget _buildLanguageTabs(BuildContext context, VerseLanguage currentLanguage) {
+  Widget _buildLanguageTabs(
+      BuildContext context, VerseLanguage currentLanguage) {
     final theme = Theme.of(context);
-    
+
     return Row(
       children: VerseLanguage.values.map((language) {
         final isSelected = language == currentLanguage;
+
+        // Determine background and text colors for proper contrast
+        final backgroundColor = isSelected
+            ? theme.colorScheme.secondary
+            : theme.colorScheme.surface;
+
+        // Use explicit contrast colors to ensure visibility
+        final textColor = isSelected
+            ? theme.colorScheme.onSecondary
+            : _getContrastColor(backgroundColor);
+
         return Expanded(
           child: GestureDetector(
             onTap: () {
               context.read<DailyVerseBloc>().add(
-                ChangeVerseLanguage(language: language),
-              );
+                    ChangeVerseLanguage(language: language),
+                  );
             },
             child: Container(
               margin: const EdgeInsets.symmetric(horizontal: 8),
               padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 18),
               decoration: BoxDecoration(
-                color: isSelected 
-                    ? theme.colorScheme.secondary 
-                    : theme.colorScheme.surface,
+                color: backgroundColor,
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: isSelected 
-                      ? theme.colorScheme.secondary 
+                  color: isSelected
+                      ? theme.colorScheme.secondary
                       : theme.colorScheme.primary.withValues(alpha: 0.3),
                   width: 1.5,
                 ),
-                boxShadow: isSelected ? [
-                  BoxShadow(
-                    color: theme.colorScheme.secondary.withValues(alpha: 0.4),
-                    blurRadius: 6,
-                    offset: const Offset(0, 3),
-                  ),
-                ] : null,
+                boxShadow: isSelected
+                    ? [
+                        BoxShadow(
+                          color: theme.colorScheme.secondary
+                              .withValues(alpha: 0.4),
+                          blurRadius: 6,
+                          offset: const Offset(0, 3),
+                        ),
+                      ]
+                    : null,
               ),
               child: Text(
                 '${language.flag} ${language.displayName}',
                 style: theme.textTheme.labelMedium?.copyWith(
                   fontWeight: FontWeight.w600,
-                  color: isSelected 
-                      ? theme.colorScheme.onSecondary 
-                      : theme.colorScheme.onSecondary.withValues(alpha: 0.7),
+                  color: textColor,
                 ),
                 textAlign: TextAlign.center,
               ),
@@ -409,9 +421,18 @@ class DailyVerseCard extends StatelessWidget {
     );
   }
 
+  /// Helper function to determine the best contrasting text color for a given background color
+  Color _getContrastColor(Color backgroundColor) {
+    // Calculate luminance to determine if background is light or dark
+    final luminance = backgroundColor.computeLuminance();
+
+    // Return white text for dark backgrounds, dark text for light backgrounds
+    return luminance > 0.5 ? Colors.black87 : Colors.white;
+  }
+
   Widget _buildActionButtons(BuildContext context, DailyVerseLoaded state) {
     final theme = Theme.of(context);
-    
+
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -434,9 +455,9 @@ class DailyVerseCard extends StatelessWidget {
             minimumSize: const Size(0, 44),
           ),
         ),
-        
+
         const SizedBox(width: 12),
-        
+
         // Share button
         TextButton.icon(
           onPressed: () => _shareVerse(state),
@@ -456,9 +477,9 @@ class DailyVerseCard extends StatelessWidget {
             minimumSize: const Size(0, 44),
           ),
         ),
-        
+
         const SizedBox(width: 12),
-        
+
         // Refresh button
         IconButton(
           onPressed: () {
@@ -480,7 +501,7 @@ class DailyVerseCard extends StatelessWidget {
 
   Widget _buildShimmerText(BuildContext context, {double width = 1.0}) {
     final theme = Theme.of(context);
-    
+
     return Container(
       height: 16,
       width: double.infinity * width,
@@ -494,9 +515,9 @@ class DailyVerseCard extends StatelessWidget {
   void _copyVerseToClipboard(BuildContext context, DailyVerseLoaded state) {
     final text = '${state.verse.reference}\n\n${state.currentVerseText}';
     Clipboard.setData(ClipboardData(text: text));
-    
+
     final theme = Theme.of(context);
-    
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(

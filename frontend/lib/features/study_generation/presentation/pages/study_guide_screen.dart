@@ -149,7 +149,7 @@ class _StudyGuideScreenState extends State<StudyGuideScreen> {
         elevation: 0,
         leading: IconButton(
           onPressed: () => context.pop(),
-          icon: Icon(
+          icon: const Icon(
             Icons.arrow_back_ios,
             color: AppTheme.primaryColor,
           ),
@@ -170,7 +170,7 @@ class _StudyGuideScreenState extends State<StudyGuideScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(
+              const Icon(
                 Icons.error_outline,
                 size: 64,
                 color: AppTheme.accentColor,
@@ -298,7 +298,7 @@ class _StudyGuideScreenState extends State<StudyGuideScreen> {
       children: [
         Row(
           children: [
-            Icon(
+            const Icon(
               Icons.edit_note,
               color: AppTheme.primaryColor,
               size: 24,
@@ -325,7 +325,6 @@ class _StudyGuideScreenState extends State<StudyGuideScreen> {
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
               color: AppTheme.primaryColor.withValues(alpha: 0.2),
-              width: 1,
             ),
           ),
           child: TextField(
@@ -680,7 +679,6 @@ class _StudySection extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: AppTheme.primaryColor.withValues(alpha: 0.1),
-          width: 1,
         ),
         boxShadow: [
           BoxShadow(
@@ -726,7 +724,7 @@ class _StudySection extends StatelessWidget {
               // Copy button
               IconButton(
                 onPressed: () => _copyToClipboard(context, content),
-                icon: Icon(
+                icon: const Icon(
                   Icons.copy,
                   color: AppTheme.onSurfaceVariant,
                   size: 18,

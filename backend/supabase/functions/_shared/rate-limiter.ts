@@ -27,8 +27,8 @@ interface RateLimitConfig {
 type UserType = 'anonymous' | 'authenticated'
 
 // Default configuration constants
-const DEFAULT_ANONYMOUS_LIMIT = 3 as const
-const DEFAULT_AUTHENTICATED_LIMIT = 30 as const
+const DEFAULT_ANONYMOUS_LIMIT = 1 as const
+const DEFAULT_AUTHENTICATED_LIMIT = 5 as const
 const DEFAULT_WINDOW_MINUTES = 60 as const
 
 /**
@@ -116,16 +116,12 @@ export class RateLimiter {
   async recordUsage(identifier: string, userType: UserType): Promise<void> {
     try {
       this.validateInputs(identifier, userType)
-
-      if (userType === 'anonymous') {
-        await this.recordAnonymousUsage(identifier)
-      } else {
-        // For authenticated users, usage is tracked by the study_guides table
-        // No additional recording needed
-      }
+      
+      const windowStart = this.calculateWindowStart()
+      await this.incrementUsageInRateLimitTable(identifier, userType, windowStart)
     } catch (error) {
       console.error('Failed to record usage:', error)
-      // Don't fail the request if usage recording fails
+      // Don't fail the request if usage recording fails (fail-open principle)
     }
   }
 
@@ -163,13 +159,8 @@ export class RateLimiter {
     try {
       this.validateInputs(identifier, userType)
 
-      if (userType === 'anonymous') {
-        await this.resetAnonymousLimit(identifier)
-      } else {
-        // For authenticated users, we would need to delete recent study guides
-        // This should only be done by admin operations
-        console.warn('Resetting authenticated user limits is not implemented')
-      }
+      // Reset rate limit for both user types using the unified table
+      await this.resetRateLimitInTable(identifier, userType)
     } catch (error) {
       console.error('Failed to reset user limit:', error)
       throw new AppError(
@@ -211,13 +202,7 @@ export class RateLimiter {
    * @returns Promise resolving to usage count
    */
   private async getAnonymousUsage(sessionId: string, windowStart: Date): Promise<number> {
-    const { count } = await this.supabaseClient
-      .from('anonymous_study_guides')
-      .select('*', { count: 'exact', head: true })
-      .eq('session_id', sessionId)
-      .gte('created_at', windowStart.toISOString())
-
-    return count ?? 0
+    return this.getUsageFromRateLimitTable(sessionId, 'anonymous', windowStart)
   }
 
   /**
@@ -228,42 +213,100 @@ export class RateLimiter {
    * @returns Promise resolving to usage count
    */
   private async getAuthenticatedUsage(userId: string, windowStart: Date): Promise<number> {
-    const { count } = await this.supabaseClient
-      .from('study_guides')
-      .select('*', { count: 'exact', head: true })
-      .eq('user_id', userId)
-      .gte('created_at', windowStart.toISOString())
-
-    return count ?? 0
+    return this.getUsageFromRateLimitTable(userId, 'authenticated', windowStart)
   }
 
   /**
-   * Records usage for anonymous users.
+   * Gets usage count from the unified rate_limit_usage table.
    * 
-   * @param sessionId - Anonymous session ID
+   * @param identifier - User identifier (user ID or session ID)
+   * @param userType - Type of user
+   * @param windowStart - Start of time window
+   * @returns Promise resolving to usage count
    */
-  private async recordAnonymousUsage(sessionId: string): Promise<void> {
-    const currentCount = await this.getCurrentUsage(sessionId, 'anonymous')
-    
-    await this.supabaseClient
-      .from('anonymous_sessions')
-      .update({
-        study_guides_count: currentCount + 1,
-        last_activity: new Date().toISOString()
-      })
-      .eq('session_id', sessionId)
+  private async getUsageFromRateLimitTable(
+    identifier: string, 
+    userType: UserType, 
+    windowStart: Date
+  ): Promise<number> {
+    try {
+      const { data, error } = await this.supabaseClient
+        .from('rate_limit_usage')
+        .select('count')
+        .eq('identifier', identifier)
+        .eq('user_type', userType)
+        .eq('window_start', windowStart.toISOString())
+        .single()
+
+      if (error) {
+        if (error.code === 'PGRST116') {
+          // No record found - return 0
+          return 0
+        }
+        throw error
+      }
+
+      return data?.count ?? 0
+    } catch (error) {
+      console.error('Error getting usage from rate limit table:', error)
+      // Fail open - return 0 if we can't get the count
+      return 0
+    }
   }
 
   /**
-   * Resets rate limit for anonymous users.
+   * Increments usage count in the unified rate_limit_usage table.
    * 
-   * @param sessionId - Anonymous session ID
+   * @param identifier - User identifier (user ID or session ID)
+   * @param userType - Type of user
+   * @param windowStart - Start of time window
+   * @returns Promise that resolves when usage is recorded
    */
-  private async resetAnonymousLimit(sessionId: string): Promise<void> {
-    await this.supabaseClient
-      .from('anonymous_sessions')
-      .update({ study_guides_count: 0 })
-      .eq('session_id', sessionId)
+  private async incrementUsageInRateLimitTable(
+    identifier: string, 
+    userType: UserType, 
+    windowStart: Date
+  ): Promise<void> {
+    try {
+      // Use the PostgreSQL function for atomic increment
+      const { error } = await this.supabaseClient
+        .rpc('increment_rate_limit_usage', {
+          p_identifier: identifier,
+          p_user_type: userType,
+          p_window_start: windowStart.toISOString()
+        })
+
+      if (error) {
+        console.error('Failed to increment rate limit usage:', error)
+        // Fail open - don't throw error to avoid blocking user
+      }
+    } catch (error) {
+      console.error('Error incrementing usage in rate limit table:', error)
+      // Fail open - don't throw error to avoid blocking user
+    }
+  }
+
+  /**
+   * Resets rate limit for a user in the unified rate_limit_usage table.
+   * 
+   * @param identifier - User identifier (user ID or session ID)
+   * @param userType - Type of user
+   */
+  private async resetRateLimitInTable(identifier: string, userType: UserType): Promise<void> {
+    try {
+      await this.supabaseClient
+        .from('rate_limit_usage')
+        .delete()
+        .eq('identifier', identifier)
+        .eq('user_type', userType)
+    } catch (error) {
+      console.error('Failed to reset rate limit:', error)
+      throw new AppError(
+        'RATE_LIMIT_RESET_ERROR',
+        `Failed to reset rate limit for ${userType} user`,
+        500
+      )
+    }
   }
 
   /**

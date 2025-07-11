@@ -32,7 +32,6 @@ class GuideListItemApi extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
         side: BorderSide(
           color: AppTheme.primaryColor.withOpacity(0.1),
-          width: 1,
         ),
       ),
       child: InkWell(

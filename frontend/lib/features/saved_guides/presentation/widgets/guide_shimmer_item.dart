@@ -40,8 +40,7 @@ class _GuideShimmerItemState extends State<GuideShimmerItem>
   @override
   Widget build(BuildContext context) => AnimatedBuilder(
       animation: _animation,
-      builder: (context, child) {
-        return Card(
+      builder: (context, child) => Card(
           margin: const EdgeInsets.only(bottom: 12),
           elevation: 2,
           shadowColor: AppTheme.primaryColor.withOpacity(0.1),
@@ -151,7 +150,6 @@ class _GuideShimmerItemState extends State<GuideShimmerItem>
               ],
             ),
           ),
-        );
-      },
+        ),
     );
 }

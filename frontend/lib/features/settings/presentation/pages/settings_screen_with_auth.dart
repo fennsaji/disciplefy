@@ -51,9 +51,9 @@ class _SettingsScreenContent extends StatelessWidget {
           },
           builder: (context, state) {
             if (state is SettingsLoading) {
-              return Center(
+              return const Center(
                 child: CircularProgressIndicator(
-                  valueColor: const AlwaysStoppedAnimation<Color>(AppTheme.primaryColor),
+                  valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primaryColor),
                   strokeWidth: 3,
                 ),
               );
@@ -132,7 +132,7 @@ class _SettingsScreenContent extends StatelessWidget {
                       icon: Icons.account_circle_outlined,
                       title: 'Account Settings',
                       subtitle: 'Manage your account preferences',
-                      trailing: Icon(
+                      trailing: const Icon(
                         Icons.arrow_forward_ios,
                         size: 16,
                         color: AppTheme.onSurfaceVariant,
@@ -237,7 +237,7 @@ class _SettingsScreenContent extends StatelessWidget {
           icon: Icons.language_outlined,
           title: 'Language',
           subtitle: _getLanguageDisplayName(state.settings.language),
-          trailing: Icon(
+          trailing: const Icon(
             Icons.arrow_forward_ios,
             size: 16,
             color: AppTheme.onSurfaceVariant,
@@ -276,7 +276,7 @@ class _SettingsScreenContent extends StatelessWidget {
                 subtitle: authState.isAnonymous 
                     ? 'Clear guest session'
                     : 'Sign out of your account',
-                trailing: Icon(
+                trailing: const Icon(
                   Icons.arrow_forward_ios,
                   size: 16,
                   color: AppTheme.onSurfaceVariant,
@@ -291,7 +291,7 @@ class _SettingsScreenContent extends StatelessWidget {
                   icon: Icons.delete_forever_outlined,
                   title: 'Delete Account',
                   subtitle: 'Permanently delete your account and data',
-                  trailing: Icon(
+                  trailing: const Icon(
                     Icons.arrow_forward_ios,
                     size: 16,
                     color: AppTheme.onSurfaceVariant,
@@ -313,7 +313,7 @@ class _SettingsScreenContent extends StatelessWidget {
               icon: Icons.login_outlined,
               title: 'Sign In',
               subtitle: 'Sign in to sync your data across devices',
-              trailing: Icon(
+              trailing: const Icon(
                 Icons.arrow_forward_ios,
                 size: 16,
                 color: AppTheme.onSurfaceVariant,
@@ -344,7 +344,7 @@ class _SettingsScreenContent extends StatelessWidget {
           icon: Icons.favorite_outline,
           title: 'Support Developer',
           subtitle: 'Help us improve the app',
-          trailing: Icon(
+          trailing: const Icon(
             Icons.arrow_forward_ios,
             size: 16,
             color: AppTheme.onSurfaceVariant,
@@ -358,7 +358,7 @@ class _SettingsScreenContent extends StatelessWidget {
           icon: Icons.privacy_tip_outlined,
           title: 'Privacy Policy',
           subtitle: 'View our privacy policy',
-          trailing: Icon(
+          trailing: const Icon(
             Icons.arrow_forward_ios,
             size: 16,
             color: AppTheme.onSurfaceVariant,
@@ -371,7 +371,7 @@ class _SettingsScreenContent extends StatelessWidget {
           icon: Icons.feedback_outlined,
           title: 'Feedback',
           subtitle: 'Send us your feedback',
-          trailing: Icon(
+          trailing: const Icon(
             Icons.arrow_forward_ios,
             size: 16,
             color: AppTheme.onSurfaceVariant,
@@ -501,7 +501,7 @@ class _SettingsScreenContent extends StatelessWidget {
                   ],
                 ),
               ),
-              Icon(
+              const Icon(
                 Icons.arrow_forward_ios,
                 size: 16,
                 color: AppTheme.onSurfaceVariant,

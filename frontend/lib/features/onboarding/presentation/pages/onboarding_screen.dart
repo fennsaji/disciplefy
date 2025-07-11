@@ -302,7 +302,6 @@ class _OnboardingSlideWidget extends StatelessWidget {
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
                 color: AppTheme.secondaryColor.withOpacity(0.5),
-                width: 1,
               ),
             ),
             child: Text(

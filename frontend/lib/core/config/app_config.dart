@@ -10,7 +10,7 @@ class AppConfig {
       ? 'http://127.0.0.1:54321'
       : 'https://wzdcwxvyjuxjgzpnukvm.supabase.co',
   );
-  
+
   static const String supabaseAnonKey = String.fromEnvironment(
     'SUPABASE_ANON_KEY',
     defaultValue: kDebugMode 

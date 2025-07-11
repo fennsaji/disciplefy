@@ -519,7 +519,6 @@ class _WelcomeFeatureItem extends StatelessWidget {
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
               color: AppTheme.primaryColor.withOpacity(0.2),
-              width: 1,
             ),
           ),
           child: Icon(

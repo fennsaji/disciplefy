@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../../../core/services/auth_service.dart';
 import '../../data/services/unified_study_guides_service.dart';
 import '../../domain/entities/saved_guide_entity.dart';
 import 'saved_guides_event.dart';

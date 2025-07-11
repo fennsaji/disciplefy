@@ -678,4 +678,47 @@ export class StudyGuideRepository {
       )
     }
   }
+
+  async getStudyGuides(userId: string, savedOnly: boolean, limit: number, offset: number) {
+    let query = this.supabaseClient
+      .from('study_guides')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false })
+      .range(offset, offset + limit - 1);
+
+    if (savedOnly) {
+      query = query.eq('is_saved', true);
+    }
+
+    const { data, error } = await query;
+
+    if (error) {
+      throw new AppError('DATABASE_ERROR', `Failed to fetch study guides: ${error.message}`);
+    }
+
+    return data || [];
+  }
+
+  async updateStudyGuide(userId: string, guideId: string, isSaved: boolean) {
+    const { data, error } = await this.supabaseClient
+      .from('study_guides')
+      .update({ 
+        is_saved: isSaved,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', guideId)
+      .eq('user_id', userId)
+      .select()
+      .single();
+
+    if (error) {
+      if (error.code === 'PGRST116') {
+        throw new AppError('NOT_FOUND', 'Study guide not found or you do not have permission to modify it');
+      }
+      throw new AppError('DATABASE_ERROR', `Failed to update study guide: ${error.message}`);
+    }
+
+    return data;
+  }
 }

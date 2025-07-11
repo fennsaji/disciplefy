@@ -15,8 +15,7 @@ import { LLMService } from '../_shared/llm-service.ts'
 import { ErrorHandler, AppError } from '../_shared/error-handler.ts'
 import { RequestValidator } from '../_shared/request-validator.ts'
 import { AnalyticsLogger } from '../_shared/analytics-logger.ts'
-import { StudyGuideService } from './study-guide-service.ts'
-import { StudyGuideRepository } from './study-guide-repository.ts'
+import { StudyGuideService } from '../_shared/study-guide-service.ts';
 
 /**
  * Request payload for study guide generation.
@@ -110,42 +109,16 @@ serve(async (req: Request): Promise<Response> => {
       requestData
     )
 
-    // Check for existing study guide first
-    const existingStudyGuide = await checkExistingStudyGuide(
-      dependencies.repository,
-      dependencies.securityValidator,
-      requestData
-    )
-
-    let savedStudyGuide: any
-
-    if (existingStudyGuide) {
-      // Return existing study guide
-      savedStudyGuide = existingStudyGuide
-      
-      // Log cache hit
-      await dependencies.analyticsLogger.logEvent('study_guide_cache_hit', {
-        input_type: requestData.input_type,
+    const studyGuide = await dependencies.studyGuideService.findOrCreateStudyGuide(
+      {
+        inputType: requestData.input_type,
+        inputValue: requestData.input_value,
         language: requestData.language || DEFAULT_LANGUAGE,
-        is_authenticated: requestData.user_context?.is_authenticated ?? false,
-        user_id: requestData.user_context?.user_id,
-        session_id: requestData.user_context?.session_id
-      }, req.headers.get('x-forwarded-for'))
-    } else {
-      // Generate new study guide
-      const studyGuide = await generateStudyGuide(
-        dependencies.studyGuideService,
-        requestData
-      )
+      },
+      requestData.user_context!
+    );
 
-      // Store study guide
-      savedStudyGuide = await saveStudyGuide(
-        dependencies.repository,
-        dependencies.securityValidator,
-        requestData,
-        studyGuide
-      )
-    }
+    let savedStudyGuide: any = studyGuide;
 
     // Log analytics
     await logStudyGeneration(
@@ -210,8 +183,7 @@ function initializeDependencies(supabaseClient: SupabaseClient) {
     securityValidator: new SecurityValidator(),
     rateLimiter: new RateLimiter(supabaseClient),
     analyticsLogger: new AnalyticsLogger(supabaseClient),
-    studyGuideService: new StudyGuideService(),
-    repository: new StudyGuideRepository(supabaseClient)
+    studyGuideService: new StudyGuideService(supabaseClient),
   }
 }
 
@@ -357,109 +329,7 @@ async function enforceRateLimit(
   return await rateLimiter.checkRateLimit(identifier, userType)
 }
 
-/**
- * Checks for existing study guide before generating new one.
- * 
- * @param repository - Study guide repository
- * @param securityValidator - Security validator for hashing
- * @param requestData - Request data for lookup
- * @returns Existing study guide or null if not found
- */
-async function checkExistingStudyGuide(
-  repository: StudyGuideRepository,
-  securityValidator: SecurityValidator,
-  requestData: StudyGenerationRequest
-): Promise<any> {
-  const userContext = requestData.user_context!
-  const isAuthenticated = userContext.is_authenticated
 
-  if (isAuthenticated) {
-    // Check for existing authenticated study guide
-    return await repository.findExistingAuthenticatedStudyGuide(
-      userContext.user_id!,
-      requestData.input_type,
-      requestData.input_value,
-      requestData.language || DEFAULT_LANGUAGE
-    )
-  } else {
-    // Check for existing anonymous study guide
-    const inputValueHash = await securityValidator.hashSensitiveData(
-      requestData.input_value
-    )
-    
-    return await repository.findExistingAnonymousStudyGuide(
-      userContext.session_id!,
-      requestData.input_type,
-      inputValueHash,
-      requestData.language || DEFAULT_LANGUAGE
-    )
-  }
-}
-
-/**
- * Generates the study guide using the LLM service.
- * 
- * @param studyGuideService - Study guide service instance
- * @param requestData - Request data for generation
- * @returns Generated study guide
- */
-async function generateStudyGuide(
-  studyGuideService: StudyGuideService,
-  requestData: StudyGenerationRequest
-) {
-  return await studyGuideService.generateStudyGuide({
-    inputType: requestData.input_type,
-    inputValue: requestData.input_value,
-    language: requestData.language || DEFAULT_LANGUAGE
-  })
-}
-
-/**
- * Saves the generated study guide to the database.
- * 
- * @param repository - Study guide repository
- * @param securityValidator - Security validator for hashing
- * @param requestData - Original request data
- * @param studyGuide - Generated study guide
- * @returns Saved study guide data
- */
-async function saveStudyGuide(
-  repository: StudyGuideRepository,
-  securityValidator: SecurityValidator,
-  requestData: StudyGenerationRequest,
-  studyGuide: any
-) {
-  const userContext = requestData.user_context!
-  const isAuthenticated = userContext.is_authenticated
-
-  const studyGuideData = {
-    inputType: requestData.input_type,
-    inputValue: requestData.input_value,
-    summary: studyGuide.summary,
-    interpretation: studyGuide.interpretation,
-    context: studyGuide.context,
-    relatedVerses: studyGuide.relatedVerses,
-    reflectionQuestions: studyGuide.reflectionQuestions,
-    prayerPoints: studyGuide.prayerPoints,
-    language: requestData.language || DEFAULT_LANGUAGE
-  }
-
-  if (isAuthenticated) {
-    return await repository.saveAuthenticatedStudyGuide(
-      userContext.user_id!,
-      studyGuideData
-    )
-  } else {
-    const inputValueHash = await securityValidator.hashSensitiveData(
-      requestData.input_value
-    )
-    
-    return await repository.saveAnonymousStudyGuide(
-      userContext.session_id!,
-      { ...studyGuideData, inputValueHash }
-    )
-  }
-}
 
 /**
  * Logs analytics event for study guide generation.
