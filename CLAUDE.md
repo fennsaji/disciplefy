@@ -537,6 +537,8 @@ Fixes #issue-number
   ```
 - **When to use**: Architectural decision records, historical context, knowledge preservation
 
+#### **10. 
+
 ### 🎯 **MCP Usage Strategy**
 
 **Automatic Context Selection:**
