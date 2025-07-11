@@ -126,7 +126,7 @@ class _SettingsScreenContent extends StatelessWidget {
           icon: Icons.language_outlined,
           title: 'App Language',
           subtitle: _getLanguageDisplayName(state.settings.language),
-          trailing: Icon(
+          trailing: const Icon(
             Icons.arrow_forward_ios,
             size: 16,
             color: AppTheme.onSurfaceVariant,
@@ -160,7 +160,7 @@ class _SettingsScreenContent extends StatelessWidget {
           icon: Icons.logout_outlined,
           title: 'Logout',
           subtitle: 'Sign out of your account',
-          trailing: Icon(
+          trailing: const Icon(
             Icons.arrow_forward_ios,
             size: 16,
             color: AppTheme.onSurfaceVariant,
@@ -189,7 +189,7 @@ class _SettingsScreenContent extends StatelessWidget {
           icon: Icons.favorite_outline,
           title: 'Support Developer',
           subtitle: 'Help us improve the app',
-          trailing: Icon(
+          trailing: const Icon(
             Icons.arrow_forward_ios,
             size: 16,
             color: AppTheme.onSurfaceVariant,
@@ -203,7 +203,7 @@ class _SettingsScreenContent extends StatelessWidget {
           icon: Icons.privacy_tip_outlined,
           title: 'Privacy Policy',
           subtitle: 'View our privacy policy',
-          trailing: Icon(
+          trailing: const Icon(
             Icons.arrow_forward_ios,
             size: 16,
             color: AppTheme.onSurfaceVariant,
@@ -216,7 +216,7 @@ class _SettingsScreenContent extends StatelessWidget {
           icon: Icons.feedback_outlined,
           title: 'Feedback',
           subtitle: 'Send us your feedback',
-          trailing: Icon(
+          trailing: const Icon(
             Icons.arrow_forward_ios,
             size: 16,
             color: AppTheme.onSurfaceVariant,

@@ -107,11 +107,9 @@ class StudyGuidesResult {
   
   factory StudyGuidesResult.error(String error) => StudyGuidesResult._(
       error: error,
-      isSuccess: false,
     );
   
   factory StudyGuidesResult.authRequired() => const StudyGuidesResult._(
       requiresAuth: true,
-      isSuccess: false,
     );
 }

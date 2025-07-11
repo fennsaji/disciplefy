@@ -59,7 +59,7 @@ class DisciplefyBibleStudyApp extends StatelessWidget {
           create: (context) => sl<StudyBloc>(),
         ),
         BlocProvider<AuthBloc>(
-          create: (context) => sl<AuthBloc>()..add(AuthInitializeRequested()),
+          create: (context) => sl<AuthBloc>()..add(const AuthInitializeRequested()),
         ),
       ],
       child: MaterialApp.router(
@@ -69,7 +69,6 @@ class DisciplefyBibleStudyApp extends StatelessWidget {
         // Theming
         theme: AppTheme.lightTheme,
         darkTheme: AppTheme.darkTheme,
-        themeMode: ThemeMode.system,
         
         // Localization
         localizationsDelegates: AppLocalizations.localizationsDelegates,
@@ -91,7 +90,6 @@ class ErrorApp extends StatelessWidget {
         useMaterial3: true,
         colorScheme: ColorScheme.fromSeed(
           seedColor: Colors.red,
-          brightness: Brightness.light,
         ),
       ),
       home: Scaffold(

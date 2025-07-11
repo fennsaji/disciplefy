@@ -120,7 +120,6 @@ class _AppShellContent extends StatelessWidget {
                 }
               },
             ),
-            extendBody: false, // Prevent body from extending behind bottom nav
           ),
         );
       },

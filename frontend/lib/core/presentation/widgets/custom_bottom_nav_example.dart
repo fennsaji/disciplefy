@@ -136,7 +136,6 @@ class _FixedAppShellState extends State<FixedAppShell> {
   @override
   Widget build(BuildContext context) => Scaffold(
       backgroundColor: const Color(0xFF1E1E1E),
-      extendBody: false, // Prevent body from extending behind bottom nav
       body: IndexedStack(
         index: _selectedIndex,
         children: _screens,

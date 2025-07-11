@@ -63,7 +63,7 @@ class RecommendedGuideTopicModel extends RecommendedGuideTopic {
       createdAt: createdAt,
     );
 
-  /// Creates a model from a domain entity.
+  /// Creates a model from a domain entity.z
   factory RecommendedGuideTopicModel.fromEntity(RecommendedGuideTopic entity) => RecommendedGuideTopicModel(
       id: entity.id,
       title: entity.title,

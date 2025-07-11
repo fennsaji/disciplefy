@@ -117,13 +117,7 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen> {
       appBar: AppBar(
         backgroundColor: AppTheme.backgroundColor,
         elevation: 0,
-        leading: IconButton(
-          onPressed: () => context.pop(),
-          icon: const Icon(
-            Icons.arrow_back_ios,
-            color: AppTheme.primaryColor,
-          ),
-        ),
+        automaticallyImplyLeading: false,
         title: Text(
           'Generate Study Guide',
           style: GoogleFonts.playfairDisplay(
@@ -260,21 +254,21 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen> {
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(
+              borderSide: const BorderSide(
                 color: AppTheme.primaryColor,
                 width: 2,
               ),
             ),
             errorBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(
+              borderSide: const BorderSide(
                 color: AppTheme.accentColor,
                 width: 2,
               ),
             ),
             focusedErrorBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(
+              borderSide: const BorderSide(
                 color: AppTheme.accentColor,
                 width: 2,
               ),
@@ -290,7 +284,7 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen> {
                       _inputController.clear();
                       _inputFocusNode.requestFocus();
                     },
-                    icon: Icon(
+                    icon: const Icon(
                       Icons.clear,
                       color: AppTheme.onSurfaceVariant,
                     ),
@@ -457,7 +451,7 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen> {
           ),
           title: Row(
             children: [
-              Icon(
+              const Icon(
                 Icons.error_outline,
                 color: AppTheme.accentColor,
                 size: 24,
@@ -597,7 +591,6 @@ class _SuggestionChip extends StatelessWidget {
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
             color: AppTheme.primaryColor.withOpacity(0.3),
-            width: 1,
           ),
         ),
         child: Text(

@@ -217,7 +217,7 @@ class _AuthCallbackPageState extends State<AuthCallbackPage> {
             ),
           ),
           const SizedBox(height: 8),
-          if (widget.code != null) _buildDebugItem('Code', widget.code!.substring(0, 20) + '...'),
+          if (widget.code != null) _buildDebugItem('Code', '${widget.code!.substring(0, 20)}...'),
           if (widget.state != null) _buildDebugItem('State', widget.state!),
           if (widget.error != null) _buildDebugItem('Error', widget.error!),
           if (widget.errorDescription != null) _buildDebugItem('Error Description', widget.errorDescription!),

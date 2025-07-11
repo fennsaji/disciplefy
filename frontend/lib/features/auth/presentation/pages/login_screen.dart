@@ -60,7 +60,6 @@ class _LoginScreenState extends State<LoginScreen> {
                 content: Text(state.message),
                 backgroundColor: Theme.of(context).colorScheme.error,
                 behavior: SnackBarBehavior.floating,
-                duration: const Duration(seconds: 4),
               ),
             );
           }
@@ -137,7 +136,7 @@ class _LoginScreenState extends State<LoginScreen> {
         color: AppTheme.primaryColor.withValues(alpha: 0.1),
         shape: BoxShape.circle,
       ),
-      child: Icon(
+      child: const Icon(
         Icons.auto_stories,
         size: 60,
         color: AppTheme.primaryColor,
@@ -252,7 +251,7 @@ class _LoginScreenState extends State<LoginScreen> {
         onPressed: isLoading ? null : () => _handleGuestSignIn(context),
         style: OutlinedButton.styleFrom(
           foregroundColor: AppTheme.primaryColor,
-          side: BorderSide(
+          side: const BorderSide(
             color: AppTheme.primaryColor,
             width: 2,
           ),
@@ -264,7 +263,7 @@ class _LoginScreenState extends State<LoginScreen> {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
+            const Icon(
               Icons.person_outline,
               size: 20,
               color: AppTheme.primaryColor,
@@ -311,7 +310,7 @@ class _LoginScreenState extends State<LoginScreen> {
           
           const SizedBox(height: 16),
           
-          _FeatureItem(
+          const _FeatureItem(
             icon: Icons.auto_awesome,
             title: 'AI-Powered Study Guides',
             subtitle: 'Personalized insights for any verse or topic',
@@ -319,7 +318,7 @@ class _LoginScreenState extends State<LoginScreen> {
           
           const SizedBox(height: 12),
           
-          _FeatureItem(
+          const _FeatureItem(
             icon: Icons.school,
             title: 'Structured Learning',
             subtitle: 'Follow proven biblical study methodology',
@@ -327,7 +326,7 @@ class _LoginScreenState extends State<LoginScreen> {
           
           const SizedBox(height: 12),
           
-          _FeatureItem(
+          const _FeatureItem(
             icon: Icons.language,
             title: 'Multi-Language Support',
             subtitle: 'Study in English, Hindi, and Malayalam',
@@ -382,7 +381,6 @@ class _FeatureItem extends StatelessWidget {
             borderRadius: BorderRadius.circular(10),
             border: Border.all(
               color: AppTheme.primaryColor.withOpacity(0.2),
-              width: 1,
             ),
           ),
           child: Icon(

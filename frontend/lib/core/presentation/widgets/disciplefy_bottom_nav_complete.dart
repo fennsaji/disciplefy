@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' as flutter_services;
 import 'package:google_fonts/google_fonts.dart';
-import '../../theme/app_theme.dart';
 
 /// Navigation tab data model for bottom navigation
 class NavTab {

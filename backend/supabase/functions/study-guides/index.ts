@@ -2,7 +2,7 @@ import { serve } from "https://deno.land/std@0.208.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { corsHeaders } from '../_shared/cors.ts'
 import { ErrorHandler, AppError } from '../_shared/error-handler.ts'
-import { SecurityValidator } from '../_shared/security-validator.ts'
+import { StudyGuideService } from '../_shared/study-guide-service.ts'
 
 interface SaveGuideRequest {
   guide_id: string
@@ -46,12 +46,19 @@ serve(async (req: Request) => {
 
     // Get user context
     const authHeader = req.headers.get('Authorization')
-    const { user, sessionId, isAuthenticated } = await getUserContext(supabaseClient, authHeader)
+    const { user, isAuthenticated } = await getUserContext(supabaseClient, authHeader)
+
+    // Block anonymous users completely
+    if (!isAuthenticated || !user) {
+      throw new AppError('UNAUTHORIZED', 'Anonymous access is not allowed for this API', 401)
+    }
+
+    const studyGuideService = new StudyGuideService(supabaseClient)
 
     if (req.method === 'GET') {
-      return await handleGetStudyGuides(supabaseClient, user?.id, sessionId, isAuthenticated, req)
+      return await handleGetStudyGuides(studyGuideService, user.id, req)
     } else if (req.method === 'POST') {
-      return await handleSaveUnsaveGuide(supabaseClient, user?.id, sessionId, isAuthenticated, req)
+      return await handleSaveUnsaveGuide(studyGuideService, user.id, req)
     } else {
       throw new AppError('METHOD_NOT_ALLOWED', 'Only GET and POST methods are allowed', 405)
     }
@@ -62,8 +69,7 @@ serve(async (req: Request) => {
 })
 
 async function getUserContext(supabaseClient: any, authHeader: string | null) {
-  let user = null
-  let sessionId = null
+  let user: any = null
   let isAuthenticated = false
 
   try {
@@ -75,22 +81,16 @@ async function getUserContext(supabaseClient: any, authHeader: string | null) {
       }
     }
   } catch (e) {
-    // Not authenticated, will use session-based approach
+    // Not authenticated
+    console.error('Failed to get user context:', e)
   }
 
-  if (!isAuthenticated) {
-    // For anonymous users, try to extract session ID from request
-    sessionId = 'anonymous-session'  // This should come from request body or headers
-  }
-
-  return { user, sessionId, isAuthenticated }
+  return { user, isAuthenticated }
 }
 
 async function handleGetStudyGuides(
-  supabaseClient: any, 
-  userId: string | undefined, 
-  sessionId: string | null,
-  isAuthenticated: boolean,
+  studyGuideService: StudyGuideService, 
+  userId: string,
   req: Request
 ): Promise<Response> {
   const url = new URL(req.url)
@@ -98,44 +98,7 @@ async function handleGetStudyGuides(
   const limit = parseInt(url.searchParams.get('limit') || '20')
   const offset = parseInt(url.searchParams.get('offset') || '0')
 
-  let query
-  let guides: StudyGuideResponse[] = []
-
-  if (isAuthenticated && userId) {
-    // Fetch authenticated user's guides
-    query = supabaseClient
-      .from('study_guides')
-      .select('*')
-      .eq('user_id', userId)
-      .order('created_at', { ascending: false })
-      .range(offset, offset + limit - 1)
-
-    if (savedOnly) {
-      query = query.eq('is_saved', true)
-    }
-
-    const { data, error } = await query
-
-    if (error) {
-      throw new AppError('DATABASE_ERROR', `Failed to fetch study guides: ${error.message}`)
-    }
-
-    guides = data || []
-  } else if (sessionId) {
-    // Fetch anonymous user's guides
-    const { data, error } = await supabaseClient
-      .from('anonymous_study_guides')
-      .select('*')
-      .eq('session_id', sessionId)
-      .order('created_at', { ascending: false })
-      .range(offset, offset + limit - 1)
-
-    if (error) {
-      throw new AppError('DATABASE_ERROR', `Failed to fetch anonymous study guides: ${error.message}`)
-    }
-
-    guides = data || []
-  }
+  const guides = await studyGuideService.getStudyGuides(userId, savedOnly, limit, offset);
 
   return new Response(
     JSON.stringify({
@@ -154,19 +117,12 @@ async function handleGetStudyGuides(
 }
 
 async function handleSaveUnsaveGuide(
-  supabaseClient: any,
-  userId: string | undefined,
-  sessionId: string | null,
-  isAuthenticated: boolean,
+  studyGuideService: StudyGuideService,
+  userId: string,
   req: Request
 ): Promise<Response> {
-  if (!isAuthenticated || !userId) {
-    throw new AppError('UNAUTHORIZED', 'Authentication required to save guides', 401)
-  }
-
   const requestBody: SaveGuideRequest = await req.json()
   
-  // Validate request
   if (!requestBody.guide_id || !requestBody.action) {
     throw new AppError('INVALID_REQUEST', 'guide_id and action are required')
   }
@@ -175,33 +131,13 @@ async function handleSaveUnsaveGuide(
     throw new AppError('INVALID_REQUEST', 'action must be "save" or "unsave"')
   }
 
-  // Validate input
-  await SecurityValidator.validateInput(requestBody.guide_id, 'guid')
+  if (!requestBody.guide_id || typeof requestBody.guide_id !== 'string') {
+    throw new AppError('INVALID_REQUEST', 'Invalid guide_id format')
+  }
 
   const isSaved = requestBody.action === 'save'
 
-  // Update the guide's saved status
-  const { data, error } = await supabaseClient
-    .from('study_guides')
-    .update({ 
-      is_saved: isSaved,
-      updated_at: new Date().toISOString()
-    })
-    .eq('id', requestBody.guide_id)
-    .eq('user_id', userId)  // Ensure user can only modify their own guides
-    .select()
-    .single()
-
-  if (error) {
-    if (error.code === 'PGRST116') {
-      throw new AppError('NOT_FOUND', 'Study guide not found or you do not have permission to modify it')
-    }
-    throw new AppError('DATABASE_ERROR', `Failed to ${requestBody.action} study guide: ${error.message}`)
-  }
-
-  if (!data) {
-    throw new AppError('NOT_FOUND', 'Study guide not found')
-  }
+  const data = await studyGuideService.updateStudyGuide(userId, requestBody.guide_id, isSaved);
 
   return new Response(
     JSON.stringify({
