@@ -1,3 +1,5 @@
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+
 /**
  * Repository for managing Recommended Guide Bible study topics.
  * 
@@ -23,27 +25,73 @@ interface RecommendedGuideTopic {
 }
 
 /**
+ * Database response from get_recommended_topics function
+ */
+interface DatabaseRecommendedTopic {
+  readonly id: string
+  readonly title: string
+  readonly description: string
+  readonly category: string
+  readonly difficulty_level: 'beginner' | 'intermediate' | 'advanced'
+  readonly estimated_duration: string
+  readonly tags: readonly string[]
+  readonly display_order: number
+  readonly created_at: string
+}
+
+/**
  * Repository for accessing Recommended Guide Bible study topics.
  * 
  * This repository provides a clean abstraction over the topics data,
  * following the Repository pattern for data access.
  */
 export class TopicsRepository {
+  private supabaseClient: any
+
+  constructor() {
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
+    
+    if (!supabaseUrl || !supabaseServiceKey) {
+      throw new Error('Missing required Supabase configuration')
+    }
+    
+    this.supabaseClient = createClient(supabaseUrl, supabaseServiceKey)
+  }
   
   /**
    * Retrieves all topics for a specific language.
    * 
    * @param language - Language code (currently only 'en' is supported)
+   * @param limit - Maximum number of topics to return
+   * @param offset - Number of topics to skip
    * @returns Promise resolving to array of topics
    */
-  async getTopicsByLanguage(language: string): Promise<readonly RecommendedGuideTopic[]> {
+  async getTopicsByLanguage(
+    language: string,
+    limit: number = 20,
+    offset: number = 0
+  ): Promise<readonly RecommendedGuideTopic[]> {
     // For now, we only support English topics
     // In future iterations, this could be expanded to include translations
     if (language !== 'en') {
       return []
     }
 
-    return this.getEnglishTopics()
+    const { data, error } = await this.supabaseClient
+      .rpc('get_recommended_topics', {
+        p_category: null,
+        p_difficulty: null,
+        p_limit: limit,
+        p_offset: offset
+      })
+
+    if (error) {
+      console.error('Error fetching topics:', error)
+      return []
+    }
+
+    return this.mapDatabaseTopicsToInterface(data || [])
   }
 
   /**
@@ -63,15 +111,34 @@ export class TopicsRepository {
    * 
    * @param category - Topic category
    * @param language - Language code
+   * @param limit - Maximum number of topics to return
+   * @param offset - Number of topics to skip
    * @returns Promise resolving to filtered topics array
    */
-  async getTopicsByCategory(category: string, language = 'en'): Promise<readonly RecommendedGuideTopic[]> {
-    const topics = await this.getTopicsByLanguage(language)
-    const normalizedCategory = category.toLowerCase()
-    
-    return topics.filter(topic => 
-      topic.category.toLowerCase() === normalizedCategory
-    )
+  async getTopicsByCategory(
+    category: string,
+    language = 'en',
+    limit: number = 20,
+    offset: number = 0
+  ): Promise<readonly RecommendedGuideTopic[]> {
+    if (language !== 'en') {
+      return []
+    }
+
+    const { data, error } = await this.supabaseClient
+      .rpc('get_recommended_topics', {
+        p_category: category,
+        p_difficulty: null,
+        p_limit: limit,
+        p_offset: offset
+      })
+
+    if (error) {
+      console.error('Error fetching topics by category:', error)
+      return []
+    }
+
+    return this.mapDatabaseTopicsToInterface(data || [])
   }
 
   /**
@@ -79,14 +146,34 @@ export class TopicsRepository {
    * 
    * @param difficulty - Difficulty level
    * @param language - Language code
+   * @param limit - Maximum number of topics to return
+   * @param offset - Number of topics to skip
    * @returns Promise resolving to filtered topics array
    */
   async getTopicsByDifficulty(
-    difficulty: 'beginner' | 'intermediate' | 'advanced', 
-    language = 'en'
+    difficulty: 'beginner' | 'intermediate' | 'advanced',
+    language = 'en',
+    limit: number = 20,
+    offset: number = 0
   ): Promise<readonly RecommendedGuideTopic[]> {
-    const topics = await this.getTopicsByLanguage(language)
-    return topics.filter(topic => topic.difficulty_level === difficulty)
+    if (language !== 'en') {
+      return []
+    }
+
+    const { data, error } = await this.supabaseClient
+      .rpc('get_recommended_topics', {
+        p_category: null,
+        p_difficulty: difficulty,
+        p_limit: limit,
+        p_offset: offset
+      })
+
+    if (error) {
+      console.error('Error fetching topics by difficulty:', error)
+      return []
+    }
+
+    return this.mapDatabaseTopicsToInterface(data || [])
   }
 
   /**
@@ -96,8 +183,19 @@ export class TopicsRepository {
    * @returns Promise resolving to array of category names
    */
   async getCategories(language = 'en'): Promise<readonly string[]> {
-    const topics = await this.getTopicsByLanguage(language)
-    return [...new Set(topics.map(topic => topic.category))]
+    if (language !== 'en') {
+      return []
+    }
+
+    const { data, error } = await this.supabaseClient
+      .rpc('get_recommended_topics_categories')
+
+    if (error) {
+      console.error('Error fetching categories:', error)
+      return []
+    }
+
+    return (data || []).map((row: any) => row.category)
   }
 
   /**
@@ -105,10 +203,19 @@ export class TopicsRepository {
    * 
    * @param query - Search query string
    * @param language - Language code
+   * @param limit - Maximum number of topics to return
+   * @param offset - Number of topics to skip
    * @returns Promise resolving to matching topics
    */
-  async searchTopics(query: string, language = 'en'): Promise<readonly RecommendedGuideTopic[]> {
-    const topics = await this.getTopicsByLanguage(language)
+  async searchTopics(
+    query: string,
+    language = 'en',
+    limit: number = 20,
+    offset: number = 0
+  ): Promise<readonly RecommendedGuideTopic[]> {
+    // For now, return all topics and filter client-side
+    // In future, we can add a search function to the database
+    const topics = await this.getTopicsByLanguage(language, limit, offset)
     const normalizedQuery = query.toLowerCase()
 
     return topics.filter(topic =>
@@ -119,162 +226,54 @@ export class TopicsRepository {
   }
 
   /**
-   * Gets the complete set of English Recommended Guide topics.
+   * Gets the total count of topics for pagination.
    * 
-   * @returns Array of Recommended Guide methodology topics
+   * @param category - Optional category filter
+   * @param difficulty - Optional difficulty filter
+   * @param language - Language code
+   * @returns Promise resolving to total count
    */
-  private getEnglishTopics(): readonly RecommendedGuideTopic[] {
-    return [
-      {
-        id: 'rg-001',
-        title: 'Understanding Biblical Context',
-        description: 'Learn to read Scripture within its historical and cultural setting',
-        difficulty_level: 'beginner',
-        estimated_duration: '45 minutes',
-        key_verses: ['2 Timothy 3:16-17', 'Nehemiah 8:1-8', 'Acts 17:11'],
-        category: 'Bible Study Methods',
-        tags: ['context', 'interpretation', 'hermeneutics']
-      },
-      {
-        id: 'rg-002',
-        title: 'The Scholar\'s Approach to Scripture',
-        description: 'Discovering what the text meant to its original audience',
-        difficulty_level: 'intermediate',
-        estimated_duration: '60 minutes',
-        key_verses: ['1 Corinthians 2:14', 'Luke 24:13-35', 'Acts 8:30-31'],
-        category: 'Bible Study Methods',
-        tags: ['scholarship', 'original meaning', 'exegesis']
-      },
-      {
-        id: 'rg-003',
-        title: 'Group Discussion Dynamics',
-        description: 'Facilitating meaningful biblical conversations',
-        difficulty_level: 'intermediate',
-        estimated_duration: '50 minutes',
-        key_verses: ['Proverbs 27:17', 'Ecclesiastes 4:12', 'Hebrews 10:24-25'],
-        category: 'Group Leadership',
-        tags: ['discussion', 'community', 'facilitation']
-      },
-      {
-        id: 'rg-004',
-        title: 'Personal Application of Scripture',
-        description: 'Moving from understanding to life transformation',
-        difficulty_level: 'beginner',
-        estimated_duration: '40 minutes',
-        key_verses: ['James 1:22-25', 'Luke 6:46-49', 'John 14:15'],
-        category: 'Spiritual Growth',
-        tags: ['application', 'transformation', 'obedience']
-      },
-      {
-        id: 'rg-005',
-        title: 'The Gospel in the Old Testament',
-        description: 'Seeing Christ throughout the Hebrew Scriptures',
-        difficulty_level: 'advanced',
-        estimated_duration: '75 minutes',
-        key_verses: ['Luke 24:27', 'John 5:39', 'Isaiah 53:1-12'],
-        category: 'Biblical Theology',
-        tags: ['gospel', 'christology', 'old testament']
-      },
-      {
-        id: 'rg-006',
-        title: 'Prayer and Scripture Study',
-        description: 'Integrating prayer into Bible study for spiritual insight',
-        difficulty_level: 'beginner',
-        estimated_duration: '35 minutes',
-        key_verses: ['Psalm 119:18', '1 Corinthians 2:10-14', 'John 16:13'],
-        category: 'Spiritual Disciplines',
-        tags: ['prayer', 'illumination', 'holy spirit']
-      },
-      {
-        id: 'rg-007',
-        title: 'Character Studies in Scripture',
-        description: 'Learning from biblical characters and their journeys',
-        difficulty_level: 'intermediate',
-        estimated_duration: '55 minutes',
-        key_verses: ['1 Corinthians 10:11', 'Romans 15:4', 'Hebrews 11:1-40'],
-        category: 'Biblical Characters',
-        tags: ['biography', 'character', 'examples']
-      },
-      {
-        id: 'rg-008',
-        title: 'Understanding Biblical Covenants',
-        description: 'Exploring God\'s covenant relationship with humanity',
-        difficulty_level: 'advanced',
-        estimated_duration: '70 minutes',
-        key_verses: ['Genesis 12:1-3', 'Jeremiah 31:31-34', 'Hebrews 8:6-13'],
-        category: 'Biblical Theology',
-        tags: ['covenant', 'relationship', 'promise']
-      },
-      {
-        id: 'rg-009',
-        title: 'The Parables of Jesus',
-        description: 'Understanding the teaching method of Christ',
-        difficulty_level: 'intermediate',
-        estimated_duration: '50 minutes',
-        key_verses: ['Matthew 13:3-23', 'Mark 4:33-34', 'Luke 8:4-15'],
-        category: 'New Testament Studies',
-        tags: ['parables', 'teaching', 'kingdom']
-      },
-      {
-        id: 'rg-010',
-        title: 'Spiritual Warfare and Victory',
-        description: 'Biblical understanding of our battle and Christ\'s victory',
-        difficulty_level: 'intermediate',
-        estimated_duration: '60 minutes',
-        key_verses: ['Ephesians 6:10-18', '2 Corinthians 10:3-5', '1 John 4:4'],
-        category: 'Spiritual Growth',
-        tags: ['warfare', 'victory', 'armor']
-      },
-      {
-        id: 'rg-011',
-        title: 'Love and Relationships',
-        description: 'Biblical foundations for healthy relationships',
-        difficulty_level: 'beginner',
-        estimated_duration: '45 minutes',
-        key_verses: ['1 Corinthians 13:1-13', 'John 13:34-35', 'Ephesians 5:21-33'],
-        category: 'Christian Living',
-        tags: ['love', 'relationships', 'community']
-      },
-      {
-        id: 'rg-012',
-        title: 'Forgiveness and Grace',
-        description: 'Understanding God\'s forgiveness and extending it to others',
-        difficulty_level: 'beginner',
-        estimated_duration: '50 minutes',
-        key_verses: ['Ephesians 4:32', 'Matthew 6:14-15', 'Colossians 3:13'],
-        category: 'Christian Living',
-        tags: ['forgiveness', 'grace', 'reconciliation']
-      },
-      {
-        id: 'rg-013',
-        title: 'Faith and Doubt',
-        description: 'Navigating seasons of doubt and growing in faith',
-        difficulty_level: 'intermediate',
-        estimated_duration: '55 minutes',
-        key_verses: ['Mark 9:24', 'James 1:6-8', 'Hebrews 11:1'],
-        category: 'Spiritual Growth',
-        tags: ['faith', 'doubt', 'trust']
-      },
-      {
-        id: 'rg-014',
-        title: 'Worship and Praise',
-        description: 'Biblical foundations for authentic worship',
-        difficulty_level: 'beginner',
-        estimated_duration: '40 minutes',
-        key_verses: ['John 4:23-24', 'Psalm 150:1-6', 'Romans 12:1'],
-        category: 'Spiritual Disciplines',
-        tags: ['worship', 'praise', 'heart']
-      },
-      {
-        id: 'rg-015',
-        title: 'Suffering and Hope',
-        description: 'Finding hope and purpose in times of suffering',
-        difficulty_level: 'advanced',
-        estimated_duration: '65 minutes',
-        key_verses: ['Romans 8:28', '2 Corinthians 1:3-4', '1 Peter 4:12-19'],
-        category: 'Life Challenges',
-        tags: ['suffering', 'hope', 'perseverance']
-      }
-    ]
+  async getTopicsCount(
+    category?: string,
+    difficulty?: string,
+    language = 'en'
+  ): Promise<number> {
+    if (language !== 'en') {
+      return 0
+    }
+
+    const { data, error } = await this.supabaseClient
+      .rpc('get_recommended_topics_count', {
+        p_category: category || null,
+        p_difficulty: difficulty || null
+      })
+
+    if (error) {
+      console.error('Error fetching topics count:', error)
+      return 0
+    }
+
+    return data || 0
+  }
+
+  /**
+   * Maps database topics to interface format.
+   * 
+   * @param dbTopics - Database topics array
+   * @returns Interface-compliant topics array
+   */
+  private mapDatabaseTopicsToInterface(
+    dbTopics: DatabaseRecommendedTopic[]
+  ): readonly RecommendedGuideTopic[] {
+    return dbTopics.map(dbTopic => ({
+      id: dbTopic.id,
+      title: dbTopic.title,
+      description: dbTopic.description,
+      difficulty_level: dbTopic.difficulty_level,
+      estimated_duration: dbTopic.estimated_duration,
+      key_verses: [], // Empty for now - not stored in database
+      category: dbTopic.category,
+      tags: dbTopic.tags
+    }))
   }
 }

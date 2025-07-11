@@ -6,7 +6,7 @@ BEGIN;
 -- Create the recommended_topics table
 CREATE TABLE recommended_topics (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  study_guide_id UUID NOT NULL REFERENCES study_guides_cache(id) ON DELETE CASCADE,
+  study_guide_id UUID REFERENCES study_guides_cache(id) ON DELETE CASCADE,
   category VARCHAR(100) NOT NULL,
   difficulty_level VARCHAR(20) NOT NULL CHECK (difficulty_level IN ('beginner', 'intermediate', 'advanced')),
   estimated_duration VARCHAR(50) NOT NULL,
@@ -16,7 +16,7 @@ CREATE TABLE recommended_topics (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   
-  -- Ensure unique study guide per recommendation
+  -- Ensure unique study guide per recommendation (only when study_guide_id is not null)
   CONSTRAINT unique_study_guide_recommendation UNIQUE(study_guide_id)
 );
 
@@ -50,6 +50,10 @@ COMMENT ON COLUMN recommended_topics.tags IS 'Array of tags for enhanced filteri
 COMMENT ON COLUMN recommended_topics.display_order IS 'Order for displaying topics (lower numbers first)';
 COMMENT ON COLUMN recommended_topics.is_active IS 'Whether this topic is currently active/visible';
 
+-- Add title column to recommended_topics table
+ALTER TABLE recommended_topics ADD COLUMN title TEXT;
+ALTER TABLE recommended_topics ADD COLUMN description TEXT;
+
 -- Create a function to get recommended topics with study guide data
 CREATE OR REPLACE FUNCTION get_recommended_topics(
   p_category TEXT DEFAULT NULL,
@@ -72,8 +76,8 @@ BEGIN
   RETURN QUERY
   SELECT 
     rt.id,
-    sg.input_value AS title,
-    sg.summary AS description,
+    rt.title,
+    rt.description,
     rt.category,
     rt.difficulty_level,
     rt.estimated_duration,
@@ -81,7 +85,6 @@ BEGIN
     rt.display_order,
     rt.created_at
   FROM recommended_topics rt
-  JOIN study_guides_cache sg ON rt.study_guide_id = sg.id
   WHERE rt.is_active = true
     AND (p_category IS NULL OR rt.category = p_category)
     AND (p_difficulty IS NULL OR rt.difficulty_level = p_difficulty)

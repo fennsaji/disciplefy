@@ -193,89 +193,38 @@ async function getFilteredTopics(
   categories: readonly string[]
   total: number
 }> {
-  // Get all topics for the specified language
-  const allTopics = await repository.getTopicsByLanguage(params.language)
-
-  // Apply filters
-  let filteredTopics = allTopics
-
-  if (params.category) {
-    filteredTopics = filterByCategory(filteredTopics, params.category)
+  // Get topics from database with filters and pagination
+  let topics: readonly RecommendedGuideTopic[]
+  
+  if (params.category && params.difficulty) {
+    // Both filters - need to call getTopicsByLanguage and filter client-side for now
+    const allTopics = await repository.getTopicsByLanguage(params.language, 100, 0)
+    const filteredTopics = allTopics.filter(topic => 
+      topic.category.toLowerCase() === params.category!.toLowerCase() &&
+      topic.difficulty_level === params.difficulty
+    )
+    topics = filteredTopics.slice(params.offset, params.offset + params.limit)
+  } else if (params.category) {
+    topics = await repository.getTopicsByCategory(params.category, params.language, params.limit, params.offset)
+  } else if (params.difficulty) {
+    topics = await repository.getTopicsByDifficulty(params.difficulty as any, params.language, params.limit, params.offset)
+  } else {
+    topics = await repository.getTopicsByLanguage(params.language, params.limit, params.offset)
   }
 
-  if (params.difficulty) {
-    filteredTopics = filterByDifficulty(filteredTopics, params.difficulty)
-  }
-
-  // Apply pagination
-  const paginatedTopics = applyPagination(filteredTopics, params.limit, params.offset)
-
-  // Extract unique categories
-  const categories = extractUniqueCategories(allTopics)
+  // Get categories and total count
+  const [categories, total] = await Promise.all([
+    repository.getCategories(params.language),
+    repository.getTopicsCount(params.category, params.difficulty, params.language)
+  ])
 
   return {
-    topics: paginatedTopics,
+    topics,
     categories,
-    total: filteredTopics.length
+    total
   }
 }
 
-/**
- * Filters topics by category (case-insensitive).
- * 
- * @param topics - Topics to filter
- * @param category - Category to filter by
- * @returns Filtered topics array
- */
-function filterByCategory(
-  topics: readonly RecommendedGuideTopic[], 
-  category: string
-): readonly RecommendedGuideTopic[] {
-  const normalizedCategory = category.toLowerCase()
-  return topics.filter(topic => 
-    topic.category.toLowerCase() === normalizedCategory
-  )
-}
-
-/**
- * Filters topics by difficulty level.
- * 
- * @param topics - Topics to filter  
- * @param difficulty - Difficulty level to filter by
- * @returns Filtered topics array
- */
-function filterByDifficulty(
-  topics: readonly RecommendedGuideTopic[], 
-  difficulty: string
-): readonly RecommendedGuideTopic[] {
-  return topics.filter(topic => topic.difficulty_level === difficulty)
-}
-
-/**
- * Applies pagination to the topics array.
- * 
- * @param topics - Topics to paginate
- * @param limit - Maximum number of topics to return
- * @param offset - Number of topics to skip
- * @returns Paginated topics array
- */
-function applyPagination(
-  topics: readonly RecommendedGuideTopic[], 
-  limit: number, 
-  offset: number
-): readonly RecommendedGuideTopic[] {
-  return topics.slice(offset, offset + limit)
-}
-
-/**
- * Extracts unique categories from topics array.
- * 
- * @param topics - Topics to extract categories from
- * @returns Array of unique category names
- */
-function extractUniqueCategories(topics: readonly RecommendedGuideTopic[]): readonly string[] {
-  return [...new Set(topics.map(topic => topic.category))]
-}
 
 /**
  * Logs analytics event for topics access.
