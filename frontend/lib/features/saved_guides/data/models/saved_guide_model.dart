@@ -83,25 +83,34 @@ class SavedGuideModel extends SavedGuideEntity {
     );
 
   /// Create model from API response
-  factory SavedGuideModel.fromApiResponse(Map<String, dynamic> json) => SavedGuideModel(
+  /// Updated to handle new cached architecture response format.
+  factory SavedGuideModel.fromApiResponse(Map<String, dynamic> json) {
+    final inputData = json['input'] as Map<String, dynamic>? ?? {};
+    final contentData = json['content'] as Map<String, dynamic>? ?? {};
+    final inputType = inputData['type'] as String? ?? 'topic';
+    final inputValue = inputData['value'] as String? ?? 'Study Guide';
+    
+    return SavedGuideModel(
       id: json['id'] as String,
-      title: json['input_value'] as String? ?? 'Study Guide',
-      content: _formatContentFromApi(json),
-      typeString: json['input_type'] as String? ?? 'topic',
-      createdAt: DateTime.parse(json['created_at'] as String),
-      lastAccessedAt: DateTime.parse(json['updated_at'] as String),
-      isSaved: json['is_saved'] as bool? ?? false,
-      verseReference: json['input_type'] == 'scripture' ? json['input_value'] as String? : null,
-      topicName: json['input_type'] == 'topic' ? json['input_value'] as String? : null,
+      title: inputValue,
+      content: _formatContentFromApi(contentData),
+      typeString: inputType,
+      createdAt: DateTime.parse(json['createdAt'] as String),
+      lastAccessedAt: DateTime.parse(json['updatedAt'] as String),
+      isSaved: json['isSaved'] as bool? ?? false,
+      verseReference: inputType == 'scripture' ? inputValue : null,
+      topicName: inputType == 'topic' ? inputValue : null,
     );
+  }
 
-  static String _formatContentFromApi(Map<String, dynamic> json) {
-    final summary = json['summary'] as String? ?? '';
-    final interpretation = json['interpretation'] as String? ?? '';
-    final context = json['context'] as String? ?? '';
-    final relatedVerses = (json['related_verses'] as List<dynamic>?)?.cast<String>() ?? [];
-    final reflectionQuestions = (json['reflection_questions'] as List<dynamic>?)?.cast<String>() ?? [];
-    final prayerPoints = (json['prayer_points'] as List<dynamic>?)?.cast<String>() ?? [];
+  /// Updated to handle new cached architecture content format.
+  static String _formatContentFromApi(Map<String, dynamic> contentData) {
+    final summary = contentData['summary'] as String? ?? '';
+    final interpretation = contentData['interpretation'] as String? ?? '';
+    final context = contentData['context'] as String? ?? '';
+    final relatedVerses = (contentData['relatedVerses'] as List<dynamic>?)?.cast<String>() ?? [];
+    final reflectionQuestions = (contentData['reflectionQuestions'] as List<dynamic>?)?.cast<String>() ?? [];
+    final prayerPoints = (contentData['prayerPoints'] as List<dynamic>?)?.cast<String>() ?? [];
 
     final content = StringBuffer();
     

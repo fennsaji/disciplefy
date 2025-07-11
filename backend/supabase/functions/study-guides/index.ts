@@ -1,66 +1,69 @@
 import { serve } from "https://deno.land/std@0.208.0/http/server.ts"
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { createClient, SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { corsHeaders } from '../_shared/cors.ts'
 import { ErrorHandler, AppError } from '../_shared/error-handler.ts'
-import { StudyGuideService } from '../_shared/study-guide-service.ts'
+import { 
+  StudyGuideRepository,
+  StudyGuideResponse,
+  UserContext
+} from '../_shared/repositories/study-guide-repository.ts'
 
+/**
+ * Request payload for save/unsave operations.
+ */
 interface SaveGuideRequest {
-  guide_id: string
-  action: 'save' | 'unsave'
+  readonly guide_id: string
+  readonly action: 'save' | 'unsave'
 }
 
-interface StudyGuideResponse {
-  id: string
-  input_type: string
-  input_value?: string
-  input_value_hash?: string
-  summary: string
-  interpretation: string
-  context: string
-  related_verses: string[]
-  reflection_questions: string[]
-  prayer_points: string[]
-  language: string
-  is_saved?: boolean
-  created_at: string
-  updated_at: string
+/**
+ * Response payload for study guide operations.
+ */
+interface StudyGuideManagementApiResponse {
+  readonly success: true
+  readonly data: {
+    readonly guides?: StudyGuideResponse[]
+    readonly guide?: StudyGuideResponse
+    readonly total?: number
+    readonly hasMore?: boolean
+    readonly message?: string
+  }
 }
 
-serve(async (req: Request) => {
-  // Handle CORS
+/**
+ * Study Guide Management Edge Function
+ * 
+ * Handles retrieval and save/unsave operations for study guides
+ * using the cached architecture with content deduplication.
+ */
+serve(async (req: Request): Promise<Response> => {
+  // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
 
   try {
     // Initialize Supabase client
-    const supabaseClient = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
-      {
-        global: {
-          headers: { Authorization: req.headers.get('Authorization')! },
-        },
-      }
-    )
+    const supabaseClient = createSupabaseClient(req)
+    const repository = new StudyGuideRepository(supabaseClient)
 
     // Get user context
-    const authHeader = req.headers.get('Authorization')
-    const { user, isAuthenticated } = await getUserContext(supabaseClient, authHeader)
+    const userContext = await getUserContext(supabaseClient, req)
 
-    // Block anonymous users completely
-    if (!isAuthenticated || !user) {
-      throw new AppError('UNAUTHORIZED', 'Anonymous access is not allowed for this API', 401)
-    }
-
-    const studyGuideService = new StudyGuideService(supabaseClient)
-
-    if (req.method === 'GET') {
-      return await handleGetStudyGuides(studyGuideService, user.id, req)
-    } else if (req.method === 'POST') {
-      return await handleSaveUnsaveGuide(studyGuideService, user.id, req)
-    } else {
-      throw new AppError('METHOD_NOT_ALLOWED', 'Only GET and POST methods are allowed', 405)
+    // Route to appropriate handler
+    switch (req.method) {
+      case 'GET':
+        return await handleGetStudyGuides(repository, userContext, req)
+      case 'POST':
+        return await handleSaveUnsaveGuide(repository, userContext, req)
+      case 'DELETE':
+        return await handleDeleteGuide(repository, userContext, req)
+      default:
+        throw new AppError(
+          'METHOD_NOT_ALLOWED',
+          'Only GET, POST, and DELETE methods are allowed',
+          405
+        )
     }
 
   } catch (error) {
@@ -68,107 +71,261 @@ serve(async (req: Request) => {
   }
 })
 
-async function getUserContext(supabaseClient: any, authHeader: string | null) {
-  let user: any = null
-  let isAuthenticated = false
+/**
+ * Creates configured Supabase client.
+ * Uses service role for database operations but validates user tokens separately.
+ */
+function createSupabaseClient(req: Request): SupabaseClient {
+  const supabaseUrl = Deno.env.get('SUPABASE_URL')!
+  const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 
-  try {
-    if (authHeader?.startsWith('Bearer ')) {
-      const { data: { user: authUser } } = await supabaseClient.auth.getUser(authHeader.replace('Bearer ', ''))
-      if (authUser) {
-        user = authUser
-        isAuthenticated = true
-      }
-    }
-  } catch (e) {
-    // Not authenticated
-    console.error('Failed to get user context:', e)
-  }
-
-  return { user, isAuthenticated }
+  return createClient(supabaseUrl, supabaseServiceKey, {
+    global: {
+      headers: { 
+        Authorization: req.headers.get('Authorization') || '' 
+      },
+    },
+  })
 }
 
+/**
+ * Creates a separate client for user authentication validation.
+ */
+function createAuthClient(req: Request): SupabaseClient {
+  const supabaseUrl = Deno.env.get('SUPABASE_URL')!
+  const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!
+
+  return createClient(supabaseUrl, supabaseAnonKey, {
+    global: {
+      headers: { 
+        Authorization: req.headers.get('Authorization') || '' 
+      },
+    },
+  })
+}
+
+/**
+ * Extracts user context from request.
+ * Uses separate auth client for user validation.
+ */
+async function getUserContext(
+  supabaseClient: SupabaseClient,
+  req: Request
+): Promise<UserContext> {
+  const authHeader = req.headers.get('Authorization')
+  
+  // Check for session ID (anonymous user)
+  const sessionId = req.headers.get('x-session-id')
+  
+  if (authHeader?.startsWith('Bearer ')) {
+    try {
+      // Create separate auth client for user validation
+      const authClient = createAuthClient(req)
+      const { data: { user } } = await authClient.auth.getUser(
+        authHeader.replace('Bearer ', '')
+      )
+      
+      if (user) {
+        return {
+          type: 'authenticated',
+          userId: user.id
+        }
+      }
+    } catch (error) {
+      console.warn('Failed to authenticate user:', error)
+    }
+  }
+
+  // Handle anonymous user
+  if (sessionId) {
+    return {
+      type: 'anonymous',
+      sessionId: sessionId
+    }
+  }
+
+  throw new AppError(
+    'UNAUTHORIZED',
+    'Authentication required. Provide either Bearer token or x-session-id header',
+    401
+  )
+}
+
+/**
+ * Handles GET requests to retrieve study guides.
+ */
 async function handleGetStudyGuides(
-  studyGuideService: StudyGuideService, 
-  userId: string,
+  repository: StudyGuideRepository,
+  userContext: UserContext,
   req: Request
 ): Promise<Response> {
   const url = new URL(req.url)
   const savedOnly = url.searchParams.get('saved') === 'true'
-  const limit = parseInt(url.searchParams.get('limit') || '20')
-  const offset = parseInt(url.searchParams.get('offset') || '0')
-
-  const guides = await studyGuideService.getStudyGuides(userId, savedOnly, limit, offset);
-
-  return new Response(
-    JSON.stringify({
-      success: true,
-      data: {
-        guides: guides.map(formatStudyGuideResponse),
-        total: guides.length,
-        hasMore: guides.length === limit
-      }
-    }),
-    {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      status: 200,
-    }
+  const limit = Math.min(
+    parseInt(url.searchParams.get('limit') || '20'),
+    100
   )
+  const offset = Math.max(
+    parseInt(url.searchParams.get('offset') || '0'),
+    0
+  )
+
+  // Get user's study guides
+  const guides = await repository.getUserStudyGuides(userContext, {
+    savedOnly,
+    limit,
+    offset
+  })
+
+  const response: StudyGuideManagementApiResponse = {
+    success: true,
+    data: {
+      guides,
+      total: guides.length,
+      hasMore: guides.length === limit
+    }
+  }
+
+  return new Response(JSON.stringify(response), {
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    status: 200,
+  })
 }
 
+/**
+ * Handles POST requests to save/unsave study guides.
+ */
 async function handleSaveUnsaveGuide(
-  studyGuideService: StudyGuideService,
-  userId: string,
+  repository: StudyGuideRepository,
+  userContext: UserContext,
   req: Request
 ): Promise<Response> {
   const requestBody: SaveGuideRequest = await req.json()
-  
-  if (!requestBody.guide_id || !requestBody.action) {
-    throw new AppError('INVALID_REQUEST', 'guide_id and action are required')
-  }
 
-  if (!['save', 'unsave'].includes(requestBody.action)) {
-    throw new AppError('INVALID_REQUEST', 'action must be "save" or "unsave"')
-  }
-
-  if (!requestBody.guide_id || typeof requestBody.guide_id !== 'string') {
-    throw new AppError('INVALID_REQUEST', 'Invalid guide_id format')
-  }
+  // Validate request
+  validateSaveRequest(requestBody)
 
   const isSaved = requestBody.action === 'save'
 
-  const data = await studyGuideService.updateStudyGuide(userId, requestBody.guide_id, isSaved);
-
-  return new Response(
-    JSON.stringify({
-      success: true,
-      message: `Guide ${requestBody.action}d successfully`,
-      data: {
-        guide: formatStudyGuideResponse(data)
-      }
-    }),
-    {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      status: 200,
-    }
+  // Update save status
+  const updatedGuide = await repository.updateSaveStatus(
+    requestBody.guide_id,
+    isSaved,
+    userContext
   )
+
+  const response: StudyGuideManagementApiResponse = {
+    success: true,
+    data: {
+      guide: updatedGuide,
+      message: `Study guide ${requestBody.action}d successfully`
+    }
+  }
+
+  return new Response(JSON.stringify(response), {
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    status: 200,
+  })
 }
 
-function formatStudyGuideResponse(guide: any): StudyGuideResponse {
-  return {
-    id: guide.id,
-    input_type: guide.input_type,
-    input_value: guide.input_value,
-    input_value_hash: guide.input_value_hash,
-    summary: guide.summary,
-    interpretation: guide.interpretation || '',
-    context: guide.context,
-    related_verses: guide.related_verses || [],
-    reflection_questions: guide.reflection_questions || [],
-    prayer_points: guide.prayer_points || [],
-    language: guide.language || 'en',
-    is_saved: guide.is_saved || false,
-    created_at: guide.created_at,
-    updated_at: guide.updated_at
+/**
+ * Handles DELETE requests to remove study guides.
+ */
+async function handleDeleteGuide(
+  repository: StudyGuideRepository,
+  userContext: UserContext,
+  req: Request
+): Promise<Response> {
+  const url = new URL(req.url)
+  const guideId = url.searchParams.get('id')
+
+  if (!guideId) {
+    throw new AppError(
+      'INVALID_REQUEST',
+      'Guide ID is required as query parameter',
+      400
+    )
+  }
+
+  // Note: In cached architecture, we only delete the user's relationship
+  // to the content, not the cached content itself
+  await repository.deleteUserGuideRelationship(guideId, userContext)
+
+  const response: StudyGuideManagementApiResponse = {
+    success: true,
+    data: {
+      message: 'Study guide removed successfully'
+    }
+  }
+
+  return new Response(JSON.stringify(response), {
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    status: 200,
+  })
+}
+
+/**
+ * Validates save/unsave request.
+ */
+function validateSaveRequest(request: SaveGuideRequest): void {
+  if (!request.guide_id || typeof request.guide_id !== 'string') {
+    throw new AppError(
+      'INVALID_REQUEST',
+      'guide_id is required and must be a string',
+      400
+    )
+  }
+
+  if (!request.action || !['save', 'unsave'].includes(request.action)) {
+    throw new AppError(
+      'INVALID_REQUEST',
+      'action must be either "save" or "unsave"',
+      400
+    )
+  }
+}
+
+/**
+ * Extension to StudyGuideRepository for deletion operations.
+ */
+declare module '../_shared/repositories/study-guide-repository.ts' {
+  interface StudyGuideRepository {
+    deleteUserGuideRelationship(guideId: string, userContext: UserContext): Promise<void>
+  }
+}
+
+// Add the delete method to the repository
+StudyGuideRepository.prototype.deleteUserGuideRelationship = async function(
+  guideId: string,
+  userContext: UserContext
+): Promise<void> {
+  if (userContext.type === 'authenticated') {
+    const { error } = await this.supabase
+      .from('user_study_guides_new')
+      .delete()
+      .eq('study_guide_id', guideId)
+      .eq('user_id', userContext.userId!)
+
+    if (error) {
+      throw new AppError(
+        'DATABASE_ERROR',
+        `Failed to delete user study guide relationship: ${error.message}`,
+        500
+      )
+    }
+  } else {
+    const { error } = await this.supabase
+      .from('anonymous_study_guides_new')
+      .delete()
+      .eq('study_guide_id', guideId)
+      .eq('session_id', userContext.sessionId!)
+
+    if (error) {
+      throw new AppError(
+        'DATABASE_ERROR',
+        `Failed to delete anonymous study guide relationship: ${error.message}`,
+        500
+      )
+    }
   }
 }
