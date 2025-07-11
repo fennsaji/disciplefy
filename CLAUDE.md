@@ -631,6 +631,8 @@ Fixes #issue-number
 - **Better interaction** - Enhanced button sizing and spacing for easier tapping
 - **Performance optimization** - Reduced unnecessary API calls through smart caching
 
----
 
-📝 **This refactor successfully transformed the Daily Verse component from a manual-load system to an elegant, auto-loading card with improved visual design and user experience.**
+## 🧠 Memories and Development Notes
+
+- Always use `cd frontend && sh scripts/run_web_local.sh` for running client web
+- Always use mcp whenever applicable

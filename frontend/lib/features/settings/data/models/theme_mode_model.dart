@@ -16,36 +16,34 @@ class ThemeModeModel extends ThemeModeEntity {
 
   Map<String, dynamic> toJson() => _$ThemeModeModelToJson(this);
 
-  factory ThemeModeModel.fromEntity(ThemeModeEntity entity) {
-    return ThemeModeModel(
+  factory ThemeModeModel.fromEntity(ThemeModeEntity entity) => ThemeModeModel(
       mode: entity.mode,
       isSystemMode: entity.isSystemMode,
       isDarkMode: entity.isDarkMode,
     );
-  }
 
   factory ThemeModeModel.fromString(String themeString) {
     switch (themeString) {
       case 'light':
-        return ThemeModeModel(
+        return const ThemeModeModel(
           mode: AppThemeMode.light,
           isSystemMode: false,
           isDarkMode: false,
         );
       case 'dark':
-        return ThemeModeModel(
+        return const ThemeModeModel(
           mode: AppThemeMode.dark,
           isSystemMode: false,
           isDarkMode: true,
         );
       case 'system':
-        return ThemeModeModel(
+        return const ThemeModeModel(
           mode: AppThemeMode.system,
           isSystemMode: true,
           isDarkMode: false,
         );
       default:
-        return ThemeModeModel(
+        return const ThemeModeModel(
           mode: AppThemeMode.light,
           isSystemMode: false,
           isDarkMode: false,

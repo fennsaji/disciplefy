@@ -52,20 +52,16 @@ class DailyVerseBloc extends Bloc<DailyVerseEvent, DailyVerseState> {
       result.fold(
         (failure) => emit(DailyVerseError(
           message: failure.message,
-          hasCachedFallback: false,
         )),
         (verse) => emit(DailyVerseLoaded(
           verse: verse,
           currentLanguage: preferredLanguage,
           preferredLanguage: preferredLanguage,
-          isFromCache: false,
-          isServiceAvailable: true,
         )),
       );
     } catch (e) {
       emit(DailyVerseError(
         message: 'Failed to load today\'s verse: $e',
-        hasCachedFallback: false,
       ));
     }
   }
@@ -91,20 +87,16 @@ class DailyVerseBloc extends Bloc<DailyVerseEvent, DailyVerseState> {
       result.fold(
         (failure) => emit(DailyVerseError(
           message: failure.message,
-          hasCachedFallback: false,
         )),
         (verse) => emit(DailyVerseLoaded(
           verse: verse,
           currentLanguage: preferredLanguage,
           preferredLanguage: preferredLanguage,
-          isFromCache: false,
-          isServiceAvailable: true,
         )),
       );
     } catch (e) {
       emit(DailyVerseError(
         message: 'Failed to load verse for ${event.date}: $e',
-        hasCachedFallback: false,
       ));
     }
   }
@@ -150,7 +142,6 @@ class DailyVerseBloc extends Bloc<DailyVerseEvent, DailyVerseState> {
     } catch (e) {
       emit(DailyVerseError(
         message: 'Failed to save language preference: $e',
-        hasCachedFallback: false,
       ));
     }
   }
@@ -172,7 +163,6 @@ class DailyVerseBloc extends Bloc<DailyVerseEvent, DailyVerseState> {
     // For now, emit offline state with fallback message
     emit(const DailyVerseError(
       message: 'No cached verse available. Please check your internet connection.',
-      hasCachedFallback: false,
     ));
   }
 
@@ -187,14 +177,12 @@ class DailyVerseBloc extends Bloc<DailyVerseEvent, DailyVerseState> {
       result.fold(
         (failure) => emit(DailyVerseError(
           message: 'Failed to get cache stats: ${failure.message}',
-          hasCachedFallback: false,
         )),
         (stats) => emit(DailyVerseCacheStats(stats: stats)),
       );
     } catch (e) {
       emit(DailyVerseError(
         message: 'Failed to get cache stats: $e',
-        hasCachedFallback: false,
       ));
     }
   }
@@ -210,14 +198,12 @@ class DailyVerseBloc extends Bloc<DailyVerseEvent, DailyVerseState> {
       result.fold(
         (failure) => emit(DailyVerseError(
           message: 'Failed to clear cache: ${failure.message}',
-          hasCachedFallback: false,
         )),
         (_) => emit(const DailyVerseCacheCleared()),
       );
     } catch (e) {
       emit(DailyVerseError(
         message: 'Failed to clear cache: $e',
-        hasCachedFallback: false,
       ));
     }
   }

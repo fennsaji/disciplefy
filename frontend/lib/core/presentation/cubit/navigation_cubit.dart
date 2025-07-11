@@ -160,17 +160,11 @@ class NavigationCubit extends Cubit<NavigationState> {
   }
 
   /// Check if given route corresponds to a main navigation tab
-  bool isMainNavigationRoute(String route) {
-    return routeToIndex.containsKey(route);
-  }
+  bool isMainNavigationRoute(String route) => routeToIndex.containsKey(route);
 
   /// Get tab index for route (returns null if not a main nav route)
-  int? getTabIndexForRoute(String route) {
-    return routeToIndex[route];
-  }
+  int? getTabIndexForRoute(String route) => routeToIndex[route];
 
   /// Get route name for tab index
-  String? getRouteForTabIndex(int index) {
-    return indexToRoute[index];
-  }
+  String? getRouteForTabIndex(int index) => indexToRoute[index];
 }

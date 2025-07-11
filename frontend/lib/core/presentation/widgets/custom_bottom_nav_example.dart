@@ -24,8 +24,7 @@ class _CustomBottomNavigationExampleState extends State<CustomBottomNavigationEx
   ];
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
+  Widget build(BuildContext context) => Scaffold(
       backgroundColor: const Color(0xFF1E1E1E),
       body: IndexedStack(
         index: _selectedIndex,
@@ -33,10 +32,8 @@ class _CustomBottomNavigationExampleState extends State<CustomBottomNavigationEx
       ),
       bottomNavigationBar: _buildCustomBottomNavigationBar(),
     );
-  }
 
-  Widget _buildCustomBottomNavigationBar() {
-    return Container(
+  Widget _buildCustomBottomNavigationBar() => Container(
       decoration: const BoxDecoration(
         color: Color(0xFF1E1E1E),
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
@@ -98,7 +95,6 @@ class _CustomBottomNavigationExampleState extends State<CustomBottomNavigationEx
         ),
       ),
     );
-  }
 
   void _onItemTapped(int index) {
     if (index != _selectedIndex) {
@@ -138,8 +134,7 @@ class _FixedAppShellState extends State<FixedAppShell> {
   ];
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
+  Widget build(BuildContext context) => Scaffold(
       backgroundColor: const Color(0xFF1E1E1E),
       extendBody: false, // Prevent body from extending behind bottom nav
       body: IndexedStack(
@@ -148,10 +143,8 @@ class _FixedAppShellState extends State<FixedAppShell> {
       ),
       bottomNavigationBar: _buildBottomNavigationBar(),
     );
-  }
 
-  Widget _buildBottomNavigationBar() {
-    return Container(
+  Widget _buildBottomNavigationBar() => Container(
       decoration: const BoxDecoration(
         color: Color(0xFF1E1E1E),
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
@@ -182,7 +175,6 @@ class _FixedAppShellState extends State<FixedAppShell> {
         ),
       ),
     );
-  }
 
   Widget _buildNavItem(int index, IconData icon, IconData activeIcon, String label) {
     final isSelected = _selectedIndex == index;

@@ -64,19 +64,13 @@ class AuthService {
   }
 
   /// Retrieves the stored auth token.
-  static Future<String?> getAuthToken() async {
-    return await _secureStorage.read(key: _authTokenKey);
-  }
+  static Future<String?> getAuthToken() async => await _secureStorage.read(key: _authTokenKey);
 
   /// Retrieves the user type (guest, google, etc.).
-  static Future<String?> getUserType() async {
-    return await _secureStorage.read(key: _userTypeKey);
-  }
+  static Future<String?> getUserType() async => await _secureStorage.read(key: _userTypeKey);
 
   /// Retrieves the user ID.
-  static Future<String?> getUserId() async {
-    return await _secureStorage.read(key: _userIdKey);
-  }
+  static Future<String?> getUserId() async => await _secureStorage.read(key: _userIdKey);
 
   /// Checks if onboarding has been completed.
   static Future<bool> isOnboardingCompleted() async {

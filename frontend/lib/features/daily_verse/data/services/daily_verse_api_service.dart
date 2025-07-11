@@ -22,9 +22,7 @@ class DailyVerseApiService {
       : _httpClient = httpClient ?? http.Client();
 
   /// Get today's daily verse
-  Future<Either<Failure, DailyVerseEntity>> getTodaysVerse() async {
-    return getDailyVerse(null);
-  }
+  Future<Either<Failure, DailyVerseEntity>> getTodaysVerse() async => getDailyVerse(null);
 
   /// Get daily verse for a specific date
   Future<Either<Failure, DailyVerseEntity>> getDailyVerse(DateTime? date) async {
@@ -46,11 +44,11 @@ class DailyVerseApiService {
       if (response.statusCode == 200) {
         return _parseVerseResponse(response.body);
       } else if (response.statusCode == 401) {
-        return Left(AuthenticationFailure(
+        return const Left(AuthenticationFailure(
           message: 'Authentication required to access daily verse',
         ));
       } else if (response.statusCode == 404) {
-        return Left(ServerFailure(
+        return const Left(ServerFailure(
           message: 'Daily verse not found for the requested date',
         ));
       } else {
@@ -80,7 +78,7 @@ class DailyVerseApiService {
       final Map<String, dynamic> jsonData = json.decode(responseBody);
       
       if (!jsonData.containsKey('success') || !jsonData.containsKey('data')) {
-        return Left(ServerFailure(
+        return const Left(ServerFailure(
           message: 'Invalid response format from daily verse API',
         ));
       }

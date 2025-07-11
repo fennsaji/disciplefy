@@ -146,14 +146,10 @@ extension BlocEmitterDebugExtension<T> on Emitter<T> {
     T state, {
     String? eventName,
     String? blocName,
-  }) {
-    return BlocDebugHelper.safeEmitAsync(this, state, eventName: eventName, blocName: blocName);
-  }
+  }) => BlocDebugHelper.safeEmitAsync(this, state, eventName: eventName, blocName: blocName);
 
   /// Validates that this emitter is still valid
-  bool isValid({String? eventName, String? blocName}) {
-    return BlocDebugHelper.validateEmitter(this, eventName: eventName, blocName: blocName);
-  }
+  bool isValid({String? eventName, String? blocName}) => BlocDebugHelper.validateEmitter(this, eventName: eventName, blocName: blocName);
 }
 
 /// Example usage:

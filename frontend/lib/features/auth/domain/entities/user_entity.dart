@@ -50,8 +50,7 @@ class UserEntity extends Equatable {
     bool? isAnonymous,
     DateTime? createdAt,
     DateTime? lastSignInAt,
-  }) {
-    return UserEntity(
+  }) => UserEntity(
       id: id ?? this.id,
       email: email ?? this.email,
       name: name ?? this.name,
@@ -63,5 +62,4 @@ class UserEntity extends Equatable {
       createdAt: createdAt ?? this.createdAt,
       lastSignInAt: lastSignInAt ?? this.lastSignInAt,
     );
-  }
 }

@@ -85,7 +85,7 @@ class _StudyGuideScreenState extends State<StudyGuideScreen> {
         elevation: 0,
         leading: IconButton(
           onPressed: () => context.pop(),
-          icon: Icon(
+          icon: const Icon(
             Icons.arrow_back_ios,
             color: AppTheme.primaryColor,
           ),
@@ -102,7 +102,7 @@ class _StudyGuideScreenState extends State<StudyGuideScreen> {
         actions: [
           IconButton(
             onPressed: _shareStudyGuide,
-            icon: Icon(
+            icon: const Icon(
               Icons.share_outlined,
               color: AppTheme.primaryColor,
             ),
@@ -142,8 +142,7 @@ class _StudyGuideScreenState extends State<StudyGuideScreen> {
     );
   }
 
-  Widget _buildErrorScreen() {
-    return Scaffold(
+  Widget _buildErrorScreen() => Scaffold(
       backgroundColor: AppTheme.backgroundColor,
       appBar: AppBar(
         backgroundColor: AppTheme.backgroundColor,
@@ -228,10 +227,8 @@ class _StudyGuideScreenState extends State<StudyGuideScreen> {
         ),
       ),
     );
-  }
 
-  Widget _buildStudyContent() {
-    return Column(
+  Widget _buildStudyContent() => Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // Summary Section
@@ -295,10 +292,8 @@ class _StudyGuideScreenState extends State<StudyGuideScreen> {
         ),
       ],
     );
-  }
 
-  Widget _buildNotesSection() {
-    return Column(
+  Widget _buildNotesSection() => Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
@@ -353,10 +348,8 @@ class _StudyGuideScreenState extends State<StudyGuideScreen> {
         ),
       ],
     );
-  }
 
-  Widget _buildBottomActions() {
-    return Container(
+  Widget _buildBottomActions() => Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         color: AppTheme.surfaceColor,
@@ -452,7 +445,6 @@ class _StudyGuideScreenState extends State<StudyGuideScreen> {
         ],
       ),
     );
-  }
 
   String _getDisplayTitle() {
     if (_currentStudyGuide.inputType == 'scripture') {
@@ -476,9 +468,9 @@ class _StudyGuideScreenState extends State<StudyGuideScreen> {
     // Check if already saving
     if (_isSaving) return;
 
-    // Check authentication
-    final isAuthenticated = await AuthService.isAuthenticated();
-    if (!isAuthenticated) {
+    // Check authentication - must be fully authenticated (not guest)
+    final isFullyAuthenticated = await AuthService.isFullyAuthenticated();
+    if (!isFullyAuthenticated) {
       _showAuthenticationRequiredDialog();
       return;
     }
@@ -681,8 +673,7 @@ class _StudySection extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
-    return Container(
+  Widget build(BuildContext context) => Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: AppTheme.surfaceColor,
@@ -760,7 +751,6 @@ class _StudySection extends StatelessWidget {
         ],
       ),
     );
-  }
 
   void _copyToClipboard(BuildContext context, String text) {
     Clipboard.setData(ClipboardData(text: text));

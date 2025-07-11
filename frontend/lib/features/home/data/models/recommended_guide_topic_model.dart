@@ -50,8 +50,7 @@ class RecommendedGuideTopicModel extends RecommendedGuideTopic {
   Map<String, dynamic> toJson() => _$RecommendedGuideTopicModelToJson(this);
 
   /// Converts this model to a domain entity.
-  RecommendedGuideTopic toEntity() {
-    return RecommendedGuideTopic(
+  RecommendedGuideTopic toEntity() => RecommendedGuideTopic(
       id: id,
       title: title,
       description: description,
@@ -63,11 +62,9 @@ class RecommendedGuideTopicModel extends RecommendedGuideTopic {
       isFeatured: isFeatured,
       createdAt: createdAt,
     );
-  }
 
   /// Creates a model from a domain entity.
-  factory RecommendedGuideTopicModel.fromEntity(RecommendedGuideTopic entity) {
-    return RecommendedGuideTopicModel(
+  factory RecommendedGuideTopicModel.fromEntity(RecommendedGuideTopic entity) => RecommendedGuideTopicModel(
       id: entity.id,
       title: entity.title,
       description: entity.description,
@@ -79,7 +76,6 @@ class RecommendedGuideTopicModel extends RecommendedGuideTopic {
       isFeatured: entity.isFeatured,
       createdAt: entity.createdAt,
     );
-  }
 
 }
 
@@ -113,8 +109,6 @@ class RecommendedGuideTopicsResponse {
   Map<String, dynamic> toJson() => _$RecommendedGuideTopicsResponseToJson(this);
 
   /// Converts topics to domain entities.
-  List<RecommendedGuideTopic> toEntities() {
-    return topics.map((model) => model.toEntity()).toList();
-  }
+  List<RecommendedGuideTopic> toEntities() => topics.map((model) => model.toEntity()).toList();
 
 }

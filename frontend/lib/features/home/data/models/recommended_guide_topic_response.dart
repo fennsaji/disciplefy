@@ -23,8 +23,7 @@ class RecommendedGuideTopicResponse {
   });
 
   /// Creates a [RecommendedGuideTopicResponse] from JSON.
-  factory RecommendedGuideTopicResponse.fromJson(Map<String, dynamic> json) {
-    return RecommendedGuideTopicResponse(
+  factory RecommendedGuideTopicResponse.fromJson(Map<String, dynamic> json) => RecommendedGuideTopicResponse(
       id: json['id'] ?? '',
       title: json['title'] ?? '',
       description: json['description'] ?? '',
@@ -34,11 +33,9 @@ class RecommendedGuideTopicResponse {
       category: json['category'] ?? '',
       tags: List<String>.from(json['tags'] ?? []),
     );
-  }
 
   /// Converts this response to a domain entity.
-  RecommendedGuideTopic toEntity() {
-    return RecommendedGuideTopic(
+  RecommendedGuideTopic toEntity() => RecommendedGuideTopic(
       id: id,
       title: title,
       description: description,
@@ -50,7 +47,6 @@ class RecommendedGuideTopicResponse {
       isFeatured: false, // This info is not in the API response
       createdAt: DateTime.now(), // This info is not in the API response
     );
-  }
 
   /// Parses duration string like "45 minutes" to integer minutes
   int _parseDuration(String duration) {
@@ -71,17 +67,13 @@ class RecommendedGuideTopicsApiResponse {
   });
 
   /// Creates a [RecommendedGuideTopicsApiResponse] from JSON.
-  factory RecommendedGuideTopicsApiResponse.fromJson(Map<String, dynamic> json) {
-    return RecommendedGuideTopicsApiResponse(
+  factory RecommendedGuideTopicsApiResponse.fromJson(Map<String, dynamic> json) => RecommendedGuideTopicsApiResponse(
       success: json['success'] ?? false,
       data: RecommendedGuideTopicsData.fromJson(json['data'] ?? {}),
     );
-  }
 
   /// Converts topics to domain entities.
-  List<RecommendedGuideTopic> toEntities() {
-    return data.topics.map((topic) => topic.toEntity()).toList();
-  }
+  List<RecommendedGuideTopic> toEntities() => data.topics.map((topic) => topic.toEntity()).toList();
 }
 
 /// Data section of the API response

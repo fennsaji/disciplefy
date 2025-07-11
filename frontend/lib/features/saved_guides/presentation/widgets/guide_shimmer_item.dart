@@ -38,8 +38,7 @@ class _GuideShimmerItemState extends State<GuideShimmerItem>
   }
 
   @override
-  Widget build(BuildContext context) {
-    return AnimatedBuilder(
+  Widget build(BuildContext context) => AnimatedBuilder(
       animation: _animation,
       builder: (context, child) {
         return Card(
@@ -155,5 +154,4 @@ class _GuideShimmerItemState extends State<GuideShimmerItem>
         );
       },
     );
-  }
 }

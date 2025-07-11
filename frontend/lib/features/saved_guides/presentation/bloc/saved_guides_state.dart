@@ -27,12 +27,10 @@ class SavedGuidesLoaded extends SavedGuidesState {
   SavedGuidesLoaded copyWith({
     List<SavedGuideEntity>? savedGuides,
     List<SavedGuideEntity>? recentGuides,
-  }) {
-    return SavedGuidesLoaded(
+  }) => SavedGuidesLoaded(
       savedGuides: savedGuides ?? this.savedGuides,
       recentGuides: recentGuides ?? this.recentGuides,
     );
-  }
 }
 
 class SavedGuidesError extends SavedGuidesState {
@@ -92,8 +90,7 @@ class SavedGuidesApiLoaded extends SavedGuidesState {
     bool? hasMoreSaved,
     bool? hasMoreRecent,
     int? currentTab,
-  }) {
-    return SavedGuidesApiLoaded(
+  }) => SavedGuidesApiLoaded(
       savedGuides: savedGuides ?? this.savedGuides,
       recentGuides: recentGuides ?? this.recentGuides,
       isLoadingSaved: isLoadingSaved ?? this.isLoadingSaved,
@@ -102,7 +99,6 @@ class SavedGuidesApiLoaded extends SavedGuidesState {
       hasMoreRecent: hasMoreRecent ?? this.hasMoreRecent,
       currentTab: currentTab ?? this.currentTab,
     );
-  }
 }
 
 class SavedGuidesTabLoading extends SavedGuidesState {
@@ -116,4 +112,17 @@ class SavedGuidesTabLoading extends SavedGuidesState {
 
   @override
   List<Object?> get props => [tabIndex, isRefresh];
+}
+
+class SavedGuidesAuthRequired extends SavedGuidesState {
+  final String message;
+  final bool isForSavedGuides;
+
+  const SavedGuidesAuthRequired({
+    required this.message,
+    required this.isForSavedGuides,
+  });
+
+  @override
+  List<Object?> get props => [message, isForSavedGuides];
 }

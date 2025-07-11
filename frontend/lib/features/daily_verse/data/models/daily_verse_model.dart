@@ -22,13 +22,11 @@ class DailyVerseModel {
   Map<String, dynamic> toJson() => _$DailyVerseModelToJson(this);
 
   /// Convert to domain entity
-  DailyVerseEntity toEntity() {
-    return DailyVerseEntity(
+  DailyVerseEntity toEntity() => DailyVerseEntity(
       reference: reference,
       translations: translations.toEntity(),
       date: DateTime.parse(date),
     );
-  }
 }
 
 @JsonSerializable()
@@ -49,13 +47,11 @@ class DailyVerseTranslationsModel {
   Map<String, dynamic> toJson() => _$DailyVerseTranslationsModelToJson(this);
 
   /// Convert to domain entity
-  DailyVerseTranslations toEntity() {
-    return DailyVerseTranslations(
+  DailyVerseTranslations toEntity() => DailyVerseTranslations(
       esv: esv,
       hindi: hi,
       malayalam: ml,
     );
-  }
 }
 
 @JsonSerializable()

@@ -18,32 +18,26 @@ class AppSettingsModel extends AppSettingsEntity {
     required super.appVersion,
   }) : super(themeMode: themeMode);
 
-  static Map<String, dynamic> _themeModeToJson(ThemeModeEntity themeMode) {
-    return ThemeModeModel.fromEntity(themeMode).toJson();
-  }
+  static Map<String, dynamic> _themeModeToJson(ThemeModeEntity themeMode) => ThemeModeModel.fromEntity(themeMode).toJson();
 
   factory AppSettingsModel.fromJson(Map<String, dynamic> json) =>
       _$AppSettingsModelFromJson(json);
 
   Map<String, dynamic> toJson() => _$AppSettingsModelToJson(this);
 
-  factory AppSettingsModel.fromEntity(AppSettingsEntity entity) {
-    return AppSettingsModel(
+  factory AppSettingsModel.fromEntity(AppSettingsEntity entity) => AppSettingsModel(
       themeMode: ThemeModeModel.fromEntity(entity.themeMode),
       language: entity.language,
       notificationsEnabled: entity.notificationsEnabled,
       appVersion: entity.appVersion,
     );
-  }
 
-  factory AppSettingsModel.defaultSettings() {
-    return AppSettingsModel(
+  factory AppSettingsModel.defaultSettings() => AppSettingsModel(
       themeMode: ThemeModeModel.fromEntity(ThemeModeEntity.light()),
       language: 'en',
       notificationsEnabled: true,
       appVersion: '1.0.0',
     );
-  }
 
   @override
   AppSettingsModel copyWith({
@@ -51,12 +45,10 @@ class AppSettingsModel extends AppSettingsEntity {
     String? language,
     bool? notificationsEnabled,
     String? appVersion,
-  }) {
-    return AppSettingsModel(
+  }) => AppSettingsModel(
       themeMode: themeMode != null ? ThemeModeModel.fromEntity(themeMode) : this.themeMode,
       language: language ?? this.language,
       notificationsEnabled: notificationsEnabled ?? this.notificationsEnabled,
       appVersion: appVersion ?? this.appVersion,
     );
-  }
 }

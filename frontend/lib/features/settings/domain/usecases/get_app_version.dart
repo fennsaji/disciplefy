@@ -9,7 +9,5 @@ class GetAppVersion implements UseCase<String, NoParams> {
   const GetAppVersion(this.repository);
 
   @override
-  Future<Either<Failure, String>> call(NoParams params) async {
-    return await repository.getAppVersion();
-  }
+  Future<Either<Failure, String>> call(NoParams params) async => await repository.getAppVersion();
 }

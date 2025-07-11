@@ -51,8 +51,7 @@ class StudyResultPage extends StatelessWidget {
   }
 
   /// Builds the error state when no study guide is available.
-  Widget _buildErrorState(BuildContext context, AppLocalizations l10n) {
-    return Center(
+  Widget _buildErrorState(BuildContext context, AppLocalizations l10n) => Center(
       child: Padding(
         padding: const EdgeInsets.all(AppConstants.LARGE_PADDING),
         child: Column(
@@ -81,11 +80,9 @@ class StudyResultPage extends StatelessWidget {
         ),
       ),
     );
-  }
 
   /// Builds the main study guide content display.
-  Widget _buildStudyGuideContent(BuildContext context, AppLocalizations l10n) {
-    return Column(
+  Widget _buildStudyGuideContent(BuildContext context, AppLocalizations l10n) => Column(
       children: [
         // Study guide header
         _buildStudyGuideHeader(context),
@@ -109,11 +106,9 @@ class StudyResultPage extends StatelessWidget {
         _buildActionButtons(context, l10n),
       ],
     );
-  }
 
   /// Builds the study guide header with title and metadata.
-  Widget _buildStudyGuideHeader(BuildContext context) {
-    return Container(
+  Widget _buildStudyGuideHeader(BuildContext context) => Container(
       width: double.infinity,
       padding: const EdgeInsets.all(AppConstants.DEFAULT_PADDING),
       decoration: BoxDecoration(
@@ -165,11 +160,9 @@ class StudyResultPage extends StatelessWidget {
         ),
       ),
     );
-  }
 
   /// Builds a text section with title and content.
-  Widget _buildSection(BuildContext context, String title, String content) {
-    return Column(
+  Widget _buildSection(BuildContext context, String title, String content) => Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const SizedBox(height: AppConstants.LARGE_PADDING),
@@ -192,11 +185,9 @@ class StudyResultPage extends StatelessWidget {
         ),
       ],
     );
-  }
 
   /// Builds a list section with title and bullet points.
-  Widget _buildListSection(BuildContext context, String title, List<String> items) {
-    return Column(
+  Widget _buildListSection(BuildContext context, String title, List<String> items) => Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const SizedBox(height: AppConstants.LARGE_PADDING),
@@ -239,11 +230,9 @@ class StudyResultPage extends StatelessWidget {
         ),
       ],
     );
-  }
 
   /// Builds the action buttons at the bottom.
-  Widget _buildActionButtons(BuildContext context, AppLocalizations l10n) {
-    return Container(
+  Widget _buildActionButtons(BuildContext context, AppLocalizations l10n) => Container(
       padding: const EdgeInsets.all(AppConstants.DEFAULT_PADDING),
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
@@ -275,7 +264,6 @@ class StudyResultPage extends StatelessWidget {
         ),
       ),
     );
-  }
 
   /// Shares the study guide content.
   void _shareStudyGuide(BuildContext context) {
@@ -283,9 +271,9 @@ class StudyResultPage extends StatelessWidget {
       final content = _formatStudyGuideForSharing(studyGuide!);
       Clipboard.setData(ClipboardData(text: content));
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Study guide copied to clipboard'),
-          duration: const Duration(seconds: 2),
+        const SnackBar(
+          content: Text('Study guide copied to clipboard'),
+          duration: Duration(seconds: 2),
         ),
       );
     }

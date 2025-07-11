@@ -5,14 +5,9 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../features/onboarding/presentation/pages/onboarding_screen.dart';
 import '../../features/onboarding/presentation/pages/onboarding_language_page.dart';
 import '../../features/onboarding/presentation/pages/onboarding_purpose_page.dart';
-import '../../features/home/presentation/pages/home_screen.dart';
-import '../../features/study_generation/presentation/pages/study_input_page.dart';
-import '../../features/study_generation/presentation/pages/generate_study_screen.dart';
 import '../../features/study_generation/presentation/pages/study_guide_screen.dart';
 import '../../features/study_generation/presentation/pages/study_result_page.dart';
 import '../../features/study_generation/domain/entities/study_guide.dart';
-import '../../features/settings/presentation/pages/settings_screen.dart';
-import '../../features/saved_guides/presentation/pages/saved_screen.dart';
 import '../../features/auth/presentation/pages/login_screen.dart';
 import '../../features/auth/presentation/pages/auth_callback_page.dart';
 import '../presentation/widgets/app_shell.dart';
@@ -37,6 +32,7 @@ class AppRouter {
   static final GoRouter router = GoRouter(
     initialLocation: _getInitialRoute(),
     redirect: (context, state) {
+      // Use Supabase for authentication check (primary method)
       final user = Supabase.instance.client.auth.currentUser;
       final isAuthenticated = user != null;
       final currentPath = state.uri.path;

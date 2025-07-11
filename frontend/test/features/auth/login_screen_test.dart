@@ -24,8 +24,7 @@ void main() {
     mockGoRouter = MockGoRouter();
   });
 
-  Widget createTestWidget() {
-    return MaterialApp(
+  Widget createTestWidget() => MaterialApp(
       theme: ThemeData(
         primarySwatch: Colors.blue,
         colorScheme: ColorScheme.fromSeed(seedColor: AppTheme.primaryColor),
@@ -35,13 +34,12 @@ void main() {
         child: const LoginScreen(),
       ),
     );
-  }
 
   group('LoginScreen Widget Tests', () {
     testWidgets('should display welcome text and sign-in buttons', (tester) async {
       // Arrange
-      when(mockAuthBloc.state).thenReturn(auth_states.UnauthenticatedState());
-      when(mockAuthBloc.stream).thenAnswer((_) => Stream.value(auth_states.UnauthenticatedState()));
+      when(mockAuthBloc.state).thenReturn(const auth_states.UnauthenticatedState());
+      when(mockAuthBloc.stream).thenAnswer((_) => Stream.value(const auth_states.UnauthenticatedState()));
 
       // Act
       await tester.pumpWidget(createTestWidget());
@@ -56,8 +54,8 @@ void main() {
 
     testWidgets('should show loading state when authentication is in progress', (tester) async {
       // Arrange
-      when(mockAuthBloc.state).thenReturn(auth_states.AuthLoadingState());
-      when(mockAuthBloc.stream).thenAnswer((_) => Stream.value(auth_states.AuthLoadingState()));
+      when(mockAuthBloc.state).thenReturn(const auth_states.AuthLoadingState());
+      when(mockAuthBloc.stream).thenAnswer((_) => Stream.value(const auth_states.AuthLoadingState()));
 
       // Act
       await tester.pumpWidget(createTestWidget());
@@ -82,8 +80,8 @@ void main() {
 
     testWidgets('should trigger Google sign-in when Google button is tapped', (tester) async {
       // Arrange
-      when(mockAuthBloc.state).thenReturn(auth_states.UnauthenticatedState());
-      when(mockAuthBloc.stream).thenAnswer((_) => Stream.value(auth_states.UnauthenticatedState()));
+      when(mockAuthBloc.state).thenReturn(const auth_states.UnauthenticatedState());
+      when(mockAuthBloc.stream).thenAnswer((_) => Stream.value(const auth_states.UnauthenticatedState()));
 
       // Act
       await tester.pumpWidget(createTestWidget());
@@ -96,8 +94,8 @@ void main() {
 
     testWidgets('should trigger anonymous sign-in when Guest button is tapped', (tester) async {
       // Arrange
-      when(mockAuthBloc.state).thenReturn(auth_states.UnauthenticatedState());
-      when(mockAuthBloc.stream).thenAnswer((_) => Stream.value(auth_states.UnauthenticatedState()));
+      when(mockAuthBloc.state).thenReturn(const auth_states.UnauthenticatedState());
+      when(mockAuthBloc.stream).thenAnswer((_) => Stream.value(const auth_states.UnauthenticatedState()));
 
       // Act
       await tester.pumpWidget(createTestWidget());
@@ -111,10 +109,10 @@ void main() {
     testWidgets('should show error snackbar when authentication fails', (tester) async {
       // Arrange
       const String errorMessage = 'Authentication failed';
-      when(mockAuthBloc.state).thenReturn(auth_states.UnauthenticatedState());
+      when(mockAuthBloc.state).thenReturn(const auth_states.UnauthenticatedState());
       when(mockAuthBloc.stream).thenAnswer((_) => Stream.fromIterable([
-        auth_states.UnauthenticatedState(),
-        auth_states.AuthErrorState(message: errorMessage),
+        const auth_states.UnauthenticatedState(),
+        const auth_states.AuthErrorState(message: errorMessage),
       ]));
 
       // Act
@@ -129,10 +127,10 @@ void main() {
     testWidgets('should show neutral snackbar when authentication is canceled', (tester) async {
       // Arrange
       const String cancelMessage = 'Google login canceled';
-      when(mockAuthBloc.state).thenReturn(auth_states.UnauthenticatedState());
+      when(mockAuthBloc.state).thenReturn(const auth_states.UnauthenticatedState());
       when(mockAuthBloc.stream).thenAnswer((_) => Stream.fromIterable([
-        auth_states.UnauthenticatedState(),
-        auth_states.AuthErrorState(message: cancelMessage),
+        const auth_states.UnauthenticatedState(),
+        const auth_states.AuthErrorState(message: cancelMessage),
       ]));
 
       // Act
@@ -147,12 +145,11 @@ void main() {
     testWidgets('should navigate to home when authentication succeeds', (tester) async {
       // Arrange
       final mockUser = MockUser();
-      when(mockAuthBloc.state).thenReturn(auth_states.UnauthenticatedState());
+      when(mockAuthBloc.state).thenReturn(const auth_states.UnauthenticatedState());
       when(mockAuthBloc.stream).thenAnswer((_) => Stream.fromIterable([
-        auth_states.UnauthenticatedState(),
+        const auth_states.UnauthenticatedState(),
         auth_states.AuthenticatedState(
           user: mockUser,
-          profile: null,
           isAnonymous: false,
         ),
       ]));
@@ -189,8 +186,8 @@ void main() {
 
     testWidgets('should display Google logo in Google sign-in button', (tester) async {
       // Arrange
-      when(mockAuthBloc.state).thenReturn(auth_states.UnauthenticatedState());
-      when(mockAuthBloc.stream).thenAnswer((_) => Stream.value(auth_states.UnauthenticatedState()));
+      when(mockAuthBloc.state).thenReturn(const auth_states.UnauthenticatedState());
+      when(mockAuthBloc.stream).thenAnswer((_) => Stream.value(const auth_states.UnauthenticatedState()));
 
       // Act
       await tester.pumpWidget(createTestWidget());
@@ -209,8 +206,8 @@ void main() {
 
     testWidgets('should display privacy policy text', (tester) async {
       // Arrange
-      when(mockAuthBloc.state).thenReturn(auth_states.UnauthenticatedState());
-      when(mockAuthBloc.stream).thenAnswer((_) => Stream.value(auth_states.UnauthenticatedState()));
+      when(mockAuthBloc.state).thenReturn(const auth_states.UnauthenticatedState());
+      when(mockAuthBloc.stream).thenAnswer((_) => Stream.value(const auth_states.UnauthenticatedState()));
 
       // Act
       await tester.pumpWidget(createTestWidget());
@@ -224,8 +221,8 @@ void main() {
 
     testWidgets('should display app logo', (tester) async {
       // Arrange
-      when(mockAuthBloc.state).thenReturn(auth_states.UnauthenticatedState());
-      when(mockAuthBloc.stream).thenAnswer((_) => Stream.value(auth_states.UnauthenticatedState()));
+      when(mockAuthBloc.state).thenReturn(const auth_states.UnauthenticatedState());
+      when(mockAuthBloc.stream).thenAnswer((_) => Stream.value(const auth_states.UnauthenticatedState()));
 
       // Act
       await tester.pumpWidget(createTestWidget());
@@ -239,10 +236,10 @@ void main() {
     testWidgets('should handle rate limit error appropriately', (tester) async {
       // Arrange
       const String rateLimitMessage = 'Too many login attempts. Please try again later.';
-      when(mockAuthBloc.state).thenReturn(auth_states.UnauthenticatedState());
+      when(mockAuthBloc.state).thenReturn(const auth_states.UnauthenticatedState());
       when(mockAuthBloc.stream).thenAnswer((_) => Stream.fromIterable([
-        auth_states.UnauthenticatedState(),
-        auth_states.AuthErrorState(message: rateLimitMessage),
+        const auth_states.UnauthenticatedState(),
+        const auth_states.AuthErrorState(message: rateLimitMessage),
       ]));
 
       // Act
@@ -257,10 +254,10 @@ void main() {
     testWidgets('should handle CSRF validation error appropriately', (tester) async {
       // Arrange
       const String csrfMessage = 'Security validation failed. Please try again.';
-      when(mockAuthBloc.state).thenReturn(auth_states.UnauthenticatedState());
+      when(mockAuthBloc.state).thenReturn(const auth_states.UnauthenticatedState());
       when(mockAuthBloc.stream).thenAnswer((_) => Stream.fromIterable([
-        auth_states.UnauthenticatedState(),
-        auth_states.AuthErrorState(message: csrfMessage),
+        const auth_states.UnauthenticatedState(),
+        const auth_states.AuthErrorState(message: csrfMessage),
       ]));
 
       // Act
@@ -275,10 +272,10 @@ void main() {
     testWidgets('should handle network error appropriately', (tester) async {
       // Arrange
       const String networkMessage = 'Network error. Please check your connection';
-      when(mockAuthBloc.state).thenReturn(auth_states.UnauthenticatedState());
+      when(mockAuthBloc.state).thenReturn(const auth_states.UnauthenticatedState());
       when(mockAuthBloc.stream).thenAnswer((_) => Stream.fromIterable([
-        auth_states.UnauthenticatedState(),
-        auth_states.AuthErrorState(message: networkMessage),
+        const auth_states.UnauthenticatedState(),
+        const auth_states.AuthErrorState(message: networkMessage),
       ]));
 
       // Act

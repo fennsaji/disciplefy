@@ -96,19 +96,19 @@ class OnboardingPurposePage extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: 16),
-                      _StepItem(
+                      const _StepItem(
                         number: '1',
                         title: 'Choose Input',
                         description: 'Enter a Bible verse or topic you want to study',
                       ),
                       const SizedBox(height: 12),
-                      _StepItem(
+                      const _StepItem(
                         number: '2',
                         title: 'AI Generation',
                         description: 'Our AI creates a detailed study guide using Jeff Reed methodology',
                       ),
                       const SizedBox(height: 12),
-                      _StepItem(
+                      const _StepItem(
                         number: '3',
                         title: 'Study & Apply',
                         description: 'Follow the structured guide for deeper understanding and application',
@@ -125,7 +125,7 @@ class OnboardingPurposePage extends StatelessWidget {
                 style: ElevatedButton.styleFrom(
                   minimumSize: const Size.fromHeight(56),
                 ),
-                child: Text('Get Started'),
+                child: const Text('Get Started'),
               ),
             ],
           ),
@@ -157,8 +157,7 @@ class _StepItem extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
-    return Row(
+  Widget build(BuildContext context) => Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Container(
@@ -200,5 +199,4 @@ class _StepItem extends StatelessWidget {
         ),
       ],
     );
-  }
 }

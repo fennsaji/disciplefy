@@ -133,8 +133,8 @@ class RecommendedGuidesService {
         print('✅ [TOPICS] Successfully parsed ${topics.length} topics');
         return Right(topics);
       } else {
-        print('❌ [TOPICS] API response indicates failure: ${jsonData}');
-        return Left(ClientFailure(message: 'API returned failure response'));
+        print('❌ [TOPICS] API response indicates failure: $jsonData');
+        return const Left(ClientFailure(message: 'API returned failure response'));
       }
     } catch (e) {
       print('💥 [TOPICS] JSON parsing error: $e');

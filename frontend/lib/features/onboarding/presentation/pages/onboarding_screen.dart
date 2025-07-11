@@ -149,12 +149,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 controller: _pageController,
                 onPageChanged: _onPageChanged,
                 itemCount: _slides.length,
-                itemBuilder: (context, index) {
-                  return _OnboardingSlideWidget(
+                itemBuilder: (context, index) => _OnboardingSlideWidget(
                     slide: _slides[index],
                     isLargeScreen: isLargeScreen,
-                  );
-                },
+                  ),
               ),
             ),
             
@@ -220,8 +218,7 @@ class _OnboardingSlideWidget extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
-    return Padding(
+  Widget build(BuildContext context) => Padding(
       padding: const EdgeInsets.symmetric(horizontal: 32),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -322,7 +319,6 @@ class _OnboardingSlideWidget extends StatelessWidget {
         ],
       ),
     );
-  }
 }
 
 /// Data model for onboarding slide content.

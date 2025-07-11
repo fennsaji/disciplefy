@@ -77,8 +77,7 @@ class StudyGuide extends Equatable {
     String? language,
     DateTime? createdAt,
     String? userId,
-  }) {
-    return StudyGuide(
+  }) => StudyGuide(
       id: id ?? this.id,
       input: input ?? this.input,
       inputType: inputType ?? this.inputType,
@@ -92,7 +91,6 @@ class StudyGuide extends Equatable {
       createdAt: createdAt ?? this.createdAt,
       userId: userId ?? this.userId,
     );
-  }
 
   /// Gets the title of the study guide based on input type and content.
   /// 
@@ -109,14 +107,12 @@ class StudyGuide extends Equatable {
   /// Checks if this study guide is complete with all required sections.
   /// 
   /// A complete study guide must have non-empty content for all sections.
-  bool get isComplete {
-    return summary.isNotEmpty &&
+  bool get isComplete => summary.isNotEmpty &&
            interpretation.isNotEmpty &&
            context.isNotEmpty &&
            relatedVerses.isNotEmpty &&
            reflectionQuestions.isNotEmpty &&
            prayerPoints.isNotEmpty;
-  }
 
   /// Estimates the reading time for this study guide in minutes.
   /// 
@@ -133,9 +129,7 @@ class StudyGuide extends Equatable {
   }
 
   /// Counts the number of words in a given text.
-  int _countWords(String text) {
-    return text.trim().split(RegExp(r'\s+')).where((word) => word.isNotEmpty).length;
-  }
+  int _countWords(String text) => text.trim().split(RegExp(r'\s+')).where((word) => word.isNotEmpty).length;
 
   @override
   List<Object?> get props => [
@@ -154,7 +148,5 @@ class StudyGuide extends Equatable {
       ];
 
   @override
-  String toString() {
-    return 'StudyGuide{id: $id, title: $title, language: $language, complete: $isComplete}';
-  }
+  String toString() => 'StudyGuide{id: $id, title: $title, language: $language, complete: $isComplete}';
 }

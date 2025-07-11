@@ -70,8 +70,7 @@ class SavedGuideModel extends SavedGuideEntity {
 
   Map<String, dynamic> toJson() => _$SavedGuideModelToJson(this);
 
-  factory SavedGuideModel.fromEntity(SavedGuideEntity entity) {
-    return SavedGuideModel(
+  factory SavedGuideModel.fromEntity(SavedGuideEntity entity) => SavedGuideModel(
       id: entity.id,
       title: entity.title,
       content: entity.content,
@@ -82,11 +81,9 @@ class SavedGuideModel extends SavedGuideEntity {
       verseReference: entity.verseReference,
       topicName: entity.topicName,
     );
-  }
 
   /// Create model from API response
-  factory SavedGuideModel.fromApiResponse(Map<String, dynamic> json) {
-    return SavedGuideModel(
+  factory SavedGuideModel.fromApiResponse(Map<String, dynamic> json) => SavedGuideModel(
       id: json['id'] as String,
       title: json['input_value'] as String? ?? 'Study Guide',
       content: _formatContentFromApi(json),
@@ -97,7 +94,6 @@ class SavedGuideModel extends SavedGuideEntity {
       verseReference: json['input_type'] == 'scripture' ? json['input_value'] as String? : null,
       topicName: json['input_type'] == 'topic' ? json['input_value'] as String? : null,
     );
-  }
 
   static String _formatContentFromApi(Map<String, dynamic> json) {
     final summary = json['summary'] as String? ?? '';
@@ -147,8 +143,7 @@ class SavedGuideModel extends SavedGuideEntity {
     return content.toString().trim();
   }
 
-  SavedGuideEntity toEntity() {
-    return SavedGuideEntity(
+  SavedGuideEntity toEntity() => SavedGuideEntity(
       id: id,
       title: title,
       content: content,
@@ -159,7 +154,6 @@ class SavedGuideModel extends SavedGuideEntity {
       verseReference: verseReference,
       topicName: topicName,
     );
-  }
 
   @override
   SavedGuideModel copyWith({
@@ -172,8 +166,7 @@ class SavedGuideModel extends SavedGuideEntity {
     bool? isSaved,
     String? verseReference,
     String? topicName,
-  }) {
-    return SavedGuideModel(
+  }) => SavedGuideModel(
       id: id ?? this.id,
       title: title ?? this.title,
       content: content ?? this.content,
@@ -184,5 +177,4 @@ class SavedGuideModel extends SavedGuideEntity {
       verseReference: verseReference ?? this.verseReference,
       topicName: topicName ?? this.topicName,
     );
-  }
 }

@@ -69,8 +69,7 @@ class DisciplefyBottomNav extends StatelessWidget {
   ];
 
   @override
-  Widget build(BuildContext context) {
-    return ClipRRect(
+  Widget build(BuildContext context) => ClipRRect(
       borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
       child: Container(
         decoration: const BoxDecoration(
@@ -113,7 +112,6 @@ class DisciplefyBottomNav extends StatelessWidget {
         ),
       ),
     );
-  }
 
   void _handleTap(BuildContext context, int index) {
     if (index != currentIndex) {

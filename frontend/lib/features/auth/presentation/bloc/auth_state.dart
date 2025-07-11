@@ -58,13 +58,11 @@ class AuthenticatedState extends AuthState {
       : null;
 
   /// Creates a copy of this state with updated profile
-  AuthenticatedState copyWithProfile(Map<String, dynamic>? newProfile) {
-    return AuthenticatedState(
+  AuthenticatedState copyWithProfile(Map<String, dynamic>? newProfile) => AuthenticatedState(
       user: user,
       profile: newProfile,
       isAnonymous: isAnonymous,
     );
-  }
 }
 
 /// State when an authentication error occurs

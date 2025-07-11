@@ -96,7 +96,6 @@ class SavedGuidesApiBloc extends Bloc<SavedGuidesEvent, SavedGuidesState> {
       emit(SavedGuidesApiLoaded(
         savedGuides: updatedSavedGuides,
         recentGuides: currentRecentGuides,
-        isLoadingSaved: false,
         hasMoreSaved: hasMore,
         currentTab: currentState is SavedGuidesApiLoaded ? currentState.currentTab : 0,
       ));
@@ -135,7 +134,6 @@ class SavedGuidesApiBloc extends Bloc<SavedGuidesEvent, SavedGuidesState> {
 
     try {
       final result = await _unifiedService.fetchStudyGuides(
-        saved: false,
         limit: event.limit,
         offset: event.refresh ? 0 : _recentOffset,
       );
@@ -173,7 +171,6 @@ class SavedGuidesApiBloc extends Bloc<SavedGuidesEvent, SavedGuidesState> {
       emit(SavedGuidesApiLoaded(
         savedGuides: currentSavedGuides,
         recentGuides: updatedRecentGuides,
-        isLoadingRecent: false,
         hasMoreRecent: hasMore,
         currentTab: currentState is SavedGuidesApiLoaded ? currentState.currentTab : 1,
       ));

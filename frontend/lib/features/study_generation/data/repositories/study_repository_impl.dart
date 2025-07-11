@@ -98,7 +98,6 @@ class StudyRepositoryImpl implements StudyRepository {
         ));
       } else if (response.status >= 500) {
         return const Left(ServerFailure(
-          message: 'Server error occurred. Please try again later.',
           code: 'SERVER_ERROR',
         ));
       } else {
@@ -236,8 +235,7 @@ class StudyRepositoryImpl implements StudyRepository {
   }
 
   /// Parses a study guide from cached data.
-  StudyGuide _parseStudyGuideFromCache(Map<dynamic, dynamic> data) {
-    return StudyGuide(
+  StudyGuide _parseStudyGuideFromCache(Map<dynamic, dynamic> data) => StudyGuide(
       id: data['id'] as String,
       input: data['input'] as String,
       inputType: data['inputType'] as String,
@@ -251,11 +249,9 @@ class StudyRepositoryImpl implements StudyRepository {
       createdAt: DateTime.parse(data['createdAt'] as String),
       userId: data['userId'] as String?,
     );
-  }
 
   /// Converts a study guide to a map for caching.
-  Map<String, dynamic> _convertStudyGuideToMap(StudyGuide studyGuide) {
-    return {
+  Map<String, dynamic> _convertStudyGuideToMap(StudyGuide studyGuide) => {
       'id': studyGuide.id,
       'input': studyGuide.input,
       'inputType': studyGuide.inputType,
@@ -269,7 +265,6 @@ class StudyRepositoryImpl implements StudyRepository {
       'createdAt': studyGuide.createdAt.toIso8601String(),
       'userId': studyGuide.userId,
     };
-  }
 
   /// Gets the authentication token for API requests.
   Future<String?> _getAuthToken() async {

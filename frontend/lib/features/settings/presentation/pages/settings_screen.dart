@@ -22,12 +22,10 @@ class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return BlocProvider(
+  Widget build(BuildContext context) => BlocProvider(
       create: (context) => sl<SettingsBloc>()..add(LoadSettings()),
       child: const _SettingsScreenContent(),
     );
-  }
 }
 
 class _SettingsScreenContent extends StatelessWidget {
@@ -55,9 +53,9 @@ class _SettingsScreenContent extends StatelessWidget {
         },
         builder: (context, state) {
           if (state is SettingsLoading) {
-            return Center(
+            return const Center(
               child: CircularProgressIndicator(
-                valueColor: const AlwaysStoppedAnimation<Color>(AppTheme.primaryColor),
+                valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primaryColor),
                 strokeWidth: 3,
               ),
             );
@@ -111,8 +109,7 @@ class _SettingsScreenContent extends StatelessWidget {
   }
 
   /// Theme & Language Section
-  Widget _buildThemeLanguageSection(BuildContext context, SettingsLoaded state) {
-    return _buildSection(
+  Widget _buildThemeLanguageSection(BuildContext context, SettingsLoaded state) => _buildSection(
       title: 'Theme & Language',
       children: [
         _buildSettingsTile(
@@ -138,11 +135,9 @@ class _SettingsScreenContent extends StatelessWidget {
         ),
       ],
     );
-  }
 
   /// Notifications Section
-  Widget _buildNotificationSection(BuildContext context, SettingsLoaded state) {
-    return _buildSection(
+  Widget _buildNotificationSection(BuildContext context, SettingsLoaded state) => _buildSection(
       title: 'Notifications',
       children: [
         _buildSettingsTile(
@@ -155,11 +150,9 @@ class _SettingsScreenContent extends StatelessWidget {
         ),
       ],
     );
-  }
 
   /// Account Section
-  Widget _buildAccountSection(BuildContext context) {
-    return _buildSection(
+  Widget _buildAccountSection(BuildContext context) => _buildSection(
       title: 'Account',
       children: [
         _buildSettingsTile(
@@ -177,11 +170,9 @@ class _SettingsScreenContent extends StatelessWidget {
         ),
       ],
     );
-  }
 
   /// About Section (Full version - temporarily disabled)
-  Widget _buildAboutSection(BuildContext context, SettingsLoaded state) {
-    return _buildSection(
+  Widget _buildAboutSection(BuildContext context, SettingsLoaded state) => _buildSection(
       title: 'About',
       children: [
         _buildSettingsTile(
@@ -234,11 +225,9 @@ class _SettingsScreenContent extends StatelessWidget {
         ),
       ],
     );
-  }
 
   /// Simplified About Section - Only App Version
-  Widget _buildSimplifiedAboutSection(BuildContext context, SettingsLoaded state) {
-    return _buildSection(
+  Widget _buildSimplifiedAboutSection(BuildContext context, SettingsLoaded state) => _buildSection(
       title: 'About',
       children: [
         _buildSettingsTile(
@@ -251,14 +240,12 @@ class _SettingsScreenContent extends StatelessWidget {
         ),
       ],
     );
-  }
 
   /// Reusable section builder with Disciplefy styling
   Widget _buildSection({
     required String title,
     required List<Widget> children,
-  }) {
-    return Column(
+  }) => Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
@@ -289,7 +276,6 @@ class _SettingsScreenContent extends StatelessWidget {
         ),
       ],
     );
-  }
 
   /// Reusable settings tile with Disciplefy styling
   Widget _buildSettingsTile({
@@ -300,8 +286,7 @@ class _SettingsScreenContent extends StatelessWidget {
     required Widget? trailing,
     required VoidCallback? onTap,
     Color? iconColor,
-  }) {
-    return Material(
+  }) => Material(
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
@@ -363,20 +348,16 @@ class _SettingsScreenContent extends StatelessWidget {
         ),
       ),
     );
-  }
 
   /// Subtle divider with Disciplefy styling
-  Widget _buildDivider() {
-    return Container(
+  Widget _buildDivider() => Container(
       margin: const EdgeInsets.symmetric(horizontal: 20),
       height: 1,
       color: AppTheme.primaryColor.withOpacity(0.08),
     );
-  }
 
   /// Custom theme switch with Disciplefy colors
-  Widget _buildThemeSwitch(BuildContext context, SettingsLoaded state) {
-    return Switch(
+  Widget _buildThemeSwitch(BuildContext context, SettingsLoaded state) => Switch(
       value: state.settings.themeMode.isDarkMode,
       onChanged: (value) {
         final newTheme = value
@@ -389,11 +370,9 @@ class _SettingsScreenContent extends StatelessWidget {
       inactiveThumbColor: AppTheme.onSurfaceVariant,
       inactiveTrackColor: AppTheme.onSurfaceVariant.withOpacity(0.3),
     );
-  }
 
   /// Custom notification switch with Disciplefy colors
-  Widget _buildNotificationSwitch(BuildContext context, SettingsLoaded state) {
-    return Switch(
+  Widget _buildNotificationSwitch(BuildContext context, SettingsLoaded state) => Switch(
       value: state.settings.notificationsEnabled,
       onChanged: (value) {
         context.read<SettingsBloc>().add(ToggleNotifications(value));
@@ -403,7 +382,6 @@ class _SettingsScreenContent extends StatelessWidget {
       inactiveThumbColor: AppTheme.onSurfaceVariant,
       inactiveTrackColor: AppTheme.onSurfaceVariant.withOpacity(0.3),
     );
-  }
 
   /// Language bottom sheet with Disciplefy styling
   void _showLanguageBottomSheet(BuildContext context, String currentLanguage) {
@@ -498,7 +476,7 @@ class _SettingsScreenContent extends StatelessWidget {
                 ),
               ),
               if (isSelected)
-                Icon(
+                const Icon(
                   Icons.check_circle,
                   color: AppTheme.primaryColor,
                   size: 24,
@@ -579,7 +557,7 @@ class _SettingsScreenContent extends StatelessWidget {
                   child: OutlinedButton(
                     onPressed: () => Navigator.of(context).pop(),
                     style: OutlinedButton.styleFrom(
-                      side: BorderSide(color: AppTheme.primaryColor),
+                      side: const BorderSide(color: AppTheme.primaryColor),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
@@ -706,7 +684,6 @@ class _SettingsScreenContent extends StatelessWidget {
     
     showDialog(
       context: context,
-      barrierDismissible: true,
       builder: (context) => AlertDialog(
         backgroundColor: const Color(0xFFFAFAFA), // Light background
         surfaceTintColor: Colors.transparent,

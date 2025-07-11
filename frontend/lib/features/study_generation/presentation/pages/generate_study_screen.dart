@@ -119,7 +119,7 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen> {
         elevation: 0,
         leading: IconButton(
           onPressed: () => context.pop(),
-          icon: Icon(
+          icon: const Icon(
             Icons.arrow_back_ios,
             color: AppTheme.primaryColor,
           ),
@@ -169,9 +169,7 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen> {
                 
                 // Generate Button and Status
                 BlocBuilder<StudyBloc, StudyState>(
-                  builder: (context, state) {
-                    return _buildGenerateButton(state);
-                  },
+                  builder: (context, state) => _buildGenerateButton(state),
                 ),
                 
                 SizedBox(height: isLargeScreen ? 40 : 24),
@@ -183,8 +181,7 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen> {
     );
   }
 
-  Widget _buildModeToggle() {
-    return Column(
+  Widget _buildModeToggle() => Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
@@ -224,10 +221,8 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen> {
         ),
       ],
     );
-  }
 
-  Widget _buildInputSection() {
-    return Column(
+  Widget _buildInputSection() => Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
@@ -305,7 +300,6 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen> {
         ),
       ],
     );
-  }
 
   Widget _buildSuggestions() {
     final suggestions = _getFilteredSuggestions();
@@ -329,15 +323,13 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen> {
         Wrap(
           spacing: 8,
           runSpacing: 8,
-          children: suggestions.map((suggestion) {
-            return _SuggestionChip(
+          children: suggestions.map((suggestion) => _SuggestionChip(
               label: suggestion,
               onTap: () {
                 _inputController.text = suggestion;
                 _inputFocusNode.unfocus();
               },
-            );
-          }).toList(),
+            )).toList(),
         ),
       ],
     );
@@ -360,7 +352,7 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen> {
               children: [
                 Row(
                   children: [
-                    SizedBox(
+                    const SizedBox(
                       width: 20,
                       height: 20,
                       child: CircularProgressIndicator(
@@ -459,8 +451,7 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen> {
   void _showErrorDialog(BuildContext context, String message, bool isRetryable) {
     showDialog(
       context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
+      builder: (BuildContext context) => AlertDialog(
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
           ),
@@ -547,8 +538,7 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen> {
               ),
             ],
           ],
-        );
-      },
+        ),
     );
   }
 }
@@ -566,8 +556,7 @@ class _ModeToggleButton extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
+  Widget build(BuildContext context) => GestureDetector(
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 12),
@@ -586,7 +575,6 @@ class _ModeToggleButton extends StatelessWidget {
         ),
       ),
     );
-  }
 }
 
 /// Suggestion chip widget.
@@ -600,8 +588,7 @@ class _SuggestionChip extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
+  Widget build(BuildContext context) => GestureDetector(
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -623,7 +610,6 @@ class _SuggestionChip extends StatelessWidget {
         ),
       ),
     );
-  }
 }
 
 /// Enum for study input mode.

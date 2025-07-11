@@ -36,8 +36,7 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    return BlocListener<AuthBloc, auth_states.AuthState>(
+  Widget build(BuildContext context) => BlocListener<AuthBloc, auth_states.AuthState>(
       listener: (context, state) {
         if (state is auth_states.AuthenticatedState) {
           // Navigate to home screen on successful authentication
@@ -129,11 +128,9 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
       ),
     );
-  }
 
   /// Builds the app logo with brand colors
-  Widget _buildAppLogo(BuildContext context) {
-    return Container(
+  Widget _buildAppLogo(BuildContext context) => Container(
       width: 120,
       height: 120,
       decoration: BoxDecoration(
@@ -146,11 +143,9 @@ class _LoginScreenState extends State<LoginScreen> {
         color: AppTheme.primaryColor,
       ),
     );
-  }
 
   /// Builds the welcome text section
-  Widget _buildWelcomeText(BuildContext context) {
-    return Column(
+  Widget _buildWelcomeText(BuildContext context) => Column(
       children: [
         Text(
           'Welcome to Disciplefy',
@@ -176,11 +171,9 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
       ],
     );
-  }
 
   /// Builds the sign-in buttons with proper state management
-  Widget _buildSignInButtons(BuildContext context) {
-    return BlocBuilder<AuthBloc, auth_states.AuthState>(
+  Widget _buildSignInButtons(BuildContext context) => BlocBuilder<AuthBloc, auth_states.AuthState>(
       builder: (context, state) {
         final isLoading = state is auth_states.AuthLoadingState;
         
@@ -197,11 +190,9 @@ class _LoginScreenState extends State<LoginScreen> {
         );
       },
     );
-  }
 
   /// Builds the Google sign-in button with proper branding
-  Widget _buildGoogleSignInButton(BuildContext context, bool isLoading) {
-    return SizedBox(
+  Widget _buildGoogleSignInButton(BuildContext context, bool isLoading) => SizedBox(
       width: double.infinity,
       height: 56,
       child: ElevatedButton(
@@ -252,11 +243,9 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
       ),
     );
-  }
 
   /// Builds the guest sign-in button
-  Widget _buildGuestSignInButton(BuildContext context, bool isLoading) {
-    return SizedBox(
+  Widget _buildGuestSignInButton(BuildContext context, bool isLoading) => SizedBox(
       width: double.infinity,
       height: 56,
       child: OutlinedButton(
@@ -294,11 +283,9 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
       ),
     );
-  }
 
   /// Builds the features preview section
-  Widget _buildFeaturesSection(BuildContext context) {
-    return Container(
+  Widget _buildFeaturesSection(BuildContext context) => Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: AppTheme.surfaceColor,
@@ -348,11 +335,9 @@ class _LoginScreenState extends State<LoginScreen> {
         ],
       ),
     );
-  }
 
   /// Builds the privacy policy text
-  Widget _buildPrivacyText(BuildContext context) {
-    return Text(
+  Widget _buildPrivacyText(BuildContext context) => Text(
       'By continuing, you agree to our Terms of Service and Privacy Policy',
       style: GoogleFonts.inter(
         fontSize: 12,
@@ -361,7 +346,6 @@ class _LoginScreenState extends State<LoginScreen> {
       ),
       textAlign: TextAlign.center,
     );
-  }
 
   /// Handles Google sign-in button tap
   void _handleGoogleSignIn(BuildContext context) {
@@ -387,8 +371,7 @@ class _FeatureItem extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
-    return Row(
+  Widget build(BuildContext context) => Row(
       children: [
         // Icon container
         Container(
@@ -440,5 +423,4 @@ class _FeatureItem extends StatelessWidget {
         ),
       ],
     );
-  }
 }

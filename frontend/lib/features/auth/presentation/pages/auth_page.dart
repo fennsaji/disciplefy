@@ -68,8 +68,7 @@ class _AuthPageState extends State<AuthPage> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
+  Widget build(BuildContext context) => Scaffold(
       appBar: AppBar(
         title: const Text('Sign In'),
         leading: IconButton(
@@ -174,5 +173,4 @@ class _AuthPageState extends State<AuthPage> {
         ),
       ),
     );
-  }
 }
