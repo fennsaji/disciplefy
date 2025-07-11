@@ -34,6 +34,8 @@ class StudyGuidesApiService {
       
       if (savedOnly) {
         queryParams['saved'] = 'true';
+      } else {
+        queryParams['saved'] = 'false';
       }
 
       final uri = Uri.parse('$_baseUrl$_studyGuidesEndpoint')

@@ -205,32 +205,36 @@ class StudyRepositoryImpl implements StudyRepository {
   }
 
   /// Parses a study guide from the API response.
+  /// Updated to handle new cached architecture response format.
   StudyGuide _parseStudyGuideFromResponse(
     Map<String, dynamic> data,
     String input,
     String inputType,
     String language,
   ) {
-    final studyData = data['data'] as Map<String, dynamic>? ?? {};
+    final responseData = data['data'] as Map<String, dynamic>? ?? {};
+    final studyGuide = responseData['study_guide'] as Map<String, dynamic>? ?? {};
+    final content = studyGuide['content'] as Map<String, dynamic>? ?? {};
+    final inputData = studyGuide['input'] as Map<String, dynamic>? ?? {};
     
     return StudyGuide(
-      id: studyData['id'] as String? ?? _uuid.v4(),
-      input: input,
-      inputType: inputType,
-      summary: studyData['summary'] as String? ?? 'No summary available',
-      interpretation: studyData['interpretation'] as String? ?? 'No interpretation available',
-      context: studyData['context'] as String? ?? 'No context available',
-      relatedVerses: (studyData['related_verses'] as List<dynamic>?)
+      id: studyGuide['id'] as String? ?? _uuid.v4(),
+      input: inputData['value'] as String? ?? input,
+      inputType: inputData['type'] as String? ?? inputType,
+      summary: content['summary'] as String? ?? 'No summary available',
+      interpretation: content['interpretation'] as String? ?? 'No interpretation available',
+      context: content['context'] as String? ?? 'No context available',
+      relatedVerses: (content['relatedVerses'] as List<dynamic>?)
           ?.map((e) => e.toString())
           .toList() ?? [],
-      reflectionQuestions: (studyData['reflection_questions'] as List<dynamic>?)
+      reflectionQuestions: (content['reflectionQuestions'] as List<dynamic>?)
           ?.map((e) => e.toString())
           .toList() ?? [],
-      prayerPoints: (studyData['prayer_points'] as List<dynamic>?)
+      prayerPoints: (content['prayerPoints'] as List<dynamic>?)
           ?.map((e) => e.toString())
           .toList() ?? [],
-      language: language,
-      createdAt: DateTime.now(),
+      language: inputData['language'] as String? ?? language,
+      createdAt: DateTime.parse(studyGuide['createdAt'] as String? ?? DateTime.now().toIso8601String()),
     );
   }
 

@@ -26,7 +26,7 @@
     updated_at TIMESTAMP
   )
 
-  -- Keep anonymous_study_guides as is
+  -- Remove anonymous_study_guides table and all it's usage
 
   ---
   ✅ Pros: The Benefits
@@ -34,7 +34,7 @@
   1. Storage Efficiency
 
   - Massive Storage Reduction: Popular verses like "John 3:16" would be stored once, not per user
-  - Global Deduplication: Cross-user deduplication becomes possible
+  - Global Deduplication: Cross-user deduplication becomes possible : WHich is fine
   - Efficient Pattern: Separates volatile user relationships from stable content
 
   Example Impact:
@@ -89,18 +89,6 @@
       )
     );
 
-  4. Migration Complexity
-
-  - Multi-Step Migration: Requires careful data transformation
-  - Zero-Downtime Challenge: Maintaining service during migration
-  - Data Validation: Ensuring no data loss during deduplication
-  - Application Logic Updates: Extensive changes to repository layer
-
-  5. Limited Deduplication Benefit
-
-  - Personalized Content: Bible study content is often unique per user
-  - Hash Collisions: Using input_value_hash could theoretically cause collisions
-  - Exact Match Only: Only identical input + language combinations benefit
 
   ---
   📊 Real-World Impact Analysis
@@ -211,8 +199,7 @@
   Instead of full migration, implement incremental caching:
 
   1. Phase 1: Service layer consolidation (no DB changes)
-  2. Phase 2: Optional caching layer with metrics tracking
-  3. Phase 3: Full migration only if proven beneficial
+  2. Phase 2: Optional caching layer
 
   This approach captures benefits while minimizing risks to your established security model.
 
@@ -225,9 +212,5 @@
      ☐ Phase 1: Design unified StudyGuideService interface for both authenticated and anonymous users
      ☐ Phase 1: Implement unified service layer without database schema changes
      ☐ Phase 1: Update existing Edge Functions to use unified service
-     ☐ Phase 1: Add performance monitoring and metrics collection
      ☐ Phase 2: Design optional caching layer with cache hit rate tracking
      ☐ Phase 2: Implement cache lookup and content deduplication logic
-     ☐ Phase 2: Deploy and monitor cache performance for 2-4 weeks
-     ☐ Phase 3: Evaluate migration to full caching architecture based on Phase 2 results
-     ☐ Phase 3: Implement database migration if Phase 2 shows significant benefits
