@@ -32,7 +32,7 @@ interface DatabaseRecommendedTopic {
   readonly title: string
   readonly description: string
   readonly category: string
-  readonly difficulty_level: 'beginner' | 'intermediate' | 'advanced'
+  readonly difficulty_level: string
   readonly estimated_duration: string
   readonly tags: readonly string[]
   readonly display_order: number
@@ -269,7 +269,7 @@ export class TopicsRepository {
       id: dbTopic.id,
       title: dbTopic.title,
       description: dbTopic.description,
-      difficulty_level: dbTopic.difficulty_level,
+      difficulty_level: dbTopic.difficulty_level as 'beginner' | 'intermediate' | 'advanced',
       estimated_duration: dbTopic.estimated_duration,
       key_verses: [], // Empty for now - not stored in database
       category: dbTopic.category,

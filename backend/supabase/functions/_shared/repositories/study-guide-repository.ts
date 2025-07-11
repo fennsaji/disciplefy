@@ -110,7 +110,7 @@ export class StudyGuideRepository {
   ): Promise<any> {
     // Check if content already exists
     const { data: existingContent, error: selectError } = await this.supabase
-      .from('study_guides_cache')
+      .from('study_guides')
       .select('*')
       .eq('input_type', input.type)
       .eq('input_value_hash', inputHash)
@@ -132,7 +132,7 @@ export class StudyGuideRepository {
 
     // Create new cached content
     const { data: newContent, error: insertError } = await this.supabase
-      .from('study_guides_cache')
+      .from('study_guides')
       .insert({
         input_type: input.type,
         input_value_hash: inputHash,
@@ -152,7 +152,7 @@ export class StudyGuideRepository {
       if (insertError.code === '23505') { // Unique constraint violation
         // Retry finding the content
         const { data: raceContent, error: raceError } = await this.supabase
-          .from('study_guides_cache')
+          .from('study_guides')
           .select('*')
           .eq('input_type', input.type)
           .eq('input_value_hash', inputHash)
@@ -295,7 +295,7 @@ export class StudyGuideRepository {
         is_saved,
         created_at,
         updated_at,
-        study_guides_cache (
+        study_guides (
           id,
           input_type,
           input_value_hash,
@@ -347,7 +347,7 @@ export class StudyGuideRepository {
         is_saved,
         created_at,
         updated_at,
-        study_guides_cache (
+        study_guides (
           id,
           input_type,
           input_value_hash,
@@ -427,7 +427,7 @@ export class StudyGuideRepository {
         is_saved,
         created_at,
         updated_at,
-        study_guides_cache (
+        study_guides (
           id,
           input_type,
           input_value_hash,
@@ -479,7 +479,7 @@ export class StudyGuideRepository {
         is_saved,
         created_at,
         updated_at,
-        study_guides_cache (
+        study_guides (
           id,
           input_type,
           input_value_hash,
@@ -521,7 +521,7 @@ export class StudyGuideRepository {
 
     // Check if content exists in cache
     const { data: content, error } = await this.supabase
-      .from('study_guides_cache')
+      .from('study_guides')
       .select('*')
       .eq('input_type', input.type)
       .eq('input_value_hash', inputHash)
@@ -607,7 +607,7 @@ export class StudyGuideRepository {
           is_saved,
           created_at,
           updated_at,
-          study_guides_cache (
+          study_guides (
             id,
             input_type,
             input_value_hash,
@@ -643,7 +643,7 @@ export class StudyGuideRepository {
           is_saved,
           created_at,
           updated_at,
-          study_guides_cache (
+          study_guides (
             id,
             input_type,
             input_value_hash,
@@ -688,7 +688,7 @@ export class StudyGuideRepository {
     data: any,
     isAuthenticated: boolean
   ): StudyGuideResponse {
-    const studyGuide = data.study_guides_cache
+    const studyGuide = data.study_guides
 
     return {
       id: studyGuide.id,

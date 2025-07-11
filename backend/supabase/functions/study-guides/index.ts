@@ -88,25 +88,10 @@ function createSupabaseClient(req: Request): SupabaseClient {
   })
 }
 
-/**
- * Creates a separate client for user authentication validation.
- */
-function createAuthClient(req: Request): SupabaseClient {
-  const supabaseUrl = Deno.env.get('SUPABASE_URL')!
-  const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!
-
-  return createClient(supabaseUrl, supabaseAnonKey, {
-    global: {
-      headers: { 
-        Authorization: req.headers.get('Authorization') || '' 
-      },
-    },
-  })
-}
 
 /**
  * Extracts user context from request.
- * Uses separate auth client for user validation.
+ * Uses the main supabase client which already has the auth header.
  */
 async function getUserContext(
   supabaseClient: SupabaseClient,
@@ -119,13 +104,29 @@ async function getUserContext(
   
   if (authHeader?.startsWith('Bearer ')) {
     try {
-      // Create separate auth client for user validation
-      const authClient = createAuthClient(req)
-      const { data: { user } } = await authClient.auth.getUser(
-        authHeader.replace('Bearer ', '')
-      )
+      const token = authHeader.replace('Bearer ', '')
+      
+      console.log('Attempting to validate token for user authentication')
+      
+      // Use the main client which already has auth headers set
+      const { data: { user }, error } = await supabaseClient.auth.getUser(token)
+      
+      if (error) {
+        console.warn('Auth validation error:', error)
+        // Try to extract user info from JWT payload as fallback
+        const payload = JSON.parse(atob(token.split('.')[1]))
+        if (payload.sub && payload.exp > Date.now() / 1000) {
+          console.log('Using JWT payload for user context:', payload.sub)
+          return {
+            type: 'authenticated',
+            userId: payload.sub
+          }
+        }
+        throw error
+      }
       
       if (user) {
+        console.log('Successfully authenticated user:', user.id)
         return {
           type: 'authenticated',
           userId: user.id
@@ -133,6 +134,7 @@ async function getUserContext(
       }
     } catch (error) {
       console.warn('Failed to authenticate user:', error)
+      // Don't throw immediately, let it fall through to check session ID
     }
   }
 

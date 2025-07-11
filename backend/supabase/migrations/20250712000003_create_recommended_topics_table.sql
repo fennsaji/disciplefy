@@ -1,12 +1,12 @@
 -- Create recommended_topics table
--- This table references the study_guides_cache table to provide recommended topics
+-- This table references the study_guides table to provide recommended topics
 
 BEGIN;
 
 -- Create the recommended_topics table
 CREATE TABLE recommended_topics (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  study_guide_id UUID REFERENCES study_guides_cache(id) ON DELETE CASCADE,
+  study_guide_id UUID REFERENCES study_guides(id) ON DELETE CASCADE,
   category VARCHAR(100) NOT NULL,
   difficulty_level VARCHAR(20) NOT NULL CHECK (difficulty_level IN ('beginner', 'intermediate', 'advanced')),
   estimated_duration VARCHAR(50) NOT NULL,
@@ -42,7 +42,7 @@ CREATE POLICY "Service role can manage recommended topics" ON recommended_topics
 
 -- Add comments for documentation
 COMMENT ON TABLE recommended_topics IS 'Curated recommended topics that reference study guides from the cache';
-COMMENT ON COLUMN recommended_topics.study_guide_id IS 'References a study guide in the study_guides_cache table';
+COMMENT ON COLUMN recommended_topics.study_guide_id IS 'References a study guide in the study_guides table';
 COMMENT ON COLUMN recommended_topics.category IS 'Topic category for filtering and organization';
 COMMENT ON COLUMN recommended_topics.difficulty_level IS 'Difficulty level: beginner, intermediate, or advanced';
 COMMENT ON COLUMN recommended_topics.estimated_duration IS 'Estimated time to complete the study';
@@ -65,9 +65,9 @@ RETURNS TABLE(
   id UUID,
   title TEXT,
   description TEXT,
-  category TEXT,
-  difficulty_level TEXT,
-  estimated_duration TEXT,
+  category VARCHAR(100),
+  difficulty_level VARCHAR(20),
+  estimated_duration VARCHAR(50),
   tags TEXT[],
   display_order INTEGER,
   created_at TIMESTAMP WITH TIME ZONE
@@ -96,7 +96,7 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- Create a function to get all available categories
 CREATE OR REPLACE FUNCTION get_recommended_topics_categories()
-RETURNS TABLE(category TEXT) AS $$
+RETURNS TABLE(category VARCHAR(100)) AS $$
 BEGIN
   RETURN QUERY
   SELECT DISTINCT rt.category

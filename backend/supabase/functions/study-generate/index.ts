@@ -50,7 +50,7 @@ interface StudyGuideApiResponse {
 
 // Configuration constants
 const DEFAULT_LANGUAGE = 'en' as const
-const REQUIRED_ENV_VARS = ['SUPABASE_URL', 'SUPABASE_ANON_KEY'] as const
+const REQUIRED_ENV_VARS = ['SUPABASE_URL', 'SUPABASE_SERVICE_ROLE_KEY'] as const
 
 /**
  * Study Guide Generation Edge Function
@@ -184,13 +184,13 @@ function validateEnvironment(): void {
 }
 
 /**
- * Creates configured Supabase client.
+ * Creates configured Supabase client with service role for database operations.
  */
 function createSupabaseClient(req: Request): SupabaseClient {
   const supabaseUrl = Deno.env.get('SUPABASE_URL')!
-  const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!
+  const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 
-  return createClient(supabaseUrl, supabaseAnonKey, {
+  return createClient(supabaseUrl, supabaseServiceKey, {
     global: {
       headers: { 
         Authorization: req.headers.get('Authorization') || '' 
