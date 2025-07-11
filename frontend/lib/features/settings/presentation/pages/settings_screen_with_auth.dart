@@ -19,20 +19,17 @@ class SettingsScreenWithAuth extends StatelessWidget {
   const SettingsScreenWithAuth({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return BlocProvider(
+  Widget build(BuildContext context) => BlocProvider(
       create: (context) => sl<SettingsBloc>()..add(LoadSettings()),
       child: const _SettingsScreenContent(),
     );
-  }
 }
 
 class _SettingsScreenContent extends StatelessWidget {
   const _SettingsScreenContent();
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
+  Widget build(BuildContext context) => Scaffold(
       backgroundColor: AppTheme.backgroundColor,
       body: BlocListener<AuthBloc, auth_states.AuthState>(
         listener: (context, authState) {
@@ -117,11 +114,9 @@ class _SettingsScreenContent extends StatelessWidget {
         ),
       ),
     );
-  }
 
   /// User Profile Section - shows different content based on auth state
-  Widget _buildUserProfileSection(BuildContext context) {
-    return BlocBuilder<AuthBloc, auth_states.AuthState>(
+  Widget _buildUserProfileSection(BuildContext context) => BlocBuilder<AuthBloc, auth_states.AuthState>(
       builder: (context, authState) {
         if (authState is auth_states.AuthenticatedState) {
           return Column(
@@ -154,11 +149,9 @@ class _SettingsScreenContent extends StatelessWidget {
         return const SizedBox.shrink();
       },
     );
-  }
 
   /// User Profile Tile showing user info
-  Widget _buildUserProfileTile(BuildContext context, auth_states.AuthenticatedState authState) {
-    return Padding(
+  Widget _buildUserProfileTile(BuildContext context, auth_states.AuthenticatedState authState) => Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
       child: Row(
         children: [
@@ -225,11 +218,9 @@ class _SettingsScreenContent extends StatelessWidget {
         ],
       ),
     );
-  }
 
   /// Theme & Language Section
-  Widget _buildThemeLanguageSection(BuildContext context, SettingsLoaded state) {
-    return _buildSection(
+  Widget _buildThemeLanguageSection(BuildContext context, SettingsLoaded state) => _buildSection(
       title: 'Appearance',
       children: [
         _buildSettingsTile(
@@ -255,11 +246,9 @@ class _SettingsScreenContent extends StatelessWidget {
         ),
       ],
     );
-  }
 
   /// Notification Section
-  Widget _buildNotificationSection(BuildContext context, SettingsLoaded state) {
-    return _buildSection(
+  Widget _buildNotificationSection(BuildContext context, SettingsLoaded state) => _buildSection(
       title: 'Notifications',
       children: [
         _buildSettingsTile(
@@ -272,11 +261,9 @@ class _SettingsScreenContent extends StatelessWidget {
         ),
       ],
     );
-  }
 
   /// Account Section with AuthBloc integration
-  Widget _buildAccountSection(BuildContext context) {
-    return BlocBuilder<AuthBloc, auth_states.AuthState>(
+  Widget _buildAccountSection(BuildContext context) => BlocBuilder<AuthBloc, auth_states.AuthState>(
       builder: (context, authState) {
         if (authState is auth_states.AuthenticatedState) {
           return _buildSection(
@@ -338,11 +325,9 @@ class _SettingsScreenContent extends StatelessWidget {
         );
       },
     );
-  }
 
   /// About Section
-  Widget _buildAboutSection(BuildContext context, SettingsLoaded state) {
-    return _buildSection(
+  Widget _buildAboutSection(BuildContext context, SettingsLoaded state) => _buildSection(
       title: 'About',
       children: [
         _buildSettingsTile(
@@ -395,7 +380,6 @@ class _SettingsScreenContent extends StatelessWidget {
         ),
       ],
     );
-  }
 
   /// Account Settings Bottom Sheet
   void _showAccountSettingsBottomSheet(BuildContext context, auth_states.AuthenticatedState authState) {
@@ -480,8 +464,7 @@ class _SettingsScreenContent extends StatelessWidget {
     required String title,
     required String subtitle,
     required VoidCallback onTap,
-  }) {
-    return Material(
+  }) => Material(
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
@@ -528,7 +511,6 @@ class _SettingsScreenContent extends StatelessWidget {
         ),
       ),
     );
-  }
 
   /// Logout confirmation dialog with AuthBloc integration
   void _showLogoutDialog(BuildContext context, bool isAnonymous) {
@@ -636,8 +618,7 @@ class _SettingsScreenContent extends StatelessWidget {
   Widget _buildSection({
     required String title,
     required List<Widget> children,
-  }) {
-    return Column(
+  }) => Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
@@ -668,7 +649,6 @@ class _SettingsScreenContent extends StatelessWidget {
         ),
       ],
     );
-  }
 
   Widget _buildSettingsTile({
     required BuildContext context,
@@ -678,8 +658,7 @@ class _SettingsScreenContent extends StatelessWidget {
     required Widget? trailing,
     required VoidCallback? onTap,
     Color? iconColor,
-  }) {
-    return Material(
+  }) => Material(
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
@@ -736,18 +715,14 @@ class _SettingsScreenContent extends StatelessWidget {
         ),
       ),
     );
-  }
 
-  Widget _buildDivider() {
-    return Container(
+  Widget _buildDivider() => Container(
       margin: const EdgeInsets.symmetric(horizontal: 20),
       height: 1,
       color: AppTheme.primaryColor.withValues(alpha: 0.08),
     );
-  }
 
-  Widget _buildThemeSwitch(BuildContext context, SettingsLoaded state) {
-    return Switch(
+  Widget _buildThemeSwitch(BuildContext context, SettingsLoaded state) => Switch(
       value: state.settings.themeMode.isDarkMode,
       onChanged: (value) {
         final newTheme = value
@@ -760,10 +735,8 @@ class _SettingsScreenContent extends StatelessWidget {
       inactiveThumbColor: AppTheme.onSurfaceVariant,
       inactiveTrackColor: AppTheme.onSurfaceVariant.withValues(alpha: 0.3),
     );
-  }
 
-  Widget _buildNotificationSwitch(BuildContext context, SettingsLoaded state) {
-    return Switch(
+  Widget _buildNotificationSwitch(BuildContext context, SettingsLoaded state) => Switch(
       value: state.settings.notificationsEnabled,
       onChanged: (value) {
         context.read<SettingsBloc>().add(ToggleNotifications(value));
@@ -773,7 +746,6 @@ class _SettingsScreenContent extends StatelessWidget {
       inactiveThumbColor: AppTheme.onSurfaceVariant,
       inactiveTrackColor: AppTheme.onSurfaceVariant.withValues(alpha: 0.3),
     );
-  }
 
   void _showLanguageBottomSheet(BuildContext context, String currentLanguage) {
     showModalBottomSheet(
@@ -861,7 +833,7 @@ class _SettingsScreenContent extends StatelessWidget {
                 ),
               ),
               if (isSelected)
-                Icon(
+                const Icon(
                   Icons.check_circle,
                   color: AppTheme.primaryColor,
                   size: 24,
@@ -935,7 +907,7 @@ class _SettingsScreenContent extends StatelessWidget {
                   child: OutlinedButton(
                     onPressed: () => Navigator.of(context).pop(),
                     style: OutlinedButton.styleFrom(
-                      side: BorderSide(color: AppTheme.primaryColor),
+                      side: const BorderSide(color: AppTheme.primaryColor),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),

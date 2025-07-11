@@ -43,7 +43,7 @@ class _AppShellState extends State<AppShell> {
     super.initState();
     _navigationCubit = NavigationCubit();
     // Initialize with default index, will be updated in didChangeDependencies
-    _navigationCubit.initialize(initialIndex: 0);
+    _navigationCubit.initialize();
   }
 
   @override
@@ -74,20 +74,17 @@ class _AppShellState extends State<AppShell> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    return BlocProvider.value(
+  Widget build(BuildContext context) => BlocProvider.value(
       value: _navigationCubit,
       child: const _AppShellContent(),
     );
-  }
 }
 
 class _AppShellContent extends StatelessWidget {
   const _AppShellContent();
 
   @override
-  Widget build(BuildContext context) {
-    return BlocBuilder<NavigationCubit, NavigationState>(
+  Widget build(BuildContext context) => BlocBuilder<NavigationCubit, NavigationState>(
       builder: (context, state) {
         int selectedIndex = 0;
         
@@ -128,7 +125,6 @@ class _AppShellContent extends StatelessWidget {
         );
       },
     );
-  }
 
   void _handleBackNavigation(BuildContext context) {
     final navigationCubit = context.read<NavigationCubit>();
@@ -161,9 +157,7 @@ class _GenerateStudyScreenWrapper extends StatelessWidget {
   const _GenerateStudyScreenWrapper();
 
   @override
-  Widget build(BuildContext context) {
-    return const GenerateStudyScreen();
-  }
+  Widget build(BuildContext context) => const GenerateStudyScreen();
 }
 
 /// Wrapper for Saved Guides Screen without app bar
@@ -210,9 +204,7 @@ class SlidePageRoute<T> extends PageRoute<T> {
     BuildContext context,
     Animation<double> animation,
     Animation<double> secondaryAnimation,
-  ) {
-    return child;
-  }
+  ) => child;
 
   @override
   Widget buildTransitions(

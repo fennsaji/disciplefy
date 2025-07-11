@@ -18,15 +18,6 @@ import '../../features/settings/domain/usecases/get_settings.dart';
 import '../../features/settings/domain/usecases/update_theme_mode.dart';
 import '../../features/settings/domain/usecases/get_app_version.dart';
 import '../../features/settings/presentation/bloc/settings_bloc.dart';
-import '../../features/saved_guides/domain/repositories/saved_guides_repository.dart';
-import '../../features/saved_guides/data/repositories/saved_guides_repository_impl.dart';
-import '../../features/saved_guides/data/datasources/saved_guides_local_data_source.dart';
-import '../../features/saved_guides/domain/usecases/get_saved_guides.dart';
-import '../../features/saved_guides/domain/usecases/get_recent_guides.dart';
-import '../../features/saved_guides/domain/usecases/save_guide.dart';
-import '../../features/saved_guides/domain/usecases/remove_guide.dart';
-import '../../features/saved_guides/domain/usecases/add_to_recent.dart';
-import '../../features/saved_guides/presentation/bloc/saved_guides_bloc.dart';
 import '../../features/daily_verse/data/services/daily_verse_api_service.dart';
 import '../../features/daily_verse/data/services/daily_verse_cache_service.dart';
 import '../../features/daily_verse/domain/repositories/daily_verse_repository.dart';
@@ -34,6 +25,9 @@ import '../../features/daily_verse/data/repositories/daily_verse_repository_impl
 import '../../features/daily_verse/domain/usecases/get_daily_verse.dart';
 import '../../features/daily_verse/domain/usecases/manage_verse_preferences.dart';
 import '../../features/daily_verse/presentation/bloc/daily_verse_bloc.dart';
+import '../../features/saved_guides/data/services/unified_study_guides_service.dart';
+import '../../features/saved_guides/data/services/study_guides_api_service.dart';
+import '../../features/saved_guides/presentation/bloc/saved_guides_api_bloc.dart';
 
 final sl = GetIt.instance;
 
@@ -88,29 +82,6 @@ Future<void> initializeDependencies() async {
         authService: sl(),
       ));
 
-  //! Saved Guides
-  sl.registerLazySingleton<SavedGuidesLocalDataSource>(
-    () => SavedGuidesLocalDataSourceImpl(),
-  );
-
-  sl.registerLazySingleton<SavedGuidesRepository>(
-    () => SavedGuidesRepositoryImpl(localDataSource: sl()),
-  );
-
-  sl.registerLazySingleton(() => GetSavedGuides(sl()));
-  sl.registerLazySingleton(() => GetRecentGuides(sl()));
-  sl.registerLazySingleton(() => SaveGuide(sl()));
-  sl.registerLazySingleton(() => RemoveGuide(sl()));
-  sl.registerLazySingleton(() => AddToRecent(sl()));
-
-  sl.registerFactory(() => SavedGuidesBloc(
-        getSavedGuides: sl(),
-        getRecentGuides: sl(),
-        saveGuide: sl(),
-        removeGuide: sl(),
-        addToRecent: sl(),
-        repository: sl(),
-      ));
 
   //! Daily Verse
   sl.registerLazySingleton<DailyVerseApiService>(
@@ -140,5 +111,18 @@ Future<void> initializeDependencies() async {
         setPreferredLanguage: sl(),
         getCacheStats: sl(),
         clearVerseCache: sl(),
+      ));
+
+  //! Saved Guides
+  sl.registerLazySingleton<StudyGuidesApiService>(
+    () => StudyGuidesApiService(),
+  );
+
+  sl.registerLazySingleton<UnifiedStudyGuidesService>(
+    () => UnifiedStudyGuidesService(apiService: sl()),
+  );
+
+  sl.registerFactory(() => SavedGuidesApiBloc(
+        unifiedService: sl(),
       ));
 }

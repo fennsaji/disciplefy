@@ -24,8 +24,7 @@ class GuideListItemApi extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
-    return Card(
+  Widget build(BuildContext context) => Card(
       margin: const EdgeInsets.only(bottom: 12),
       elevation: 2,
       shadowColor: AppTheme.primaryColor.withOpacity(0.1),
@@ -112,7 +111,6 @@ class GuideListItemApi extends StatelessWidget {
         ),
       ),
     );
-  }
 
   Widget _buildIcon() {
     IconData iconData;
@@ -189,7 +187,7 @@ class GuideListItemApi extends StatelessWidget {
       );
     } else if (guide.isSaved) {
       // Show filled bookmark for already saved guides
-      return Icon(
+      return const Icon(
         Icons.bookmark,
         color: AppTheme.primaryColor,
         size: 20,
@@ -240,7 +238,7 @@ class GuideListItemApi extends StatelessWidget {
 
     return Row(
       children: [
-        Icon(
+        const Icon(
           Icons.access_time,
           size: 14,
           color: AppTheme.onSurfaceVariant,
@@ -290,7 +288,7 @@ class GuideListItemApi extends StatelessWidget {
               ),
             const SizedBox(width: 8),
             if (guide.isSaved)
-              Icon(
+              const Icon(
                 Icons.bookmark,
                 size: 16,
                 color: AppTheme.primaryColor,

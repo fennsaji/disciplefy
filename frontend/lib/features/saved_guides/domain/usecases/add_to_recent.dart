@@ -11,9 +11,7 @@ class AddToRecent implements UseCase<void, AddToRecentParams> {
   const AddToRecent(this.repository);
 
   @override
-  Future<Either<Failure, void>> call(AddToRecentParams params) async {
-    return await repository.addToRecent(params.guide);
-  }
+  Future<Either<Failure, void>> call(AddToRecentParams params) async => await repository.addToRecent(params.guide);
 }
 
 class AddToRecentParams extends Equatable {

@@ -100,7 +100,7 @@ class AppTextField extends StatelessWidget {
   });
 
   /// Factory constructor for email text fields.
-  AppTextField.email({
+  const AppTextField.email({
     super.key,
     this.controller,
     this.labelText = 'Email',
@@ -125,7 +125,7 @@ class AppTextField extends StatelessWidget {
         inputFormatters = null;
 
   /// Factory constructor for password text fields.
-  AppTextField.password({
+  const AppTextField.password({
     super.key,
     this.controller,
     this.labelText = 'Password',
@@ -150,7 +150,7 @@ class AppTextField extends StatelessWidget {
         inputFormatters = null;
 
   /// Factory constructor for multiline text fields.
-  AppTextField.multiline({
+  const AppTextField.multiline({
     super.key,
     this.controller,
     required this.labelText,
@@ -175,7 +175,7 @@ class AppTextField extends StatelessWidget {
         inputFormatters = null;
 
   /// Factory constructor for search text fields.
-  AppTextField.search({
+  const AppTextField.search({
     super.key,
     this.controller,
     this.labelText = 'Search',
@@ -200,8 +200,7 @@ class AppTextField extends StatelessWidget {
         inputFormatters = null;
 
   @override
-  Widget build(BuildContext context) {
-    return TextField(
+  Widget build(BuildContext context) => TextField(
       controller: controller,
       focusNode: focusNode,
       onChanged: onChanged,
@@ -270,5 +269,4 @@ class AppTextField extends StatelessWidget {
         ),
       ),
     );
-  }
 }

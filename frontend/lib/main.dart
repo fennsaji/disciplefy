@@ -53,8 +53,7 @@ class DisciplefyBibleStudyApp extends StatelessWidget {
   const DisciplefyBibleStudyApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return MultiBlocProvider(
+  Widget build(BuildContext context) => MultiBlocProvider(
       providers: [
         BlocProvider<StudyBloc>(
           create: (context) => sl<StudyBloc>(),
@@ -80,15 +79,13 @@ class DisciplefyBibleStudyApp extends StatelessWidget {
         routerConfig: AppRouter.router,
       ),
     );
-  }
 }
 
 class ErrorApp extends StatelessWidget {
   const ErrorApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
+  Widget build(BuildContext context) => MaterialApp(
       title: 'Disciplefy Bible Study - Error',
       theme: ThemeData(
         useMaterial3: true,
@@ -127,5 +124,4 @@ class ErrorApp extends StatelessWidget {
         ),
       ),
     );
-  }
 }

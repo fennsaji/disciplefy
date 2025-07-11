@@ -28,13 +28,13 @@ class ErrorPage extends StatelessWidget {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(
+                const Icon(
                   Icons.error_outline,
                   size: 80,
                   color: Colors.red,
                 ),
                 const SizedBox(height: 24),
-                Text(
+                const Text(
                   'Something went wrong',
                   style: TextStyle(
                     fontSize: 20,

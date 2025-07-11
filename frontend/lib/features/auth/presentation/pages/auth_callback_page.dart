@@ -88,7 +88,6 @@ class _AuthCallbackPageState extends State<AuthCallbackPage> {
         content: Text(message),
         backgroundColor: Theme.of(context).colorScheme.error,
         behavior: SnackBarBehavior.floating,
-        duration: const Duration(seconds: 4),
       ),
     );
 
@@ -101,8 +100,7 @@ class _AuthCallbackPageState extends State<AuthCallbackPage> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    return BlocListener<AuthBloc, auth_states.AuthState>(
+  Widget build(BuildContext context) => BlocListener<AuthBloc, auth_states.AuthState>(
       listener: (context, state) {
         if (state is auth_states.AuthenticatedState) {
           // Success - navigate to home
@@ -172,7 +170,6 @@ class _AuthCallbackPageState extends State<AuthCallbackPage> {
         ),
       ),
     );
-  }
 
   String _getProcessingText() {
     if (widget.error != null) {
@@ -199,8 +196,7 @@ class _AuthCallbackPageState extends State<AuthCallbackPage> {
     return false; // Set to true for debugging
   }
 
-  Widget _buildDebugInfo() {
-    return Container(
+  Widget _buildDebugInfo() => Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: AppTheme.surfaceColor,
@@ -228,10 +224,8 @@ class _AuthCallbackPageState extends State<AuthCallbackPage> {
         ],
       ),
     );
-  }
 
-  Widget _buildDebugItem(String label, String value) {
-    return Padding(
+  Widget _buildDebugItem(String label, String value) => Padding(
       padding: const EdgeInsets.only(bottom: 4),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -256,5 +250,4 @@ class _AuthCallbackPageState extends State<AuthCallbackPage> {
         ],
       ),
     );
-  }
 }

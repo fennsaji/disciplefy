@@ -10,7 +10,6 @@ import '../../data/services/recommended_guides_service.dart';
 import '../../domain/entities/recommended_guide_topic.dart';
 import '../../../daily_verse/presentation/bloc/daily_verse_bloc.dart';
 import '../../../daily_verse/presentation/bloc/daily_verse_event.dart';
-import '../../../daily_verse/presentation/bloc/daily_verse_state.dart';
 import '../../../daily_verse/presentation/widgets/daily_verse_card.dart';
 
 /// Home screen displaying daily verse, navigation options, and study recommendations.
@@ -32,7 +31,7 @@ class _HomeScreenState extends State<HomeScreen> {
   // State variables
   String _currentUserName = 'Guest';
   String _userType = 'guest';
-  bool _hasResumeableStudy = false;
+  final bool _hasResumeableStudy = false;
   bool _isLoadingTopics = true;
   String? _topicsError;
   List<RecommendedGuideTopic> _recommendedTopics = [];
@@ -117,7 +116,12 @@ class _HomeScreenState extends State<HomeScreen> {
     final isLargeScreen = screenHeight > 700;
 
     return BlocProvider(
-      create: (context) => sl<DailyVerseBloc>(),
+      create: (context) {
+        final bloc = sl<DailyVerseBloc>();
+        // Auto-load today's verse when BLoC is created
+        bloc.add(const LoadTodaysVerse());
+        return bloc;
+      },
       child: Scaffold(
         backgroundColor: AppTheme.backgroundColor,
         body: SafeArea(
@@ -176,8 +180,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildAppHeader() {
-    return Row(
+  Widget _buildAppHeader() => Row(
       children: [
         // App Logo
         Container(
@@ -228,10 +231,8 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       ],
     );
-  }
 
-  Widget _buildWelcomeMessage() {
-    return Column(
+  Widget _buildWelcomeMessage() => Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
@@ -256,11 +257,9 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       ],
     );
-  }
 
 
-  Widget _buildGenerateStudyButton() {
-    return SizedBox(
+  Widget _buildGenerateStudyButton() => SizedBox(
       width: double.infinity,
       child: ElevatedButton.icon(
         onPressed: () => context.go('/generate-study'),
@@ -286,10 +285,8 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       ),
     );
-  }
 
-  Widget _buildResumeStudyBanner() {
-    return Container(
+  Widget _buildResumeStudyBanner() => Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: AppTheme.accentColor.withOpacity(0.1),
@@ -343,10 +340,8 @@ class _HomeScreenState extends State<HomeScreen> {
         ],
       ),
     );
-  }
 
-  Widget _buildRecommendedTopics() {
-    return Column(
+  Widget _buildRecommendedTopics() => Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
@@ -384,10 +379,8 @@ class _HomeScreenState extends State<HomeScreen> {
           _buildTopicsGrid(),
       ],
     );
-  }
 
-  Widget _buildTopicsErrorWidget() {
-    return Container(
+  Widget _buildTopicsErrorWidget() => Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         color: AppTheme.accentColor.withOpacity(0.1),
@@ -440,10 +433,8 @@ class _HomeScreenState extends State<HomeScreen> {
         ],
       ),
     );
-  }
 
-  Widget _buildTopicsLoadingWidget() {
-    return LayoutBuilder(
+  Widget _buildTopicsLoadingWidget() => LayoutBuilder(
       builder: (context, constraints) {
         const double spacing = 16.0;
         final double cardWidth = (constraints.maxWidth - spacing) / 2;
@@ -460,10 +451,8 @@ class _HomeScreenState extends State<HomeScreen> {
         );
       },
     );
-  }
 
-  Widget _buildLoadingTopicCard() {
-    return Container(
+  Widget _buildLoadingTopicCard() => Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: AppTheme.surfaceColor,
@@ -572,10 +561,8 @@ class _HomeScreenState extends State<HomeScreen> {
         ],
       ),
     );
-  }
 
-  Widget _buildNoTopicsWidget() {
-    return Container(
+  Widget _buildNoTopicsWidget() => Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         color: AppTheme.surfaceColor,
@@ -613,7 +600,6 @@ class _HomeScreenState extends State<HomeScreen> {
         ],
       ),
     );
-  }
 
   Widget _buildTopicsGrid() {
     // Use a different approach: Wrap or ListView instead of fixed-height GridView
@@ -626,15 +612,13 @@ class _HomeScreenState extends State<HomeScreen> {
         return Wrap(
           spacing: spacing,
           runSpacing: spacing,
-          children: _recommendedTopics.map((topic) {
-            return SizedBox(
+          children: _recommendedTopics.map((topic) => SizedBox(
               width: cardWidth,
               child: _RecommendedGuideTopicCard(
                 topic: topic,
                 onTap: () => _navigateToStudyGuide(topic),
               ),
-            );
-          }).toList(),
+            )).toList(),
         );
       },
     );
@@ -675,7 +659,6 @@ class _RecommendedGuideTopicCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: color.withOpacity(0.2),
-            width: 1,
           ),
           boxShadow: [
             BoxShadow(
@@ -769,7 +752,7 @@ class _RecommendedGuideTopicCard extends StatelessWidget {
                 Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(
+                    const Icon(
                       Icons.schedule,
                       size: 12,
                       color: AppTheme.onSurfaceVariant,
@@ -787,7 +770,7 @@ class _RecommendedGuideTopicCard extends StatelessWidget {
                 Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(
+                    const Icon(
                       Icons.book_outlined,
                       size: 12,
                       color: AppTheme.onSurfaceVariant,

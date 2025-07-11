@@ -1,18 +1,15 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../../core/config/app_config.dart';
 import '../../../../core/error/exceptions.dart';
-import '../../../../core/services/auth_service.dart';
 import '../models/saved_guide_model.dart';
 
 /// API service for managing study guides (saved/recent)
 class StudyGuidesApiService {
   static String get _baseUrl => AppConfig.baseApiUrl.replaceAll('/functions/v1', '');
   static const String _studyGuidesEndpoint = '/functions/v1/study-guides';
-  
-  static const FlutterSecureStorage _secureStorage = FlutterSecureStorage();
   
   final http.Client _httpClient;
 
@@ -60,13 +57,13 @@ class StudyGuidesApiService {
             SavedGuideModel.fromApiResponse(guideJson as Map<String, dynamic>)
           ).toList();
         } else {
-          throw ServerException(
+          throw const ServerException(
             message: 'API returned failure response',
             code: 'API_ERROR',
           );
         }
       } else if (response.statusCode == 401) {
-        throw AuthenticationException(
+        throw const AuthenticationException(
           message: 'Authentication required',
           code: 'UNAUTHORIZED',
         );
@@ -113,18 +110,18 @@ class StudyGuidesApiService {
           final guideData = jsonData['data']['guide'] as Map<String, dynamic>;
           return SavedGuideModel.fromApiResponse(guideData);
         } else {
-          throw ServerException(
+          throw const ServerException(
             message: 'API returned failure response',
             code: 'API_ERROR',
           );
         }
       } else if (response.statusCode == 401) {
-        throw AuthenticationException(
+        throw const AuthenticationException(
           message: 'Authentication required to save guides',
           code: 'UNAUTHORIZED',
         );
       } else if (response.statusCode == 404) {
-        throw ServerException(
+        throw const ServerException(
           message: 'Study guide not found',
           code: 'NOT_FOUND',
         );
@@ -152,13 +149,14 @@ class StudyGuidesApiService {
       'apikey': AppConfig.supabaseAnonKey,
     };
 
-    // Get auth token from secure storage if available
-    final authToken = await _secureStorage.read(key: 'auth_token');
-    if (authToken != null && authToken.isNotEmpty) {
-      headers['Authorization'] = 'Bearer $authToken';
+    // Use Supabase session token for consistent authentication
+    final session = Supabase.instance.client.auth.currentSession;
+    if (session != null && session.accessToken.isNotEmpty) {
+      headers['Authorization'] = 'Bearer ${session.accessToken}';
+      print('🔐 [API] Using Supabase session token for user: ${session.user.id}');
     } else {
-      // For anonymous access, use the Supabase anon key
-      headers['Authorization'] = 'Bearer ${AppConfig.supabaseAnonKey}';
+      // For unauthenticated requests, only use apikey (no Authorization header)
+      print('🔐 [API] Making unauthenticated request with apikey only');
     }
 
     return headers;

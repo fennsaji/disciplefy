@@ -7,7 +7,6 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'dart:convert';
 
 import 'package:disciplefy_bible_study/features/auth/data/services/auth_service.dart';
-import 'package:disciplefy_bible_study/core/config/app_config.dart';
 
 import 'auth_service_test.mocks.dart';
 

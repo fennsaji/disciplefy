@@ -20,8 +20,7 @@ class AppTheme {
   static const Color surfaceColor = Color(0xFFFFFFFF); // White
   static const Color onSurfaceVariant = Color(0xFF6B7280); // Gray text
 
-  static ThemeData get lightTheme {
-    return ThemeData(
+  static ThemeData get lightTheme => ThemeData(
       useMaterial3: true,
       colorScheme: ColorScheme.fromSeed(
         seedColor: primaryColor,
@@ -130,10 +129,8 @@ class AppTheme {
         ),
       ),
     );
-  }
 
-  static ThemeData get darkTheme {
-    return ThemeData(
+  static ThemeData get darkTheme => ThemeData(
       useMaterial3: true,
       colorScheme: ColorScheme.fromSeed(
         seedColor: primaryColor,
@@ -151,5 +148,4 @@ class AppTheme {
       cardTheme: lightTheme.cardTheme,
       appBarTheme: lightTheme.appBarTheme,
     );
-  }
 }

@@ -84,9 +84,7 @@ class DailyVerseCacheService {
   }
 
   /// Get today's cached verse
-  Future<DailyVerseEntity?> getTodaysCachedVerse() async {
-    return getCachedVerse(DateTime.now());
-  }
+  Future<DailyVerseEntity?> getTodaysCachedVerse() async => getCachedVerse(DateTime.now());
 
   /// Check if verse is cached for a specific date
   Future<bool> isVerseCached(DateTime date) async {
@@ -209,9 +207,7 @@ class DailyVerseCacheService {
   }
 
   /// Format date as key for consistent caching
-  String _formatDateKey(DateTime date) {
-    return '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
-  }
+  String _formatDateKey(DateTime date) => '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
 
   /// Estimate cache size in bytes (rough approximation)
   int _estimateCacheSize() {

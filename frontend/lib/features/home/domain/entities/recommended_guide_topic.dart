@@ -71,8 +71,7 @@ class RecommendedGuideTopic extends Equatable {
     List<String>? tags,
     bool? isFeatured,
     DateTime? createdAt,
-  }) {
-    return RecommendedGuideTopic(
+  }) => RecommendedGuideTopic(
       id: id ?? this.id,
       title: title ?? this.title,
       description: description ?? this.description,
@@ -84,10 +83,7 @@ class RecommendedGuideTopic extends Equatable {
       isFeatured: isFeatured ?? this.isFeatured,
       createdAt: createdAt ?? this.createdAt,
     );
-  }
 
   @override
-  String toString() {
-    return 'RecommendedGuideTopic(id: $id, title: $title, category: $category, difficulty: $difficulty)';
-  }
+  String toString() => 'RecommendedGuideTopic(id: $id, title: $title, category: $category, difficulty: $difficulty)';
 }

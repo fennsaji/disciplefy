@@ -40,12 +40,12 @@ class SaveGuideApiService {
         final Map<String, dynamic> jsonData = json.decode(response.body);
         return jsonData['success'] == true;
       } else if (response.statusCode == 401) {
-        throw AuthenticationException(
+        throw const AuthenticationException(
           message: 'Authentication required to save guides',
           code: 'UNAUTHORIZED',
         );
       } else if (response.statusCode == 404) {
-        throw ServerException(
+        throw const ServerException(
           message: 'Study guide not found',
           code: 'NOT_FOUND',
         );

@@ -49,7 +49,7 @@ class AppConfig {
       if (isDevelopment) {
         return 'http://localhost:59641/auth/callback';
       }
-      return '${supabaseUrl}/auth/v1/callback';
+      return '$supabaseUrl/auth/v1/callback';
     }
     // Use deep link scheme for mobile apps (both development and production)
     return 'com.disciplefy.bible_study_app://auth/callback';
@@ -93,10 +93,8 @@ class AppConfig {
   static String get donationsUrl => '$baseApiUrl/donations';
   
   // Validation
-  static bool get isConfigValid {
-    return supabaseUrl.isNotEmpty &&
+  static bool get isConfigValid => supabaseUrl.isNotEmpty &&
            supabaseAnonKey.isNotEmpty;
-  }
   
   static bool get isOAuthConfigValid {
     return (kIsWeb && googleClientId.isNotEmpty) || 

@@ -17,41 +17,33 @@ class ThemeModeEntity extends Equatable {
     required this.isDarkMode,
   });
 
-  factory ThemeModeEntity.light() {
-    return const ThemeModeEntity(
+  factory ThemeModeEntity.light() => const ThemeModeEntity(
       mode: AppThemeMode.light,
       isSystemMode: false,
       isDarkMode: false,
     );
-  }
 
-  factory ThemeModeEntity.dark() {
-    return const ThemeModeEntity(
+  factory ThemeModeEntity.dark() => const ThemeModeEntity(
       mode: AppThemeMode.dark,
       isSystemMode: false,
       isDarkMode: true,
     );
-  }
 
-  factory ThemeModeEntity.system({required bool isDarkMode}) {
-    return ThemeModeEntity(
+  factory ThemeModeEntity.system({required bool isDarkMode}) => ThemeModeEntity(
       mode: AppThemeMode.system,
       isSystemMode: true,
       isDarkMode: isDarkMode,
     );
-  }
 
   ThemeModeEntity copyWith({
     AppThemeMode? mode,
     bool? isSystemMode,
     bool? isDarkMode,
-  }) {
-    return ThemeModeEntity(
+  }) => ThemeModeEntity(
       mode: mode ?? this.mode,
       isSystemMode: isSystemMode ?? this.isSystemMode,
       isDarkMode: isDarkMode ?? this.isDarkMode,
     );
-  }
 
   @override
   List<Object?> get props => [mode, isSystemMode, isDarkMode];

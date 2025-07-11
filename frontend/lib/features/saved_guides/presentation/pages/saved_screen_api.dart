@@ -3,7 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../../core/theme/app_theme.dart';
-import '../../data/services/study_guides_api_service.dart';
+import '../../../../core/di/injection_container.dart';
 import '../../domain/entities/saved_guide_entity.dart';
 import '../bloc/saved_guides_api_bloc.dart';
 import '../bloc/saved_guides_event.dart';
@@ -96,18 +96,20 @@ class _SavedScreenApiState extends State<SavedScreenApi> with TickerProviderStat
   }
 
   @override
-  Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (context) => SavedGuidesApiBloc(
-        apiService: StudyGuidesApiService(),
-      )..add(const LoadSavedGuidesFromApi(refresh: true)),
+  Widget build(BuildContext context) => BlocProvider(
+      create: (context) {
+        final bloc = sl<SavedGuidesApiBloc>();
+        // Only load saved guides on initialization (default tab)
+        // Recent guides will be loaded when user switches to that tab
+        bloc.add(const LoadSavedGuidesFromApi(refresh: true));
+        return bloc;
+      },
       child: _SavedScreenApiContent(
         tabController: _tabController,
         savedScrollController: _savedScrollController,
         recentScrollController: _recentScrollController,
       ),
     );
-  }
 }
 
 class _SavedScreenApiContent extends StatelessWidget {
@@ -122,8 +124,7 @@ class _SavedScreenApiContent extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
+  Widget build(BuildContext context) => Scaffold(
       backgroundColor: AppTheme.backgroundColor,
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -220,6 +221,10 @@ class _SavedScreenApiContent extends StatelessWidget {
                   return _buildLoadingIndicator(state.isRefresh);
                 }
 
+                if (state is SavedGuidesAuthRequired) {
+                  return _buildAuthRequiredState(context, state);
+                }
+
                 if (state is SavedGuidesApiLoaded) {
                   return TabBarView(
                     controller: tabController,
@@ -241,10 +246,8 @@ class _SavedScreenApiContent extends StatelessWidget {
         ],
       ),
     );
-  }
 
-  Widget _buildLoadingIndicator(bool isRefresh) {
-    return Center(
+  Widget _buildLoadingIndicator(bool isRefresh) => Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
@@ -262,10 +265,8 @@ class _SavedScreenApiContent extends StatelessWidget {
         ],
       ),
     );
-  }
 
-  Widget _buildErrorState(BuildContext context, String message) {
-    return Center(
+  Widget _buildErrorState(BuildContext context, String message) => Center(
       child: Padding(
         padding: const EdgeInsets.all(20),
         child: Column(
@@ -311,7 +312,61 @@ class _SavedScreenApiContent extends StatelessWidget {
         ),
       ),
     );
-  }
+
+  Widget _buildAuthRequiredState(BuildContext context, SavedGuidesAuthRequired state) => Center(
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              state.isForSavedGuides ? Icons.bookmark_border : Icons.history,
+              size: 64,
+              color: AppTheme.primaryColor.withOpacity(0.6),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Sign In Required',
+              style: GoogleFonts.inter(
+                fontSize: 20,
+                fontWeight: FontWeight.w600,
+                color: AppTheme.textPrimary,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              state.message,
+              style: GoogleFonts.inter(
+                fontSize: 14,
+                color: AppTheme.onSurfaceVariant,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 24),
+            ElevatedButton(
+              onPressed: () {
+                context.go('/auth');
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.secondaryColor,
+                foregroundColor: AppTheme.textPrimary,
+                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              child: Text(
+                'Sign In',
+                style: GoogleFonts.inter(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
 
   Widget _buildSavedTab(BuildContext context, SavedGuidesApiLoaded state) {
     if (state.savedGuides.isEmpty && !state.isLoadingSaved) {
@@ -394,7 +449,6 @@ class _SavedScreenApiContent extends StatelessWidget {
             guide: guide,
             onTap: () => _openGuide(context, guide),
             onSave: guide.isSaved ? null : () => _toggleSaveStatus(context, guide, true),
-            showRemoveOption: false,
           );
         },
       ),

@@ -14,7 +14,7 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
 
   AuthBloc({required AuthService authService})
       : _authService = authService,
-        super(auth_states.AuthInitialState()) {
+        super(const auth_states.AuthInitialState()) {
     // Register event handlers
     on<AuthInitializeRequested>(_onAuthInitialize);
     on<GoogleSignInRequested>(_onGoogleSignIn);
@@ -48,7 +48,7 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
     Emitter<auth_states.AuthState> emit,
   ) async {
     try {
-      emit(auth_states.AuthLoadingState());
+      emit(const auth_states.AuthLoadingState());
 
       // Check if user is already authenticated
       if (_authService.isAuthenticated) {
@@ -63,16 +63,16 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
             isAnonymous: user.isAnonymous,
           ));
         } else {
-          emit(auth_states.UnauthenticatedState());
+          emit(const auth_states.UnauthenticatedState());
         }
       } else {
-        emit(auth_states.UnauthenticatedState());
+        emit(const auth_states.UnauthenticatedState());
       }
     } catch (e) {
       if (kDebugMode) {
         print('Auth initialization error: $e');
       }
-      emit(auth_states.AuthErrorState(message: 'Failed to initialize authentication'));
+      emit(const auth_states.AuthErrorState(message: 'Failed to initialize authentication'));
     }
   }
 
@@ -82,7 +82,7 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
     Emitter<auth_states.AuthState> emit,
   ) async {
     try {
-      emit(auth_states.AuthLoadingState());
+      emit(const auth_states.AuthLoadingState());
 
       // Attempt Google sign-in
       final success = await _authService.signInWithGoogle();
@@ -93,7 +93,6 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
         // Create or update user profile
         await _authService.upsertUserProfile(
           languagePreference: 'en', // Default language
-          themePreference: 'light',
         );
         
         // Load user profile data
@@ -105,7 +104,7 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
           isAnonymous: false,
         ));
       } else {
-        emit(auth_states.AuthErrorState(message: 'Google sign-in failed'));
+        emit(const auth_states.AuthErrorState(message: 'Google sign-in failed'));
       }
     } catch (e) {
       if (kDebugMode) {
@@ -139,7 +138,7 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
     Emitter<auth_states.AuthState> emit,
   ) async {
     try {
-      emit(auth_states.AuthLoadingState());
+      emit(const auth_states.AuthLoadingState());
       
       if (kDebugMode) {
         print('Processing Google OAuth callback with code: ${event.code.substring(0, 10)}...');
@@ -206,7 +205,7 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
     Emitter<auth_states.AuthState> emit,
   ) async {
     try {
-      emit(auth_states.AuthLoadingState());
+      emit(const auth_states.AuthLoadingState());
 
       // Attempt anonymous sign-in
       final success = await _authService.signInAnonymously();
@@ -216,17 +215,16 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
         
         emit(auth_states.AuthenticatedState(
           user: user,
-          profile: null, // Anonymous users don't have profiles
           isAnonymous: true,
         ));
       } else {
-        emit(auth_states.AuthErrorState(message: 'Anonymous sign-in failed'));
+        emit(const auth_states.AuthErrorState(message: 'Anonymous sign-in failed'));
       }
     } catch (e) {
       if (kDebugMode) {
         print('Anonymous sign-in error: $e');
       }
-      emit(auth_states.AuthErrorState(message: 'Failed to continue as guest'));
+      emit(const auth_states.AuthErrorState(message: 'Failed to continue as guest'));
     }
   }
 
@@ -236,17 +234,17 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
     Emitter<auth_states.AuthState> emit,
   ) async {
     try {
-      emit(auth_states.AuthLoadingState());
+      emit(const auth_states.AuthLoadingState());
 
       // Sign out from authentication service
       await _authService.signOut();
       
-      emit(auth_states.UnauthenticatedState());
+      emit(const auth_states.UnauthenticatedState());
     } catch (e) {
       if (kDebugMode) {
         print('Sign-out error: $e');
       }
-      emit(auth_states.AuthErrorState(message: 'Failed to sign out'));
+      emit(const auth_states.AuthErrorState(message: 'Failed to sign out'));
     }
   }
 
@@ -271,7 +269,7 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
           ));
         }
       } else if (authState.event == AuthChangeEvent.signedOut) {
-        emit(auth_states.UnauthenticatedState());
+        emit(const auth_states.UnauthenticatedState());
       }
     } catch (e) {
       if (kDebugMode) {
@@ -287,17 +285,17 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
     Emitter<auth_states.AuthState> emit,
   ) async {
     try {
-      emit(auth_states.AuthLoadingState());
+      emit(const auth_states.AuthLoadingState());
 
       // Delete account and all associated data
       await _authService.deleteAccount();
       
-      emit(auth_states.UnauthenticatedState());
+      emit(const auth_states.UnauthenticatedState());
     } catch (e) {
       if (kDebugMode) {
         print('Delete account error: $e');
       }
-      emit(auth_states.AuthErrorState(message: 'Failed to delete account'));
+      emit(const auth_states.AuthErrorState(message: 'Failed to delete account'));
     }
   }
 
@@ -339,7 +337,7 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
       if (kDebugMode) {
         print('Profile update error: $e');
       }
-      emit(auth_states.AuthErrorState(message: 'Failed to update profile'));
+      emit(const auth_states.AuthErrorState(message: 'Failed to update profile'));
     }
   }
 }

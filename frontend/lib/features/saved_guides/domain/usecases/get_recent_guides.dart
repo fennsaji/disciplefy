@@ -10,7 +10,5 @@ class GetRecentGuides implements UseCase<List<SavedGuideEntity>, NoParams> {
   const GetRecentGuides(this.repository);
 
   @override
-  Future<Either<Failure, List<SavedGuideEntity>>> call(NoParams params) async {
-    return await repository.getRecentGuides();
-  }
+  Future<Either<Failure, List<SavedGuideEntity>>> call(NoParams params) async => await repository.getRecentGuides();
 }

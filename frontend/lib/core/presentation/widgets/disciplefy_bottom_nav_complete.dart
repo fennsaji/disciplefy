@@ -145,8 +145,8 @@ class _BottomNavItem extends StatelessWidget {
     final isDark = theme.brightness == Brightness.dark;
     
     // ✅ Theme colors as specified
-    final activeColor = const Color(0xFF6A4FB6); // Active icon color
-    final inactiveColor = const Color(0xFF5E5E5E); // Inactive color for both light and dark
+    const activeColor = Color(0xFF6A4FB6); // Active icon color
+    const inactiveColor = Color(0xFF5E5E5E); // Inactive color for both light and dark
 
     return Material(
       color: Colors.transparent,

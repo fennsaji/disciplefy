@@ -110,19 +110,42 @@ serve(async (req: Request): Promise<Response> => {
       requestData
     )
 
-    // Generate study guide
-    const studyGuide = await generateStudyGuide(
-      dependencies.studyGuideService,
+    // Check for existing study guide first
+    const existingStudyGuide = await checkExistingStudyGuide(
+      dependencies.repository,
+      dependencies.securityValidator,
       requestData
     )
 
-    // Store study guide
-    const savedStudyGuide = await saveStudyGuide(
-      dependencies.repository,
-      dependencies.securityValidator,
-      requestData,
-      studyGuide
-    )
+    let savedStudyGuide: any
+
+    if (existingStudyGuide) {
+      // Return existing study guide
+      savedStudyGuide = existingStudyGuide
+      
+      // Log cache hit
+      await dependencies.analyticsLogger.logEvent('study_guide_cache_hit', {
+        input_type: requestData.input_type,
+        language: requestData.language || DEFAULT_LANGUAGE,
+        is_authenticated: requestData.user_context?.is_authenticated ?? false,
+        user_id: requestData.user_context?.user_id,
+        session_id: requestData.user_context?.session_id
+      }, req.headers.get('x-forwarded-for'))
+    } else {
+      // Generate new study guide
+      const studyGuide = await generateStudyGuide(
+        dependencies.studyGuideService,
+        requestData
+      )
+
+      // Store study guide
+      savedStudyGuide = await saveStudyGuide(
+        dependencies.repository,
+        dependencies.securityValidator,
+        requestData,
+        studyGuide
+      )
+    }
 
     // Log analytics
     await logStudyGeneration(
@@ -332,6 +355,45 @@ async function enforceRateLimit(
 
   await rateLimiter.enforceRateLimit(identifier, userType)
   return await rateLimiter.checkRateLimit(identifier, userType)
+}
+
+/**
+ * Checks for existing study guide before generating new one.
+ * 
+ * @param repository - Study guide repository
+ * @param securityValidator - Security validator for hashing
+ * @param requestData - Request data for lookup
+ * @returns Existing study guide or null if not found
+ */
+async function checkExistingStudyGuide(
+  repository: StudyGuideRepository,
+  securityValidator: SecurityValidator,
+  requestData: StudyGenerationRequest
+): Promise<any> {
+  const userContext = requestData.user_context!
+  const isAuthenticated = userContext.is_authenticated
+
+  if (isAuthenticated) {
+    // Check for existing authenticated study guide
+    return await repository.findExistingAuthenticatedStudyGuide(
+      userContext.user_id!,
+      requestData.input_type,
+      requestData.input_value,
+      requestData.language || DEFAULT_LANGUAGE
+    )
+  } else {
+    // Check for existing anonymous study guide
+    const inputValueHash = await securityValidator.hashSensitiveData(
+      requestData.input_value
+    )
+    
+    return await repository.findExistingAnonymousStudyGuide(
+      userContext.session_id!,
+      requestData.input_type,
+      inputValueHash,
+      requestData.language || DEFAULT_LANGUAGE
+    )
+  }
 }
 
 /**

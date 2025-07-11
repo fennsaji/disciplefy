@@ -60,6 +60,116 @@ export class StudyGuideRepository {
   constructor(private readonly supabaseClient: SupabaseClient) {}
 
   /**
+   * Finds an existing study guide for authenticated users.
+   * 
+   * @param userId - User ID
+   * @param inputType - Input type (scripture or topic)
+   * @param inputValue - Input value
+   * @param language - Language preference
+   * @returns Promise resolving to existing study guide or null
+   */
+  async findExistingAuthenticatedStudyGuide(
+    userId: string,
+    inputType: string,
+    inputValue: string,
+    language: string
+  ): Promise<StudyGuideRecord | null> {
+    
+    this.validateUserId(userId)
+    this.validateInputParams(inputType, inputValue, language)
+
+    try {
+      const { data, error } = await this.supabaseClient
+        .from('study_guides')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('input_type', inputType)
+        .eq('input_value', inputValue)
+        .eq('language', language)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single()
+
+      if (error) {
+        if (error.code === 'PGRST116') {
+          // No rows returned - not found
+          return null
+        }
+        throw new AppError(
+          'DATABASE_ERROR',
+          `Failed to find existing study guide: ${error.message}`,
+          500
+        )
+      }
+
+      return data as StudyGuideRecord
+      
+    } catch (error) {
+      if (error instanceof AppError) {
+        throw error
+      }
+      
+      // Don't throw for not found case
+      return null
+    }
+  }
+
+  /**
+   * Finds an existing study guide for anonymous users.
+   * 
+   * @param sessionId - Session ID
+   * @param inputType - Input type (scripture or topic)
+   * @param inputValueHash - Hashed input value
+   * @param language - Language preference
+   * @returns Promise resolving to existing study guide or null
+   */
+  async findExistingAnonymousStudyGuide(
+    sessionId: string,
+    inputType: string,
+    inputValueHash: string,
+    language: string
+  ): Promise<StudyGuideRecord | null> {
+    
+    this.validateSessionId(sessionId)
+    this.validateInputParams(inputType, inputValueHash, language)
+
+    try {
+      const { data, error } = await this.supabaseClient
+        .from('anonymous_study_guides')
+        .select('*')
+        .eq('session_id', sessionId)
+        .eq('input_type', inputType)
+        .eq('input_value_hash', inputValueHash)
+        .eq('language', language)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single()
+
+      if (error) {
+        if (error.code === 'PGRST116') {
+          // No rows returned - not found
+          return null
+        }
+        throw new AppError(
+          'DATABASE_ERROR',
+          `Failed to find existing anonymous study guide: ${error.message}`,
+          500
+        )
+      }
+
+      return data as StudyGuideRecord
+      
+    } catch (error) {
+      if (error instanceof AppError) {
+        throw error
+      }
+      
+      // Don't throw for not found case
+      return null
+    }
+  }
+
+  /**
    * Saves a study guide for an authenticated user.
    * 
    * @param userId - User ID
@@ -530,6 +640,40 @@ export class StudyGuideRepository {
       throw new AppError(
         'VALIDATION_ERROR',
         'Offset must be a non-negative integer',
+        400
+      )
+    }
+  }
+
+  /**
+   * Validates input parameters for study guide lookup.
+   * 
+   * @param inputType - Input type to validate
+   * @param inputValue - Input value to validate
+   * @param language - Language to validate
+   * @throws {AppError} When parameters are invalid
+   */
+  private validateInputParams(inputType: string, inputValue: string, language: string): void {
+    if (!inputType || !['scripture', 'topic'].includes(inputType)) {
+      throw new AppError(
+        'VALIDATION_ERROR',
+        'Input type must be either "scripture" or "topic"',
+        400
+      )
+    }
+
+    if (!inputValue || typeof inputValue !== 'string' || inputValue.trim().length === 0) {
+      throw new AppError(
+        'VALIDATION_ERROR',
+        'Input value must be a non-empty string',
+        400
+      )
+    }
+
+    if (!language || typeof language !== 'string' || language.trim().length === 0) {
+      throw new AppError(
+        'VALIDATION_ERROR',
+        'Language must be a non-empty string',
         400
       )
     }

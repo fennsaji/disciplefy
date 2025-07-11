@@ -161,7 +161,6 @@ class StudyBloc extends Bloc<StudyEvent, StudyState> {
           code: 'UNEXPECTED_ERROR',
           context: {'error': e.toString()},
         ),
-        isRetryable: true,
       ));
     }
   }

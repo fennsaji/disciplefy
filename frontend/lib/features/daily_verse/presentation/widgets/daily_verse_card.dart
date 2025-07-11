@@ -7,10 +7,6 @@ import '../bloc/daily_verse_bloc.dart';
 import '../bloc/daily_verse_event.dart';
 import '../bloc/daily_verse_state.dart';
 
-/// Light gold highlight color for selected tabs and icons
-const Color _highlightColor = Color(0xFFFFEEC0);
-/// Primary purple color for text elements
-const Color _primaryPurple = Color(0xFF6A4FB6);
 
 /// Daily verse card widget for home screen
 class DailyVerseCard extends StatelessWidget {
@@ -30,8 +26,7 @@ class DailyVerseCard extends StatelessWidget {
     final theme = Theme.of(context);
     
     return BlocBuilder<DailyVerseBloc, DailyVerseState>(
-      builder: (context, state) {
-        return Container(
+      builder: (context, state) => Container(
           margin: margin ?? const EdgeInsets.symmetric(horizontal: 20),
           child: Card(
             elevation: 2,
@@ -42,8 +37,8 @@ class DailyVerseCard extends StatelessWidget {
             child: Container(
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(16),
-                // Use a clean white background for better readability
-                color: theme.colorScheme.surface,
+                // Use secondary theme color (light gold) for consistent theming
+                color: theme.colorScheme.secondary,
                 border: Border.all(
                   color: theme.colorScheme.primary.withValues(alpha: 0.12),
                   width: 1,
@@ -52,8 +47,7 @@ class DailyVerseCard extends StatelessWidget {
               child: _buildCardContent(context, state),
             ),
           ),
-        );
-      },
+        ),
     );
   }
 
@@ -82,7 +76,7 @@ class DailyVerseCard extends StatelessWidget {
             children: [
               Icon(
                 Icons.menu_book,
-                color: theme.colorScheme.primary,
+                color: theme.colorScheme.onSecondary,
                 size: 24,
               ),
               const SizedBox(width: 12),
@@ -90,7 +84,7 @@ class DailyVerseCard extends StatelessWidget {
                 child: Text(
                   isRefreshing ? 'Refreshing...' : 'Loading Verse of the Day...',
                   style: theme.textTheme.titleMedium?.copyWith(
-                    color: theme.colorScheme.primary,
+                    color: theme.colorScheme.onSecondary,
                   ),
                 ),
               ),
@@ -98,7 +92,7 @@ class DailyVerseCard extends StatelessWidget {
           ),
           const SizedBox(height: 20),
           LinearProgressIndicator(
-            valueColor: AlwaysStoppedAnimation<Color>(theme.colorScheme.primary),
+            valueColor: AlwaysStoppedAnimation<Color>(theme.colorScheme.onSecondary),
             backgroundColor: theme.colorScheme.surface,
           ),
           const SizedBox(height: 16),
@@ -139,7 +133,7 @@ class DailyVerseCard extends StatelessWidget {
               child: Text(
                 state.verse.reference,
                 style: theme.textTheme.titleMedium?.copyWith(
-                  color: _primaryPurple,
+                  color: theme.colorScheme.onSecondary,
                   fontWeight: FontWeight.w700,
                   fontSize: 16,
                   letterSpacing: 0.5,
@@ -153,11 +147,10 @@ class DailyVerseCard extends StatelessWidget {
               padding: const EdgeInsets.all(20),
               margin: const EdgeInsets.only(bottom: 20),
               decoration: BoxDecoration(
-                color: _highlightColor.withValues(alpha: 0.3),
+                color: theme.colorScheme.secondary.withValues(alpha: 0.3),
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(
-                  color: _highlightColor.withValues(alpha: 0.6),
-                  width: 1,
+                  color: theme.colorScheme.secondary.withValues(alpha: 0.6),
                 ),
               ),
               child: Text(
@@ -165,7 +158,7 @@ class DailyVerseCard extends StatelessWidget {
                 style: theme.textTheme.bodyLarge?.copyWith(
                   fontSize: 18,
                   fontWeight: FontWeight.w500,
-                  color: theme.colorScheme.onSurface,
+                  color: theme.colorScheme.onSecondary,
                   height: 1.7,
                   letterSpacing: 0.3,
                 ),
@@ -209,7 +202,7 @@ class DailyVerseCard extends StatelessWidget {
               Text(
                 state.formattedDate,
                 style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
+                  color: theme.colorScheme.onSecondary.withValues(alpha: 0.8),
                 ),
               ),
             ],
@@ -227,7 +220,7 @@ class DailyVerseCard extends StatelessWidget {
           Text(
             state.verse.reference,
             style: theme.textTheme.labelLarge?.copyWith(
-              color: theme.colorScheme.primary,
+              color: theme.colorScheme.onSecondary,
               fontWeight: FontWeight.w600,
               letterSpacing: 0.5,
             ),
@@ -240,11 +233,10 @@ class DailyVerseCard extends StatelessWidget {
             width: double.infinity,
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: theme.colorScheme.primaryContainer.withValues(alpha: 0.05),
+              color: theme.colorScheme.secondary.withValues(alpha: 0.3),
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                color: theme.colorScheme.primary.withValues(alpha: 0.08),
-                width: 1,
+                color: theme.colorScheme.secondary.withValues(alpha: 0.6),
               ),
             ),
             child: Text(
@@ -252,7 +244,7 @@ class DailyVerseCard extends StatelessWidget {
               style: theme.textTheme.headlineSmall?.copyWith(
                 fontSize: 18,
                 fontWeight: FontWeight.w500,
-                color: theme.colorScheme.onSurface,
+                color: theme.colorScheme.onSecondary,
                 height: 1.6,
               ),
             ),
@@ -279,14 +271,14 @@ class DailyVerseCard extends StatelessWidget {
             'Unable to Load Verse',
             style: theme.textTheme.headlineSmall?.copyWith(
               fontWeight: FontWeight.w600,
-              color: theme.colorScheme.onSurface,
+              color: theme.colorScheme.onSecondary,
             ),
           ),
           const SizedBox(height: 8),
           Text(
             state.message,
             style: theme.textTheme.bodyMedium?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
+              color: theme.colorScheme.onSecondary.withValues(alpha: 0.8),
             ),
             textAlign: TextAlign.center,
           ),
@@ -308,7 +300,10 @@ class DailyVerseCard extends StatelessWidget {
   }
 
   Widget _buildEmptyState(BuildContext context) {
-    // Auto-load should happen in initState, so empty state shows loading
+    // Trigger load if we're in initial state and no load has been triggered
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<DailyVerseBloc>().add(const LoadTodaysVerse());
+    });
     return _buildLoadingState(context, false);
   }
 
@@ -319,7 +314,7 @@ class DailyVerseCard extends StatelessWidget {
       children: [
         Icon(
           Icons.menu_book,
-          color: theme.colorScheme.primary,
+          color: theme.colorScheme.onSecondary,
           size: 24,
         ),
         const SizedBox(width: 12),
@@ -331,13 +326,13 @@ class DailyVerseCard extends StatelessWidget {
                 'Verse of the Day',
                 style: theme.textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.w600,
-                  color: theme.colorScheme.primary,
+                  color: theme.colorScheme.onSecondary,
                 ),
               ),
               Text(
                 date,
                 style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
+                  color: theme.colorScheme.onSecondary.withValues(alpha: 0.8),
                 ),
               ),
             ],
@@ -347,14 +342,14 @@ class DailyVerseCard extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
             decoration: BoxDecoration(
-              color: theme.colorScheme.primary.withValues(alpha: 0.1),
+              color: theme.colorScheme.onSecondary.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Text(
               'Cached',
               style: theme.textTheme.labelSmall?.copyWith(
                 fontWeight: FontWeight.w500,
-                color: theme.colorScheme.primary,
+                color: theme.colorScheme.onSecondary,
               ),
             ),
           ),
@@ -380,18 +375,18 @@ class DailyVerseCard extends StatelessWidget {
               padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 18),
               decoration: BoxDecoration(
                 color: isSelected 
-                    ? _highlightColor 
+                    ? theme.colorScheme.secondary 
                     : theme.colorScheme.surface,
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
                   color: isSelected 
-                      ? _highlightColor 
-                      : _primaryPurple.withValues(alpha: 0.3),
+                      ? theme.colorScheme.secondary 
+                      : theme.colorScheme.primary.withValues(alpha: 0.3),
                   width: 1.5,
                 ),
                 boxShadow: isSelected ? [
                   BoxShadow(
-                    color: _highlightColor.withValues(alpha: 0.4),
+                    color: theme.colorScheme.secondary.withValues(alpha: 0.4),
                     blurRadius: 6,
                     offset: const Offset(0, 3),
                   ),
@@ -402,8 +397,8 @@ class DailyVerseCard extends StatelessWidget {
                 style: theme.textTheme.labelMedium?.copyWith(
                   fontWeight: FontWeight.w600,
                   color: isSelected 
-                      ? _primaryPurple 
-                      : _primaryPurple,
+                      ? theme.colorScheme.onSecondary 
+                      : theme.colorScheme.onSecondary.withValues(alpha: 0.7),
                 ),
                 textAlign: TextAlign.center,
               ),
@@ -426,12 +421,12 @@ class DailyVerseCard extends StatelessWidget {
           icon: Icon(
             Icons.copy,
             size: 20,
-            color: _primaryPurple,
+            color: theme.colorScheme.onSecondary,
           ),
           label: Text(
             'Copy',
             style: theme.textTheme.labelLarge?.copyWith(
-              color: _primaryPurple,
+              color: theme.colorScheme.onSecondary,
             ),
           ),
           style: TextButton.styleFrom(
@@ -448,12 +443,12 @@ class DailyVerseCard extends StatelessWidget {
           icon: Icon(
             Icons.share,
             size: 20,
-            color: _primaryPurple,
+            color: theme.colorScheme.onSecondary,
           ),
           label: Text(
             'Share',
             style: theme.textTheme.labelLarge?.copyWith(
-              color: _primaryPurple,
+              color: theme.colorScheme.onSecondary,
             ),
           ),
           style: TextButton.styleFrom(
@@ -471,7 +466,7 @@ class DailyVerseCard extends StatelessWidget {
           },
           icon: Icon(
             Icons.refresh,
-            color: _primaryPurple,
+            color: theme.colorScheme.onSecondary,
             size: 24,
           ),
           style: IconButton.styleFrom(

@@ -56,15 +56,13 @@ class DailyVerseLoaded extends DailyVerseState {
     VerseLanguage? preferredLanguage,
     bool? isFromCache,
     bool? isServiceAvailable,
-  }) {
-    return DailyVerseLoaded(
+  }) => DailyVerseLoaded(
       verse: verse ?? this.verse,
       currentLanguage: currentLanguage ?? this.currentLanguage,
       preferredLanguage: preferredLanguage ?? this.preferredLanguage,
       isFromCache: isFromCache ?? this.isFromCache,
       isServiceAvailable: isServiceAvailable ?? this.isServiceAvailable,
     );
-  }
 
   @override
   List<Object?> get props => [
@@ -113,13 +111,11 @@ class DailyVerseOffline extends DailyVerseState {
     DailyVerseEntity? verse,
     VerseLanguage? currentLanguage,
     VerseLanguage? preferredLanguage,
-  }) {
-    return DailyVerseOffline(
+  }) => DailyVerseOffline(
       verse: verse ?? this.verse,
       currentLanguage: currentLanguage ?? this.currentLanguage,
       preferredLanguage: preferredLanguage ?? this.preferredLanguage,
     );
-  }
 
   @override
   List<Object?> get props => [verse, currentLanguage, preferredLanguage];

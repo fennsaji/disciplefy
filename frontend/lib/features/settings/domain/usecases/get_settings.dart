@@ -10,7 +10,5 @@ class GetSettings implements UseCase<AppSettingsEntity, NoParams> {
   const GetSettings(this.repository);
 
   @override
-  Future<Either<Failure, AppSettingsEntity>> call(NoParams params) async {
-    return await repository.getSettings();
-  }
+  Future<Either<Failure, AppSettingsEntity>> call(NoParams params) async => await repository.getSettings();
 }

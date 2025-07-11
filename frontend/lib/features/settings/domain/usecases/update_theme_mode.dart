@@ -11,9 +11,7 @@ class UpdateThemeMode implements UseCase<void, UpdateThemeModeParams> {
   const UpdateThemeMode(this.repository);
 
   @override
-  Future<Either<Failure, void>> call(UpdateThemeModeParams params) async {
-    return await repository.updateThemeMode(params.themeMode);
-  }
+  Future<Either<Failure, void>> call(UpdateThemeModeParams params) async => await repository.updateThemeMode(params.themeMode);
 }
 
 class UpdateThemeModeParams extends Equatable {

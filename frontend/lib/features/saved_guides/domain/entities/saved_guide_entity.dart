@@ -38,8 +38,7 @@ class SavedGuideEntity extends Equatable {
     bool? isSaved,
     String? verseReference,
     String? topicName,
-  }) {
-    return SavedGuideEntity(
+  }) => SavedGuideEntity(
       id: id ?? this.id,
       title: title ?? this.title,
       content: content ?? this.content,
@@ -50,7 +49,6 @@ class SavedGuideEntity extends Equatable {
       verseReference: verseReference ?? this.verseReference,
       topicName: topicName ?? this.topicName,
     );
-  }
 
   String get displayTitle {
     switch (type) {

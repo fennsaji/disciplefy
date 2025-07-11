@@ -17,8 +17,7 @@ class EmptyStateWidget extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
-    return Center(
+  Widget build(BuildContext context) => Center(
       child: Padding(
         padding: const EdgeInsets.all(32),
         child: Column(
@@ -65,5 +64,4 @@ class EmptyStateWidget extends StatelessWidget {
         ),
       ),
     );
-  }
 }

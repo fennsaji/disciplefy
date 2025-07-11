@@ -184,7 +184,6 @@ class AuthService {
           // Create or update user profile
           await upsertUserProfile(
             languagePreference: 'en',
-            themePreference: 'light',
           );
           
           return true;

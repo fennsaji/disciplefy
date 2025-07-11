@@ -84,8 +84,7 @@ class _StudyInputPageState extends State<StudyInputPage>
           }
         },
         child: BlocBuilder<StudyBloc, StudyState>(
-          builder: (context, state) {
-            return Stack(
+          builder: (context, state) => Stack(
               children: [
                 TabBarView(
                   controller: _tabController,
@@ -128,8 +127,7 @@ class _StudyInputPageState extends State<StudyInputPage>
                     ),
                   ),
               ],
-            );
-          },
+            ),
         ),
       ),
     );

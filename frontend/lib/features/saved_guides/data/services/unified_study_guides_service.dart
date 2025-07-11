@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/services/auth_service.dart';
 import '../models/saved_guide_model.dart';
 import 'study_guides_api_service.dart';
@@ -17,15 +18,26 @@ class UnifiedStudyGuidesService {
     int limit = 20,
     int offset = 0,
   }) async {
-    // Check authentication status
-    final isFullyAuthenticated = await AuthService.isFullyAuthenticated();
-    final isGuest = await AuthService.isGuestUser();
+    // Use consistent authentication check with router (Supabase)
+    final user = Supabase.instance.client.auth.currentUser;
+    final isAuthenticated = user != null;
+    final isAnonymous = user?.isAnonymous ?? true;
     
-    if (isGuest) {
-      return StudyGuidesResult.authRequired();
-    }
+    // Also check AuthService for compatibility
+    final userType = await AuthService.getUserType();
+    final hasStoredToken = await AuthService.getAuthToken() != null;
     
-    if (!isFullyAuthenticated) {
+    // Debug authentication state
+    print('🔐 [SAVED_GUIDES] Auth Debug:');
+    print('  - Supabase isAuthenticated: $isAuthenticated');
+    print('  - Supabase isAnonymous: $isAnonymous');
+    print('  - Supabase user email: ${user?.email ?? "none"}');
+    print('  - AuthService userType: $userType');
+    print('  - AuthService hasToken: $hasStoredToken');
+    
+    // Require proper authentication (not anonymous)
+    if (!isAuthenticated || isAnonymous) {
+      print('❌ [SAVED_GUIDES] User needs authentication - not properly signed in');
       return StudyGuidesResult.authRequired();
     }
     
@@ -47,10 +59,12 @@ class UnifiedStudyGuidesService {
     required String guideId,
     required bool save,
   }) async {
-    final isFullyAuthenticated = await AuthService.isFullyAuthenticated();
-    final isGuest = await AuthService.isGuestUser();
+    // Use consistent authentication check with router (Supabase)
+    final user = Supabase.instance.client.auth.currentUser;
+    final isAuthenticated = user != null;
+    final isAnonymous = user?.isAnonymous ?? true;
     
-    if (isGuest || !isFullyAuthenticated) {
+    if (!isAuthenticated || isAnonymous) {
       return StudyGuidesResult.authRequired();
     }
     
@@ -67,7 +81,8 @@ class UnifiedStudyGuidesService {
   }
   
   void dispose() {
-    _apiService.dispose();
+    // Don't dispose the API service here since it might be shared
+    // _apiService.dispose();
   }
 }
 
@@ -85,24 +100,18 @@ class StudyGuidesResult {
     this.isSuccess = false,
   });
   
-  factory StudyGuidesResult.success(List<SavedGuideModel> guides) {
-    return StudyGuidesResult._(
+  factory StudyGuidesResult.success(List<SavedGuideModel> guides) => StudyGuidesResult._(
       guides: guides,
       isSuccess: true,
     );
-  }
   
-  factory StudyGuidesResult.error(String error) {
-    return StudyGuidesResult._(
+  factory StudyGuidesResult.error(String error) => StudyGuidesResult._(
       error: error,
       isSuccess: false,
     );
-  }
   
-  factory StudyGuidesResult.authRequired() {
-    return const StudyGuidesResult._(
+  factory StudyGuidesResult.authRequired() => const StudyGuidesResult._(
       requiresAuth: true,
       isSuccess: false,
     );
-  }
 }

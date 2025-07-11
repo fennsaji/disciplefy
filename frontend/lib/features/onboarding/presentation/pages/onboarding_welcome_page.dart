@@ -30,7 +30,7 @@ class _OnboardingWelcomePageState extends State<OnboardingWelcomePage> {
   
   // Loading states
   bool _isGuestLoginLoading = false;
-  bool _isGoogleLoginLoading = false;
+  final bool _isGoogleLoginLoading = false;
 
   @override
   Widget build(BuildContext context) {
@@ -150,7 +150,7 @@ class _OnboardingWelcomePageState extends State<OnboardingWelcomePage> {
                     
                     const SizedBox(height: 20),
                     
-                    _WelcomeFeatureItem(
+                    const _WelcomeFeatureItem(
                       icon: Icons.auto_awesome,
                       title: 'AI-Powered Study Guides',
                       subtitle: 'Personalized insights for any verse or topic',
@@ -158,7 +158,7 @@ class _OnboardingWelcomePageState extends State<OnboardingWelcomePage> {
                     
                     const SizedBox(height: 16),
                     
-                    _WelcomeFeatureItem(
+                    const _WelcomeFeatureItem(
                       icon: Icons.school,
                       title: 'Structured Learning',
                       subtitle: 'Follow proven biblical study methodology',
@@ -166,7 +166,7 @@ class _OnboardingWelcomePageState extends State<OnboardingWelcomePage> {
                     
                     const SizedBox(height: 16),
                     
-                    _WelcomeFeatureItem(
+                    const _WelcomeFeatureItem(
                       icon: Icons.language,
                       title: 'Multi-Language Support',
                       subtitle: 'Study in English, Hindi, and Malayalam',
@@ -230,7 +230,7 @@ class _OnboardingWelcomePageState extends State<OnboardingWelcomePage> {
                           : () => _loginAsGuest(),
                       style: OutlinedButton.styleFrom(
                         foregroundColor: AppTheme.primaryColor,
-                        side: BorderSide(
+                        side: const BorderSide(
                           color: AppTheme.primaryColor,
                           width: 2,
                         ),
@@ -243,7 +243,7 @@ class _OnboardingWelcomePageState extends State<OnboardingWelcomePage> {
                           ? Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                SizedBox(
+                                const SizedBox(
                                   width: 20,
                                   height: 20,
                                   child: CircularProgressIndicator(
@@ -460,8 +460,7 @@ class _OnboardingWelcomePageState extends State<OnboardingWelcomePage> {
   void _showErrorDialog(String title, String message) {
     showDialog(
       context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
+      builder: (BuildContext context) => AlertDialog(
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
           ),
@@ -491,8 +490,7 @@ class _OnboardingWelcomePageState extends State<OnboardingWelcomePage> {
               ),
             ),
           ],
-        );
-      },
+        ),
     );
   }
 }
@@ -510,8 +508,7 @@ class _WelcomeFeatureItem extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
-    return Row(
+  Widget build(BuildContext context) => Row(
       children: [
         // Icon container
         Container(
@@ -563,5 +560,4 @@ class _WelcomeFeatureItem extends StatelessWidget {
         ),
       ],
     );
-  }
 }
