@@ -13,7 +13,7 @@ import '../../../features/settings/presentation/pages/settings_screen.dart';
 /// Main App Shell with Bottom Navigation
 /// 
 /// Features:
-/// - IndexedStack for efficient screen switching with state preservation
+/// - Conditional rendering for lazy loading of screens and API optimization
 /// - Bottom navigation with Disciplefy branding
 /// - Android back button handling
 /// - Smooth transitions and animations
@@ -21,14 +21,6 @@ import '../../../features/settings/presentation/pages/settings_screen.dart';
 /// - Accessibility support
 class AppShell extends StatefulWidget {
   const AppShell({super.key});
-
-  /// Main navigation screens corresponding to bottom nav tabs
-  static const List<Widget> _screens = [
-    _HomeScreenWrapper(),           // Index 0: Home
-    _GenerateStudyScreenWrapper(),  // Index 1: Study Generation  
-    _SavedScreenWrapper(),          // Index 2: Saved Guides
-    _SettingsScreenWrapper(),       // Index 3: Settings
-  ];
 
   @override
   State<AppShell> createState() => _AppShellState();
@@ -103,10 +95,7 @@ class _AppShellContent extends StatelessWidget {
           },
           child: Scaffold(
             backgroundColor: const Color(0xFF1E1E1E), // Match bottom nav background
-            body: IndexedStack(
-              index: selectedIndex,
-              children: AppShell._screens,
-            ),
+            body: _buildCurrentScreen(selectedIndex),
             bottomNavigationBar: bottom_nav.DisciplefyBottomNav(
               currentIndex: selectedIndex,
               tabs: bottom_nav.DisciplefyBottomNav.defaultTabs,
@@ -124,6 +113,21 @@ class _AppShellContent extends StatelessWidget {
         );
       },
     );
+
+  Widget _buildCurrentScreen(int selectedIndex) {
+    switch (selectedIndex) {
+      case 0:
+        return const _HomeScreenWrapper();
+      case 1:
+        return const _GenerateStudyScreenWrapper();
+      case 2:
+        return const _SavedScreenWrapper();
+      case 3:
+        return const _SettingsScreenWrapper();
+      default:
+        return const _HomeScreenWrapper();
+    }
+  }
 
   void _handleBackNavigation(BuildContext context) {
     final navigationCubit = context.read<NavigationCubit>();

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -11,6 +10,9 @@ import '../../domain/entities/recommended_guide_topic.dart';
 import '../../../daily_verse/presentation/bloc/daily_verse_bloc.dart';
 import '../../../daily_verse/presentation/bloc/daily_verse_event.dart';
 import '../../../daily_verse/presentation/widgets/daily_verse_card.dart';
+import '../../../study_generation/domain/usecases/generate_study_guide.dart';
+import '../../../auth/presentation/bloc/auth_bloc.dart';
+import '../../../auth/presentation/bloc/auth_state.dart' as auth_states;
 
 /// Home screen displaying daily verse, navigation options, and study recommendations.
 /// 
@@ -24,13 +26,10 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  // Services and storage
-  static const FlutterSecureStorage _secureStorage = FlutterSecureStorage();
+  // Services
   late final RecommendedGuidesService _topicsService;
   
   // State variables
-  String _currentUserName = 'Guest';
-  String _userType = 'guest';
   final bool _hasResumeableStudy = false;
   bool _isLoadingTopics = true;
   String? _topicsError;
@@ -49,9 +48,8 @@ class _HomeScreenState extends State<HomeScreen> {
     super.dispose();
   }
 
-  /// Initializes the screen by loading user data, topics, and daily verse
+  /// Initializes the screen by loading topics and daily verse
   Future<void> _initializeScreen() async {
-    await _loadUserData();
     await _loadRecommendedTopics();
     // Load daily verse only once on screen initialization
     _loadDailyVerse();
@@ -66,22 +64,6 @@ class _HomeScreenState extends State<HomeScreen> {
     bloc.add(const LoadTodaysVerse());
   }
 
-  /// Loads user data from secure storage
-  Future<void> _loadUserData() async {
-    try {
-      final userType = await _secureStorage.read(key: 'user_type') ?? 'guest';
-      final userId = await _secureStorage.read(key: 'user_id');
-      
-      setState(() {
-        _userType = userType;
-        _currentUserName = userType == 'guest' ? 'Guest' : 'User';
-      });
-      
-      print('👤 [HOME] User loaded: $_currentUserName (type: $_userType)');
-    } catch (e) {
-      print('⚠️ [HOME] Error loading user data: $e');
-    }
-  }
 
   /// Loads recommended topics from the API
   Future<void> _loadRecommendedTopics() async {
@@ -115,13 +97,32 @@ class _HomeScreenState extends State<HomeScreen> {
     final screenHeight = MediaQuery.of(context).size.height;
     final isLargeScreen = screenHeight > 700;
 
-    return BlocProvider(
-      create: (context) {
-        final bloc = sl<DailyVerseBloc>();
-        // Auto-load today's verse when BLoC is created
-        bloc.add(const LoadTodaysVerse());
-        return bloc;
-      },
+    return BlocBuilder<AuthBloc, auth_states.AuthState>(
+      builder: (context, authState) {
+        // Extract user information from AuthBloc state
+        String currentUserName = 'Guest';
+        
+        if (authState is auth_states.AuthenticatedState) {
+          if (authState.isAnonymous) {
+            currentUserName = 'Guest';
+          } else {
+            // Extract user name from Google account
+            final user = authState.user;
+            currentUserName = user.userMetadata?['full_name'] ?? 
+                             user.userMetadata?['name'] ?? 
+                             user.email?.split('@').first ?? 
+                             'User';
+          }
+          print('👤 [HOME] User loaded: $currentUserName (authenticated: ${!authState.isAnonymous})');
+        }
+
+        return BlocProvider(
+          create: (context) {
+            final bloc = sl<DailyVerseBloc>();
+            // Auto-load today's verse when BLoC is created
+            bloc.add(const LoadTodaysVerse());
+            return bloc;
+          },
       child: Scaffold(
         backgroundColor: AppTheme.backgroundColor,
         body: SafeArea(
@@ -142,7 +143,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       SizedBox(height: isLargeScreen ? 32 : 24),
                       
                       // Welcome Message
-                      _buildWelcomeMessage(),
+                      _buildWelcomeMessage(currentUserName),
                       
                       SizedBox(height: isLargeScreen ? 32 : 24),
                       
@@ -176,7 +177,8 @@ class _HomeScreenState extends State<HomeScreen> {
             ],
           ),
         ),
-      ),
+        );
+      },
     );
   }
 
@@ -232,11 +234,11 @@ class _HomeScreenState extends State<HomeScreen> {
       ],
     );
 
-  Widget _buildWelcomeMessage() => Column(
+  Widget _buildWelcomeMessage(String userName) => Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Welcome back, $_currentUserName',
+          'Welcome back, $userName',
           style: GoogleFonts.inter(
             fontSize: 28,
             fontWeight: FontWeight.w600,
@@ -620,12 +622,82 @@ class _HomeScreenState extends State<HomeScreen> {
 
 
   void _navigateToStudyGuide(RecommendedGuideTopic topic) {
-    // Navigate to generate study screen with predefined topic
-    context.go('/generate-study', extra: {
-      'input_type': 'topic',
-      'input_value': topic.title,
-      'predefined_topic': topic,
-    });
+    // Generate study guide directly and navigate to study guide screen
+    _generateAndNavigateToStudyGuide(topic);
+  }
+
+  /// Generates a study guide for the given topic and navigates directly to the study guide screen
+  Future<void> _generateAndNavigateToStudyGuide(RecommendedGuideTopic topic) async {
+    try {
+      // Show loading indicator
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                      Theme.of(context).colorScheme.onPrimary,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Text('Generating study guide for "${topic.title}"...'),
+              ],
+            ),
+            duration: const Duration(minutes: 1), // Long duration since generation can take time
+            backgroundColor: Theme.of(context).colorScheme.primary,
+          ),
+        );
+      }
+
+      // Generate study guide using the study generation service
+      final generateStudyGuide = sl<GenerateStudyGuide>();
+      final result = await generateStudyGuide(StudyGenerationParams(
+        input: topic.title,
+        inputType: 'topic',
+        language: 'en', // TODO: Get from user preferences
+      ));
+
+      if (mounted) {
+        // Hide loading snackbar
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+
+        result.fold(
+          (failure) {
+            // Show error message
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Failed to generate study guide: ${failure.message}'),
+                backgroundColor: Theme.of(context).colorScheme.error,
+                action: SnackBarAction(
+                  label: 'Retry',
+                  onPressed: () => _generateAndNavigateToStudyGuide(topic),
+                ),
+              ),
+            );
+          },
+          (studyGuide) {
+            // Navigate directly to study guide screen with generated content
+            context.go('/study-guide', extra: studyGuide);
+          },
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error generating study guide: $e'),
+            backgroundColor: Theme.of(context).colorScheme.error,
+          ),
+        );
+      }
+    }
   }
 }
 

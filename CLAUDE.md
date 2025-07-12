@@ -537,8 +537,6 @@ Fixes #issue-number
   ```
 - **When to use**: Architectural decision records, historical context, knowledge preservation
 
-#### **10. 
-
 ### 🎯 **MCP Usage Strategy**
 
 **Automatic Context Selection:**
@@ -682,3 +680,198 @@ Color _getContrastColor(Color backgroundColor) {
 
 **Before**: Text used inherited theme colors with poor contrast  
 **After**: Text color calculated dynamically based on background luminance for optimal readability
+
+---
+
+## 🔧 **MCP Server Integration Guide**
+
+**CRITICAL**: Claude MUST automatically utilize the following MCP servers based on task context. This section provides mandatory guidance for intelligent MCP server selection and usage.
+
+### 📋 **Available MCP Servers & Auto-Selection Rules**
+
+#### **🗂️ File System Access - Always Use First**
+
+**Servers Available:**
+- `disciplefy-filesystem` - Full project access
+- `disciplefy-frontend` - Flutter-specific frontend access  
+- `disciplefy-backend` - Supabase backend access
+- `disciplefy-docs` - Documentation access
+
+**Auto-Selection Rules:**
+```
+WHEN: Any task involving code analysis, file reading, or project structure
+ALWAYS: Start with appropriate filesystem MCP before other actions
+FRONTEND: Flutter/Dart code, widgets, BLoC, UI → use disciplefy-frontend
+BACKEND: Supabase, Edge Functions, SQL → use disciplefy-backend  
+DOCS: Architecture, specs, planning → use disciplefy-docs
+GENERAL: Cross-cutting concerns → use disciplefy-filesystem
+```
+
+#### **🧠 Memory & Context Management - Auto-Persist**
+
+**Server:** `memory-bank-mcp`
+
+**Auto-Usage Rules:**
+```
+ALWAYS: Store important debugging insights for future reference
+AUTOMATICALLY: Save architectural decisions and optimization patterns
+REMEMBER: Performance fixes, API optimizations, navigation solutions
+CONTEXT: Maintain development session continuity across conversations
+```
+
+#### **🗄️ Database Debugging - For Backend Issues**
+
+**Servers:** `postgres`, `supabase-p6sex5-42`
+
+**Auto-Selection Rules:**
+```
+WHEN: Database errors, authentication issues, API failures
+USE: postgres for direct SQL queries and data analysis
+USE: supabase-p6sex5-42 for Supabase-specific operations
+ALWAYS: Validate RLS policies when debugging data access issues
+```
+
+#### **🌐 Browser Automation - For Web Testing**
+
+**Server:** `browsermcp`
+
+**Auto-Usage Rules:**
+```
+WHEN: Testing Flutter web app, UI debugging, user flow validation
+AUTOMATICALLY: Open http://localhost:3000 for live testing
+USE: For automated screenshot capture and responsive testing
+COMBINE: With filesystem access for comprehensive UI debugging
+```
+
+#### **🎭 External Integrations - Context-Aware**
+
+**Servers:** `playwright`, `figma`, `github-noefyp-16`
+
+**Auto-Selection Rules:**
+```
+PLAYWRIGHT: Advanced browser testing, E2E flows, performance testing
+FIGMA: Design token extraction, UI component analysis
+GITHUB: Repository operations, PR analysis, issue tracking
+```
+
+#### **🤔 Complex Problem Solving - For Architecture**
+
+**Server:** `sequential-thinking`
+
+**Auto-Usage Rules:**
+```
+WHEN: Complex debugging, architectural decisions, performance optimization
+AUTOMATICALLY: Break down multi-layered problems systematically
+USE: For root cause analysis and step-by-step problem solving
+COMBINE: With filesystem access for thorough analysis
+```
+
+### 🚀 **Automatic MCP Workflow Patterns**
+
+#### **Pattern 1: Code Analysis & Debugging**
+```
+1. ALWAYS start with disciplefy-frontend/backend filesystem access
+2. USE sequential-thinking for complex issues
+3. STORE insights in memory-bank-mcp for future reference
+4. IF database related → ADD postgres MCP
+5. IF web testing needed → ADD browsermcp
+```
+
+#### **Pattern 2: Feature Development**
+```
+1. START with disciplefy-filesystem for project overview
+2. USE disciplefy-docs for architecture requirements
+3. APPLY sequential-thinking for implementation planning
+4. REMEMBER architectural decisions in memory-bank-mcp
+5. IF UI components → ADD figma MCP for design tokens
+```
+
+#### **Pattern 3: Performance Optimization**
+```
+1. USE sequential-thinking to analyze performance bottlenecks
+2. ACCESS relevant code via disciplefy-frontend/backend
+3. IF database performance → ADD postgres for query analysis
+4. TEST improvements via browsermcp automation
+5. STORE optimization patterns in memory-bank-mcp
+```
+
+#### **Pattern 4: Bug Investigation**
+```
+1. START with sequential-thinking for systematic analysis
+2. ACCESS code via appropriate filesystem MCP
+3. IF API/database issue → ADD postgres + supabase MCPs
+4. VERIFY fixes via browsermcp testing
+5. DOCUMENT solution in memory-bank-mcp
+```
+
+### ⚡ **Intelligent MCP Selection Examples**
+
+#### **Flutter Performance Issue:**
+```
+"Analyze widget rebuild performance in home_screen.dart"
+→ AUTO-USE: disciplefy-frontend + sequential-thinking
+→ THEN: browsermcp for live testing
+→ FINALLY: memory-bank-mcp to store optimization patterns
+```
+
+#### **API Integration Problem:**
+```
+"Debug study guide generation API failures"  
+→ AUTO-USE: disciplefy-backend + postgres + supabase-p6sex5-42
+→ THEN: sequential-thinking for root cause analysis
+→ FINALLY: memory-bank-mcp to remember the solution
+```
+
+#### **Navigation Architecture Review:**
+```
+"Review the IndexedStack optimization we implemented"
+→ AUTO-USE: disciplefy-frontend + memory-bank-mcp
+→ THEN: sequential-thinking for architecture analysis
+→ OPTIONALLY: browsermcp for live validation
+```
+
+#### **Database Schema Changes:**
+```
+"Check RLS policies for study_guides table"
+→ AUTO-USE: postgres + disciplefy-backend
+→ THEN: disciplefy-docs for security requirements
+→ FINALLY: memory-bank-mcp to store security patterns
+```
+
+### 🎯 **Mandatory MCP Usage Rules**
+
+#### **ALWAYS Required:**
+1. **Start with filesystem access** - Never analyze code without first accessing project files
+2. **Use sequential-thinking** - For any complex or multi-step analysis
+3. **Store in memory-bank-mcp** - Any insights, solutions, or architectural decisions
+4. **Combine contextually** - Multiple MCPs for comprehensive analysis
+
+#### **Context-Triggered:**
+1. **Database operations** - Always use postgres + supabase MCPs
+2. **Web app testing** - Always use browsermcp for live validation
+3. **UI/UX issues** - Combine filesystem + browsermcp + optionally figma
+4. **Performance problems** - Use sequential-thinking + relevant filesystem + testing MCPs
+
+#### **Never Skip:**
+1. **Memory persistence** - All important debugging insights MUST be stored
+2. **Systematic analysis** - Use sequential-thinking for complex problems
+3. **Live validation** - Use browsermcp when Flutter web app testing is relevant
+4. **Comprehensive access** - Use appropriate filesystem MCP for complete context
+
+### 🔄 **MCP Integration Best Practices**
+
+#### **Efficiency Rules:**
+- **Batch MCP calls** when multiple servers are needed simultaneously
+- **Start broad, then narrow** - Begin with disciplefy-filesystem, then specific MCPs
+- **Validate live** - Use browsermcp for any UI/UX related changes
+- **Document everything** - Use memory-bank-mcp as your permanent knowledge base
+
+#### **Quality Assurance:**
+- **Always verify** database changes with postgres MCP
+- **Test web changes** with browsermcp automation
+- **Follow architecture** using disciplefy-docs for requirements
+- **Maintain context** with memory-bank-mcp across sessions
+
+---
+
+📝 **This MCP integration is now permanently established. Claude MUST follow these patterns automatically based on task context to provide maximum debugging and development effectiveness.**
