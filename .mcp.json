@@ -1,0 +1,32 @@
+{
+    "mcpServers": {
+        "postgres-local": {
+            "command": "/Users/fennsaji/.nvm/versions/node/v20.18.0/bin/npx",
+            "args": ["@modelcontextprotocol/server-postgres", "postgresql://postgres:postgres@127.0.0.1:54322/postgres"]
+        },
+        "disciplefy-frontend": {
+            "command": "/Users/fennsaji/.nvm/versions/node/v20.18.0/bin/npx",
+            "args": [
+                "-y",
+                "@modelcontextprotocol/server-filesystem",
+                "/Users/fennsaji/Documents/Projects/Fenn/bible-study-app/frontend"
+            ]
+        },
+        "disciplefy-backend": {
+            "command": "/Users/fennsaji/.nvm/versions/node/v20.18.0/bin/npx",
+            "args": [
+                "-y",
+                "@modelcontextprotocol/server-filesystem",
+                "/Users/fennsaji/Documents/Projects/Fenn/bible-study-app/backend"
+            ]
+        },
+        "disciplefy-docs": {
+            "command": "/Users/fennsaji/.nvm/versions/node/v20.18.0/bin/npx",
+            "args": [
+                "-y",
+                "@modelcontextprotocol/server-filesystem",
+                "/Users/fennsaji/Documents/Projects/Fenn/bible-study-app/docs"
+            ]
+        }
+    }
+}
