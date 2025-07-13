@@ -41,6 +41,10 @@ class StudyGuidesApiService {
       final uri = Uri.parse('$_baseUrl$_studyGuidesEndpoint')
           .replace(queryParameters: queryParams);
 
+      // Debug logging
+      print('🌐 [API] Making request to: $uri');
+      print('📋 [API] Query params: $queryParams');
+
       // Prepare headers
       final headers = await _getApiHeaders();
       

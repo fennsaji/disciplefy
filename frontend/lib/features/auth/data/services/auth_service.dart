@@ -4,6 +4,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import '../../../../core/config/app_config.dart';
+import '../../../../core/services/auth_service.dart' as CoreAuthService;
 
 /// Authentication service handling OAuth providers and Supabase integration
 /// References: Security Design Plan, Technical Architecture Document
@@ -181,6 +182,13 @@ class AuthService {
             sessionData['access_token'],
           );
           
+          // Sync authentication state with Core AuthService
+          await CoreAuthService.AuthService.storeAuthData(
+            accessToken: sessionData['access_token'],
+            userType: 'google',
+            userId: currentUser?.id,
+          );
+          
           // Create or update user profile
           await upsertUserProfile(
             languagePreference: 'en',
@@ -259,6 +267,17 @@ class AuthService {
   Future<bool> signInAnonymously() async {
     try {
       await _supabase.auth.signInAnonymously();
+      
+      // Sync with Core AuthService for guest user
+      final session = _supabase.auth.currentSession;
+      if (session != null) {
+        await CoreAuthService.AuthService.storeAuthData(
+          accessToken: session.accessToken,
+          userType: 'guest',
+          userId: currentUser?.id,
+        );
+      }
+      
       return true;
     } catch (e) {
       if (kDebugMode) {
@@ -278,6 +297,9 @@ class AuthService {
       
       // Sign out from Supabase
       await _supabase.auth.signOut();
+      
+      // Clear Core AuthService data as well
+      await CoreAuthService.AuthService.signOut();
     } catch (e) {
       if (kDebugMode) {
         print('Sign-Out Error: $e');
