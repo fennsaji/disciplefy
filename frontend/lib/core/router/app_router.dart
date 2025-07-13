@@ -164,16 +164,21 @@ class AppRouter {
           // Handle different types of navigation data
           StudyGuide? studyGuide;
           Map<String, dynamic>? routeExtra;
+          String? navigationSource;
           
           if (state.extra is StudyGuide) {
             studyGuide = state.extra as StudyGuide;
+            // Check query parameters for source information
+            navigationSource = state.uri.queryParameters['source'];
           } else if (state.extra is Map<String, dynamic>) {
             routeExtra = state.extra as Map<String, dynamic>;
+            navigationSource = 'saved'; // Default for saved guides
           }
           
           return StudyGuideScreen(
             studyGuide: studyGuide,
             routeExtra: routeExtra,
+            navigationSource: navigationSource,
           );
         },
       ),

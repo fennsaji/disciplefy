@@ -132,7 +132,7 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen> {
         listener: (context, state) {
           if (state is StudyGenerationSuccess) {
             // Navigate to study guide screen with generated content
-            context.go('/study-guide', extra: state.studyGuide);
+            context.go('/study-guide?source=generate', extra: state.studyGuide);
           } else if (state is StudyGenerationFailure) {
             // Show error message with retry option
             _showErrorDialog(context, state.failure.message, state.isRetryable);

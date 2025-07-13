@@ -18,11 +18,13 @@ import '../../data/services/save_guide_api_service.dart';
 class StudyGuideScreen extends StatefulWidget {
   final StudyGuide? studyGuide;
   final Map<String, dynamic>? routeExtra;
+  final String? navigationSource;
 
   const StudyGuideScreen({
     super.key,
     this.studyGuide,
     this.routeExtra,
+    this.navigationSource,
   });
 
   @override
@@ -57,8 +59,10 @@ class _StudyGuideScreenState extends State<StudyGuideScreen> {
 
   void _initializeStudyGuide() {
     if (widget.studyGuide != null) {
+      // This means we came from the generate screen
       _currentStudyGuide = widget.studyGuide!;
     } else if (widget.routeExtra != null && widget.routeExtra!['study_guide'] != null) {
+      // This means we came from the saved guides screen
       // Handle study guide data from saved guides navigation
       try {
         final guideData = widget.routeExtra!['study_guide'] as Map<String, dynamic>;
@@ -249,7 +253,22 @@ class _StudyGuideScreenState extends State<StudyGuideScreen> {
         backgroundColor: AppTheme.backgroundColor,
         elevation: 0,
         leading: IconButton(
-          onPressed: () => context.pop(),
+          onPressed: () {
+            // Navigate back based on the source
+            switch (widget.navigationSource) {
+              case 'home':
+                context.go('/');
+                break;
+              case 'generate':
+                context.go('/generate-study');
+                break;
+              case 'saved':
+              case 'recent':
+              default:
+                context.go('/saved');
+                break;
+            }
+          },
           icon: const Icon(
             Icons.arrow_back_ios,
             color: AppTheme.primaryColor,
@@ -313,7 +332,22 @@ class _StudyGuideScreenState extends State<StudyGuideScreen> {
         backgroundColor: AppTheme.backgroundColor,
         elevation: 0,
         leading: IconButton(
-          onPressed: () => context.pop(),
+          onPressed: () {
+            // Navigate back based on the source
+            switch (widget.navigationSource) {
+              case 'home':
+                context.go('/');
+                break;
+              case 'generate':
+                context.go('/generate-study');
+                break;
+              case 'saved':
+              case 'recent':
+              default:
+                context.go('/saved');
+                break;
+            }
+          },
           icon: const Icon(
             Icons.arrow_back_ios,
             color: AppTheme.primaryColor,
