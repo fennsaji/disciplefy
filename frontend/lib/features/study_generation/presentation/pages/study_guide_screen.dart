@@ -687,41 +687,68 @@ class _StudyGuideScreenState extends State<StudyGuideScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
+        backgroundColor: const Color(0xFFFAFAFA), // Light background
+        surfaceTintColor: Colors.transparent,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        elevation: 8,
+        shadowColor: Colors.black.withOpacity(0.1),
         title: Text(
           'Authentication Required',
-          style: GoogleFonts.inter(
-            fontWeight: FontWeight.w600,
-            color: AppTheme.textPrimary,
+          style: GoogleFonts.playfairDisplay(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            color: const Color(0xFF333333), // Primary gray text
           ),
         ),
         content: Text(
           'You need to be signed in to save study guides. Would you like to sign in now?',
           style: GoogleFonts.inter(
-            color: AppTheme.textPrimary,
+            fontSize: 16,
+            color: const Color(0xFF333333), // Primary gray text
+            height: 1.5,
           ),
         ),
+        actionsPadding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
+            style: TextButton.styleFrom(
+              foregroundColor: const Color(0xFF888888), // Light gray for cancel
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
             child: Text(
               'Cancel',
               style: GoogleFonts.inter(
-                color: AppTheme.onSurfaceVariant,
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: const Color(0xFF888888), // Light gray text
               ),
             ),
           ),
+          const SizedBox(width: 12),
           ElevatedButton(
             onPressed: () {
               Navigator.of(context).pop();
               context.go('/login');
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.primaryColor,
+              backgroundColor: const Color(0xFF7A56DB), // Primary purple
               foregroundColor: Colors.white,
+              elevation: 0,
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
             ),
             child: Text(
               'Sign In',
               style: GoogleFonts.inter(
+                fontSize: 16,
                 fontWeight: FontWeight.w600,
               ),
             ),
