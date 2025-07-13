@@ -83,7 +83,7 @@ export class StudyGuideRepository {
       id: cachedContent.id,
       input: {
         type: input.type,
-        value: input.value, // Show original value for authenticated users
+        value: input.value, // Show original input value
         language: input.language
       },
       content: {
@@ -135,6 +135,7 @@ export class StudyGuideRepository {
       .from('study_guides')
       .insert({
         input_type: input.type,
+        input_value: input.value, // Store original input value for display
         input_value_hash: inputHash,
         language: input.language,
         summary: content.summary,
@@ -298,6 +299,7 @@ export class StudyGuideRepository {
         study_guides (
           id,
           input_type,
+          input_value,
           input_value_hash,
           language,
           summary,
@@ -350,6 +352,7 @@ export class StudyGuideRepository {
         study_guides (
           id,
           input_type,
+          input_value,
           input_value_hash,
           language,
           summary,
@@ -430,6 +433,7 @@ export class StudyGuideRepository {
         study_guides (
           id,
           input_type,
+          input_value,
           input_value_hash,
           language,
           summary,
@@ -482,6 +486,7 @@ export class StudyGuideRepository {
         study_guides (
           id,
           input_type,
+          input_value,
           input_value_hash,
           language,
           summary,
@@ -547,7 +552,7 @@ export class StudyGuideRepository {
       id: content.id,
       input: {
         type: input.type,
-        value: input.value,
+        value: content.input_value || input.value, // Use stored input value from database
         language: input.language
       },
       content: {
@@ -686,7 +691,8 @@ export class StudyGuideRepository {
    */
   private formatStudyGuideResponse(
     data: any,
-    isAuthenticated: boolean
+    isAuthenticated: boolean,
+    originalInputValue?: string
   ): StudyGuideResponse {
     const studyGuide = data.study_guides
 
@@ -694,7 +700,7 @@ export class StudyGuideRepository {
       id: studyGuide.id,
       input: {
         type: studyGuide.input_type as 'scripture' | 'topic',
-        value: isAuthenticated ? '[Content]' : '[Hidden]', // Don't expose raw input
+        value: studyGuide.input_value || originalInputValue || '[Content]', // Use stored input value from database
         language: studyGuide.language
       },
       content: {

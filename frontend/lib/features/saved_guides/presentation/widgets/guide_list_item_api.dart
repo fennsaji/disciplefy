@@ -27,11 +27,12 @@ class GuideListItemApi extends StatelessWidget {
   Widget build(BuildContext context) => Card(
       margin: const EdgeInsets.only(bottom: 12),
       elevation: 2,
-      shadowColor: AppTheme.primaryColor.withOpacity(0.1),
+      color: Theme.of(context).colorScheme.surface,
+      shadowColor: AppTheme.primaryColor.withValues(alpha: 0.1),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
         side: BorderSide(
-          color: AppTheme.primaryColor.withOpacity(0.1),
+          color: AppTheme.primaryColor.withValues(alpha: 0.1),
         ),
       ),
       child: InkWell(
@@ -58,8 +59,8 @@ class GuideListItemApi extends StatelessWidget {
                                 fontSize: 16,
                                 fontWeight: FontWeight.w600,
                                 color: isLoading 
-                                    ? AppTheme.textPrimary.withOpacity(0.6)
-                                    : AppTheme.textPrimary,
+                                    ? Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6)
+                                    : Theme.of(context).colorScheme.onSurface,
                                 height: 1.3,
                               ),
                               maxLines: 2,
@@ -70,20 +71,20 @@ class GuideListItemApi extends StatelessWidget {
                               guide.subtitle,
                               style: GoogleFonts.inter(
                                 fontSize: 12,
-                                color: AppTheme.onSurfaceVariant,
+                                color: Theme.of(context).colorScheme.onSurfaceVariant,
                                 fontWeight: FontWeight.w500,
                               ),
                             ),
                           ],
                         ),
                       ),
-                      _buildActionButton(),
+                      _buildActionButton(context),
                     ],
                   ),
                   const SizedBox(height: 12),
-                  _buildContentPreview(),
+                  _buildContentPreview(context),
                   const SizedBox(height: 12),
-                  _buildFooter(),
+                  _buildFooter(context),
                 ],
               ),
             ),
@@ -91,7 +92,7 @@ class GuideListItemApi extends StatelessWidget {
               Positioned.fill(
                 child: Container(
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.7),
+                    color: Colors.white.withValues(alpha: 0.7),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: const Center(
@@ -129,7 +130,7 @@ class GuideListItemApi extends StatelessWidget {
       width: 40,
       height: 40,
       decoration: BoxDecoration(
-        color: iconColor.withOpacity(0.1),
+        color: iconColor.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Icon(
@@ -140,7 +141,7 @@ class GuideListItemApi extends StatelessWidget {
     );
   }
 
-  Widget _buildActionButton() {
+  Widget _buildActionButton(BuildContext context) {
     if (showRemoveOption && onRemove != null) {
       // Show remove options for saved guides
       return PopupMenuButton<String>(
@@ -165,8 +166,8 @@ class GuideListItemApi extends StatelessWidget {
         child: Icon(
           Icons.more_vert,
           color: isLoading 
-              ? AppTheme.onSurfaceVariant.withOpacity(0.5)
-              : AppTheme.onSurfaceVariant,
+              ? Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.5)
+              : Theme.of(context).colorScheme.onSurfaceVariant,
           size: 20,
         ),
       );
@@ -177,7 +178,7 @@ class GuideListItemApi extends StatelessWidget {
         icon: Icon(
           Icons.bookmark_border,
           color: isLoading 
-              ? AppTheme.primaryColor.withOpacity(0.5)
+              ? AppTheme.primaryColor.withValues(alpha: 0.5)
               : AppTheme.primaryColor,
           size: 20,
         ),
@@ -196,7 +197,7 @@ class GuideListItemApi extends StatelessWidget {
     return const SizedBox(width: 20);
   }
 
-  Widget _buildContentPreview() {
+  Widget _buildContentPreview(BuildContext context) {
     String preview;
     
     // Extract meaningful content from the formatted content
@@ -222,8 +223,8 @@ class GuideListItemApi extends StatelessWidget {
       style: GoogleFonts.inter(
         fontSize: 14,
         color: isLoading 
-            ? AppTheme.textPrimary.withOpacity(0.6)
-            : AppTheme.textPrimary,
+            ? Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6)
+            : Theme.of(context).colorScheme.onSurface,
         height: 1.4,
       ),
       maxLines: 3,
@@ -231,23 +232,23 @@ class GuideListItemApi extends StatelessWidget {
     );
   }
 
-  Widget _buildFooter() {
+  Widget _buildFooter(BuildContext context) {
     final timeFormat = DateFormat('MMM d, yyyy');
     final timeText = timeFormat.format(guide.lastAccessedAt);
 
     return Row(
       children: [
-        const Icon(
+        Icon(
           Icons.access_time,
           size: 14,
-          color: AppTheme.onSurfaceVariant,
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
         ),
         const SizedBox(width: 4),
         Text(
           timeText,
           style: GoogleFonts.inter(
             fontSize: 12,
-            color: AppTheme.onSurfaceVariant,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
           ),
         ),
         const Spacer(),
@@ -257,7 +258,7 @@ class GuideListItemApi extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                 decoration: BoxDecoration(
-                  color: AppTheme.primaryColor.withOpacity(0.1),
+                  color: AppTheme.primaryColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(4),
                 ),
                 child: Text(
@@ -273,7 +274,7 @@ class GuideListItemApi extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                 decoration: BoxDecoration(
-                  color: AppTheme.accentColor.withOpacity(0.1),
+                  color: AppTheme.accentColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(4),
                 ),
                 child: Text(

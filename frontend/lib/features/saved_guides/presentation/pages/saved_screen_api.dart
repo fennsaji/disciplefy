@@ -27,6 +27,7 @@ class _SavedScreenApiState extends State<SavedScreenApi> with TickerProviderStat
   @override
   void initState() {
     super.initState();
+    print('🔥 [SAVED_SCREEN] SavedScreenApi initState called!');
     _tabController = TabController(length: 2, vsync: this);
     _savedScrollController = ScrollController();
     _recentScrollController = ScrollController();
@@ -99,7 +100,9 @@ class _SavedScreenApiState extends State<SavedScreenApi> with TickerProviderStat
   }
 
   @override
-  Widget build(BuildContext context) => BlocProvider(
+  Widget build(BuildContext context) {
+    print('🏗️ [SAVED_SCREEN] SavedScreenApi build called!');
+    return BlocProvider(
       create: (context) {
         final bloc = sl<SavedGuidesApiBloc>();
         // Only load saved guides on initialization (default tab)
@@ -113,6 +116,7 @@ class _SavedScreenApiState extends State<SavedScreenApi> with TickerProviderStat
         recentScrollController: _recentScrollController,
       ),
     );
+  }
 }
 
 class _SavedScreenApiContent extends StatelessWidget {
@@ -468,6 +472,9 @@ class _SavedScreenApiContent extends StatelessWidget {
         'type': guide.type.name,
         'verse_reference': guide.verseReference,
         'topic_name': guide.topicName,
+        'is_saved': guide.isSaved,
+        'created_at': guide.createdAt.toIso8601String(),
+        'last_accessed_at': guide.lastAccessedAt.toIso8601String(),
       }
     });
   }
