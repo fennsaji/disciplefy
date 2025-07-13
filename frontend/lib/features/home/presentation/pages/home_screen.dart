@@ -9,6 +9,7 @@ import '../../data/services/recommended_guides_service.dart';
 import '../../domain/entities/recommended_guide_topic.dart';
 import '../../../daily_verse/presentation/bloc/daily_verse_bloc.dart';
 import '../../../daily_verse/presentation/bloc/daily_verse_event.dart';
+import '../../../daily_verse/presentation/bloc/daily_verse_state.dart';
 import '../../../daily_verse/presentation/widgets/daily_verse_card.dart';
 import '../../../study_generation/domain/usecases/generate_study_guide.dart';
 import '../../../auth/presentation/bloc/auth_bloc.dart';
@@ -64,7 +65,6 @@ class _HomeScreenState extends State<HomeScreen> {
     bloc.add(const LoadTodaysVerse());
   }
 
-
   /// Loads recommended topics from the API
   Future<void> _loadRecommendedTopics() async {
     setState(() {
@@ -92,6 +92,103 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  /// Handle daily verse card tap to generate study guide
+  void _onDailyVerseCardTap() {
+    // Get the current DailyVerseBloc state
+    final dailyVerseBloc = context.read<DailyVerseBloc>();
+    final currentState = dailyVerseBloc.state;
+
+    if (currentState is DailyVerseLoaded) {
+      // Generate study guide with verse reference
+      _generateStudyGuideFromVerse(currentState.verse.reference);
+    } else if (currentState is DailyVerseOffline) {
+      // Generate study guide with cached verse reference
+      _generateStudyGuideFromVerse(currentState.verse.reference);
+    } else {
+      // Show error if verse is not loaded
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Daily verse is not yet loaded. Please try again.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  /// Generate study guide from verse reference
+  Future<void> _generateStudyGuideFromVerse(String verseReference) async {
+    try {
+      // Show loading indicator
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                      Theme.of(context).colorScheme.onPrimary,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Text('Generating study guide for "$verseReference"...'),
+              ],
+            ),
+            duration: const Duration(minutes: 1), // Long duration since generation can take time
+            backgroundColor: Theme.of(context).colorScheme.primary,
+          ),
+        );
+      }
+
+      // Generate study guide using the study generation service
+      final generateStudyGuide = sl<GenerateStudyGuide>();
+      final result = await generateStudyGuide(StudyGenerationParams(
+        input: verseReference,
+        inputType: 'scripture',
+        language: 'en', // TODO: Get from user preferences
+      ));
+
+      if (mounted) {
+        // Hide loading snackbar
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+
+        result.fold(
+          (failure) {
+            // Show error message
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Failed to generate study guide: ${failure.message}'),
+                backgroundColor: Theme.of(context).colorScheme.error,
+                action: SnackBarAction(
+                  label: 'Retry',
+                  onPressed: () => _generateStudyGuideFromVerse(verseReference),
+                ),
+              ),
+            );
+          },
+          (studyGuide) {
+            // Navigate directly to study guide screen with generated content
+            context.go('/study-guide', extra: studyGuide);
+          },
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error generating study guide: $e'),
+            backgroundColor: Theme.of(context).colorScheme.error,
+          ),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final screenHeight = MediaQuery.of(context).size.height;
@@ -116,65 +213,58 @@ class _HomeScreenState extends State<HomeScreen> {
           print('👤 [HOME] User loaded: $currentUserName (authenticated: ${!authState.isAnonymous})');
         }
 
-        return BlocProvider(
-          create: (context) {
-            final bloc = sl<DailyVerseBloc>();
-            // Auto-load today's verse when BLoC is created
-            bloc.add(const LoadTodaysVerse());
-            return bloc;
-          },
-          child: Scaffold(
-            backgroundColor: AppTheme.backgroundColor,
-            body: SafeArea(
-              child: Column(
-                children: [
-                  // Main content
-                  Expanded(
-                    child: SingleChildScrollView(
-                      padding: const EdgeInsets.symmetric(horizontal: 24),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          SizedBox(height: isLargeScreen ? 32 : 24),
-                          
-                          // App Header with Logo
-                          _buildAppHeader(),
-                          
-                          SizedBox(height: isLargeScreen ? 32 : 24),
-                          
-                          // Welcome Message
-                          _buildWelcomeMessage(currentUserName),
-                          
-                          SizedBox(height: isLargeScreen ? 32 : 24),
-                          
-                          // Daily Verse Card
-                          const DailyVerseCard(
-                            margin: EdgeInsets.zero,
-                          ),
-                          
-                          SizedBox(height: isLargeScreen ? 40 : 32),
-                          
-                          // Generate Study Guide Button
-                          _buildGenerateStudyButton(),
-                          
-                          SizedBox(height: isLargeScreen ? 32 : 24),
-                          
-                          // Resume Last Study (conditional)
-                          if (_hasResumeableStudy) ...[
-                            _buildResumeStudyBanner(),
-                            SizedBox(height: isLargeScreen ? 32 : 24),
-                          ],
-                          
-                          // Recommended Study Topics
-                          _buildRecommendedTopics(),
-                          
+        return Scaffold(
+          backgroundColor: AppTheme.backgroundColor,
+          body: SafeArea(
+            child: Column(
+              children: [
+                // Main content
+                Expanded(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        SizedBox(height: isLargeScreen ? 32 : 24),
+                        
+                        // App Header with Logo
+                        _buildAppHeader(),
+                        
+                        SizedBox(height: isLargeScreen ? 32 : 24),
+                        
+                        // Welcome Message
+                        _buildWelcomeMessage(currentUserName),
+                        
+                        SizedBox(height: isLargeScreen ? 32 : 24),
+                        
+                        // Daily Verse Card with click functionality
+                        DailyVerseCard(
+                          margin: EdgeInsets.zero,
+                          onTap: _onDailyVerseCardTap,
+                        ),
+                        
+                        SizedBox(height: isLargeScreen ? 40 : 32),
+                        
+                        // Generate Study Guide Button
+                        _buildGenerateStudyButton(),
+                        
+                        SizedBox(height: isLargeScreen ? 32 : 24),
+                        
+                        // Resume Last Study (conditional)
+                        if (_hasResumeableStudy) ...[
+                          _buildResumeStudyBanner(),
                           SizedBox(height: isLargeScreen ? 32 : 24),
                         ],
-                      ),
+                        
+                        // Recommended Study Topics
+                        _buildRecommendedTopics(),
+                        
+                        SizedBox(height: isLargeScreen ? 32 : 24),
+                      ],
                     ),
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
         );
@@ -259,7 +349,6 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       ],
     );
-
 
   Widget _buildGenerateStudyButton() => SizedBox(
       width: double.infinity,
@@ -620,7 +709,6 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-
   void _navigateToStudyGuide(RecommendedGuideTopic topic) {
     // Generate study guide directly and navigate to study guide screen
     _generateAndNavigateToStudyGuide(topic);
@@ -893,5 +981,3 @@ class _RecommendedGuideTopicCard extends StatelessWidget {
     }
   }
 }
-
-

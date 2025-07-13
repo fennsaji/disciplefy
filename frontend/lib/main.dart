@@ -12,6 +12,8 @@ import 'features/study_generation/presentation/bloc/study_bloc.dart';
 import 'features/saved_guides/data/models/saved_guide_model.dart';
 import 'features/auth/presentation/bloc/auth_bloc.dart';
 import 'features/auth/presentation/bloc/auth_event.dart';
+import 'features/daily_verse/presentation/bloc/daily_verse_bloc.dart';
+import 'features/daily_verse/presentation/bloc/daily_verse_event.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -60,6 +62,9 @@ class DisciplefyBibleStudyApp extends StatelessWidget {
         ),
         BlocProvider<AuthBloc>(
           create: (context) => sl<AuthBloc>()..add(const AuthInitializeRequested()),
+        ),
+        BlocProvider<DailyVerseBloc>(
+          create: (context) => sl<DailyVerseBloc>()..add(const LoadTodaysVerse()),
         ),
       ],
       child: MaterialApp.router(
