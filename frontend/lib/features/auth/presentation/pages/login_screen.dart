@@ -162,7 +162,7 @@ class _LoginScreenState extends State<LoginScreen> {
           'Deepen your faith through guided Bible study',
           style: GoogleFonts.inter(
             fontSize: 16,
-            fontWeight: FontWeight.w400,
+            fontWeight: FontWeight.normal,
             color: AppTheme.onSurfaceVariant,
             height: 1.5,
           ),

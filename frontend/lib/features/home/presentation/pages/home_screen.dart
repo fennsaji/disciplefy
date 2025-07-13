@@ -172,7 +172,7 @@ class _HomeScreenState extends State<HomeScreen> {
           },
           (studyGuide) {
             // Navigate directly to study guide screen with generated content
-            context.go('/study-guide', extra: studyGuide);
+            context.go('/study-guide?source=home', extra: studyGuide);
           },
         );
       }
@@ -771,7 +771,7 @@ class _HomeScreenState extends State<HomeScreen> {
           },
           (studyGuide) {
             // Navigate directly to study guide screen with generated content
-            context.go('/study-guide', extra: studyGuide);
+            context.go('/study-guide?source=home', extra: studyGuide);
           },
         );
       }

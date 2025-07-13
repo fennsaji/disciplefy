@@ -23,6 +23,7 @@ class _SavedScreenApiState extends State<SavedScreenApi> with TickerProviderStat
   late TabController _tabController;
   late ScrollController _savedScrollController;
   late ScrollController _recentScrollController;
+  SavedGuidesApiBloc? _bloc;
 
   @override
   void initState() {
@@ -32,9 +33,6 @@ class _SavedScreenApiState extends State<SavedScreenApi> with TickerProviderStat
     _savedScrollController = ScrollController();
     _recentScrollController = ScrollController();
 
-    // Listen to tab changes
-    _tabController.addListener(_onTabChanged);
-
     // Setup scroll listeners for pagination
     _savedScrollController.addListener(_onSavedScroll);
     _recentScrollController.addListener(_onRecentScroll);
@@ -42,25 +40,20 @@ class _SavedScreenApiState extends State<SavedScreenApi> with TickerProviderStat
 
   @override
   void dispose() {
-    _tabController.removeListener(_onTabChanged);
     _savedScrollController.removeListener(_onSavedScroll);
     _recentScrollController.removeListener(_onRecentScroll);
     
     _tabController.dispose();
     _savedScrollController.dispose();
     _recentScrollController.dispose();
+    _bloc = null;
     super.dispose();
   }
 
-  void _onTabChanged() {
-    // Always fire the tab change event - don't rely on indexIsChanging
-    // which can be unreliable during tab animations
-    final tabIndex = _tabController.index;
+  void _onTabChanged(int tabIndex) {
     print('🔄 [TABS] Tab changed to index: $tabIndex (${tabIndex == 0 ? "Saved" : "Recent"})');
     
-    context.read<SavedGuidesApiBloc>().add(
-      TabChangedEvent(tabIndex: tabIndex),
-    );
+    _bloc?.add(TabChangedEvent(tabIndex: tabIndex));
   }
 
   void _onSavedScroll() {
@@ -78,24 +71,30 @@ class _SavedScreenApiState extends State<SavedScreenApi> with TickerProviderStat
   }
 
   void _loadMoreSaved() {
-    final state = context.read<SavedGuidesApiBloc>().state;
-    if (state is SavedGuidesApiLoaded && 
-        !state.isLoadingSaved && 
-        state.hasMoreSaved) {
-      context.read<SavedGuidesApiBloc>().add(
-        LoadSavedGuidesFromApi(offset: state.savedGuides.length),
-      );
+    final bloc = _bloc;
+    if (bloc != null) {
+      final state = bloc.state;
+      if (state is SavedGuidesApiLoaded && 
+          !state.isLoadingSaved && 
+          state.hasMoreSaved) {
+        bloc.add(
+          LoadSavedGuidesFromApi(offset: state.savedGuides.length),
+        );
+      }
     }
   }
 
   void _loadMoreRecent() {
-    final state = context.read<SavedGuidesApiBloc>().state;
-    if (state is SavedGuidesApiLoaded && 
-        !state.isLoadingRecent && 
-        state.hasMoreRecent) {
-      context.read<SavedGuidesApiBloc>().add(
-        LoadRecentGuidesFromApi(offset: state.recentGuides.length),
-      );
+    final bloc = _bloc;
+    if (bloc != null) {
+      final state = bloc.state;
+      if (state is SavedGuidesApiLoaded && 
+          !state.isLoadingRecent && 
+          state.hasMoreRecent) {
+        bloc.add(
+          LoadRecentGuidesFromApi(offset: state.recentGuides.length),
+        );
+      }
     }
   }
 
@@ -105,9 +104,20 @@ class _SavedScreenApiState extends State<SavedScreenApi> with TickerProviderStat
     return BlocProvider(
       create: (context) {
         final bloc = sl<SavedGuidesApiBloc>();
-        // Only load saved guides on initialization (default tab)
-        // Recent guides will be loaded when user switches to that tab
-        bloc.add(const LoadSavedGuidesFromApi(refresh: true));
+        _bloc = bloc; // Store reference
+        
+        // Setup tab listener after BloC is available
+        _tabController.addListener(() {
+          _onTabChanged(_tabController.index);
+        });
+        
+        // Load initial tab data based on the default tab (0 = saved)
+        final initialTab = _tabController.index;
+        if (initialTab == 0) {
+          bloc.add(const LoadSavedGuidesFromApi(refresh: true));
+        } else {
+          bloc.add(const LoadRecentGuidesFromApi(refresh: true));
+        }
         return bloc;
       },
       child: _SavedScreenApiContent(
@@ -463,8 +473,11 @@ class _SavedScreenApiContent extends StatelessWidget {
   }
 
   void _openGuide(BuildContext context, SavedGuideEntity guide) {
-    // Navigate to study guide screen
-    context.go('/study-guide', extra: {
+    // Determine source based on current tab
+    final source = tabController.index == 0 ? 'saved' : 'recent';
+    
+    // Navigate to study guide screen with source parameter
+    context.go('/study-guide?source=$source', extra: {
       'study_guide': {
         'id': guide.id,
         'title': guide.displayTitle,

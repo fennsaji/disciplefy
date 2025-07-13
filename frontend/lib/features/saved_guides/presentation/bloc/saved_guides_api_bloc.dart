@@ -234,39 +234,49 @@ class SavedGuidesApiBloc extends Bloc<SavedGuidesEvent, SavedGuidesState> {
     }
   }
 
-  void _onTabChanged(
+  Future<void> _onTabChanged(
     TabChangedEvent event,
     Emitter<SavedGuidesState> emit,
-  ) {
+  ) async {
     print('📋 [BLOC] TabChangedEvent received: tab ${event.tabIndex}');
     
-    // Debounce tab changes to avoid excessive API calls
+    // Cancel any existing debounce timer
     _debounceTimer?.cancel();
+    
+    // Create a completer to handle the debounced operation
+    final completer = Completer<void>();
+    
     _debounceTimer = Timer(const Duration(milliseconds: 300), () {
-      print('⏰ [BLOC] Processing tab change after debounce: tab ${event.tabIndex}');
-      final currentState = state;
-      
-      if (currentState is SavedGuidesApiLoaded) {
-        emit(currentState.copyWith(currentTab: event.tabIndex));
-      } else {
-        emit(SavedGuidesApiLoaded(
-          savedGuides: const [],
-          recentGuides: const [],
-          currentTab: event.tabIndex,
-        ));
-      }
+      if (!emit.isDone) {
+        print('⏰ [BLOC] Processing tab change after debounce: tab ${event.tabIndex}');
+        final currentState = state;
+        
+        if (currentState is SavedGuidesApiLoaded) {
+          emit(currentState.copyWith(currentTab: event.tabIndex));
+        } else {
+          emit(SavedGuidesApiLoaded(
+            savedGuides: const [],
+            recentGuides: const [],
+            currentTab: event.tabIndex,
+          ));
+        }
 
-      // Always load data for the selected tab when switching
-      if (event.tabIndex == 0) {
-        // Saved tab - always load to ensure fresh data
-        print('📥 [BLOC] Triggering LoadSavedGuidesFromApi');
-        add(const LoadSavedGuidesFromApi());
-      } else {
-        // Recent tab - always load to ensure fresh data  
-        print('📥 [BLOC] Triggering LoadRecentGuidesFromApi');
-        add(const LoadRecentGuidesFromApi());
+        // Always load data for the selected tab when switching
+        if (event.tabIndex == 0) {
+          // Saved tab - always load to ensure fresh data
+          print('📥 [BLOC] Triggering LoadSavedGuidesFromApi');
+          add(const LoadSavedGuidesFromApi());
+        } else {
+          // Recent tab - always load to ensure fresh data  
+          print('📥 [BLOC] Triggering LoadRecentGuidesFromApi');
+          add(const LoadRecentGuidesFromApi());
+        }
       }
+      completer.complete();
     });
+    
+    // Wait for debounced operation to complete
+    await completer.future;
   }
 
   /// Helper method to update a guide in a list
