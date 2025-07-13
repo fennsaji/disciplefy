@@ -154,16 +154,41 @@ class DailyVerseCard extends StatelessWidget {
                   color: theme.colorScheme.secondary.withValues(alpha: 0.6),
                 ),
               ),
-              child: Text(
-                state.currentVerseText,
-                style: theme.textTheme.bodyLarge?.copyWith(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w500,
-                  color: theme.colorScheme.onSecondary,
-                  height: 1.7,
-                  letterSpacing: 0.3,
-                ),
-                textAlign: TextAlign.start,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    state.currentVerseText,
+                    style: theme.textTheme.bodyLarge?.copyWith(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w500,
+                      color: theme.colorScheme.onSecondary,
+                      height: 1.7,
+                      letterSpacing: 0.3,
+                    ),
+                    textAlign: TextAlign.start,
+                  ),
+                  if (onTap != null) ...[
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.auto_awesome,
+                          size: 14,
+                          color: theme.colorScheme.onSecondary.withValues(alpha: 0.6),
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          'Tap to generate study guide',
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.onSecondary.withValues(alpha: 0.6),
+                            fontStyle: FontStyle.italic,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ],
               ),
             ),
 
@@ -323,12 +348,24 @@ class DailyVerseCard extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                'Verse of the Day',
-                style: theme.textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w600,
-                  color: theme.colorScheme.onSecondary,
-                ),
+              Row(
+                children: [
+                  Text(
+                    'Verse of the Day',
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                      color: theme.colorScheme.onSecondary,
+                    ),
+                  ),
+                  if (onTap != null) ...[
+                    const SizedBox(width: 8),
+                    Icon(
+                      Icons.touch_app,
+                      size: 16,
+                      color: theme.colorScheme.onSecondary.withValues(alpha: 0.7),
+                    ),
+                  ],
+                ],
               ),
               Text(
                 date,
