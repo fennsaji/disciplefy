@@ -52,11 +52,14 @@ class _SavedScreenApiState extends State<SavedScreenApi> with TickerProviderStat
   }
 
   void _onTabChanged() {
-    if (_tabController.indexIsChanging) {
-      context.read<SavedGuidesApiBloc>().add(
-        TabChangedEvent(tabIndex: _tabController.index),
-      );
-    }
+    // Always fire the tab change event - don't rely on indexIsChanging
+    // which can be unreliable during tab animations
+    final tabIndex = _tabController.index;
+    print('🔄 [TABS] Tab changed to index: $tabIndex (${tabIndex == 0 ? "Saved" : "Recent"})');
+    
+    context.read<SavedGuidesApiBloc>().add(
+      TabChangedEvent(tabIndex: tabIndex),
+    );
   }
 
   void _onSavedScroll() {

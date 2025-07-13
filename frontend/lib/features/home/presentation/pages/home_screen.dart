@@ -123,60 +123,60 @@ class _HomeScreenState extends State<HomeScreen> {
             bloc.add(const LoadTodaysVerse());
             return bloc;
           },
-      child: Scaffold(
-        backgroundColor: AppTheme.backgroundColor,
-        body: SafeArea(
-          child: Column(
-            children: [
-              // Main content
-              Expanded(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.symmetric(horizontal: 24),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      SizedBox(height: isLargeScreen ? 32 : 24),
-                      
-                      // App Header with Logo
-                      _buildAppHeader(),
-                      
-                      SizedBox(height: isLargeScreen ? 32 : 24),
-                      
-                      // Welcome Message
-                      _buildWelcomeMessage(currentUserName),
-                      
-                      SizedBox(height: isLargeScreen ? 32 : 24),
-                      
-                      // Daily Verse Card
-                      const DailyVerseCard(
-                        margin: EdgeInsets.zero,
+          child: Scaffold(
+            backgroundColor: AppTheme.backgroundColor,
+            body: SafeArea(
+              child: Column(
+                children: [
+                  // Main content
+                  Expanded(
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.symmetric(horizontal: 24),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          SizedBox(height: isLargeScreen ? 32 : 24),
+                          
+                          // App Header with Logo
+                          _buildAppHeader(),
+                          
+                          SizedBox(height: isLargeScreen ? 32 : 24),
+                          
+                          // Welcome Message
+                          _buildWelcomeMessage(currentUserName),
+                          
+                          SizedBox(height: isLargeScreen ? 32 : 24),
+                          
+                          // Daily Verse Card
+                          const DailyVerseCard(
+                            margin: EdgeInsets.zero,
+                          ),
+                          
+                          SizedBox(height: isLargeScreen ? 40 : 32),
+                          
+                          // Generate Study Guide Button
+                          _buildGenerateStudyButton(),
+                          
+                          SizedBox(height: isLargeScreen ? 32 : 24),
+                          
+                          // Resume Last Study (conditional)
+                          if (_hasResumeableStudy) ...[
+                            _buildResumeStudyBanner(),
+                            SizedBox(height: isLargeScreen ? 32 : 24),
+                          ],
+                          
+                          // Recommended Study Topics
+                          _buildRecommendedTopics(),
+                          
+                          SizedBox(height: isLargeScreen ? 32 : 24),
+                        ],
                       ),
-                      
-                      SizedBox(height: isLargeScreen ? 40 : 32),
-                      
-                      // Generate Study Guide Button
-                      _buildGenerateStudyButton(),
-                      
-                      SizedBox(height: isLargeScreen ? 32 : 24),
-                      
-                      // Resume Last Study (conditional)
-                      if (_hasResumeableStudy) ...[
-                        _buildResumeStudyBanner(),
-                        SizedBox(height: isLargeScreen ? 32 : 24),
-                      ],
-                      
-                      // Recommended Study Topics
-                      _buildRecommendedTopics(),
-                      
-                      SizedBox(height: isLargeScreen ? 32 : 24),
-                    ],
+                    ),
                   ),
-                ),
+                ],
               ),
-              
-            ],
+            ),
           ),
-        ),
         );
       },
     );

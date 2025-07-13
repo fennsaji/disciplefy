@@ -1,11 +1,11 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:dartz/dartz.dart';
 
 import '../../../../core/config/app_config.dart';
 import '../../../../core/error/failures.dart';
 import '../../../../core/error/exceptions.dart';
+import '../../../../core/services/api_auth_helper.dart';
 import '../models/daily_verse_model.dart';
 import '../../domain/entities/daily_verse_entity.dart';
 
@@ -13,8 +13,6 @@ import '../../domain/entities/daily_verse_entity.dart';
 class DailyVerseApiService {
   static String get _baseUrl => AppConfig.baseApiUrl.replaceAll('/functions/v1', '');
   static const String _dailyVerseEndpoint = '/functions/v1/daily-verse';
-  
-  static const FlutterSecureStorage _secureStorage = FlutterSecureStorage();
   
   final http.Client _httpClient;
 
@@ -27,7 +25,7 @@ class DailyVerseApiService {
   /// Get daily verse for a specific date
   Future<Either<Failure, DailyVerseEntity>> getDailyVerse(DateTime? date) async {
     try {
-      final headers = await _getApiHeaders();
+      final headers = await ApiAuthHelper.getAuthHeaders();
       
       // Build URL with optional date parameter
       String url = '$_baseUrl$_dailyVerseEndpoint';
@@ -99,29 +97,12 @@ class DailyVerseApiService {
     }
   }
 
-  /// Get API headers with authentication
-  Future<Map<String, String>> _getApiHeaders() async {
-    final headers = <String, String>{
-      'Content-Type': 'application/json',
-      'apikey': AppConfig.supabaseAnonKey,
-    };
 
-    // Get auth token from secure storage if available
-    final authToken = await _secureStorage.read(key: 'auth_token');
-    if (authToken != null && authToken.isNotEmpty) {
-      headers['Authorization'] = 'Bearer $authToken';
-    } else {
-      // For anonymous access, use the Supabase anon key
-      headers['Authorization'] = 'Bearer ${AppConfig.supabaseAnonKey}';
-    }
-
-    return headers;
-  }
 
   /// Check if service is available (health check)
   Future<bool> isServiceAvailable() async {
     try {
-      final headers = await _getApiHeaders();
+      final headers = await ApiAuthHelper.getAuthHeaders();
       
       final response = await _httpClient.get(
         Uri.parse('$_baseUrl$_dailyVerseEndpoint'),

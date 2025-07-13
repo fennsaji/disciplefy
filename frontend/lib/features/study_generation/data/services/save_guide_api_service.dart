@@ -1,16 +1,14 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import '../../../../core/config/app_config.dart';
 import '../../../../core/error/exceptions.dart';
+import '../../../../core/services/api_auth_helper.dart';
 
 /// API service for saving/unsaving study guides
 class SaveGuideApiService {
   static String get _baseUrl => AppConfig.baseApiUrl.replaceAll('/functions/v1', '');
   static const String _saveGuideEndpoint = '/functions/v1/study-guides';
-  
-  static const FlutterSecureStorage _secureStorage = FlutterSecureStorage();
   
   final http.Client _httpClient;
 
@@ -23,7 +21,7 @@ class SaveGuideApiService {
     required bool save,
   }) async {
     try {
-      final headers = await _getApiHeaders();
+      final headers = await ApiAuthHelper.getAuthHeaders();
       
       final body = json.encode({
         'guide_id': guideId,
@@ -69,24 +67,7 @@ class SaveGuideApiService {
     }
   }
 
-  /// Get API headers with authentication
-  Future<Map<String, String>> _getApiHeaders() async {
-    final headers = <String, String>{
-      'Content-Type': 'application/json',
-      'apikey': AppConfig.supabaseAnonKey,
-    };
 
-    // Get auth token from secure storage if available
-    final authToken = await _secureStorage.read(key: 'auth_token');
-    if (authToken != null && authToken.isNotEmpty) {
-      headers['Authorization'] = 'Bearer $authToken';
-    } else {
-      // For anonymous access, use the Supabase anon key
-      headers['Authorization'] = 'Bearer ${AppConfig.supabaseAnonKey}';
-    }
-
-    return headers;
-  }
 
   /// Dispose HTTP client
   void dispose() {

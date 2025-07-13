@@ -5,7 +5,10 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../../../../core/theme/app_theme.dart';
-import '../../../../core/services/auth_service.dart';
+import '../../../../core/services/auth_service.dart' as CoreAuthService;
+import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../auth/presentation/bloc/auth_bloc.dart';
+import '../../../auth/presentation/bloc/auth_state.dart' as auth_states;
 import '../../domain/entities/study_guide.dart';
 import '../../data/services/save_guide_api_service.dart';
 
@@ -467,9 +470,9 @@ class _StudyGuideScreenState extends State<StudyGuideScreen> {
     // Check if already saving
     if (_isSaving) return;
 
-    // Check authentication - must be fully authenticated (not guest)
-    final isFullyAuthenticated = await AuthService.isFullyAuthenticated();
-    if (!isFullyAuthenticated) {
+    // Check authentication using AuthBloc state - must be fully authenticated (not anonymous)
+    final authState = context.read<AuthBloc>().state;
+    if (authState is! auth_states.AuthenticatedState || authState.isAnonymous) {
       _showAuthenticationRequiredDialog();
       return;
     }

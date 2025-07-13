@@ -239,9 +239,12 @@ class SavedGuidesApiBloc extends Bloc<SavedGuidesEvent, SavedGuidesState> {
     TabChangedEvent event,
     Emitter<SavedGuidesState> emit,
   ) {
+    print('📋 [BLOC] TabChangedEvent received: tab ${event.tabIndex}');
+    
     // Debounce tab changes to avoid excessive API calls
     _debounceTimer?.cancel();
     _debounceTimer = Timer(const Duration(milliseconds: 300), () {
+      print('⏰ [BLOC] Processing tab change after debounce: tab ${event.tabIndex}');
       final currentState = state;
       
       if (currentState is SavedGuidesApiLoaded) {
@@ -254,17 +257,15 @@ class SavedGuidesApiBloc extends Bloc<SavedGuidesEvent, SavedGuidesState> {
         ));
       }
 
-      // Load data for the selected tab if empty
+      // Always load data for the selected tab when switching
       if (event.tabIndex == 0) {
-        // Saved tab
-        if (currentState is! SavedGuidesApiLoaded || currentState.savedGuides.isEmpty) {
-          add(const LoadSavedGuidesFromApi(refresh: true));
-        }
+        // Saved tab - always load to ensure fresh data
+        print('📥 [BLOC] Triggering LoadSavedGuidesFromApi');
+        add(const LoadSavedGuidesFromApi());
       } else {
-        // Recent tab
-        if (currentState is! SavedGuidesApiLoaded || currentState.recentGuides.isEmpty) {
-          add(const LoadRecentGuidesFromApi(refresh: true));
-        }
+        // Recent tab - always load to ensure fresh data  
+        print('📥 [BLOC] Triggering LoadRecentGuidesFromApi');
+        add(const LoadRecentGuidesFromApi());
       }
     });
   }

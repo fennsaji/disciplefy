@@ -11,6 +11,7 @@ import '../../domain/entities/study_guide.dart';
 import '../../domain/repositories/study_repository.dart';
 import '../../../../core/network/network_info.dart';
 import '../../../../core/services/auth_service.dart';
+import '../../../../core/services/api_auth_helper.dart';
 
 /// Implementation of the StudyRepository interface.
 /// 
@@ -56,21 +57,9 @@ class StudyRepositoryImpl implements StudyRepository {
 
       // Get authentication context
       final userContext = await _getUserContext();
-      final authToken = await _getAuthToken();
-
-      // Prepare headers
-      final headers = <String, String>{
-        'Content-Type': 'application/json',
-        'apikey': AppConfig.supabaseAnonKey, // Supabase anon key
-      };
       
-      // Add authorization header if available
-      if (authToken != null) {
-        headers['Authorization'] = 'Bearer $authToken';
-      } else {
-        // For anonymous access, use the Supabase anon key as Bearer token
-        headers['Authorization'] = 'Bearer ${AppConfig.supabaseAnonKey}';
-      }
+      // Use unified authentication helper
+      final headers = await ApiAuthHelper.getAuthHeaders();
 
       // Call Supabase Edge Function for study generation
       final response = await _supabaseClient.functions.invoke(
@@ -270,22 +259,12 @@ class StudyRepositoryImpl implements StudyRepository {
       'userId': studyGuide.userId,
     };
 
-  /// Gets the authentication token for API requests.
-  Future<String?> _getAuthToken() async {
-    try {
-      return await AuthService.getAuthToken();
-    } catch (e) {
-      return null;
-    }
-  }
-
   /// Gets the user context for API requests.
   Future<Map<String, dynamic>> _getUserContext() async {
     try {
-      final isAuthenticated = await AuthService.isAuthenticated();
-      
-      if (isAuthenticated) {
-        final userId = await AuthService.getUserId();
+      // Use ApiAuthHelper for consistent authentication state
+      if (ApiAuthHelper.isAuthenticated) {
+        final userId = ApiAuthHelper.currentUserId;
         return {
           'is_authenticated': true,
           'user_id': userId,
