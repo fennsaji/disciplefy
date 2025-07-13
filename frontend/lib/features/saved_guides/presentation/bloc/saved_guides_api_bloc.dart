@@ -133,7 +133,6 @@ class SavedGuidesApiBloc extends Bloc<SavedGuidesEvent, SavedGuidesState> {
 
     try {
       final result = await _unifiedService.fetchStudyGuides(
-        saved: false,
         limit: event.limit,
         offset: event.refresh ? 0 : _recentOffset,
       );

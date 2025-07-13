@@ -5,7 +5,6 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../../../../core/theme/app_theme.dart';
-import '../../../../core/services/auth_service.dart' as CoreAuthService;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../auth/presentation/bloc/auth_bloc.dart';
 import '../../../auth/presentation/bloc/auth_state.dart' as auth_states;
@@ -59,8 +58,171 @@ class _StudyGuideScreenState extends State<StudyGuideScreen> {
   void _initializeStudyGuide() {
     if (widget.studyGuide != null) {
       _currentStudyGuide = widget.studyGuide!;
+    } else if (widget.routeExtra != null && widget.routeExtra!['study_guide'] != null) {
+      // Handle study guide data from saved guides navigation
+      try {
+        final guideData = widget.routeExtra!['study_guide'] as Map<String, dynamic>;
+        final contentString = guideData['content'] ?? '';
+        final parsedContent = _parseStudyGuideContent(contentString);
+        
+        _currentStudyGuide = StudyGuide(
+          id: guideData['id'] ?? '',
+          input: guideData['title'] ?? guideData['verse_reference'] ?? guideData['topic_name'] ?? '',
+          inputType: guideData['type'] ?? 'topic',
+          summary: parsedContent['summary'] ?? '',
+          interpretation: parsedContent['interpretation'] ?? '',
+          context: parsedContent['context'] ?? '',
+          relatedVerses: parsedContent['relatedVerses'] ?? <String>[],
+          reflectionQuestions: parsedContent['reflectionQuestions'] ?? <String>[],
+          prayerPoints: parsedContent['prayerPoints'] ?? <String>[],
+          language: 'en', // Default language
+          createdAt: DateTime.now(), // Current time as fallback
+        );
+        
+        // Set save status from route data for saved guides
+        _isSaved = guideData['is_saved'] as bool? ?? false;
+      } catch (e) {
+        print('❌ [STUDY_GUIDE] Error parsing route data: $e');
+        _showError('Invalid study guide data. Please try again.');
+      }
     } else {
-      _showError('No study guide data provided. Please generate a study guide first.');
+      // Redirect to saved guides page when no data is provided
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          context.go('/saved');
+        }
+      });
+      _showError('Redirecting to saved guides...');
+    }
+  }
+
+  /// Parses formatted study guide content into individual sections
+  Map<String, dynamic> _parseStudyGuideContent(String content) {
+    print('🔍 [CONTENT_PARSER] Starting to parse content with length: ${content.length}');
+    
+    final result = <String, dynamic>{
+      'summary': '',
+      'interpretation': '',
+      'context': '',
+      'relatedVerses': <String>[],
+      'reflectionQuestions': <String>[],
+      'prayerPoints': <String>[],
+    };
+
+    if (content.isEmpty) {
+      print('⚠️ [CONTENT_PARSER] Content is empty');
+      return result;
+    }
+
+    final sections = content.split('\n\n');
+    String currentSection = '';
+    final StringBuffer currentContent = StringBuffer();
+
+    for (final section in sections) {
+      final trimmedSection = section.trim();
+      
+      if (trimmedSection.startsWith('**Summary:**')) {
+        _saveCurrentSection(result, currentSection, currentContent.toString());
+        currentSection = 'summary';
+        currentContent.clear();
+        currentContent.write(trimmedSection.replaceFirst('**Summary:**', '').trim());
+      } else if (trimmedSection.startsWith('**Interpretation:**')) {
+        _saveCurrentSection(result, currentSection, currentContent.toString());
+        currentSection = 'interpretation';
+        currentContent.clear();
+        currentContent.write(trimmedSection.replaceFirst('**Interpretation:**', '').trim());
+      } else if (trimmedSection.startsWith('**Context:**')) {
+        _saveCurrentSection(result, currentSection, currentContent.toString());
+        currentSection = 'context';
+        currentContent.clear();
+        currentContent.write(trimmedSection.replaceFirst('**Context:**', '').trim());
+      } else if (trimmedSection.startsWith('**Related Verses:**')) {
+        _saveCurrentSection(result, currentSection, currentContent.toString());
+        currentSection = 'relatedVerses';
+        currentContent.clear();
+        // Handle bullet points in the same section
+        final lines = trimmedSection.split('\n');
+        for (final line in lines.skip(1)) { // Skip the header line
+          if (line.trim().startsWith('•')) {
+            final item = line.trim().replaceFirst('•', '').trim();
+            if (item.isNotEmpty) {
+              (result[currentSection] as List<String>).add(item);
+            }
+          }
+        }
+      } else if (trimmedSection.startsWith('**Reflection Questions:**')) {
+        _saveCurrentSection(result, currentSection, currentContent.toString());
+        currentSection = 'reflectionQuestions';
+        currentContent.clear();
+        // Handle bullet points in the same section
+        final lines = trimmedSection.split('\n');
+        for (final line in lines.skip(1)) { // Skip the header line
+          if (line.trim().startsWith('•')) {
+            final item = line.trim().replaceFirst('•', '').trim();
+            if (item.isNotEmpty) {
+              (result[currentSection] as List<String>).add(item);
+            }
+          }
+        }
+      } else if (trimmedSection.startsWith('**Prayer Points:**')) {
+        _saveCurrentSection(result, currentSection, currentContent.toString());
+        currentSection = 'prayerPoints';
+        currentContent.clear();
+        // Handle bullet points in the same section
+        final lines = trimmedSection.split('\n');
+        for (final line in lines.skip(1)) { // Skip the header line
+          if (line.trim().startsWith('•')) {
+            final item = line.trim().replaceFirst('•', '').trim();
+            if (item.isNotEmpty) {
+              (result[currentSection] as List<String>).add(item);
+            }
+          }
+        }
+      } else if (currentSection.isNotEmpty) {
+        // Continue current section content
+        if (currentSection == 'relatedVerses' || 
+            currentSection == 'reflectionQuestions' || 
+            currentSection == 'prayerPoints') {
+          // Handle list items
+          final lines = trimmedSection.split('\n');
+          for (final line in lines) {
+            if (line.trim().startsWith('•')) {
+              final item = line.trim().replaceFirst('•', '').trim();
+              if (item.isNotEmpty) {
+                (result[currentSection] as List<String>).add(item);
+              }
+            }
+          }
+        } else {
+          // Handle regular text sections
+          if (currentContent.isNotEmpty) {
+            currentContent.write('\n\n$trimmedSection');
+          } else {
+            currentContent.write(trimmedSection);
+          }
+        }
+      }
+    }
+
+    // Save the last section
+    _saveCurrentSection(result, currentSection, currentContent.toString());
+
+    print('✅ [CONTENT_PARSER] Parsing complete. Summary length: ${result['summary']?.length ?? 0}');
+    print('✅ [CONTENT_PARSER] Parsed sections: ${result.keys.where((k) => result[k] != null && ((result[k] is String && result[k].isNotEmpty) || (result[k] is List && result[k].isNotEmpty))).toList()}');
+
+    return result;
+  }
+
+  void _saveCurrentSection(Map<String, dynamic> result, String section, String content) {
+    if (section.isEmpty || content.isEmpty) return;
+    
+    if (section == 'relatedVerses' || 
+        section == 'reflectionQuestions' || 
+        section == 'prayerPoints') {
+      // Lists are handled in the main parsing loop
+      return;
+    } else {
+      result[section] = content.trim();
     }
   }
 
@@ -208,7 +370,7 @@ class _StudyGuideScreenState extends State<StudyGuideScreen> {
               const SizedBox(height: 32),
               
               ElevatedButton(
-                onPressed: () => context.pop(),
+                onPressed: () => context.go('/saved'),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppTheme.primaryColor,
                   foregroundColor: Colors.white,
@@ -218,7 +380,7 @@ class _StudyGuideScreenState extends State<StudyGuideScreen> {
                   ),
                 ),
                 child: Text(
-                  'Try Again',
+                  'View Saved Guides',
                   style: GoogleFonts.inter(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
@@ -457,7 +619,7 @@ class _StudyGuideScreenState extends State<StudyGuideScreen> {
     }
   }
 
-  /// Save the current study guide via API
+  /// Toggle save/unsave status of the current study guide via API
   void _saveStudyGuide() async {
     // Debounce rapid taps - prevent multiple requests within 2 seconds
     final now = DateTime.now();
@@ -477,37 +639,30 @@ class _StudyGuideScreenState extends State<StudyGuideScreen> {
       return;
     }
 
-    // Already saved check
-    if (_isSaved) {
-      _showSnackBar(
-        'Study guide is already saved!',
-        AppTheme.primaryColor,
-        icon: Icons.bookmark,
-      );
-      return;
-    }
+    // Determine action based on current save status
+    final shouldSave = !_isSaved;
 
     setState(() {
       _isSaving = true;
     });
 
     try {
-      // Call the API to save the guide
+      // Call the API to toggle save status
       final success = await _saveGuideService.toggleSaveGuide(
         guideId: _currentStudyGuide.id,
-        save: true,
+        save: shouldSave,
       );
 
       if (success) {
         setState(() {
-          _isSaved = true;
+          _isSaved = shouldSave;
           _isSaving = false;
         });
 
         _showSnackBar(
-          'Study guide saved successfully!',
-          AppTheme.successColor,
-          icon: Icons.check_circle,
+          shouldSave ? 'Study guide saved successfully!' : 'Study guide removed from saved!',
+          shouldSave ? AppTheme.successColor : AppTheme.primaryColor,
+          icon: shouldSave ? Icons.check_circle : Icons.bookmark_remove,
         );
 
         // TODO: Save notes locally if needed

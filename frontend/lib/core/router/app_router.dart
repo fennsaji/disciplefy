@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -12,6 +13,10 @@ import '../../features/auth/presentation/pages/login_screen.dart';
 import '../../features/auth/presentation/pages/auth_callback_page.dart';
 import '../presentation/widgets/app_shell.dart';
 import '../error/error_page.dart';
+import '../../features/home/presentation/pages/home_screen.dart';
+import '../../features/study_generation/presentation/pages/generate_study_screen.dart';
+import '../../features/saved_guides/presentation/pages/saved_screen_api.dart';
+import '../../features/settings/presentation/pages/settings_screen.dart';
 
 class AppRoutes {
   static const String onboarding = '/onboarding';
@@ -80,26 +85,51 @@ class AppRouter {
         builder: (context, state) => const OnboardingPurposePage(),
       ),
       
-      // Main App Routes (using AppShell directly)
-      GoRoute(
-        path: AppRoutes.home,
-        name: 'home',
-        builder: (context, state) => const AppShell(),
-      ),
-      GoRoute(
-        path: AppRoutes.generateStudy,
-        name: 'generate_study',
-        builder: (context, state) => const AppShell(),
-      ),
-      GoRoute(
-        path: AppRoutes.saved,
-        name: 'saved',
-        builder: (context, state) => const AppShell(),
-      ),
-      GoRoute(
-        path: AppRoutes.settings,
-        name: 'settings',
-        builder: (context, state) => const AppShell(),
+      // Main App Routes (using StatefulShellRoute for proper navigation)
+      StatefulShellRoute.indexedStack(
+        builder: (context, state, navigationShell) => AppShell(navigationShell: navigationShell),
+        branches: [
+          // Home Branch
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: AppRoutes.home,
+                name: 'home',
+                builder: (context, state) => const HomeScreen(),
+              ),
+            ],
+          ),
+          // Study Generation Branch
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: AppRoutes.generateStudy,
+                name: 'generate_study',
+                builder: (context, state) => const GenerateStudyScreen(),
+              ),
+            ],
+          ),
+          // Saved Guides Branch
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: AppRoutes.saved,
+                name: 'saved',
+                builder: (context, state) => const SavedScreenApi(),
+              ),
+            ],
+          ),
+          // Settings Branch
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: AppRoutes.settings,
+                name: 'settings',
+                builder: (context, state) => const SettingsScreen(),
+              ),
+            ],
+          ),
+        ],
       ),
       
       // Authentication Routes (outside app shell)

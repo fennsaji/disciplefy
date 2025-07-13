@@ -26,6 +26,7 @@ class UnifiedStudyGuidesService {
     // Also check AuthService for compatibility
     final userType = await AuthService.getUserType();
     final hasStoredToken = await AuthService.getAuthToken() != null;
+    final isFullyAuthenticated = await AuthService.isFullyAuthenticated();
     
     // Debug authentication state
     print('🔐 [SAVED_GUIDES] Auth Debug:');
@@ -34,11 +35,22 @@ class UnifiedStudyGuidesService {
     print('  - Supabase user email: ${user?.email ?? "none"}');
     print('  - AuthService userType: $userType');
     print('  - AuthService hasToken: $hasStoredToken');
+    print('  - AuthService isFullyAuthenticated: $isFullyAuthenticated');
     
-    // Require proper authentication (not anonymous)
-    if (!isAuthenticated || isAnonymous) {
+    // Enhanced authentication logic with fallback
+    // If Supabase thinks user is anonymous but AuthService has valid credentials,
+    // trust AuthService (handles OAuth session corruption gracefully)
+    final shouldRequireAuth = (!isAuthenticated || isAnonymous) && !isFullyAuthenticated;
+    
+    if (shouldRequireAuth) {
       print('❌ [SAVED_GUIDES] User needs authentication - not properly signed in');
       return StudyGuidesResult.authRequired();
+    }
+    
+    // If we have valid AuthService credentials but Supabase session is corrupted,
+    // log this for debugging
+    if (isFullyAuthenticated && (isAnonymous || !isAuthenticated)) {
+      print('⚠️ [SAVED_GUIDES] Auth state mismatch detected - using AuthService credentials');
     }
     
     try {
@@ -64,8 +76,20 @@ class UnifiedStudyGuidesService {
     final isAuthenticated = user != null;
     final isAnonymous = user?.isAnonymous ?? true;
     
-    if (!isAuthenticated || isAnonymous) {
+    // Check AuthService for fallback authentication
+    final isFullyAuthenticated = await AuthService.isFullyAuthenticated();
+    
+    // Enhanced authentication logic with fallback
+    final shouldRequireAuth = (!isAuthenticated || isAnonymous) && !isFullyAuthenticated;
+    
+    if (shouldRequireAuth) {
+      print('❌ [SAVED_GUIDES] Toggle guide failed - user needs authentication');
       return StudyGuidesResult.authRequired();
+    }
+    
+    // Log auth state mismatch for debugging
+    if (isFullyAuthenticated && (isAnonymous || !isAuthenticated)) {
+      print('⚠️ [SAVED_GUIDES] Auth state mismatch in toggle guide - using AuthService credentials');
     }
     
     try {

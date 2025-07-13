@@ -3,14 +3,12 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 
-import '../../../../core/config/app_config.dart';
 import '../../../../core/error/failures.dart';
 import '../../../../core/error/exceptions.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../domain/entities/study_guide.dart';
 import '../../domain/repositories/study_repository.dart';
 import '../../../../core/network/network_info.dart';
-import '../../../../core/services/auth_service.dart';
 import '../../../../core/services/api_auth_helper.dart';
 
 /// Implementation of the StudyRepository interface.
@@ -204,12 +202,11 @@ class StudyRepositoryImpl implements StudyRepository {
     final responseData = data['data'] as Map<String, dynamic>? ?? {};
     final studyGuide = responseData['study_guide'] as Map<String, dynamic>? ?? {};
     final content = studyGuide['content'] as Map<String, dynamic>? ?? {};
-    final inputData = studyGuide['input'] as Map<String, dynamic>? ?? {};
     
     return StudyGuide(
       id: studyGuide['id'] as String? ?? _uuid.v4(),
-      input: inputData['value'] as String? ?? input,
-      inputType: inputData['type'] as String? ?? inputType,
+      input: input, // Always use the original user input
+      inputType: inputType, // Always use the original input type
       summary: content['summary'] as String? ?? 'No summary available',
       interpretation: content['interpretation'] as String? ?? 'No interpretation available',
       context: content['context'] as String? ?? 'No context available',
@@ -222,7 +219,7 @@ class StudyRepositoryImpl implements StudyRepository {
       prayerPoints: (content['prayerPoints'] as List<dynamic>?)
           ?.map((e) => e.toString())
           .toList() ?? [],
-      language: inputData['language'] as String? ?? language,
+      language: language, // Always use the original language parameter
       createdAt: DateTime.parse(studyGuide['createdAt'] as String? ?? DateTime.now().toIso8601String()),
     );
   }
