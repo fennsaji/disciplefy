@@ -187,7 +187,7 @@ export class LLMService {
       temperature: 0.2,
       promptModifiers: {
         languageInstruction: 'Output only in simple, everyday Hindi (avoid complex Sanskrit words, use common spoken Hindi)',
-        complexityInstruction: 'Use village-level language that common people can easily understand'
+        complexityInstruction: 'Use easy level language that common people can easily understand'
       },
       culturalContext: 'Indian Christian context with cultural sensitivity to local traditions and practices'
     })
@@ -202,7 +202,7 @@ export class LLMService {
         languageInstruction: 'Output only in simple, everyday Malayalam (avoid complex literary words, use common spoken Malayalam)',
         complexityInstruction: 'Use simple vocabulary accessible to Malayalam speakers across Kerala'
       },
-      culturalContext: 'Kerala Christian context with awareness of the strong Christian heritage in the region'
+      culturalContext: 'Kerala Christian context with awareness of the strong Protestant Christian heritage in the region'
     })
 
     console.log(`[LLM] Initialized configurations for ${this.languageConfigs.size} languages`)
@@ -259,7 +259,7 @@ export class LLMService {
    */
   private async generateWithLLM(params: LLMGenerationParams): Promise<LLMResponse> {
     const languageConfig = this.languageConfigs.get(params.language)!
-    const prompt = this.createPrompt(params, languageConfig)
+    const prompt = this.createEnhancedPrompt(params, languageConfig)
     
     try {
       // Use language-specific provider preference if available, otherwise fallback to configured provider
@@ -415,41 +415,121 @@ export class LLMService {
   }
 
   /**
-   * Creates a prompt for LLM based on Jeff Reed methodology.
+   * Creates an enhanced prompt for LLM based on Jeff Reed methodology with language-specific examples.
    * 
    * @param params - Generation parameters
    * @param languageConfig - Language-specific configuration
-   * @returns Formatted prompt string
+   * @returns Enhanced formatted prompt string with cultural context and examples
    */
-  private createPrompt(params: LLMGenerationParams, languageConfig: LanguageConfig): string {
+  private createEnhancedPrompt(params: LLMGenerationParams, languageConfig: LanguageConfig): string {
     const { inputType, inputValue } = params
+    const languageExamples = this.getLanguageSpecificExamples(params.language)
     
-    const basePrompt = `You are a Bible scholar generating a comprehensive Bible study guide using the Inductive Bible Study Method. The user has submitted a ${inputType === 'scripture' ? 'scripture reference' : 'topic'}: "${inputValue}". Your task is to return ONLY valid JSON in the following format:
+    const enhancedPrompt = `You are a biblical scholar and theologian creating Bible study guides using the Inductive Bible Study Method. ${languageConfig.culturalContext}
 
-      {
-        "summary": "Brief (2-3 sentence) overview capturing the main message or theme.",
-        "interpretation": "In-depth theological interpretation explaining the intended meaning, key teachings, and how they relate to broader biblical themes. Use 4-5 well-structured paragraphs.",
-        "context": "Historical, cultural, and literary background to help the reader understand the setting and authorship. Use 1-2 concise paragraphs.",
-        "relatedVerses": ["3-5 relevant Bible verses with references that support or expand the message."],
-        "reflectionQuestions": ["4-6 practical questions to help apply the message in personal or group life."],
-        "prayerPoints": ["3-4 prayer suggestions aligned with the message and reflection."]
-      }
+The user has submitted a ${inputType === 'scripture' ? 'scripture reference' : 'topic'}: "${inputValue}"
 
-      CRITICAL JSON FORMATTING RULES:
-      - Return ONLY valid JSON - no markdown, no code blocks, no extra text
-      - Properly escape all quotes within text content using \"
-      - Ensure all strings are properly closed with matching quotes
-      - Use simple punctuation to avoid JSON parsing issues
+TASK: Generate a comprehensive Bible study guide in JSON format ONLY.
 
-      Content Instructions:
-      - Maintain Protestant (especially Pentecostal) theological alignment.
-      - ${languageConfig.promptModifiers.languageInstruction}.
-      - ${languageConfig.promptModifiers.complexityInstruction}.
-      - Keep the tone pastoral, clear, and applicable to real-life spiritual growth.
-      - Cultural context: ${languageConfig.culturalContext}.
-      - Ensure every section is biblically rooted, Christ-centered, and practically useful for group or individual study.`
+JSON STRUCTURE (follow exactly):
+{
+  "summary": "Brief (2-3 sentence) overview capturing the main message or theme",
+  "interpretation": "In-depth theological interpretation (4-5 well-structured paragraphs) explaining the intended meaning, key teachings, and broader biblical connections",
+  "context": "Historical, cultural, and literary background (1-2 concise paragraphs) to help understand the setting and authorship",
+  "relatedVerses": ["3-5 relevant Bible verses with references that support or expand the message"],
+  "reflectionQuestions": ["4-6 practical questions to help apply the message in personal or group life"],
+  "prayerPoints": ["3-4 prayer suggestions aligned with the message and reflection"]
+}
 
-    return basePrompt
+CRITICAL FORMATTING RULES:
+- Return ONLY valid JSON - no markdown, no code blocks, no extra text
+- Properly escape all quotes within text content using \\"
+- Ensure all strings are properly closed with matching quotes
+- Use simple punctuation to avoid JSON parsing issues
+- No trailing commas
+
+LANGUAGE & CULTURAL GUIDELINES:
+- ${languageConfig.promptModifiers.languageInstruction}
+- ${languageConfig.promptModifiers.complexityInstruction}
+- Vocabulary Guidelines: Use everyday, accessible words that common people understand
+- Avoid scholarly, technical, or overly complex theological terms
+- Cultural Context: ${languageConfig.culturalContext}
+
+CONTENT REQUIREMENTS:
+- Maintain Protestant (especially Pentecostal) theological alignment
+- Keep tone pastoral, warm, and applicable to real-life spiritual growth
+- Ensure every section is biblically rooted and Christ-centered
+- Make content practically useful for both group and individual study
+- Include specific, actionable guidance for spiritual application
+
+${languageExamples}
+
+Remember: Output ONLY the JSON object. No additional text, explanations, or formatting.`
+
+    return enhancedPrompt
+  }
+
+  /**
+   * Provides language-specific examples and formatting guidelines for better LLM output.
+   * 
+   * @param language - Target language code (en, hi, ml)
+   * @returns Language-specific examples and guidelines
+   */
+  private getLanguageSpecificExamples(language: string): string {
+    switch (language) {
+      case 'en':
+        return `ENGLISH EXAMPLES & STYLE:
+Use clear, accessible English appropriate for all education levels.
+
+Example Summary: "This passage teaches us about God's unfailing love and how we can trust Him in difficult times."
+
+Example Reflection Question: "How can you practically show God's love to someone in your family or community this week?"
+
+Example Prayer Point: "Ask God to help you trust His love even when circumstances are challenging."
+
+Tone: Pastoral, encouraging, and practical with modern language that connects biblical truth to daily life.`
+
+      case 'hi':
+        return `हिंदी के उदाहरण और शैली:
+सरल, रोजमर्रा की हिंदी का उपयोग करें। कठिन संस्कृत शब्दों से बचें।
+
+उदाहरण सारांश: "यह पद हमें दिखाता है कि परमेश्वर हमसे बहुत प्रेम करता है और हम मुश्किल समय में उस पर भरोसा कर सकते हैं।"
+
+उदाहरण प्रश्न: "आप इस सप्ताह अपने परिवार या समुदाय में किसी को परमेश्वर का प्रेम कैसे दिखा सकते हैं?"
+
+उदाहरण प्रार्थना: "परमेश्वर से प्रार्थना करें कि वह आपको कठिन समय में भी उसके प्रेम पर भरोसा करने में मदद करे।"
+
+शैली: गांव के लोग समझ सकें, ऐसी सरल भाषा। आम बोलचाल के शब्द। बाइबल की सच्चाई को रोजाना की जिंदगी से जोड़ें।
+
+शब्दावली गाइड:
+- "परमेश्वर" (न कि "ईश्वर")
+- "प्रेम" (न कि "प्रीति") 
+- "मदद" (न कि "सहायता")
+- "जिंदगी" (न कि "जीवन")
+- "दिल" (न कि "हृदय")`
+
+      case 'ml':
+        return `മലയാളത്തിലെ ഉദാഹരണങ്ങളും ശൈലിയും:
+സാധാരണ, എളുപ്പത്തിൽ മനസ്സിലാകുന്ന മലയാളം ഉപയോഗിക്കുക. സാഹിത്യിക വാക്കുകൾ ഒഴിവാക്കുക.
+
+ഉദാഹരണ സാരാംശം: "ഈ വചനം നമ്മോട് ദൈവത്തിന്റെ അവിഭാജ്യമായ സ്നേഹത്തെക്കുറിച്ചും ബുദ്ധിമുട്ടുള്ള സമയങ്ങളിൽ അവനിൽ ആശ്രയിക്കാമെന്നതിനെക്കുറിച്ചും പഠിപ്പിക്കുന്നു."
+
+ഉദാഹരണ ചോദ്യം: "ഈ ആഴ്ച നിങ്ങൾക്ക് കുടുംബത്തിലോ സമൂഹത്തിലോ ഉള്ള ആരെങ്കിലുമോട് ദൈവത്തിന്റെ സ്നേഹം എങ്ങനെ കാണിക്കാം?"
+
+ഉദാഹരണ പ്രാർത്ഥന: "കഷ്ടകാലങ്ങളിൽ പോലും ദൈവത്തിന്റെ സ്നേഹത്തിൽ ആശ്രയിക്കാൻ സഹായിക്കേണമേ എന്ന് പ്രാർത്ഥിക്കുക."
+
+ശൈലി: കേരളത്തിലെ എല്ലാ ക്രിസ്ത്യാനികൾക്കും മനസ്സിലാകുന്ന സാധാരണ മലയാളം. ബൈബിൾ സത്യത്തെ ദൈനംദിന ജീവിതവുമായി ബന്ധിപ്പിക്കുക.
+
+പദാവലി ഗൈഡ്:
+- "ദൈവം" (നല്ല സാധാരണ വാക്ക്)
+- "സ്നേഹം" (എളുപ്പത്തിൽ മനസ്സിലാകും)
+- "സഹായം" (ലളിതമായ വാക്ക്)
+- "ജീവിതം" (എല്ലാവർക്കും അറിയാം)
+- "ഹൃദയം" (പക്ഷേ "മനസ്സ്" കൂടുതൽ സാധാരണം)`
+
+      default:
+        return 'Use clear, accessible language appropriate for your target audience.'
+    }
   }
 
   /**
