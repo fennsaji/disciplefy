@@ -517,46 +517,70 @@ class _SettingsScreenContent extends StatelessWidget {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
+        backgroundColor: const Color(0xFFFAFAFA), // Light background
+        surfaceTintColor: Colors.transparent,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        elevation: 8,
+        shadowColor: Colors.black.withOpacity(0.1),
         title: Text(
           isAnonymous ? 'Clear Session' : 'Sign Out',
           style: GoogleFonts.playfairDisplay(
+            fontSize: 20,
             fontWeight: FontWeight.bold,
-            color: AppTheme.primaryColor,
+            color: const Color(0xFF333333), // Primary gray text
           ),
         ),
         content: Text(
           isAnonymous
               ? 'Are you sure you want to clear your guest session? Your data will be lost.'
               : 'Are you sure you want to sign out?',
-          style: GoogleFonts.inter(color: AppTheme.textPrimary),
+          style: GoogleFonts.inter(
+            fontSize: 16,
+            color: const Color(0xFF333333), // Primary gray text
+            height: 1.5,
+          ),
         ),
+        actionsPadding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
+            style: TextButton.styleFrom(
+              foregroundColor: const Color(0xFF888888), // Light gray for cancel
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
             child: Text(
               'Cancel',
               style: GoogleFonts.inter(
+                fontSize: 16,
                 fontWeight: FontWeight.w600,
-                color: AppTheme.onSurfaceVariant,
+                color: const Color(0xFF888888), // Light gray text
               ),
             ),
           ),
+          const SizedBox(width: 12),
           ElevatedButton(
             onPressed: () {
               Navigator.of(context).pop();
               context.read<AuthBloc>().add(const SignOutRequested());
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.errorColor,
+              backgroundColor: const Color(0xFF7A56DB), // Primary purple
               foregroundColor: Colors.white,
+              elevation: 0,
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(8),
               ),
             ),
             child: Text(
               isAnonymous ? 'Clear' : 'Sign Out',
-              style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+              style: GoogleFonts.inter(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ),
         ],
@@ -569,44 +593,68 @@ class _SettingsScreenContent extends StatelessWidget {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
+        backgroundColor: const Color(0xFFFAFAFA), // Light background
+        surfaceTintColor: Colors.transparent,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        elevation: 8,
+        shadowColor: Colors.black.withOpacity(0.1),
         title: Text(
           'Delete Account',
           style: GoogleFonts.playfairDisplay(
+            fontSize: 20,
             fontWeight: FontWeight.bold,
-            color: AppTheme.errorColor,
+            color: const Color(0xFFDC2626), // Red error color
           ),
         ),
         content: Text(
           'This action cannot be undone. All your data will be permanently deleted.',
-          style: GoogleFonts.inter(color: AppTheme.textPrimary),
+          style: GoogleFonts.inter(
+            fontSize: 16,
+            color: const Color(0xFF333333), // Primary gray text
+            height: 1.5,
+          ),
         ),
+        actionsPadding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
+            style: TextButton.styleFrom(
+              foregroundColor: const Color(0xFF888888), // Light gray for cancel
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
             child: Text(
               'Cancel',
               style: GoogleFonts.inter(
+                fontSize: 16,
                 fontWeight: FontWeight.w600,
-                color: AppTheme.onSurfaceVariant,
+                color: const Color(0xFF888888), // Light gray text
               ),
             ),
           ),
+          const SizedBox(width: 12),
           ElevatedButton(
             onPressed: () {
               Navigator.of(context).pop();
               context.read<AuthBloc>().add(const DeleteAccountRequested());
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.errorColor,
+              backgroundColor: const Color(0xFFDC2626), // Red error color
               foregroundColor: Colors.white,
+              elevation: 0,
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(8),
               ),
             ),
             child: Text(
               'Delete',
-              style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+              style: GoogleFonts.inter(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ),
         ],

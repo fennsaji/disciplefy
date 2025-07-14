@@ -461,31 +461,46 @@ class _OnboardingWelcomePageState extends State<OnboardingWelcomePage> {
     showDialog(
       context: context,
       builder: (BuildContext context) => AlertDialog(
+          backgroundColor: const Color(0xFFFAFAFA), // Light background
+          surfaceTintColor: Colors.transparent,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
           ),
+          elevation: 8,
+          shadowColor: Colors.black.withOpacity(0.1),
           title: Text(
             title,
-            style: GoogleFonts.inter(
-              fontWeight: FontWeight.w600,
-              color: AppTheme.textPrimary,
+            style: GoogleFonts.playfairDisplay(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: const Color(0xFF333333), // Primary gray text
             ),
           ),
           content: Text(
             message,
             style: GoogleFonts.inter(
-              color: AppTheme.onSurfaceVariant,
-              height: 1.4,
+              fontSize: 16,
+              color: const Color(0xFF333333), // Primary gray text
+              height: 1.5,
             ),
           ),
+          actionsPadding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
+              style: TextButton.styleFrom(
+                foregroundColor: const Color(0xFF888888), // Light gray for cancel
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
               child: Text(
                 'OK',
                 style: GoogleFonts.inter(
+                  fontSize: 16,
                   fontWeight: FontWeight.w600,
-                  color: AppTheme.primaryColor,
+                  color: const Color(0xFF888888), // Light gray text
                 ),
               ),
             ),

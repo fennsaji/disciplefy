@@ -22,6 +22,7 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen> {
   final FocusNode _inputFocusNode = FocusNode();
   
   StudyInputMode _selectedMode = StudyInputMode.scripture;
+  StudyLanguage _selectedLanguage = StudyLanguage.english;
   bool _isInputValid = false;
   String? _validationError;
 
@@ -149,6 +150,11 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen> {
                 // Mode Toggle
                 _buildModeToggle(),
                 
+                SizedBox(height: isLargeScreen ? 24 : 16),
+                
+                // Language Selection
+                _buildLanguageSelection(),
+                
                 SizedBox(height: isLargeScreen ? 32 : 24),
                 
                 // Input Section
@@ -208,6 +214,57 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen> {
                   label: 'Topic',
                   isSelected: _selectedMode == StudyInputMode.topic,
                   onTap: () => _switchMode(StudyInputMode.topic),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+
+  Widget _buildLanguageSelection() => Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Language',
+          style: GoogleFonts.inter(
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+            color: AppTheme.textPrimary,
+          ),
+        ),
+        
+        const SizedBox(height: 12),
+        
+        Container(
+          decoration: BoxDecoration(
+            color: AppTheme.primaryColor.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: _LanguageToggleButton(
+                  flag: '🇺🇸',
+                  label: 'English',
+                  isSelected: _selectedLanguage == StudyLanguage.english,
+                  onTap: () => _switchLanguage(StudyLanguage.english),
+                ),
+              ),
+              Expanded(
+                child: _LanguageToggleButton(
+                  flag: '🇮🇳',
+                  label: 'हिन्दी',
+                  isSelected: _selectedLanguage == StudyLanguage.hindi,
+                  onTap: () => _switchLanguage(StudyLanguage.hindi),
+                ),
+              ),
+              Expanded(
+                child: _LanguageToggleButton(
+                  flag: '🇮🇳',
+                  label: 'മലയാളം',
+                  isSelected: _selectedLanguage == StudyLanguage.malayalam,
+                  onTap: () => _switchLanguage(StudyLanguage.malayalam),
                 ),
               ),
             ],
@@ -426,18 +483,25 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen> {
     _inputFocusNode.requestFocus();
   }
 
+  void _switchLanguage(StudyLanguage language) {
+    setState(() {
+      _selectedLanguage = language;
+    });
+  }
+
   void _generateStudyGuide() {
     if (!_isInputValid) return;
     
     final input = _inputController.text.trim();
     final inputType = _selectedMode == StudyInputMode.scripture ? 'scripture' : 'topic';
+    final languageCode = _selectedLanguage.code;
     
     // Trigger BLoC event to generate study guide
     context.read<StudyBloc>().add(
       GenerateStudyGuideRequested(
         input: input,
         inputType: inputType,
-        language: 'en', // TODO: Get from user preferences
+        language: languageCode,
       ),
     );
   }
@@ -446,23 +510,27 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen> {
     showDialog(
       context: context,
       builder: (BuildContext context) => AlertDialog(
+          backgroundColor: const Color(0xFFFAFAFA), // Light background
+          surfaceTintColor: Colors.transparent,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
           ),
+          elevation: 8,
+          shadowColor: Colors.black.withOpacity(0.1),
           title: Row(
             children: [
               const Icon(
                 Icons.error_outline,
-                color: AppTheme.accentColor,
+                color: Color(0xFFDC2626), // Red error color
                 size: 24,
               ),
               const SizedBox(width: 12),
               Text(
                 'Generation Failed',
-                style: GoogleFonts.inter(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                  color: AppTheme.textPrimary,
+                style: GoogleFonts.playfairDisplay(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: const Color(0xFF333333), // Primary gray text
                 ),
               ),
             ],
@@ -474,58 +542,69 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen> {
               Text(
                 message,
                 style: GoogleFonts.inter(
-                  fontSize: 14,
-                  color: AppTheme.onSurfaceVariant,
-                  height: 1.4,
+                  fontSize: 16,
+                  color: const Color(0xFF333333), // Primary gray text
+                  height: 1.5,
                 ),
               ),
               const SizedBox(height: 12),
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: AppTheme.backgroundColor,
+                  color: const Color(0xFFF5F5F5), // Light gray background
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
                   'We couldn\'t generate a study guide right now. Please try again later.',
                   style: GoogleFonts.inter(
-                    fontSize: 12,
-                    color: AppTheme.onSurfaceVariant,
+                    fontSize: 14,
+                    color: const Color(0xFF666666), // Secondary gray text
                     fontStyle: FontStyle.italic,
                   ),
                 ),
               ),
             ],
           ),
+          actionsPadding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
+              style: TextButton.styleFrom(
+                foregroundColor: const Color(0xFF888888), // Light gray for cancel
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
               child: Text(
                 'OK',
                 style: GoogleFonts.inter(
-                  fontWeight: FontWeight.w500,
-                  color: AppTheme.onSurfaceVariant,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: const Color(0xFF888888), // Light gray text
                 ),
               ),
             ),
             if (isRetryable) ...[
-              const SizedBox(width: 8),
+              const SizedBox(width: 12),
               ElevatedButton(
                 onPressed: () {
                   Navigator.of(context).pop();
                   _generateStudyGuide();
                 },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.primaryColor,
+                  backgroundColor: const Color(0xFF7A56DB), // Primary purple
                   foregroundColor: Colors.white,
+                  elevation: 0,
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  elevation: 0,
                 ),
                 child: Text(
                   'Try Again',
                   style: GoogleFonts.inter(
+                    fontSize: 16,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -571,6 +650,54 @@ class _ModeToggleButton extends StatelessWidget {
     );
 }
 
+/// Language toggle button widget.
+class _LanguageToggleButton extends StatelessWidget {
+  final String flag;
+  final String label;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  const _LanguageToggleButton({
+    required this.flag,
+    required this.label,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) => GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 10),
+        decoration: BoxDecoration(
+          color: isSelected ? AppTheme.primaryColor : Colors.transparent,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              flag,
+              style: const TextStyle(fontSize: 16),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              label,
+              style: GoogleFonts.inter(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: isSelected ? Colors.white : AppTheme.primaryColor,
+              ),
+              textAlign: TextAlign.center,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
+        ),
+      ),
+    );
+}
+
 /// Suggestion chip widget.
 class _SuggestionChip extends StatelessWidget {
   final String label;
@@ -609,4 +736,14 @@ class _SuggestionChip extends StatelessWidget {
 enum StudyInputMode {
   scripture,
   topic,
+}
+
+/// Enum for study language selection.
+enum StudyLanguage {
+  english('en'),
+  hindi('hi'),
+  malayalam('ml');
+
+  const StudyLanguage(this.code);
+  final String code;
 }
