@@ -80,20 +80,30 @@ jobs:
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
 
-  deploy-web:
-    needs: test
-    runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
-    steps:
-      - uses: actions/checkout@v3
-      - name: Setup Flutter
-        uses: subosito/flutter-action@v2
-      - name: Build web
-        run: flutter build web --release
-      - name: Deploy to Supabase Storage
-        run: |
-          # Deploy web build to Supabase storage bucket
-          supabase storage cp -r build/web/* main-bucket/
+  # Replace this section in "deploy-web" job of GitHub Actions workflow
+
+deploy-web:
+  needs: test
+  runs-on: ubuntu-latest
+  if: github.ref == 'refs/heads/main'
+  steps:
+    - uses: actions/checkout@v3
+    - name: Setup Flutter
+      uses: subosito/flutter-action@v2
+      with:
+        flutter-version: '3.16.0'
+    - name: Build Flutter Web App
+      run: flutter build web --release
+    - name: Setup Supabase CLI
+      uses: supabase/setup-cli@v1
+    - name: Upload Web Build to Supabase Storage
+      run: |
+        supabase storage rm --bucket web --recursive || true
+        supabase storage cp -r build/web/ web/
+      env:
+        SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+
 ```
 
 ### **Mobile App Deployment**
