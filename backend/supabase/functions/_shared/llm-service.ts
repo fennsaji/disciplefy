@@ -93,21 +93,43 @@ interface AnthropicResponse {
 type LLMProvider = 'openai' | 'anthropic'
 
 /**
+ * Language-specific configuration for LLM generation.
+ */
+interface LanguageConfig {
+  readonly name: string
+  readonly modelPreference: LLMProvider
+  readonly maxTokens: number
+  readonly temperature: number
+  readonly promptModifiers: {
+    readonly languageInstruction: string
+    readonly complexityInstruction: string
+  }
+  readonly culturalContext: string
+}
+
+/**
  * Service for generating Bible study content using Large Language Models.
  * 
  * This service handles LLM integration with provider selection via environment variables.
  * Supports OpenAI GPT and Anthropic Claude APIs with proper error handling and validation.
+ * Features language-specific configurations for optimal results in English, Hindi, and Malayalam.
  */
 export class LLMService {
   private readonly provider: LLMProvider
   private readonly apiKey: string
   private readonly useMockData: boolean
+  private readonly languageConfigs: Map<string, LanguageConfig>
 
   /**
    * Creates a new LLM service instance.
    * Reads LLM_PROVIDER and USE_MOCK environment variables to configure behavior.
+   * Initializes language-specific configurations for English, Hindi, and Malayalam.
    */
   constructor() {
+    // Initialize language configurations
+    this.languageConfigs = new Map()
+    this.initializeLanguageConfigs()
+    
     // Check if we should use mock data (development mode)
     this.useMockData = Deno.env.get('USE_MOCK') === 'true'
     
@@ -138,6 +160,52 @@ export class LLMService {
     
     this.apiKey = apiKey
     console.log(`[LLM] Initialized with provider: ${this.provider}`)
+  }
+
+  /**
+   * Initializes language-specific configurations for supported languages.
+   */
+  private initializeLanguageConfigs(): void {
+    // English configuration
+    this.languageConfigs.set('en', {
+      name: 'English',
+      modelPreference: 'openai',
+      maxTokens: 3000,
+      temperature: 0.3,
+      promptModifiers: {
+        languageInstruction: 'Output only in clear, accessible English',
+        complexityInstruction: 'Use clear, pastoral language appropriate for all education levels'
+      },
+      culturalContext: 'Western Christian context with Protestant theological emphasis'
+    })
+
+    // Hindi configuration
+    this.languageConfigs.set('hi', {
+      name: 'Hindi',
+      modelPreference: 'anthropic',
+      maxTokens: 4000,
+      temperature: 0.2,
+      promptModifiers: {
+        languageInstruction: 'Output only in simple, everyday Hindi (avoid complex Sanskrit words, use common spoken Hindi)',
+        complexityInstruction: 'Use village-level language that common people can easily understand'
+      },
+      culturalContext: 'Indian Christian context with cultural sensitivity to local traditions and practices'
+    })
+
+    // Malayalam configuration
+    this.languageConfigs.set('ml', {
+      name: 'Malayalam',
+      modelPreference: 'anthropic',
+      maxTokens: 4000,
+      temperature: 0.2,
+      promptModifiers: {
+        languageInstruction: 'Output only in simple, everyday Malayalam (avoid complex literary words, use common spoken Malayalam)',
+        complexityInstruction: 'Use simple vocabulary accessible to Malayalam speakers across Kerala'
+      },
+      culturalContext: 'Kerala Christian context with awareness of the strong Christian heritage in the region'
+    })
+
+    console.log(`[LLM] Initialized configurations for ${this.languageConfigs.size} languages`)
   }
 
   /**
@@ -174,6 +242,12 @@ export class LLMService {
     if (!params.language || typeof params.language !== 'string') {
       throw new Error('Invalid language')
     }
+
+    // Validate language is supported
+    if (!this.languageConfigs.has(params.language)) {
+      const supportedLanguages = Array.from(this.languageConfigs.keys()).join(', ')
+      throw new Error(`Unsupported language: "${params.language}". Supported languages: ${supportedLanguages}`)
+    }
   }
 
   /**
@@ -184,20 +258,23 @@ export class LLMService {
    * @throws {Error} When LLM API call fails or response is invalid
    */
   private async generateWithLLM(params: LLMGenerationParams): Promise<LLMResponse> {
-    const prompt = this.createPrompt(params)
+    const languageConfig = this.languageConfigs.get(params.language)!
+    const prompt = this.createPrompt(params, languageConfig)
     
     try {
-      console.log(`[LLM] Calling ${this.provider} API`)
+      // Use language-specific provider preference if available, otherwise fallback to configured provider
+      const preferredProvider = languageConfig.modelPreference || this.provider
+      console.log(`[LLM] Calling ${preferredProvider} API for language: ${languageConfig.name}`)
       
       let rawResponse: string
       
-      // Call the appropriate provider
-      if (this.provider === 'openai') {
-        rawResponse = await this.callOpenAI(prompt)
-      } else if (this.provider === 'anthropic') {
-        rawResponse = await this.callAnthropic(prompt)
+      // Call the appropriate provider based on language preference
+      if (preferredProvider === 'openai') {
+        rawResponse = await this.callOpenAI(prompt, languageConfig)
+      } else if (preferredProvider === 'anthropic') {
+        rawResponse = await this.callAnthropic(prompt, languageConfig)
       } else {
-        throw new Error(`Unsupported provider: ${this.provider}`)
+        throw new Error(`Unsupported provider: ${preferredProvider}`)
       }
       
       // Parse JSON response
@@ -234,24 +311,25 @@ export class LLMService {
    * Calls OpenAI ChatCompletion API.
    * 
    * @param prompt - The formatted prompt
+   * @param languageConfig - Language-specific configuration
    * @returns Promise resolving to response content
    * @throws {Error} When API call fails
    */
-  private async callOpenAI(prompt: string): Promise<string> {
+  private async callOpenAI(prompt: string, languageConfig: LanguageConfig): Promise<string> {
     const request: OpenAIRequest = {
       model: 'gpt-3.5-turbo-1106', // Supports JSON mode
       messages: [
         {
           role: 'system',
-          content: 'You are a biblical scholar and theologian who creates Bible study guides following Inductive Bible Study Method. Always respond with valid JSON in the exact format requested.'
+          content: `You are a biblical scholar and theologian who creates Bible study guides following Inductive Bible Study Method. ${languageConfig.culturalContext}. Always respond with valid JSON in the exact format requested.`
         },
         {
           role: 'user',
           content: prompt
         }
       ],
-      temperature: 0.3, // Lower temperature for more consistent theological content
-      max_tokens: 3000, // Increased for multilingual content
+      temperature: languageConfig.temperature,
+      max_tokens: languageConfig.maxTokens,
       response_format: { type: 'json_object' }
     }
 
@@ -288,15 +366,16 @@ export class LLMService {
    * Calls Anthropic Claude API.
    * 
    * @param prompt - The formatted prompt
+   * @param languageConfig - Language-specific configuration
    * @returns Promise resolving to response content
    * @throws {Error} When API call fails
    */
-  private async callAnthropic(prompt: string): Promise<string> {
+  private async callAnthropic(prompt: string, languageConfig: LanguageConfig): Promise<string> {
     const request: AnthropicRequest = {
       model: 'claude-3-haiku-20240307', // Fast and cost-effective
-      max_tokens: 3000, // Increased for multilingual content
-      temperature: 0.3,
-      system: 'You are a biblical scholar and theologian who creates Bible study guides following Inductive Bible Study method. Always respond with valid JSON in the exact format requested.',
+      max_tokens: languageConfig.maxTokens,
+      temperature: languageConfig.temperature,
+      system: `You are a biblical scholar and theologian who creates Bible study guides following Inductive Bible Study method. ${languageConfig.culturalContext}. Always respond with valid JSON in the exact format requested.`,
       messages: [
         {
           role: 'user',
@@ -339,10 +418,11 @@ export class LLMService {
    * Creates a prompt for LLM based on Jeff Reed methodology.
    * 
    * @param params - Generation parameters
+   * @param languageConfig - Language-specific configuration
    * @returns Formatted prompt string
    */
-  private createPrompt(params: LLMGenerationParams): string {
-    const { inputType, inputValue, language } = params
+  private createPrompt(params: LLMGenerationParams, languageConfig: LanguageConfig): string {
+    const { inputType, inputValue } = params
     
     const basePrompt = `You are a Bible scholar generating a comprehensive Bible study guide using the Inductive Bible Study Method. The user has submitted a ${inputType === 'scripture' ? 'scripture reference' : 'topic'}: "${inputValue}". Your task is to return ONLY valid JSON in the following format:
 
@@ -363,9 +443,10 @@ export class LLMService {
 
       Content Instructions:
       - Maintain Protestant (especially Pentecostal) theological alignment.
-      - Output only in ${language === 'en' ? 'English' : language === 'hi' ? 'simple, everyday Hindi (avoid complex Sanskrit words, use common spoken Hindi)' : 'simple, everyday Malayalam (avoid complex literary words, use common spoken Malayalam)'}.
+      - ${languageConfig.promptModifiers.languageInstruction}.
+      - ${languageConfig.promptModifiers.complexityInstruction}.
       - Keep the tone pastoral, clear, and applicable to real-life spiritual growth.
-      - For non-English languages: Use simple vocabulary that common people can easily understand. Avoid scholarly or literary terms.
+      - Cultural context: ${languageConfig.culturalContext}.
       - Ensure every section is biblically rooted, Christ-centered, and practically useful for group or individual study.`
 
     return basePrompt
