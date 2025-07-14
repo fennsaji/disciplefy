@@ -793,8 +793,8 @@ class _SettingsScreenContent extends StatelessWidget {
         return 'English';
       case 'hi':
         return 'Hindi';
-      case 'es':
-        return 'Spanish';
+      case 'ml':
+        return 'Malayalam';
       default:
         return 'English';
     }
