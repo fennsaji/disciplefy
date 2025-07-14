@@ -156,6 +156,14 @@ export class LLMService {
     const openaiKey = Deno.env.get('OPENAI_API_KEY')
     const anthropicKey = Deno.env.get('ANTHROPIC_API_KEY')
     
+    console.log('[LLM] Environment variable check:', {
+      hasOpenAI: !!openaiKey,
+      hasAnthropic: !!anthropicKey,
+      openaiKeyLength: openaiKey?.length || 0,
+      anthropicKeyLength: anthropicKey?.length || 0,
+      anthropicKeyPrefix: anthropicKey?.substring(0, 12) || 'MISSING'
+    })
+    
     if (openaiKey && openaiKey.trim().length > 0) {
       this.availableProviders.add('openai')
     }
@@ -314,6 +322,13 @@ export class LLMService {
           throw new Error(`Unsupported provider: ${selectedProvider}`)
         }
       } catch (primaryError) {
+        console.error(`[LLM] Primary provider ${selectedProvider} failed:`, {
+          error: primaryError.message,
+          stack: primaryError.stack,
+          provider: selectedProvider,
+          language: params.language,
+          timestamp: new Date().toISOString()
+        })
         console.warn(`[LLM] Primary provider ${selectedProvider} failed, attempting fallback`)
         
         // Attempt fallback to alternative provider
@@ -349,6 +364,25 @@ export class LLMService {
       console.error(`[LLM] ${this.provider} API call failed:`, error)
       throw new Error(`LLM generation failed: ${error.message}`)
     }
+  }
+
+  /**
+   * Gets the correct API key for a specific provider.
+   * 
+   * @param provider - The LLM provider to get API key for
+   * @returns API key for the provider
+   * @throws {Error} When API key is not available
+   */
+  private getApiKeyForProvider(provider: LLMProvider): string {
+    const apiKeyEnv = provider === 'openai' ? 'OPENAI_API_KEY' : 'ANTHROPIC_API_KEY'
+    const apiKey = Deno.env.get(apiKeyEnv)
+    
+    if (!apiKey || apiKey.trim().length === 0) {
+      throw new Error(`API key not available for provider: ${provider}`)
+    }
+    
+    console.log(`[LLM] Using API key for ${provider}: ${apiKey.substring(0, 15)}...`)
+    return apiKey
   }
 
   /**
@@ -398,10 +432,12 @@ export class LLMService {
       response_format: { type: 'json_object' }
     }
 
+    const apiKey = this.getApiKeyForProvider('openai')
+    
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${this.apiKey}`,
+        'Authorization': `Bearer ${apiKey}`,
         'Content-Type': 'application/json'
       },
       body: JSON.stringify(request)
@@ -456,18 +492,37 @@ export class LLMService {
       ]
     }
 
+    console.log(`[LLM] Calling Anthropic API with request:`, {
+      model: request.model,
+      max_tokens: request.max_tokens,
+      temperature: request.temperature,
+      messageLength: request.messages[0].content.length,
+      systemMessageLength: request.system?.length || 0
+    })
+
+    const apiKey = this.getApiKeyForProvider('anthropic')
+    
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
-        'x-api-key': this.apiKey,
+        'x-api-key': apiKey,
         'Content-Type': 'application/json',
         'anthropic-version': '2023-06-01'
       },
       body: JSON.stringify(request)
     })
 
+    console.log(`[LLM] Anthropic API response status: ${response.status}`)
+
     if (!response.ok) {
       const errorText = await response.text()
+      console.error(`[LLM] Anthropic API error details:`, {
+        status: response.status,
+        statusText: response.statusText,
+        headers: Object.fromEntries(response.headers.entries()),
+        errorBody: errorText,
+        timestamp: new Date().toISOString()
+      })
       throw new Error(`Anthropic API error (${response.status}): ${errorText}`)
     }
 
@@ -519,10 +574,12 @@ export class LLMService {
     }
 
     try {
+      const apiKey = this.getApiKeyForProvider('openai')
+      
       const response = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${this.apiKey}`,
+          'Authorization': `Bearer ${apiKey}`,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify(request)
@@ -613,10 +670,10 @@ export class LLMService {
     switch (language) {
       case 'hi': // Hindi
       case 'ml': // Malayalam
-        return 'claude-3-sonnet-20240229' // Better multilingual understanding
+        return 'claude-3-5-sonnet-20241022' // Better multilingual understanding
       case 'en': // English
       default:
-        return 'claude-3-haiku-20240307' // Fast and cost-effective
+        return 'claude-3-5-haiku-20241022' // Fast and cost-effective
     }
   }
 
@@ -863,29 +920,29 @@ export class LLMService {
    * @returns System message string
    */
   private createSystemMessage(languageConfig: LanguageConfig): string {
-    return `You are a biblical scholar and theologian specializing in creating Bible study guides using the Inductive Bible Study Method. Your expertise combines deep theological knowledge with pastoral sensitivity.
+    return `You are a biblical scholar creating Bible study guides. Your responses must be valid JSON only.
 
-THEOLOGICAL FOUNDATION:
-- Maintain Protestant (especially Pentecostal) theological alignment
-- Ensure biblical accuracy and Christ-centered interpretation
-- Apply sound hermeneutical principles
-- Emphasize practical spiritual application
+THEOLOGICAL APPROACH:
+- Protestant theological alignment
+- Biblical accuracy and Christ-centered interpretation
+- Practical spiritual application
 
-LANGUAGE & CULTURAL APPROACH:
+LANGUAGE REQUIREMENTS:
 - ${languageConfig.promptModifiers.languageInstruction}
 - ${languageConfig.promptModifiers.complexityInstruction}
 - Cultural Context: ${languageConfig.culturalContext}
-- Use vocabulary accessible to common people
-- Avoid scholarly jargon or overly complex theological terms
+- Use simple vocabulary accessible to common people
 
-TONE & STYLE:
-- Maintain a pastoral, warm, and encouraging tone
-- Focus on practical life application
-- Make content useful for both individual and group study
-- Connect biblical truth to daily spiritual growth
-- Provide actionable guidance for spiritual development
+JSON OUTPUT REQUIREMENTS:
+- Output ONLY valid JSON - no extra text before or after
+- Use simple punctuation only: periods and commas
+- Avoid special characters that break JSON parsing
+- Keep sentences short and clear
+- No quotes, colons, or semicolons in content text
+- Replace any quotes in content with simple words
+- Ensure proper JSON structure with no trailing commas
 
-Your responses should demonstrate theological depth while remaining accessible to believers at all levels of spiritual maturity.`
+TONE: Pastoral, warm, encouraging, practical for daily spiritual growth.`
   }
 
   /**
@@ -899,29 +956,29 @@ Your responses should demonstrate theological depth while remaining accessible t
     const { inputType, inputValue } = params
     const languageExamples = this.getLanguageSpecificExamples(params.language)
 
-    return `TASK: Create a comprehensive Bible study guide for the ${inputType === 'scripture' ? 'scripture reference' : 'topic'}: "${inputValue}"
+    return `TASK: Create a Bible study guide for the ${inputType === 'scripture' ? 'scripture reference' : 'topic'}: "${inputValue}"
 
 REQUIRED JSON OUTPUT FORMAT (follow exactly):
 {
-  "summary": "Brief (2-3 sentence) overview capturing the main message or theme",
-  "interpretation": "In-depth theological interpretation (4-5 well-structured paragraphs) explaining the intended meaning, key teachings, and broader biblical connections", 
-  "context": "Historical, cultural, and literary background (1-2 concise paragraphs) to help understand the setting and authorship",
-  "relatedVerses": ["3-5 relevant Bible verses with references that support or expand the message"],
-  "reflectionQuestions": ["4-6 practical questions to help apply the message in personal or group life"],
-  "prayerPoints": ["3-4 prayer suggestions aligned with the message and reflection"]
+  "summary": "Brief overview (2-3 sentences) capturing the main message",
+  "interpretation": "Theological interpretation (3-4 paragraphs) explaining meaning and key teachings", 
+  "context": "Historical and cultural background (1-2 paragraphs) for understanding",
+  "relatedVerses": ["3-5 relevant Bible verses with references"],
+  "reflectionQuestions": ["4-6 practical application questions"],
+  "prayerPoints": ["3-4 prayer suggestions"]
 }
 
-CRITICAL FORMATTING RULES:
-- Return ONLY valid JSON - no markdown, no code blocks, no extra text
-- Properly escape all quotes within text content using \\"
-- Ensure all strings are properly closed with matching quotes
-- Use simple punctuation to avoid JSON parsing issues
-- No trailing commas
-- Each field must contain meaningful, substantive content
+CRITICAL JSON FORMATTING RULES:
+- Output ONLY valid JSON - no markdown, no extra text before or after
+- Use simple punctuation: periods, commas only - avoid quotes, colons, semicolons in content
+- No special characters like newlines, tabs, or control characters
+- Keep sentences short and simple to avoid parsing issues
+- Replace any quotes in content with simple words
+- No trailing commas in arrays or objects
 
 ${languageExamples}
 
-IMPORTANT: Output ONLY the JSON object. No additional text, explanations, or formatting markers.`
+Output format: Start with { and end with } - nothing else.`
   }
 
   /**
@@ -969,26 +1026,29 @@ Tone: Pastoral, encouraging, and practical with modern language that connects bi
 
       case 'ml':
         return `മലയാളത്തിൽ ഉദാഹരണം:
-സാധാരണ, എളുപ്പത്തിൽ മനസ്സിലാകുന്ന മലയാളം ഉപയോഗിക്കുക. സാഹിത്യിക വാക്കുകൾ ഒഴിവാക്കുക.
+സാധാരണ മലയാളം ഉപയോഗിക്കുക. JSON പാഴ്സിംഗ് പ്രശ്നങ്ങൾ ഒഴിവാക്കാൻ:
 
-ഉദാഹരണ സാരാംശം: "ഈ വചനം നമ്മോട് ദൈവത്തിന്റെ സ്നേഹം കാണിക്കുന്നു."
+JSON ഫോർമാറ്റിംഗ് നിയമങ്ങൾ:
+- ഉദ്ധരണി ചിഹ്നങ്ങൾ ഉപയോഗിക്കരുത്
+- ലളിതമായ വാക്യങ്ങൾ മാത്രം
+- പ്രത്യേക ചിഹ്നങ്ങൾ ഒഴിവാക്കുക
 
-ഉദാഹരണ ചോദ്യം: "നിങ്ങളുടെ ജീവിതത്തിൽ ദൈവത്തിന്റെ സ്നേഹം എങ്ങനെ കാണാം?"
+ഉദാഹരണ സാരാംശം: ഈ വചനം ദൈവത്തിന്റെ സ്നേഹം കാണിക്കുന്നു.
 
-ഉദാഹരണ പ്രാർത്ഥന: "കർത്താവേ, അങ്ങയുടെ സ്നേഹം മനസ്സിലാക്കാൻ സഹായിക്കേണമേ."
+ഉദാഹരണ ചോദ്യം: നിങ്ങളുടെ ജീവിതത്തിൽ ദൈവത്തിന്റെ സ്നേഹം എങ്ങനെ കാണാം.
 
-ഉദാഹരണ വ്യാഖ്യാനം: "ഈ വചനത്തിൽ പൗലോസ് നമ്മോട് പറയുന്നത് ദൈവത്തിന്റെ സ്നേഹം ഒരിക്കലും തീരാത്തതാണെന്നാണ്. ഈ സ്നേഹം നമുക്ക് വേണ്ടി തന്റെ പുത്രനായ യേശുവിനെ നൽകുവാൻ പോലും അവനെ പ്രേരിപ്പിച്ചു."
+ഉദാഹരണ പ്രാർത്ഥന: കർത്താവേ അങ്ങയുടെ സ്നേഹം മനസ്സിലാക്കാൻ സഹായിക്കേണമേ.
 
-ശൈലി: കേരളത്തിലെ എല്ലാ ക്രിസ്ത്യാനികൾക്കും മനസ്സിലാകുന്ന സാധാരണ മലയാളം. ബൈബിൾ സത്യത്തെ ദൈനംദിന ജീവിതവുമായി ബന്ധിപ്പിക്കുക.
+ശൈലി: ലളിതമായ മലയാളം. ബൈബിൾ സത്യത്തെ ദൈനംദിന ജീവിതവുമായി ബന്ധിപ്പിക്കുക.
 
-പദാവലി ഗൈഡ്:
-- "ദൈവം" (നല്ല സാധാരണ വാക്ക്)
-- "സ്നേഹം" (എളുപ്പത്തിൽ മനസ്സിലാകും)
-- "സഹായം" (ലളിതമായ വാക്ക്)
-- "ജീവിതം" (എല്ലാവർക്കും അറിയാം)
-- "മനസ്സ്" (ഹൃദയത്തെക്കാൾ സാധാരണം)
-- "പ്രാർത്ഥന" (ലളിതമായ വാക്ക്)
-- "അനുഗ്രഹം" (ആശീർവാദത്തേക്കാൾ നല്ലത്)`
+പദാവലി:
+- ദൈവം
+- സ്നേഹം
+- സഹായം
+- ജീവിതം
+- മനസ്സ്
+- പ്രാർത്ഥന
+- അനുഗ്രഹം`
 
       default:
         return 'Use clear, accessible language appropriate for your target audience.'

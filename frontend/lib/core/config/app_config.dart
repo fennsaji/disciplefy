@@ -15,7 +15,7 @@ class AppConfig {
     'SUPABASE_ANON_KEY',
     defaultValue: kDebugMode 
       ? 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0'
-      : 'your-prod-anon-key',
+      : 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0',
   );
   
   // OAuth Configuration
@@ -23,7 +23,7 @@ class AppConfig {
     'GOOGLE_CLIENT_ID',
     defaultValue: kIsWeb 
       ? '587108000155-af542dhgo9rmp5hvsm1vepgqsgil438d.apps.googleusercontent.com'
-      : '', // Android gets this from google-services.json, iOS uses separate client ID
+      : '587108000155-af542dhgo9rmp5hvsm1vepgqsgil438d.apps.googleusercontent.com', // Android gets this from google-services.json, iOS uses separate client ID
   );
   
   static const String appleClientId = String.fromEnvironment(
@@ -57,7 +57,7 @@ class AppConfig {
   
   // Rate Limiting (from API Contract Documentation)
   static const int anonymousRateLimit = 3; // guides per hour
-  static const int authenticatedRateLimit = 30; // guides per hour
+  static const int authenticatedRateLimit = 10; // guides per hour
   static const int apiRequestLimit = 100; // requests per hour for authenticated
   
   // Security Configuration

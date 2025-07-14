@@ -59,6 +59,12 @@ const REQUIRED_ENV_VARS = ['SUPABASE_URL', 'SUPABASE_SERVICE_ROLE_KEY'] as const
  * Significantly reduces LLM API calls and storage requirements.
  */
 serve(async (req: Request): Promise<Response> => {
+  // Debug environment variables immediately
+  console.log('[DEBUG] Environment check:', {
+    hasOpenAI: !!Deno.env.get('OPENAI_API_KEY'),
+    hasAnthropic: !!Deno.env.get('ANTHROPIC_API_KEY'),
+    anthropicKeyStart: Deno.env.get('ANTHROPIC_API_KEY')?.substring(0, 15) || 'MISSING'
+  })
   const startTime = performance.now()
 
   // Handle preflight CORS requests
