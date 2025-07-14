@@ -11,6 +11,7 @@ import '../../../daily_verse/presentation/bloc/daily_verse_bloc.dart';
 import '../../../daily_verse/presentation/bloc/daily_verse_event.dart';
 import '../../../daily_verse/presentation/bloc/daily_verse_state.dart';
 import '../../../daily_verse/presentation/widgets/daily_verse_card.dart';
+import '../../../daily_verse/domain/entities/daily_verse_entity.dart';
 import '../../../study_generation/domain/usecases/generate_study_guide.dart';
 import '../../../auth/presentation/bloc/auth_bloc.dart';
 import '../../../auth/presentation/bloc/auth_state.dart' as auth_states;
@@ -99,11 +100,11 @@ class _HomeScreenState extends State<HomeScreen> {
     final currentState = dailyVerseBloc.state;
 
     if (currentState is DailyVerseLoaded) {
-      // Generate study guide with verse reference
-      _generateStudyGuideFromVerse(currentState.verse.reference);
+      // Generate study guide with verse reference and selected language
+      _generateStudyGuideFromVerse(currentState.verse.reference, currentState.currentLanguage);
     } else if (currentState is DailyVerseOffline) {
-      // Generate study guide with cached verse reference
-      _generateStudyGuideFromVerse(currentState.verse.reference);
+      // Generate study guide with cached verse reference and selected language  
+      _generateStudyGuideFromVerse(currentState.verse.reference, currentState.currentLanguage);
     } else {
       // Show error if verse is not loaded
       ScaffoldMessenger.of(context).showSnackBar(
@@ -116,7 +117,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   /// Generate study guide from verse reference
-  Future<void> _generateStudyGuideFromVerse(String verseReference) async {
+  Future<void> _generateStudyGuideFromVerse(String verseReference, VerseLanguage selectedLanguage) async {
     try {
       // Show loading indicator
       if (mounted) {
@@ -149,7 +150,7 @@ class _HomeScreenState extends State<HomeScreen> {
       final result = await generateStudyGuide(StudyGenerationParams(
         input: verseReference,
         inputType: 'scripture',
-        language: 'en', // TODO: Get from user preferences
+        language: selectedLanguage.code, // Use selected language from daily verse
       ));
 
       if (mounted) {
@@ -165,7 +166,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 backgroundColor: Theme.of(context).colorScheme.error,
                 action: SnackBarAction(
                   label: 'Retry',
-                  onPressed: () => _generateStudyGuideFromVerse(verseReference),
+                  onPressed: () => _generateStudyGuideFromVerse(verseReference, selectedLanguage),
                 ),
               ),
             );
@@ -710,12 +711,23 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _navigateToStudyGuide(RecommendedGuideTopic topic) {
+    // Get the current language from Daily Verse state
+    final dailyVerseBloc = context.read<DailyVerseBloc>();
+    final currentState = dailyVerseBloc.state;
+    
+    VerseLanguage selectedLanguage = VerseLanguage.english; // Default to English
+    if (currentState is DailyVerseLoaded) {
+      selectedLanguage = currentState.currentLanguage;
+    } else if (currentState is DailyVerseOffline) {
+      selectedLanguage = currentState.currentLanguage;
+    }
+    
     // Generate study guide directly and navigate to study guide screen
-    _generateAndNavigateToStudyGuide(topic);
+    _generateAndNavigateToStudyGuide(topic, selectedLanguage);
   }
 
   /// Generates a study guide for the given topic and navigates directly to the study guide screen
-  Future<void> _generateAndNavigateToStudyGuide(RecommendedGuideTopic topic) async {
+  Future<void> _generateAndNavigateToStudyGuide(RecommendedGuideTopic topic, VerseLanguage selectedLanguage) async {
     try {
       // Show loading indicator
       if (mounted) {
@@ -748,7 +760,7 @@ class _HomeScreenState extends State<HomeScreen> {
       final result = await generateStudyGuide(StudyGenerationParams(
         input: topic.title,
         inputType: 'topic',
-        language: 'en', // TODO: Get from user preferences
+        language: selectedLanguage.code, // Use selected language from daily verse
       ));
 
       if (mounted) {
@@ -764,7 +776,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 backgroundColor: Theme.of(context).colorScheme.error,
                 action: SnackBarAction(
                   label: 'Retry',
-                  onPressed: () => _generateAndNavigateToStudyGuide(topic),
+                  onPressed: () => _generateAndNavigateToStudyGuide(topic, selectedLanguage),
                 ),
               ),
             );

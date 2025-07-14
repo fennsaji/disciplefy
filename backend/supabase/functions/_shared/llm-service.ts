@@ -1,5 +1,3 @@
-import { getMockStudyGuide, DEFAULT_MOCK_GUIDE } from './mock-data.ts'
-
 // Declare Deno types for Supabase Edge Functions environment
 declare const Deno: {
   env: {
@@ -154,11 +152,6 @@ export class LLMService {
 
     console.log(`[LLM] Generating study guide for ${params.inputType}: ${params.inputValue}`)
     
-    if (this.useMockData) {
-      console.log('[LLM] Using mock data (development mode)')
-      return this.generateWithMockData(params)
-    }
-
     // Always use real LLM in production
     return await this.generateWithLLM(params)
   }
@@ -210,8 +203,13 @@ export class LLMService {
       // Parse JSON response
       let parsedResponse: any
       try {
-        parsedResponse = JSON.parse(rawResponse)
+        // Clean and attempt to parse the response
+        let cleanedResponse = this.cleanJSONResponse(rawResponse)
+        parsedResponse = JSON.parse(cleanedResponse)
       } catch (parseError) {
+        console.error('[LLM] Raw response that failed to parse:', rawResponse.substring(0, 500) + '...')
+        console.error('[LLM] Parse error:', parseError.message)
+        
         throw new Error(`Failed to parse LLM response as JSON: ${parseError.message}`)
       }
       
@@ -245,7 +243,7 @@ export class LLMService {
       messages: [
         {
           role: 'system',
-          content: 'You are a biblical scholar and theologian who creates Bible study guides following Jeff Reed methodology. Always respond with valid JSON in the exact format requested.'
+          content: 'You are a biblical scholar and theologian who creates Bible study guides following Inductive Bible Study Method. Always respond with valid JSON in the exact format requested.'
         },
         {
           role: 'user',
@@ -253,7 +251,7 @@ export class LLMService {
         }
       ],
       temperature: 0.3, // Lower temperature for more consistent theological content
-      max_tokens: 2000,
+      max_tokens: 3000, // Increased for multilingual content
       response_format: { type: 'json_object' }
     }
 
@@ -296,9 +294,9 @@ export class LLMService {
   private async callAnthropic(prompt: string): Promise<string> {
     const request: AnthropicRequest = {
       model: 'claude-3-haiku-20240307', // Fast and cost-effective
-      max_tokens: 2000,
+      max_tokens: 3000, // Increased for multilingual content
       temperature: 0.3,
-      system: 'You are a biblical scholar and theologian who creates Bible study guides following Jeff Reed methodology. Always respond with valid JSON in the exact format requested.',
+      system: 'You are a biblical scholar and theologian who creates Bible study guides following Inductive Bible Study method. Always respond with valid JSON in the exact format requested.',
       messages: [
         {
           role: 'user',
@@ -338,28 +336,6 @@ export class LLMService {
   }
 
   /**
-   * Generates study guide using mock data.
-   * 
-   * @param params - Generation parameters
-   * @returns LLM response with mock data
-   */
-  private generateWithMockData(params: LLMGenerationParams): LLMResponse {
-    console.log(`[LLM] Using mock data for ${params.inputType}: ${params.inputValue}`)
-    
-    const mockGuide = getMockStudyGuide(params.inputType, params.inputValue) || DEFAULT_MOCK_GUIDE
-    
-    // Convert mock data format to expected LLM response format
-    return {
-      summary: mockGuide.summary,
-      interpretation: mockGuide.interpretation || `This ${params.inputType === 'scripture' ? 'passage' : 'topic'} reveals God's character and His relationship with humanity. The original meaning emphasizes themes of faith, redemption, and spiritual growth. Understanding the context helps us apply these timeless truths to our modern lives, encouraging us to deepen our relationship with God and live according to His will.`,
-      context: mockGuide.context,
-      relatedVerses: mockGuide.related_verses, // Convert snake_case to camelCase
-      reflectionQuestions: mockGuide.reflection_questions,
-      prayerPoints: mockGuide.prayer_points
-    }
-  }
-
-  /**
    * Creates a prompt for LLM based on Jeff Reed methodology.
    * 
    * @param params - Generation parameters
@@ -379,11 +355,17 @@ export class LLMService {
         "prayerPoints": ["3-4 prayer suggestions aligned with the message and reflection."]
       }
 
-      Instructions:
+      CRITICAL JSON FORMATTING RULES:
+      - Return ONLY valid JSON - no markdown, no code blocks, no extra text
+      - Properly escape all quotes within text content using \"
+      - Ensure all strings are properly closed with matching quotes
+      - Use simple punctuation to avoid JSON parsing issues
+
+      Content Instructions:
       - Maintain Protestant (especially Pentecostal) theological alignment.
-      - Output only in ${language === 'en' ? 'English' : language === 'hi' ? 'Hindi' : 'Malayalam'}.
-      - Do NOT include markdown, headers, commentary, or extra text. Return strictly valid JSON only.
+      - Output only in ${language === 'en' ? 'English' : language === 'hi' ? 'simple, everyday Hindi (avoid complex Sanskrit words, use common spoken Hindi)' : 'simple, everyday Malayalam (avoid complex literary words, use common spoken Malayalam)'}.
       - Keep the tone pastoral, clear, and applicable to real-life spiritual growth.
+      - For non-English languages: Use simple vocabulary that common people can easily understand. Avoid scholarly or literary terms.
       - Ensure every section is biblically rooted, Christ-centered, and practically useful for group or individual study.`
 
     return basePrompt
@@ -450,6 +432,85 @@ export class LLMService {
       reflectionQuestions: response.reflectionQuestions.map((question: string) => this.sanitizeText(question)),
       prayerPoints: response.prayerPoints.map((point: string) => this.sanitizeText(point))
     }
+  }
+
+  /**
+   * Cleans JSON response to handle common formatting issues with multilingual content.
+   * 
+   * @param response - Raw JSON response from LLM
+   * @returns Cleaned JSON string
+   */
+  private cleanJSONResponse(response: string): string {
+    let cleaned = response.trim()
+    
+    // Remove any markdown code block markers that might be included
+    cleaned = cleaned.replace(/^```json\s*/i, '').replace(/\s*```$/, '')
+    
+    // Fix common JSON issues with quotes in multilingual content
+    try {
+      // Try to parse as-is first
+      JSON.parse(cleaned)
+      return cleaned
+    } catch (error) {
+      // If parsing fails, try to fix common issues
+      console.log('[LLM] Attempting to repair malformed JSON response')
+      
+      // Try to extract JSON from response if there's additional text
+      const jsonMatch = cleaned.match(/\{[\s\S]*\}/)
+      if (jsonMatch) {
+        cleaned = jsonMatch[0]
+      }
+      
+      // Handle truncated JSON by trying to complete it
+      if (error.message.includes('Unterminated string')) {
+        console.log('[LLM] Detected truncated JSON, attempting repair')
+        cleaned = this.repairTruncatedJSON(cleaned)
+      }
+      
+      return cleaned
+    }
+  }
+
+  /**
+   * Attempts to repair truncated JSON by closing incomplete strings and objects.
+   * 
+   * @param json - Truncated JSON string
+   * @returns Repaired JSON string
+   */
+  private repairTruncatedJSON(json: string): string {
+    let repaired = json
+    
+    // Count unclosed braces and brackets
+    const openBraces = (repaired.match(/\{/g) || []).length
+    const closeBraces = (repaired.match(/\}/g) || []).length
+    const openBrackets = (repaired.match(/\[/g) || []).length
+    const closeBrackets = (repaired.match(/\]/g) || []).length
+    
+    // Check if we're in the middle of a string (odd number of quotes in the last line)
+    const lines = repaired.split('\n')
+    const lastLine = lines[lines.length - 1]
+    const quotesInLastLine = (lastLine.match(/"/g) || []).length
+    
+    // If we're in an unterminated string, close it
+    if (quotesInLastLine % 2 === 1) {
+      repaired += '"'
+    }
+    
+    // Remove any trailing commas before closing
+    repaired = repaired.replace(/,\s*$/, '')
+    
+    // Close any unclosed arrays
+    for (let i = 0; i < openBrackets - closeBrackets; i++) {
+      repaired += ']'
+    }
+    
+    // Close any unclosed objects
+    for (let i = 0; i < openBraces - closeBraces; i++) {
+      repaired += '}'
+    }
+    
+    console.log('[LLM] JSON repair attempted')
+    return repaired
   }
 
   /**
