@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:hive_flutter/hive_flutter.dart';
@@ -14,6 +15,7 @@ import 'features/auth/presentation/bloc/auth_bloc.dart';
 import 'features/auth/presentation/bloc/auth_event.dart';
 import 'features/daily_verse/presentation/bloc/daily_verse_bloc.dart';
 import 'features/daily_verse/presentation/bloc/daily_verse_event.dart';
+import 'core/utils/web_splash_controller.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -51,8 +53,22 @@ void main() async {
   }
 }
 
-class DisciplefyBibleStudyApp extends StatelessWidget {
+class DisciplefyBibleStudyApp extends StatefulWidget {
   const DisciplefyBibleStudyApp({super.key});
+
+  @override
+  State<DisciplefyBibleStudyApp> createState() => _DisciplefyBibleStudyAppState();
+}
+
+class _DisciplefyBibleStudyAppState extends State<DisciplefyBibleStudyApp> {
+  @override
+  void initState() {
+    super.initState();
+    // Signal that Flutter is ready after the first frame
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      WebSplashController.signalFlutterReady();
+    });
+  }
 
   @override
   Widget build(BuildContext context) => MultiBlocProvider(
