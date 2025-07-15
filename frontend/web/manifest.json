@@ -30,6 +30,19 @@
             "sizes": "512x512",
             "type": "image/png",
             "purpose": "maskable"
+        },
+        {
+            "src": "splash_screen.png",
+            "sizes": "1024x1024",
+            "type": "image/png",
+            "purpose": "any"
+        }
+    ],
+    "splash_pages": [
+        {
+            "src": "splash_screen.png",
+            "sizes": "1024x1024",
+            "type": "image/png"
         }
     ]
 }
