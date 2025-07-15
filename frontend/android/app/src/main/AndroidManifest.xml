@@ -38,7 +38,7 @@
                 <!-- Replace YOUR_SUPABASE_URL with your actual Supabase URL -->
                 <data android:scheme="https" 
                       android:host="wzdcwxvyjuxjgzpnukvm.supabase.co" 
-                      android:pathPrefix="/auth/v1/callback" />
+                      android:pathPrefix="/auth/callback" />
             </intent-filter>
             
             <!-- Custom scheme for OAuth redirects (fallback) -->
