@@ -316,18 +316,11 @@ StudyGuideRepository.prototype.deleteUserGuideRelationship = async function(
       )
     }
   } else {
-    const { error } = await this.supabase
-      .from('anonymous_study_guides_new')
-      .delete()
-      .eq('study_guide_id', guideId)
-      .eq('session_id', userContext.sessionId!)
-
-    if (error) {
-      throw new AppError(
-        'DATABASE_ERROR',
-        `Failed to delete anonymous study guide relationship: ${error.message}`,
-        500
-      )
-    }
+    // Anonymous users donot have guides
+    throw new AppError(
+      'BAD_REQUEST',
+      'Anonymous users do not have study guides',
+      400
+    )
   }
 }

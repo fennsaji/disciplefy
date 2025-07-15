@@ -6,8 +6,58 @@ import { SecurityValidator } from '../_shared/security-validator.ts'
 import { ErrorHandler, AppError } from '../_shared/error-handler.ts'
 import { RequestValidator } from '../_shared/request-validator.ts'
 import { AnalyticsLogger } from '../_shared/analytics-logger.ts'
-import { FeedbackService } from './feedback-service.ts'
-import { FeedbackRepository } from './feedback-repository.ts'
+// TODO: Implement FeedbackService and FeedbackRepository
+class FeedbackService {
+  async calculateSentimentScore(message: string): Promise<number> {
+    // Simple sentiment analysis - count positive/negative words
+    const positiveWords = ['good', 'great', 'helpful', 'love', 'amazing', 'excellent', 'wonderful']
+    const negativeWords = ['bad', 'terrible', 'awful', 'hate', 'horrible', 'poor', 'useless']
+    
+    const words = message.toLowerCase().split(/\s+/)
+    const positiveCount = words.filter(word => positiveWords.includes(word)).length
+    const negativeCount = words.filter(word => negativeWords.includes(word)).length
+    
+    return positiveCount > negativeCount ? 0.7 : negativeCount > positiveCount ? 0.3 : 0.5
+  }
+}
+
+class FeedbackRepository {
+  constructor(private supabaseClient: any) {}
+  
+  async verifyStudyGuideExists(studyGuideId: string, isAuthenticated: boolean): Promise<boolean> {
+    const { data } = await this.supabaseClient
+      .from('study_guides')
+      .select('id')
+      .eq('id', studyGuideId)
+      .single()
+    return !!data
+  }
+  
+  async verifyJeffReedSessionExists(sessionId: string): Promise<boolean> {
+    // Sessions not implemented yet
+    return false
+  }
+  
+  async saveFeedback(feedbackData: any) {
+    const { data, error } = await this.supabaseClient
+      .from('feedback')
+      .insert({
+        study_guide_id: feedbackData.studyGuideId,
+        jeff_reed_session_id: feedbackData.jeffReedSessionId,
+        user_id: feedbackData.userId,
+        was_helpful: feedbackData.wasHelpful,
+        message: feedbackData.message,
+        category: feedbackData.category,
+        sentiment_score: feedbackData.sentimentScore,
+        created_at: new Date().toISOString()
+      })
+      .select()
+      .single()
+    
+    if (error) throw error
+    return data
+  }
+}
 
 /**
  * Request payload for feedback submission.
@@ -366,7 +416,7 @@ async function verifyResourceAccess(
     if (!exists) {
       throw new AppError(
         'NOT_FOUND',
-        'Jeff Reed session not found or access denied',
+        'Session not found or access denied',
         404
       )
     }
