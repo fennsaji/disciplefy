@@ -107,16 +107,15 @@ file_size_limit = "50MiB"
 enabled = true
 # The base URL of your website. Used as an allow-list for redirects and for constructing URLs used
 # in emails.
-site_url = "http://localhost:59641"
+site_url = "https://disciplefy.vercel.app"
 # A list of *exact* URLs that auth providers are permitted to redirect to post authentication.
 # Include mobile deep links and web callback URLs for Google OAuth
 additional_redirect_urls = [
   "http://localhost:59641",
-  "http://localhost:59641/auth/callback",
-  "http://127.0.0.1:59641/auth/callback",  # Flutter web dev server
-  "https://disciplefy.com/auth/callback",   # Production web
+  "http://localhost:59641/auth/callback",  # Local development web
+  "https://disciplefy.vercel.app",
+  "https://disciplefy.vercel.app/auth/callback",   # Production web
   "com.disciplefy.bible_study_app://auth/callback",  # Mobile deep link
-  "http://127.0.0.1:3000",  # Legacy redirect (if configured in Google Console)
 ]
 # How long tokens are valid for, in seconds. Defaults to 3600 (1 hour), maximum 604,800 (1 week).
 jwt_expiry = 3600
@@ -281,7 +280,7 @@ client_id = "env(GOOGLE_OAUTH_CLIENT_ID)"
 secret = "env(GOOGLE_OAUTH_CLIENT_SECRET)"
 # Redirect URI for Google OAuth (must match Google Cloud Console configuration)
 # For development, use localhost callback. For production, use deep link
-redirect_uri = "http://127.0.0.1:54321/auth/v1/callback"
+redirect_uri = "http://127.0.0.1:54321/auth/callback"
 # Skip nonce check for local development (set to false in production)
 skip_nonce_check = true
 
