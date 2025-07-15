@@ -1,11 +1,11 @@
 {
-    "name": "disciplefy_bible_study",
-    "short_name": "disciplefy_bible_study",
+    "name": "Disciplefy | Bible Study App",
+    "short_name": "Disciplefy",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
     "theme_color": "#0175C2",
-    "description": "Disciplefy | Bible Study App",
+    "description": "A Bible study app designed to help you grow in your faith.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

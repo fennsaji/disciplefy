@@ -403,17 +403,20 @@ export class StudyGuideRepository {
       return null
     }
 
-    // Check if user already has this content
-    const hasContent = await this.userHasContent(content.id, userContext)
+    if (userContext.type === 'authenticated') {
+      // Check if user already has this content
+      const hasContent = await this.userHasContent(content.id, userContext)
 
-    if (hasContent) {
-      // User already has this content, return existing relationship
-      return await this.getUserContentRelation(content.id, userContext)
+      if (hasContent) {
+        // User already has this content, return existing relationship
+        return await this.getUserContentRelation(content.id, userContext)
+      }
+
+      // Content exists but user doesn't have it - create relationship
+      await this.linkUserToContent(content.id, userContext)
     }
 
-    // Content exists but user doesn't have it - create relationship
-    await this.linkUserToContent(content.id, userContext)
-
+    // Return cached content (for both authenticated and anonymous users)
     return {
       id: content.id,
       input: {
@@ -429,7 +432,7 @@ export class StudyGuideRepository {
         reflectionQuestions: content.reflection_questions,
         prayerPoints: content.prayer_points
       },
-      isSaved: false,
+      isSaved: false, // Anonymous users can't save, authenticated users get it linked above
       createdAt: content.created_at,
       updatedAt: content.updated_at
     }
@@ -452,12 +455,8 @@ export class StudyGuideRepository {
 
       return !error && !!data
     } else {
-      // Throw error as anonymous users cannot have saved guides
-      throw new AppError(
-        'BAD_REQUEST',
-        'Anonymous users cannot have saved guides',
-        400
-      )
+      // Anonymous users can access cached content but don't have saved relationships
+      return false
     }
   }
 

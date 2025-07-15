@@ -68,61 +68,69 @@ class _LoginScreenState extends State<LoginScreen> {
       child: Scaffold(
         backgroundColor: AppTheme.backgroundColor,
         body: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24.0),
-            child: Column(
-              children: [
-                // Skip button
-                Align(
-                  alignment: Alignment.topRight,
-                  child: Padding(
-                    padding: const EdgeInsets.only(top: 16.0),
-                    child: TextButton(
-                      onPressed: () => context.go('/'),
-                      child: Text(
-                        'Skip',
-                        style: GoogleFonts.inter(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w500,
-                          color: AppTheme.onSurfaceVariant,
-                        ),
+          child: Column(
+            children: [
+              // Skip button - fixed at top
+              Align(
+                alignment: Alignment.topRight,
+                child: Padding(
+                  padding: const EdgeInsets.only(top: 16.0, right: 24.0),
+                  child: TextButton(
+                    onPressed: () => context.go('/'),
+                    child: Text(
+                      'Skip',
+                      style: GoogleFonts.inter(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                        color: AppTheme.onSurfaceVariant,
                       ),
                     ),
                   ),
                 ),
-                
-                // Main content
-                Expanded(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      // App logo/icon
-                      _buildAppLogo(context),
-                      
-                      const SizedBox(height: 48),
-                      
-                      // Welcome text
-                      _buildWelcomeText(context),
-                      
-                      const SizedBox(height: 32),
-                      
-                      // Features Preview Section
-                      _buildFeaturesSection(context),
-                      
-                      const SizedBox(height: 32),
-                      
-                      // Sign-in buttons
-                      _buildSignInButtons(context),
-                      
-                      const SizedBox(height: 32),
-                      
-                      // Privacy policy text
-                      _buildPrivacyText(context),
-                    ],
+              ),
+              
+              // Main content - scrollable
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      minHeight: MediaQuery.of(context).size.height - 
+                        MediaQuery.of(context).viewPadding.top - 
+                        MediaQuery.of(context).viewPadding.bottom - 
+                        80, // Account for skip button space
+                    ),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        // App logo/icon
+                        _buildAppLogo(context),
+                        
+                        const SizedBox(height: 48),
+                        
+                        // Welcome text
+                        _buildWelcomeText(context),
+                        
+                        const SizedBox(height: 32),
+                        
+                        // Features Preview Section
+                        _buildFeaturesSection(context),
+                        
+                        const SizedBox(height: 32),
+                        
+                        // Sign-in buttons
+                        _buildSignInButtons(context),
+                        
+                        const SizedBox(height: 32),
+                        
+                        // Privacy policy text
+                        _buildPrivacyText(context),
+                      ],
+                    ),
                   ),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),
@@ -223,7 +231,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     height: 20,
                     decoration: const BoxDecoration(
                       image: DecorationImage(
-                        image: AssetImage('images/google_logo.png'),
+                        image: AssetImage('assets/images/google_logo.png'),
                         fit: BoxFit.contain,
                       ),
                     ),

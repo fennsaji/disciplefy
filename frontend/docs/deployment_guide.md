@@ -402,3 +402,9 @@ Your deployment is successful when:
 ---
 
 *This guide ensures reliable, automated deployment of your Flutter web app to Supabase Storage with proper CSP configuration.*
+
+flutter build web \                                                
+  --release \
+  --base-href / --dart-define=APP_URL=https://disciplefy.vercel.app --dart-define=FLUTTER_WEB_BUILD=true \
+          --dart-define=SUPABASE_URL="https://wzdcwxvyjuxjgzpnukvm.supabase.co" \
+          --dart-define=SUPABASE_ANON_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind6ZGN3eHZ5anV4amd6cG51a3ZtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTE4MDY3MjMsImV4cCI6MjA2NzM4MjcyM30.FRwVStEigv5hh_-I8ct3QcY_GswCKWcEMCtkjXvq8FA"

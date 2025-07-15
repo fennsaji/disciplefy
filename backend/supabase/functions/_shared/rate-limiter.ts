@@ -18,7 +18,9 @@ interface RateLimitResult {
 interface RateLimitConfig {
   readonly anonymousLimit: number
   readonly authenticatedLimit: number
-  readonly windowMinutes: number
+  readonly anonymousWindowMinutes?: number
+  readonly authenticatedWindowMinutes?: number
+  readonly windowMinutes?: number // Legacy support
 }
 
 /**
@@ -29,7 +31,9 @@ type UserType = 'anonymous' | 'authenticated'
 // Default configuration constants
 const DEFAULT_ANONYMOUS_LIMIT = 1 as const
 const DEFAULT_AUTHENTICATED_LIMIT = 5 as const
-const DEFAULT_WINDOW_MINUTES = 60 as const
+const DEFAULT_ANONYMOUS_WINDOW_MINUTES = 480 as const // 8 hours
+const DEFAULT_AUTHENTICATED_WINDOW_MINUTES = 60 as const // 1 hour
+const DEFAULT_WINDOW_MINUTES = 60 as const // Legacy support
 
 /**
  * Rate limiter for Edge Functions.
@@ -54,7 +58,9 @@ export class RateLimiter {
     this.config = {
       anonymousLimit: config?.anonymousLimit ?? DEFAULT_ANONYMOUS_LIMIT,
       authenticatedLimit: config?.authenticatedLimit ?? DEFAULT_AUTHENTICATED_LIMIT,
-      windowMinutes: config?.windowMinutes ?? DEFAULT_WINDOW_MINUTES
+      anonymousWindowMinutes: config?.anonymousWindowMinutes ?? DEFAULT_ANONYMOUS_WINDOW_MINUTES,
+      authenticatedWindowMinutes: config?.authenticatedWindowMinutes ?? DEFAULT_AUTHENTICATED_WINDOW_MINUTES,
+      windowMinutes: config?.windowMinutes ?? DEFAULT_WINDOW_MINUTES // Legacy support
     }
   }
 
@@ -74,12 +80,12 @@ export class RateLimiter {
       this.validateInputs(identifier, userType)
 
       const limit = this.getLimitForUserType(userType)
-      const windowStart = this.calculateWindowStart()
+      const windowStart = this.calculateWindowStart(userType)
       const currentUsage = await this.getCurrentUsage(identifier, userType, windowStart)
       
       const remaining = Math.max(0, limit - currentUsage)
       const allowed = currentUsage < limit
-      const resetTime = this.calculateResetTime()
+      const resetTime = this.calculateResetTime(userType)
 
       return {
         allowed,
@@ -96,7 +102,7 @@ export class RateLimiter {
       return {
         allowed: true,
         remaining: limit,
-        resetTime: this.calculateResetTime(),
+        resetTime: this.calculateResetTime(userType),
         currentUsage: 0,
         limit
       }
@@ -117,7 +123,7 @@ export class RateLimiter {
     try {
       this.validateInputs(identifier, userType)
       
-      const windowStart = this.calculateWindowStart()
+      const windowStart = this.calculateWindowStart(userType)
       await this.incrementUsageInRateLimitTable(identifier, userType, windowStart)
     } catch (error) {
       console.error('Failed to record usage:', error)
@@ -185,7 +191,7 @@ export class RateLimiter {
     windowStart?: Date
   ): Promise<number> {
     
-    const effectiveWindowStart = windowStart ?? this.calculateWindowStart()
+    const effectiveWindowStart = windowStart ?? this.calculateWindowStart(userType)
 
     if (userType === 'anonymous') {
       return this.getAnonymousUsage(identifier, effectiveWindowStart)
@@ -349,29 +355,98 @@ export class RateLimiter {
   /**
    * Calculates the start of the current time window.
    * 
-   * @returns Date representing the start of the time window
+   * Creates fixed time windows based on user type:
+   * - Anonymous: 8-hour windows (e.g., 0:00-8:00, 8:00-16:00, 16:00-0:00)
+   * - Authenticated: 1-hour windows (e.g., 1:00-2:00, 2:00-3:00)
+   * 
+   * @param userType - Type of user to get window size for
+   * @returns Date representing the start of the current time window
    */
-  private calculateWindowStart(): Date {
+  private calculateWindowStart(userType: UserType): Date {
     const now = new Date()
     const windowStart = new Date(now)
-    windowStart.setMinutes(now.getMinutes() - this.config.windowMinutes)
+    
+    const windowMinutes = userType === 'anonymous' 
+      ? this.config.anonymousWindowMinutes!
+      : this.config.authenticatedWindowMinutes!
+    
+    // For windows larger than 60 minutes, calculate based on hours from midnight
+    if (windowMinutes >= 60) {
+      const hours = now.getHours()
+      const windowHours = windowMinutes / 60
+      const windowStartHour = Math.floor(hours / windowHours) * windowHours
+      
+      windowStart.setHours(windowStartHour)
+      windowStart.setMinutes(0)
+      windowStart.setSeconds(0)
+      windowStart.setMilliseconds(0)
+    } else {
+      // For sub-hour windows, use minute-based calculation
+      const minutes = now.getMinutes()
+      const windowStartMinutes = Math.floor(minutes / windowMinutes) * windowMinutes
+      
+      windowStart.setMinutes(windowStartMinutes)
+      windowStart.setSeconds(0)
+      windowStart.setMilliseconds(0)
+    }
+    
     return windowStart
   }
 
   /**
    * Calculates time until rate limit resets (in minutes).
    * 
+   * @param userType - Type of user to calculate reset time for
    * @returns Minutes until the rate limit window resets
    */
-  private calculateResetTime(): number {
+  private calculateResetTime(userType: UserType): number {
     const now = new Date()
-    const nextWindow = new Date(now)
-    nextWindow.setMinutes(
-      Math.ceil(now.getMinutes() / this.config.windowMinutes) * this.config.windowMinutes,
-      0,
-      0
-    )
+    const windowMinutes = userType === 'anonymous' 
+      ? this.config.anonymousWindowMinutes!
+      : this.config.authenticatedWindowMinutes!
     
-    return Math.ceil((nextWindow.getTime() - now.getTime()) / (1000 * 60))
+    const nextWindow = new Date(now)
+    
+    // For windows larger than 60 minutes, calculate based on hours
+    if (windowMinutes >= 60) {
+      const hours = now.getHours()
+      const windowHours = windowMinutes / 60
+      
+      // Calculate current window start
+      const currentWindowStart = Math.floor(hours / windowHours) * windowHours
+      
+      // Calculate next window start
+      const nextWindowHour = currentWindowStart + windowHours
+      
+      // Handle day boundary properly
+      if (nextWindowHour >= 24) {
+        nextWindow.setDate(nextWindow.getDate() + 1)
+        nextWindow.setHours(nextWindowHour - 24)
+      } else {
+        nextWindow.setHours(nextWindowHour)
+      }
+      nextWindow.setMinutes(0)
+      nextWindow.setSeconds(0)
+      nextWindow.setMilliseconds(0)
+    } else {
+      // For sub-hour windows, use minute-based calculation
+      const minutes = now.getMinutes()
+      const nextWindowMinutes = Math.ceil(minutes / windowMinutes) * windowMinutes
+      
+      // Handle hour boundary properly
+      if (nextWindowMinutes >= 60) {
+        nextWindow.setHours(nextWindow.getHours() + 1)
+        nextWindow.setMinutes(nextWindowMinutes - 60)
+      } else {
+        nextWindow.setMinutes(nextWindowMinutes)
+      }
+      nextWindow.setSeconds(0)
+      nextWindow.setMilliseconds(0)
+    }
+    
+    const diffMinutes = Math.ceil((nextWindow.getTime() - now.getTime()) / (1000 * 60))
+    
+    // Ensure we never return negative values
+    return Math.max(0, diffMinutes)
   }
 }
