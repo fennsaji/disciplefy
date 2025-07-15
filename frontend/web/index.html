@@ -32,8 +32,104 @@
 
   <title>Disciplefy | Bible Study App</title>
   <link rel="manifest" href="manifest.json">
+  
+  <style>
+    /* Splash Screen Styles */
+    #splash-screen {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background-color: #FBEDD9;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      transition: opacity 0.5s ease-out;
+      overflow: hidden;
+    }
+    
+    #splash-screen.fade-out {
+      opacity: 0;
+      pointer-events: none;
+    }
+    
+    .splash-logo {
+      max-width: 90vw;
+      max-height: 40vh;
+      width: auto;
+      height: auto;
+      animation: fadeIn 1s ease-in-out;
+    }
+    
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    /* Loading indicator */
+    .loading-indicator {
+      position: absolute;
+      bottom: 15vh;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 40px;
+      height: 40px;
+      border: 3px solid #E0E0E0;
+      border-top: 3px solid #6A4FB6;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+    
+    @keyframes spin {
+      0% { transform: translateX(-50%) rotate(0deg); }
+      100% { transform: translateX(-50%) rotate(360deg); }
+    }
+    
+    /* Hide splash screen once Flutter loads */
+    body.flutter-loaded #splash-screen {
+      display: none;
+    }
+  </style>
 </head>
 <body>
+  <!-- Splash Screen -->
+  <div id="splash-screen">
+    <div>
+      <img src="splash_screen.png" alt="Disciplefy" class="splash-logo">
+      <div class="loading-indicator"></div>
+    </div>
+  </div>
+  
+  <script>
+    // Hide splash screen when Flutter is ready
+    window.addEventListener('flutter-initialized', function() {
+      hideSplashScreen();
+    });
+    
+    // Also listen for Flutter-specific events
+    window.addEventListener('flutter-first-frame', function() {
+      hideSplashScreen();
+    });
+    
+    // Fallback: Hide splash screen after 5 seconds
+    setTimeout(() => {
+      hideSplashScreen();
+    }, 5000);
+    
+    // Function to hide splash screen
+    function hideSplashScreen() {
+      const splashScreen = document.getElementById('splash-screen');
+      if (splashScreen && !document.body.classList.contains('flutter-loaded')) {
+        splashScreen.classList.add('fade-out');
+        setTimeout(() => {
+          document.body.classList.add('flutter-loaded');
+        }, 500);
+      }
+    }
+  </script>
+  
   <script src="flutter_bootstrap.js" async></script>
 </body>
 </html>
