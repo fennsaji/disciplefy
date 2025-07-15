@@ -73,6 +73,15 @@ jobs:
           
         echo "✅ Web build completed successfully"
         
+        # Optimize CSP headers for Supabase Storage
+        echo "🔧 Optimizing CSP headers..."
+        if [ -f "scripts/optimize_csp.sh" ]; then
+          chmod +x scripts/optimize_csp.sh
+          ./scripts/optimize_csp.sh
+        else
+          echo "⚠️ CSP optimization script not found, using default CSP from template..."
+        fi
+        
         # Display build size
         echo "📦 Build size information:"
         du -sh build/web/
@@ -123,30 +132,47 @@ jobs:
       with:
         node-version: '20'
         
-    - name: Deploy to Hosting Platform
+    - name: Install Supabase CLI
+      run: npm install -g supabase@1.123.4
+      
+    - name: Deploy to Supabase Storage
       run: |
-        echo "🌐 Preparing web deployment..."
+        echo "🌐 Deploying to Supabase Storage..."
         
-        # For now, this is a placeholder for web deployment
-        # TODO: Implement actual deployment based on hosting choice:
-        # - Supabase Storage
-        # - Vercel
-        # - Netlify
-        # - Firebase Hosting
-        # - GitHub Pages
-        
+        # Verify web build contents
         echo "📁 Web build contents:"
         ls -la web-build/
         
         echo "📊 Build size analysis:"
         du -sh web-build/*
         
-        # Placeholder deployment script
-        echo "🚀 Web deployment placeholder - configure based on hosting platform"
+        # Deploy to Supabase Storage
+        echo "🚀 Uploading to Supabase Storage..."
+        
+        cd web-build
+        supabase storage cp . ss://disciplefy/ \
+          --recursive \
+          --cache-control "max-age=3600" \
+          --project-ref "${{ secrets.SUPABASE_PROJECT_REF }}" \
+          --experimental
+        
         echo "✅ Deployment completed successfully"
         
-        # Output deployment URL (placeholder)
-        echo "🌍 App deployed at: https://app.disciplefy.in"
+        # Output deployment URL
+        echo "🌍 App deployed at: https://${{ secrets.SUPABASE_PROJECT_REF }}.supabase.co/storage/v1/object/public/disciplefy/index.html"
+        
+        # Test deployment
+        echo "🔍 Testing deployment..."
+        response=$(curl -s -o /dev/null -w "%{http_code}" "https://${{ secrets.SUPABASE_PROJECT_REF }}.supabase.co/storage/v1/object/public/disciplefy/index.html")
+        
+        if [ "$response" = "200" ]; then
+          echo "✅ Deployment test successful (HTTP $response)"
+        else
+          echo "⚠️ Deployment test returned HTTP $response"
+        fi
+      env:
+        SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
 
   deployment-summary:
     name: Deployment Summary

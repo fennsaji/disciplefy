@@ -37,12 +37,6 @@ frontend/pubspec.lock
 frontend/coverage/
 frontend/test/coverage_helper_test.dart
 
-# Flutter web
-frontend/web/
-!frontend/web/index.html
-!frontend/web/manifest.json
-!frontend/web/favicon.png
-
 # ==============================================================================
 # SUPABASE BACKEND
 # ==============================================================================

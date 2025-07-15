@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Authentication Redirect</title>
+  <script>
+    // Handle OAuth redirect for web platform
+    if (window.location.hash) {
+      // Extract tokens from URL hash
+      const hashParams = new URLSearchParams(window.location.hash.substring(1));
+      const accessToken = hashParams.get('access_token');
+      const refreshToken = hashParams.get('refresh_token');
+      
+      if (accessToken) {
+        // Store tokens and redirect to main app
+        localStorage.setItem('supabase.auth.token', JSON.stringify({
+          access_token: accessToken,
+          refresh_token: refreshToken,
+          expires_in: hashParams.get('expires_in')
+        }));
+        
+        // Redirect to main app
+        window.location.href = '/';
+      } else {
+        // Handle error
+        const error = hashParams.get('error');
+        console.error('OAuth Error:', error);
+        window.location.href = '/?error=' + encodeURIComponent(error || 'Authentication failed');
+      }
+    } else {
+      // No hash, redirect to main app
+      window.location.href = '/';
+    }
+  </script>
+</head>
+<body>
+  <div style="display: flex; justify-content: center; align-items: center; height: 100vh; font-family: Arial, sans-serif;">
+    <div style="text-align: center;">
+      <h2>Completing authentication...</h2>
+      <p>Please wait while we redirect you back to the app.</p>
+    </div>
+  </div>
+</body>
+</html>
