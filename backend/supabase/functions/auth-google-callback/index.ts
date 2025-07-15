@@ -83,7 +83,7 @@ serve(async (req: Request) => {
         'https://accounts.google.com',
         'http://127.0.0.1:59641',
         'http://localhost:59641',
-        'https://disciplefy.com'
+        'https://disciplefy.vercel.app'
       ]
     })
 
@@ -359,5 +359,5 @@ function determineRedirectUrl(req: Request, user: any): string {
     return 'http://localhost:59641/auth/callback'
   }
 
-  return 'https://disciplefy.com/auth/callback'
+  return 'https://disciplefy.vercel.app/auth/callback'
 }
