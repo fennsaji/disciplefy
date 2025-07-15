@@ -1,0 +1,173 @@
+name: Backend Deployment - Supabase Functions
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'backend/**'
+      - '.github/workflows/backend-deploy.yml'
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Deployment environment'
+        required: true
+        default: 'production'
+        type: choice
+        options:
+        - production
+        - staging
+
+concurrency:
+  group: backend-deploy-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  validate-backend:
+    name: Validate Backend Code
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+        cache-dependency-path: 'backend/package*.json'
+        
+    - name: Install dependencies
+      working-directory: ./backend
+      run: |
+        if [ -f package.json ]; then
+          npm ci
+        else
+          echo "No package.json found, skipping npm install"
+        fi
+        
+    - name: TypeScript compilation check
+      working-directory: ./backend
+      run: |
+        # Check if TypeScript files can be compiled
+        find supabase/functions -name "*.ts" -type f | while read -r file; do
+          echo "Checking TypeScript syntax: $file"
+          npx tsc --noEmit --skipLibCheck "$file" 2>/dev/null || {
+            echo "❌ TypeScript error in $file"
+            exit 1
+          }
+        done
+        echo "✅ All TypeScript files are valid"
+        
+    - name: Validate Edge Function structure
+      working-directory: ./backend
+      run: |
+        echo "🔍 Validating Edge Function structure..."
+        
+        # Check that each function has an index.ts file
+        for func_dir in supabase/functions/*/; do
+          func_name=$(basename "$func_dir")
+          
+          if [ ! -f "${func_dir}index.ts" ]; then
+            echo "❌ Missing index.ts in function: $func_name"
+            exit 1
+          fi
+          
+          # Check for basic Deno serve pattern
+          if ! grep -q "Deno.serve" "${func_dir}index.ts"; then
+            echo "⚠️ Function $func_name might not follow Deno.serve pattern"
+          fi
+          
+          echo "✅ Function $func_name structure is valid"
+        done
+
+  deploy-functions:
+    name: Deploy to Supabase
+    runs-on: ubuntu-latest
+    needs: validate-backend
+    timeout-minutes: 15
+    environment: 
+      name: ${{ github.event.inputs.environment || 'production' }}
+      
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        
+    - name: Install Supabase CLI
+      run: npm install -g supabase@1.123.4
+      
+    - name: Validate Supabase connection
+      working-directory: ./backend
+      run: |
+        echo "🔗 Testing Supabase connection..."
+        supabase projects list --token "$SUPABASE_ACCESS_TOKEN" > /dev/null
+        echo "✅ Supabase connection successful"
+      env:
+        SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        
+    - name: Deploy Edge Functions
+      working-directory: ./backend
+      run: |
+        echo "🚀 Deploying Edge Functions to ${{ github.event.inputs.environment || 'production' }}..."
+        
+        # Deploy all functions
+        supabase functions deploy --project-ref "$SUPABASE_PROJECT_REF" --no-verify-jwt
+        
+        echo "✅ Edge Functions deployed successfully"
+      env:
+        SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+        
+    - name: Verify deployment
+      working-directory: ./backend
+      run: |
+        echo "🔍 Verifying deployment..."
+        
+        # List deployed functions
+        supabase functions list --project-ref "$SUPABASE_PROJECT_REF"
+        
+        # Test a simple endpoint (env-test) if it exists
+        if supabase functions list --project-ref "$SUPABASE_PROJECT_REF" | grep -q "env-test"; then
+          echo "Testing env-test endpoint..."
+          
+          response=$(curl -s -w "%{http_code}" \
+            "https://$SUPABASE_PROJECT_REF.supabase.co/functions/v1/env-test" \
+            -H "Authorization: Bearer $SUPABASE_ANON_KEY" \
+            -o /tmp/response.json)
+          
+          if [ "$response" = "200" ]; then
+            echo "✅ env-test endpoint responding correctly"
+          else
+            echo "⚠️ env-test endpoint returned status: $response"
+            cat /tmp/response.json 2>/dev/null || echo "No response body"
+          fi
+        fi
+        
+        echo "🎉 Deployment verification complete"
+      env:
+        SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+        SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+
+  notify-deployment:
+    name: Notify Deployment Status
+    runs-on: ubuntu-latest
+    needs: [validate-backend, deploy-functions]
+    if: always()
+    
+    steps:
+    - name: Deployment notification
+      run: |
+        if [ "${{ needs.deploy-functions.result }}" = "success" ]; then
+          echo "🎉 Backend deployment to ${{ github.event.inputs.environment || 'production' }} was successful!"
+          echo "Functions are now live at: https://${{ secrets.SUPABASE_PROJECT_REF }}.supabase.co/functions/v1/"
+        else
+          echo "❌ Backend deployment failed. Check the logs above."
+          exit 1
+        fi

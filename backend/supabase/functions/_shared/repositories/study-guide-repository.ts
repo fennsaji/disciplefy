@@ -135,7 +135,7 @@ export class StudyGuideRepository {
       .from('study_guides')
       .insert({
         input_type: input.type,
-        input_value: input.value, // Store original input value for display
+        input_value: input.value,
         input_value_hash: inputHash,
         language: input.language,
         summary: content.summary,
@@ -190,8 +190,6 @@ export class StudyGuideRepository {
   ): Promise<void> {
     if (userContext.type === 'authenticated') {
       await this.linkAuthenticatedUser(contentId, userContext.userId!)
-    } else {
-      await this.linkAnonymousUser(contentId, userContext.sessionId!)
     }
   }
 
@@ -223,33 +221,6 @@ export class StudyGuideRepository {
   }
 
   /**
-   * Link anonymous user to content
-   */
-  private async linkAnonymousUser(
-    contentId: string,
-    sessionId: string
-  ): Promise<void> {
-    const { error } = await this.supabase
-      .from('anonymous_study_guides_new')
-      .insert({
-        session_id: sessionId,
-        study_guide_id: contentId,
-        is_saved: false
-      })
-
-    if (error) {
-      // Ignore duplicate key errors (session already has this content)
-      if (error.code !== '23505') {
-        throw new AppError(
-          'DATABASE_ERROR',
-          `Failed to link anonymous user to content: ${error.message}`,
-          500
-        )
-      }
-    }
-  }
-
-  /**
    * Get user's study guides with optimized JOIN
    */
   async getUserStudyGuides(
@@ -271,11 +242,11 @@ export class StudyGuideRepository {
         offset
       )
     } else {
-      return await this.getAnonymousUserGuides(
-        userContext.sessionId!,
-        options.savedOnly,
-        limit,
-        offset
+      // Throw error as anonymous users cannot have saved guides
+      throw new AppError(
+        'BAD_REQUEST',
+        'Anonymous users cannot have saved guides',
+        400
       )
     }
   }
@@ -334,59 +305,6 @@ export class StudyGuideRepository {
   }
 
   /**
-   * Get anonymous user's study guides
-   */
-  private async getAnonymousUserGuides(
-    sessionId: string,
-    savedOnly?: boolean,
-    limit = 20,
-    offset = 0
-  ): Promise<StudyGuideResponse[]> {
-    let query = this.supabase
-      .from('anonymous_study_guides_new')
-      .select(`
-        id,
-        is_saved,
-        created_at,
-        updated_at,
-        study_guides (
-          id,
-          input_type,
-          input_value,
-          input_value_hash,
-          language,
-          summary,
-          interpretation,
-          context,
-          related_verses,
-          reflection_questions,
-          prayer_points,
-          created_at,
-          updated_at
-        )
-      `)
-      .eq('session_id', sessionId)
-      .order('created_at', { ascending: false })
-      .range(offset, offset + limit - 1)
-
-    if (savedOnly) {
-      query = query.eq('is_saved', true)
-    }
-
-    const { data, error } = await query
-
-    if (error) {
-      throw new AppError(
-        'DATABASE_ERROR',
-        `Failed to get anonymous user guides: ${error.message}`,
-        500
-      )
-    }
-
-    return (data ?? []).map(item => this.formatStudyGuideResponse(item, false))
-  }
-
-  /**
    * Update save status
    */
   async updateSaveStatus(
@@ -401,10 +319,11 @@ export class StudyGuideRepository {
         userContext.userId!
       )
     } else {
-      return await this.updateAnonymousSaveStatus(
-        studyGuideId,
-        isSaved,
-        userContext.sessionId!
+      // Anonymous users cannot save guides
+      throw new AppError(
+        'BAD_REQUEST',
+        'Anonymous users cannot save guides',
+        400
       )
     }
   }
@@ -460,59 +379,6 @@ export class StudyGuideRepository {
     }
 
     return this.formatStudyGuideResponse(data, true)
-  }
-
-  /**
-   * Update anonymous user's save status
-   */
-  private async updateAnonymousSaveStatus(
-    studyGuideId: string,
-    isSaved: boolean,
-    sessionId: string
-  ): Promise<StudyGuideResponse> {
-    const { data, error } = await this.supabase
-      .from('anonymous_study_guides_new')
-      .update({
-        is_saved: isSaved,
-        updated_at: new Date().toISOString()
-      })
-      .eq('study_guide_id', studyGuideId)
-      .eq('session_id', sessionId)
-      .select(`
-        id,
-        is_saved,
-        created_at,
-        updated_at,
-        study_guides (
-          id,
-          input_type,
-          input_value,
-          input_value_hash,
-          language,
-          summary,
-          interpretation,
-          context,
-          related_verses,
-          reflection_questions,
-          prayer_points,
-          created_at,
-          updated_at
-        )
-      `)
-      .single()
-
-    if (error) {
-      if (error.code === 'PGRST116') {
-        throw new AppError('NOT_FOUND', 'Study guide not found', 404)
-      }
-      throw new AppError(
-        'DATABASE_ERROR',
-        `Failed to update save status: ${error.message}`,
-        500
-      )
-    }
-
-    return this.formatStudyGuideResponse(data, false)
   }
 
   /**
@@ -586,14 +452,12 @@ export class StudyGuideRepository {
 
       return !error && !!data
     } else {
-      const { data, error } = await this.supabase
-        .from('anonymous_study_guides_new')
-        .select('id')
-        .eq('study_guide_id', contentId)
-        .eq('session_id', userContext.sessionId!)
-        .single()
-
-      return !error && !!data
+      // Throw error as anonymous users cannot have saved guides
+      throw new AppError(
+        'BAD_REQUEST',
+        'Anonymous users cannot have saved guides',
+        400
+      )
     }
   }
 
@@ -641,41 +505,12 @@ export class StudyGuideRepository {
 
       return this.formatStudyGuideResponse(data, true)
     } else {
-      const { data, error } = await this.supabase
-        .from('anonymous_study_guides_new')
-        .select(`
-          id,
-          is_saved,
-          created_at,
-          updated_at,
-          study_guides (
-            id,
-            input_type,
-            input_value_hash,
-            language,
-            summary,
-            interpretation,
-            context,
-            related_verses,
-            reflection_questions,
-            prayer_points,
-            created_at,
-            updated_at
-          )
-        `)
-        .eq('study_guide_id', contentId)
-        .eq('session_id', userContext.sessionId!)
-        .single()
-
-      if (error) {
-        throw new AppError(
-          'DATABASE_ERROR',
-          `Failed to get user content relation: ${error.message}`,
-          500
-        )
-      }
-
-      return this.formatStudyGuideResponse(data, false)
+      // Anonymous users cannot have saved guides
+      throw new AppError(
+        'BAD_REQUEST',
+        'Anonymous users cannot have saved guides',
+        400
+      )
     }
   }
 

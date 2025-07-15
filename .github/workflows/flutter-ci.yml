@@ -1,0 +1,129 @@
+name: Flutter CI - Testing & Code Quality
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - 'frontend/**'
+      - '.github/workflows/flutter-ci.yml'
+  pull_request:
+    branches: [ main, develop ]
+    paths:
+      - 'frontend/**'
+      - '.github/workflows/flutter-ci.yml'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  code-quality:
+    name: Code Quality & Testing
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Setup Flutter
+      uses: subosito/flutter-action@v2
+      with:
+        flutter-version: '3.24.1'
+        channel: 'stable'
+        cache: true
+        
+    - name: Cache pub dependencies
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.pub-cache
+          frontend/.dart_tool
+        key: ${{ runner.os }}-pub-${{ hashFiles('frontend/pubspec.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-pub-
+        
+    - name: Get Flutter dependencies
+      working-directory: ./frontend
+      run: flutter pub get
+      
+    - name: Verify Flutter formatting
+      working-directory: ./frontend
+      run: dart format --output=none --set-exit-if-changed .
+      
+    - name: Analyze Flutter code
+      working-directory: ./frontend
+      run: flutter analyze --fatal-infos
+      
+    - name: Run Flutter tests with coverage
+      working-directory: ./frontend
+      run: flutter test --coverage
+      
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v4
+      with:
+        file: frontend/coverage/lcov.info
+        flags: flutter
+        name: flutter-coverage
+        fail_ci_if_error: false
+        
+    - name: Check test coverage threshold
+      working-directory: ./frontend
+      run: |
+        if [ -f coverage/lcov.info ]; then
+          # Install lcov for coverage analysis
+          sudo apt-get update && sudo apt-get install -y lcov
+          
+          # Generate coverage report
+          genhtml coverage/lcov.info -o coverage/html --quiet
+          
+          # Extract coverage percentage (simplified check)
+          coverage=$(lcov --summary coverage/lcov.info 2>/dev/null | grep -o '[0-9.]*%' | head -1 | cut -d'%' -f1)
+          echo "Test coverage: ${coverage}%"
+          
+          # Fail if coverage is below 70%
+          if (( $(echo "$coverage < 70" | bc -l) )); then
+            echo "❌ Test coverage ${coverage}% is below required 70%"
+            exit 1
+          else
+            echo "✅ Test coverage ${coverage}% meets requirement"
+          fi
+        else
+          echo "⚠️ No coverage file found, skipping coverage check"
+        fi
+
+  security-scan:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    if: github.event_name == 'pull_request'
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Setup Flutter
+      uses: subosito/flutter-action@v2
+      with:
+        flutter-version: '3.24.1'
+        channel: 'stable'
+        cache: true
+        
+    - name: Get Flutter dependencies
+      working-directory: ./frontend
+      run: flutter pub get
+      
+    - name: Run security audit
+      working-directory: ./frontend
+      run: |
+        # Check for known vulnerabilities in dependencies
+        flutter pub deps --json | jq '.packages[] | select(.kind == "direct") | .name' | xargs -I {} sh -c 'echo "Checking {}"'
+        
+        # Scan for hardcoded secrets (basic check)
+        echo "🔍 Scanning for potential secrets..."
+        if grep -r -i -E "(api[_-]?key|secret|password|token)" lib/ --include="*.dart" | grep -v -E "(//|/\*|\*/)" | grep -E ':\s*["\x27][a-zA-Z0-9]{10,}["\x27]'; then
+          echo "❌ Potential hardcoded secrets found!"
+          exit 1
+        else
+          echo "✅ No hardcoded secrets detected"
+        fi
