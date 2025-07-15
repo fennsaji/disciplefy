@@ -87,8 +87,8 @@ serve(async (req: Request): Promise<Response> => {
       req
     )
 
-    // Rate limiting
-    const rateLimitResult = await enforceRateLimit(
+    // Rate limiting - check and enforce limits
+    await enforceRateLimit(
       services.rateLimiter,
       userContext
     )
@@ -137,6 +137,12 @@ serve(async (req: Request): Promise<Response> => {
 
       fromCache = false
 
+      // Record usage for rate limiting (only for new generations)
+      const identifier = userContext.type === 'authenticated' 
+        ? userContext.userId! 
+        : userContext.sessionId!
+      await services.rateLimiter.recordUsage(identifier, userContext.type)
+
       await services.analyticsLogger.logEvent('study_guide_generated', {
         input_type: requestData.input_type,
         language: requestData.language || DEFAULT_LANGUAGE,
@@ -145,6 +151,12 @@ serve(async (req: Request): Promise<Response> => {
         session_id: userContext.sessionId
       }, req.headers.get('x-forwarded-for'))
     }
+
+    // Get final rate limit status after recording usage
+    const identifier = userContext.type === 'authenticated' 
+      ? userContext.userId! 
+      : userContext.sessionId!
+    const rateLimitResult = await services.rateLimiter.checkRateLimit(identifier, userContext.type)
 
     // Calculate response time
     const responseTime = performance.now() - startTime
@@ -187,8 +199,8 @@ function validateEnvironment(): void {
  * Creates configured Supabase client with service role for database operations.
  */
 function createSupabaseClient(req: Request): SupabaseClient {
-  const supabaseUrl = Deno.env.get('SUPABASE_URL')!
-  const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+  const supabaseUrl = globalThis.Deno.env.get('SUPABASE_URL')!
+  const supabaseServiceKey = globalThis.Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 
   return createClient(supabaseUrl, supabaseServiceKey, {
     global: {
@@ -203,9 +215,17 @@ function createSupabaseClient(req: Request): SupabaseClient {
  * Initializes all required services.
  */
 function initializeServices(supabaseClient: SupabaseClient) {
+  // Get rate limiting configuration from environment variables
+  const rateLimitConfig = {
+    anonymousLimit: parseInt(globalThis.Deno.env.get('ANONYMOUS_RATE_LIMIT') || '3', 10),
+    authenticatedLimit: parseInt(globalThis.Deno.env.get('AUTHENTICATED_RATE_LIMIT') || '10', 10),
+    anonymousWindowMinutes: 480, // 8 hours for anonymous users
+    authenticatedWindowMinutes: 60 // 1 hour for authenticated users
+  }
+
   return {
     securityValidator: new SecurityValidator(),
-    rateLimiter: new RateLimiter(supabaseClient),
+    rateLimiter: new RateLimiter(supabaseClient, rateLimitConfig),
     analyticsLogger: new AnalyticsLogger(supabaseClient),
     llmService: new LLMService(),
     repository: new StudyGuideRepository(supabaseClient)

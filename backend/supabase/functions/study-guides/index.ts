@@ -202,7 +202,23 @@ async function handleSaveUnsaveGuide(
   userContext: UserContext,
   req: Request
 ): Promise<Response> {
-  const requestBody: SaveGuideRequest = await req.json()
+  const requestBody: any = await req.json()
+
+  // Extract user context from request body if present (for consistency with study-generate)
+  let finalUserContext = userContext
+  if (requestBody.user_context) {
+    if (requestBody.user_context.is_authenticated && requestBody.user_context.user_id) {
+      finalUserContext = {
+        type: 'authenticated',
+        userId: requestBody.user_context.user_id
+      }
+    } else if (!requestBody.user_context.is_authenticated && requestBody.user_context.session_id) {
+      finalUserContext = {
+        type: 'anonymous',
+        sessionId: requestBody.user_context.session_id
+      }
+    }
+  }
 
   // Validate request
   validateSaveRequest(requestBody)
@@ -213,7 +229,7 @@ async function handleSaveUnsaveGuide(
   const updatedGuide = await repository.updateSaveStatus(
     requestBody.guide_id,
     isSaved,
-    userContext
+    finalUserContext
   )
 
   const response: StudyGuideManagementApiResponse = {

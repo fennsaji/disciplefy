@@ -10,6 +10,7 @@ import '../../domain/entities/study_guide.dart';
 import '../../domain/repositories/study_repository.dart';
 import '../../../../core/network/network_info.dart';
 import '../../../../core/services/api_auth_helper.dart';
+import '../../../../core/services/auth_service.dart';
 
 /// Implementation of the StudyRepository interface.
 /// 
@@ -259,9 +260,9 @@ class StudyRepositoryImpl implements StudyRepository {
   /// Gets the user context for API requests.
   Future<Map<String, dynamic>> _getUserContext() async {
     try {
-      // Use ApiAuthHelper for consistent authentication state
-      if (ApiAuthHelper.isAuthenticated) {
-        final userId = ApiAuthHelper.currentUserId;
+      // Use AuthService.isFullyAuthenticated() to properly exclude guest users
+      if (await AuthService.isFullyAuthenticated()) {
+        final userId = await AuthService.getUserId();
         return {
           'is_authenticated': true,
           'user_id': userId,

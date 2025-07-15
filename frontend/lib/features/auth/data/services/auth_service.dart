@@ -174,13 +174,19 @@ class AuthService {
         final Map<String, dynamic> responseData = jsonDecode(response.body);
         
         if (responseData['success'] == true) {
+          print('🔍 [DEBUG] Google OAuth callback successful');
+          
           // Extract session data
           final sessionData = responseData['session'];
+          print('🔍 [DEBUG] Session data keys: ${sessionData.keys}');
           
           // Set the Supabase session
           await _supabase.auth.recoverSession(
             sessionData['access_token'],
           );
+          
+          print('🔍 [DEBUG] Current user after session recovery: ${currentUser?.id}');
+          print('🔍 [DEBUG] Current user isAnonymous: ${currentUser?.isAnonymous}');
           
           // Sync authentication state with Core AuthService
           await CoreAuthService.AuthService.storeAuthData(
@@ -188,6 +194,12 @@ class AuthService {
             userType: 'google',
             userId: currentUser?.id,
           );
+          
+          // Verify what was stored
+          final storedUserType = await CoreAuthService.AuthService.getUserType();
+          final storedUserId = await CoreAuthService.AuthService.getUserId();
+          print('🔍 [DEBUG] Stored user type: $storedUserType');
+          print('🔍 [DEBUG] Stored user ID: $storedUserId');
           
           // Create or update user profile
           await upsertUserProfile(
@@ -266,6 +278,9 @@ class AuthService {
   /// Sign in anonymously
   Future<bool> signInAnonymously() async {
     try {
+      print('🔍 [DEBUG] signInAnonymously called');
+      print('🔍 [DEBUG] Stack trace: ${StackTrace.current}');
+      
       await _supabase.auth.signInAnonymously();
       
       // Sync with Core AuthService for guest user
@@ -276,6 +291,8 @@ class AuthService {
           userType: 'guest',
           userId: currentUser?.id,
         );
+        
+        print('🔍 [DEBUG] Anonymous sign-in stored user type: guest');
       }
       
       return true;
