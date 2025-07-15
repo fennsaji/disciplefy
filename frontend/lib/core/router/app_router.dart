@@ -40,30 +40,39 @@ class AppRouter {
       final user = Supabase.instance.client.auth.currentUser;
       final isAuthenticated = user != null;
       final currentPath = state.uri.path;
-      
+
       // Debug logging
-      print('🔐 [ROUTER] Auth check: ${isAuthenticated ? "✅ Authenticated" : "❌ Not authenticated"} | Route: $currentPath');
+      print(
+          '🔐 [ROUTER] Auth check: ${isAuthenticated ? "✅ Authenticated" : "❌ Not authenticated"} | Route: $currentPath');
       if (user != null) {
-        print('👤 [ROUTER] User: ${user.email ?? "Anonymous"} (${user.isAnonymous ? "anonymous" : "authenticated"})');
+        print(
+            '👤 [ROUTER] User: ${user.email ?? "Anonymous"} (${user.isAnonymous ? "anonymous" : "authenticated"})');
       }
-      
+
       // Public routes that don't require authentication
-      final publicRoutes = ['/login', '/onboarding', '/onboarding/language', '/onboarding/purpose', '/auth/callback'];
-      final isPublicRoute = publicRoutes.contains(currentPath) || 
-                           currentPath.startsWith('/auth/callback');
-      
+      final publicRoutes = [
+        '/login',
+        '/onboarding',
+        '/onboarding/language',
+        '/onboarding/purpose',
+        '/auth/callback'
+      ];
+      final isPublicRoute = publicRoutes.contains(currentPath) ||
+          currentPath.startsWith('/auth/callback');
+
       // If not authenticated and trying to access protected route, redirect to login
       if (!isAuthenticated && !isPublicRoute) {
-        print('🚫 [ROUTER] Blocking access to $currentPath, redirecting to /login');
+        print(
+            '🚫 [ROUTER] Blocking access to $currentPath, redirecting to /login');
         return '/login';
       }
-      
+
       // If authenticated and on login page, redirect to home
       if (isAuthenticated && currentPath == '/login') {
         print('🏠 [ROUTER] User authenticated, redirecting to home');
         return '/';
       }
-      
+
       return null; // No redirect needed
     },
     routes: [
@@ -83,10 +92,11 @@ class AppRouter {
         name: 'onboarding_purpose',
         builder: (context, state) => const OnboardingPurposePage(),
       ),
-      
+
       // Main App Routes (using StatefulShellRoute for proper navigation)
       StatefulShellRoute.indexedStack(
-        builder: (context, state, navigationShell) => AppShell(navigationShell: navigationShell),
+        builder: (context, state, navigationShell) =>
+            AppShell(navigationShell: navigationShell),
         branches: [
           // Home Branch
           StatefulShellBranch(
@@ -130,7 +140,7 @@ class AppRouter {
           ),
         ],
       ),
-      
+
       // Authentication Routes (outside app shell)
       GoRoute(
         path: AppRoutes.login,
@@ -145,8 +155,9 @@ class AppRouter {
           final code = state.uri.queryParameters['code'];
           final stateParam = state.uri.queryParameters['state'];
           final error = state.uri.queryParameters['error'];
-          final errorDescription = state.uri.queryParameters['error_description'];
-          
+          final errorDescription =
+              state.uri.queryParameters['error_description'];
+
           return AuthCallbackPage(
             code: code,
             state: stateParam,
@@ -155,7 +166,7 @@ class AppRouter {
           );
         },
       ),
-      
+
       // Full Screen Routes (outside shell)
       GoRoute(
         path: AppRoutes.studyGuide,
@@ -165,7 +176,7 @@ class AppRouter {
           StudyGuide? studyGuide;
           Map<String, dynamic>? routeExtra;
           String? navigationSource;
-          
+
           if (state.extra is StudyGuide) {
             studyGuide = state.extra as StudyGuide;
             // Check query parameters for source information
@@ -174,7 +185,7 @@ class AppRouter {
             routeExtra = state.extra as Map<String, dynamic>;
             navigationSource = 'saved'; // Default for saved guides
           }
-          
+
           return StudyGuideScreen(
             studyGuide: studyGuide,
             routeExtra: routeExtra,
@@ -190,7 +201,7 @@ class AppRouter {
           return StudyResultPage(studyGuide: studyGuide);
         },
       ),
-      
+
       // Error Page
       GoRoute(
         path: AppRoutes.error,
@@ -210,12 +221,13 @@ class AppRouter {
     try {
       // Check if onboarding has been completed
       final box = Hive.box('app_settings');
-      final onboardingCompleted = box.get('onboarding_completed', defaultValue: false);
-      
+      final onboardingCompleted =
+          box.get('onboarding_completed', defaultValue: false);
+
       // Check if user is authenticated
       final user = Supabase.instance.client.auth.currentUser;
       final isAuthenticated = user != null;
-      
+
       if (isAuthenticated) {
         // User is authenticated, go to home
         return AppRoutes.home;
@@ -240,9 +252,12 @@ extension AppRouterExtension on GoRouter {
   void goToOnboardingPurpose() => go(AppRoutes.onboardingPurpose);
   void goToHome() => go(AppRoutes.home);
   void goToGenerateStudy() => go(AppRoutes.generateStudy);
-  void goToStudyGuide(StudyGuide studyGuide) => go(AppRoutes.studyGuide, extra: studyGuide);
-  void goToStudyGuideWithExtra(Map<String, dynamic> extra) => go(AppRoutes.studyGuide, extra: extra);
-  void goToStudyResult(StudyGuide studyGuide) => go(AppRoutes.studyResult, extra: studyGuide);
+  void goToStudyGuide(StudyGuide studyGuide) =>
+      go(AppRoutes.studyGuide, extra: studyGuide);
+  void goToStudyGuideWithExtra(Map<String, dynamic> extra) =>
+      go(AppRoutes.studyGuide, extra: extra);
+  void goToStudyResult(StudyGuide studyGuide) =>
+      go(AppRoutes.studyResult, extra: studyGuide);
   void goToSettings() => go(AppRoutes.settings);
   void goToSaved() => go(AppRoutes.saved);
   void goToLogin() => go(AppRoutes.login);
