@@ -106,46 +106,36 @@ async function getUserContext(
     try {
       const token = authHeader.replace('Bearer ', '')
       
-      console.log('Attempting to validate token for user authentication')
+      console.log('🔐 [AUTH] Validating JWT token for user authentication')
       
-      // Use the main client which already has auth headers set
-      const { data: { user }, error } = await supabaseClient.auth.getUser(token)
-      
-      if (error) {
-        console.warn('Auth validation error:', error)
-        // Try to extract user info from JWT payload as fallback
-        const payload = JSON.parse(atob(token.split('.')[1]))
-        if (payload.sub && payload.exp > Date.now() / 1000) {
-          console.log('Using JWT payload for user context:', payload.sub)
-          return {
-            type: 'authenticated',
-            userId: payload.sub
-          }
-        }
-        throw error
-      }
-      
-      if (user) {
-        console.log('Successfully authenticated user:', user.id)
+      // Extract user info from JWT payload (same pattern as study-generate)
+      const payload = JSON.parse(atob(token.split('.')[1]))
+      if (payload.sub && payload.exp > Date.now() / 1000) {
+        console.log('✅ [AUTH] Successfully authenticated user from JWT:', payload.sub)
         return {
           type: 'authenticated',
-          userId: user.id
+          userId: payload.sub
         }
+      } else {
+        console.warn('⚠️ [AUTH] JWT token expired or invalid')
+        throw new Error('Token expired or invalid')
       }
     } catch (error) {
-      console.warn('Failed to authenticate user:', error)
+      console.warn('❌ [AUTH] JWT validation failed:', error)
       // Don't throw immediately, let it fall through to check session ID
     }
   }
 
   // Handle anonymous user
   if (sessionId) {
+    console.log('👤 [AUTH] Using anonymous session:', sessionId)
     return {
       type: 'anonymous',
       sessionId: sessionId
     }
   }
 
+  console.warn('❌ [AUTH] No valid authentication found')
   throw new AppError(
     'UNAUTHORIZED',
     'Authentication required. Provide either Bearer token or x-session-id header',

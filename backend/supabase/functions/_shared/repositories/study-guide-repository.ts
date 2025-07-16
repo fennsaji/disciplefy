@@ -336,14 +336,26 @@ export class StudyGuideRepository {
     isSaved: boolean,
     userId: string
   ): Promise<StudyGuideResponse> {
+    // First verify the study guide exists
+    const { data: studyGuide, error: studyGuideError } = await this.supabase
+      .from('study_guides')
+      .select('*')
+      .eq('id', studyGuideId)
+      .single()
+
+    if (studyGuideError || !studyGuide) {
+      throw new AppError('NOT_FOUND', 'Study guide not found', 404)
+    }
+
+    // Use UPSERT to handle missing relationship records
     const { data, error } = await this.supabase
       .from('user_study_guides_new')
-      .update({
+      .upsert({
+        user_id: userId,
+        study_guide_id: studyGuideId,
         is_saved: isSaved,
         updated_at: new Date().toISOString()
       })
-      .eq('study_guide_id', studyGuideId)
-      .eq('user_id', userId)
       .select(`
         id,
         is_saved,
@@ -368,9 +380,6 @@ export class StudyGuideRepository {
       .single()
 
     if (error) {
-      if (error.code === 'PGRST116') {
-        throw new AppError('NOT_FOUND', 'Study guide not found', 404)
-      }
       throw new AppError(
         'DATABASE_ERROR',
         `Failed to update save status: ${error.message}`,
