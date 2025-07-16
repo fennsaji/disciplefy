@@ -108,6 +108,13 @@
     body.flutter-loaded #splash-screen {
       display: none;
     }
+    
+    /* Hide splash screen for PWA to prevent double splash */
+    @media all and (display-mode: standalone) {
+      #splash-screen {
+        display: none !important;
+      }
+    }
   </style>
 </head>
 <body>
