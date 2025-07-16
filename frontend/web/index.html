@@ -43,6 +43,23 @@
   <meta name="msapplication-navbutton-color" content="#6A4FB6">
   <meta name="msapplication-TileColor" content="#FBEDD9">
   <meta name="msapplication-starturl" content="/">
+  <meta name="msapplication-TileImage" content="icons/Icon-192.png">
+  
+  <!-- Enhanced PWA meta tags -->
+  <meta name="application-name" content="Disciplefy">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-status-bar-style" content="default">
+  <meta name="format-detection" content="telephone=no">
+  <meta name="HandheldFriendly" content="true">
+  <meta name="MobileOptimized" content="320">
+  
+  <!-- Security headers -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self' data: gap: https://ssl.gstatic.com 'unsafe-eval' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; media-src *; img-src 'self' data: content:;">
+  <meta http-equiv="x-ua-compatible" content="IE=edge">
+  
+  <!-- Preload critical resources -->
+  <link rel="preload" href="flutter_bootstrap.js" as="script">
+  <link rel="preload" href="splash_screen.png" as="image">
 
   <!-- Favicon -->
   <link rel="icon" type="image/png" href="favicon.png"/>
@@ -153,12 +170,25 @@
       }
     }
     
-    // PWA Installation and Service Worker
+    // Enhanced PWA Service Worker Registration
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', function() {
         navigator.serviceWorker.register('/flutter_service_worker.js')
           .then(function(registration) {
-            console.log('ServiceWorker registration successful');
+            console.log('ServiceWorker registration successful with scope: ', registration.scope);
+            
+            // Check for service worker updates
+            registration.addEventListener('updatefound', () => {
+              const newWorker = registration.installing;
+              if (newWorker) {
+                newWorker.addEventListener('statechange', () => {
+                  if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                    console.log('New service worker available');
+                    // Could show update notification here
+                  }
+                });
+              }
+            });
           })
           .catch(function(error) {
             console.log('ServiceWorker registration failed: ', error);
@@ -166,13 +196,56 @@
       });
     }
     
-    // PWA Install Banner
+    // Enhanced PWA Install Banner
     let deferredPrompt;
+    let installButton = null;
+    
     window.addEventListener('beforeinstallprompt', (e) => {
       e.preventDefault();
       deferredPrompt = e;
-      // Show install button or banner here if needed
       console.log('PWA install prompt available');
+      
+      // Show custom install button if needed
+      showInstallButton();
+    });
+    
+    // Handle successful installation
+    window.addEventListener('appinstalled', (evt) => {
+      console.log('PWA was installed successfully');
+      hideInstallButton();
+    });
+    
+    // Function to show install button
+    function showInstallButton() {
+      // This can be implemented to show a custom install button
+      // For now, just log that it's available
+      console.log('App can be installed');
+    }
+    
+    // Function to hide install button
+    function hideInstallButton() {
+      console.log('Install button hidden');
+    }
+    
+    // Check if running as PWA
+    function isPWA() {
+      return window.matchMedia('(display-mode: standalone)').matches ||
+             window.navigator.standalone === true;
+    }
+    
+    // PWA-specific initialization
+    if (isPWA()) {
+      console.log('Running as PWA');
+      // Add PWA-specific behaviors here
+    }
+    
+    // Handle network status changes
+    window.addEventListener('online', () => {
+      console.log('Network connectivity restored');
+    });
+    
+    window.addEventListener('offline', () => {
+      console.log('Network connectivity lost');
     });
   </script>
   

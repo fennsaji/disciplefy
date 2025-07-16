@@ -51,7 +51,7 @@ class AppConfig {
   // OAuth Redirect URLs
   static String get authRedirectUrl {
     if (kIsWeb) {
-      return '$appUrl';
+      return appUrl;
     }
     // Use deep link scheme for mobile apps (both development and production)
     return 'com.disciplefy.bible_study_app://auth/callback';

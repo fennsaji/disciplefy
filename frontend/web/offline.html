@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Offline - Disciplefy</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #FBEDD9;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      text-align: center;
+    }
+    
+    .container {
+      max-width: 400px;
+      padding: 2rem;
+    }
+    
+    .logo {
+      width: 80px;
+      height: 80px;
+      margin: 0 auto 2rem;
+      background-color: #6A4FB6;
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2rem;
+      color: white;
+    }
+    
+    h1 {
+      color: #6A4FB6;
+      margin-bottom: 1rem;
+      font-size: 2rem;
+    }
+    
+    p {
+      color: #666;
+      margin-bottom: 2rem;
+      line-height: 1.5;
+    }
+    
+    .button {
+      display: inline-block;
+      padding: 12px 24px;
+      background-color: #6A4FB6;
+      color: white;
+      text-decoration: none;
+      border-radius: 8px;
+      font-weight: 500;
+      transition: background-color 0.3s ease;
+      margin: 0.5rem;
+    }
+    
+    .button:hover {
+      background-color: #5a3f9a;
+    }
+    
+    .button.secondary {
+      background-color: transparent;
+      color: #6A4FB6;
+      border: 2px solid #6A4FB6;
+    }
+    
+    .button.secondary:hover {
+      background-color: #6A4FB6;
+      color: white;
+    }
+    
+    .connection-status {
+      margin-top: 2rem;
+      padding: 1rem;
+      border-radius: 8px;
+      font-size: 0.9rem;
+    }
+    
+    .connection-status.offline {
+      background-color: #ffebee;
+      color: #c62828;
+    }
+    
+    .connection-status.online {
+      background-color: #e8f5e8;
+      color: #2e7d32;
+    }
+    
+    @media (max-width: 480px) {
+      .container {
+        padding: 1rem;
+      }
+      
+      h1 {
+        font-size: 1.5rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="logo">📖</div>
+    <h1>You're Offline</h1>
+    <p>It looks like you're not connected to the internet. Some features may not be available.</p>
+    
+    <div class="connection-status offline" id="connectionStatus">
+      🔴 No internet connection
+    </div>
+    
+    <div style="margin-top: 2rem;">
+      <a href="/" class="button">Try Again</a>
+      <button onclick="location.reload()" class="button secondary">Reload Page</button>
+    </div>
+  </div>
+  
+  <script>
+    // Check connection status
+    function updateConnectionStatus() {
+      const status = document.getElementById('connectionStatus');
+      if (navigator.onLine) {
+        status.className = 'connection-status online';
+        status.innerHTML = '🟢 Internet connection restored';
+        setTimeout(() => {
+          window.location.href = '/';
+        }, 2000);
+      } else {
+        status.className = 'connection-status offline';
+        status.innerHTML = '🔴 No internet connection';
+      }
+    }
+    
+    // Listen for connection changes
+    window.addEventListener('online', updateConnectionStatus);
+    window.addEventListener('offline', updateConnectionStatus);
+    
+    // Check connection every 5 seconds
+    setInterval(updateConnectionStatus, 5000);
+    
+    // Initial check
+    updateConnectionStatus();
+  </script>
+</body>
+</html>
