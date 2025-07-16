@@ -6,8 +6,10 @@ import { SecurityValidator } from '../_shared/security-validator.ts'
 import { ErrorHandler, AppError } from '../_shared/error-handler.ts'
 import { RequestValidator } from '../_shared/request-validator.ts'
 import { AnalyticsLogger } from '../_shared/analytics-logger.ts'
+
 // TODO: Implement FeedbackService and FeedbackRepository
 class FeedbackService {
+  // TODO: Implement sentiment analysis logic using LLM Models
   async calculateSentimentScore(message: string): Promise<number> {
     // Simple sentiment analysis - count positive/negative words
     const positiveWords = ['good', 'great', 'helpful', 'love', 'amazing', 'excellent', 'wonderful']
@@ -33,17 +35,11 @@ class FeedbackRepository {
     return !!data
   }
   
-  async verifyJeffReedSessionExists(sessionId: string): Promise<boolean> {
-    // Sessions not implemented yet
-    return false
-  }
-  
   async saveFeedback(feedbackData: any) {
     const { data, error } = await this.supabaseClient
       .from('feedback')
       .insert({
         study_guide_id: feedbackData.studyGuideId,
-        jeff_reed_session_id: feedbackData.jeffReedSessionId,
         user_id: feedbackData.userId,
         was_helpful: feedbackData.wasHelpful,
         message: feedbackData.message,
@@ -64,7 +60,6 @@ class FeedbackRepository {
  */
 interface FeedbackRequest {
   readonly study_guide_id?: string
-  readonly jeff_reed_session_id?: string
   readonly was_helpful: boolean
   readonly message?: string
   readonly category?: string
@@ -105,7 +100,7 @@ const REQUIRED_ENV_VARS = ['SUPABASE_URL', 'SUPABASE_ANON_KEY'] as const
 /**
  * Edge Function: Feedback Submission
  * 
- * Handles user feedback for study guides and Jeff Reed sessions
+ * Handles user feedback for study guides
  * with sentiment analysis, security validation, and analytics tracking.
  * 
  * @param req - HTTP request object
@@ -281,10 +276,10 @@ function validateFeedbackStructure(requestBody: any): void {
   }
 
   // Validate that at least one reference ID is provided
-  if (!requestBody.study_guide_id && !requestBody.jeff_reed_session_id) {
+  if (!requestBody.study_guide_id) {
     throw new AppError(
       'VALIDATION_ERROR',
-      'Either study_guide_id or jeff_reed_session_id must be provided',
+      'Either study_guide_id must be provided',
       400
     )
   }
@@ -294,14 +289,6 @@ function validateFeedbackStructure(requestBody: any): void {
     throw new AppError(
       'VALIDATION_ERROR',
       'study_guide_id must be a string',
-      400
-    )
-  }
-
-  if (requestBody.jeff_reed_session_id && typeof requestBody.jeff_reed_session_id !== 'string') {
-    throw new AppError(
-      'VALIDATION_ERROR',
-      'jeff_reed_session_id must be a string',
       400
     )
   }
@@ -407,20 +394,6 @@ async function verifyResourceAccess(
       )
     }
   }
-
-  if (requestData.jeff_reed_session_id) {
-    const exists = await repository.verifyJeffReedSessionExists(
-      requestData.jeff_reed_session_id
-    )
-    
-    if (!exists) {
-      throw new AppError(
-        'NOT_FOUND',
-        'Session not found or access denied',
-        404
-      )
-    }
-  }
 }
 
 /**
@@ -446,8 +419,7 @@ async function processFeedback(
   // Prepare feedback data
   const feedbackData = {
     studyGuideId: requestData.study_guide_id,
-    jeffReedSessionId: requestData.jeff_reed_session_id,
-    userId: requestData.user_context?.user_id,
+    userId: requestData.user_context?.user_id ?? requestData.user_context?.session_id,
     wasHelpful: requestData.was_helpful,
     message: validatedMessage,
     category: requestData.category || DEFAULT_CATEGORY,

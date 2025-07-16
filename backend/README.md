@@ -487,7 +487,8 @@ supabase migration new add_new_feature
 supabase db reset
 
 # Or apply incrementally
-supabase migration up
+supabase migration up 
+supabase db push # For production
 ```
 
 ### 3. Edge Function Development
