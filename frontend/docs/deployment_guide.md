@@ -2,24 +2,90 @@
 
 ## 🚀 **Deployment Overview**
 
-This guide covers deploying the Flutter web app to Supabase Storage, including CSP configuration and automated deployment via GitHub Actions.
+This guide covers deploying the Flutter web app to multiple platforms, including Vercel (primary), Supabase Storage, and GitHub Pages. It includes CSP configuration and automated deployment via GitHub Actions.
 
 ## 🎯 **Deployment Targets**
 
-### **Production Deployment**
+### **Production Deployment (Vercel)**
+- **Platform**: Vercel
+- **URL**: `https://disciplefy.vercel.app`
+- **CDN**: Vercel Edge Network
+- **Custom Domain**: `disciplefy.com` (optional)
+- **SSL**: Automatic HTTPS with Let's Encrypt
+
+### **Alternative Production (Supabase Storage)**
 - **Platform**: Supabase Storage
 - **URL**: `https://wzdcwxvyjuxjgzpnukvm.supabase.co/storage/v1/object/public/disciplefy/`
 - **Bucket**: `disciplefy`
 - **CDN**: Supabase Edge Network
 
-### **Staging Deployment** (Optional)
-- **Platform**: Supabase Storage
-- **Bucket**: `disciplefy-staging`
-- **URL**: `https://wzdcwxvyjuxjgzpnukvm.supabase.co/storage/v1/object/public/disciplefy-staging/`
+### **Staging Deployment (Vercel Preview)**
+- **Platform**: Vercel Preview
+- **URL**: `https://disciplefy-{branch}.vercel.app`
+- **Trigger**: Pull requests and feature branches
+- **Environment**: Preview environment with staging data
 
 ## 🔧 **Manual Deployment**
 
-### **Step 1: Prerequisites**
+### **Option 1: Vercel Deployment (Recommended)**
+
+#### **Step 1: Prerequisites**
+```bash
+# Install Vercel CLI
+npm install -g vercel@latest
+
+# Login to Vercel
+vercel login
+
+# Verify connection
+vercel whoami
+vercel projects list
+```
+
+#### **Step 2: Build for Production**
+```bash
+# Navigate to frontend directory
+cd frontend
+
+# Clean build
+flutter clean
+flutter pub get
+
+# Build for production (Vercel)
+flutter build web --release \
+  --web-renderer canvaskit \
+  --base-href "/" \
+  --dart-define=APP_URL=https://disciplefy.vercel.app \
+  --dart-define=FLUTTER_WEB_BUILD=true \
+  --dart-define=SUPABASE_URL="https://wzdcwxvyjuxjgzpnukvm.supabase.co" \
+  --dart-define=SUPABASE_ANON_KEY="your-anon-key"
+```
+
+#### **Step 3: Deploy to Vercel**
+```bash
+# Deploy to Vercel
+cd build/web
+vercel --prod
+
+# Or deploy with project name
+vercel --prod --name disciplefy
+
+# Check deployment status
+vercel ls disciplefy
+```
+
+#### **Step 4: Test Deployment**
+```bash
+# Test the deployed app
+curl -I "https://disciplefy.vercel.app"
+
+# Open in browser
+open "https://disciplefy.vercel.app"
+```
+
+### **Option 2: Supabase Storage Deployment**
+
+#### **Step 1: Prerequisites**
 ```bash
 # Install Supabase CLI
 npm install -g supabase@1.123.4
@@ -31,7 +97,7 @@ supabase login
 supabase projects list
 ```
 
-### **Step 2: Build for Production**
+#### **Step 2: Build for Production**
 ```bash
 # Navigate to frontend directory
 cd frontend
@@ -55,7 +121,7 @@ if [ -f "scripts/optimize_csp.sh" ]; then
 fi
 ```
 
-### **Step 3: Deploy to Supabase Storage**
+#### **Step 3: Deploy to Supabase Storage**
 ```bash
 # Deploy to production bucket
 supabase storage cp build/web ss://disciplefy/ \
@@ -69,7 +135,7 @@ supabase storage ls ss://disciplefy/ \
   --project-ref wzdcwxvyjuxjgzpnukvm
 ```
 
-### **Step 4: Test Deployment**
+#### **Step 4: Test Deployment**
 ```bash
 # Test the deployed app
 curl -I "https://wzdcwxvyjuxjgzpnukvm.supabase.co/storage/v1/object/public/disciplefy/index.html"
@@ -78,34 +144,178 @@ curl -I "https://wzdcwxvyjuxjgzpnukvm.supabase.co/storage/v1/object/public/disci
 open "https://wzdcwxvyjuxjgzpnukvm.supabase.co/storage/v1/object/public/disciplefy/"
 ```
 
+## 🎛️ **Vercel Configuration**
+
+### **vercel.json Configuration**
+Create a `vercel.json` file in your project root:
+
+```json
+{
+  "version": 2,
+  "name": "disciplefy",
+  "builds": [
+    {
+      "src": "frontend/build/web/**",
+      "use": "@vercel/static"
+    }
+  ],
+  "routes": [
+    {
+      "handle": "filesystem"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/frontend/build/web/index.html"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "X-Frame-Options",
+          "value": "DENY"
+        },
+        {
+          "key": "X-XSS-Protection",
+          "value": "1; mode=block"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "strict-origin-when-cross-origin"
+        },
+        {
+          "key": "Permissions-Policy",
+          "value": "camera=(), microphone=(), geolocation=()"
+        }
+      ]
+    },
+    {
+      "source": "/static/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
+        }
+      ]
+    }
+  ],
+  "env": {
+    "APP_URL": "https://disciplefy.vercel.app",
+    "FLUTTER_WEB_BUILD": "true",
+    "SUPABASE_URL": "https://wzdcwxvyjuxjgzpnukvm.supabase.co",
+    "SUPABASE_ANON_KEY": "@supabase_anon_key"
+  }
+}
+```
+
+### **Environment Variables**
+Configure in Vercel Dashboard → Project Settings → Environment Variables:
+
+| Variable Name | Value | Environment |
+|---------------|-------|-------------|
+| `APP_URL` | `https://disciplefy.vercel.app` | Production |
+| `FLUTTER_WEB_BUILD` | `true` | All |
+| `SUPABASE_URL` | `https://wzdcwxvyjuxjgzpnukvm.supabase.co` | All |
+| `SUPABASE_ANON_KEY` | `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...` | All |
+
+### **Custom Domain Setup**
+```bash
+# Add custom domain
+vercel domains add disciplefy.com
+
+# Configure domain
+vercel domains inspect disciplefy.com
+
+# Set domain for project
+vercel alias set disciplefy.vercel.app disciplefy.com
+```
+
 ## 🤖 **Automated Deployment (GitHub Actions)**
 
-### **Workflow Configuration**
-The deployment is automated via `.github/workflows/web-deploy.yml`:
+### **Workflow Configuration - Vercel**
+The deployment is automated via `.github/workflows/vercel-deploy.yml`:
 
 ```yaml
-name: Frontend Deployment - Web & Mobile
+name: Vercel Deployment
+
+on:
+  push:
+    branches: [ main ]
+    paths: [ 'frontend/**' ]
+  pull_request:
+    branches: [ main ]
+    paths: [ 'frontend/**' ]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    name: Deploy to Vercel
+    runs-on: ubuntu-latest
+    environment: ${{ github.ref == 'refs/heads/main' && 'production' || 'preview' }}
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.24.1'
+          channel: 'stable'
+          cache: true
+      
+      - name: Install Dependencies
+        run: |
+          cd frontend
+          flutter pub get
+      
+      - name: Build Web App
+        run: |
+          cd frontend
+          flutter build web --release \
+            --web-renderer canvaskit \
+            --base-href "/" \
+            --dart-define=APP_URL=${{ github.ref == 'refs/heads/main' && 'https://disciplefy.vercel.app' || 'https://disciplefy-preview.vercel.app' }} \
+            --dart-define=FLUTTER_WEB_BUILD=true \
+            --dart-define=SUPABASE_URL="${{ secrets.SUPABASE_URL }}" \
+            --dart-define=SUPABASE_ANON_KEY="${{ secrets.SUPABASE_ANON_KEY }}"
+      
+      - name: Deploy to Vercel
+        uses: amondnet/vercel-action@v25
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+          working-directory: frontend/build/web
+          production: ${{ github.ref == 'refs/heads/main' }}
+          scope: ${{ secrets.VERCEL_ORG_ID }}
+```
+
+### **Alternative Workflow - Supabase Storage**
+For Supabase Storage deployment, use `.github/workflows/supabase-deploy.yml`:
+
+```yaml
+name: Supabase Storage Deployment
 
 on:
   push:
     branches: [ main ]
     paths: [ 'frontend/**' ]
   workflow_dispatch:
-    inputs:
-      platform:
-        description: 'Platform to build'
-        required: true
-        default: 'web'
-        type: choice
-        options: [ web, android, ios, all ]
 
 jobs:
-  build-web:
-    name: Build Flutter Web
+  deploy:
+    name: Deploy to Supabase Storage
     runs-on: ubuntu-latest
+    environment: production
     steps:
       - uses: actions/checkout@v4
-      - uses: subosito/flutter-action@v2
+      
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.24.1'
           channel: 'stable'
@@ -115,31 +325,17 @@ jobs:
         run: |
           cd frontend
           flutter pub get
-          flutter build web --release --web-renderer canvaskit
-          
-          # CSP optimization
-          if [ -f "scripts/optimize_csp.sh" ]; then
-            chmod +x scripts/optimize_csp.sh
-            ./scripts/optimize_csp.sh
-          fi
-
-  deploy-web:
-    name: Deploy to Supabase Storage
-    needs: build-web
-    runs-on: ubuntu-latest
-    environment: production
-    steps:
-      - uses: actions/checkout@v4
-      - name: Download build artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: flutter-web-build
-          path: ./web-build
+          flutter build web --release \
+            --web-renderer canvaskit \
+            --base-href "/" \
+            --dart-define=FLUTTER_WEB_BUILD=true \
+            --dart-define=SUPABASE_URL="${{ secrets.SUPABASE_URL }}" \
+            --dart-define=SUPABASE_ANON_KEY="${{ secrets.SUPABASE_ANON_KEY }}"
       
       - name: Deploy to Supabase Storage
         run: |
           npm install -g supabase@1.123.4
-          cd web-build
+          cd frontend/build/web
           supabase storage cp . ss://disciplefy/ \
             --recursive \
             --cache-control "max-age=3600" \
@@ -152,6 +348,16 @@ jobs:
 ### **Required GitHub Secrets**
 Configure these in your repository settings:
 
+#### **For Vercel Deployment:**
+| Secret Name | Description | How to Get |
+|-------------|-------------|-----------|
+| `VERCEL_TOKEN` | Vercel API token | Vercel Dashboard → Settings → Tokens |
+| `VERCEL_ORG_ID` | Vercel organization ID | Vercel Dashboard → Settings → General |
+| `VERCEL_PROJECT_ID` | Vercel project ID | Project Settings → General |
+| `SUPABASE_URL` | Supabase project URL | `https://wzdcwxvyjuxjgzpnukvm.supabase.co` |
+| `SUPABASE_ANON_KEY` | Supabase anonymous key | Supabase Dashboard → Settings → API |
+
+#### **For Supabase Storage Deployment:**
 | Secret Name | Description | Example |
 |-------------|-------------|---------|
 | `SUPABASE_ACCESS_TOKEN` | Supabase CLI access token | `sbp_xxx...` |
@@ -160,52 +366,143 @@ Configure these in your repository settings:
 | `SUPABASE_ANON_KEY` | Supabase anonymous key | `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...` |
 
 ### **Triggering Deployment**
+
+#### **Vercel Deployment:**
+```bash
+# Automatic deployment (on push to main)
+git push origin main
+
+# Preview deployment (on PR)
+git checkout -b feature/new-feature
+git push origin feature/new-feature
+# Create PR → automatic preview deployment
+
+# Manual deployment (via GitHub Actions)
+# Go to Actions tab → Vercel Deployment → Run workflow
+```
+
+#### **Supabase Storage Deployment:**
 ```bash
 # Automatic deployment (on push to main)
 git push origin main
 
 # Manual deployment (via GitHub Actions)
-# Go to Actions tab → Web Deploy → Run workflow
+# Go to Actions tab → Supabase Storage Deployment → Run workflow
 ```
 
 ## 🔍 **Deployment Verification**
 
 ### **Automated Checks**
-The deployment workflow includes automated verification:
 
+#### **Vercel Deployment Checks:**
+```bash
+# HTTP status check
+response=$(curl -s -o /dev/null -w "%{http_code}" "https://disciplefy.vercel.app")
+
+if [ "$response" = "200" ]; then
+  echo "✅ Vercel deployment successful (HTTP $response)"
+else
+  echo "❌ Vercel deployment failed (HTTP $response)"
+fi
+
+# Check deployment status
+vercel ls disciplefy
+```
+
+#### **Supabase Storage Deployment Checks:**
 ```bash
 # HTTP status check
 response=$(curl -s -o /dev/null -w "%{http_code}" "https://wzdcwxvyjuxjgzpnukvm.supabase.co/storage/v1/object/public/disciplefy/index.html")
 
 if [ "$response" = "200" ]; then
-  echo "✅ Deployment successful (HTTP $response)"
+  echo "✅ Supabase deployment successful (HTTP $response)"
 else
-  echo "❌ Deployment failed (HTTP $response)"
+  echo "❌ Supabase deployment failed (HTTP $response)"
 fi
 ```
 
 ### **Manual Verification Steps**
-1. **Check HTTP Status**: Ensure app returns 200 OK
+
+#### **For Vercel Deployment:**
+1. **Check HTTP Status**: Ensure `https://disciplefy.vercel.app` returns 200 OK
+2. **Test CSP**: Verify no CSP violations in browser console
+3. **Test Functionality**: Ensure all features work
+4. **Check Performance**: Verify acceptable loading times
+5. **Test Mobile**: Check responsive design
+6. **Verify Environment**: Check that environment variables are correctly set
+
+#### **For Supabase Storage Deployment:**
+1. **Check HTTP Status**: Ensure Supabase storage URL returns 200 OK
 2. **Test CSP**: Verify no CSP violations in browser console
 3. **Test Functionality**: Ensure all features work
 4. **Check Performance**: Verify acceptable loading times
 5. **Test Mobile**: Check responsive design
 
 ### **Post-Deployment Checklist**
-- [ ] App loads successfully
+- [ ] App loads successfully at production URL
 - [ ] No JavaScript errors in console
 - [ ] No CSP violations
-- [ ] Authentication works
+- [ ] Authentication works with Supabase
 - [ ] API calls succeed
-- [ ] All pages/routes work
-- [ ] Mobile responsive
-- [ ] Performance acceptable
+- [ ] All pages/routes work correctly
+- [ ] Mobile responsive design
+- [ ] Performance acceptable (< 3s load time)
+- [ ] PWA installation works
+- [ ] Service worker registers correctly
 
 ## 🛠️ **Deployment Troubleshooting**
 
 ### **Common Issues**
 
-#### **1. Supabase CLI Authentication Failed**
+#### **Vercel Deployment Issues:**
+
+##### **1. Vercel CLI Authentication Failed**
+```bash
+# Error: "Authentication failed"
+# Solution: Login to Vercel
+vercel login
+
+# Or set token manually:
+export VERCEL_TOKEN="your-vercel-token"
+```
+
+##### **2. Build Fails on Vercel**
+```bash
+# Error: Flutter build fails
+# Solution: Check Flutter version and dependencies
+flutter --version
+flutter clean
+flutter pub get
+flutter doctor
+flutter build web --verbose
+```
+
+##### **3. Environment Variables Not Set**
+```bash
+# Error: Environment variables undefined
+# Solution: Check Vercel project settings
+vercel env ls
+vercel env add SUPABASE_URL
+vercel env add SUPABASE_ANON_KEY
+```
+
+##### **4. Function Timeout**
+```bash
+# Error: Function execution timed out
+# Solution: Check vercel.json configuration
+# Add to vercel.json:
+{
+  "functions": {
+    "frontend/build/web/index.html": {
+      "maxDuration": 30
+    }
+  }
+}
+```
+
+#### **Supabase Storage Issues:**
+
+##### **1. Supabase CLI Authentication Failed**
 ```bash
 # Error: "Authentication failed"
 # Solution: Regenerate access token
@@ -214,7 +511,7 @@ supabase login
 export SUPABASE_ACCESS_TOKEN="your-new-token"
 ```
 
-#### **2. Build Fails**
+##### **2. Build Fails**
 ```bash
 # Error: Flutter build fails
 # Solution: Check dependencies and clean build
@@ -224,28 +521,68 @@ flutter doctor
 flutter build web --verbose
 ```
 
-#### **3. CSP Violations After Deployment**
+##### **3. CSP Violations After Deployment**
 ```bash
 # Error: CSP blocks resources
 # Solution: Check CSP in deployed index.html
 curl -s "https://wzdcwxvyjuxjgzpnukvm.supabase.co/storage/v1/object/public/disciplefy/index.html" | grep -i "content-security-policy"
 ```
 
-#### **4. Assets Not Loading**
+#### **Common Issues (Both Platforms):**
+
+##### **1. Assets Not Loading**
 ```bash
 # Error: Images, fonts, etc. not loading
-# Solution: Check asset paths and CSP
+# Solution: Check asset paths and base href
+# Vercel:
+curl -I "https://disciplefy.vercel.app/assets/AssetManifest.json"
+# Supabase:
 curl -I "https://wzdcwxvyjuxjgzpnukvm.supabase.co/storage/v1/object/public/disciplefy/assets/AssetManifest.json"
 ```
 
-#### **5. API Connection Issues**
+##### **2. API Connection Issues**
 ```bash
 # Error: API calls fail
-# Solution: Check connect-src in CSP and CORS
-curl -s "https://wzdcwxvyjuxjgzpnukvm.supabase.co/storage/v1/object/public/disciplefy/index.html" | grep -o "connect-src[^;]*"
+# Solution: Check CORS and environment variables
+# Test API connectivity:
+curl -I "https://wzdcwxvyjuxjgzpnukvm.supabase.co/functions/v1/env-test"
+```
+
+##### **3. PWA Installation Issues**
+```bash
+# Error: PWA doesn't install
+# Solution: Check manifest.json and service worker
+# Vercel:
+curl -I "https://disciplefy.vercel.app/manifest.json"
+# Supabase:
+curl -I "https://wzdcwxvyjuxjgzpnukvm.supabase.co/storage/v1/object/public/disciplefy/manifest.json"
 ```
 
 ### **Debug Commands**
+
+#### **Vercel Debug Commands:**
+```bash
+# Check deployment status
+vercel ls disciplefy
+
+# Check deployment logs
+vercel logs disciplefy
+
+# Check environment variables
+vercel env ls
+
+# Test specific files
+curl -I "https://disciplefy.vercel.app/flutter.js"
+curl -I "https://disciplefy.vercel.app/manifest.json"
+
+# Check headers
+curl -I "https://disciplefy.vercel.app"
+
+# Download deployed file for inspection
+curl -s "https://disciplefy.vercel.app/index.html" > debug_index.html
+```
+
+#### **Supabase Debug Commands:**
 ```bash
 # Check deployed files
 supabase storage ls ss://disciplefy/ --project-ref wzdcwxvyjuxjgzpnukvm
@@ -390,20 +727,51 @@ curl -f "https://wzdcwxvyjuxjgzpnukvm.supabase.co/functions/v1/env-test" > /dev/
 
 ## 🎉 **Success Indicators**
 
-Your deployment is successful when:
+### **Vercel Deployment Success:**
+Your Vercel deployment is successful when:
 - ✅ **GitHub Actions workflow** completes without errors
-- ✅ **App loads** at the production URL
+- ✅ **App loads** at `https://disciplefy.vercel.app`
+- ✅ **No console errors** in browser
+- ✅ **All features work** as expected
+- ✅ **Performance is acceptable** (< 3s load time)
+- ✅ **Mobile responsive** design works
+- ✅ **PWA installation** works correctly
+- ✅ **Environment variables** are set correctly
+- ✅ **Custom domain** (if configured) works
+
+### **Supabase Storage Deployment Success:**
+Your Supabase deployment is successful when:
+- ✅ **GitHub Actions workflow** completes without errors
+- ✅ **App loads** at the Supabase Storage URL
 - ✅ **No console errors** in browser
 - ✅ **All features work** as expected
 - ✅ **Performance is acceptable** (< 3s load time)
 - ✅ **Mobile responsive** design works
 - ✅ **CSP violations resolved**
 
+## 📚 **Quick Reference**
+
+### **Production Build Command:**
+```bash
+flutter build web --release \
+  --base-href "/" \
+  --dart-define=APP_URL=https://disciplefy.vercel.app \
+  --dart-define=FLUTTER_WEB_BUILD=true \
+  --dart-define=SUPABASE_URL="https://wzdcwxvyjuxjgzpnukvm.supabase.co" \
+  --dart-define=SUPABASE_ANON_KEY="your-anon-key"
+```
+
+### **Deployment URLs:**
+- **Primary (Vercel)**: https://disciplefy.vercel.app
+- **Alternative (Supabase)**: https://wzdcwxvyjuxjgzpnukvm.supabase.co/storage/v1/object/public/disciplefy/
+- **Preview (Vercel)**: https://disciplefy-{branch}.vercel.app
+
+### **Key Files:**
+- `vercel.json` - Vercel configuration
+- `frontend/build/web/` - Built Flutter web app
+- `.github/workflows/vercel-deploy.yml` - Vercel deployment workflow
+- `.github/workflows/supabase-deploy.yml` - Supabase deployment workflow
+
 ---
 
-*This guide ensures reliable, automated deployment of your Flutter web app to Supabase Storage with proper CSP configuration.*
-
-flutter build web --release \
-  --base-href / --dart-define=APP_URL=https://disciplefy.vercel.app --dart-define=FLUTTER_WEB_BUILD=true \
-          --dart-define=SUPABASE_URL="https://wzdcwxvyjuxjgzpnukvm.supabase.co" \
-          --dart-define=SUPABASE_ANON_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind6ZGN3eHZ5anV4amd6cG51a3ZtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTE4MDY3MjMsImV4cCI6MjA2NzM4MjcyM30.FRwVStEigv5hh_-I8ct3QcY_GswCKWcEMCtkjXvq8FA"
+*This guide ensures reliable, automated deployment of your Flutter web app to Vercel (primary) or Supabase Storage with proper configuration and monitoring.*
