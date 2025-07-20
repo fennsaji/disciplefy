@@ -4,7 +4,7 @@ import { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2'
  * Analytics event data structure.
  */
 interface AnalyticsEventData {
-  [key: string]: string | number | boolean | null | undefined
+  [key: string]: string | number | boolean | null | undefined | Record<string, any>
 }
 
 /**

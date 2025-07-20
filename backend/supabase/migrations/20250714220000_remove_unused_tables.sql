@@ -34,7 +34,6 @@ BEGIN
     DROP POLICY IF EXISTS "recommended_guide_sessions_select_policy" ON public.recommended_guide_sessions;
     DROP POLICY IF EXISTS "anonymous_study_guides_select_policy" ON public.anonymous_study_guides;
     DROP POLICY IF EXISTS "anonymous_study_guides_new_select_policy" ON public.anonymous_study_guides_new;
-    DROP
     
     -- Note: Some policies may not exist, which is fine
 EXCEPTION

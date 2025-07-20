@@ -1,363 +1,235 @@
-import { serve } from "https://deno.land/std@0.208.0/http/server.ts"
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-import { corsHeaders } from '../_shared/cors.ts'
-import { ErrorHandler, AppError } from '../_shared/error-handler.ts'
-import { SecurityValidator } from '../_shared/security-validator.ts'
-import { AnalyticsLogger } from '../_shared/analytics-logger.ts'
+/**
+ * Google Auth Callback Edge Function
+ * 
+ * Refactored according to security guide to implement proper CSRF protection
+ * and use centralized services.
+ */
 
+import { createFunction } from '../_shared/core/function-factory.ts'
+import { ServiceContainer } from '../_shared/core/services.ts'
+import { AppError } from '../_shared/utils/error-handler.ts'
+import { ApiSuccessResponse } from '../_shared/types/index.ts'
+
+/**
+ * Google callback request payload
+ */
 interface GoogleCallbackRequest {
-  code: string
-  state?: string
-  error?: string
-  error_description?: string
+  readonly code: string
+  readonly state?: string
+  readonly error?: string
+  readonly error_description?: string
 }
 
+/**
+ * Google callback response data
+ */
 interface GoogleCallbackResponse {
-  success: boolean
-  session?: {
-    access_token: string
-    refresh_token: string
-    expires_in: number
-    user: {
-      id: string
-      email: string
-      email_verified: boolean
-      name: string
-      picture: string
-      provider: string
+  readonly session?: {
+    readonly access_token: string
+    readonly refresh_token: string
+    readonly expires_in: number
+    readonly user: {
+      readonly id: string
+      readonly email: string
+      readonly email_verified: boolean
+      readonly name: string
+      readonly picture: string
+      readonly provider: string
     }
   }
-  error?: string
-  redirect_url?: string
+  readonly error?: string
 }
 
-serve(async (req: Request) => {
-  // Handle CORS preflight
-  if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders })
+/**
+ * Complete API response structure
+ */
+interface GoogleCallbackApiResponse extends ApiSuccessResponse<GoogleCallbackResponse> {}
+
+/**
+ * Main handler for Google auth callback
+ */
+async function handleGoogleCallback(req: Request, services: ServiceContainer): Promise<Response> {
+  const { authService, securityValidator, analyticsLogger, supabaseServiceClient } = services
+  // Parse request body
+  let requestData: GoogleCallbackRequest
+  try {
+    requestData = await req.json()
+  } catch (error) {
+    throw new AppError('INVALID_REQUEST', 'Invalid JSON in request body', 400)
   }
 
-  try {
-    // Only allow POST requests for security
-    if (req.method !== 'POST') {
-      throw new AppError('METHOD_NOT_ALLOWED', 'Only POST requests are allowed', 405)
-    }
-
-    // Initialize Supabase client
-    const supabaseClient = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-      {
-        auth: {
-          autoRefreshToken: false,
-          persistSession: false,
-        },
-      }
+  // Check for OAuth error
+  if (requestData.error) {
+    throw new AppError(
+      'AUTHENTICATION_ERROR',
+      `OAuth error: ${requestData.error_description || requestData.error}`,
+      401
     )
-
-    // Parse request body
-    const requestBody: GoogleCallbackRequest = await req.json()
-    
-    // Validate required fields
-    if (!requestBody.code && !requestBody.error) {
-      throw new AppError('INVALID_REQUEST', 'Either code or error parameter is required')
-    }
-
-    // Handle OAuth error response
-    if (requestBody.error) {
-      await logOAuthError(supabaseClient, requestBody, req)
-      throw new AppError('OAUTH_ERROR', requestBody.error_description || requestBody.error)
-    }
-
-    // Validate authorization code
-    if (!requestBody.code || typeof requestBody.code !== 'string') {
-      throw new AppError('INVALID_REQUEST', 'Invalid authorization code')
-    }
-
-    // Security validation
-    const securityResult = await SecurityValidator.validateRequest(req, {
-      checkRateLimit: true,
-      maxRequestsPerHour: 30,
-      requireValidReferer: true,
-      allowedReferers: [
-        'https://accounts.google.com',
-        'http://127.0.0.1:59641',
-        'http://localhost:59641',
-        'https://disciplefy.vercel.app'
-      ]
-    })
-
-    if (!securityResult.isValid) {
-      throw new AppError('SECURITY_VIOLATION', securityResult.reason)
-    }
-
-    // Validate state parameter for CSRF protection
-    if (requestBody.state) {
-      const isValidState = await validateStateParameter(supabaseClient, requestBody.state)
-      if (!isValidState) {
-        await logSecurityEvent(supabaseClient, 'CSRF_INVALID_STATE', req, { state: requestBody.state })
-        throw new AppError('CSRF_VALIDATION_FAILED', 'Invalid state parameter')
-      }
-    }
-
-    // Exchange authorization code for tokens
-    const { data: sessionData, error: sessionError } = await supabaseClient.auth.exchangeCodeForSession(requestBody.code)
-
-    if (sessionError) {
-      await logOAuthError(supabaseClient, { 
-        code: requestBody.code, 
-        error: sessionError.message 
-      }, req)
-      throw new AppError('OAUTH_EXCHANGE_FAILED', sessionError.message)
-    }
-
-    if (!sessionData?.session || !sessionData?.user) {
-      throw new AppError('OAUTH_SESSION_FAILED', 'Failed to create session from OAuth callback')
-    }
-
-    // Log successful authentication
-    await logSuccessfulAuth(supabaseClient, sessionData.user, req)
-
-    // Check if user needs to migrate from anonymous session
-    const migrationResult = await handleAnonymousSessionMigration(
-      supabaseClient, 
-      sessionData.user.id, 
-      req
-    )
-
-    // Prepare response
-    const response: GoogleCallbackResponse = {
-      success: true,
-      session: {
-        access_token: sessionData.session.access_token,
-        refresh_token: sessionData.session.refresh_token,
-        expires_in: sessionData.session.expires_in || 3600,
-        user: {
-          id: sessionData.user.id,
-          email: sessionData.user.email || '',
-          email_verified: sessionData.user.email_confirmed_at !== null,
-          name: sessionData.user.user_metadata?.full_name || sessionData.user.user_metadata?.name || '',
-          picture: sessionData.user.user_metadata?.avatar_url || sessionData.user.user_metadata?.picture || '',
-          provider: 'google'
-        }
-      },
-      redirect_url: determineRedirectUrl(req, sessionData.user)
-    }
-
-    // Log analytics event
-    const analyticsLogger = new AnalyticsLogger(supabaseClient)
-    await analyticsLogger.logEvent(
-      'oauth_login_success',
-      {
-        provider: 'google',
-        email_verified: response.session.user.email_verified,
-        migration_performed: migrationResult.migrated,
-        guides_migrated: migrationResult.guides_migrated,
-        user_id: sessionData.user.id,
-      },
-      req.headers.get('x-forwarded-for')
-    )
-
-    return new Response(
-      JSON.stringify(response),
-      {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 200,
-      }
-    )
-
-  } catch (error) {
-    return ErrorHandler.handleError(error, corsHeaders)
   }
-})
 
-async function validateStateParameter(supabaseClient: any, state: string): Promise<boolean> {
-  try {
-    // In a real implementation, you would store state parameters in a cache/database
-    // and validate them here. For this demo, we'll do basic validation.
+  // Validate authorization code
+  if (!requestData.code) {
+    throw new AppError('VALIDATION_ERROR', 'Authorization code is required', 400)
+  }
+
+  // Proper CSRF protection - validate state parameter (required)
+  if (!requestData.state) {
+    throw new AppError('SECURITY_VIOLATION', 'State parameter is required for CSRF protection', 400)
+  }
+  await validateStateParameter(requestData.state, { ...securityValidator, supabaseClient: supabaseServiceClient })
+
+  // Exchange authorization code for tokens
+  const sessionData = await exchangeCodeForTokens(supabaseServiceClient, requestData.code)
+
+  // Log analytics
+  await analyticsLogger.logEvent('google_auth_callback_success', {
+    user_id: sessionData.session?.user.id,
+    email_verified: sessionData.session?.user.email_verified,
+    provider: 'google'
+  }, req.headers.get('x-forwarded-for'))
+
+  // Build response
+  const response: GoogleCallbackApiResponse = {
+    success: true,
+    data: sessionData
+  }
+
+  return new Response(JSON.stringify(response), {
+    status: 200,
+    headers: { 'Content-Type': 'application/json' }
+  })
+}
+
+/**
+ * Validates OAuth state parameter for proper CSRF protection
+ * 
+ * This implements complete CSRF protection by validating the state parameter
+ * against a securely stored value in the database.
+ */
+async function validateStateParameter(state: string, securityValidator: any): Promise<void> {
+  // First, validate the state parameter format for security
+  const securityResult = await securityValidator.validateInput(state, 'oauth_state')
+  
+  if (!securityResult.isValid) {
+    throw new AppError('SECURITY_VIOLATION', 'Invalid state parameter format', 400)
+  }
+
+  // Basic format validation
+  if (!state || state.length < 16) {
+    throw new AppError('SECURITY_VIOLATION', 'State parameter too short or missing', 400)
+  }
+
+  // Validate state is a valid UUID or random string
+  const statePattern = /^[a-zA-Z0-9_-]{16,128}$/
+  if (!statePattern.test(state)) {
+    throw new AppError('SECURITY_VIOLATION', 'Invalid state parameter format', 400)
+  }
+
+  // Retrieve and validate the stored state from database
+  const { data: storedState, error } = await securityValidator.supabaseClient
+    .from('oauth_states')
+    .select('state, created_at, used')
+    .eq('state', state)
+    .eq('used', false)
+    .single()
+
+  if (error || !storedState) {
+    throw new AppError('SECURITY_VIOLATION', 'Invalid or expired state parameter', 400)
+  }
+
+  // Check if state has expired (15 minutes)
+  const stateAge = Date.now() - new Date(storedState.created_at).getTime()
+  const maxAge = 15 * 60 * 1000 // 15 minutes in milliseconds
+  
+  if (stateAge > maxAge) {
+    // Clean up expired state
+    await securityValidator.supabaseClient
+      .from('oauth_states')
+      .delete()
+      .eq('state', state)
     
-    // State should be a UUID or similar secure random string
-    const stateRegex = /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i
-    if (!stateRegex.test(state)) {
-      return false
-    }
+    throw new AppError('SECURITY_VIOLATION', 'State parameter has expired', 400)
+  }
 
-    // Check if state exists in temporary storage (implement based on your needs)
-    // For now, we'll accept any valid UUID format
-    return true
-  } catch (error) {
-    console.error('State validation error:', error)
+  // Perform constant-time comparison to prevent timing attacks
+  if (!constantTimeEquals(state, storedState.state)) {
+    throw new AppError('SECURITY_VIOLATION', 'State parameter mismatch', 400)
+  }
+
+  // Mark state as used to prevent reuse
+  const { error: updateError } = await securityValidator.supabaseClient
+    .from('oauth_states')
+    .update({ used: true, used_at: new Date().toISOString() })
+    .eq('state', state)
+
+  if (updateError) {
+    console.error('Failed to mark OAuth state as used:', updateError)
+    // Don't fail the request for this, but log it
+  }
+}
+
+/**
+ * Constant-time string comparison to prevent timing attacks
+ */
+function constantTimeEquals(a: string, b: string): boolean {
+  if (a.length !== b.length) {
     return false
   }
-}
-
-async function logOAuthError(
-  supabaseClient: any, 
-  errorData: any, 
-  req: Request
-): Promise<void> {
-  try {
-    await supabaseClient
-      .from('llm_security_events')
-      .insert({
-        event_type: 'oauth_callback_error',
-        input_text: JSON.stringify(errorData),
-        risk_score: 0.3,
-        action_taken: 'logged',
-        detection_details: {
-          error_type: errorData.error,
-          error_description: errorData.error_description,
-          timestamp: new Date().toISOString()
-        },
-        ip_address: req.headers.get('x-forwarded-for'),
-        created_at: new Date().toISOString()
-      })
-  } catch (error) {
-    console.error('Failed to log OAuth error:', error)
+  
+  let result = 0
+  for (let i = 0; i < a.length; i++) {
+    result |= a.charCodeAt(i) ^ b.charCodeAt(i)
   }
+  
+  return result === 0
 }
 
-async function logSecurityEvent(
-  supabaseClient: any, 
-  eventType: string, 
-  req: Request, 
-  details: any
-): Promise<void> {
+/**
+ * Exchanges authorization code for access tokens
+ */
+async function exchangeCodeForTokens(supabaseClient: any, code: string): Promise<GoogleCallbackResponse> {
   try {
-    await supabaseClient
-      .from('llm_security_events')
-      .insert({
-        event_type: eventType,
-        input_text: JSON.stringify(details),
-        risk_score: 0.8,
-        action_taken: 'blocked',
-        detection_details: {
-          ...details,
-          timestamp: new Date().toISOString()
-        },
-        ip_address: req.headers.get('x-forwarded-for'),
-        created_at: new Date().toISOString()
-      })
-  } catch (error) {
-    console.error('Failed to log security event:', error)
-  }
-}
+    // Exchange code for session using Supabase auth
+    const { data, error } = await supabaseClient.auth.exchangeCodeForSession(code)
 
-async function logSuccessfulAuth(
-  supabaseClient: any, 
-  user: any, 
-  req: Request
-): Promise<void> {
-  try {
-    await supabaseClient
-      .from('analytics_events')
-      .insert({
-        user_id: user.id,
-        event_type: 'oauth_login_success',
-        event_data: {
-          provider: 'google',
-          email: user.email,
-          email_verified: user.email_confirmed_at !== null,
-          user_metadata: user.user_metadata
-        },
-        ip_address: req.headers.get('x-forwarded-for'),
-        user_agent: req.headers.get('user-agent'),
-        created_at: new Date().toISOString()
-      })
-  } catch (error) {
-    console.error('Failed to log successful auth:', error)
-  }
-}
-
-async function handleAnonymousSessionMigration(
-  supabaseClient: any, 
-  userId: string, 
-  req: Request
-): Promise<{ migrated: boolean; guides_migrated: number }> {
-  try {
-    // Check if there's an anonymous session to migrate
-    const sessionId = req.headers.get('x-anonymous-session-id')
-    
-    if (!sessionId) {
-      return { migrated: false, guides_migrated: 0 }
+    if (error) {
+      throw new AppError('AUTHENTICATION_ERROR', `Failed to exchange code: ${error.message}`, 401)
     }
 
-    // Get anonymous session
-    const { data: anonymousSession, error: sessionError } = await supabaseClient
-      .from('anonymous_sessions')
-      .select('*, anonymous_study_guides(*)')
-      .eq('session_id', sessionId)
-      .eq('is_migrated', false)
-      .single()
-
-    if (sessionError || !anonymousSession) {
-      return { migrated: false, guides_migrated: 0 }
+    if (!data.session || !data.user) {
+      throw new AppError('AUTHENTICATION_ERROR', 'No session or user data returned', 401)
     }
 
-    // Migrate anonymous study guides to authenticated user
-    const guides = anonymousSession.anonymous_study_guides || []
-    let migratedCount = 0
-
-    if (guides.length > 0) {
-      const authenticatedGuides = guides.map((guide: any) => ({
-        user_id: userId,
-        input_type: guide.input_type,
-        input_value: 'migrated_from_anonymous',
-        summary: guide.summary,
-        context: guide.context,
-        related_verses: guide.related_verses,
-        reflection_questions: guide.reflection_questions,
-        prayer_points: guide.prayer_points,
-        language: guide.language,
-        is_saved: true,
-        created_at: guide.created_at
-      }))
-
-      const { error: insertError } = await supabaseClient
-        .from('study_guides')
-        .insert(authenticatedGuides)
-
-      if (!insertError) {
-        migratedCount = guides.length
+    return {
+      session: {
+        access_token: data.session.access_token,
+        refresh_token: data.session.refresh_token,
+        expires_in: data.session.expires_in || 3600,
+        user: {
+          id: data.user.id,
+          email: data.user.email || '',
+          email_verified: data.user.email_confirmed_at ? true : false,
+          name: data.user.user_metadata?.name || data.user.user_metadata?.full_name || '',
+          picture: data.user.user_metadata?.avatar_url || data.user.user_metadata?.picture || '',
+          provider: data.user.app_metadata?.provider || 'google'
+        }
       }
     }
-
-    // Mark session as migrated
-    await supabaseClient
-      .from('anonymous_sessions')
-      .update({ 
-        is_migrated: true,
-        last_activity: new Date().toISOString()
-      })
-      .eq('session_id', sessionId)
-
-    return { migrated: true, guides_migrated: migratedCount }
   } catch (error) {
-    console.error('Anonymous session migration failed:', error)
-    return { migrated: false, guides_migrated: 0 }
+    if (error instanceof AppError) {
+      throw error
+    }
+    const errorMessage = error instanceof Error ? error.message : 'Unknown authentication error'
+    throw new AppError('AUTHENTICATION_ERROR', `Authentication failed: ${errorMessage}`, 401)
   }
 }
 
-function determineRedirectUrl(req: Request, user: any): string {
-  // Check for custom redirect URL in headers
-  const customRedirect = req.headers.get('x-redirect-url')
-  if (customRedirect) {
-    return customRedirect
-  }
-
-  // Check if request is from mobile app (no referer or mobile user agent)
-  const referer = req.headers.get('referer')
-  const userAgent = req.headers.get('user-agent') || ''
-  
-  // For mobile apps (no referer or mobile user agent), use deep link
-  if (!referer || userAgent.includes('Mobile') || userAgent.includes('Android') || userAgent.includes('iOS')) {
-    return 'com.disciplefy.bible_study_app://auth/callback'
-  }
-
-  // Default redirect based on environment (web only)
-  if (referer?.includes('localhost') || referer?.includes('127.0.0.1')) {
-    return 'http://localhost:59641/auth/callback'
-  }
-
-  return 'https://disciplefy.vercel.app/auth/callback'
-}
+// Wrap the handler in the factory
+createFunction(async (req: Request, services: ServiceContainer) => {
+  return await handleGoogleCallback(req, services)
+}, {
+  requireAuth: false,
+  enableAnalytics: true,
+  allowedMethods: ['POST'],
+  timeout: 15000
+})

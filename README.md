@@ -486,3 +486,10 @@ This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) 
 **🌟 Star this repository if Disciplefy Bible Study App helps deepen your faith journey!**
 
 *Built with ❤️ for transformational Bible study using modern technology and timeless wisdom.*
+
+
+## LLM Prompt Templates
+Analyse [File or Folder path]  and check if it is implemented and mark completed stuff as Completed. Also check if correctly implemented, if any bugs or logical errors update the respective document. Also if not completed mark as Pending. Update the same document with status
+
+
+Analyse [File or Folder path] and find out any bugs, logical errors, not complying Coding principles like DRY, SOLID and Clean Code Principles, and/or Compilation issues. And documenet in @[path]/docs and no coding 

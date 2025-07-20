@@ -18,8 +18,8 @@ Authorization: Bearer YOUR_ACCESS_TOKEN
 ```
 
 ### Rate Limits
-- **Anonymous Users**: 3 requests per hour per IP
-- **Authenticated Users**: 30 requests per hour per user
+- **Anonymous Users**: 3 requests per 8-hour window per session
+- **Authenticated Users**: 10 requests per hour per user
 
 ---
 
@@ -44,12 +44,7 @@ Authorization: Bearer YOUR_ACCESS_TOKEN (optional)
 {
   "input_type": "scripture | topic",
   "input_value": "string (required)",
-  "language": "string (optional, default: 'en')",
-  "user_context": {
-    "is_authenticated": "boolean",
-    "user_id": "string (optional)",
-    "session_id": "string (optional for anonymous)"
-  }
+  "language": "string (optional, default: 'en')"
 }
 ```
 
@@ -57,22 +52,38 @@ Authorization: Bearer YOUR_ACCESS_TOKEN (optional)
 - `input_type`: Type of input - either "scripture" for Bible verses or "topic" for study topics
 - `input_value`: The actual scripture reference (e.g., "John 3:16") or topic name (e.g., "Faith")
 - `language`: Language code (supported: "en", "hi", "ml")
-- `user_context`: Context information for personalization and storage
+
+**Authentication Note**: User context is now automatically determined from the JWT token in the Authorization header for secure authentication.
 
 **Response Body**:
 ```json
 {
   "success": true,
   "data": {
-    "id": "string",
-    "summary": "string",
-    "interpretation": "string",
-    "context": "string",
-    "related_verses": ["string"],
-    "reflection_questions": ["string"],
-    "prayer_points": ["string"],
-    "language": "string",
-    "created_at": "string (ISO 8601)"
+    "study_guide": {
+      "id": "string",
+      "input": {
+        "type": "scripture | topic",
+        "value": "string",
+        "language": "string"
+      },
+      "content": {
+        "summary": "string",
+        "interpretation": "string",
+        "context": "string",
+        "relatedVerses": ["string"],
+        "reflectionQuestions": ["string"],
+        "prayerPoints": ["string"]
+      },
+      "isSaved": "boolean",
+      "createdAt": "string (ISO 8601)",
+      "updatedAt": "string (ISO 8601)"
+    },
+    "from_cache": "boolean",
+    "cache_stats": {
+      "hit_rate": "number",
+      "response_time_ms": "number"
+    }
   },
   "rate_limit": {
     "remaining": "number",
@@ -120,12 +131,14 @@ Authorization: Bearer YOUR_ACCESS_TOKEN (optional)
 }
 ```
 
-**Notes**:
-- Includes prompt injection detection and content filtering
-- Returns proper error responses if LLM service is unavailable (no mock data fallback)
-- Anonymous users' input is hashed for privacy
-- Authenticated users' studies are saved to their account
-- Anonymous sessions are automatically created if they don't exist when saving guides
+**Security Notes**:
+- **Authentication**: User identity is securely validated via JWT token with signature verification, preventing user impersonation
+- **Input Validation**: Includes prompt injection detection and content filtering
+- **Rate Limiting**: Enforced based on authenticated user identity using centralized service, preventing bypass attacks
+- **Content Caching**: Efficiently caches generated content to reduce API calls
+- **Error Handling**: Returns proper error responses if LLM service is unavailable
+- **Privacy**: Anonymous users' input is hashed for privacy protection
+- **Environment Security**: All environment variables centralized with proper validation
 
 ---
 
@@ -356,11 +369,8 @@ X-Anonymous-Session-ID: session_id (optional, for migration)
 ```json
 {
   "success": false,
-  "error": "OAUTH_EXCHANGE_FAILED",
-  "message": "Failed to exchange authorization code for tokens",
-  "details": {
-    "oauth_error": "invalid_grant"
-  }
+  "error": "UNAUTHORIZED",
+  "message": "Invalid or expired token"
 }
 ```
 
@@ -505,7 +515,76 @@ Authorization: Bearer SUPABASE_ANON_KEY (creation) or Bearer USER_ACCESS_TOKEN (
 
 ---
 
-### 6. Manage Study Guides
+### 6. Daily Verse
+
+**Endpoint**: `GET /functions/v1/daily-verse`
+
+**Description**: Retrieves the daily Bible verse with multiple language translations using AI-powered verse generation.
+
+**Authentication**: Not required (public endpoint)
+
+**Request Headers**:
+```
+Content-Type: application/json
+```
+
+**Query Parameters**:
+- `date` (optional): Specific date for verse in YYYY-MM-DD format (default: today)
+
+**Example Request**:
+```
+GET /functions/v1/daily-verse?date=2025-07-20
+```
+
+**Response Body**:
+```json
+{
+  "success": true,
+  "data": {
+    "reference": "string (e.g., 'John 3:16')",
+    "date": "string (YYYY-MM-DD)",
+    "translations": {
+      "esv": "string (English Standard Version)",
+      "hindi": "string (Hindi translation)",
+      "malayalam": "string (Malayalam translation)"
+    },
+    "fromCache": "boolean",
+    "timestamp": "string (ISO 8601)"
+  }
+}
+```
+
+**Error Responses**:
+
+**400 Bad Request**:
+```json
+{
+  "success": false,
+  "error": "VALIDATION_ERROR",
+  "message": "Invalid date format. Please use YYYY-MM-DD."
+}
+```
+
+**502 Bad Gateway**:
+```json
+{
+  "success": false,
+  "error": "LLM_SERVICE_ERROR",
+  "message": "Unable to generate daily verse content"
+}
+```
+
+**Notes**:
+- Uses LLM-powered verse generation with anti-repetition logic
+- Automatically excludes recently used verses (past 30 days)
+- Supports caching for improved performance
+- No authentication or rate limiting required
+- Analytics logging tracks verse access patterns
+- Fallback system ensures verse availability even if LLM fails
+
+---
+
+### 7. Manage Study Guides
 
 **Endpoint**: `GET /functions/v1/study-guides` and `POST /functions/v1/study-guides`
 
@@ -513,7 +592,7 @@ Authorization: Bearer SUPABASE_ANON_KEY (creation) or Bearer USER_ACCESS_TOKEN (
 
 **Authentication**: Required for saving/unsaving guides, optional for retrieval
 
-#### 6.1 Get Study Guides
+#### 7.1 Get Study Guides
 
 **Method**: `GET /functions/v1/study-guides`
 
@@ -562,7 +641,7 @@ GET /functions/v1/study-guides?saved=true&limit=10&offset=0
 }
 ```
 
-#### 6.2 Save/Unsave Study Guide
+#### 7.2 Save/Unsave Study Guide
 
 **Method**: `POST /functions/v1/study-guides`
 
@@ -690,8 +769,8 @@ X-RateLimit-Reset: 1609459200
 - XSS prevention for user content
 
 ### Rate Limiting
-- Anonymous users: 3 requests/hour per IP
-- Authenticated users: 30 requests/hour per user
+- Anonymous users: 3 requests per 8-hour window per session
+- Authenticated users: 10 requests per hour per user
 - OAuth callbacks: 30 attempts/hour per IP
 
 ### Privacy Protection
@@ -737,6 +816,10 @@ const { data, error } = await supabase.functions.invoke('study-generate', {
   }
 });
 
+// Access the generated study guide
+const studyGuide = data.study_guide;
+const content = studyGuide.content;
+
 // Get saved study guides
 const { data: guides } = await supabase.functions.invoke('study-guides', {
   body: {},
@@ -764,6 +847,10 @@ final response = await Supabase.instance.client.functions.invoke(
   },
 );
 
+// Access the generated study guide
+final studyGuide = response.data['study_guide'];
+final content = studyGuide['content'];
+
 // Get saved study guides
 final guidesResponse = await Supabase.instance.client.functions.invoke(
   'study-guides',
@@ -783,10 +870,20 @@ final saveResponse = await Supabase.instance.client.functions.invoke(
 
 ### Direct HTTP
 ```bash
-# Generate study guide
+# Generate study guide (authenticated)
 curl -X POST "https://your-project.supabase.co/functions/v1/study-generate" \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -d '{
+    "input_type": "scripture",
+    "input_value": "John 3:16",
+    "language": "en"
+  }'
+
+# Generate study guide (anonymous)
+curl -X POST "https://your-project.supabase.co/functions/v1/study-generate" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_ANON_KEY" \
   -d '{
     "input_type": "scripture",
     "input_value": "John 3:16",
@@ -823,11 +920,14 @@ supabase functions deploy
 ```
 
 ### Environment Variables
-Required environment variables:
+Required environment variables (centrally managed in `config.ts`):
 - `SUPABASE_URL`: Supabase project URL
-- `SUPABASE_ANON_KEY`: Supabase anonymous key
-- `GOOGLE_OAUTH_CLIENT_ID`: Google OAuth client ID
-- `GOOGLE_OAUTH_CLIENT_SECRET`: Google OAuth client secret
+- `SUPABASE_ANON_KEY`: Supabase anonymous key for JWT validation
+- `SUPABASE_SERVICE_ROLE_KEY`: Supabase service role key for database operations
+- `OPENAI_API_KEY`: OpenAI API key for LLM services
+- `ANTHROPIC_API_KEY`: Anthropic API key for LLM services
+- `LLM_PROVIDER`: Primary LLM provider ('openai' or 'anthropic')
+- `USE_MOCK`: Enable mock mode for testing ('true' or 'false')
 
 ### Monitoring
 All endpoints include comprehensive logging:
@@ -839,5 +939,24 @@ All endpoints include comprehensive logging:
 ---
 
 **Last Updated**: July 2025  
-**API Version**: 1.1  
+**API Version**: 1.2  
 **Support**: support@disciplefy.com
+
+## Security Changelog
+
+### Version 1.3 (July 2025)
+- **NEW FEATURE**: Added `/daily-verse` endpoint with LLM-powered verse generation
+- **SECURITY FIX**: Centralized all environment variable access to prevent scattered dependencies
+- **SECURITY FIX**: Implemented dependency injection throughout codebase for better security
+- **IMPROVEMENT**: Enhanced CSRF protection with constant-time comparison
+- **IMPROVEMENT**: Added anonymous session migration with data preservation
+- **IMPROVEMENT**: Implemented anti-repetition logic for daily verses
+- **IMPROVEMENT**: Enhanced service container with proper singleton patterns
+
+### Version 1.2 (July 2025)
+- **BREAKING CHANGE**: Removed `user_context` parameter from study-generate endpoint
+- **SECURITY FIX**: Implemented secure JWT validation to prevent user impersonation
+- **IMPROVEMENT**: Enhanced rate limiting based on authenticated user identity
+- **IMPROVEMENT**: Added comprehensive environment variable validation
+- **IMPROVEMENT**: Optimized service instantiation for better performance
+- **IMPROVEMENT**: Enhanced error handling and type safety

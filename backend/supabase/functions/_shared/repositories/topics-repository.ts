@@ -1,4 +1,4 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 /**
  * Repository for managing Recommended Guide Bible study topics.
@@ -46,18 +46,11 @@ interface DatabaseRecommendedTopic {
  * following the Repository pattern for data access.
  */
 export class TopicsRepository {
-  private supabaseClient: any
-
-  constructor() {
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
-    
-    if (!supabaseUrl || !supabaseServiceKey) {
-      throw new Error('Missing required Supabase configuration')
-    }
-    
-    this.supabaseClient = createClient(supabaseUrl, supabaseServiceKey)
-  }
+  /**
+   * Constructor with dependency injection
+   * @param supabaseClient - Shared SupabaseClient instance from service container
+   */
+  constructor(private readonly supabaseClient: SupabaseClient) {}
   
   /**
    * Retrieves all topics for a specific language.
@@ -223,6 +216,47 @@ export class TopicsRepository {
       topic.description.toLowerCase().includes(normalizedQuery) ||
       topic.tags.some(tag => tag.toLowerCase().includes(normalizedQuery))
     )
+  }
+
+  /**
+   * Retrieves topics with combined filters and proper pagination.
+   * 
+   * @param options - Filter and pagination options
+   * @returns Promise resolving to filtered topics array
+   */
+  async getTopics(options: {
+    category?: string
+    difficulty?: 'beginner' | 'intermediate' | 'advanced'
+    language?: string
+    limit?: number
+    offset?: number
+  }): Promise<readonly RecommendedGuideTopic[]> {
+    const {
+      category,
+      difficulty,
+      language = 'en',
+      limit = 20,
+      offset = 0
+    } = options
+
+    if (language !== 'en') {
+      return []
+    }
+
+    const { data, error } = await this.supabaseClient
+      .rpc('get_recommended_topics', {
+        p_category: category || null,
+        p_difficulty: difficulty || null,
+        p_limit: limit,
+        p_offset: offset
+      })
+
+    if (error) {
+      console.error('Error fetching topics with combined filters:', error)
+      return []
+    }
+
+    return this.mapDatabaseTopicsToInterface(data || [])
   }
 
   /**

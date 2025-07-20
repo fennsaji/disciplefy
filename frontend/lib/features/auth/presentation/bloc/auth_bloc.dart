@@ -2,15 +2,18 @@ import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 import '../../data/services/auth_service.dart';
 import 'auth_event.dart';
 import 'auth_state.dart' as auth_states;
+import '../../../../core/services/http_service.dart';
 
 /// Authentication BLoC managing user authentication state
 /// Follows Clean Architecture principles with proper separation of concerns
 class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
   final AuthService _authService;
   late final StreamSubscription<AuthState> _authStateSubscription;
+  late final StreamSubscription<String> _httpAuthFailureSubscription;
 
   AuthBloc({required AuthService authService})
       : _authService = authService,
@@ -23,6 +26,8 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
     on<SignOutRequested>(_onSignOut);
     on<AuthStateChanged>(_onAuthStateChanged);
     on<DeleteAccountRequested>(_onDeleteAccount);
+    on<TokenRefreshFailed>(_onTokenRefreshFailed);
+    on<ForceLogoutRequested>(_onForceLogout);
 
     // Initialize authentication state
     add(const AuthInitializeRequested());
@@ -33,11 +38,19 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
         add(AuthStateChanged(supabaseAuthState));
       },
     );
+    
+    // Listen to HTTP authentication failures
+    _httpAuthFailureSubscription = HttpService.authFailureStream.listen(
+      (reason) {
+        add(ForceLogoutRequested(reason: reason));
+      },
+    );
   }
 
   @override
   Future<void> close() {
     _authStateSubscription.cancel();
+    _httpAuthFailureSubscription.cancel();
     _authService.dispose();
     return super.close();
   }
@@ -308,6 +321,110 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
         print('Admin check error: $e');
       }
       return false;
+    }
+  }
+
+  /// Handles token refresh failure
+  Future<void> _onTokenRefreshFailed(
+    TokenRefreshFailed event,
+    Emitter<auth_states.AuthState> emit,
+  ) async {
+    try {
+      if (kDebugMode) {
+        print('Token refresh failed: ${event.reason}');
+      }
+      
+      // Clear all authentication data
+      await _clearAllAuthData();
+      
+      // Emit unauthenticated state
+      emit(const auth_states.UnauthenticatedState());
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error handling token refresh failure: $e');
+      }
+      // Still emit unauthenticated state even if cleanup fails
+      emit(const auth_states.UnauthenticatedState());
+    }
+  }
+
+  /// Handles force logout request
+  Future<void> _onForceLogout(
+    ForceLogoutRequested event,
+    Emitter<auth_states.AuthState> emit,
+  ) async {
+    try {
+      if (kDebugMode) {
+        print('Force logout requested: ${event.reason}');
+      }
+      
+      emit(const auth_states.AuthLoadingState());
+      
+      // Clear all authentication data
+      await _clearAllAuthData();
+      
+      // Emit unauthenticated state
+      emit(const auth_states.UnauthenticatedState());
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error during force logout: $e');
+      }
+      // Still emit unauthenticated state even if cleanup fails
+      emit(const auth_states.UnauthenticatedState());
+    }
+  }
+
+  /// Clear all authentication data and user data
+  Future<void> _clearAllAuthData() async {
+    try {
+      // Sign out from Google if available
+      // This is handled by the AuthService.signOut() method
+      
+      // Sign out from Supabase and clear Core AuthService data
+      await _authService.signOut();
+      
+      // Clear additional app-specific data
+      await _clearUserAppData();
+      
+      if (kDebugMode) {
+        print('All authentication data cleared');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error clearing authentication data: $e');
+      }
+      // Continue with logout even if some cleanup fails
+    }
+  }
+
+  /// Clear user-specific app data (cache, preferences, etc.)
+  Future<void> _clearUserAppData() async {
+    try {
+      // Clear specific boxes that might contain user data
+      const boxesToClear = [
+        'app_settings',
+        'user_preferences',
+        'cached_data',
+        'study_guides_cache',
+        'daily_verse_cache',
+      ];
+      
+      for (final boxName in boxesToClear) {
+        try {
+          if (Hive.isBoxOpen(boxName)) {
+            await Hive.box(boxName).clear();
+            print('Cleared Hive box: $boxName');
+          }
+        } catch (e) {
+          if (kDebugMode) {
+            print('Error clearing Hive box $boxName: $e');
+          }
+        }
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error clearing user app data: $e');
+      }
     }
   }
 

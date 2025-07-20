@@ -1,89 +1,93 @@
-import { serve } from 'https://deno.land/std@0.208.0/http/server.ts'
-import { corsHeaders } from '../_shared/cors.ts'
-import { ErrorHandler } from '../_shared/error-handler.ts'
-import { RequestValidator } from '../_shared/request-validator.ts'
-import { AnalyticsLogger } from '../_shared/analytics-logger.ts'
-import { DailyVerseService } from './daily-verse-service.ts'
-
 /**
- * Supabase Edge Function: Daily Verse
+ * Daily Verse Edge Function
  * 
- * Provides daily Bible verses in multiple translations (ESV, Hindi, Malayalam)
- * with caching to minimize external API calls and ensure offline support.
- * 
- * Endpoints:
- * - GET /daily-verse - Returns today's verse in all translations
- * - GET /daily-verse?date=YYYY-MM-DD - Returns verse for specific date
- * 
- * Features:
- * - Multi-language support (ESV, Hindi, Malayalam)
- * - Daily caching to reduce API calls
- * - Fallback verses for API failures
- * - Analytics tracking for usage metrics
+ * Refactored to use the new clean architecture with:
+ * - Function factory for boilerplate elimination
+ * - Singleton services for performance
+ * - Clean separation of concerns
  */
 
-serve(async (req: Request): Promise<Response> => {
-  // Handle CORS preflight requests
-  if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders })
+import { createSimpleFunction } from '../_shared/core/function-factory.ts'
+import { AppError } from '../_shared/utils/error-handler.ts'
+import { ApiSuccessResponse } from '../_shared/types/index.ts'
+import { ServiceContainer } from '../_shared/core/services.ts'
+
+/**
+ * Daily verse data structure
+ */
+interface DailyVerseData {
+  readonly reference: string
+  readonly date: string
+  readonly translations: {
+    readonly esv?: string
+    readonly hindi?: string
+    readonly malayalam?: string
+  }
+  readonly fromCache: boolean
+  readonly timestamp: string
+}
+
+/**
+ * Complete API response structure
+ */
+interface DailyVerseApiResponse extends ApiSuccessResponse<DailyVerseData> {}
+
+/**
+ * Main handler for daily verse
+ */
+async function handleDailyVerse(req: Request, services: ServiceContainer): Promise<Response> {
+  // Parse query parameters
+  const url = new URL(req.url)
+  const requestDate = url.searchParams.get('date')
+
+  // Validate date parameter if provided
+  if (requestDate && isNaN(new Date(requestDate).getTime())) {
+    throw new AppError('VALIDATION_ERROR', 'Invalid date format. Please use YYYY-MM-DD.', 400)
   }
 
-  try {
-    console.log('Daily verse function called with method:', req.method)
-    console.log('Request URL:', req.url)
-    
-    // Validate HTTP method
-    RequestValidator.validateHttpMethod(req.method, ['GET'])
+  // Get daily verse data using injected service
+  const verseData = await services.dailyVerseService.getDailyVerse(requestDate)
 
-    // Parse query parameters
-    const url = new URL(req.url)
-    const requestDate = url.searchParams.get('date')
-    const userAgent = req.headers.get('user-agent') || 'unknown'
-
-    // Initialize services
-    const dailyVerseService = new DailyVerseService()
-    const analyticsLogger = new AnalyticsLogger(dailyVerseService.getSupabaseClient())
-
-    // Get daily verse data
-    console.log('Getting daily verse for date:', requestDate || 'today')
-    const verseData = await dailyVerseService.getDailyVerse(requestDate)
-    console.log('Successfully retrieved verse:', verseData.reference)
-
-    // Log analytics event
-    await analyticsLogger.logEvent(
-      'daily_verse_fetched',
-      {
-        date: verseData.date,
-        hasCustomDate: !!requestDate,
-        userAgent: userAgent.substring(0, 100), // Limit length
-      },
-      req.headers.get('x-forwarded-for')
-    )
-
-    // Return successful response
-    return new Response(
-      JSON.stringify({
-        success: true,
-        data: verseData,
-      }),
-      {
-        status: 200,
-        headers: {
-          ...corsHeaders,
-          'Content-Type': 'application/json',
-          'Cache-Control': 'public, max-age=3600', // Cache for 1 hour
-        },
-      }
-    )
-
-  } catch (error) {
-    // Log error event
-    await analyticsLogger.logEvent(
-      'daily_verse_error',
-      { error: error.message },
-      req.headers.get('x-forwarded-for')
-    )
-
-    return ErrorHandler.handleError(error, corsHeaders)
+  // Create response data with additional fields
+  const responseData: DailyVerseData = {
+    reference: verseData.reference,
+    date: verseData.date,
+    translations: {
+      esv: verseData.translations.esv,
+      hindi: verseData.translations.hi,
+      malayalam: verseData.translations.ml
+    },
+    fromCache: false, // TODO: Implement cache tracking
+    timestamp: new Date().toISOString()
   }
+
+  // Log analytics event
+  await services.analyticsLogger.logEvent('daily_verse_accessed', {
+    date: verseData.date,
+    reference: verseData.reference,
+    from_cache: responseData.fromCache,
+    requested_date: requestDate,
+    user_agent: req.headers.get('user-agent') || 'unknown'
+  }, req.headers.get('x-forwarded-for'))
+
+  // Build response
+  const response: DailyVerseApiResponse = {
+    success: true,
+    data: responseData
+  }
+
+  return new Response(JSON.stringify(response), {
+    status: 200,
+    headers: { 
+      'Content-Type': 'application/json',
+      'Cache-Control': 'public, max-age=3600' // Cache for 1 hour
+    }
+  })
+}
+
+// Create the function with the factory
+createSimpleFunction(handleDailyVerse, {
+  allowedMethods: ['GET'],
+  enableAnalytics: true,
+  timeout: 15000 // 15 seconds
 })

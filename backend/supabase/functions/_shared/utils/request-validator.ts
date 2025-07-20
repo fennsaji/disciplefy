@@ -194,29 +194,6 @@ export class RequestValidator {
     }
   }
 
-  /**
-   * Validates that required environment variables are present.
-   * 
-   * @param requiredVars - Array of required environment variable names
-   * @throws {AppError} When required variables are missing
-   */
-  static validateEnvironmentVariables(requiredVars: readonly string[]): void {
-    const missingVars: string[] = []
-
-    for (const varName of requiredVars) {
-      if (!Deno.env.get(varName)) {
-        missingVars.push(varName)
-      }
-    }
-
-    if (missingVars.length > 0) {
-      throw new AppError(
-        'CONFIGURATION_ERROR',
-        `Missing required environment variables: ${missingVars.join(', ')}`,
-        500
-      )
-    }
-  }
 
   /**
    * Validates numeric parameters with range checking.

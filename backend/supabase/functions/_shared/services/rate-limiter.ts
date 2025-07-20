@@ -1,5 +1,5 @@
 import { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2'
-import { AppError } from './error-handler.ts'
+import { AppError } from '../utils/error-handler.ts'
 
 /**
  * Rate limit check result.
