@@ -28,6 +28,7 @@ import '../../features/daily_verse/presentation/bloc/daily_verse_bloc.dart';
 import '../../features/saved_guides/data/services/unified_study_guides_service.dart';
 import '../../features/saved_guides/data/services/study_guides_api_service.dart';
 import '../../features/saved_guides/presentation/bloc/saved_guides_api_bloc.dart';
+import '../../features/study_generation/data/services/save_guide_api_service.dart';
 
 final sl = GetIt.instance;
 
@@ -85,7 +86,7 @@ Future<void> initializeDependencies() async {
 
   //! Daily Verse
   sl.registerLazySingleton<DailyVerseApiService>(
-    () => DailyVerseApiService(httpClient: sl()),
+    () => DailyVerseApiService(),
   );
 
   sl.registerLazySingleton<DailyVerseCacheService>(
@@ -116,6 +117,10 @@ Future<void> initializeDependencies() async {
   //! Saved Guides
   sl.registerLazySingleton<StudyGuidesApiService>(
     () => StudyGuidesApiService(),
+  );
+  
+  sl.registerLazySingleton<SaveGuideApiService>(
+    () => SaveGuideApiService(httpClient: sl()),
   );
 
   sl.registerLazySingleton<UnifiedStudyGuidesService>(

@@ -1,9 +1,8 @@
 import 'dart:convert';
-import 'package:http/http.dart' as http;
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../../core/config/app_config.dart';
 import '../../../../core/error/exceptions.dart';
+import '../../../../core/services/http_service.dart';
 import '../models/saved_guide_model.dart';
 
 /// API service for managing study guides (saved/recent)
@@ -11,10 +10,10 @@ class StudyGuidesApiService {
   static String get _baseUrl => AppConfig.baseApiUrl.replaceAll('/functions/v1', '');
   static const String _studyGuidesEndpoint = '/functions/v1/study-guides';
   
-  final http.Client _httpClient;
+  final HttpService _httpService;
 
-  StudyGuidesApiService({http.Client? httpClient}) 
-      : _httpClient = httpClient ?? http.Client();
+  StudyGuidesApiService({HttpService? httpService}) 
+      : _httpService = httpService ?? HttpServiceProvider.instance;
 
   /// Fetch study guides from API
   /// [savedOnly] - if true, only fetch saved guides
@@ -46,12 +45,12 @@ class StudyGuidesApiService {
       print('📋 [API] Query params: $queryParams');
 
       // Prepare headers
-      final headers = await _getApiHeaders();
+      final headers = await _httpService.createHeaders();
       
-      final response = await _httpClient.get(
-        uri,
+      final response = await _httpService.get(
+        uri.toString(),
         headers: headers,
-      ).timeout(const Duration(seconds: 10));
+      );
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> jsonData = json.decode(response.body);
@@ -68,11 +67,6 @@ class StudyGuidesApiService {
             code: 'API_ERROR',
           );
         }
-      } else if (response.statusCode == 401) {
-        throw const AuthenticationException(
-          message: 'Authentication required',
-          code: 'UNAUTHORIZED',
-        );
       } else {
         throw ServerException(
           message: 'Failed to fetch study guides: ${response.statusCode}',
@@ -96,18 +90,18 @@ class StudyGuidesApiService {
     required bool save,
   }) async {
     try {
-      final headers = await _getApiHeaders();
+      final headers = await _httpService.createHeaders();
       
       final body = json.encode({
         'guide_id': guideId,
         'action': save ? 'save' : 'unsave',
       });
 
-      final response = await _httpClient.post(
-        Uri.parse('$_baseUrl$_studyGuidesEndpoint'),
+      final response = await _httpService.post(
+        '$_baseUrl$_studyGuidesEndpoint',
         headers: headers,
         body: body,
-      ).timeout(const Duration(seconds: 10));
+      );
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> jsonData = json.decode(response.body);
@@ -121,11 +115,6 @@ class StudyGuidesApiService {
             code: 'API_ERROR',
           );
         }
-      } else if (response.statusCode == 401) {
-        throw const AuthenticationException(
-          message: 'Authentication required to save guides',
-          code: 'UNAUTHORIZED',
-        );
       } else if (response.statusCode == 404) {
         throw const ServerException(
           message: 'Study guide not found',
@@ -148,28 +137,10 @@ class StudyGuidesApiService {
     }
   }
 
-  /// Get API headers with authentication
-  Future<Map<String, String>> _getApiHeaders() async {
-    final headers = <String, String>{
-      'Content-Type': 'application/json',
-      'apikey': AppConfig.supabaseAnonKey,
-    };
 
-    // Use Supabase session token for consistent authentication
-    final session = Supabase.instance.client.auth.currentSession;
-    if (session != null && session.accessToken.isNotEmpty) {
-      headers['Authorization'] = 'Bearer ${session.accessToken}';
-      print('🔐 [API] Using Supabase session token for user: ${session.user.id}');
-    } else {
-      // For unauthenticated requests, only use apikey (no Authorization header)
-      print('🔐 [API] Making unauthenticated request with apikey only');
-    }
-
-    return headers;
-  }
 
   /// Dispose HTTP client
   void dispose() {
-    _httpClient.close();
+    _httpService.dispose();
   }
 }

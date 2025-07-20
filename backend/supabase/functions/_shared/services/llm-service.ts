@@ -6,6 +6,16 @@ declare const Deno: {
 }
 
 /**
+ * LLM service configuration interface
+ */
+export interface LLMServiceConfig {
+  readonly openaiApiKey?: string
+  readonly anthropicApiKey?: string
+  readonly provider?: 'openai' | 'anthropic'
+  readonly useMock: boolean
+}
+
+/**
  * Parameters for LLM study guide generation.
  */
 interface LLMGenerationParams {
@@ -24,6 +34,18 @@ interface LLMResponse {
   readonly relatedVerses: readonly string[]
   readonly reflectionQuestions: readonly string[]
   readonly prayerPoints: readonly string[]
+}
+
+/**
+ * Daily verse generation response structure.
+ */
+interface DailyVerseResponse {
+  readonly reference: string
+  readonly translations: {
+    readonly esv: string
+    readonly hindi: string
+    readonly malayalam: string
+  }
 }
 
 /**
@@ -127,11 +149,10 @@ export class LLMService {
   private readonly availableProviders: Set<LLMProvider>
 
   /**
-   * Creates a new LLM service instance.
-   * Reads LLM_PROVIDER and USE_MOCK environment variables to configure behavior.
-   * Initializes language-specific configurations for English, Hindi, and Malayalam.
+   * Creates a new LLM service instance with dependency injection.
+   * @param config - LLM service configuration from centralized config
    */
-  constructor() {
+  constructor(private readonly config: LLMServiceConfig) {
     // Initialize language configurations
     this.languageConfigs = new Map()
     this.initializeLanguageConfigs()
@@ -139,8 +160,8 @@ export class LLMService {
     // Initialize available providers set
     this.availableProviders = new Set()
     
-    // Check if we should use mock data (development mode)
-    this.useMockData = Deno.env.get('USE_MOCK') === 'true'
+    // Use injected configuration
+    this.useMockData = config.useMock
     
     if (this.useMockData) {
       console.log('[LLM] Using mock data mode')
@@ -153,22 +174,19 @@ export class LLMService {
     }
 
     // Check available providers by validating API keys
-    const openaiKey = Deno.env.get('OPENAI_API_KEY')
-    const anthropicKey = Deno.env.get('ANTHROPIC_API_KEY')
-    
-    console.log('[LLM] Environment variable check:', {
-      hasOpenAI: !!openaiKey,
-      hasAnthropic: !!anthropicKey,
-      openaiKeyLength: openaiKey?.length || 0,
-      anthropicKeyLength: anthropicKey?.length || 0,
-      anthropicKeyPrefix: anthropicKey?.substring(0, 12) || 'MISSING'
+    console.log('[LLM] Configuration check:', {
+      hasOpenAI: !!config.openaiApiKey,
+      hasAnthropic: !!config.anthropicApiKey,
+      openaiKeyLength: config.openaiApiKey?.length || 0,
+      anthropicKeyLength: config.anthropicApiKey?.length || 0,
+      anthropicKeyPrefix: config.anthropicApiKey?.substring(0, 12) || 'MISSING'
     })
     
-    if (openaiKey && openaiKey.trim().length > 0) {
+    if (config.openaiApiKey && config.openaiApiKey.trim().length > 0) {
       this.availableProviders.add('openai')
     }
     
-    if (anthropicKey && anthropicKey.trim().length > 0) {
+    if (config.anthropicApiKey && config.anthropicApiKey.trim().length > 0) {
       this.availableProviders.add('anthropic')
     }
     
@@ -176,33 +194,25 @@ export class LLMService {
       throw new Error('No LLM providers available. Please configure OPENAI_API_KEY or ANTHROPIC_API_KEY')
     }
 
-    // Determine primary LLM provider from environment variable
-    const providerEnv = Deno.env.get('LLM_PROVIDER')?.toLowerCase()
-    
-    if (providerEnv && providerEnv !== 'openai' && providerEnv !== 'anthropic') {
-      throw new Error(`Invalid LLM_PROVIDER: "${providerEnv}". Must be "openai" or "anthropic"`)
-    }
-    
     // Set primary provider based on configuration or default to available provider
-    if (providerEnv && this.availableProviders.has(providerEnv as LLMProvider)) {
-      this.provider = providerEnv as LLMProvider
+    if (config.provider && this.availableProviders.has(config.provider)) {
+      this.provider = config.provider
     } else {
       // Default to first available provider (Anthropic preferred for multilingual)
       this.provider = this.availableProviders.has('anthropic') ? 'anthropic' : 'openai'
-      if (providerEnv) {
-        console.warn(`[LLM] Configured provider ${providerEnv} not available, using ${this.provider}`)
+      if (config.provider) {
+        console.warn(`[LLM] Configured provider ${config.provider} not available, using ${this.provider}`)
       }
     }
     
     // Set API key for primary provider
-    const apiKeyEnv = this.provider === 'openai' ? 'OPENAI_API_KEY' : 'ANTHROPIC_API_KEY'
-    this.apiKey = Deno.env.get(apiKeyEnv)!
+    this.apiKey = this.provider === 'openai' ? config.openaiApiKey! : config.anthropicApiKey!
     
     console.log(`[LLM] Initialized with primary provider: ${this.provider}`)
     console.log(`[LLM] Available providers: ${Array.from(this.availableProviders).join(', ')}`)
     
-    // Log streaming configuration
-    const streamingEnabled = Deno.env.get('ENABLE_STREAMING') === 'true'
+    // Log streaming configuration (disabled for now)
+    const streamingEnabled = false
     console.log(`[LLM] Streaming support: ${streamingEnabled ? 'enabled' : 'disabled'}`)
   }
 
@@ -269,6 +279,92 @@ export class LLMService {
   }
 
   /**
+   * Generates a daily Bible verse with translations using LLM.
+   * 
+   * @param excludeReferences - Array of recently used verses to avoid
+   * @param language - Target language for cultural context (default: 'en')
+   * @returns Promise resolving to daily verse response
+   * @throws {Error} When generation fails
+   */
+  async generateDailyVerse(
+    excludeReferences: string[] = [], 
+    language: string = 'en'
+  ): Promise<DailyVerseResponse> {
+    console.log(`[LLM] Generating daily verse, excluding: ${excludeReferences.join(', ')}`)
+    
+    if (this.useMockData) {
+      console.log('[LLM] Using mock data for daily verse')
+      return this.getMockDailyVerse()
+    }
+
+    try {
+      // Create verse-specific prompt
+      const prompt = this.createDailyVersePrompt(excludeReferences, language)
+      
+      // Select optimal provider for verse generation
+      const selectedProvider = this.selectOptimalProvider(language)
+      console.log(`[LLM] Selected ${selectedProvider} for daily verse generation`)
+      
+      let rawResponse: string
+      
+      // Call the selected provider
+      if (selectedProvider === 'openai') {
+        rawResponse = await this.callOpenAIForVerse(prompt.systemMessage, prompt.userMessage)
+      } else {
+        rawResponse = await this.callAnthropicForVerse(prompt.systemMessage, prompt.userMessage)
+      }
+      
+      // Parse and validate the response
+      const parsedResponse = await this.parseVerseResponse(rawResponse)
+      
+      console.log(`[LLM] Successfully generated daily verse: ${parsedResponse.reference}`)
+      return parsedResponse
+      
+    } catch (error) {
+      console.error(`[LLM] Daily verse generation failed:`, error)
+      throw new Error(`Daily verse generation failed: ${error instanceof Error ? error.message : String(error)}`)
+    }
+  }
+
+  /**
+   * Gets a mock daily verse for development/testing.
+   * 
+   * @returns Mock daily verse response
+   */
+  private getMockDailyVerse(): DailyVerseResponse {
+    const mockVerses = [
+      {
+        reference: "John 3:16",
+        translations: {
+          esv: "For God so loved the world, that he gave his only Son, that whoever believes in him should not perish but have eternal life.",
+          hindi: "क्योंकि परमेश्वर ने जगत से ऐसा प्रेम रखा कि उसने अपना एकलौता पुत्र दे दिया, ताकि जो कोई उस पर विश्वास करे वह नष्ट न हो, परन्तु अनन्त जीवन पाए।",
+          malayalam: "കാരണം ദൈവം ലോകത്തെ ഇങ്ങനെ സ്നേഹിച്ചു, തന്റെ ഏകജാതനായ പുത്രനെ നൽകി, അവനിൽ വിശ്വസിക്കുന്നവൻ നശിക്കാതെ നിത്യജീവൻ പ്രാപിക്കേണ്ടതിന്."
+        }
+      },
+      {
+        reference: "Philippians 4:13",
+        translations: {
+          esv: "I can do all things through him who strengthens me.",
+          hindi: "मैं उसके द्वारा जो मुझे सामर्थ्य देता है, सब कुछ कर सकता हूँ।",
+          malayalam: "എന്നെ ബലപ്പെടുത്തുന്ന ക്രിസ്തുവിൽ എനിക്കു സകലവും ചെയ്വാൻ കഴിയും."
+        }
+      },
+      {
+        reference: "Psalm 23:1",
+        translations: {
+          esv: "The Lord is my shepherd; I shall not want.",
+          hindi: "यहोवा मेरा चरवाहा है; मुझे कमी न होगी।",
+          malayalam: "യഹോവ എന്റെ ഇടയൻ ആകുന്നു; എനിക്കു മുട്ടു വരികയില്ല."
+        }
+      }
+    ]
+    
+    // Select verse based on current time to provide some variety
+    const index = Math.floor(Date.now() / (1000 * 60 * 60 * 24)) % mockVerses.length
+    return mockVerses[index]
+  }
+
+  /**
    * Validates generation parameters.
    * 
    * @param params - Parameters to validate
@@ -323,8 +419,8 @@ export class LLMService {
         }
       } catch (primaryError) {
         console.error(`[LLM] Primary provider ${selectedProvider} failed:`, {
-          error: primaryError.message,
-          stack: primaryError.stack,
+          error: primaryError instanceof Error ? primaryError.message : String(primaryError),
+          stack: primaryError instanceof Error ? primaryError.stack : undefined,
           provider: selectedProvider,
           language: params.language,
           timestamp: new Date().toISOString()
@@ -362,7 +458,7 @@ export class LLMService {
       
     } catch (error) {
       console.error(`[LLM] ${this.provider} API call failed:`, error)
-      throw new Error(`LLM generation failed: ${error.message}`)
+      throw new Error(`LLM generation failed: ${error instanceof Error ? error.message : String(error)}`)
     }
   }
 
@@ -374,8 +470,7 @@ export class LLMService {
    * @throws {Error} When API key is not available
    */
   private getApiKeyForProvider(provider: LLMProvider): string {
-    const apiKeyEnv = provider === 'openai' ? 'OPENAI_API_KEY' : 'ANTHROPIC_API_KEY'
-    const apiKey = Deno.env.get(apiKeyEnv)
+    const apiKey = provider === 'openai' ? this.config.openaiApiKey : this.config.anthropicApiKey
     
     if (!apiKey || apiKey.trim().length === 0) {
       throw new Error(`API key not available for provider: ${provider}`)
@@ -396,8 +491,8 @@ export class LLMService {
    * @throws {Error} When API call fails
    */
   private async callOpenAI(systemMessage: string, userMessage: string, languageConfig: LanguageConfig, params: LLMGenerationParams): Promise<string> {
-    // Check if streaming is enabled
-    const enableStreaming = Deno.env.get('ENABLE_STREAMING') === 'true'
+    // Streaming is disabled for now
+    const enableStreaming = false
     
     if (enableStreaming) {
       return this.callOpenAIWithStreaming(systemMessage, userMessage, languageConfig, params)
@@ -638,7 +733,7 @@ export class LLMService {
       return fullContent
 
     } catch (error) {
-      console.warn('[LLM] Streaming error, falling back to standard mode:', error.message)
+      console.warn('[LLM] Streaming error, falling back to standard mode:', error instanceof Error ? error.message : String(error))
       return this.callOpenAIStandard(systemMessage, userMessage, languageConfig, params)
     }
   }
@@ -744,16 +839,17 @@ export class LLMService {
       let cleanedResponse = this.cleanJSONResponse(rawResponse)
       return JSON.parse(cleanedResponse)
     } catch (parseError) {
-      console.error(`[LLM] JSON parse attempt ${retryCount + 1} failed:`, parseError.message)
+      console.error(`[LLM] JSON parse attempt ${retryCount + 1} failed:`, parseError instanceof Error ? parseError.message : String(parseError))
       
       if (retryCount < maxRetries) {
         console.log(`[LLM] Retrying with adjusted parameters (attempt ${retryCount + 2}/${maxRetries + 1})`)
         
-        // Adjust parameters for retry
+        // Adjust parameters for retry - calculate adjustments based on ORIGINAL config
+        const originalLanguageConfig = this.languageConfigs.get(params.language)!
         const adjustedLanguageConfig = {
           ...languageConfig,
-          temperature: Math.max(0.1, languageConfig.temperature - 0.1), // Reduce temperature
-          maxTokens: languageConfig.maxTokens + 500 // Increase tokens
+          temperature: Math.max(0.1, originalLanguageConfig.temperature - (0.1 * (retryCount + 1))), // Reduce temperature progressively
+          maxTokens: originalLanguageConfig.maxTokens + (500 * (retryCount + 1)) // Increase tokens progressively
         }
         
         // Re-generate with adjusted parameters
@@ -771,7 +867,7 @@ export class LLMService {
           // Recursive retry with incremented count
           return await this.parseWithRetry(retryResponse, params, adjustedLanguageConfig, retryCount + 1)
         } catch (retryError) {
-          console.error(`[LLM] Retry ${retryCount + 1} failed:`, retryError.message)
+          console.error(`[LLM] Retry ${retryCount + 1} failed:`, retryError instanceof Error ? retryError.message : String(retryError))
           
           // If retry generation fails, try parsing original response one more time
           if (retryCount === 0) {
@@ -785,7 +881,7 @@ export class LLMService {
           
           // If this is the last retry, throw the original parse error
           if (retryCount >= maxRetries - 1) {
-            throw new Error(`Failed to parse LLM response after ${maxRetries} attempts: ${parseError.message}`)
+            throw new Error(`Failed to parse LLM response after ${maxRetries} attempts: ${parseError instanceof Error ? parseError.message : String(parseError)}`)
           }
           
           // Continue with retries
@@ -794,7 +890,7 @@ export class LLMService {
       } else {
         // All retries exhausted
         console.error('[LLM] Raw response that failed to parse:', rawResponse.substring(0, 500) + '...')
-        throw new Error(`Failed to parse LLM response after ${maxRetries} attempts: ${parseError.message}`)
+        throw new Error(`Failed to parse LLM response after ${maxRetries} attempts: ${parseError instanceof Error ? parseError.message : String(parseError)}`)
       }
     }
   }
@@ -922,27 +1018,25 @@ export class LLMService {
   private createSystemMessage(languageConfig: LanguageConfig): string {
     return `You are a biblical scholar creating Bible study guides. Your responses must be valid JSON only.
 
-THEOLOGICAL APPROACH:
-- Protestant theological alignment
-- Biblical accuracy and Christ-centered interpretation
-- Practical spiritual application
+      THEOLOGICAL APPROACH:
+      - Protestant theological alignment
+      - Biblical accuracy and Christ-centered interpretation
+      - Practical spiritual application
 
-LANGUAGE REQUIREMENTS:
-- ${languageConfig.promptModifiers.languageInstruction}
-- ${languageConfig.promptModifiers.complexityInstruction}
-- Cultural Context: ${languageConfig.culturalContext}
-- Use simple vocabulary accessible to common people
+      LANGUAGE REQUIREMENTS:
+      - ${languageConfig.promptModifiers.languageInstruction}
+      - ${languageConfig.promptModifiers.complexityInstruction}
+      - Cultural Context: ${languageConfig.culturalContext}
+      - Use simple vocabulary accessible to common people
 
-JSON OUTPUT REQUIREMENTS:
-- Output ONLY valid JSON - no extra text before or after
-- Use simple punctuation only: periods and commas
-- Avoid special characters that break JSON parsing
-- Keep sentences short and clear
-- No quotes, colons, or semicolons in content text
-- Replace any quotes in content with simple words
-- Ensure proper JSON structure with no trailing commas
+      JSON OUTPUT REQUIREMENTS:
+      - Output ONLY valid JSON - no extra text before or after
+      - Use proper JSON string escaping for any quotes or special characters
+      - Keep sentences clear and well-structured
+      - Ensure proper JSON structure with no trailing commas
+      - Use standard JSON formatting with proper escaping
 
-TONE: Pastoral, warm, encouraging, practical for daily spiritual growth.`
+      TONE: Pastoral, warm, encouraging, practical for daily spiritual growth.`
   }
 
   /**
@@ -958,27 +1052,26 @@ TONE: Pastoral, warm, encouraging, practical for daily spiritual growth.`
 
     return `TASK: Create a Bible study guide for the ${inputType === 'scripture' ? 'scripture reference' : 'topic'}: "${inputValue}"
 
-REQUIRED JSON OUTPUT FORMAT (follow exactly):
-{
-  "summary": "Brief overview (2-3 sentences) capturing the main message",
-  "interpretation": "Theological interpretation (3-4 paragraphs) explaining meaning and key teachings", 
-  "context": "Historical and cultural background (1-2 paragraphs) for understanding",
-  "relatedVerses": ["3-5 relevant Bible verses with references"],
-  "reflectionQuestions": ["4-6 practical application questions"],
-  "prayerPoints": ["3-4 prayer suggestions"]
-}
+      REQUIRED JSON OUTPUT FORMAT (follow exactly):
+      {
+        "summary": "Brief overview (2-3 sentences) capturing the main message",
+        "interpretation": "Theological interpretation (3-4 paragraphs) explaining meaning and key teachings", 
+        "context": "Historical and cultural background (1-2 paragraphs) for understanding",
+        "relatedVerses": ["3-5 relevant Bible verses with references"],
+        "reflectionQuestions": ["4-6 practical application questions"],
+        "prayerPoints": ["3-4 prayer suggestions"]
+      }
 
-CRITICAL JSON FORMATTING RULES:
-- Output ONLY valid JSON - no markdown, no extra text before or after
-- Use simple punctuation: periods, commas only - avoid quotes, colons, semicolons in content
-- No special characters like newlines, tabs, or control characters
-- Keep sentences short and simple to avoid parsing issues
-- Replace any quotes in content with simple words
-- No trailing commas in arrays or objects
+      CRITICAL JSON FORMATTING RULES:
+      - Output ONLY valid JSON - no markdown, no extra text before or after
+      - Use proper JSON string escaping for quotes and special characters
+      - Keep content natural and readable while ensuring valid JSON
+      - Use standard JSON formatting with proper escaping
+      - No trailing commas in arrays or objects
 
-${languageExamples}
+      ${languageExamples}
 
-Output format: Start with { and end with } - nothing else.`
+      Output format: Start with { and end with } - nothing else.`
   }
 
   /**
@@ -1146,7 +1239,7 @@ JSON ഫോർമാറ്റിംഗ് നിയമങ്ങൾ:
       }
       
       // Handle truncated JSON by trying to complete it
-      if (error.message.includes('Unterminated string')) {
+      if (error instanceof Error && error.message.includes('Unterminated string')) {
         console.log('[LLM] Detected truncated JSON, attempting repair')
         cleaned = this.repairTruncatedJSON(cleaned)
       }
@@ -1195,6 +1288,215 @@ JSON ഫോർമാറ്റിംഗ് നിയമങ്ങൾ:
     
     console.log('[LLM] JSON repair attempted')
     return repaired
+  }
+
+  /**
+   * Creates a prompt specifically for daily verse generation.
+   * 
+   * @param excludeReferences - Verses to avoid
+   * @param language - Target language for cultural context
+   * @returns Prompt object with system and user messages
+   */
+  private createDailyVersePrompt(excludeReferences: string[], language: string): {systemMessage: string, userMessage: string} {
+    const excludeList = excludeReferences.length > 0 
+      ? ` Avoid these recently used verses: ${excludeReferences.join(', ')}.`
+      : ''
+    
+    const languageConfig = this.languageConfigs.get(language) || this.languageConfigs.get('en')!
+    
+    const systemMessage = `You are a biblical scholar selecting meaningful Bible verses for daily encouragement.
+
+Your task is to select ONE inspiring Bible verse and provide it with accurate translations.
+
+OUTPUT REQUIREMENTS:
+- Return ONLY valid JSON with the exact structure specified
+- No markdown formatting, no extra text
+- Use proper JSON string escaping for any quotes
+- Ensure all translations are accurate and meaningful
+
+LANGUAGE CONTEXT: ${languageConfig.culturalContext}
+COMPLEXITY: ${languageConfig.promptModifiers.complexityInstruction}`
+
+    const userMessage = `Select one meaningful Bible verse for daily spiritual encouragement.${excludeList}
+
+Requirements:
+- Choose a verse that offers comfort, strength, hope, faith, peace, or guidance
+- Provide accurate translations in all three languages
+- Focus on well-known, inspiring verses
+- Ensure theological accuracy
+
+Return in this EXACT JSON format (no other text):
+{
+  "reference": "Book Chapter:Verse",
+  "translations": {
+    "esv": "English verse text (ESV translation)",
+    "hindi": "Hindi translation in Devanagari script",
+    "malayalam": "Malayalam translation in Malayalam script"
+  }
+}
+
+Examples of good verse types:
+- God's love and grace (John 3:16, Romans 8:38-39)
+- Strength and courage (Philippians 4:13, Joshua 1:9)
+- Peace and comfort (Psalm 23:1, Matthew 11:28)
+- Hope and faith (Jeremiah 29:11, Hebrews 11:1)
+- Guidance and wisdom (Proverbs 3:5-6, Psalm 119:105)`
+
+    return { systemMessage, userMessage }
+  }
+
+  /**
+   * Calls OpenAI API specifically for verse generation.
+   * 
+   * @param systemMessage - System prompt
+   * @param userMessage - User prompt
+   * @returns Raw response text
+   */
+  private async callOpenAIForVerse(systemMessage: string, userMessage: string): Promise<string> {
+    const model = 'gpt-3.5-turbo-1106'
+    
+    const request: OpenAIRequest = {
+      model,
+      messages: [
+        { role: 'system', content: systemMessage },
+        { role: 'user', content: userMessage }
+      ],
+      temperature: 0.3,
+      max_tokens: 800,
+      response_format: { type: 'json_object' }
+    }
+
+    const apiKey = this.getApiKeyForProvider('openai')
+    
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(request)
+    })
+
+    if (!response.ok) {
+      const errorText = await response.text()
+      throw new Error(`OpenAI API error (${response.status}): ${errorText}`)
+    }
+
+    const data: OpenAIResponse = await response.json()
+    
+    if (!data.choices || data.choices.length === 0) {
+      throw new Error('OpenAI API returned no choices')
+    }
+
+    const content = data.choices[0].message.content
+    if (!content) {
+      throw new Error('OpenAI API returned empty content')
+    }
+
+    return content
+  }
+
+  /**
+   * Calls Anthropic API specifically for verse generation.
+   * 
+   * @param systemMessage - System prompt
+   * @param userMessage - User prompt
+   * @returns Raw response text
+   */
+  private async callAnthropicForVerse(systemMessage: string, userMessage: string): Promise<string> {
+    const model = 'claude-3-5-haiku-20241022'
+    
+    const request: AnthropicRequest = {
+      model,
+      max_tokens: 800,
+      temperature: 0.2,
+      system: systemMessage,
+      messages: [
+        { role: 'user', content: userMessage }
+      ]
+    }
+
+    const apiKey = this.getApiKeyForProvider('anthropic')
+    
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'x-api-key': apiKey,
+        'Content-Type': 'application/json',
+        'anthropic-version': '2023-06-01'
+      },
+      body: JSON.stringify(request)
+    })
+
+    if (!response.ok) {
+      const errorText = await response.text()
+      throw new Error(`Anthropic API error (${response.status}): ${errorText}`)
+    }
+
+    const data: AnthropicResponse = await response.json()
+    
+    if (!data.content || data.content.length === 0) {
+      throw new Error('Anthropic API returned no content')
+    }
+
+    const textContent = data.content.find(c => c.type === 'text')
+    if (!textContent) {
+      throw new Error('Anthropic API returned no text content')
+    }
+
+    return textContent.text
+  }
+
+  /**
+   * Parses and validates verse response from LLM.
+   * 
+   * @param rawResponse - Raw response from LLM
+   * @returns Parsed and validated verse response
+   */
+  private async parseVerseResponse(rawResponse: string): Promise<DailyVerseResponse> {
+    try {
+      // Clean the response
+      const cleaned = this.cleanJSONResponse(rawResponse)
+      const parsed = JSON.parse(cleaned)
+      
+      // Validate structure
+      if (!parsed.reference || typeof parsed.reference !== 'string') {
+        throw new Error('Missing or invalid reference field')
+      }
+      
+      if (!parsed.translations || typeof parsed.translations !== 'object') {
+        throw new Error('Missing or invalid translations field')
+      }
+      
+      const { esv, hindi, malayalam } = parsed.translations
+      
+      if (!esv || typeof esv !== 'string') {
+        throw new Error('Missing or invalid ESV translation')
+      }
+      
+      if (!hindi || typeof hindi !== 'string') {
+        throw new Error('Missing or invalid Hindi translation')
+      }
+      
+      if (!malayalam || typeof malayalam !== 'string') {
+        throw new Error('Missing or invalid Malayalam translation')
+      }
+      
+      // Sanitize and return
+      return {
+        reference: this.sanitizeText(parsed.reference),
+        translations: {
+          esv: this.sanitizeText(esv),
+          hindi: this.sanitizeText(hindi),
+          malayalam: this.sanitizeText(malayalam)
+        }
+      }
+      
+    } catch (error) {
+      console.error('[LLM] Failed to parse verse response:', error)
+      console.error('[LLM] Raw response:', rawResponse.substring(0, 500))
+      throw new Error(`Failed to parse verse response: ${error instanceof Error ? error.message : String(error)}`)
+    }
   }
 
   /**

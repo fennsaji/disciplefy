@@ -1,10 +1,12 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+// Supabase client is now injected via DI container - no need to import createClient
+import { LLMService } from '../_shared/services/llm-service.ts'
 
 /**
  * Daily Verse Service
  * 
  * Handles fetching, caching, and serving daily Bible verses
  * in multiple translations with fallback mechanisms.
+ * Uses LLM generation for dynamic verse selection.
  */
 
 interface DailyVerseData {
@@ -25,11 +27,10 @@ interface BibleApiResponse {
 }
 
 export class DailyVerseService {
-  private supabase
   private readonly CACHE_TABLE = 'daily_verses_cache'
   
-  // Pre-selected daily verses for reliability (John 3:16, Psalm 23:1, etc.)
-  private readonly FALLBACK_VERSES = [
+  // Emergency fallback verses for when LLM generation fails
+  private readonly EMERGENCY_FALLBACK_VERSES = [
     {
       reference: "John 3:16",
       translations: {
@@ -72,14 +73,11 @@ export class DailyVerseService {
     }
   ]
 
-  constructor() {
-    const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? ''
-    const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? Deno.env.get('SUPABASE_ANON_KEY') ?? ''
-    
-    console.log('Initializing Supabase client with URL:', supabaseUrl ? 'present' : 'missing')
-    console.log('Service role key:', serviceRoleKey ? 'present' : 'missing')
-    
-    this.supabase = createClient(supabaseUrl, serviceRoleKey)
+  constructor(
+    private readonly supabase: any,
+    private readonly llmService: LLMService
+  ) {
+    // Supabase client and LLM service injected via DI container
   }
 
   /**
@@ -132,34 +130,143 @@ export class DailyVerseService {
   }
 
   /**
-   * Generate a new daily verse using external APIs or fallback system
+   * Generate a new daily verse using LLM with anti-repetition logic
    */
   private async generateDailyVerse(date: Date): Promise<DailyVerseData> {
+    console.log('=== Starting daily verse generation ===')
+    
     try {
-      // For MVP, use pre-selected verses with deterministic selection
-      // This ensures reliability and avoids external API dependencies
-      const verseIndex = this.getDeterministicVerseIndex(date)
-      const selectedVerse = this.FALLBACK_VERSES[verseIndex]
-
+      // Get recently used verses from the last 30 days (reduced for testing)
+      const recentVerses = await this.getRecentlyUsedVerses(30)
+      const recentReferences = recentVerses.map(v => v.verse_data.reference)
+      
+      console.log(`Found ${recentReferences.length} recently used verses to avoid:`, recentReferences)
+      
+      // Always attempt LLM generation first
+      console.log('Attempting LLM verse generation...')
+      const llmResponse = await this.generateVerseWithLLM(recentReferences)
+      
+      console.log('LLM generation successful:', llmResponse.reference)
+      
       return {
-        reference: selectedVerse.reference,
-        translations: selectedVerse.translations,
+        reference: llmResponse.reference,
+        translations: llmResponse.translations,
         date: this.formatDateKey(date)
       }
-
-      // TODO: Future enhancement - integrate with external Bible APIs
-      // const apiVerse = await this.fetchFromBibleApi(date)
-      // return apiVerse
-
+      
     } catch (error) {
-      console.error('Error generating daily verse:', error)
-      throw error
+      console.error('Error generating daily verse with LLM:', error)
+      console.log('Falling back to emergency verse selection')
+      
+      // Fall back to emergency verses if LLM fails
+      return this.getEmergencyFallbackVerse(date)
     }
   }
 
   /**
-   * Get deterministic verse index based on date
-   * This ensures the same verse is shown for the same date across all users
+   * Get recently used verses from the cache to avoid repetition
+   */
+  private async getRecentlyUsedVerses(days: number): Promise<Array<{verse_data: DailyVerseData}>> {
+    try {
+      const cutoffDate = new Date()
+      cutoffDate.setDate(cutoffDate.getDate() - days)
+      const cutoffKey = this.formatDateKey(cutoffDate)
+      
+      const { data, error } = await this.supabase
+        .from(this.CACHE_TABLE)
+        .select('verse_data')
+        .gte('date_key', cutoffKey)
+        .eq('is_active', true)
+        .order('date_key', { ascending: false })
+      
+      if (error) {
+        console.error('Error fetching recent verses:', error)
+        return []
+      }
+      
+      return data || []
+    } catch (error) {
+      console.error('Error in getRecentlyUsedVerses:', error)
+      return []
+    }
+  }
+
+  /**
+   * Generate verse using LLM with proper verse content generation
+   */
+  private async generateVerseWithLLM(excludeReferences: string[]): Promise<DailyVerseData> {
+    console.log('Generating daily verse using dedicated LLM method...')
+    
+    try {
+      // Use the dedicated daily verse generation method from LLM service
+      const llmResponse = await this.llmService.generateDailyVerse(excludeReferences, 'en')
+      
+      console.log(`LLM generated verse: ${llmResponse.reference}`)
+      
+      return {
+        reference: llmResponse.reference,
+        translations: {
+          esv: llmResponse.translations.esv,
+          hi: llmResponse.translations.hindi,
+          ml: llmResponse.translations.malayalam
+        },
+        date: '' // Will be set by caller
+      }
+      
+    } catch (llmError) {
+      console.error('LLM generation failed:', llmError)
+      throw new Error('Failed to generate verse with LLM')
+    }
+  }
+
+  // Removed the old callLLMForVerse and parseLLMVerseResponse methods
+  // as they are no longer needed - we now use the dedicated LLM service method
+
+  /**
+   * Normalize verse reference for comparison
+   */
+  private normalizeReference(verse: string): string {
+    const ref = this.extractReference(verse)
+    return ref.toLowerCase().replace(/\s+/g, '').replace(/[.:]/g, '')
+  }
+
+  /**
+   * Extract reference from verse string
+   */
+  private extractReference(verse: string): string {
+    // Handle format: "Reference - Text" or just "Reference"
+    const parts = verse.split(' - ')
+    return parts[0].trim()
+  }
+
+  /**
+   * Extract text from verse string
+   */
+  private extractText(verse: string): string {
+    // Handle format: "Reference - Text" or just "Reference"
+    const parts = verse.split(' - ')
+    return parts.length > 1 ? parts.slice(1).join(' - ').trim() : ''
+  }
+
+  /**
+   * Find fallback translations for a given verse reference
+   */
+  private findFallbackTranslations(reference: string): { esv: string; hi: string; ml: string } | null {
+    // Normalize the reference for comparison
+    const normalizedRef = this.normalizeReference(reference)
+    
+    for (const fallback of this.EMERGENCY_FALLBACK_VERSES) {
+      const normalizedFallback = this.normalizeReference(fallback.reference)
+      if (normalizedRef === normalizedFallback) {
+        return fallback.translations
+      }
+    }
+    
+    return null
+  }
+
+  /**
+   * Get deterministic verse index based on date for emergency fallback
    */
   private getDeterministicVerseIndex(date: Date): number {
     // Use year and day of year for consistency
@@ -168,7 +275,21 @@ export class DailyVerseService {
     
     // Simple hash function to distribute verses evenly
     const hash = (year + dayOfYear) * 37
-    return hash % this.FALLBACK_VERSES.length
+    return hash % this.EMERGENCY_FALLBACK_VERSES.length
+  }
+
+  /**
+   * Get emergency fallback verse when LLM generation fails
+   */
+  private getEmergencyFallbackVerse(date: Date): DailyVerseData {
+    const verseIndex = this.getDeterministicVerseIndex(date)
+    const fallbackVerse = this.EMERGENCY_FALLBACK_VERSES[verseIndex]
+
+    return {
+      reference: fallbackVerse.reference,
+      translations: fallbackVerse.translations,
+      date: this.formatDateKey(date)
+    }
   }
 
   /**
@@ -232,14 +353,7 @@ export class DailyVerseService {
    * Get fallback verse when all else fails
    */
   private getFallbackVerse(date: Date): DailyVerseData {
-    const verseIndex = this.getDeterministicVerseIndex(date)
-    const fallbackVerse = this.FALLBACK_VERSES[verseIndex]
-
-    return {
-      reference: fallbackVerse.reference,
-      translations: fallbackVerse.translations,
-      date: this.formatDateKey(date)
-    }
+    return this.getEmergencyFallbackVerse(date)
   }
 
   /**

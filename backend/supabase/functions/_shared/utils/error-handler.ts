@@ -15,7 +15,7 @@ export class AppError extends Error {
    */
   constructor(
     public readonly code: string,
-    public readonly message: string,
+    public override readonly message: string,
     public readonly statusCode: number = 400
   ) {
     super(message)
@@ -146,7 +146,7 @@ export class ErrorHandler {
   } {
     const errorMessage = error?.message?.toLowerCase() || ''
 
-    // Rate limiting errors
+    // Rate limiting errors - very specific
     if (errorMessage.includes('rate limit') || errorMessage.includes('too many requests')) {
       return {
         code: 'RATE_LIMIT_EXCEEDED',
@@ -155,44 +155,8 @@ export class ErrorHandler {
       }
     }
 
-    // Validation errors - preserve original message for debugging
-    if (errorMessage.includes('validation') || errorMessage.includes('invalid')) {
-      return {
-        code: 'VALIDATION_ERROR',
-        message: error?.message || 'Invalid input data provided.',
-        statusCode: 400
-      }
-    }
-
-    // Authentication errors
-    if (errorMessage.includes('auth') || errorMessage.includes('unauthorized')) {
-      return {
-        code: 'AUTHENTICATION_ERROR',
-        message: 'Authentication required or invalid credentials.',
-        statusCode: 401
-      }
-    }
-
-    // Permission errors
-    if (errorMessage.includes('permission') || errorMessage.includes('forbidden')) {
-      return {
-        code: 'PERMISSION_DENIED',
-        message: 'Insufficient permissions to perform this action.',
-        statusCode: 403
-      }
-    }
-
-    // Network/timeout errors
-    if (errorMessage.includes('timeout') || errorMessage.includes('network')) {
-      return {
-        code: 'NETWORK_ERROR',
-        message: 'Network error occurred. Please try again.',
-        statusCode: 503
-      }
-    }
-
-    // Database errors
-    if (errorMessage.includes('database') || errorMessage.includes('postgres')) {
+    // Database errors - specific service errors first
+    if (errorMessage.includes('database') || errorMessage.includes('postgres') || errorMessage.includes('constraint') || errorMessage.includes('relation')) {
       return {
         code: 'DATABASE_ERROR',
         message: 'Database error occurred. Please try again later.',
@@ -200,7 +164,7 @@ export class ErrorHandler {
       }
     }
 
-    // LLM service errors
+    // LLM service errors - specific service errors
     if (errorMessage.includes('openai') || errorMessage.includes('anthropic') || errorMessage.includes('llm')) {
       return {
         code: 'LLM_SERVICE_ERROR',
@@ -209,12 +173,48 @@ export class ErrorHandler {
       }
     }
 
-    // Configuration errors
-    if (errorMessage.includes('config') || errorMessage.includes('environment')) {
+    // Configuration errors - specific system errors
+    if (errorMessage.includes('config') || errorMessage.includes('environment') || errorMessage.includes('missing required')) {
       return {
         code: 'CONFIGURATION_ERROR',
         message: 'Service configuration error.',
         statusCode: 500
+      }
+    }
+
+    // Network/timeout errors - specific connection errors
+    if (errorMessage.includes('timeout') || errorMessage.includes('network') || errorMessage.includes('connection')) {
+      return {
+        code: 'NETWORK_ERROR',
+        message: 'Network error occurred. Please try again.',
+        statusCode: 503
+      }
+    }
+
+    // Authentication errors - specific auth patterns
+    if (errorMessage.includes('auth') || errorMessage.includes('unauthorized') || errorMessage.includes('jwt') || errorMessage.includes('token')) {
+      return {
+        code: 'AUTHENTICATION_ERROR',
+        message: 'Authentication required or invalid credentials.',
+        statusCode: 401
+      }
+    }
+
+    // Permission errors - specific authorization patterns
+    if (errorMessage.includes('permission') || errorMessage.includes('forbidden') || errorMessage.includes('access denied')) {
+      return {
+        code: 'PERMISSION_DENIED',
+        message: 'Insufficient permissions to perform this action.',
+        statusCode: 403
+      }
+    }
+
+    // Validation errors - more generic patterns that could overlap
+    if (errorMessage.includes('validation') || errorMessage.includes('invalid') || errorMessage.includes('required')) {
+      return {
+        code: 'VALIDATION_ERROR',
+        message: error?.message || 'Invalid input data provided.',
+        statusCode: 400
       }
     }
 

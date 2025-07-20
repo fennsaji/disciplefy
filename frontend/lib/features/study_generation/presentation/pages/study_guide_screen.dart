@@ -3,11 +3,10 @@ import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../../core/theme/app_theme.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../../auth/presentation/bloc/auth_bloc.dart';
-import '../../../auth/presentation/bloc/auth_state.dart' as auth_states;
+import '../../../../core/di/injection_container.dart';
 import '../../domain/entities/study_guide.dart';
 import '../../data/services/save_guide_api_service.dart';
 
@@ -34,7 +33,7 @@ class StudyGuideScreen extends StatefulWidget {
 class _StudyGuideScreenState extends State<StudyGuideScreen> {
   final TextEditingController _notesController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
-  final SaveGuideApiService _saveGuideService = SaveGuideApiService();
+  late final SaveGuideApiService _saveGuideService;
   
   late StudyGuide _currentStudyGuide;
   bool _hasError = false;
@@ -46,6 +45,7 @@ class _StudyGuideScreenState extends State<StudyGuideScreen> {
   @override
   void initState() {
     super.initState();
+    _saveGuideService = sl<SaveGuideApiService>();
     _initializeStudyGuide();
   }
 
@@ -53,7 +53,7 @@ class _StudyGuideScreenState extends State<StudyGuideScreen> {
   void dispose() {
     _notesController.dispose();
     _scrollController.dispose();
-    _saveGuideService.dispose();
+    // Don't dispose the service - it's managed by DI
     super.dispose();
   }
 
@@ -666,9 +666,11 @@ class _StudyGuideScreenState extends State<StudyGuideScreen> {
     // Check if already saving
     if (_isSaving) return;
 
-    // Check authentication using AuthBloc state - must be fully authenticated (not anonymous)
-    final authState = context.read<AuthBloc>().state;
-    if (authState is! auth_states.AuthenticatedState || authState.isAnonymous) {
+    // Check authentication using Supabase (same logic as router)
+    final user = Supabase.instance.client.auth.currentUser;
+    final isAuthenticated = user != null && !user.isAnonymous;
+    
+    if (!isAuthenticated) {
       _showAuthenticationRequiredDialog();
       return;
     }
@@ -796,14 +798,14 @@ class _StudyGuideScreenState extends State<StudyGuideScreen> {
   void _handleSaveError(dynamic error) {
     String message = 'Failed to save study guide. Please try again.';
     Color backgroundColor = AppTheme.errorColor;
-
+    
     if (error.toString().contains('UNAUTHORIZED')) {
       message = 'Authentication expired. Please sign in again.';
     } else if (error.toString().contains('NETWORK_ERROR')) {
       message = 'Network error. Please check your connection.';
     } else if (error.toString().contains('NOT_FOUND')) {
       message = 'Study guide not found. It may have been deleted.';
-    } else if (error.toString().contains('already saved')) {
+    } else if (error.toString().contains('ALREADY_SAVED') || error.toString().contains('already saved')) {
       message = 'This study guide is already saved!';
       backgroundColor = AppTheme.primaryColor;
       setState(() {

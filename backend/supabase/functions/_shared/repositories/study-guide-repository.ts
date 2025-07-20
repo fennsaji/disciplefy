@@ -1,6 +1,6 @@
 import { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2'
-import { AppError } from '../error-handler.ts'
-import { SecurityValidator } from '../security-validator.ts'
+import { AppError } from '../utils/error-handler.ts'
+import { SecurityValidator } from '../utils/security-validator.ts'
 
 /**
  * Study guide content for caching
@@ -221,7 +221,7 @@ export class StudyGuideRepository {
   }
 
   /**
-   * Get user's study guides with optimized JOIN
+   * Get user's study guides with total count
    */
   async getUserStudyGuides(
     userContext: UserContext,
@@ -231,18 +231,49 @@ export class StudyGuideRepository {
       offset?: number
     } = {}
   ): Promise<StudyGuideResponse[]> {
+    const result = await this.getUserStudyGuidesWithCount(userContext, options)
+    return result.guides
+  }
+
+  /**
+   * Get user's study guides with total count and pagination info
+   */
+  async getUserStudyGuidesWithCount(
+    userContext: UserContext,
+    options: {
+      savedOnly?: boolean
+      limit?: number
+      offset?: number
+    } = {}
+  ): Promise<{
+    guides: StudyGuideResponse[]
+    total: number
+    hasMore: boolean
+  }> {
     const limit = Math.min(options.limit ?? 20, 100)
     const offset = Math.max(options.offset ?? 0, 0)
 
     if (userContext.type === 'authenticated') {
-      return await this.getAuthenticatedUserGuides(
-        userContext.userId!,
-        options.savedOnly,
-        limit,
-        offset
-      )
+      const [guides, total] = await Promise.all([
+        this.getAuthenticatedUserGuides(
+          userContext.userId!,
+          options.savedOnly,
+          limit,
+          offset
+        ),
+        this.getAuthenticatedUserGuidesCount(
+          userContext.userId!,
+          options.savedOnly
+        )
+      ])
+
+      return {
+        guides,
+        total,
+        hasMore: total > offset + guides.length
+      }
     } else {
-      // Throw error as anonymous users cannot have saved guides
+      // Anonymous users cannot have saved guides
       throw new AppError(
         'BAD_REQUEST',
         'Anonymous users cannot have saved guides',
@@ -302,6 +333,35 @@ export class StudyGuideRepository {
     }
 
     return (data ?? []).map(item => this.formatStudyGuideResponse(item, true))
+  }
+
+  /**
+   * Get total count of authenticated user's study guides
+   */
+  private async getAuthenticatedUserGuidesCount(
+    userId: string,
+    savedOnly?: boolean
+  ): Promise<number> {
+    let query = this.supabase
+      .from('user_study_guides_new')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', userId)
+
+    if (savedOnly) {
+      query = query.eq('is_saved', true)
+    }
+
+    const { count, error } = await query
+
+    if (error) {
+      throw new AppError(
+        'DATABASE_ERROR',
+        `Failed to get authenticated user guides count: ${error.message}`,
+        500
+      )
+    }
+
+    return count ?? 0
   }
 
   /**
@@ -388,6 +448,37 @@ export class StudyGuideRepository {
     }
 
     return this.formatStudyGuideResponse(data, true)
+  }
+
+  /**
+   * Delete user's relationship to a study guide
+   */
+  async deleteUserStudyGuideRelationship(
+    studyGuideId: string,
+    userContext: UserContext
+  ): Promise<void> {
+    if (userContext.type === 'authenticated') {
+      const { error } = await this.supabase
+        .from('user_study_guides_new')
+        .delete()
+        .eq('study_guide_id', studyGuideId)
+        .eq('user_id', userContext.userId!)
+
+      if (error) {
+        throw new AppError(
+          'DATABASE_ERROR',
+          `Failed to delete user study guide relationship: ${error.message}`,
+          500
+        )
+      }
+    } else {
+      // Anonymous users don't have saved guides
+      throw new AppError(
+        'BAD_REQUEST',
+        'Anonymous users do not have saved study guides',
+        400
+      )
+    }
   }
 
   /**

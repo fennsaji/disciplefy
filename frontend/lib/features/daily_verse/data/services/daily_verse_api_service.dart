@@ -1,11 +1,10 @@
 import 'dart:convert';
-import 'package:http/http.dart' as http;
 import 'package:dartz/dartz.dart';
 
 import '../../../../core/config/app_config.dart';
 import '../../../../core/error/failures.dart';
 import '../../../../core/error/exceptions.dart';
-import '../../../../core/services/api_auth_helper.dart';
+import '../../../../core/services/http_service.dart';
 import '../models/daily_verse_model.dart';
 import '../../domain/entities/daily_verse_entity.dart';
 
@@ -14,10 +13,10 @@ class DailyVerseApiService {
   static String get _baseUrl => AppConfig.baseApiUrl.replaceAll('/functions/v1', '');
   static const String _dailyVerseEndpoint = '/functions/v1/daily-verse';
   
-  final http.Client _httpClient;
+  final HttpService _httpService;
 
-  DailyVerseApiService({http.Client? httpClient}) 
-      : _httpClient = httpClient ?? http.Client();
+  DailyVerseApiService({HttpService? httpService}) 
+      : _httpService = httpService ?? HttpServiceProvider.instance;
 
   /// Get today's daily verse
   Future<Either<Failure, DailyVerseEntity>> getTodaysVerse() async => getDailyVerse(null);
@@ -25,7 +24,7 @@ class DailyVerseApiService {
   /// Get daily verse for a specific date
   Future<Either<Failure, DailyVerseEntity>> getDailyVerse(DateTime? date) async {
     try {
-      final headers = await ApiAuthHelper.getAuthHeaders();
+      final headers = await _httpService.createHeaders();
       
       // Build URL with optional date parameter
       String url = '$_baseUrl$_dailyVerseEndpoint';
@@ -34,17 +33,10 @@ class DailyVerseApiService {
         url += '?date=$dateString';
       }
 
-      final response = await _httpClient.get(
-        Uri.parse(url),
-        headers: headers,
-      ).timeout(const Duration(seconds: 10));
+      final response = await _httpService.get(url, headers: headers);
 
       if (response.statusCode == 200) {
         return _parseVerseResponse(response.body);
-      } else if (response.statusCode == 401) {
-        return const Left(AuthenticationFailure(
-          message: 'Authentication required to access daily verse',
-        ));
       } else if (response.statusCode == 404) {
         return const Left(ServerFailure(
           message: 'Daily verse not found for the requested date',
@@ -102,12 +94,12 @@ class DailyVerseApiService {
   /// Check if service is available (health check)
   Future<bool> isServiceAvailable() async {
     try {
-      final headers = await ApiAuthHelper.getAuthHeaders();
+      final headers = await _httpService.createHeaders();
       
-      final response = await _httpClient.get(
-        Uri.parse('$_baseUrl$_dailyVerseEndpoint'),
+      final response = await _httpService.get(
+        '$_baseUrl$_dailyVerseEndpoint',
         headers: headers,
-      ).timeout(const Duration(seconds: 5));
+      );
 
       return response.statusCode == 200;
     } catch (e) {
@@ -117,6 +109,6 @@ class DailyVerseApiService {
 
   /// Dispose HTTP client
   void dispose() {
-    _httpClient.close();
+    _httpService.dispose();
   }
 }

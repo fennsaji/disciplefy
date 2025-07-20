@@ -1,232 +1,217 @@
-import { serve } from "https://deno.land/std@0.208.0/http/server.ts"
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-import { corsHeaders } from '../_shared/cors.ts'
-import { ErrorHandler, AppError } from '../_shared/error-handler.ts'
+/**
+ * Auth Session Edge Function
+ * 
+ * Refactored to use the new clean architecture with:
+ * - Function factory for boilerplate elimination
+ * - Singleton services for performance
+ * - Clean separation of concerns
+ */
 
+import { createFunction, FunctionHandler } from '../_shared/core/function-factory.ts'
+import { AppError } from '../_shared/utils/error-handler.ts'
+import { ApiSuccessResponse, UserContext } from '../_shared/types/index.ts'
+import { ServiceContainer } from '../_shared/core/services.ts'
+
+/**
+ * Session request payload
+ */
 interface SessionRequest {
-  action: 'create_anonymous' | 'migrate_to_authenticated'
-  device_fingerprint?: string
-  anonymous_session_id?: string
+  readonly action: 'create_anonymous' | 'migrate_to_authenticated'
+  readonly device_fingerprint?: string
+  readonly anonymous_session_id?: string
 }
 
+/**
+ * Session response data
+ */
 interface SessionResponse {
-  session_id: string
-  expires_at: string
-  is_anonymous: boolean
-  migration_successful?: boolean
+  readonly session_id: string
+  readonly expires_at: string
+  readonly is_anonymous: boolean
+  readonly migration_successful?: boolean
 }
 
-serve(async (req: Request) => {
-  // Handle CORS
-  if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders })
-  }
+/**
+ * Complete API response structure
+ */
+interface SessionApiResponse extends ApiSuccessResponse<SessionResponse> {}
 
+/**
+ * Main handler for auth session operations
+ */
+async function handleAuthSession(req: Request, services: ServiceContainer, userContext?: UserContext): Promise<Response> {
+  // Parse request body
+  let requestData: SessionRequest
   try {
-    // Only allow POST requests
-    if (req.method !== 'POST') {
-      throw new AppError('METHOD_NOT_ALLOWED', 'Only POST requests are allowed', 405)
-    }
-
-    // Initialize Supabase client
-    const supabaseClient = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-      {
-        global: {
-          headers: { Authorization: req.headers.get('Authorization')! },
-        },
-      }
-    )
-
-    // Parse request body
-    const requestBody: SessionRequest = await req.json()
-    
-    if (!requestBody.action) {
-      throw new AppError('INVALID_REQUEST', 'action field is required')
-    }
-
-    let response: SessionResponse
-
-    if (requestBody.action === 'create_anonymous') {
-      response = await createAnonymousSession(supabaseClient, requestBody, req)
-    } else if (requestBody.action === 'migrate_to_authenticated') {
-      response = await migrateToAuthenticated(supabaseClient, requestBody, req)
-    } else {
-      throw new AppError('INVALID_REQUEST', 'Invalid action. Use "create_anonymous" or "migrate_to_authenticated"')
-    }
-
-    return new Response(
-      JSON.stringify({
-        success: true,
-        data: response
-      }),
-      {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 200,
-      }
-    )
-
+    requestData = await req.json()
   } catch (error) {
-    return ErrorHandler.handleError(error, corsHeaders)
+    throw new AppError('INVALID_REQUEST', 'Invalid JSON in request body', 400)
   }
-})
 
-async function createAnonymousSession(
-  supabaseClient: any, 
-  requestBody: SessionRequest, 
-  req: Request
-): Promise<SessionResponse> {
-  
-  // Create device fingerprint hash for privacy
-  const deviceFingerprint = requestBody.device_fingerprint || 'unknown'
-  const ipAddress = req.headers.get('x-forwarded-for') || 'unknown'
-  
-  // Hash sensitive data
-  const deviceHash = await hashData(deviceFingerprint)
-  const ipHash = await hashData(ipAddress)
+  // Validate request
+  validateSessionRequest(requestData)
 
-  // Create anonymous session
-  const { data: session, error } = await supabaseClient
-    .from('anonymous_sessions')
-    .insert({
-      device_fingerprint_hash: deviceHash,
-      ip_address_hash: ipHash,
-      created_at: new Date().toISOString(),
-      last_activity: new Date().toISOString(),
-      expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), // 24 hours
-      study_guides_count: 0,
-      jeff_reed_sessions_count: 0
-    })
-    .select()
-    .single()
+  let sessionData: SessionResponse
+
+  if (requestData.action === 'create_anonymous') {
+    sessionData = await createAnonymousSession(services, requestData.device_fingerprint)
+  } else if (requestData.action === 'migrate_to_authenticated') {
+    // Require authentication for migration
+    if (!userContext || !userContext.userId) {
+      throw new AppError('AUTHENTICATION_ERROR', 'Authentication required for session migration', 401)
+    }
+    sessionData = await migrateToAuthenticated(services, requestData.anonymous_session_id!, userContext)
+  } else {
+    throw new AppError('INVALID_REQUEST', 'Invalid action', 400)
+  }
+
+  // Log analytics
+  await services.analyticsLogger.logEvent('auth_session_action', {
+    action: requestData.action,
+    is_anonymous: sessionData.is_anonymous,
+    migration_successful: sessionData.migration_successful
+  }, req.headers.get('x-forwarded-for'))
+
+  // Build response
+  const response: SessionApiResponse = {
+    success: true,
+    data: sessionData
+  }
+
+  return new Response(JSON.stringify(response), {
+    status: 200,
+    headers: { 'Content-Type': 'application/json' }
+  })
+}
+
+/**
+ * Validates session request
+ */
+function validateSessionRequest(requestData: any): void {
+  if (!requestData.action || !['create_anonymous', 'migrate_to_authenticated'].includes(requestData.action)) {
+    throw new AppError('VALIDATION_ERROR', 'Invalid action', 400)
+  }
+
+  if (requestData.action === 'migrate_to_authenticated' && !requestData.anonymous_session_id) {
+    throw new AppError('VALIDATION_ERROR', 'anonymous_session_id is required for migration', 400)
+  }
+}
+
+/**
+ * Creates anonymous session
+ */
+async function createAnonymousSession(services: ServiceContainer, deviceFingerprint?: string): Promise<SessionResponse> {
+  // Create anonymous session using Supabase auth
+  const { data, error } = await services.supabaseServiceClient.auth.signInAnonymously({
+    options: {
+      data: {
+        device_fingerprint: deviceFingerprint
+      }
+    }
+  })
 
   if (error) {
-    console.error('Anonymous session creation error:', error)
-    throw new AppError('DATABASE_ERROR', 'Failed to create anonymous session')
+    throw new AppError('AUTHENTICATION_ERROR', `Failed to create anonymous session: ${error.message}`, 401)
   }
 
-  // Log analytics event
-  await supabaseClient
-    .from('analytics_events')
-    .insert({
-      event_type: 'anonymous_session_created',
-      event_data: {
-        device_fingerprint_provided: !!requestBody.device_fingerprint
-      },
-      session_id: session.session_id,
-      ip_address: req.headers.get('x-forwarded-for')
-    })
-
   return {
-    session_id: session.session_id,
-    expires_at: session.expires_at,
+    session_id: data.session?.access_token || data.user?.id || '',
+    expires_at: data.session?.expires_at ? String(data.session.expires_at) : new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
     is_anonymous: true
   }
 }
 
-async function migrateToAuthenticated(
-  supabaseClient: any, 
-  requestBody: SessionRequest, 
-  req: Request
-): Promise<SessionResponse> {
-  
-  if (!requestBody.anonymous_session_id) {
-    throw new AppError('INVALID_REQUEST', 'anonymous_session_id is required for migration')
-  }
+/**
+ * Migrates anonymous session to authenticated
+ */
+async function migrateToAuthenticated(services: ServiceContainer, anonymousSessionId: string, userContext: UserContext): Promise<SessionResponse> {
+  try {
+    // Validate the anonymous session exists and hasn't been migrated
+    const { data: sessionCheck, error: sessionError } = await services.supabaseServiceClient
+      .from('user_sessions')
+      .select('id, is_migrated, created_at')
+      .eq('session_id', anonymousSessionId)
+      .eq('is_anonymous', true)
+      .single()
 
-  // Get the current authenticated user
-  const { data: { user }, error: userError } = await supabaseClient.auth.getUser()
-  
-  if (userError || !user) {
-    throw new AppError('UNAUTHORIZED', 'User must be authenticated to migrate session')
-  }
+    if (sessionError || !sessionCheck) {
+      throw new AppError('VALIDATION_ERROR', 'Invalid or non-existent anonymous session', 400)
+    }
 
-  // Get the anonymous session
-  const { data: anonymousSession, error: sessionError } = await supabaseClient
-    .from('anonymous_sessions')
-    .select('*')
-    .eq('session_id', requestBody.anonymous_session_id)
-    .single()
+    if (sessionCheck.is_migrated) {
+      throw new AppError('VALIDATION_ERROR', 'Anonymous session has already been migrated', 400)
+    }
 
-  if (sessionError || !anonymousSession) {
-    throw new AppError('NOT_FOUND', 'Anonymous session not found')
-  }
+    // Migrate study guides
+    const { error: guidesError } = await services.supabaseServiceClient
+      .from('study_guides')
+      .update({ user_id: userContext.userId })
+      .eq('session_id', anonymousSessionId)
+      .is('user_id', null)
 
-  // Check if session has expired
-  if (new Date(anonymousSession.expires_at) < new Date()) {
-    throw new AppError('SESSION_EXPIRED', 'Anonymous session has expired')
-  }
+    if (guidesError) {
+      console.error('Failed to migrate study guides:', guidesError)
+    }
 
-  // Migrate anonymous study guides to authenticated user
-  const { error: migrateStudyGuidesError } = await supabaseClient
-    .from('anonymous_study_guides')
-    .select('*')
-    .eq('session_id', requestBody.anonymous_session_id)
-    .then(async ({ data: guides }) => {
-      if (guides && guides.length > 0) {
-        // Transform anonymous guides to authenticated guides
-        const authenticatedGuides = guides.map(guide => ({
-          user_id: user.id,
-          input_type: guide.input_type,
-          input_value: 'migrated_from_anonymous', // Don't store original value for privacy
-          summary: guide.summary,
-          context: guide.context,
-          related_verses: guide.related_verses,
-          reflection_questions: guide.reflection_questions,
-          prayer_points: guide.prayer_points,
-          language: guide.language,
-          is_saved: true,
-          created_at: guide.created_at
-        }))
+    // Migrate feedback data
+    const { error: feedbackError } = await services.supabaseServiceClient
+      .from('feedback')
+      .update({ user_id: userContext.userId })
+      .eq('session_id', anonymousSessionId)
+      .is('user_id', null)
 
-        return await supabaseClient
-          .from('study_guides')
-          .insert(authenticatedGuides)
-      }
-      return { error: null }
-    })
+    if (feedbackError) {
+      console.error('Failed to migrate feedback:', feedbackError)
+    }
 
-  if (migrateStudyGuidesError) {
-    console.error('Study guides migration error:', migrateStudyGuidesError)
-    throw new AppError('MIGRATION_ERROR', 'Failed to migrate study guides')
-  }
+    // Mark session as migrated
+    const { error: updateError } = await services.supabaseServiceClient
+      .from('user_sessions')
+      .update({ 
+        is_migrated: true, 
+        migrated_to_user_id: userContext.userId,
+        migrated_at: new Date().toISOString()
+      })
+      .eq('session_id', anonymousSessionId)
 
-  // Mark anonymous session as migrated
-  await supabaseClient
-    .from('anonymous_sessions')
-    .update({ 
-      is_migrated: true,
-      last_activity: new Date().toISOString()
-    })
-    .eq('session_id', requestBody.anonymous_session_id)
+    if (updateError) {
+      throw new AppError('DATABASE_ERROR', 'Failed to mark session as migrated', 500)
+    }
 
-  // Log analytics event
-  await supabaseClient
-    .from('analytics_events')
-    .insert({
-      user_id: user.id,
-      event_type: 'anonymous_session_migrated',
-      event_data: {
-        original_session_id: requestBody.anonymous_session_id,
-        study_guides_migrated: anonymousSession.study_guides_count
-      },
-      session_id: requestBody.anonymous_session_id,
-      ip_address: req.headers.get('x-forwarded-for')
-    })
+    // Create authenticated session token
+    const { data: authData, error: authError } = await services.supabaseServiceClient.auth.getUser()
+    
+    const sessionId = authData?.user?.id || `auth_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
 
-  return {
-    session_id: user.id, // Use user ID as the new session identifier
-    expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
-    is_anonymous: false,
-    migration_successful: true
+    return {
+      session_id: sessionId,
+      expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 days
+      is_anonymous: false,
+      migration_successful: true
+    }
+  } catch (error) {
+    if (error instanceof AppError) {
+      throw error
+    }
+    throw new AppError('INTERNAL_SERVER_ERROR', 'Failed to migrate anonymous session', 500)
   }
 }
 
-async function hashData(data: string): Promise<string> {
-  const encoder = new TextEncoder()
-  const dataBytes = encoder.encode(data)
-  const hashBuffer = await crypto.subtle.digest('SHA-256', dataBytes)
-  const hashArray = Array.from(new Uint8Array(hashBuffer))
-  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('')
+// Create the function with conditional authentication based on action
+const authHandler: FunctionHandler = async (req, services, userContext) => {
+  // Check if migration is requested and require auth
+  if (req.method === 'POST') {
+    const body = await req.clone().json().catch(() => ({}))
+    if (body.action === 'migrate_to_authenticated' && !userContext?.userId) {
+      throw new AppError('AUTHENTICATION_ERROR', 'Authentication required for session migration', 401)
+    }
+  }
+  return handleAuthSession(req, services, userContext)
 }
+
+createFunction(authHandler, {
+  allowedMethods: ['POST'],
+  enableAnalytics: true,
+  timeout: 10000, // 10 seconds
+  requireAuth: false // We handle auth conditionally in the handler
+})

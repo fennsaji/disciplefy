@@ -10,7 +10,6 @@ import '../../domain/entities/study_guide.dart';
 import '../../domain/repositories/study_repository.dart';
 import '../../../../core/network/network_info.dart';
 import '../../../../core/services/api_auth_helper.dart';
-import '../../../../core/services/auth_service.dart';
 
 /// Implementation of the StudyRepository interface.
 /// 
@@ -54,9 +53,6 @@ class StudyRepositoryImpl implements StudyRepository {
         ));
       }
 
-      // Get authentication context
-      final userContext = await _getUserContext();
-      
       // Use unified authentication helper
       final headers = await ApiAuthHelper.getAuthHeaders();
 
@@ -67,7 +63,6 @@ class StudyRepositoryImpl implements StudyRepository {
           'input_type': inputType,
           'input_value': input,
           'language': language,
-          'user_context': userContext,
         },
         headers: headers,
       );
@@ -86,7 +81,13 @@ class StudyRepositoryImpl implements StudyRepository {
         ));
       } else if (response.status >= 500) {
         return const Left(ServerFailure(
-          
+          message: 'Server error occurred. Please try again later.',
+          code: 'SERVER_ERROR',
+        ));
+      } else if (response.status == 401) {
+        return const Left(AuthenticationFailure(
+          message: 'Authentication required. Please sign in to continue.',
+          code: 'UNAUTHORIZED',
         ));
       } else {
         return const Left(ServerFailure(
@@ -257,54 +258,7 @@ class StudyRepositoryImpl implements StudyRepository {
       'userId': studyGuide.userId,
     };
 
-  /// Gets the user context for API requests.
-  Future<Map<String, dynamic>> _getUserContext() async {
-    try {
-      // Use AuthService.isFullyAuthenticated() to properly exclude guest users
-      if (await AuthService.isFullyAuthenticated()) {
-        final userId = await AuthService.getUserId();
-        return {
-          'is_authenticated': true,
-          'user_id': userId,
-        };
-      } else {
-        // For anonymous users, create or get a session ID
-        final sessionId = await _getOrCreateSessionId();
-        return {
-          'is_authenticated': false,
-          'session_id': sessionId,
-        };
-      }
-    } catch (e) {
-      // Fallback to anonymous session
-      final sessionId = await _getOrCreateSessionId();
-      return {
-        'is_authenticated': false,
-        'session_id': sessionId,
-      };
-    }
-  }
-
-  /// Gets or creates a session ID for anonymous users.
-  Future<String> _getOrCreateSessionId() async {
-    try {
-      if (!Hive.isBoxOpen('app_settings')) {
-        await Hive.openBox('app_settings');
-      }
-      
-      final box = Hive.box('app_settings');
-      String? sessionId = box.get('anonymous_session_id');
-      
-      if (sessionId == null || sessionId.isEmpty) {
-        sessionId = _uuid.v4();
-        await box.put('anonymous_session_id', sessionId);
-      }
-      
-      return sessionId;
-    } catch (e) {
-      // Fallback to generating a new session ID
-      return _uuid.v4();
-    }
-  }
+  /// User context is now automatically handled by JWT token authentication.
+  /// No need to manually pass user context in the request body.
 
 }

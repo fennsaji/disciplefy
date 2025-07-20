@@ -73,3 +73,27 @@ class UpdateUserProfileRequested extends AuthEvent {
   @override
   List<Object?> get props => [languagePreference, themePreference];
 }
+
+/// Event to handle token refresh failure and force logout
+class TokenRefreshFailed extends AuthEvent {
+  final String reason;
+
+  const TokenRefreshFailed({
+    required this.reason,
+  });
+
+  @override
+  List<Object?> get props => [reason];
+}
+
+/// Event to force logout and clear all data
+class ForceLogoutRequested extends AuthEvent {
+  final String reason;
+
+  const ForceLogoutRequested({
+    required this.reason,
+  });
+
+  @override
+  List<Object?> get props => [reason];
+}

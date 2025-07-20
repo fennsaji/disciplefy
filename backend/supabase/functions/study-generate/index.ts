@@ -1,239 +1,154 @@
-import { serve } from "https://deno.land/std@0.208.0/http/server.ts"
-import { createClient, SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2'
-import { corsHeaders } from '../_shared/cors.ts'
-import { SecurityValidator } from '../_shared/security-validator.ts'
-import { RateLimiter } from '../_shared/rate-limiter.ts'
-import { LLMService } from '../_shared/llm-service.ts'
-import { ErrorHandler, AppError } from '../_shared/error-handler.ts'
-import { RequestValidator } from '../_shared/request-validator.ts'
-import { AnalyticsLogger } from '../_shared/analytics-logger.ts'
-import { 
-  StudyGuideRepository,
-  StudyGuideInput,
-  StudyGuideContent,
-  UserContext,
-  StudyGuideResponse
-} from '../_shared/repositories/study-guide-repository.ts'
+/**
+ * Study Guide Generation Edge Function
+ * 
+ * Refactored according to the security guide to eliminate critical vulnerabilities:
+ * - Removed insecure manual JWT decoding
+ * - Eliminated client-provided user context
+ * - Uses centralized AuthService for secure authentication
+ * - Leverages function factory for boilerplate elimination
+ */
+
+import { createFunction } from '../_shared/core/function-factory.ts'
+import { ServiceContainer } from '../_shared/core/services.ts'
+import { RequestValidator } from '../_shared/utils/request-validator.ts'
+import { AppError } from '../_shared/utils/error-handler.ts'
+import { StudyGuideInput } from '../_shared/types/index.ts'
 
 /**
- * Request payload for study guide generation.
+ * Request payload for study guide generation
+ * 
+ * Note: user_context is removed as per security guide to prevent
+ * client-provided user impersonation attacks
  */
 interface StudyGenerationRequest {
   readonly input_type: 'scripture' | 'topic'
   readonly input_value: string
   readonly language?: string
-  readonly user_context?: {
-    readonly is_authenticated: boolean
-    readonly user_id?: string
-    readonly session_id?: string
-  }
 }
 
 /**
- * Response payload for study guide generation.
- */
-interface StudyGuideApiResponse {
-  readonly success: true
-  readonly data: {
-    readonly study_guide: StudyGuideResponse
-    readonly from_cache: boolean
-    readonly cache_stats: {
-      readonly hit_rate: number
-      readonly response_time_ms: number
-    }
-  }
-  readonly rate_limit: {
-    readonly remaining: number
-    readonly reset_time: number
-  }
-}
-
-// Configuration constants
-const DEFAULT_LANGUAGE = 'en' as const
-const REQUIRED_ENV_VARS = ['SUPABASE_URL', 'SUPABASE_SERVICE_ROLE_KEY'] as const
-
-/**
- * Study Guide Generation Edge Function
+ * Study guide generation handler
  * 
- * Enhanced version with content caching and deduplication.
- * Significantly reduces LLM API calls and storage requirements.
+ * This handler demonstrates the new secure pattern:
+ * 1. Get user context SECURELY from AuthService
+ * 2. Validate request body (no client-provided user context)
+ * 3. Use injected services for business logic
  */
-serve(async (req: Request): Promise<Response> => {
-  const startTime = performance.now()
+async function handleStudyGenerate(req: Request, { authService, llmService, studyGuideRepository, rateLimiter, analyticsLogger, securityValidator }: ServiceContainer): Promise<Response> {
+  // 1. Get user context SECURELY from the new AuthService
+  const userContext = await authService.getUserContext(req)
+  
+  // 2. Validate request body and parse data
+  const { input_type, input_value, language } = await parseAndValidateRequest(req)
+  
+  // 3. Security validation of input
+  const securityResult = await securityValidator.validateInput(input_value, input_type)
+  if (!securityResult.isValid) {
+    await analyticsLogger.logEvent('security_violation', {
+      event_type: securityResult.eventType,
+      risk_score: securityResult.riskScore,
+      action_taken: 'BLOCKED',
+      user_id: userContext.userId,
+      session_id: userContext.sessionId
+    }, req.headers.get('x-forwarded-for'))
 
-  // Handle preflight CORS requests
-  if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders })
+    throw new AppError('SECURITY_VIOLATION', securityResult.message, 400)
   }
 
-  try {
-    // Validate environment and method
-    validateEnvironment()
-    RequestValidator.validateHttpMethod(req.method, ['POST'])
+  // 4. Check for existing cached content FIRST (before rate limiting)
+  const studyGuideInput: StudyGuideInput = {
+    type: input_type,
+    value: input_value,
+    language: language || 'en'
+  }
 
-    // Initialize services
-    const supabaseClient = createSupabaseClient(req)
-    const services = initializeServices(supabaseClient)
+  const existingContent = await studyGuideRepository.findExistingContent(studyGuideInput, userContext)
+  
+  if (existingContent) {
+    // Return cached content immediately (no rate limit check needed)
+    await analyticsLogger.logEvent('study_guide_cache_hit', {
+      input_type,
+      language: language || 'en',
+      user_type: userContext.type,
+      user_id: userContext.userId,
+      session_id: userContext.sessionId
+    }, req.headers.get('x-forwarded-for'))
 
-    // Parse and validate request
-    const requestData = await parseAndValidateRequest(req)
-    const userContext = buildUserContext(requestData)
-
-    // Security validation
-    await performSecurityValidation(
-      services.securityValidator,
-      services.analyticsLogger,
-      requestData,
-      req
-    )
-
-    // Rate limiting - check and enforce limits
-    await enforceRateLimit(
-      services.rateLimiter,
-      userContext
-    )
-
-    // Attempt to find existing cached content
-    const studyGuideInput: StudyGuideInput = {
-      type: requestData.input_type,
-      value: requestData.input_value,
-      language: requestData.language || DEFAULT_LANGUAGE
-    }
-
-    let studyGuideResponse: StudyGuideResponse
-    let fromCache = false
-
-    // Check for existing content in cache
-    const existingContent = await services.repository.findExistingContent(
-      studyGuideInput,
-      userContext
-    )
-
-    if (existingContent) {
-      // Return cached content
-      studyGuideResponse = existingContent
-      fromCache = true
-      
-      await services.analyticsLogger.logEvent('study_guide_cache_hit', {
-        input_type: requestData.input_type,
-        language: requestData.language || DEFAULT_LANGUAGE,
-        user_type: userContext.type,
-        user_id: userContext.userId,
-        session_id: userContext.sessionId
-      }, req.headers.get('x-forwarded-for'))
-    } else {
-      // Generate new content
-      const generatedContent = await generateNewContent(
-        services.llmService,
-        studyGuideInput
-      )
-
-      // Save to cache and link to user
-      studyGuideResponse = await services.repository.saveStudyGuide(
-        studyGuideInput,
-        generatedContent,
-        userContext
-      )
-
-      fromCache = false
-
-      // Record usage for rate limiting (only for new generations)
-      const identifier = userContext.type === 'authenticated' 
-        ? userContext.userId! 
-        : userContext.sessionId!
-      await services.rateLimiter.recordUsage(identifier, userContext.type)
-
-      await services.analyticsLogger.logEvent('study_guide_generated', {
-        input_type: requestData.input_type,
-        language: requestData.language || DEFAULT_LANGUAGE,
-        user_type: userContext.type,
-        user_id: userContext.userId,
-        session_id: userContext.sessionId
-      }, req.headers.get('x-forwarded-for'))
-    }
-
-    // Get final rate limit status after recording usage
-    const identifier = userContext.type === 'authenticated' 
-      ? userContext.userId! 
-      : userContext.sessionId!
-    const rateLimitResult = await services.rateLimiter.checkRateLimit(identifier, userContext.type)
-
-    // Calculate response time
-    const responseTime = performance.now() - startTime
-
-    // Build response
-    const response: StudyGuideApiResponse = {
+    return new Response(JSON.stringify({
       success: true,
       data: {
-        study_guide: studyGuideResponse,
-        from_cache: fromCache,
-        cache_stats: {
-          hit_rate: fromCache ? 100 : 0, // Individual request hit rate
-          response_time_ms: Math.round(responseTime)
-        }
-      },
-      rate_limit: {
-        remaining: rateLimitResult.remaining,
-        reset_time: rateLimitResult.resetTime
+        study_guide: existingContent,
+        from_cache: true
       }
-    }
-
-    return new Response(JSON.stringify(response), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    }), {
       status: 200,
+      headers: { 'Content-Type': 'application/json' }
     })
-
-  } catch (error) {
-    return ErrorHandler.handleError(error, corsHeaders)
   }
-})
 
-/**
- * Validates required environment variables.
- */
-function validateEnvironment(): void {
-  RequestValidator.validateEnvironmentVariables(REQUIRED_ENV_VARS)
-}
+  // --- CACHE MISS: Only now enforce rate limiting for expensive LLM generation ---
+  
+  // 5. Rate limiting enforcement (only for new content generation)
+  const identifier = userContext.type === 'authenticated' ? userContext.userId! : userContext.sessionId!
+  await rateLimiter.enforceRateLimit(identifier, userContext.type)
 
-/**
- * Creates configured Supabase client with service role for database operations.
- */
-function createSupabaseClient(req: Request): SupabaseClient {
-  const supabaseUrl = globalThis.Deno.env.get('SUPABASE_URL')!
-  const supabaseServiceKey = globalThis.Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+  // 6. Generate new content using LLM service
+  const generatedContent = await llmService.generateStudyGuide({
+    inputType: input_type,
+    inputValue: input_value,
+    language: language || 'en'
+  })
 
-  return createClient(supabaseUrl, supabaseServiceKey, {
-    global: {
-      headers: { 
-        Authorization: req.headers.get('Authorization') || '' 
-      },
+  // 7. Save to repository
+  const savedGuide = await studyGuideRepository.saveStudyGuide(
+    studyGuideInput,
+    {
+      summary: generatedContent.summary,
+      interpretation: generatedContent.interpretation,
+      context: generatedContent.context,
+      relatedVerses: generatedContent.relatedVerses,
+      reflectionQuestions: generatedContent.reflectionQuestions,
+      prayerPoints: generatedContent.prayerPoints
     },
+    userContext
+  )
+
+  // 8. Record usage for rate limiting
+  await rateLimiter.recordUsage(identifier, userContext.type)
+
+  // 9. Log analytics
+  await analyticsLogger.logEvent('study_guide_generated', {
+    input_type,
+    language: language || 'en',
+    user_type: userContext.type,
+    user_id: userContext.userId,
+    session_id: userContext.sessionId
+  }, req.headers.get('x-forwarded-for'))
+
+  // 10. Get rate limit status
+  const rateLimitResult = await rateLimiter.checkRateLimit(identifier, userContext.type)
+
+  // 11. Return response
+  return new Response(JSON.stringify({
+    success: true,
+    data: {
+      study_guide: savedGuide,
+      from_cache: false
+    },
+    rate_limit: {
+      remaining: rateLimitResult.remaining,
+      reset_time: rateLimitResult.resetTime
+    }
+  }), {
+    status: 200,
+    headers: { 'Content-Type': 'application/json' }
   })
 }
 
 /**
- * Initializes all required services.
- */
-function initializeServices(supabaseClient: SupabaseClient) {
-  // Get rate limiting configuration from environment variables
-  const rateLimitConfig = {
-    anonymousLimit: parseInt(globalThis.Deno.env.get('ANONYMOUS_RATE_LIMIT') || '3', 10),
-    authenticatedLimit: parseInt(globalThis.Deno.env.get('AUTHENTICATED_RATE_LIMIT') || '10', 10),
-    anonymousWindowMinutes: 480, // 8 hours for anonymous users
-    authenticatedWindowMinutes: 60 // 1 hour for authenticated users
-  }
-
-  return {
-    securityValidator: new SecurityValidator(),
-    rateLimiter: new RateLimiter(supabaseClient, rateLimitConfig),
-    analyticsLogger: new AnalyticsLogger(supabaseClient),
-    llmService: new LLMService(),
-    repository: new StudyGuideRepository(supabaseClient)
-  }
-}
-
-/**
- * Parses and validates request payload.
+ * Parses and validates request payload
+ * 
+ * Note: This no longer accepts user_context from client as per security guide
  */
 async function parseAndValidateRequest(req: Request): Promise<StudyGenerationRequest> {
   let requestBody: any
@@ -241,11 +156,7 @@ async function parseAndValidateRequest(req: Request): Promise<StudyGenerationReq
   try {
     requestBody = await req.json()
   } catch (error) {
-    throw new AppError(
-      'INVALID_REQUEST',
-      'Invalid JSON in request body',
-      400
-    )
+    throw new AppError('INVALID_REQUEST', 'Invalid JSON in request body', 400)
   }
 
   // Validate required fields
@@ -267,125 +178,12 @@ async function parseAndValidateRequest(req: Request): Promise<StudyGenerationReq
 
   RequestValidator.validateRequestBody(requestBody, validationRules)
 
-  // Validate user context
-  if (requestBody.user_context) {
-    validateUserContext(requestBody.user_context)
-  }
-
-  return requestBody as StudyGenerationRequest
-}
-
-/**
- * Validates user context structure.
- */
-function validateUserContext(userContext: any): void {
-  if (typeof userContext.is_authenticated !== 'boolean') {
-    throw new AppError(
-      'VALIDATION_ERROR',
-      'user_context.is_authenticated must be a boolean',
-      400
-    )
-  }
-
-  if (userContext.is_authenticated && !userContext.user_id) {
-    throw new AppError(
-      'VALIDATION_ERROR',
-      'user_context.user_id is required for authenticated users',
-      400
-    )
-  }
-
-  if (!userContext.is_authenticated && !userContext.session_id) {
-    throw new AppError(
-      'VALIDATION_ERROR',
-      'user_context.session_id is required for anonymous users',
-      400
-    )
-  }
-}
-
-/**
- * Builds user context from request data.
- */
-function buildUserContext(requestData: StudyGenerationRequest): UserContext {
-  const userContextData = requestData.user_context
-
-  if (!userContextData) {
-    throw new AppError(
-      'VALIDATION_ERROR',
-      'user_context is required',
-      400
-    )
-  }
-
   return {
-    type: userContextData.is_authenticated ? 'authenticated' : 'anonymous',
-    userId: userContextData.user_id,
-    sessionId: userContextData.session_id
+    input_type: requestBody.input_type,
+    input_value: requestBody.input_value,
+    language: requestBody.language
   }
 }
 
-/**
- * Performs security validation on input.
- */
-async function performSecurityValidation(
-  securityValidator: SecurityValidator,
-  analyticsLogger: AnalyticsLogger,
-  requestData: StudyGenerationRequest,
-  req: Request
-): Promise<void> {
-  const securityResult = await securityValidator.validateInput(
-    requestData.input_value,
-    requestData.input_type
-  )
-
-  if (!securityResult.isValid) {
-    await analyticsLogger.logEvent('security_violation', {
-      event_type: securityResult.eventType,
-      risk_score: securityResult.riskScore,
-      action_taken: 'BLOCKED',
-      user_id: requestData.user_context?.user_id,
-      session_id: requestData.user_context?.session_id
-    }, req.headers.get('x-forwarded-for'))
-
-    throw new AppError('SECURITY_VIOLATION', securityResult.message, 400)
-  }
-}
-
-/**
- * Enforces rate limiting.
- */
-async function enforceRateLimit(
-  rateLimiter: RateLimiter,
-  userContext: UserContext
-) {
-  const identifier = userContext.type === 'authenticated' 
-    ? userContext.userId! 
-    : userContext.sessionId!
-
-  await rateLimiter.enforceRateLimit(identifier, userContext.type)
-  return await rateLimiter.checkRateLimit(identifier, userContext.type)
-}
-
-/**
- * Generates new study guide content using LLM.
- */
-async function generateNewContent(
-  llmService: LLMService,
-  input: StudyGuideInput
-): Promise<StudyGuideContent> {
-  const generated = await llmService.generateStudyGuide({
-    inputType: input.type,
-    inputValue: input.value,
-    language: input.language
-  })
-
-  return {
-    summary: generated.summary,
-    interpretation: generated.interpretation,
-    context: generated.context,
-    relatedVerses: generated.relatedVerses,
-    reflectionQuestions: generated.reflectionQuestions,
-    prayerPoints: generated.prayerPoints
-  }
-}
+// Wrap the handler in the factory as specified in the guide
+createFunction(handleStudyGenerate)

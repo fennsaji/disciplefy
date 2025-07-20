@@ -15,24 +15,29 @@ class ApiAuthHelper {
   /// Uses live Supabase session for authenticated users
   /// Uses x-session-id header for anonymous users
   static Future<Map<String, String>> getAuthHeaders() async {
-    final headers = <String, String>{
-      'Content-Type': 'application/json',
-      'apikey': AppConfig.supabaseAnonKey,
-    };
+    try {
+      final headers = <String, String>{
+        'Content-Type': 'application/json',
+        'apikey': AppConfig.supabaseAnonKey,
+      };
 
-    // Get live Supabase session (same pattern as working StudyGuidesApiService)
-    final session = Supabase.instance.client.auth.currentSession;
-    if (session != null && session.accessToken.isNotEmpty) {
-      headers['Authorization'] = 'Bearer ${session.accessToken}';
-      print('🔐 [API] Using Supabase session token for user: ${session.user.id}');
-    } else {
-      // For anonymous users, add x-session-id header (as expected by backend)
-      final sessionId = await _getOrCreateAnonymousSessionId();
-      headers['x-session-id'] = sessionId;
-      print('🔐 [API] Using anonymous session ID: $sessionId');
+      // Get live Supabase session (same pattern as working StudyGuidesApiService)
+      final session = Supabase.instance.client.auth.currentSession;
+      if (session != null && session.accessToken.isNotEmpty) {
+        headers['Authorization'] = 'Bearer ${session.accessToken}';
+        print('🔐 [API] Using Supabase session token for user: ${session.user.id}');
+      } else {
+        // For anonymous users, add x-session-id header (as expected by backend)
+        final sessionId = await _getOrCreateAnonymousSessionId();
+        headers['x-session-id'] = sessionId;
+        print('🔐 [API] Using anonymous session ID: $sessionId');
+      }
+
+      return headers;
+    } catch (e) {
+      print('🚨 [API] Error creating auth headers: $e');
+      rethrow;
     }
-
-    return headers;
   }
 
   /// Get or create anonymous session ID for unauthenticated users

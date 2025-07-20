@@ -1,10 +1,9 @@
 import 'dart:convert';
 import 'package:dartz/dartz.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:http/http.dart' as http;
 
 import '../../../../core/config/app_config.dart';
 import '../../../../core/error/failures.dart';
+import '../../../../core/services/http_service.dart';
 import '../../domain/entities/recommended_guide_topic.dart';
 import '../models/recommended_guide_topic_response.dart';
 
@@ -14,13 +13,10 @@ class RecommendedGuidesService {
   static String get _baseUrl => AppConfig.baseApiUrl.replaceAll('/functions/v1', '');
   static const String _topicsEndpoint = '/functions/v1/topics-recommended';
   
-  // Secure storage for auth token
-  static const FlutterSecureStorage _secureStorage = FlutterSecureStorage();
-  
-  final http.Client _httpClient;
+  final HttpService _httpService;
 
-  RecommendedGuidesService({http.Client? httpClient}) 
-      : _httpClient = httpClient ?? http.Client();
+  RecommendedGuidesService({HttpService? httpService}) 
+      : _httpService = httpService ?? HttpServiceProvider.instance;
 
   /// Fetches all recommended guide topics from the API.
   /// 
@@ -31,21 +27,18 @@ class RecommendedGuidesService {
       print('🚀 [TOPICS] Fetching topics from API...');
       
       // Prepare headers for API request
-      final headers = await _getApiHeaders();
+      final headers = await _httpService.createHeaders();
       
       // Make API request
-      final response = await _httpClient.get(
-        Uri.parse('$_baseUrl$_topicsEndpoint'),
+      final response = await _httpService.get(
+        '$_baseUrl$_topicsEndpoint',
         headers: headers,
-      ).timeout(const Duration(seconds: 10));
+      );
 
       print('📡 [TOPICS] API Response Status: ${response.statusCode}');
 
       if (response.statusCode == 200) {
         return _parseTopicsResponse(response.body);
-      } else if (response.statusCode == 401) {
-        print('🔒 [TOPICS] Unauthorized access');
-        return const Left(AuthenticationFailure(message: 'Unauthorized access to topics'));
       } else {
         print('❌ [TOPICS] API error: ${response.statusCode} - ${response.body}');
         return Left(ServerFailure(message: 'Failed to fetch topics: ${response.statusCode}'));
@@ -81,12 +74,12 @@ class RecommendedGuidesService {
       print('🚀 [TOPICS] Fetching filtered topics: $uri');
 
       // Prepare headers for API request
-      final headers = await _getApiHeaders();
+      final headers = await _httpService.createHeaders();
 
-      final response = await _httpClient.get(
-        uri,
+      final response = await _httpService.get(
+        uri.toString(),
         headers: headers,
-      ).timeout(const Duration(seconds: 10));
+      );
 
       if (response.statusCode == 200) {
         return _parseTopicsResponse(response.body);
@@ -100,24 +93,7 @@ class RecommendedGuidesService {
     }
   }
 
-  /// Prepares headers for API requests with proper authentication
-  Future<Map<String, String>> _getApiHeaders() async {
-    final headers = <String, String>{
-      'Content-Type': 'application/json',
-      'apikey': AppConfig.supabaseAnonKey, // Always include the anon key
-    };
 
-    // Get auth token from secure storage if available
-    final authToken = await _secureStorage.read(key: 'auth_token');
-    if (authToken != null && authToken.isNotEmpty) {
-      headers['Authorization'] = 'Bearer $authToken';
-    } else {
-      // For anonymous access, use the Supabase anon key as Bearer token
-      headers['Authorization'] = 'Bearer ${AppConfig.supabaseAnonKey}';
-    }
-
-    return headers;
-  }
 
   /// Parses the API response and converts to domain entities.
   Either<Failure, List<RecommendedGuideTopic>> _parseTopicsResponse(String responseBody) {
@@ -146,6 +122,6 @@ class RecommendedGuidesService {
 
   /// Disposes of the HTTP client.
   void dispose() {
-    _httpClient.close();
+    _httpService.dispose();
   }
 }
