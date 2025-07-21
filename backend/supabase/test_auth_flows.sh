@@ -79,7 +79,7 @@ test_anonymous_read_access() {
     # Test topics table access
     print_info "Testing topics table read access..."
     local response=$(curl -s -X GET \
-        "${SUPABASE_URL}/rest/v1/topics?select=*" \
+        "${SUPABASE_URL}/rest/v1/recommended_topics?select=*" \
         -H "apikey: ${SUPABASE_ANON_KEY}" \
         -H "Content-Type: application/json")
     
@@ -96,7 +96,7 @@ test_anonymous_read_access() {
     # Test daily_verse table access
     print_info "Testing daily_verse table read access..."
     local response=$(curl -s -X GET \
-        "${SUPABASE_URL}/rest/v1/daily_verse?select=*" \
+        "${SUPABASE_URL}/rest/v1/daily_verses_cache?select=*" \
         -H "apikey: ${SUPABASE_ANON_KEY}" \
         -H "Content-Type: application/json")
     
