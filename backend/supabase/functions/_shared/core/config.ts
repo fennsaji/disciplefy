@@ -24,14 +24,22 @@ export interface AppConfig {
  * Validates and returns the complete application configuration
  */
 function getValidatedConfig(): AppConfig {
+  const openaiApiKey = Deno.env.get('OPENAI_API_KEY')
+  const anthropicApiKey = Deno.env.get('ANTHROPIC_API_KEY')
+  const useMockEnv = Deno.env.get('USE_MOCK')
+  
+  // Auto-enable mock mode if no LLM keys are provided
+  const hasLLMKeys = !!(openaiApiKey || anthropicApiKey)
+  const useMock = useMockEnv === 'true' || !hasLLMKeys
+
   const config: Partial<AppConfig> = {
     supabaseUrl: Deno.env.get('SUPABASE_URL'),
     supabaseServiceKey: Deno.env.get('SUPABASE_SERVICE_ROLE_KEY'),
     supabaseAnonKey: Deno.env.get('SUPABASE_ANON_KEY'),
-    openaiApiKey: Deno.env.get('OPENAI_API_KEY'),
-    anthropicApiKey: Deno.env.get('ANTHROPIC_API_KEY'),
+    openaiApiKey,
+    anthropicApiKey,
     llmProvider: Deno.env.get('LLM_PROVIDER') as 'openai' | 'anthropic' | undefined,
-    useMock: Deno.env.get('USE_MOCK') === 'true'
+    useMock
   }
 
   // Validate required variables
@@ -46,14 +54,15 @@ function getValidatedConfig(): AppConfig {
     )
   }
 
-  // Validate LLM configuration if not using mock
-  if (!config.useMock && !config.openaiApiKey && !config.anthropicApiKey) {
-    throw new AppError(
-      'CONFIGURATION_ERROR',
-      'Either OPENAI_API_KEY or ANTHROPIC_API_KEY must be provided when USE_MOCK is not true',
-      500
-    )
+  // Provide mock keys if in mock mode but no real keys available
+  if (config.useMock && !hasLLMKeys) {
+    config.openaiApiKey = 'mock-openai-key'
+    config.anthropicApiKey = 'mock-anthropic-key'
+    config.llmProvider = 'openai'
   }
+
+  // Log configuration status (for debugging)
+  console.log(`[CONFIG] Mock mode: ${config.useMock}, LLM Provider: ${config.llmProvider}`)
 
   return config as AppConfig
 }

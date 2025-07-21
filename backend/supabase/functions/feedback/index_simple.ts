@@ -33,16 +33,11 @@ async function handleFeedback(req: Request): Promise<Response> {
   try {
     // Parse request body
     let requestBody: any
-    const bodyText = await req.text()
-    console.log('Raw request body:', bodyText)
-    
     try {
-      requestBody = JSON.parse(bodyText)
-      console.log('Parsed JSON:', requestBody)
+      requestBody = await req.json()
     } catch (error) {
-      console.error('JSON parse error:', error)
       return new Response(
-        JSON.stringify({ success: false, error: 'Invalid JSON in request body', debug: bodyText }), 
+        JSON.stringify({ success: false, error: 'Invalid JSON in request body' }), 
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
@@ -77,7 +72,7 @@ async function handleFeedback(req: Request): Promise<Response> {
         was_helpful: requestBody.was_helpful,
         message: requestBody.message || null,
         category: requestBody.category || 'general',
-        user_id: null, // Use null for anonymous users instead of a string
+        user_id: 'anonymous', // For now, simplified
         created_at: new Date().toISOString()
       })
       .select()

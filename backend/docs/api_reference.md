@@ -9,7 +9,7 @@ This document provides comprehensive API documentation for the Disciplefy Bible 
 ## Authentication
 
 The API supports two authentication modes:
-- **Anonymous**: No authentication required, limited features
+- **Anonymous**: Requires anonymous token
 - **Authenticated**: Requires Bearer token from Supabase Auth
 
 ### Authentication Header
@@ -148,11 +148,12 @@ Authorization: Bearer YOUR_ACCESS_TOKEN (optional)
 
 **Description**: Retrieves curated Bible study topics following Jeff Reed's methodology.
 
-**Authentication**: Not required (public endpoint)
+**Authentication**: Required (Bearer token from Supabase Auth or anonymous token)
 
 **Request Headers**:
 ```
 Content-Type: application/json
+Authorization: Bearer YOUR_ACCESS_TOKEN
 ```
 
 **Query Parameters**:
@@ -210,8 +211,8 @@ GET /functions/v1/topics-recommended?category=Bible%20Study%20Methods&difficulty
 ```
 
 **Notes**:
-- No authentication required
-- No rate limiting applied
+- Requires authentication (Bearer token or anonymous token)
+- Rate limiting applied per standard rate limits
 - Currently supports 15 predefined topics in English
 - Categories include: Bible Study Methods, Group Leadership, Spiritual Disciplines, etc.
 
@@ -521,11 +522,12 @@ Authorization: Bearer SUPABASE_ANON_KEY (creation) or Bearer USER_ACCESS_TOKEN (
 
 **Description**: Retrieves the daily Bible verse with multiple language translations using AI-powered verse generation.
 
-**Authentication**: Not required (public endpoint)
+**Authentication**: Required (Bearer token from Supabase Auth or anonymous token)
 
 **Request Headers**:
 ```
 Content-Type: application/json
+Authorization: Bearer YOUR_ACCESS_TOKEN
 ```
 
 **Query Parameters**:
@@ -578,7 +580,7 @@ GET /functions/v1/daily-verse?date=2025-07-20
 - Uses LLM-powered verse generation with anti-repetition logic
 - Automatically excludes recently used verses (past 30 days)
 - Supports caching for improved performance
-- No authentication or rate limiting required
+- Requires authentication (Bearer token or anonymous token)
 - Analytics logging tracks verse access patterns
 - Fallback system ensures verse availability even if LLM fails
 
