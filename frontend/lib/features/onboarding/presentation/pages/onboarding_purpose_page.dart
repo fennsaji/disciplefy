@@ -1,11 +1,26 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:hive_flutter/hive_flutter.dart';
 
 import '../../../../core/localization/app_localizations.dart';
+import '../../../../core/di/injection_container.dart';
+import '../../domain/entities/onboarding_state_entity.dart';
+import '../bloc/onboarding_bloc.dart';
+import '../bloc/onboarding_event.dart';
+import '../bloc/onboarding_state.dart';
 
 class OnboardingPurposePage extends StatelessWidget {
   const OnboardingPurposePage({super.key});
+
+  @override
+  Widget build(BuildContext context) => BlocProvider(
+      create: (context) => sl<OnboardingBloc>()..add(const LoadOnboardingState()),
+      child: const _OnboardingPurposeContent(),
+    );
+}
+
+class _OnboardingPurposeContent extends StatelessWidget {
+  const _OnboardingPurposeContent();
 
   @override
   Widget build(BuildContext context) {
@@ -20,18 +35,56 @@ class OnboardingPurposePage extends StatelessWidget {
       );
     }
 
-    return Scaffold(
-      appBar: AppBar(
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => context.go('/onboarding/language'),
+    return BlocListener<OnboardingBloc, OnboardingState>(
+      listener: (context, state) {
+        if (state is OnboardingNavigating) {
+          // Navigate based on the navigation state
+          switch (state.toStep) {
+            case OnboardingStep.welcome:
+              context.go('/onboarding/welcome');
+              break;
+            case OnboardingStep.language:
+              context.go('/onboarding/language');
+              break;
+            case OnboardingStep.completed:
+              context.go('/');
+              break;
+            default:
+              break;
+          }
+        } else if (state is OnboardingCompleted) {
+          // Navigate to home when onboarding is completed
+          context.go('/');
+          
+          // Show success message
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Welcome to Disciplefy! Let\'s start your spiritual journey.'),
+              backgroundColor: Colors.green,
+              duration: Duration(seconds: 3),
+            ),
+          );
+        } else if (state is OnboardingError) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(state.message),
+              backgroundColor: Theme.of(context).colorScheme.error,
+            ),
+          );
+        }
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back),
+            onPressed: () => context.read<OnboardingBloc>().add(const PreviousStep()),
+          ),
         ),
-      ),
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
-            children: [
+        body: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              children: [
               const Spacer(),
               
               // Illustration
@@ -120,28 +173,43 @@ class OnboardingPurposePage extends StatelessWidget {
               
               const Spacer(),
               
-              ElevatedButton(
-                onPressed: () => _completeOnboarding(context),
-                style: ElevatedButton.styleFrom(
-                  minimumSize: const Size.fromHeight(56),
-                ),
-                child: const Text('Get Started'),
+              BlocBuilder<OnboardingBloc, OnboardingState>(
+                builder: (context, state) {
+                  final isLoading = state is OnboardingLoading;
+                  
+                  return ElevatedButton(
+                    onPressed: isLoading 
+                        ? null 
+                        : () => context.read<OnboardingBloc>().add(const CompleteOnboardingRequested()),
+                    style: ElevatedButton.styleFrom(
+                      minimumSize: const Size.fromHeight(56),
+                    ),
+                    child: isLoading
+                        ? const Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                ),
+                              ),
+                              SizedBox(width: 12),
+                              Text('Setting up...'),
+                            ],
+                          )
+                        : const Text('Get Started'),
+                  );
+                },
               ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
     );
-  }
-
-  void _completeOnboarding(BuildContext context) async {
-    // Mark onboarding as completed
-    final box = Hive.box('app_settings');
-    await box.put('onboarding_completed', true);
-    
-    if (context.mounted) {
-      context.go('/');
-    }
   }
 }
 

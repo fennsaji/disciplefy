@@ -1,5 +1,6 @@
 import 'package:equatable/equatable.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../domain/exceptions/auth_exceptions.dart';
 
 /// Base class for all authentication states
 /// Follows the BLoC pattern with immutable states
@@ -69,14 +70,16 @@ class AuthenticatedState extends AuthState {
 class AuthErrorState extends AuthState {
   final String message;
   final String? errorCode;
+  final ErrorSeverity severity;
 
   const AuthErrorState({
     required this.message,
     this.errorCode,
+    this.severity = ErrorSeverity.error,
   });
 
   @override
-  List<Object?> get props => [message, errorCode];
+  List<Object?> get props => [message, errorCode, severity];
 }
 
 /// State when user profile is being updated

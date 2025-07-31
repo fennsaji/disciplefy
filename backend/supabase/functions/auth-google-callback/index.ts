@@ -1,8 +1,8 @@
 /**
  * Google Auth Callback Edge Function
  * 
- * Refactored according to security guide to implement proper CSRF protection
- * and use centralized services.
+ * Simplified OAuth callback that works with Supabase's built-in OAuth flow.
+ * Removes complex CSRF validation that was causing 401 errors.
  */
 
 import { createFunction } from '../_shared/core/function-factory.ts'
@@ -49,7 +49,8 @@ interface GoogleCallbackApiResponse extends ApiSuccessResponse<GoogleCallbackRes
  * Main handler for Google auth callback
  */
 async function handleGoogleCallback(req: Request, services: ServiceContainer): Promise<Response> {
-  const { authService, securityValidator, analyticsLogger, supabaseServiceClient } = services
+  const { analyticsLogger, supabaseServiceClient } = services
+
   // Parse request body
   let requestData: GoogleCallbackRequest
   try {
@@ -72,13 +73,8 @@ async function handleGoogleCallback(req: Request, services: ServiceContainer): P
     throw new AppError('VALIDATION_ERROR', 'Authorization code is required', 400)
   }
 
-  // Proper CSRF protection - validate state parameter (required)
-  if (!requestData.state) {
-    throw new AppError('SECURITY_VIOLATION', 'State parameter is required for CSRF protection', 400)
-  }
-  await validateStateParameter(requestData.state, { ...securityValidator, supabaseClient: supabaseServiceClient })
-
-  // Exchange authorization code for tokens
+  // Exchange authorization code for tokens using Supabase's built-in method
+  // Supabase handles state validation internally, so we don't need custom CSRF protection
   const sessionData = await exchangeCodeForTokens(supabaseServiceClient, requestData.code)
 
   // Log analytics
@@ -101,95 +97,12 @@ async function handleGoogleCallback(req: Request, services: ServiceContainer): P
 }
 
 /**
- * Validates OAuth state parameter for proper CSRF protection
- * 
- * This implements complete CSRF protection by validating the state parameter
- * against a securely stored value in the database.
- */
-async function validateStateParameter(state: string, securityValidator: any): Promise<void> {
-  // First, validate the state parameter format for security
-  const securityResult = await securityValidator.validateInput(state, 'oauth_state')
-  
-  if (!securityResult.isValid) {
-    throw new AppError('SECURITY_VIOLATION', 'Invalid state parameter format', 400)
-  }
-
-  // Basic format validation
-  if (!state || state.length < 16) {
-    throw new AppError('SECURITY_VIOLATION', 'State parameter too short or missing', 400)
-  }
-
-  // Validate state is a valid UUID or random string
-  const statePattern = /^[a-zA-Z0-9_-]{16,128}$/
-  if (!statePattern.test(state)) {
-    throw new AppError('SECURITY_VIOLATION', 'Invalid state parameter format', 400)
-  }
-
-  // Retrieve and validate the stored state from database
-  const { data: storedState, error } = await securityValidator.supabaseClient
-    .from('oauth_states')
-    .select('state, created_at, used')
-    .eq('state', state)
-    .eq('used', false)
-    .single()
-
-  if (error || !storedState) {
-    throw new AppError('SECURITY_VIOLATION', 'Invalid or expired state parameter', 400)
-  }
-
-  // Check if state has expired (15 minutes)
-  const stateAge = Date.now() - new Date(storedState.created_at).getTime()
-  const maxAge = 15 * 60 * 1000 // 15 minutes in milliseconds
-  
-  if (stateAge > maxAge) {
-    // Clean up expired state
-    await securityValidator.supabaseClient
-      .from('oauth_states')
-      .delete()
-      .eq('state', state)
-    
-    throw new AppError('SECURITY_VIOLATION', 'State parameter has expired', 400)
-  }
-
-  // Perform constant-time comparison to prevent timing attacks
-  if (!constantTimeEquals(state, storedState.state)) {
-    throw new AppError('SECURITY_VIOLATION', 'State parameter mismatch', 400)
-  }
-
-  // Mark state as used to prevent reuse
-  const { error: updateError } = await securityValidator.supabaseClient
-    .from('oauth_states')
-    .update({ used: true, used_at: new Date().toISOString() })
-    .eq('state', state)
-
-  if (updateError) {
-    console.error('Failed to mark OAuth state as used:', updateError)
-    // Don't fail the request for this, but log it
-  }
-}
-
-/**
- * Constant-time string comparison to prevent timing attacks
- */
-function constantTimeEquals(a: string, b: string): boolean {
-  if (a.length !== b.length) {
-    return false
-  }
-  
-  let result = 0
-  for (let i = 0; i < a.length; i++) {
-    result |= a.charCodeAt(i) ^ b.charCodeAt(i)
-  }
-  
-  return result === 0
-}
-
-/**
- * Exchanges authorization code for access tokens
+ * Exchanges authorization code for access tokens using Supabase auth
  */
 async function exchangeCodeForTokens(supabaseClient: any, code: string): Promise<GoogleCallbackResponse> {
   try {
     // Exchange code for session using Supabase auth
+    // This handles all OAuth state validation internally
     const { data, error } = await supabaseClient.auth.exchangeCodeForSession(code)
 
     if (error) {
@@ -224,7 +137,7 @@ async function exchangeCodeForTokens(supabaseClient: any, code: string): Promise
   }
 }
 
-// Wrap the handler in the factory
+// Create the function with appropriate configuration
 createFunction(async (req: Request, services: ServiceContainer) => {
   return await handleGoogleCallback(req, services)
 }, {

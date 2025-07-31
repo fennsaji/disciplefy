@@ -9,6 +9,19 @@ abstract class DailyVerseState extends Equatable {
   List<Object?> get props => [];
 }
 
+/// Mixin for states that contain verse data with language switching capability
+mixin VerseDataStateMixin {
+  DailyVerseEntity get verse;
+  VerseLanguage get currentLanguage;
+  VerseLanguage get preferredLanguage;
+
+  /// Get current verse text based on selected language
+  String get currentVerseText => verse.getVerseText(currentLanguage);
+
+  /// Get formatted date
+  String get formattedDate => verse.formattedDate;
+}
+
 /// Initial state
 class DailyVerseInitial extends DailyVerseState {
   const DailyVerseInitial();
@@ -25,9 +38,12 @@ class DailyVerseLoading extends DailyVerseState {
 }
 
 /// Verse loaded successfully
-class DailyVerseLoaded extends DailyVerseState {
+class DailyVerseLoaded extends DailyVerseState with VerseDataStateMixin {
+  @override
   final DailyVerseEntity verse;
+  @override
   final VerseLanguage currentLanguage;
+  @override
   final VerseLanguage preferredLanguage;
   final bool isFromCache;
   final bool isServiceAvailable;
@@ -40,14 +56,8 @@ class DailyVerseLoaded extends DailyVerseState {
     this.isServiceAvailable = true,
   });
 
-  /// Get current verse text based on selected language
-  String get currentVerseText => verse.getVerseText(currentLanguage);
-
   /// Check if verse is for today
   bool get isToday => verse.isToday;
-
-  /// Get formatted date
-  String get formattedDate => verse.formattedDate;
 
   /// Copy with new values
   DailyVerseLoaded copyWith({
@@ -89,9 +99,12 @@ class DailyVerseError extends DailyVerseState {
 }
 
 /// Offline mode with cached verse
-class DailyVerseOffline extends DailyVerseState {
+class DailyVerseOffline extends DailyVerseState with VerseDataStateMixin {
+  @override
   final DailyVerseEntity verse;
+  @override
   final VerseLanguage currentLanguage;
+  @override
   final VerseLanguage preferredLanguage;
 
   const DailyVerseOffline({
@@ -99,12 +112,6 @@ class DailyVerseOffline extends DailyVerseState {
     required this.currentLanguage,
     required this.preferredLanguage,
   });
-
-  /// Get current verse text based on selected language
-  String get currentVerseText => verse.getVerseText(currentLanguage);
-
-  /// Get formatted date
-  String get formattedDate => verse.formattedDate;
 
   /// Copy with new language
   DailyVerseOffline copyWith({

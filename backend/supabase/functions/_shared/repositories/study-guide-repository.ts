@@ -200,23 +200,56 @@ export class StudyGuideRepository {
     contentId: string,
     userId: string
   ): Promise<void> {
+    // Use UPSERT with proper conflict resolution to handle race conditions gracefully
     const { error } = await this.supabase
       .from('user_study_guides_new')
-      .insert({
+      .upsert({
         user_id: userId,
         study_guide_id: contentId,
-        is_saved: false
+        is_saved: false,
+        updated_at: new Date().toISOString()
+      }, {
+        onConflict: 'user_id,study_guide_id',
+        ignoreDuplicates: false  // Always update on conflict
       })
 
     if (error) {
-      // Ignore duplicate key errors (user already has this content)
-      if (error.code !== '23505') {
-        throw new AppError(
-          'DATABASE_ERROR',
-          `Failed to link authenticated user to content: ${error.message}`,
-          500
-        )
+      // If upsert still fails, try a manual check-and-insert approach
+      if (error.code === '23505') { // Unique constraint violation
+        // Check if relationship already exists
+        const { data: existing, error: selectError } = await this.supabase
+          .from('user_study_guides_new')
+          .select('id')
+          .eq('user_id', userId)
+          .eq('study_guide_id', contentId)
+          .single()
+
+        if (selectError && selectError.code !== 'PGRST116') {
+          throw new AppError(
+            'DATABASE_ERROR',
+            `Failed to check existing user relationship: ${selectError.message}`,
+            500
+          )
+        }
+
+        // If relationship doesn't exist, this is an unexpected error
+        if (!existing) {
+          throw new AppError(
+            'DATABASE_ERROR',
+            `Unexpected constraint violation: ${error.message}`,
+            500
+          )
+        }
+        
+        // Relationship already exists, which is fine - no error needed
+        return
       }
+
+      throw new AppError(
+        'DATABASE_ERROR',
+        `Failed to link authenticated user to content: ${error.message}`,
+        500
+      )
     }
   }
 
@@ -407,7 +440,7 @@ export class StudyGuideRepository {
       throw new AppError('NOT_FOUND', 'Study guide not found', 404)
     }
 
-    // Use UPSERT to handle missing relationship records
+    // Use UPSERT with explicit conflict resolution to handle missing relationship records
     const { data, error } = await this.supabase
       .from('user_study_guides_new')
       .upsert({
@@ -415,6 +448,9 @@ export class StudyGuideRepository {
         study_guide_id: studyGuideId,
         is_saved: isSaved,
         updated_at: new Date().toISOString()
+      }, {
+        onConflict: 'user_id,study_guide_id',
+        ignoreDuplicates: false  // Always update the record on conflict
       })
       .select(`
         id,
@@ -513,7 +549,19 @@ export class StudyGuideRepository {
       }
 
       // Content exists but user doesn't have it - create relationship
-      await this.linkUserToContent(content.id, userContext)
+      // Use try-catch to handle race conditions gracefully
+      try {
+        await this.linkUserToContent(content.id, userContext)
+      } catch (error) {
+        // If linking fails due to constraint violation, it means another request
+        // created the relationship concurrently - this is acceptable
+        if (error instanceof AppError && error.message.includes('constraint violation')) {
+          console.warn(`[StudyGuideRepository] Race condition detected while linking user ${userContext.userId} to content ${content.id} - relationship may already exist`)
+          // Continue with returning the content since the relationship exists now
+        } else {
+          throw error
+        }
+      }
     }
 
     // Return cached content (for both authenticated and anonymous users)

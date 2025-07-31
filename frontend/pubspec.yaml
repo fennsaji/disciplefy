@@ -11,65 +11,65 @@ dependencies:
     sdk: flutter
   
   # State Management
-  flutter_bloc: ^8.1.3
+  flutter_bloc: ^9.1.1
   equatable: ^2.0.5
   dartz: ^0.10.1
   
   # Network & API
-  http: ^1.1.0
+  http: ^1.2.0
   dio: ^5.3.2
-  retrofit: ^4.0.3
-  json_annotation: ^4.8.1
+  retrofit: ^4.5.0
+  json_annotation: ^4.9.0
   
   # Database & Storage
-  supabase_flutter: ^2.0.0
+  supabase_flutter: ^2.8.4
   hive: ^2.2.3
   hive_flutter: ^1.1.0
   sqflite: ^2.3.0
-  flutter_secure_storage: ^9.0.0
-  shared_preferences: ^2.2.2
+  flutter_secure_storage: ^10.0.0-beta.4
+  shared_preferences: ^2.2.3
   
   # Authentication
-  google_sign_in: ^6.1.5
-  sign_in_with_apple: ^5.0.0
+  google_sign_in: ^7.1.1
+  sign_in_with_apple: ^7.0.1
   
   # UI & UX
   flutter_localizations:
     sdk: flutter
   intl: ^0.20.2
-  cached_network_image: ^3.3.0
+  cached_network_image: ^3.4.0
   shimmer: ^3.0.0
-  lottie: ^2.7.0
-  go_router: ^12.1.3
-  flutter_markdown: ^0.6.18
+  lottie: ^3.3.1
+  go_router: ^16.0.0
+  flutter_markdown: ^0.7.7+1
   google_fonts: ^6.1.0
   smooth_page_indicator: ^1.1.0
-  share_plus: ^7.2.1
-  url_launcher: ^6.2.1
+  share_plus: ^11.0.0
+  url_launcher: ^6.3.1
   
   # Utilities
-  get_it: ^7.6.4
-  connectivity_plus: ^5.0.1
-  package_info_plus: ^4.2.0
-  device_info_plus: ^9.1.0
+  get_it: ^8.0.3
+  connectivity_plus: ^6.1.4
+  package_info_plus: ^8.3.0
+  device_info_plus: ^11.5.0
   uuid: ^4.2.1
   
   # Development
-  flutter_lints: ^3.0.0
+  flutter_lints: ^6.0.0
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   
   # Code Generation
-  build_runner: ^2.4.7
-  retrofit_generator: ^8.0.4
-  json_serializable: ^6.7.1
+  build_runner: ^2.4.14
+  retrofit_generator: ^9.2.0
+  json_serializable: ^6.9.0
   hive_generator: ^2.0.1
   
   # Testing
-  mockito: ^5.4.2
-  bloc_test: ^9.1.4
+  mockito: ^5.4.5
+  bloc_test: ^10.0.0
   integration_test:
     sdk: flutter
 

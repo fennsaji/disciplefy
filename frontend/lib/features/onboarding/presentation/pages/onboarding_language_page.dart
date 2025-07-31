@@ -1,35 +1,26 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:hive_flutter/hive_flutter.dart';
 
 import '../../../../core/localization/app_localizations.dart';
+import '../../../../core/di/injection_container.dart';
+import '../../domain/entities/onboarding_state_entity.dart';
+import '../bloc/onboarding_bloc.dart';
+import '../bloc/onboarding_event.dart';
+import '../bloc/onboarding_state.dart';
 
-class OnboardingLanguagePage extends StatefulWidget {
+class OnboardingLanguagePage extends StatelessWidget {
   const OnboardingLanguagePage({super.key});
 
   @override
-  State<OnboardingLanguagePage> createState() => _OnboardingLanguagePageState();
+  Widget build(BuildContext context) => BlocProvider(
+      create: (context) => sl<OnboardingBloc>()..add(const LoadOnboardingState()),
+      child: const _OnboardingLanguageContent(),
+    );
 }
 
-class _OnboardingLanguagePageState extends State<OnboardingLanguagePage> {
-  String _selectedLanguage = 'en';
-
-  @override
-  void initState() {
-    super.initState();
-    // Check if user has previously selected a language
-    _loadSelectedLanguage();
-  }
-
-  void _loadSelectedLanguage() async {
-    final box = Hive.box('app_settings');
-    final savedLanguage = box.get('selected_language', defaultValue: 'en');
-    if (['en', 'hi', 'ml'].contains(savedLanguage)) {
-      setState(() {
-        _selectedLanguage = savedLanguage;
-      });
-    }
-  }
+class _OnboardingLanguageContent extends StatelessWidget {
+  const _OnboardingLanguageContent();
 
   @override
   Widget build(BuildContext context) {
@@ -44,90 +35,123 @@ class _OnboardingLanguagePageState extends State<OnboardingLanguagePage> {
       );
     }
 
-    return Scaffold(
-      appBar: AppBar(
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => context.go('/onboarding/welcome'),
+    return BlocListener<OnboardingBloc, OnboardingState>(
+      listener: (context, state) {
+        if (state is OnboardingNavigating) {
+          // Navigate based on the navigation state
+          switch (state.toStep) {
+            case OnboardingStep.welcome:
+              context.go('/onboarding/welcome');
+              break;
+            case OnboardingStep.purpose:
+              context.go('/onboarding/purpose');
+              break;
+            case OnboardingStep.completed:
+              context.go('/');
+              break;
+            default:
+              break;
+          }
+        } else if (state is OnboardingError) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(state.message),
+              backgroundColor: Theme.of(context).colorScheme.error,
+            ),
+          );
+        }
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back),
+            onPressed: () => context.read<OnboardingBloc>().add(const PreviousStep()),
+          ),
         ),
-      ),
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                l10n.onboardingLanguageTitle,
-                style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              
-              const SizedBox(height: 8),
-              
-              Text(
-                l10n.onboardingLanguageSubtitle,
-                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
-              ),
-              
-              const SizedBox(height: 48),
-              
-              // Language Options
-              _LanguageOption(
-                code: 'en',
-                name: l10n.languageEnglish,
-                nativeName: 'English',
-                isSelected: _selectedLanguage == 'en',
-                onTap: () => setState(() => _selectedLanguage = 'en'),
-              ),
-              
-              const SizedBox(height: 16),
-              
-              _LanguageOption(
-                code: 'hi',
-                name: l10n.languageHindi,
-                nativeName: 'हिन्दी',
-                isSelected: _selectedLanguage == 'hi',
-                onTap: () => setState(() => _selectedLanguage = 'hi'),
-              ),
-              
-              const SizedBox(height: 16),
-              
-              _LanguageOption(
-                code: 'ml',
-                name: l10n.languageMalayalam,
-                nativeName: 'മലയാളം',
-                isSelected: _selectedLanguage == 'ml',
-                onTap: () => setState(() => _selectedLanguage = 'ml'),
-              ),
-              
-              const Spacer(),
-              
-              ElevatedButton(
-                onPressed: () => _continueWithLanguage(),
-                style: ElevatedButton.styleFrom(
-                  minimumSize: const Size.fromHeight(56),
-                ),
-                child: Text(l10n.continueButton),
-              ),
-            ],
+        body: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: BlocBuilder<OnboardingBloc, OnboardingState>(
+              builder: (context, state) {
+                if (state is OnboardingLoading) {
+                  return const Center(
+                    child: CircularProgressIndicator(),
+                  );
+                }
+
+                final selectedLanguage = state is OnboardingLoaded 
+                    ? state.onboardingState.selectedLanguage ?? 'en'
+                    : 'en';
+
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      l10n.onboardingLanguageTitle,
+                      style: Theme.of(context).textTheme.headlineLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    
+                    const SizedBox(height: 8),
+                    
+                    Text(
+                      l10n.onboardingLanguageSubtitle,
+                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                    
+                    const SizedBox(height: 48),
+                    
+                    // Language Options
+                    _LanguageOption(
+                      code: 'en',
+                      name: l10n.languageEnglish,
+                      nativeName: 'English',
+                      isSelected: selectedLanguage == 'en',
+                      onTap: () => context.read<OnboardingBloc>().add(const LanguageSelected('en')),
+                    ),
+                    
+                    const SizedBox(height: 16),
+                    
+                    _LanguageOption(
+                      code: 'hi',
+                      name: l10n.languageHindi,
+                      nativeName: 'हिन्दी',
+                      isSelected: selectedLanguage == 'hi',
+                      onTap: () => context.read<OnboardingBloc>().add(const LanguageSelected('hi')),
+                    ),
+                    
+                    const SizedBox(height: 16),
+                    
+                    _LanguageOption(
+                      code: 'ml',
+                      name: l10n.languageMalayalam,
+                      nativeName: 'മലയാളം',
+                      isSelected: selectedLanguage == 'ml',
+                      onTap: () => context.read<OnboardingBloc>().add(const LanguageSelected('ml')),
+                    ),
+                    
+                    const Spacer(),
+                    
+                    ElevatedButton(
+                      onPressed: selectedLanguage.isNotEmpty 
+                          ? () => context.read<OnboardingBloc>().add(const NextStep())
+                          : null,
+                      style: ElevatedButton.styleFrom(
+                        minimumSize: const Size.fromHeight(56),
+                      ),
+                      child: Text(l10n.continueButton),
+                    ),
+                  ],
+                );
+              },
+            ),
           ),
         ),
       ),
     );
-  }
-
-  void _continueWithLanguage() async {
-    // Save selected language
-    final box = Hive.box('app_settings');
-    await box.put('selected_language', _selectedLanguage);
-    
-    if (mounted) {
-      context.go('/onboarding/purpose');
-    }
   }
 }
 

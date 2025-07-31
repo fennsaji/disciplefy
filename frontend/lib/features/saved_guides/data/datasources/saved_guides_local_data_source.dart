@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'package:hive/hive.dart';
 import '../../../../core/error/exceptions.dart';
 import '../models/saved_guide_model.dart';
@@ -19,11 +18,6 @@ class SavedGuidesLocalDataSourceImpl implements SavedGuidesLocalDataSource {
   static const String _savedGuidesBoxName = 'saved_guides';
   static const String _recentGuidesBoxName = 'recent_guides';
   static const int _maxRecentGuides = 10;
-
-  final StreamController<List<SavedGuideModel>> _savedGuidesController = 
-      StreamController<List<SavedGuideModel>>.broadcast();
-  final StreamController<List<SavedGuideModel>> _recentGuidesController = 
-      StreamController<List<SavedGuideModel>>.broadcast();
 
   Box<SavedGuideModel>? _savedGuidesBox;
   Box<SavedGuideModel>? _recentGuidesBox;
@@ -73,7 +67,6 @@ class SavedGuidesLocalDataSourceImpl implements SavedGuidesLocalDataSource {
         lastAccessedAt: DateTime.now(),
       );
       await box.put(guide.id, savedGuide);
-      _emitSavedGuides();
     } catch (e) {
       throw CacheException(message: 'Failed to save guide: $e');
     }
@@ -87,9 +80,6 @@ class SavedGuidesLocalDataSourceImpl implements SavedGuidesLocalDataSource {
       
       await savedBox.delete(guideId);
       await recentBox.delete(guideId);
-      
-      _emitSavedGuides();
-      _emitRecentGuides();
     } catch (e) {
       throw CacheException(message: 'Failed to remove guide: $e');
     }
@@ -116,8 +106,6 @@ class SavedGuidesLocalDataSourceImpl implements SavedGuidesLocalDataSource {
           await box.delete(guides[i].id);
         }
       }
-      
-      _emitRecentGuides();
     } catch (e) {
       throw CacheException(message: 'Failed to add to recent: $e');
     }
@@ -128,7 +116,6 @@ class SavedGuidesLocalDataSourceImpl implements SavedGuidesLocalDataSource {
     try {
       final box = await savedGuidesBox;
       await box.clear();
-      _emitSavedGuides();
     } catch (e) {
       throw CacheException(message: 'Failed to clear saved guides: $e');
     }
@@ -139,44 +126,44 @@ class SavedGuidesLocalDataSourceImpl implements SavedGuidesLocalDataSource {
     try {
       final box = await recentGuidesBox;
       await box.clear();
-      _emitRecentGuides();
     } catch (e) {
       throw CacheException(message: 'Failed to clear recent guides: $e');
     }
   }
 
   @override
-  Stream<List<SavedGuideModel>> watchSavedGuides() {
-    _emitSavedGuides();
-    return _savedGuidesController.stream;
+  Stream<List<SavedGuideModel>> watchSavedGuides() async* {
+    final box = await savedGuidesBox;
+    
+    // Emit current state first
+    yield await getSavedGuides();
+    
+    // Watch for changes using Hive's built-in reactivity
+    await for (final _ in box.watch()) {
+      try {
+        yield await getSavedGuides();
+      } catch (e) {
+        // Handle errors gracefully
+        yield [];
+      }
+    }
   }
 
   @override
-  Stream<List<SavedGuideModel>> watchRecentGuides() {
-    _emitRecentGuides();
-    return _recentGuidesController.stream;
-  }
-
-  Future<void> _emitSavedGuides() async {
-    try {
-      final guides = await getSavedGuides();
-      _savedGuidesController.add(guides);
-    } catch (e) {
-      _savedGuidesController.addError(e);
+  Stream<List<SavedGuideModel>> watchRecentGuides() async* {
+    final box = await recentGuidesBox;
+    
+    // Emit current state first
+    yield await getRecentGuides();
+    
+    // Watch for changes using Hive's built-in reactivity
+    await for (final _ in box.watch()) {
+      try {
+        yield await getRecentGuides();
+      } catch (e) {
+        // Handle errors gracefully
+        yield [];
+      }
     }
-  }
-
-  Future<void> _emitRecentGuides() async {
-    try {
-      final guides = await getRecentGuides();
-      _recentGuidesController.add(guides);
-    } catch (e) {
-      _recentGuidesController.addError(e);
-    }
-  }
-
-  void dispose() {
-    _savedGuidesController.close();
-    _recentGuidesController.close();
   }
 }

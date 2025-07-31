@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter/services.dart';
 
+import '../../../../core/utils/ui_utils.dart';
 import '../../domain/entities/daily_verse_entity.dart';
 import '../bloc/daily_verse_bloc.dart';
 import '../bloc/daily_verse_event.dart';
@@ -411,7 +412,7 @@ class DailyVerseCard extends StatelessWidget {
         // Use explicit contrast colors to ensure visibility
         final textColor = isSelected
             ? theme.colorScheme.onSecondary
-            : _getContrastColor(backgroundColor);
+            : UiUtils.getContrastColor(backgroundColor);
 
         return Expanded(
           child: GestureDetector(
@@ -458,14 +459,7 @@ class DailyVerseCard extends StatelessWidget {
     );
   }
 
-  /// Helper function to determine the best contrasting text color for a given background color
-  Color _getContrastColor(Color backgroundColor) {
-    // Calculate luminance to determine if background is light or dark
-    final luminance = backgroundColor.computeLuminance();
 
-    // Return white text for dark backgrounds, dark text for light backgrounds
-    return luminance > 0.5 ? Colors.black87 : Colors.white;
-  }
 
   Widget _buildActionButtons(BuildContext context, DailyVerseLoaded state) {
     final theme = Theme.of(context);

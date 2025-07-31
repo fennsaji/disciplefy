@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../../../core/theme/app_theme.dart';
+import '../../domain/services/study_navigation_service.dart';
 import '../bloc/study_bloc.dart';
+import '../bloc/study_event.dart';
+import '../bloc/study_state.dart';
 
 /// Generate Study Screen allowing users to input scripture reference or topic.
 /// 
@@ -133,7 +135,11 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen> {
         listener: (context, state) {
           if (state is StudyGenerationSuccess) {
             // Navigate to study guide screen with generated content
-            context.go('/study-guide?source=generate', extra: state.studyGuide);
+            StudyNavigationService.navigateToStudyGuide(
+              context,
+              studyGuide: state.studyGuide,
+              source: StudyNavigationSource.generate,
+            );
           } else if (state is StudyGenerationFailure) {
             // Show error message with retry option
             _showErrorDialog(context, state.failure.message, state.isRetryable);

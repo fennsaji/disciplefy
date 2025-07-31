@@ -36,7 +36,7 @@ class AppSettingsModel extends AppSettingsEntity {
       themeMode: ThemeModeModel.fromEntity(ThemeModeEntity.light()),
       language: 'en',
       notificationsEnabled: true,
-      appVersion: '1.0.0',
+      appVersion: '', // Will be populated dynamically from PackageInfo
     );
 
   @override

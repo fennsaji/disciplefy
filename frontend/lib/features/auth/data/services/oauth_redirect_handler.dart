@@ -1,6 +1,9 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
+
+import '../../../../core/config/app_config.dart';
+import '../../domain/entities/auth_params.dart';
 import 'auth_service.dart';
 
 /// Handler for OAuth redirect URLs and deep linking
@@ -41,9 +44,8 @@ class OAuthRedirectHandler {
     try {
       final Uri uri = Uri.parse(url);
       
-      // Check if this is a Google OAuth callback
-      if (uri.scheme == 'com.disciplefy.bible_study' || 
-          uri.scheme == 'io.supabase.flutter') {
+      // Check if this is a valid OAuth callback scheme
+      if (AppConfig.oauthRedirectSchemes.contains(uri.scheme)) {
         
         // Extract parameters from URL
         final Map<String, String> params = uri.queryParameters;
@@ -57,18 +59,22 @@ class OAuthRedirectHandler {
         if (code != null) {
           // Process successful OAuth callback
           await _authService.processGoogleOAuthCallback(
-            code: code,
-            state: state,
-            error: error,
-            errorDescription: errorDescription,
+            GoogleOAuthCallbackParams(
+              code: code,
+              state: state,
+              error: error,
+              errorDescription: errorDescription,
+            ),
           );
         } else if (error != null) {
           // Handle OAuth error
           await _authService.processGoogleOAuthCallback(
-            code: '', // Required parameter, but will be ignored due to error
-            state: state,
-            error: error,
-            errorDescription: errorDescription,
+            GoogleOAuthCallbackParams(
+              code: '', // Required parameter, but will be ignored due to error
+              state: state,
+              error: error,
+              errorDescription: errorDescription,
+            ),
           );
         }
       }

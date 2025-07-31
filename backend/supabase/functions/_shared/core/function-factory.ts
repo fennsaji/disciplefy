@@ -16,7 +16,7 @@
  */
 
 import { serve } from 'https://deno.land/std@0.208.0/http/server.ts'
-import { corsHeaders } from '../utils/cors.ts'
+import { corsHeaders, handleCors } from '../utils/cors.ts'
 import { ErrorHandler } from '../utils/error-handler.ts'
 import { getServiceContainer, createUserSupabaseClient, ServiceContainer } from './services.ts'
 import { config } from './config.ts'
@@ -98,7 +98,6 @@ export function createFunction(
   config: FunctionConfig = {}
 ): void {
   const finalConfig = { ...DEFAULT_CONFIG, ...config }
-  const mergedCorsHeaders = { ...corsHeaders, ...finalConfig.corsHeaders }
 
   serve(async (req: Request): Promise<Response> => {
     const metrics: Partial<PerformanceMetrics> = {
@@ -106,6 +105,8 @@ export function createFunction(
     }
 
     const requestId = generateRequestId()
+    const corsHeaders = handleCors(req)
+    const mergedCorsHeaders = { ...corsHeaders, ...finalConfig.corsHeaders }
     
     try {
       // Handle CORS preflight requests

@@ -1,4 +1,9 @@
 import 'package:dartz/dartz.dart';
+import 'package:flutter/foundation.dart';
+import 'package:hive/hive.dart';
+import 'dart:io';
+
+import '../../../../core/error/exceptions.dart';
 import '../../../../core/error/failures.dart';
 import '../../domain/entities/daily_verse_entity.dart';
 import '../../domain/repositories/daily_verse_repository.dart';
@@ -48,14 +53,38 @@ class DailyVerseRepositoryImpl implements DailyVerseRepository {
           // API success, cache the result
           try {
             await _cacheService.cacheVerse(verse);
+          } on HiveError catch (e) {
+            // Cache failure is non-critical, continue with API result
+            if (kDebugMode) {
+              print('Warning: Hive cache error: ${e.message}');
+            }
+          } on StorageException catch (e) {
+            // Cache failure is non-critical, continue with API result
+            if (kDebugMode) {
+              print('Warning: Storage cache error: ${e.message}');
+            }
           } catch (e) {
             // Cache failure is non-critical, continue with API result
-            print('Warning: Failed to cache verse: $e');
+            if (kDebugMode) {
+              print('Warning: Failed to cache verse: $e');
+            }
           }
           return Right(verse);
         },
       );
 
+    } on SocketException catch (e) {
+      return Left(NetworkFailure(
+        message: 'Network connection failed: ${e.message}',
+      ));
+    } on HiveError catch (e) {
+      return Left(CacheFailure(
+        message: 'Cache operation failed: ${e.message}',
+      ));
+    } on StorageException catch (e) {
+      return Left(CacheFailure(
+        message: 'Storage error: ${e.message}',
+      ));
     } catch (e) {
       return Left(CacheFailure(
         message: 'Failed to get daily verse: $e',
@@ -67,6 +96,10 @@ class DailyVerseRepositoryImpl implements DailyVerseRepository {
   Future<DailyVerseEntity?> getCachedVerse(DateTime date) async {
     try {
       return await _cacheService.getCachedVerse(date);
+    } on HiveError {
+      return null;
+    } on StorageException {
+      return null;
     } catch (e) {
       return null;
     }
@@ -76,6 +109,16 @@ class DailyVerseRepositoryImpl implements DailyVerseRepository {
   Future<void> cacheVerse(DailyVerseEntity verse) async {
     try {
       await _cacheService.cacheVerse(verse);
+    } on HiveError catch (e) {
+      throw CacheException(
+        message: 'Hive cache error: ${e.message}',
+        code: 'CACHE_WRITE_ERROR',
+      );
+    } on StorageException catch (e) {
+      throw CacheException(
+        message: 'Storage error: ${e.message}',
+        code: 'CACHE_WRITE_ERROR',
+      );
     } catch (e) {
       throw CacheException(
         message: 'Failed to cache verse: $e',
@@ -88,6 +131,10 @@ class DailyVerseRepositoryImpl implements DailyVerseRepository {
   Future<VerseLanguage> getPreferredLanguage() async {
     try {
       return await _cacheService.getPreferredLanguage();
+    } on StorageException {
+      return VerseLanguage.english; // Default fallback
+    } on HiveError {
+      return VerseLanguage.english; // Default fallback
     } catch (e) {
       return VerseLanguage.english; // Default fallback
     }
@@ -97,6 +144,16 @@ class DailyVerseRepositoryImpl implements DailyVerseRepository {
   Future<void> setPreferredLanguage(VerseLanguage language) async {
     try {
       await _cacheService.setPreferredLanguage(language);
+    } on HiveError catch (e) {
+      throw CacheException(
+        message: 'Hive cache error: ${e.message}',
+        code: 'CACHE_WRITE_ERROR',
+      );
+    } on StorageException catch (e) {
+      throw CacheException(
+        message: 'Storage error: ${e.message}',
+        code: 'CACHE_WRITE_ERROR',
+      );
     } catch (e) {
       throw CacheException(
         message: 'Failed to save preferred language: $e',
@@ -109,6 +166,10 @@ class DailyVerseRepositoryImpl implements DailyVerseRepository {
   Future<bool> isServiceAvailable() async {
     try {
       return await _apiService.isServiceAvailable();
+    } on SocketException {
+      return false;
+    } on ServerException {
+      return false;
     } catch (e) {
       return false;
     }
@@ -118,6 +179,22 @@ class DailyVerseRepositoryImpl implements DailyVerseRepository {
   Future<Map<String, dynamic>> getCacheStats() async {
     try {
       return await _cacheService.getCacheStats();
+    } on HiveError catch (e) {
+      return {
+        'error': 'Hive cache error: ${e.message}',
+        'total_cached_verses': 0,
+        'last_fetch': null,
+        'preferred_language': 'English',
+        'cache_size_bytes': 0,
+      };
+    } on StorageException catch (e) {
+      return {
+        'error': 'Storage error: ${e.message}',
+        'total_cached_verses': 0,
+        'last_fetch': null,
+        'preferred_language': 'English',
+        'cache_size_bytes': 0,
+      };
     } catch (e) {
       return {
         'error': 'Failed to get cache stats: $e',
@@ -133,6 +210,16 @@ class DailyVerseRepositoryImpl implements DailyVerseRepository {
   Future<void> clearCache() async {
     try {
       await _cacheService.clearCache();
+    } on HiveError catch (e) {
+      throw CacheException(
+        message: 'Hive cache error: ${e.message}',
+        code: 'CACHE_CLEAR_ERROR',
+      );
+    } on StorageException catch (e) {
+      throw CacheException(
+        message: 'Storage error: ${e.message}',
+        code: 'CACHE_CLEAR_ERROR',
+      );
     } catch (e) {
       throw CacheException(
         message: 'Failed to clear cache: $e',
@@ -142,16 +229,3 @@ class DailyVerseRepositoryImpl implements DailyVerseRepository {
   }
 }
 
-/// Custom exception for cache operations
-class CacheException implements Exception {
-  final String message;
-  final String code;
-
-  CacheException({
-    required this.message,
-    required this.code,
-  });
-
-  @override
-  String toString() => 'CacheException: $message (Code: $code)';
-}

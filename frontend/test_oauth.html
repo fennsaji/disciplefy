@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Google OAuth Test</title>
+    <meta charset="UTF-8">
+</head>
+<body>
+    <h1>Google OAuth Flow Test</h1>
+    <p>This page tests the Google OAuth flow for the Disciplefy app.</p>
+    
+    <h2>Test OAuth URL Construction</h2>
+    <button onclick="testOAuthUrl()">Generate OAuth URL</button>
+    <div id="oauth-url"></div>
+    
+    <h2>Test OAuth Callback</h2>
+    <p>Use this URL to test the callback manually:</p>
+    <a href="http://localhost:59641/auth/callback?code=test_code&state=test_state" target="_blank">
+        Test Callback with Mock Data
+    </a>
+    
+    <h2>Test Supabase OAuth Integration</h2>
+    <button onclick="testSupabaseOAuth()">Test Supabase OAuth URL</button>
+    <div id="supabase-oauth"></div>
+    
+    <script>
+        function testOAuthUrl() {
+            const clientId = '587108000155-af542dhgo9rmp5hvsm1vepgqsgil438d.apps.googleusercontent.com';
+            const redirectUri = 'http://localhost:59641/auth/callback';
+            const scope = 'email profile';
+            const state = 'random_state_' + Math.random().toString(36).substring(2);
+            
+            const oauthUrl = `https://accounts.google.com/oauth/authorize?` +
+                `client_id=${encodeURIComponent(clientId)}&` +
+                `redirect_uri=${encodeURIComponent(redirectUri)}&` +
+                `scope=${encodeURIComponent(scope)}&` +
+                `response_type=code&` +
+                `state=${encodeURIComponent(state)}`;
+            
+            document.getElementById('oauth-url').innerHTML = 
+                `<p><strong>Generated OAuth URL:</strong></p>
+                 <p style="word-break: break-all; background: #f0f0f0; padding: 10px;">${oauthUrl}</p>
+                 <p><a href="${oauthUrl}" target="_blank">Click to Test OAuth Flow</a></p>`;
+        }
+        
+        function testSupabaseOAuth() {
+            const supabaseUrl = 'https://wzdcwxvyjuxjgzpnukvm.supabase.co';
+            const redirectUri = 'http://localhost:59641/auth/callback';
+            
+            const supabaseOAuthUrl = `${supabaseUrl}/auth/v1/authorize?` +
+                `provider=google&` +
+                `redirect_to=${encodeURIComponent(redirectUri)}`;
+            
+            document.getElementById('supabase-oauth').innerHTML = 
+                `<p><strong>Supabase OAuth URL:</strong></p>
+                 <p style="word-break: break-all; background: #f0f0f0; padding: 10px;">${supabaseOAuthUrl}</p>
+                 <p><a href="${supabaseOAuthUrl}" target="_blank">Click to Test Supabase OAuth</a></p>`;
+        }
+        
+        // Auto-generate URLs on load
+        window.onload = function() {
+            testOAuthUrl();
+            testSupabaseOAuth();
+        };
+    </script>
+</body>
+</html>

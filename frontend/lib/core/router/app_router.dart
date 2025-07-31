@@ -1,12 +1,9 @@
 import 'package:go_router/go_router.dart';
-import 'package:hive_flutter/hive_flutter.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../features/onboarding/presentation/pages/onboarding_screen.dart';
 import '../../features/onboarding/presentation/pages/onboarding_language_page.dart';
 import '../../features/onboarding/presentation/pages/onboarding_purpose_page.dart';
 import '../../features/study_generation/presentation/pages/study_guide_screen.dart';
-import '../../features/study_generation/presentation/pages/study_result_page.dart';
 import '../../features/study_generation/domain/entities/study_guide.dart';
 import '../../features/auth/presentation/pages/login_screen.dart';
 import '../../features/auth/presentation/pages/auth_callback_page.dart';
@@ -14,67 +11,20 @@ import '../presentation/widgets/app_shell.dart';
 import '../error/error_page.dart';
 import '../../features/home/presentation/pages/home_screen.dart';
 import '../../features/study_generation/presentation/pages/generate_study_screen.dart';
-import '../../features/saved_guides/presentation/pages/saved_screen_api.dart';
+import '../../features/study_generation/domain/services/study_navigation_service.dart';
+import '../../features/saved_guides/presentation/pages/saved_screen.dart';
 import '../../features/settings/presentation/pages/settings_screen.dart';
-
-class AppRoutes {
-  static const String onboarding = '/onboarding';
-  static const String onboardingLanguage = '/onboarding/language';
-  static const String onboardingPurpose = '/onboarding/purpose';
-  static const String home = '/';
-  static const String generateStudy = '/generate-study';
-  static const String studyGuide = '/study-guide';
-  static const String studyResult = '/study-result';
-  static const String settings = '/settings';
-  static const String saved = '/saved';
-  static const String login = '/login';
-  static const String authCallback = '/auth/callback';
-  static const String error = '/error';
-}
+import 'app_routes.dart';
+import 'router_guard.dart';
+import 'auth_notifier.dart';
 
 class AppRouter {
+  static final AuthNotifier _authNotifier = AuthNotifier();
+  
   static final GoRouter router = GoRouter(
-    initialLocation: _getInitialRoute(),
-    redirect: (context, state) {
-      // Use Supabase for authentication check (primary method)
-      final user = Supabase.instance.client.auth.currentUser;
-      final isAuthenticated = user != null;
-      final currentPath = state.uri.path;
-
-      // Debug logging
-      print(
-          '🔐 [ROUTER] Auth check: ${isAuthenticated ? "✅ Authenticated" : "❌ Not authenticated"} | Route: $currentPath');
-      if (user != null) {
-        print(
-            '👤 [ROUTER] User: ${user.email ?? "Anonymous"} (${user.isAnonymous ? "anonymous" : "authenticated"})');
-      }
-
-      // Public routes that don't require authentication
-      final publicRoutes = [
-        '/login',
-        '/onboarding',
-        '/onboarding/language',
-        '/onboarding/purpose',
-        '/auth/callback'
-      ];
-      final isPublicRoute = publicRoutes.contains(currentPath) ||
-          currentPath.startsWith('/auth/callback');
-
-      // If not authenticated and trying to access protected route, redirect to login
-      if (!isAuthenticated && !isPublicRoute) {
-        print(
-            '🚫 [ROUTER] Blocking access to $currentPath, redirecting to /login');
-        return '/login';
-      }
-
-      // If authenticated and on login page, redirect to home
-      if (isAuthenticated && currentPath == '/login') {
-        print('🏠 [ROUTER] User authenticated, redirecting to home');
-        return '/';
-      }
-
-      return null; // No redirect needed
-    },
+    initialLocation: '/', // Let the redirect logic handle the initial route
+    refreshListenable: _authNotifier, // Listen to auth state changes
+    redirect: (context, state) => RouterGuard.handleRedirect(state.uri.path),
     routes: [
       // Onboarding Flow (outside app shell)
       GoRoute(
@@ -124,7 +74,7 @@ class AppRouter {
               GoRoute(
                 path: AppRoutes.saved,
                 name: 'saved',
-                builder: (context, state) => const SavedScreenApi(),
+                builder: (context, state) => const SavedScreen(),
               ),
             ],
           ),
@@ -175,15 +125,15 @@ class AppRouter {
           // Handle different types of navigation data
           StudyGuide? studyGuide;
           Map<String, dynamic>? routeExtra;
-          String? navigationSource;
+          
+          // Parse navigation source from query parameters
+          final sourceString = state.uri.queryParameters['source'];
+          final navigationSource = StudyNavigationService.parseNavigationSource(sourceString);
 
           if (state.extra is StudyGuide) {
             studyGuide = state.extra as StudyGuide;
-            // Check query parameters for source information
-            navigationSource = state.uri.queryParameters['source'];
           } else if (state.extra is Map<String, dynamic>) {
             routeExtra = state.extra as Map<String, dynamic>;
-            navigationSource = 'saved'; // Default for saved guides
           }
 
           return StudyGuideScreen(
@@ -191,14 +141,6 @@ class AppRouter {
             routeExtra: routeExtra,
             navigationSource: navigationSource,
           );
-        },
-      ),
-      GoRoute(
-        path: AppRoutes.studyResult,
-        name: 'study_result',
-        builder: (context, state) {
-          final studyGuide = state.extra as StudyGuide?;
-          return StudyResultPage(studyGuide: studyGuide);
         },
       ),
 
@@ -217,32 +159,6 @@ class AppRouter {
     ),
   );
 
-  static String _getInitialRoute() {
-    try {
-      // Check if onboarding has been completed
-      final box = Hive.box('app_settings');
-      final onboardingCompleted =
-          box.get('onboarding_completed', defaultValue: false);
-
-      // Check if user is authenticated
-      final user = Supabase.instance.client.auth.currentUser;
-      final isAuthenticated = user != null;
-
-      if (isAuthenticated) {
-        // User is authenticated, go to home
-        return AppRoutes.home;
-      } else if (onboardingCompleted) {
-        // Onboarding completed but not authenticated, go to login
-        return AppRoutes.login;
-      } else {
-        // First time user, go to onboarding
-        return AppRoutes.onboarding;
-      }
-    } catch (e) {
-      // If Hive is not ready, default to login
-      return AppRoutes.login;
-    }
-  }
 }
 
 // Navigation Extensions
@@ -256,8 +172,6 @@ extension AppRouterExtension on GoRouter {
       go(AppRoutes.studyGuide, extra: studyGuide);
   void goToStudyGuideWithExtra(Map<String, dynamic> extra) =>
       go(AppRoutes.studyGuide, extra: extra);
-  void goToStudyResult(StudyGuide studyGuide) =>
-      go(AppRoutes.studyResult, extra: studyGuide);
   void goToSettings() => go(AppRoutes.settings);
   void goToSaved() => go(AppRoutes.saved);
   void goToLogin() => go(AppRoutes.login);

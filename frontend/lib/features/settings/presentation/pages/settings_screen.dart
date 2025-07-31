@@ -5,19 +5,17 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/di/injection_container.dart';
+import '../../../auth/presentation/bloc/auth_bloc.dart';
+import '../../../auth/presentation/bloc/auth_event.dart';
+import '../../../auth/presentation/bloc/auth_state.dart' as auth_states;
 import '../../domain/entities/theme_mode_entity.dart';
 import '../bloc/settings_bloc.dart';
 import '../bloc/settings_event.dart';
 import '../bloc/settings_state.dart';
 
-/// Settings Screen following Disciplefy design system and branding
-/// 
-/// Features:
-/// - Disciplefy brand colors and typography
-/// - Grouped settings sections with clear visual hierarchy
-/// - Fully accessible with WCAG AA compliance
-/// - Light/Dark mode support
-/// - Responsive design with proper spacing
+/// Settings Screen with proper AuthBloc integration
+/// Handles both authenticated and anonymous users
+/// Features proper logout logic following SOLID principles
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
 
@@ -32,85 +30,200 @@ class _SettingsScreenContent extends StatelessWidget {
   const _SettingsScreenContent();
 
   @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    
-    return Scaffold(
+  Widget build(BuildContext context) => Scaffold(
       backgroundColor: AppTheme.backgroundColor,
-      body: BlocConsumer<SettingsBloc, SettingsState>(
-        listener: (context, state) {
-          if (state is SettingsError) {
-            _showSnackBar(context, state.message, AppTheme.errorColor);
-          } else if (state is SettingsUpdateSuccess) {
-            _showSnackBar(context, state.message, AppTheme.successColor);
-          } else if (state is LogoutSuccess) {
-            // Navigate to login and clear navigation stack
+      body: BlocListener<AuthBloc, auth_states.AuthState>(
+        listener: (context, authState) {
+          if (authState is auth_states.UnauthenticatedState) {
+            // Navigate to login screen after successful logout
             context.go('/login');
-          } else if (state is LogoutError) {
-            _showSnackBar(context, state.message, AppTheme.errorColor);
+          } else if (authState is auth_states.AuthErrorState) {
+            // Show error message
+            _showSnackBar(context, authState.message, AppTheme.errorColor);
           }
         },
-        builder: (context, state) {
-          if (state is SettingsLoading) {
-            return const Center(
-              child: CircularProgressIndicator(
-                valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primaryColor),
-                strokeWidth: 3,
-              ),
-            );
-          }
+        child: BlocConsumer<SettingsBloc, SettingsState>(
+          listener: (context, state) {
+            if (state is SettingsError) {
+              _showSnackBar(context, state.message, AppTheme.errorColor);
+            } else if (state is SettingsUpdateSuccess) {
+              _showSnackBar(context, state.message, AppTheme.successColor);
+            }
+          },
+          builder: (context, state) {
+            if (state is SettingsLoading) {
+              return const Center(
+                child: CircularProgressIndicator(
+                  valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primaryColor),
+                  strokeWidth: 3,
+                ),
+              );
+            }
 
-          if (state is SettingsLoaded) {
-            return SingleChildScrollView(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Settings Header
-                  Padding(
-                    padding: const EdgeInsets.only(top: 16, bottom: 32),
-                    child: Text(
-                      'Settings',
-                      style: GoogleFonts.playfairDisplay(
-                        fontSize: 32,
-                        fontWeight: FontWeight.bold,
-                        color: AppTheme.primaryColor,
+            if (state is SettingsLoaded) {
+              return SingleChildScrollView(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Settings Header
+                    Padding(
+                      padding: const EdgeInsets.only(top: 16, bottom: 32),
+                      child: Text(
+                        'Settings',
+                        style: GoogleFonts.playfairDisplay(
+                          fontSize: 32,
+                          fontWeight: FontWeight.bold,
+                          color: AppTheme.primaryColor,
+                        ),
                       ),
                     ),
-                  ),
-                  
-                  // Temporarily disabled sections for simplified settings
-                  // _buildThemeLanguageSection(context, state),
-                  // const SizedBox(height: 24),
-                  // _buildNotificationSection(context, state),
-                  // const SizedBox(height: 24),
-                  _buildAccountSection(context),
-                  const SizedBox(height: 24),
-                  _buildSimplifiedAboutSection(context, state),
-                  const SizedBox(height: 40), // Extra padding at bottom
-                ],
+                    
+                    // User Profile Section (only for authenticated users)
+                    _buildUserProfileSection(context),
+                    
+                    // Theme & Language Section - DISABLED
+                    // _buildThemeLanguageSection(context, state),
+                    // const SizedBox(height: 24),
+                    
+                    // Notification Section - DISABLED
+                    // _buildNotificationSection(context, state),
+                    // const SizedBox(height: 24),
+                    
+                    // Account Section
+                    _buildAccountSection(context),
+                    const SizedBox(height: 24),
+                    
+                    // About Section
+                    _buildAboutSection(context, state),
+                    const SizedBox(height: 40),
+                  ],
+                ),
+              );
+            }
+
+            return Center(
+              child: Text(
+                'Failed to load settings',
+                style: GoogleFonts.inter(
+                  fontSize: 16,
+                  color: AppTheme.errorColor,
+                ),
               ),
             );
-          }
-
-          return Center(
-            child: Text(
-              'Failed to load settings',
-              style: GoogleFonts.inter(
-                fontSize: 16,
-                color: AppTheme.errorColor,
-              ),
-            ),
-          );
-        },
+          },
+        ),
       ),
     );
-  }
+
+  /// User Profile Section - shows different content based on auth state
+  Widget _buildUserProfileSection(BuildContext context) => BlocBuilder<AuthBloc, auth_states.AuthState>(
+      builder: (context, authState) {
+        if (authState is auth_states.AuthenticatedState) {
+          return Column(
+            children: [
+              _buildSection(
+                title: 'Account',
+                children: [
+                  _buildUserProfileTile(context, authState),
+                  if (!authState.isAnonymous) ...[
+                    _buildDivider(),
+                    // Account Settings - DISABLED (contained theme/language settings)
+                    // _buildSettingsTile(
+                    //   context: context,
+                    //   icon: Icons.account_circle_outlined,
+                    //   title: 'Account Settings',
+                    //   subtitle: 'Manage your account preferences',
+                    //   trailing: const Icon(
+                    //     Icons.arrow_forward_ios,
+                    //     size: 16,
+                    //     color: AppTheme.onSurfaceVariant,
+                    //   ),
+                    //   onTap: () => _showAccountSettingsBottomSheet(context, authState),
+                    // ),
+                  ],
+                ],
+              ),
+              const SizedBox(height: 24),
+            ],
+          );
+        }
+        return const SizedBox.shrink();
+      },
+    );
+
+  /// User Profile Tile showing user info
+  Widget _buildUserProfileTile(BuildContext context, auth_states.AuthenticatedState authState) => Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      child: Row(
+        children: [
+          // Profile Picture
+          CircleAvatar(
+            radius: 25,
+            backgroundImage: authState.photoUrl != null
+                ? NetworkImage(authState.photoUrl!)
+                : null,
+            backgroundColor: AppTheme.primaryColor.withValues(alpha: 0.1),
+            child: authState.photoUrl == null
+                ? Icon(
+                    authState.isAnonymous ? Icons.person_outline : Icons.person,
+                    size: 25,
+                    color: AppTheme.primaryColor,
+                  )
+                : null,
+          ),
+          
+          const SizedBox(width: 16),
+          
+          // User Info
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  authState.isAnonymous
+                      ? 'Guest User'
+                      : authState.displayName ?? 'User',
+                  style: GoogleFonts.inter(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: AppTheme.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  authState.isAnonymous
+                      ? 'Sign in to sync your data'
+                      : authState.email ?? 'No email',
+                  style: GoogleFonts.inter(
+                    fontSize: 14,
+                    color: AppTheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          
+          // Sign In Button for Anonymous Users
+          if (authState.isAnonymous)
+            TextButton(
+              onPressed: () => context.go('/login'),
+              child: Text(
+                'Sign In',
+                style: GoogleFonts.inter(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: AppTheme.primaryColor,
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
 
   /// Theme & Language Section
   Widget _buildThemeLanguageSection(BuildContext context, SettingsLoaded state) => _buildSection(
-      title: 'Theme & Language',
+      title: 'Appearance',
       children: [
         _buildSettingsTile(
           context: context,
@@ -124,7 +237,7 @@ class _SettingsScreenContent extends StatelessWidget {
         _buildSettingsTile(
           context: context,
           icon: Icons.language_outlined,
-          title: 'App Language',
+          title: 'Language',
           subtitle: _getLanguageDisplayName(state.settings.language),
           trailing: const Icon(
             Icons.arrow_forward_ios,
@@ -136,7 +249,7 @@ class _SettingsScreenContent extends StatelessWidget {
       ],
     );
 
-  /// Notifications Section
+  /// Notification Section
   Widget _buildNotificationSection(BuildContext context, SettingsLoaded state) => _buildSection(
       title: 'Notifications',
       children: [
@@ -151,27 +264,71 @@ class _SettingsScreenContent extends StatelessWidget {
       ],
     );
 
-  /// Account Section
-  Widget _buildAccountSection(BuildContext context) => _buildSection(
-      title: 'Account',
-      children: [
-        _buildSettingsTile(
-          context: context,
-          icon: Icons.logout_outlined,
-          title: 'Logout',
-          subtitle: 'Sign out of your account',
-          trailing: const Icon(
-            Icons.arrow_forward_ios,
-            size: 16,
-            color: AppTheme.onSurfaceVariant,
-          ),
-          onTap: () => _showLogoutDialog(context),
-          iconColor: AppTheme.errorColor,
-        ),
-      ],
+  /// Account Section with AuthBloc integration
+  Widget _buildAccountSection(BuildContext context) => BlocBuilder<AuthBloc, auth_states.AuthState>(
+      builder: (context, authState) {
+        if (authState is auth_states.AuthenticatedState) {
+          return _buildSection(
+            title: 'Account Actions',
+            children: [
+              _buildSettingsTile(
+                context: context,
+                icon: Icons.logout_outlined,
+                title: 'Sign Out',
+                subtitle: authState.isAnonymous 
+                    ? 'Clear guest session'
+                    : 'Sign out of your account',
+                trailing: const Icon(
+                  Icons.arrow_forward_ios,
+                  size: 16,
+                  color: AppTheme.onSurfaceVariant,
+                ),
+                onTap: () => _showLogoutDialog(context, authState.isAnonymous),
+                iconColor: AppTheme.errorColor,
+              ),
+              if (!authState.isAnonymous) ...[
+                _buildDivider(),
+                _buildSettingsTile(
+                  context: context,
+                  icon: Icons.delete_forever_outlined,
+                  title: 'Delete Account',
+                  subtitle: 'Permanently delete your account and data',
+                  trailing: const Icon(
+                    Icons.arrow_forward_ios,
+                    size: 16,
+                    color: AppTheme.onSurfaceVariant,
+                  ),
+                  onTap: () => _showDeleteAccountDialog(context),
+                  iconColor: AppTheme.errorColor,
+                ),
+              ],
+            ],
+          );
+        }
+        
+        // For unauthenticated users, show sign in option
+        return _buildSection(
+          title: 'Account',
+          children: [
+            _buildSettingsTile(
+              context: context,
+              icon: Icons.login_outlined,
+              title: 'Sign In',
+              subtitle: 'Sign in to sync your data across devices',
+              trailing: const Icon(
+                Icons.arrow_forward_ios,
+                size: 16,
+                color: AppTheme.onSurfaceVariant,
+              ),
+              onTap: () => context.go('/login'),
+              iconColor: AppTheme.primaryColor,
+            ),
+          ],
+        );
+      },
     );
 
-  /// About Section (Full version - temporarily disabled)
+  /// About Section
   Widget _buildAboutSection(BuildContext context, SettingsLoaded state) => _buildSection(
       title: 'About',
       children: [
@@ -226,22 +383,288 @@ class _SettingsScreenContent extends StatelessWidget {
       ],
     );
 
-  /// Simplified About Section - Only App Version
-  Widget _buildSimplifiedAboutSection(BuildContext context, SettingsLoaded state) => _buildSection(
-      title: 'About',
-      children: [
-        _buildSettingsTile(
-          context: context,
-          icon: Icons.info_outline,
-          title: 'App Version',
-          subtitle: state.settings.appVersion,
-          trailing: null,
-          onTap: null,
+  /// Account Settings Bottom Sheet
+  void _showAccountSettingsBottomSheet(BuildContext context, auth_states.AuthenticatedState authState) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) => Container(
+        decoration: const BoxDecoration(
+          color: AppTheme.surfaceColor,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
         ),
-      ],
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Handle
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: AppTheme.onSurfaceVariant.withValues(alpha: 0.3),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            const SizedBox(height: 24),
+            
+            Text(
+              'Account Settings',
+              style: GoogleFonts.playfairDisplay(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: AppTheme.primaryColor,
+              ),
+            ),
+            const SizedBox(height: 24),
+            
+            // Language Preference
+            _buildAccountSettingItem(
+              icon: Icons.language_outlined,
+              title: 'Language Preference',
+              subtitle: _getLanguageDisplayName(authState.languagePreference),
+              onTap: () {
+                Navigator.pop(context);
+                _showLanguageBottomSheet(context, authState.languagePreference);
+              },
+            ),
+            
+            const SizedBox(height: 16),
+            
+            // Theme Preference
+            _buildAccountSettingItem(
+              icon: Icons.palette_outlined,
+              title: 'Theme Preference',
+              subtitle: _getThemeDisplayName(
+                authState.themePreference == 'dark' 
+                    ? ThemeModeEntity.dark() 
+                    : ThemeModeEntity.light()
+              ),
+              onTap: () {
+                Navigator.pop(context);
+                // Toggle theme
+                final newTheme = authState.themePreference == 'dark'
+                    ? ThemeModeEntity.light()
+                    : ThemeModeEntity.dark();
+                context.read<SettingsBloc>().add(ThemeModeChanged(newTheme));
+              },
+            ),
+            
+            const SizedBox(height: 24),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAccountSettingItem({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required VoidCallback onTap,
+  }) => Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              Icon(
+                icon,
+                size: 24,
+                color: AppTheme.primaryColor,
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: GoogleFonts.inter(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: AppTheme.textPrimary,
+                      ),
+                    ),
+                    Text(
+                      subtitle,
+                      style: GoogleFonts.inter(
+                        fontSize: 14,
+                        color: AppTheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const Icon(
+                Icons.arrow_forward_ios,
+                size: 16,
+                color: AppTheme.onSurfaceVariant,
+              ),
+            ],
+          ),
+        ),
+      ),
     );
 
-  /// Reusable section builder with Disciplefy styling
+  /// Logout confirmation dialog with AuthBloc integration
+  void _showLogoutDialog(BuildContext context, bool isAnonymous) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: const Color(0xFFFAFAFA), // Light background
+        surfaceTintColor: Colors.transparent,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        elevation: 8,
+        shadowColor: Colors.black.withOpacity(0.1),
+        title: Text(
+          isAnonymous ? 'Clear Session' : 'Sign Out',
+          style: GoogleFonts.playfairDisplay(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            color: const Color(0xFF333333), // Primary gray text
+          ),
+        ),
+        content: Text(
+          isAnonymous
+              ? 'Are you sure you want to clear your guest session? Your data will be lost.'
+              : 'Are you sure you want to sign out?',
+          style: GoogleFonts.inter(
+            fontSize: 16,
+            color: const Color(0xFF333333), // Primary gray text
+            height: 1.5,
+          ),
+        ),
+        actionsPadding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            style: TextButton.styleFrom(
+              foregroundColor: const Color(0xFF888888), // Light gray for cancel
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            child: Text(
+              'Cancel',
+              style: GoogleFonts.inter(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: const Color(0xFF888888), // Light gray text
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              context.read<AuthBloc>().add(const SignOutRequested());
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF7A56DB), // Primary purple
+              foregroundColor: Colors.white,
+              elevation: 0,
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            child: Text(
+              isAnonymous ? 'Clear' : 'Sign Out',
+              style: GoogleFonts.inter(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Delete Account confirmation dialog
+  void _showDeleteAccountDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: const Color(0xFFFAFAFA), // Light background
+        surfaceTintColor: Colors.transparent,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        elevation: 8,
+        shadowColor: Colors.black.withOpacity(0.1),
+        title: Text(
+          'Delete Account',
+          style: GoogleFonts.playfairDisplay(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            color: const Color(0xFFDC2626), // Red error color
+          ),
+        ),
+        content: Text(
+          'This action cannot be undone. All your data will be permanently deleted.',
+          style: GoogleFonts.inter(
+            fontSize: 16,
+            color: const Color(0xFF333333), // Primary gray text
+            height: 1.5,
+          ),
+        ),
+        actionsPadding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            style: TextButton.styleFrom(
+              foregroundColor: const Color(0xFF888888), // Light gray for cancel
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            child: Text(
+              'Cancel',
+              style: GoogleFonts.inter(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: const Color(0xFF888888), // Light gray text
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              context.read<AuthBloc>().add(const DeleteAccountRequested());
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFDC2626), // Red error color
+              foregroundColor: Colors.white,
+              elevation: 0,
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            child: Text(
+              'Delete',
+              style: GoogleFonts.inter(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Include all the helper methods from the original settings screen
   Widget _buildSection({
     required String title,
     required List<Widget> children,
@@ -266,7 +689,7 @@ class _SettingsScreenContent extends StatelessWidget {
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
-                color: AppTheme.primaryColor.withOpacity(0.08),
+                color: AppTheme.primaryColor.withValues(alpha: 0.08),
                 blurRadius: 12,
                 offset: const Offset(0, 4),
               ),
@@ -277,7 +700,6 @@ class _SettingsScreenContent extends StatelessWidget {
       ],
     );
 
-  /// Reusable settings tile with Disciplefy styling
   Widget _buildSettingsTile({
     required BuildContext context,
     required IconData icon,
@@ -295,12 +717,11 @@ class _SettingsScreenContent extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
           child: Row(
             children: [
-              // Icon
               Container(
                 width: 40,
                 height: 40,
                 decoration: BoxDecoration(
-                  color: (iconColor ?? AppTheme.primaryColor).withOpacity(0.1),
+                  color: (iconColor ?? AppTheme.primaryColor).withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Icon(
@@ -310,8 +731,6 @@ class _SettingsScreenContent extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 16),
-              
-              // Content
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -337,8 +756,6 @@ class _SettingsScreenContent extends StatelessWidget {
                   ],
                 ),
               ),
-              
-              // Trailing
               if (trailing != null) ...[
                 const SizedBox(width: 12),
                 trailing,
@@ -349,41 +766,37 @@ class _SettingsScreenContent extends StatelessWidget {
       ),
     );
 
-  /// Subtle divider with Disciplefy styling
   Widget _buildDivider() => Container(
       margin: const EdgeInsets.symmetric(horizontal: 20),
       height: 1,
-      color: AppTheme.primaryColor.withOpacity(0.08),
+      color: AppTheme.primaryColor.withValues(alpha: 0.08),
     );
 
-  /// Custom theme switch with Disciplefy colors
   Widget _buildThemeSwitch(BuildContext context, SettingsLoaded state) => Switch(
       value: state.settings.themeMode.isDarkMode,
       onChanged: (value) {
         final newTheme = value
             ? ThemeModeEntity.dark()
             : ThemeModeEntity.light();
-        context.read<SettingsBloc>().add(UpdateThemeMode(newTheme));
+        context.read<SettingsBloc>().add(ThemeModeChanged(newTheme));
       },
       activeColor: AppTheme.primaryColor,
-      activeTrackColor: AppTheme.primaryColor.withOpacity(0.3),
+      activeTrackColor: AppTheme.primaryColor.withValues(alpha: 0.3),
       inactiveThumbColor: AppTheme.onSurfaceVariant,
-      inactiveTrackColor: AppTheme.onSurfaceVariant.withOpacity(0.3),
+      inactiveTrackColor: AppTheme.onSurfaceVariant.withValues(alpha: 0.3),
     );
 
-  /// Custom notification switch with Disciplefy colors
   Widget _buildNotificationSwitch(BuildContext context, SettingsLoaded state) => Switch(
       value: state.settings.notificationsEnabled,
       onChanged: (value) {
         context.read<SettingsBloc>().add(ToggleNotifications(value));
       },
       activeColor: AppTheme.primaryColor,
-      activeTrackColor: AppTheme.primaryColor.withOpacity(0.3),
+      activeTrackColor: AppTheme.primaryColor.withValues(alpha: 0.3),
       inactiveThumbColor: AppTheme.onSurfaceVariant,
-      inactiveTrackColor: AppTheme.onSurfaceVariant.withOpacity(0.3),
+      inactiveTrackColor: AppTheme.onSurfaceVariant.withValues(alpha: 0.3),
     );
 
-  /// Language bottom sheet with Disciplefy styling
   void _showLanguageBottomSheet(BuildContext context, String currentLanguage) {
     showModalBottomSheet(
       context: context,
@@ -399,20 +812,17 @@ class _SettingsScreenContent extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Handle
             Center(
               child: Container(
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: AppTheme.onSurfaceVariant.withOpacity(0.3),
+                  color: AppTheme.onSurfaceVariant.withValues(alpha: 0.3),
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
             ),
             const SizedBox(height: 24),
-            
-            // Title
             Text(
               'Select Language',
               style: GoogleFonts.playfairDisplay(
@@ -422,11 +832,8 @@ class _SettingsScreenContent extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 24),
-            
-            // Language options
             _buildLanguageOption(context, 'en', 'English', '🇺🇸', currentLanguage),
             _buildLanguageOption(context, 'hi', 'Hindi', '🇮🇳', currentLanguage),
-            
             const SizedBox(height: 24),
           ],
         ),
@@ -454,7 +861,7 @@ class _SettingsScreenContent extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           decoration: BoxDecoration(
-            color: isSelected ? AppTheme.primaryColor.withOpacity(0.1) : Colors.transparent,
+            color: isSelected ? AppTheme.primaryColor.withValues(alpha: 0.1) : Colors.transparent,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
               color: isSelected ? AppTheme.primaryColor : Colors.transparent,
@@ -488,7 +895,6 @@ class _SettingsScreenContent extends StatelessWidget {
     );
   }
 
-  /// Support developer bottom sheet
   void _showSupportBottomSheet(BuildContext context) {
     showModalBottomSheet(
       context: context,
@@ -503,23 +909,20 @@ class _SettingsScreenContent extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Handle
             Container(
               width: 40,
               height: 4,
               decoration: BoxDecoration(
-                color: AppTheme.onSurfaceVariant.withOpacity(0.3),
+                color: AppTheme.onSurfaceVariant.withValues(alpha: 0.3),
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
             const SizedBox(height: 24),
-            
-            // Heart icon
             Container(
               width: 80,
               height: 80,
               decoration: BoxDecoration(
-                color: AppTheme.accentColor.withOpacity(0.2),
+                color: AppTheme.accentColor.withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(20),
               ),
               child: const Icon(
@@ -529,7 +932,6 @@ class _SettingsScreenContent extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 24),
-            
             Text(
               'Support Developer',
               style: GoogleFonts.playfairDisplay(
@@ -539,9 +941,8 @@ class _SettingsScreenContent extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 16),
-            
             Text(
-              'Thank you for using Disciplefy! Your support helps us continue improving the app and providing quality Bible study resources.',
+              'Thank you for using Disciplefy! Your support helps us continue improving the app.',
               style: GoogleFonts.inter(
                 fontSize: 16,
                 color: AppTheme.textPrimary,
@@ -550,7 +951,6 @@ class _SettingsScreenContent extends StatelessWidget {
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 32),
-            
             Row(
               children: [
                 Expanded(
@@ -577,7 +977,7 @@ class _SettingsScreenContent extends StatelessWidget {
                   child: ElevatedButton(
                     onPressed: () {
                       Navigator.of(context).pop();
-                      // TODO: Implement donation/support functionality
+                      // TODO: Implement donation functionality
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppTheme.primaryColor,
@@ -602,7 +1002,6 @@ class _SettingsScreenContent extends StatelessWidget {
     );
   }
 
-  /// Feedback bottom sheet
   void _showFeedbackBottomSheet(BuildContext context) {
     showModalBottomSheet(
       context: context,
@@ -618,19 +1017,17 @@ class _SettingsScreenContent extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Handle
             Center(
               child: Container(
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: AppTheme.onSurfaceVariant.withOpacity(0.3),
+                  color: AppTheme.onSurfaceVariant.withValues(alpha: 0.3),
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
             ),
             const SizedBox(height: 24),
-            
             Text(
               'Send Feedback',
               style: GoogleFonts.playfairDisplay(
@@ -640,7 +1037,6 @@ class _SettingsScreenContent extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 16),
-            
             Text(
               'Help us improve Disciplefy by sharing your thoughts and suggestions.',
               style: GoogleFonts.inter(
@@ -650,7 +1046,6 @@ class _SettingsScreenContent extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 24),
-            
             SizedBox(
               width: double.infinity,
               child: ElevatedButton.icon(
@@ -677,86 +1072,6 @@ class _SettingsScreenContent extends StatelessWidget {
     );
   }
 
-  /// Logout confirmation dialog
-  void _showLogoutDialog(BuildContext context) {
-    // Capture the SettingsBloc reference before showing the dialog
-    final settingsBloc = context.read<SettingsBloc>();
-    
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: const Color(0xFFFAFAFA), // Light background
-        surfaceTintColor: Colors.transparent,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
-        elevation: 8,
-        shadowColor: Colors.black.withOpacity(0.1),
-        title: Text(
-          'Confirm Logout',
-          style: GoogleFonts.playfairDisplay(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-            color: const Color(0xFF333333), // Primary gray text
-          ),
-        ),
-        content: Text(
-          'Are you sure you want to logout? This will end your current session.',
-          style: GoogleFonts.inter(
-            fontSize: 16,
-            color: const Color(0xFF333333), // Primary gray text
-            height: 1.5,
-          ),
-        ),
-        actionsPadding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            style: TextButton.styleFrom(
-              foregroundColor: const Color(0xFF888888), // Light gray for cancel
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-            child: Text(
-              'Cancel',
-              style: GoogleFonts.inter(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: const Color(0xFF888888), // Light gray text
-              ),
-            ),
-          ),
-          const SizedBox(width: 12),
-          ElevatedButton(
-            onPressed: () {
-              settingsBloc.add(LogoutUser());
-              Navigator.of(context).pop();
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF7A56DB), // Primary purple
-              foregroundColor: Colors.white,
-              elevation: 0,
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-            child: Text(
-              'Logout',
-              style: GoogleFonts.inter(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// Helper method to show styled snackbars
   void _showSnackBar(BuildContext context, String message, Color backgroundColor) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -775,7 +1090,6 @@ class _SettingsScreenContent extends StatelessWidget {
     );
   }
 
-  /// Helper methods for display names
   String _getThemeDisplayName(ThemeModeEntity themeMode) {
     switch (themeMode.mode) {
       case AppThemeMode.light:
@@ -800,7 +1114,6 @@ class _SettingsScreenContent extends StatelessWidget {
     }
   }
 
-  /// External URL launchers
   Future<void> _launchPrivacyPolicy() async {
     final uri = Uri.parse('https://disciplefy.com/privacy');
     if (await canLaunchUrl(uri)) {

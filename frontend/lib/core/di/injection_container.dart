@@ -9,7 +9,10 @@ import '../../features/auth/data/services/auth_service.dart';
 import '../../features/auth/presentation/bloc/auth_bloc.dart';
 import '../../features/study_generation/domain/repositories/study_repository.dart';
 import '../../features/study_generation/data/repositories/study_repository_impl.dart';
+import '../../features/study_generation/data/datasources/study_remote_data_source.dart';
+import '../../features/study_generation/data/datasources/study_local_data_source.dart';
 import '../../features/study_generation/domain/usecases/generate_study_guide.dart';
+import '../../features/study_generation/domain/services/input_validation_service.dart';
 import '../../features/study_generation/presentation/bloc/study_bloc.dart';
 import '../../features/settings/domain/repositories/settings_repository.dart';
 import '../../features/settings/data/repositories/settings_repository_impl.dart';
@@ -23,15 +26,49 @@ import '../../features/daily_verse/data/services/daily_verse_cache_service.dart'
 import '../../features/daily_verse/domain/repositories/daily_verse_repository.dart';
 import '../../features/daily_verse/data/repositories/daily_verse_repository_impl.dart';
 import '../../features/daily_verse/domain/usecases/get_daily_verse.dart';
+import '../../features/daily_verse/domain/usecases/get_cached_verse.dart';
 import '../../features/daily_verse/domain/usecases/manage_verse_preferences.dart';
 import '../../features/daily_verse/presentation/bloc/daily_verse_bloc.dart';
-import '../../features/saved_guides/data/services/unified_study_guides_service.dart';
 import '../../features/saved_guides/data/services/study_guides_api_service.dart';
-import '../../features/saved_guides/presentation/bloc/saved_guides_api_bloc.dart';
+import '../../features/saved_guides/presentation/bloc/unified_saved_guides_bloc.dart';
+import '../../features/saved_guides/domain/repositories/saved_guides_repository.dart';
+import '../../features/saved_guides/data/repositories/saved_guides_repository_impl.dart';
+import '../../features/saved_guides/data/datasources/saved_guides_local_data_source.dart';
+import '../../features/saved_guides/data/datasources/saved_guides_remote_data_source.dart';
+import '../../features/saved_guides/domain/usecases/get_saved_guides_with_sync.dart';
+import '../../features/saved_guides/domain/usecases/get_recent_guides_with_sync.dart';
+import '../../features/saved_guides/domain/usecases/toggle_save_guide_api.dart';
 import '../../features/study_generation/data/services/save_guide_api_service.dart';
+import '../../features/feedback/data/datasources/feedback_remote_datasource.dart';
+import '../../features/feedback/data/datasources/feedback_remote_datasource_impl.dart';
+import '../../features/feedback/data/repositories/feedback_repository_impl.dart';
+import '../../features/feedback/domain/repositories/feedback_repository.dart';
+import '../../features/feedback/domain/usecases/submit_feedback_usecase.dart';
+import '../../features/feedback/presentation/bloc/feedback_bloc.dart';
+import '../../features/home/data/services/recommended_guides_service.dart';
+import '../../features/home/presentation/bloc/home_bloc.dart';
+import '../../features/home/presentation/bloc/recommended_topics_bloc.dart';
+import '../../features/home/presentation/bloc/home_study_generation_bloc.dart';
+import '../../features/onboarding/data/datasources/onboarding_local_datasource.dart';
+import '../../features/onboarding/data/repositories/onboarding_repository_impl.dart';
+import '../../features/onboarding/domain/repositories/onboarding_repository.dart';
+import '../../features/onboarding/domain/usecases/get_onboarding_state.dart';
+import '../../features/onboarding/domain/usecases/save_language_preference.dart';
+import '../../features/onboarding/domain/usecases/complete_onboarding.dart';
+import '../../features/onboarding/presentation/bloc/onboarding_bloc.dart';
+import '../../features/user_profile/data/repositories/user_profile_repository_impl.dart';
+import '../../features/user_profile/data/services/user_profile_service.dart';
+import '../../features/user_profile/domain/repositories/user_profile_repository.dart';
+import '../../features/user_profile/domain/usecases/get_user_profile.dart';
+import '../../features/user_profile/domain/usecases/update_user_profile.dart';
+import '../../features/user_profile/domain/usecases/delete_user_profile.dart';
+import '../../features/user_profile/presentation/bloc/user_profile_bloc.dart';
 
+/// Service locator instance for dependency injection
 final sl = GetIt.instance;
 
+/// Initialize all dependencies for the application
+/// Call this before runApp() in main.dart
 Future<void> initializeDependencies() async {
   //! Core
   sl.registerLazySingleton(() => http.Client());
@@ -49,21 +86,40 @@ Future<void> initializeDependencies() async {
   sl.registerLazySingleton(() => AuthService());
   sl.registerFactory(() => AuthBloc(authService: sl()));
 
-  //! Study Generation
+  //! Study Generation Data Sources
+  sl.registerLazySingleton<StudyRemoteDataSource>(
+    () => StudyRemoteDataSourceImpl(
+      supabaseClient: sl(),
+    ),
+  );
+  
+  sl.registerLazySingleton<StudyLocalDataSource>(
+    () => StudyLocalDataSourceImpl(),
+  );
+
+  //! Study Generation Repository
   sl.registerLazySingleton<StudyRepository>(
     () => StudyRepositoryImpl(
-      supabaseClient: sl(),
+      remoteDataSource: sl(),
+      localDataSource: sl(),
       networkInfo: sl(),
     ),
   );
 
   sl.registerLazySingleton(() => GenerateStudyGuide(sl()));
 
-  sl.registerFactory(() => StudyBloc(generateStudyGuide: sl()));
+  sl.registerLazySingleton(() => InputValidationService());
+
+  sl.registerFactory(() => StudyBloc(
+    generateStudyGuide: sl(),
+    saveGuideService: sl(),
+    validationService: sl(),
+    authService: sl(),
+  ));
 
   //! Settings
   sl.registerLazySingleton<SettingsLocalDataSource>(
-    () => SettingsLocalDataSourceImpl(sharedPreferences: sl()),
+    () => SettingsLocalDataSourceImpl(),
   );
 
   sl.registerLazySingleton<SettingsRepository>(
@@ -79,8 +135,6 @@ Future<void> initializeDependencies() async {
         updateThemeMode: sl(),
         getAppVersion: sl(),
         settingsRepository: sl(),
-        supabaseClient: sl(),
-        authService: sl(),
       ));
 
 
@@ -101,6 +155,7 @@ Future<void> initializeDependencies() async {
   );
 
   sl.registerLazySingleton(() => GetDailyVerse(sl()));
+  sl.registerLazySingleton(() => GetCachedVerse(sl()));
   sl.registerLazySingleton(() => GetPreferredLanguage(sl()));
   sl.registerLazySingleton(() => SetPreferredLanguage(sl()));
   sl.registerLazySingleton(() => GetCacheStats(sl()));
@@ -108,6 +163,7 @@ Future<void> initializeDependencies() async {
 
   sl.registerFactory(() => DailyVerseBloc(
         getDailyVerse: sl(),
+        getCachedVerse: sl(),
         getPreferredLanguage: sl(),
         setPreferredLanguage: sl(),
         getCacheStats: sl(),
@@ -123,11 +179,102 @@ Future<void> initializeDependencies() async {
     () => SaveGuideApiService(httpClient: sl()),
   );
 
-  sl.registerLazySingleton<UnifiedStudyGuidesService>(
-    () => UnifiedStudyGuidesService(apiService: sl()),
+
+  // Register Saved Guides Data Sources
+  sl.registerLazySingleton<SavedGuidesLocalDataSource>(
+    () => SavedGuidesLocalDataSourceImpl(),
   );
 
-  sl.registerFactory(() => SavedGuidesApiBloc(
-        unifiedService: sl(),
+  sl.registerLazySingleton<SavedGuidesRemoteDataSource>(
+    () => SavedGuidesRemoteDataSourceImpl(
+      apiService: sl(),
+    ),
+  );
+
+  // Register Saved Guides Repository
+  sl.registerLazySingleton<SavedGuidesRepository>(
+    () => SavedGuidesRepositoryImpl(
+      localDataSource: sl(),
+      remoteDataSource: sl(),
+    ),
+  );
+
+  // Register Saved Guides Use Cases
+  sl.registerLazySingleton(() => GetSavedGuidesWithSync(repository: sl()));
+  sl.registerLazySingleton(() => GetRecentGuidesWithSync(repository: sl()));
+  sl.registerLazySingleton(() => ToggleSaveGuideApi(repository: sl()));
+
+  sl.registerFactory(() => UnifiedSavedGuidesBloc(
+        getSavedGuidesWithSync: sl(),
+        getRecentGuidesWithSync: sl(),
+        toggleSaveGuideApi: sl(),
       ));
+
+  //! Feedback
+  sl.registerLazySingleton<FeedbackRemoteDataSource>(
+    () => FeedbackRemoteDataSourceImpl(supabaseClient: sl()),
+  );
+
+  sl.registerLazySingleton<FeedbackRepository>(
+    () => FeedbackRepositoryImpl(remoteDataSource: sl()),
+  );
+
+  sl.registerLazySingleton(() => SubmitFeedbackUseCase(repository: sl()));
+
+  sl.registerFactory(() => FeedbackBloc(submitFeedbackUseCase: sl()));
+
+  //! Home
+  sl.registerLazySingleton(() => RecommendedGuidesService());
+
+  sl.registerFactory(() => HomeBloc(
+    topicsBloc: sl(),
+    studyGenerationBloc: sl(),
+  ));
+  
+  sl.registerFactory(() => RecommendedTopicsBloc(
+    topicsService: sl(),
+  ));
+  
+  sl.registerFactory(() => HomeStudyGenerationBloc(
+    generateStudyGuideUseCase: sl(),
+  ));
+
+  //! Onboarding
+  sl.registerLazySingleton<OnboardingLocalDataSource>(
+    () => OnboardingLocalDataSourceImpl(),
+  );
+
+  sl.registerLazySingleton<OnboardingRepository>(
+    () => OnboardingRepositoryImpl(localDataSource: sl()),
+  );
+
+  sl.registerLazySingleton(() => GetOnboardingState(sl()));
+  sl.registerLazySingleton(() => SaveLanguagePreference(sl()));
+  sl.registerLazySingleton(() => CompleteOnboarding(sl()));
+
+  sl.registerFactory(() => OnboardingBloc(
+    getOnboardingState: sl(),
+    saveLanguagePreference: sl(),
+    completeOnboarding: sl(),
+  ));
+
+  //! User Profile
+  sl.registerLazySingleton<UserProfileRepository>(
+    () => UserProfileRepositoryImpl(sl()),
+  );
+
+  sl.registerLazySingleton<UserProfileService>(
+    () => UserProfileService(),
+  );
+
+  sl.registerLazySingleton(() => GetUserProfile(repository: sl()));
+  sl.registerLazySingleton(() => UpdateUserProfile(repository: sl()));
+  sl.registerLazySingleton(() => DeleteUserProfile(repository: sl()));
+
+  sl.registerFactory(() => UserProfileBloc(
+    getUserProfile: sl(),
+    updateUserProfile: sl(),
+    deleteUserProfile: sl(),
+    repository: sl(),
+  ));
 }

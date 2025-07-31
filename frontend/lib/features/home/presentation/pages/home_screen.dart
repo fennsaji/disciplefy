@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -5,55 +6,45 @@ import 'package:google_fonts/google_fonts.dart';
 
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/di/injection_container.dart';
-import '../../data/services/recommended_guides_service.dart';
 import '../../domain/entities/recommended_guide_topic.dart';
 import '../../../daily_verse/presentation/bloc/daily_verse_bloc.dart';
 import '../../../daily_verse/presentation/bloc/daily_verse_event.dart';
 import '../../../daily_verse/presentation/bloc/daily_verse_state.dart';
 import '../../../daily_verse/presentation/widgets/daily_verse_card.dart';
 import '../../../daily_verse/domain/entities/daily_verse_entity.dart';
-import '../../../study_generation/domain/usecases/generate_study_guide.dart';
 import '../../../auth/presentation/bloc/auth_bloc.dart';
 import '../../../auth/presentation/bloc/auth_state.dart' as auth_states;
+import '../bloc/home_bloc.dart';
+import '../bloc/home_event.dart';
+import '../bloc/home_state.dart';
 
 /// Home screen displaying daily verse, navigation options, and study recommendations.
 /// 
 /// Features app logo, verse of the day, main navigation, and predefined study topics
 /// following the UX specifications and brand guidelines.
-class HomeScreen extends StatefulWidget {
+class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
 
   @override
-  State<HomeScreen> createState() => _HomeScreenState();
+  Widget build(BuildContext context) => BlocProvider(
+      create: (context) => sl<HomeBloc>()..add(const LoadRecommendedTopics(limit: 6)),
+      child: const _HomeScreenContent(),
+    );
 }
 
-class _HomeScreenState extends State<HomeScreen> {
-  // Services
-  late final RecommendedGuidesService _topicsService;
-  
-  // State variables
+class _HomeScreenContent extends StatefulWidget {
+  const _HomeScreenContent();
+
+  @override
+  State<_HomeScreenContent> createState() => _HomeScreenContentState();
+}
+
+class _HomeScreenContentState extends State<_HomeScreenContent> {
   final bool _hasResumeableStudy = false;
-  bool _isLoadingTopics = true;
-  String? _topicsError;
-  List<RecommendedGuideTopic> _recommendedTopics = [];
 
   @override
   void initState() {
     super.initState();
-    _topicsService = RecommendedGuidesService();
-    _initializeScreen();
-  }
-
-  @override
-  void dispose() {
-    _topicsService.dispose();
-    super.dispose();
-  }
-
-  /// Initializes the screen by loading topics and daily verse
-  Future<void> _initializeScreen() async {
-    await _loadRecommendedTopics();
-    // Load daily verse only once on screen initialization
     _loadDailyVerse();
   }
   
@@ -66,33 +57,6 @@ class _HomeScreenState extends State<HomeScreen> {
     bloc.add(const LoadTodaysVerse());
   }
 
-  /// Loads recommended topics from the API
-  Future<void> _loadRecommendedTopics() async {
-    setState(() {
-      _isLoadingTopics = true;
-      _topicsError = null;
-    });
-
-    final result = await _topicsService.getFilteredTopics(limit: 6);
-    
-    result.fold(
-      (failure) {
-        setState(() {
-          _isLoadingTopics = false;
-          _topicsError = failure.message;
-        });
-        print('❌ [HOME] Failed to load topics: ${failure.message}');
-      },
-      (topics) {
-        setState(() {
-          _isLoadingTopics = false;
-          _recommendedTopics = topics;
-        });
-        print('✅ [HOME] Loaded ${topics.length} topics');
-      },
-    );
-  }
-
   /// Handle daily verse card tap to generate study guide
   void _onDailyVerseCardTap() {
     // Get the current DailyVerseBloc state
@@ -101,10 +65,16 @@ class _HomeScreenState extends State<HomeScreen> {
 
     if (currentState is DailyVerseLoaded) {
       // Generate study guide with verse reference and selected language
-      _generateStudyGuideFromVerse(currentState.verse.reference, currentState.currentLanguage);
+      context.read<HomeBloc>().add(GenerateStudyGuideFromVerse(
+        verseReference: currentState.verse.reference,
+        language: _getLanguageCode(currentState.currentLanguage),
+      ));
     } else if (currentState is DailyVerseOffline) {
       // Generate study guide with cached verse reference and selected language  
-      _generateStudyGuideFromVerse(currentState.verse.reference, currentState.currentLanguage);
+      context.read<HomeBloc>().add(GenerateStudyGuideFromVerse(
+        verseReference: currentState.verse.reference,
+        language: _getLanguageCode(currentState.currentLanguage),
+      ));
     } else {
       // Show error if verse is not loaded
       ScaffoldMessenger.of(context).showSnackBar(
@@ -116,87 +86,67 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  /// Generate study guide from verse reference
-  Future<void> _generateStudyGuideFromVerse(String verseReference, VerseLanguage selectedLanguage) async {
-    try {
-      // Show loading indicator
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Row(
-              children: [
-                SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    valueColor: AlwaysStoppedAnimation<Color>(
-                      Theme.of(context).colorScheme.onPrimary,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Text('Generating study guide for "$verseReference"...'),
-              ],
-            ),
-            duration: const Duration(minutes: 1), // Long duration since generation can take time
-            backgroundColor: Theme.of(context).colorScheme.primary,
-          ),
-        );
-      }
-
-      // Generate study guide using the study generation service
-      final generateStudyGuide = sl<GenerateStudyGuide>();
-      final result = await generateStudyGuide(StudyGenerationParams(
-        input: verseReference,
-        inputType: 'scripture',
-        language: selectedLanguage.code, // Use selected language from daily verse
-      ));
-
-      if (mounted) {
-        // Hide loading snackbar
-        ScaffoldMessenger.of(context).hideCurrentSnackBar();
-
-        result.fold(
-          (failure) {
-            // Show error message
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('Failed to generate study guide: ${failure.message}'),
-                backgroundColor: Theme.of(context).colorScheme.error,
-                action: SnackBarAction(
-                  label: 'Retry',
-                  onPressed: () => _generateStudyGuideFromVerse(verseReference, selectedLanguage),
-                ),
-              ),
-            );
-          },
-          (studyGuide) {
-            // Navigate directly to study guide screen with generated content
-            context.go('/study-guide?source=home', extra: studyGuide);
-          },
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).hideCurrentSnackBar();
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error generating study guide: $e'),
-            backgroundColor: Theme.of(context).colorScheme.error,
-          ),
-        );
-      }
+  /// Convert VerseLanguage enum to language code string
+  String _getLanguageCode(VerseLanguage language) {
+    switch (language) {
+      case VerseLanguage.english:
+        return 'en';
+      case VerseLanguage.hindi:
+        return 'hi';
+      case VerseLanguage.malayalam:
+        return 'ml';
     }
   }
+
 
   @override
   Widget build(BuildContext context) {
     final screenHeight = MediaQuery.of(context).size.height;
     final isLargeScreen = screenHeight > 700;
 
-    return BlocBuilder<AuthBloc, auth_states.AuthState>(
-      builder: (context, authState) {
+    return BlocListener<HomeBloc, HomeState>(
+      listener: (context, state) {
+        if (state is HomeStudyGuideGenerated) {
+          // Navigate to study guide screen
+          context.go('/study-guide?source=home', extra: state.studyGuide);
+        } else if (state is HomeCombinedState) {
+          // Handle study guide generation states
+          if (state.isGeneratingStudyGuide && state.generationInput != null) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Row(
+                  children: [
+                    const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Text('Generating study guide for "${state.generationInput}"...'),
+                  ],
+                ),
+                duration: const Duration(minutes: 1),
+                backgroundColor: Theme.of(context).colorScheme.primary,
+              ),
+            );
+          } else if (state.generationError != null) {
+            ScaffoldMessenger.of(context).hideCurrentSnackBar();
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Failed to generate study guide: ${state.generationError}'),
+                backgroundColor: Theme.of(context).colorScheme.error,
+              ),
+            );
+          } else if (!state.isGeneratingStudyGuide) {
+            ScaffoldMessenger.of(context).hideCurrentSnackBar();
+          }
+        }
+      },
+      child: BlocBuilder<AuthBloc, auth_states.AuthState>(
+        builder: (context, authState) {
         // Extract user information from AuthBloc state
         String currentUserName = 'Guest';
         
@@ -211,7 +161,7 @@ class _HomeScreenState extends State<HomeScreen> {
                              user.email?.split('@').first ?? 
                              'User';
           }
-          print('👤 [HOME] User loaded: $currentUserName (authenticated: ${!authState.isAnonymous})');
+          if (kDebugMode) print('👤 [HOME] User loaded: $currentUserName (authenticated: ${!authState.isAnonymous})');
         }
 
         return Scaffold(
@@ -269,7 +219,8 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
         );
-      },
+        },
+      ),
     );
   }
 
@@ -432,46 +383,52 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
 
-  Widget _buildRecommendedTopics() => Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  Widget _buildRecommendedTopics() => BlocBuilder<HomeBloc, HomeState>(
+      builder: (context, state) {
+        final homeState = state is HomeCombinedState ? state : const HomeCombinedState();
+        
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'Recommended Study Topics',
-              style: GoogleFonts.inter(
-                fontSize: 20,
-                fontWeight: FontWeight.w600,
-                color: AppTheme.textPrimary,
-              ),
-            ),
-            if (_isLoadingTopics)
-              const SizedBox(
-                width: 20,
-                height: 20,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primaryColor),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Recommended Study Topics',
+                  style: GoogleFonts.inter(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w600,
+                    color: AppTheme.textPrimary,
+                  ),
                 ),
-              ),
+                if (homeState.isLoadingTopics)
+                  const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primaryColor),
+                    ),
+                  ),
+              ],
+            ),
+            
+            const SizedBox(height: 16),
+            
+            if (homeState.topicsError != null)
+              _buildTopicsErrorWidget(homeState.topicsError!)
+            else if (homeState.isLoadingTopics)
+              _buildTopicsLoadingWidget()
+            else if (homeState.topics.isEmpty)
+              _buildNoTopicsWidget()
+            else
+              _buildTopicsGrid(homeState.topics),
           ],
-        ),
-        
-        const SizedBox(height: 16),
-        
-        if (_topicsError != null)
-          _buildTopicsErrorWidget()
-        else if (_isLoadingTopics)
-          _buildTopicsLoadingWidget()
-        else if (_recommendedTopics.isEmpty)
-          _buildNoTopicsWidget()
-        else
-          _buildTopicsGrid(),
-      ],
+        );
+      },
     );
 
-  Widget _buildTopicsErrorWidget() => Container(
+  Widget _buildTopicsErrorWidget(String error) => Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         color: AppTheme.accentColor.withOpacity(0.1),
@@ -498,7 +455,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           const SizedBox(height: 8),
           Text(
-            _topicsError!,
+            error,
             style: GoogleFonts.inter(
               fontSize: 14,
               color: AppTheme.onSurfaceVariant,
@@ -507,7 +464,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           const SizedBox(height: 16),
           ElevatedButton(
-            onPressed: _loadRecommendedTopics,
+            onPressed: () => context.read<HomeBloc>().add(const RefreshRecommendedTopics()),
             style: ElevatedButton.styleFrom(
               backgroundColor: AppTheme.primaryColor,
               foregroundColor: Colors.white,
@@ -687,7 +644,7 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
 
-  Widget _buildTopicsGrid() {
+  Widget _buildTopicsGrid(List<RecommendedGuideTopic> topics) {
     // Use a different approach: Wrap or ListView instead of fixed-height GridView
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -698,7 +655,7 @@ class _HomeScreenState extends State<HomeScreen> {
         return Wrap(
           spacing: spacing,
           runSpacing: spacing,
-          children: _recommendedTopics.map((topic) => SizedBox(
+          children: topics.map((topic) => SizedBox(
               width: cardWidth,
               child: _RecommendedGuideTopicCard(
                 topic: topic,
@@ -722,83 +679,13 @@ class _HomeScreenState extends State<HomeScreen> {
       selectedLanguage = currentState.currentLanguage;
     }
     
-    // Generate study guide directly and navigate to study guide screen
-    _generateAndNavigateToStudyGuide(topic, selectedLanguage);
+    // Generate study guide using HomeBloc
+    context.read<HomeBloc>().add(GenerateStudyGuideFromTopic(
+      topicName: topic.title,
+      language: _getLanguageCode(selectedLanguage),
+    ));
   }
 
-  /// Generates a study guide for the given topic and navigates directly to the study guide screen
-  Future<void> _generateAndNavigateToStudyGuide(RecommendedGuideTopic topic, VerseLanguage selectedLanguage) async {
-    try {
-      // Show loading indicator
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Row(
-              children: [
-                SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    valueColor: AlwaysStoppedAnimation<Color>(
-                      Theme.of(context).colorScheme.onPrimary,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Text('Generating study guide for "${topic.title}"...'),
-              ],
-            ),
-            duration: const Duration(minutes: 1), // Long duration since generation can take time
-            backgroundColor: Theme.of(context).colorScheme.primary,
-          ),
-        );
-      }
-
-      // Generate study guide using the study generation service
-      final generateStudyGuide = sl<GenerateStudyGuide>();
-      final result = await generateStudyGuide(StudyGenerationParams(
-        input: topic.title,
-        inputType: 'topic',
-        language: selectedLanguage.code, // Use selected language from daily verse
-      ));
-
-      if (mounted) {
-        // Hide loading snackbar
-        ScaffoldMessenger.of(context).hideCurrentSnackBar();
-
-        result.fold(
-          (failure) {
-            // Show error message
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('Failed to generate study guide: ${failure.message}'),
-                backgroundColor: Theme.of(context).colorScheme.error,
-                action: SnackBarAction(
-                  label: 'Retry',
-                  onPressed: () => _generateAndNavigateToStudyGuide(topic, selectedLanguage),
-                ),
-              ),
-            );
-          },
-          (studyGuide) {
-            // Navigate directly to study guide screen with generated content
-            context.go('/study-guide?source=home', extra: studyGuide);
-          },
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).hideCurrentSnackBar();
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error generating study guide: $e'),
-            backgroundColor: Theme.of(context).colorScheme.error,
-          ),
-        );
-      }
-    }
-  }
 }
 
 /// Recommended guide topic card widget for API-based topics.
@@ -959,37 +846,25 @@ class _RecommendedGuideTopicCard extends StatelessWidget {
     );
   }
 
-  IconData _getIconForCategory(String category) {
-    switch (category.toLowerCase()) {
-      case 'faith foundations':
-        return Icons.foundation;
-      case 'spiritual disciplines':
-        return Icons.self_improvement;
-      case 'salvation':
-        return Icons.favorite;
-      case 'christian living':
-        return Icons.directions_walk;
-      case 'character of god':
-        return Icons.auto_awesome;
-      case 'relationships':
-        return Icons.people;
-      case 'spiritual growth':
-        return Icons.trending_up;
-      default:
-        return Icons.menu_book;
-    }
-  }
+  // Category to icon mapping
+  static const Map<String, IconData> _categoryIcons = {
+    'faith foundations': Icons.foundation,
+    'spiritual disciplines': Icons.self_improvement,
+    'salvation': Icons.favorite,
+    'christian living': Icons.directions_walk,
+    'character of god': Icons.auto_awesome,
+    'relationships': Icons.people,
+    'spiritual growth': Icons.trending_up,
+  };
 
-  Color _getColorForDifficulty(String difficulty) {
-    switch (difficulty.toLowerCase()) {
-      case 'beginner':
-        return const Color(0xFF4CAF50); // Green
-      case 'intermediate':
-        return const Color(0xFF6A4FB6); // Primary purple
-      case 'advanced':
-        return const Color(0xFFFF6B6B); // Accent red
-      default:
-        return AppTheme.primaryColor;
-    }
-  }
+  // Difficulty to color mapping
+  static const Map<String, Color> _difficultyColors = {
+    'beginner': Color(0xFF4CAF50), // Green
+    'intermediate': Color(0xFF6A4FB6), // Primary purple
+    'advanced': Color(0xFFFF6B6B), // Accent red
+  };
+
+  IconData _getIconForCategory(String category) => _categoryIcons[category.toLowerCase()] ?? Icons.menu_book;
+
+  Color _getColorForDifficulty(String difficulty) => _difficultyColors[difficulty.toLowerCase()] ?? AppTheme.primaryColor;
 }

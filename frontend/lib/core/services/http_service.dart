@@ -9,6 +9,7 @@ import 'api_auth_helper.dart';
 class HttpService {
   static const int _maxRetries = 1;
   final http.Client _httpClient;
+  bool _isDisposed = false;
   
   /// Stream controller for authentication failure events
   static final StreamController<String> _authFailureController = 
@@ -49,6 +50,12 @@ class HttpService {
     Future<http.Response> Function() requestFunction,
     String url,
   ) async {
+    if (_isDisposed) {
+      throw const NetworkException(
+        message: 'HTTP client has been disposed',
+        code: 'CLIENT_DISPOSED',
+      );
+    }
     int retryCount = 0;
     
     while (retryCount <= _maxRetries) {
@@ -197,7 +204,10 @@ class HttpService {
 
   /// Dispose HTTP client
   void dispose() {
-    _httpClient.close();
+    if (!_isDisposed) {
+      _httpClient.close();
+      _isDisposed = true;
+    }
   }
   
   /// Dispose static resources

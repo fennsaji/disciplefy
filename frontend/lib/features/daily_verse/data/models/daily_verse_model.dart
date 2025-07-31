@@ -32,13 +32,13 @@ class DailyVerseModel {
 @JsonSerializable()
 class DailyVerseTranslationsModel {
   final String esv;
-  final String hi;
-  final String ml;
+  final String hindi;
+  final String malayalam;
 
   const DailyVerseTranslationsModel({
     required this.esv,
-    required this.hi,
-    required this.ml,
+    required this.hindi,
+    required this.malayalam,
   });
 
   factory DailyVerseTranslationsModel.fromJson(Map<String, dynamic> json) =>
@@ -49,8 +49,8 @@ class DailyVerseTranslationsModel {
   /// Convert to domain entity
   DailyVerseTranslations toEntity() => DailyVerseTranslations(
       esv: esv,
-      hindi: hi,
-      malayalam: ml,
+      hindi: hindi,
+      malayalam: malayalam,
     );
 }
 

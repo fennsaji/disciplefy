@@ -1,411 +1,82 @@
-import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:google_sign_in/google_sign_in.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
-import '../../../../core/config/app_config.dart';
-import '../../../../core/services/auth_service.dart' as CoreAuthService;
 
-/// Authentication service handling OAuth providers and Supabase integration
-/// References: Security Design Plan, Technical Architecture Document
+import '../../domain/entities/auth_params.dart';
+import 'authentication_service.dart';
+import 'auth_storage_service.dart';
+
+/// REFACTORED: Facade pattern for backward compatibility
+/// Now delegates to specialized services following Single Responsibility Principle
+/// 
+/// This maintains the existing API while internally using:
+/// - AuthenticationService: Core auth state and session management
+/// - AuthStorageService: Secure data storage operations
 class AuthService {
-  final SupabaseClient _supabase = Supabase.instance.client;
-  GoogleSignIn? _googleSignIn;
+  final AuthenticationService _authService;
+  final AuthStorageService _storageService;
 
-  AuthService() {
-    _initializeGoogleSignIn();
-  }
-
-  void _initializeGoogleSignIn() {
-    if (!kIsWeb && AppConfig.googleClientId.isNotEmpty) {
-      _googleSignIn = GoogleSignIn(
-        clientId: AppConfig.googleClientId,
-        scopes: ['email', 'profile'],
-      );
-    }
-  }
+  /// Constructor with dependency injection for better testability
+  AuthService({
+    AuthenticationService? authenticationService,
+    AuthStorageService? storageService,
+  }) : _authService = authenticationService ?? AuthenticationService(),
+        _storageService = storageService ?? AuthStorageService();
 
   /// Get current authenticated user
-  User? get currentUser => _supabase.auth.currentUser;
+  User? get currentUser => _authService.currentUser;
 
-  /// Check if user is authenticated
-  bool get isAuthenticated => currentUser != null;
+  /// Check if user is authenticated (either via Supabase or anonymous session)
+  bool get isAuthenticated => _authService.isAuthenticated;
+
+  /// Async method to check authentication status including anonymous sessions
+  /// Returns false only for legitimate unauthenticated state, not for errors
+  Future<bool> isAuthenticatedAsync() async => _authService.isAuthenticatedAsync();
 
   /// Listen to authentication state changes
-  Stream<AuthState> get authStateChanges => _supabase.auth.onAuthStateChange;
+  Stream<AuthState> get authStateChanges => _authService.authStateChanges;
 
   /// Sign in with Google OAuth using custom backend callback
-  Future<bool> signInWithGoogle() async {
-    try {
-      if (kIsWeb) {
-        // Web-based Google OAuth with custom callback
-        return await _signInWithGoogleWeb();
-      } else {
-        // Mobile Google Sign-In with custom callback
-        return await _signInWithGoogleMobile();
-      }
-    } catch (e) {
-      if (kDebugMode) {
-        print('Google Sign-In Error: $e');
-      }
-      rethrow;
-    }
-  }
+  Future<bool> signInWithGoogle() async => _authService.signInWithGoogle();
 
-  /// Web-based Google OAuth with custom callback
-  Future<bool> _signInWithGoogleWeb() async {
-    // Initialize Google OAuth flow
-    final redirectUrl = AppConfig.authRedirectUrl;
-    
-    try {
-      // Use Supabase's OAuth to get the authorization code
-      await _supabase.auth.signInWithOAuth(
-        OAuthProvider.google,
-        redirectTo: redirectUrl,
-        authScreenLaunchMode: LaunchMode.externalApplication,
-      );
-      
-      // Note: The OAuth redirect will be handled by platform-specific code
-      // and will eventually call our callback API
-      return true;
-    } catch (e) {
-      if (kDebugMode) {
-        print('Web Google OAuth Error: $e');
-      }
-      rethrow;
-    }
-  }
 
-  /// Mobile Google Sign-In with custom callback
-  Future<bool> _signInWithGoogleMobile() async {
-    if (_googleSignIn == null) {
-      throw Exception('Google Sign-In not configured for mobile platform');
-    }
+  /// Process Google OAuth callback with authorization code
+  Future<bool> processGoogleOAuthCallback(GoogleOAuthCallbackParams params) async => 
+      _authService.processGoogleOAuthCallback(params);
 
-    final GoogleSignInAccount? googleUser = await _googleSignIn!.signIn();
-    if (googleUser == null) {
-      throw Exception('Google Sign-In was cancelled');
-    }
-
-    final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
-    
-    if (googleAuth.accessToken == null || googleAuth.idToken == null) {
-      throw Exception('Failed to get Google authentication tokens');
-    }
-
-    // Get the authorization code from Google
-    final String authorizationCode = googleAuth.accessToken!;
-    
-    // Call our custom backend callback
-    return await _callGoogleOAuthCallback(
-      code: authorizationCode,
-      idToken: googleAuth.idToken,
-    );
-  }
-
-  /// Process Google OAuth callback with custom backend API
-  Future<bool> processGoogleOAuthCallback({
-    required String code,
-    String? state,
-    String? error,
-    String? errorDescription,
-  }) async {
-    try {
-      // If there's an OAuth error, handle it
-      if (error != null) {
-        String errorMessage = 'Google OAuth failed';
-        if (errorDescription != null) {
-          errorMessage += ': $errorDescription';
-        }
-        throw Exception(errorMessage);
-      }
-
-      // Call our custom backend callback
-      return await _callGoogleOAuthCallback(
-        code: code,
-        state: state,
-      );
-    } catch (e) {
-      if (kDebugMode) {
-        print('Google OAuth Callback Error: $e');
-      }
-      rethrow;
-    }
-  }
-
-  /// Call the custom Google OAuth callback API
-  Future<bool> _callGoogleOAuthCallback({
-    required String code,
-    String? state,
-    String? idToken,
-  }) async {
-    try {
-      // Get guest session ID for potential migration
-      final String? guestSessionId = await _getGuestSessionId();
-      
-      // Prepare request headers
-      final Map<String, String> headers = {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ${AppConfig.supabaseAnonKey}',
-      };
-      
-      // Add guest session ID if available
-      if (guestSessionId != null) {
-        headers['X-Anonymous-Session-ID'] = guestSessionId;
-      }
-      
-      // Prepare request body
-      final Map<String, dynamic> body = {
-        'code': code,
-      };
-      
-      if (state != null) {
-        body['state'] = state;
-      }
-      
-      // Call the callback API
-      final response = await http.post(
-        Uri.parse('${AppConfig.baseApiUrl}/auth-google-callback'),
-        headers: headers,
-        body: jsonEncode(body),
-      );
-      
-      if (response.statusCode == 200) {
-        final Map<String, dynamic> responseData = jsonDecode(response.body);
-        
-        if (responseData['success'] == true) {
-          print('🔍 [DEBUG] Google OAuth callback successful');
-          
-          // Extract session data
-          final sessionData = responseData['session'];
-          print('🔍 [DEBUG] Session data keys: ${sessionData.keys}');
-          
-          // Set the Supabase session
-          await _supabase.auth.recoverSession(
-            sessionData['access_token'],
-          );
-          
-          print('🔍 [DEBUG] Current user after session recovery: ${currentUser?.id}');
-          print('🔍 [DEBUG] Current user isAnonymous: ${currentUser?.isAnonymous}');
-          
-          // Sync authentication state with Core AuthService
-          await CoreAuthService.AuthService.storeAuthData(
-            accessToken: sessionData['access_token'],
-            userType: 'google',
-            userId: currentUser?.id,
-          );
-          
-          // Verify what was stored
-          final storedUserType = await CoreAuthService.AuthService.getUserType();
-          final storedUserId = await CoreAuthService.AuthService.getUserId();
-          print('🔍 [DEBUG] Stored user type: $storedUserType');
-          print('🔍 [DEBUG] Stored user ID: $storedUserId');
-          
-          // Create or update user profile
-          await upsertUserProfile(
-            languagePreference: 'en',
-          );
-          
-          return true;
-        } else {
-          throw Exception(responseData['message'] ?? 'Authentication failed');
-        }
-      } else {
-        // Handle error response
-        Map<String, dynamic> errorData = {};
-        try {
-          errorData = jsonDecode(response.body);
-        } catch (e) {
-          // If JSON parsing fails, use status code
-          throw Exception('HTTP ${response.statusCode}: Authentication failed');
-        }
-        
-        final String errorMessage = errorData['message'] ?? 'Authentication failed';
-        final String? errorCode = errorData['error'];
-        
-        // Handle specific error types
-        if (errorCode == 'RATE_LIMITED') {
-          throw Exception('Too many login attempts. Please try again later.');
-        } else if (errorCode == 'CSRF_VALIDATION_FAILED') {
-          throw Exception('Security validation failed. Please try again.');
-        } else if (errorCode == 'INVALID_REQUEST') {
-          throw Exception('Invalid login request. Please try again.');
-        } else {
-          throw Exception(errorMessage);
-        }
-      }
-    } catch (e) {
-      if (kDebugMode) {
-        print('Google OAuth Callback API Error: $e');
-      }
-      rethrow;
-    }
-  }
-
-  /// Get guest session ID for migration
-  Future<String?> _getGuestSessionId() async {
-    try {
-      // Check if current user is anonymous
-      final currentUser = _supabase.auth.currentUser;
-      if (currentUser != null && currentUser.isAnonymous) {
-        return currentUser.id;
-      }
-      return null;
-    } catch (e) {
-      if (kDebugMode) {
-        print('Error getting guest session ID: $e');
-      }
-      return null;
-    }
-  }
 
   /// Sign in with Apple OAuth (iOS/Web only)
-  Future<bool> signInWithApple() async {
-    try {
-      await _supabase.auth.signInWithOAuth(
-        OAuthProvider.apple,
-        redirectTo: AppConfig.authRedirectUrl,
-      );
-      return true;
-    } catch (e) {
-      if (kDebugMode) {
-        print('Apple Sign-In Error: $e');
-      }
-      rethrow;
-    }
-  }
+  Future<bool> signInWithApple() async => _authService.signInWithApple();
 
-  /// Sign in anonymously
-  Future<bool> signInAnonymously() async {
-    try {
-      print('🔍 [DEBUG] signInAnonymously called');
-      print('🔍 [DEBUG] Stack trace: ${StackTrace.current}');
-      
-      await _supabase.auth.signInAnonymously();
-      
-      // Sync with Core AuthService for guest user
-      final session = _supabase.auth.currentSession;
-      if (session != null) {
-        await CoreAuthService.AuthService.storeAuthData(
-          accessToken: session.accessToken,
-          userType: 'guest',
-          userId: currentUser?.id,
-        );
-        
-        print('🔍 [DEBUG] Anonymous sign-in stored user type: guest');
-      }
-      
-      return true;
-    } catch (e) {
-      if (kDebugMode) {
-        print('Anonymous Sign-In Error: $e');
-      }
-      rethrow;
-    }
-  }
+  /// Sign in anonymously using Supabase + custom backend session
+  Future<bool> signInAnonymously() async => _authService.signInAnonymously();
+
 
   /// Sign out current user
-  Future<void> signOut() async {
-    try {
-      // Sign out from Google if available
-      if (_googleSignIn != null && await _googleSignIn!.isSignedIn()) {
-        await _googleSignIn!.signOut();
-      }
-      
-      // Sign out from Supabase
-      await _supabase.auth.signOut();
-      
-      // Clear Core AuthService data as well
-      await CoreAuthService.AuthService.signOut();
-    } catch (e) {
-      if (kDebugMode) {
-        print('Sign-Out Error: $e');
-      }
-      rethrow;
-    }
-  }
-
-  /// Get user profile data
-  Future<Map<String, dynamic>?> getUserProfile() async {
-    if (!isAuthenticated) return null;
-
-    try {
-      final response = await _supabase
-          .from('user_profiles')
-          .select()
-          .eq('id', currentUser!.id)
-          .maybeSingle();
-      
-      return response;
-    } catch (e) {
-      if (kDebugMode) {
-        print('Get User Profile Error: $e');
-      }
-      return null;
-    }
-  }
-
-  /// Create or update user profile
-  Future<void> upsertUserProfile({
-    required String languagePreference,
-    String themePreference = 'light',
-  }) async {
-    if (!isAuthenticated) return;
-
-    try {
-      await _supabase.from('user_profiles').upsert({
-        'id': currentUser!.id,
-        'language_preference': languagePreference,
-        'theme_preference': themePreference,
-        'updated_at': DateTime.now().toIso8601String(),
-      });
-    } catch (e) {
-      if (kDebugMode) {
-        print('Upsert User Profile Error: $e');
-      }
-      rethrow;
-    }
-  }
+  Future<void> signOut() async => _authService.signOut();
 
   /// Delete user account and all associated data
-  Future<void> deleteAccount() async {
-    if (!isAuthenticated) return;
+  Future<void> deleteAccount() async => _authService.deleteAccount();
 
-    try {
-      // Delete user profile (cascade will handle related data)
-      await _supabase
-          .from('user_profiles')
-          .delete()
-          .eq('id', currentUser!.id);
-      
-      // Sign out after deletion
-      await signOut();
-    } catch (e) {
-      if (kDebugMode) {
-        print('Delete Account Error: $e');
-      }
-      rethrow;
-    }
-  }
+  /// Creates a mock User object for anonymous sessions
+  User createAnonymousUser() => _authService.createAnonymousUser();
 
-  /// Check if current user is admin
-  Future<bool> isCurrentUserAdmin() async {
-    if (!isAuthenticated) return false;
+  // ===== STORAGE FACADE METHODS =====
+  
+  /// Get stored user type
+  Future<String?> getUserType() async => await _storageService.getUserType();
 
-    try {
-      final profile = await getUserProfile();
-      return profile?['is_admin'] == true;
-    } catch (e) {
-      if (kDebugMode) {
-        print('Check Admin Status Error: $e');
-      }
-      return false;
-    }
-  }
+  /// Get stored user ID
+  Future<String?> getUserId() async => await _storageService.getUserId();
+
+  /// Check if onboarding is completed
+  Future<bool> isOnboardingCompleted() async => await _storageService.isOnboardingCompleted();
+
+  /// Store authentication data
+  Future<void> storeAuthData(AuthDataStorageParams params) async => 
+      await _storageService.storeAuthData(params);
+
+  /// Clear all stored auth data
+  Future<void> clearAllData() async => await _storageService.clearAllData();
 
   /// Dispose resources
-  void dispose() {
-    // Google Sign-In doesn't need explicit disposal
-    // Supabase client is managed globally
-  }
+  void dispose() => _authService.dispose();
 }

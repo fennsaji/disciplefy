@@ -1,4 +1,4 @@
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import '../../../../core/error/exceptions.dart';
 import '../models/app_settings_model.dart';
@@ -14,21 +14,20 @@ abstract class SettingsLocalDataSource {
 }
 
 class SettingsLocalDataSourceImpl implements SettingsLocalDataSource {
-  final SharedPreferences sharedPreferences;
+  static const String _boxName = 'app_settings';
+  static const String _themeModeKey = 'settings_theme_mode';
+  static const String _languageKey = 'settings_language';
+  static const String _notificationsKey = 'settings_notifications_enabled';
+  static const String _appVersionKey = 'settings_app_version';
 
-  const SettingsLocalDataSourceImpl({required this.sharedPreferences});
-
-  static const String _themeModeKey = 'theme_mode';
-  static const String _languageKey = 'language';
-  static const String _notificationsKey = 'notifications_enabled';
-  static const String _appVersionKey = 'app_version';
+  Box get _box => Hive.box(_boxName);
 
   @override
   Future<AppSettingsModel> getSettings() async {
     try {
-      final themeString = sharedPreferences.getString(_themeModeKey) ?? 'light';
-      final language = sharedPreferences.getString(_languageKey) ?? 'en';
-      final notificationsEnabled = sharedPreferences.getBool(_notificationsKey) ?? true;
+      final themeString = _box.get(_themeModeKey, defaultValue: 'light') as String;
+      final language = _box.get(_languageKey, defaultValue: 'en') as String;
+      final notificationsEnabled = _box.get(_notificationsKey, defaultValue: true) as bool;
       final appVersion = await getAppVersion();
 
       return AppSettingsModel(
@@ -46,10 +45,10 @@ class SettingsLocalDataSourceImpl implements SettingsLocalDataSource {
   Future<void> saveSettings(AppSettingsModel settings) async {
     try {
       final themeModel = ThemeModeModel.fromEntity(settings.themeMode);
-      await sharedPreferences.setString(_themeModeKey, themeModel.toStringValue());
-      await sharedPreferences.setString(_languageKey, settings.language);
-      await sharedPreferences.setBool(_notificationsKey, settings.notificationsEnabled);
-      await sharedPreferences.setString(_appVersionKey, settings.appVersion);
+      await _box.put(_themeModeKey, themeModel.toStringValue());
+      await _box.put(_languageKey, settings.language);
+      await _box.put(_notificationsKey, settings.notificationsEnabled);
+      await _box.put(_appVersionKey, settings.appVersion);
     } catch (e) {
       throw CacheException(message: 'Failed to save settings: $e');
     }
@@ -58,7 +57,7 @@ class SettingsLocalDataSourceImpl implements SettingsLocalDataSource {
   @override
   Future<void> updateThemeMode(ThemeModeModel themeMode) async {
     try {
-      await sharedPreferences.setString(_themeModeKey, themeMode.toStringValue());
+      await _box.put(_themeModeKey, themeMode.toStringValue());
     } catch (e) {
       throw CacheException(message: 'Failed to update theme mode: $e');
     }
@@ -67,7 +66,7 @@ class SettingsLocalDataSourceImpl implements SettingsLocalDataSource {
   @override
   Future<void> updateLanguage(String language) async {
     try {
-      await sharedPreferences.setString(_languageKey, language);
+      await _box.put(_languageKey, language);
     } catch (e) {
       throw CacheException(message: 'Failed to update language: $e');
     }
@@ -86,10 +85,10 @@ class SettingsLocalDataSourceImpl implements SettingsLocalDataSource {
   @override
   Future<void> clearAllSettings() async {
     try {
-      await sharedPreferences.remove(_themeModeKey);
-      await sharedPreferences.remove(_languageKey);
-      await sharedPreferences.remove(_notificationsKey);
-      await sharedPreferences.remove(_appVersionKey);
+      await _box.delete(_themeModeKey);
+      await _box.delete(_languageKey);
+      await _box.delete(_notificationsKey);
+      await _box.delete(_appVersionKey);
     } catch (e) {
       throw CacheException(message: 'Failed to clear settings: $e');
     }
