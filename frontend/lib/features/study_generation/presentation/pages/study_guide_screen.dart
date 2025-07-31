@@ -1,51 +1,74 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:go_router/go_router.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:share_plus/share_plus.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/error/failures.dart';
 import '../../../../core/di/injection_container.dart';
 import '../../domain/entities/study_guide.dart';
-import '../../data/services/save_guide_api_service.dart';
+import '../../domain/services/study_navigation_service.dart';
+import '../bloc/study_bloc.dart';
+import '../bloc/study_event.dart';
+import '../bloc/study_state.dart';
+import '../../../saved_guides/data/models/saved_guide_model.dart';
 
 /// Study Guide Screen displaying generated content with sections and user interactions.
 /// 
 /// Features scrollable content, note-taking, save/share functionality, and error handling
 /// following the UX specifications and brand guidelines.
-class StudyGuideScreen extends StatefulWidget {
+class StudyGuideScreen extends StatelessWidget {
   final StudyGuide? studyGuide;
   final Map<String, dynamic>? routeExtra;
-  final String? navigationSource;
+  final StudyNavigationSource navigationSource;
 
   const StudyGuideScreen({
     super.key,
     this.studyGuide,
     this.routeExtra,
-    this.navigationSource,
+    this.navigationSource = StudyNavigationSource.saved,
   });
 
   @override
-  State<StudyGuideScreen> createState() => _StudyGuideScreenState();
+  Widget build(BuildContext context) => BlocProvider(
+      create: (context) => sl<StudyBloc>(),
+      child: _StudyGuideScreenContent(
+        studyGuide: studyGuide,
+        routeExtra: routeExtra,
+        navigationSource: navigationSource,
+      ),
+    );
 }
 
-class _StudyGuideScreenState extends State<StudyGuideScreen> {
+class _StudyGuideScreenContent extends StatefulWidget {
+  final StudyGuide? studyGuide;
+  final Map<String, dynamic>? routeExtra;
+  final StudyNavigationSource navigationSource;
+
+  const _StudyGuideScreenContent({
+    this.studyGuide,
+    this.routeExtra,
+    required this.navigationSource,
+  });
+
+  @override
+  State<_StudyGuideScreenContent> createState() => _StudyGuideScreenContentState();
+}
+
+class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
   final TextEditingController _notesController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
-  late final SaveGuideApiService _saveGuideService;
   
   late StudyGuide _currentStudyGuide;
   bool _hasError = false;
   String _errorMessage = '';
-  bool _isSaving = false;
   bool _isSaved = false;
   DateTime? _lastSaveAttempt;
 
   @override
   void initState() {
     super.initState();
-    _saveGuideService = sl<SaveGuideApiService>();
     _initializeStudyGuide();
   }
 
@@ -53,7 +76,6 @@ class _StudyGuideScreenState extends State<StudyGuideScreen> {
   void dispose() {
     _notesController.dispose();
     _scrollController.dispose();
-    // Don't dispose the service - it's managed by DI
     super.dispose();
   }
 
@@ -66,22 +88,22 @@ class _StudyGuideScreenState extends State<StudyGuideScreen> {
       // Handle study guide data from saved guides navigation
       try {
         final guideData = widget.routeExtra!['study_guide'] as Map<String, dynamic>;
-        final contentString = guideData['content'] ?? '';
-        final parsedContent = _parseStudyGuideContent(contentString);
         
-        _currentStudyGuide = StudyGuide(
+        // Create a SavedGuideModel from the route data to use the new structured approach
+        final savedGuideModel = SavedGuideModel(
           id: guideData['id'] ?? '',
-          input: guideData['title'] ?? guideData['verse_reference'] ?? guideData['topic_name'] ?? '',
-          inputType: guideData['type'] ?? 'topic',
-          summary: parsedContent['summary'] ?? '',
-          interpretation: parsedContent['interpretation'] ?? '',
-          context: parsedContent['context'] ?? '',
-          relatedVerses: parsedContent['relatedVerses'] ?? <String>[],
-          reflectionQuestions: parsedContent['reflectionQuestions'] ?? <String>[],
-          prayerPoints: parsedContent['prayerPoints'] ?? <String>[],
-          language: 'en', // Default language
-          createdAt: DateTime.now(), // Current time as fallback
+          title: guideData['title'] ?? '',
+          content: guideData['content'] ?? '',
+          typeString: guideData['type'] ?? 'topic',
+          createdAt: DateTime.tryParse(guideData['created_at'] ?? '') ?? DateTime.now(),
+          lastAccessedAt: DateTime.tryParse(guideData['last_accessed_at'] ?? '') ?? DateTime.now(),
+          isSaved: guideData['is_saved'] as bool? ?? false,
+          verseReference: guideData['verse_reference'],
+          topicName: guideData['topic_name'],
         );
+        
+        // Use the toStudyGuide method which handles both structured and legacy content
+        _currentStudyGuide = savedGuideModel.toStudyGuide();
         
         // Set save status from route data for saved guides
         _isSaved = guideData['is_saved'] as bool? ?? false;
@@ -93,142 +115,13 @@ class _StudyGuideScreenState extends State<StudyGuideScreen> {
       // Redirect to saved guides page when no data is provided
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
-          context.go('/saved');
+          StudyNavigationService.navigateToSaved(context);
         }
       });
       _showError('Redirecting to saved guides...');
     }
   }
 
-  /// Parses formatted study guide content into individual sections
-  Map<String, dynamic> _parseStudyGuideContent(String content) {
-    print('🔍 [CONTENT_PARSER] Starting to parse content with length: ${content.length}');
-    
-    final result = <String, dynamic>{
-      'summary': '',
-      'interpretation': '',
-      'context': '',
-      'relatedVerses': <String>[],
-      'reflectionQuestions': <String>[],
-      'prayerPoints': <String>[],
-    };
-
-    if (content.isEmpty) {
-      print('⚠️ [CONTENT_PARSER] Content is empty');
-      return result;
-    }
-
-    final sections = content.split('\n\n');
-    String currentSection = '';
-    final StringBuffer currentContent = StringBuffer();
-
-    for (final section in sections) {
-      final trimmedSection = section.trim();
-      
-      if (trimmedSection.startsWith('**Summary:**')) {
-        _saveCurrentSection(result, currentSection, currentContent.toString());
-        currentSection = 'summary';
-        currentContent.clear();
-        currentContent.write(trimmedSection.replaceFirst('**Summary:**', '').trim());
-      } else if (trimmedSection.startsWith('**Interpretation:**')) {
-        _saveCurrentSection(result, currentSection, currentContent.toString());
-        currentSection = 'interpretation';
-        currentContent.clear();
-        currentContent.write(trimmedSection.replaceFirst('**Interpretation:**', '').trim());
-      } else if (trimmedSection.startsWith('**Context:**')) {
-        _saveCurrentSection(result, currentSection, currentContent.toString());
-        currentSection = 'context';
-        currentContent.clear();
-        currentContent.write(trimmedSection.replaceFirst('**Context:**', '').trim());
-      } else if (trimmedSection.startsWith('**Related Verses:**')) {
-        _saveCurrentSection(result, currentSection, currentContent.toString());
-        currentSection = 'relatedVerses';
-        currentContent.clear();
-        // Handle bullet points in the same section
-        final lines = trimmedSection.split('\n');
-        for (final line in lines.skip(1)) { // Skip the header line
-          if (line.trim().startsWith('•')) {
-            final item = line.trim().replaceFirst('•', '').trim();
-            if (item.isNotEmpty) {
-              (result[currentSection] as List<String>).add(item);
-            }
-          }
-        }
-      } else if (trimmedSection.startsWith('**Reflection Questions:**')) {
-        _saveCurrentSection(result, currentSection, currentContent.toString());
-        currentSection = 'reflectionQuestions';
-        currentContent.clear();
-        // Handle bullet points in the same section
-        final lines = trimmedSection.split('\n');
-        for (final line in lines.skip(1)) { // Skip the header line
-          if (line.trim().startsWith('•')) {
-            final item = line.trim().replaceFirst('•', '').trim();
-            if (item.isNotEmpty) {
-              (result[currentSection] as List<String>).add(item);
-            }
-          }
-        }
-      } else if (trimmedSection.startsWith('**Prayer Points:**')) {
-        _saveCurrentSection(result, currentSection, currentContent.toString());
-        currentSection = 'prayerPoints';
-        currentContent.clear();
-        // Handle bullet points in the same section
-        final lines = trimmedSection.split('\n');
-        for (final line in lines.skip(1)) { // Skip the header line
-          if (line.trim().startsWith('•')) {
-            final item = line.trim().replaceFirst('•', '').trim();
-            if (item.isNotEmpty) {
-              (result[currentSection] as List<String>).add(item);
-            }
-          }
-        }
-      } else if (currentSection.isNotEmpty) {
-        // Continue current section content
-        if (currentSection == 'relatedVerses' || 
-            currentSection == 'reflectionQuestions' || 
-            currentSection == 'prayerPoints') {
-          // Handle list items
-          final lines = trimmedSection.split('\n');
-          for (final line in lines) {
-            if (line.trim().startsWith('•')) {
-              final item = line.trim().replaceFirst('•', '').trim();
-              if (item.isNotEmpty) {
-                (result[currentSection] as List<String>).add(item);
-              }
-            }
-          }
-        } else {
-          // Handle regular text sections
-          if (currentContent.isNotEmpty) {
-            currentContent.write('\n\n$trimmedSection');
-          } else {
-            currentContent.write(trimmedSection);
-          }
-        }
-      }
-    }
-
-    // Save the last section
-    _saveCurrentSection(result, currentSection, currentContent.toString());
-
-    print('✅ [CONTENT_PARSER] Parsing complete. Summary length: ${result['summary']?.length ?? 0}');
-    print('✅ [CONTENT_PARSER] Parsed sections: ${result.keys.where((k) => result[k] != null && ((result[k] is String && result[k].isNotEmpty) || (result[k] is List && result[k].isNotEmpty))).toList()}');
-
-    return result;
-  }
-
-  void _saveCurrentSection(Map<String, dynamic> result, String section, String content) {
-    if (section.isEmpty || content.isEmpty) return;
-    
-    if (section == 'relatedVerses' || 
-        section == 'reflectionQuestions' || 
-        section == 'prayerPoints') {
-      // Lists are handled in the main parsing loop
-      return;
-    } else {
-      result[section] = content.trim();
-    }
-  }
 
 
   void _showError(String message) {
@@ -247,27 +140,35 @@ class _StudyGuideScreenState extends State<StudyGuideScreen> {
       return _buildErrorScreen();
     }
 
-    return Scaffold(
+    return BlocListener<StudyBloc, StudyState>(
+      listener: (context, state) {
+        if (state is StudySaveSuccess) {
+          setState(() {
+            _isSaved = state.saved;
+          });
+          _showSnackBar(
+            state.message,
+            state.saved ? AppTheme.successColor : AppTheme.primaryColor,
+            icon: state.saved ? Icons.check_circle : Icons.bookmark_remove,
+          );
+        } else if (state is StudySaveFailure) {
+          _handleSaveError(state.failure);
+        } else if (state is StudyAuthenticationRequired) {
+          _showAuthenticationRequiredDialog();
+        }
+      },
+      child: Scaffold(
       backgroundColor: AppTheme.backgroundColor,
       appBar: AppBar(
         backgroundColor: AppTheme.backgroundColor,
         elevation: 0,
         leading: IconButton(
           onPressed: () {
-            // Navigate back based on the source
-            switch (widget.navigationSource) {
-              case 'home':
-                context.go('/');
-                break;
-              case 'generate':
-                context.go('/generate-study');
-                break;
-              case 'saved':
-              case 'recent':
-              default:
-                context.go('/saved');
-                break;
-            }
+            // Navigate back using the navigation service
+            StudyNavigationService.navigateBack(
+              context,
+              source: widget.navigationSource,
+            );
           },
           icon: const Icon(
             Icons.arrow_back_ios,
@@ -323,6 +224,7 @@ class _StudyGuideScreenState extends State<StudyGuideScreen> {
           _buildBottomActions(),
         ],
       ),
+      ),
     );
   }
 
@@ -333,20 +235,11 @@ class _StudyGuideScreenState extends State<StudyGuideScreen> {
         elevation: 0,
         leading: IconButton(
           onPressed: () {
-            // Navigate back based on the source
-            switch (widget.navigationSource) {
-              case 'home':
-                context.go('/');
-                break;
-              case 'generate':
-                context.go('/generate-study');
-                break;
-              case 'saved':
-              case 'recent':
-              default:
-                context.go('/saved');
-                break;
-            }
+            // Navigate back using the navigation service
+            StudyNavigationService.navigateBack(
+              context,
+              source: widget.navigationSource,
+            );
           },
           icon: const Icon(
             Icons.arrow_back_ios,
@@ -404,7 +297,7 @@ class _StudyGuideScreenState extends State<StudyGuideScreen> {
               const SizedBox(height: 32),
               
               ElevatedButton(
-                onPressed: () => context.go('/saved'),
+                onPressed: () => StudyNavigationService.navigateToSaved(context),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppTheme.primaryColor,
                   foregroundColor: Colors.white,
@@ -562,58 +455,65 @@ class _StudyGuideScreenState extends State<StudyGuideScreen> {
       child: Row(
         children: [
           Expanded(
-            child: _isSaving
-                ? OutlinedButton.icon(
-                    onPressed: null,
-                    icon: const SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primaryColor),
-                      ),
-                    ),
-                    label: Text(
-                      'Saving...',
-                      style: GoogleFonts.inter(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: AppTheme.primaryColor.withValues(alpha: 0.6),
-                      side: BorderSide(
-                        color: AppTheme.primaryColor.withValues(alpha: 0.6),
-                        width: 2,
-                      ),
-                      minimumSize: const Size.fromHeight(56),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                  )
-                : OutlinedButton.icon(
-                    onPressed: _saveStudyGuide,
-                    icon: Icon(_isSaved ? Icons.bookmark : Icons.bookmark_border),
-                    label: Text(
-                      _isSaved ? 'Saved' : 'Save Study',
-                      style: GoogleFonts.inter(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: _isSaved ? AppTheme.successColor : AppTheme.primaryColor,
-                      side: BorderSide(
-                        color: _isSaved ? AppTheme.successColor : AppTheme.primaryColor,
-                        width: 2,
-                      ),
-                      minimumSize: const Size.fromHeight(56),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                  ),
+            child: BlocBuilder<StudyBloc, StudyState>(
+              builder: (context, state) {
+                final isSaving = state is StudySaveInProgress && 
+                                 state.guideId == _currentStudyGuide.id;
+                
+                return isSaving
+                    ? OutlinedButton.icon(
+                        onPressed: null,
+                        icon: const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primaryColor),
+                          ),
+                        ),
+                        label: Text(
+                          'Saving...',
+                          style: GoogleFonts.inter(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: AppTheme.primaryColor.withValues(alpha: 0.6),
+                          side: BorderSide(
+                            color: AppTheme.primaryColor.withValues(alpha: 0.6),
+                            width: 2,
+                          ),
+                          minimumSize: const Size.fromHeight(56),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                      )
+                    : OutlinedButton.icon(
+                        onPressed: _saveStudyGuide,
+                        icon: Icon(_isSaved ? Icons.bookmark : Icons.bookmark_border),
+                        label: Text(
+                          _isSaved ? 'Saved' : 'Save Study',
+                          style: GoogleFonts.inter(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: _isSaved ? AppTheme.successColor : AppTheme.primaryColor,
+                          side: BorderSide(
+                            color: _isSaved ? AppTheme.successColor : AppTheme.primaryColor,
+                            width: 2,
+                          ),
+                          minimumSize: const Size.fromHeight(56),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                      );
+              },
+            ),
           ),
           
           const SizedBox(width: 16),
@@ -653,8 +553,8 @@ class _StudyGuideScreenState extends State<StudyGuideScreen> {
     }
   }
 
-  /// Toggle save/unsave status of the current study guide via API
-  void _saveStudyGuide() async {
+  /// Toggle save/unsave status of the current study guide via BLoC
+  void _saveStudyGuide() {
     // Debounce rapid taps - prevent multiple requests within 2 seconds
     final now = DateTime.now();
     if (_lastSaveAttempt != null && 
@@ -663,58 +563,19 @@ class _StudyGuideScreenState extends State<StudyGuideScreen> {
     }
     _lastSaveAttempt = now;
 
-    // Check if already saving
-    if (_isSaving) return;
-
-    // Check authentication using Supabase (same logic as router)
-    final user = Supabase.instance.client.auth.currentUser;
-    final isAuthenticated = user != null && !user.isAnonymous;
-    
-    if (!isAuthenticated) {
-      _showAuthenticationRequiredDialog();
-      return;
-    }
-
     // Determine action based on current save status
     final shouldSave = !_isSaved;
 
-    setState(() {
-      _isSaving = true;
-    });
+    // Dispatch authentication check event to BLoC instead of direct Supabase access
+    context.read<StudyBloc>().add(CheckAuthenticationRequested(
+      guideId: _currentStudyGuide.id,
+      save: shouldSave,
+    ));
 
-    try {
-      // Call the API to toggle save status
-      final success = await _saveGuideService.toggleSaveGuide(
-        guideId: _currentStudyGuide.id,
-        save: shouldSave,
-      );
-
-      if (success) {
-        setState(() {
-          _isSaved = shouldSave;
-          _isSaving = false;
-        });
-
-        _showSnackBar(
-          shouldSave ? 'Study guide saved successfully!' : 'Study guide removed from saved!',
-          shouldSave ? AppTheme.successColor : AppTheme.primaryColor,
-          icon: shouldSave ? Icons.check_circle : Icons.bookmark_remove,
-        );
-
-        // TODO: Save notes locally if needed
-        final notes = _notesController.text.trim();
-        if (notes.isNotEmpty) {
-          debugPrint('Notes to save locally: $notes');
-        }
-      } else {
-        throw Exception('Save operation returned false');
-      }
-    } catch (e) {
-      setState(() {
-        _isSaving = false;
-      });
-
-      _handleSaveError(e);
+    // TODO: Save notes locally if needed
+    final notes = _notesController.text.trim();
+    if (notes.isNotEmpty) {
+      debugPrint('Notes to save locally: $notes');
     }
   }
 
@@ -770,7 +631,7 @@ class _StudyGuideScreenState extends State<StudyGuideScreen> {
           ElevatedButton(
             onPressed: () {
               Navigator.of(context).pop();
-              context.go('/login');
+              StudyNavigationService.navigateToLogin(context);
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF7A56DB), // Primary purple
@@ -794,23 +655,25 @@ class _StudyGuideScreenState extends State<StudyGuideScreen> {
     );
   }
 
-  /// Handle save operation errors
-  void _handleSaveError(dynamic error) {
+  /// Handle save operation errors from BLoC
+  void _handleSaveError(Failure failure) {
     String message = 'Failed to save study guide. Please try again.';
     Color backgroundColor = AppTheme.errorColor;
     
-    if (error.toString().contains('UNAUTHORIZED')) {
+    if (failure.code == 'UNAUTHORIZED') {
       message = 'Authentication expired. Please sign in again.';
-    } else if (error.toString().contains('NETWORK_ERROR')) {
+    } else if (failure.code == 'NETWORK_ERROR') {
       message = 'Network error. Please check your connection.';
-    } else if (error.toString().contains('NOT_FOUND')) {
+    } else if (failure.code == 'NOT_FOUND') {
       message = 'Study guide not found. It may have been deleted.';
-    } else if (error.toString().contains('ALREADY_SAVED') || error.toString().contains('already saved')) {
+    } else if (failure.code == 'ALREADY_SAVED') {
       message = 'This study guide is already saved!';
       backgroundColor = AppTheme.primaryColor;
       setState(() {
         _isSaved = true;
       });
+    } else {
+      message = failure.message;
     }
 
     _showSnackBar(message, backgroundColor, icon: Icons.error_outline);

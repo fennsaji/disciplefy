@@ -25,16 +25,16 @@ DailyVerseTranslationsModel _$DailyVerseTranslationsModelFromJson(
         Map<String, dynamic> json) =>
     DailyVerseTranslationsModel(
       esv: json['esv'] as String,
-      hi: json['hi'] as String,
-      ml: json['ml'] as String,
+      hindi: json['hindi'] as String,
+      malayalam: json['malayalam'] as String,
     );
 
 Map<String, dynamic> _$DailyVerseTranslationsModelToJson(
         DailyVerseTranslationsModel instance) =>
     <String, dynamic>{
       'esv': instance.esv,
-      'hi': instance.hi,
-      'ml': instance.ml,
+      'hindi': instance.hindi,
+      'malayalam': instance.malayalam,
     };
 
 DailyVerseResponse _$DailyVerseResponseFromJson(Map<String, dynamic> json) =>

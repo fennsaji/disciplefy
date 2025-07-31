@@ -19,17 +19,11 @@ class AppConfig {
 
   static const String supabaseAnonKey = String.fromEnvironment(
     'SUPABASE_ANON_KEY',
-    defaultValue: kDebugMode
-        ? 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0'
-        : 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0',
   );
 
   // OAuth Configuration
   static const String googleClientId = String.fromEnvironment(
     'GOOGLE_CLIENT_ID',
-    defaultValue: kIsWeb
-        ? '587108000155-af542dhgo9rmp5hvsm1vepgqsgil438d.apps.googleusercontent.com'
-        : '587108000155-af542dhgo9rmp5hvsm1vepgqsgil438d.apps.googleusercontent.com', // Android gets this from google-services.json, iOS uses separate client ID
   );
 
   static const String appleClientId = String.fromEnvironment(
@@ -40,7 +34,6 @@ class AppConfig {
   // Payment Configuration (Razorpay)
   static const String razorpayKeyId = String.fromEnvironment(
     'RAZORPAY_KEY_ID',
-    defaultValue: kDebugMode ? 'rzp_test_key' : 'rzp_live_key',
   );
 
   // App Configuration
@@ -51,11 +44,52 @@ class AppConfig {
   // OAuth Redirect URLs
   static String get authRedirectUrl {
     if (kIsWeb) {
-      return appUrl;
+      // DYNAMIC FIX: Use current origin for OAuth redirects to handle localhost correctly
+      final currentOrigin = _getCurrentWebOrigin();
+      return '$currentOrigin/auth/callback';
     }
     // Use deep link scheme for mobile apps (both development and production)
     return 'com.disciplefy.bible_study_app://auth/callback';
   }
+
+  /// Get the current web origin dynamically
+  /// This ensures OAuth redirects work correctly in both development and production
+  /// Uses Uri.base which is safe and doesn't rely on deprecated dart:html
+  static String _getCurrentWebOrigin() {
+    if (kIsWeb) {
+      try {
+        // Use Uri.base to get the current origin - this is the modern, safe approach
+        final baseUri = Uri.base;
+        final origin = '${baseUri.scheme}://${baseUri.host}${baseUri.hasPort ? ':${baseUri.port}' : ''}';
+        
+        if (kDebugMode) {
+          print('🔧 [AppConfig] Dynamic web origin detected: $origin');
+        }
+        return origin;
+      } catch (e) {
+        if (kDebugMode) {
+          print('🔧 [AppConfig] ⚠️ Failed to get dynamic origin, falling back to appUrl: $e');
+        }
+      }
+      
+      // Fallback to configured appUrl if dynamic detection fails
+      if (kDebugMode) {
+        print('🔧 [AppConfig] Using fallback appUrl: $appUrl');
+      }
+      return appUrl;
+    }
+    return appUrl;
+  }
+
+  // OAuth redirect schemes for deep linking
+  static const List<String> oauthRedirectSchemes = [
+    'com.disciplefy.bible_study',
+    'io.supabase.flutter',
+  ];
+
+  // Auth endpoints
+  static const String authSessionEndpoint = '/auth-session';
+  static const String googleOAuthCallbackEndpoint = '/auth-google-callback';
 
   // Rate Limiting (from API Contract Documentation)
   static const int anonymousRateLimit = 3; // guides per hour
@@ -76,6 +110,9 @@ class AppConfig {
   static const int maxCachedBibleVerses = 500;
   static const int cacheRetentionDays = 30;
   static const String maxOfflineStorageSize = '100MB';
+  
+  // Cache Refresh Configuration
+  static const int dailyVerseCacheRefreshHours = 1; // Refresh daily verse cache after 1 hour
 
   // Environment Detection
   static bool get isProduction => !kDebugMode;
@@ -102,11 +139,37 @@ class AppConfig {
         (!kIsWeb); // Mobile gets config from platform-specific files
   }
 
+  /// Validates that all required configuration values are present
+  /// Throws detailed exceptions for missing critical configuration
   static void validateConfiguration() {
-    if (!isConfigValid) {
+    final List<String> missingConfigs = [];
+    
+    if (supabaseUrl.isEmpty) {
+      missingConfigs.add('SUPABASE_URL');
+    }
+    
+    if (supabaseAnonKey.isEmpty) {
+      missingConfigs.add('SUPABASE_ANON_KEY');
+    }
+    
+    if (kIsWeb && googleClientId.isEmpty) {
+      missingConfigs.add('GOOGLE_CLIENT_ID (required for web)');
+    }
+    
+    if (missingConfigs.isNotEmpty) {
       throw Exception(
-          'Invalid configuration: Missing required environment variables. '
-          'Check SUPABASE_URL and SUPABASE_ANON_KEY.');
+        'Missing required environment variables: ${missingConfigs.join(', ')}. '
+        'Please set these environment variables before running the application.'
+      );
+    }
+    
+    // Validate format of critical URLs
+    if (!supabaseUrl.startsWith('http')) {
+      throw Exception('SUPABASE_URL must be a valid HTTP/HTTPS URL');
+    }
+    
+    if (kDebugMode) {
+      print('✅ Configuration validation passed');
     }
   }
 
@@ -115,10 +178,14 @@ class AppConfig {
       print('🔧 App Configuration:');
       print('  - Environment: ${isDevelopment ? "Development" : "Production"}');
       print('  - Supabase URL: $supabaseUrl');
-      print(
-          '  - Google OAuth: ${isOAuthConfigValid ? "✅ Configured" : "❌ Missing"}');
+      print('  - Google Client ID: $googleClientId');
+      print('  - Google OAuth: ${isOAuthConfigValid ? "✅ Configured" : "❌ Missing"}');
       print('  - Platform: ${kIsWeb ? "Web" : "Mobile"}');
-      print('  - Redirect URL: $authRedirectUrl');
+      if (kIsWeb) {
+        print('  - Current Origin (Dynamic): ${_getCurrentWebOrigin()}');
+        print('  - Static App URL: $appUrl');
+      }
+      print('  - Auth Redirect URL (Dynamic): $authRedirectUrl');
       print('  - Package Name: $packageName');
     }
   }

@@ -69,6 +69,7 @@ flutter run -d chrome \
   --dart-define=SUPABASE_ANON_KEY="$SUPABASE_ANON_KEY" \
   --dart-define=GOOGLE_CLIENT_ID="$GOOGLE_CLIENT_ID" \
   --dart-define=APPLE_CLIENT_ID="$APPLE_CLIENT_ID" \
+  --dart-define=APP_URL="$APP_URL" \
   --dart-define=FLUTTER_ENV="$FLUTTER_ENV" \
   --dart-define=LOG_LEVEL="$LOG_LEVEL"
 

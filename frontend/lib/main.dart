@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter_web_plugins/url_strategy.dart';
 import 'core/config/app_config.dart';
 import 'core/di/injection_container.dart';
 import 'features/daily_verse/data/services/daily_verse_cache_service.dart';
@@ -18,6 +20,12 @@ import 'core/utils/web_splash_controller.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  
+  // Configure URL strategy for web to use path-based routing instead of hash routing
+  // This fixes OAuth callback issues where hash fragments interfere with redirect flow
+  if (kIsWeb) {
+    usePathUrlStrategy();
+  }
   
   try {
     // Initialize Hive for local storage

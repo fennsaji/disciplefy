@@ -10,10 +10,10 @@ abstract class SettingsEvent extends Equatable {
 
 class LoadSettings extends SettingsEvent {}
 
-class UpdateThemeMode extends SettingsEvent {
+class ThemeModeChanged extends SettingsEvent {
   final ThemeModeEntity themeMode;
 
-  const UpdateThemeMode(this.themeMode);
+  const ThemeModeChanged(this.themeMode);
 
   @override
   List<Object?> get props => [themeMode];
@@ -41,4 +41,3 @@ class LoadAppVersion extends SettingsEvent {}
 
 class ClearAllSettings extends SettingsEvent {}
 
-class LogoutUser extends SettingsEvent {}

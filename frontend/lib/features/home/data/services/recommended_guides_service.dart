@@ -1,16 +1,17 @@
 import 'dart:convert';
 import 'package:dartz/dartz.dart';
+import 'package:flutter/foundation.dart';
 
 import '../../../../core/config/app_config.dart';
 import '../../../../core/error/failures.dart';
 import '../../../../core/services/http_service.dart';
 import '../../domain/entities/recommended_guide_topic.dart';
-import '../models/recommended_guide_topic_response.dart';
+import '../models/recommended_guide_topic_model.dart';
 
 /// Service for fetching recommended study guide topics from the backend API.
 class RecommendedGuidesService {
   // API Configuration
-  static String get _baseUrl => AppConfig.baseApiUrl.replaceAll('/functions/v1', '');
+  static String get _baseUrl => AppConfig.supabaseUrl;
   static const String _topicsEndpoint = '/functions/v1/topics-recommended';
   
   final HttpService _httpService;
@@ -24,7 +25,7 @@ class RecommendedGuidesService {
   /// [Left] with [Failure] on error.
   Future<Either<Failure, List<RecommendedGuideTopic>>> getAllTopics() async {
     try {
-      print('🚀 [TOPICS] Fetching topics from API...');
+      if (kDebugMode) print('🚀 [TOPICS] Fetching topics from API...');
       
       // Prepare headers for API request
       final headers = await _httpService.createHeaders();
@@ -35,17 +36,19 @@ class RecommendedGuidesService {
         headers: headers,
       );
 
-      print('📡 [TOPICS] API Response Status: ${response.statusCode}');
+      if (kDebugMode) print('📡 [TOPICS] API Response Status: ${response.statusCode}');
 
       if (response.statusCode == 200) {
         return _parseTopicsResponse(response.body);
       } else {
-        print('❌ [TOPICS] API error: ${response.statusCode} - ${response.body}');
+        if (kDebugMode) print('❌ [TOPICS] API error: ${response.statusCode} - ${response.body}');
         return Left(ServerFailure(message: 'Failed to fetch topics: ${response.statusCode}'));
       }
     } catch (e, stackTrace) {
-      print('💥 [TOPICS] Exception: $e');
-      print('📚 [TOPICS] Stack trace: $stackTrace');
+      if (kDebugMode) {
+        print('💥 [TOPICS] Exception: $e');
+        print('📚 [TOPICS] Stack trace: $stackTrace');
+      }
       
       return Left(NetworkFailure(message: 'Failed to connect to topics service: $e'));
     }
@@ -71,7 +74,7 @@ class RecommendedGuidesService {
       final uri = Uri.parse('$_baseUrl$_topicsEndpoint')
           .replace(queryParameters: queryParams.isNotEmpty ? queryParams : null);
 
-      print('🚀 [TOPICS] Fetching filtered topics: $uri');
+      if (kDebugMode) print('🚀 [TOPICS] Fetching filtered topics: $uri');
 
       // Prepare headers for API request
       final headers = await _httpService.createHeaders();
@@ -84,11 +87,11 @@ class RecommendedGuidesService {
       if (response.statusCode == 200) {
         return _parseTopicsResponse(response.body);
       } else {
-        print('💥 [TOPICS] API error ${response.statusCode}');
+        if (kDebugMode) print('💥 [TOPICS] API error ${response.statusCode}');
         return Left(ServerFailure(message: 'Failed to fetch filtered topics: ${response.statusCode}'));
       }
     } catch (e) {
-      print('💥 [TOPICS] Filtered topics error: $e');
+      if (kDebugMode) print('💥 [TOPICS] Filtered topics error: $e');
       return Left(NetworkFailure(message: 'Failed to fetch filtered topics: $e'));
     }
   }
@@ -98,30 +101,36 @@ class RecommendedGuidesService {
   /// Parses the API response and converts to domain entities.
   Either<Failure, List<RecommendedGuideTopic>> _parseTopicsResponse(String responseBody) {
     try {
-      print('📄 [TOPICS] Parsing response...');
+      if (kDebugMode) print('📄 [TOPICS] Parsing response...');
       final Map<String, dynamic> jsonData = json.decode(responseBody);
       
-      // Parse the expected API format: {"success": true, "data": {"topics": [...], "total": 15}}
-      if (jsonData.containsKey('success') && jsonData['success'] == true) {
-        final apiResponse = RecommendedGuideTopicsApiResponse.fromJson(jsonData);
-        final topics = apiResponse.toEntities();
+      // Parse the expected API format using RecommendedGuideTopicsResponse
+      if (jsonData.containsKey('topics') || (jsonData.containsKey('data') && jsonData['data'].containsKey('topics'))) {
+        // Handle both direct format {"topics": [...]} and nested format {"data": {"topics": [...]}}
+        final topicsData = jsonData.containsKey('data') ? jsonData['data'] : jsonData;
+        final response = RecommendedGuideTopicsResponse.fromJson(topicsData);
+        final topics = response.toEntities();
         
-        print('✅ [TOPICS] Successfully parsed ${topics.length} topics');
+        if (kDebugMode) print('✅ [TOPICS] Successfully parsed ${topics.length} topics');
         return Right(topics);
       } else {
-        print('❌ [TOPICS] API response indicates failure: $jsonData');
-        return const Left(ClientFailure(message: 'API returned failure response'));
+        if (kDebugMode) print('❌ [TOPICS] API response missing topics data: $jsonData');
+        return const Left(ClientFailure(message: 'API response missing topics data'));
       }
     } catch (e) {
-      print('💥 [TOPICS] JSON parsing error: $e');
-      print('📄 [TOPICS] Raw response: $responseBody');
+      if (kDebugMode) {
+        print('💥 [TOPICS] JSON parsing error: $e');
+        print('📄 [TOPICS] Raw response: $responseBody');
+      }
       return Left(ClientFailure(message: 'Failed to parse topics response: $e'));
     }
   }
 
 
-  /// Disposes of the HTTP client.
+  /// Disposes of the service resources.
+  /// Note: HttpService is a shared singleton, so we don't dispose it here.
   void dispose() {
-    _httpService.dispose();
+    // HttpService is managed by HttpServiceProvider as a singleton
+    // Individual services should not dispose shared resources
   }
 }

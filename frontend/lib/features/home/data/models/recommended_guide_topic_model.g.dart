@@ -19,8 +19,10 @@ RecommendedGuideTopicModel _$RecommendedGuideTopicModelFromJson(
           .map((e) => e as String)
           .toList(),
       tags: (json['tags'] as List<dynamic>).map((e) => e as String).toList(),
-      isFeatured: json['is_featured'] as bool,
-      createdAt: DateTime.parse(json['created_at'] as String),
+      isFeatured: json['is_featured'] as bool? ?? false,
+      createdAt: json['created_at'] == null
+          ? null
+          : DateTime.parse(json['created_at'] as String),
     );
 
 Map<String, dynamic> _$RecommendedGuideTopicModelToJson(

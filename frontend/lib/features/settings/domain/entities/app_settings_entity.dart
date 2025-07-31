@@ -18,7 +18,7 @@ class AppSettingsEntity extends Equatable {
       themeMode: ThemeModeEntity.light(),
       language: 'en',
       notificationsEnabled: true,
-      appVersion: '1.0.0',
+      appVersion: '', // Will be populated dynamically from PackageInfo
     );
 
   AppSettingsEntity copyWith({

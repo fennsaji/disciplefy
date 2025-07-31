@@ -1,41 +1,38 @@
 import 'package:dartz/dartz.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:uuid/uuid.dart';
-import 'package:hive_flutter/hive_flutter.dart';
 
 import '../../../../core/error/failures.dart';
 import '../../../../core/error/exceptions.dart';
-import '../../../../core/constants/app_constants.dart';
 import '../../domain/entities/study_guide.dart';
 import '../../domain/repositories/study_repository.dart';
 import '../../../../core/network/network_info.dart';
-import '../../../../core/services/api_auth_helper.dart';
+import '../datasources/study_remote_data_source.dart';
+import '../datasources/study_local_data_source.dart';
 
 /// Implementation of the StudyRepository interface.
 /// 
-/// This class handles study guide generation, caching, and retrieval
-/// using Supabase as the backend and Hive for local caching.
+/// This class coordinates between remote and local data sources
+/// following Clean Architecture principles and Single Responsibility Principle.
 class StudyRepositoryImpl implements StudyRepository {
-  /// Supabase client for API calls.
-  final SupabaseClient _supabaseClient;
+  /// Remote data source for API operations.
+  final StudyRemoteDataSource _remoteDataSource;
+  
+  /// Local data source for cache operations.
+  final StudyLocalDataSource _localDataSource;
   
   /// Network information service.
   final NetworkInfo _networkInfo;
-  
-  /// UUID generator for creating unique IDs.
-  final Uuid _uuid = const Uuid();
-  
-  /// Box name for caching study guides.
-  static const String _studyGuidesBoxName = 'study_guides';
 
   /// Creates a new StudyRepositoryImpl instance.
   /// 
-  /// [supabaseClient] The Supabase client for API calls.
+  /// [remoteDataSource] The remote data source for API calls.
+  /// [localDataSource] The local data source for caching.
   /// [networkInfo] The network information service.
   StudyRepositoryImpl({
-    required SupabaseClient supabaseClient,
+    required StudyRemoteDataSource remoteDataSource,
+    required StudyLocalDataSource localDataSource,
     required NetworkInfo networkInfo,
-  })  : _supabaseClient = supabaseClient,
+  })  : _remoteDataSource = remoteDataSource,
+        _localDataSource = localDataSource,
         _networkInfo = networkInfo;
 
   @override
@@ -53,48 +50,17 @@ class StudyRepositoryImpl implements StudyRepository {
         ));
       }
 
-      // Use unified authentication helper
-      final headers = await ApiAuthHelper.getAuthHeaders();
-
-      // Call Supabase Edge Function for study generation
-      final response = await _supabaseClient.functions.invoke(
-        'study-generate',
-        body: {
-          'input_type': inputType,
-          'input_value': input,
-          'language': language,
-        },
-        headers: headers,
+      // Use remote data source to generate study guide
+      final studyGuide = await _remoteDataSource.generateStudyGuide(
+        input: input,
+        inputType: inputType,
+        language: language,
       );
-
-      if (response.status == 200 && response.data != null) {
-        final studyGuide = _parseStudyGuideFromResponse(response.data, input, inputType, language);
-        
-        // Cache the generated study guide
-        await cacheStudyGuide(studyGuide);
-        
-        return Right(studyGuide);
-      } else if (response.status == 429) {
-        return const Left(RateLimitFailure(
-          message: 'You have reached your study generation limit. Please try again later.',
-          code: 'RATE_LIMITED',
-        ));
-      } else if (response.status >= 500) {
-        return const Left(ServerFailure(
-          message: 'Server error occurred. Please try again later.',
-          code: 'SERVER_ERROR',
-        ));
-      } else if (response.status == 401) {
-        return const Left(AuthenticationFailure(
-          message: 'Authentication required. Please sign in to continue.',
-          code: 'UNAUTHORIZED',
-        ));
-      } else {
-        return const Left(ServerFailure(
-          message: 'Failed to generate study guide. Please try again later.',
-          code: 'GENERATION_FAILED',
-        ));
-      }
+      
+      // Cache the generated study guide using local data source
+      await _localDataSource.cacheStudyGuide(studyGuide);
+      
+      return Right(studyGuide);
     } on NetworkException catch (e) {
       return Left(NetworkFailure(
         message: e.message,
@@ -103,6 +69,24 @@ class StudyRepositoryImpl implements StudyRepository {
       ));
     } on ServerException catch (e) {
       return Left(ServerFailure(
+        message: e.message,
+        code: e.code,
+        context: e.context,
+      ));
+    } on AuthenticationException catch (e) {
+      return Left(AuthenticationFailure(
+        message: e.message,
+        code: e.code,
+        context: e.context,
+      ));
+    } on RateLimitException catch (e) {
+      return Left(RateLimitFailure(
+        message: e.message,
+        code: e.code,
+        context: e.context,
+      ));
+    } on ClientException catch (e) {
+      return Left(ClientFailure(
         message: e.message,
         code: e.code,
         context: e.context,
@@ -117,148 +101,11 @@ class StudyRepositoryImpl implements StudyRepository {
   }
 
   @override
-  Future<List<StudyGuide>> getCachedStudyGuides() async {
-    try {
-      if (!Hive.isBoxOpen(_studyGuidesBoxName)) {
-        await Hive.openBox(_studyGuidesBoxName);
-      }
-      
-      final box = Hive.box(_studyGuidesBoxName);
-      final studyGuides = <StudyGuide>[];
-      
-      for (final key in box.keys) {
-        final data = box.get(key) as Map<dynamic, dynamic>?;
-        if (data != null) {
-          try {
-            final studyGuide = _parseStudyGuideFromCache(data);
-            studyGuides.add(studyGuide);
-          } catch (e) {
-            // Skip invalid cached entries
-            continue;
-          }
-        }
-      }
-      
-      // Sort by creation date (newest first)
-      studyGuides.sort((a, b) => b.createdAt.compareTo(a.createdAt));
-      
-      // Return only the most recent guides
-      return studyGuides.take(AppConstants.MAX_STUDY_GUIDES_CACHE).toList();
-    } catch (e) {
-      return [];
-    }
-  }
+  Future<List<StudyGuide>> getCachedStudyGuides() => _localDataSource.getCachedStudyGuides();
 
   @override
-  Future<bool> cacheStudyGuide(StudyGuide studyGuide) async {
-    try {
-      if (!Hive.isBoxOpen(_studyGuidesBoxName)) {
-        await Hive.openBox(_studyGuidesBoxName);
-      }
-      
-      final box = Hive.box(_studyGuidesBoxName);
-      final data = _convertStudyGuideToMap(studyGuide);
-      
-      await box.put(studyGuide.id, data);
-      
-      // Cleanup old entries if cache exceeds limit
-      if (box.length > AppConstants.MAX_STUDY_GUIDES_CACHE) {
-        final allGuides = await getCachedStudyGuides();
-        final oldestGuides = allGuides.skip(AppConstants.MAX_STUDY_GUIDES_CACHE);
-        
-        for (final guide in oldestGuides) {
-          await box.delete(guide.id);
-        }
-      }
-      
-      return true;
-    } catch (e) {
-      return false;
-    }
-  }
+  Future<bool> cacheStudyGuide(StudyGuide studyGuide) => _localDataSource.cacheStudyGuide(studyGuide);
 
   @override
-  Future<bool> clearCache() async {
-    try {
-      if (!Hive.isBoxOpen(_studyGuidesBoxName)) {
-        await Hive.openBox(_studyGuidesBoxName);
-      }
-      
-      final box = Hive.box(_studyGuidesBoxName);
-      await box.clear();
-      
-      return true;
-    } catch (e) {
-      return false;
-    }
-  }
-
-  /// Parses a study guide from the API response.
-  /// Updated to handle new cached architecture response format.
-  StudyGuide _parseStudyGuideFromResponse(
-    Map<String, dynamic> data,
-    String input,
-    String inputType,
-    String language,
-  ) {
-    final responseData = data['data'] as Map<String, dynamic>? ?? {};
-    final studyGuide = responseData['study_guide'] as Map<String, dynamic>? ?? {};
-    final content = studyGuide['content'] as Map<String, dynamic>? ?? {};
-    
-    return StudyGuide(
-      id: studyGuide['id'] as String? ?? _uuid.v4(),
-      input: input, // Always use the original user input
-      inputType: inputType, // Always use the original input type
-      summary: content['summary'] as String? ?? 'No summary available',
-      interpretation: content['interpretation'] as String? ?? 'No interpretation available',
-      context: content['context'] as String? ?? 'No context available',
-      relatedVerses: (content['relatedVerses'] as List<dynamic>?)
-          ?.map((e) => e.toString())
-          .toList() ?? [],
-      reflectionQuestions: (content['reflectionQuestions'] as List<dynamic>?)
-          ?.map((e) => e.toString())
-          .toList() ?? [],
-      prayerPoints: (content['prayerPoints'] as List<dynamic>?)
-          ?.map((e) => e.toString())
-          .toList() ?? [],
-      language: language, // Always use the original language parameter
-      createdAt: DateTime.parse(studyGuide['createdAt'] as String? ?? DateTime.now().toIso8601String()),
-    );
-  }
-
-  /// Parses a study guide from cached data.
-  StudyGuide _parseStudyGuideFromCache(Map<dynamic, dynamic> data) => StudyGuide(
-      id: data['id'] as String,
-      input: data['input'] as String,
-      inputType: data['inputType'] as String,
-      summary: data['summary'] as String,
-      interpretation: data['interpretation'] as String? ?? 'No interpretation available',
-      context: data['context'] as String,
-      relatedVerses: (data['relatedVerses'] as List<dynamic>).map((e) => e.toString()).toList(),
-      reflectionQuestions: (data['reflectionQuestions'] as List<dynamic>).map((e) => e.toString()).toList(),
-      prayerPoints: (data['prayerPoints'] as List<dynamic>).map((e) => e.toString()).toList(),
-      language: data['language'] as String? ?? AppConstants.DEFAULT_LANGUAGE,
-      createdAt: DateTime.parse(data['createdAt'] as String),
-      userId: data['userId'] as String?,
-    );
-
-  /// Converts a study guide to a map for caching.
-  Map<String, dynamic> _convertStudyGuideToMap(StudyGuide studyGuide) => {
-      'id': studyGuide.id,
-      'input': studyGuide.input,
-      'inputType': studyGuide.inputType,
-      'summary': studyGuide.summary,
-      'interpretation': studyGuide.interpretation,
-      'context': studyGuide.context,
-      'relatedVerses': studyGuide.relatedVerses,
-      'reflectionQuestions': studyGuide.reflectionQuestions,
-      'prayerPoints': studyGuide.prayerPoints,
-      'language': studyGuide.language,
-      'createdAt': studyGuide.createdAt.toIso8601String(),
-      'userId': studyGuide.userId,
-    };
-
-  /// User context is now automatically handled by JWT token authentication.
-  /// No need to manually pass user context in the request body.
-
+  Future<bool> clearCache() => _localDataSource.clearCache();
 }

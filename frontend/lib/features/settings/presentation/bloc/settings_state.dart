@@ -39,13 +39,3 @@ class SettingsUpdateSuccess extends SettingsState {
   List<Object?> get props => [message];
 }
 
-class LogoutSuccess extends SettingsState {}
-
-class LogoutError extends SettingsState {
-  final String message;
-
-  const LogoutError({required this.message});
-
-  @override
-  List<Object?> get props => [message];
-}

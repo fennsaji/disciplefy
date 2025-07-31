@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:dartz/dartz.dart';
 
 import '../../../../core/config/app_config.dart';
@@ -10,7 +11,6 @@ import '../../domain/entities/daily_verse_entity.dart';
 
 /// API service for fetching daily Bible verses
 class DailyVerseApiService {
-  static String get _baseUrl => AppConfig.baseApiUrl.replaceAll('/functions/v1', '');
   static const String _dailyVerseEndpoint = '/functions/v1/daily-verse';
   
   final HttpService _httpService;
@@ -27,7 +27,7 @@ class DailyVerseApiService {
       final headers = await _httpService.createHeaders();
       
       // Build URL with optional date parameter
-      String url = '$_baseUrl$_dailyVerseEndpoint';
+      String url = '${AppConfig.supabaseUrl}$_dailyVerseEndpoint';
       if (date != null) {
         final dateString = date.toIso8601String().split('T')[0]; // YYYY-MM-DD
         url += '?date=$dateString';
@@ -49,16 +49,22 @@ class DailyVerseApiService {
           message: errorData?['message'] ?? 'Failed to fetch daily verse',
         ));
       }
+    } on SocketException catch (e) {
+      return Left(NetworkFailure(
+        message: 'Network connection failed: ${e.message}',
+      ));
+    } on AuthenticationException catch (e) {
+      return Left(AuthenticationFailure(message: e.message));
+    } on ServerException catch (e) {
+      return Left(ServerFailure(message: e.message));
+    } on FormatException catch (e) {
+      return Left(ServerFailure(
+        message: 'Invalid response format: ${e.message}',
+      ));
     } catch (e) {
-      if (e is AuthenticationException) {
-        return Left(AuthenticationFailure(message: e.message));
-      } else if (e is ServerException) {
-        return Left(ServerFailure(message: e.message));
-      } else {
-        return Left(NetworkFailure(
-          message: 'Failed to connect to daily verse service: $e',
-        ));
-      }
+      return Left(NetworkFailure(
+        message: 'Unexpected error occurred: $e',
+      ));
     }
   }
 
@@ -82,6 +88,14 @@ class DailyVerseApiService {
       final DailyVerseResponse verseResponse = DailyVerseResponse.fromJson(jsonData);
       return Right(verseResponse.data.toEntity());
 
+    } on FormatException catch (e) {
+      return Left(ServerFailure(
+        message: 'Invalid JSON format in response: ${e.message}',
+      ));
+    } on TypeError catch (e) {
+      return Left(ServerFailure(
+        message: 'Data type mismatch in response: ${e.toString()}',
+      ));
     } catch (e) {
       return Left(ServerFailure(
         message: 'Failed to parse daily verse response: $e',
@@ -97,11 +111,17 @@ class DailyVerseApiService {
       final headers = await _httpService.createHeaders();
       
       final response = await _httpService.get(
-        '$_baseUrl$_dailyVerseEndpoint',
+        '${AppConfig.supabaseUrl}$_dailyVerseEndpoint',
         headers: headers,
       );
 
       return response.statusCode == 200;
+    } on SocketException {
+      return false;
+    } on AuthenticationException {
+      return false;
+    } on ServerException {
+      return false;
     } catch (e) {
       return false;
     }

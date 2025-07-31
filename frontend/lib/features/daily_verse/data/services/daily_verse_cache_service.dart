@@ -1,5 +1,7 @@
+import 'package:flutter/foundation.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../../../core/config/app_config.dart';
 import '../../domain/entities/daily_verse_entity.dart';
 
 /// Local caching service for daily verses using Hive for structured data
@@ -135,13 +137,13 @@ class DailyVerseCacheService {
     }
   }
 
-  /// Check if cache should be refreshed (older than 1 hour)
+  /// Check if cache should be refreshed based on configured duration
   Future<bool> shouldRefresh() async {
     final lastFetch = await getLastFetchTime();
     if (lastFetch == null) return true;
 
     final hoursSinceLastFetch = DateTime.now().difference(lastFetch).inHours;
-    return hoursSinceLastFetch >= 1;
+    return hoursSinceLastFetch >= AppConfig.dailyVerseCacheRefreshHours;
   }
 
   /// Get cache statistics
@@ -191,7 +193,9 @@ class DailyVerseCacheService {
 
     } catch (e) {
       // Non-critical error, just log and continue
-      print('Warning: Failed to cleanup old cache entries: $e');
+      if (kDebugMode) {
+        print('Warning: Failed to cleanup old cache entries: $e');
+      }
     }
   }
 
@@ -202,7 +206,9 @@ class DailyVerseCacheService {
       await prefs.setInt(_lastFetchKey, DateTime.now().millisecondsSinceEpoch);
     } catch (e) {
       // Non-critical error
-      print('Warning: Failed to update last fetch time: $e');
+      if (kDebugMode) {
+        print('Warning: Failed to update last fetch time: $e');
+      }
     }
   }
 

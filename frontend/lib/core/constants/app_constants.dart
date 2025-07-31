@@ -25,8 +25,53 @@ class AppConstants {
   static const double DEFAULT_PADDING = 16.0;
   static const double LARGE_PADDING = 24.0;
   static const double SMALL_PADDING = 8.0;
+  static const double EXTRA_SMALL_PADDING = 4.0;
+  static const double EXTRA_LARGE_PADDING = 32.0;
+  static const double CARD_PADDING = 20.0;
+  static const double BUTTON_PADDING = 10.0;
+  static const double HORIZONTAL_MARGIN = 20.0;
   static const double BORDER_RADIUS = 12.0;
+  static const double LARGE_BORDER_RADIUS = 16.0;
+  static const double SMALL_BORDER_RADIUS = 4.0;
   static const double CARD_ELEVATION = 2.0;
+  
+  // Spacing Configuration
+  static const double SPACING_4 = 4.0;
+  static const double SPACING_6 = 6.0;
+  static const double SPACING_8 = 8.0;
+  static const double SPACING_10 = 10.0;
+  static const double SPACING_12 = 12.0;
+  static const double SPACING_16 = 16.0;
+  static const double SPACING_18 = 18.0;
+  static const double SPACING_20 = 20.0;
+  
+  // Typography Configuration
+  static const double FONT_SIZE_12 = 12.0;
+  static const double FONT_SIZE_14 = 14.0;
+  static const double FONT_SIZE_16 = 16.0;
+  static const double FONT_SIZE_18 = 18.0;
+  static const double FONT_SIZE_20 = 20.0;
+  static const double FONT_SIZE_24 = 24.0;
+  static const double FONT_SIZE_28 = 28.0;
+  static const double FONT_SIZE_32 = 32.0;
+  
+  // Line Heights
+  static const double LINE_HEIGHT_1_2 = 1.2;
+  static const double LINE_HEIGHT_1_4 = 1.4;
+  static const double LINE_HEIGHT_1_6 = 1.6;
+  static const double LINE_HEIGHT_1_7 = 1.7;
+  
+  // Icon Sizes
+  static const double ICON_SIZE_16 = 16.0;
+  static const double ICON_SIZE_20 = 20.0;
+  static const double ICON_SIZE_24 = 24.0;
+  static const double ICON_SIZE_40 = 40.0;
+  static const double ICON_SIZE_80 = 80.0;
+  
+  // Border Widths
+  static const double BORDER_WIDTH_THIN = 1.0;
+  static const double BORDER_WIDTH_MEDIUM = 1.5;
+  static const double BORDER_WIDTH_THICK = 2.0;
   
   // Animation Durations
   static const int DEFAULT_ANIMATION_DURATION_MS = 300;

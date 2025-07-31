@@ -18,7 +18,7 @@ class RecommendedGuideTopicModel extends RecommendedGuideTopic {
   @JsonKey(name: 'key_verses')
   final List<String> keyVerses;
 
-  const RecommendedGuideTopicModel({
+  RecommendedGuideTopicModel({
     required super.id,
     required super.title,
     required super.description,
@@ -27,12 +27,13 @@ class RecommendedGuideTopicModel extends RecommendedGuideTopic {
     required this.estimatedDuration,
     required this.keyVerses,
     required super.tags,
-    required super.isFeatured,
-    required super.createdAt,
+    super.isFeatured = false, // Default to false if not provided
+    DateTime? createdAt, // Allow null parameter
   }) : super(
           difficulty: difficultyLevel,
           estimatedMinutes: _parseDuration(estimatedDuration),
           scriptureCount: keyVerses.length,
+        createdAt: createdAt ?? DateTime.now(),
         );
   
   /// Parses duration string like "45 minutes" to integer minutes
@@ -63,15 +64,15 @@ class RecommendedGuideTopicModel extends RecommendedGuideTopic {
       createdAt: createdAt,
     );
 
-  /// Creates a model from a domain entity.z
+  /// Creates a model from a domain entity.
   factory RecommendedGuideTopicModel.fromEntity(RecommendedGuideTopic entity) => RecommendedGuideTopicModel(
       id: entity.id,
       title: entity.title,
       description: entity.description,
       category: entity.category,
-      difficulty: entity.difficulty,
-      estimatedMinutes: entity.estimatedMinutes,
-      scriptureCount: entity.scriptureCount,
+      difficultyLevel: entity.difficulty,
+      estimatedDuration: '${entity.estimatedMinutes} minutes',
+      keyVerses: List.generate(entity.scriptureCount, (index) => 'Verse ${index + 1}'), // Placeholder
       tags: entity.tags,
       isFeatured: entity.isFeatured,
       createdAt: entity.createdAt,

@@ -25,6 +25,11 @@ class AnonymousSignInRequested extends AuthEvent {
   const AnonymousSignInRequested();
 }
 
+/// Event to check current session state (for OAuth callbacks)
+class SessionCheckRequested extends AuthEvent {
+  const SessionCheckRequested();
+}
+
 /// Event to request sign-out
 class SignOutRequested extends AuthEvent {
   const SignOutRequested();

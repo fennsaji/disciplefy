@@ -1,13 +1,13 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:http/http.dart' as http;
 
 import '../../../../core/localization/app_localizations.dart';
 import '../../../../core/theme/app_theme.dart';
-import '../../../../core/utils/debug_helper.dart';
+import '../../../auth/presentation/bloc/auth_bloc.dart';
+import '../../../auth/presentation/bloc/auth_event.dart';
+import '../../../auth/presentation/bloc/auth_state.dart' as auth_states;
 
 /// Welcome/Login screen based on Login_Screen.jpg design.
 /// 
@@ -21,16 +21,6 @@ class OnboardingWelcomePage extends StatefulWidget {
 }
 
 class _OnboardingWelcomePageState extends State<OnboardingWelcomePage> {
-  // Constants for API configuration
-  static const String _baseUrl = 'http://127.0.0.1:54321';
-  static const String _supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0';
-  
-  // Secure storage instance
-  static const FlutterSecureStorage _secureStorage = FlutterSecureStorage();
-  
-  // Loading states
-  bool _isGuestLoginLoading = false;
-  final bool _isGoogleLoginLoading = false;
 
   @override
   Widget build(BuildContext context) {
@@ -181,94 +171,132 @@ class _OnboardingWelcomePageState extends State<OnboardingWelcomePage> {
               Column(
                 children: [
                   // Login with Google Button
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton.icon(
-                      onPressed: _isGoogleLoginLoading || _isGuestLoginLoading 
-                          ? null 
-                          : () => _handleGoogleLogin(context),
-                      icon: _isGoogleLoginLoading 
-                          ? const SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                              ),
-                            )
-                          : const Icon(
-                              Icons.g_mobiledata,
-                              size: 24,
+                  BlocBuilder<AuthBloc, auth_states.AuthState>(
+                    builder: (context, state) {
+                      final isLoading = state is auth_states.AuthLoadingState;
+                      
+                      return SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton.icon(
+                          onPressed: isLoading 
+                              ? null 
+                              : () => _handleGoogleLogin(context),
+                          icon: isLoading 
+                              ? const SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                  ),
+                                )
+                              : const Icon(
+                                  Icons.g_mobiledata,
+                                  size: 24,
+                                ),
+                          label: Text(
+                            isLoading ? 'Signing in...' : 'Login with Google',
+                            style: GoogleFonts.inter(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
                             ),
-                      label: Text(
-                        _isGoogleLoginLoading ? 'Signing in...' : 'Login with Google',
-                        style: GoogleFonts.inter(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
+                          ),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppTheme.primaryColor,
+                            foregroundColor: Colors.white,
+                            minimumSize: const Size.fromHeight(56),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            elevation: 0,
+                          ),
                         ),
-                      ),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppTheme.primaryColor,
-                        foregroundColor: Colors.white,
-                        minimumSize: const Size.fromHeight(56),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        elevation: 0,
-                      ),
-                    ),
+                      );
+                    },
                   ),
                   
                   const SizedBox(height: 16),
                   
                   // Continue as Guest Button
-                  SizedBox(
-                    width: double.infinity,
-                    child: OutlinedButton(
-                      onPressed: _isGoogleLoginLoading || _isGuestLoginLoading 
-                          ? null 
-                          : () => _loginAsGuest(),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: AppTheme.primaryColor,
-                        side: const BorderSide(
-                          color: AppTheme.primaryColor,
-                          width: 2,
-                        ),
-                        minimumSize: const Size.fromHeight(56),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                      child: _isGuestLoginLoading
-                          ? Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                const SizedBox(
-                                  width: 20,
-                                  height: 20,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primaryColor),
-                                  ),
-                                ),
-                                const SizedBox(width: 12),
-                                Text(
-                                  'Signing in...',
+                  BlocConsumer<AuthBloc, auth_states.AuthState>(
+                    listener: (context, state) {
+                      if (state is auth_states.AuthenticatedState) {
+                        // Navigate to home on successful authentication
+                        context.go('/');
+                        
+                        // Show success message
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              state.isAnonymous 
+                                  ? 'Welcome! You\'re signed in as a guest.'
+                                  : 'Welcome back!',
+                              style: GoogleFonts.inter(color: Colors.white),
+                            ),
+                            backgroundColor: Colors.green,
+                            duration: const Duration(seconds: 2),
+                          ),
+                        );
+                      } else if (state is auth_states.AuthErrorState) {
+                        // Show error dialog
+                        _showErrorDialog(
+                          'Guest Login Failed',
+                          'Unable to sign in as guest:\n\n${state.message}',
+                        );
+                      }
+                    },
+                    builder: (context, state) {
+                      final isLoading = state is auth_states.AuthLoadingState;
+                      
+                      return SizedBox(
+                        width: double.infinity,
+                        child: OutlinedButton(
+                          onPressed: isLoading 
+                              ? null 
+                              : () => context.read<AuthBloc>().add(const AnonymousSignInRequested()),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: AppTheme.primaryColor,
+                            side: const BorderSide(
+                              color: AppTheme.primaryColor,
+                              width: 2,
+                            ),
+                            minimumSize: const Size.fromHeight(56),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          child: isLoading
+                              ? Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    const SizedBox(
+                                      width: 20,
+                                      height: 20,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primaryColor),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Text(
+                                      'Signing in...',
+                                      style: GoogleFonts.inter(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ],
+                                )
+                              : Text(
+                                  'Continue as Guest',
                                   style: GoogleFonts.inter(
                                     fontSize: 16,
                                     fontWeight: FontWeight.w600,
                                   ),
                                 ),
-                              ],
-                            )
-                          : Text(
-                              'Continue as Guest',
-                              style: GoogleFonts.inter(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                    ),
+                        ),
+                      );
+                    },
                   ),
                 ],
               ),
@@ -294,164 +322,10 @@ class _OnboardingWelcomePageState extends State<OnboardingWelcomePage> {
     );
   }
 
-  /// Logs in as a guest user by creating an anonymous session.
-  /// 
-  /// This method:
-  /// 1. Calls the Supabase anonymous signup API
-  /// 2. Extracts the access token from the response
-  /// 3. Stores the token securely using flutter_secure_storage
-  /// 4. Navigates to the home screen on success
-  /// 5. Shows error messages on failure
-  Future<void> _loginAsGuest() async {
-    if (_isGuestLoginLoading) return;
-    
-    setState(() {
-      _isGuestLoginLoading = true;
-    });
+  /// Navigate to proper login screen for Google authentication
+  /// Uses BLoC architecture instead of direct API calls
 
-    try {
-      print('🚀 [DEBUG] Starting guest login...');
-      
-      // Create anonymous session with Supabase auth
-      final response = await http.post(
-        Uri.parse('$_baseUrl/auth/v1/signup'),
-        headers: {
-          'Content-Type': 'application/json',
-          'apikey': _supabaseAnonKey,
-        },
-        body: json.encode({}), // Empty JSON body as required
-      );
-
-      print('📡 [DEBUG] API Response Status: ${response.statusCode}');
-      print('📄 [DEBUG] API Response Body: ${response.body}');
-
-      if (response.statusCode == 200) {
-        try {
-          // Parse the response to extract the access token
-          final Map<String, dynamic> responseData = json.decode(response.body);
-          print('✅ [DEBUG] JSON parsing successful');
-          print('🔍 [DEBUG] Response keys: ${responseData.keys.toList()}');
-          
-          // Log detailed response structure
-          DebugHelper.logSupabaseResponse(responseData);
-          
-          // Check for access token with detailed logging
-          if (responseData.containsKey('access_token')) {
-            final String accessToken = responseData['access_token'];
-            print('🔑 [DEBUG] Access token received: ${accessToken.substring(0, 20)}...');
-            
-            try {
-              // Store the token securely
-              await _secureStorage.write(
-                key: 'auth_token', 
-                value: accessToken,
-              );
-              print('💾 [DEBUG] Auth token stored');
-              
-              // Store user type for future reference
-              await _secureStorage.write(
-                key: 'user_type', 
-                value: 'guest',
-              );
-              print('💾 [DEBUG] User type stored');
-              
-              // Store session info if available - with null safety
-              final user = responseData['user'];
-              if (user != null && user is Map<String, dynamic>) {
-                final userId = user['id'];
-                if (userId != null && userId is String) {
-                  await _secureStorage.write(
-                    key: 'user_id', 
-                    value: userId,
-                  );
-                  print('💾 [DEBUG] User ID stored: $userId');
-                } else {
-                  print('⚠️ [DEBUG] User ID is null or not a string: $userId');
-                }
-              } else {
-                print('⚠️ [DEBUG] User object is null or invalid: $user');
-              }
-              
-              // Mark onboarding as completed
-              await _secureStorage.write(
-                key: 'onboarding_completed', 
-                value: 'true',
-              );
-              print('💾 [DEBUG] Onboarding marked as completed');
-
-              if (mounted) {
-                print('🧭 [DEBUG] Navigating to home (/)');
-                // Navigate to home screen (route is '/' not '/home')
-                context.go('/');
-                
-                // Show success message
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      'Welcome! You\'re signed in as a guest.',
-                      style: GoogleFonts.inter(color: Colors.white),
-                    ),
-                    backgroundColor: Colors.green,
-                    duration: const Duration(seconds: 2),
-                  ),
-                );
-                print('✅ [DEBUG] Guest login flow completed successfully');
-                
-                // Validate stored data
-                await DebugHelper.printStoredAuthData();
-              } else {
-                print('❌ [DEBUG] Widget not mounted, skipping navigation');
-              }
-            } catch (storageError) {
-              print('💥 [DEBUG] Storage error: $storageError');
-              throw Exception('Failed to store authentication data: $storageError');
-            }
-          } else {
-            print('❌ [DEBUG] No access_token in response');
-            print('🔍 [DEBUG] Available keys: ${responseData.keys.toList()}');
-            throw Exception('No access token received from server');
-          }
-        } catch (jsonError) {
-          print('💥 [DEBUG] JSON parsing error: $jsonError');
-          print('📄 [DEBUG] Raw response: ${response.body}');
-          throw Exception('Failed to parse server response: $jsonError');
-        }
-      } else {
-        print('❌ [DEBUG] API error - Status: ${response.statusCode}');
-        print('📄 [DEBUG] Error response: ${response.body}');
-        
-        // Handle API error response with safer JSON parsing
-        try {
-          final Map<String, dynamic> errorData = json.decode(response.body);
-          final String errorMessage = errorData['error_description'] ?? 
-                                     errorData['message'] ?? 
-                                     'Server returned status ${response.statusCode}';
-          throw Exception(errorMessage);
-        } catch (e) {
-          throw Exception('Server error (${response.statusCode}): ${response.body}');
-        }
-      }
-    } catch (e, stackTrace) {
-      print('💥 [DEBUG] Guest login error: $e');
-      print('📚 [DEBUG] Stack trace: $stackTrace');
-      
-      if (mounted) {
-        // Show error dialog with more specific error information
-        _showErrorDialog(
-          'Guest Login Failed',
-          'Unable to sign in as guest:\n\n${e.toString().replaceAll('Exception: ', '')}',
-        );
-      }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isGuestLoginLoading = false;
-        });
-      }
-    }
-  }
-
-  void _handleGoogleLogin(BuildContext context) async {
+  void _handleGoogleLogin(BuildContext context) {
     // Navigate to the proper login screen with Google OAuth
     context.go('/login');
   }

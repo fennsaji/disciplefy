@@ -26,19 +26,37 @@ class SavedGuideModelAdapter extends TypeAdapter<SavedGuideModel> {
       isSaved: fields[6] as bool,
       verseReference: fields[7] as String?,
       topicName: fields[8] as String?,
+      summary: fields[9] as String?,
+      interpretation: fields[10] as String?,
+      context: fields[11] as String?,
+      relatedVerses: (fields[12] as List?)?.cast<String>(),
+      reflectionQuestions: (fields[13] as List?)?.cast<String>(),
+      prayerPoints: (fields[14] as List?)?.cast<String>(),
     );
   }
 
   @override
   void write(BinaryWriter writer, SavedGuideModel obj) {
     writer
-      ..writeByte(9)
+      ..writeByte(15)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
       ..write(obj.title)
       ..writeByte(2)
       ..write(obj.content)
+      ..writeByte(9)
+      ..write(obj.summary)
+      ..writeByte(10)
+      ..write(obj.interpretation)
+      ..writeByte(11)
+      ..write(obj.context)
+      ..writeByte(12)
+      ..write(obj.relatedVerses)
+      ..writeByte(13)
+      ..write(obj.reflectionQuestions)
+      ..writeByte(14)
+      ..write(obj.prayerPoints)
       ..writeByte(3)
       ..write(obj.typeString)
       ..writeByte(4)
@@ -79,6 +97,18 @@ SavedGuideModel _$SavedGuideModelFromJson(Map<String, dynamic> json) =>
       isSaved: json['isSaved'] as bool,
       verseReference: json['verseReference'] as String?,
       topicName: json['topicName'] as String?,
+      summary: json['summary'] as String?,
+      interpretation: json['interpretation'] as String?,
+      context: json['context'] as String?,
+      relatedVerses: (json['relatedVerses'] as List<dynamic>?)
+          ?.map((e) => e as String)
+          .toList(),
+      reflectionQuestions: (json['reflectionQuestions'] as List<dynamic>?)
+          ?.map((e) => e as String)
+          .toList(),
+      prayerPoints: (json['prayerPoints'] as List<dynamic>?)
+          ?.map((e) => e as String)
+          .toList(),
     );
 
 Map<String, dynamic> _$SavedGuideModelToJson(SavedGuideModel instance) =>
@@ -86,6 +116,12 @@ Map<String, dynamic> _$SavedGuideModelToJson(SavedGuideModel instance) =>
       'id': instance.id,
       'title': instance.title,
       'content': instance.content,
+      'summary': instance.summary,
+      'interpretation': instance.interpretation,
+      'context': instance.context,
+      'relatedVerses': instance.relatedVerses,
+      'reflectionQuestions': instance.reflectionQuestions,
+      'prayerPoints': instance.prayerPoints,
       'type': instance.typeString,
       'createdAt': instance.createdAt.toIso8601String(),
       'lastAccessedAt': instance.lastAccessedAt.toIso8601String(),
