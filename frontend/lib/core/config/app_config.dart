@@ -4,17 +4,20 @@ import 'package:flutter/foundation.dart';
 /// References: Technical Architecture Document, Security Design Plan
 class AppConfig {
   // Supabase Configuration (Primary Backend)
+  // CRITICAL FIX: Use proper environment detection for Supabase URL
   static const String supabaseUrl = String.fromEnvironment(
     'SUPABASE_URL',
-    defaultValue: kDebugMode
+    defaultValue: _flutterEnv == 'development'
         ? 'http://127.0.0.1:54321'
         : 'https://wzdcwxvyjuxjgzpnukvm.supabase.co',
   );
 
+  // CRITICAL FIX: Use proper environment detection for App URL
   static const String appUrl = String.fromEnvironment(
     'APP_URL',
-    defaultValue:
-        kDebugMode ? 'http://localhost:59641' : 'https://disciplefy.vercel.app',
+    defaultValue: _flutterEnv == 'development'
+        ? 'http://localhost:59641'
+        : 'https://disciplefy.vercel.app',
   );
 
   static const String supabaseAnonKey = String.fromEnvironment(
@@ -62,18 +65,18 @@ class AppConfig {
         final baseUri = Uri.base;
         final origin = '${baseUri.scheme}://${baseUri.host}${baseUri.hasPort ? ':${baseUri.port}' : ''}';
         
-        if (kDebugMode) {
+        if (isDevelopment) {
           print('🔧 [AppConfig] Dynamic web origin detected: $origin');
         }
         return origin;
       } catch (e) {
-        if (kDebugMode) {
+        if (isDevelopment) {
           print('🔧 [AppConfig] ⚠️ Failed to get dynamic origin, falling back to appUrl: $e');
         }
       }
       
       // Fallback to configured appUrl if dynamic detection fails
-      if (kDebugMode) {
+      if (isDevelopment) {
         print('🔧 [AppConfig] Using fallback appUrl: $appUrl');
       }
       return appUrl;
@@ -114,9 +117,14 @@ class AppConfig {
   // Cache Refresh Configuration
   static const int dailyVerseCacheRefreshHours = 1; // Refresh daily verse cache after 1 hour
 
-  // Environment Detection
-  static bool get isProduction => !kDebugMode;
-  static bool get isDevelopment => kDebugMode;
+  // Environment Detection - Fixed for production builds
+  // CRITICAL FIX: Use FLUTTER_ENV dart-define instead of kDebugMode
+  // kDebugMode is unreliable in production builds and causes wrong Supabase URL selection
+  static const String _flutterEnv = String.fromEnvironment('FLUTTER_ENV', defaultValue: 'development');
+  
+  static bool get isProduction => _flutterEnv == 'production';
+  static bool get isDevelopment => _flutterEnv == 'development';
+  static String get environment => _flutterEnv;
 
   // Feature Flags
   static bool get enableOfflineMode => true;
@@ -168,15 +176,16 @@ class AppConfig {
       throw Exception('SUPABASE_URL must be a valid HTTP/HTTPS URL');
     }
     
-    if (kDebugMode) {
+    if (isDevelopment) {
       print('✅ Configuration validation passed');
     }
   }
 
   static void logConfiguration() {
-    if (kDebugMode) {
+    if (isDevelopment) {
       print('🔧 App Configuration:');
-      print('  - Environment: ${isDevelopment ? "Development" : "Production"}');
+      print('  - Environment: $environment (${isDevelopment ? "Development" : "Production"})');
+      print('  - FLUTTER_ENV: $_flutterEnv');
       print('  - Supabase URL: $supabaseUrl');
       print('  - Google Client ID: $googleClientId');
       print('  - Google OAuth: ${isOAuthConfigValid ? "✅ Configured" : "❌ Missing"}');
