@@ -1,8 +1,8 @@
 /// App route constants for consistent navigation
 class AppRoutes {
   static const String onboarding = '/onboarding';
-  static const String onboardingLanguage = '/onboarding/language';
-  static const String onboardingPurpose = '/onboarding/purpose';
+  // static const String onboardingLanguage = '/onboarding/language';
+  // static const String onboardingPurpose = '/onboarding/purpose';
   static const String home = '/';
   static const String generateStudy = '/generate-study';
   static const String studyGuide = '/study-guide';

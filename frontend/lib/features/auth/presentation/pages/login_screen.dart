@@ -77,24 +77,6 @@ class _LoginScreenState extends State<LoginScreen> {
           body: SafeArea(
             child: Column(
               children: [
-                // Skip button - fixed at top
-                Align(
-                  alignment: Alignment.topRight,
-                  child: Padding(
-                    padding: const EdgeInsets.only(top: 16.0, right: 24.0),
-                    child: TextButton(
-                      onPressed: () => context.go('/'),
-                      child: Text(
-                        'Skip',
-                        style: GoogleFonts.inter(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w500,
-                          color: AppTheme.onSurfaceVariant,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
 
                 // Main content - scrollable
                 Expanded(

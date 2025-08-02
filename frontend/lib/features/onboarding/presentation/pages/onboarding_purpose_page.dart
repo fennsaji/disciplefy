@@ -41,25 +41,25 @@ class _OnboardingPurposeContent extends StatelessWidget {
           // Navigate based on the navigation state
           switch (state.toStep) {
             case OnboardingStep.welcome:
-              context.go('/onboarding/welcome');
+              context.go('/onboarding');
               break;
             case OnboardingStep.language:
               context.go('/onboarding/language');
               break;
             case OnboardingStep.completed:
-              context.go('/');
+              context.go('/login');
               break;
             default:
               break;
           }
         } else if (state is OnboardingCompleted) {
-          // Navigate to home when onboarding is completed
-          context.go('/');
+          // Navigate to login when onboarding is completed
+          context.go('/login');
           
           // Show success message
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('Welcome to Disciplefy! Let\'s start your spiritual journey.'),
+              content: Text('Setup complete! Please sign in to start your spiritual journey.'),
               backgroundColor: Colors.green,
               duration: Duration(seconds: 3),
             ),
@@ -200,7 +200,7 @@ class _OnboardingPurposeContent extends StatelessWidget {
                               Text('Setting up...'),
                             ],
                           )
-                        : const Text('Get Started'),
+                        : const Text('Complete Setup'),
                   );
                 },
               ),
