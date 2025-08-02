@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 
+import 'package:hive_flutter/hive_flutter.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../auth/presentation/bloc/auth_bloc.dart';
 import '../../../auth/presentation/bloc/auth_state.dart' as auth_states;
@@ -76,13 +77,26 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     });
   }
 
-  void _navigateToWelcome() {
-    context.go('/onboarding/welcome');
+void _navigateToWelcome() async {
+    // Mark onboarding as completed
+    final box = Hive.box('app_settings');
+    await box.put('onboarding_completed', true);
+
+    if (mounted) {
+      context.go('/login');
+    }
   }
 
-  void _skipOnboarding() {
-    context.go('/onboarding/welcome');
+  void _skipOnboarding() async {
+    // Mark onboarding as completed
+    final box = Hive.box('app_settings');
+    await box.put('onboarding_completed', true);
+
+    if (mounted) {
+      context.go('/login');
+    }
   }
+
 
   @override
   Widget build(BuildContext context) {

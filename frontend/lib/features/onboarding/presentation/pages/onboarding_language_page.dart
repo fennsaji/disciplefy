@@ -41,11 +41,7 @@ class _OnboardingLanguageContent extends StatelessWidget {
           // Navigate based on the navigation state
           switch (state.toStep) {
             case OnboardingStep.welcome:
-              context.go('/onboarding/welcome');
-              break;
             case OnboardingStep.purpose:
-              context.go('/onboarding/purpose');
-              break;
             case OnboardingStep.completed:
               context.go('/');
               break;

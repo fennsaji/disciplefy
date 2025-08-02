@@ -14,15 +14,7 @@ class OnboardingNavigationHandler {
     
     switch (currentStep) {
       case OnboardingStep.welcome:
-        return OnboardingStep.language;
-        
       case OnboardingStep.language:
-        // Only proceed if language is selected
-        if (currentState.selectedLanguage != null) {
-          return OnboardingStep.purpose;
-        }
-        return null; // Cannot proceed without language selection
-        
       case OnboardingStep.purpose:
         return OnboardingStep.completed;
         

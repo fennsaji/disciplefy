@@ -32,16 +32,16 @@ class AppRouter {
         name: 'onboarding',
         builder: (context, state) => const OnboardingScreen(),
       ),
-      GoRoute(
-        path: AppRoutes.onboardingLanguage,
-        name: 'onboarding_language',
-        builder: (context, state) => const OnboardingLanguagePage(),
-      ),
-      GoRoute(
-        path: AppRoutes.onboardingPurpose,
-        name: 'onboarding_purpose',
-        builder: (context, state) => const OnboardingPurposePage(),
-      ),
+      // GoRoute(
+      //   path: AppRoutes.onboardingLanguage,
+      //   name: 'onboarding_language',
+      //   builder: (context, state) => const OnboardingLanguagePage(),
+      // ),
+      // GoRoute(
+      //   path: AppRoutes.onboardingPurpose,
+      //   name: 'onboarding_purpose',
+      //   builder: (context, state) => const OnboardingPurposePage(),
+      // ),
 
       // Main App Routes (using StatefulShellRoute for proper navigation)
       StatefulShellRoute.indexedStack(
@@ -164,8 +164,8 @@ class AppRouter {
 // Navigation Extensions
 extension AppRouterExtension on GoRouter {
   void goToOnboarding() => go(AppRoutes.onboarding);
-  void goToOnboardingLanguage() => go(AppRoutes.onboardingLanguage);
-  void goToOnboardingPurpose() => go(AppRoutes.onboardingPurpose);
+  // void goToOnboardingLanguage() => go(AppRoutes.onboardingLanguage);
+  // void goToOnboardingPurpose() => go(AppRoutes.onboardingPurpose);
   void goToHome() => go(AppRoutes.home);
   void goToGenerateStudy() => go(AppRoutes.generateStudy);
   void goToStudyGuide(StudyGuide studyGuide) =>

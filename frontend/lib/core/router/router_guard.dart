@@ -17,7 +17,7 @@ class RouterGuard {
     // Clean any hash fragments that might interfere with routing
     // This is a safeguard for OAuth callback URLs that might preserve fragments
     final cleanPath = currentPath.split('#').first;
-    
+
     Logger.info(
       'Processing route redirect',
       tag: 'ROUTER',
@@ -95,8 +95,9 @@ class RouterGuard {
   static OnboardingState _getOnboardingState() {
     try {
       final box = Hive.box(_hiveBboxName);
-      final isCompleted = box.get(_onboardingCompletedKey, defaultValue: false) as bool;
-      
+      final isCompleted =
+          box.get(_onboardingCompletedKey, defaultValue: false) as bool;
+
       // Log all relevant Hive data for debugging
       Logger.info(
         'Onboarding state retrieved',
@@ -119,12 +120,14 @@ class RouterGuard {
   }
 
   /// Analyze the current route to determine its type
-  static RouteAnalysis _analyzeCurrentRoute(String currentPath) => RouteAnalysis(
-      currentPath: currentPath,
-      isPublicRoute: _isPublicRoute(currentPath),
-      isOnboardingRoute: currentPath.startsWith(AppRoutes.onboarding),
-      isAuthRoute: currentPath == AppRoutes.login || currentPath.startsWith('/auth/callback'),
-    );
+  static RouteAnalysis _analyzeCurrentRoute(String currentPath) =>
+      RouteAnalysis(
+        currentPath: currentPath,
+        isPublicRoute: _isPublicRoute(currentPath),
+        isOnboardingRoute: currentPath.startsWith(AppRoutes.onboarding),
+        isAuthRoute: currentPath == AppRoutes.login ||
+            currentPath.startsWith('/auth/callback'),
+      );
 
   /// Check if the route is public (accessible without authentication)
   static bool _isPublicRoute(String path) {
@@ -132,10 +135,10 @@ class RouterGuard {
       AppRoutes.login,
       AppRoutes.authCallback,
     ];
-    
-    return publicRoutes.contains(path) || 
-           path.startsWith(AppRoutes.onboarding) ||
-           path.startsWith('/auth/callback');
+
+    return publicRoutes.contains(path) ||
+        path.startsWith(AppRoutes.onboarding) ||
+        path.startsWith('/auth/callback');
   }
 
   /// Log the current navigation state for debugging
@@ -184,15 +187,17 @@ class RouterGuard {
       return _handleUnauthenticatedUser(routeAnalysis);
     }
 
-    // Case 2: Authenticated but onboarding not completed
-    if (authState.isAuthenticated && !onboardingState.isCompleted) {
-      Logger.info('Decision: User authenticated but onboarding incomplete', tag: 'ROUTER');
-      return _handleAuthenticatedUserWithoutOnboarding(routeAnalysis);
-    }
+    // // Case 2: Authenticated but onboarding not completed
+    // if (authState.isAuthenticated && !onboardingState.isCompleted) {
+    //   Logger.info('Decision: User authenticated but onboarding incomplete',
+    //       tag: 'ROUTER');
+    //   return _handleAuthenticatedUserWithoutOnboarding(routeAnalysis);
+    // }
 
     // Case 3: Authenticated and onboarding completed
-    if (authState.isAuthenticated && onboardingState.isCompleted) {
-      Logger.info('Decision: User fully authenticated and onboarded', tag: 'ROUTER');
+    if (authState.isAuthenticated) {
+      Logger.info('Decision: User fully authenticated and onboarded',
+          tag: 'ROUTER');
       return _handleFullyAuthenticatedUser(routeAnalysis, authState);
     }
 
@@ -204,19 +209,18 @@ class RouterGuard {
   /// Handle redirect logic for unauthenticated users
   static String? _handleUnauthenticatedUser(RouteAnalysis routeAnalysis) {
     if (routeAnalysis.isPublicRoute) {
-    // Public routes don't need logging for security reasons
+      // Public routes don't need logging for security reasons
       return null;
     }
 
     // Special handling for logout scenarios - ensure we go to login
     // even if there are temporary inconsistencies in storage
     if (routeAnalysis.currentPath == AppRoutes.settings ||
-        routeAnalysis.currentPath == AppRoutes.home ||
         routeAnalysis.currentPath == AppRoutes.generateStudy ||
         routeAnalysis.currentPath == AppRoutes.saved) {
       Logger.info(
         'Post-logout redirect to login from protected route',
-        tag: 'ROUTER', 
+        tag: 'ROUTER',
         context: {'attempted_route': routeAnalysis.currentPath},
       );
       return AppRoutes.login;
@@ -227,13 +231,28 @@ class RouterGuard {
       tag: 'ROUTER',
       context: {'attempted_route': routeAnalysis.currentPath},
     );
-    return AppRoutes.login;
+    final onboardingState = _getOnboardingState();
+    if (routeAnalysis.currentPath == AppRoutes.home) {
+      if (onboardingState.isCompleted) {
+        return AppRoutes.login; // Returning user
+      }
+    }
+    if (routeAnalysis.isOnboardingRoute) {
+      Logger.info(
+        'Unauthenticated user redirected to onboarding',
+        tag: 'ROUTER',
+        context: {'attempted_route': routeAnalysis.currentPath},
+      );
+      return null; // New user
+    }
+    return AppRoutes.onboarding;
   }
 
   /// Handle redirect logic for authenticated users without completed onboarding
-  static String? _handleAuthenticatedUserWithoutOnboarding(RouteAnalysis routeAnalysis) {
+  static String? _handleAuthenticatedUserWithoutOnboarding(
+      RouteAnalysis routeAnalysis) {
     if (routeAnalysis.isOnboardingRoute) {
-    // User navigation logging handled by navigation system
+      // User navigation logging handled by navigation system
       return null;
     }
 
@@ -263,7 +282,7 @@ class RouterGuard {
         );
         return null; // Allow access to login screen
       }
-      
+
       Logger.info(
         'Fully authenticated user redirected to home',
         tag: 'ROUTER',

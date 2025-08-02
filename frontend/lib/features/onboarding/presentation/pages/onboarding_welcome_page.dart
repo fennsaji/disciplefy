@@ -5,22 +5,28 @@ import 'package:google_fonts/google_fonts.dart';
 
 import '../../../../core/localization/app_localizations.dart';
 import '../../../../core/theme/app_theme.dart';
-import '../../../auth/presentation/bloc/auth_bloc.dart';
-import '../../../auth/presentation/bloc/auth_event.dart';
-import '../../../auth/presentation/bloc/auth_state.dart' as auth_states;
+import '../../../../core/di/injection_container.dart';
+import '../../domain/entities/onboarding_state_entity.dart';
+import '../bloc/onboarding_bloc.dart';
+import '../bloc/onboarding_event.dart';
+import '../bloc/onboarding_state.dart';
 
-/// Welcome/Login screen based on Login_Screen.jpg design.
+/// Welcome screen that introduces the app without authentication.
 /// 
-/// Features app logo, tagline, and authentication options
+/// Features app logo, tagline, and app features preview
 /// following the UX specifications and brand guidelines.
-class OnboardingWelcomePage extends StatefulWidget {
+class OnboardingWelcomePage extends StatelessWidget {
   const OnboardingWelcomePage({super.key});
 
   @override
-  State<OnboardingWelcomePage> createState() => _OnboardingWelcomePageState();
+  Widget build(BuildContext context) => BlocProvider(
+      create: (context) => sl<OnboardingBloc>()..add(const LoadOnboardingState()),
+      child: const _OnboardingWelcomeContent(),
+    );
 }
 
-class _OnboardingWelcomePageState extends State<OnboardingWelcomePage> {
+class _OnboardingWelcomeContent extends StatelessWidget {
+  const _OnboardingWelcomeContent();
 
   @override
   Widget build(BuildContext context) {
@@ -40,7 +46,33 @@ class _OnboardingWelcomePageState extends State<OnboardingWelcomePage> {
       );
     }
 
-    return Scaffold(
+    return BlocListener<OnboardingBloc, OnboardingState>(
+      listener: (context, state) {
+        if (state is OnboardingNavigating) {
+          // Navigate based on the navigation state
+          switch (state.toStep) {
+            case OnboardingStep.language:
+              context.go('/onboarding/language');
+              break;
+            case OnboardingStep.purpose:
+              context.go('/onboarding/purpose');
+              break;
+            case OnboardingStep.completed:
+              context.go('/login');
+              break;
+            default:
+              break;
+          }
+        } else if (state is OnboardingError) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(state.message),
+              backgroundColor: Theme.of(context).colorScheme.error,
+            ),
+          );
+        }
+      },
+      child: Scaffold(
       backgroundColor: AppTheme.backgroundColor,
       body: SafeArea(
         child: Padding(
@@ -167,145 +199,65 @@ class _OnboardingWelcomePageState extends State<OnboardingWelcomePage> {
               
               const Spacer(),
               
-              // Authentication Buttons
-              Column(
-                children: [
-                  // Login with Google Button
-                  BlocBuilder<AuthBloc, auth_states.AuthState>(
-                    builder: (context, state) {
-                      final isLoading = state is auth_states.AuthLoadingState;
-                      
-                      return SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton.icon(
-                          onPressed: isLoading 
-                              ? null 
-                              : () => _handleGoogleLogin(context),
-                          icon: isLoading 
-                              ? const SizedBox(
+              // Continue Button
+              BlocBuilder<OnboardingBloc, OnboardingState>(
+                builder: (context, state) {
+                  final isLoading = state is OnboardingLoading;
+                  
+                  return SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: isLoading 
+                          ? null 
+                          : () => context.read<OnboardingBloc>().add(const NextStep()),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppTheme.primaryColor,
+                        foregroundColor: Colors.white,
+                        minimumSize: const Size.fromHeight(56),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        elevation: 0,
+                      ),
+                      child: isLoading
+                          ? Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                const SizedBox(
                                   width: 20,
                                   height: 20,
                                   child: CircularProgressIndicator(
                                     strokeWidth: 2,
                                     valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                                   ),
-                                )
-                              : const Icon(
-                                  Icons.g_mobiledata,
-                                  size: 24,
                                 ),
-                          label: Text(
-                            isLoading ? 'Signing in...' : 'Login with Google',
-                            style: GoogleFonts.inter(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppTheme.primaryColor,
-                            foregroundColor: Colors.white,
-                            minimumSize: const Size.fromHeight(56),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            elevation: 0,
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                  
-                  const SizedBox(height: 16),
-                  
-                  // Continue as Guest Button
-                  BlocConsumer<AuthBloc, auth_states.AuthState>(
-                    listener: (context, state) {
-                      if (state is auth_states.AuthenticatedState) {
-                        // Navigate to home on successful authentication
-                        context.go('/');
-                        
-                        // Show success message
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(
-                              state.isAnonymous 
-                                  ? 'Welcome! You\'re signed in as a guest.'
-                                  : 'Welcome back!',
-                              style: GoogleFonts.inter(color: Colors.white),
-                            ),
-                            backgroundColor: Colors.green,
-                            duration: const Duration(seconds: 2),
-                          ),
-                        );
-                      } else if (state is auth_states.AuthErrorState) {
-                        // Show error dialog
-                        _showErrorDialog(
-                          'Guest Login Failed',
-                          'Unable to sign in as guest:\n\n${state.message}',
-                        );
-                      }
-                    },
-                    builder: (context, state) {
-                      final isLoading = state is auth_states.AuthLoadingState;
-                      
-                      return SizedBox(
-                        width: double.infinity,
-                        child: OutlinedButton(
-                          onPressed: isLoading 
-                              ? null 
-                              : () => context.read<AuthBloc>().add(const AnonymousSignInRequested()),
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: AppTheme.primaryColor,
-                            side: const BorderSide(
-                              color: AppTheme.primaryColor,
-                              width: 2,
-                            ),
-                            minimumSize: const Size.fromHeight(56),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                          child: isLoading
-                              ? Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    const SizedBox(
-                                      width: 20,
-                                      height: 20,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                        valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primaryColor),
-                                      ),
-                                    ),
-                                    const SizedBox(width: 12),
-                                    Text(
-                                      'Signing in...',
-                                      style: GoogleFonts.inter(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                                  ],
-                                )
-                              : Text(
-                                  'Continue as Guest',
+                                const SizedBox(width: 12),
+                                Text(
+                                  'Loading...',
                                   style: GoogleFonts.inter(
                                     fontSize: 16,
                                     fontWeight: FontWeight.w600,
                                   ),
                                 ),
-                        ),
-                      );
-                    },
-                  ),
-                ],
+                              ],
+                            )
+                          : Text(
+                              'Continue',
+                              style: GoogleFonts.inter(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                    ),
+                  );
+                },
               ),
               
               SizedBox(height: isLargeScreen ? 40 : 24),
               
               // Privacy/Terms Notice
               Text(
-                'By continuing, you agree to our Terms of Service and Privacy Policy',
+                'Let\'s set up your personalized Bible study experience',
                 style: GoogleFonts.inter(
                   fontSize: 12,
                   color: AppTheme.onSurfaceVariant,
@@ -320,68 +272,6 @@ class _OnboardingWelcomePageState extends State<OnboardingWelcomePage> {
         ),
       ),
     );
-  }
-
-  /// Navigate to proper login screen for Google authentication
-  /// Uses BLoC architecture instead of direct API calls
-
-  void _handleGoogleLogin(BuildContext context) {
-    // Navigate to the proper login screen with Google OAuth
-    context.go('/login');
-  }
-
-  /// Shows an error dialog with the given title and message.
-  void _showErrorDialog(String title, String message) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) => AlertDialog(
-          backgroundColor: const Color(0xFFFAFAFA), // Light background
-          surfaceTintColor: Colors.transparent,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-          elevation: 8,
-          shadowColor: Colors.black.withOpacity(0.1),
-          title: Text(
-            title,
-            style: GoogleFonts.playfairDisplay(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: const Color(0xFF333333), // Primary gray text
-            ),
-          ),
-          content: Text(
-            message,
-            style: GoogleFonts.inter(
-              fontSize: 16,
-              color: const Color(0xFF333333), // Primary gray text
-              height: 1.5,
-            ),
-          ),
-          actionsPadding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              style: TextButton.styleFrom(
-                foregroundColor: const Color(0xFF888888), // Light gray for cancel
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-              child: Text(
-                'OK',
-                style: GoogleFonts.inter(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: const Color(0xFF888888), // Light gray text
-                ),
-              ),
-            ),
-          ],
-        ),
-    );
-  }
 }
 
 /// Individual feature item widget for the welcome screen.
