@@ -853,7 +853,7 @@ class _SettingsScreenContent extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             Text(
-              'Thank you for using Disciplefy! Your support helps us continue improving the app.',
+              'Thank you for using Disciplefy! Your support helps us continue improving the app. If this app has blessed you or helped you in any way, and you’d like to encourage the work behind it, you can support it here by buying me a coffee.',
               style: GoogleFonts.inter(
                 fontSize: 16,
                 color: AppTheme.textPrimary,
@@ -888,7 +888,7 @@ class _SettingsScreenContent extends StatelessWidget {
                   child: ElevatedButton(
                     onPressed: () {
                       Navigator.of(context).pop();
-                      // TODO: Implement donation functionality
+                      _launchBuyMeCoffee();
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppTheme.primaryColor,
@@ -1036,6 +1036,13 @@ class _SettingsScreenContent extends StatelessWidget {
     final uri = Uri.parse('mailto:fennsaji@gmail.com?subject=Disciplefy Feedback');
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri);
+    }
+  }
+
+  Future<void> _launchBuyMeCoffee() async {
+    final uri = Uri.parse('https://buymeacoffee.com/fennsaji');
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
     }
   }
 }
