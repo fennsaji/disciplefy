@@ -286,22 +286,6 @@ class _SettingsScreenContent extends StatelessWidget {
                 onTap: () => _showLogoutDialog(context, authState.isAnonymous),
                 iconColor: AppTheme.errorColor,
               ),
-              if (!authState.isAnonymous) ...[
-                _buildDivider(),
-                _buildSettingsTile(
-                  context: context,
-                  icon: Icons.delete_forever_outlined,
-                  title: 'Delete Account',
-                  subtitle: 'Permanently delete your account and data',
-                  trailing: const Icon(
-                    Icons.arrow_forward_ios,
-                    size: 16,
-                    color: AppTheme.onSurfaceVariant,
-                  ),
-                  onTap: () => _showDeleteAccountDialog(context),
-                  iconColor: AppTheme.errorColor,
-                ),
-              ],
             ],
           );
         }
@@ -590,79 +574,6 @@ class _SettingsScreenContent extends StatelessWidget {
     );
   }
 
-  /// Delete Account confirmation dialog
-  void _showDeleteAccountDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: const Color(0xFFFAFAFA), // Light background
-        surfaceTintColor: Colors.transparent,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        elevation: 8,
-        shadowColor: Colors.black.withOpacity(0.1),
-        title: Text(
-          'Delete Account',
-          style: GoogleFonts.playfairDisplay(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-            color: const Color(0xFFDC2626), // Red error color
-          ),
-        ),
-        content: Text(
-          'This action cannot be undone. All your data will be permanently deleted.',
-          style: GoogleFonts.inter(
-            fontSize: 16,
-            color: const Color(0xFF333333), // Primary gray text
-            height: 1.5,
-          ),
-        ),
-        actionsPadding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            style: TextButton.styleFrom(
-              foregroundColor: const Color(0xFF888888), // Light gray for cancel
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-            child: Text(
-              'Cancel',
-              style: GoogleFonts.inter(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: const Color(0xFF888888), // Light gray text
-              ),
-            ),
-          ),
-          const SizedBox(width: 12),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-              context.read<AuthBloc>().add(const DeleteAccountRequested());
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFDC2626), // Red error color
-              foregroundColor: Colors.white,
-              elevation: 0,
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-            child: Text(
-              'Delete',
-              style: GoogleFonts.inter(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 
   // Include all the helper methods from the original settings screen
   Widget _buildSection({
@@ -1122,7 +1033,7 @@ class _SettingsScreenContent extends StatelessWidget {
   }
 
   Future<void> _launchFeedback() async {
-    final uri = Uri.parse('mailto:support@disciplefy.com?subject=Disciplefy Feedback');
+    final uri = Uri.parse('mailto:fennsaji@gmail.com?subject=Disciplefy Feedback');
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri);
     }
