@@ -16,14 +16,13 @@ on:
       environment:
         description: 'Deployment environment'
         required: true
-        default: 'preview'
+        default: 'development'
         type: choice
         options:
-        - preview
         - development
         - staging
       deploy_to_vercel:
-        description: 'Deploy to Vercel'
+        description: 'Deploy to Vercel Development App'
         required: false
         default: true
         type: boolean
@@ -130,19 +129,16 @@ jobs:
           if [ "${{ github.event.inputs.environment }}" = "staging" ]; then
             echo "DEPLOY_ENV=staging" >> $GITHUB_ENV
             echo "environment=staging" >> $GITHUB_OUTPUT
-            echo "VERCEL_ALIAS=disciplefy-staging" >> $GITHUB_ENV
-          elif [ "${{ github.event.inputs.environment }}" = "development" ]; then
+          elif [ "${{ github.event_name }}" = "pull_request" ]; then
+            echo "DEPLOY_ENV=pr-preview" >> $GITHUB_ENV
+            echo "environment=pr-preview" >> $GITHUB_OUTPUT
+          else
             echo "DEPLOY_ENV=development" >> $GITHUB_ENV
             echo "environment=development" >> $GITHUB_OUTPUT
-            echo "VERCEL_ALIAS=disciplefy-dev" >> $GITHUB_ENV
-          else
-            echo "DEPLOY_ENV=preview" >> $GITHUB_ENV
-            echo "environment=preview" >> $GITHUB_OUTPUT
-            echo "VERCEL_ALIAS=disciplefy-pr-${{ github.event.number || github.run_number }}" >> $GITHUB_ENV
           fi
           
-          echo "🎯 Deploying to: ${{ env.DEPLOY_ENV }}"
-          echo "🏷️ Vercel alias: ${{ env.VERCEL_ALIAS }}"
+          echo "🎯 Deploying to: ${{ env.DEPLOY_ENV }} environment"
+          echo "📦 Using separate Vercel development app"
       
       - name: 📦 Get Flutter dependencies
         run: flutter pub get
@@ -151,53 +147,51 @@ jobs:
         run: |
           echo "📝 Creating ${{ env.DEPLOY_ENV }} environment configuration..."
           
-          # Create development environment configuration
+          # Create development environment configuration (no production dependencies)
           cat > lib/core/config/dev_config.dart << EOF
           // Development configuration for ${{ env.DEPLOY_ENV }}
           // This file is generated during CI/CD and should not be committed
           
           class DevConfig {
             static const String environment = '${{ env.DEPLOY_ENV }}';
-            static const String apiBaseUrl = 'https://${{ secrets.SUPABASE_DEV_PROJECT_REF || secrets.SUPABASE_PROJECT_REF }}.supabase.co';
-            static const String supabaseAnonKey = '${{ secrets.SUPABASE_DEV_ANON_KEY || secrets.SUPABASE_ANON_KEY }}';
+            static const String apiBaseUrl = 'https://${{ secrets.SUPABASE_DEV_PROJECT_REF }}.supabase.co';
+            static const String supabaseAnonKey = '${{ secrets.SUPABASE_DEV_ANON_KEY }}';
             static const bool isDevelopment = true;
             static const bool enableLogging = true;
             static const bool enableDebugMode = true;
+            static const bool enableTestMode = true;
           }
           EOF
           
-          echo "✅ Development environment configuration created"
+          echo "✅ Development environment configuration created (isolated from production)"
       
       - name: 🏗️ Build Flutter web app
         run: |
           echo "🏗️ Building Flutter web app for ${{ env.DEPLOY_ENV }}..."
           
-          # Build with development optimizations
+          # Build with development optimizations (no production env dependencies)
           flutter build web \
             --release \
             --web-renderer html \
             --base-href / \
             --dart-define=ENVIRONMENT=${{ env.DEPLOY_ENV }} \
-            --dart-define=API_BASE_URL=https://${{ secrets.SUPABASE_DEV_PROJECT_REF || secrets.SUPABASE_PROJECT_REF }}.supabase.co \
-            --dart-define=ENABLE_LOGGING=true
+            --dart-define=API_BASE_URL=https://${{ secrets.SUPABASE_DEV_PROJECT_REF }}.supabase.co \
+            --dart-define=SUPABASE_ANON_KEY=${{ secrets.SUPABASE_DEV_ANON_KEY }} \
+            --dart-define=ENABLE_LOGGING=true \
+            --dart-define=IS_DEVELOPMENT=true
           
           echo "📊 Build statistics:"
           du -sh build/web
           ls -la build/web/
           
-          echo "✅ Flutter web app built successfully for ${{ env.DEPLOY_ENV }}"
+          echo "✅ Flutter web app built successfully for ${{ env.DEPLOY_ENV }} (isolated from production)"
       
       - name: 📦 Optimize development build
         run: |
           echo "📦 Optimizing build for ${{ env.DEPLOY_ENV }}..."
           
-          # Keep source maps for development/staging (remove only for preview)
-          if [ "${{ env.DEPLOY_ENV }}" = "preview" ]; then
-            find build/web -name "*.map" -delete
-            echo "ℹ️ Source maps removed for preview environment"
-          else
-            echo "ℹ️ Source maps preserved for ${{ env.DEPLOY_ENV }} environment"
-          fi
+          # Keep source maps for all development deployments
+          echo "ℹ️ Source maps preserved for ${{ env.DEPLOY_ENV }} environment (development build)"
           
           # Create Vercel configuration for development
           cat > build/web/vercel.json << EOF
@@ -238,38 +232,40 @@ jobs:
           
           echo "✅ Build optimization completed for ${{ env.DEPLOY_ENV }}"
       
-      - name: 🔗 Link Vercel project
+      - name: 🔗 Link Vercel development project
         if: ${{ github.event.inputs.deploy_to_vercel != 'false' }}
         run: |
-          echo "🔗 Linking to Vercel project..."
+          echo "🔗 Linking to Vercel development project (separate from production)..."
           cd build/web
-          vercel --token ${{ secrets.VERCEL_TOKEN }} --scope ${{ secrets.VERCEL_ORG_ID }} link --yes --project ${{ secrets.VERCEL_PROJECT_ID }}
-          echo "✅ Vercel project linked"
+          vercel --token ${{ secrets.VERCEL_DEV_TOKEN }} --scope ${{ secrets.VERCEL_DEV_ORG_ID }} link --yes --project ${{ secrets.VERCEL_DEV_PROJECT_ID }}
+          echo "✅ Vercel development project linked"
       
-      - name: 🚀 Deploy to Vercel
+      - name: 🚀 Deploy to Vercel Development App
         id: deploy
         if: ${{ github.event.inputs.deploy_to_vercel != 'false' }}
         run: |
-          echo "🚀 Deploying to Vercel ${{ env.DEPLOY_ENV }}..."
+          echo "🚀 Deploying to separate Vercel development app..."
           
           cd build/web
           
-          # Deploy with appropriate settings
-          if [ "${{ env.DEPLOY_ENV }}" = "preview" ] || [ "${{ github.event_name }}" = "pull_request" ]; then
-            # Preview deployment for PRs
-            VERCEL_URL=$(vercel --token ${{ secrets.VERCEL_TOKEN }} --yes | tail -n 1)
+          # Deploy to development Vercel app (completely separate from production)
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            # PR preview on development app
+            VERCEL_URL=$(vercel --token ${{ secrets.VERCEL_DEV_TOKEN }} --yes | tail -n 1)
             echo "preview-url=$VERCEL_URL" >> $GITHUB_OUTPUT
-            echo "deployment-type=preview" >> $GITHUB_OUTPUT
+            echo "deployment-type=pr-preview" >> $GITHUB_OUTPUT
+            echo "🔀 PR preview deployed to development app"
           else
-            # Deployment to alias for development/staging
-            VERCEL_URL=$(vercel --token ${{ secrets.VERCEL_TOKEN }} --yes)
-            vercel --token ${{ secrets.VERCEL_TOKEN }} alias $VERCEL_URL ${{ env.VERCEL_ALIAS }}.vercel.app
-            echo "preview-url=https://${{ env.VERCEL_ALIAS }}.vercel.app" >> $GITHUB_OUTPUT
-            echo "deployment-type=alias" >> $GITHUB_OUTPUT
+            # Direct deployment to development app
+            VERCEL_URL=$(vercel --token ${{ secrets.VERCEL_DEV_TOKEN }} --yes --prod)
+            echo "preview-url=$VERCEL_URL" >> $GITHUB_OUTPUT
+            echo "deployment-type=development" >> $GITHUB_OUTPUT
+            echo "🚀 Deployed to development app production environment"
           fi
           
-          echo "✅ Deployment to Vercel completed"
-          echo "🌐 URL: ${{ steps.deploy.outputs.preview-url }}"
+          echo "✅ Deployment to separate Vercel development app completed"
+          echo "🌐 Development App URL: ${{ steps.deploy.outputs.preview-url }}"
+          echo "🔒 Isolated from production Vercel app"
       
       - name: 🧪 Test development deployment
         if: ${{ github.event.inputs.deploy_to_vercel != 'false' }}
@@ -352,9 +348,10 @@ jobs:
             
             **Environment**: \`${environment}\`
             **Status**: ✅ Deployment Successful
+            **App**: 🧪 Development Vercel App (isolated from production)
             
-            ### 🔗 Preview URL:
-            **[🌐 View Deployment](${deploymentUrl})**
+            ### 🔗 Development App URL:
+            **[🌐 View Development Deployment](${deploymentUrl})**
             
             ### 🧪 Test the App:
             - **Homepage**: [${deploymentUrl}](${deploymentUrl})
@@ -364,10 +361,12 @@ jobs:
             ### 🛠️ Development Features:
             - ✅ Debug mode enabled
             - ✅ Enhanced logging
-            - ✅ Development API endpoints
+            - ✅ Development API endpoints only
             - ✅ Source maps preserved
+            - ✅ Test mode enabled
+            - 🔒 Isolated from production environment
             
-            **Note**: This is a preview deployment for testing. Changes will be deployed to production when this PR is merged to main.
+            **Note**: This deployment uses the development Vercel app and development Supabase project. No production resources are used.
             
             ---
             *Deployed from commit: ${context.sha.substring(0, 7)}*`;

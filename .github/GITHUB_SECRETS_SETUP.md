@@ -65,12 +65,21 @@ Navigate to your GitHub repository → Settings → Secrets and Variables → Ac
 
 ### 🌐 Frontend Deployment (Vercel)
 
+#### Production Environment
 | Secret Name | Description | How to Get | Required |
 |-------------|-------------|------------|----------|
-| `VERCEL_TOKEN` | Vercel deployment token | [Vercel Account](https://vercel.com/account/
-tokens) → Create token | ✅ Yes |
-| `VERCEL_ORG_ID` | Vercel organization ID | Vercel Dashboard → Team Settings → General | ✅ Yes |
-| `VERCEL_PROJECT_ID` | Vercel project ID | Vercel Dashboard → Project Settings → General | ✅ Yes |
+| `VERCEL_TOKEN` | Vercel production deployment token | [Vercel Account](https://vercel.com/account/tokens) → Create token | ✅ Yes |
+| `VERCEL_ORG_ID` | Vercel organization ID (production) | Vercel Dashboard → Team Settings → General | ✅ Yes |
+| `VERCEL_PROJECT_ID` | Vercel production project ID | Production Vercel project → Settings → General | ✅ Yes |
+
+#### Development Environment (Separate Vercel App)
+| Secret Name | Description | How to Get | Required |
+|-------------|-------------|------------|----------|
+| `VERCEL_DEV_TOKEN` | Vercel development deployment token | [Vercel Account](https://vercel.com/account/tokens) → Create separate token | ✅ Yes |
+| `VERCEL_DEV_ORG_ID` | Vercel organization ID (can be same as production) | Vercel Dashboard → Team Settings → General | ✅ Yes |
+| `VERCEL_DEV_PROJECT_ID` | Vercel development project ID | **Create separate development Vercel project** → Settings → General | ✅ Yes |
+
+> **Important**: The development deployment uses a completely separate Vercel project to ensure isolation from production.
 
 
 ## 🛠️ Detailed Setup Instructions
@@ -116,17 +125,31 @@ tokens) → Create token | ✅ Yes |
 
 ### 4. Vercel Configuration
 
-#### Get Vercel Token
+#### Production Vercel App Setup
 1. Go to [Vercel Account Settings](https://vercel.com/account/tokens)
 2. Click **Create Token**
-3. Name it "GitHub Actions"
+3. Name it "GitHub Actions Production"
 4. Select appropriate scope
 5. Copy the token
+6. In your production Vercel project:
+   - Go to **Settings** → **General**
+   - Copy **Project ID** and **Team ID**
 
-#### Get Organization & Project IDs
-1. In Vercel Dashboard, go to your project
-2. Go to **Settings** → **General**
-3. Find **Project ID** and **Team ID** (if applicable)
+#### Development Vercel App Setup (Separate App)
+1. **Create a new Vercel project** specifically for development:
+   - Name it something like "disciplefy-dev" or "disciplefy-development"
+   - This should be completely separate from your production app
+2. Create a separate token or reuse the same token:
+   - Go to [Vercel Account Settings](https://vercel.com/account/tokens)
+   - Create a new token named "GitHub Actions Development" (recommended)
+   - Or reuse the production token (less secure but simpler)
+3. Get the development project details:
+   - Go to your **development** Vercel project
+   - Go to **Settings** → **General**
+   - Copy the **Project ID** (this will be different from production)
+   - Copy the **Team ID** (may be same as production if using same organization)
+
+> **Important**: The development Vercel app should be completely separate from production to ensure isolation and prevent accidental production deployments.
 
 ### 5. Generate JWT Secret
 
@@ -164,10 +187,19 @@ gh secret set GOOGLE_OAUTH_CLIENT_ID -b "your-client-id"
 gh secret set GOOGLE_OAUTH_CLIENT_SECRET -b "your-client-secret"
 gh secret set JWT_SECRET -b "your-jwt-secret"
 
-# Vercel secrets
-gh secret set VERCEL_TOKEN -b "your-vercel-token"
+# Vercel production secrets
+gh secret set VERCEL_TOKEN -b "your-production-vercel-token"
 gh secret set VERCEL_ORG_ID -b "your-org-id"
-gh secret set VERCEL_PROJECT_ID -b "your-project-id"
+gh secret set VERCEL_PROJECT_ID -b "your-production-project-id"
+
+# Vercel development secrets (separate app)
+gh secret set VERCEL_DEV_TOKEN -b "your-development-vercel-token"
+gh secret set VERCEL_DEV_ORG_ID -b "your-org-id"  # May be same as production
+gh secret set VERCEL_DEV_PROJECT_ID -b "your-development-project-id"
+
+# Development Supabase secrets (if using separate dev project)
+gh secret set SUPABASE_DEV_PROJECT_REF -b "your-dev-project-ref"
+gh secret set SUPABASE_DEV_ANON_KEY -b "your-dev-anon-key"
 ```
 
 ---
@@ -210,18 +242,22 @@ gh secret set VERCEL_PROJECT_ID -b "your-project-id"
   - ✅ Vercel deployment
   - ✅ Route testing
 
-#### Development Deployment
-- **Trigger**: Push to `develop`/`dev`/`staging` branches OR Pull Requests to `main`
+#### Development Deployment (Separate Vercel App)
+- **Trigger**: Push to `develop`/`dev`/`development` branches OR Pull Requests to `main`
 - **Manual**: Repository → Actions → "Frontend Development Deployment" → Run workflow
-- **Environments**: `preview` (PR deployments), `development`, or `staging`
+- **Environments**: `development` (default) or `staging`
 - **What it deploys**:
-  - ✅ Flutter web build (with development configuration)
-  - ✅ Vercel preview deployment
+  - ✅ Flutter web build (with development configuration and logging)
+  - ✅ **Separate Vercel development app** (completely isolated from production)
+  - ✅ Development Supabase backend integration
   - ✅ Route testing and validation
+  - ✅ PR preview deployments on development app
 - **Features**:
-  - 🔍 Automatic PR comments with preview URLs
-  - 🧪 Enhanced logging and debug mode
-  - 🔒 Security scanning and validation
+  - 🔒 **Zero production dependencies** - Uses only development secrets
+  - 🧪 Enhanced debugging and logging enabled
+  - 📊 Source maps preserved for debugging
+  - 🔍 Automatic PR comments with development app URLs
+  - 🛡️ Security scanning and best practices checking
   - 🧹 Automatic cleanup of sensitive files
   - 📊 Source map preservation for development environments
 
