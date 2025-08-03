@@ -12,7 +12,7 @@ class AppConfig {
         : 'https://wzdcwxvyjuxjgzpnukvm.supabase.co',
   );
 
-  // CRITICAL FIX: Use proper environment detection for App URL
+  // App URL - Used as fallback when dynamic origin detection fails
   static const String appUrl = String.fromEnvironment(
     'APP_URL',
     defaultValue: _flutterEnv == 'development'
@@ -29,15 +29,8 @@ class AppConfig {
     'GOOGLE_CLIENT_ID',
   );
 
-  static const String appleClientId = String.fromEnvironment(
-    'APPLE_CLIENT_ID',
-    defaultValue: 'com.disciplefy.bible_study',
-  );
-
-  // Payment Configuration (Razorpay)
-  static const String razorpayKeyId = String.fromEnvironment(
-    'RAZORPAY_KEY_ID',
-  );
+  // Apple OAuth not implemented yet - placeholder for future
+  static const String appleClientId = 'com.disciplefy.bible_study';
 
   // App Configuration
   static const String appVersion = '1.0.0';
@@ -95,6 +88,7 @@ class AppConfig {
   static const String googleOAuthCallbackEndpoint = '/auth-google-callback';
 
   // Rate Limiting (from API Contract Documentation)
+  // Note: These are hardcoded as they're client-side limits, not server configuration
   static const int anonymousRateLimit = 3; // guides per hour
   static const int authenticatedRateLimit = 10; // guides per hour
   static const int apiRequestLimit = 100; // requests per hour for authenticated

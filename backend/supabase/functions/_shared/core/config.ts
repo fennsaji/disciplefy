@@ -9,14 +9,20 @@ import { AppError } from '../utils/error-handler.ts'
 
 /**
  * Complete application configuration interface
+ * All these environment variables are actively used by Edge Functions
  */
 export interface AppConfig {
+  // Supabase configuration (required)
   readonly supabaseUrl: string
   readonly supabaseServiceKey: string
   readonly supabaseAnonKey: string
+  
+  // LLM provider configuration (optional - auto-mock if missing)
   readonly openaiApiKey?: string
   readonly anthropicApiKey?: string
   readonly llmProvider?: 'openai' | 'anthropic'
+  
+  // Development/testing flags
   readonly useMock: boolean
 }
 
@@ -56,9 +62,9 @@ function getValidatedConfig(): AppConfig {
 
   // Provide mock keys if in mock mode but no real keys available
   if (config.useMock && !hasLLMKeys) {
-    config.openaiApiKey = 'mock-openai-key'
-    config.anthropicApiKey = 'mock-anthropic-key'
-    config.llmProvider = 'openai'
+    (config as any).openaiApiKey = 'mock-openai-key'
+    ;(config as any).anthropicApiKey = 'mock-anthropic-key'
+    ;(config as any).llmProvider = 'openai'
   }
 
   // Log configuration status (for debugging)
