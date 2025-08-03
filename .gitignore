@@ -8,7 +8,7 @@
 # Environment files (contains API keys and secrets)
 .env
 .env.local
-.env.development
+.env.dev
 .env.staging
 .env.production
 .env.*.local
