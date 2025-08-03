@@ -48,7 +48,7 @@ jobs:
       - name: 📱 Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.24.0'
+          flutter-version: '3.32.0'
           channel: 'stable'
           cache: true
       
@@ -111,7 +111,7 @@ jobs:
       - name: 📱 Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.24.0'
+          flutter-version: '3.32.0'
           channel: 'stable'
           cache: true
       
@@ -129,16 +129,13 @@ jobs:
           if [ "${{ github.event.inputs.environment }}" = "staging" ]; then
             echo "DEPLOY_ENV=staging" >> $GITHUB_ENV
             echo "environment=staging" >> $GITHUB_OUTPUT
-          elif [ "${{ github.event_name }}" = "pull_request" ]; then
-            echo "DEPLOY_ENV=pr-preview" >> $GITHUB_ENV
-            echo "environment=pr-preview" >> $GITHUB_OUTPUT
           else
             echo "DEPLOY_ENV=development" >> $GITHUB_ENV
             echo "environment=development" >> $GITHUB_OUTPUT
           fi
           
           echo "🎯 Deploying to: ${{ env.DEPLOY_ENV }} environment"
-          echo "📦 Using separate Vercel development app"
+          echo "📦 Using separate Vercel development app (no previews)"
       
       - name: 📦 Get Flutter dependencies
         run: flutter pub get
@@ -248,20 +245,12 @@ jobs:
           
           cd build/web
           
-          # Deploy to development Vercel app (completely separate from production)
-          if [ "${{ github.event_name }}" = "pull_request" ]; then
-            # PR preview on development app
-            VERCEL_URL=$(vercel --token ${{ secrets.VERCEL_DEV_TOKEN }} --yes | tail -n 1)
-            echo "preview-url=$VERCEL_URL" >> $GITHUB_OUTPUT
-            echo "deployment-type=pr-preview" >> $GITHUB_OUTPUT
-            echo "🔀 PR preview deployed to development app"
-          else
-            # Direct deployment to development app
-            VERCEL_URL=$(vercel --token ${{ secrets.VERCEL_DEV_TOKEN }} --yes --prod)
-            echo "preview-url=$VERCEL_URL" >> $GITHUB_OUTPUT
-            echo "deployment-type=development" >> $GITHUB_OUTPUT
-            echo "🚀 Deployed to development app production environment"
-          fi
+          # Deploy directly to development Vercel app (no previews)
+          # Both PRs and branch pushes deploy to the same development environment
+          VERCEL_URL=$(vercel --token ${{ secrets.VERCEL_DEV_TOKEN }} --yes --prod)
+          echo "preview-url=$VERCEL_URL" >> $GITHUB_OUTPUT
+          echo "deployment-type=development" >> $GITHUB_OUTPUT
+          echo "🚀 Deployed directly to development app (no preview URLs)"
           
           echo "✅ Deployment to separate Vercel development app completed"
           echo "🌐 Development App URL: ${{ steps.deploy.outputs.preview-url }}"
@@ -314,9 +303,10 @@ jobs:
           
           echo "📋 Configuration:"
           echo "   • Environment: ${{ env.DEPLOY_ENV }}"
+          echo "   • Deployment: Direct to development app (no previews)"
           echo "   • Logging: Enabled"
           echo "   • Debug mode: Enabled"
-          echo "   • Source maps: ${{ env.DEPLOY_ENV != 'preview' && 'Preserved' || 'Removed' }}"
+          echo "   • Source maps: Preserved"
       
       - name: 🧹 Security cleanup
         if: always()
@@ -349,6 +339,7 @@ jobs:
             **Environment**: \`${environment}\`
             **Status**: ✅ Deployment Successful
             **App**: 🧪 Development Vercel App (isolated from production)
+            **Deployment Type**: Direct deployment (no preview URLs)
             
             ### 🔗 Development App URL:
             **[🌐 View Development Deployment](${deploymentUrl})**
@@ -365,8 +356,9 @@ jobs:
             - ✅ Source maps preserved
             - ✅ Test mode enabled
             - 🔒 Isolated from production environment
+            - 🚫 No preview URLs (direct deployment to dev app)
             
-            **Note**: This deployment uses the development Vercel app and development Supabase project. No production resources are used.
+            **Note**: This PR and all development changes deploy directly to the same development Vercel app. No separate preview URLs are created.
             
             ---
             *Deployed from commit: ${context.sha.substring(0, 7)}*`;
