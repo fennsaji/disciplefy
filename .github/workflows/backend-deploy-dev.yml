@@ -11,7 +11,7 @@ on:
     paths:
       - 'backend/**'
     types: [opened, synchronize, reopened]
-  workflow_dispatch:  # Allow manual triggering
+  workflow_dispatch:
     inputs:
       environment:
         description: 'Deployment environment'
@@ -327,7 +327,7 @@ jobs:
       uses: actions/github-script@v7
       with:
         script: |
-          const deployEnv = '${{ needs.deploy-to-development.outputs.DEPLOY_ENV || "development" }}';
+          const deployEnv = '${{ needs.deploy-to-development.outputs.DEPLOY_ENV }}' || 'development';
           const projectRef = '${{ needs.deploy-to-development.outputs.PROJECT_REF }}';
           
           const comment = `## 🚀 Backend Development Deployment
