@@ -51,21 +51,15 @@ jobs:
     - name: 🔄 Checkout repository
       uses: actions/checkout@v4
       
-    - name: 📦 Setup Node.js
-      uses: actions/setup-node@v4
+    - name: 🦕 Setup Deno
+      uses: denoland/setup-deno@v2
       with:
-        node-version: '20'
-        cache: 'npm'
-        cache-dependency-path: 'backend/package*.json'
+        deno-version: v1.47.x
         
-    - name: 🔧 Install dependencies
-      working-directory: ./backend
+    - name: 🔧 Verify Deno installation
       run: |
-        if [ -f package.json ]; then
-          npm ci
-        else
-          echo "No package.json found, skipping npm install"
-        fi
+        deno --version
+        echo "✅ Deno is ready for TypeScript compilation checks"
         
     - name: 🔍 TypeScript compilation check
       working-directory: ./backend
@@ -126,6 +120,10 @@ jobs:
     timeout-minutes: 15
     environment: 
       name: ${{ github.event.inputs.environment || 'development' }}
+    
+    outputs:
+      DEPLOY_ENV: ${{ steps.env-setup.outputs.deploy_env }}
+      PROJECT_REF: ${{ steps.env-setup.outputs.project_ref }}
       
     steps:
     - name: 🔄 Checkout repository
@@ -140,13 +138,18 @@ jobs:
       run: npm install -g supabase@latest
       
     - name: 🔍 Determine deployment environment
+      id: env-setup
       run: |
         if [ "${{ github.event.inputs.environment }}" = "staging" ]; then
           echo "DEPLOY_ENV=staging" >> $GITHUB_ENV
           echo "PROJECT_REF=${{ secrets.SUPABASE_STAGING_PROJECT_REF }}" >> $GITHUB_ENV
+          echo "deploy_env=staging" >> $GITHUB_OUTPUT
+          echo "project_ref=${{ secrets.SUPABASE_STAGING_PROJECT_REF }}" >> $GITHUB_OUTPUT
         else
           echo "DEPLOY_ENV=development" >> $GITHUB_ENV
           echo "PROJECT_REF=${{ secrets.SUPABASE_DEV_PROJECT_REF }}" >> $GITHUB_ENV
+          echo "deploy_env=development" >> $GITHUB_OUTPUT
+          echo "project_ref=${{ secrets.SUPABASE_DEV_PROJECT_REF }}" >> $GITHUB_OUTPUT
         fi
         
         echo "🎯 Deploying to: ${{ env.DEPLOY_ENV }}"
