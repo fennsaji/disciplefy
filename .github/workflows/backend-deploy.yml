@@ -111,6 +111,84 @@ jobs:
       env:
         SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
         
+    - name: Create production environment file
+      working-directory: ./backend
+      run: |
+        echo "📝 Creating production environment file..."
+        cat > .env.production << EOF
+        # Supabase Configuration
+        SUPABASE_PROJECT_REF=${{ secrets.SUPABASE_PROJECT_REF }}
+        SUPABASE_ACCESS_TOKEN=${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        SUPABASE_URL=https://${{ secrets.SUPABASE_PROJECT_REF }}.supabase.co
+        SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}
+        SUPABASE_SERVICE_ROLE_KEY=${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        
+        # LLM Configuration
+        OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}
+        ANTHROPIC_API_KEY=${{ secrets.ANTHROPIC_API_KEY }}
+        LLM_PROVIDER=${{ secrets.LLM_PROVIDER || 'openai' }}
+        
+        # Authentication
+        GOOGLE_OAUTH_CLIENT_ID=${{ secrets.GOOGLE_OAUTH_CLIENT_ID }}
+        GOOGLE_OAUTH_CLIENT_SECRET=${{ secrets.GOOGLE_OAUTH_CLIENT_SECRET }}
+        
+        # Application URLs
+        SITE_URL=https://disciplefy.vercel.app
+        ADDITIONAL_REDIRECT_URLS=https://disciplefy.vercel.app/auth/callback,com.disciplefy.bible_study_app://auth/callback
+        
+        # Security
+        JWT_SECRET=${{ secrets.JWT_SECRET }}
+        
+        # Production settings
+        LOG_LEVEL=error
+        USE_MOCK=false
+        NODE_ENV=production
+        EOF
+        echo "✅ Production environment file created"
+    
+    - name: Link to Supabase project
+      working-directory: ./backend
+      run: |
+        echo "🔗 Linking to Supabase project..."
+        supabase link --project-ref "$SUPABASE_PROJECT_REF"
+      env:
+        SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+    
+    - name: Deploy Database Migrations
+      working-directory: ./backend
+      run: |
+        echo "🗄️ Deploying database migrations..."
+        if [ -d "supabase/migrations" ] && [ "$(ls -A supabase/migrations 2>/dev/null)" ]; then
+          supabase db push --project-ref "$SUPABASE_PROJECT_REF"
+          echo "✅ Database migrations deployed"
+        else
+          echo "ℹ️ No migrations to deploy"
+        fi
+      env:
+        SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+    
+    - name: Deploy RLS Policies
+      working-directory: ./backend
+      run: |
+        echo "🔒 Deploying RLS policies..."
+        if [ -d "supabase/policies" ] && [ "$(ls -A supabase/policies 2>/dev/null)" ]; then
+          for policy_file in supabase/policies/*.sql; do
+            if [ -f "$policy_file" ]; then
+              policy_name=$(basename "$policy_file" .sql)
+              echo "🔐 Applying policy: $policy_name"
+              supabase db query --project-ref "$SUPABASE_PROJECT_REF" --file "$policy_file"
+            fi
+          done
+          echo "✅ RLS policies deployed"
+        else
+          echo "ℹ️ No RLS policies to deploy"
+        fi
+      env:
+        SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+        
     - name: Deploy Edge Functions
       working-directory: ./backend
       run: |
@@ -120,6 +198,16 @@ jobs:
         supabase functions deploy --project-ref "$SUPABASE_PROJECT_REF" --no-verify-jwt
         
         echo "✅ Edge Functions deployed successfully"
+      env:
+        SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+        
+    - name: Update Function Secrets
+      working-directory: ./backend
+      run: |
+        echo "🔑 Updating Edge Function secrets..."
+        supabase secrets set --env-file .env.production --project-ref "$SUPABASE_PROJECT_REF"
+        echo "✅ Function secrets updated"
       env:
         SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
         SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
@@ -149,11 +237,29 @@ jobs:
           fi
         fi
         
+        # Test more Edge Functions
+        FUNCTIONS=("daily-verse" "topics-recommended" "auth-session")
+        for func in "${FUNCTIONS[@]}"; do
+          if curl -f -s "https://$SUPABASE_PROJECT_REF.supabase.co/functions/v1/$func" > /dev/null; then
+            echo "✅ Function $func is responding"
+          else
+            echo "⚠️ Function $func test failed"
+          fi
+        done
+        
         echo "🎉 Deployment verification complete"
       env:
         SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
         SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
         SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        
+    - name: Security Cleanup
+      working-directory: ./backend
+      if: always()
+      run: |
+        echo "🧹 Cleaning up sensitive files..."
+        rm -f .env.production
+        echo "✅ Cleanup completed"
 
   notify-deployment:
     name: Notify Deployment Status
