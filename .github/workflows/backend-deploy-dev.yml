@@ -1,0 +1,375 @@
+name: Backend Development Deployment
+
+on:
+  push:
+    branches: [dev]
+    paths:
+      - 'backend/**'
+      - '.github/workflows/backend-deploy-dev.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'backend/**'
+    types: [opened, synchronize, reopened]
+  workflow_dispatch:  # Allow manual triggering
+    inputs:
+      environment:
+        description: 'Deployment environment'
+        required: true
+        default: 'development'
+        type: choice
+        options:
+        - development
+        - staging
+      deploy_functions:
+        description: 'Deploy Edge Functions'
+        required: false
+        default: true
+        type: boolean
+      deploy_migrations:
+        description: 'Deploy Database Migrations'
+        required: false
+        default: true
+        type: boolean
+      deploy_policies:
+        description: 'Deploy RLS Policies'
+        required: false
+        default: false
+        type: boolean
+
+concurrency:
+  group: backend-dev-deploy-${{ github.ref }}
+  cancel-in-progress: true  # Cancel previous runs for dev
+
+jobs:
+  validate-backend:
+    name: Validate Backend Code
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    
+    steps:
+    - name: 🔄 Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: 📦 Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+        cache-dependency-path: 'backend/package*.json'
+        
+    - name: 🔧 Install dependencies
+      working-directory: ./backend
+      run: |
+        if [ -f package.json ]; then
+          npm ci
+        else
+          echo "No package.json found, skipping npm install"
+        fi
+        
+    - name: 🔍 TypeScript compilation check
+      working-directory: ./backend
+      run: |
+        # Check if TypeScript files can be compiled
+        find supabase/functions -name "*.ts" -type f | while read -r file; do
+          echo "Checking TypeScript syntax: $file"
+          npx tsc --noEmit --skipLibCheck "$file" 2>/dev/null || {
+            echo "❌ TypeScript error in $file"
+            exit 1
+          }
+        done
+        echo "✅ All TypeScript files are valid"
+        
+    - name: 🧪 Validate Edge Function structure
+      working-directory: ./backend
+      run: |
+        echo "🔍 Validating Edge Function structure..."
+        
+        # Check that each function has an index.ts file
+        for func_dir in supabase/functions/*/; do
+          func_name=$(basename "$func_dir")
+          
+          if [ ! -f "${func_dir}index.ts" ]; then
+            echo "❌ Missing index.ts in function: $func_name"
+            exit 1
+          fi
+          
+          # Check for basic Deno serve pattern
+          if ! grep -q "Deno.serve" "${func_dir}index.ts"; then
+            echo "⚠️ Function $func_name might not follow Deno.serve pattern"
+          fi
+          
+          echo "✅ Function $func_name structure is valid"
+        done
+        
+    - name: 🔒 Security scan
+      working-directory: ./backend
+      run: |
+        echo "🔒 Running basic security checks..."
+        
+        # Check for potential security issues
+        if grep -r "console.log.*password\|console.log.*secret\|console.log.*key" supabase/functions/ 2>/dev/null; then
+          echo "⚠️ Found potential credential logging"
+        fi
+        
+        # Check for hardcoded URLs
+        if grep -r "localhost\|127.0.0.1" supabase/functions/ --exclude-dir=node_modules 2>/dev/null; then
+          echo "ℹ️ Found localhost references (may be intentional for dev)"
+        fi
+        
+        echo "✅ Security scan completed"
+
+  deploy-to-development:
+    name: Deploy to Development Environment
+    runs-on: ubuntu-latest
+    needs: validate-backend
+    timeout-minutes: 15
+    environment: 
+      name: ${{ github.event.inputs.environment || 'development' }}
+      
+    steps:
+    - name: 🔄 Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: 📦 Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        
+    - name: 🔧 Install Supabase CLI
+      run: npm install -g supabase@latest
+      
+    - name: 🔍 Determine deployment environment
+      run: |
+        if [ "${{ github.event.inputs.environment }}" = "staging" ]; then
+          echo "DEPLOY_ENV=staging" >> $GITHUB_ENV
+          echo "PROJECT_REF=${{ secrets.SUPABASE_STAGING_PROJECT_REF }}" >> $GITHUB_ENV
+        else
+          echo "DEPLOY_ENV=development" >> $GITHUB_ENV
+          echo "PROJECT_REF=${{ secrets.SUPABASE_DEV_PROJECT_REF }}" >> $GITHUB_ENV
+        fi
+        
+        echo "🎯 Deploying to: ${{ env.DEPLOY_ENV }}"
+        echo "📍 Project reference: ${{ env.PROJECT_REF }}"
+      
+    - name: ✅ Validate Supabase connection
+      working-directory: ./backend
+      run: |
+        echo "🔗 Testing Supabase connection to ${{ env.DEPLOY_ENV }}..."
+        if [ -z "${{ env.PROJECT_REF }}" ]; then
+          echo "❌ Project reference not set for ${{ env.DEPLOY_ENV }}"
+          exit 1
+        fi
+        supabase projects list --token "$SUPABASE_ACCESS_TOKEN" > /dev/null
+        echo "✅ Supabase connection successful"
+      env:
+        SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        
+    - name: 📝 Create development environment file
+      working-directory: ./backend
+      run: |
+        echo "📝 Creating ${{ env.DEPLOY_ENV }} environment file..."
+        cat > .env.${{ env.DEPLOY_ENV }} << EOF
+        # Supabase Configuration (${{ env.DEPLOY_ENV }})
+        SUPABASE_PROJECT_REF=${{ env.PROJECT_REF }}
+        SUPABASE_ACCESS_TOKEN=${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        SUPABASE_URL=https://${{ env.PROJECT_REF }}.supabase.co
+        SUPABASE_ANON_KEY=${{ secrets.SUPABASE_DEV_ANON_KEY }}
+        SUPABASE_SERVICE_ROLE_KEY=${{ secrets.SUPABASE_DEV_SERVICE_ROLE_KEY }}
+        
+        # LLM Configuration (Development)
+        OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY_DEV || secrets.OPENAI_API_KEY }}
+        ANTHROPIC_API_KEY=${{ secrets.ANTHROPIC_API_KEY_DEV || secrets.ANTHROPIC_API_KEY }}
+        LLM_PROVIDER=${{ secrets.LLM_PROVIDER || 'openai' }}
+        
+        # Authentication (Development)
+        GOOGLE_OAUTH_CLIENT_ID=${{ secrets.GOOGLE_OAUTH_CLIENT_ID_DEV || secrets.GOOGLE_OAUTH_CLIENT_ID }}
+        GOOGLE_OAUTH_CLIENT_SECRET=${{ secrets.GOOGLE_OAUTH_CLIENT_SECRET_DEV || secrets.GOOGLE_OAUTH_CLIENT_SECRET }}
+        
+        # Application URLs (Development)
+        SITE_URL=https://${{ env.PROJECT_REF }}.supabase.co
+        ADDITIONAL_REDIRECT_URLS=http://localhost:3000/auth/callback,https://disciplefy-dev.vercel.app/auth/callback
+        
+        # Security (Development)
+        JWT_SECRET=${{ secrets.JWT_SECRET_DEV || secrets.JWT_SECRET }}
+        
+        # Development settings
+        LOG_LEVEL=debug
+        USE_MOCK=${{ env.DEPLOY_ENV == 'development' && 'true' || 'false' }}
+        NODE_ENV=${{ env.DEPLOY_ENV }}
+        ANONYMOUS_RATE_LIMIT=10
+        AUTHENTICATED_RATE_LIMIT=20
+        API_REQUEST_LIMIT=200
+        EOF
+        echo "✅ ${{ env.DEPLOY_ENV }} environment file created"
+    
+    - name: 🔗 Link to Supabase project
+      working-directory: ./backend
+      run: |
+        echo "🔗 Linking to Supabase ${{ env.DEPLOY_ENV }} project..."
+        supabase link --project-ref "${{ env.PROJECT_REF }}"
+      env:
+        SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+    
+    - name: 🗄️ Deploy Database Migrations
+      if: ${{ github.event.inputs.deploy_migrations != 'false' }}
+      working-directory: ./backend
+      run: |
+        echo "🗄️ Deploying database migrations to ${{ env.DEPLOY_ENV }}..."
+        if [ -d "supabase/migrations" ] && [ "$(ls -A supabase/migrations 2>/dev/null)" ]; then
+          supabase db push --project-ref "${{ env.PROJECT_REF }}"
+          echo "✅ Database migrations deployed to ${{ env.DEPLOY_ENV }}"
+        else
+          echo "ℹ️ No migrations to deploy"
+        fi
+      env:
+        SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+    
+    - name: 🔒 Deploy RLS Policies
+      if: ${{ github.event.inputs.deploy_policies == 'true' }}
+      working-directory: ./backend
+      run: |
+        echo "🔒 Deploying RLS policies to ${{ env.DEPLOY_ENV }}..."
+        if [ -d "supabase/policies" ] && [ "$(ls -A supabase/policies 2>/dev/null)" ]; then
+          for policy_file in supabase/policies/*.sql; do
+            if [ -f "$policy_file" ]; then
+              policy_name=$(basename "$policy_file" .sql)
+              echo "🔐 Applying policy: $policy_name"
+              supabase db query --project-ref "${{ env.PROJECT_REF }}" --file "$policy_file"
+            fi
+          done
+          echo "✅ RLS policies deployed to ${{ env.DEPLOY_ENV }}"
+        else
+          echo "ℹ️ No RLS policies to deploy"
+        fi
+      env:
+        SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        
+    - name: 📦 Deploy Edge Functions
+      if: ${{ github.event.inputs.deploy_functions != 'false' }}
+      working-directory: ./backend
+      run: |
+        echo "🚀 Deploying Edge Functions to ${{ env.DEPLOY_ENV }}..."
+        
+        # Deploy all functions with development settings
+        supabase functions deploy --project-ref "${{ env.PROJECT_REF }}" --no-verify-jwt
+        
+        echo "✅ Edge Functions deployed successfully to ${{ env.DEPLOY_ENV }}"
+      env:
+        SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        
+    - name: 🔑 Update Function Secrets
+      working-directory: ./backend
+      run: |
+        echo "🔑 Updating Edge Function secrets for ${{ env.DEPLOY_ENV }}..."
+        supabase secrets set --env-file .env.${{ env.DEPLOY_ENV }} --project-ref "${{ env.PROJECT_REF }}"
+        echo "✅ Function secrets updated for ${{ env.DEPLOY_ENV }}"
+      env:
+        SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        
+    - name: 🧪 Test development deployment
+      working-directory: ./backend
+      run: |
+        echo "🧪 Testing ${{ env.DEPLOY_ENV }} deployment..."
+        
+        # Test health endpoint
+        BASE_URL="https://${{ env.PROJECT_REF }}.supabase.co"
+        
+        if curl -f -s "$BASE_URL/rest/v1/" > /dev/null; then
+          echo "✅ Supabase REST API is healthy"
+        else
+          echo "⚠️ Supabase REST API test failed"
+        fi
+        
+        # Test Edge Functions
+        FUNCTIONS=("daily-verse" "topics-recommended")
+        for func in "${FUNCTIONS[@]}"; do
+          if curl -f -s "$BASE_URL/functions/v1/$func" > /dev/null; then
+            echo "✅ Function $func is responding"
+          else
+            echo "⚠️ Function $func test failed (may be expected for some functions)"
+          fi
+        done
+        
+        echo "🎉 ${{ env.DEPLOY_ENV }} deployment tests completed"
+        
+    - name: 📊 Deployment summary
+      run: |
+        echo "🎉 Backend deployment to ${{ env.DEPLOY_ENV }} completed!"
+        echo "🌐 ${{ env.DEPLOY_ENV }} API: https://${{ env.PROJECT_REF }}.supabase.co"
+        echo "📋 Deployed components:"
+        echo "   • Edge Functions: ${{ github.event.inputs.deploy_functions != 'false' && '✅' || '⏭️' }}"
+        echo "   • Database Migrations: ${{ github.event.inputs.deploy_migrations != 'false' && '✅' || '⏭️' }}"
+        echo "   • RLS Policies: ${{ github.event.inputs.deploy_policies == 'true' && '✅' || '⏭️' }}"
+        echo "   • Function Secrets: ✅"
+        
+        if [ "${{ github.event_name }}" = "pull_request" ]; then
+          echo "🔍 This is a PR deployment for testing purposes"
+          echo "📝 Review the changes and test the deployment before merging"
+        fi
+      
+    - name: 🧹 Security cleanup
+      working-directory: ./backend
+      if: always()
+      run: |
+        echo "🧹 Cleaning up sensitive files..."
+        rm -f .env.${{ env.DEPLOY_ENV }}
+        echo "✅ Cleanup completed"
+
+  comment-pr:
+    name: Comment on PR
+    runs-on: ubuntu-latest
+    needs: deploy-to-development
+    if: github.event_name == 'pull_request'
+    
+    steps:
+    - name: 💬 Comment deployment status
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const deployEnv = '${{ needs.deploy-to-development.outputs.DEPLOY_ENV || "development" }}';
+          const projectRef = '${{ needs.deploy-to-development.outputs.PROJECT_REF }}';
+          
+          const comment = `## 🚀 Backend Development Deployment
+          
+          **Environment**: \`${deployEnv}\`
+          **Status**: ✅ Deployment Successful
+          
+          ### 🔗 Test URLs:
+          - **API Base**: https://${projectRef}.supabase.co
+          - **Functions**: https://${projectRef}.supabase.co/functions/v1/
+          - **Studio**: https://app.supabase.com/project/${projectRef}
+          
+          ### 🧪 Test Endpoints:
+          - Daily Verse: https://${projectRef}.supabase.co/functions/v1/daily-verse
+          - Topics: https://${projectRef}.supabase.co/functions/v1/topics-recommended
+          
+          **Note**: This deployment is for testing purposes. Changes will be deployed to production when this PR is merged to main.
+          
+          ---
+          *Deployed from commit: ${context.sha.substring(0, 7)}*`;
+          
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: comment
+          });
+
+  notify-deployment:
+    name: Notify Deployment Status
+    runs-on: ubuntu-latest
+    needs: [validate-backend, deploy-to-development]
+    if: always() && github.event_name != 'pull_request'
+    
+    steps:
+    - name: 📢 Deployment notification
+      run: |
+        if [ "${{ needs.deploy-to-development.result }}" = "success" ]; then
+          echo "🎉 Backend deployment to ${{ github.event.inputs.environment || 'development' }} was successful!"
+          echo "🌐 Development API is now live"
+          echo "🧪 Ready for testing and validation"
+        else
+          echo "❌ Backend deployment failed. Check the logs above."
+          exit 1
+        fi

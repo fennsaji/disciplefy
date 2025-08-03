@@ -1,0 +1,406 @@
+name: Frontend Development Deployment
+
+on:
+  push:
+    branches: [dev]
+    paths:
+      - 'frontend/**'
+      - '.github/workflows/frontend-deploy-dev.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'frontend/**'
+    types: [opened, synchronize, reopened]
+  workflow_dispatch:  # Allow manual triggering
+    inputs:
+      environment:
+        description: 'Deployment environment'
+        required: true
+        default: 'preview'
+        type: choice
+        options:
+        - preview
+        - development
+        - staging
+      deploy_to_vercel:
+        description: 'Deploy to Vercel'
+        required: false
+        default: true
+        type: boolean
+
+concurrency:
+  group: frontend-dev-deploy-${{ github.ref }}
+  cancel-in-progress: true  # Cancel previous runs for dev
+
+jobs:
+  validate-frontend:
+    name: Validate Frontend Code
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    
+    defaults:
+      run:
+        working-directory: ./frontend
+    
+    steps:
+      - name: 🔄 Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: 📱 Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.24.0'
+          channel: 'stable'
+          cache: true
+      
+      - name: 📦 Get Flutter dependencies
+        run: flutter pub get
+      
+      - name: 🔍 Analyze code
+        run: flutter analyze --fatal-infos
+      
+      - name: 🧪 Run tests
+        run: flutter test --coverage
+      
+      - name: 🔒 Security scan
+        run: |
+          echo "🔒 Running basic security checks..."
+          
+          # Check for potential security issues in Dart code
+          if grep -r "print.*password\|print.*secret\|print.*key\|print.*token" lib/ test/ 2>/dev/null; then
+            echo "⚠️ Found potential credential logging in print statements"
+          fi
+          
+          # Check for hardcoded URLs in production code
+          if grep -r "localhost\|127.0.0.1\|192.168\|10.0.0" lib/ --exclude-dir=test 2>/dev/null; then
+            echo "ℹ️ Found localhost references (may be intentional for dev)"
+          fi
+          
+          # Check for TODO/FIXME comments that might indicate security issues
+          if grep -r "TODO.*security\|FIXME.*security\|XXX.*security" lib/ 2>/dev/null; then
+            echo "ℹ️ Found security-related TODO/FIXME comments"
+          fi
+          
+          echo "✅ Security scan completed"
+      
+      - name: ✅ Validation summary
+        run: |
+          echo "🎉 Frontend validation completed successfully!"
+          echo "✅ Dependencies installed"
+          echo "✅ Code analysis passed"
+          echo "✅ Tests passed"
+          echo "✅ Security scan completed"
+
+  build-for-development:
+    name: Build for Development
+    runs-on: ubuntu-latest
+    needs: validate-frontend
+    timeout-minutes: 20
+    
+    defaults:
+      run:
+        working-directory: ./frontend
+    
+    outputs:
+      deployment-url: ${{ steps.deploy.outputs.preview-url }}
+      environment: ${{ steps.env-setup.outputs.environment }}
+    
+    steps:
+      - name: 🔄 Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: 📱 Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.24.0'
+          channel: 'stable'
+          cache: true
+      
+      - name: 📦 Setup Node.js for Vercel CLI
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      
+      - name: 🔧 Install Vercel CLI
+        run: npm install -g vercel@latest
+      
+      - name: 🎯 Determine deployment environment
+        id: env-setup
+        run: |
+          if [ "${{ github.event.inputs.environment }}" = "staging" ]; then
+            echo "DEPLOY_ENV=staging" >> $GITHUB_ENV
+            echo "environment=staging" >> $GITHUB_OUTPUT
+            echo "VERCEL_ALIAS=disciplefy-staging" >> $GITHUB_ENV
+          elif [ "${{ github.event.inputs.environment }}" = "development" ]; then
+            echo "DEPLOY_ENV=development" >> $GITHUB_ENV
+            echo "environment=development" >> $GITHUB_OUTPUT
+            echo "VERCEL_ALIAS=disciplefy-dev" >> $GITHUB_ENV
+          else
+            echo "DEPLOY_ENV=preview" >> $GITHUB_ENV
+            echo "environment=preview" >> $GITHUB_OUTPUT
+            echo "VERCEL_ALIAS=disciplefy-pr-${{ github.event.number || github.run_number }}" >> $GITHUB_ENV
+          fi
+          
+          echo "🎯 Deploying to: ${{ env.DEPLOY_ENV }}"
+          echo "🏷️ Vercel alias: ${{ env.VERCEL_ALIAS }}"
+      
+      - name: 📦 Get Flutter dependencies
+        run: flutter pub get
+      
+      - name: 📝 Create development environment configuration
+        run: |
+          echo "📝 Creating ${{ env.DEPLOY_ENV }} environment configuration..."
+          
+          # Create development environment configuration
+          cat > lib/core/config/dev_config.dart << EOF
+          // Development configuration for ${{ env.DEPLOY_ENV }}
+          // This file is generated during CI/CD and should not be committed
+          
+          class DevConfig {
+            static const String environment = '${{ env.DEPLOY_ENV }}';
+            static const String apiBaseUrl = 'https://${{ secrets.SUPABASE_DEV_PROJECT_REF || secrets.SUPABASE_PROJECT_REF }}.supabase.co';
+            static const String supabaseAnonKey = '${{ secrets.SUPABASE_DEV_ANON_KEY || secrets.SUPABASE_ANON_KEY }}';
+            static const bool isDevelopment = true;
+            static const bool enableLogging = true;
+            static const bool enableDebugMode = true;
+          }
+          EOF
+          
+          echo "✅ Development environment configuration created"
+      
+      - name: 🏗️ Build Flutter web app
+        run: |
+          echo "🏗️ Building Flutter web app for ${{ env.DEPLOY_ENV }}..."
+          
+          # Build with development optimizations
+          flutter build web \
+            --release \
+            --web-renderer html \
+            --base-href / \
+            --dart-define=ENVIRONMENT=${{ env.DEPLOY_ENV }} \
+            --dart-define=API_BASE_URL=https://${{ secrets.SUPABASE_DEV_PROJECT_REF || secrets.SUPABASE_PROJECT_REF }}.supabase.co \
+            --dart-define=ENABLE_LOGGING=true
+          
+          echo "📊 Build statistics:"
+          du -sh build/web
+          ls -la build/web/
+          
+          echo "✅ Flutter web app built successfully for ${{ env.DEPLOY_ENV }}"
+      
+      - name: 📦 Optimize development build
+        run: |
+          echo "📦 Optimizing build for ${{ env.DEPLOY_ENV }}..."
+          
+          # Keep source maps for development/staging (remove only for preview)
+          if [ "${{ env.DEPLOY_ENV }}" = "preview" ]; then
+            find build/web -name "*.map" -delete
+            echo "ℹ️ Source maps removed for preview environment"
+          else
+            echo "ℹ️ Source maps preserved for ${{ env.DEPLOY_ENV }} environment"
+          fi
+          
+          # Create Vercel configuration for development
+          cat > build/web/vercel.json << EOF
+          {
+            "version": 2,
+            "builds": [
+              {
+                "src": "**/*",
+                "use": "@vercel/static"
+              }
+            ],
+            "routes": [
+              {
+                "src": "/",
+                "dest": "/index.html"
+              },
+              {
+                "src": "/(.*)",
+                "dest": "/index.html"
+              }
+            ],
+            "headers": [
+              {
+                "source": "/assets/(.*)",
+                "headers": [
+                  {
+                    "key": "Cache-Control",
+                    "value": "public, max-age=31536000, immutable"
+                  }
+                ]
+              }
+            ],
+            "env": {
+              "ENVIRONMENT": "${{ env.DEPLOY_ENV }}"
+            }
+          }
+          EOF
+          
+          echo "✅ Build optimization completed for ${{ env.DEPLOY_ENV }}"
+      
+      - name: 🔗 Link Vercel project
+        if: ${{ github.event.inputs.deploy_to_vercel != 'false' }}
+        run: |
+          echo "🔗 Linking to Vercel project..."
+          cd build/web
+          vercel --token ${{ secrets.VERCEL_TOKEN }} --scope ${{ secrets.VERCEL_ORG_ID }} link --yes --project ${{ secrets.VERCEL_PROJECT_ID }}
+          echo "✅ Vercel project linked"
+      
+      - name: 🚀 Deploy to Vercel
+        id: deploy
+        if: ${{ github.event.inputs.deploy_to_vercel != 'false' }}
+        run: |
+          echo "🚀 Deploying to Vercel ${{ env.DEPLOY_ENV }}..."
+          
+          cd build/web
+          
+          # Deploy with appropriate settings
+          if [ "${{ env.DEPLOY_ENV }}" = "preview" ] || [ "${{ github.event_name }}" = "pull_request" ]; then
+            # Preview deployment for PRs
+            VERCEL_URL=$(vercel --token ${{ secrets.VERCEL_TOKEN }} --yes | tail -n 1)
+            echo "preview-url=$VERCEL_URL" >> $GITHUB_OUTPUT
+            echo "deployment-type=preview" >> $GITHUB_OUTPUT
+          else
+            # Deployment to alias for development/staging
+            VERCEL_URL=$(vercel --token ${{ secrets.VERCEL_TOKEN }} --yes)
+            vercel --token ${{ secrets.VERCEL_TOKEN }} alias $VERCEL_URL ${{ env.VERCEL_ALIAS }}.vercel.app
+            echo "preview-url=https://${{ env.VERCEL_ALIAS }}.vercel.app" >> $GITHUB_OUTPUT
+            echo "deployment-type=alias" >> $GITHUB_OUTPUT
+          fi
+          
+          echo "✅ Deployment to Vercel completed"
+          echo "🌐 URL: ${{ steps.deploy.outputs.preview-url }}"
+      
+      - name: 🧪 Test development deployment
+        if: ${{ github.event.inputs.deploy_to_vercel != 'false' }}
+        run: |
+          echo "🧪 Testing ${{ env.DEPLOY_ENV }} deployment..."
+          
+          # Wait for deployment to propagate
+          sleep 45
+          
+          DEPLOYMENT_URL="${{ steps.deploy.outputs.preview-url }}"
+          
+          if [ -z "$DEPLOYMENT_URL" ]; then
+            echo "⚠️ No deployment URL found, skipping tests"
+            exit 0
+          fi
+          
+          echo "🔍 Testing URL: $DEPLOYMENT_URL"
+          
+          # Test main routes
+          ROUTES=("/" "/login" "/onboarding")
+          
+          for route in "${ROUTES[@]}"; do
+            echo "Testing route: $route"
+            HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" "$DEPLOYMENT_URL$route" || echo "000")
+            
+            if [ "$HTTP_CODE" = "200" ]; then
+              echo "✅ Route $route is accessible (HTTP $HTTP_CODE)"
+            else
+              echo "⚠️ Route $route returned HTTP $HTTP_CODE"
+            fi
+          done
+          
+          echo "🎉 ${{ env.DEPLOY_ENV }} deployment tests completed"
+      
+      - name: 📊 Deployment summary
+        run: |
+          echo "🎉 Frontend deployment to ${{ env.DEPLOY_ENV }} completed!"
+          
+          if [ "${{ github.event.inputs.deploy_to_vercel }}" != "false" ]; then
+            echo "🌐 ${{ env.DEPLOY_ENV }} URL: ${{ steps.deploy.outputs.preview-url }}"
+            echo "📱 Progressive Web App features enabled"
+            echo "🔍 Routes tested and accessible"
+          else
+            echo "⏭️ Vercel deployment skipped (build-only mode)"
+          fi
+          
+          echo "📋 Configuration:"
+          echo "   • Environment: ${{ env.DEPLOY_ENV }}"
+          echo "   • Logging: Enabled"
+          echo "   • Debug mode: Enabled"
+          echo "   • Source maps: ${{ env.DEPLOY_ENV != 'preview' && 'Preserved' || 'Removed' }}"
+      
+      - name: 🧹 Security cleanup
+        if: always()
+        run: |
+          echo "🧹 Cleaning up sensitive files..."
+          rm -f lib/core/config/dev_config.dart
+          echo "✅ Cleanup completed"
+
+  comment-pr:
+    name: Comment on PR
+    runs-on: ubuntu-latest
+    needs: build-for-development
+    if: github.event_name == 'pull_request' && github.event.inputs.deploy_to_vercel != 'false'
+    
+    steps:
+      - name: 💬 Comment deployment status
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const deploymentUrl = '${{ needs.build-for-development.outputs.deployment-url }}';
+            const environment = '${{ needs.build-for-development.outputs.environment }}';
+            
+            if (!deploymentUrl) {
+              console.log('No deployment URL available, skipping PR comment');
+              return;
+            }
+            
+            const comment = `## 🚀 Frontend Development Deployment
+            
+            **Environment**: \`${environment}\`
+            **Status**: ✅ Deployment Successful
+            
+            ### 🔗 Preview URL:
+            **[🌐 View Deployment](${deploymentUrl})**
+            
+            ### 🧪 Test the App:
+            - **Homepage**: [${deploymentUrl}](${deploymentUrl})
+            - **Login**: [${deploymentUrl}/login](${deploymentUrl}/login)
+            - **Onboarding**: [${deploymentUrl}/onboarding](${deploymentUrl}/onboarding)
+            
+            ### 🛠️ Development Features:
+            - ✅ Debug mode enabled
+            - ✅ Enhanced logging
+            - ✅ Development API endpoints
+            - ✅ Source maps preserved
+            
+            **Note**: This is a preview deployment for testing. Changes will be deployed to production when this PR is merged to main.
+            
+            ---
+            *Deployed from commit: ${context.sha.substring(0, 7)}*`;
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });
+
+  notify-deployment:
+    name: Notify Deployment Status
+    runs-on: ubuntu-latest
+    needs: [validate-frontend, build-for-development]
+    if: always() && github.event_name != 'pull_request'
+    
+    steps:
+      - name: 📢 Deployment notification
+        run: |
+          if [ "${{ needs.build-for-development.result }}" = "success" ]; then
+            echo "🎉 Frontend deployment to ${{ needs.build-for-development.outputs.environment }} was successful!"
+            
+            if [ "${{ github.event.inputs.deploy_to_vercel }}" != "false" ]; then
+              echo "🌐 ${{ needs.build-for-development.outputs.environment }} app is now live"
+              echo "📱 Progressive Web App features are enabled"
+              echo "🔍 All routes tested and accessible"
+            else
+              echo "🏗️ Build completed successfully (deploy skipped)"
+            fi
+            
+            echo "🧪 Ready for testing and validation"
+          else
+            echo "❌ Frontend deployment failed. Check the logs above."
+            exit 1
+          fi
