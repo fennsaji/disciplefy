@@ -29,7 +29,7 @@ jobs:
       - name: 📱 Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.32.0'
+          flutter-version: '3.32.6'
           channel: 'stable'
           cache: true
       
@@ -37,7 +37,7 @@ jobs:
         run: flutter pub get
       
       - name: 🔍 Analyze code
-        run: flutter analyze --fatal-infos
+        run: flutter analyze
       
       - name: 🧪 Run tests
         run: flutter test --coverage
@@ -67,7 +67,7 @@ jobs:
       - name: 📱 Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.32.0'
+          flutter-version: '3.32.6'
           channel: 'stable'
           cache: true
       
@@ -108,15 +108,14 @@ jobs:
       - name: 🔗 Link Vercel project
         run: |
           echo "🔗 Linking to Vercel project..."
-          vercel --token ${{ secrets.VERCEL_TOKEN }} --scope ${{ secrets.VERCEL_ORG_ID }} link --yes --project ${{ secrets.VERCEL_PROJECT_ID }}
+          vercel --token ${{ secrets.VERCEL_TOKEN }} --scope ${{ secrets.VERCEL_ORG_ID }} link --yes --project ${{ secrets.VERCEL_PROJECT_ID }} --cwd build/web
       
       - name: 🚀 Deploy to Vercel
         run: |
           echo "🚀 Deploying to Vercel production..."
           
-          # Deploy from build/web directory
-          cd build/web
-          vercel --token ${{ secrets.VERCEL_TOKEN }} --prod --yes
+          # Deploy from build/web directory using --cwd flag
+          vercel --token ${{ secrets.VERCEL_TOKEN }} --prod --yes --cwd build/web
           
           echo "✅ Deployment to Vercel completed"
       

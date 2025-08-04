@@ -228,9 +228,10 @@ jobs:
       working-directory: ./backend
       run: |
         echo "🔗 Linking to Supabase ${{ env.DEPLOY_ENV }} project..."
-        supabase link --project-ref "${{ env.PROJECT_REF }}"
+        supabase link --project-ref "${{ env.PROJECT_REF }}" --password "$SUPABASE_DB_PASSWORD"
       env:
         SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DEV_DB_PASSWORD }}
     
     - name: 🗄️ Deploy Database Migrations
       if: ${{ github.event.inputs.deploy_migrations != 'false' }}
