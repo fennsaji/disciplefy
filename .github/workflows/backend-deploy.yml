@@ -135,7 +135,7 @@ jobs:
       run: |
         export PATH="$HOME/.local/bin:$PATH"
         echo "🔗 Testing Supabase connection to production..."
-        supabase projects list --token "$SUPABASE_ACCESS_TOKEN" > /dev/null
+        supabase projects list > /dev/null
         echo "✅ Supabase connection successful"
       env:
         SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
