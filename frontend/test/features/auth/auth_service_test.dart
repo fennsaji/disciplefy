@@ -1,338 +1,231 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/mockito.dart';
 import 'package:mockito/annotations.dart';
-import 'package:http/http.dart' as http;
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:google_sign_in/google_sign_in.dart';
-import 'dart:convert';
 
 import 'package:disciplefy_bible_study/features/auth/data/services/auth_service.dart';
+import 'package:disciplefy_bible_study/features/auth/data/services/authentication_service.dart';
+import 'package:disciplefy_bible_study/features/auth/data/services/auth_storage_service.dart';
+import 'package:disciplefy_bible_study/features/auth/domain/entities/auth_params.dart';
 
 import 'auth_service_test.mocks.dart';
 
 @GenerateMocks([
-  http.Client,
-  SupabaseClient,
-  GoTrueClient,
-  GoogleSignIn,
-  GoogleSignInAccount,
-  GoogleSignInAuthentication,
   User,
+  AuthenticationService,
+  AuthStorageService,
 ])
 void main() {
   late AuthService authService;
-  late MockSupabaseClient mockSupabaseClient;
-  late MockGoTrueClient mockGoTrueClient;
-  late MockGoogleSignIn mockGoogleSignIn;
-  late MockGoogleSignInAccount mockGoogleSignInAccount;
-  late MockGoogleSignInAuthentication mockGoogleSignInAuth;
+  late MockAuthenticationService mockAuthService;
+  late MockAuthStorageService mockStorageService;
   late MockUser mockUser;
 
   setUp(() {
-    mockSupabaseClient = MockSupabaseClient();
-    mockGoTrueClient = MockGoTrueClient();
-    mockGoogleSignIn = MockGoogleSignIn();
-    mockGoogleSignInAccount = MockGoogleSignInAccount();
-    mockGoogleSignInAuth = MockGoogleSignInAuthentication();
+    mockAuthService = MockAuthenticationService();
+    mockStorageService = MockAuthStorageService();
     mockUser = MockUser();
 
-    // Setup Supabase client mock
-    when(mockSupabaseClient.auth).thenReturn(mockGoTrueClient);
-    
-    // Initialize auth service
-    authService = AuthService();
-    
-    // Replace internal dependencies with mocks
-    // Note: This would require exposing internal dependencies or dependency injection
+    // Initialize auth service with mocked dependencies
+    authService = AuthService(
+      authenticationService: mockAuthService,
+      storageService: mockStorageService,
+    );
   });
 
-  group('Google OAuth Callback Tests', () {
-    test('should successfully process Google OAuth callback', () async {
+  group('AuthService Facade Tests', () {
+    test('should delegate currentUser to AuthenticationService', () {
       // Arrange
-      const String testCode = 'test_authorization_code';
-      const String testState = 'test_csrf_state';
-      
-      final mockResponse = {
-        'success': true,
-        'session': {
-          'access_token': 'test_access_token',
-          'refresh_token': 'test_refresh_token',
-          'expires_in': 3600,
-          'user': {
-            'id': 'test_user_id',
-            'email': 'test@example.com',
-            'email_verified': true,
-            'name': 'Test User',
-            'picture': 'https://example.com/avatar.jpg',
-            'provider': 'google'
-          }
-        }
-      };
-
-      // Mock HTTP response
-      final mockHttpResponse = http.Response(
-        jsonEncode(mockResponse),
-        200,
-        headers: {'content-type': 'application/json'},
-      );
-
-      // Mock Supabase setSession
-      when(mockGoTrueClient.setSession(any, any))
-          .thenAnswer((_) async => const AuthResponse());
+      when(mockAuthService.currentUser).thenReturn(mockUser);
 
       // Act
-      final result = await authService.processGoogleOAuthCallback(
-        code: testCode,
-        state: testState,
-      );
+      final result = authService.currentUser;
+
+      // Assert
+      expect(result, mockUser);
+      verify(mockAuthService.currentUser).called(1);
+    });
+
+    test('should delegate isAuthenticated to AuthenticationService', () {
+      // Arrange
+      when(mockAuthService.isAuthenticated).thenReturn(true);
+
+      // Act
+      final result = authService.isAuthenticated;
 
       // Assert
       expect(result, true);
+      verify(mockAuthService.isAuthenticated).called(1);
     });
 
-    test('should handle OAuth error from callback', () async {
+    test('should delegate isAuthenticatedAsync to AuthenticationService', () async {
       // Arrange
-      const String testError = 'access_denied';
-      const String testErrorDescription = 'User cancelled the authentication';
-
-      // Act & Assert
-      expect(
-        () => authService.processGoogleOAuthCallback(
-          code: 'dummy_code',
-          error: testError,
-          errorDescription: testErrorDescription,
-        ),
-        throwsException,
-      );
-    });
-
-    test('should handle API error response', () async {
-      // Arrange
-      const String testCode = 'test_authorization_code';
-      
-      final mockErrorResponse = {
-        'success': false,
-        'error': 'INVALID_REQUEST',
-        'message': 'Invalid authorization code'
-      };
-
-      final mockHttpResponse = http.Response(
-        jsonEncode(mockErrorResponse),
-        400,
-        headers: {'content-type': 'application/json'},
-      );
-
-      // Act & Assert
-      expect(
-        () => authService.processGoogleOAuthCallback(code: testCode),
-        throwsException,
-      );
-    });
-
-    test('should handle rate limit error', () async {
-      // Arrange
-      const String testCode = 'test_authorization_code';
-      
-      final mockErrorResponse = {
-        'success': false,
-        'error': 'RATE_LIMITED',
-        'message': 'Too many requests'
-      };
-
-      final mockHttpResponse = http.Response(
-        jsonEncode(mockErrorResponse),
-        429,
-        headers: {'content-type': 'application/json'},
-      );
-
-      // Act & Assert
-      expect(
-        () => authService.processGoogleOAuthCallback(code: testCode),
-        throwsA(isA<Exception>().having(
-          (e) => e.toString(),
-          'message',
-          contains('Too many login attempts'),
-        )),
-      );
-    });
-
-    test('should handle CSRF validation error', () async {
-      // Arrange
-      const String testCode = 'test_authorization_code';
-      
-      final mockErrorResponse = {
-        'success': false,
-        'error': 'CSRF_VALIDATION_FAILED',
-        'message': 'CSRF token validation failed'
-      };
-
-      final mockHttpResponse = http.Response(
-        jsonEncode(mockErrorResponse),
-        400,
-        headers: {'content-type': 'application/json'},
-      );
-
-      // Act & Assert
-      expect(
-        () => authService.processGoogleOAuthCallback(code: testCode),
-        throwsA(isA<Exception>().having(
-          (e) => e.toString(),
-          'message',
-          contains('Security validation failed'),
-        )),
-      );
-    });
-
-    test('should include guest session ID in callback request', () async {
-      // Arrange
-      const String testCode = 'test_authorization_code';
-      const String testGuestSessionId = 'guest_session_123';
-      
-      // Mock anonymous user
-      when(mockUser.id).thenReturn(testGuestSessionId);
-      when(mockUser.isAnonymous).thenReturn(true);
-      when(mockGoTrueClient.currentUser).thenReturn(mockUser);
-
-      final mockResponse = {
-        'success': true,
-        'session': {
-          'access_token': 'test_access_token',
-          'refresh_token': 'test_refresh_token',
-          'expires_in': 3600,
-          'user': {
-            'id': 'test_user_id',
-            'email': 'test@example.com',
-          }
-        }
-      };
-
-      final mockHttpResponse = http.Response(
-        jsonEncode(mockResponse),
-        200,
-        headers: {'content-type': 'application/json'},
-      );
+      when(mockAuthService.isAuthenticatedAsync()).thenAnswer((_) async => true);
 
       // Act
-      final result = await authService.processGoogleOAuthCallback(
-        code: testCode,
-      );
+      final result = await authService.isAuthenticatedAsync();
 
       // Assert
       expect(result, true);
-      // Verify that the X-Anonymous-Session-ID header was included
-      // This would require mocking the HTTP client and verifying the request
-    });
-  });
-
-  group('Google Sign-In Tests', () {
-    test('should handle Google Sign-In cancellation', () async {
-      // Arrange
-      when(mockGoogleSignIn.signIn()).thenAnswer((_) async => null);
-
-      // Act & Assert
-      expect(
-        () => authService.signInWithGoogle(),
-        throwsA(isA<Exception>().having(
-          (e) => e.toString(),
-          'message',
-          contains('cancelled'),
-        )),
-      );
+      verify(mockAuthService.isAuthenticatedAsync()).called(1);
     });
 
-    test('should handle missing Google authentication tokens', () async {
+    test('should delegate signInWithGoogle to AuthenticationService', () async {
       // Arrange
-      when(mockGoogleSignIn.signIn()).thenAnswer((_) async => mockGoogleSignInAccount);
-      when(mockGoogleSignInAccount.authentication).thenAnswer((_) async => mockGoogleSignInAuth);
-      when(mockGoogleSignInAuth.accessToken).thenReturn(null);
-      when(mockGoogleSignInAuth.idToken).thenReturn(null);
-
-      // Act & Assert
-      expect(
-        () => authService.signInWithGoogle(),
-        throwsA(isA<Exception>().having(
-          (e) => e.toString(),
-          'message',
-          contains('Failed to get Google authentication tokens'),
-        )),
-      );
-    });
-
-    test('should successfully sign in with Google on mobile', () async {
-      // Arrange
-      when(mockGoogleSignIn.signIn()).thenAnswer((_) async => mockGoogleSignInAccount);
-      when(mockGoogleSignInAccount.authentication).thenAnswer((_) async => mockGoogleSignInAuth);
-      when(mockGoogleSignInAuth.accessToken).thenReturn('test_access_token');
-      when(mockGoogleSignInAuth.idToken).thenReturn('test_id_token');
-
-      final mockResponse = {
-        'success': true,
-        'session': {
-          'access_token': 'test_access_token',
-          'refresh_token': 'test_refresh_token',
-          'expires_in': 3600,
-          'user': {
-            'id': 'test_user_id',
-            'email': 'test@example.com',
-          }
-        }
-      };
-
-      final mockHttpResponse = http.Response(
-        jsonEncode(mockResponse),
-        200,
-        headers: {'content-type': 'application/json'},
-      );
-
-      // Mock Supabase setSession
-      when(mockGoTrueClient.setSession(any, any))
-          .thenAnswer((_) async => const AuthResponse());
+      when(mockAuthService.signInWithGoogle()).thenAnswer((_) async => true);
 
       // Act
       final result = await authService.signInWithGoogle();
 
       // Assert
       expect(result, true);
+      verify(mockAuthService.signInWithGoogle()).called(1);
+    });
+
+    test('should delegate processGoogleOAuthCallback to AuthenticationService', () async {
+      // Arrange
+      const params = GoogleOAuthCallbackParams(code: 'test_code');
+      when(mockAuthService.processGoogleOAuthCallback(params)).thenAnswer((_) async => true);
+
+      // Act
+      final result = await authService.processGoogleOAuthCallback(params);
+
+      // Assert
+      expect(result, true);
+      verify(mockAuthService.processGoogleOAuthCallback(params)).called(1);
+    });
+
+    test('should delegate signInWithApple to AuthenticationService', () async {
+      // Arrange
+      when(mockAuthService.signInWithApple()).thenAnswer((_) async => true);
+
+      // Act
+      final result = await authService.signInWithApple();
+
+      // Assert
+      expect(result, true);
+      verify(mockAuthService.signInWithApple()).called(1);
+    });
+
+    test('should delegate signInAnonymously to AuthenticationService', () async {
+      // Arrange
+      when(mockAuthService.signInAnonymously()).thenAnswer((_) async => true);
+
+      // Act
+      final result = await authService.signInAnonymously();
+
+      // Assert
+      expect(result, true);
+      verify(mockAuthService.signInAnonymously()).called(1);
+    });
+
+    test('should delegate signOut to AuthenticationService', () async {
+      // Arrange
+      when(mockAuthService.signOut()).thenAnswer((_) async {});
+
+      // Act
+      await authService.signOut();
+
+      // Assert
+      verify(mockAuthService.signOut()).called(1);
+    });
+
+    test('should delegate deleteAccount to AuthenticationService', () async {
+      // Arrange
+      when(mockAuthService.deleteAccount()).thenAnswer((_) async {});
+
+      // Act
+      await authService.deleteAccount();
+
+      // Assert
+      verify(mockAuthService.deleteAccount()).called(1);
+    });
+
+    test('should delegate createAnonymousUser to AuthenticationService', () {
+      // Arrange
+      when(mockAuthService.createAnonymousUser()).thenReturn(mockUser);
+
+      // Act
+      final result = authService.createAnonymousUser();
+
+      // Assert
+      expect(result, mockUser);
+      verify(mockAuthService.createAnonymousUser()).called(1);
     });
   });
 
-  group('Session Management Tests', () {
-    test('should get guest session ID when user is anonymous', () async {
+  group('Storage Facade Tests', () {
+    test('should delegate getUserType to AuthStorageService', () async {
       // Arrange
-      const String testGuestSessionId = 'guest_session_123';
-      when(mockUser.id).thenReturn(testGuestSessionId);
-      when(mockUser.isAnonymous).thenReturn(true);
-      when(mockGoTrueClient.currentUser).thenReturn(mockUser);
+      when(mockStorageService.getUserType()).thenAnswer((_) async => 'google');
 
       // Act
-      final result = await authService.getCurrentUser();
+      final result = await authService.getUserType();
 
       // Assert
-      expect(result?.id, testGuestSessionId);
-      expect(result?.isAnonymous, true);
+      expect(result, 'google');
+      verify(mockStorageService.getUserType()).called(1);
     });
 
-    test('should return null guest session ID when user is not anonymous', () async {
+    test('should delegate getUserId to AuthStorageService', () async {
       // Arrange
-      when(mockUser.isAnonymous).thenReturn(false);
-      when(mockGoTrueClient.currentUser).thenReturn(mockUser);
+      when(mockStorageService.getUserId()).thenAnswer((_) async => 'user123');
 
       // Act
-      final result = await authService.getCurrentUser();
+      final result = await authService.getUserId();
 
       // Assert
-      expect(result?.isAnonymous, false);
+      expect(result, 'user123');
+      verify(mockStorageService.getUserId()).called(1);
     });
 
-    test('should return null guest session ID when no user', () async {
+    test('should delegate isOnboardingCompleted to AuthStorageService', () async {
       // Arrange
-      when(mockGoTrueClient.currentUser).thenReturn(null);
+      when(mockStorageService.isOnboardingCompleted()).thenAnswer((_) async => true);
 
       // Act
-      final result = await authService.getCurrentUser();
+      final result = await authService.isOnboardingCompleted();
 
       // Assert
-      expect(result, null);
+      expect(result, true);
+      verify(mockStorageService.isOnboardingCompleted()).called(1);
+    });
+
+    test('should delegate storeAuthData to AuthStorageService', () async {
+      // Arrange
+      const params = AuthDataStorageParams(
+        accessToken: 'token123',
+        userType: 'google',
+        userId: 'user123',
+      );
+      when(mockStorageService.storeAuthData(params)).thenAnswer((_) async {});
+
+      // Act
+      await authService.storeAuthData(params);
+
+      // Assert
+      verify(mockStorageService.storeAuthData(params)).called(1);
+    });
+
+    test('should delegate clearAllData to AuthStorageService', () async {
+      // Arrange
+      when(mockStorageService.clearAllData()).thenAnswer((_) async {});
+
+      // Act
+      await authService.clearAllData();
+
+      // Assert
+      verify(mockStorageService.clearAllData()).called(1);
+    });
+  });
+
+  group('Disposal Tests', () {
+    test('should delegate dispose to AuthenticationService', () {
+      // Act
+      authService.dispose();
+
+      // Assert
+      verify(mockAuthService.dispose()).called(1);
     });
   });
 }

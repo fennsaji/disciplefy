@@ -43,19 +43,18 @@ class OAuthRedirectHandler {
   Future<void> _handleRedirectUrl(String url) async {
     try {
       final Uri uri = Uri.parse(url);
-      
+
       // Check if this is a valid OAuth callback scheme
       if (AppConfig.oauthRedirectSchemes.contains(uri.scheme)) {
-        
         // Extract parameters from URL
         final Map<String, String> params = uri.queryParameters;
-        
+
         // Check for OAuth parameters
         final String? code = params['code'];
         final String? state = params['state'];
         final String? error = params['error'];
         final String? errorDescription = params['error_description'];
-        
+
         if (code != null) {
           // Process successful OAuth callback
           await _authService.processGoogleOAuthCallback(
@@ -89,7 +88,7 @@ class OAuthRedirectHandler {
   Future<void> launchOAuthUrl(String url) async {
     try {
       final Uri uri = Uri.parse(url);
-      
+
       if (await canLaunchUrl(uri)) {
         await launchUrl(
           uri,

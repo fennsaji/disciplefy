@@ -3,88 +3,77 @@
 abstract class AuthException implements Exception {
   final String message;
   final String? code;
-  
+
   const AuthException(this.message, {this.code});
-  
+
   @override
   String toString() => message;
 }
 
 /// Rate limiting exception
 class RateLimitException extends AuthException {
-  const RateLimitException([String? message]) 
-    : super(message ?? 'Too many login attempts. Please try again later.', 
-            code: 'RATE_LIMITED');
+  const RateLimitException([String? message])
+      : super(message ?? 'Too many login attempts. Please try again later.', code: 'RATE_LIMITED');
 }
 
 /// CSRF validation failure exception
 class CsrfValidationException extends AuthException {
   const CsrfValidationException([String? message])
-    : super(message ?? 'Security validation failed. Please try again.', 
-            code: 'CSRF_VALIDATION_FAILED');
+      : super(message ?? 'Security validation failed. Please try again.', code: 'CSRF_VALIDATION_FAILED');
 }
 
 /// OAuth cancelled by user exception
 class OAuthCancelledException extends AuthException {
   const OAuthCancelledException([String? message])
-    : super(message ?? 'Google login was cancelled', 
-            code: 'OAUTH_CANCELLED');
+      : super(message ?? 'Google login was cancelled', code: 'OAUTH_CANCELLED');
 }
 
 /// Network connectivity exception
 class NetworkException extends AuthException {
   const NetworkException([String? message])
-    : super(message ?? 'Network error. Please check your connection.', 
-            code: 'NETWORK_ERROR');
+      : super(message ?? 'Network error. Please check your connection.', code: 'NETWORK_ERROR');
 }
 
 /// Invalid request exception
 class InvalidRequestException extends AuthException {
   const InvalidRequestException([String? message])
-    : super(message ?? 'Invalid login request. Please try again.', 
-            code: 'INVALID_REQUEST');
+      : super(message ?? 'Invalid login request. Please try again.', code: 'INVALID_REQUEST');
 }
 
 /// Authentication configuration exception
 class AuthConfigException extends AuthException {
   const AuthConfigException([String? message])
-    : super(message ?? 'Authentication configuration error.', 
-            code: 'AUTH_CONFIG_ERROR');
+      : super(message ?? 'Authentication configuration error.', code: 'AUTH_CONFIG_ERROR');
 }
 
 /// Session expired exception
 class SessionExpiredException extends AuthException {
   const SessionExpiredException([String? message])
-    : super(message ?? 'Your session has expired. Please sign in again.', 
-            code: 'SESSION_EXPIRED');
+      : super(message ?? 'Your session has expired. Please sign in again.', code: 'SESSION_EXPIRED');
 }
 
 /// User not found exception
 class UserNotFoundException extends AuthException {
-  const UserNotFoundException([String? message])
-    : super(message ?? 'User account not found.', 
-            code: 'USER_NOT_FOUND');
+  const UserNotFoundException([String? message]) : super(message ?? 'User account not found.', code: 'USER_NOT_FOUND');
 }
 
 /// Permission denied exception
 class PermissionDeniedException extends AuthException {
   const PermissionDeniedException([String? message])
-    : super(message ?? 'Permission denied. Insufficient privileges.', 
-            code: 'PERMISSION_DENIED');
+      : super(message ?? 'Permission denied. Insufficient privileges.', code: 'PERMISSION_DENIED');
 }
 
 /// Generic authentication failure
 class AuthenticationFailedException extends AuthException {
   const AuthenticationFailedException([String? message])
-    : super(message ?? 'Authentication failed. Please try again.', 
-            code: 'AUTH_FAILED');
+      : super(message ?? 'Authentication failed. Please try again.', code: 'AUTH_FAILED');
 }
 
 /// Error severity levels for UI handling
 enum ErrorSeverity {
-  info,    // User cancelled action - low severity
-  warning, // Rate limit, temporary issue - medium severity  
-  error,   // Authentication failed - high severity
+  info, // User cancelled action - low severity
+  warning, // Rate limit, temporary issue - medium severity
+  error, // Authentication failed - high severity
   critical // System error - critical severity
 }
 

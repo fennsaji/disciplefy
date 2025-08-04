@@ -28,46 +28,46 @@ jobs:
     timeout-minutes: 10
     
     steps:
-    - name: Checkout repository
+    - name: 🔄 Checkout repository
       uses: actions/checkout@v4
       
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
+    - name: 🦕 Setup Deno
+      uses: denoland/setup-deno@v2
       with:
-        node-version: '20'
-        cache: 'npm'
-        cache-dependency-path: 'backend/package*.json'
+        deno-version: v2.4.x
         
-    - name: Install dependencies
+    - name: 🔧 Verify Deno installation
+      run: |
+        deno --version
+        echo "✅ Deno is ready for TypeScript compilation checks"
+        
+    - name: 🔍 TypeScript compilation check
       working-directory: ./backend
       run: |
-        if [ -f package.json ]; then
-          npm ci
-        else
-          echo "No package.json found, skipping npm install"
-        fi
-        
-    - name: TypeScript compilation check
-      working-directory: ./backend
-      run: |
-        # Check if TypeScript files can be compiled
+        # Check if TypeScript files can be compiled using Deno
         find supabase/functions -name "*.ts" -type f | while read -r file; do
           echo "Checking TypeScript syntax: $file"
-          npx tsc --noEmit --skipLibCheck "$file" 2>/dev/null || {
+          deno check "$file" || {
             echo "❌ TypeScript error in $file"
             exit 1
           }
         done
         echo "✅ All TypeScript files are valid"
         
-    - name: Validate Edge Function structure
+    - name: 🧪 Validate Edge Function structure
       working-directory: ./backend
       run: |
         echo "🔍 Validating Edge Function structure..."
         
-        # Check that each function has an index.ts file
+        # Check that each function has an index.ts file (exclude _shared directory)
         for func_dir in supabase/functions/*/; do
           func_name=$(basename "$func_dir")
+          
+          # Skip _shared directory as it's not a function
+          if [ "$func_name" = "_shared" ]; then
+            echo "ℹ️ Skipping _shared directory (utility/shared code)"
+            continue
+          fi
           
           if [ ! -f "${func_dir}index.ts" ]; then
             echo "❌ Missing index.ts in function: $func_name"
@@ -81,6 +81,23 @@ jobs:
           
           echo "✅ Function $func_name structure is valid"
         done
+        
+    - name: 🔒 Security scan
+      working-directory: ./backend
+      run: |
+        echo "🔒 Running basic security checks..."
+        
+        # Check for potential security issues
+        if grep -r "console.log.*password\|console.log.*secret\|console.log.*key" supabase/functions/ 2>/dev/null; then
+          echo "⚠️ Found potential credential logging"
+        fi
+        
+        # Check for hardcoded URLs
+        if grep -r "localhost\|127.0.0.1" supabase/functions/ --exclude-dir=node_modules 2>/dev/null; then
+          echo "ℹ️ Found localhost references (may be intentional for dev)"
+        fi
+        
+        echo "✅ Security scan completed"
 
   deploy-functions:
     name: Deploy to Supabase
@@ -91,7 +108,7 @@ jobs:
       name: ${{ github.event.inputs.environment || 'production' }}
       
     steps:
-    - name: Checkout repository
+    - name: 🔄 Checkout repository
       uses: actions/checkout@v4
       
     - name: Setup Node.js
@@ -99,19 +116,31 @@ jobs:
       with:
         node-version: '20'
         
-    - name: Install Supabase CLI
-      run: npm install -g supabase@1.123.4
+    - name: 🔧 Install Supabase CLI
+      run: |
+        # Install Supabase CLI using GitHub releases (latest version)
+        SUPABASE_VERSION="2.33.9"
+        curl -fsSL "https://github.com/supabase/cli/releases/download/v${SUPABASE_VERSION}/supabase_linux_amd64.tar.gz" | tar -xz -C /tmp
+        sudo mv /tmp/supabase /usr/local/bin/supabase
+        chmod +x /usr/local/bin/supabase
+        
+    - name: ✅ Verify Supabase CLI
+      run: |
+        # Make sure CLI is accessible
+        supabase --version
+        echo "✅ Supabase CLI is ready"
       
-    - name: Validate Supabase connection
+    - name: ✅ Validate Supabase connection
       working-directory: ./backend
       run: |
-        echo "🔗 Testing Supabase connection..."
+        export PATH="$HOME/.local/bin:$PATH"
+        echo "🔗 Testing Supabase connection to production..."
         supabase projects list --token "$SUPABASE_ACCESS_TOKEN" > /dev/null
         echo "✅ Supabase connection successful"
       env:
         SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
         
-    - name: Create production environment file
+    - name: 📝 Create production environment file
       working-directory: ./backend
       run: |
         echo "📝 Creating production environment file..."
@@ -146,7 +175,7 @@ jobs:
         EOF
         echo "✅ Production environment file created"
     
-    - name: Link to Supabase project
+    - name: 🔗 Link to Supabase project
       working-directory: ./backend
       run: |
         echo "🔗 Linking to Supabase project..."
@@ -155,7 +184,7 @@ jobs:
         SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
         SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
     
-    - name: Deploy Database Migrations
+    - name: 🗄️ Deploy Database Migrations
       working-directory: ./backend
       run: |
         echo "🗄️ Deploying database migrations..."
@@ -169,7 +198,7 @@ jobs:
         SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
         SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
     
-    - name: Deploy RLS Policies
+    - name: 🔒 Deploy RLS Policies
       working-directory: ./backend
       run: |
         echo "🔒 Deploying RLS policies..."
@@ -189,7 +218,7 @@ jobs:
         SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
         SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
         
-    - name: Deploy Edge Functions
+    - name: 📦 Deploy Edge Functions
       working-directory: ./backend
       run: |
         echo "🚀 Deploying Edge Functions to ${{ github.event.inputs.environment || 'production' }}..."
@@ -202,7 +231,7 @@ jobs:
         SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
         SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
         
-    - name: Update Function Secrets
+    - name: 🔑 Update Function Secrets
       working-directory: ./backend
       run: |
         echo "🔑 Updating Edge Function secrets..."
@@ -212,7 +241,7 @@ jobs:
         SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
         SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
         
-    - name: Verify deployment
+    - name: 🧪 Verify deployment
       working-directory: ./backend
       run: |
         echo "🔍 Verifying deployment..."
@@ -253,7 +282,18 @@ jobs:
         SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
         SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
         
-    - name: Security Cleanup
+    - name: 📊 Deployment summary
+      run: |
+        echo "🎉 Backend deployment to ${{ github.event.inputs.environment || 'production' }} completed!"
+        echo "🌐 Production API: https://${{ secrets.SUPABASE_PROJECT_REF }}.supabase.co"
+        echo "📋 Deployed components:"
+        echo "   • Edge Functions: ✅"
+        echo "   • Database Migrations: ✅"
+        echo "   • RLS Policies: ✅"
+        echo "   • Function Secrets: ✅"
+        echo "🔍 All functions tested and verified"
+        
+    - name: 🧹 Security Cleanup
       working-directory: ./backend
       if: always()
       run: |
@@ -268,7 +308,7 @@ jobs:
     if: always()
     
     steps:
-    - name: Deployment notification
+    - name: 📢 Deployment notification
       run: |
         if [ "${{ needs.deploy-functions.result }}" = "success" ]; then
           echo "🎉 Backend deployment to ${{ github.event.inputs.environment || 'production' }} was successful!"

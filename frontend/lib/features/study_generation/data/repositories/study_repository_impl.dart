@@ -9,21 +9,21 @@ import '../datasources/study_remote_data_source.dart';
 import '../datasources/study_local_data_source.dart';
 
 /// Implementation of the StudyRepository interface.
-/// 
+///
 /// This class coordinates between remote and local data sources
 /// following Clean Architecture principles and Single Responsibility Principle.
 class StudyRepositoryImpl implements StudyRepository {
   /// Remote data source for API operations.
   final StudyRemoteDataSource _remoteDataSource;
-  
+
   /// Local data source for cache operations.
   final StudyLocalDataSource _localDataSource;
-  
+
   /// Network information service.
   final NetworkInfo _networkInfo;
 
   /// Creates a new StudyRepositoryImpl instance.
-  /// 
+  ///
   /// [remoteDataSource] The remote data source for API calls.
   /// [localDataSource] The local data source for caching.
   /// [networkInfo] The network information service.
@@ -56,10 +56,10 @@ class StudyRepositoryImpl implements StudyRepository {
         inputType: inputType,
         language: language,
       );
-      
+
       // Cache the generated study guide using local data source
       await _localDataSource.cacheStudyGuide(studyGuide);
-      
+
       return Right(studyGuide);
     } on NetworkException catch (e) {
       return Left(NetworkFailure(

@@ -10,17 +10,17 @@ class OnboardingStateModel extends OnboardingStateEntity {
 
   /// Creates model from entity
   factory OnboardingStateModel.fromEntity(OnboardingStateEntity entity) => OnboardingStateModel(
-      selectedLanguage: entity.selectedLanguage,
-      isCompleted: entity.isCompleted,
-      currentStep: entity.currentStep,
-    );
+        selectedLanguage: entity.selectedLanguage,
+        isCompleted: entity.isCompleted,
+        currentStep: entity.currentStep,
+      );
 
   /// Converts model to entity
   OnboardingStateEntity toEntity() => OnboardingStateEntity(
-      selectedLanguage: selectedLanguage,
-      isCompleted: isCompleted,
-      currentStep: currentStep,
-    );
+        selectedLanguage: selectedLanguage,
+        isCompleted: isCompleted,
+        currentStep: currentStep,
+      );
 
   /// Creates a copy with updated fields
   @override
@@ -28,9 +28,10 @@ class OnboardingStateModel extends OnboardingStateEntity {
     String? selectedLanguage,
     bool? isCompleted,
     OnboardingStep? currentStep,
-  }) => OnboardingStateModel(
-      selectedLanguage: selectedLanguage ?? this.selectedLanguage,
-      isCompleted: isCompleted ?? this.isCompleted,
-      currentStep: currentStep ?? this.currentStep,
-    );
+  }) =>
+      OnboardingStateModel(
+        selectedLanguage: selectedLanguage ?? this.selectedLanguage,
+        isCompleted: isCompleted ?? this.isCompleted,
+        currentStep: currentStep ?? this.currentStep,
+      );
 }

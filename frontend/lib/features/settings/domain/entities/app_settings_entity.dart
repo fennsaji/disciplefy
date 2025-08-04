@@ -15,23 +15,24 @@ class AppSettingsEntity extends Equatable {
   });
 
   factory AppSettingsEntity.defaultSettings() => AppSettingsEntity(
-      themeMode: ThemeModeEntity.light(),
-      language: 'en',
-      notificationsEnabled: true,
-      appVersion: '', // Will be populated dynamically from PackageInfo
-    );
+        themeMode: ThemeModeEntity.light(),
+        language: 'en',
+        notificationsEnabled: true,
+        appVersion: '', // Will be populated dynamically from PackageInfo
+      );
 
   AppSettingsEntity copyWith({
     ThemeModeEntity? themeMode,
     String? language,
     bool? notificationsEnabled,
     String? appVersion,
-  }) => AppSettingsEntity(
-      themeMode: themeMode ?? this.themeMode,
-      language: language ?? this.language,
-      notificationsEnabled: notificationsEnabled ?? this.notificationsEnabled,
-      appVersion: appVersion ?? this.appVersion,
-    );
+  }) =>
+      AppSettingsEntity(
+        themeMode: themeMode ?? this.themeMode,
+        language: language ?? this.language,
+        notificationsEnabled: notificationsEnabled ?? this.notificationsEnabled,
+        appVersion: appVersion ?? this.appVersion,
+      );
 
   @override
   List<Object?> get props => [

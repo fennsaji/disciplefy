@@ -4,7 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../../../core/theme/ui_constants.dart';
 
 /// Language tabs for daily verse selection.
-/// 
+///
 /// Allows users to switch between different language versions
 /// of the daily verse (English, Hindi, Malayalam).
 class VerseLanguageTabs extends StatelessWidget {
@@ -20,7 +20,7 @@ class VerseLanguageTabs extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    
+
     return Container(
       margin: UIConstants.sectionMarginVertical,
       child: Row(
@@ -61,9 +61,7 @@ class VerseLanguageTabs extends StatelessWidget {
     required ThemeData theme,
   }) {
     // Calculate luminance for automatic contrast
-    final backgroundColor = isSelected
-        ? theme.colorScheme.secondary
-        : theme.colorScheme.surface;
+    final backgroundColor = isSelected ? theme.colorScheme.secondary : theme.colorScheme.surface;
     final luminance = backgroundColor.computeLuminance();
     final textColor = luminance > 0.5 ? Colors.black87 : Colors.white;
 

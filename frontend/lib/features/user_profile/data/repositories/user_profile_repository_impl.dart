@@ -9,20 +9,16 @@ import '../../../auth/domain/exceptions/auth_exceptions.dart' as auth_exceptions
 /// Handles all user profile database operations
 class UserProfileRepositoryImpl implements UserProfileRepository {
   final SupabaseClient _supabase;
-  
+
   UserProfileRepositoryImpl(this._supabase);
-  
+
   @override
   Future<UserProfileEntity?> getUserProfile(String userId) async {
     try {
-      final response = await _supabase
-          .from('user_profiles')
-          .select()
-          .eq('id', userId)
-          .maybeSingle();
-      
+      final response = await _supabase.from('user_profiles').select().eq('id', userId).maybeSingle();
+
       if (response == null) return null;
-      
+
       return UserProfileEntity.fromMap(response);
     } catch (e) {
       if (kDebugMode) {
@@ -31,7 +27,7 @@ class UserProfileRepositoryImpl implements UserProfileRepository {
       return null;
     }
   }
-  
+
   @override
   Future<void> upsertUserProfile(UserProfileEntity profile) async {
     try {
@@ -43,15 +39,12 @@ class UserProfileRepositoryImpl implements UserProfileRepository {
       throw const auth_exceptions.AuthenticationFailedException('Failed to update user profile');
     }
   }
-  
+
   @override
   Future<void> deleteUserProfile(String userId) async {
     try {
       // Delete user profile (cascade will handle related data)
-      await _supabase
-          .from('user_profiles')
-          .delete()
-          .eq('id', userId);
+      await _supabase.from('user_profiles').delete().eq('id', userId);
     } catch (e) {
       if (kDebugMode) {
         print('Error deleting user profile: $e');
@@ -59,7 +52,7 @@ class UserProfileRepositoryImpl implements UserProfileRepository {
       throw const auth_exceptions.AuthenticationFailedException('Failed to delete user profile');
     }
   }
-  
+
   @override
   Future<bool> isUserAdmin(String userId) async {
     try {
@@ -72,17 +65,14 @@ class UserProfileRepositoryImpl implements UserProfileRepository {
       return false;
     }
   }
-  
+
   @override
   Future<void> updateLanguagePreference(String userId, String languageCode) async {
     try {
-      await _supabase
-          .from('user_profiles')
-          .update({
-            'language_preference': languageCode,
-            'updated_at': DateTime.now().toIso8601String(),
-          })
-          .eq('id', userId);
+      await _supabase.from('user_profiles').update({
+        'language_preference': languageCode,
+        'updated_at': DateTime.now().toIso8601String(),
+      }).eq('id', userId);
     } catch (e) {
       if (kDebugMode) {
         print('Error updating language preference: $e');
@@ -90,17 +80,14 @@ class UserProfileRepositoryImpl implements UserProfileRepository {
       throw const auth_exceptions.AuthenticationFailedException('Failed to update language preference');
     }
   }
-  
+
   @override
   Future<void> updateThemePreference(String userId, String theme) async {
     try {
-      await _supabase
-          .from('user_profiles')
-          .update({
-            'theme_preference': theme,
-            'updated_at': DateTime.now().toIso8601String(),
-          })
-          .eq('id', userId);
+      await _supabase.from('user_profiles').update({
+        'theme_preference': theme,
+        'updated_at': DateTime.now().toIso8601String(),
+      }).eq('id', userId);
     } catch (e) {
       if (kDebugMode) {
         print('Error updating theme preference: $e');
