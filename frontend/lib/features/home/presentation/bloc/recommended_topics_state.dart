@@ -37,7 +37,7 @@ class RecommendedTopicsLoaded extends RecommendedTopicsState {
 class RecommendedTopicsError extends RecommendedTopicsState {
   /// The error message.
   final String message;
-  
+
   /// Optional error code for specific error handling.
   final String? errorCode;
 

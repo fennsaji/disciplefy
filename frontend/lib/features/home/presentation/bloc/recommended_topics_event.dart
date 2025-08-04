@@ -12,10 +12,10 @@ abstract class RecommendedTopicsEvent extends Equatable {
 class LoadRecommendedTopics extends RecommendedTopicsEvent {
   /// Maximum number of topics to load.
   final int? limit;
-  
+
   /// Category filter for topics.
   final String? category;
-  
+
   /// Difficulty filter for topics.
   final String? difficulty;
 

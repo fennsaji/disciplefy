@@ -17,7 +17,7 @@ enum LogLevel {
 }
 
 /// Centralized logging utility for the application
-/// 
+///
 /// Features:
 /// - Structured log levels with emojis
 /// - Module-based tagging for easy filtering
@@ -55,12 +55,14 @@ class Logger {
   }
 
   /// Log an error message (error events that might still allow the app to continue)
-  static void error(String message, {String? tag, Map<String, dynamic>? context, Object? error, StackTrace? stackTrace}) {
+  static void error(String message,
+      {String? tag, Map<String, dynamic>? context, Object? error, StackTrace? stackTrace}) {
     _log(LogLevel.error, message, tag: tag, context: context, error: error, stackTrace: stackTrace);
   }
 
   /// Log a critical message (very severe error events)
-  static void critical(String message, {String? tag, Map<String, dynamic>? context, Object? error, StackTrace? stackTrace}) {
+  static void critical(String message,
+      {String? tag, Map<String, dynamic>? context, Object? error, StackTrace? stackTrace}) {
     _log(LogLevel.critical, message, tag: tag, context: context, error: error, stackTrace: stackTrace);
   }
 
@@ -77,10 +79,8 @@ class Logger {
 
   /// Log API calls
   static void apiCall(String method, String endpoint, {int? statusCode, Duration? duration, String? tag}) {
-    final message = statusCode != null 
-        ? '$method $endpoint → $statusCode'
-        : '$method $endpoint';
-    
+    final message = statusCode != null ? '$method $endpoint → $statusCode' : '$method $endpoint';
+
     final context = <String, dynamic>{
       'method': method,
       'endpoint': endpoint,
@@ -133,7 +133,7 @@ class Logger {
 
     final moduleTag = tag ?? 'GENERAL';
     final logTag = '[$_appTag:$moduleTag]';
-    
+
     final logMessage = StringBuffer();
     logMessage.write('${level.emoji} $logTag $message');
 
@@ -150,7 +150,7 @@ class Logger {
     // Print the formatted log message
     if (kDebugMode) {
       print(logMessage.toString());
-      
+
       // Print stack trace for errors and critical logs
       if (stackTrace != null && level.priority >= LogLevel.error.priority) {
         print('Stack trace: $stackTrace');
@@ -164,9 +164,8 @@ class Logger {
   }
 
   /// Format context map for readable logging
-  static String _formatContext(Map<String, dynamic> context) => context.entries
-        .map((entry) => '${entry.key}=${entry.value}')
-        .join(', ');
+  static String _formatContext(Map<String, dynamic> context) =>
+      context.entries.map((entry) => '${entry.key}=${entry.value}').join(', ');
 
   /// Send logs to external logging service (placeholder for production)
   static void _sendToLoggingService(

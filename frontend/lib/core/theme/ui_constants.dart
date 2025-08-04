@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 /// Centralized UI constants for consistent design system.
-/// 
+///
 /// Contains spacing, sizing, typography, and other design tokens
 /// to ensure visual consistency across the application.
 class UIConstants {
@@ -9,7 +9,7 @@ class UIConstants {
   UIConstants._();
 
   // === SPACING CONSTANTS ===
-  
+
   /// Standard padding and margin values following 8px grid system
   static const double spacingXs = 4.0;
   static const double spacingSm = 8.0;
@@ -40,7 +40,7 @@ class UIConstants {
   static const EdgeInsets sectionMarginVertical = EdgeInsets.symmetric(vertical: spacingMd);
 
   // === BORDER RADIUS CONSTANTS ===
-  
+
   static const double radiusXs = 4.0;
   static const double radiusSm = 8.0;
   static const double radiusMd = 12.0;
@@ -56,7 +56,7 @@ class UIConstants {
   static const BorderRadius borderRadiusXl = BorderRadius.all(Radius.circular(radiusXl));
 
   // === TYPOGRAPHY CONSTANTS ===
-  
+
   /// Font size scale following Material Design type scale
   static const double fontSizeXs = 10.0;
   static const double fontSizeSm = 12.0;
@@ -76,7 +76,7 @@ class UIConstants {
   static const FontWeight fontWeightBold = FontWeight.w700;
 
   // === SIZING CONSTANTS ===
-  
+
   /// Icon sizes
   static const double iconSizeXs = 16.0;
   static const double iconSizeSm = 20.0;
@@ -101,7 +101,7 @@ class UIConstants {
   static const double containerMaxWidth = 600.0;
 
   // === ELEVATION CONSTANTS ===
-  
+
   static const double elevationNone = 0.0;
   static const double elevationSm = 1.0;
   static const double elevationMd = 2.0;
@@ -109,14 +109,14 @@ class UIConstants {
   static const double elevationXl = 8.0;
 
   // === OPACITY CONSTANTS ===
-  
+
   static const double opacityDisabled = 0.38;
   static const double opacityMedium = 0.60;
   static const double opacityLight = 0.12;
   static const double opacityOverlay = 0.16;
 
   // === ANIMATION CONSTANTS ===
-  
+
   static const Duration animationFast = Duration(milliseconds: 150);
   static const Duration animationMedium = Duration(milliseconds: 300);
   static const Duration animationSlow = Duration(milliseconds: 500);
@@ -126,18 +126,18 @@ class UIConstants {
   static const Curve animationCurveEmphasized = Curves.easeOutCubic;
 
   // === BREAKPOINT CONSTANTS ===
-  
+
   static const double breakpointMobile = 480.0;
   static const double breakpointTablet = 768.0;
   static const double breakpointDesktop = 1024.0;
 
   // === SPECIALIZED SIZING ===
-  
+
   /// Language tab specific sizing
   static const double languageTabHeight = 44.0;
   static const double languageTabPadding = 14.0;
 
-  /// Action button specific sizing  
+  /// Action button specific sizing
   static const double actionButtonPadding = 12.0;
   static const double actionButtonSpacing = 16.0;
 
@@ -153,7 +153,7 @@ class UIConstants {
   static const double chipIconSize = iconSizeXs; // 16.0
 
   // === HELPER METHODS ===
-  
+
   /// Get responsive padding based on screen width
   static EdgeInsets getResponsivePadding(double screenWidth) {
     if (screenWidth < breakpointMobile) {
@@ -180,5 +180,6 @@ class UIConstants {
   static double getContextualSpacing({
     required bool isCompact,
     double normalSpacing = spacingMd,
-  }) => isCompact ? normalSpacing * 0.75 : normalSpacing;
+  }) =>
+      isCompact ? normalSpacing * 0.75 : normalSpacing;
 }

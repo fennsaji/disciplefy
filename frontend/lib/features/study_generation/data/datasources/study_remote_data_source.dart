@@ -8,7 +8,7 @@ import '../../domain/entities/study_guide.dart';
 /// Abstract contract for remote study guide operations.
 abstract class StudyRemoteDataSource {
   /// Generates a study guide using remote API.
-  /// 
+  ///
   /// Throws [NetworkException] if there's a network issue.
   /// Throws [ServerException] if there's a server error.
   /// Throws [AuthenticationException] if authentication fails.
@@ -24,7 +24,7 @@ abstract class StudyRemoteDataSource {
 class StudyRemoteDataSourceImpl implements StudyRemoteDataSource {
   /// Supabase client for API calls.
   final SupabaseClient _supabaseClient;
-  
+
   /// UUID generator for creating unique IDs.
   final Uuid _uuid = const Uuid();
 
@@ -104,7 +104,7 @@ class StudyRemoteDataSourceImpl implements StudyRemoteDataSource {
     final responseData = data['data'] as Map<String, dynamic>? ?? {};
     final studyGuide = responseData['study_guide'] as Map<String, dynamic>? ?? {};
     final content = studyGuide['content'] as Map<String, dynamic>? ?? {};
-    
+
     return StudyGuide(
       id: studyGuide['id'] as String? ?? _uuid.v4(),
       input: input, // Always use the original user input
@@ -112,15 +112,9 @@ class StudyRemoteDataSourceImpl implements StudyRemoteDataSource {
       summary: content['summary'] as String? ?? 'No summary available',
       interpretation: content['interpretation'] as String? ?? 'No interpretation available',
       context: content['context'] as String? ?? 'No context available',
-      relatedVerses: (content['relatedVerses'] as List<dynamic>?)
-          ?.map((e) => e.toString())
-          .toList() ?? [],
-      reflectionQuestions: (content['reflectionQuestions'] as List<dynamic>?)
-          ?.map((e) => e.toString())
-          .toList() ?? [],
-      prayerPoints: (content['prayerPoints'] as List<dynamic>?)
-          ?.map((e) => e.toString())
-          .toList() ?? [],
+      relatedVerses: (content['relatedVerses'] as List<dynamic>?)?.map((e) => e.toString()).toList() ?? [],
+      reflectionQuestions: (content['reflectionQuestions'] as List<dynamic>?)?.map((e) => e.toString()).toList() ?? [],
+      prayerPoints: (content['prayerPoints'] as List<dynamic>?)?.map((e) => e.toString()).toList() ?? [],
       language: language, // Always use the original language parameter
       createdAt: DateTime.parse(studyGuide['createdAt'] as String? ?? DateTime.now().toIso8601String()),
     );

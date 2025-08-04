@@ -18,7 +18,7 @@ import 'auth_state.dart' as auth_states;
 
 /// Authentication BLoC managing user authentication state
 /// Follows Clean Architecture principles with proper separation of concerns
-/// 
+///
 /// Features:
 /// - Exponential backoff retry strategy for network failures
 /// - Comprehensive error recovery mechanisms
@@ -29,7 +29,7 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
   final ClearUserDataUseCase _clearUserDataUseCase;
   late final StreamSubscription<AuthState> _authStateSubscription;
   late final StreamSubscription<String> _httpAuthFailureSubscription;
-  
+
   // Error recovery configuration
   static const int _maxRetryAttempts = 3;
   static const Duration _baseRetryDelay = Duration(seconds: 1);
@@ -65,7 +65,7 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
         add(AuthStateChanged(supabaseAuthState));
       },
     );
-    
+
     // Listen to HTTP authentication failures
     _httpAuthFailureSubscription = HttpService.authFailureStream.listen(
       (reason) {
@@ -95,7 +95,7 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
       if (supabaseUser != null) {
         // Load user profile data for Supabase users
         final profile = await _userProfileService.getUserProfile(supabaseUser.id);
-        
+
         emit(auth_states.AuthenticatedState(
           user: supabaseUser,
           profile: profile,
@@ -109,7 +109,7 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
       if (isAuthenticated) {
         // Create mock user for anonymous session
         final user = _createAnonymousUser();
-        
+
         emit(auth_states.AuthenticatedState(
           user: user,
           isAnonymous: true,
@@ -136,27 +136,26 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
 
         // Attempt Google sign-in
         final success = await _authService.signInWithGoogle();
-        
+
         // REFACTORED: Use centralized authentication validation
         final validationResult = AuthValidator.validateAuthenticationSuccess(
           success: success,
           currentUser: _authService.currentUser,
           operationName: 'Google Sign-In',
         );
-        
+
         if (validationResult.isSuccess) {
           final user = validationResult.user!;
-          
+
           // Create or update user profile with retry
           await _retryOperation(() => _userProfileService.upsertUserProfile(
-            userId: user.id,
-            languagePreference: 'en', // Default language
-          ));
-          
+                userId: user.id,
+                languagePreference: 'en', // Default language
+              ));
+
           // Load user profile data with retry
-          final profile = await _retryOperation(() => 
-            _userProfileService.getUserProfile(user.id));
-          
+          final profile = await _retryOperation(() => _userProfileService.getUserProfile(user.id));
+
           emit(auth_states.AuthenticatedState(
             user: user,
             profile: profile,
@@ -184,7 +183,7 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
           print('🔐 [AUTH BLOC] 🚀 Starting Google OAuth callback processing...');
         }
         emit(const auth_states.AuthLoadingState());
-        
+
         if (kDebugMode) {
           print('🔐 [AUTH BLOC] - Code: ${event.code.substring(0, 20)}...');
           print('🔐 [AUTH BLOC] - State: ${event.state}');
@@ -195,11 +194,11 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
           print('🔐 [AUTH BLOC] 📞 Calling _authService.processGoogleOAuthCallback...');
         }
         final success = await _retryOperation(() => _authService.processGoogleOAuthCallback(
-          GoogleOAuthCallbackParams(
-            code: event.code,
-            state: event.state,
-          ),
-        ));
+              GoogleOAuthCallbackParams(
+                code: event.code,
+                state: event.state,
+              ),
+            ));
 
         if (kDebugMode) {
           print('🔐 [AUTH BLOC] 📊 OAuth callback result: $success');
@@ -212,24 +211,23 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
           currentUser: _authService.currentUser,
           operationName: 'Google OAuth Callback',
         );
-        
+
         if (validationResult.isSuccess) {
           final user = validationResult.user!;
           if (kDebugMode) {
             print('🔐 [AUTH BLOC] 👤 Retrieved user: ${user.id} (${user.email ?? "Anonymous"})');
             print('🔐 [AUTH BLOC] 👤 User isAnonymous: ${user.isAnonymous}');
           }
-          
+
           // Load user profile data with retry
           if (kDebugMode) {
             print('🔐 [AUTH BLOC] 📄 Loading user profile...');
           }
-          final profile = await _retryOperation(() => 
-            _userProfileService.getUserProfile(user.id));
+          final profile = await _retryOperation(() => _userProfileService.getUserProfile(user.id));
           if (kDebugMode) {
             print('🔐 [AUTH BLOC] 📄 Profile loaded: ${profile != null ? "✅" : "❌"}');
           }
-          
+
           if (kDebugMode) {
             print('🔐 [AUTH BLOC] ✅ Emitting AuthenticatedState...');
           }
@@ -238,7 +236,7 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
             isAnonymous: user.isAnonymous,
             profile: profile,
           ));
-          
+
           if (kDebugMode) {
             print('🔐 [AUTH BLOC] ✅ AuthenticatedState emitted successfully');
           }
@@ -267,16 +265,15 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
 
         // Attempt anonymous sign-in with retry
         final success = await _retryOperation(() => _authService.signInAnonymously());
-        
+
         if (success) {
           // Check authentication status using async method with retry
-          final isAuthenticated = await _retryOperation(() => 
-            _authService.isAuthenticatedAsync());
-          
+          final isAuthenticated = await _retryOperation(() => _authService.isAuthenticatedAsync());
+
           if (isAuthenticated) {
             // For anonymous users, create a mock user object since Supabase user is null
             final user = _authService.currentUser ?? _createAnonymousUser();
-            
+
             emit(auth_states.AuthenticatedState(
               user: user,
               isAnonymous: true,
@@ -302,22 +299,22 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
       if (kDebugMode) {
         print('🔐 [AUTH BLOC] 📊 Checking current session state...');
       }
-      
+
       // Check current Supabase session
       final currentUser = _authService.currentUser;
       final currentSession = Supabase.instance.client.auth.currentSession;
-      
+
       if (currentUser != null && currentSession != null) {
         if (kDebugMode) {
           print('🔐 [AUTH BLOC] ✅ Valid session found: ${currentUser.email ?? currentUser.id}');
         }
-        
+
         // Load user profile if not anonymous
         Map<String, dynamic>? profile;
         if (!currentUser.isAnonymous) {
           profile = await _userProfileService.getUserProfile(currentUser.id);
         }
-        
+
         emit(auth_states.AuthenticatedState(
           user: currentUser,
           profile: profile,
@@ -347,7 +344,7 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
 
       // Clear all user data including authentication and storage
       await _clearUserDataUseCase.execute();
-      
+
       emit(const auth_states.UnauthenticatedState());
     } catch (e) {
       if (kDebugMode) {
@@ -364,13 +361,13 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
   ) async {
     try {
       final authState = event.supabaseAuthState;
-      
+
       if (authState.event == AuthChangeEvent.signedIn) {
         final user = authState.session?.user;
         if (user != null) {
           // Load user profile if authenticated (not anonymous)
           final profile = user.isAnonymous ? null : await _userProfileService.getUserProfile(user.id);
-          
+
           emit(auth_states.AuthenticatedState(
             user: user,
             profile: profile,
@@ -397,8 +394,7 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
       }
       // For flow state errors and similar, just ignore and don't change state
       // This prevents Supabase OAuth recovery errors from affecting anonymous sessions
-      if (e.toString().contains('flow_state_not_found') || 
-          e.toString().contains('invalid flow state')) {
+      if (e.toString().contains('flow_state_not_found') || e.toString().contains('invalid flow state')) {
         if (kDebugMode) {
           print('Ignoring Supabase flow state error - likely expired OAuth session');
         }
@@ -418,7 +414,7 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
 
       // Delete account and all associated data
       await _authService.deleteAccount();
-      
+
       emit(const auth_states.UnauthenticatedState());
     } catch (e) {
       if (kDebugMode) {
@@ -453,10 +449,10 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
       if (kDebugMode) {
         print('Token refresh failed: ${event.reason}');
       }
-      
+
       // Clear all authentication data using UseCase
       await _clearUserDataUseCase.execute();
-      
+
       // Emit unauthenticated state
       emit(const auth_states.UnauthenticatedState());
     } catch (e) {
@@ -477,12 +473,12 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
       if (kDebugMode) {
         print('Force logout requested: ${event.reason}');
       }
-      
+
       emit(const auth_states.AuthLoadingState());
-      
+
       // Clear all authentication data using UseCase
       await _clearUserDataUseCase.execute();
-      
+
       // Emit unauthenticated state
       emit(const auth_states.UnauthenticatedState());
     } catch (e) {
@@ -561,10 +557,10 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
         languagePreference: event.languagePreference,
         themePreference: event.themePreference,
       );
-      
+
       // Refresh auth state to get updated profile
       final profile = await _userProfileService.getUserProfile(user.id);
-      
+
       emit(auth_states.AuthenticatedState(
         user: user,
         profile: profile,
@@ -595,7 +591,7 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
   // ===== ERROR RECOVERY MECHANISMS =====
 
   /// Retries an operation with exponential backoff for network-related failures
-  /// 
+  ///
   /// Features:
   /// - Exponential backoff with jitter to prevent thundering herd
   /// - Maximum retry attempts and delay limits
@@ -604,17 +600,17 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
   Future<T> _retryOperation<T>(Future<T> Function() operation) async {
     int attempt = 0;
     Duration delay = _baseRetryDelay;
-    
+
     while (attempt < _maxRetryAttempts) {
       try {
         return await operation();
       } catch (e) {
         attempt++;
-        
+
         if (kDebugMode) {
           print('🔄 [AUTH RETRY] Attempt $attempt failed: $e');
         }
-        
+
         // Check if error is retryable
         if (!_isRetryableError(e) || attempt >= _maxRetryAttempts) {
           if (kDebugMode) {
@@ -622,7 +618,7 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
           }
           rethrow;
         }
-        
+
         // Calculate delay with exponential backoff and jitter
         final jitter = Random().nextDouble() * 0.5; // 0-50% jitter
         final actualDelay = Duration(
@@ -631,16 +627,16 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
             _maxRetryDelay.inMilliseconds,
           ),
         );
-        
+
         if (kDebugMode) {
           print('🕐 [AUTH RETRY] Retrying in ${actualDelay.inMilliseconds}ms...');
         }
-        
+
         await Future.delayed(actualDelay);
         delay = Duration(milliseconds: (delay.inMilliseconds * 2).round());
       }
     }
-    
+
     throw Exception('Retry limit exceeded');
   }
 
@@ -666,15 +662,15 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
     if (error is auth_exceptions.NetworkException) {
       return true;
     }
-    
+
     // Rate limiting should be retried with backoff
     if (error is auth_exceptions.RateLimitException) {
       return true;
     }
-    
+
     // Check error message for network-related issues
     final errorString = error.toString().toLowerCase();
-    
+
     // Common network error indicators
     final networkErrorPatterns = [
       'network',
@@ -690,21 +686,21 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
       'no internet',
       'network unreachable',
     ];
-    
+
     for (final pattern in networkErrorPatterns) {
       if (errorString.contains(pattern)) {
         return true;
       }
     }
-    
+
     // Server errors (5xx) are generally retryable
-    if (errorString.contains('500') || 
-        errorString.contains('502') || 
-        errorString.contains('503') || 
+    if (errorString.contains('500') ||
+        errorString.contains('502') ||
+        errorString.contains('503') ||
         errorString.contains('504')) {
       return true;
     }
-    
+
     // Non-retryable errors
     if (error is auth_exceptions.OAuthCancelledException ||
         error is auth_exceptions.AuthConfigException ||
@@ -712,15 +708,15 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
         error is auth_exceptions.InvalidRequestException) {
       return false;
     }
-    
+
     // Client errors (4xx) are generally not retryable except for 408, 429
-    if (errorString.contains('400') || 
-        errorString.contains('401') || 
-        errorString.contains('403') || 
+    if (errorString.contains('400') ||
+        errorString.contains('401') ||
+        errorString.contains('403') ||
         errorString.contains('404')) {
       return false;
     }
-    
+
     // Default to non-retryable for unknown errors to prevent infinite loops
     return false;
   }

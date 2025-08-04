@@ -1,7 +1,7 @@
 import 'package:equatable/equatable.dart';
 
 /// Events for the Study Generation BLoC.
-/// 
+///
 /// These events represent user actions that trigger study guide generation
 /// or related operations.
 abstract class StudyEvent extends Equatable {
@@ -12,16 +12,16 @@ abstract class StudyEvent extends Equatable {
 }
 
 /// Event to request generation of a new study guide.
-/// 
+///
 /// This event is triggered when a user submits a verse or topic
 /// for study guide generation.
 class GenerateStudyGuideRequested extends StudyEvent {
   /// The input text (verse reference or topic).
   final String input;
-  
+
   /// The type of input ('scripture' or 'topic').
   final String inputType;
-  
+
   /// Optional language code for the study guide.
   final String? language;
 
@@ -44,7 +44,7 @@ class StudyGuideCleared extends StudyEvent {
 class SaveStudyGuideRequested extends StudyEvent {
   /// The ID of the study guide to save.
   final String guideId;
-  
+
   /// Whether to save (true) or unsave (false) the guide.
   final bool save;
 
@@ -58,12 +58,12 @@ class SaveStudyGuideRequested extends StudyEvent {
 }
 
 /// Event to validate input text.
-/// 
+///
 /// This event is triggered when user types to provide real-time validation feedback.
 class ValidateInputRequested extends StudyEvent {
   /// The input text to validate.
   final String input;
-  
+
   /// The type of input ('scripture' or 'topic').
   final String inputType;
 
@@ -77,13 +77,13 @@ class ValidateInputRequested extends StudyEvent {
 }
 
 /// Event to check authentication status before save operation.
-/// 
+///
 /// This event is triggered when user attempts to save a study guide
 /// to validate they are properly authenticated.
 class CheckAuthenticationRequested extends StudyEvent {
   /// The ID of the study guide to potentially save.
   final String guideId;
-  
+
   /// Whether to save (true) or unsave (false) the guide if authenticated.
   final bool save;
 

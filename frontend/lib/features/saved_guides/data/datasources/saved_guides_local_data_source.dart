@@ -36,9 +36,7 @@ class SavedGuidesLocalDataSourceImpl implements SavedGuidesLocalDataSource {
   Future<List<SavedGuideModel>> getSavedGuides() async {
     try {
       final box = await savedGuidesBox;
-      final guides = box.values
-          .where((guide) => guide.isSaved)
-          .toList()
+      final guides = box.values.where((guide) => guide.isSaved).toList()
         ..sort((a, b) => b.lastAccessedAt.compareTo(a.lastAccessedAt));
       return guides;
     } catch (e) {
@@ -50,8 +48,7 @@ class SavedGuidesLocalDataSourceImpl implements SavedGuidesLocalDataSource {
   Future<List<SavedGuideModel>> getRecentGuides() async {
     try {
       final box = await recentGuidesBox;
-      final guides = box.values.toList()
-        ..sort((a, b) => b.lastAccessedAt.compareTo(a.lastAccessedAt));
+      final guides = box.values.toList()..sort((a, b) => b.lastAccessedAt.compareTo(a.lastAccessedAt));
       return guides.take(_maxRecentGuides).toList();
     } catch (e) {
       throw CacheException(message: 'Failed to get recent guides: $e');
@@ -77,7 +74,7 @@ class SavedGuidesLocalDataSourceImpl implements SavedGuidesLocalDataSource {
     try {
       final savedBox = await savedGuidesBox;
       final recentBox = await recentGuidesBox;
-      
+
       await savedBox.delete(guideId);
       await recentBox.delete(guideId);
     } catch (e) {
@@ -93,14 +90,13 @@ class SavedGuidesLocalDataSourceImpl implements SavedGuidesLocalDataSource {
         isSaved: false,
         lastAccessedAt: DateTime.now(),
       );
-      
+
       await box.put(guide.id, recentGuide);
-      
+
       // Keep only the most recent guides
       if (box.length > _maxRecentGuides) {
-        final guides = box.values.toList()
-          ..sort((a, b) => b.lastAccessedAt.compareTo(a.lastAccessedAt));
-        
+        final guides = box.values.toList()..sort((a, b) => b.lastAccessedAt.compareTo(a.lastAccessedAt));
+
         // Remove oldest guides
         for (int i = _maxRecentGuides; i < guides.length; i++) {
           await box.delete(guides[i].id);
@@ -134,10 +130,10 @@ class SavedGuidesLocalDataSourceImpl implements SavedGuidesLocalDataSource {
   @override
   Stream<List<SavedGuideModel>> watchSavedGuides() async* {
     final box = await savedGuidesBox;
-    
+
     // Emit current state first
     yield await getSavedGuides();
-    
+
     // Watch for changes using Hive's built-in reactivity
     await for (final _ in box.watch()) {
       try {
@@ -152,10 +148,10 @@ class SavedGuidesLocalDataSourceImpl implements SavedGuidesLocalDataSource {
   @override
   Stream<List<SavedGuideModel>> watchRecentGuides() async* {
     final box = await recentGuidesBox;
-    
+
     // Emit current state first
     yield await getRecentGuides();
-    
+
     // Watch for changes using Hive's built-in reactivity
     await for (final _ in box.watch()) {
       try {

@@ -65,11 +65,13 @@
 
 ---
 
-## journals
+## fellowship_path_progress
 | Field         | Type       | Description                            |
 |---------------|------------|----------------------------------------|
 | id            | uuid       | Primary key                            |
-| user_id       | uuid       | FK to users                            |
+| fellowship_id | uuid       | FK to fellowships                      |
+| path_id       | uuid       | FK to discipleship_paths               |
 | lesson_id     | uuid       | FK to lessons                          |
-| content       | text       | Journal entry                          |
-| created_at    | timestamp  | When journal was written               |
+| completed_at  | timestamp  | When the lesson was marked complete by mentor |
+
+---

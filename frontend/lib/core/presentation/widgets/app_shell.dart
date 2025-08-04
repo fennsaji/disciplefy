@@ -5,7 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'bottom_nav.dart' as bottom_nav;
 
 /// Main App Shell with Bottom Navigation
-/// 
+///
 /// Features:
 /// - Persistent bottom navigation using IndexedStack
 /// - Bottom navigation with Disciplefy branding
@@ -15,7 +15,7 @@ import 'bottom_nav.dart' as bottom_nav;
 /// - Accessibility support
 class AppShell extends StatefulWidget {
   final StatefulNavigationShell navigationShell;
-  
+
   const AppShell({super.key, required this.navigationShell});
 
   @override
@@ -26,7 +26,7 @@ class _AppShellState extends State<AppShell> {
   @override
   Widget build(BuildContext context) {
     final currentIndex = widget.navigationShell.currentIndex;
-    
+
     return PopScope(
       canPop: false,
       onPopInvoked: (didPop) {
@@ -62,7 +62,6 @@ class _AppShellState extends State<AppShell> {
   }
 }
 
-
 /// Custom page transition for smooth navigation
 class SlidePageRoute<T> extends PageRoute<T> {
   final Widget child;
@@ -85,7 +84,8 @@ class SlidePageRoute<T> extends PageRoute<T> {
     BuildContext context,
     Animation<double> animation,
     Animation<double> secondaryAnimation,
-  ) => child;
+  ) =>
+      child;
 
   @override
   Widget buildTransitions(

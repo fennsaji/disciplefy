@@ -21,9 +21,9 @@ class SettingsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => BlocProvider(
-      create: (context) => sl<SettingsBloc>()..add(LoadSettings()),
-      child: const _SettingsScreenContent(),
-    );
+        create: (context) => sl<SettingsBloc>()..add(LoadSettings()),
+        child: const _SettingsScreenContent(),
+      );
 }
 
 class _SettingsScreenContent extends StatelessWidget {
@@ -31,341 +31,333 @@ class _SettingsScreenContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-      backgroundColor: AppTheme.backgroundColor,
-      body: BlocListener<AuthBloc, auth_states.AuthState>(
-        listener: (context, authState) {
-          if (authState is auth_states.UnauthenticatedState) {
-            // Navigate to login screen after successful logout
-            context.go('/login');
-          } else if (authState is auth_states.AuthErrorState) {
-            // Show error message
-            _showSnackBar(context, authState.message, AppTheme.errorColor);
-          }
-        },
-        child: BlocConsumer<SettingsBloc, SettingsState>(
-          listener: (context, state) {
-            if (state is SettingsError) {
-              _showSnackBar(context, state.message, AppTheme.errorColor);
-            } else if (state is SettingsUpdateSuccess) {
-              _showSnackBar(context, state.message, AppTheme.successColor);
+        backgroundColor: AppTheme.backgroundColor,
+        body: BlocListener<AuthBloc, auth_states.AuthState>(
+          listener: (context, authState) {
+            if (authState is auth_states.UnauthenticatedState) {
+              // Navigate to login screen after successful logout
+              context.go('/login');
+            } else if (authState is auth_states.AuthErrorState) {
+              // Show error message
+              _showSnackBar(context, authState.message, AppTheme.errorColor);
             }
           },
-          builder: (context, state) {
-            if (state is SettingsLoading) {
-              return const Center(
-                child: CircularProgressIndicator(
-                  valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primaryColor),
-                  strokeWidth: 3,
-                ),
-              );
-            }
+          child: BlocConsumer<SettingsBloc, SettingsState>(
+            listener: (context, state) {
+              if (state is SettingsError) {
+                _showSnackBar(context, state.message, AppTheme.errorColor);
+              } else if (state is SettingsUpdateSuccess) {
+                _showSnackBar(context, state.message, AppTheme.successColor);
+              }
+            },
+            builder: (context, state) {
+              if (state is SettingsLoading) {
+                return const Center(
+                  child: CircularProgressIndicator(
+                    valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primaryColor),
+                    strokeWidth: 3,
+                  ),
+                );
+              }
 
-            if (state is SettingsLoaded) {
-              return SingleChildScrollView(
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Settings Header
-                    Padding(
-                      padding: const EdgeInsets.only(top: 16, bottom: 32),
-                      child: Text(
-                        'Settings',
-                        style: GoogleFonts.playfairDisplay(
-                          fontSize: 32,
-                          fontWeight: FontWeight.bold,
-                          color: AppTheme.primaryColor,
+              if (state is SettingsLoaded) {
+                return SingleChildScrollView(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Settings Header
+                      Padding(
+                        padding: const EdgeInsets.only(top: 16, bottom: 32),
+                        child: Text(
+                          'Settings',
+                          style: GoogleFonts.playfairDisplay(
+                            fontSize: 32,
+                            fontWeight: FontWeight.bold,
+                            color: AppTheme.primaryColor,
+                          ),
                         ),
                       ),
-                    ),
-                    
-                    // User Profile Section (only for authenticated users)
-                    _buildUserProfileSection(context),
-                    
-                    // Theme & Language Section - DISABLED
-                    // _buildThemeLanguageSection(context, state),
-                    // const SizedBox(height: 24),
-                    
-                    // Notification Section - DISABLED
-                    // _buildNotificationSection(context, state),
-                    // const SizedBox(height: 24),
-                    
-                    // Account Section
-                    _buildAccountSection(context),
-                    const SizedBox(height: 24),
-                    
-                    // About Section
-                    _buildAboutSection(context, state),
-                    const SizedBox(height: 40),
-                  ],
+
+                      // User Profile Section (only for authenticated users)
+                      _buildUserProfileSection(context),
+
+                      // Theme & Language Section - DISABLED
+                      // _buildThemeLanguageSection(context, state),
+                      // const SizedBox(height: 24),
+
+                      // Notification Section - DISABLED
+                      // _buildNotificationSection(context, state),
+                      // const SizedBox(height: 24),
+
+                      // Account Section
+                      _buildAccountSection(context),
+                      const SizedBox(height: 24),
+
+                      // About Section
+                      _buildAboutSection(context, state),
+                      const SizedBox(height: 40),
+                    ],
+                  ),
+                );
+              }
+
+              return Center(
+                child: Text(
+                  'Failed to load settings',
+                  style: GoogleFonts.inter(
+                    fontSize: 16,
+                    color: AppTheme.errorColor,
+                  ),
                 ),
               );
-            }
-
-            return Center(
-              child: Text(
-                'Failed to load settings',
-                style: GoogleFonts.inter(
-                  fontSize: 16,
-                  color: AppTheme.errorColor,
-                ),
-              ),
-            );
-          },
+            },
+          ),
         ),
-      ),
-    );
+      );
 
   /// User Profile Section - shows different content based on auth state
   Widget _buildUserProfileSection(BuildContext context) => BlocBuilder<AuthBloc, auth_states.AuthState>(
-      builder: (context, authState) {
-        if (authState is auth_states.AuthenticatedState) {
-          return Column(
-            children: [
-              _buildSection(
-                title: 'Account',
-                children: [
-                  _buildUserProfileTile(context, authState),
-                  if (!authState.isAnonymous) ...[
-                    _buildDivider(),
-                    // Account Settings - DISABLED (contained theme/language settings)
-                    // _buildSettingsTile(
-                    //   context: context,
-                    //   icon: Icons.account_circle_outlined,
-                    //   title: 'Account Settings',
-                    //   subtitle: 'Manage your account preferences',
-                    //   trailing: const Icon(
-                    //     Icons.arrow_forward_ios,
-                    //     size: 16,
-                    //     color: AppTheme.onSurfaceVariant,
-                    //   ),
-                    //   onTap: () => _showAccountSettingsBottomSheet(context, authState),
-                    // ),
+        builder: (context, authState) {
+          if (authState is auth_states.AuthenticatedState) {
+            return Column(
+              children: [
+                _buildSection(
+                  title: 'Account',
+                  children: [
+                    _buildUserProfileTile(context, authState),
+                    if (!authState.isAnonymous) ...[
+                      _buildDivider(),
+                      // Account Settings - DISABLED (contained theme/language settings)
+                      // _buildSettingsTile(
+                      //   context: context,
+                      //   icon: Icons.account_circle_outlined,
+                      //   title: 'Account Settings',
+                      //   subtitle: 'Manage your account preferences',
+                      //   trailing: const Icon(
+                      //     Icons.arrow_forward_ios,
+                      //     size: 16,
+                      //     color: AppTheme.onSurfaceVariant,
+                      //   ),
+                      //   onTap: () => _showAccountSettingsBottomSheet(context, authState),
+                      // ),
+                    ],
                   ],
-                ],
-              ),
-              const SizedBox(height: 24),
-            ],
-          );
-        }
-        return const SizedBox.shrink();
-      },
-    );
+                ),
+                const SizedBox(height: 24),
+              ],
+            );
+          }
+          return const SizedBox.shrink();
+        },
+      );
 
   /// User Profile Tile showing user info
   Widget _buildUserProfileTile(BuildContext context, auth_states.AuthenticatedState authState) => Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-      child: Row(
-        children: [
-          // Profile Picture
-          CircleAvatar(
-            radius: 25,
-            backgroundImage: authState.photoUrl != null
-                ? NetworkImage(authState.photoUrl!)
-                : null,
-            backgroundColor: AppTheme.primaryColor.withValues(alpha: 0.1),
-            child: authState.photoUrl == null
-                ? Icon(
-                    authState.isAnonymous ? Icons.person_outline : Icons.person,
-                    size: 25,
-                    color: AppTheme.primaryColor,
-                  )
-                : null,
-          ),
-          
-          const SizedBox(width: 16),
-          
-          // User Info
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  authState.isAnonymous
-                      ? 'Guest User'
-                      : authState.displayName ?? 'User',
-                  style: GoogleFonts.inter(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: AppTheme.textPrimary,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  authState.isAnonymous
-                      ? 'Sign in to sync your data'
-                      : authState.email ?? 'No email',
-                  style: GoogleFonts.inter(
-                    fontSize: 14,
-                    color: AppTheme.onSurfaceVariant,
-                  ),
-                ),
-              ],
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+        child: Row(
+          children: [
+            // Profile Picture
+            CircleAvatar(
+              radius: 25,
+              backgroundImage: authState.photoUrl != null ? NetworkImage(authState.photoUrl!) : null,
+              backgroundColor: AppTheme.primaryColor.withValues(alpha: 0.1),
+              child: authState.photoUrl == null
+                  ? Icon(
+                      authState.isAnonymous ? Icons.person_outline : Icons.person,
+                      size: 25,
+                      color: AppTheme.primaryColor,
+                    )
+                  : null,
             ),
-          ),
-          
-          // Sign In Button for Anonymous Users
-          if (authState.isAnonymous)
-            TextButton(
-              onPressed: () => context.go('/login'),
-              child: Text(
-                'Sign In',
-                style: GoogleFonts.inter(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: AppTheme.primaryColor,
-                ),
+
+            const SizedBox(width: 16),
+
+            // User Info
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    authState.isAnonymous ? 'Guest User' : authState.displayName ?? 'User',
+                    style: GoogleFonts.inter(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: AppTheme.textPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    authState.isAnonymous ? 'Sign in to sync your data' : authState.email ?? 'No email',
+                    style: GoogleFonts.inter(
+                      fontSize: 14,
+                      color: AppTheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
               ),
             ),
-        ],
-      ),
-    );
+
+            // Sign In Button for Anonymous Users
+            if (authState.isAnonymous)
+              TextButton(
+                onPressed: () => context.go('/login'),
+                child: Text(
+                  'Sign In',
+                  style: GoogleFonts.inter(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: AppTheme.primaryColor,
+                  ),
+                ),
+              ),
+          ],
+        ),
+      );
 
   /// Theme & Language Section
   Widget _buildThemeLanguageSection(BuildContext context, SettingsLoaded state) => _buildSection(
-      title: 'Appearance',
-      children: [
-        _buildSettingsTile(
-          context: context,
-          icon: Icons.palette_outlined,
-          title: 'Theme',
-          subtitle: _getThemeDisplayName(state.settings.themeMode),
-          trailing: _buildThemeSwitch(context, state),
-          onTap: null,
-        ),
-        _buildDivider(),
-        _buildSettingsTile(
-          context: context,
-          icon: Icons.language_outlined,
-          title: 'Language',
-          subtitle: _getLanguageDisplayName(state.settings.language),
-          trailing: const Icon(
-            Icons.arrow_forward_ios,
-            size: 16,
-            color: AppTheme.onSurfaceVariant,
+        title: 'Appearance',
+        children: [
+          _buildSettingsTile(
+            context: context,
+            icon: Icons.palette_outlined,
+            title: 'Theme',
+            subtitle: _getThemeDisplayName(state.settings.themeMode),
+            trailing: _buildThemeSwitch(context, state),
+            onTap: null,
           ),
-          onTap: () => _showLanguageBottomSheet(context, state.settings.language),
-        ),
-      ],
-    );
+          _buildDivider(),
+          _buildSettingsTile(
+            context: context,
+            icon: Icons.language_outlined,
+            title: 'Language',
+            subtitle: _getLanguageDisplayName(state.settings.language),
+            trailing: const Icon(
+              Icons.arrow_forward_ios,
+              size: 16,
+              color: AppTheme.onSurfaceVariant,
+            ),
+            onTap: () => _showLanguageBottomSheet(context, state.settings.language),
+          ),
+        ],
+      );
 
   /// Notification Section
   Widget _buildNotificationSection(BuildContext context, SettingsLoaded state) => _buildSection(
-      title: 'Notifications',
-      children: [
-        _buildSettingsTile(
-          context: context,
-          icon: Icons.notifications_outlined,
-          title: 'Push Notifications',
-          subtitle: 'Receive study reminders and updates',
-          trailing: _buildNotificationSwitch(context, state),
-          onTap: null,
-        ),
-      ],
-    );
+        title: 'Notifications',
+        children: [
+          _buildSettingsTile(
+            context: context,
+            icon: Icons.notifications_outlined,
+            title: 'Push Notifications',
+            subtitle: 'Receive study reminders and updates',
+            trailing: _buildNotificationSwitch(context, state),
+            onTap: null,
+          ),
+        ],
+      );
 
   /// Account Section with AuthBloc integration
   Widget _buildAccountSection(BuildContext context) => BlocBuilder<AuthBloc, auth_states.AuthState>(
-      builder: (context, authState) {
-        if (authState is auth_states.AuthenticatedState) {
+        builder: (context, authState) {
+          if (authState is auth_states.AuthenticatedState) {
+            return _buildSection(
+              title: 'Account Actions',
+              children: [
+                _buildSettingsTile(
+                  context: context,
+                  icon: Icons.logout_outlined,
+                  title: 'Sign Out',
+                  subtitle: authState.isAnonymous ? 'Clear guest session' : 'Sign out of your account',
+                  trailing: const Icon(
+                    Icons.arrow_forward_ios,
+                    size: 16,
+                    color: AppTheme.onSurfaceVariant,
+                  ),
+                  onTap: () => _showLogoutDialog(context, authState.isAnonymous),
+                  iconColor: AppTheme.errorColor,
+                ),
+              ],
+            );
+          }
+
+          // For unauthenticated users, show sign in option
           return _buildSection(
-            title: 'Account Actions',
+            title: 'Account',
             children: [
               _buildSettingsTile(
                 context: context,
-                icon: Icons.logout_outlined,
-                title: 'Sign Out',
-                subtitle: authState.isAnonymous 
-                    ? 'Clear guest session'
-                    : 'Sign out of your account',
+                icon: Icons.login_outlined,
+                title: 'Sign In',
+                subtitle: 'Sign in to sync your data across devices',
                 trailing: const Icon(
                   Icons.arrow_forward_ios,
                   size: 16,
                   color: AppTheme.onSurfaceVariant,
                 ),
-                onTap: () => _showLogoutDialog(context, authState.isAnonymous),
-                iconColor: AppTheme.errorColor,
+                onTap: () => context.go('/login'),
+                iconColor: AppTheme.primaryColor,
               ),
             ],
           );
-        }
-        
-        // For unauthenticated users, show sign in option
-        return _buildSection(
-          title: 'Account',
-          children: [
-            _buildSettingsTile(
-              context: context,
-              icon: Icons.login_outlined,
-              title: 'Sign In',
-              subtitle: 'Sign in to sync your data across devices',
-              trailing: const Icon(
-                Icons.arrow_forward_ios,
-                size: 16,
-                color: AppTheme.onSurfaceVariant,
-              ),
-              onTap: () => context.go('/login'),
-              iconColor: AppTheme.primaryColor,
-            ),
-          ],
-        );
-      },
-    );
+        },
+      );
 
   /// About Section
   Widget _buildAboutSection(BuildContext context, SettingsLoaded state) => _buildSection(
-      title: 'About',
-      children: [
-        _buildSettingsTile(
-          context: context,
-          icon: Icons.info_outline,
-          title: 'App Version',
-          subtitle: state.settings.appVersion,
-          trailing: null,
-          onTap: null,
-        ),
-        _buildDivider(),
-        _buildSettingsTile(
-          context: context,
-          icon: Icons.favorite_outline,
-          title: 'Support Developer',
-          subtitle: 'Help us improve the app',
-          trailing: const Icon(
-            Icons.arrow_forward_ios,
-            size: 16,
-            color: AppTheme.onSurfaceVariant,
+        title: 'About',
+        children: [
+          _buildSettingsTile(
+            context: context,
+            icon: Icons.info_outline,
+            title: 'App Version',
+            subtitle: state.settings.appVersion,
+            trailing: null,
+            onTap: null,
           ),
-          onTap: () => _showSupportBottomSheet(context),
-          iconColor: AppTheme.accentColor,
-        ),
-        _buildDivider(),
-        _buildSettingsTile(
-          context: context,
-          icon: Icons.privacy_tip_outlined,
-          title: 'Privacy Policy',
-          subtitle: 'View our privacy policy',
-          trailing: const Icon(
-            Icons.arrow_forward_ios,
-            size: 16,
-            color: AppTheme.onSurfaceVariant,
+          _buildDivider(),
+          _buildSettingsTile(
+            context: context,
+            icon: Icons.favorite_outline,
+            title: 'Support Developer',
+            subtitle: 'Help us improve the app',
+            trailing: const Icon(
+              Icons.arrow_forward_ios,
+              size: 16,
+              color: AppTheme.onSurfaceVariant,
+            ),
+            onTap: () => _showSupportBottomSheet(context),
+            iconColor: AppTheme.accentColor,
           ),
-          onTap: () => _launchPrivacyPolicy(),
-        ),
-        _buildDivider(),
-        _buildSettingsTile(
-          context: context,
-          icon: Icons.feedback_outlined,
-          title: 'Feedback',
-          subtitle: 'Send us your feedback',
-          trailing: const Icon(
-            Icons.arrow_forward_ios,
-            size: 16,
-            color: AppTheme.onSurfaceVariant,
+          _buildDivider(),
+          _buildSettingsTile(
+            context: context,
+            icon: Icons.privacy_tip_outlined,
+            title: 'Privacy Policy',
+            subtitle: 'View our privacy policy',
+            trailing: const Icon(
+              Icons.arrow_forward_ios,
+              size: 16,
+              color: AppTheme.onSurfaceVariant,
+            ),
+            onTap: () => _launchPrivacyPolicy(),
           ),
-          onTap: () => _showFeedbackBottomSheet(context),
-        ),
-      ],
-    );
+          _buildDivider(),
+          _buildSettingsTile(
+            context: context,
+            icon: Icons.feedback_outlined,
+            title: 'Feedback',
+            subtitle: 'Send us your feedback',
+            trailing: const Icon(
+              Icons.arrow_forward_ios,
+              size: 16,
+              color: AppTheme.onSurfaceVariant,
+            ),
+            onTap: () => _showFeedbackBottomSheet(context),
+          ),
+        ],
+      );
 
   /// Account Settings Bottom Sheet
   void _showAccountSettingsBottomSheet(BuildContext context, auth_states.AuthenticatedState authState) {
@@ -395,7 +387,7 @@ class _SettingsScreenContent extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 24),
-            
+
             Text(
               'Account Settings',
               style: GoogleFonts.playfairDisplay(
@@ -405,7 +397,7 @@ class _SettingsScreenContent extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 24),
-            
+
             // Language Preference
             _buildAccountSettingItem(
               icon: Icons.language_outlined,
@@ -416,28 +408,23 @@ class _SettingsScreenContent extends StatelessWidget {
                 _showLanguageBottomSheet(context, authState.languagePreference);
               },
             ),
-            
+
             const SizedBox(height: 16),
-            
+
             // Theme Preference
             _buildAccountSettingItem(
               icon: Icons.palette_outlined,
               title: 'Theme Preference',
               subtitle: _getThemeDisplayName(
-                authState.themePreference == 'dark' 
-                    ? ThemeModeEntity.dark() 
-                    : ThemeModeEntity.light()
-              ),
+                  authState.themePreference == 'dark' ? ThemeModeEntity.dark() : ThemeModeEntity.light()),
               onTap: () {
                 Navigator.pop(context);
                 // Toggle theme
-                final newTheme = authState.themePreference == 'dark'
-                    ? ThemeModeEntity.light()
-                    : ThemeModeEntity.dark();
+                final newTheme = authState.themePreference == 'dark' ? ThemeModeEntity.light() : ThemeModeEntity.dark();
                 context.read<SettingsBloc>().add(ThemeModeChanged(newTheme));
               },
             ),
-            
+
             const SizedBox(height: 24),
           ],
         ),
@@ -450,53 +437,54 @@ class _SettingsScreenContent extends StatelessWidget {
     required String title,
     required String subtitle,
     required VoidCallback onTap,
-  }) => Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            children: [
-              Icon(
-                icon,
-                size: 24,
-                color: AppTheme.primaryColor,
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: GoogleFonts.inter(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: AppTheme.textPrimary,
-                      ),
-                    ),
-                    Text(
-                      subtitle,
-                      style: GoogleFonts.inter(
-                        fontSize: 14,
-                        color: AppTheme.onSurfaceVariant,
-                      ),
-                    ),
-                  ],
+  }) =>
+      Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(12),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                Icon(
+                  icon,
+                  size: 24,
+                  color: AppTheme.primaryColor,
                 ),
-              ),
-              const Icon(
-                Icons.arrow_forward_ios,
-                size: 16,
-                color: AppTheme.onSurfaceVariant,
-              ),
-            ],
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: GoogleFonts.inter(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: AppTheme.textPrimary,
+                        ),
+                      ),
+                      Text(
+                        subtitle,
+                        style: GoogleFonts.inter(
+                          fontSize: 14,
+                          color: AppTheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const Icon(
+                  Icons.arrow_forward_ios,
+                  size: 16,
+                  color: AppTheme.onSurfaceVariant,
+                ),
+              ],
+            ),
           ),
         ),
-      ),
-    );
+      );
 
   /// Logout confirmation dialog with AuthBloc integration
   void _showLogoutDialog(BuildContext context, bool isAnonymous) {
@@ -574,42 +562,42 @@ class _SettingsScreenContent extends StatelessWidget {
     );
   }
 
-
   // Include all the helper methods from the original settings screen
   Widget _buildSection({
     required String title,
     required List<Widget> children,
-  }) => Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.only(left: 4, bottom: 12),
-          child: Text(
-            title,
-            style: GoogleFonts.playfairDisplay(
-              fontSize: 20,
-              fontWeight: FontWeight.w600,
-              color: AppTheme.primaryColor,
-              height: 1.2,
+  }) =>
+      Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(left: 4, bottom: 12),
+            child: Text(
+              title,
+              style: GoogleFonts.playfairDisplay(
+                fontSize: 20,
+                fontWeight: FontWeight.w600,
+                color: AppTheme.primaryColor,
+                height: 1.2,
+              ),
             ),
           ),
-        ),
-        Container(
-          decoration: BoxDecoration(
-            color: AppTheme.surfaceColor,
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: [
-              BoxShadow(
-                color: AppTheme.primaryColor.withValues(alpha: 0.08),
-                blurRadius: 12,
-                offset: const Offset(0, 4),
-              ),
-            ],
+          Container(
+            decoration: BoxDecoration(
+              color: AppTheme.surfaceColor,
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: AppTheme.primaryColor.withValues(alpha: 0.08),
+                  blurRadius: 12,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: Column(children: children),
           ),
-          child: Column(children: children),
-        ),
-      ],
-    );
+        ],
+      );
 
   Widget _buildSettingsTile({
     required BuildContext context,
@@ -619,94 +607,93 @@ class _SettingsScreenContent extends StatelessWidget {
     required Widget? trailing,
     required VoidCallback? onTap,
     Color? iconColor,
-  }) => Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-          child: Row(
-            children: [
-              Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: (iconColor ?? AppTheme.primaryColor).withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(10),
+  }) =>
+      Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(16),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+            child: Row(
+              children: [
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: (iconColor ?? AppTheme.primaryColor).withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(
+                    icon,
+                    size: 20,
+                    color: iconColor ?? AppTheme.primaryColor,
+                  ),
                 ),
-                child: Icon(
-                  icon,
-                  size: 20,
-                  color: iconColor ?? AppTheme.primaryColor,
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: GoogleFonts.inter(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: AppTheme.textPrimary,
-                        height: 1.3,
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: GoogleFonts.inter(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: AppTheme.textPrimary,
+                          height: 1.3,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      subtitle,
-                      style: GoogleFonts.inter(
-                        fontSize: 14,
-                        color: AppTheme.onSurfaceVariant,
-                        height: 1.3,
+                      const SizedBox(height: 2),
+                      Text(
+                        subtitle,
+                        style: GoogleFonts.inter(
+                          fontSize: 14,
+                          color: AppTheme.onSurfaceVariant,
+                          height: 1.3,
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
-              if (trailing != null) ...[
-                const SizedBox(width: 12),
-                trailing,
+                if (trailing != null) ...[
+                  const SizedBox(width: 12),
+                  trailing,
+                ],
               ],
-            ],
+            ),
           ),
         ),
-      ),
-    );
+      );
 
   Widget _buildDivider() => Container(
-      margin: const EdgeInsets.symmetric(horizontal: 20),
-      height: 1,
-      color: AppTheme.primaryColor.withValues(alpha: 0.08),
-    );
+        margin: const EdgeInsets.symmetric(horizontal: 20),
+        height: 1,
+        color: AppTheme.primaryColor.withValues(alpha: 0.08),
+      );
 
   Widget _buildThemeSwitch(BuildContext context, SettingsLoaded state) => Switch(
-      value: state.settings.themeMode.isDarkMode,
-      onChanged: (value) {
-        final newTheme = value
-            ? ThemeModeEntity.dark()
-            : ThemeModeEntity.light();
-        context.read<SettingsBloc>().add(ThemeModeChanged(newTheme));
-      },
-      activeColor: AppTheme.primaryColor,
-      activeTrackColor: AppTheme.primaryColor.withValues(alpha: 0.3),
-      inactiveThumbColor: AppTheme.onSurfaceVariant,
-      inactiveTrackColor: AppTheme.onSurfaceVariant.withValues(alpha: 0.3),
-    );
+        value: state.settings.themeMode.isDarkMode,
+        onChanged: (value) {
+          final newTheme = value ? ThemeModeEntity.dark() : ThemeModeEntity.light();
+          context.read<SettingsBloc>().add(ThemeModeChanged(newTheme));
+        },
+        activeColor: AppTheme.primaryColor,
+        activeTrackColor: AppTheme.primaryColor.withValues(alpha: 0.3),
+        inactiveThumbColor: AppTheme.onSurfaceVariant,
+        inactiveTrackColor: AppTheme.onSurfaceVariant.withValues(alpha: 0.3),
+      );
 
   Widget _buildNotificationSwitch(BuildContext context, SettingsLoaded state) => Switch(
-      value: state.settings.notificationsEnabled,
-      onChanged: (value) {
-        context.read<SettingsBloc>().add(ToggleNotifications(value));
-      },
-      activeColor: AppTheme.primaryColor,
-      activeTrackColor: AppTheme.primaryColor.withValues(alpha: 0.3),
-      inactiveThumbColor: AppTheme.onSurfaceVariant,
-      inactiveTrackColor: AppTheme.onSurfaceVariant.withValues(alpha: 0.3),
-    );
+        value: state.settings.notificationsEnabled,
+        onChanged: (value) {
+          context.read<SettingsBloc>().add(ToggleNotifications(value));
+        },
+        activeColor: AppTheme.primaryColor,
+        activeTrackColor: AppTheme.primaryColor.withValues(alpha: 0.3),
+        inactiveThumbColor: AppTheme.onSurfaceVariant,
+        inactiveTrackColor: AppTheme.onSurfaceVariant.withValues(alpha: 0.3),
+      );
 
   void _showLanguageBottomSheet(BuildContext context, String currentLanguage) {
     showModalBottomSheet(
@@ -760,7 +747,7 @@ class _SettingsScreenContent extends StatelessWidget {
     String currentLanguage,
   ) {
     final isSelected = value == currentLanguage;
-    
+
     return Material(
       color: Colors.transparent,
       child: InkWell(

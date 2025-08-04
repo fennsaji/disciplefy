@@ -1,12 +1,11 @@
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-
 /// Centralized authentication validation utilities
 /// Reduces code duplication across auth_bloc and auth_service
 class AuthValidator {
   /// Validates authentication success result with user data
-  /// 
+  ///
   /// Used to standardize the validation pattern:
   /// `success && currentUser != null`
   static AuthValidationResult validateAuthenticationSuccess({
@@ -20,19 +19,19 @@ class AuthValidator {
         reason: AuthFailureReason.operationFailed,
       );
     }
-    
+
     if (currentUser == null) {
       return AuthValidationResult.failure(
         message: '$operationName succeeded but user data is missing',
         reason: AuthFailureReason.missingUserData,
       );
     }
-    
+
     return AuthValidationResult.success(user: currentUser);
   }
-  
+
   /// Validates current authentication state
-  /// 
+  ///
   /// Checks both Supabase user and stored auth type
   static Future<AuthStateValidationResult> validateCurrentAuthState({
     required User? supabaseUser,
@@ -45,7 +44,7 @@ class AuthValidator {
         authType: supabaseUser.isAnonymous ? AuthType.anonymous : AuthType.supabase,
       );
     }
-    
+
     // Check stored authentication
     try {
       final userType = await getUserType();
@@ -63,18 +62,18 @@ class AuthValidator {
         message: 'Failed to validate authentication state: $e',
       );
     }
-    
+
     return AuthStateValidationResult.unauthenticated();
   }
-  
+
   /// Validates user type from storage
-  /// 
+  ///
   /// Ensures the stored user type is valid
   static bool isValidUserType(String? userType) {
     if (userType == null) return false;
     return const ['guest', 'google', 'apple'].contains(userType);
   }
-  
+
   /// Creates a standardized authentication error message
   static String getAuthErrorMessage(AuthFailureReason reason, [String? details]) {
     switch (reason) {
@@ -96,27 +95,28 @@ class AuthValidationResult {
   final User? user;
   final String? errorMessage;
   final AuthFailureReason? failureReason;
-  
+
   const AuthValidationResult._({
     required this.isSuccess,
     this.user,
     this.errorMessage,
     this.failureReason,
   });
-  
+
   factory AuthValidationResult.success({required User user}) => AuthValidationResult._(
-      isSuccess: true,
-      user: user,
-    );
-  
+        isSuccess: true,
+        user: user,
+      );
+
   factory AuthValidationResult.failure({
     required String message,
     required AuthFailureReason reason,
-  }) => AuthValidationResult._(
-      isSuccess: false,
-      errorMessage: message,
-      failureReason: reason,
-    );
+  }) =>
+      AuthValidationResult._(
+        isSuccess: false,
+        errorMessage: message,
+        failureReason: reason,
+      );
 }
 
 /// Result of authentication state validation
@@ -125,32 +125,33 @@ class AuthStateValidationResult {
   final User? user;
   final AuthType? authType;
   final String? errorMessage;
-  
+
   const AuthStateValidationResult._({
     required this.status,
     this.user,
     this.authType,
     this.errorMessage,
   });
-  
+
   factory AuthStateValidationResult.authenticated({
     required User? user,
     required AuthType authType,
-  }) => AuthStateValidationResult._(
-      status: AuthStateStatus.authenticated,
-      user: user,
-      authType: authType,
-    );
-  
+  }) =>
+      AuthStateValidationResult._(
+        status: AuthStateStatus.authenticated,
+        user: user,
+        authType: authType,
+      );
+
   factory AuthStateValidationResult.unauthenticated() => const AuthStateValidationResult._(
-      status: AuthStateStatus.unauthenticated,
-    );
-  
+        status: AuthStateStatus.unauthenticated,
+      );
+
   factory AuthStateValidationResult.error({required String message}) => AuthStateValidationResult._(
-      status: AuthStateStatus.error,
-      errorMessage: message,
-    );
-  
+        status: AuthStateStatus.error,
+        errorMessage: message,
+      );
+
   bool get isAuthenticated => status == AuthStateStatus.authenticated;
   bool get isUnauthenticated => status == AuthStateStatus.unauthenticated;
   bool get isError => status == AuthStateStatus.error;

@@ -10,7 +10,7 @@ class DailyVerseCacheService {
   static const String _boxName = 'daily_verses';
   static const String _lastFetchKey = 'last_daily_verse_fetch';
   static const String _preferredLanguageKey = 'preferred_verse_language';
-  
+
   late Box<Map> _verseBox;
   bool _isInitialized = false;
 
@@ -30,7 +30,6 @@ class DailyVerseCacheService {
 
       // Clean up old entries
       await _cleanupOldEntries();
-
     } catch (e) {
       throw Exception('Failed to initialize daily verse cache: $e');
     }
@@ -53,7 +52,6 @@ class DailyVerseCacheService {
 
       await _verseBox.put(dateKey, verseData);
       await _updateLastFetchTime();
-
     } catch (e) {
       throw Exception('Failed to cache daily verse: $e');
     }
@@ -78,7 +76,6 @@ class DailyVerseCacheService {
         ),
         date: DateTime.parse(verseData['date'] as String),
       );
-
     } catch (e) {
       // Return null if parsing fails
       return null;
@@ -100,7 +97,7 @@ class DailyVerseCacheService {
     try {
       final prefs = await SharedPreferences.getInstance();
       final languageCode = prefs.getString(_preferredLanguageKey) ?? 'en';
-      
+
       switch (languageCode) {
         case 'hi':
           return VerseLanguage.hindi;
@@ -129,7 +126,7 @@ class DailyVerseCacheService {
     try {
       final prefs = await SharedPreferences.getInstance();
       final timestamp = prefs.getInt(_lastFetchKey);
-      
+
       if (timestamp == null) return null;
       return DateTime.fromMillisecondsSinceEpoch(timestamp);
     } catch (e) {
@@ -161,7 +158,7 @@ class DailyVerseCacheService {
   /// Clear all cached verses
   Future<void> clearCache() async {
     await _ensureInitialized();
-    
+
     try {
       await _verseBox.clear();
       final prefs = await SharedPreferences.getInstance();
@@ -190,7 +187,6 @@ class DailyVerseCacheService {
       for (final key in keysToDelete) {
         await _verseBox.delete(key);
       }
-
     } catch (e) {
       // Non-critical error, just log and continue
       if (kDebugMode) {
@@ -213,7 +209,8 @@ class DailyVerseCacheService {
   }
 
   /// Format date as key for consistent caching
-  String _formatDateKey(DateTime date) => '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+  String _formatDateKey(DateTime date) =>
+      '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
 
   /// Estimate cache size in bytes (rough approximation)
   int _estimateCacheSize() {

@@ -11,13 +11,13 @@ import 'home_study_generation_event.dart' as generation_events;
 import 'home_study_generation_state.dart' as generation_states;
 
 /// Refactored BLoC for coordinating Home screen concerns.
-/// 
+///
 /// This BLoC now follows the Single Responsibility Principle by delegating
 /// specific responsibilities to specialized BLoCs while coordinating their interactions.
 class HomeBloc extends Bloc<HomeEvent, HomeState> {
   final RecommendedTopicsBloc _topicsBloc;
   final HomeStudyGenerationBloc _studyGenerationBloc;
-  
+
   late final StreamSubscription _topicsSubscription;
   late final StreamSubscription _studyGenerationSubscription;
 
@@ -27,7 +27,6 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
   })  : _topicsBloc = topicsBloc,
         _studyGenerationBloc = studyGenerationBloc,
         super(const HomeCombinedState()) {
-    
     // Subscribe to child BLoC states and trigger events instead of direct emit
     _topicsSubscription = _topicsBloc.stream.listen((state) {
       add(TopicsStateChangedEvent(state));
@@ -35,14 +34,14 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
     _studyGenerationSubscription = _studyGenerationBloc.stream.listen((state) {
       add(StudyGenerationStateChangedEvent(state));
     });
-    
+
     // Register event handlers
     on<LoadRecommendedTopics>(_onLoadRecommendedTopics);
     on<RefreshRecommendedTopics>(_onRefreshRecommendedTopics);
     on<GenerateStudyGuideFromVerse>(_onGenerateStudyGuideFromVerse);
     on<GenerateStudyGuideFromTopic>(_onGenerateStudyGuideFromTopic);
     on<ClearHomeError>(_onClearHomeError);
-    
+
     // Register internal coordination events
     on<TopicsStateChangedEvent>(_onTopicsStateChanged);
     on<StudyGenerationStateChangedEvent>(_onStudyGenerationStateChanged);
@@ -175,11 +174,11 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
     // Cancel stream subscriptions first
     await _topicsSubscription.cancel();
     await _studyGenerationSubscription.cancel();
-    
+
     // Close child BLoCs
     await _topicsBloc.close();
     await _studyGenerationBloc.close();
-    
+
     // Close parent BLoC
     return super.close();
   }

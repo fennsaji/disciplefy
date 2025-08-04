@@ -85,7 +85,7 @@ class DailyVerseBloc extends Bloc<DailyVerseEvent, DailyVerseState> {
   ) {
     // NULL SAFETY FIX: Add proper null checks and type validation
     final currentState = state;
-    
+
     if (currentState is DailyVerseLoaded) {
       // Safe cast - we already verified the type
       emit(currentState.copyWith(currentLanguage: event.language));
@@ -108,7 +108,7 @@ class DailyVerseBloc extends Bloc<DailyVerseEvent, DailyVerseState> {
     try {
       // Save the preference first
       await setPreferredLanguage(SetPreferredLanguageParams(language: event.language));
-      
+
       // Update current state with new preferred language
       _updateStateWithNewLanguage(event.language, emit);
 
@@ -138,7 +138,7 @@ class DailyVerseBloc extends Bloc<DailyVerseEvent, DailyVerseState> {
     try {
       final preferredLanguage = await _getPreferredLanguageWithFallback();
       final date = event.date ?? DateTime.now();
-      
+
       await _loadAndEmitCachedVerse(date, preferredLanguage, emit);
     } catch (e) {
       emit(DailyVerseError(
@@ -154,7 +154,7 @@ class DailyVerseBloc extends Bloc<DailyVerseEvent, DailyVerseState> {
   ) async {
     try {
       final result = await getCacheStats(NoParams());
-      
+
       result.fold(
         (failure) => emit(DailyVerseError(
           message: 'Failed to get cache stats: ${failure.message}',
@@ -175,7 +175,7 @@ class DailyVerseBloc extends Bloc<DailyVerseEvent, DailyVerseState> {
   ) async {
     try {
       final result = await clearVerseCache(NoParams());
-      
+
       result.fold(
         (failure) => emit(DailyVerseError(
           message: 'Failed to clear cache: ${failure.message}',
@@ -258,7 +258,7 @@ class DailyVerseBloc extends Bloc<DailyVerseEvent, DailyVerseState> {
   ) {
     // NULL SAFETY FIX: Safe state access with proper type checking
     final currentState = state;
-    
+
     // Update current state with new preferred language
     if (currentState is DailyVerseLoaded) {
       // Safe cast - we already verified the type

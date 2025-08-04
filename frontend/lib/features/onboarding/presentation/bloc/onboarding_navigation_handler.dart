@@ -2,79 +2,79 @@ import '../../../../core/utils/logger.dart';
 import '../../domain/entities/onboarding_state_entity.dart';
 
 /// Handler for onboarding navigation logic.
-/// 
+///
 /// This class centralizes all navigation state transitions and validation
 /// following the Single Responsibility Principle.
 class OnboardingNavigationHandler {
   /// Determines the next step in the onboarding flow.
-  /// 
+  ///
   /// Returns null if navigation is not possible (e.g., missing requirements).
   OnboardingStep? getNextStep(OnboardingStateEntity currentState) {
     final currentStep = currentState.currentStep;
-    
+
     switch (currentStep) {
       case OnboardingStep.welcome:
       case OnboardingStep.language:
       case OnboardingStep.purpose:
         return OnboardingStep.completed;
-        
+
       case OnboardingStep.completed:
         return null; // Already at the end
     }
   }
 
   /// Determines the previous step in the onboarding flow.
-  /// 
+  ///
   /// Returns null if we're already at the beginning.
   OnboardingStep? getPreviousStep(OnboardingStep currentStep) {
     switch (currentStep) {
       case OnboardingStep.welcome:
         return null; // Already at the beginning
-        
+
       case OnboardingStep.language:
         return OnboardingStep.welcome;
-        
+
       case OnboardingStep.purpose:
         return OnboardingStep.language;
-        
+
       case OnboardingStep.completed:
         return OnboardingStep.purpose;
     }
   }
 
   /// Validates if navigation to the next step is allowed.
-  /// 
+  ///
   /// Returns a validation error message if navigation is not allowed,
   /// otherwise returns null.
   String? validateNextStepNavigation(OnboardingStateEntity currentState) {
     final currentStep = currentState.currentStep;
-    
+
     switch (currentStep) {
       case OnboardingStep.language:
         if (currentState.selectedLanguage == null) {
           return 'Please select a language before proceeding';
         }
         break;
-        
+
       case OnboardingStep.completed:
         return 'Onboarding is already completed';
-        
+
       default:
         break;
     }
-    
+
     return null; // Navigation is valid
   }
 
   /// Validates if navigation to the previous step is allowed.
-  /// 
+  ///
   /// Returns a validation error message if navigation is not allowed,
   /// otherwise returns null.
   String? validatePreviousStepNavigation(OnboardingStep currentStep) {
     if (currentStep == OnboardingStep.welcome) {
       return 'Already at the first step';
     }
-    
+
     return null; // Navigation is valid
   }
 

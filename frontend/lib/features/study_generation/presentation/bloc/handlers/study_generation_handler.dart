@@ -6,7 +6,7 @@ import '../study_event.dart';
 import '../study_state.dart';
 
 /// Handler for study guide generation logic.
-/// 
+///
 /// This class encapsulates all the business logic related to generating
 /// study guides, following the Single Responsibility Principle.
 class StudyGenerationHandler {
@@ -17,7 +17,7 @@ class StudyGenerationHandler {
   }) : _generateStudyGuide = generateStudyGuide;
 
   /// Handles the study guide generation request.
-  /// 
+  ///
   /// This method validates the input, calls the use case, and emits
   /// appropriate states based on the result.
   Future<void> handleGenerateStudyGuide(
@@ -65,16 +65,12 @@ class StudyGenerationHandler {
   }
 
   /// Determines if a failure is retryable.
-  /// 
+  ///
   /// [failure] The failure to check.
   /// Returns true if the user should be allowed to retry the operation.
   bool _isRetryableFailure(Failure failure) => switch (failure.runtimeType) {
-      NetworkFailure _ ||
-      ServerFailure _ ||
-      RateLimitFailure _ => true,
-      ValidationFailure _ ||
-      AuthenticationFailure _ ||
-      AuthorizationFailure _ => false,
-      _ => true,
-    };
+        NetworkFailure _ || ServerFailure _ || RateLimitFailure _ => true,
+        ValidationFailure _ || AuthenticationFailure _ || AuthorizationFailure _ => false,
+        _ => true,
+      };
 }

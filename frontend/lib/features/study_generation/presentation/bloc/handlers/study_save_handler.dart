@@ -8,7 +8,7 @@ import '../study_event.dart';
 import '../study_state.dart';
 
 /// Handler for study guide save operations.
-/// 
+///
 /// This class encapsulates all the business logic related to saving
 /// and unsaving study guides, following the Single Responsibility Principle.
 class StudySaveHandler {
@@ -22,7 +22,7 @@ class StudySaveHandler {
         _authService = authService;
 
   /// Handles the save study guide request.
-  /// 
+  ///
   /// This method calls the save API service and emits appropriate states.
   Future<void> handleSaveStudyGuide(
     SaveStudyGuideRequested event,
@@ -40,9 +40,7 @@ class StudySaveHandler {
         emit(StudySaveSuccess(
           guideId: event.guideId,
           saved: event.save,
-          message: event.save 
-            ? 'Study guide saved successfully!'
-            : 'Study guide removed from saved!',
+          message: event.save ? 'Study guide saved successfully!' : 'Study guide removed from saved!',
         ));
       } else {
         emit(StudySaveFailure(
@@ -85,7 +83,7 @@ class StudySaveHandler {
   }
 
   /// Handles the authentication check request.
-  /// 
+  ///
   /// This method checks if the user is authenticated and either proceeds
   /// with the save operation or requests authentication.
   Future<void> handleCheckAuthentication(
@@ -95,7 +93,7 @@ class StudySaveHandler {
   ) async {
     try {
       final isAuthenticated = await _authService.isAuthenticatedAsync();
-      
+
       if (isAuthenticated) {
         // User is authenticated, proceed with save operation
         addEvent(SaveStudyGuideRequested(
