@@ -13,7 +13,7 @@ abstract class SavedGuidesRepository {
   Future<Either<Failure, void>> clearAllRecent();
   Stream<List<SavedGuideEntity>> watchSavedGuides();
   Stream<List<SavedGuideEntity>> watchRecentGuides();
-  
+
   // API operations (for authenticated users)
   Future<Either<Failure, List<SavedGuideEntity>>> fetchSavedGuidesFromApi({
     int limit = 20,
@@ -27,7 +27,7 @@ abstract class SavedGuidesRepository {
     required String guideId,
     required bool save,
   });
-  
+
   // Hybrid operations (combine API + local cache)
   Future<Either<Failure, List<SavedGuideEntity>>> getSavedGuidesWithSync({
     int limit = 20,

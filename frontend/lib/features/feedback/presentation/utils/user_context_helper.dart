@@ -9,7 +9,7 @@ class UserContextHelper {
   /// Create user context from current auth state
   static Future<UserContextEntity> getCurrentUserContext() async {
     final user = _supabase.auth.currentUser;
-    
+
     if (user != null && !user.isAnonymous) {
       // Authenticated user
       return UserContextEntity.authenticated(userId: user.id);

@@ -11,7 +11,7 @@ class SaveLanguagePreference {
     if (!['en', 'hi', 'ml'].contains(languageCode)) {
       throw ArgumentError('Invalid language code: $languageCode');
     }
-    
+
     await _repository.saveLanguagePreference(languageCode);
   }
 }

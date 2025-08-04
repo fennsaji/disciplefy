@@ -11,7 +11,7 @@ import 'handlers/study_save_handler.dart';
 import 'handlers/study_validation_handler.dart';
 
 /// BLoC for managing study guide generation and saving.
-/// 
+///
 /// This refactored BLoC delegates specific responsibilities to handler classes,
 /// following the Single Responsibility Principle and making the code more maintainable.
 class StudyBloc extends Bloc<StudyEvent, StudyState> {
@@ -21,7 +21,7 @@ class StudyBloc extends Bloc<StudyEvent, StudyState> {
   late final StudyValidationHandler _validationHandler;
 
   /// Creates a new StudyBloc instance.
-  /// 
+  ///
   /// [generateStudyGuide] is the use case responsible for study generation.
   /// [saveGuideService] is the service responsible for save operations.
   /// [validationService] is the service responsible for input validation.
@@ -49,7 +49,6 @@ class StudyBloc extends Bloc<StudyEvent, StudyState> {
     on<StudyGuideCleared>(_generationHandler.handleClearStudyGuide);
     on<SaveStudyGuideRequested>(_saveHandler.handleSaveStudyGuide);
     on<ValidateInputRequested>(_validationHandler.handleValidateInput);
-    on<CheckAuthenticationRequested>((event, emit) => 
-      _saveHandler.handleCheckAuthentication(event, emit, add));
+    on<CheckAuthenticationRequested>((event, emit) => _saveHandler.handleCheckAuthentication(event, emit, add));
   }
 }

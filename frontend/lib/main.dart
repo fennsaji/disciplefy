@@ -20,40 +20,40 @@ import 'core/utils/web_splash_controller.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
+
   // Configure URL strategy for web to use path-based routing instead of hash routing
   // This fixes OAuth callback issues where hash fragments interfere with redirect flow
   if (kIsWeb) {
     usePathUrlStrategy();
   }
-  
+
   try {
     // Initialize Hive for local storage
     await Hive.initFlutter();
-    
+
     // Register Hive adapters
     if (!Hive.isAdapterRegistered(1)) {
       Hive.registerAdapter(SavedGuideModelAdapter());
     }
-    
+
     await Hive.openBox('app_settings');
-    
+
     // Validate and log configuration
     AppConfig.validateConfiguration();
     AppConfig.logConfiguration();
-    
+
     // Initialize Supabase
     await Supabase.initialize(
       url: AppConfig.supabaseUrl,
       anonKey: AppConfig.supabaseAnonKey,
     );
-    
+
     // Initialize dependency injection
     await initializeDependencies();
-    
+
     // Initialize daily verse cache service
     await sl<DailyVerseCacheService>().initialize();
-    
+
     runApp(const DisciplefyBibleStudyApp());
   } catch (e) {
     runApp(const ErrorApp());
@@ -79,33 +79,33 @@ class _DisciplefyBibleStudyAppState extends State<DisciplefyBibleStudyApp> {
 
   @override
   Widget build(BuildContext context) => MultiBlocProvider(
-      providers: [
-        BlocProvider<StudyBloc>(
-          create: (context) => sl<StudyBloc>(),
+        providers: [
+          BlocProvider<StudyBloc>(
+            create: (context) => sl<StudyBloc>(),
+          ),
+          BlocProvider<AuthBloc>(
+            create: (context) => sl<AuthBloc>()..add(const AuthInitializeRequested()),
+          ),
+          BlocProvider<DailyVerseBloc>(
+            create: (context) => sl<DailyVerseBloc>()..add(const LoadTodaysVerse()),
+          ),
+        ],
+        child: MaterialApp.router(
+          title: 'Disciplefy Bible Study',
+          debugShowCheckedModeBanner: false,
+
+          // Theming
+          theme: AppTheme.lightTheme,
+          darkTheme: AppTheme.darkTheme,
+
+          // Localization
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+
+          // Navigation
+          routerConfig: AppRouter.router,
         ),
-        BlocProvider<AuthBloc>(
-          create: (context) => sl<AuthBloc>()..add(const AuthInitializeRequested()),
-        ),
-        BlocProvider<DailyVerseBloc>(
-          create: (context) => sl<DailyVerseBloc>()..add(const LoadTodaysVerse()),
-        ),
-      ],
-      child: MaterialApp.router(
-        title: 'Disciplefy Bible Study',
-        debugShowCheckedModeBanner: false,
-        
-        // Theming
-        theme: AppTheme.lightTheme,
-        darkTheme: AppTheme.darkTheme,
-        
-        // Localization
-        localizationsDelegates: AppLocalizations.localizationsDelegates,
-        supportedLocales: AppLocalizations.supportedLocales,
-        
-        // Navigation
-        routerConfig: AppRouter.router,
-      ),
-    );
+      );
 }
 
 class ErrorApp extends StatelessWidget {
@@ -113,41 +113,41 @@ class ErrorApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => MaterialApp(
-      title: 'Disciplefy Bible Study - Error',
-      theme: ThemeData(
-        useMaterial3: true,
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: Colors.red,
+        title: 'Disciplefy Bible Study - Error',
+        theme: ThemeData(
+          useMaterial3: true,
+          colorScheme: ColorScheme.fromSeed(
+            seedColor: Colors.red,
+          ),
         ),
-      ),
-      home: Scaffold(
-        body: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(24.0),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  Icons.error_outline,
-                  size: 80,
-                  color: Theme.of(context).colorScheme.error,
-                ),
-                const SizedBox(height: 24),
-                Text(
-                  'App failed to initialize',
-                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+        home: Scaffold(
+          body: Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24.0),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.error_outline,
+                    size: 80,
                     color: Theme.of(context).colorScheme.error,
                   ),
-                ),
-                const SizedBox(height: 16),
-                const Text(
-                  'Please check your configuration and try again.',
-                  textAlign: TextAlign.center,
-                ),
-              ],
+                  const SizedBox(height: 24),
+                  Text(
+                    'App failed to initialize',
+                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                          color: Theme.of(context).colorScheme.error,
+                        ),
+                  ),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'Please check your configuration and try again.',
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+              ),
             ),
           ),
         ),
-      ),
-    );
+      );
 }

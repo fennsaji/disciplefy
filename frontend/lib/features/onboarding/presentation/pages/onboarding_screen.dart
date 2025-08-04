@@ -10,7 +10,7 @@ import '../../../auth/presentation/bloc/auth_bloc.dart';
 import '../../../auth/presentation/bloc/auth_state.dart' as auth_states;
 
 /// Onboarding carousel screen with 3 intro slides.
-/// 
+///
 /// Follows Disciplefy brand guidelines and UX specifications.
 /// Each slide introduces key app features following the design images.
 class OnboardingScreen extends StatefulWidget {
@@ -45,21 +45,24 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     OnboardingSlide(
       title: 'Generate Personalized Bible Study Guides',
       subtitle: 'AI-powered insights tailored to your spiritual journey',
-      description: 'Simply enter any scripture reference or spiritual topic, and our AI will create a comprehensive study guide with context, interpretation, and life application.',
+      description:
+          'Simply enter any scripture reference or spiritual topic, and our AI will create a comprehensive study guide with context, interpretation, and life application.',
       iconData: Icons.auto_awesome,
       verse: '"Your word is a lamp for my feet, a light on my path." - Psalm 119:105',
     ),
     OnboardingSlide(
       title: 'Explore Predefined Topics',
       subtitle: 'Discover guided studies on faith essentials',
-      description: 'Choose from carefully curated topics like Gospel, Prayer, Baptism, Grace, and Faith in Trials to deepen your understanding of core biblical principles.',
+      description:
+          'Choose from carefully curated topics like Gospel, Prayer, Baptism, Grace, and Faith in Trials to deepen your understanding of core biblical principles.',
       iconData: Icons.menu_book_rounded,
       verse: '"All Scripture is God-breathed and is useful for teaching..." - 2 Timothy 3:16',
     ),
     OnboardingSlide(
       title: 'Save Notes & Track Progress',
       subtitle: 'Build your personal spiritual journal',
-      description: 'Take notes during your study, save your insights, and track your spiritual growth journey. Resume your studies anytime, anywhere.',
+      description:
+          'Take notes during your study, save your insights, and track your spiritual growth journey. Resume your studies anytime, anywhere.',
       iconData: Icons.bookmark_added,
       verse: '"The grass withers and the flowers fall, but the word of our God endures forever." - Isaiah 40:8',
     ),
@@ -77,7 +80,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     });
   }
 
-void _navigateToWelcome() async {
+  void _navigateToWelcome() async {
     // Mark onboarding as completed
     final box = Hive.box('app_settings');
     await box.put('onboarding_completed', true);
@@ -97,12 +100,11 @@ void _navigateToWelcome() async {
     }
   }
 
-
   @override
   Widget build(BuildContext context) {
     final screenHeight = MediaQuery.of(context).size.height;
     final isLargeScreen = screenHeight > 700;
-    
+
     return Scaffold(
       backgroundColor: AppTheme.backgroundColor,
       body: SafeArea(
@@ -156,7 +158,7 @@ void _navigateToWelcome() async {
                 ],
               ),
             ),
-            
+
             // Page view with slides
             Expanded(
               child: PageView.builder(
@@ -164,12 +166,12 @@ void _navigateToWelcome() async {
                 onPageChanged: _onPageChanged,
                 itemCount: _slides.length,
                 itemBuilder: (context, index) => _OnboardingSlideWidget(
-                    slide: _slides[index],
-                    isLargeScreen: isLargeScreen,
-                  ),
+                  slide: _slides[index],
+                  isLargeScreen: isLargeScreen,
+                ),
               ),
             ),
-            
+
             // Page indicator
             Padding(
               padding: EdgeInsets.symmetric(
@@ -187,7 +189,7 @@ void _navigateToWelcome() async {
                 ),
               ),
             ),
-            
+
             // Get Started button (shows on last slide) or Continue
             Padding(
               padding: EdgeInsets.fromLTRB(24, 0, 24, isLargeScreen ? 40 : 24),
@@ -233,105 +235,105 @@ class _OnboardingSlideWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 32),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          // Icon container with brand styling
-          Container(
-            width: isLargeScreen ? 140 : 120,
-            height: isLargeScreen ? 140 : 120,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  AppTheme.primaryColor.withOpacity(0.1),
-                  AppTheme.secondaryColor.withOpacity(0.2),
-                ],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
+        padding: const EdgeInsets.symmetric(horizontal: 32),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            // Icon container with brand styling
+            Container(
+              width: isLargeScreen ? 140 : 120,
+              height: isLargeScreen ? 140 : 120,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    AppTheme.primaryColor.withOpacity(0.1),
+                    AppTheme.secondaryColor.withOpacity(0.2),
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(30),
+                border: Border.all(
+                  color: AppTheme.primaryColor.withOpacity(0.2),
+                  width: 2,
+                ),
               ),
-              borderRadius: BorderRadius.circular(30),
-              border: Border.all(
-                color: AppTheme.primaryColor.withOpacity(0.2),
-                width: 2,
-              ),
-            ),
-            child: Icon(
-              slide.iconData,
-              size: isLargeScreen ? 64 : 56,
-              color: AppTheme.primaryColor,
-            ),
-          ),
-          
-          SizedBox(height: isLargeScreen ? 56 : 48),
-          
-          // Title
-          Text(
-            slide.title,
-            style: GoogleFonts.playfairDisplay(
-              fontSize: isLargeScreen ? 32 : 28,
-              fontWeight: FontWeight.bold,
-              color: AppTheme.textPrimary,
-              height: 1.2,
-            ),
-            textAlign: TextAlign.center,
-          ),
-          
-          SizedBox(height: isLargeScreen ? 20 : 16),
-          
-          // Subtitle
-          Text(
-            slide.subtitle,
-            style: GoogleFonts.inter(
-              fontSize: isLargeScreen ? 20 : 18,
-              fontWeight: FontWeight.w500,
-              color: AppTheme.primaryColor,
-              height: 1.4,
-            ),
-            textAlign: TextAlign.center,
-          ),
-          
-          SizedBox(height: isLargeScreen ? 28 : 24),
-          
-          // Description
-          Text(
-            slide.description,
-            style: GoogleFonts.inter(
-              fontSize: 16,
-              color: AppTheme.onSurfaceVariant,
-              height: 1.6,
-            ),
-            textAlign: TextAlign.center,
-            maxLines: 4,
-            overflow: TextOverflow.ellipsis,
-          ),
-          
-          SizedBox(height: isLargeScreen ? 32 : 28),
-          
-          // Bible verse (spiritual encouragement)
-          Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: AppTheme.secondaryColor.withOpacity(0.3),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: AppTheme.secondaryColor.withOpacity(0.5),
+              child: Icon(
+                slide.iconData,
+                size: isLargeScreen ? 64 : 56,
+                color: AppTheme.primaryColor,
               ),
             ),
-            child: Text(
-              slide.verse,
-              style: GoogleFonts.inter(
-                fontSize: 14,
-                fontStyle: FontStyle.italic,
-                color: AppTheme.textPrimary.withOpacity(0.8),
-                height: 1.5,
+
+            SizedBox(height: isLargeScreen ? 56 : 48),
+
+            // Title
+            Text(
+              slide.title,
+              style: GoogleFonts.playfairDisplay(
+                fontSize: isLargeScreen ? 32 : 28,
+                fontWeight: FontWeight.bold,
+                color: AppTheme.textPrimary,
+                height: 1.2,
               ),
               textAlign: TextAlign.center,
             ),
-          ),
-        ],
-      ),
-    );
+
+            SizedBox(height: isLargeScreen ? 20 : 16),
+
+            // Subtitle
+            Text(
+              slide.subtitle,
+              style: GoogleFonts.inter(
+                fontSize: isLargeScreen ? 20 : 18,
+                fontWeight: FontWeight.w500,
+                color: AppTheme.primaryColor,
+                height: 1.4,
+              ),
+              textAlign: TextAlign.center,
+            ),
+
+            SizedBox(height: isLargeScreen ? 28 : 24),
+
+            // Description
+            Text(
+              slide.description,
+              style: GoogleFonts.inter(
+                fontSize: 16,
+                color: AppTheme.onSurfaceVariant,
+                height: 1.6,
+              ),
+              textAlign: TextAlign.center,
+              maxLines: 4,
+              overflow: TextOverflow.ellipsis,
+            ),
+
+            SizedBox(height: isLargeScreen ? 32 : 28),
+
+            // Bible verse (spiritual encouragement)
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: AppTheme.secondaryColor.withOpacity(0.3),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: AppTheme.secondaryColor.withOpacity(0.5),
+                ),
+              ),
+              child: Text(
+                slide.verse,
+                style: GoogleFonts.inter(
+                  fontSize: 14,
+                  fontStyle: FontStyle.italic,
+                  color: AppTheme.textPrimary.withOpacity(0.8),
+                  height: 1.5,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ),
+          ],
+        ),
+      );
 }
 
 /// Data model for onboarding slide content.

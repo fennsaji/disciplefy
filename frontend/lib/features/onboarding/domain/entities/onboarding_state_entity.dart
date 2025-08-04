@@ -4,10 +4,10 @@ import 'package:equatable/equatable.dart';
 class OnboardingStateEntity extends Equatable {
   /// Selected language code (en, hi, ml)
   final String? selectedLanguage;
-  
+
   /// Whether onboarding has been completed
   final bool isCompleted;
-  
+
   /// Current onboarding step
   final OnboardingStep currentStep;
 
@@ -22,11 +22,12 @@ class OnboardingStateEntity extends Equatable {
     String? selectedLanguage,
     bool? isCompleted,
     OnboardingStep? currentStep,
-  }) => OnboardingStateEntity(
-      selectedLanguage: selectedLanguage ?? this.selectedLanguage,
-      isCompleted: isCompleted ?? this.isCompleted,
-      currentStep: currentStep ?? this.currentStep,
-    );
+  }) =>
+      OnboardingStateEntity(
+        selectedLanguage: selectedLanguage ?? this.selectedLanguage,
+        isCompleted: isCompleted ?? this.isCompleted,
+        currentStep: currentStep ?? this.currentStep,
+      );
 
   @override
   List<Object?> get props => [selectedLanguage, isCompleted, currentStep];

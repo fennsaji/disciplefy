@@ -103,28 +103,27 @@ class SavedGuideModel extends SavedGuideEntity {
           prayerPoints: prayerPoints,
         );
 
-  factory SavedGuideModel.fromJson(Map<String, dynamic> json) =>
-      _$SavedGuideModelFromJson(json);
+  factory SavedGuideModel.fromJson(Map<String, dynamic> json) => _$SavedGuideModelFromJson(json);
 
   Map<String, dynamic> toJson() => _$SavedGuideModelToJson(this);
 
   factory SavedGuideModel.fromEntity(SavedGuideEntity entity) => SavedGuideModel(
-      id: entity.id,
-      title: entity.title,
-      content: entity.content,
-      typeString: entity.type == GuideType.verse ? 'verse' : 'topic',
-      createdAt: entity.createdAt,
-      lastAccessedAt: entity.lastAccessedAt,
-      isSaved: entity.isSaved,
-      verseReference: entity.verseReference,
-      topicName: entity.topicName,
-      summary: entity.summary,
-      interpretation: entity.interpretation,
-      context: entity.context,
-      relatedVerses: entity.relatedVerses,
-      reflectionQuestions: entity.reflectionQuestions,
-      prayerPoints: entity.prayerPoints,
-    );
+        id: entity.id,
+        title: entity.title,
+        content: entity.content,
+        typeString: entity.type == GuideType.verse ? 'verse' : 'topic',
+        createdAt: entity.createdAt,
+        lastAccessedAt: entity.lastAccessedAt,
+        isSaved: entity.isSaved,
+        verseReference: entity.verseReference,
+        topicName: entity.topicName,
+        summary: entity.summary,
+        interpretation: entity.interpretation,
+        context: entity.context,
+        relatedVerses: entity.relatedVerses,
+        reflectionQuestions: entity.reflectionQuestions,
+        prayerPoints: entity.prayerPoints,
+      );
 
   /// Create model from API response
   /// Updated to handle new cached architecture response format with structured content.
@@ -133,7 +132,7 @@ class SavedGuideModel extends SavedGuideEntity {
     final contentData = json['content'] as Map<String, dynamic>? ?? {};
     final inputType = inputData['type'] as String? ?? 'topic';
     final inputValue = inputData['value'] as String? ?? 'Study Guide';
-    
+
     // Extract structured content from API response
     final summary = contentData['summary'] as String? ?? '';
     final interpretation = contentData['interpretation'] as String? ?? '';
@@ -141,7 +140,7 @@ class SavedGuideModel extends SavedGuideEntity {
     final relatedVerses = (contentData['relatedVerses'] as List<dynamic>?)?.cast<String>() ?? <String>[];
     final reflectionQuestions = (contentData['reflectionQuestions'] as List<dynamic>?)?.cast<String>() ?? <String>[];
     final prayerPoints = (contentData['prayerPoints'] as List<dynamic>?)?.cast<String>() ?? <String>[];
-    
+
     return SavedGuideModel(
       id: json['id'] as String,
       title: inputValue,
@@ -163,24 +162,23 @@ class SavedGuideModel extends SavedGuideEntity {
     );
   }
 
-
   SavedGuideEntity toEntity() => SavedGuideEntity(
-      id: id,
-      title: title,
-      content: content,
-      type: typeString == 'verse' ? GuideType.verse : GuideType.topic,
-      createdAt: createdAt,
-      lastAccessedAt: lastAccessedAt,
-      isSaved: isSaved,
-      verseReference: verseReference,
-      topicName: topicName,
-      summary: summary,
-      interpretation: interpretation,
-      context: context,
-      relatedVerses: relatedVerses,
-      reflectionQuestions: reflectionQuestions,
-      prayerPoints: prayerPoints,
-    );
+        id: id,
+        title: title,
+        content: content,
+        type: typeString == 'verse' ? GuideType.verse : GuideType.topic,
+        createdAt: createdAt,
+        lastAccessedAt: lastAccessedAt,
+        isSaved: isSaved,
+        verseReference: verseReference,
+        topicName: topicName,
+        summary: summary,
+        interpretation: interpretation,
+        context: context,
+        relatedVerses: relatedVerses,
+        reflectionQuestions: reflectionQuestions,
+        prayerPoints: prayerPoints,
+      );
 
   @override
   SavedGuideModel copyWith({
@@ -199,53 +197,54 @@ class SavedGuideModel extends SavedGuideEntity {
     bool? isSaved,
     String? verseReference,
     String? topicName,
-  }) => SavedGuideModel(
-      id: id ?? this.id,
-      title: title ?? this.title,
-      content: content ?? this.content,
-      typeString: type != null ? (type == GuideType.verse ? 'verse' : 'topic') : typeString,
-      createdAt: createdAt ?? this.createdAt,
-      lastAccessedAt: lastAccessedAt ?? this.lastAccessedAt,
-      isSaved: isSaved ?? this.isSaved,
-      verseReference: verseReference ?? this.verseReference,
-      topicName: topicName ?? this.topicName,
-      // Support for structured content updates
-      summary: summary ?? this.summary,
-      interpretation: interpretation ?? this.interpretation,
-      context: context ?? this.context,
-      relatedVerses: relatedVerses ?? this.relatedVerses,
-      reflectionQuestions: reflectionQuestions ?? this.reflectionQuestions,
-      prayerPoints: prayerPoints ?? this.prayerPoints,
-    );
+  }) =>
+      SavedGuideModel(
+        id: id ?? this.id,
+        title: title ?? this.title,
+        content: content ?? this.content,
+        typeString: type != null ? (type == GuideType.verse ? 'verse' : 'topic') : typeString,
+        createdAt: createdAt ?? this.createdAt,
+        lastAccessedAt: lastAccessedAt ?? this.lastAccessedAt,
+        isSaved: isSaved ?? this.isSaved,
+        verseReference: verseReference ?? this.verseReference,
+        topicName: topicName ?? this.topicName,
+        // Support for structured content updates
+        summary: summary ?? this.summary,
+        interpretation: interpretation ?? this.interpretation,
+        context: context ?? this.context,
+        relatedVerses: relatedVerses ?? this.relatedVerses,
+        reflectionQuestions: reflectionQuestions ?? this.reflectionQuestions,
+        prayerPoints: prayerPoints ?? this.prayerPoints,
+      );
 
   /// Convert to StudyGuide with structured content only
-  /// 
+  ///
   /// This method now only uses structured content fields and provides
   /// sensible defaults for missing data, eliminating the fragile string parsing.
   StudyGuide toStudyGuide() => StudyGuide(
-      id: id,
-      input: verseReference ?? topicName ?? title,
-      inputType: typeString == 'verse' ? 'scripture' : 'topic',
-      summary: summary ?? _extractSummaryFromContent(),
-      interpretation: interpretation ?? _extractInterpretationFromContent(),
-      context: context ?? _extractContextFromContent(),
-      relatedVerses: relatedVerses ?? _extractRelatedVersesFromContent(),
-      reflectionQuestions: reflectionQuestions ?? _extractReflectionQuestionsFromContent(),
-      prayerPoints: prayerPoints ?? _extractPrayerPointsFromContent(),
-      language: 'en', // Default language
-      createdAt: createdAt,
-    );
+        id: id,
+        input: verseReference ?? topicName ?? title,
+        inputType: typeString == 'verse' ? 'scripture' : 'topic',
+        summary: summary ?? _extractSummaryFromContent(),
+        interpretation: interpretation ?? _extractInterpretationFromContent(),
+        context: context ?? _extractContextFromContent(),
+        relatedVerses: relatedVerses ?? _extractRelatedVersesFromContent(),
+        reflectionQuestions: reflectionQuestions ?? _extractReflectionQuestionsFromContent(),
+        prayerPoints: prayerPoints ?? _extractPrayerPointsFromContent(),
+        language: 'en', // Default language
+        createdAt: createdAt,
+      );
 
   /// Extract summary from content as fallback (safer than full parsing)
   String _extractSummaryFromContent() {
     if (content.isEmpty) return 'No summary available';
-    
+
     // Look for summary section with simple, safer extraction
     final summaryMatch = RegExp(r'\*\*Summary:\*\*\s*([^\*]+)', dotAll: true).firstMatch(content);
     if (summaryMatch != null) {
       return summaryMatch.group(1)?.trim().split('\n').first ?? 'No summary available';
     }
-    
+
     // Fallback: Use first paragraph of content
     final firstParagraph = content.trim().split('\n\n').first;
     return firstParagraph.length > 200 ? '${firstParagraph.substring(0, 200)}...' : firstParagraph;
@@ -254,31 +253,31 @@ class SavedGuideModel extends SavedGuideEntity {
   /// Extract interpretation from content as fallback
   String _extractInterpretationFromContent() {
     if (content.isEmpty) return 'No interpretation available';
-    
+
     final interpretationMatch = RegExp(r'\*\*Interpretation:\*\*\s*([^\*]+)', dotAll: true).firstMatch(content);
     if (interpretationMatch != null) {
       return interpretationMatch.group(1)?.trim().split('\n').first ?? 'No interpretation available';
     }
-    
+
     return 'No interpretation available';
   }
 
   /// Extract context from content as fallback
   String _extractContextFromContent() {
     if (content.isEmpty) return 'No context available';
-    
+
     final contextMatch = RegExp(r'\*\*Context:\*\*\s*([^\*]+)', dotAll: true).firstMatch(content);
     if (contextMatch != null) {
       return contextMatch.group(1)?.trim().split('\n').first ?? 'No context available';
     }
-    
+
     return 'No context available';
   }
 
   /// Extract related verses from content as fallback
   List<String> _extractRelatedVersesFromContent() {
     if (content.isEmpty) return <String>[];
-    
+
     final versesMatch = RegExp(r'\*\*Related Verses:\*\*\s*((?:•[^\*\n]+\n?)+)', dotAll: true).firstMatch(content);
     if (versesMatch != null) {
       final versesText = versesMatch.group(1) ?? '';
@@ -290,15 +289,16 @@ class SavedGuideModel extends SavedGuideEntity {
           .take(5) // Limit to 5 verses for safety
           .toList();
     }
-    
+
     return <String>[];
   }
 
   /// Extract reflection questions from content as fallback
   List<String> _extractReflectionQuestionsFromContent() {
     if (content.isEmpty) return <String>[];
-    
-    final questionsMatch = RegExp(r'\*\*Reflection Questions:\*\*\s*((?:•[^\*\n]+\n?)+)', dotAll: true).firstMatch(content);
+
+    final questionsMatch =
+        RegExp(r'\*\*Reflection Questions:\*\*\s*((?:•[^\*\n]+\n?)+)', dotAll: true).firstMatch(content);
     if (questionsMatch != null) {
       final questionsText = questionsMatch.group(1) ?? '';
       return questionsText
@@ -309,14 +309,14 @@ class SavedGuideModel extends SavedGuideEntity {
           .take(5) // Limit to 5 questions for safety
           .toList();
     }
-    
+
     return <String>[];
   }
 
   /// Extract prayer points from content as fallback
   List<String> _extractPrayerPointsFromContent() {
     if (content.isEmpty) return <String>[];
-    
+
     final prayerMatch = RegExp(r'\*\*Prayer Points:\*\*\s*((?:•[^\*\n]+\n?)+)', dotAll: true).firstMatch(content);
     if (prayerMatch != null) {
       final prayerText = prayerMatch.group(1) ?? '';
@@ -328,8 +328,7 @@ class SavedGuideModel extends SavedGuideEntity {
           .take(5) // Limit to 5 points for safety
           .toList();
     }
-    
+
     return <String>[];
   }
-
 }

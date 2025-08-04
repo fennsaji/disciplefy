@@ -7,7 +7,7 @@ import 'home_study_generation_event.dart';
 import 'home_study_generation_state.dart';
 
 /// BLoC for managing study guide generation from the Home screen.
-/// 
+///
 /// This BLoC follows the Single Responsibility Principle by handling
 /// only study guide generation from verses and topics.
 class HomeStudyGenerationBloc extends Bloc<HomeStudyGenerationEvent, HomeStudyGenerationState> {
@@ -17,7 +17,6 @@ class HomeStudyGenerationBloc extends Bloc<HomeStudyGenerationEvent, HomeStudyGe
     required GenerateStudyGuide generateStudyGuideUseCase,
   })  : _generateStudyGuideUseCase = generateStudyGuideUseCase,
         super(const HomeStudyGenerationInitial()) {
-    
     on<GenerateStudyGuideFromVerse>(_onGenerateFromVerse);
     on<GenerateStudyGuideFromTopic>(_onGenerateFromTopic);
     on<ClearHomeStudyGenerationError>(_onClearError);
@@ -92,7 +91,7 @@ class HomeStudyGenerationBloc extends Bloc<HomeStudyGenerationEvent, HomeStudyGe
                 'language': language,
               },
             );
-            
+
             emit(HomeStudyGenerationSuccess(studyGuide: studyGuide));
           },
           operationName: 'generate study guide from home',

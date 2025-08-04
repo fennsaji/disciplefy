@@ -18,7 +18,7 @@ class NavTab {
 }
 
 /// Disciplefy Bottom Navigation Bar - Complete Implementation
-/// 
+///
 /// Features:
 /// ✅ Background colors: Light (#F9F8F3), Dark (#1E1E1E)
 /// ✅ Active icon color: #6A4FB6, inactive: #5E5E5E
@@ -74,16 +74,14 @@ class DisciplefyBottomNav extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    
+
     return Container(
       decoration: BoxDecoration(
         // ✅ Background colors as specified
         color: isDark ? const Color(0xFF1E1E1E) : const Color(0xFFF9F8F3),
         boxShadow: [
           BoxShadow(
-            color: isDark 
-                ? Colors.black.withOpacity(0.3)
-                : Colors.grey.withOpacity(0.2),
+            color: isDark ? Colors.black.withOpacity(0.3) : Colors.grey.withOpacity(0.2),
             blurRadius: 8,
             offset: const Offset(0, -2),
           ),
@@ -142,7 +140,7 @@ class _BottomNavItem extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    
+
     // ✅ Theme colors as specified
     const activeColor = Color(0xFF6A4FB6); // Active icon color
     const inactiveColor = Color(0xFF5E5E5E); // Inactive color for both light and dark
@@ -173,22 +171,18 @@ class _BottomNavItem extends StatelessWidget {
                   width: 32,
                   height: 32,
                   decoration: BoxDecoration(
-                    color: isSelected 
-                        ? activeColor.withOpacity(0.12)
-                        : Colors.transparent,
+                    color: isSelected ? activeColor.withOpacity(0.12) : Colors.transparent,
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Icon(
-                    isSelected && tab.activeIcon != null 
-                        ? tab.activeIcon! 
-                        : tab.icon,
+                    isSelected && tab.activeIcon != null ? tab.activeIcon! : tab.icon,
                     size: 20,
                     color: isSelected ? activeColor : inactiveColor,
                   ),
                 ),
-                
+
                 const SizedBox(height: 3),
-                
+
                 // ✅ Label with Playfair Display font
                 AnimatedDefaultTextStyle(
                   duration: const Duration(milliseconds: 200),
@@ -216,7 +210,7 @@ class _BottomNavItem extends StatelessWidget {
 }
 
 /// Usage Example with IndexedStack in AppShell:
-/// 
+///
 /// ```dart
 /// class AppShell extends StatefulWidget {
 ///   @override
@@ -244,7 +238,7 @@ class _BottomNavItem extends StatelessWidget {
 ///   }
 /// }
 /// ```
-/// 
+///
 /// Key Benefits:
 /// - ✅ No swipe animations (IndexedStack maintains state)
 /// - ✅ Proper theme colors and typography

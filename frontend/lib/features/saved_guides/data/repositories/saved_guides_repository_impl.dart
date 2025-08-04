@@ -106,8 +106,8 @@ class SavedGuidesRepositoryImpl implements SavedGuidesRepository {
   Stream<List<SavedGuideEntity>> watchSavedGuides() {
     try {
       return localDataSource.watchSavedGuides().map(
-        (models) => models.map((model) => model.toEntity()).toList(),
-      );
+            (models) => models.map((model) => model.toEntity()).toList(),
+          );
     } catch (e) {
       return Stream.error(CacheFailure(message: 'Failed to watch saved guides: $e'));
     }
@@ -117,8 +117,8 @@ class SavedGuidesRepositoryImpl implements SavedGuidesRepository {
   Stream<List<SavedGuideEntity>> watchRecentGuides() {
     try {
       return localDataSource.watchRecentGuides().map(
-        (models) => models.map((model) => model.toEntity()).toList(),
-      );
+            (models) => models.map((model) => model.toEntity()).toList(),
+          );
     } catch (e) {
       return Stream.error(CacheFailure(message: 'Failed to watch recent guides: $e'));
     }
@@ -179,7 +179,7 @@ class SavedGuidesRepositoryImpl implements SavedGuidesRepository {
         guideId: guideId,
         save: save,
       );
-      
+
       // Update local cache as well
       final entity = guide.toEntity();
       if (save) {
@@ -187,7 +187,7 @@ class SavedGuidesRepositoryImpl implements SavedGuidesRepository {
       } else {
         await localDataSource.removeGuide(guideId);
       }
-      
+
       return Right(entity);
     } on ServerException catch (e) {
       return Left(ServerFailure(message: e.message));
@@ -214,7 +214,7 @@ class SavedGuidesRepositoryImpl implements SavedGuidesRepository {
           limit: limit,
           offset: offset,
         );
-        
+
         return apiResult.fold(
           (failure) {
             // Fallback to local cache on API failure
@@ -233,7 +233,7 @@ class SavedGuidesRepositoryImpl implements SavedGuidesRepository {
           },
         );
       }
-      
+
       // For pagination beyond first page, always use API
       return fetchSavedGuidesFromApi(limit: limit, offset: offset);
     } catch (e) {
@@ -254,7 +254,7 @@ class SavedGuidesRepositoryImpl implements SavedGuidesRepository {
           limit: limit,
           offset: offset,
         );
-        
+
         return apiResult.fold(
           (failure) {
             // Fallback to local cache on API failure
@@ -273,7 +273,7 @@ class SavedGuidesRepositoryImpl implements SavedGuidesRepository {
           },
         );
       }
-      
+
       // For pagination beyond first page, always use API
       return fetchRecentGuidesFromApi(limit: limit, offset: offset);
     } catch (e) {

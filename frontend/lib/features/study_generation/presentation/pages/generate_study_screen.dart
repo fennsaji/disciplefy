@@ -9,7 +9,7 @@ import '../bloc/study_event.dart';
 import '../bloc/study_state.dart';
 
 /// Generate Study Screen allowing users to input scripture reference or topic.
-/// 
+///
 /// Features toggle between modes, input validation, suggestions, and loading states
 /// following the UX specifications and brand guidelines.
 class GenerateStudyScreen extends StatefulWidget {
@@ -22,7 +22,7 @@ class GenerateStudyScreen extends StatefulWidget {
 class _GenerateStudyScreenState extends State<GenerateStudyScreen> {
   final TextEditingController _inputController = TextEditingController();
   final FocusNode _inputFocusNode = FocusNode();
-  
+
   StudyInputMode _selectedMode = StudyInputMode.scripture;
   StudyLanguage _selectedLanguage = StudyLanguage.english;
   bool _isInputValid = false;
@@ -97,17 +97,12 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen> {
   }
 
   List<String> _getFilteredSuggestions() {
-    final suggestions = _selectedMode == StudyInputMode.scripture 
-        ? _scriptureeSuggestions 
-        : _topicSuggestions;
-    
+    final suggestions = _selectedMode == StudyInputMode.scripture ? _scriptureeSuggestions : _topicSuggestions;
+
     final query = _inputController.text.trim().toLowerCase();
     if (query.isEmpty) return suggestions.take(5).toList();
-    
-    return suggestions
-        .where((suggestion) => suggestion.toLowerCase().contains(query))
-        .take(5)
-        .toList();
+
+    return suggestions.where((suggestion) => suggestion.toLowerCase().contains(query)).take(5).toList();
   }
 
   @override
@@ -152,32 +147,32 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 SizedBox(height: isLargeScreen ? 32 : 24),
-                
+
                 // Mode Toggle
                 _buildModeToggle(),
-                
+
                 SizedBox(height: isLargeScreen ? 24 : 16),
-                
+
                 // Language Selection
                 _buildLanguageSelection(),
-                
+
                 SizedBox(height: isLargeScreen ? 32 : 24),
-                
+
                 // Input Section
                 _buildInputSection(),
-                
+
                 SizedBox(height: isLargeScreen ? 24 : 16),
-                
+
                 // Suggestions
                 _buildSuggestions(),
-                
+
                 const Spacer(),
-                
+
                 // Generate Button and Status
                 BlocBuilder<StudyBloc, StudyState>(
                   builder: (context, state) => _buildGenerateButton(state),
                 ),
-                
+
                 SizedBox(height: isLargeScreen ? 40 : 24),
               ],
             ),
@@ -188,181 +183,173 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen> {
   }
 
   Widget _buildModeToggle() => Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'What would you like to study?',
-          style: GoogleFonts.inter(
-            fontSize: 18,
-            fontWeight: FontWeight.w600,
-            color: AppTheme.textPrimary,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'What would you like to study?',
+            style: GoogleFonts.inter(
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+              color: AppTheme.textPrimary,
+            ),
           ),
-        ),
-        
-        const SizedBox(height: 16),
-        
-        Container(
-          decoration: BoxDecoration(
-            color: AppTheme.primaryColor.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Row(
-            children: [
-              Expanded(
-                child: _ModeToggleButton(
-                  label: 'Scripture Reference',
-                  isSelected: _selectedMode == StudyInputMode.scripture,
-                  onTap: () => _switchMode(StudyInputMode.scripture),
+          const SizedBox(height: 16),
+          Container(
+            decoration: BoxDecoration(
+              color: AppTheme.primaryColor.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: _ModeToggleButton(
+                    label: 'Scripture Reference',
+                    isSelected: _selectedMode == StudyInputMode.scripture,
+                    onTap: () => _switchMode(StudyInputMode.scripture),
+                  ),
                 ),
-              ),
-              Expanded(
-                child: _ModeToggleButton(
-                  label: 'Topic',
-                  isSelected: _selectedMode == StudyInputMode.topic,
-                  onTap: () => _switchMode(StudyInputMode.topic),
+                Expanded(
+                  child: _ModeToggleButton(
+                    label: 'Topic',
+                    isSelected: _selectedMode == StudyInputMode.topic,
+                    onTap: () => _switchMode(StudyInputMode.topic),
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
-        ),
-      ],
-    );
+        ],
+      );
 
   Widget _buildLanguageSelection() => Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Language',
-          style: GoogleFonts.inter(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-            color: AppTheme.textPrimary,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Language',
+            style: GoogleFonts.inter(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: AppTheme.textPrimary,
+            ),
           ),
-        ),
-        
-        const SizedBox(height: 12),
-        
-        Container(
-          decoration: BoxDecoration(
-            color: AppTheme.primaryColor.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(12),
+          const SizedBox(height: 12),
+          Container(
+            decoration: BoxDecoration(
+              color: AppTheme.primaryColor.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: _LanguageToggleButton(
+                    flag: '🇺🇸',
+                    label: 'English',
+                    isSelected: _selectedLanguage == StudyLanguage.english,
+                    onTap: () => _switchLanguage(StudyLanguage.english),
+                  ),
+                ),
+                Expanded(
+                  child: _LanguageToggleButton(
+                    flag: '🇮🇳',
+                    label: 'हिन्दी',
+                    isSelected: _selectedLanguage == StudyLanguage.hindi,
+                    onTap: () => _switchLanguage(StudyLanguage.hindi),
+                  ),
+                ),
+                Expanded(
+                  child: _LanguageToggleButton(
+                    flag: '🇮🇳',
+                    label: 'മലയാളം',
+                    isSelected: _selectedLanguage == StudyLanguage.malayalam,
+                    onTap: () => _switchLanguage(StudyLanguage.malayalam),
+                  ),
+                ),
+              ],
+            ),
           ),
-          child: Row(
-            children: [
-              Expanded(
-                child: _LanguageToggleButton(
-                  flag: '🇺🇸',
-                  label: 'English',
-                  isSelected: _selectedLanguage == StudyLanguage.english,
-                  onTap: () => _switchLanguage(StudyLanguage.english),
-                ),
-              ),
-              Expanded(
-                child: _LanguageToggleButton(
-                  flag: '🇮🇳',
-                  label: 'हिन्दी',
-                  isSelected: _selectedLanguage == StudyLanguage.hindi,
-                  onTap: () => _switchLanguage(StudyLanguage.hindi),
-                ),
-              ),
-              Expanded(
-                child: _LanguageToggleButton(
-                  flag: '🇮🇳',
-                  label: 'മലയാളം',
-                  isSelected: _selectedLanguage == StudyLanguage.malayalam,
-                  onTap: () => _switchLanguage(StudyLanguage.malayalam),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
+        ],
+      );
 
   Widget _buildInputSection() => Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          _selectedMode == StudyInputMode.scripture 
-              ? 'Enter Scripture Reference'
-              : 'Enter Topic',
-          style: GoogleFonts.inter(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-            color: AppTheme.textPrimary,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            _selectedMode == StudyInputMode.scripture ? 'Enter Scripture Reference' : 'Enter Topic',
+            style: GoogleFonts.inter(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: AppTheme.textPrimary,
+            ),
           ),
-        ),
-        
-        const SizedBox(height: 12),
-        
-        TextField(
-          controller: _inputController,
-          focusNode: _inputFocusNode,
-          style: GoogleFonts.inter(
-            fontSize: 16,
-            color: AppTheme.textPrimary,
+          const SizedBox(height: 12),
+          TextField(
+            controller: _inputController,
+            focusNode: _inputFocusNode,
+            style: GoogleFonts.inter(
+              fontSize: 16,
+              color: AppTheme.textPrimary,
+            ),
+            decoration: InputDecoration(
+              hintText: _selectedMode == StudyInputMode.scripture
+                  ? 'e.g., John 3:16, Matthew 5:1-12'
+                  : 'e.g., Forgiveness, Love, Faith',
+              hintStyle: GoogleFonts.inter(
+                color: AppTheme.onSurfaceVariant,
+              ),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(
+                  color: AppTheme.primaryColor.withOpacity(0.3),
+                ),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(
+                  color: AppTheme.primaryColor,
+                  width: 2,
+                ),
+              ),
+              errorBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(
+                  color: AppTheme.accentColor,
+                  width: 2,
+                ),
+              ),
+              focusedErrorBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(
+                  color: AppTheme.accentColor,
+                  width: 2,
+                ),
+              ),
+              errorText: _validationError,
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 16,
+              ),
+              suffixIcon: _inputController.text.isNotEmpty
+                  ? IconButton(
+                      onPressed: () {
+                        _inputController.clear();
+                        _inputFocusNode.requestFocus();
+                      },
+                      icon: const Icon(
+                        Icons.clear,
+                        color: AppTheme.onSurfaceVariant,
+                      ),
+                    )
+                  : null,
+            ),
           ),
-          decoration: InputDecoration(
-            hintText: _selectedMode == StudyInputMode.scripture 
-                ? 'e.g., John 3:16, Matthew 5:1-12'
-                : 'e.g., Forgiveness, Love, Faith',
-            hintStyle: GoogleFonts.inter(
-              color: AppTheme.onSurfaceVariant,
-            ),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(
-                color: AppTheme.primaryColor.withOpacity(0.3),
-              ),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(
-                color: AppTheme.primaryColor,
-                width: 2,
-              ),
-            ),
-            errorBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(
-                color: AppTheme.accentColor,
-                width: 2,
-              ),
-            ),
-            focusedErrorBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(
-                color: AppTheme.accentColor,
-                width: 2,
-              ),
-            ),
-            errorText: _validationError,
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 16,
-              vertical: 16,
-            ),
-            suffixIcon: _inputController.text.isNotEmpty
-                ? IconButton(
-                    onPressed: () {
-                      _inputController.clear();
-                      _inputFocusNode.requestFocus();
-                    },
-                    icon: const Icon(
-                      Icons.clear,
-                      color: AppTheme.onSurfaceVariant,
-                    ),
-                  )
-                : null,
-          ),
-        ),
-      ],
-    );
+        ],
+      );
 
   Widget _buildSuggestions() {
     final suggestions = _getFilteredSuggestions();
-    
+
     if (suggestions.isEmpty) return const SizedBox.shrink();
-    
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -374,19 +361,19 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen> {
             color: AppTheme.onSurfaceVariant,
           ),
         ),
-        
         const SizedBox(height: 12),
-        
         Wrap(
           spacing: 8,
           runSpacing: 8,
-          children: suggestions.map((suggestion) => _SuggestionChip(
-              label: suggestion,
-              onTap: () {
-                _inputController.text = suggestion;
-                _inputFocusNode.unfocus();
-              },
-            )).toList(),
+          children: suggestions
+              .map((suggestion) => _SuggestionChip(
+                    label: suggestion,
+                    onTap: () {
+                      _inputController.text = suggestion;
+                      _inputFocusNode.unfocus();
+                    },
+                  ))
+              .toList(),
         ),
       ],
     );
@@ -394,7 +381,7 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen> {
 
   Widget _buildGenerateButton(StudyState state) {
     final isLoading = state is StudyGenerationInProgress;
-    
+
     return Column(
       children: [
         if (isLoading) ...[
@@ -419,9 +406,7 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen> {
                         ),
                       ),
                     ),
-                    
                     const SizedBox(width: 16),
-                    
                     Expanded(
                       child: Text(
                         'Generating your study guide...',
@@ -434,9 +419,7 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen> {
                     ),
                   ],
                 ),
-                
                 const SizedBox(height: 8),
-                
                 Text(
                   'This may take a few moments.',
                   style: GoogleFonts.inter(
@@ -447,10 +430,8 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen> {
               ],
             ),
           ),
-          
           const SizedBox(height: 16),
         ],
-        
         SizedBox(
           width: double.infinity,
           child: ElevatedButton(
@@ -497,127 +478,127 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen> {
 
   void _generateStudyGuide() {
     if (!_isInputValid) return;
-    
+
     final input = _inputController.text.trim();
     final inputType = _selectedMode == StudyInputMode.scripture ? 'scripture' : 'topic';
     final languageCode = _selectedLanguage.code;
-    
+
     // Trigger BLoC event to generate study guide
     context.read<StudyBloc>().add(
-      GenerateStudyGuideRequested(
-        input: input,
-        inputType: inputType,
-        language: languageCode,
-      ),
-    );
+          GenerateStudyGuideRequested(
+            input: input,
+            inputType: inputType,
+            language: languageCode,
+          ),
+        );
   }
 
   void _showErrorDialog(BuildContext context, String message, bool isRetryable) {
     showDialog(
       context: context,
       builder: (BuildContext context) => AlertDialog(
-          backgroundColor: const Color(0xFFFAFAFA), // Light background
-          surfaceTintColor: Colors.transparent,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-          elevation: 8,
-          shadowColor: Colors.black.withOpacity(0.1),
-          title: Row(
-            children: [
-              const Icon(
-                Icons.error_outline,
-                color: Color(0xFFDC2626), // Red error color
-                size: 24,
+        backgroundColor: const Color(0xFFFAFAFA), // Light background
+        surfaceTintColor: Colors.transparent,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        elevation: 8,
+        shadowColor: Colors.black.withOpacity(0.1),
+        title: Row(
+          children: [
+            const Icon(
+              Icons.error_outline,
+              color: Color(0xFFDC2626), // Red error color
+              size: 24,
+            ),
+            const SizedBox(width: 12),
+            Text(
+              'Generation Failed',
+              style: GoogleFonts.playfairDisplay(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: const Color(0xFF333333), // Primary gray text
               ),
-              const SizedBox(width: 12),
-              Text(
-                'Generation Failed',
-                style: GoogleFonts.playfairDisplay(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: const Color(0xFF333333), // Primary gray text
-                ),
+            ),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              message,
+              style: GoogleFonts.inter(
+                fontSize: 16,
+                color: const Color(0xFF333333), // Primary gray text
+                height: 1.5,
               ),
-            ],
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                message,
+            ),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF5F5F5), // Light gray background
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                'We couldn\'t generate a study guide right now. Please try again later.',
                 style: GoogleFonts.inter(
-                  fontSize: 16,
-                  color: const Color(0xFF333333), // Primary gray text
-                  height: 1.5,
+                  fontSize: 14,
+                  color: const Color(0xFF666666), // Secondary gray text
+                  fontStyle: FontStyle.italic,
                 ),
               ),
-              const SizedBox(height: 12),
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF5F5F5), // Light gray background
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text(
-                  'We couldn\'t generate a study guide right now. Please try again later.',
-                  style: GoogleFonts.inter(
-                    fontSize: 14,
-                    color: const Color(0xFF666666), // Secondary gray text
-                    fontStyle: FontStyle.italic,
-                  ),
-                ),
+            ),
+          ],
+        ),
+        actionsPadding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            style: TextButton.styleFrom(
+              foregroundColor: const Color(0xFF888888), // Light gray for cancel
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
               ),
-            ],
+            ),
+            child: Text(
+              'OK',
+              style: GoogleFonts.inter(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: const Color(0xFF888888), // Light gray text
+              ),
+            ),
           ),
-          actionsPadding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              style: TextButton.styleFrom(
-                foregroundColor: const Color(0xFF888888), // Light gray for cancel
+          if (isRetryable) ...[
+            const SizedBox(width: 12),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                _generateStudyGuide();
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF7A56DB), // Primary purple
+                foregroundColor: Colors.white,
+                elevation: 0,
                 padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),
               ),
               child: Text(
-                'OK',
+                'Try Again',
                 style: GoogleFonts.inter(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
-                  color: const Color(0xFF888888), // Light gray text
                 ),
               ),
             ),
-            if (isRetryable) ...[
-              const SizedBox(width: 12),
-              ElevatedButton(
-                onPressed: () {
-                  Navigator.of(context).pop();
-                  _generateStudyGuide();
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF7A56DB), // Primary purple
-                  foregroundColor: Colors.white,
-                  elevation: 0,
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-                child: Text(
-                  'Try Again',
-                  style: GoogleFonts.inter(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-            ],
           ],
-        ),
+        ],
+      ),
     );
   }
 }
@@ -636,24 +617,24 @@ class _ModeToggleButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 12),
-        decoration: BoxDecoration(
-          color: isSelected ? AppTheme.primaryColor : Colors.transparent,
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Text(
-          label,
-          style: GoogleFonts.inter(
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-            color: isSelected ? Colors.white : AppTheme.primaryColor,
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          decoration: BoxDecoration(
+            color: isSelected ? AppTheme.primaryColor : Colors.transparent,
+            borderRadius: BorderRadius.circular(8),
           ),
-          textAlign: TextAlign.center,
+          child: Text(
+            label,
+            style: GoogleFonts.inter(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: isSelected ? Colors.white : AppTheme.primaryColor,
+            ),
+            textAlign: TextAlign.center,
+          ),
         ),
-      ),
-    );
+      );
 }
 
 /// Language toggle button widget.
@@ -672,36 +653,36 @@ class _LanguageToggleButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 10),
-        decoration: BoxDecoration(
-          color: isSelected ? AppTheme.primaryColor : Colors.transparent,
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              flag,
-              style: const TextStyle(fontSize: 16),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              label,
-              style: GoogleFonts.inter(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: isSelected ? Colors.white : AppTheme.primaryColor,
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 10),
+          decoration: BoxDecoration(
+            color: isSelected ? AppTheme.primaryColor : Colors.transparent,
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                flag,
+                style: const TextStyle(fontSize: 16),
               ),
-              textAlign: TextAlign.center,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ],
+              const SizedBox(height: 4),
+              Text(
+                label,
+                style: GoogleFonts.inter(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: isSelected ? Colors.white : AppTheme.primaryColor,
+                ),
+                textAlign: TextAlign.center,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          ),
         ),
-      ),
-    );
+      );
 }
 
 /// Suggestion chip widget.
@@ -716,26 +697,26 @@ class _SuggestionChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        decoration: BoxDecoration(
-          color: AppTheme.surfaceColor,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: AppTheme.primaryColor.withOpacity(0.3),
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          decoration: BoxDecoration(
+            color: AppTheme.surfaceColor,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: AppTheme.primaryColor.withOpacity(0.3),
+            ),
+          ),
+          child: Text(
+            label,
+            style: GoogleFonts.inter(
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+              color: AppTheme.primaryColor,
+            ),
           ),
         ),
-        child: Text(
-          label,
-          style: GoogleFonts.inter(
-            fontSize: 12,
-            fontWeight: FontWeight.w500,
-            color: AppTheme.primaryColor,
-          ),
-        ),
-      ),
-    );
+      );
 }
 
 /// Enum for study input mode.

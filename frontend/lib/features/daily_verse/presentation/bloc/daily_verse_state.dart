@@ -66,22 +66,23 @@ class DailyVerseLoaded extends DailyVerseState with VerseDataStateMixin {
     VerseLanguage? preferredLanguage,
     bool? isFromCache,
     bool? isServiceAvailable,
-  }) => DailyVerseLoaded(
-      verse: verse ?? this.verse,
-      currentLanguage: currentLanguage ?? this.currentLanguage,
-      preferredLanguage: preferredLanguage ?? this.preferredLanguage,
-      isFromCache: isFromCache ?? this.isFromCache,
-      isServiceAvailable: isServiceAvailable ?? this.isServiceAvailable,
-    );
+  }) =>
+      DailyVerseLoaded(
+        verse: verse ?? this.verse,
+        currentLanguage: currentLanguage ?? this.currentLanguage,
+        preferredLanguage: preferredLanguage ?? this.preferredLanguage,
+        isFromCache: isFromCache ?? this.isFromCache,
+        isServiceAvailable: isServiceAvailable ?? this.isServiceAvailable,
+      );
 
   @override
   List<Object?> get props => [
-    verse,
-    currentLanguage,
-    preferredLanguage,
-    isFromCache,
-    isServiceAvailable,
-  ];
+        verse,
+        currentLanguage,
+        preferredLanguage,
+        isFromCache,
+        isServiceAvailable,
+      ];
 }
 
 /// Error loading verse
@@ -118,11 +119,12 @@ class DailyVerseOffline extends DailyVerseState with VerseDataStateMixin {
     DailyVerseEntity? verse,
     VerseLanguage? currentLanguage,
     VerseLanguage? preferredLanguage,
-  }) => DailyVerseOffline(
-      verse: verse ?? this.verse,
-      currentLanguage: currentLanguage ?? this.currentLanguage,
-      preferredLanguage: preferredLanguage ?? this.preferredLanguage,
-    );
+  }) =>
+      DailyVerseOffline(
+        verse: verse ?? this.verse,
+        currentLanguage: currentLanguage ?? this.currentLanguage,
+        preferredLanguage: preferredLanguage ?? this.preferredLanguage,
+      );
 
   @override
   List<Object?> get props => [verse, currentLanguage, preferredLanguage];

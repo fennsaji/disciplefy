@@ -11,8 +11,9 @@ class ToggleSaveGuideApi {
   Future<Either<Failure, SavedGuideEntity>> call({
     required String guideId,
     required bool save,
-  }) async => await repository.toggleSaveGuideApi(
-      guideId: guideId,
-      save: save,
-    );
+  }) async =>
+      await repository.toggleSaveGuideApi(
+        guideId: guideId,
+        save: save,
+      );
 }

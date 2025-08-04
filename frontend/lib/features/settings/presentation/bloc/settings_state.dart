@@ -38,4 +38,3 @@ class SettingsUpdateSuccess extends SettingsState {
   @override
   List<Object?> get props => [message];
 }
-

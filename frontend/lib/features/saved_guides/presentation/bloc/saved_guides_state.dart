@@ -27,10 +27,11 @@ class SavedGuidesLoaded extends SavedGuidesState {
   SavedGuidesLoaded copyWith({
     List<SavedGuideEntity>? savedGuides,
     List<SavedGuideEntity>? recentGuides,
-  }) => SavedGuidesLoaded(
-      savedGuides: savedGuides ?? this.savedGuides,
-      recentGuides: recentGuides ?? this.recentGuides,
-    );
+  }) =>
+      SavedGuidesLoaded(
+        savedGuides: savedGuides ?? this.savedGuides,
+        recentGuides: recentGuides ?? this.recentGuides,
+      );
 }
 
 class SavedGuidesError extends SavedGuidesState {
@@ -73,14 +74,14 @@ class SavedGuidesApiLoaded extends SavedGuidesState {
 
   @override
   List<Object?> get props => [
-    savedGuides,
-    recentGuides,
-    isLoadingSaved,
-    isLoadingRecent,
-    hasMoreSaved,
-    hasMoreRecent,
-    currentTab,
-  ];
+        savedGuides,
+        recentGuides,
+        isLoadingSaved,
+        isLoadingRecent,
+        hasMoreSaved,
+        hasMoreRecent,
+        currentTab,
+      ];
 
   SavedGuidesApiLoaded copyWith({
     List<SavedGuideEntity>? savedGuides,
@@ -90,15 +91,16 @@ class SavedGuidesApiLoaded extends SavedGuidesState {
     bool? hasMoreSaved,
     bool? hasMoreRecent,
     int? currentTab,
-  }) => SavedGuidesApiLoaded(
-      savedGuides: savedGuides ?? this.savedGuides,
-      recentGuides: recentGuides ?? this.recentGuides,
-      isLoadingSaved: isLoadingSaved ?? this.isLoadingSaved,
-      isLoadingRecent: isLoadingRecent ?? this.isLoadingRecent,
-      hasMoreSaved: hasMoreSaved ?? this.hasMoreSaved,
-      hasMoreRecent: hasMoreRecent ?? this.hasMoreRecent,
-      currentTab: currentTab ?? this.currentTab,
-    );
+  }) =>
+      SavedGuidesApiLoaded(
+        savedGuides: savedGuides ?? this.savedGuides,
+        recentGuides: recentGuides ?? this.recentGuides,
+        isLoadingSaved: isLoadingSaved ?? this.isLoadingSaved,
+        isLoadingRecent: isLoadingRecent ?? this.isLoadingRecent,
+        hasMoreSaved: hasMoreSaved ?? this.hasMoreSaved,
+        hasMoreRecent: hasMoreRecent ?? this.hasMoreRecent,
+        currentTab: currentTab ?? this.currentTab,
+      );
 }
 
 class SavedGuidesTabLoading extends SavedGuidesState {

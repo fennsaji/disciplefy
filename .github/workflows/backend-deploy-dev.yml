@@ -54,7 +54,7 @@ jobs:
     - name: 🦕 Setup Deno
       uses: denoland/setup-deno@v2
       with:
-        deno-version: v1.47.x
+        deno-version: v2.4.x
         
     - name: 🔧 Verify Deno installation
       run: |
@@ -64,10 +64,10 @@ jobs:
     - name: 🔍 TypeScript compilation check
       working-directory: ./backend
       run: |
-        # Check if TypeScript files can be compiled
+        # Check if TypeScript files can be compiled using Deno
         find supabase/functions -name "*.ts" -type f | while read -r file; do
           echo "Checking TypeScript syntax: $file"
-          npx tsc --noEmit --skipLibCheck "$file" 2>/dev/null || {
+          deno check "$file" || {
             echo "❌ TypeScript error in $file"
             exit 1
           }
@@ -79,9 +79,15 @@ jobs:
       run: |
         echo "🔍 Validating Edge Function structure..."
         
-        # Check that each function has an index.ts file
+        # Check that each function has an index.ts file (exclude _shared directory)
         for func_dir in supabase/functions/*/; do
           func_name=$(basename "$func_dir")
+          
+          # Skip _shared directory as it's not a function
+          if [ "$func_name" = "_shared" ]; then
+            echo "ℹ️ Skipping _shared directory (utility/shared code)"
+            continue
+          fi
           
           if [ ! -f "${func_dir}index.ts" ]; then
             echo "❌ Missing index.ts in function: $func_name"
@@ -135,7 +141,18 @@ jobs:
         node-version: '20'
         
     - name: 🔧 Install Supabase CLI
-      run: npm install -g supabase@latest
+      run: |
+        # Install Supabase CLI using GitHub releases (latest version)
+        SUPABASE_VERSION="2.33.9"
+        curl -fsSL "https://github.com/supabase/cli/releases/download/v${SUPABASE_VERSION}/supabase_linux_amd64.tar.gz" | tar -xz -C /tmp
+        sudo mv /tmp/supabase /usr/local/bin/supabase
+        chmod +x /usr/local/bin/supabase
+        
+    - name: ✅ Verify Supabase CLI
+      run: |
+        # Make sure CLI is accessible
+        supabase --version
+        echo "✅ Supabase CLI is ready"
       
     - name: 🔍 Determine deployment environment
       id: env-setup
@@ -158,6 +175,7 @@ jobs:
     - name: ✅ Validate Supabase connection
       working-directory: ./backend
       run: |
+        export PATH="$HOME/.local/bin:$PATH"
         echo "🔗 Testing Supabase connection to ${{ env.DEPLOY_ENV }}..."
         if [ -z "${{ env.PROJECT_REF }}" ]; then
           echo "❌ Project reference not set for ${{ env.DEPLOY_ENV }}"

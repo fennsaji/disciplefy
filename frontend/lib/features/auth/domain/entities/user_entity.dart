@@ -50,16 +50,17 @@ class UserEntity extends Equatable {
     bool? isAnonymous,
     DateTime? createdAt,
     DateTime? lastSignInAt,
-  }) => UserEntity(
-      id: id ?? this.id,
-      email: email ?? this.email,
-      name: name ?? this.name,
-      avatarUrl: avatarUrl ?? this.avatarUrl,
-      authProvider: authProvider ?? this.authProvider,
-      languagePreference: languagePreference ?? this.languagePreference,
-      themePreference: themePreference ?? this.themePreference,
-      isAnonymous: isAnonymous ?? this.isAnonymous,
-      createdAt: createdAt ?? this.createdAt,
-      lastSignInAt: lastSignInAt ?? this.lastSignInAt,
-    );
+  }) =>
+      UserEntity(
+        id: id ?? this.id,
+        email: email ?? this.email,
+        name: name ?? this.name,
+        avatarUrl: avatarUrl ?? this.avatarUrl,
+        authProvider: authProvider ?? this.authProvider,
+        languagePreference: languagePreference ?? this.languagePreference,
+        themePreference: themePreference ?? this.themePreference,
+        isAnonymous: isAnonymous ?? this.isAnonymous,
+        createdAt: createdAt ?? this.createdAt,
+        lastSignInAt: lastSignInAt ?? this.lastSignInAt,
+      );
 }

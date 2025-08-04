@@ -40,4 +40,3 @@ class ToggleNotifications extends SettingsEvent {
 class LoadAppVersion extends SettingsEvent {}
 
 class ClearAllSettings extends SettingsEvent {}
-

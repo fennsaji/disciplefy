@@ -6,13 +6,13 @@ class UiUtils {
   UiUtils._();
 
   /// Calculates the best contrasting text color for a given background color
-  /// 
+  ///
   /// Uses luminance calculation to determine if the background is light or dark,
   /// then returns an appropriate text color for optimal readability.
-  /// 
+  ///
   /// Returns [Colors.black87] for light backgrounds and [Colors.white] for dark backgrounds
   /// to maintain WCAG contrast compliance.
-  /// 
+  ///
   /// Example:
   /// ```dart
   /// final textColor = UiUtils.getContrastColor(Colors.blue);
@@ -27,9 +27,9 @@ class UiUtils {
   }
 
   /// Gets the appropriate text color with null safety
-  /// 
+  ///
   /// Provides a safe fallback if the background color is null
-  /// 
+  ///
   /// Example:
   /// ```dart
   /// final textColor = UiUtils.getSafeContrastColor(theme.colorScheme.surface);

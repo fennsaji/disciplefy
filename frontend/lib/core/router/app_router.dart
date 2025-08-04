@@ -20,7 +20,7 @@ import 'auth_notifier.dart';
 
 class AppRouter {
   static final AuthNotifier _authNotifier = AuthNotifier();
-  
+
   static final GoRouter router = GoRouter(
     initialLocation: '/', // Let the redirect logic handle the initial route
     refreshListenable: _authNotifier, // Listen to auth state changes
@@ -45,8 +45,7 @@ class AppRouter {
 
       // Main App Routes (using StatefulShellRoute for proper navigation)
       StatefulShellRoute.indexedStack(
-        builder: (context, state, navigationShell) =>
-            AppShell(navigationShell: navigationShell),
+        builder: (context, state, navigationShell) => AppShell(navigationShell: navigationShell),
         branches: [
           // Home Branch
           StatefulShellBranch(
@@ -105,8 +104,7 @@ class AppRouter {
           final code = state.uri.queryParameters['code'];
           final stateParam = state.uri.queryParameters['state'];
           final error = state.uri.queryParameters['error'];
-          final errorDescription =
-              state.uri.queryParameters['error_description'];
+          final errorDescription = state.uri.queryParameters['error_description'];
 
           return AuthCallbackPage(
             code: code,
@@ -125,7 +123,7 @@ class AppRouter {
           // Handle different types of navigation data
           StudyGuide? studyGuide;
           Map<String, dynamic>? routeExtra;
-          
+
           // Parse navigation source from query parameters
           final sourceString = state.uri.queryParameters['source'];
           final navigationSource = StudyNavigationService.parseNavigationSource(sourceString);
@@ -158,7 +156,6 @@ class AppRouter {
       error: 'Page not found: ${state.matchedLocation}',
     ),
   );
-
 }
 
 // Navigation Extensions
@@ -168,10 +165,8 @@ extension AppRouterExtension on GoRouter {
   // void goToOnboardingPurpose() => go(AppRoutes.onboardingPurpose);
   void goToHome() => go(AppRoutes.home);
   void goToGenerateStudy() => go(AppRoutes.generateStudy);
-  void goToStudyGuide(StudyGuide studyGuide) =>
-      go(AppRoutes.studyGuide, extra: studyGuide);
-  void goToStudyGuideWithExtra(Map<String, dynamic> extra) =>
-      go(AppRoutes.studyGuide, extra: extra);
+  void goToStudyGuide(StudyGuide studyGuide) => go(AppRoutes.studyGuide, extra: studyGuide);
+  void goToStudyGuideWithExtra(Map<String, dynamic> extra) => go(AppRoutes.studyGuide, extra: extra);
   void goToSettings() => go(AppRoutes.settings);
   void goToSaved() => go(AppRoutes.saved);
   void goToLogin() => go(AppRoutes.login);

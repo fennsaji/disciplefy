@@ -7,7 +7,7 @@ import '../../../auth/presentation/bloc/auth_bloc.dart';
 import '../../../auth/presentation/bloc/auth_state.dart' as auth_states;
 
 /// User profile section widget for settings screen.
-/// 
+///
 /// Displays user profile information when authenticated,
 /// or shows guest status for anonymous users.
 class UserProfileSection extends StatelessWidget {
@@ -15,13 +15,13 @@ class UserProfileSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => BlocBuilder<AuthBloc, auth_states.AuthState>(
-      builder: (context, authState) {
-        if (authState is auth_states.AuthenticatedState) {
-          return _UserProfileTile(authState: authState);
-        }
-        return const _GuestProfileTile();
-      },
-    );
+        builder: (context, authState) {
+          if (authState is auth_states.AuthenticatedState) {
+            return _UserProfileTile(authState: authState);
+          }
+          return const _GuestProfileTile();
+        },
+      );
 }
 
 /// Profile tile for authenticated users
@@ -32,57 +32,57 @@ class _UserProfileTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-      child: Row(
-        children: [
-          _buildProfileAvatar(),
-          const SizedBox(width: 16),
-          Expanded(child: _buildProfileInfo(context)),
-        ],
-      ),
-    );
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+        child: Row(
+          children: [
+            _buildProfileAvatar(),
+            const SizedBox(width: 16),
+            Expanded(child: _buildProfileInfo(context)),
+          ],
+        ),
+      );
 
   Widget _buildProfileAvatar() => Container(
-      width: 64,
-      height: 64,
-      decoration: BoxDecoration(
-        color: AppTheme.primaryColor.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(32),
-        border: Border.all(
-          color: AppTheme.primaryColor.withOpacity(0.2),
-          width: 2,
+        width: 64,
+        height: 64,
+        decoration: BoxDecoration(
+          color: AppTheme.primaryColor.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(32),
+          border: Border.all(
+            color: AppTheme.primaryColor.withOpacity(0.2),
+            width: 2,
+          ),
         ),
-      ),
-      child: const Icon(
-        Icons.person,
-        size: 32,
-        color: AppTheme.primaryColor,
-      ),
-    );
+        child: const Icon(
+          Icons.person,
+          size: 32,
+          color: AppTheme.primaryColor,
+        ),
+      );
 
   Widget _buildProfileInfo(BuildContext context) => Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          authState.user.displayName ?? 'User',
-          style: GoogleFonts.inter(
-            fontSize: 18,
-            fontWeight: FontWeight.w600,
-            color: AppTheme.textPrimary,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            authState.user.userMetadata?['display_name']?.toString() ?? authState.user.email?.split('@')[0] ?? 'User',
+            style: GoogleFonts.inter(
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+              color: AppTheme.textPrimary,
+            ),
           ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          authState.user.email ?? 'No email',
-          style: GoogleFonts.inter(
-            fontSize: 14,
-            color: AppTheme.onSurfaceVariant,
+          const SizedBox(height: 4),
+          Text(
+            authState.user.email ?? 'No email',
+            style: GoogleFonts.inter(
+              fontSize: 14,
+              color: AppTheme.onSurfaceVariant,
+            ),
           ),
-        ),
-        const SizedBox(height: 8),
-        const _UserStatusChip(userType: 'google'), // Simplified for now
-      ],
-    );
+          const SizedBox(height: 8),
+          const _UserStatusChip(userType: 'google'), // Simplified for now
+        ],
+      );
 }
 
 /// Profile tile for guest users
@@ -91,57 +91,57 @@ class _GuestProfileTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-      child: Row(
-        children: [
-          _buildGuestAvatar(),
-          const SizedBox(width: 16),
-          Expanded(child: _buildGuestInfo()),
-        ],
-      ),
-    );
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+        child: Row(
+          children: [
+            _buildGuestAvatar(),
+            const SizedBox(width: 16),
+            Expanded(child: _buildGuestInfo()),
+          ],
+        ),
+      );
 
   Widget _buildGuestAvatar() => Container(
-      width: 64,
-      height: 64,
-      decoration: BoxDecoration(
-        color: AppTheme.surfaceColor,
-        borderRadius: BorderRadius.circular(32),
-        border: Border.all(
-          color: AppTheme.borderColor,
-          width: 2,
+        width: 64,
+        height: 64,
+        decoration: BoxDecoration(
+          color: AppTheme.surfaceColor,
+          borderRadius: BorderRadius.circular(32),
+          border: Border.all(
+            color: AppTheme.onSurfaceVariant,
+            width: 2,
+          ),
         ),
-      ),
-      child: Icon(
-        Icons.person_outline,
-        size: 32,
-        color: AppTheme.textSecondary,
-      ),
-    );
+        child: const Icon(
+          Icons.person_outline,
+          size: 32,
+          color: AppTheme.onSurfaceVariant,
+        ),
+      );
 
   Widget _buildGuestInfo() => Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Guest User',
-          style: GoogleFonts.inter(
-            fontSize: 18,
-            fontWeight: FontWeight.w600,
-            color: AppTheme.textPrimary,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Guest User',
+            style: GoogleFonts.inter(
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+              color: AppTheme.textPrimary,
+            ),
           ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          'Sign in to sync your data',
-          style: GoogleFonts.inter(
-            fontSize: 14,
-            color: AppTheme.textSecondary,
+          const SizedBox(height: 4),
+          Text(
+            'Sign in to sync your data',
+            style: GoogleFonts.inter(
+              fontSize: 14,
+              color: AppTheme.onSurfaceVariant,
+            ),
           ),
-        ),
-        const SizedBox(height: 8),
-        const _UserStatusChip(userType: 'guest'),
-      ],
-    );
+          const SizedBox(height: 8),
+          const _UserStatusChip(userType: 'guest'),
+        ],
+      );
 }
 
 /// Status chip showing user type
@@ -153,7 +153,7 @@ class _UserStatusChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final chipData = _getChipData(userType);
-    
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(

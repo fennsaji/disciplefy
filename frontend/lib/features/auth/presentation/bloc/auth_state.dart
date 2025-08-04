@@ -46,24 +46,20 @@ class AuthenticatedState extends AuthState {
   String? get email => user.email;
   String? get displayName => user.userMetadata?['full_name'] ?? user.userMetadata?['name'];
   String? get photoUrl => user.userMetadata?['avatar_url'] ?? user.userMetadata?['picture'];
-  
+
   /// Profile helpers
   String get languagePreference => profile?['language_preference'] ?? 'en';
   String get themePreference => profile?['theme_preference'] ?? 'light';
   bool get isAdmin => profile?['is_admin'] == true;
-  DateTime? get profileCreatedAt => profile?['created_at'] != null 
-      ? DateTime.tryParse(profile!['created_at']) 
-      : null;
-  DateTime? get profileUpdatedAt => profile?['updated_at'] != null 
-      ? DateTime.tryParse(profile!['updated_at']) 
-      : null;
+  DateTime? get profileCreatedAt => profile?['created_at'] != null ? DateTime.tryParse(profile!['created_at']) : null;
+  DateTime? get profileUpdatedAt => profile?['updated_at'] != null ? DateTime.tryParse(profile!['updated_at']) : null;
 
   /// Creates a copy of this state with updated profile
   AuthenticatedState copyWithProfile(Map<String, dynamic>? newProfile) => AuthenticatedState(
-      user: user,
-      profile: newProfile,
-      isAnonymous: isAnonymous,
-    );
+        user: user,
+        profile: newProfile,
+        isAnonymous: isAnonymous,
+      );
 }
 
 /// State when an authentication error occurs
