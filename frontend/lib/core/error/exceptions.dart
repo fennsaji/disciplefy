@@ -1,14 +1,14 @@
 /// Custom exceptions for the Disciplefy Bible Study app.
-/// 
+///
 /// This file defines all application-specific exceptions following
 /// Clean Architecture principles and standardized error handling.
 abstract class AppException implements Exception {
   /// The error message to display to users.
   final String message;
-  
+
   /// Error code for logging and debugging purposes.
   final String code;
-  
+
   /// Additional context for the error.
   final Map<String, dynamic>? context;
 

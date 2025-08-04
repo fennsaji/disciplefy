@@ -47,10 +47,10 @@ class ApiAuthHelper {
       if (!Hive.isBoxOpen(_anonymousSessionBoxName)) {
         await Hive.openBox(_anonymousSessionBoxName);
       }
-      
+
       final box = Hive.box(_anonymousSessionBoxName);
       String? sessionId = box.get(_sessionIdKey);
-      
+
       if (sessionId == null || sessionId.isEmpty) {
         sessionId = _uuid.v4();
         await box.put(_sessionIdKey, sessionId);
@@ -58,7 +58,7 @@ class ApiAuthHelper {
       } else {
         print('🔐 [API] Using existing anonymous session ID: $sessionId');
       }
-      
+
       return sessionId;
     } catch (e) {
       // Fallback to generating a new session ID

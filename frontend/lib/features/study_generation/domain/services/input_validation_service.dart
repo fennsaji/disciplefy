@@ -6,13 +6,13 @@ import '../../../../core/utils/validation_utils.dart';
 import '../usecases/generate_study_guide.dart';
 
 /// Domain service for input validation logic.
-/// 
+///
 /// This service encapsulates all business rules for validating
 /// study generation inputs, providing a single source of truth
 /// for validation logic across the application.
 class InputValidationService {
   /// Regular expression pattern for scripture references.
-  /// 
+  ///
   /// Matches formats like:
   /// - John 3:16
   /// - 1 Corinthians 13:4-7
@@ -23,10 +23,10 @@ class InputValidationService {
   );
 
   /// Validates input text based on type and returns validation result.
-  /// 
+  ///
   /// [input] The input text to validate
   /// [inputType] The type of input ('scripture' or 'topic')
-  /// 
+  ///
   /// Returns [ValidationResult] containing validity status and error message.
   ValidationResult validateInput(String input, String inputType) {
     // Use ValidationUtils for consistent empty check
@@ -108,10 +108,10 @@ class InputValidationService {
   }
 
   /// Creates parameters object with validation.
-  /// 
+  ///
   /// This method combines validation with parameter creation,
   /// ensuring that only valid parameters can be created.
-  /// 
+  ///
   /// Returns Either a [ValidationFailure] or valid parameters.
   Either<ValidationFailure, StudyGenerationParams> createValidatedParams({
     required String input,
@@ -119,7 +119,7 @@ class InputValidationService {
     String? language,
   }) {
     final result = validateInput(input, inputType);
-    
+
     if (!result.isValid && result.errorMessage != null) {
       return Left(ValidationFailure(
         message: result.errorMessage!,
@@ -145,7 +145,7 @@ class InputValidationService {
 class ValidationResult {
   /// Whether the input is valid.
   final bool isValid;
-  
+
   /// Error message if invalid (null for valid inputs or empty input).
   final String? errorMessage;
 

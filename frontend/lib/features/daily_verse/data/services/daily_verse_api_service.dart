@@ -12,11 +12,10 @@ import '../../domain/entities/daily_verse_entity.dart';
 /// API service for fetching daily Bible verses
 class DailyVerseApiService {
   static const String _dailyVerseEndpoint = '/functions/v1/daily-verse';
-  
+
   final HttpService _httpService;
 
-  DailyVerseApiService({HttpService? httpService}) 
-      : _httpService = httpService ?? HttpServiceProvider.instance;
+  DailyVerseApiService({HttpService? httpService}) : _httpService = httpService ?? HttpServiceProvider.instance;
 
   /// Get today's daily verse
   Future<Either<Failure, DailyVerseEntity>> getTodaysVerse() async => getDailyVerse(null);
@@ -25,7 +24,7 @@ class DailyVerseApiService {
   Future<Either<Failure, DailyVerseEntity>> getDailyVerse(DateTime? date) async {
     try {
       final headers = await _httpService.createHeaders();
-      
+
       // Build URL with optional date parameter
       String url = '${AppConfig.supabaseUrl}$_dailyVerseEndpoint';
       if (date != null) {
@@ -42,9 +41,8 @@ class DailyVerseApiService {
           message: 'Daily verse not found for the requested date',
         ));
       } else {
-        final Map<String, dynamic>? errorData = 
-            json.decode(response.body) as Map<String, dynamic>?;
-        
+        final Map<String, dynamic>? errorData = json.decode(response.body) as Map<String, dynamic>?;
+
         return Left(ServerFailure(
           message: errorData?['message'] ?? 'Failed to fetch daily verse',
         ));
@@ -72,7 +70,7 @@ class DailyVerseApiService {
   Either<Failure, DailyVerseEntity> _parseVerseResponse(String responseBody) {
     try {
       final Map<String, dynamic> jsonData = json.decode(responseBody);
-      
+
       if (!jsonData.containsKey('success') || !jsonData.containsKey('data')) {
         return const Left(ServerFailure(
           message: 'Invalid response format from daily verse API',
@@ -87,7 +85,6 @@ class DailyVerseApiService {
 
       final DailyVerseResponse verseResponse = DailyVerseResponse.fromJson(jsonData);
       return Right(verseResponse.data.toEntity());
-
     } on FormatException catch (e) {
       return Left(ServerFailure(
         message: 'Invalid JSON format in response: ${e.message}',
@@ -103,13 +100,11 @@ class DailyVerseApiService {
     }
   }
 
-
-
   /// Check if service is available (health check)
   Future<bool> isServiceAvailable() async {
     try {
       final headers = await _httpService.createHeaders();
-      
+
       final response = await _httpService.get(
         '${AppConfig.supabaseUrl}$_dailyVerseEndpoint',
         headers: headers,

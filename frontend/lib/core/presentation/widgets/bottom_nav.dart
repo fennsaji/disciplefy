@@ -18,7 +18,7 @@ class NavTab {
 }
 
 /// Disciplefy Bottom Navigation Bar - Light Theme
-/// 
+///
 /// Features:
 /// ✅ Fixed overflow issues with proper SafeArea usage
 /// ✅ Light background (#FAFAFA) with rounded top corners
@@ -69,47 +69,47 @@ class DisciplefyBottomNav extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => ClipRRect(
-      borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-      child: Container(
-        decoration: const BoxDecoration(
-          color: Color(0xFFFAFAFA), // Light background
-          border: Border(
-            top: BorderSide(
-              color: Color(0xFFE5E5E5), // Top border for separation
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+        child: Container(
+          decoration: const BoxDecoration(
+            color: Color(0xFFFAFAFA), // Light background
+            border: Border(
+              top: BorderSide(
+                color: Color(0xFFE5E5E5), // Top border for separation
+              ),
             ),
+            boxShadow: [
+              BoxShadow(
+                color: Color(0x0A000000), // Very subtle shadow for light theme
+                blurRadius: 8,
+                offset: Offset(0, -2),
+              ),
+            ],
           ),
-          boxShadow: [
-            BoxShadow(
-              color: Color(0x0A000000), // Very subtle shadow for light theme
-              blurRadius: 8,
-              offset: Offset(0, -2),
-            ),
-          ],
-        ),
-        child: SafeArea(
-          top: false, // Don't apply SafeArea to top
-          child: SizedBox(
-            height: 60, // Fixed height to prevent overflow
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: tabs.asMap().entries.map((entry) {
-                final index = entry.key;
-                final tab = entry.value;
-                final isSelected = currentIndex == index;
+          child: SafeArea(
+            top: false, // Don't apply SafeArea to top
+            child: SizedBox(
+              height: 60, // Fixed height to prevent overflow
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: tabs.asMap().entries.map((entry) {
+                  final index = entry.key;
+                  final tab = entry.value;
+                  final isSelected = currentIndex == index;
 
-                return Expanded(
-                  child: _BottomNavItem(
-                    tab: tab,
-                    isSelected: isSelected,
-                    onTap: () => _handleTap(context, index),
-                  ),
-                );
-              }).toList(),
+                  return Expanded(
+                    child: _BottomNavItem(
+                      tab: tab,
+                      isSelected: isSelected,
+                      onTap: () => _handleTap(context, index),
+                    ),
+                  );
+                }).toList(),
+              ),
             ),
           ),
         ),
-      ),
-    );
+      );
 
   void _handleTap(BuildContext context, int index) {
     if (index != currentIndex) {
@@ -162,22 +162,18 @@ class _BottomNavItem extends StatelessWidget {
                   width: 28,
                   height: 28,
                   decoration: BoxDecoration(
-                    color: isSelected 
-                        ? activeColor.withOpacity(0.15)
-                        : Colors.transparent,
+                    color: isSelected ? activeColor.withOpacity(0.15) : Colors.transparent,
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Icon(
-                    isSelected && tab.activeIcon != null 
-                        ? tab.activeIcon! 
-                        : tab.icon,
+                    isSelected && tab.activeIcon != null ? tab.activeIcon! : tab.icon,
                     size: 18,
                     color: isSelected ? activeColor : inactiveColor,
                   ),
                 ),
-                
+
                 const SizedBox(height: 2),
-                
+
                 // Label with custom styling
                 Text(
                   tab.label,
@@ -198,4 +194,3 @@ class _BottomNavItem extends StatelessWidget {
     );
   }
 }
-

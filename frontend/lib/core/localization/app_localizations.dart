@@ -7,8 +7,7 @@ class AppLocalizations {
 
   static AppLocalizations? of(BuildContext context) => Localizations.of<AppLocalizations>(context, AppLocalizations);
 
-  static const LocalizationsDelegate<AppLocalizations> delegate =
-      _AppLocalizationsDelegate();
+  static const LocalizationsDelegate<AppLocalizations> delegate = _AppLocalizationsDelegate();
 
   static const List<LocalizationsDelegate<dynamic>> localizationsDelegates = [
     delegate,

@@ -5,7 +5,7 @@ import '../../features/settings/data/models/theme_mode_model.dart';
 
 class ThemeService extends ChangeNotifier {
   static const String _themeModeKey = 'theme_mode';
-  
+
   ThemeModeEntity _currentTheme = ThemeModeEntity.light();
   bool _isInitialized = false;
 
@@ -14,7 +14,7 @@ class ThemeService extends ChangeNotifier {
 
   Future<void> initialize() async {
     if (_isInitialized) return;
-    
+
     try {
       final prefs = await SharedPreferences.getInstance();
       final themeString = prefs.getString(_themeModeKey) ?? 'light';
@@ -33,7 +33,7 @@ class ThemeService extends ChangeNotifier {
       final prefs = await SharedPreferences.getInstance();
       final themeModel = ThemeModeModel.fromEntity(theme);
       await prefs.setString(_themeModeKey, themeModel.toStringValue());
-      
+
       _currentTheme = theme;
       notifyListeners();
     } catch (e) {

@@ -12,7 +12,7 @@ abstract class HomeStudyGenerationEvent extends Equatable {
 class GenerateStudyGuideFromVerse extends HomeStudyGenerationEvent {
   /// The verse reference to generate a study guide from.
   final String verseReference;
-  
+
   /// The language for the study guide.
   final String language;
 
@@ -29,7 +29,7 @@ class GenerateStudyGuideFromVerse extends HomeStudyGenerationEvent {
 class GenerateStudyGuideFromTopic extends HomeStudyGenerationEvent {
   /// The topic name to generate a study guide from.
   final String topicName;
-  
+
   /// The language for the study guide.
   final String language;
 

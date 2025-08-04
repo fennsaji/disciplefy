@@ -14,7 +14,7 @@ class UnifiedSavedGuidesBloc extends Bloc<SavedGuidesEvent, SavedGuidesState> wi
   final GetSavedGuidesWithSync _getSavedGuidesWithSync;
   final GetRecentGuidesWithSync _getRecentGuidesWithSync;
   final ToggleSaveGuideApi _toggleSaveGuideApi;
-  
+
   // Debouncer for tab changes
   Timer? _debounceTimer;
 
@@ -22,11 +22,10 @@ class UnifiedSavedGuidesBloc extends Bloc<SavedGuidesEvent, SavedGuidesState> wi
     required GetSavedGuidesWithSync getSavedGuidesWithSync,
     required GetRecentGuidesWithSync getRecentGuidesWithSync,
     required ToggleSaveGuideApi toggleSaveGuideApi,
-  }) : _getSavedGuidesWithSync = getSavedGuidesWithSync,
-       _getRecentGuidesWithSync = getRecentGuidesWithSync,
-       _toggleSaveGuideApi = toggleSaveGuideApi,
-       super(SavedGuidesInitial()) {
-    
+  })  : _getSavedGuidesWithSync = getSavedGuidesWithSync,
+        _getRecentGuidesWithSync = getRecentGuidesWithSync,
+        _toggleSaveGuideApi = toggleSaveGuideApi,
+        super(SavedGuidesInitial()) {
     on<LoadSavedGuidesFromApi>(_onLoadSavedGuides);
     on<LoadRecentGuidesFromApi>(_onLoadRecentGuides);
     on<ToggleGuideApiEvent>(_onToggleGuide);
@@ -44,7 +43,7 @@ class UnifiedSavedGuidesBloc extends Bloc<SavedGuidesEvent, SavedGuidesState> wi
       targetTab: 0,
       resetSavedOffset: event.refresh,
     );
-    
+
     // Emit loading state
     _emitLoadingState(emit, loadingState);
 
@@ -54,7 +53,7 @@ class UnifiedSavedGuidesBloc extends Bloc<SavedGuidesEvent, SavedGuidesState> wi
       offset: event.refresh ? 0 : savedPagination.offset,
       forceRefresh: event.refresh,
     );
-    
+
     // REFACTORED: Use centralized result handling
     _handleSavedGuidesResult(
       result: result,
@@ -75,7 +74,7 @@ class UnifiedSavedGuidesBloc extends Bloc<SavedGuidesEvent, SavedGuidesState> wi
       targetTab: 1,
       resetRecentOffset: event.refresh,
     );
-    
+
     // Emit loading state
     _emitLoadingState(emit, loadingState);
 
@@ -85,7 +84,7 @@ class UnifiedSavedGuidesBloc extends Bloc<SavedGuidesEvent, SavedGuidesState> wi
       offset: event.refresh ? 0 : recentPagination.offset,
       forceRefresh: event.refresh,
     );
-    
+
     // REFACTORED: Use centralized result handling
     _handleRecentGuidesResult(
       result: result,
@@ -103,7 +102,7 @@ class UnifiedSavedGuidesBloc extends Bloc<SavedGuidesEvent, SavedGuidesState> wi
       guideId: event.guideId,
       save: event.save,
     );
-    
+
     result.fold(
       (failure) {
         if (failure.runtimeType.toString().contains('Authentication')) {
@@ -149,14 +148,14 @@ class UnifiedSavedGuidesBloc extends Bloc<SavedGuidesEvent, SavedGuidesState> wi
     Emitter<SavedGuidesState> emit,
   ) async {
     // TIMER RESOURCE LEAK FIX: Proper cleanup and error handling
-    
+
     // Cancel any existing debounce timer
     _debounceTimer?.cancel();
     _debounceTimer = null; // Clear reference to prevent memory leaks
-    
+
     // Use a more robust approach with proper error handling
     final completer = Completer<void>();
-    
+
     try {
       _debounceTimer = Timer(const Duration(milliseconds: 300), () {
         try {
@@ -176,7 +175,7 @@ class UnifiedSavedGuidesBloc extends Bloc<SavedGuidesEvent, SavedGuidesState> wi
           }
         }
       });
-      
+
       // Wait for debounced operation with timeout protection
       await completer.future.timeout(
         const Duration(seconds: 1), // Prevent hanging indefinitely
@@ -193,7 +192,7 @@ class UnifiedSavedGuidesBloc extends Bloc<SavedGuidesEvent, SavedGuidesState> wi
       rethrow;
     }
   }
-  
+
   /// EXTRACTED METHOD: Handles tab change logic separately
   /// Improves testability and reduces complexity in timer callback
   void _handleTabChangeLogic(
@@ -201,7 +200,7 @@ class UnifiedSavedGuidesBloc extends Bloc<SavedGuidesEvent, SavedGuidesState> wi
     Emitter<SavedGuidesState> emit,
   ) {
     final currentState = state;
-    
+
     if (currentState is SavedGuidesApiLoaded) {
       emit(currentState.copyWith(currentTab: event.tabIndex));
     } else {
@@ -227,7 +226,7 @@ class UnifiedSavedGuidesBloc extends Bloc<SavedGuidesEvent, SavedGuidesState> wi
     bool? shouldInclude,
   ) {
     final updatedList = list.where((guide) => guide.id != updatedGuide.id).toList();
-    
+
     if (shouldInclude == true) {
       // Add to the beginning of the list
       updatedList.insert(0, updatedGuide);
@@ -239,7 +238,7 @@ class UnifiedSavedGuidesBloc extends Bloc<SavedGuidesEvent, SavedGuidesState> wi
       }
     }
     // If shouldInclude is false, guide is removed (already filtered out above)
-    
+
     return updatedList;
   }
 
@@ -330,8 +329,8 @@ class UnifiedSavedGuidesBloc extends Bloc<SavedGuidesEvent, SavedGuidesState> wi
           savedGuides: updatedSavedGuides,
           recentGuides: loadingState.currentRecentGuides,
           hasMoreSaved: hasMore,
-          currentTab: loadingState.currentState is SavedGuidesApiLoaded 
-              ? (loadingState.currentState as SavedGuidesApiLoaded).currentTab 
+          currentTab: loadingState.currentState is SavedGuidesApiLoaded
+              ? (loadingState.currentState as SavedGuidesApiLoaded).currentTab
               : 0,
         ));
       },
@@ -369,8 +368,8 @@ class UnifiedSavedGuidesBloc extends Bloc<SavedGuidesEvent, SavedGuidesState> wi
           savedGuides: loadingState.currentSavedGuides,
           recentGuides: updatedRecentGuides,
           hasMoreRecent: hasMore,
-          currentTab: loadingState.currentState is SavedGuidesApiLoaded 
-              ? (loadingState.currentState as SavedGuidesApiLoaded).currentTab 
+          currentTab: loadingState.currentState is SavedGuidesApiLoaded
+              ? (loadingState.currentState as SavedGuidesApiLoaded).currentTab
               : 1,
         ));
       },
@@ -386,7 +385,7 @@ class UnifiedSavedGuidesBloc extends Bloc<SavedGuidesEvent, SavedGuidesState> wi
   }) {
     if (failure.runtimeType.toString().contains('Authentication')) {
       emit(SavedGuidesAuthRequired(
-        message: isForSavedGuides 
+        message: isForSavedGuides
             ? 'You need to be signed in to view saved guides'
             : 'You need to be signed in to view recent guides',
         isForSavedGuides: isForSavedGuides,

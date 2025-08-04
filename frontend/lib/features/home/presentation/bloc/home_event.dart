@@ -77,7 +77,7 @@ class TopicsStateChangedEvent extends HomeEvent {
   List<Object?> get props => [topicsState];
 }
 
-/// Internal event triggered when study generation BLoC state changes  
+/// Internal event triggered when study generation BLoC state changes
 class StudyGenerationStateChangedEvent extends HomeEvent {
   final generation_states.HomeStudyGenerationState generationState;
 

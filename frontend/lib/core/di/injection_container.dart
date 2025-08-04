@@ -92,7 +92,7 @@ Future<void> initializeDependencies() async {
       supabaseClient: sl(),
     ),
   );
-  
+
   sl.registerLazySingleton<StudyLocalDataSource>(
     () => StudyLocalDataSourceImpl(),
   );
@@ -111,11 +111,11 @@ Future<void> initializeDependencies() async {
   sl.registerLazySingleton(() => InputValidationService());
 
   sl.registerFactory(() => StudyBloc(
-    generateStudyGuide: sl(),
-    saveGuideService: sl(),
-    validationService: sl(),
-    authService: sl(),
-  ));
+        generateStudyGuide: sl(),
+        saveGuideService: sl(),
+        validationService: sl(),
+        authService: sl(),
+      ));
 
   //! Settings
   sl.registerLazySingleton<SettingsLocalDataSource>(
@@ -136,7 +136,6 @@ Future<void> initializeDependencies() async {
         getAppVersion: sl(),
         settingsRepository: sl(),
       ));
-
 
   //! Daily Verse
   sl.registerLazySingleton<DailyVerseApiService>(
@@ -174,11 +173,10 @@ Future<void> initializeDependencies() async {
   sl.registerLazySingleton<StudyGuidesApiService>(
     () => StudyGuidesApiService(),
   );
-  
+
   sl.registerLazySingleton<SaveGuideApiService>(
     () => SaveGuideApiService(httpClient: sl()),
   );
-
 
   // Register Saved Guides Data Sources
   sl.registerLazySingleton<SavedGuidesLocalDataSource>(
@@ -227,17 +225,17 @@ Future<void> initializeDependencies() async {
   sl.registerLazySingleton(() => RecommendedGuidesService());
 
   sl.registerFactory(() => HomeBloc(
-    topicsBloc: sl(),
-    studyGenerationBloc: sl(),
-  ));
-  
+        topicsBloc: sl(),
+        studyGenerationBloc: sl(),
+      ));
+
   sl.registerFactory(() => RecommendedTopicsBloc(
-    topicsService: sl(),
-  ));
-  
+        topicsService: sl(),
+      ));
+
   sl.registerFactory(() => HomeStudyGenerationBloc(
-    generateStudyGuideUseCase: sl(),
-  ));
+        generateStudyGuideUseCase: sl(),
+      ));
 
   //! Onboarding
   sl.registerLazySingleton<OnboardingLocalDataSource>(
@@ -253,10 +251,10 @@ Future<void> initializeDependencies() async {
   sl.registerLazySingleton(() => CompleteOnboarding(sl()));
 
   sl.registerFactory(() => OnboardingBloc(
-    getOnboardingState: sl(),
-    saveLanguagePreference: sl(),
-    completeOnboarding: sl(),
-  ));
+        getOnboardingState: sl(),
+        saveLanguagePreference: sl(),
+        completeOnboarding: sl(),
+      ));
 
   //! User Profile
   sl.registerLazySingleton<UserProfileRepository>(
@@ -272,9 +270,9 @@ Future<void> initializeDependencies() async {
   sl.registerLazySingleton(() => DeleteUserProfile(repository: sl()));
 
   sl.registerFactory(() => UserProfileBloc(
-    getUserProfile: sl(),
-    updateUserProfile: sl(),
-    deleteUserProfile: sl(),
-    repository: sl(),
-  ));
+        getUserProfile: sl(),
+        updateUserProfile: sl(),
+        deleteUserProfile: sl(),
+        repository: sl(),
+      ));
 }

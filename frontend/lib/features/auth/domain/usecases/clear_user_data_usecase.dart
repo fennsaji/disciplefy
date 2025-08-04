@@ -4,10 +4,10 @@ import 'package:hive_flutter/hive_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// Use case for clearing user data during logout and account deletion
-/// Centralized data cleanup following Clean Architecture principles  
+/// Centralized data cleanup following Clean Architecture principles
 class ClearUserDataUseCase {
   static const FlutterSecureStorage _secureStorage = FlutterSecureStorage();
-  
+
   /// List of Hive boxes that contain user-specific data
   static const List<String> _userDataBoxes = [
     'user_preferences',
@@ -15,12 +15,12 @@ class ClearUserDataUseCase {
     'study_guides_cache',
     'daily_verse_cache',
   ];
-  
+
   /// Keys in app_settings box that should be cleared during logout
   /// (user-specific data that shouldn't persist across sessions)
   static const List<String> _appSettingsUserKeys = [
     'user_type',
-    'user_id', 
+    'user_id',
     'auth_token',
     'refresh_token',
     'access_token',
@@ -28,7 +28,7 @@ class ClearUserDataUseCase {
     'last_sync_timestamp',
     'current_user_session',
   ];
-  
+
   /// Keys in app_settings box that should be preserved during logout
   /// (app-level settings that persist across user sessions)
   static const List<String> _appSettingsPreservedKeys = [
@@ -45,14 +45,14 @@ class ClearUserDataUseCase {
     if (kDebugMode) {
       print('🧹 [CLEAR DATA] Starting user data cleanup...');
     }
-    
+
     await Future.wait([
       _clearSupabaseSession(),
       _clearSecureStorage(),
       _clearHiveBoxes(),
       _clearAdditionalUserData(),
     ]);
-    
+
     if (kDebugMode) {
       print('🧹 [CLEAR DATA] ✅ User data cleanup completed');
     }
@@ -89,17 +89,17 @@ class ClearUserDataUseCase {
   /// Clear all user-specific Hive boxes
   Future<void> _clearHiveBoxes() async {
     final List<Future<void>> clearTasks = [];
-    
+
     // Clear regular user data boxes completely
     for (final boxName in _userDataBoxes) {
       clearTasks.add(_clearHiveBox(boxName));
     }
-    
+
     // Handle app_settings box specially - only clear user-specific keys
     clearTasks.add(_clearAppSettingsUserData());
-    
+
     await Future.wait(clearTasks);
-    
+
     if (kDebugMode) {
       print('🧹 [CLEAR DATA] ✅ All user-specific data cleared');
     }
@@ -131,13 +131,13 @@ class ClearUserDataUseCase {
     try {
       if (Hive.isBoxOpen('app_settings')) {
         final box = Hive.box('app_settings');
-        
+
         // Log current state for debugging
         if (kDebugMode) {
           print('🧹 [CLEAR DATA] 📊 app_settings keys before cleanup: ${box.keys.toList()}');
           print('🧹 [CLEAR DATA] 📊 onboarding_completed before: ${box.get('onboarding_completed')}');
         }
-        
+
         // Clear only user-specific keys
         for (final key in _appSettingsUserKeys) {
           if (box.containsKey(key)) {
@@ -147,7 +147,7 @@ class ClearUserDataUseCase {
             }
           }
         }
-        
+
         // Log preserved state
         if (kDebugMode) {
           print('🧹 [CLEAR DATA] 📊 app_settings keys after cleanup: ${box.keys.toList()}');
@@ -165,13 +165,13 @@ class ClearUserDataUseCase {
       }
     }
   }
-  
+
   /// Clear additional app-specific storage (extend as needed)
   Future<void> _clearAdditionalUserData() async {
     try {
       // Add any additional cleanup logic here
       // For example: SharedPreferences, temporary files, etc.
-      
+
       if (kDebugMode) {
         print('🧹 [CLEAR DATA] ✅ Additional user data cleared');
       }

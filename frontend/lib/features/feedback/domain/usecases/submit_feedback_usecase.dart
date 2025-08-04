@@ -11,7 +11,8 @@ class SubmitFeedbackUseCase implements UseCase<void, SubmitFeedbackParams> {
   SubmitFeedbackUseCase({required this.repository});
 
   @override
-  Future<Either<Failure, void>> call(SubmitFeedbackParams params) async => await repository.submitFeedback(params.feedback);
+  Future<Either<Failure, void>> call(SubmitFeedbackParams params) async =>
+      await repository.submitFeedback(params.feedback);
 }
 
 /// Parameters for submit feedback use case
@@ -26,14 +27,15 @@ class SubmitFeedbackParams {
     required String message,
     String category = 'general',
     required UserContextEntity userContext,
-  }) => SubmitFeedbackParams(
-      feedback: FeedbackEntity(
-        wasHelpful: wasHelpful,
-        message: message,
-        category: category,
-        userContext: userContext,
-      ),
-    );
+  }) =>
+      SubmitFeedbackParams(
+        feedback: FeedbackEntity(
+          wasHelpful: wasHelpful,
+          message: message,
+          category: category,
+          userContext: userContext,
+        ),
+      );
 
   /// Create params for study guide feedback
   factory SubmitFeedbackParams.studyGuide({
@@ -42,26 +44,28 @@ class SubmitFeedbackParams {
     String? message,
     String category = 'content',
     required UserContextEntity userContext,
-  }) => SubmitFeedbackParams(
-      feedback: FeedbackEntity(
-        studyGuideId: studyGuideId,
-        wasHelpful: wasHelpful,
-        message: message,
-        category: category,
-        userContext: userContext,
-      ),
-    );
+  }) =>
+      SubmitFeedbackParams(
+        feedback: FeedbackEntity(
+          studyGuideId: studyGuideId,
+          wasHelpful: wasHelpful,
+          message: message,
+          category: category,
+          userContext: userContext,
+        ),
+      );
 
   /// Create params for bug report
   factory SubmitFeedbackParams.bugReport({
     required String message,
     required UserContextEntity userContext,
-  }) => SubmitFeedbackParams(
-      feedback: FeedbackEntity(
-        wasHelpful: false,
-        message: message,
-        category: 'technical',
-        userContext: userContext,
-      ),
-    );
+  }) =>
+      SubmitFeedbackParams(
+        feedback: FeedbackEntity(
+          wasHelpful: false,
+          message: message,
+          category: 'technical',
+          userContext: userContext,
+        ),
+      );
 }

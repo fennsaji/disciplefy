@@ -13,23 +13,22 @@ class RecommendedGuidesService {
   // API Configuration
   static String get _baseUrl => AppConfig.supabaseUrl;
   static const String _topicsEndpoint = '/functions/v1/topics-recommended';
-  
+
   final HttpService _httpService;
 
-  RecommendedGuidesService({HttpService? httpService}) 
-      : _httpService = httpService ?? HttpServiceProvider.instance;
+  RecommendedGuidesService({HttpService? httpService}) : _httpService = httpService ?? HttpServiceProvider.instance;
 
   /// Fetches all recommended guide topics from the API.
-  /// 
+  ///
   /// Returns [Right] with list of topics on success,
   /// [Left] with [Failure] on error.
   Future<Either<Failure, List<RecommendedGuideTopic>>> getAllTopics() async {
     try {
       if (kDebugMode) print('🚀 [TOPICS] Fetching topics from API...');
-      
+
       // Prepare headers for API request
       final headers = await _httpService.createHeaders();
-      
+
       // Make API request
       final response = await _httpService.get(
         '$_baseUrl$_topicsEndpoint',
@@ -49,15 +48,15 @@ class RecommendedGuidesService {
         print('💥 [TOPICS] Exception: $e');
         print('📚 [TOPICS] Stack trace: $stackTrace');
       }
-      
+
       return Left(NetworkFailure(message: 'Failed to connect to topics service: $e'));
     }
   }
 
   /// Fetches filtered topics based on category, difficulty, and limit.
-  /// 
+  ///
   /// [category] - Filter by topic category (optional)
-  /// [difficulty] - Filter by difficulty level (optional)  
+  /// [difficulty] - Filter by difficulty level (optional)
   /// [limit] - Maximum number of topics to return (optional)
   Future<Either<Failure, List<RecommendedGuideTopic>>> getFilteredTopics({
     String? category,
@@ -71,8 +70,8 @@ class RecommendedGuidesService {
       if (difficulty != null) queryParams['difficulty'] = difficulty;
       if (limit != null) queryParams['limit'] = limit.toString();
 
-      final uri = Uri.parse('$_baseUrl$_topicsEndpoint')
-          .replace(queryParameters: queryParams.isNotEmpty ? queryParams : null);
+      final uri =
+          Uri.parse('$_baseUrl$_topicsEndpoint').replace(queryParameters: queryParams.isNotEmpty ? queryParams : null);
 
       if (kDebugMode) print('🚀 [TOPICS] Fetching filtered topics: $uri');
 
@@ -96,21 +95,19 @@ class RecommendedGuidesService {
     }
   }
 
-
-
   /// Parses the API response and converts to domain entities.
   Either<Failure, List<RecommendedGuideTopic>> _parseTopicsResponse(String responseBody) {
     try {
       if (kDebugMode) print('📄 [TOPICS] Parsing response...');
       final Map<String, dynamic> jsonData = json.decode(responseBody);
-      
+
       // Parse the expected API format using RecommendedGuideTopicsResponse
       if (jsonData.containsKey('topics') || (jsonData.containsKey('data') && jsonData['data'].containsKey('topics'))) {
         // Handle both direct format {"topics": [...]} and nested format {"data": {"topics": [...]}}
         final topicsData = jsonData.containsKey('data') ? jsonData['data'] : jsonData;
         final response = RecommendedGuideTopicsResponse.fromJson(topicsData);
         final topics = response.toEntities();
-        
+
         if (kDebugMode) print('✅ [TOPICS] Successfully parsed ${topics.length} topics');
         return Right(topics);
       } else {
@@ -125,7 +122,6 @@ class RecommendedGuidesService {
       return Left(ClientFailure(message: 'Failed to parse topics response: $e'));
     }
   }
-
 
   /// Disposes of the service resources.
   /// Note: HttpService is a shared singleton, so we don't dispose it here.

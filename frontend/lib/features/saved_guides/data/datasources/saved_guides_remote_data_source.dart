@@ -34,28 +34,30 @@ class SavedGuidesRemoteDataSourceImpl implements SavedGuidesRemoteDataSource {
   Future<List<SavedGuideModel>> getSavedGuides({
     int limit = 20,
     int offset = 0,
-  }) async => await _apiService.getStudyGuides(
-      savedOnly: true,
-      limit: limit,
-      offset: offset,
-    );
+  }) async =>
+      await _apiService.getStudyGuides(
+        savedOnly: true,
+        limit: limit,
+        offset: offset,
+      );
 
   @override
   Future<List<SavedGuideModel>> getRecentGuides({
     int limit = 20,
     int offset = 0,
-  }) async => await _apiService.getStudyGuides(
-      limit: limit,
-      offset: offset,
-    );
+  }) async =>
+      await _apiService.getStudyGuides(
+        limit: limit,
+        offset: offset,
+      );
 
   @override
   Future<SavedGuideModel> toggleSaveGuide({
     required String guideId,
     required bool save,
-  }) async => await _apiService.saveUnsaveGuide(
-      guideId: guideId,
-      save: save,
-    );
+  }) async =>
+      await _apiService.saveUnsaveGuide(
+        guideId: guideId,
+        save: save,
+      );
 }
-
