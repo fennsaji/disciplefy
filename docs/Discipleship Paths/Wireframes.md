@@ -7,7 +7,7 @@
 * **Top App Bar:** Disciplefy Logo | Profile Icon
 * **Main Sections:**
 
-  * 📖 **Daily Verse (Text only)**
+  * 📖 **Daily Verse**
   * 🎯 **Generate Bible Study** Button
   * 🧭 **Explore Bible Topics**
   * Fellowship: Discipleship track Progress

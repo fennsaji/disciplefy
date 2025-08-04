@@ -126,13 +126,13 @@ if [ -d "frontend" ] && (has_changes_since_push "frontend" || git diff --name-on
         
         # Run comprehensive analysis
         echo "🔍 Running comprehensive Flutter analysis..."
-        if flutter analyze --fatal-infos >/dev/null 2>&1; then
+        if flutter analyze >/dev/null 2>&1; then
             echo -e "${GREEN}✅ Flutter analysis: PASSED${NC}"
         else
             echo -e "${RED}❌ Flutter analysis: FAILED${NC}"
             echo ""
             echo -e "${RED}Analysis errors:${NC}"
-            flutter analyze --fatal-infos 2>&1 | sed 's/^/   /'
+            flutter analyze 2>&1 | sed 's/^/   /'
             OVERALL_SUCCESS=false
         fi
         

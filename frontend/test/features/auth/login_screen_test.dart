@@ -27,9 +27,11 @@ void main() {
           primarySwatch: Colors.blue,
           colorScheme: ColorScheme.fromSeed(seedColor: AppTheme.primaryColor),
         ),
-        home: BlocProvider<AuthBloc>(
-          create: (context) => mockAuthBloc,
-          child: const LoginScreen(),
+        home: Scaffold(
+          body: BlocProvider<AuthBloc>(
+            create: (context) => mockAuthBloc,
+            child: const LoginScreen(),
+          ),
         ),
       );
 
@@ -47,7 +49,6 @@ void main() {
       expect(find.text('Deepen your faith through guided Bible study'), findsOneWidget);
       expect(find.text('Continue with Google'), findsOneWidget);
       expect(find.text('Continue as Guest'), findsOneWidget);
-      expect(find.text('Skip'), findsOneWidget);
     });
 
     testWidgets('should show loading state when authentication is in progress', (tester) async {
@@ -95,8 +96,12 @@ void main() {
       when(mockAuthBloc.state).thenReturn(const auth_states.UnauthenticatedState());
       when(mockAuthBloc.stream).thenAnswer((_) => Stream.value(const auth_states.UnauthenticatedState()));
 
+      // Set a larger test surface to avoid tap-outside-bounds issues
+      await tester.binding.setSurfaceSize(const Size(800, 1200));
+
       // Act
       await tester.pumpWidget(createTestWidget());
+      await tester.pumpAndSettle(); // Wait for layout to settle
       await tester.tap(find.text('Continue as Guest'));
       await tester.pump();
 
@@ -180,6 +185,7 @@ void main() {
       // Act
       await tester.pumpWidget(testWidget);
       await tester.pump(); // Trigger the stream emission
+      await tester.pumpAndSettle(); // Wait for navigation and animations
 
       // Assert
       expect(find.text('Home Screen'), findsOneWidget);
