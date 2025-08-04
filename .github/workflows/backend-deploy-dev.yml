@@ -181,7 +181,7 @@ jobs:
           echo "❌ Project reference not set for ${{ env.DEPLOY_ENV }}"
           exit 1
         fi
-        supabase projects list --token "$SUPABASE_ACCESS_TOKEN" > /dev/null
+        supabase projects list > /dev/null
         echo "✅ Supabase connection successful"
       env:
         SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
