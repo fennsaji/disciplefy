@@ -190,7 +190,7 @@ jobs:
       run: |
         echo "🗄️ Deploying database migrations..."
         if [ -d "supabase/migrations" ] && [ "$(ls -A supabase/migrations 2>/dev/null)" ]; then
-          supabase db push
+          supabase db push --password "$SUPABASE_DB_PASSWORD"
           echo "✅ Database migrations deployed"
         else
           echo "ℹ️ No migrations to deploy"
@@ -207,7 +207,7 @@ jobs:
             if [ -f "$policy_file" ]; then
               policy_name=$(basename "$policy_file" .sql)
               echo "🔐 Applying policy: $policy_name"
-              supabase db query --file "$policy_file"
+              supabase db query --file "$policy_file" --password "$SUPABASE_DB_PASSWORD"
             fi
           done
           echo "✅ RLS policies deployed"
