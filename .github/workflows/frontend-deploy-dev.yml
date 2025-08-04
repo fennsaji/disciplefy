@@ -104,7 +104,7 @@ jobs:
         working-directory: ./frontend
     
     outputs:
-      deployment-url: ${{ steps.deploy.outputs.preview-url }}
+      deployment-url: ${{ steps.deploy.outputs.deployment-url }}
       environment: ${{ steps.env-setup.outputs.environment }}
     
     steps:
@@ -147,10 +147,11 @@ jobs:
         run: |
           echo "📝 Creating ${{ env.DEPLOY_ENV }} environment configuration..."
           
-          # Create development environment configuration (no production dependencies)
+          # Create development environment configuration (only dev keys, no production fallbacks)
           cat > lib/core/config/dev_config.dart << EOF
           // Development configuration for ${{ env.DEPLOY_ENV }}
           // This file is generated during CI/CD and should not be committed
+          // Uses only development-specific secrets (no production fallbacks)
           
           class DevConfig {
             static const String environment = '${{ env.DEPLOY_ENV }}';
@@ -253,9 +254,9 @@ jobs:
           # Deploy directly to development Vercel app (no previews)
           # Both PRs and branch pushes deploy to the same development environment
           VERCEL_URL=$(vercel --token ${{ secrets.VERCEL_DEV_TOKEN }} --yes --prod --cwd build/web/frontend)
-          echo "preview-url=$VERCEL_URL" >> $GITHUB_OUTPUT
+          echo "deployment-url=$VERCEL_URL" >> $GITHUB_OUTPUT
           echo "deployment-type=development" >> $GITHUB_OUTPUT
-          echo "🚀 Deployed directly to development app (no preview URLs)"
+          echo "🚀 Deployed directly to disciplefy-dev app (not a preview)"
           
           echo "✅ Deployment to separate Vercel development app completed"
           echo "🌐 Development App URL: $VERCEL_URL"
@@ -269,7 +270,7 @@ jobs:
           # Wait for deployment to propagate
           sleep 45
           
-          DEPLOYMENT_URL="${{ steps.deploy.outputs.preview-url }}"
+          DEPLOYMENT_URL="${{ steps.deploy.outputs.deployment-url }}"
           
           if [ -z "$DEPLOYMENT_URL" ]; then
             echo "⚠️ No deployment URL found, skipping tests"
@@ -299,7 +300,7 @@ jobs:
           echo "🎉 Frontend deployment to ${{ env.DEPLOY_ENV }} completed!"
           
           if [ "${{ github.event.inputs.deploy_to_vercel }}" != "false" ]; then
-            echo "🌐 ${{ env.DEPLOY_ENV }} URL: ${{ steps.deploy.outputs.preview-url }}"
+            echo "🌐 ${{ env.DEPLOY_ENV }} URL: ${{ steps.deploy.outputs.deployment-url }}"
             echo "📱 Progressive Web App features enabled"
             echo "🔍 Routes tested and accessible"
           else
