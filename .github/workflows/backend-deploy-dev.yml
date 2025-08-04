@@ -239,7 +239,7 @@ jobs:
       run: |
         echo "🗄️ Deploying database migrations to ${{ env.DEPLOY_ENV }}..."
         if [ -d "supabase/migrations" ] && [ "$(ls -A supabase/migrations 2>/dev/null)" ]; then
-          supabase db push --project-ref "${{ env.PROJECT_REF }}"
+          supabase db push
           echo "✅ Database migrations deployed to ${{ env.DEPLOY_ENV }}"
         else
           echo "ℹ️ No migrations to deploy"
@@ -257,7 +257,7 @@ jobs:
             if [ -f "$policy_file" ]; then
               policy_name=$(basename "$policy_file" .sql)
               echo "🔐 Applying policy: $policy_name"
-              supabase db query --project-ref "${{ env.PROJECT_REF }}" --file "$policy_file"
+              supabase db query --file "$policy_file"
             fi
           done
           echo "✅ RLS policies deployed to ${{ env.DEPLOY_ENV }}"
@@ -274,7 +274,7 @@ jobs:
         echo "🚀 Deploying Edge Functions to ${{ env.DEPLOY_ENV }}..."
         
         # Deploy all functions with development settings
-        supabase functions deploy --project-ref "${{ env.PROJECT_REF }}" --no-verify-jwt
+        supabase functions deploy --no-verify-jwt
         
         echo "✅ Edge Functions deployed successfully to ${{ env.DEPLOY_ENV }}"
       env:
@@ -284,7 +284,7 @@ jobs:
       working-directory: ./backend
       run: |
         echo "🔑 Updating Edge Function secrets for ${{ env.DEPLOY_ENV }}..."
-        supabase secrets set --env-file .env.${{ env.DEPLOY_ENV }} --project-ref "${{ env.PROJECT_REF }}"
+        supabase secrets set --env-file .env.${{ env.DEPLOY_ENV }}
         echo "✅ Function secrets updated for ${{ env.DEPLOY_ENV }}"
       env:
         SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
