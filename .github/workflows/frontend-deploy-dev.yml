@@ -235,8 +235,7 @@ jobs:
         if: ${{ github.event.inputs.deploy_to_vercel != 'false' }}
         run: |
           echo "🔗 Linking to Vercel development project (separate from production)..."
-          cd build/web
-          vercel --token ${{ secrets.VERCEL_DEV_TOKEN }} --scope ${{ secrets.VERCEL_DEV_ORG_ID }} link --yes --project ${{ secrets.VERCEL_DEV_PROJECT_ID }}
+          vercel --token ${{ secrets.VERCEL_DEV_TOKEN }} --scope ${{ secrets.VERCEL_DEV_ORG_ID }} link --yes --project ${{ secrets.VERCEL_DEV_PROJECT_ID }} --cwd build/web
           echo "✅ Vercel development project linked"
       
       - name: 🚀 Deploy to Vercel Development App
@@ -245,17 +244,15 @@ jobs:
         run: |
           echo "🚀 Deploying to separate Vercel development app..."
           
-          cd build/web
-          
           # Deploy directly to development Vercel app (no previews)
           # Both PRs and branch pushes deploy to the same development environment
-          VERCEL_URL=$(vercel --token ${{ secrets.VERCEL_DEV_TOKEN }} --yes --prod)
+          VERCEL_URL=$(vercel --token ${{ secrets.VERCEL_DEV_TOKEN }} --yes --prod --cwd build/web)
           echo "preview-url=$VERCEL_URL" >> $GITHUB_OUTPUT
           echo "deployment-type=development" >> $GITHUB_OUTPUT
           echo "🚀 Deployed directly to development app (no preview URLs)"
           
           echo "✅ Deployment to separate Vercel development app completed"
-          echo "🌐 Development App URL: ${{ steps.deploy.outputs.preview-url }}"
+          echo "🌐 Development App URL: $VERCEL_URL"
           echo "🔒 Isolated from production Vercel app"
       
       - name: 🧪 Test development deployment
