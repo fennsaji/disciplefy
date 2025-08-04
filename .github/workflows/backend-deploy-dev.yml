@@ -193,26 +193,26 @@ jobs:
         cat > .env.${{ env.DEPLOY_ENV }} << EOF
         # Supabase Configuration (${{ env.DEPLOY_ENV }})
         SUPABASE_PROJECT_REF=${{ env.PROJECT_REF }}
-        SUPABASE_ACCESS_TOKEN=${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        SUPABASE_ACCESS_TOKEN=${{ secrets.SUPABASE_DEV_ACCESS_TOKEN }}
         SUPABASE_URL=https://${{ env.PROJECT_REF }}.supabase.co
         SUPABASE_ANON_KEY=${{ secrets.SUPABASE_DEV_ANON_KEY }}
         SUPABASE_SERVICE_ROLE_KEY=${{ secrets.SUPABASE_DEV_SERVICE_ROLE_KEY }}
         
         # LLM Configuration (Development)
-        OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY_DEV || secrets.OPENAI_API_KEY }}
-        ANTHROPIC_API_KEY=${{ secrets.ANTHROPIC_API_KEY_DEV || secrets.ANTHROPIC_API_KEY }}
-        LLM_PROVIDER=${{ secrets.LLM_PROVIDER || 'openai' }}
+        OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY_DEV }}
+        ANTHROPIC_API_KEY=${{ secrets.ANTHROPIC_API_KEY_DEV }}
+        LLM_PROVIDER=${{ secrets.LLM_PROVIDER_DEV || 'openai' }}
         
         # Authentication (Development)
-        GOOGLE_OAUTH_CLIENT_ID=${{ secrets.GOOGLE_OAUTH_CLIENT_ID_DEV || secrets.GOOGLE_OAUTH_CLIENT_ID }}
-        GOOGLE_OAUTH_CLIENT_SECRET=${{ secrets.GOOGLE_OAUTH_CLIENT_SECRET_DEV || secrets.GOOGLE_OAUTH_CLIENT_SECRET }}
+        GOOGLE_OAUTH_CLIENT_ID=${{ secrets.GOOGLE_OAUTH_CLIENT_ID_DEV }}
+        GOOGLE_OAUTH_CLIENT_SECRET=${{ secrets.GOOGLE_OAUTH_CLIENT_SECRET_DEV }}
         
         # Application URLs (Development)
         SITE_URL=https://${{ env.PROJECT_REF }}.supabase.co
         ADDITIONAL_REDIRECT_URLS=http://localhost:3000/auth/callback,https://disciplefy-dev.vercel.app/auth/callback
         
         # Security (Development)
-        JWT_SECRET=${{ secrets.JWT_SECRET_DEV || secrets.JWT_SECRET }}
+        JWT_SECRET=${{ secrets.JWT_SECRET_DEV }}
         
         # Development settings
         LOG_LEVEL=debug
@@ -239,7 +239,7 @@ jobs:
       run: |
         echo "🗄️ Deploying database migrations to ${{ env.DEPLOY_ENV }}..."
         if [ -d "supabase/migrations" ] && [ "$(ls -A supabase/migrations 2>/dev/null)" ]; then
-          supabase db push
+          supabase db push --password "$SUPABASE_DB_PASSWORD"
           echo "✅ Database migrations deployed to ${{ env.DEPLOY_ENV }}"
         else
           echo "ℹ️ No migrations to deploy"
@@ -257,7 +257,7 @@ jobs:
             if [ -f "$policy_file" ]; then
               policy_name=$(basename "$policy_file" .sql)
               echo "🔐 Applying policy: $policy_name"
-              supabase db query --file "$policy_file"
+              supabase db query --file "$policy_file" --password "$SUPABASE_DB_PASSWORD"
             fi
           done
           echo "✅ RLS policies deployed to ${{ env.DEPLOY_ENV }}"
