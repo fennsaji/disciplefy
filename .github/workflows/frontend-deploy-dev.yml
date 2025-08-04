@@ -235,7 +235,13 @@ jobs:
         if: ${{ github.event.inputs.deploy_to_vercel != 'false' }}
         run: |
           echo "🔗 Linking to Vercel development project (separate from production)..."
-          vercel --token ${{ secrets.VERCEL_DEV_TOKEN }} --scope ${{ secrets.VERCEL_DEV_ORG_ID }} link --yes --project ${{ secrets.VERCEL_DEV_PROJECT_ID }} --cwd build/web
+          
+          # Create the directory structure Vercel expects
+          mkdir -p build/web/frontend
+          cp -r build/web/* build/web/frontend/ 2>/dev/null || true
+          
+          # Link using the expected directory structure
+          vercel --token ${{ secrets.VERCEL_DEV_TOKEN }} --scope ${{ secrets.VERCEL_DEV_ORG_ID }} link --yes --project ${{ secrets.VERCEL_DEV_PROJECT_ID }} --cwd build/web/frontend
           echo "✅ Vercel development project linked"
       
       - name: 🚀 Deploy to Vercel Development App
@@ -246,7 +252,7 @@ jobs:
           
           # Deploy directly to development Vercel app (no previews)
           # Both PRs and branch pushes deploy to the same development environment
-          VERCEL_URL=$(vercel --token ${{ secrets.VERCEL_DEV_TOKEN }} --yes --prod --cwd build/web)
+          VERCEL_URL=$(vercel --token ${{ secrets.VERCEL_DEV_TOKEN }} --yes --prod --cwd build/web/frontend)
           echo "preview-url=$VERCEL_URL" >> $GITHUB_OUTPUT
           echo "deployment-type=development" >> $GITHUB_OUTPUT
           echo "🚀 Deployed directly to development app (no preview URLs)"
