@@ -85,7 +85,7 @@ jobs:
       - name: 🏗️ Build Flutter web app
         run: |
           echo "🏗️ Building Flutter web app for production..."
-          flutter build web --release --web-renderer html --base-href /
+          flutter build web --release --base-href /
           
           echo "📊 Build statistics:"
           du -sh build/web

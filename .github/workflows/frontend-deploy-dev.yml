@@ -172,7 +172,6 @@ jobs:
           # Build with development optimizations (no production env dependencies)
           flutter build web \
             --release \
-            --web-renderer html \
             --base-href / \
             --dart-define=ENVIRONMENT=${{ env.DEPLOY_ENV }} \
             --dart-define=API_BASE_URL=https://${{ secrets.SUPABASE_DEV_PROJECT_REF }}.supabase.co \
