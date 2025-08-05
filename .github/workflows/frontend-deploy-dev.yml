@@ -203,11 +203,9 @@ jobs:
           # Create the directory structure Vercel expects
           mkdir -p build/web/frontend
           
-          # Copy all files except directories to avoid recursive copy issues
-          find build/web -maxdepth 1 -type f -exec cp {} build/web/frontend/ \;
-          
-          # Copy directories (except frontend itself)
-          find build/web -maxdepth 1 -type d -name "*" ! -name "web" ! -name "frontend" -exec cp -r {} build/web/frontend/ \; 2>/dev/null || true
+          # Copy all build files to the frontend directory
+          # Use rsync to avoid copying the destination directory into itself
+          rsync -av --exclude='frontend' build/web/ build/web/frontend/
           
           # Create Vercel configuration for development (static deployment only)
           cat > build/web/frontend/vercel.json << EOF
