@@ -85,7 +85,22 @@ jobs:
       - name: 🏗️ Build Flutter web app
         run: |
           echo "🏗️ Building Flutter web app for production..."
-          flutter build web --release --base-href /
+          
+          # Build with production configuration and all required environment variables
+          flutter build web \
+            --release \
+            --base-href / \
+            --dart-define=ENVIRONMENT=production \
+            --dart-define=SUPABASE_URL=https://${{ secrets.SUPABASE_PROJECT_REF }}.supabase.co \
+            --dart-define=SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }} \
+            --dart-define=APP_URL=https://disciplefy.vercel.app \
+            --dart-define=GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_OAUTH_CLIENT_ID }} \
+            --dart-define=FLUTTER_ENV=production \
+            --dart-define=FLUTTER_WEB_BUILD=true \
+            --dart-define=FLUTTER_WEB_USE_SKIA=true \
+            --dart-define=FLUTTER_WEB_AUTO_DETECT=false \
+            --dart-define=ENABLE_LOGGING=false \
+            --dart-define=IS_DEVELOPMENT=false
           
           echo "📊 Build statistics:"
           du -sh build/web
