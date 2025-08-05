@@ -4,16 +4,16 @@ import 'package:equatable/equatable.dart';
 /// Navigation states for bottom navigation
 abstract class NavigationState extends Equatable {
   const NavigationState();
-  
+
   @override
   List<Object> get props => [];
 }
 
 class NavigationInitial extends NavigationState {
   final int selectedIndex;
-  
+
   const NavigationInitial({this.selectedIndex = 0});
-  
+
   @override
   List<Object> get props => [selectedIndex];
 }
@@ -21,12 +21,12 @@ class NavigationInitial extends NavigationState {
 class NavigationTabChanged extends NavigationState {
   final int selectedIndex;
   final String routeName;
-  
+
   const NavigationTabChanged({
-    required this.selectedIndex, 
+    required this.selectedIndex,
     required this.routeName,
   });
-  
+
   @override
   List<Object> get props => [selectedIndex, routeName];
 }
@@ -34,7 +34,7 @@ class NavigationTabChanged extends NavigationState {
 /// Navigation events for bottom navigation
 abstract class NavigationEvent extends Equatable {
   const NavigationEvent();
-  
+
   @override
   List<Object> get props => [];
 }
@@ -42,24 +42,24 @@ abstract class NavigationEvent extends Equatable {
 class TabSelected extends NavigationEvent {
   final int index;
   final String routeName;
-  
+
   const TabSelected({required this.index, required this.routeName});
-  
+
   @override
   List<Object> get props => [index, routeName];
 }
 
 class NavigationInitialized extends NavigationEvent {
   final int initialIndex;
-  
+
   const NavigationInitialized({this.initialIndex = 0});
-  
+
   @override
   List<Object> get props => [initialIndex];
 }
 
 /// Navigation Cubit for managing bottom navigation state
-/// 
+///
 /// Features:
 /// - Track currently selected tab index
 /// - Handle tab navigation with route awareness
@@ -71,7 +71,7 @@ class NavigationCubit extends Cubit<NavigationState> {
   /// Available navigation routes mapped to their indices
   static const Map<int, String> indexToRoute = {
     0: '/',
-    1: '/generate-study', 
+    1: '/generate-study',
     2: '/saved',
     3: '/settings',
   };
@@ -110,7 +110,7 @@ class NavigationCubit extends Cubit<NavigationState> {
     }
 
     _selectedIndex = index;
-    
+
     // Update navigation history (keep last 10 entries)
     _navigationHistory.add(index);
     if (_navigationHistory.length > 10) {
@@ -137,20 +137,20 @@ class NavigationCubit extends Cubit<NavigationState> {
     if (_navigationHistory.length > 1) {
       // Remove current tab from history
       _navigationHistory.removeLast();
-      
+
       // Navigate to previous tab
       final previousIndex = _navigationHistory.last;
       _selectedIndex = previousIndex;
-      
+
       final routeName = indexToRoute[previousIndex]!;
       emit(NavigationTabChanged(
         selectedIndex: previousIndex,
         routeName: routeName,
       ));
-      
+
       return true; // Handled by navigation
     }
-    
+
     return false; // Let system handle (exit app)
   }
 

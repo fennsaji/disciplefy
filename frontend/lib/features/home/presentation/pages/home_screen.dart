@@ -19,7 +19,7 @@ import '../bloc/home_event.dart';
 import '../bloc/home_state.dart';
 
 /// Home screen displaying daily verse, navigation options, and study recommendations.
-/// 
+///
 /// Features app logo, verse of the day, main navigation, and predefined study topics
 /// following the UX specifications and brand guidelines.
 class HomeScreen extends StatelessWidget {
@@ -27,9 +27,9 @@ class HomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => BlocProvider(
-      create: (context) => sl<HomeBloc>()..add(const LoadRecommendedTopics(limit: 6)),
-      child: const _HomeScreenContent(),
-    );
+        create: (context) => sl<HomeBloc>()..add(const LoadRecommendedTopics(limit: 6)),
+        child: const _HomeScreenContent(),
+      );
 }
 
 class _HomeScreenContent extends StatefulWidget {
@@ -47,7 +47,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
     super.initState();
     _loadDailyVerse();
   }
-  
+
   /// Load daily verse - called only once during initialization
   void _loadDailyVerse() {
     // Auto-load daily verse on home screen initialization
@@ -66,15 +66,15 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
     if (currentState is DailyVerseLoaded) {
       // Generate study guide with verse reference and selected language
       context.read<HomeBloc>().add(GenerateStudyGuideFromVerse(
-        verseReference: currentState.verse.reference,
-        language: _getLanguageCode(currentState.currentLanguage),
-      ));
+            verseReference: currentState.verse.reference,
+            language: _getLanguageCode(currentState.currentLanguage),
+          ));
     } else if (currentState is DailyVerseOffline) {
-      // Generate study guide with cached verse reference and selected language  
+      // Generate study guide with cached verse reference and selected language
       context.read<HomeBloc>().add(GenerateStudyGuideFromVerse(
-        verseReference: currentState.verse.reference,
-        language: _getLanguageCode(currentState.currentLanguage),
-      ));
+            verseReference: currentState.verse.reference,
+            language: _getLanguageCode(currentState.currentLanguage),
+          ));
     } else {
       // Show error if verse is not loaded
       ScaffoldMessenger.of(context).showSnackBar(
@@ -97,7 +97,6 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
         return 'ml';
     }
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -147,502 +146,495 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
       },
       child: BlocBuilder<AuthBloc, auth_states.AuthState>(
         builder: (context, authState) {
-        // Extract user information from AuthBloc state
-        String currentUserName = 'Guest';
-        
-        if (authState is auth_states.AuthenticatedState) {
-          if (authState.isAnonymous) {
-            currentUserName = 'Guest';
-          } else {
-            // Extract user name from Google account
-            final user = authState.user;
-            currentUserName = user.userMetadata?['full_name'] ?? 
-                             user.userMetadata?['name'] ?? 
-                             user.email?.split('@').first ?? 
-                             'User';
-          }
-          if (kDebugMode) print('👤 [HOME] User loaded: $currentUserName (authenticated: ${!authState.isAnonymous})');
-        }
+          // Extract user information from AuthBloc state
+          String currentUserName = 'Guest';
 
-        return Scaffold(
-          backgroundColor: AppTheme.backgroundColor,
-          body: SafeArea(
-            child: Column(
-              children: [
-                // Main content
-                Expanded(
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.symmetric(horizontal: 24),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        SizedBox(height: isLargeScreen ? 32 : 24),
-                        
-                        // App Header with Logo
-                        _buildAppHeader(),
-                        
-                        SizedBox(height: isLargeScreen ? 32 : 24),
-                        
-                        // Welcome Message
-                        _buildWelcomeMessage(currentUserName),
-                        
-                        SizedBox(height: isLargeScreen ? 32 : 24),
-                        
-                        // Daily Verse Card with click functionality
-                        DailyVerseCard(
-                          margin: EdgeInsets.zero,
-                          onTap: _onDailyVerseCardTap,
-                        ),
-                        
-                        SizedBox(height: isLargeScreen ? 40 : 32),
-                        
-                        // Generate Study Guide Button
-                        _buildGenerateStudyButton(),
-                        
-                        SizedBox(height: isLargeScreen ? 32 : 24),
-                        
-                        // Resume Last Study (conditional)
-                        if (_hasResumeableStudy) ...[
-                          _buildResumeStudyBanner(),
+          if (authState is auth_states.AuthenticatedState) {
+            if (authState.isAnonymous) {
+              currentUserName = 'Guest';
+            } else {
+              // Extract user name from Google account
+              final user = authState.user;
+              currentUserName = user.userMetadata?['full_name'] ??
+                  user.userMetadata?['name'] ??
+                  user.email?.split('@').first ??
+                  'User';
+            }
+            if (kDebugMode) print('👤 [HOME] User loaded: $currentUserName (authenticated: ${!authState.isAnonymous})');
+          }
+
+          return Scaffold(
+            backgroundColor: AppTheme.backgroundColor,
+            body: SafeArea(
+              child: Column(
+                children: [
+                  // Main content
+                  Expanded(
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.symmetric(horizontal: 24),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          SizedBox(height: isLargeScreen ? 32 : 24),
+
+                          // App Header with Logo
+                          _buildAppHeader(),
+
+                          SizedBox(height: isLargeScreen ? 32 : 24),
+
+                          // Welcome Message
+                          _buildWelcomeMessage(currentUserName),
+
+                          SizedBox(height: isLargeScreen ? 32 : 24),
+
+                          // Daily Verse Card with click functionality
+                          DailyVerseCard(
+                            margin: EdgeInsets.zero,
+                            onTap: _onDailyVerseCardTap,
+                          ),
+
+                          SizedBox(height: isLargeScreen ? 40 : 32),
+
+                          // Generate Study Guide Button
+                          _buildGenerateStudyButton(),
+
+                          SizedBox(height: isLargeScreen ? 32 : 24),
+
+                          // Resume Last Study (conditional)
+                          if (_hasResumeableStudy) ...[
+                            _buildResumeStudyBanner(),
+                            SizedBox(height: isLargeScreen ? 32 : 24),
+                          ],
+
+                          // Recommended Study Topics
+                          _buildRecommendedTopics(),
+
                           SizedBox(height: isLargeScreen ? 32 : 24),
                         ],
-                        
-                        // Recommended Study Topics
-                        _buildRecommendedTopics(),
-                        
-                        SizedBox(height: isLargeScreen ? 32 : 24),
-                      ],
+                      ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-        );
+          );
         },
       ),
     );
   }
 
   Widget _buildAppHeader() => Row(
-      children: [
-        // App Logo
-        Container(
-          width: 40,
-          height: 40,
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [
-                AppTheme.primaryColor,
-                AppTheme.primaryColor.withOpacity(0.8),
-              ],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
+        children: [
+          // App Logo
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  AppTheme.primaryColor,
+                  AppTheme.primaryColor.withOpacity(0.8),
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(10),
             ),
-            borderRadius: BorderRadius.circular(10),
+            child: const Icon(
+              Icons.menu_book_rounded,
+              color: Colors.white,
+              size: 24,
+            ),
           ),
-          child: const Icon(
-            Icons.menu_book_rounded,
-            color: Colors.white,
-            size: 24,
+
+          const SizedBox(width: 12),
+
+          // App Title
+          Text(
+            'Disciplefy',
+            style: GoogleFonts.playfairDisplay(
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+              color: AppTheme.primaryColor,
+            ),
           ),
-        ),
-        
-        const SizedBox(width: 12),
-        
-        // App Title
-        Text(
-          'Disciplefy',
-          style: GoogleFonts.playfairDisplay(
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
-            color: AppTheme.primaryColor,
+
+          const Spacer(),
+
+          // Settings Icon
+          IconButton(
+            onPressed: () {
+              context.go('/settings');
+            },
+            icon: const Icon(
+              Icons.settings_outlined,
+              color: AppTheme.onSurfaceVariant,
+              size: 24,
+            ),
           ),
-        ),
-        
-        const Spacer(),
-        
-        // Settings Icon
-        IconButton(
-          onPressed: () {
-            context.go('/settings');
-          },
-          icon: const Icon(
-            Icons.settings_outlined,
-            color: AppTheme.onSurfaceVariant,
-            size: 24,
-          ),
-        ),
-      ],
-    );
+        ],
+      );
 
   Widget _buildWelcomeMessage(String userName) => Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Welcome back, $userName',
-          style: GoogleFonts.inter(
-            fontSize: 28,
-            fontWeight: FontWeight.w600,
-            color: AppTheme.textPrimary,
-            height: 1.2,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Welcome back, $userName',
+            style: GoogleFonts.inter(
+              fontSize: 28,
+              fontWeight: FontWeight.w600,
+              color: AppTheme.textPrimary,
+              height: 1.2,
+            ),
           ),
-        ),
-        
-        const SizedBox(height: 8),
-        
-        Text(
-          'Continue your spiritual journey with guided study',
-          style: GoogleFonts.inter(
-            fontSize: 16,
-            color: AppTheme.onSurfaceVariant,
-            height: 1.4,
+          const SizedBox(height: 8),
+          Text(
+            'Continue your spiritual journey with guided study',
+            style: GoogleFonts.inter(
+              fontSize: 16,
+              color: AppTheme.onSurfaceVariant,
+              height: 1.4,
+            ),
           ),
-        ),
-      ],
-    );
+        ],
+      );
 
   Widget _buildGenerateStudyButton() => SizedBox(
-      width: double.infinity,
-      child: ElevatedButton.icon(
-        onPressed: () => context.go('/generate-study'),
-        icon: const Icon(
-          Icons.auto_awesome,
-          size: 24,
-        ),
-        label: Text(
-          'Generate Study Guide',
-          style: GoogleFonts.inter(
-            fontSize: 18,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        style: ElevatedButton.styleFrom(
-          backgroundColor: AppTheme.primaryColor,
-          foregroundColor: Colors.white,
-          minimumSize: const Size.fromHeight(64),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-          elevation: 0,
-        ),
-      ),
-    );
-
-  Widget _buildResumeStudyBanner() => Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: AppTheme.accentColor.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: AppTheme.accentColor.withOpacity(0.3),
-        ),
-      ),
-      child: Row(
-        children: [
-          const Icon(
-            Icons.bookmark,
-            color: AppTheme.accentColor,
+        width: double.infinity,
+        child: ElevatedButton.icon(
+          onPressed: () => context.go('/generate-study'),
+          icon: const Icon(
+            Icons.auto_awesome,
             size: 24,
           ),
-          
-          const SizedBox(width: 16),
-          
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Resume your last study',
-                  style: GoogleFonts.inter(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: AppTheme.textPrimary,
-                  ),
-                ),
-                
-                const SizedBox(height: 4),
-                
-                Text(
-                  'Continue studying "Faith in Trials"',
-                  style: GoogleFonts.inter(
-                    fontSize: 14,
-                    color: AppTheme.onSurfaceVariant,
-                  ),
-                ),
-              ],
+          label: Text(
+            'Generate Study Guide',
+            style: GoogleFonts.inter(
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
             ),
           ),
-          
-          const Icon(
-            Icons.arrow_forward_ios,
-            color: AppTheme.accentColor,
-            size: 16,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppTheme.primaryColor,
+            foregroundColor: Colors.white,
+            minimumSize: const Size.fromHeight(64),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            elevation: 0,
           ),
-        ],
-      ),
-    );
+        ),
+      );
+
+  Widget _buildResumeStudyBanner() => Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: AppTheme.accentColor.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: AppTheme.accentColor.withOpacity(0.3),
+          ),
+        ),
+        child: Row(
+          children: [
+            const Icon(
+              Icons.bookmark,
+              color: AppTheme.accentColor,
+              size: 24,
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Resume your last study',
+                    style: GoogleFonts.inter(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: AppTheme.textPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Continue studying "Faith in Trials"',
+                    style: GoogleFonts.inter(
+                      fontSize: 14,
+                      color: AppTheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const Icon(
+              Icons.arrow_forward_ios,
+              color: AppTheme.accentColor,
+              size: 16,
+            ),
+          ],
+        ),
+      );
 
   Widget _buildRecommendedTopics() => BlocBuilder<HomeBloc, HomeState>(
-      builder: (context, state) {
-        final homeState = state is HomeCombinedState ? state : const HomeCombinedState();
-        
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'Recommended Study Topics',
-                  style: GoogleFonts.inter(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w600,
-                    color: AppTheme.textPrimary,
-                  ),
-                ),
-                if (homeState.isLoadingTopics)
-                  const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primaryColor),
+        builder: (context, state) {
+          final homeState = state is HomeCombinedState ? state : const HomeCombinedState();
+
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Recommended Study Topics',
+                    style: GoogleFonts.inter(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w600,
+                      color: AppTheme.textPrimary,
                     ),
                   ),
-              ],
-            ),
-            
-            const SizedBox(height: 16),
-            
-            if (homeState.topicsError != null)
-              _buildTopicsErrorWidget(homeState.topicsError!)
-            else if (homeState.isLoadingTopics)
-              _buildTopicsLoadingWidget()
-            else if (homeState.topics.isEmpty)
-              _buildNoTopicsWidget()
-            else
-              _buildTopicsGrid(homeState.topics),
-          ],
-        );
-      },
-    );
+                  if (homeState.isLoadingTopics)
+                    const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primaryColor),
+                      ),
+                    ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              if (homeState.topicsError != null)
+                _buildTopicsErrorWidget(homeState.topicsError!)
+              else if (homeState.isLoadingTopics)
+                _buildTopicsLoadingWidget()
+              else if (homeState.topics.isEmpty)
+                _buildNoTopicsWidget()
+              else
+                _buildTopicsGrid(homeState.topics),
+            ],
+          );
+        },
+      );
 
   Widget _buildTopicsErrorWidget(String error) => Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: AppTheme.accentColor.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: AppTheme.accentColor.withOpacity(0.3),
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          color: AppTheme.accentColor.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: AppTheme.accentColor.withOpacity(0.3),
+          ),
         ),
-      ),
-      child: Column(
-        children: [
-          const Icon(
-            Icons.error_outline,
-            color: AppTheme.accentColor,
-            size: 32,
-          ),
-          const SizedBox(height: 12),
-          Text(
-            'Failed to load topics',
-            style: GoogleFonts.inter(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-              color: AppTheme.textPrimary,
+        child: Column(
+          children: [
+            const Icon(
+              Icons.error_outline,
+              color: AppTheme.accentColor,
+              size: 32,
             ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            error,
-            style: GoogleFonts.inter(
-              fontSize: 14,
-              color: AppTheme.onSurfaceVariant,
-            ),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 16),
-          ElevatedButton(
-            onPressed: () => context.read<HomeBloc>().add(const RefreshRecommendedTopics()),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.primaryColor,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
+            const SizedBox(height: 12),
+            Text(
+              'Failed to load topics',
+              style: GoogleFonts.inter(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: AppTheme.textPrimary,
               ),
             ),
-            child: Text(
-              'Retry',
-              style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+            const SizedBox(height: 8),
+            Text(
+              error,
+              style: GoogleFonts.inter(
+                fontSize: 14,
+                color: AppTheme.onSurfaceVariant,
+              ),
+              textAlign: TextAlign.center,
             ),
-          ),
-        ],
-      ),
-    );
-
-  Widget _buildTopicsLoadingWidget() => LayoutBuilder(
-      builder: (context, constraints) {
-        const double spacing = 16.0;
-        final double cardWidth = (constraints.maxWidth - spacing) / 2;
-        
-        return Wrap(
-          spacing: spacing,
-          runSpacing: spacing,
-          children: List.generate(6, (index) => SizedBox(
-              width: cardWidth,
-              child: _buildLoadingTopicCard(),
-            )),
-        );
-      },
-    );
-
-  Widget _buildLoadingTopicCard() => Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppTheme.surfaceColor,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: AppTheme.primaryColor.withOpacity(0.1),
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min, // Match the real card
-        children: [
-          // Header row skeleton
-          Row(
-            children: [
-              Container(
-                width: 36,
-                height: 36,
-                decoration: BoxDecoration(
-                  color: AppTheme.primaryColor.withOpacity(0.1),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: () => context.read<HomeBloc>().add(const RefreshRecommendedTopics()),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.primaryColor,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: const Center(
-                  child: SizedBox(
-                    width: 16,
-                    height: 16,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primaryColor),
+              ),
+              child: Text(
+                'Retry',
+                style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+              ),
+            ),
+          ],
+        ),
+      );
+
+  Widget _buildTopicsLoadingWidget() => LayoutBuilder(
+        builder: (context, constraints) {
+          const double spacing = 16.0;
+          final double cardWidth = (constraints.maxWidth - spacing) / 2;
+
+          return Wrap(
+            spacing: spacing,
+            runSpacing: spacing,
+            children: List.generate(
+                6,
+                (index) => SizedBox(
+                      width: cardWidth,
+                      child: _buildLoadingTopicCard(),
+                    )),
+          );
+        },
+      );
+
+  Widget _buildLoadingTopicCard() => Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: AppTheme.surfaceColor,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: AppTheme.primaryColor.withOpacity(0.1),
+          ),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min, // Match the real card
+          children: [
+            // Header row skeleton
+            Row(
+              children: [
+                Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    color: AppTheme.primaryColor.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Center(
+                    child: SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primaryColor),
+                      ),
                     ),
                   ),
                 ),
-              ),
-              const SizedBox(width: 8),
-              Container(
-                height: 20,
-                width: 60,
-                decoration: BoxDecoration(
-                  color: AppTheme.primaryColor.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
+                const SizedBox(width: 8),
+                Container(
+                  height: 20,
+                  width: 60,
+                  decoration: BoxDecoration(
+                    color: AppTheme.primaryColor.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
                 ),
+              ],
+            ),
+
+            const SizedBox(height: 12),
+
+            // Title skeleton
+            Container(
+              height: 14,
+              width: double.infinity,
+              decoration: BoxDecoration(
+                color: AppTheme.primaryColor.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(4),
               ),
-            ],
-          ),
-          
-          const SizedBox(height: 12),
-          
-          // Title skeleton
-          Container(
-            height: 14,
-            width: double.infinity,
-            decoration: BoxDecoration(
-              color: AppTheme.primaryColor.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(4),
             ),
-          ),
-          
-          const SizedBox(height: 6),
-          
-          // Description skeleton
-          Container(
-            height: 11,
-            width: double.infinity,
-            decoration: BoxDecoration(
-              color: AppTheme.primaryColor.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(4),
+
+            const SizedBox(height: 6),
+
+            // Description skeleton
+            Container(
+              height: 11,
+              width: double.infinity,
+              decoration: BoxDecoration(
+                color: AppTheme.primaryColor.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(4),
+              ),
             ),
-          ),
-          
-          const SizedBox(height: 4),
-          
-          Container(
-            height: 11,
-            width: MediaQuery.of(context).size.width * 0.6,
-            decoration: BoxDecoration(
-              color: AppTheme.primaryColor.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(4),
+
+            const SizedBox(height: 4),
+
+            Container(
+              height: 11,
+              width: MediaQuery.of(context).size.width * 0.6,
+              decoration: BoxDecoration(
+                color: AppTheme.primaryColor.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(4),
+              ),
             ),
-          ),
-          
-          const SizedBox(height: 12),
-          
-          // Footer skeleton
-          Row(
-            children: [
-              Container(
-                height: 10,
-                width: 40,
-                decoration: BoxDecoration(
-                  color: AppTheme.primaryColor.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(4),
+
+            const SizedBox(height: 12),
+
+            // Footer skeleton
+            Row(
+              children: [
+                Container(
+                  height: 10,
+                  width: 40,
+                  decoration: BoxDecoration(
+                    color: AppTheme.primaryColor.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
                 ),
-              ),
-              const SizedBox(width: 12),
-              Container(
-                height: 10,
-                width: 20,
-                decoration: BoxDecoration(
-                  color: AppTheme.primaryColor.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(4),
+                const SizedBox(width: 12),
+                Container(
+                  height: 10,
+                  width: 20,
+                  decoration: BoxDecoration(
+                    color: AppTheme.primaryColor.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
                 ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
+              ],
+            ),
+          ],
+        ),
+      );
 
   Widget _buildNoTopicsWidget() => Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: AppTheme.surfaceColor,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: AppTheme.primaryColor.withOpacity(0.2),
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          color: AppTheme.surfaceColor,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: AppTheme.primaryColor.withOpacity(0.2),
+          ),
         ),
-      ),
-      child: Column(
-        children: [
-          const Icon(
-            Icons.topic_outlined,
-            color: AppTheme.onSurfaceVariant,
-            size: 32,
-          ),
-          const SizedBox(height: 12),
-          Text(
-            'No topics available',
-            style: GoogleFonts.inter(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-              color: AppTheme.textPrimary,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Check your connection and try again.',
-            style: GoogleFonts.inter(
-              fontSize: 14,
+        child: Column(
+          children: [
+            const Icon(
+              Icons.topic_outlined,
               color: AppTheme.onSurfaceVariant,
+              size: 32,
             ),
-            textAlign: TextAlign.center,
-          ),
-        ],
-      ),
-    );
+            const SizedBox(height: 12),
+            Text(
+              'No topics available',
+              style: GoogleFonts.inter(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: AppTheme.textPrimary,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Check your connection and try again.',
+              style: GoogleFonts.inter(
+                fontSize: 14,
+                color: AppTheme.onSurfaceVariant,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      );
 
   Widget _buildTopicsGrid(List<RecommendedGuideTopic> topics) {
     // Use a different approach: Wrap or ListView instead of fixed-height GridView
@@ -651,17 +643,19 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
         // Calculate optimal card width (accounting for spacing)
         const double spacing = 16.0;
         final double cardWidth = (constraints.maxWidth - spacing) / 2;
-        
+
         return Wrap(
           spacing: spacing,
           runSpacing: spacing,
-          children: topics.map((topic) => SizedBox(
-              width: cardWidth,
-              child: _RecommendedGuideTopicCard(
-                topic: topic,
-                onTap: () => _navigateToStudyGuide(topic),
-              ),
-            )).toList(),
+          children: topics
+              .map((topic) => SizedBox(
+                    width: cardWidth,
+                    child: _RecommendedGuideTopicCard(
+                      topic: topic,
+                      onTap: () => _navigateToStudyGuide(topic),
+                    ),
+                  ))
+              .toList(),
         );
       },
     );
@@ -671,21 +665,20 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
     // Get the current language from Daily Verse state
     final dailyVerseBloc = context.read<DailyVerseBloc>();
     final currentState = dailyVerseBloc.state;
-    
+
     VerseLanguage selectedLanguage = VerseLanguage.english; // Default to English
     if (currentState is DailyVerseLoaded) {
       selectedLanguage = currentState.currentLanguage;
     } else if (currentState is DailyVerseOffline) {
       selectedLanguage = currentState.currentLanguage;
     }
-    
+
     // Generate study guide using HomeBloc
     context.read<HomeBloc>().add(GenerateStudyGuideFromTopic(
-      topicName: topic.title,
-      language: _getLanguageCode(selectedLanguage),
-    ));
+          topicName: topic.title,
+          language: _getLanguageCode(selectedLanguage),
+        ));
   }
-
 }
 
 /// Recommended guide topic card widget for API-based topics.
@@ -702,7 +695,7 @@ class _RecommendedGuideTopicCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final iconData = _getIconForCategory(topic.category);
     final color = _getColorForDifficulty(topic.difficulty);
-    
+
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -742,7 +735,8 @@ class _RecommendedGuideTopicCard extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 8), // Fixed spacing instead of Spacer
-                Flexible( // Use Flexible instead of Spacer
+                Flexible(
+                  // Use Flexible instead of Spacer
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
                     decoration: BoxDecoration(
@@ -762,9 +756,9 @@ class _RecommendedGuideTopicCard extends StatelessWidget {
                 ),
               ],
             ),
-            
+
             const SizedBox(height: 12),
-            
+
             // Title with proper constraints
             Text(
               topic.title,
@@ -777,9 +771,9 @@ class _RecommendedGuideTopicCard extends StatelessWidget {
               maxLines: 2, // Allow 2 lines for longer titles
               overflow: TextOverflow.ellipsis,
             ),
-            
+
             const SizedBox(height: 6), // Reduced spacing
-            
+
             // Description with flexible height
             Flexible(
               child: Text(
@@ -793,9 +787,9 @@ class _RecommendedGuideTopicCard extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
               ),
             ),
-            
+
             const SizedBox(height: 12), // Fixed spacing instead of Spacer
-            
+
             // Footer with metadata - use Wrap for overflow protection
             Wrap(
               spacing: 8,
@@ -866,5 +860,6 @@ class _RecommendedGuideTopicCard extends StatelessWidget {
 
   IconData _getIconForCategory(String category) => _categoryIcons[category.toLowerCase()] ?? Icons.menu_book;
 
-  Color _getColorForDifficulty(String difficulty) => _difficultyColors[difficulty.toLowerCase()] ?? AppTheme.primaryColor;
+  Color _getColorForDifficulty(String difficulty) =>
+      _difficultyColors[difficulty.toLowerCase()] ?? AppTheme.primaryColor;
 }

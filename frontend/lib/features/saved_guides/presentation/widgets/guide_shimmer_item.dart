@@ -9,8 +9,7 @@ class GuideShimmerItem extends StatefulWidget {
   State<GuideShimmerItem> createState() => _GuideShimmerItemState();
 }
 
-class _GuideShimmerItemState extends State<GuideShimmerItem>
-    with SingleTickerProviderStateMixin {
+class _GuideShimmerItemState extends State<GuideShimmerItem> with SingleTickerProviderStateMixin {
   late AnimationController _animationController;
   late Animation<double> _animation;
 
@@ -39,8 +38,8 @@ class _GuideShimmerItemState extends State<GuideShimmerItem>
 
   @override
   Widget build(BuildContext context) => AnimatedBuilder(
-      animation: _animation,
-      builder: (context, child) => Card(
+        animation: _animation,
+        builder: (context, child) => Card(
           margin: const EdgeInsets.only(bottom: 12),
           elevation: 2,
           shadowColor: AppTheme.primaryColor.withOpacity(0.1),
@@ -150,5 +149,5 @@ class _GuideShimmerItemState extends State<GuideShimmerItem>
             ),
           ),
         ),
-    );
+      );
 }

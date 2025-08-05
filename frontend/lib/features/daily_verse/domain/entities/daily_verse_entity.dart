@@ -39,18 +39,26 @@ class DailyVerseEntity extends Equatable {
   /// Check if verse is for today
   bool get isToday {
     final today = DateTime.now();
-    return date.year == today.year &&
-           date.month == today.month &&
-           date.day == today.day;
+    return date.year == today.year && date.month == today.month && date.day == today.day;
   }
 
   /// Get formatted date string
   String get formattedDate {
     const months = [
-      'January', 'February', 'March', 'April', 'May', 'June',
-      'July', 'August', 'September', 'October', 'November', 'December'
+      'January',
+      'February',
+      'March',
+      'April',
+      'May',
+      'June',
+      'July',
+      'August',
+      'September',
+      'October',
+      'November',
+      'December'
     ];
-    
+
     return '${months[date.month - 1]} ${date.day}, ${date.year}';
   }
 
@@ -60,8 +68,8 @@ class DailyVerseEntity extends Equatable {
 
 /// Available verse translations
 class DailyVerseTranslations extends Equatable {
-  final String esv;      // English Standard Version
-  final String hindi;    // Hindi translation
+  final String esv; // English Standard Version
+  final String hindi; // Hindi translation
   final String malayalam; // Malayalam translation
 
   const DailyVerseTranslations({

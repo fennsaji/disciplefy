@@ -493,3 +493,7 @@ Analyse [File or Folder path]  and check if it is implemented and mark completed
 
 
 Analyse [File or Folder path] and find out any bugs, logical errors, not complying Coding principles like DRY, SOLID and Clean Code Principles, and/or Compilation issues. And document in @[path]/docs and no coding 
+
+```
+act -W .github/workflows/frontend-deploy-dev.yml --container-daemon-socket /var/run/docker.sock
+```

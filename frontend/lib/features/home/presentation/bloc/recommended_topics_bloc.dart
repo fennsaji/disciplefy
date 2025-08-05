@@ -7,7 +7,7 @@ import 'recommended_topics_event.dart';
 import 'recommended_topics_state.dart';
 
 /// BLoC for managing recommended topics on the Home screen.
-/// 
+///
 /// This BLoC follows the Single Responsibility Principle by handling
 /// only recommended topics loading and management.
 class RecommendedTopicsBloc extends Bloc<RecommendedTopicsEvent, RecommendedTopicsState> {
@@ -17,7 +17,6 @@ class RecommendedTopicsBloc extends Bloc<RecommendedTopicsEvent, RecommendedTopi
     required RecommendedGuidesService topicsService,
   })  : _topicsService = topicsService,
         super(const RecommendedTopicsInitial()) {
-    
     on<LoadRecommendedTopics>(_onLoadRecommendedTopics);
     on<RefreshRecommendedTopics>(_onRefreshRecommendedTopics);
     on<ClearRecommendedTopicsError>(_onClearError);

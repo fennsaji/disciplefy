@@ -11,7 +11,7 @@ class ErrorPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    
+
     // If localization is not ready, show basic error page
     if (l10n == null) {
       return Scaffold(
@@ -80,8 +80,8 @@ class ErrorPage extends StatelessWidget {
               Text(
                 l10n.errorTitle,
                 style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                  color: Theme.of(context).colorScheme.error,
-                ),
+                      color: Theme.of(context).colorScheme.error,
+                    ),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 16),
@@ -113,21 +113,20 @@ class ErrorPage extends StatelessWidget {
 
   String _getErrorMessage(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    
+
     if (error == null) return l10n.errorMessage;
-    
+
     // Categorize error types
-    if (error!.toLowerCase().contains('network') || 
-        error!.toLowerCase().contains('connection')) {
+    if (error!.toLowerCase().contains('network') || error!.toLowerCase().contains('connection')) {
       return l10n.errorPageNetwork;
     }
-    
-    if (error!.toLowerCase().contains('server') || 
+
+    if (error!.toLowerCase().contains('server') ||
         error!.toLowerCase().contains('500') ||
         error!.toLowerCase().contains('503')) {
       return l10n.errorPageServer;
     }
-    
+
     return l10n.errorPageUnknown;
   }
 }

@@ -6,7 +6,7 @@ import 'auth_storage_service.dart';
 
 /// REFACTORED: Facade pattern for backward compatibility
 /// Now delegates to specialized services following Single Responsibility Principle
-/// 
+///
 /// This maintains the existing API while internally using:
 /// - AuthenticationService: Core auth state and session management
 /// - AuthStorageService: Secure data storage operations
@@ -18,7 +18,7 @@ class AuthService {
   AuthService({
     AuthenticationService? authenticationService,
     AuthStorageService? storageService,
-  }) : _authService = authenticationService ?? AuthenticationService(),
+  })  : _authService = authenticationService ?? AuthenticationService(),
         _storageService = storageService ?? AuthStorageService();
 
   /// Get current authenticated user
@@ -37,18 +37,15 @@ class AuthService {
   /// Sign in with Google OAuth using custom backend callback
   Future<bool> signInWithGoogle() async => _authService.signInWithGoogle();
 
-
   /// Process Google OAuth callback with authorization code
-  Future<bool> processGoogleOAuthCallback(GoogleOAuthCallbackParams params) async => 
+  Future<bool> processGoogleOAuthCallback(GoogleOAuthCallbackParams params) async =>
       _authService.processGoogleOAuthCallback(params);
-
 
   /// Sign in with Apple OAuth (iOS/Web only)
   Future<bool> signInWithApple() async => _authService.signInWithApple();
 
   /// Sign in anonymously using Supabase + custom backend session
   Future<bool> signInAnonymously() async => _authService.signInAnonymously();
-
 
   /// Sign out current user
   Future<void> signOut() async => _authService.signOut();
@@ -60,7 +57,7 @@ class AuthService {
   User createAnonymousUser() => _authService.createAnonymousUser();
 
   // ===== STORAGE FACADE METHODS =====
-  
+
   /// Get stored user type
   Future<String?> getUserType() async => await _storageService.getUserType();
 
@@ -71,8 +68,7 @@ class AuthService {
   Future<bool> isOnboardingCompleted() async => await _storageService.isOnboardingCompleted();
 
   /// Store authentication data
-  Future<void> storeAuthData(AuthDataStorageParams params) async => 
-      await _storageService.storeAuthData(params);
+  Future<void> storeAuthData(AuthDataStorageParams params) async => await _storageService.storeAuthData(params);
 
   /// Clear all stored auth data
   Future<void> clearAllData() async => await _storageService.clearAllData();

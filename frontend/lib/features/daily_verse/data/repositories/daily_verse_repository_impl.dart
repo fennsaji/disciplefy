@@ -18,8 +18,8 @@ class DailyVerseRepositoryImpl implements DailyVerseRepository {
   DailyVerseRepositoryImpl({
     required DailyVerseApiService apiService,
     required DailyVerseCacheService cacheService,
-  }) : _apiService = apiService,
-       _cacheService = cacheService;
+  })  : _apiService = apiService,
+        _cacheService = cacheService;
 
   @override
   Future<Either<Failure, DailyVerseEntity>> getTodaysVerse() async => getDailyVerse(DateTime.now());
@@ -29,7 +29,7 @@ class DailyVerseRepositoryImpl implements DailyVerseRepository {
     try {
       // Check if we should try cache first (offline or recent fetch)
       final shouldRefresh = await _cacheService.shouldRefresh();
-      
+
       if (!shouldRefresh) {
         final cachedVerse = await _cacheService.getCachedVerse(date);
         if (cachedVerse != null) {
@@ -39,7 +39,7 @@ class DailyVerseRepositoryImpl implements DailyVerseRepository {
 
       // Try to fetch from API
       final apiResult = await _apiService.getDailyVerse(date);
-      
+
       return apiResult.fold(
         (failure) async {
           // API failed, try cache as fallback
@@ -72,7 +72,6 @@ class DailyVerseRepositoryImpl implements DailyVerseRepository {
           return Right(verse);
         },
       );
-
     } on SocketException catch (e) {
       return Left(NetworkFailure(
         message: 'Network connection failed: ${e.message}',
@@ -228,4 +227,3 @@ class DailyVerseRepositoryImpl implements DailyVerseRepository {
     }
   }
 }
-

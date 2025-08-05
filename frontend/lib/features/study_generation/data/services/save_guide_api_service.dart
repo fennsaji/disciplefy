@@ -9,11 +9,10 @@ import '../../../../core/error/exceptions.dart';
 class SaveGuideApiService {
   static String get _baseUrl => AppConfig.baseApiUrl.replaceAll('/functions/v1', '');
   static const String _saveGuideEndpoint = '/functions/v1/study-guides';
-  
+
   final http.Client _httpClient;
 
-  SaveGuideApiService({http.Client? httpClient}) 
-      : _httpClient = httpClient ?? http.Client();
+  SaveGuideApiService({http.Client? httpClient}) : _httpClient = httpClient ?? http.Client();
 
   /// Save or unsave a study guide
   Future<bool> toggleSaveGuide({
@@ -22,25 +21,27 @@ class SaveGuideApiService {
   }) async {
     try {
       print('🔍 [SAVE_GUIDE] Starting toggleSaveGuide - guideId: $guideId, save: $save');
-      
+
       final headers = await _getApiHeaders();
       print('🔍 [SAVE_GUIDE] Got headers: ${headers.keys.join(', ')}');
-      
+
       final body = json.encode({
         'guide_id': guideId,
         'action': save ? 'save' : 'unsave',
       });
       print('🔍 [SAVE_GUIDE] Request body: $body');
-      
+
       final url = '$_baseUrl$_saveGuideEndpoint';
       print('🔍 [SAVE_GUIDE] Making POST request to: $url');
 
-      final response = await _httpClient.post(
-        Uri.parse(url),
-        headers: headers,
-        body: body,
-      ).timeout(const Duration(seconds: 10));
-      
+      final response = await _httpClient
+          .post(
+            Uri.parse(url),
+            headers: headers,
+            body: body,
+          )
+          .timeout(const Duration(seconds: 10));
+
       print('🔍 [SAVE_GUIDE] Response status: ${response.statusCode}');
       print('🔍 [SAVE_GUIDE] Response body: ${response.body}');
 
@@ -58,13 +59,12 @@ class SaveGuideApiService {
           code: 'NOT_FOUND',
         );
       } else {
-        final Map<String, dynamic>? errorData = 
-            json.decode(response.body) as Map<String, dynamic>?;
-        
+        final Map<String, dynamic>? errorData = json.decode(response.body) as Map<String, dynamic>?;
+
         // Handle nested error structure
         String errorMessage = 'Failed to ${save ? 'save' : 'unsave'} study guide';
         String errorCode = 'SERVER_ERROR';
-        
+
         if (errorData != null) {
           if (errorData['error'] is Map<String, dynamic>) {
             final errorObj = errorData['error'] as Map<String, dynamic>;
@@ -73,14 +73,14 @@ class SaveGuideApiService {
           } else if (errorData['message'] is String) {
             errorMessage = errorData['message'];
           }
-          
+
           // Handle specific database errors
           if (errorMessage.contains('duplicate key value violates unique constraint')) {
             errorMessage = 'This study guide is already saved!';
             errorCode = 'ALREADY_SAVED';
           }
         }
-        
+
         throw ServerException(
           message: errorMessage,
           code: errorCode,
@@ -89,11 +89,11 @@ class SaveGuideApiService {
     } catch (e) {
       print('🚨 [SAVE_GUIDE] Error caught: $e');
       print('🚨 [SAVE_GUIDE] Error type: ${e.runtimeType}');
-      
+
       if (e is AuthenticationException || e is ServerException) {
         rethrow;
       }
-      
+
       throw NetworkException(
         message: 'Failed to connect to save guide service: $e',
         code: 'NETWORK_ERROR',
@@ -123,8 +123,6 @@ class SaveGuideApiService {
 
     return headers;
   }
-
-
 
   /// Dispose HTTP client
   void dispose() {

@@ -29,7 +29,6 @@ class OnboardingBloc extends Bloc<OnboardingEvent, OnboardingState> {
         _completeOnboarding = completeOnboarding,
         _navigationHandler = navigationHandler ?? OnboardingNavigationHandler(),
         super(const OnboardingInitial()) {
-    
     on<LoadOnboardingState>(_onLoadOnboardingState);
     on<LanguageSelected>(_onLanguageSelected);
     on<NextStep>(_onNextStep);
@@ -87,7 +86,7 @@ class OnboardingBloc extends Bloc<OnboardingEvent, OnboardingState> {
         );
 
         await _saveLanguagePreference(event.languageCode);
-        
+
         // Update current state
         _currentOnboardingState = _currentOnboardingState!.copyWith(
           selectedLanguage: event.languageCode,
@@ -128,7 +127,7 @@ class OnboardingBloc extends Bloc<OnboardingEvent, OnboardingState> {
       );
 
       emit(OnboardingNavigating(fromStep: currentStep, toStep: nextStep));
-      
+
       _currentOnboardingState = _currentOnboardingState!.copyWith(
         currentStep: nextStep,
       );
@@ -169,7 +168,7 @@ class OnboardingBloc extends Bloc<OnboardingEvent, OnboardingState> {
       );
 
       emit(OnboardingNavigating(fromStep: currentStep, toStep: previousStep));
-      
+
       _currentOnboardingState = _currentOnboardingState!.copyWith(
         currentStep: previousStep,
       );
@@ -192,7 +191,7 @@ class OnboardingBloc extends Bloc<OnboardingEvent, OnboardingState> {
         );
 
         await _completeOnboarding();
-        
+
         _currentOnboardingState = _currentOnboardingState?.copyWith(
           isCompleted: true,
           currentStep: OnboardingStep.completed,
@@ -212,7 +211,7 @@ class OnboardingBloc extends Bloc<OnboardingEvent, OnboardingState> {
   /// Get navigation information for the current state
   OnboardingNavigationInfo? get navigationInfo {
     if (_currentOnboardingState == null) return null;
-    
+
     final currentStep = _currentOnboardingState!.currentStep;
     return OnboardingNavigationInfo(
       currentStep: currentStep,

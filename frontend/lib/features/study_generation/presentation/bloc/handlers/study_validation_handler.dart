@@ -5,7 +5,7 @@ import '../study_event.dart';
 import '../study_state.dart';
 
 /// Handler for input validation logic.
-/// 
+///
 /// This class encapsulates all the business logic related to validating
 /// user input for study guide generation, following the Single Responsibility Principle.
 class StudyValidationHandler {
@@ -16,7 +16,7 @@ class StudyValidationHandler {
   }) : _validationService = validationService;
 
   /// Handles input validation request.
-  /// 
+  ///
   /// This method validates the input using the domain validation service
   /// and emits the appropriate validation state.
   void handleValidateInput(
@@ -27,7 +27,7 @@ class StudyValidationHandler {
       event.input,
       event.inputType,
     );
-    
+
     emit(StudyInputValidation(
       isValid: result.isValid,
       input: event.input,
