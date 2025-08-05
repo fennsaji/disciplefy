@@ -200,15 +200,15 @@ jobs:
         run: |
           echo "🔗 Linking to Vercel development project (separate from production)..."
           
-          # Create clean deployment directory to avoid nested structure issues
+          # Create clean deployment directory matching Vercel project configuration
           rm -rf vercel-deploy
-          mkdir -p vercel-deploy
+          mkdir -p vercel-deploy/frontend
           
-          # Copy all build files to clean deployment directory
-          cp -r build/web/* vercel-deploy/
+          # Copy all build files to match Vercel's expected "frontend" root directory
+          cp -r build/web/* vercel-deploy/frontend/
           
           # Create Vercel configuration for development (static deployment only)
-          cat > vercel-deploy/vercel.json << EOF
+          cat > vercel-deploy/frontend/vercel.json << EOF
           {
             "version": 2,
             "buildCommand": null,
