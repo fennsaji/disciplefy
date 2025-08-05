@@ -193,10 +193,28 @@ jobs:
           # Keep source maps for all development deployments
           echo "ℹ️ Source maps preserved for ${{ env.DEPLOY_ENV }} environment (development build)"
           
-          # Create Vercel configuration for development
-          cat > build/web/vercel.json << EOF
+          echo "✅ Build optimization completed for ${{ env.DEPLOY_ENV }}"
+      
+      - name: 🔗 Link Vercel development project
+        if: ${{ github.event.inputs.deploy_to_vercel != 'false' }}
+        run: |
+          echo "🔗 Linking to Vercel development project (separate from production)..."
+          
+          # Create the directory structure Vercel expects
+          mkdir -p build/web/frontend
+          
+          # Copy all files except directories to avoid recursive copy issues
+          find build/web -maxdepth 1 -type f -exec cp {} build/web/frontend/ \;
+          
+          # Copy directories (except frontend itself)
+          find build/web -maxdepth 1 -type d -name "*" ! -name "web" ! -name "frontend" -exec cp -r {} build/web/frontend/ \; 2>/dev/null || true
+          
+          # Create Vercel configuration for development (static deployment only)
+          cat > build/web/frontend/vercel.json << EOF
           {
             "version": 2,
+            "buildCommand": null,
+            "outputDirectory": ".",
             "builds": [
               {
                 "src": "**/*",
@@ -229,17 +247,6 @@ jobs:
             }
           }
           EOF
-          
-          echo "✅ Build optimization completed for ${{ env.DEPLOY_ENV }}"
-      
-      - name: 🔗 Link Vercel development project
-        if: ${{ github.event.inputs.deploy_to_vercel != 'false' }}
-        run: |
-          echo "🔗 Linking to Vercel development project (separate from production)..."
-          
-          # Create the directory structure Vercel expects
-          mkdir -p build/web/frontend
-          cp -r build/web/* build/web/frontend/ 2>/dev/null || true
           
           # Link using the expected directory structure
           vercel --token ${{ secrets.VERCEL_DEV_TOKEN }} --scope ${{ secrets.VERCEL_DEV_ORG_ID }} link --yes --project ${{ secrets.VERCEL_DEV_PROJECT_ID }} --cwd build/web/frontend
