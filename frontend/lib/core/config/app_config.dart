@@ -4,26 +4,16 @@ import 'package:flutter/foundation.dart';
 /// References: Technical Architecture Document, Security Design Plan
 class AppConfig {
   // Supabase Configuration (Primary Backend)
-  // CRITICAL FIX: Use proper environment detection for Supabase URL
-  static const String supabaseUrl = String.fromEnvironment(
-    'SUPABASE_URL',
-    defaultValue: _flutterEnv == 'development' ? 'http://127.0.0.1:54321' : 'https://wzdcwxvyjuxjgzpnukvm.supabase.co',
-  );
+  // CRITICAL FIX: Use explicit environment variable without conditional defaultValue
+  static const String supabaseUrl = String.fromEnvironment('SUPABASE_URL');
 
   // App URL - Used as fallback when dynamic origin detection fails
-  static const String appUrl = String.fromEnvironment(
-    'APP_URL',
-    defaultValue: _flutterEnv == 'development' ? 'http://localhost:59641' : 'https://disciplefy.vercel.app',
-  );
+  static const String appUrl = String.fromEnvironment('APP_URL');
 
-  static const String supabaseAnonKey = String.fromEnvironment(
-    'SUPABASE_ANON_KEY',
-  );
+  static const String supabaseAnonKey = String.fromEnvironment('SUPABASE_ANON_KEY');
 
   // OAuth Configuration
-  static const String googleClientId = String.fromEnvironment(
-    'GOOGLE_CLIENT_ID',
-  );
+  static const String googleClientId = String.fromEnvironment('GOOGLE_CLIENT_ID');
 
   // Apple OAuth not implemented yet - placeholder for future
   static const String appleClientId = 'com.disciplefy.bible_study';
