@@ -170,13 +170,19 @@ jobs:
         run: |
           echo "🏗️ Building Flutter web app for ${{ env.DEPLOY_ENV }}..."
           
-          # Build with development optimizations (no production env dependencies)
+          # Build with development optimizations and all required environment variables
           flutter build web \
             --release \
             --base-href / \
             --dart-define=ENVIRONMENT=${{ env.DEPLOY_ENV }} \
-            --dart-define=API_BASE_URL=https://${{ secrets.SUPABASE_DEV_PROJECT_REF }}.supabase.co \
+            --dart-define=SUPABASE_URL=https://${{ secrets.SUPABASE_DEV_PROJECT_REF }}.supabase.co \
             --dart-define=SUPABASE_ANON_KEY=${{ secrets.SUPABASE_DEV_ANON_KEY }} \
+            --dart-define=APP_URL=https://disciplefy-dev.vercel.app \
+            --dart-define=GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_OAUTH_CLIENT_ID_DEV }} \
+            --dart-define=FLUTTER_ENV=${{ env.DEPLOY_ENV }} \
+            --dart-define=FLUTTER_WEB_BUILD=true \
+            --dart-define=FLUTTER_WEB_USE_SKIA=true \
+            --dart-define=FLUTTER_WEB_AUTO_DETECT=false \
             --dart-define=ENABLE_LOGGING=true \
             --dart-define=IS_DEVELOPMENT=true
           
