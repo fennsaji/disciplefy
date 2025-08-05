@@ -6,8 +6,7 @@ part of 'recommended_guide_topic_model.dart';
 // JsonSerializableGenerator
 // **************************************************************************
 
-RecommendedGuideTopicModel _$RecommendedGuideTopicModelFromJson(
-        Map<String, dynamic> json) =>
+RecommendedGuideTopicModel _$RecommendedGuideTopicModelFromJson(Map<String, dynamic> json) =>
     RecommendedGuideTopicModel(
       id: json['id'] as String,
       title: json['title'] as String,
@@ -15,19 +14,13 @@ RecommendedGuideTopicModel _$RecommendedGuideTopicModelFromJson(
       category: json['category'] as String,
       difficultyLevel: json['difficulty_level'] as String,
       estimatedDuration: json['estimated_duration'] as String,
-      keyVerses: (json['key_verses'] as List<dynamic>)
-          .map((e) => e as String)
-          .toList(),
+      keyVerses: (json['key_verses'] as List<dynamic>).map((e) => e as String).toList(),
       tags: (json['tags'] as List<dynamic>).map((e) => e as String).toList(),
       isFeatured: json['is_featured'] as bool? ?? false,
-      createdAt: json['created_at'] == null
-          ? null
-          : DateTime.parse(json['created_at'] as String),
+      createdAt: json['created_at'] == null ? null : DateTime.parse(json['created_at'] as String),
     );
 
-Map<String, dynamic> _$RecommendedGuideTopicModelToJson(
-        RecommendedGuideTopicModel instance) =>
-    <String, dynamic>{
+Map<String, dynamic> _$RecommendedGuideTopicModelToJson(RecommendedGuideTopicModel instance) => <String, dynamic>{
       'id': instance.id,
       'title': instance.title,
       'description': instance.description,
@@ -40,20 +33,17 @@ Map<String, dynamic> _$RecommendedGuideTopicModelToJson(
       'key_verses': instance.keyVerses,
     };
 
-RecommendedGuideTopicsResponse _$RecommendedGuideTopicsResponseFromJson(
-        Map<String, dynamic> json) =>
+RecommendedGuideTopicsResponse _$RecommendedGuideTopicsResponseFromJson(Map<String, dynamic> json) =>
     RecommendedGuideTopicsResponse(
       topics: (json['topics'] as List<dynamic>)
-          .map((e) =>
-              RecommendedGuideTopicModel.fromJson(e as Map<String, dynamic>))
+          .map((e) => RecommendedGuideTopicModel.fromJson(e as Map<String, dynamic>))
           .toList(),
       total: (json['total'] as num).toInt(),
       page: (json['page'] as num?)?.toInt(),
       totalPages: (json['totalPages'] as num?)?.toInt(),
     );
 
-Map<String, dynamic> _$RecommendedGuideTopicsResponseToJson(
-        RecommendedGuideTopicsResponse instance) =>
+Map<String, dynamic> _$RecommendedGuideTopicsResponseToJson(RecommendedGuideTopicsResponse instance) =>
     <String, dynamic>{
       'topics': instance.topics,
       'total': instance.total,

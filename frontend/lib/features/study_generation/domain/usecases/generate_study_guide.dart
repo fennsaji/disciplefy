@@ -7,16 +7,16 @@ import '../entities/study_guide.dart';
 import '../repositories/study_repository.dart';
 
 /// Parameters for study guide generation.
-/// 
+///
 /// This class encapsulates all the information needed to generate
 /// a study guide, including validation rules.
 class StudyGenerationParams extends Equatable {
   /// The input text (verse reference or topic).
   final String input;
-  
+
   /// The type of input ('scripture' or 'topic').
   final String inputType;
-  
+
   /// Optional language code for the study guide.
   final String? language;
 
@@ -30,7 +30,7 @@ class StudyGenerationParams extends Equatable {
   List<Object?> get props => [input, inputType, language];
 
   /// Validates the parameters.
-  /// 
+  ///
   /// Returns a [ValidationFailure] if the parameters are invalid,
   /// otherwise returns null.
   ValidationFailure? validate() {
@@ -74,7 +74,7 @@ class StudyGenerationParams extends Equatable {
 }
 
 /// Use case for generating Bible study guides.
-/// 
+///
 /// This use case implements the business logic for generating study guides
 /// from verse references or topics, following Clean Architecture principles.
 class GenerateStudyGuide {
@@ -82,17 +82,17 @@ class GenerateStudyGuide {
   final StudyRepository _repository;
 
   /// Creates a new GenerateStudyGuide use case.
-  /// 
+  ///
   /// [repository] The repository to use for study guide operations.
   const GenerateStudyGuide(this._repository);
 
   /// Generates a study guide based on the provided parameters.
-  /// 
+  ///
   /// This method validates the input, calls the repository, and returns
   /// either a [StudyGuide] on success or a [Failure] on error.
-  /// 
+  ///
   /// [params] The parameters for study guide generation.
-  /// 
+  ///
   /// Returns an [Either] containing either a [Failure] or [StudyGuide].
   Future<Either<Failure, StudyGuide>> call(StudyGenerationParams params) async {
     // Validate input parameters

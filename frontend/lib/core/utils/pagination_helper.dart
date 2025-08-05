@@ -3,13 +3,13 @@
 class PaginationHelper {
   /// Default page size for list-based UI components
   static const int defaultPageSize = 20;
-  
+
   /// Default offset for starting pagination
   static const int defaultOffset = 0;
-  
+
   /// Maximum page size to prevent excessive API calls
   static const int maxPageSize = 100;
-  
+
   /// Minimum page size to ensure reasonable UI performance
   static const int minPageSize = 5;
 
@@ -42,28 +42,29 @@ class PaginationHelper {
   static PaginationParams createParams({
     int? limit,
     int? offset,
-  }) => PaginationParams(
-      limit: validatePageSize(limit ?? defaultPageSize),
-      offset: offset ?? defaultOffset,
-    );
+  }) =>
+      PaginationParams(
+        limit: validatePageSize(limit ?? defaultPageSize),
+        offset: offset ?? defaultOffset,
+      );
 
   /// Reset pagination to the beginning
   static PaginationParams reset({int? pageSize}) => PaginationParams(
-      limit: validatePageSize(pageSize ?? defaultPageSize),
-      offset: defaultOffset,
-    );
+        limit: validatePageSize(pageSize ?? defaultPageSize),
+        offset: defaultOffset,
+      );
 
   /// Get the next page parameters
   static PaginationParams nextPage(PaginationParams current) => PaginationParams(
-      limit: current.limit,
-      offset: calculateNextOffset(current.offset, current.limit),
-    );
+        limit: current.limit,
+        offset: calculateNextOffset(current.offset, current.limit),
+      );
 
   /// Get the previous page parameters
   static PaginationParams previousPage(PaginationParams current) => PaginationParams(
-      limit: current.limit,
-      offset: calculatePreviousOffset(current.offset, current.limit),
-    );
+        limit: current.limit,
+        offset: calculatePreviousOffset(current.offset, current.limit),
+      );
 }
 
 /// Data class for pagination parameters
@@ -80,10 +81,11 @@ class PaginationParams {
   PaginationParams copyWith({
     int? limit,
     int? offset,
-  }) => PaginationParams(
-      limit: limit ?? this.limit,
-      offset: offset ?? this.offset,
-    );
+  }) =>
+      PaginationParams(
+        limit: limit ?? this.limit,
+        offset: offset ?? this.offset,
+      );
 
   /// Check if this is the first page
   bool get isFirstPage => offset == 0;
@@ -93,9 +95,9 @@ class PaginationParams {
 
   /// Convert to query parameters for API calls
   Map<String, String> toQueryParams() => {
-      'limit': limit.toString(),
-      'offset': offset.toString(),
-    };
+        'limit': limit.toString(),
+        'offset': offset.toString(),
+      };
 
   @override
   String toString() => 'PaginationParams(limit: $limit, offset: $offset)';
@@ -103,9 +105,7 @@ class PaginationParams {
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
-    return other is PaginationParams &&
-        other.limit == limit &&
-        other.offset == offset;
+    return other is PaginationParams && other.limit == limit && other.offset == offset;
   }
 
   @override
@@ -116,7 +116,7 @@ class PaginationParams {
 mixin PaginationMixin {
   /// Current pagination state for saved guides
   PaginationParams _savedPagination = PaginationHelper.reset();
-  
+
   /// Current pagination state for recent guides
   PaginationParams _recentPagination = PaginationHelper.reset();
 
@@ -166,9 +166,9 @@ extension PaginationExtension<T> on List<T> {
   List<T> paginate(PaginationParams params) {
     final startIndex = params.offset;
     final endIndex = startIndex + params.limit;
-    
+
     if (startIndex >= length) return [];
-    
+
     return sublist(
       startIndex,
       endIndex > length ? length : endIndex,

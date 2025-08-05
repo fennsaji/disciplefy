@@ -16,17 +16,16 @@ class DailyVerseModel {
     required this.date,
   });
 
-  factory DailyVerseModel.fromJson(Map<String, dynamic> json) =>
-      _$DailyVerseModelFromJson(json);
+  factory DailyVerseModel.fromJson(Map<String, dynamic> json) => _$DailyVerseModelFromJson(json);
 
   Map<String, dynamic> toJson() => _$DailyVerseModelToJson(this);
 
   /// Convert to domain entity
   DailyVerseEntity toEntity() => DailyVerseEntity(
-      reference: reference,
-      translations: translations.toEntity(),
-      date: DateTime.parse(date),
-    );
+        reference: reference,
+        translations: translations.toEntity(),
+        date: DateTime.parse(date),
+      );
 }
 
 @JsonSerializable()
@@ -48,10 +47,10 @@ class DailyVerseTranslationsModel {
 
   /// Convert to domain entity
   DailyVerseTranslations toEntity() => DailyVerseTranslations(
-      esv: esv,
-      hindi: hindi,
-      malayalam: malayalam,
-    );
+        esv: esv,
+        hindi: hindi,
+        malayalam: malayalam,
+      );
 }
 
 @JsonSerializable()
@@ -64,8 +63,7 @@ class DailyVerseResponse {
     required this.data,
   });
 
-  factory DailyVerseResponse.fromJson(Map<String, dynamic> json) =>
-      _$DailyVerseResponseFromJson(json);
+  factory DailyVerseResponse.fromJson(Map<String, dynamic> json) => _$DailyVerseResponseFromJson(json);
 
   Map<String, dynamic> toJson() => _$DailyVerseResponseToJson(this);
 }

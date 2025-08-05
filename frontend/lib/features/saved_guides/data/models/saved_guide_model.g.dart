@@ -77,17 +77,14 @@ class SavedGuideModelAdapter extends TypeAdapter<SavedGuideModel> {
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      other is SavedGuideModelAdapter &&
-          runtimeType == other.runtimeType &&
-          typeId == other.typeId;
+      other is SavedGuideModelAdapter && runtimeType == other.runtimeType && typeId == other.typeId;
 }
 
 // **************************************************************************
 // JsonSerializableGenerator
 // **************************************************************************
 
-SavedGuideModel _$SavedGuideModelFromJson(Map<String, dynamic> json) =>
-    SavedGuideModel(
+SavedGuideModel _$SavedGuideModelFromJson(Map<String, dynamic> json) => SavedGuideModel(
       id: json['id'] as String,
       title: json['title'] as String,
       content: json['content'] as String,
@@ -100,19 +97,12 @@ SavedGuideModel _$SavedGuideModelFromJson(Map<String, dynamic> json) =>
       summary: json['summary'] as String?,
       interpretation: json['interpretation'] as String?,
       context: json['context'] as String?,
-      relatedVerses: (json['relatedVerses'] as List<dynamic>?)
-          ?.map((e) => e as String)
-          .toList(),
-      reflectionQuestions: (json['reflectionQuestions'] as List<dynamic>?)
-          ?.map((e) => e as String)
-          .toList(),
-      prayerPoints: (json['prayerPoints'] as List<dynamic>?)
-          ?.map((e) => e as String)
-          .toList(),
+      relatedVerses: (json['relatedVerses'] as List<dynamic>?)?.map((e) => e as String).toList(),
+      reflectionQuestions: (json['reflectionQuestions'] as List<dynamic>?)?.map((e) => e as String).toList(),
+      prayerPoints: (json['prayerPoints'] as List<dynamic>?)?.map((e) => e as String).toList(),
     );
 
-Map<String, dynamic> _$SavedGuideModelToJson(SavedGuideModel instance) =>
-    <String, dynamic>{
+Map<String, dynamic> _$SavedGuideModelToJson(SavedGuideModel instance) => <String, dynamic>{
       'id': instance.id,
       'title': instance.title,
       'content': instance.content,

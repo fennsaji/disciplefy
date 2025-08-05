@@ -5,13 +5,13 @@ import '../models/onboarding_state_model.dart';
 abstract class OnboardingLocalDataSource {
   /// Gets the current onboarding state from local storage
   Future<OnboardingStateModel> getOnboardingState();
-  
+
   /// Saves language preference to local storage
   Future<void> saveLanguagePreference(String languageCode);
-  
+
   /// Marks onboarding as completed in local storage
   Future<void> completeOnboarding();
-  
+
   /// Resets onboarding state in local storage
   Future<void> resetOnboarding();
 }
@@ -28,7 +28,7 @@ class OnboardingLocalDataSourceImpl implements OnboardingLocalDataSource {
   Future<OnboardingStateModel> getOnboardingState() async {
     final selectedLanguage = _box.get(_languageKey, defaultValue: 'en') as String;
     final isCompleted = _box.get(_onboardingCompletedKey, defaultValue: false) as bool;
-    
+
     return OnboardingStateModel(
       selectedLanguage: selectedLanguage,
       isCompleted: isCompleted,

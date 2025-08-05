@@ -35,7 +35,7 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
     emit(SettingsLoading());
 
     final result = await getSettings(NoParams());
-    
+
     ErrorHandler.handleEitherResult(
       result: result,
       emit: emit,
@@ -123,9 +123,7 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
           emit(SettingsLoaded(settings: updatedSettings));
           if (!emit.isDone) {
             emit(SettingsUpdateSuccess(
-              message: event.enabled 
-                  ? 'Notifications enabled' 
-                  : 'Notifications disabled',
+              message: event.enabled ? 'Notifications enabled' : 'Notifications disabled',
             ));
           }
         },
@@ -139,7 +137,7 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
     Emitter<SettingsState> emit,
   ) async {
     final result = await getAppVersion(NoParams());
-    
+
     ErrorHandler.handleEitherResult(
       result: result,
       emit: emit,
@@ -173,6 +171,4 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
       operationName: 'clear all settings',
     );
   }
-
-
 }

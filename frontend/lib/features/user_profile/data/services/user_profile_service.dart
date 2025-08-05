@@ -9,11 +9,11 @@ import '../repositories/user_profile_repository_impl.dart';
 /// Provides high-level business logic for profile operations
 class UserProfileService {
   late final UserProfileRepository _repository;
-  
+
   UserProfileService() {
     _repository = UserProfileRepositoryImpl(Supabase.instance.client);
   }
-  
+
   /// Get user profile data by user ID
   Future<Map<String, dynamic>?> getUserProfile(String userId) async {
     try {
@@ -26,7 +26,7 @@ class UserProfileService {
       return null;
     }
   }
-  
+
   /// Create or update user profile with default values
   Future<void> upsertUserProfile({
     required String userId,
@@ -40,24 +40,24 @@ class UserProfileService {
       themePreference: themePreference,
       updatedAt: now,
     );
-    
+
     await _repository.upsertUserProfile(profile);
   }
-  
+
   /// Delete user profile and all associated data
   Future<void> deleteUserProfile(String userId) async {
     await _repository.deleteUserProfile(userId);
   }
-  
+
   /// Check if user has admin privileges
   Future<bool> isCurrentUserAdmin(String userId) async => await _repository.isUserAdmin(userId);
-  
+
   /// Update user language preference
   Future<void> updateLanguagePreference(String userId, String languageCode) async {
     await _repository.updateLanguagePreference(userId, languageCode);
   }
-  
-  /// Update user theme preference  
+
+  /// Update user theme preference
   Future<void> updateThemePreference(String userId, String theme) async {
     await _repository.updateThemePreference(userId, theme);
   }

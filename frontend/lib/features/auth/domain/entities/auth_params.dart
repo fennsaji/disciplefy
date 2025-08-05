@@ -18,11 +18,11 @@ class GoogleOAuthCallbackParams {
 
   /// Create params from OAuth redirect URL query parameters
   factory GoogleOAuthCallbackParams.fromQueryParams(Map<String, String> params) => GoogleOAuthCallbackParams(
-      code: params['code'] ?? '',
-      state: params['state'],
-      error: params['error'],
-      errorDescription: params['error_description'],
-    );
+        code: params['code'] ?? '',
+        state: params['state'],
+        error: params['error'],
+        errorDescription: params['error_description'],
+      );
 }
 
 /// Parameters for internal OAuth callback API call
@@ -54,29 +54,32 @@ class AuthDataStorageParams {
   factory AuthDataStorageParams.google({
     required String accessToken,
     String? userId,
-  }) => AuthDataStorageParams(
-      accessToken: accessToken,
-      userType: 'google',
-      userId: userId,
-    );
+  }) =>
+      AuthDataStorageParams(
+        accessToken: accessToken,
+        userType: 'google',
+        userId: userId,
+      );
 
   /// Create params for guest authentication
   factory AuthDataStorageParams.guest({
     required String accessToken,
     required String userId,
-  }) => AuthDataStorageParams(
-      accessToken: accessToken,
-      userType: 'guest',
-      userId: userId,
-    );
+  }) =>
+      AuthDataStorageParams(
+        accessToken: accessToken,
+        userType: 'guest',
+        userId: userId,
+      );
 
   /// Create params for Apple authentication
   factory AuthDataStorageParams.apple({
     required String accessToken,
     String? userId,
-  }) => AuthDataStorageParams(
-      accessToken: accessToken,
-      userType: 'apple',
-      userId: userId,
-    );
+  }) =>
+      AuthDataStorageParams(
+        accessToken: accessToken,
+        userType: 'apple',
+        userId: userId,
+      );
 }

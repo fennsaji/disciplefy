@@ -41,7 +41,7 @@ class _SavedScreenState extends State<SavedScreen> with TickerProviderStateMixin
   void dispose() {
     _savedScrollController.removeListener(_onSavedScroll);
     _recentScrollController.removeListener(_onRecentScroll);
-    
+
     _tabController.dispose();
     _savedScrollController.dispose();
     _recentScrollController.dispose();
@@ -54,15 +54,13 @@ class _SavedScreenState extends State<SavedScreen> with TickerProviderStateMixin
   }
 
   void _onSavedScroll() {
-    if (_savedScrollController.position.pixels >=
-        _savedScrollController.position.maxScrollExtent * 0.8) {
+    if (_savedScrollController.position.pixels >= _savedScrollController.position.maxScrollExtent * 0.8) {
       _loadMoreSaved();
     }
   }
 
   void _onRecentScroll() {
-    if (_recentScrollController.position.pixels >=
-        _recentScrollController.position.maxScrollExtent * 0.8) {
+    if (_recentScrollController.position.pixels >= _recentScrollController.position.maxScrollExtent * 0.8) {
       _loadMoreRecent();
     }
   }
@@ -71,9 +69,7 @@ class _SavedScreenState extends State<SavedScreen> with TickerProviderStateMixin
     final bloc = _bloc;
     if (bloc != null) {
       final state = bloc.state;
-      if (state is SavedGuidesApiLoaded && 
-          !state.isLoadingSaved && 
-          state.hasMoreSaved) {
+      if (state is SavedGuidesApiLoaded && !state.isLoadingSaved && state.hasMoreSaved) {
         bloc.add(
           LoadSavedGuidesFromApi(offset: state.savedGuides.length),
         );
@@ -85,9 +81,7 @@ class _SavedScreenState extends State<SavedScreen> with TickerProviderStateMixin
     final bloc = _bloc;
     if (bloc != null) {
       final state = bloc.state;
-      if (state is SavedGuidesApiLoaded && 
-          !state.isLoadingRecent && 
-          state.hasMoreRecent) {
+      if (state is SavedGuidesApiLoaded && !state.isLoadingRecent && state.hasMoreRecent) {
         bloc.add(
           LoadRecentGuidesFromApi(offset: state.recentGuides.length),
         );
@@ -97,30 +91,30 @@ class _SavedScreenState extends State<SavedScreen> with TickerProviderStateMixin
 
   @override
   Widget build(BuildContext context) => BlocProvider(
-      create: (context) {
-        final bloc = sl<UnifiedSavedGuidesBloc>();
-        _bloc = bloc; // Store reference
-        
-        // Setup tab listener after BloC is available
-        _tabController.addListener(() {
-          _onTabChanged(_tabController.index);
-        });
-        
-        // Load initial tab data based on the default tab (0 = saved)
-        final initialTab = _tabController.index;
-        if (initialTab == 0) {
-          bloc.add(const LoadSavedGuidesFromApi(refresh: true));
-        } else {
-          bloc.add(const LoadRecentGuidesFromApi(refresh: true));
-        }
-        return bloc;
-      },
-      child: _SavedScreenContent(
-        tabController: _tabController,
-        savedScrollController: _savedScrollController,
-        recentScrollController: _recentScrollController,
-      ),
-    );
+        create: (context) {
+          final bloc = sl<UnifiedSavedGuidesBloc>();
+          _bloc = bloc; // Store reference
+
+          // Setup tab listener after BloC is available
+          _tabController.addListener(() {
+            _onTabChanged(_tabController.index);
+          });
+
+          // Load initial tab data based on the default tab (0 = saved)
+          final initialTab = _tabController.index;
+          if (initialTab == 0) {
+            bloc.add(const LoadSavedGuidesFromApi(refresh: true));
+          } else {
+            bloc.add(const LoadRecentGuidesFromApi(refresh: true));
+          }
+          return bloc;
+        },
+        child: _SavedScreenContent(
+          tabController: _tabController,
+          savedScrollController: _savedScrollController,
+          recentScrollController: _recentScrollController,
+        ),
+      );
 }
 
 class _SavedScreenContent extends StatelessWidget {
@@ -136,248 +130,248 @@ class _SavedScreenContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-      backgroundColor: AppTheme.backgroundColor,
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Header with title and tabs
-          Container(
-            padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Title
-                Text(
-                  'Study Guides',
-                  style: GoogleFonts.playfairDisplay(
-                    fontSize: 32,
-                    fontWeight: FontWeight.bold,
-                    color: AppTheme.primaryColor,
+        backgroundColor: AppTheme.backgroundColor,
+        body: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Header with title and tabs
+            Container(
+              padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Title
+                  Text(
+                    'Study Guides',
+                    style: GoogleFonts.playfairDisplay(
+                      fontSize: 32,
+                      fontWeight: FontWeight.bold,
+                      color: AppTheme.primaryColor,
+                    ),
                   ),
-                ),
-                
-                const SizedBox(height: 24),
-                
-                // Custom Tab Bar
-                Container(
-                  decoration: BoxDecoration(
-                    color: AppTheme.surfaceColor,
-                    borderRadius: BorderRadius.circular(12),
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppTheme.primaryColor.withOpacity(0.08),
-                        blurRadius: 8,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: TabBar(
-                    controller: tabController,
-                    labelColor: AppTheme.primaryColor,
-                    unselectedLabelColor: AppTheme.onSurfaceVariant,
-                    indicator: BoxDecoration(
-                      color: AppTheme.primaryColor.withOpacity(0.1),
+
+                  const SizedBox(height: 24),
+
+                  // Custom Tab Bar
+                  Container(
+                    decoration: BoxDecoration(
+                      color: AppTheme.surfaceColor,
                       borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppTheme.primaryColor.withOpacity(0.08),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
                     ),
-                    indicatorSize: TabBarIndicatorSize.tab,
-                    dividerColor: Colors.transparent,
-                    labelStyle: GoogleFonts.inter(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                    ),
-                    unselectedLabelStyle: GoogleFonts.inter(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w500,
-                    ),
-                    tabs: const [
-                      Tab(
-                        icon: Icon(Icons.bookmark, size: 20),
-                        text: 'Saved',
+                    child: TabBar(
+                      controller: tabController,
+                      labelColor: AppTheme.primaryColor,
+                      unselectedLabelColor: AppTheme.onSurfaceVariant,
+                      indicator: BoxDecoration(
+                        color: AppTheme.primaryColor.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(12),
                       ),
-                      Tab(
-                        icon: Icon(Icons.history, size: 20),
-                        text: 'Recent',
+                      indicatorSize: TabBarIndicatorSize.tab,
+                      dividerColor: Colors.transparent,
+                      labelStyle: GoogleFonts.inter(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
                       ),
-                    ],
+                      unselectedLabelStyle: GoogleFonts.inter(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                      ),
+                      tabs: const [
+                        Tab(
+                          icon: Icon(Icons.bookmark, size: 20),
+                          text: 'Saved',
+                        ),
+                        Tab(
+                          icon: Icon(Icons.history, size: 20),
+                          text: 'Recent',
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-          
-          // Tab Content
-          Expanded(
-            child: BlocConsumer<UnifiedSavedGuidesBloc, SavedGuidesState>(
-              listener: (context, state) {
-                if (state is SavedGuidesError) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(state.message),
-                      backgroundColor: AppTheme.errorColor,
-                      behavior: SnackBarBehavior.floating,
-                    ),
-                  );
-                } else if (state is SavedGuidesActionSuccess) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(state.message),
-                      backgroundColor: AppTheme.successColor,
-                      behavior: SnackBarBehavior.floating,
-                    ),
-                  );
-                }
-              },
-              builder: (context, state) {
-                if (state is SavedGuidesTabLoading) {
-                  return _buildLoadingIndicator(state.isRefresh);
-                }
 
-                if (state is SavedGuidesAuthRequired) {
-                  return _buildAuthRequiredState(context, state);
-                }
+            // Tab Content
+            Expanded(
+              child: BlocConsumer<UnifiedSavedGuidesBloc, SavedGuidesState>(
+                listener: (context, state) {
+                  if (state is SavedGuidesError) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(state.message),
+                        backgroundColor: AppTheme.errorColor,
+                        behavior: SnackBarBehavior.floating,
+                      ),
+                    );
+                  } else if (state is SavedGuidesActionSuccess) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(state.message),
+                        backgroundColor: AppTheme.successColor,
+                        behavior: SnackBarBehavior.floating,
+                      ),
+                    );
+                  }
+                },
+                builder: (context, state) {
+                  if (state is SavedGuidesTabLoading) {
+                    return _buildLoadingIndicator(state.isRefresh);
+                  }
 
-                if (state is SavedGuidesApiLoaded) {
-                  return TabBarView(
-                    controller: tabController,
-                    children: [
-                      _buildSavedTab(context, state),
-                      _buildRecentTab(context, state),
-                    ],
-                  );
-                }
+                  if (state is SavedGuidesAuthRequired) {
+                    return _buildAuthRequiredState(context, state);
+                  }
 
-                if (state is SavedGuidesError) {
-                  return _buildErrorState(context, state.message);
-                }
+                  if (state is SavedGuidesApiLoaded) {
+                    return TabBarView(
+                      controller: tabController,
+                      children: [
+                        _buildSavedTab(context, state),
+                        _buildRecentTab(context, state),
+                      ],
+                    );
+                  }
 
-                return _buildLoadingIndicator(false);
-              },
+                  if (state is SavedGuidesError) {
+                    return _buildErrorState(context, state.message);
+                  }
+
+                  return _buildLoadingIndicator(false);
+                },
+              ),
             ),
-          ),
-        ],
-      ),
-    );
+          ],
+        ),
+      );
 
   Widget _buildLoadingIndicator(bool isRefresh) => Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const CircularProgressIndicator(
-            valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primaryColor),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            isRefresh ? 'Refreshing guides...' : 'Loading guides...',
-            style: GoogleFonts.inter(
-              fontSize: 16,
-              color: AppTheme.onSurfaceVariant,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const CircularProgressIndicator(
+              valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primaryColor),
             ),
-          ),
-        ],
-      ),
-    );
+            const SizedBox(height: 16),
+            Text(
+              isRefresh ? 'Refreshing guides...' : 'Loading guides...',
+              style: GoogleFonts.inter(
+                fontSize: 16,
+                color: AppTheme.onSurfaceVariant,
+              ),
+            ),
+          ],
+        ),
+      );
 
   Widget _buildErrorState(BuildContext context, String message) => Center(
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(
-              Icons.error_outline,
-              size: 64,
-              color: AppTheme.errorColor,
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'Error Loading Guides',
-              style: GoogleFonts.inter(
-                fontSize: 20,
-                fontWeight: FontWeight.w600,
-                color: AppTheme.textPrimary,
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(
+                Icons.error_outline,
+                size: 64,
+                color: AppTheme.errorColor,
               ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              message,
-              style: GoogleFonts.inter(
-                fontSize: 14,
-                color: AppTheme.onSurfaceVariant,
+              const SizedBox(height: 16),
+              Text(
+                'Error Loading Guides',
+                style: GoogleFonts.inter(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w600,
+                  color: AppTheme.textPrimary,
+                ),
               ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 24),
-            ElevatedButton(
-              onPressed: () {
-                context.read<UnifiedSavedGuidesBloc>().add(
-                  const LoadSavedGuidesFromApi(refresh: true),
-                );
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.primaryColor,
-                foregroundColor: Colors.white,
+              const SizedBox(height: 8),
+              Text(
+                message,
+                style: GoogleFonts.inter(
+                  fontSize: 14,
+                  color: AppTheme.onSurfaceVariant,
+                ),
+                textAlign: TextAlign.center,
               ),
-              child: const Text('Retry'),
-            ),
-          ],
+              const SizedBox(height: 24),
+              ElevatedButton(
+                onPressed: () {
+                  context.read<UnifiedSavedGuidesBloc>().add(
+                        const LoadSavedGuidesFromApi(refresh: true),
+                      );
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.primaryColor,
+                  foregroundColor: Colors.white,
+                ),
+                child: const Text('Retry'),
+              ),
+            ],
+          ),
         ),
-      ),
-    );
+      );
 
   Widget _buildAuthRequiredState(BuildContext context, SavedGuidesAuthRequired state) => Center(
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              state.isForSavedGuides ? Icons.bookmark_border : Icons.history,
-              size: 64,
-              color: AppTheme.primaryColor.withOpacity(0.6),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'Sign In Required',
-              style: GoogleFonts.inter(
-                fontSize: 20,
-                fontWeight: FontWeight.w600,
-                color: AppTheme.textPrimary,
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                state.isForSavedGuides ? Icons.bookmark_border : Icons.history,
+                size: 64,
+                color: AppTheme.primaryColor.withOpacity(0.6),
               ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              state.message,
-              style: GoogleFonts.inter(
-                fontSize: 14,
-                color: AppTheme.onSurfaceVariant,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 24),
-            ElevatedButton(
-              onPressed: () {
-                context.go('/auth');
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.secondaryColor,
-                foregroundColor: AppTheme.textPrimary,
-                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-              child: Text(
-                'Sign In',
+              const SizedBox(height: 16),
+              Text(
+                'Sign In Required',
                 style: GoogleFonts.inter(
-                  fontSize: 16,
+                  fontSize: 20,
                   fontWeight: FontWeight.w600,
+                  color: AppTheme.textPrimary,
                 ),
               ),
-            ),
-          ],
+              const SizedBox(height: 8),
+              Text(
+                state.message,
+                style: GoogleFonts.inter(
+                  fontSize: 14,
+                  color: AppTheme.onSurfaceVariant,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 24),
+              ElevatedButton(
+                onPressed: () {
+                  context.go('/auth');
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.secondaryColor,
+                  foregroundColor: AppTheme.textPrimary,
+                  padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                child: Text(
+                  'Sign In',
+                  style: GoogleFonts.inter(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
-      ),
-    );
+      );
 
   Widget _buildSavedTab(BuildContext context, SavedGuidesApiLoaded state) {
     if (state.savedGuides.isEmpty && !state.isLoadingSaved) {
@@ -391,8 +385,8 @@ class _SavedScreenContent extends StatelessWidget {
     return RefreshIndicator(
       onRefresh: () async {
         context.read<UnifiedSavedGuidesBloc>().add(
-          const LoadSavedGuidesFromApi(refresh: true),
-        );
+              const LoadSavedGuidesFromApi(refresh: true),
+            );
       },
       child: ListView.builder(
         controller: savedScrollController,
@@ -435,8 +429,8 @@ class _SavedScreenContent extends StatelessWidget {
     return RefreshIndicator(
       onRefresh: () async {
         context.read<UnifiedSavedGuidesBloc>().add(
-          const LoadRecentGuidesFromApi(refresh: true),
-        );
+              const LoadRecentGuidesFromApi(refresh: true),
+            );
       },
       child: ListView.builder(
         controller: recentScrollController,
@@ -469,7 +463,7 @@ class _SavedScreenContent extends StatelessWidget {
   void _openGuide(BuildContext context, SavedGuideEntity guide) {
     // Determine source based on current tab
     final source = tabController.index == 0 ? 'saved' : 'recent';
-    
+
     // Navigate to study guide screen with source parameter
     context.go('/study-guide?source=$source', extra: {
       'study_guide': {
@@ -488,10 +482,10 @@ class _SavedScreenContent extends StatelessWidget {
 
   void _toggleSaveStatus(BuildContext context, SavedGuideEntity guide, bool save) {
     context.read<UnifiedSavedGuidesBloc>().add(
-      ToggleGuideApiEvent(
-        guideId: guide.id,
-        save: save,
-      ),
-    );
+          ToggleGuideApiEvent(
+            guideId: guide.id,
+            save: save,
+          ),
+        );
   }
 }

@@ -41,18 +41,13 @@ class FeedbackService {
       );
 
       if (response.status != 200) {
-        throw Exception(
-          response.data['message'] ?? 'Failed to submit feedback'
-        );
+        throw Exception(response.data['message'] ?? 'Failed to submit feedback');
       }
 
       // Check if response indicates success
       if (response.data['success'] != true) {
-        throw Exception(
-          response.data['message'] ?? 'Feedback submission failed'
-        );
+        throw Exception(response.data['message'] ?? 'Feedback submission failed');
       }
-
     } catch (e) {
       // Re-throw with more context
       throw Exception('Failed to submit feedback: $e');

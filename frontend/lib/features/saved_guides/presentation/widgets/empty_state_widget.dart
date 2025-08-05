@@ -18,50 +18,50 @@ class EmptyStateWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              width: 80,
-              height: 80,
-              decoration: BoxDecoration(
-                color: AppTheme.primaryColor.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(20),
+        child: Padding(
+          padding: const EdgeInsets.all(32),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                width: 80,
+                height: 80,
+                decoration: BoxDecoration(
+                  color: AppTheme.primaryColor.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Icon(
+                  icon,
+                  size: 40,
+                  color: AppTheme.primaryColor.withOpacity(0.6),
+                ),
               ),
-              child: Icon(
-                icon,
-                size: 40,
-                color: AppTheme.primaryColor.withOpacity(0.6),
-              ),
-            ),
-            const SizedBox(height: 24),
-            Text(
-              title,
-              style: GoogleFonts.playfairDisplay(
-                fontSize: 24,
-                fontWeight: FontWeight.w600,
-                color: AppTheme.textPrimary,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 12),
-            Text(
-              subtitle,
-              style: GoogleFonts.inter(
-                fontSize: 16,
-                color: AppTheme.onSurfaceVariant,
-                height: 1.5,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            if (action != null) ...[
               const SizedBox(height: 24),
-              action!,
+              Text(
+                title,
+                style: GoogleFonts.playfairDisplay(
+                  fontSize: 24,
+                  fontWeight: FontWeight.w600,
+                  color: AppTheme.textPrimary,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 12),
+              Text(
+                subtitle,
+                style: GoogleFonts.inter(
+                  fontSize: 16,
+                  color: AppTheme.onSurfaceVariant,
+                  height: 1.5,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              if (action != null) ...[
+                const SizedBox(height: 24),
+                action!,
+              ],
             ],
-          ],
+          ),
         ),
-      ),
-    );
+      );
 }

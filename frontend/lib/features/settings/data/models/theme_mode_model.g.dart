@@ -6,15 +6,13 @@ part of 'theme_mode_model.dart';
 // JsonSerializableGenerator
 // **************************************************************************
 
-ThemeModeModel _$ThemeModeModelFromJson(Map<String, dynamic> json) =>
-    ThemeModeModel(
+ThemeModeModel _$ThemeModeModelFromJson(Map<String, dynamic> json) => ThemeModeModel(
       mode: $enumDecode(_$AppThemeModeEnumMap, json['mode']),
       isSystemMode: json['isSystemMode'] as bool,
       isDarkMode: json['isDarkMode'] as bool,
     );
 
-Map<String, dynamic> _$ThemeModeModelToJson(ThemeModeModel instance) =>
-    <String, dynamic>{
+Map<String, dynamic> _$ThemeModeModelToJson(ThemeModeModel instance) => <String, dynamic>{
       'mode': _$AppThemeModeEnumMap[instance.mode]!,
       'isSystemMode': instance.isSystemMode,
       'isDarkMode': instance.isDarkMode,

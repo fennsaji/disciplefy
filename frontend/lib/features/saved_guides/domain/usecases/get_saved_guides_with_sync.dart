@@ -12,9 +12,10 @@ class GetSavedGuidesWithSync {
     int limit = 20,
     int offset = 0,
     bool forceRefresh = false,
-  }) async => await repository.getSavedGuidesWithSync(
-      limit: limit,
-      offset: offset,
-      forceRefresh: forceRefresh,
-    );
+  }) async =>
+      await repository.getSavedGuidesWithSync(
+        limit: limit,
+        offset: offset,
+        forceRefresh: forceRefresh,
+      );
 }

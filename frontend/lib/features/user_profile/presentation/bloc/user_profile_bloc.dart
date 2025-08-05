@@ -125,7 +125,7 @@ class UserProfileBloc extends Bloc<UserProfileEvent, UserProfileState> {
           event.languageCode,
         );
         emit(LanguagePreferenceUpdated(newLanguage: event.languageCode));
-        
+
         // Reload profile to get updated data
         add(LoadUserProfileEvent(userId: event.userId));
       },
@@ -147,7 +147,7 @@ class UserProfileBloc extends Bloc<UserProfileEvent, UserProfileState> {
       operation: () async {
         await _repository.updateThemePreference(event.userId, event.theme);
         emit(ThemePreferenceUpdated(newTheme: event.theme));
-        
+
         // Reload profile to get updated data
         add(LoadUserProfileEvent(userId: event.userId));
       },
@@ -167,7 +167,7 @@ class UserProfileBloc extends Bloc<UserProfileEvent, UserProfileState> {
   ) async {
     try {
       final isAdmin = await _repository.isUserAdmin(event.userId);
-      
+
       // Update current state if it's UserProfileLoaded
       if (state is UserProfileLoaded) {
         final currentState = state as UserProfileLoaded;

@@ -1,16 +1,16 @@
 import 'package:equatable/equatable.dart';
 
 /// Abstract base class for all failures in the application.
-/// 
+///
 /// Failures represent error states that have been handled and can be
 /// presented to the user in a meaningful way.
 abstract class Failure extends Equatable {
   /// User-friendly error message.
   final String message;
-  
+
   /// Technical error code for debugging.
   final String code;
-  
+
   /// Additional context about the failure.
   final Map<String, dynamic>? context;
 

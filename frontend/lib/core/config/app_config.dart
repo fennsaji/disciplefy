@@ -4,40 +4,19 @@ import 'package:flutter/foundation.dart';
 /// References: Technical Architecture Document, Security Design Plan
 class AppConfig {
   // Supabase Configuration (Primary Backend)
-  // CRITICAL FIX: Use proper environment detection for Supabase URL
-  static const String supabaseUrl = String.fromEnvironment(
-    'SUPABASE_URL',
-    defaultValue: _flutterEnv == 'development'
-        ? 'http://127.0.0.1:54321'
-        : 'https://wzdcwxvyjuxjgzpnukvm.supabase.co',
-  );
+  // CRITICAL FIX: Use explicit environment variable without conditional defaultValue
+  static const String supabaseUrl = String.fromEnvironment('SUPABASE_URL');
 
-  // CRITICAL FIX: Use proper environment detection for App URL
-  static const String appUrl = String.fromEnvironment(
-    'APP_URL',
-    defaultValue: _flutterEnv == 'development'
-        ? 'http://localhost:59641'
-        : 'https://disciplefy.vercel.app',
-  );
+  // App URL - Used as fallback when dynamic origin detection fails
+  static const String appUrl = String.fromEnvironment('APP_URL');
 
-  static const String supabaseAnonKey = String.fromEnvironment(
-    'SUPABASE_ANON_KEY',
-  );
+  static const String supabaseAnonKey = String.fromEnvironment('SUPABASE_ANON_KEY');
 
   // OAuth Configuration
-  static const String googleClientId = String.fromEnvironment(
-    'GOOGLE_CLIENT_ID',
-  );
+  static const String googleClientId = String.fromEnvironment('GOOGLE_CLIENT_ID');
 
-  static const String appleClientId = String.fromEnvironment(
-    'APPLE_CLIENT_ID',
-    defaultValue: 'com.disciplefy.bible_study',
-  );
-
-  // Payment Configuration (Razorpay)
-  static const String razorpayKeyId = String.fromEnvironment(
-    'RAZORPAY_KEY_ID',
-  );
+  // Apple OAuth not implemented yet - placeholder for future
+  static const String appleClientId = 'com.disciplefy.bible_study';
 
   // App Configuration
   static const String appVersion = '1.0.0';
@@ -64,7 +43,7 @@ class AppConfig {
         // Use Uri.base to get the current origin - this is the modern, safe approach
         final baseUri = Uri.base;
         final origin = '${baseUri.scheme}://${baseUri.host}${baseUri.hasPort ? ':${baseUri.port}' : ''}';
-        
+
         if (isDevelopment) {
           print('🔧 [AppConfig] Dynamic web origin detected: $origin');
         }
@@ -74,7 +53,7 @@ class AppConfig {
           print('🔧 [AppConfig] ⚠️ Failed to get dynamic origin, falling back to appUrl: $e');
         }
       }
-      
+
       // Fallback to configured appUrl if dynamic detection fails
       if (isDevelopment) {
         print('🔧 [AppConfig] Using fallback appUrl: $appUrl');
@@ -95,6 +74,7 @@ class AppConfig {
   static const String googleOAuthCallbackEndpoint = '/auth-google-callback';
 
   // Rate Limiting (from API Contract Documentation)
+  // Note: These are hardcoded as they're client-side limits, not server configuration
   static const int anonymousRateLimit = 3; // guides per hour
   static const int authenticatedRateLimit = 10; // guides per hour
   static const int apiRequestLimit = 100; // requests per hour for authenticated
@@ -113,7 +93,7 @@ class AppConfig {
   static const int maxCachedBibleVerses = 500;
   static const int cacheRetentionDays = 30;
   static const String maxOfflineStorageSize = '100MB';
-  
+
   // Cache Refresh Configuration
   static const int dailyVerseCacheRefreshHours = 1; // Refresh daily verse cache after 1 hour
 
@@ -121,7 +101,7 @@ class AppConfig {
   // CRITICAL FIX: Use FLUTTER_ENV dart-define instead of kDebugMode
   // kDebugMode is unreliable in production builds and causes wrong Supabase URL selection
   static const String _flutterEnv = String.fromEnvironment('FLUTTER_ENV', defaultValue: 'development');
-  
+
   static bool get isProduction => _flutterEnv == 'production';
   static bool get isDevelopment => _flutterEnv == 'development';
   static String get environment => _flutterEnv;
@@ -139,43 +119,39 @@ class AppConfig {
   static String get donationsUrl => '$baseApiUrl/donations';
 
   // Validation
-  static bool get isConfigValid =>
-      supabaseUrl.isNotEmpty && supabaseAnonKey.isNotEmpty;
+  static bool get isConfigValid => supabaseUrl.isNotEmpty && supabaseAnonKey.isNotEmpty;
 
   static bool get isOAuthConfigValid {
-    return (kIsWeb && googleClientId.isNotEmpty) ||
-        (!kIsWeb); // Mobile gets config from platform-specific files
+    return (kIsWeb && googleClientId.isNotEmpty) || (!kIsWeb); // Mobile gets config from platform-specific files
   }
 
   /// Validates that all required configuration values are present
   /// Throws detailed exceptions for missing critical configuration
   static void validateConfiguration() {
     final List<String> missingConfigs = [];
-    
+
     if (supabaseUrl.isEmpty) {
       missingConfigs.add('SUPABASE_URL');
     }
-    
+
     if (supabaseAnonKey.isEmpty) {
       missingConfigs.add('SUPABASE_ANON_KEY');
     }
-    
+
     if (kIsWeb && googleClientId.isEmpty) {
       missingConfigs.add('GOOGLE_CLIENT_ID (required for web)');
     }
-    
+
     if (missingConfigs.isNotEmpty) {
-      throw Exception(
-        'Missing required environment variables: ${missingConfigs.join(', ')}. '
-        'Please set these environment variables before running the application.'
-      );
+      throw Exception('Missing required environment variables: ${missingConfigs.join(', ')}. '
+          'Please set these environment variables before running the application.');
     }
-    
+
     // Validate format of critical URLs
     if (!supabaseUrl.startsWith('http')) {
       throw Exception('SUPABASE_URL must be a valid HTTP/HTTPS URL');
     }
-    
+
     if (isDevelopment) {
       print('✅ Configuration validation passed');
     }

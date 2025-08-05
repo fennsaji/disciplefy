@@ -5,13 +5,13 @@ import '../../../../core/router/app_routes.dart';
 import '../entities/study_guide.dart';
 
 /// Domain service for study generation navigation.
-/// 
+///
 /// This service provides a centralized, consistent way to handle
 /// navigation flows within the study generation feature,
 /// eliminating duplicate navigation logic and inconsistent patterns.
 class StudyNavigationService {
   /// Navigates to the study guide screen with proper data passing.
-  /// 
+  ///
   /// [context] The build context for navigation
   /// [studyGuide] The study guide to display
   /// [source] The navigation source for proper back navigation
@@ -27,7 +27,7 @@ class StudyNavigationService {
   }
 
   /// Navigates to the study guide screen with saved guide data.
-  /// 
+  ///
   /// [context] The build context for navigation
   /// [routeData] The saved guide data from the database
   static void navigateToSavedStudyGuide(
@@ -41,7 +41,7 @@ class StudyNavigationService {
   }
 
   /// Handles back navigation based on the navigation source.
-  /// 
+  ///
   /// [context] The build context for navigation
   /// [source] The original navigation source
   static void navigateBack(
@@ -83,12 +83,12 @@ class StudyNavigationService {
   }
 
   /// Parses navigation source from string.
-  /// 
+  ///
   /// [sourceString] The source string from query parameters
   /// Returns the corresponding [StudyNavigationSource] or [StudyNavigationSource.saved] as default
   static StudyNavigationSource parseNavigationSource(String? sourceString) {
     if (sourceString == null) return StudyNavigationSource.saved;
-    
+
     try {
       return StudyNavigationSource.values.firstWhere(
         (source) => source.name == sourceString,
@@ -100,7 +100,7 @@ class StudyNavigationService {
   }
 
   /// Shows an error dialog and optionally navigates to login.
-  /// 
+  ///
   /// [context] The build context
   /// [title] The error dialog title
   /// [message] The error message
@@ -139,13 +139,13 @@ class StudyNavigationService {
 enum StudyNavigationSource {
   /// Navigated from home screen.
   home,
-  
+
   /// Navigated from study generation screen.
   generate,
-  
+
   /// Navigated from saved guides screen.
   saved,
-  
+
   /// Navigated from recent guides section.
   recent,
 }

@@ -11,9 +11,9 @@ abstract class UserProfileEvent extends Equatable {
 /// Event to load user profile data
 class LoadUserProfileEvent extends UserProfileEvent {
   final String userId;
-  
+
   LoadUserProfileEvent({required this.userId});
-  
+
   @override
   List<Object> get props => [userId];
 }
@@ -21,9 +21,9 @@ class LoadUserProfileEvent extends UserProfileEvent {
 /// Event to update user profile
 class UpdateUserProfileEvent extends UserProfileEvent {
   final UserProfileEntity profile;
-  
+
   UpdateUserProfileEvent({required this.profile});
-  
+
   @override
   List<Object> get props => [profile];
 }
@@ -31,9 +31,9 @@ class UpdateUserProfileEvent extends UserProfileEvent {
 /// Event to delete user profile
 class DeleteUserProfileEvent extends UserProfileEvent {
   final String userId;
-  
+
   DeleteUserProfileEvent({required this.userId});
-  
+
   @override
   List<Object> get props => [userId];
 }
@@ -42,12 +42,12 @@ class DeleteUserProfileEvent extends UserProfileEvent {
 class UpdateLanguagePreferenceEvent extends UserProfileEvent {
   final String userId;
   final String languageCode;
-  
+
   UpdateLanguagePreferenceEvent({
     required this.userId,
     required this.languageCode,
   });
-  
+
   @override
   List<Object> get props => [userId, languageCode];
 }
@@ -56,12 +56,12 @@ class UpdateLanguagePreferenceEvent extends UserProfileEvent {
 class UpdateThemePreferenceEvent extends UserProfileEvent {
   final String userId;
   final String theme;
-  
+
   UpdateThemePreferenceEvent({
     required this.userId,
     required this.theme,
   });
-  
+
   @override
   List<Object> get props => [userId, theme];
 }
@@ -69,9 +69,9 @@ class UpdateThemePreferenceEvent extends UserProfileEvent {
 /// Event to check admin status
 class CheckAdminStatusEvent extends UserProfileEvent {
   final String userId;
-  
+
   CheckAdminStatusEvent({required this.userId});
-  
+
   @override
   List<Object> get props => [userId];
 }

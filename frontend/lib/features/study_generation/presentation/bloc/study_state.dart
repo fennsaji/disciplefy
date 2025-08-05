@@ -4,7 +4,7 @@ import '../../../../core/error/failures.dart';
 import '../../domain/entities/study_guide.dart';
 
 /// States for the Study Generation BLoC.
-/// 
+///
 /// These states represent the current status of study guide generation
 /// and related operations.
 abstract class StudyState extends Equatable {
@@ -34,7 +34,7 @@ class StudyGenerationInProgress extends StudyState {
 class StudyGenerationSuccess extends StudyState {
   /// The generated study guide.
   final StudyGuide studyGuide;
-  
+
   /// Timestamp of generation for caching purposes.
   final DateTime generatedAt;
 
@@ -51,7 +51,7 @@ class StudyGenerationSuccess extends StudyState {
 class StudyGenerationFailure extends StudyState {
   /// The failure that occurred.
   final Failure failure;
-  
+
   /// Whether the failure is retryable.
   final bool isRetryable;
 
@@ -81,10 +81,10 @@ class StudySaveInProgress extends StudyState {
 class StudySaveSuccess extends StudyState {
   /// The ID of the study guide that was saved/unsaved.
   final String guideId;
-  
+
   /// Whether the guide was saved (true) or unsaved (false).
   final bool saved;
-  
+
   /// Success message to display to user.
   final String message;
 
@@ -102,10 +102,10 @@ class StudySaveSuccess extends StudyState {
 class StudySaveFailure extends StudyState {
   /// The ID of the study guide that failed to save.
   final String guideId;
-  
+
   /// The failure that occurred.
   final Failure failure;
-  
+
   /// Whether the failure is retryable.
   final bool isRetryable;
 
@@ -123,13 +123,13 @@ class StudySaveFailure extends StudyState {
 class StudyInputValidation extends StudyState {
   /// Whether the current input is valid.
   final bool isValid;
-  
+
   /// Error message if input is invalid (null if valid or empty).
   final String? errorMessage;
-  
+
   /// The input text that was validated.
   final String input;
-  
+
   /// The input type that was validated.
   final String inputType;
 
@@ -148,10 +148,10 @@ class StudyInputValidation extends StudyState {
 class StudyAuthenticationRequired extends StudyState {
   /// The ID of the study guide that requires authentication to save.
   final String guideId;
-  
+
   /// Whether to save (true) or unsave (false) the guide after authentication.
   final bool save;
-  
+
   /// Message to display to the user explaining why authentication is needed.
   final String message;
 

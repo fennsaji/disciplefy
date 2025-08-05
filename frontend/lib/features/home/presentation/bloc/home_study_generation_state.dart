@@ -19,7 +19,7 @@ class HomeStudyGenerationInitial extends HomeStudyGenerationState {
 class HomeStudyGenerationInProgress extends HomeStudyGenerationState {
   /// The input being used for generation.
   final String input;
-  
+
   /// The type of input ('scripture' or 'topic').
   final String inputType;
 
@@ -49,13 +49,13 @@ class HomeStudyGenerationSuccess extends HomeStudyGenerationState {
 class HomeStudyGenerationError extends HomeStudyGenerationState {
   /// The error message.
   final String message;
-  
+
   /// The input that failed to generate.
   final String input;
-  
+
   /// The type of input that failed.
   final String inputType;
-  
+
   /// Optional error code for specific error handling.
   final String? errorCode;
 

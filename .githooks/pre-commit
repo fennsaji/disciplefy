@@ -1,0 +1,138 @@
+#!/bin/bash
+#
+# Git Pre-Commit Hook - Disciplefy Bible Study App
+# 
+# This hook ensures both backend and frontend compile successfully
+# before allowing commits to prevent broken code from entering the repository.
+#
+# To install: git config core.hooksPath .githooks
+#
+
+set -e
+
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
+
+echo -e "${BLUE}🔍 Pre-commit Hook: Checking compilation...${NC}"
+echo ""
+
+# Get the root directory of the repository
+REPO_ROOT=$(git rev-parse --show-toplevel)
+cd "$REPO_ROOT"
+
+# Track overall success
+OVERALL_SUCCESS=true
+
+# Function to check if files in a directory have been modified
+files_modified_in_dir() {
+    local dir="$1"
+    git diff --cached --name-only | grep -q "^$dir/" 2>/dev/null
+}
+
+# Check Backend Compilation
+echo -e "${YELLOW}📦 Checking Backend (TypeScript/Deno)...${NC}"
+if files_modified_in_dir "backend" || git diff --cached --name-only | grep -q "\.ts$"; then
+    cd "$REPO_ROOT/backend"
+    
+    # Check if Deno is available
+    if ! command -v deno &> /dev/null; then
+        echo -e "${RED}❌ Deno not found. Please install Deno:${NC}"
+        echo "   curl -fsSL https://deno.land/install.sh | sh"
+        OVERALL_SUCCESS=false
+    else
+        echo "🔧 Using: $(deno --version | head -n1)"
+        
+        # Run TypeScript compilation check
+        if find supabase/functions -name "*.ts" -exec deno check {} + >/dev/null 2>&1; then
+            echo -e "${GREEN}✅ Backend TypeScript compilation: PASSED${NC}"
+        else
+            echo -e "${RED}❌ Backend TypeScript compilation: FAILED${NC}"
+            echo ""
+            echo -e "${RED}Compilation errors:${NC}"
+            find supabase/functions -name "*.ts" -exec deno check {} + 2>&1 | sed 's/^/   /'
+            echo ""
+            echo -e "${RED}Fix the TypeScript errors above before committing.${NC}"
+            OVERALL_SUCCESS=false
+        fi
+    fi
+    
+    cd "$REPO_ROOT"
+else
+    echo -e "${BLUE}ℹ️  No backend files modified - skipping backend check${NC}"
+fi
+
+echo ""
+
+# Check Frontend Compilation
+echo -e "${YELLOW}📱 Checking Frontend (Flutter/Dart)...${NC}"
+if files_modified_in_dir "frontend" || git diff --cached --name-only | grep -q "\.dart$"; then
+    cd "$REPO_ROOT/frontend"
+    
+    # Check if Flutter is available
+    if ! command -v flutter &> /dev/null; then
+        echo -e "${RED}❌ Flutter not found. Please install Flutter SDK${NC}"
+        OVERALL_SUCCESS=false
+    else
+        echo "🔧 Using: $(flutter --version | head -n1)"
+        
+        # Get Flutter dependencies (quietly)
+        echo "📦 Getting Flutter dependencies..."
+        if flutter pub get >/dev/null 2>&1; then
+            echo -e "${GREEN}✅ Flutter dependencies: OK${NC}"
+        else
+            echo -e "${RED}❌ Flutter pub get failed${NC}"
+            OVERALL_SUCCESS=false
+        fi
+        
+        # Run Flutter analyze
+        echo "🔍 Running Flutter analyze..."
+        if flutter analyze --fatal-infos >/dev/null 2>&1; then
+            echo -e "${GREEN}✅ Flutter analysis: PASSED${NC}"
+        else
+            echo -e "${RED}❌ Flutter analysis: FAILED${NC}"
+            echo ""
+            echo -e "${RED}Analysis errors:${NC}"
+            flutter analyze --fatal-infos 2>&1 | sed 's/^/   /'
+            echo ""
+            echo -e "${RED}Fix the Dart analysis errors above before committing.${NC}"
+            OVERALL_SUCCESS=false
+        fi
+        
+        # Run Dart format check
+        echo "🎨 Checking Dart formatting..."
+        if dart format --set-exit-if-changed --line-length 120 lib/ test/ >/dev/null 2>&1; then
+            echo -e "${GREEN}✅ Dart formatting: PASSED${NC}"
+        else
+            echo -e "${YELLOW}⚠️  Dart formatting: Some files need formatting${NC}"
+            echo -e "${YELLOW}   Run: dart format --line-length 120 lib/ test/${NC}"
+            # Don't fail for formatting - just warn
+        fi
+    fi
+    
+    cd "$REPO_ROOT"
+else
+    echo -e "${BLUE}ℹ️  No frontend files modified - skipping frontend check${NC}"
+fi
+
+echo ""
+
+# Final result
+if [ "$OVERALL_SUCCESS" = true ]; then
+    echo -e "${GREEN}🎉 Pre-commit checks PASSED! Proceeding with commit...${NC}"
+    echo ""
+    exit 0
+else
+    echo -e "${RED}🚨 Pre-commit checks FAILED!${NC}"
+    echo -e "${RED}Please fix the errors above before committing.${NC}"
+    echo ""
+    echo -e "${YELLOW}💡 Tips:${NC}"
+    echo -e "${YELLOW}   • Backend: Run './backend/scripts/check-compilation.sh' to see detailed errors${NC}"
+    echo -e "${YELLOW}   • Frontend: Run 'flutter analyze' in the frontend directory${NC}"
+    echo -e "${YELLOW}   • Skip this hook (not recommended): git commit --no-verify${NC}"
+    echo ""
+    exit 1
+fi
