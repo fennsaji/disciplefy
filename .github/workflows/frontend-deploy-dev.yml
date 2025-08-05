@@ -200,15 +200,15 @@ jobs:
         run: |
           echo "🔗 Linking to Vercel development project (separate from production)..."
           
-          # Create the directory structure Vercel expects
-          mkdir -p build/web/frontend
+          # Create clean deployment directory to avoid nested structure issues
+          rm -rf vercel-deploy
+          mkdir -p vercel-deploy
           
-          # Copy all build files to the frontend directory
-          # Use rsync to avoid copying the destination directory into itself
-          rsync -av --exclude='frontend' build/web/ build/web/frontend/
+          # Copy all build files to clean deployment directory
+          cp -r build/web/* vercel-deploy/
           
           # Create Vercel configuration for development (static deployment only)
-          cat > build/web/frontend/vercel.json << EOF
+          cat > vercel-deploy/vercel.json << EOF
           {
             "version": 2,
             "buildCommand": null,
@@ -246,8 +246,8 @@ jobs:
           }
           EOF
           
-          # Link using the expected directory structure
-          vercel --token ${{ secrets.VERCEL_DEV_TOKEN }} --scope ${{ secrets.VERCEL_DEV_ORG_ID }} link --yes --project ${{ secrets.VERCEL_DEV_PROJECT_ID }} --cwd build/web/frontend
+          # Link using clean deployment directory
+          vercel --token ${{ secrets.VERCEL_DEV_TOKEN }} --scope ${{ secrets.VERCEL_DEV_ORG_ID }} link --yes --project ${{ secrets.VERCEL_DEV_PROJECT_ID }} --cwd vercel-deploy
           echo "✅ Vercel development project linked"
       
       - name: 🚀 Deploy to Vercel Development App
@@ -258,7 +258,7 @@ jobs:
           
           # Deploy directly to development Vercel app (no previews)
           # Both PRs and branch pushes deploy to the same development environment
-          VERCEL_URL=$(vercel --token ${{ secrets.VERCEL_DEV_TOKEN }} --yes --prod --cwd build/web/frontend)
+          VERCEL_URL=$(vercel --token ${{ secrets.VERCEL_DEV_TOKEN }} --yes --prod --cwd vercel-deploy)
           echo "deployment-url=$VERCEL_URL" >> $GITHUB_OUTPUT
           echo "deployment-type=development" >> $GITHUB_OUTPUT
           echo "🚀 Deployed directly to disciplefy-dev app (not a preview)"
