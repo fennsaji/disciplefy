@@ -219,14 +219,10 @@ jobs:
                 "use": "@vercel/static"
               }
             ],
-            "routes": [
+            "rewrites": [
               {
-                "src": "/",
-                "dest": "/index.html"
-              },
-              {
-                "src": "/(.*)",
-                "dest": "/index.html"
+                "source": "/(.*)",
+                "destination": "/index.html"
               }
             ],
             "headers": [
