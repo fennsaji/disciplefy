@@ -476,6 +476,13 @@ class _SavedScreenContent extends StatelessWidget {
         'is_saved': guide.isSaved,
         'created_at': guide.createdAt.toIso8601String(),
         'last_accessed_at': guide.lastAccessedAt.toIso8601String(),
+        // Include structured content fields for proper display
+        'summary': guide.summary,
+        'interpretation': guide.interpretation,
+        'context': guide.context,
+        'related_verses': guide.relatedVerses,
+        'reflection_questions': guide.reflectionQuestions,
+        'prayer_points': guide.prayerPoints,
       }
     });
   }
