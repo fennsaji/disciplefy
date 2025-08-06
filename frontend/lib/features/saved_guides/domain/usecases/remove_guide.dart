@@ -10,7 +10,8 @@ class RemoveGuide implements UseCase<void, RemoveGuideParams> {
   const RemoveGuide(this.repository);
 
   @override
-  Future<Either<Failure, void>> call(RemoveGuideParams params) async => await repository.removeGuide(params.guideId);
+  Future<Either<Failure, void>> call(RemoveGuideParams params) async =>
+      await repository.removeGuide(params.guideId);
 }
 
 class RemoveGuideParams extends Equatable {

@@ -41,14 +41,16 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   @override
-  Widget build(BuildContext context) => BlocListener<AuthBloc, auth_states.AuthState>(
+  Widget build(BuildContext context) =>
+      BlocListener<AuthBloc, auth_states.AuthState>(
         listener: (context, state) {
           if (state is auth_states.AuthenticatedState) {
             // Navigate to home screen on successful authentication
             context.go('/');
           } else if (state is auth_states.AuthErrorState) {
             // Handle different types of errors
-            if (state.message.contains('canceled') || state.message.contains('cancelled')) {
+            if (state.message.contains('canceled') ||
+                state.message.contains('cancelled')) {
               // Show neutral snackbar for cancelled operations
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
@@ -164,7 +166,8 @@ class _LoginScreenState extends State<LoginScreen> {
       );
 
   /// Builds the sign-in buttons with proper state management
-  Widget _buildSignInButtons(BuildContext context) => BlocBuilder<AuthBloc, auth_states.AuthState>(
+  Widget _buildSignInButtons(BuildContext context) =>
+      BlocBuilder<AuthBloc, auth_states.AuthState>(
         builder: (context, state) {
           final isLoading = state is auth_states.AuthLoadingState;
 
@@ -183,7 +186,8 @@ class _LoginScreenState extends State<LoginScreen> {
       );
 
   /// Builds the Google sign-in button with proper branding
-  Widget _buildGoogleSignInButton(BuildContext context, bool isLoading) => SizedBox(
+  Widget _buildGoogleSignInButton(BuildContext context, bool isLoading) =>
+      SizedBox(
         width: double.infinity,
         height: 56,
         child: ElevatedButton(
@@ -195,7 +199,8 @@ class _LoginScreenState extends State<LoginScreen> {
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),
             ),
-            disabledBackgroundColor: AppTheme.primaryColor.withValues(alpha: 0.5),
+            disabledBackgroundColor:
+                AppTheme.primaryColor.withValues(alpha: 0.5),
           ),
           child: isLoading
               ? const SizedBox(
@@ -236,7 +241,8 @@ class _LoginScreenState extends State<LoginScreen> {
       );
 
   /// Builds the guest sign-in button
-  Widget _buildGuestSignInButton(BuildContext context, bool isLoading) => SizedBox(
+  Widget _buildGuestSignInButton(BuildContext context, bool isLoading) =>
+      SizedBox(
         width: double.infinity,
         height: 56,
         child: OutlinedButton(
@@ -250,7 +256,8 @@ class _LoginScreenState extends State<LoginScreen> {
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),
             ),
-            disabledForegroundColor: AppTheme.primaryColor.withValues(alpha: 0.5),
+            disabledForegroundColor:
+                AppTheme.primaryColor.withValues(alpha: 0.5),
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,

@@ -14,7 +14,8 @@ class OnboardingPurposePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => BlocProvider(
-        create: (context) => sl<OnboardingBloc>()..add(const LoadOnboardingState()),
+        create: (context) =>
+            sl<OnboardingBloc>()..add(const LoadOnboardingState()),
         child: const _OnboardingPurposeContent(),
       );
 }
@@ -59,7 +60,8 @@ class _OnboardingPurposeContent extends StatelessWidget {
           // Show success message
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('Setup complete! Please sign in to start your spiritual journey.'),
+              content: Text(
+                  'Setup complete! Please sign in to start your spiritual journey.'),
               backgroundColor: Colors.green,
               duration: Duration(seconds: 3),
             ),
@@ -77,7 +79,8 @@ class _OnboardingPurposeContent extends StatelessWidget {
         appBar: AppBar(
           leading: IconButton(
             icon: const Icon(Icons.arrow_back),
-            onPressed: () => context.read<OnboardingBloc>().add(const PreviousStep()),
+            onPressed: () =>
+                context.read<OnboardingBloc>().add(const PreviousStep()),
           ),
         ),
         body: SafeArea(
@@ -144,27 +147,31 @@ class _OnboardingPurposeContent extends StatelessWidget {
                       children: [
                         Text(
                           'How it works:',
-                          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                                fontWeight: FontWeight.bold,
-                              ),
+                          style:
+                              Theme.of(context).textTheme.titleLarge?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                  ),
                         ),
                         const SizedBox(height: 16),
                         const _StepItem(
                           number: '1',
                           title: 'Choose Input',
-                          description: 'Enter a Bible verse or topic you want to study',
+                          description:
+                              'Enter a Bible verse or topic you want to study',
                         ),
                         const SizedBox(height: 12),
                         const _StepItem(
                           number: '2',
                           title: 'AI Generation',
-                          description: 'Our AI creates a detailed study guide using Jeff Reed methodology',
+                          description:
+                              'Our AI creates a detailed study guide using Jeff Reed methodology',
                         ),
                         const SizedBox(height: 12),
                         const _StepItem(
                           number: '3',
                           title: 'Study & Apply',
-                          description: 'Follow the structured guide for deeper understanding and application',
+                          description:
+                              'Follow the structured guide for deeper understanding and application',
                         ),
                       ],
                     ),
@@ -180,7 +187,9 @@ class _OnboardingPurposeContent extends StatelessWidget {
                     return ElevatedButton(
                       onPressed: isLoading
                           ? null
-                          : () => context.read<OnboardingBloc>().add(const CompleteOnboardingRequested()),
+                          : () => context
+                              .read<OnboardingBloc>()
+                              .add(const CompleteOnboardingRequested()),
                       style: ElevatedButton.styleFrom(
                         minimumSize: const Size.fromHeight(56),
                       ),
@@ -193,7 +202,8 @@ class _OnboardingPurposeContent extends StatelessWidget {
                                   height: 20,
                                   child: CircularProgressIndicator(
                                     strokeWidth: 2,
-                                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                    valueColor: AlwaysStoppedAnimation<Color>(
+                                        Colors.white),
                                   ),
                                 ),
                                 SizedBox(width: 12),

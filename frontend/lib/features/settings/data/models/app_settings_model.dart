@@ -21,11 +21,13 @@ class AppSettingsModel extends AppSettingsEntity {
   static Map<String, dynamic> _themeModeToJson(ThemeModeEntity themeMode) =>
       ThemeModeModel.fromEntity(themeMode).toJson();
 
-  factory AppSettingsModel.fromJson(Map<String, dynamic> json) => _$AppSettingsModelFromJson(json);
+  factory AppSettingsModel.fromJson(Map<String, dynamic> json) =>
+      _$AppSettingsModelFromJson(json);
 
   Map<String, dynamic> toJson() => _$AppSettingsModelToJson(this);
 
-  factory AppSettingsModel.fromEntity(AppSettingsEntity entity) => AppSettingsModel(
+  factory AppSettingsModel.fromEntity(AppSettingsEntity entity) =>
+      AppSettingsModel(
         themeMode: ThemeModeModel.fromEntity(entity.themeMode),
         language: entity.language,
         notificationsEnabled: entity.notificationsEnabled,
@@ -47,7 +49,9 @@ class AppSettingsModel extends AppSettingsEntity {
     String? appVersion,
   }) =>
       AppSettingsModel(
-        themeMode: themeMode != null ? ThemeModeModel.fromEntity(themeMode) : this.themeMode,
+        themeMode: themeMode != null
+            ? ThemeModeModel.fromEntity(themeMode)
+            : this.themeMode,
         language: language ?? this.language,
         notificationsEnabled: notificationsEnabled ?? this.notificationsEnabled,
         appVersion: appVersion ?? this.appVersion,

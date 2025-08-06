@@ -44,7 +44,17 @@ jobs:
       
     - name: Verify Flutter formatting
       working-directory: ./frontend
-      run: dart format --output=none --set-exit-if-changed .
+      run: |
+        echo "🔍 Checking Flutter code formatting..."
+        if ! dart format --output=none --set-exit-if-changed .; then
+          echo "❌ Code formatting issues found!"
+          echo "💡 Run 'dart format .' to fix formatting issues"
+          echo "📝 Files that need formatting:"
+          dart format --output=show --set-exit-if-changed . || true
+          exit 1
+        else
+          echo "✅ All files are properly formatted"
+        fi
       
     - name: Analyze Flutter code
       working-directory: ./frontend

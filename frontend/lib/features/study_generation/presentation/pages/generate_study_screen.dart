@@ -82,27 +82,36 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen> {
         _validationError = null;
       } else if (_selectedMode == StudyInputMode.scripture) {
         _isInputValid = _validateScriptureReference(text);
-        _validationError = _isInputValid ? null : 'Please enter a valid scripture reference (e.g., John 3:16)';
+        _validationError = _isInputValid
+            ? null
+            : 'Please enter a valid scripture reference (e.g., John 3:16)';
       } else {
         _isInputValid = text.length >= 2;
-        _validationError = _isInputValid ? null : 'Please enter at least 2 characters';
+        _validationError =
+            _isInputValid ? null : 'Please enter at least 2 characters';
       }
     });
   }
 
   bool _validateScriptureReference(String text) {
     // Basic regex pattern for scripture references
-    final scripturePattern = RegExp(r'^[1-3]?\s*[a-zA-Z]+\s+\d+(?::\d+(?:-\d+)?)?$');
+    final scripturePattern =
+        RegExp(r'^[1-3]?\s*[a-zA-Z]+\s+\d+(?::\d+(?:-\d+)?)?$');
     return scripturePattern.hasMatch(text);
   }
 
   List<String> _getFilteredSuggestions() {
-    final suggestions = _selectedMode == StudyInputMode.scripture ? _scriptureeSuggestions : _topicSuggestions;
+    final suggestions = _selectedMode == StudyInputMode.scripture
+        ? _scriptureeSuggestions
+        : _topicSuggestions;
 
     final query = _inputController.text.trim().toLowerCase();
     if (query.isEmpty) return suggestions.take(5).toList();
 
-    return suggestions.where((suggestion) => suggestion.toLowerCase().contains(query)).take(5).toList();
+    return suggestions
+        .where((suggestion) => suggestion.toLowerCase().contains(query))
+        .take(5)
+        .toList();
   }
 
   @override
@@ -274,7 +283,9 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            _selectedMode == StudyInputMode.scripture ? 'Enter Scripture Reference' : 'Enter Topic',
+            _selectedMode == StudyInputMode.scripture
+                ? 'Enter Scripture Reference'
+                : 'Enter Topic',
             style: GoogleFonts.inter(
               fontSize: 16,
               fontWeight: FontWeight.w600,
@@ -480,7 +491,8 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen> {
     if (!_isInputValid) return;
 
     final input = _inputController.text.trim();
-    final inputType = _selectedMode == StudyInputMode.scripture ? 'scripture' : 'topic';
+    final inputType =
+        _selectedMode == StudyInputMode.scripture ? 'scripture' : 'topic';
     final languageCode = _selectedLanguage.code;
 
     // Trigger BLoC event to generate study guide
@@ -493,7 +505,8 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen> {
         );
   }
 
-  void _showErrorDialog(BuildContext context, String message, bool isRetryable) {
+  void _showErrorDialog(
+      BuildContext context, String message, bool isRetryable) {
     showDialog(
       context: context,
       builder: (BuildContext context) => AlertDialog(
@@ -583,7 +596,8 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen> {
                 backgroundColor: const Color(0xFF7A56DB), // Primary purple
                 foregroundColor: Colors.white,
                 elevation: 0,
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),

@@ -117,7 +117,8 @@ class ErrorPage extends StatelessWidget {
     if (error == null) return l10n.errorMessage;
 
     // Categorize error types
-    if (error!.toLowerCase().contains('network') || error!.toLowerCase().contains('connection')) {
+    if (error!.toLowerCase().contains('network') ||
+        error!.toLowerCase().contains('connection')) {
       return l10n.errorPageNetwork;
     }
 
