@@ -100,6 +100,13 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
           isSaved: guideData['is_saved'] as bool? ?? false,
           verseReference: guideData['verse_reference'],
           topicName: guideData['topic_name'],
+          // Include structured content fields from navigation data
+          summary: guideData['summary'] as String?,
+          interpretation: guideData['interpretation'] as String?,
+          context: guideData['context'] as String?,
+          relatedVerses: (guideData['related_verses'] as List<dynamic>?)?.cast<String>(),
+          reflectionQuestions: (guideData['reflection_questions'] as List<dynamic>?)?.cast<String>(),
+          prayerPoints: (guideData['prayer_points'] as List<dynamic>?)?.cast<String>(),
         );
 
         // Use the toStudyGuide method which handles both structured and legacy content
