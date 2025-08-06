@@ -10,7 +10,8 @@ import 'saved_guides_state.dart';
 
 /// Unified BLoC that follows Clean Architecture principles
 /// Uses use cases to interact with the repository layer
-class UnifiedSavedGuidesBloc extends Bloc<SavedGuidesEvent, SavedGuidesState> with PaginationMixin {
+class UnifiedSavedGuidesBloc extends Bloc<SavedGuidesEvent, SavedGuidesState>
+    with PaginationMixin {
   final GetSavedGuidesWithSync _getSavedGuidesWithSync;
   final GetRecentGuidesWithSync _getRecentGuidesWithSync;
   final ToggleSaveGuideApi _toggleSaveGuideApi;
@@ -136,7 +137,9 @@ class UnifiedSavedGuidesBloc extends Bloc<SavedGuidesEvent, SavedGuidesState> wi
           ));
 
           emit(SavedGuidesActionSuccess(
-            message: event.save ? 'Guide saved successfully' : 'Guide removed from saved',
+            message: event.save
+                ? 'Guide saved successfully'
+                : 'Guide removed from saved',
           ));
         }
       },
@@ -225,14 +228,16 @@ class UnifiedSavedGuidesBloc extends Bloc<SavedGuidesEvent, SavedGuidesState> wi
     SavedGuideEntity updatedGuide,
     bool? shouldInclude,
   ) {
-    final updatedList = list.where((guide) => guide.id != updatedGuide.id).toList();
+    final updatedList =
+        list.where((guide) => guide.id != updatedGuide.id).toList();
 
     if (shouldInclude == true) {
       // Add to the beginning of the list
       updatedList.insert(0, updatedGuide);
     } else if (shouldInclude == null) {
       // Just update the existing guide
-      final existingIndex = list.indexWhere((guide) => guide.id == updatedGuide.id);
+      final existingIndex =
+          list.indexWhere((guide) => guide.id == updatedGuide.id);
       if (existingIndex >= 0) {
         updatedList.insert(existingIndex, updatedGuide);
       }

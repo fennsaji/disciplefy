@@ -59,7 +59,10 @@ class GuideListItem extends StatelessWidget {
                                   fontSize: 16,
                                   fontWeight: FontWeight.w600,
                                   color: isLoading
-                                      ? Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6)
+                                      ? Theme.of(context)
+                                          .colorScheme
+                                          .onSurface
+                                          .withValues(alpha: 0.6)
                                       : Theme.of(context).colorScheme.onSurface,
                                   height: 1.3,
                                 ),
@@ -71,7 +74,9 @@ class GuideListItem extends StatelessWidget {
                                 guide.subtitle,
                                 style: GoogleFonts.inter(
                                   fontSize: 12,
-                                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .onSurfaceVariant,
                                   fontWeight: FontWeight.w500,
                                 ),
                               ),
@@ -101,7 +106,8 @@ class GuideListItem extends StatelessWidget {
                         height: 20,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primaryColor),
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                              AppTheme.primaryColor),
                         ),
                       ),
                     ),
@@ -164,7 +170,10 @@ class GuideListItem extends StatelessWidget {
         child: Icon(
           Icons.more_vert,
           color: isLoading
-              ? Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.5)
+              ? Theme.of(context)
+                  .colorScheme
+                  .onSurfaceVariant
+                  .withValues(alpha: 0.5)
               : Theme.of(context).colorScheme.onSurfaceVariant,
           size: 20,
         ),
@@ -175,7 +184,9 @@ class GuideListItem extends StatelessWidget {
         onPressed: isLoading ? null : onSave,
         icon: Icon(
           Icons.bookmark_border,
-          color: isLoading ? AppTheme.primaryColor.withValues(alpha: 0.5) : AppTheme.primaryColor,
+          color: isLoading
+              ? AppTheme.primaryColor.withValues(alpha: 0.5)
+              : AppTheme.primaryColor,
           size: 20,
         ),
         tooltip: 'Save Guide',

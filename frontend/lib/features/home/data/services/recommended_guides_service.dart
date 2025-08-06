@@ -16,7 +16,8 @@ class RecommendedGuidesService {
 
   final HttpService _httpService;
 
-  RecommendedGuidesService({HttpService? httpService}) : _httpService = httpService ?? HttpServiceProvider.instance;
+  RecommendedGuidesService({HttpService? httpService})
+      : _httpService = httpService ?? HttpServiceProvider.instance;
 
   /// Fetches all recommended guide topics from the API.
   ///
@@ -43,9 +44,11 @@ class RecommendedGuidesService {
         return _parseTopicsResponse(response.body);
       } else {
         if (kDebugMode) {
-          print('❌ [TOPICS] API error: ${response.statusCode} - ${response.body}');
+          print(
+              '❌ [TOPICS] API error: ${response.statusCode} - ${response.body}');
         }
-        return Left(ServerFailure(message: 'Failed to fetch topics: ${response.statusCode}'));
+        return Left(ServerFailure(
+            message: 'Failed to fetch topics: ${response.statusCode}'));
       }
     } catch (e, stackTrace) {
       if (kDebugMode) {
@@ -53,7 +56,8 @@ class RecommendedGuidesService {
         print('📚 [TOPICS] Stack trace: $stackTrace');
       }
 
-      return Left(NetworkFailure(message: 'Failed to connect to topics service: $e'));
+      return Left(
+          NetworkFailure(message: 'Failed to connect to topics service: $e'));
     }
   }
 
@@ -74,8 +78,8 @@ class RecommendedGuidesService {
       if (difficulty != null) queryParams['difficulty'] = difficulty;
       if (limit != null) queryParams['limit'] = limit.toString();
 
-      final uri =
-          Uri.parse('$_baseUrl$_topicsEndpoint').replace(queryParameters: queryParams.isNotEmpty ? queryParams : null);
+      final uri = Uri.parse('$_baseUrl$_topicsEndpoint').replace(
+          queryParameters: queryParams.isNotEmpty ? queryParams : null);
 
       if (kDebugMode) print('🚀 [TOPICS] Fetching filtered topics: $uri');
 
@@ -91,24 +95,31 @@ class RecommendedGuidesService {
         return _parseTopicsResponse(response.body);
       } else {
         if (kDebugMode) print('💥 [TOPICS] API error ${response.statusCode}');
-        return Left(ServerFailure(message: 'Failed to fetch filtered topics: ${response.statusCode}'));
+        return Left(ServerFailure(
+            message:
+                'Failed to fetch filtered topics: ${response.statusCode}'));
       }
     } catch (e) {
       if (kDebugMode) print('💥 [TOPICS] Filtered topics error: $e');
-      return Left(NetworkFailure(message: 'Failed to fetch filtered topics: $e'));
+      return Left(
+          NetworkFailure(message: 'Failed to fetch filtered topics: $e'));
     }
   }
 
   /// Parses the API response and converts to domain entities.
-  Either<Failure, List<RecommendedGuideTopic>> _parseTopicsResponse(String responseBody) {
+  Either<Failure, List<RecommendedGuideTopic>> _parseTopicsResponse(
+      String responseBody) {
     try {
       if (kDebugMode) print('📄 [TOPICS] Parsing response...');
       final Map<String, dynamic> jsonData = json.decode(responseBody);
 
       // Parse the expected API format using RecommendedGuideTopicsResponse
-      if (jsonData.containsKey('topics') || (jsonData.containsKey('data') && jsonData['data'].containsKey('topics'))) {
+      if (jsonData.containsKey('topics') ||
+          (jsonData.containsKey('data') &&
+              jsonData['data'].containsKey('topics'))) {
         // Handle both direct format {"topics": [...]} and nested format {"data": {"topics": [...]}}
-        final topicsData = jsonData.containsKey('data') ? jsonData['data'] : jsonData;
+        final topicsData =
+            jsonData.containsKey('data') ? jsonData['data'] : jsonData;
         final response = RecommendedGuideTopicsResponse.fromJson(topicsData);
         final topics = response.toEntities();
 
@@ -120,14 +131,16 @@ class RecommendedGuidesService {
         if (kDebugMode) {
           print('❌ [TOPICS] API response missing topics data: $jsonData');
         }
-        return const Left(ClientFailure(message: 'API response missing topics data'));
+        return const Left(
+            ClientFailure(message: 'API response missing topics data'));
       }
     } catch (e) {
       if (kDebugMode) {
         print('💥 [TOPICS] JSON parsing error: $e');
         print('📄 [TOPICS] Raw response: $responseBody');
       }
-      return Left(ClientFailure(message: 'Failed to parse topics response: $e'));
+      return Left(
+          ClientFailure(message: 'Failed to parse topics response: $e'));
     }
   }
 

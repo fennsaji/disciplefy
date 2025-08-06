@@ -131,7 +131,8 @@ class StudyGuide extends Equatable {
   }
 
   /// Counts the number of words in a given text.
-  int _countWords(String text) => text.trim().split(RegExp(r'\s+')).where((word) => word.isNotEmpty).length;
+  int _countWords(String text) =>
+      text.trim().split(RegExp(r'\s+')).where((word) => word.isNotEmpty).length;
 
   @override
   List<Object?> get props => [
@@ -150,5 +151,6 @@ class StudyGuide extends Equatable {
       ];
 
   @override
-  String toString() => 'StudyGuide{id: $id, title: $title, language: $language, complete: $isComplete}';
+  String toString() =>
+      'StudyGuide{id: $id, title: $title, language: $language, complete: $isComplete}';
 }

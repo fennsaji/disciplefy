@@ -60,14 +60,16 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
       ErrorHandler.handleEitherResult(
         result: result,
         emit: emit,
-        createErrorState: (message, errorCode) => SettingsError(message: message),
+        createErrorState: (message, errorCode) =>
+            SettingsError(message: message),
         onSuccess: (_) {
           final updatedSettings = currentState.settings.copyWith(
             themeMode: event.themeMode,
           );
           emit(SettingsLoaded(settings: updatedSettings));
           if (!emit.isDone) {
-            emit(const SettingsUpdateSuccess(message: 'Theme updated successfully'));
+            emit(const SettingsUpdateSuccess(
+                message: 'Theme updated successfully'));
           }
         },
         operationName: 'update theme mode',
@@ -88,14 +90,16 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
       ErrorHandler.handleEitherResult(
         result: result,
         emit: emit,
-        createErrorState: (message, errorCode) => SettingsError(message: message),
+        createErrorState: (message, errorCode) =>
+            SettingsError(message: message),
         onSuccess: (_) {
           final updatedSettings = currentState.settings.copyWith(
             language: event.language,
           );
           emit(SettingsLoaded(settings: updatedSettings));
           if (!emit.isDone) {
-            emit(const SettingsUpdateSuccess(message: 'Language updated successfully'));
+            emit(const SettingsUpdateSuccess(
+                message: 'Language updated successfully'));
           }
         },
         operationName: 'update language',
@@ -118,12 +122,15 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
       ErrorHandler.handleEitherResult(
         result: result,
         emit: emit,
-        createErrorState: (message, errorCode) => SettingsError(message: message),
+        createErrorState: (message, errorCode) =>
+            SettingsError(message: message),
         onSuccess: (_) {
           emit(SettingsLoaded(settings: updatedSettings));
           if (!emit.isDone) {
             emit(SettingsUpdateSuccess(
-              message: event.enabled ? 'Notifications enabled' : 'Notifications disabled',
+              message: event.enabled
+                  ? 'Notifications enabled'
+                  : 'Notifications disabled',
             ));
           }
         },
@@ -167,7 +174,8 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
       result: result,
       emit: emit,
       createErrorState: (message, errorCode) => SettingsError(message: message),
-      onSuccess: (_) => emit(const SettingsUpdateSuccess(message: 'All settings cleared')),
+      onSuccess: (_) =>
+          emit(const SettingsUpdateSuccess(message: 'All settings cleared')),
       operationName: 'clear all settings',
     );
   }
