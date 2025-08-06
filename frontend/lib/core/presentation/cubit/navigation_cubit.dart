@@ -73,14 +73,12 @@ class NavigationCubit extends Cubit<NavigationState> {
     0: '/',
     1: '/generate-study',
     2: '/saved',
-    3: '/settings',
   };
 
   static const Map<String, int> routeToIndex = {
     '/': 0,
     '/generate-study': 1,
     '/saved': 2,
-    '/settings': 3,
   };
 
   int _selectedIndex = 0;
