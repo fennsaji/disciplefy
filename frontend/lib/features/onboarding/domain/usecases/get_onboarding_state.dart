@@ -8,6 +8,5 @@ class GetOnboardingState {
   const GetOnboardingState(this._repository);
 
   /// Retrieves the current onboarding state
-  Future<OnboardingStateEntity> call() async =>
-      await _repository.getOnboardingState();
+  Future<OnboardingStateEntity> call() async => await _repository.getOnboardingState();
 }

@@ -91,15 +91,13 @@ class AppConstants {
   static const String DEFAULT_DIFFICULTY_LEVEL = 'intermediate';
 
   // Error Messages
-  static const String NETWORK_ERROR_MESSAGE =
-      'No internet connection available';
+  static const String NETWORK_ERROR_MESSAGE = 'No internet connection available';
   static const String SERVER_ERROR_MESSAGE = 'Server error occurred';
   static const String VALIDATION_ERROR_MESSAGE = 'Please check your input';
   static const String UNKNOWN_ERROR_MESSAGE = 'An unexpected error occurred';
 
   // Success Messages
-  static const String STUDY_GENERATED_MESSAGE =
-      'Study guide generated successfully';
+  static const String STUDY_GENERATED_MESSAGE = 'Study guide generated successfully';
   static const String SETTINGS_SAVED_MESSAGE = 'Settings saved successfully';
 
   // Navigation
@@ -115,12 +113,7 @@ class AppConstants {
   static const bool ENABLE_DARK_THEME = true;
 
   // Jeff Reed Methodology
-  static const List<String> JEFF_REED_STEPS = [
-    'Observation',
-    'Interpretation',
-    'Application',
-    'Prayer'
-  ];
+  static const List<String> JEFF_REED_STEPS = ['Observation', 'Interpretation', 'Application', 'Prayer'];
 
   static const int JEFF_REED_TOTAL_STEPS = 4;
 

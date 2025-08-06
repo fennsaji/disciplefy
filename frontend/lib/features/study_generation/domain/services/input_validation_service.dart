@@ -67,8 +67,7 @@ class InputValidationService {
       } else {
         return const ValidationResult(
           isValid: false,
-          errorMessage:
-              'Verse reference cannot exceed ${AppConstants.MAX_VERSE_LENGTH} characters',
+          errorMessage: 'Verse reference cannot exceed ${AppConstants.MAX_VERSE_LENGTH} characters',
         );
       }
     }
@@ -77,8 +76,7 @@ class InputValidationService {
     if (!_scripturePattern.hasMatch(input)) {
       return const ValidationResult(
         isValid: false,
-        errorMessage:
-            'Please enter a valid scripture reference (e.g., John 3:16)',
+        errorMessage: 'Please enter a valid scripture reference (e.g., John 3:16)',
       );
     }
 
@@ -101,8 +99,7 @@ class InputValidationService {
       } else {
         return const ValidationResult(
           isValid: false,
-          errorMessage:
-              'Topic cannot exceed ${AppConstants.MAX_TOPIC_LENGTH} characters',
+          errorMessage: 'Topic cannot exceed ${AppConstants.MAX_TOPIC_LENGTH} characters',
         );
       }
     }

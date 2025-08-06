@@ -9,8 +9,7 @@ class GuideShimmerItem extends StatefulWidget {
   State<GuideShimmerItem> createState() => _GuideShimmerItemState();
 }
 
-class _GuideShimmerItemState extends State<GuideShimmerItem>
-    with SingleTickerProviderStateMixin {
+class _GuideShimmerItemState extends State<GuideShimmerItem> with SingleTickerProviderStateMixin {
   late AnimationController _animationController;
   late Animation<double> _animation;
 
@@ -62,8 +61,7 @@ class _GuideShimmerItemState extends State<GuideShimmerItem>
                       width: 40,
                       height: 40,
                       decoration: BoxDecoration(
-                        color: AppTheme.onSurfaceVariant
-                            .withOpacity(_animation.value * 0.3),
+                        color: AppTheme.onSurfaceVariant.withOpacity(_animation.value * 0.3),
                         borderRadius: BorderRadius.circular(8),
                       ),
                     ),
@@ -77,8 +75,7 @@ class _GuideShimmerItemState extends State<GuideShimmerItem>
                             height: 20,
                             width: double.infinity,
                             decoration: BoxDecoration(
-                              color: AppTheme.onSurfaceVariant
-                                  .withOpacity(_animation.value * 0.3),
+                              color: AppTheme.onSurfaceVariant.withOpacity(_animation.value * 0.3),
                               borderRadius: BorderRadius.circular(4),
                             ),
                           ),
@@ -88,8 +85,7 @@ class _GuideShimmerItemState extends State<GuideShimmerItem>
                             height: 14,
                             width: 120,
                             decoration: BoxDecoration(
-                              color: AppTheme.onSurfaceVariant
-                                  .withOpacity(_animation.value * 0.2),
+                              color: AppTheme.onSurfaceVariant.withOpacity(_animation.value * 0.2),
                               borderRadius: BorderRadius.circular(4),
                             ),
                           ),
@@ -101,8 +97,7 @@ class _GuideShimmerItemState extends State<GuideShimmerItem>
                       width: 20,
                       height: 20,
                       decoration: BoxDecoration(
-                        color: AppTheme.onSurfaceVariant
-                            .withOpacity(_animation.value * 0.2),
+                        color: AppTheme.onSurfaceVariant.withOpacity(_animation.value * 0.2),
                         borderRadius: BorderRadius.circular(10),
                       ),
                     ),
@@ -114,8 +109,7 @@ class _GuideShimmerItemState extends State<GuideShimmerItem>
                   height: 16,
                   width: double.infinity,
                   decoration: BoxDecoration(
-                    color: AppTheme.onSurfaceVariant
-                        .withOpacity(_animation.value * 0.2),
+                    color: AppTheme.onSurfaceVariant.withOpacity(_animation.value * 0.2),
                     borderRadius: BorderRadius.circular(4),
                   ),
                 ),
@@ -124,8 +118,7 @@ class _GuideShimmerItemState extends State<GuideShimmerItem>
                   height: 16,
                   width: MediaQuery.of(context).size.width * 0.7,
                   decoration: BoxDecoration(
-                    color: AppTheme.onSurfaceVariant
-                        .withOpacity(_animation.value * 0.2),
+                    color: AppTheme.onSurfaceVariant.withOpacity(_animation.value * 0.2),
                     borderRadius: BorderRadius.circular(4),
                   ),
                 ),
@@ -137,8 +130,7 @@ class _GuideShimmerItemState extends State<GuideShimmerItem>
                       height: 12,
                       width: 100,
                       decoration: BoxDecoration(
-                        color: AppTheme.onSurfaceVariant
-                            .withOpacity(_animation.value * 0.15),
+                        color: AppTheme.onSurfaceVariant.withOpacity(_animation.value * 0.15),
                         borderRadius: BorderRadius.circular(4),
                       ),
                     ),
@@ -147,8 +139,7 @@ class _GuideShimmerItemState extends State<GuideShimmerItem>
                       height: 16,
                       width: 50,
                       decoration: BoxDecoration(
-                        color: AppTheme.primaryColor
-                            .withOpacity(_animation.value * 0.2),
+                        color: AppTheme.primaryColor.withOpacity(_animation.value * 0.2),
                         borderRadius: BorderRadius.circular(4),
                       ),
                     ),

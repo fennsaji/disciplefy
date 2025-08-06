@@ -7,14 +7,12 @@ import '../../../../core/error/exceptions.dart';
 
 /// API service for saving/unsaving study guides
 class SaveGuideApiService {
-  static String get _baseUrl =>
-      AppConfig.baseApiUrl.replaceAll('/functions/v1', '');
+  static String get _baseUrl => AppConfig.baseApiUrl.replaceAll('/functions/v1', '');
   static const String _saveGuideEndpoint = '/functions/v1/study-guides';
 
   final http.Client _httpClient;
 
-  SaveGuideApiService({http.Client? httpClient})
-      : _httpClient = httpClient ?? http.Client();
+  SaveGuideApiService({http.Client? httpClient}) : _httpClient = httpClient ?? http.Client();
 
   /// Save or unsave a study guide
   Future<bool> toggleSaveGuide({
@@ -22,8 +20,7 @@ class SaveGuideApiService {
     required bool save,
   }) async {
     try {
-      print(
-          '🔍 [SAVE_GUIDE] Starting toggleSaveGuide - guideId: $guideId, save: $save');
+      print('🔍 [SAVE_GUIDE] Starting toggleSaveGuide - guideId: $guideId, save: $save');
 
       final headers = await _getApiHeaders();
       print('🔍 [SAVE_GUIDE] Got headers: ${headers.keys.join(', ')}');
@@ -62,12 +59,10 @@ class SaveGuideApiService {
           code: 'NOT_FOUND',
         );
       } else {
-        final Map<String, dynamic>? errorData =
-            json.decode(response.body) as Map<String, dynamic>?;
+        final Map<String, dynamic>? errorData = json.decode(response.body) as Map<String, dynamic>?;
 
         // Handle nested error structure
-        String errorMessage =
-            'Failed to ${save ? 'save' : 'unsave'} study guide';
+        String errorMessage = 'Failed to ${save ? 'save' : 'unsave'} study guide';
         String errorCode = 'SERVER_ERROR';
 
         if (errorData != null) {
@@ -80,8 +75,7 @@ class SaveGuideApiService {
           }
 
           // Handle specific database errors
-          if (errorMessage
-              .contains('duplicate key value violates unique constraint')) {
+          if (errorMessage.contains('duplicate key value violates unique constraint')) {
             errorMessage = 'This study guide is already saved!';
             errorCode = 'ALREADY_SAVED';
           }
@@ -118,8 +112,7 @@ class SaveGuideApiService {
     final session = Supabase.instance.client.auth.currentSession;
     if (session != null && session.accessToken.isNotEmpty) {
       headers['Authorization'] = 'Bearer ${session.accessToken}';
-      print(
-          '🔐 [SAVE_GUIDE] Using Supabase session token for user: ${session.user.id}');
+      print('🔐 [SAVE_GUIDE] Using Supabase session token for user: ${session.user.id}');
     } else {
       print('🔐 [SAVE_GUIDE] No valid session found');
       throw const AuthenticationException(

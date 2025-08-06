@@ -132,19 +132,13 @@ class _FeedbackBottomSheetState extends State<FeedbackBottomSheet> {
         child: DropdownButtonHideUnderline(
           child: DropdownButton<String>(
             value: _selectedCategory,
-            onChanged: (value) =>
-                setState(() => _selectedCategory = value ?? 'general'),
+            onChanged: (value) => setState(() => _selectedCategory = value ?? 'general'),
             items: const [
-              DropdownMenuItem(
-                  value: 'general', child: Text('General Feedback')),
-              DropdownMenuItem(
-                  value: 'content', child: Text('Content & Study Guides')),
-              DropdownMenuItem(
-                  value: 'usability', child: Text('App Usability')),
-              DropdownMenuItem(
-                  value: 'technical', child: Text('Technical Issues')),
-              DropdownMenuItem(
-                  value: 'suggestion', child: Text('Feature Suggestion')),
+              DropdownMenuItem(value: 'general', child: Text('General Feedback')),
+              DropdownMenuItem(value: 'content', child: Text('Content & Study Guides')),
+              DropdownMenuItem(value: 'usability', child: Text('App Usability')),
+              DropdownMenuItem(value: 'technical', child: Text('Technical Issues')),
+              DropdownMenuItem(value: 'suggestion', child: Text('Feature Suggestion')),
             ],
           ),
         ),
@@ -157,8 +151,7 @@ class _FeedbackBottomSheetState extends State<FeedbackBottomSheet> {
           hintText: 'Tell us what you think...',
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
-            borderSide:
-                BorderSide(color: AppTheme.onSurfaceVariant.withOpacity(0.3)),
+            borderSide: BorderSide(color: AppTheme.onSurfaceVariant.withOpacity(0.3)),
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
@@ -229,8 +222,7 @@ class _FeedbackBottomSheetState extends State<FeedbackBottomSheet> {
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content:
-              Text('Failed to prepare feedback submission. Please try again.'),
+          content: Text('Failed to prepare feedback submission. Please try again.'),
           backgroundColor: AppTheme.errorColor,
         ),
       );

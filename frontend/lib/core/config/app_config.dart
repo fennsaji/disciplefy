@@ -10,12 +10,10 @@ class AppConfig {
   // App URL - Used as fallback when dynamic origin detection fails
   static const String appUrl = String.fromEnvironment('APP_URL');
 
-  static const String supabaseAnonKey =
-      String.fromEnvironment('SUPABASE_ANON_KEY');
+  static const String supabaseAnonKey = String.fromEnvironment('SUPABASE_ANON_KEY');
 
   // OAuth Configuration
-  static const String googleClientId =
-      String.fromEnvironment('GOOGLE_CLIENT_ID');
+  static const String googleClientId = String.fromEnvironment('GOOGLE_CLIENT_ID');
 
   // Apple OAuth not implemented yet - placeholder for future
   static const String appleClientId = 'com.disciplefy.bible_study';
@@ -44,8 +42,7 @@ class AppConfig {
       try {
         // Use Uri.base to get the current origin - this is the modern, safe approach
         final baseUri = Uri.base;
-        final origin =
-            '${baseUri.scheme}://${baseUri.host}${baseUri.hasPort ? ':${baseUri.port}' : ''}';
+        final origin = '${baseUri.scheme}://${baseUri.host}${baseUri.hasPort ? ':${baseUri.port}' : ''}';
 
         if (isDevelopment) {
           print('🔧 [AppConfig] Dynamic web origin detected: $origin');
@@ -53,8 +50,7 @@ class AppConfig {
         return origin;
       } catch (e) {
         if (isDevelopment) {
-          print(
-              '🔧 [AppConfig] ⚠️ Failed to get dynamic origin, falling back to appUrl: $e');
+          print('🔧 [AppConfig] ⚠️ Failed to get dynamic origin, falling back to appUrl: $e');
         }
       }
 
@@ -99,14 +95,12 @@ class AppConfig {
   static const String maxOfflineStorageSize = '100MB';
 
   // Cache Refresh Configuration
-  static const int dailyVerseCacheRefreshHours =
-      1; // Refresh daily verse cache after 1 hour
+  static const int dailyVerseCacheRefreshHours = 1; // Refresh daily verse cache after 1 hour
 
   // Environment Detection - Fixed for production builds
   // CRITICAL FIX: Use FLUTTER_ENV dart-define instead of kDebugMode
   // kDebugMode is unreliable in production builds and causes wrong Supabase URL selection
-  static const String _flutterEnv =
-      String.fromEnvironment('FLUTTER_ENV', defaultValue: 'development');
+  static const String _flutterEnv = String.fromEnvironment('FLUTTER_ENV', defaultValue: 'development');
 
   static bool get isProduction => _flutterEnv == 'production';
   static bool get isDevelopment => _flutterEnv == 'development';
@@ -125,12 +119,10 @@ class AppConfig {
   static String get donationsUrl => '$baseApiUrl/donations';
 
   // Validation
-  static bool get isConfigValid =>
-      supabaseUrl.isNotEmpty && supabaseAnonKey.isNotEmpty;
+  static bool get isConfigValid => supabaseUrl.isNotEmpty && supabaseAnonKey.isNotEmpty;
 
   static bool get isOAuthConfigValid {
-    return (kIsWeb && googleClientId.isNotEmpty) ||
-        (!kIsWeb); // Mobile gets config from platform-specific files
+    return (kIsWeb && googleClientId.isNotEmpty) || (!kIsWeb); // Mobile gets config from platform-specific files
   }
 
   /// Validates that all required configuration values are present
@@ -151,8 +143,7 @@ class AppConfig {
     }
 
     if (missingConfigs.isNotEmpty) {
-      throw Exception(
-          'Missing required environment variables: ${missingConfigs.join(', ')}. '
+      throw Exception('Missing required environment variables: ${missingConfigs.join(', ')}. '
           'Please set these environment variables before running the application.');
     }
 
@@ -169,13 +160,11 @@ class AppConfig {
   static void logConfiguration() {
     if (isDevelopment) {
       print('🔧 App Configuration:');
-      print(
-          '  - Environment: $environment (${isDevelopment ? "Development" : "Production"})');
+      print('  - Environment: $environment (${isDevelopment ? "Development" : "Production"})');
       print('  - FLUTTER_ENV: $_flutterEnv');
       print('  - Supabase URL: $supabaseUrl');
       print('  - Google Client ID: $googleClientId');
-      print(
-          '  - Google OAuth: ${isOAuthConfigValid ? "✅ Configured" : "❌ Missing"}');
+      print('  - Google OAuth: ${isOAuthConfigValid ? "✅ Configured" : "❌ Missing"}');
       print('  - Platform: ${kIsWeb ? "Web" : "Mobile"}');
       if (kIsWeb) {
         print('  - Current Origin (Dynamic): ${_getCurrentWebOrigin()}');

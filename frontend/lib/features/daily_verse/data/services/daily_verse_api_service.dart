@@ -15,16 +15,13 @@ class DailyVerseApiService {
 
   final HttpService _httpService;
 
-  DailyVerseApiService({HttpService? httpService})
-      : _httpService = httpService ?? HttpServiceProvider.instance;
+  DailyVerseApiService({HttpService? httpService}) : _httpService = httpService ?? HttpServiceProvider.instance;
 
   /// Get today's daily verse
-  Future<Either<Failure, DailyVerseEntity>> getTodaysVerse() async =>
-      getDailyVerse(null);
+  Future<Either<Failure, DailyVerseEntity>> getTodaysVerse() async => getDailyVerse(null);
 
   /// Get daily verse for a specific date
-  Future<Either<Failure, DailyVerseEntity>> getDailyVerse(
-      DateTime? date) async {
+  Future<Either<Failure, DailyVerseEntity>> getDailyVerse(DateTime? date) async {
     try {
       final headers = await _httpService.createHeaders();
 
@@ -44,8 +41,7 @@ class DailyVerseApiService {
           message: 'Daily verse not found for the requested date',
         ));
       } else {
-        final Map<String, dynamic>? errorData =
-            json.decode(response.body) as Map<String, dynamic>?;
+        final Map<String, dynamic>? errorData = json.decode(response.body) as Map<String, dynamic>?;
 
         return Left(ServerFailure(
           message: errorData?['message'] ?? 'Failed to fetch daily verse',
@@ -87,8 +83,7 @@ class DailyVerseApiService {
         ));
       }
 
-      final DailyVerseResponse verseResponse =
-          DailyVerseResponse.fromJson(jsonData);
+      final DailyVerseResponse verseResponse = DailyVerseResponse.fromJson(jsonData);
       return Right(verseResponse.data.toEntity());
     } on FormatException catch (e) {
       return Left(ServerFailure(
