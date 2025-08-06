@@ -40,7 +40,9 @@ class StudySaveHandler {
         emit(StudySaveSuccess(
           guideId: event.guideId,
           saved: event.save,
-          message: event.save ? 'Study guide saved successfully!' : 'Study guide removed from saved!',
+          message: event.save
+              ? 'Study guide saved successfully!'
+              : 'Study guide removed from saved!',
         ));
       } else {
         emit(StudySaveFailure(
@@ -105,7 +107,8 @@ class StudySaveHandler {
         emit(StudyAuthenticationRequired(
           guideId: event.guideId,
           save: event.save,
-          message: 'You need to be signed in to save study guides. Would you like to sign in now?',
+          message:
+              'You need to be signed in to save study guides. Would you like to sign in now?',
         ));
       }
     } catch (e) {
@@ -113,7 +116,8 @@ class StudySaveHandler {
       emit(StudyAuthenticationRequired(
         guideId: event.guideId,
         save: event.save,
-        message: 'Unable to verify authentication status. Please try signing in.',
+        message:
+            'Unable to verify authentication status. Please try signing in.',
       ));
     }
   }

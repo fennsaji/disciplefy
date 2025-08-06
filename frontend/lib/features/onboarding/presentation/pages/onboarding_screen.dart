@@ -48,7 +48,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       description:
           'Simply enter any scripture reference or spiritual topic, and our AI will create a comprehensive study guide with context, interpretation, and life application.',
       iconData: Icons.auto_awesome,
-      verse: '"Your word is a lamp for my feet, a light on my path." - Psalm 119:105',
+      verse:
+          '"Your word is a lamp for my feet, a light on my path." - Psalm 119:105',
     ),
     OnboardingSlide(
       title: 'Explore Predefined Topics',
@@ -56,7 +57,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       description:
           'Choose from carefully curated topics like Gospel, Prayer, Baptism, Grace, and Faith in Trials to deepen your understanding of core biblical principles.',
       iconData: Icons.menu_book_rounded,
-      verse: '"All Scripture is God-breathed and is useful for teaching..." - 2 Timothy 3:16',
+      verse:
+          '"All Scripture is God-breathed and is useful for teaching..." - 2 Timothy 3:16',
     ),
     OnboardingSlide(
       title: 'Save Notes & Track Progress',
@@ -64,7 +66,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       description:
           'Take notes during your study, save your insights, and track your spiritual growth journey. Resume your studies anytime, anywhere.',
       iconData: Icons.bookmark_added,
-      verse: '"The grass withers and the flowers fall, but the word of our God endures forever." - Isaiah 40:8',
+      verse:
+          '"The grass withers and the flowers fall, but the word of our God endures forever." - Isaiah 40:8',
     ),
   ];
 
@@ -207,7 +210,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     elevation: 0,
                   ),
                   child: Text(
-                    _currentPage == _slides.length - 1 ? 'Get Started' : 'Continue',
+                    _currentPage == _slides.length - 1
+                        ? 'Get Started'
+                        : 'Continue',
                     style: GoogleFonts.inter(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,

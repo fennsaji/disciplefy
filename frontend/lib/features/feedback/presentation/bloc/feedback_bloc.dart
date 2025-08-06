@@ -69,7 +69,8 @@ class FeedbackBloc extends Bloc<FeedbackEvent, FeedbackState> {
     result.fold(
       (failure) => emit(FeedbackSubmitFailure(message: failure.message)),
       (_) => emit(const FeedbackSubmitSuccess(
-        message: 'Bug report submitted successfully. Thank you for helping us improve!',
+        message:
+            'Bug report submitted successfully. Thank you for helping us improve!',
       )),
     );
   }

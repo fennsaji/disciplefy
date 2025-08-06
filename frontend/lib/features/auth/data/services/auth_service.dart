@@ -29,7 +29,8 @@ class AuthService {
 
   /// Async method to check authentication status including anonymous sessions
   /// Returns false only for legitimate unauthenticated state, not for errors
-  Future<bool> isAuthenticatedAsync() async => _authService.isAuthenticatedAsync();
+  Future<bool> isAuthenticatedAsync() async =>
+      _authService.isAuthenticatedAsync();
 
   /// Listen to authentication state changes
   Stream<AuthState> get authStateChanges => _authService.authStateChanges;
@@ -38,7 +39,8 @@ class AuthService {
   Future<bool> signInWithGoogle() async => _authService.signInWithGoogle();
 
   /// Process Google OAuth callback with authorization code
-  Future<bool> processGoogleOAuthCallback(GoogleOAuthCallbackParams params) async =>
+  Future<bool> processGoogleOAuthCallback(
+          GoogleOAuthCallbackParams params) async =>
       _authService.processGoogleOAuthCallback(params);
 
   /// Sign in with Apple OAuth (iOS/Web only)
@@ -65,10 +67,12 @@ class AuthService {
   Future<String?> getUserId() async => await _storageService.getUserId();
 
   /// Check if onboarding is completed
-  Future<bool> isOnboardingCompleted() async => await _storageService.isOnboardingCompleted();
+  Future<bool> isOnboardingCompleted() async =>
+      await _storageService.isOnboardingCompleted();
 
   /// Store authentication data
-  Future<void> storeAuthData(AuthDataStorageParams params) async => await _storageService.storeAuthData(params);
+  Future<void> storeAuthData(AuthDataStorageParams params) async =>
+      await _storageService.storeAuthData(params);
 
   /// Clear all stored auth data
   Future<void> clearAllData() async => await _storageService.clearAllData();

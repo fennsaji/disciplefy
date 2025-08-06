@@ -6,13 +6,15 @@ import '../repositories/user_profile_repository.dart';
 
 /// Use case for retrieving user profile
 /// Implements Clean Architecture principles with proper error handling
-class GetUserProfile implements UseCase<UserProfileEntity?, GetUserProfileParams> {
+class GetUserProfile
+    implements UseCase<UserProfileEntity?, GetUserProfileParams> {
   final UserProfileRepository repository;
 
   const GetUserProfile({required this.repository});
 
   @override
-  Future<Either<Failure, UserProfileEntity?>> call(GetUserProfileParams params) async {
+  Future<Either<Failure, UserProfileEntity?>> call(
+      GetUserProfileParams params) async {
     try {
       final profile = await repository.getUserProfile(params.userId);
       return Right(profile);
