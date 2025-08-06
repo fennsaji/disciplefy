@@ -6,11 +6,6 @@ on:
     paths:
       - 'backend/**'
       - '.github/workflows/backend-deploy-dev.yml'
-  pull_request:
-    branches: [main]
-    paths:
-      - 'backend/**'
-    types: [opened, synchronize, reopened]
   workflow_dispatch:
     inputs:
       environment:
