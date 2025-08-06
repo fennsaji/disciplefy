@@ -1,4 +1,4 @@
-name: Deploy Frontend to Production
+name: Frontend Production Deployment
 
 on:
   push:
