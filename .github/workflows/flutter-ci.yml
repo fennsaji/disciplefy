@@ -1,13 +1,8 @@
 name: Flutter CI - Testing & Code Quality
 
 on:
-  push:
-    branches: [ main, develop ]
-    paths:
-      - 'frontend/**'
-      - '.github/workflows/flutter-ci.yml'
   pull_request:
-    branches: [ main, develop ]
+    branches: [ main, dev ]
     paths:
       - 'frontend/**'
       - '.github/workflows/flutter-ci.yml'

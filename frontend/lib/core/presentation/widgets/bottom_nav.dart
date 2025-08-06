@@ -59,12 +59,6 @@ class DisciplefyBottomNav extends StatelessWidget {
       label: 'Saved',
       semanticLabel: 'Navigate to Saved Guides screen. View your saved and recent study guides.',
     ),
-    NavTab(
-      icon: Icons.settings_outlined,
-      activeIcon: Icons.settings,
-      label: 'Settings',
-      semanticLabel: 'Navigate to Settings screen. Manage app preferences and account.',
-    ),
   ];
 
   @override
