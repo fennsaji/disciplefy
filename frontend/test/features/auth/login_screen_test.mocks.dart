@@ -5,9 +5,12 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'dart:async' as _i12;
 
-import 'package:disciplefy_bible_study/features/auth/presentation/bloc/auth_bloc.dart' as _i13;
-import 'package:disciplefy_bible_study/features/auth/presentation/bloc/auth_event.dart' as _i14;
-import 'package:disciplefy_bible_study/features/auth/presentation/bloc/auth_state.dart' as _i8;
+import 'package:disciplefy_bible_study/features/auth/presentation/bloc/auth_bloc.dart'
+    as _i13;
+import 'package:disciplefy_bible_study/features/auth/presentation/bloc/auth_event.dart'
+    as _i14;
+import 'package:disciplefy_bible_study/features/auth/presentation/bloc/auth_state.dart'
+    as _i8;
 import 'package:flutter/widgets.dart' as _i3;
 import 'package:flutter_bloc/flutter_bloc.dart' as _i15;
 import 'package:go_router/src/configuration.dart' as _i2;
@@ -35,7 +38,8 @@ import 'package:supabase_flutter/supabase_flutter.dart' as _i16;
 // ignore_for_file: camel_case_types
 // ignore_for_file: subtype_of_sealed_class
 
-class _FakeRouteConfiguration_0 extends _i1.SmartFake implements _i2.RouteConfiguration {
+class _FakeRouteConfiguration_0 extends _i1.SmartFake
+    implements _i2.RouteConfiguration {
   _FakeRouteConfiguration_0(
     Object parent,
     Invocation parentInvocation,
@@ -45,7 +49,8 @@ class _FakeRouteConfiguration_0 extends _i1.SmartFake implements _i2.RouteConfig
         );
 }
 
-class _FakeBackButtonDispatcher_1 extends _i1.SmartFake implements _i3.BackButtonDispatcher {
+class _FakeBackButtonDispatcher_1 extends _i1.SmartFake
+    implements _i3.BackButtonDispatcher {
   _FakeBackButtonDispatcher_1(
     Object parent,
     Invocation parentInvocation,
@@ -55,7 +60,8 @@ class _FakeBackButtonDispatcher_1 extends _i1.SmartFake implements _i3.BackButto
         );
 }
 
-class _FakeGoRouterDelegate_2 extends _i1.SmartFake implements _i4.GoRouterDelegate {
+class _FakeGoRouterDelegate_2 extends _i1.SmartFake
+    implements _i4.GoRouterDelegate {
   _FakeGoRouterDelegate_2(
     Object parent,
     Invocation parentInvocation,
@@ -65,7 +71,8 @@ class _FakeGoRouterDelegate_2 extends _i1.SmartFake implements _i4.GoRouterDeleg
         );
 }
 
-class _FakeGoRouteInformationProvider_3 extends _i1.SmartFake implements _i5.GoRouteInformationProvider {
+class _FakeGoRouteInformationProvider_3 extends _i1.SmartFake
+    implements _i5.GoRouteInformationProvider {
   _FakeGoRouteInformationProvider_3(
     Object parent,
     Invocation parentInvocation,
@@ -75,7 +82,8 @@ class _FakeGoRouteInformationProvider_3 extends _i1.SmartFake implements _i5.GoR
         );
 }
 
-class _FakeGoRouteInformationParser_4 extends _i1.SmartFake implements _i6.GoRouteInformationParser {
+class _FakeGoRouteInformationParser_4 extends _i1.SmartFake
+    implements _i6.GoRouteInformationParser {
   _FakeGoRouteInformationParser_4(
     Object parent,
     Invocation parentInvocation,
@@ -123,7 +131,8 @@ class MockGoRouter extends _i1.Mock implements _i9.GoRouter {
       ) as _i2.RouteConfiguration);
 
   @override
-  set configuration(_i2.RouteConfiguration? _configuration) => super.noSuchMethod(
+  set configuration(_i2.RouteConfiguration? _configuration) =>
+      super.noSuchMethod(
         Invocation.setter(
           #configuration,
           _configuration,
@@ -150,7 +159,8 @@ class MockGoRouter extends _i1.Mock implements _i9.GoRouter {
       ) as _i4.GoRouterDelegate);
 
   @override
-  set routerDelegate(_i4.GoRouterDelegate? _routerDelegate) => super.noSuchMethod(
+  set routerDelegate(_i4.GoRouterDelegate? _routerDelegate) =>
+      super.noSuchMethod(
         Invocation.setter(
           #routerDelegate,
           _routerDelegate,
@@ -159,7 +169,8 @@ class MockGoRouter extends _i1.Mock implements _i9.GoRouter {
       );
 
   @override
-  _i5.GoRouteInformationProvider get routeInformationProvider => (super.noSuchMethod(
+  _i5.GoRouteInformationProvider get routeInformationProvider =>
+      (super.noSuchMethod(
         Invocation.getter(#routeInformationProvider),
         returnValue: _FakeGoRouteInformationProvider_3(
           this,
@@ -168,7 +179,9 @@ class MockGoRouter extends _i1.Mock implements _i9.GoRouter {
       ) as _i5.GoRouteInformationProvider);
 
   @override
-  set routeInformationProvider(_i5.GoRouteInformationProvider? _routeInformationProvider) => super.noSuchMethod(
+  set routeInformationProvider(
+          _i5.GoRouteInformationProvider? _routeInformationProvider) =>
+      super.noSuchMethod(
         Invocation.setter(
           #routeInformationProvider,
           _routeInformationProvider,
@@ -177,7 +190,8 @@ class MockGoRouter extends _i1.Mock implements _i9.GoRouter {
       );
 
   @override
-  _i6.GoRouteInformationParser get routeInformationParser => (super.noSuchMethod(
+  _i6.GoRouteInformationParser get routeInformationParser =>
+      (super.noSuchMethod(
         Invocation.getter(#routeInformationParser),
         returnValue: _FakeGoRouteInformationParser_4(
           this,
@@ -186,7 +200,9 @@ class MockGoRouter extends _i1.Mock implements _i9.GoRouter {
       ) as _i6.GoRouteInformationParser);
 
   @override
-  set routeInformationParser(_i6.GoRouteInformationParser? _routeInformationParser) => super.noSuchMethod(
+  set routeInformationParser(
+          _i6.GoRouteInformationParser? _routeInformationParser) =>
+      super.noSuchMethod(
         Invocation.setter(
           #routeInformationParser,
           _routeInformationParser,
@@ -514,7 +530,9 @@ class MockAuthBloc extends _i1.Mock implements _i13.AuthBloc {
       );
 
   @override
-  void onTransition(_i15.Transition<_i14.AuthEvent, _i8.AuthState>? transition) => super.noSuchMethod(
+  void onTransition(
+          _i15.Transition<_i14.AuthEvent, _i8.AuthState>? transition) =>
+      super.noSuchMethod(
         Invocation.method(
           #onTransition,
           [transition],

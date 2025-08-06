@@ -6,11 +6,6 @@ on:
     paths:
       - 'backend/**'
       - '.github/workflows/backend-deploy-dev.yml'
-  pull_request:
-    branches: [main]
-    paths:
-      - 'backend/**'
-    types: [opened, synchronize, reopened]
   workflow_dispatch:
     inputs:
       environment:
@@ -209,7 +204,7 @@ jobs:
         
         # Application URLs (Development)
         SITE_URL=https://${{ env.PROJECT_REF }}.supabase.co
-        ADDITIONAL_REDIRECT_URLS=http://localhost:3000/auth/callback,https://disciplefy-dev.vercel.app/auth/callback
+        ADDITIONAL_REDIRECT_URLS=http://localhost:59641/auth/callback,https://disciplefy-dev.vercel.app/auth/callback
         
         # Security (Development)
         JWT_SECRET=${{ secrets.JWT_SECRET_DEV }}

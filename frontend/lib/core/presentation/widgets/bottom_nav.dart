@@ -45,25 +45,22 @@ class DisciplefyBottomNav extends StatelessWidget {
       icon: Icons.home_outlined,
       activeIcon: Icons.home,
       label: 'Home',
-      semanticLabel: 'Navigate to Home screen. Shows daily verse and study recommendations.',
+      semanticLabel:
+          'Navigate to Home screen. Shows daily verse and study recommendations.',
     ),
     NavTab(
       icon: Icons.edit_note_outlined,
       activeIcon: Icons.edit_note,
       label: 'Study',
-      semanticLabel: 'Navigate to Study Generation screen. Create new Bible study guides.',
+      semanticLabel:
+          'Navigate to Study Generation screen. Create new Bible study guides.',
     ),
     NavTab(
       icon: Icons.bookmark_outline,
       activeIcon: Icons.bookmark,
       label: 'Saved',
-      semanticLabel: 'Navigate to Saved Guides screen. View your saved and recent study guides.',
-    ),
-    NavTab(
-      icon: Icons.settings_outlined,
-      activeIcon: Icons.settings,
-      label: 'Settings',
-      semanticLabel: 'Navigate to Settings screen. Manage app preferences and account.',
+      semanticLabel:
+          'Navigate to Saved Guides screen. View your saved and recent study guides.',
     ),
   ];
 
@@ -162,11 +159,15 @@ class _BottomNavItem extends StatelessWidget {
                   width: 28,
                   height: 28,
                   decoration: BoxDecoration(
-                    color: isSelected ? activeColor.withOpacity(0.15) : Colors.transparent,
+                    color: isSelected
+                        ? activeColor.withOpacity(0.15)
+                        : Colors.transparent,
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Icon(
-                    isSelected && tab.activeIcon != null ? tab.activeIcon! : tab.icon,
+                    isSelected && tab.activeIcon != null
+                        ? tab.activeIcon!
+                        : tab.icon,
                     size: 18,
                     color: isSelected ? activeColor : inactiveColor,
                   ),

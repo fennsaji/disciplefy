@@ -102,14 +102,24 @@ if files_modified_in_dir "frontend" || git diff --cached --name-only | grep -q "
             OVERALL_SUCCESS=false
         fi
         
-        # Run Dart format check
+        # Run Dart format check - STRICT MODE (FAIL ON FORMATTING ISSUES)
         echo "🎨 Checking Dart formatting..."
-        if dart format --set-exit-if-changed --line-length 120 lib/ test/ >/dev/null 2>&1; then
+        # Check if files need formatting using git diff approach (non-destructive)
+        dart format --output=none lib/ test/ >/dev/null 2>&1
+        if git diff --quiet lib/ test/; then
             echo -e "${GREEN}✅ Dart formatting: PASSED${NC}"
         else
-            echo -e "${YELLOW}⚠️  Dart formatting: Some files need formatting${NC}"
-            echo -e "${YELLOW}   Run: dart format --line-length 120 lib/ test/${NC}"
-            # Don't fail for formatting - just warn
+            echo -e "${RED}❌ Dart formatting: FAILED${NC}"
+            echo ""
+            echo -e "${RED}Files need formatting. Please run:${NC}"
+            echo -e "${RED}   dart format lib/ test/${NC}"
+            echo ""
+            echo -e "${RED}Files that need formatting:${NC}"
+            git diff --name-only lib/ test/ | sed 's/^/   /' | head -10
+            echo ""
+            # Restore original state since we only want to check, not modify
+            git checkout lib/ test/ >/dev/null 2>&1
+            OVERALL_SUCCESS=false
         fi
     fi
     

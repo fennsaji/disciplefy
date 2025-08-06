@@ -61,7 +61,8 @@ class VerseLanguageTabs extends StatelessWidget {
     required ThemeData theme,
   }) {
     // Calculate luminance for automatic contrast
-    final backgroundColor = isSelected ? theme.colorScheme.secondary : theme.colorScheme.surface;
+    final backgroundColor =
+        isSelected ? theme.colorScheme.secondary : theme.colorScheme.surface;
     final luminance = backgroundColor.computeLuminance();
     final textColor = luminance > 0.5 ? Colors.black87 : Colors.white;
 
@@ -78,13 +79,16 @@ class VerseLanguageTabs extends StatelessWidget {
             borderRadius: UIConstants.borderRadiusSm,
             border: Border.all(
               color: isSelected
-                  ? theme.colorScheme.primary.withValues(alpha: UIConstants.opacityOverlay)
-                  : theme.colorScheme.outline.withValues(alpha: UIConstants.opacityLight),
+                  ? theme.colorScheme.primary
+                      .withValues(alpha: UIConstants.opacityOverlay)
+                  : theme.colorScheme.outline
+                      .withValues(alpha: UIConstants.opacityLight),
             ),
             boxShadow: isSelected
                 ? [
                     BoxShadow(
-                      color: theme.colorScheme.primary.withValues(alpha: UIConstants.opacityLight),
+                      color: theme.colorScheme.primary
+                          .withValues(alpha: UIConstants.opacityLight),
                       blurRadius: UIConstants.elevationMd,
                       offset: const Offset(0, 2),
                     ),
@@ -96,7 +100,9 @@ class VerseLanguageTabs extends StatelessWidget {
             textAlign: TextAlign.center,
             style: GoogleFonts.inter(
               fontSize: UIConstants.fontSizeSm,
-              fontWeight: isSelected ? UIConstants.fontWeightSemiBold : UIConstants.fontWeightMedium,
+              fontWeight: isSelected
+                  ? UIConstants.fontWeightSemiBold
+                  : UIConstants.fontWeightMedium,
               color: textColor,
             ),
           ),

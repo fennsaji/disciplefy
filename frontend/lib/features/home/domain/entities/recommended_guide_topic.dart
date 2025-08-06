@@ -86,5 +86,6 @@ class RecommendedGuideTopic extends Equatable {
       );
 
   @override
-  String toString() => 'RecommendedGuideTopic(id: $id, title: $title, category: $category, difficulty: $difficulty)';
+  String toString() =>
+      'RecommendedGuideTopic(id: $id, title: $title, category: $category, difficulty: $difficulty)';
 }

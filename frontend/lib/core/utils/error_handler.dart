@@ -30,7 +30,8 @@ class ErrorHandler {
       finalErrorCode = errorCode ?? error.code;
     } else if (error is Exception) {
       // Handle general exceptions
-      errorMessage = customMessage ?? _extractErrorMessage(error, operationName);
+      errorMessage =
+          customMessage ?? _extractErrorMessage(error, operationName);
       finalErrorCode = errorCode ?? _getErrorCodeFromException(error);
     } else {
       // Handle unknown errors
@@ -60,10 +61,12 @@ class ErrorHandler {
 
   /// Handles Either result pattern with error emission
   /// Common pattern for UseCase results
-  static void handleEitherResult<TSuccess, TError extends Object, TFailure extends Failure>({
+  static void handleEitherResult<TSuccess, TError extends Object,
+      TFailure extends Failure>({
     required dynamic result,
     required Emitter<TError> emit,
-    required TError Function(String message, String? errorCode) createErrorState,
+    required TError Function(String message, String? errorCode)
+        createErrorState,
     required void Function(TSuccess) onSuccess,
     String? operationName,
   }) {
@@ -105,7 +108,9 @@ class ErrorHandler {
     final errorString = error.toString();
 
     // Common error patterns
-    if (errorString.contains('network') || errorString.contains('connection') || errorString.contains('internet')) {
+    if (errorString.contains('network') ||
+        errorString.contains('connection') ||
+        errorString.contains('internet')) {
       return 'Network error. Please check your connection and try again.';
     }
 
@@ -113,7 +118,9 @@ class ErrorHandler {
       return 'Request timed out. Please try again.';
     }
 
-    if (errorString.contains('permission') || errorString.contains('denied') || errorString.contains('unauthorized')) {
+    if (errorString.contains('permission') ||
+        errorString.contains('denied') ||
+        errorString.contains('unauthorized')) {
       return 'Access denied. Please check your permissions.';
     }
 
@@ -121,7 +128,9 @@ class ErrorHandler {
       return 'Resource not found.';
     }
 
-    if (errorString.contains('server') || errorString.contains('500') || errorString.contains('503')) {
+    if (errorString.contains('server') ||
+        errorString.contains('500') ||
+        errorString.contains('503')) {
       return 'Server error. Please try again later.';
     }
 

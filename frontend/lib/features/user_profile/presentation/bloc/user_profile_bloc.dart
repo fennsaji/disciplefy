@@ -85,7 +85,8 @@ class UserProfileBloc extends Bloc<UserProfileEvent, UserProfileState> {
         message: message,
         errorCode: errorCode,
       ),
-      onSuccess: (_) => emit(UserProfileUpdateSuccess(updatedProfile: event.profile)),
+      onSuccess: (_) =>
+          emit(UserProfileUpdateSuccess(updatedProfile: event.profile)),
       operationName: 'update user profile',
     );
   }
