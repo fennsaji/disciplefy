@@ -77,16 +77,7 @@ class AppRouter {
               ),
             ],
           ),
-          // Settings Branch
-          StatefulShellBranch(
-            routes: [
-              GoRoute(
-                path: AppRoutes.settings,
-                name: 'settings',
-                builder: (context, state) => const SettingsScreen(),
-              ),
-            ],
-          ),
+
         ],
       ),
 
