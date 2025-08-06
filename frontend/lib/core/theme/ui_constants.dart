@@ -26,18 +26,26 @@ class UIConstants {
   static const EdgeInsets paddingXl = EdgeInsets.all(spacingXl);
 
   /// Horizontal padding patterns
-  static const EdgeInsets paddingHorizontalSm = EdgeInsets.symmetric(horizontal: spacingSm);
-  static const EdgeInsets paddingHorizontalMd = EdgeInsets.symmetric(horizontal: spacingMd);
-  static const EdgeInsets paddingHorizontalLg = EdgeInsets.symmetric(horizontal: spacingLg);
+  static const EdgeInsets paddingHorizontalSm =
+      EdgeInsets.symmetric(horizontal: spacingSm);
+  static const EdgeInsets paddingHorizontalMd =
+      EdgeInsets.symmetric(horizontal: spacingMd);
+  static const EdgeInsets paddingHorizontalLg =
+      EdgeInsets.symmetric(horizontal: spacingLg);
 
   /// Vertical padding patterns
-  static const EdgeInsets paddingVerticalSm = EdgeInsets.symmetric(vertical: spacingSm);
-  static const EdgeInsets paddingVerticalMd = EdgeInsets.symmetric(vertical: spacingMd);
-  static const EdgeInsets paddingVerticalLg = EdgeInsets.symmetric(vertical: spacingLg);
+  static const EdgeInsets paddingVerticalSm =
+      EdgeInsets.symmetric(vertical: spacingSm);
+  static const EdgeInsets paddingVerticalMd =
+      EdgeInsets.symmetric(vertical: spacingMd);
+  static const EdgeInsets paddingVerticalLg =
+      EdgeInsets.symmetric(vertical: spacingLg);
 
   /// Page-level margins
-  static const EdgeInsets pageMarginHorizontal = EdgeInsets.symmetric(horizontal: spacingLg);
-  static const EdgeInsets sectionMarginVertical = EdgeInsets.symmetric(vertical: spacingMd);
+  static const EdgeInsets pageMarginHorizontal =
+      EdgeInsets.symmetric(horizontal: spacingLg);
+  static const EdgeInsets sectionMarginVertical =
+      EdgeInsets.symmetric(vertical: spacingMd);
 
   // === BORDER RADIUS CONSTANTS ===
 
@@ -49,11 +57,16 @@ class UIConstants {
   static const double radiusCircular = 50.0;
 
   /// Common BorderRadius patterns
-  static const BorderRadius borderRadiusXs = BorderRadius.all(Radius.circular(radiusXs));
-  static const BorderRadius borderRadiusSm = BorderRadius.all(Radius.circular(radiusSm));
-  static const BorderRadius borderRadiusMd = BorderRadius.all(Radius.circular(radiusMd));
-  static const BorderRadius borderRadiusLg = BorderRadius.all(Radius.circular(radiusLg));
-  static const BorderRadius borderRadiusXl = BorderRadius.all(Radius.circular(radiusXl));
+  static const BorderRadius borderRadiusXs =
+      BorderRadius.all(Radius.circular(radiusXs));
+  static const BorderRadius borderRadiusSm =
+      BorderRadius.all(Radius.circular(radiusSm));
+  static const BorderRadius borderRadiusMd =
+      BorderRadius.all(Radius.circular(radiusMd));
+  static const BorderRadius borderRadiusLg =
+      BorderRadius.all(Radius.circular(radiusLg));
+  static const BorderRadius borderRadiusXl =
+      BorderRadius.all(Radius.circular(radiusXl));
 
   // === TYPOGRAPHY CONSTANTS ===
 

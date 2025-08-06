@@ -5,9 +5,11 @@ class AppLocalizations {
 
   AppLocalizations(this.locale);
 
-  static AppLocalizations? of(BuildContext context) => Localizations.of<AppLocalizations>(context, AppLocalizations);
+  static AppLocalizations? of(BuildContext context) =>
+      Localizations.of<AppLocalizations>(context, AppLocalizations);
 
-  static const LocalizationsDelegate<AppLocalizations> delegate = _AppLocalizationsDelegate();
+  static const LocalizationsDelegate<AppLocalizations> delegate =
+      _AppLocalizationsDelegate();
 
   static const List<LocalizationsDelegate<dynamic>> localizationsDelegates = [
     delegate,
@@ -36,11 +38,14 @@ class AppLocalizations {
 
       // Onboarding
       'onboarding_welcome_title': 'Welcome to Disciplefy',
-      'onboarding_welcome_subtitle': 'AI-powered Bible study guides following Jeff Reed methodology',
+      'onboarding_welcome_subtitle':
+          'AI-powered Bible study guides following Jeff Reed methodology',
       'onboarding_language_title': 'Choose Your Language',
-      'onboarding_language_subtitle': 'Select your preferred language for the app',
+      'onboarding_language_subtitle':
+          'Select your preferred language for the app',
       'onboarding_purpose_title': 'Transform Your Bible Study',
-      'onboarding_purpose_subtitle': 'Generate personalized study guides for any verse or topic',
+      'onboarding_purpose_subtitle':
+          'Generate personalized study guides for any verse or topic',
       'language_english': 'English',
       'language_hindi': 'हिन्दी',
       'language_malayalam': 'മലയാളം',
@@ -81,11 +86,13 @@ class AppLocalizations {
 
       // Onboarding
       'onboarding_welcome_title': 'डिसाइपलफाई में आपका स्वागत है',
-      'onboarding_welcome_subtitle': 'जेफ रीड पद्धति के अनुसार AI-संचालित बाइबल अध्ययन गाइड',
+      'onboarding_welcome_subtitle':
+          'जेफ रीड पद्धति के अनुसार AI-संचालित बाइबल अध्ययन गाइड',
       'onboarding_language_title': 'अपनी भाषा चुनें',
       'onboarding_language_subtitle': 'ऐप के लिए अपनी पसंदीदा भाषा चुनें',
       'onboarding_purpose_title': 'अपने बाइबल अध्ययन को बदलें',
-      'onboarding_purpose_subtitle': 'किसी भी आयत या विषय के लिए व्यक्तिगत अध्ययन गाइड बनाएं',
+      'onboarding_purpose_subtitle':
+          'किसी भी आयत या विषय के लिए व्यक्तिगत अध्ययन गाइड बनाएं',
       'language_english': 'English',
       'language_hindi': 'हिन्दी',
       'language_malayalam': 'മലയാളം',
@@ -122,15 +129,19 @@ class AppLocalizations {
       'retry_button': 'വീണ്ടും ശ്രമിക്കുക',
       'loading': 'ലോഡ് ചെയ്യുന്നു...',
       'error_title': 'എന്തോ തെറ്റ് സംഭവിച്ചു',
-      'error_message': 'ദയവായി വീണ്ടും ശ്രമിക്കുക അല്ലെങ്കിൽ പിന്തുണയുമായി ബന്ധപ്പെടുക.',
+      'error_message':
+          'ദയവായി വീണ്ടും ശ്രമിക്കുക അല്ലെങ്കിൽ പിന്തുണയുമായി ബന്ധപ്പെടുക.',
 
       // Onboarding
       'onboarding_welcome_title': 'ഡിസൈപ്പിൾഫൈയിലേക്ക് സ്വാഗതം',
-      'onboarding_welcome_subtitle': 'ജെഫ് റീഡ് രീതി പിന്തുടർന്ന് AI-നയിക്കുന്ന ബൈബിൾ പഠന ഗൈഡുകൾ',
+      'onboarding_welcome_subtitle':
+          'ജെഫ് റീഡ് രീതി പിന്തുടർന്ന് AI-നയിക്കുന്ന ബൈബിൾ പഠന ഗൈഡുകൾ',
       'onboarding_language_title': 'നിങ്ങളുടെ ഭാഷ തിരഞ്ഞെടുക്കുക',
-      'onboarding_language_subtitle': 'ആപ്പിനായി നിങ്ങളുടെ പ്രിയപ്പെട്ട ഭാഷ തിരഞ്ഞെടുക്കുക',
+      'onboarding_language_subtitle':
+          'ആപ്പിനായി നിങ്ങളുടെ പ്രിയപ്പെട്ട ഭാഷ തിരഞ്ഞെടുക്കുക',
       'onboarding_purpose_title': 'നിങ്ങളുടെ ബൈബിൾ പഠനം പരിവർത്തനം ചെയ്യുക',
-      'onboarding_purpose_subtitle': 'ഏതൊരു വാക്യത്തിനും അല്ലെങ്കിൽ വിഷയത്തിനും വ്യക്തിഗത പഠന ഗൈഡുകൾ സൃഷ്ടിക്കുക',
+      'onboarding_purpose_subtitle':
+          'ഏതൊരു വാക്യത്തിനും അല്ലെങ്കിൽ വിഷയത്തിനും വ്യക്തിഗത പഠന ഗൈഡുകൾ സൃഷ്ടിക്കുക',
       'language_english': 'English',
       'language_hindi': 'हिन्दी',
       'language_malayalam': 'മലയാളം',
@@ -143,7 +154,8 @@ class AppLocalizations {
       'study_input_topic_hint': 'പഠന വിഷയം നൽകുക (ഉദാ., വിശ്വാസം, സ്നേഹം)',
       'study_input_generate_button': 'പഠന ഗൈഡ് സൃഷ്ടിക്കുക',
       'study_input_verse_validation': 'ദയവായി സാധുവായ ബൈബിൾ റഫറൻസ് നൽകുക',
-      'study_input_topic_validation': 'ദയവായി ഒരു വിഷയം നൽകുക (2-100 അക്ഷരങ്ങൾ)',
+      'study_input_topic_validation':
+          'ദയവായി ഒരു വിഷയം നൽകുക (2-100 അക്ഷരങ്ങൾ)',
       'study_input_generating': 'നിങ്ങളുടെ പഠന ഗൈഡ് സൃഷ്ടിക്കുന്നു...',
 
       // Study Result
@@ -160,57 +172,92 @@ class AppLocalizations {
   };
 
   String get appTitle => _localizedValues[locale.languageCode]!['app_title']!;
-  String get continueButton => _localizedValues[locale.languageCode]!['continue_button']!;
-  String get backButton => _localizedValues[locale.languageCode]!['back_button']!;
-  String get nextButton => _localizedValues[locale.languageCode]!['next_button']!;
-  String get cancelButton => _localizedValues[locale.languageCode]!['cancel_button']!;
-  String get retryButton => _localizedValues[locale.languageCode]!['retry_button']!;
+  String get continueButton =>
+      _localizedValues[locale.languageCode]!['continue_button']!;
+  String get backButton =>
+      _localizedValues[locale.languageCode]!['back_button']!;
+  String get nextButton =>
+      _localizedValues[locale.languageCode]!['next_button']!;
+  String get cancelButton =>
+      _localizedValues[locale.languageCode]!['cancel_button']!;
+  String get retryButton =>
+      _localizedValues[locale.languageCode]!['retry_button']!;
   String get loading => _localizedValues[locale.languageCode]!['loading']!;
-  String get errorTitle => _localizedValues[locale.languageCode]!['error_title']!;
-  String get errorMessage => _localizedValues[locale.languageCode]!['error_message']!;
+  String get errorTitle =>
+      _localizedValues[locale.languageCode]!['error_title']!;
+  String get errorMessage =>
+      _localizedValues[locale.languageCode]!['error_message']!;
 
   // Onboarding
-  String get onboardingWelcomeTitle => _localizedValues[locale.languageCode]!['onboarding_welcome_title']!;
-  String get onboardingWelcomeSubtitle => _localizedValues[locale.languageCode]!['onboarding_welcome_subtitle']!;
-  String get onboardingLanguageTitle => _localizedValues[locale.languageCode]!['onboarding_language_title']!;
-  String get onboardingLanguageSubtitle => _localizedValues[locale.languageCode]!['onboarding_language_subtitle']!;
-  String get onboardingPurposeTitle => _localizedValues[locale.languageCode]!['onboarding_purpose_title']!;
-  String get onboardingPurposeSubtitle => _localizedValues[locale.languageCode]!['onboarding_purpose_subtitle']!;
-  String get languageEnglish => _localizedValues[locale.languageCode]!['language_english']!;
-  String get languageHindi => _localizedValues[locale.languageCode]!['language_hindi']!;
-  String get languageMalayalam => _localizedValues[locale.languageCode]!['language_malayalam']!;
+  String get onboardingWelcomeTitle =>
+      _localizedValues[locale.languageCode]!['onboarding_welcome_title']!;
+  String get onboardingWelcomeSubtitle =>
+      _localizedValues[locale.languageCode]!['onboarding_welcome_subtitle']!;
+  String get onboardingLanguageTitle =>
+      _localizedValues[locale.languageCode]!['onboarding_language_title']!;
+  String get onboardingLanguageSubtitle =>
+      _localizedValues[locale.languageCode]!['onboarding_language_subtitle']!;
+  String get onboardingPurposeTitle =>
+      _localizedValues[locale.languageCode]!['onboarding_purpose_title']!;
+  String get onboardingPurposeSubtitle =>
+      _localizedValues[locale.languageCode]!['onboarding_purpose_subtitle']!;
+  String get languageEnglish =>
+      _localizedValues[locale.languageCode]!['language_english']!;
+  String get languageHindi =>
+      _localizedValues[locale.languageCode]!['language_hindi']!;
+  String get languageMalayalam =>
+      _localizedValues[locale.languageCode]!['language_malayalam']!;
 
   // Study Input
-  String get studyInputTitle => _localizedValues[locale.languageCode]!['study_input_title']!;
-  String get studyInputVerseTab => _localizedValues[locale.languageCode]!['study_input_verse_tab']!;
-  String get studyInputTopicTab => _localizedValues[locale.languageCode]!['study_input_topic_tab']!;
-  String get studyInputVerseHint => _localizedValues[locale.languageCode]!['study_input_verse_hint']!;
-  String get studyInputTopicHint => _localizedValues[locale.languageCode]!['study_input_topic_hint']!;
-  String get studyInputGenerateButton => _localizedValues[locale.languageCode]!['study_input_generate_button']!;
-  String get studyInputVerseValidation => _localizedValues[locale.languageCode]!['study_input_verse_validation']!;
-  String get studyInputTopicValidation => _localizedValues[locale.languageCode]!['study_input_topic_validation']!;
-  String get studyInputGenerating => _localizedValues[locale.languageCode]!['study_input_generating']!;
+  String get studyInputTitle =>
+      _localizedValues[locale.languageCode]!['study_input_title']!;
+  String get studyInputVerseTab =>
+      _localizedValues[locale.languageCode]!['study_input_verse_tab']!;
+  String get studyInputTopicTab =>
+      _localizedValues[locale.languageCode]!['study_input_topic_tab']!;
+  String get studyInputVerseHint =>
+      _localizedValues[locale.languageCode]!['study_input_verse_hint']!;
+  String get studyInputTopicHint =>
+      _localizedValues[locale.languageCode]!['study_input_topic_hint']!;
+  String get studyInputGenerateButton =>
+      _localizedValues[locale.languageCode]!['study_input_generate_button']!;
+  String get studyInputVerseValidation =>
+      _localizedValues[locale.languageCode]!['study_input_verse_validation']!;
+  String get studyInputTopicValidation =>
+      _localizedValues[locale.languageCode]!['study_input_topic_validation']!;
+  String get studyInputGenerating =>
+      _localizedValues[locale.languageCode]!['study_input_generating']!;
 
   // Study Result
-  String get studyResultTitle => _localizedValues[locale.languageCode]!['study_result_title']!;
-  String get studyResultNewButton => _localizedValues[locale.languageCode]!['study_result_new_button']!;
-  String get studyResultShareButton => _localizedValues[locale.languageCode]!['study_result_share_button']!;
+  String get studyResultTitle =>
+      _localizedValues[locale.languageCode]!['study_result_title']!;
+  String get studyResultNewButton =>
+      _localizedValues[locale.languageCode]!['study_result_new_button']!;
+  String get studyResultShareButton =>
+      _localizedValues[locale.languageCode]!['study_result_share_button']!;
 
   // Error Page
-  String get errorPageTitle => _localizedValues[locale.languageCode]!['error_page_title']!;
-  String get errorPageNetwork => _localizedValues[locale.languageCode]!['error_page_network']!;
-  String get errorPageServer => _localizedValues[locale.languageCode]!['error_page_server']!;
-  String get errorPageUnknown => _localizedValues[locale.languageCode]!['error_page_unknown']!;
+  String get errorPageTitle =>
+      _localizedValues[locale.languageCode]!['error_page_title']!;
+  String get errorPageNetwork =>
+      _localizedValues[locale.languageCode]!['error_page_network']!;
+  String get errorPageServer =>
+      _localizedValues[locale.languageCode]!['error_page_server']!;
+  String get errorPageUnknown =>
+      _localizedValues[locale.languageCode]!['error_page_unknown']!;
 }
 
-class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {
+class _AppLocalizationsDelegate
+    extends LocalizationsDelegate<AppLocalizations> {
   const _AppLocalizationsDelegate();
 
   @override
-  bool isSupported(Locale locale) => ['en', 'hi', 'ml'].contains(locale.languageCode);
+  bool isSupported(Locale locale) =>
+      ['en', 'hi', 'ml'].contains(locale.languageCode);
 
   @override
-  Future<AppLocalizations> load(Locale locale) async => AppLocalizations(locale);
+  Future<AppLocalizations> load(Locale locale) async =>
+      AppLocalizations(locale);
 
   @override
   bool shouldReload(_AppLocalizationsDelegate old) => false;

@@ -50,7 +50,8 @@ class AuthStorageService {
       // Use Future.wait to execute all secure storage writes concurrently
       // but fail fast if any operation fails
       await Future.wait([
-        for (final entry in secureStorageData.entries) _secureStorage.write(key: entry.key, value: entry.value),
+        for (final entry in secureStorageData.entries)
+          _secureStorage.write(key: entry.key, value: entry.value),
       ]);
 
       if (kDebugMode) {
@@ -78,8 +79,10 @@ class AuthStorageService {
         // Verify what was actually stored
         final storedUserType = box.get('user_type');
         final storedOnboarding = box.get('onboarding_completed');
-        print('🔐 [AUTH STORAGE] 🔍 Verification - Hive user_type: $storedUserType');
-        print('🔐 [AUTH STORAGE] 🔍 Verification - Hive onboarding_completed: $storedOnboarding');
+        print(
+            '🔐 [AUTH STORAGE] 🔍 Verification - Hive user_type: $storedUserType');
+        print(
+            '🔐 [AUTH STORAGE] 🔍 Verification - Hive onboarding_completed: $storedOnboarding');
       }
     } catch (e) {
       if (kDebugMode) {
@@ -113,10 +116,12 @@ class AuthStorageService {
   }
 
   /// Retrieves the user type
-  Future<String?> getUserType() async => await _secureStorage.read(key: _userTypeKey);
+  Future<String?> getUserType() async =>
+      await _secureStorage.read(key: _userTypeKey);
 
   /// Retrieves the user ID
-  Future<String?> getUserId() async => await _secureStorage.read(key: _userIdKey);
+  Future<String?> getUserId() async =>
+      await _secureStorage.read(key: _userIdKey);
 
   /// Checks if onboarding has been completed
   Future<bool> isOnboardingCompleted() async {

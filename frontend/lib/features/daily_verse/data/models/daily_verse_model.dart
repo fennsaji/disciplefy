@@ -16,7 +16,8 @@ class DailyVerseModel {
     required this.date,
   });
 
-  factory DailyVerseModel.fromJson(Map<String, dynamic> json) => _$DailyVerseModelFromJson(json);
+  factory DailyVerseModel.fromJson(Map<String, dynamic> json) =>
+      _$DailyVerseModelFromJson(json);
 
   Map<String, dynamic> toJson() => _$DailyVerseModelToJson(this);
 
@@ -63,7 +64,8 @@ class DailyVerseResponse {
     required this.data,
   });
 
-  factory DailyVerseResponse.fromJson(Map<String, dynamic> json) => _$DailyVerseResponseFromJson(json);
+  factory DailyVerseResponse.fromJson(Map<String, dynamic> json) =>
+      _$DailyVerseResponseFromJson(json);
 
   Map<String, dynamic> toJson() => _$DailyVerseResponseToJson(this);
 }

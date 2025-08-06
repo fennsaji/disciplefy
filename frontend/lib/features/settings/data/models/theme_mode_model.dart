@@ -11,7 +11,8 @@ class ThemeModeModel extends ThemeModeEntity {
     required super.isDarkMode,
   });
 
-  factory ThemeModeModel.fromJson(Map<String, dynamic> json) => _$ThemeModeModelFromJson(json);
+  factory ThemeModeModel.fromJson(Map<String, dynamic> json) =>
+      _$ThemeModeModelFromJson(json);
 
   Map<String, dynamic> toJson() => _$ThemeModeModelToJson(this);
 
