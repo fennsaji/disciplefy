@@ -64,7 +64,8 @@ class DisciplefyBibleStudyApp extends StatefulWidget {
   const DisciplefyBibleStudyApp({super.key});
 
   @override
-  State<DisciplefyBibleStudyApp> createState() => _DisciplefyBibleStudyAppState();
+  State<DisciplefyBibleStudyApp> createState() =>
+      _DisciplefyBibleStudyAppState();
 }
 
 class _DisciplefyBibleStudyAppState extends State<DisciplefyBibleStudyApp> {
@@ -84,10 +85,12 @@ class _DisciplefyBibleStudyAppState extends State<DisciplefyBibleStudyApp> {
             create: (context) => sl<StudyBloc>(),
           ),
           BlocProvider<AuthBloc>(
-            create: (context) => sl<AuthBloc>()..add(const AuthInitializeRequested()),
+            create: (context) =>
+                sl<AuthBloc>()..add(const AuthInitializeRequested()),
           ),
           BlocProvider<DailyVerseBloc>(
-            create: (context) => sl<DailyVerseBloc>()..add(const LoadTodaysVerse()),
+            create: (context) =>
+                sl<DailyVerseBloc>()..add(const LoadTodaysVerse()),
           ),
         ],
         child: MaterialApp.router(

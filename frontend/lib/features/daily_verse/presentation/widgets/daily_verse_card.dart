@@ -81,7 +81,9 @@ class DailyVerseCard extends StatelessWidget {
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
-                  isRefreshing ? 'Refreshing...' : 'Loading Verse of the Day...',
+                  isRefreshing
+                      ? 'Refreshing...'
+                      : 'Loading Verse of the Day...',
                   style: theme.textTheme.titleMedium?.copyWith(
                     color: theme.colorScheme.onSecondary,
                   ),
@@ -91,7 +93,8 @@ class DailyVerseCard extends StatelessWidget {
           ),
           const SizedBox(height: 20),
           LinearProgressIndicator(
-            valueColor: AlwaysStoppedAnimation<Color>(theme.colorScheme.onSecondary),
+            valueColor:
+                AlwaysStoppedAnimation<Color>(theme.colorScheme.onSecondary),
             backgroundColor: theme.colorScheme.surface,
           ),
           const SizedBox(height: 16),
@@ -173,13 +176,15 @@ class DailyVerseCard extends StatelessWidget {
                         Icon(
                           Icons.auto_awesome,
                           size: 14,
-                          color: theme.colorScheme.onSecondary.withValues(alpha: 0.6),
+                          color: theme.colorScheme.onSecondary
+                              .withValues(alpha: 0.6),
                         ),
                         const SizedBox(width: 6),
                         Text(
                           'Tap to generate study guide',
                           style: theme.textTheme.bodySmall?.copyWith(
-                            color: theme.colorScheme.onSecondary.withValues(alpha: 0.6),
+                            color: theme.colorScheme.onSecondary
+                                .withValues(alpha: 0.6),
                             fontStyle: FontStyle.italic,
                           ),
                         ),
@@ -360,7 +365,8 @@ class DailyVerseCard extends StatelessWidget {
                     Icon(
                       Icons.touch_app,
                       size: 16,
-                      color: theme.colorScheme.onSecondary.withValues(alpha: 0.7),
+                      color:
+                          theme.colorScheme.onSecondary.withValues(alpha: 0.7),
                     ),
                   ],
                 ],
@@ -393,7 +399,8 @@ class DailyVerseCard extends StatelessWidget {
     );
   }
 
-  Widget _buildLanguageTabs(BuildContext context, VerseLanguage currentLanguage) {
+  Widget _buildLanguageTabs(
+      BuildContext context, VerseLanguage currentLanguage) {
     final theme = Theme.of(context);
 
     return Row(
@@ -401,10 +408,14 @@ class DailyVerseCard extends StatelessWidget {
         final isSelected = language == currentLanguage;
 
         // Determine background and text colors for proper contrast
-        final backgroundColor = isSelected ? theme.colorScheme.secondary : theme.colorScheme.surface;
+        final backgroundColor = isSelected
+            ? theme.colorScheme.secondary
+            : theme.colorScheme.surface;
 
         // Use explicit contrast colors to ensure visibility
-        final textColor = isSelected ? theme.colorScheme.onSecondary : UiUtils.getContrastColor(backgroundColor);
+        final textColor = isSelected
+            ? theme.colorScheme.onSecondary
+            : UiUtils.getContrastColor(backgroundColor);
 
         return Expanded(
           child: GestureDetector(
@@ -420,13 +431,16 @@ class DailyVerseCard extends StatelessWidget {
                 color: backgroundColor,
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: isSelected ? theme.colorScheme.secondary : theme.colorScheme.primary.withValues(alpha: 0.3),
+                  color: isSelected
+                      ? theme.colorScheme.secondary
+                      : theme.colorScheme.primary.withValues(alpha: 0.3),
                   width: 1.5,
                 ),
                 boxShadow: isSelected
                     ? [
                         BoxShadow(
-                          color: theme.colorScheme.secondary.withValues(alpha: 0.4),
+                          color: theme.colorScheme.secondary
+                              .withValues(alpha: 0.4),
                           blurRadius: 6,
                           offset: const Offset(0, 3),
                         ),

@@ -109,7 +109,8 @@ class SavedGuidesRepositoryImpl implements SavedGuidesRepository {
             (models) => models.map((model) => model.toEntity()).toList(),
           );
     } catch (e) {
-      return Stream.error(CacheFailure(message: 'Failed to watch saved guides: $e'));
+      return Stream.error(
+          CacheFailure(message: 'Failed to watch saved guides: $e'));
     }
   }
 
@@ -120,7 +121,8 @@ class SavedGuidesRepositoryImpl implements SavedGuidesRepository {
             (models) => models.map((model) => model.toEntity()).toList(),
           );
     } catch (e) {
-      return Stream.error(CacheFailure(message: 'Failed to watch recent guides: $e'));
+      return Stream.error(
+          CacheFailure(message: 'Failed to watch recent guides: $e'));
     }
   }
 
@@ -282,7 +284,8 @@ class SavedGuidesRepositoryImpl implements SavedGuidesRepository {
   }
 
   /// Helper method to cache guides locally
-  Future<void> _cacheGuides(List<SavedGuideEntity> guides, bool areSaved) async {
+  Future<void> _cacheGuides(
+      List<SavedGuideEntity> guides, bool areSaved) async {
     try {
       for (final guide in guides) {
         final model = SavedGuideModel.fromEntity(guide);

@@ -11,7 +11,8 @@ class GetDailyVerse implements UseCase<DailyVerseEntity, GetDailyVerseParams> {
   GetDailyVerse(this.repository);
 
   @override
-  Future<Either<Failure, DailyVerseEntity>> call(GetDailyVerseParams params) async {
+  Future<Either<Failure, DailyVerseEntity>> call(
+      GetDailyVerseParams params) async {
     if (params.date != null) {
       return await repository.getDailyVerse(params.date!);
     } else {
@@ -30,5 +31,6 @@ class GetDailyVerseParams {
   factory GetDailyVerseParams.today() => GetDailyVerseParams();
 
   /// Create params for specific date
-  factory GetDailyVerseParams.forDate(DateTime date) => GetDailyVerseParams(date: date);
+  factory GetDailyVerseParams.forDate(DateTime date) =>
+      GetDailyVerseParams(date: date);
 }
