@@ -22,8 +22,7 @@ class DailyVerseRepositoryImpl implements DailyVerseRepository {
         _cacheService = cacheService;
 
   @override
-  Future<Either<Failure, DailyVerseEntity>> getTodaysVerse() async =>
-      getDailyVerse(DateTime.now());
+  Future<Either<Failure, DailyVerseEntity>> getTodaysVerse() async => getDailyVerse(DateTime.now());
 
   @override
   Future<Either<Failure, DailyVerseEntity>> getDailyVerse(DateTime date) async {

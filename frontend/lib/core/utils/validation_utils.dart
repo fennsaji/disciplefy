@@ -8,14 +8,12 @@ class ValidationUtils {
   /// Validates that a string is not null, not empty, and not just whitespace.
   ///
   /// Returns true if the string contains meaningful content.
-  static bool isNotNullOrEmptyString(String? value) =>
-      value != null && value.trim().isNotEmpty;
+  static bool isNotNullOrEmptyString(String? value) => value != null && value.trim().isNotEmpty;
 
   /// Validates that a string is null, empty, or just whitespace.
   ///
   /// Returns true if the string is empty or contains no meaningful content.
-  static bool isNullOrEmptyString(String? value) =>
-      value == null || value.trim().isEmpty;
+  static bool isNullOrEmptyString(String? value) => value == null || value.trim().isEmpty;
 
   /// Validates string length is within specified bounds.
   ///
@@ -24,8 +22,7 @@ class ValidationUtils {
   /// [maxLength] Maximum allowed length (inclusive)
   ///
   /// Returns true if length is within bounds.
-  static bool isValidLength(String? value,
-      {int minLength = 0, int? maxLength}) {
+  static bool isValidLength(String? value, {int minLength = 0, int? maxLength}) {
     if (value == null) return minLength == 0;
 
     final length = value.trim().length;
@@ -38,8 +35,7 @@ class ValidationUtils {
   /// Validates that a list is not null and not empty.
   ///
   /// Returns true if the list contains at least one element.
-  static bool isNotNullOrEmpty<T>(List<T>? list) =>
-      list != null && list.isNotEmpty;
+  static bool isNotNullOrEmpty<T>(List<T>? list) => list != null && list.isNotEmpty;
 
   /// Validates that a list is null or empty.
   ///
@@ -163,8 +159,7 @@ class ValidationUtils {
   /// [errorMessage] Error message if validation failed
   ///
   /// Returns ValidationResult instance.
-  static ValidationResult createResult(bool isValid, [String? errorMessage]) =>
-      ValidationResult(
+  static ValidationResult createResult(bool isValid, [String? errorMessage]) => ValidationResult(
         isValid: isValid,
         errorMessage: isValid ? null : errorMessage,
       );
@@ -187,19 +182,15 @@ class ValidationResult {
   const ValidationResult.valid() : this(isValid: true);
 
   /// Creates a failed validation result with an error message.
-  const ValidationResult.invalid(String errorMessage)
-      : this(isValid: false, errorMessage: errorMessage);
+  const ValidationResult.invalid(String errorMessage) : this(isValid: false, errorMessage: errorMessage);
 
   @override
-  String toString() =>
-      'ValidationResult(isValid: $isValid, errorMessage: $errorMessage)';
+  String toString() => 'ValidationResult(isValid: $isValid, errorMessage: $errorMessage)';
 
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
-    return other is ValidationResult &&
-        other.isValid == isValid &&
-        other.errorMessage == errorMessage;
+    return other is ValidationResult && other.isValid == isValid && other.errorMessage == errorMessage;
   }
 
   @override

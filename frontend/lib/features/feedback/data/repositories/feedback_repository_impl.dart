@@ -22,8 +22,7 @@ class FeedbackRepositoryImpl implements FeedbackRepository {
     } on NetworkException catch (e) {
       return Left(NetworkFailure(message: e.message));
     } on SocketException catch (e) {
-      return Left(
-          NetworkFailure(message: 'Network connection failed: ${e.message}'));
+      return Left(NetworkFailure(message: 'Network connection failed: ${e.message}'));
     } catch (e) {
       return Left(ServerFailure(message: 'Unexpected error: $e'));
     }

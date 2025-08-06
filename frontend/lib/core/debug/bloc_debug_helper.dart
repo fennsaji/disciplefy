@@ -75,10 +75,8 @@ class BlocDebugHelper {
     Duration? duration,
   }) {
     if (kDebugMode) {
-      final durationText =
-          duration != null ? ' (${duration.inMilliseconds}ms)' : '';
-      print(
-          '[BLoC Debug] $blocName: Finished handling event $eventName$durationText');
+      final durationText = duration != null ? ' (${duration.inMilliseconds}ms)' : '';
+      print('[BLoC Debug] $blocName: Finished handling event $eventName$durationText');
     }
   }
 
@@ -134,8 +132,7 @@ extension BlocEmitterDebugExtension<T> on Emitter<T> {
     String? eventName,
     String? blocName,
   }) {
-    BlocDebugHelper.safeEmit(this, state,
-        eventName: eventName, blocName: blocName);
+    BlocDebugHelper.safeEmit(this, state, eventName: eventName, blocName: blocName);
   }
 
   /// Safely emits a state after an async operation
@@ -144,13 +141,11 @@ extension BlocEmitterDebugExtension<T> on Emitter<T> {
     String? eventName,
     String? blocName,
   }) =>
-      BlocDebugHelper.safeEmitAsync(this, state,
-          eventName: eventName, blocName: blocName);
+      BlocDebugHelper.safeEmitAsync(this, state, eventName: eventName, blocName: blocName);
 
   /// Validates that this emitter is still valid
   bool isValid({String? eventName, String? blocName}) =>
-      BlocDebugHelper.validateEmitter(this,
-          eventName: eventName, blocName: blocName);
+      BlocDebugHelper.validateEmitter(this, eventName: eventName, blocName: blocName);
 }
 
 /// Example usage:

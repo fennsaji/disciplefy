@@ -10,8 +10,7 @@ import 'recommended_topics_state.dart';
 ///
 /// This BLoC follows the Single Responsibility Principle by handling
 /// only recommended topics loading and management.
-class RecommendedTopicsBloc
-    extends Bloc<RecommendedTopicsEvent, RecommendedTopicsState> {
+class RecommendedTopicsBloc extends Bloc<RecommendedTopicsEvent, RecommendedTopicsState> {
   final RecommendedGuidesService _topicsService;
 
   RecommendedTopicsBloc({

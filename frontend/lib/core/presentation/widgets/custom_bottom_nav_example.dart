@@ -10,23 +10,17 @@ class CustomBottomNavigationExample extends StatefulWidget {
   const CustomBottomNavigationExample({super.key});
 
   @override
-  State<CustomBottomNavigationExample> createState() =>
-      _CustomBottomNavigationExampleState();
+  State<CustomBottomNavigationExample> createState() => _CustomBottomNavigationExampleState();
 }
 
-class _CustomBottomNavigationExampleState
-    extends State<CustomBottomNavigationExample> {
+class _CustomBottomNavigationExampleState extends State<CustomBottomNavigationExample> {
   int _selectedIndex = 0;
 
   final List<Widget> _screens = [
-    const Center(
-        child: Text('Home Screen', style: TextStyle(color: Colors.white))),
-    const Center(
-        child: Text('Study Screen', style: TextStyle(color: Colors.white))),
-    const Center(
-        child: Text('Saved Screen', style: TextStyle(color: Colors.white))),
-    const Center(
-        child: Text('Settings Screen', style: TextStyle(color: Colors.white))),
+    const Center(child: Text('Home Screen', style: TextStyle(color: Colors.white))),
+    const Center(child: Text('Study Screen', style: TextStyle(color: Colors.white))),
+    const Center(child: Text('Saved Screen', style: TextStyle(color: Colors.white))),
+    const Center(child: Text('Settings Screen', style: TextStyle(color: Colors.white))),
   ];
 
   @override
@@ -133,14 +127,10 @@ class _FixedAppShellState extends State<FixedAppShell> {
   int _selectedIndex = 0;
 
   final List<Widget> _screens = [
-    const Center(
-        child: Text('Home Screen', style: TextStyle(color: Colors.white))),
-    const Center(
-        child: Text('Study Screen', style: TextStyle(color: Colors.white))),
-    const Center(
-        child: Text('Saved Screen', style: TextStyle(color: Colors.white))),
-    const Center(
-        child: Text('Settings Screen', style: TextStyle(color: Colors.white))),
+    const Center(child: Text('Home Screen', style: TextStyle(color: Colors.white))),
+    const Center(child: Text('Study Screen', style: TextStyle(color: Colors.white))),
+    const Center(child: Text('Saved Screen', style: TextStyle(color: Colors.white))),
+    const Center(child: Text('Settings Screen', style: TextStyle(color: Colors.white))),
   ];
 
   @override
@@ -175,12 +165,9 @@ class _FixedAppShellState extends State<FixedAppShell> {
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
                   _buildNavItem(0, Icons.home_outlined, Icons.home, 'Home'),
-                  _buildNavItem(
-                      1, Icons.edit_note_outlined, Icons.edit_note, 'Study'),
-                  _buildNavItem(
-                      2, Icons.bookmark_outline, Icons.bookmark, 'Saved'),
-                  _buildNavItem(
-                      3, Icons.settings_outlined, Icons.settings, 'Settings'),
+                  _buildNavItem(1, Icons.edit_note_outlined, Icons.edit_note, 'Study'),
+                  _buildNavItem(2, Icons.bookmark_outline, Icons.bookmark, 'Saved'),
+                  _buildNavItem(3, Icons.settings_outlined, Icons.settings, 'Settings'),
                 ],
               ),
             ),
@@ -188,8 +175,7 @@ class _FixedAppShellState extends State<FixedAppShell> {
         ),
       );
 
-  Widget _buildNavItem(
-      int index, IconData icon, IconData activeIcon, String label) {
+  Widget _buildNavItem(int index, IconData icon, IconData activeIcon, String label) {
     final isSelected = _selectedIndex == index;
     const activeColor = Color(0xFF6A4FB6);
     const inactiveColor = Color(0xFF5E5E5E);
@@ -212,9 +198,7 @@ class _FixedAppShellState extends State<FixedAppShell> {
                   width: 28,
                   height: 28,
                   decoration: BoxDecoration(
-                    color: isSelected
-                        ? activeColor.withOpacity(0.15)
-                        : Colors.transparent,
+                    color: isSelected ? activeColor.withOpacity(0.15) : Colors.transparent,
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Icon(

@@ -79,18 +79,15 @@ class AuthenticationService {
   Future<bool> signInWithGoogle() async {
     try {
       print('🔐 [AUTH SERVICE] 🚀 Initiating Google OAuth PKCE flow...');
-      print(
-          '🔐 [AUTH SERVICE] - Backend: OAuth redirects to Supabase auth endpoints');
+      print('🔐 [AUTH SERVICE] - Backend: OAuth redirects to Supabase auth endpoints');
 
       final success = await _oauthService.signInWithGoogle();
 
       if (success) {
-        print(
-            '🔐 [AUTH SERVICE] ✅ Google OAuth PKCE flow initiated successfully');
+        print('🔐 [AUTH SERVICE] ✅ Google OAuth PKCE flow initiated successfully');
 
         // For corrected PKCE flow, check if session was established
-        final sessionEstablished =
-            await _oauthService.checkOAuthSessionEstablished();
+        final sessionEstablished = await _oauthService.checkOAuthSessionEstablished();
 
         if (sessionEstablished && currentUser != null) {
           print('🔐 [AUTH SERVICE] ✅ Google OAuth PKCE session established');
@@ -105,8 +102,7 @@ class AuthenticationService {
 
           return true;
         } else {
-          print(
-              '🔐 [AUTH SERVICE] ⚠️ Google OAuth PKCE session not established');
+          print('🔐 [AUTH SERVICE] ⚠️ Google OAuth PKCE session not established');
           return false;
         }
       } else {
@@ -125,20 +121,17 @@ class AuthenticationService {
       if (e is auth_exceptions.AuthException) {
         rethrow;
       }
-      throw auth_exceptions.AuthenticationFailedException(
-          'Google authentication failed: ${e.toString()}');
+      throw auth_exceptions.AuthenticationFailedException('Google authentication failed: ${e.toString()}');
     }
   }
 
   /// Process Google OAuth callback with authorization code
-  Future<bool> processGoogleOAuthCallback(
-      GoogleOAuthCallbackParams params) async {
+  Future<bool> processGoogleOAuthCallback(GoogleOAuthCallbackParams params) async {
     try {
       // If there's an OAuth error, handle it
       if (params.error != null) {
         if (params.error == 'access_denied') {
-          throw const auth_exceptions.OAuthCancelledException(
-              'Google OAuth was cancelled by user');
+          throw const auth_exceptions.OAuthCancelledException('Google OAuth was cancelled by user');
         }
         String errorMessage = 'Google OAuth failed';
         if (params.errorDescription != null) {
@@ -156,10 +149,8 @@ class AuthenticationService {
       );
 
       if (success && currentUser != null) {
-        print(
-            '🔍 [DEBUG] Current user after session recovery: ${currentUser?.id}');
-        print(
-            '🔍 [DEBUG] Current user isAnonymous: ${currentUser?.isAnonymous}');
+        print('🔍 [DEBUG] Current user after session recovery: ${currentUser?.id}');
+        print('🔍 [DEBUG] Current user isAnonymous: ${currentUser?.isAnonymous}');
 
         // Store authentication state
         print('🔍 [DEBUG] About to store auth data...');
@@ -182,8 +173,7 @@ class AuthenticationService {
 
         return true;
       } else {
-        throw const auth_exceptions.AuthenticationFailedException(
-            'OAuth callback processing failed');
+        throw const auth_exceptions.AuthenticationFailedException('OAuth callback processing failed');
       }
     } catch (e) {
       if (kDebugMode) {
@@ -221,19 +211,16 @@ class AuthenticationService {
       final user = response.user;
 
       if (user == null) {
-        throw const auth_exceptions.AuthenticationFailedException(
-            'Failed to create Supabase anonymous user');
+        throw const auth_exceptions.AuthenticationFailedException('Failed to create Supabase anonymous user');
       }
 
       print('🔍 [DEBUG] Supabase anonymous user created: ${user.id}');
-      print(
-          '🔍 [DEBUG] Anonymous user JWT token available: ${response.session?.accessToken != null}');
+      print('🔍 [DEBUG] Anonymous user JWT token available: ${response.session?.accessToken != null}');
 
       // Step 2: Store auth state properly - using JWT token, not session_id
       await _storageService.storeAuthData(
         AuthDataStorageParams.guest(
-          accessToken:
-              response.session!.accessToken, // ✅ Using actual JWT token
+          accessToken: response.session!.accessToken, // ✅ Using actual JWT token
           userId: user.id, // ✅ Using Supabase user ID
         ),
       );

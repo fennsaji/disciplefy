@@ -20,8 +20,7 @@ class OnboardingWelcomePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => BlocProvider(
-        create: (context) =>
-            sl<OnboardingBloc>()..add(const LoadOnboardingState()),
+        create: (context) => sl<OnboardingBloc>()..add(const LoadOnboardingState()),
         child: const _OnboardingWelcomeContent(),
       );
 }
@@ -174,8 +173,7 @@ class _OnboardingWelcomeContent extends StatelessWidget {
                       const _WelcomeFeatureItem(
                         icon: Icons.auto_awesome,
                         title: 'AI-Powered Study Guides',
-                        subtitle:
-                            'Personalized insights for any verse or topic',
+                        subtitle: 'Personalized insights for any verse or topic',
                       ),
                       const SizedBox(height: 16),
                       const _WelcomeFeatureItem(
@@ -203,11 +201,7 @@ class _OnboardingWelcomeContent extends StatelessWidget {
                     return SizedBox(
                       width: double.infinity,
                       child: ElevatedButton(
-                        onPressed: isLoading
-                            ? null
-                            : () => context
-                                .read<OnboardingBloc>()
-                                .add(const NextStep()),
+                        onPressed: isLoading ? null : () => context.read<OnboardingBloc>().add(const NextStep()),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppTheme.primaryColor,
                           foregroundColor: Colors.white,
@@ -226,8 +220,7 @@ class _OnboardingWelcomeContent extends StatelessWidget {
                                     height: 20,
                                     child: CircularProgressIndicator(
                                       strokeWidth: 2,
-                                      valueColor: AlwaysStoppedAnimation<Color>(
-                                          Colors.white),
+                                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                                     ),
                                   ),
                                   const SizedBox(width: 12),
