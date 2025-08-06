@@ -35,51 +35,68 @@ class Logger {
   }
 
   /// Log a verbose message (detailed debugging information)
-  static void verbose(String message, {String? tag, Map<String, dynamic>? context}) {
+  static void verbose(String message,
+      {String? tag, Map<String, dynamic>? context}) {
     _log(LogLevel.verbose, message, tag: tag, context: context);
   }
 
   /// Log a debug message (general debugging information)
-  static void debug(String message, {String? tag, Map<String, dynamic>? context}) {
+  static void debug(String message,
+      {String? tag, Map<String, dynamic>? context}) {
     _log(LogLevel.debug, message, tag: tag, context: context);
   }
 
   /// Log an info message (general information)
-  static void info(String message, {String? tag, Map<String, dynamic>? context}) {
+  static void info(String message,
+      {String? tag, Map<String, dynamic>? context}) {
     _log(LogLevel.info, message, tag: tag, context: context);
   }
 
   /// Log a warning message (potentially harmful situations)
-  static void warning(String message, {String? tag, Map<String, dynamic>? context}) {
+  static void warning(String message,
+      {String? tag, Map<String, dynamic>? context}) {
     _log(LogLevel.warning, message, tag: tag, context: context);
   }
 
   /// Log an error message (error events that might still allow the app to continue)
   static void error(String message,
-      {String? tag, Map<String, dynamic>? context, Object? error, StackTrace? stackTrace}) {
-    _log(LogLevel.error, message, tag: tag, context: context, error: error, stackTrace: stackTrace);
+      {String? tag,
+      Map<String, dynamic>? context,
+      Object? error,
+      StackTrace? stackTrace}) {
+    _log(LogLevel.error, message,
+        tag: tag, context: context, error: error, stackTrace: stackTrace);
   }
 
   /// Log a critical message (very severe error events)
   static void critical(String message,
-      {String? tag, Map<String, dynamic>? context, Object? error, StackTrace? stackTrace}) {
-    _log(LogLevel.critical, message, tag: tag, context: context, error: error, stackTrace: stackTrace);
+      {String? tag,
+      Map<String, dynamic>? context,
+      Object? error,
+      StackTrace? stackTrace}) {
+    _log(LogLevel.critical, message,
+        tag: tag, context: context, error: error, stackTrace: stackTrace);
   }
 
   /// Log performance metrics
-  static void performance(String operation, Duration duration, {String? tag, Map<String, dynamic>? context}) {
+  static void performance(String operation, Duration duration,
+      {String? tag, Map<String, dynamic>? context}) {
     final perfContext = {
       'operation': operation,
       'duration_ms': duration.inMilliseconds,
       'duration_readable': '${duration.inMilliseconds}ms',
       ...?context,
     };
-    _log(LogLevel.info, 'Performance: $operation completed', tag: tag ?? 'PERFORMANCE', context: perfContext);
+    _log(LogLevel.info, 'Performance: $operation completed',
+        tag: tag ?? 'PERFORMANCE', context: perfContext);
   }
 
   /// Log API calls
-  static void apiCall(String method, String endpoint, {int? statusCode, Duration? duration, String? tag}) {
-    final message = statusCode != null ? '$method $endpoint → $statusCode' : '$method $endpoint';
+  static void apiCall(String method, String endpoint,
+      {int? statusCode, Duration? duration, String? tag}) {
+    final message = statusCode != null
+        ? '$method $endpoint → $statusCode'
+        : '$method $endpoint';
 
     final context = <String, dynamic>{
       'method': method,
@@ -88,28 +105,34 @@ class Logger {
       if (duration != null) 'duration_ms': duration.inMilliseconds,
     };
 
-    final level = statusCode != null && statusCode >= 400 ? LogLevel.error : LogLevel.info;
+    final level = statusCode != null && statusCode >= 400
+        ? LogLevel.error
+        : LogLevel.info;
     _log(level, message, tag: tag ?? 'API', context: context);
   }
 
   /// Log user actions for analytics
-  static void userAction(String action, {String? screen, Map<String, dynamic>? properties}) {
+  static void userAction(String action,
+      {String? screen, Map<String, dynamic>? properties}) {
     final context = {
       'action': action,
       if (screen != null) 'screen': screen,
       ...?properties,
     };
-    _log(LogLevel.info, 'User Action: $action', tag: 'USER_ACTION', context: context);
+    _log(LogLevel.info, 'User Action: $action',
+        tag: 'USER_ACTION', context: context);
   }
 
   /// Log navigation events
-  static void navigation(String from, String to, {Map<String, dynamic>? context}) {
+  static void navigation(String from, String to,
+      {Map<String, dynamic>? context}) {
     final navContext = {
       'from': from,
       'to': to,
       ...?context,
     };
-    _log(LogLevel.debug, 'Navigation: $from → $to', tag: 'NAVIGATION', context: navContext);
+    _log(LogLevel.debug, 'Navigation: $from → $to',
+        tag: 'NAVIGATION', context: navContext);
   }
 
   /// Internal logging implementation
@@ -159,7 +182,8 @@ class Logger {
 
     // In production, you might want to send critical/error logs to a service
     if (kReleaseMode && level.priority >= LogLevel.error.priority) {
-      _sendToLoggingService(level, message, tag: moduleTag, context: context, error: error);
+      _sendToLoggingService(level, message,
+          tag: moduleTag, context: context, error: error);
     }
   }
 
@@ -255,12 +279,18 @@ extension LoggerExtension on Object {
   }
 
   /// Log error message with automatic class tagging
-  void logError(String message, {Map<String, dynamic>? context, Object? error, StackTrace? stackTrace}) {
-    Logger.error(message, tag: _className, context: context, error: error, stackTrace: stackTrace);
+  void logError(String message,
+      {Map<String, dynamic>? context, Object? error, StackTrace? stackTrace}) {
+    Logger.error(message,
+        tag: _className,
+        context: context,
+        error: error,
+        stackTrace: stackTrace);
   }
 
   /// Log performance with automatic class tagging
-  void logPerformance(String operation, Duration duration, {Map<String, dynamic>? context}) {
+  void logPerformance(String operation, Duration duration,
+      {Map<String, dynamic>? context}) {
     Logger.performance(operation, duration, tag: _className, context: context);
   }
 }
@@ -268,47 +298,56 @@ extension LoggerExtension on Object {
 /// Module-specific loggers for consistency
 class ModuleLoggers {
   /// Auth module logger
-  static void auth(LogLevel level, String message, {Map<String, dynamic>? context}) {
+  static void auth(LogLevel level, String message,
+      {Map<String, dynamic>? context}) {
     Logger._log(level, message, tag: 'AUTH', context: context);
   }
 
   /// Home module logger
-  static void home(LogLevel level, String message, {Map<String, dynamic>? context}) {
+  static void home(LogLevel level, String message,
+      {Map<String, dynamic>? context}) {
     Logger._log(level, message, tag: 'HOME', context: context);
   }
 
   /// Study Generation module logger
-  static void study(LogLevel level, String message, {Map<String, dynamic>? context}) {
+  static void study(LogLevel level, String message,
+      {Map<String, dynamic>? context}) {
     Logger._log(level, message, tag: 'STUDY', context: context);
   }
 
   /// Daily Verse module logger
-  static void dailyVerse(LogLevel level, String message, {Map<String, dynamic>? context}) {
+  static void dailyVerse(LogLevel level, String message,
+      {Map<String, dynamic>? context}) {
     Logger._log(level, message, tag: 'DAILY_VERSE', context: context);
   }
 
   /// Settings module logger
-  static void settings(LogLevel level, String message, {Map<String, dynamic>? context}) {
+  static void settings(LogLevel level, String message,
+      {Map<String, dynamic>? context}) {
     Logger._log(level, message, tag: 'SETTINGS', context: context);
   }
 
   /// Onboarding module logger
-  static void onboarding(LogLevel level, String message, {Map<String, dynamic>? context}) {
+  static void onboarding(LogLevel level, String message,
+      {Map<String, dynamic>? context}) {
     Logger._log(level, message, tag: 'ONBOARDING', context: context);
   }
 
   /// Saved Guides module logger
-  static void savedGuides(LogLevel level, String message, {Map<String, dynamic>? context}) {
+  static void savedGuides(LogLevel level, String message,
+      {Map<String, dynamic>? context}) {
     Logger._log(level, message, tag: 'SAVED_GUIDES', context: context);
   }
 
   /// User Profile module logger
-  static void userProfile(LogLevel level, String message, {Map<String, dynamic>? context}) {
+  static void userProfile(LogLevel level, String message,
+      {Map<String, dynamic>? context}) {
     Logger._log(level, message, tag: 'USER_PROFILE', context: context);
   }
 
   /// Feedback module logger
-  static void feedback(LogLevel level, String message, {Map<String, dynamic>? context}) {
+  static void feedback(LogLevel level, String message,
+      {Map<String, dynamic>? context}) {
     Logger._log(level, message, tag: 'FEEDBACK', context: context);
   }
 }

@@ -12,33 +12,42 @@ class HttpService {
   bool _isDisposed = false;
 
   /// Stream controller for authentication failure events
-  static final StreamController<String> _authFailureController = StreamController<String>.broadcast();
+  static final StreamController<String> _authFailureController =
+      StreamController<String>.broadcast();
 
   /// Stream of authentication failure events
   static Stream<String> get authFailureStream => _authFailureController.stream;
 
-  HttpService({http.Client? httpClient}) : _httpClient = httpClient ?? http.Client();
+  HttpService({http.Client? httpClient})
+      : _httpClient = httpClient ?? http.Client();
 
   /// Make an authenticated HTTP GET request with automatic 401 handling
-  Future<http.Response> get(String url, {Map<String, String>? headers}) async => await _makeRequest(
+  Future<http.Response> get(String url, {Map<String, String>? headers}) async =>
+      await _makeRequest(
         () => _httpClient.get(Uri.parse(url), headers: headers),
         url,
       );
 
   /// Make an authenticated HTTP POST request with automatic 401 handling
-  Future<http.Response> post(String url, {Map<String, String>? headers, String? body}) async => await _makeRequest(
+  Future<http.Response> post(String url,
+          {Map<String, String>? headers, String? body}) async =>
+      await _makeRequest(
         () => _httpClient.post(Uri.parse(url), headers: headers, body: body),
         url,
       );
 
   /// Make an authenticated HTTP PUT request with automatic 401 handling
-  Future<http.Response> put(String url, {Map<String, String>? headers, String? body}) async => await _makeRequest(
+  Future<http.Response> put(String url,
+          {Map<String, String>? headers, String? body}) async =>
+      await _makeRequest(
         () => _httpClient.put(Uri.parse(url), headers: headers, body: body),
         url,
       );
 
   /// Make an authenticated HTTP DELETE request with automatic 401 handling
-  Future<http.Response> delete(String url, {Map<String, String>? headers}) async => await _makeRequest(
+  Future<http.Response> delete(String url,
+          {Map<String, String>? headers}) async =>
+      await _makeRequest(
         () => _httpClient.delete(Uri.parse(url), headers: headers),
         url,
       );
@@ -58,7 +67,8 @@ class HttpService {
 
     while (retryCount <= _maxRetries) {
       try {
-        final response = await requestFunction().timeout(const Duration(seconds: 10));
+        final response =
+            await requestFunction().timeout(const Duration(seconds: 10));
 
         // Handle 401 Unauthorized
         if (response.statusCode == 401) {
@@ -82,7 +92,8 @@ class HttpService {
               );
             }
           } else {
-            print('🔐 [HTTP] No valid session or max retries reached, logging out...');
+            print(
+                '🔐 [HTTP] No valid session or max retries reached, logging out...');
             await _handleAuthenticationFailure();
             throw const AuthenticationException(
               message: 'Authentication required. Please login.',
@@ -129,7 +140,8 @@ class HttpService {
 
       // Check if token is close to expiry (within 5 minutes)
       final now = DateTime.now();
-      final expiryTime = DateTime.fromMillisecondsSinceEpoch(currentSession.expiresAt! * 1000);
+      final expiryTime =
+          DateTime.fromMillisecondsSinceEpoch(currentSession.expiresAt! * 1000);
 
       if (expiryTime.isAfter(now.add(const Duration(minutes: 5)))) {
         print('🔐 [HTTP] Token is still valid, no refresh needed');

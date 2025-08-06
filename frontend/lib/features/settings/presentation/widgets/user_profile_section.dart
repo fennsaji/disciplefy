@@ -14,7 +14,8 @@ class UserProfileSection extends StatelessWidget {
   const UserProfileSection({super.key});
 
   @override
-  Widget build(BuildContext context) => BlocBuilder<AuthBloc, auth_states.AuthState>(
+  Widget build(BuildContext context) =>
+      BlocBuilder<AuthBloc, auth_states.AuthState>(
         builder: (context, authState) {
           if (authState is auth_states.AuthenticatedState) {
             return _UserProfileTile(authState: authState);
@@ -64,7 +65,9 @@ class _UserProfileTile extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            authState.user.userMetadata?['display_name']?.toString() ?? authState.user.email?.split('@')[0] ?? 'User',
+            authState.user.userMetadata?['display_name']?.toString() ??
+                authState.user.email?.split('@')[0] ??
+                'User',
             style: GoogleFonts.inter(
               fontSize: 18,
               fontWeight: FontWeight.w600,

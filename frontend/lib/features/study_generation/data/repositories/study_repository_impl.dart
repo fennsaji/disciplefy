@@ -45,7 +45,8 @@ class StudyRepositoryImpl implements StudyRepository {
       // Check network connectivity
       if (!await _networkInfo.isConnected) {
         return const Left(NetworkFailure(
-          message: 'No internet connection. Please check your network and try again.',
+          message:
+              'No internet connection. Please check your network and try again.',
           code: 'NO_CONNECTION',
         ));
       }
@@ -101,10 +102,12 @@ class StudyRepositoryImpl implements StudyRepository {
   }
 
   @override
-  Future<List<StudyGuide>> getCachedStudyGuides() => _localDataSource.getCachedStudyGuides();
+  Future<List<StudyGuide>> getCachedStudyGuides() =>
+      _localDataSource.getCachedStudyGuides();
 
   @override
-  Future<bool> cacheStudyGuide(StudyGuide studyGuide) => _localDataSource.cacheStudyGuide(studyGuide);
+  Future<bool> cacheStudyGuide(StudyGuide studyGuide) =>
+      _localDataSource.cacheStudyGuide(studyGuide);
 
   @override
   Future<bool> clearCache() => _localDataSource.clearCache();
