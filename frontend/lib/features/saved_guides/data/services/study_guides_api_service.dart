@@ -7,12 +7,14 @@ import '../models/saved_guide_model.dart';
 
 /// API service for managing study guides (saved/recent)
 class StudyGuidesApiService {
-  static String get _baseUrl => AppConfig.baseApiUrl.replaceAll('/functions/v1', '');
+  static String get _baseUrl =>
+      AppConfig.baseApiUrl.replaceAll('/functions/v1', '');
   static const String _studyGuidesEndpoint = '/functions/v1/study-guides';
 
   final HttpService _httpService;
 
-  StudyGuidesApiService({HttpService? httpService}) : _httpService = httpService ?? HttpServiceProvider.instance;
+  StudyGuidesApiService({HttpService? httpService})
+      : _httpService = httpService ?? HttpServiceProvider.instance;
 
   /// Fetch study guides from API
   /// [savedOnly] - if true, only fetch saved guides
@@ -36,7 +38,8 @@ class StudyGuidesApiService {
         queryParams['saved'] = 'false';
       }
 
-      final uri = Uri.parse('$_baseUrl$_studyGuidesEndpoint').replace(queryParameters: queryParams);
+      final uri = Uri.parse('$_baseUrl$_studyGuidesEndpoint')
+          .replace(queryParameters: queryParams);
 
       // Prepare headers
       final headers = await _httpService.createHeaders();
@@ -53,7 +56,8 @@ class StudyGuidesApiService {
           final guidesData = jsonData['data']['guides'] as List<dynamic>? ?? [];
 
           return guidesData
-              .map((guideJson) => SavedGuideModel.fromApiResponse(guideJson as Map<String, dynamic>))
+              .map((guideJson) => SavedGuideModel.fromApiResponse(
+                  guideJson as Map<String, dynamic>))
               .toList();
         } else {
           throw const ServerException(
@@ -116,7 +120,8 @@ class StudyGuidesApiService {
         );
       } else {
         throw ServerException(
-          message: 'Failed to ${save ? 'save' : 'unsave'} study guide: ${response.statusCode}',
+          message:
+              'Failed to ${save ? 'save' : 'unsave'} study guide: ${response.statusCode}',
           code: 'SERVER_ERROR',
         );
       }

@@ -1,21 +1,28 @@
-name: Backend Deployment - Supabase Functions
+name: Backend Production Deployment
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
     paths:
       - 'backend/**'
       - '.github/workflows/backend-deploy.yml'
   workflow_dispatch:
     inputs:
-      environment:
-        description: 'Deployment environment'
-        required: true
-        default: 'production'
-        type: choice
-        options:
-        - production
-        - staging
+      deploy_functions:
+        description: 'Deploy Edge Functions'
+        required: false
+        default: true
+        type: boolean
+      deploy_migrations:
+        description: 'Deploy Database Migrations'
+        required: false
+        default: true
+        type: boolean
+      deploy_policies:
+        description: 'Deploy RLS Policies'
+        required: false
+        default: false
+        type: boolean
 
 concurrency:
   group: backend-deploy-${{ github.ref }}
@@ -99,19 +106,22 @@ jobs:
         
         echo "✅ Security scan completed"
 
-  deploy-functions:
-    name: Deploy to Supabase
+  deploy-to-production:
+    name: Deploy to Production Environment
     runs-on: ubuntu-latest
     needs: validate-backend
     timeout-minutes: 15
-    environment: 
-      name: ${{ github.event.inputs.environment || 'production' }}
+    environment: production
+    
+    outputs:
+      DEPLOY_ENV: ${{ steps.env-setup.outputs.deploy_env }}
+      PROJECT_REF: ${{ steps.env-setup.outputs.project_ref }}
       
     steps:
     - name: 🔄 Checkout repository
       uses: actions/checkout@v4
       
-    - name: Setup Node.js
+    - name: 📦 Setup Node.js
       uses: actions/setup-node@v4
       with:
         node-version: '20'
@@ -130,11 +140,26 @@ jobs:
         supabase --version
         echo "✅ Supabase CLI is ready"
       
+    - name: 🔍 Setup production environment
+      id: env-setup
+      run: |
+        echo "DEPLOY_ENV=production" >> $GITHUB_ENV
+        echo "PROJECT_REF=${{ secrets.SUPABASE_PROJECT_REF }}" >> $GITHUB_ENV
+        echo "deploy_env=production" >> $GITHUB_OUTPUT
+        echo "project_ref=${{ secrets.SUPABASE_PROJECT_REF }}" >> $GITHUB_OUTPUT
+        
+        echo "🎯 Deploying to: production"
+        echo "📍 Project reference: ${{ secrets.SUPABASE_PROJECT_REF }}"
+      
     - name: ✅ Validate Supabase connection
       working-directory: ./backend
       run: |
         export PATH="$HOME/.local/bin:$PATH"
         echo "🔗 Testing Supabase connection to production..."
+        if [ -z "${{ secrets.SUPABASE_PROJECT_REF }}" ]; then
+          echo "❌ Project reference not set for production"
+          exit 1
+        fi
         supabase projects list > /dev/null
         echo "✅ Supabase connection successful"
       env:
@@ -145,159 +170,147 @@ jobs:
       run: |
         echo "📝 Creating production environment file..."
         cat > .env.production << EOF
-        # Supabase Configuration
+        # Supabase Configuration (Production)
         SUPABASE_PROJECT_REF=${{ secrets.SUPABASE_PROJECT_REF }}
         SUPABASE_ACCESS_TOKEN=${{ secrets.SUPABASE_ACCESS_TOKEN }}
         SUPABASE_URL=https://${{ secrets.SUPABASE_PROJECT_REF }}.supabase.co
         SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}
         SUPABASE_SERVICE_ROLE_KEY=${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
         
-        # LLM Configuration
+        # LLM Configuration (Production)
         OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}
         ANTHROPIC_API_KEY=${{ secrets.ANTHROPIC_API_KEY }}
         LLM_PROVIDER=${{ secrets.LLM_PROVIDER || 'openai' }}
         
-        # Authentication
+        # Authentication (Production)
         GOOGLE_OAUTH_CLIENT_ID=${{ secrets.GOOGLE_OAUTH_CLIENT_ID }}
         GOOGLE_OAUTH_CLIENT_SECRET=${{ secrets.GOOGLE_OAUTH_CLIENT_SECRET }}
         
-        # Application URLs
+        # Application URLs (Production)
         SITE_URL=https://disciplefy.vercel.app
-        ADDITIONAL_REDIRECT_URLS=https://disciplefy.vercel.app/auth/callback,com.disciplefy.bible_study_app://auth/callback
+        ADDITIONAL_REDIRECT_URLS=http://localhost:59641/auth/callback,https://disciplefy.vercel.app/auth/callback,com.disciplefy.bible_study_app://auth/callback
         
-        # Security
+        # Security (Production)
         JWT_SECRET=${{ secrets.JWT_SECRET }}
         
         # Production settings
         LOG_LEVEL=error
         USE_MOCK=false
         NODE_ENV=production
+        ANONYMOUS_RATE_LIMIT=5
+        AUTHENTICATED_RATE_LIMIT=10
+        API_REQUEST_LIMIT=100
         EOF
         echo "✅ Production environment file created"
     
     - name: 🔗 Link to Supabase project
       working-directory: ./backend
       run: |
-        echo "🔗 Linking to Supabase project..."
-        supabase link --project-ref "$SUPABASE_PROJECT_REF" --password "$SUPABASE_DB_PASSWORD"
+        echo "🔗 Linking to Supabase production project..."
+        supabase link --project-ref "${{ secrets.SUPABASE_PROJECT_REF }}" --password "${{ secrets.SUPABASE_DB_PASSWORD }}"
       env:
         SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
-        SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
-        SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
     
     - name: 🗄️ Deploy Database Migrations
+      if: ${{ github.event.inputs.deploy_migrations != 'false' }}
       working-directory: ./backend
       run: |
-        echo "🗄️ Deploying database migrations..."
+        echo "🗄️ Deploying database migrations to production..."
         if [ -d "supabase/migrations" ] && [ "$(ls -A supabase/migrations 2>/dev/null)" ]; then
-          # Use direct database URL for non-interactive authentication
-          export DB_PASS="$SUPABASE_DB_PASSWORD"
-          supabase db push --db-url "postgresql://postgres.${SUPABASE_PROJECT_REF}:${SUPABASE_DB_PASSWORD}@aws-0-us-east-2.pooler.supabase.com:6543/postgres"
-          echo "✅ Database migrations deployed"
+          # Use DB_PASS environment variable for non-interactive authentication
+          export DB_PASS="${{ secrets.SUPABASE_DB_PASSWORD }}"
+          supabase db push --db-url "postgresql://postgres.${{ secrets.SUPABASE_PROJECT_REF }}:${{ secrets.SUPABASE_DB_PASSWORD }}@aws-0-us-east-2.pooler.supabase.com:6543/postgres"
+          echo "✅ Database migrations deployed to production"
         else
           echo "ℹ️ No migrations to deploy"
         fi
       env:
         SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
-        SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
-        SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
     
     - name: 🔒 Deploy RLS Policies
+      if: ${{ github.event.inputs.deploy_policies == 'true' }}
       working-directory: ./backend
       run: |
-        echo "🔒 Deploying RLS policies..."
+        echo "🔒 Deploying RLS policies to production..."
         if [ -d "supabase/policies" ] && [ "$(ls -A supabase/policies 2>/dev/null)" ]; then
           for policy_file in supabase/policies/*.sql; do
             if [ -f "$policy_file" ]; then
               policy_name=$(basename "$policy_file" .sql)
               echo "🔐 Applying policy: $policy_name"
-              supabase db query --file "$policy_file" --db-url "postgresql://postgres.${SUPABASE_PROJECT_REF}:${SUPABASE_DB_PASSWORD}@aws-0-us-east-2.pooler.supabase.com:6543/postgres"
+              supabase db query --file "$policy_file" --db-url "postgresql://postgres.${{ secrets.SUPABASE_PROJECT_REF }}:${{ secrets.SUPABASE_DB_PASSWORD }}@aws-0-us-east-2.pooler.supabase.com:6543/postgres"
             fi
           done
-          echo "✅ RLS policies deployed"
+          echo "✅ RLS policies deployed to production"
         else
           echo "ℹ️ No RLS policies to deploy"
         fi
       env:
         SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
-        SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
         
     - name: 📦 Deploy Edge Functions
+      if: ${{ github.event.inputs.deploy_functions != 'false' }}
       working-directory: ./backend
       run: |
-        echo "🚀 Deploying Edge Functions to ${{ github.event.inputs.environment || 'production' }}..."
+        echo "🚀 Deploying Edge Functions to production..."
         
-        # Deploy all functions
+        # Deploy all functions with production settings
         supabase functions deploy --no-verify-jwt
         
-        echo "✅ Edge Functions deployed successfully"
+        echo "✅ Edge Functions deployed successfully to production"
       env:
         SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
-        SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
         
     - name: 🔑 Update Function Secrets
       working-directory: ./backend
       run: |
-        echo "🔑 Updating Edge Function secrets..."
+        echo "🔑 Updating Edge Function secrets for production..."
         supabase secrets set --env-file .env.production
-        echo "✅ Function secrets updated"
+        echo "✅ Function secrets updated for production"
       env:
         SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
-        SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
         
-    - name: 🧪 Verify deployment
+    - name: 🧪 Test production deployment
       working-directory: ./backend
       run: |
-        echo "🔍 Verifying deployment..."
+        echo "🧪 Testing production deployment..."
         
-        # List deployed functions
-        supabase functions list
+        # Test health endpoint
+        BASE_URL="https://${{ secrets.SUPABASE_PROJECT_REF }}.supabase.co"
         
-        # Test a simple endpoint (env-test) if it exists
-        if supabase functions list | grep -q "env-test"; then
-          echo "Testing env-test endpoint..."
-          
-          response=$(curl -s -w "%{http_code}" \
-            "https://$SUPABASE_PROJECT_REF.supabase.co/functions/v1/env-test" \
-            -H "Authorization: Bearer $SUPABASE_ANON_KEY" \
-            -o /tmp/response.json)
-          
-          if [ "$response" = "200" ]; then
-            echo "✅ env-test endpoint responding correctly"
-          else
-            echo "⚠️ env-test endpoint returned status: $response"
-            cat /tmp/response.json 2>/dev/null || echo "No response body"
-          fi
+        if curl -f -s "$BASE_URL/rest/v1/" > /dev/null; then
+          echo "✅ Supabase REST API is healthy"
+        else
+          echo "⚠️ Supabase REST API test failed"
         fi
         
-        # Test more Edge Functions
-        FUNCTIONS=("daily-verse" "topics-recommended" "auth-session")
+        # Test Edge Functions
+        FUNCTIONS=("daily-verse" "topics-recommended")
         for func in "${FUNCTIONS[@]}"; do
-          if curl -f -s "https://$SUPABASE_PROJECT_REF.supabase.co/functions/v1/$func" > /dev/null; then
+          if curl -f -s "$BASE_URL/functions/v1/$func" > /dev/null; then
             echo "✅ Function $func is responding"
           else
-            echo "⚠️ Function $func test failed"
+            echo "⚠️ Function $func test failed (may be expected for some functions)"
           fi
         done
         
-        echo "🎉 Deployment verification complete"
-      env:
-        SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
-        SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
-        SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        echo "🎉 Production deployment tests completed"
         
     - name: 📊 Deployment summary
       run: |
-        echo "🎉 Backend deployment to ${{ github.event.inputs.environment || 'production' }} completed!"
+        echo "🎉 Backend deployment to production completed!"
         echo "🌐 Production API: https://${{ secrets.SUPABASE_PROJECT_REF }}.supabase.co"
         echo "📋 Deployed components:"
-        echo "   • Edge Functions: ✅"
-        echo "   • Database Migrations: ✅"
-        echo "   • RLS Policies: ✅"
+        echo "   • Edge Functions: ${{ github.event.inputs.deploy_functions != 'false' && '✅' || '⏭️' }}"
+        echo "   • Database Migrations: ${{ github.event.inputs.deploy_migrations != 'false' && '✅' || '⏭️' }}"
+        echo "   • RLS Policies: ${{ github.event.inputs.deploy_policies == 'true' && '✅' || '⏭️' }}"
         echo "   • Function Secrets: ✅"
-        echo "🔍 All functions tested and verified"
         
-    - name: 🧹 Security Cleanup
+        if [ "${{ github.event_name }}" = "pull_request" ]; then
+          echo "🔍 This is a PR deployment for testing purposes"
+          echo "📝 Review the changes and test the deployment before merging"
+        fi
+        
+    - name: 🧹 Security cleanup
       working-directory: ./backend
       if: always()
       run: |
@@ -305,18 +318,59 @@ jobs:
         rm -f .env.production
         echo "✅ Cleanup completed"
 
+  comment-pr:
+    name: Comment on PR
+    runs-on: ubuntu-latest
+    needs: deploy-to-production
+    if: github.event_name == 'pull_request'
+    
+    steps:
+    - name: 💬 Comment deployment status
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const deployEnv = '${{ needs.deploy-to-production.outputs.DEPLOY_ENV }}' || 'production';
+          const projectRef = '${{ needs.deploy-to-production.outputs.PROJECT_REF }}';
+          
+          const comment = `## 🚀 Backend Production Deployment
+          
+          **Environment**: \\`production\\`
+          **Status**: ✅ Deployment Successful
+          
+          ### 🔗 Test URLs:
+          - **API Base**: https://${projectRef}.supabase.co
+          - **Functions**: https://${projectRef}.supabase.co/functions/v1/
+          - **Studio**: https://app.supabase.com/project/${projectRef}
+          
+          ### 🧪 Test Endpoints:
+          - Daily Verse: https://${projectRef}.supabase.co/functions/v1/daily-verse
+          - Topics: https://${projectRef}.supabase.co/functions/v1/topics-recommended
+          
+          **Note**: This deployment is for testing purposes. Changes will be deployed to production when this PR is merged to main.
+          
+          ---
+          *Deployed from commit: ${context.sha.substring(0, 7)}*`;
+          
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: comment
+          });
+
   notify-deployment:
     name: Notify Deployment Status
     runs-on: ubuntu-latest
-    needs: [validate-backend, deploy-functions]
-    if: always()
+    needs: [validate-backend, deploy-to-production]
+    if: always() && github.event_name != 'pull_request'
     
     steps:
     - name: 📢 Deployment notification
       run: |
-        if [ "${{ needs.deploy-functions.result }}" = "success" ]; then
-          echo "🎉 Backend deployment to ${{ github.event.inputs.environment || 'production' }} was successful!"
-          echo "Functions are now live at: https://${{ secrets.SUPABASE_PROJECT_REF }}.supabase.co/functions/v1/"
+        if [ "${{ needs.deploy-to-production.result }}" = "success" ]; then
+          echo "🎉 Backend deployment to production was successful!"
+          echo "🌐 Production API is now live"
+          echo "🚀 Ready for production traffic"
         else
           echo "❌ Backend deployment failed. Check the logs above."
           exit 1

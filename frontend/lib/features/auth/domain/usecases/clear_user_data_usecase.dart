@@ -134,8 +134,10 @@ class ClearUserDataUseCase {
 
         // Log current state for debugging
         if (kDebugMode) {
-          print('🧹 [CLEAR DATA] 📊 app_settings keys before cleanup: ${box.keys.toList()}');
-          print('🧹 [CLEAR DATA] 📊 onboarding_completed before: ${box.get('onboarding_completed')}');
+          print(
+              '🧹 [CLEAR DATA] 📊 app_settings keys before cleanup: ${box.keys.toList()}');
+          print(
+              '🧹 [CLEAR DATA] 📊 onboarding_completed before: ${box.get('onboarding_completed')}');
         }
 
         // Clear only user-specific keys
@@ -150,13 +152,17 @@ class ClearUserDataUseCase {
 
         // Log preserved state
         if (kDebugMode) {
-          print('🧹 [CLEAR DATA] 📊 app_settings keys after cleanup: ${box.keys.toList()}');
-          print('🧹 [CLEAR DATA] 📊 onboarding_completed after: ${box.get('onboarding_completed')}');
-          print('🧹 [CLEAR DATA] ✅ app_settings user data cleared, app settings preserved');
+          print(
+              '🧹 [CLEAR DATA] 📊 app_settings keys after cleanup: ${box.keys.toList()}');
+          print(
+              '🧹 [CLEAR DATA] 📊 onboarding_completed after: ${box.get('onboarding_completed')}');
+          print(
+              '🧹 [CLEAR DATA] ✅ app_settings user data cleared, app settings preserved');
         }
       } else {
         if (kDebugMode) {
-          print('🧹 [CLEAR DATA] ℹ️ app_settings box not open, skipping selective clear');
+          print(
+              '🧹 [CLEAR DATA] ℹ️ app_settings box not open, skipping selective clear');
         }
       }
     } catch (e) {

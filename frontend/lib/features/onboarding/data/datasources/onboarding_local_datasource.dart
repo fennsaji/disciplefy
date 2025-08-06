@@ -26,8 +26,10 @@ class OnboardingLocalDataSourceImpl implements OnboardingLocalDataSource {
 
   @override
   Future<OnboardingStateModel> getOnboardingState() async {
-    final selectedLanguage = _box.get(_languageKey, defaultValue: 'en') as String;
-    final isCompleted = _box.get(_onboardingCompletedKey, defaultValue: false) as bool;
+    final selectedLanguage =
+        _box.get(_languageKey, defaultValue: 'en') as String;
+    final isCompleted =
+        _box.get(_onboardingCompletedKey, defaultValue: false) as bool;
 
     return OnboardingStateModel(
       selectedLanguage: selectedLanguage,

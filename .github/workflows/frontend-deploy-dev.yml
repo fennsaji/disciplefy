@@ -6,11 +6,6 @@ on:
     paths:
       - 'frontend/**'
       - '.github/workflows/frontend-deploy-dev.yml'
-  pull_request:
-    branches: [main]
-    paths:
-      - 'frontend/**'
-    types: [opened, synchronize, reopened]
   workflow_dispatch:  # Allow manual triggering
     inputs:
       environment:

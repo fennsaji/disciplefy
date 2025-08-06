@@ -1,4 +1,4 @@
-name: Deploy Frontend to Production
+name: Frontend Production Deployment
 
 on:
   push:
@@ -7,6 +7,20 @@ on:
       - 'frontend/**'
       - '.github/workflows/frontend-deploy.yml'
   workflow_dispatch:  # Allow manual triggering
+    inputs:
+      environment:
+        description: 'Deployment environment'
+        required: true
+        default: 'production'
+        type: choice
+        options:
+        - production
+        - staging
+      deploy_to_vercel:
+        description: 'Deploy to Vercel Production App'
+        required: false
+        default: true
+        type: boolean
 
 concurrency:
   group: frontend-deploy-${{ github.ref }}
@@ -42,12 +56,34 @@ jobs:
       - name: 🧪 Run tests
         run: flutter test --coverage
       
+      - name: 🔒 Security scan
+        run: |
+          echo "🔒 Running basic security checks..."
+          
+          # Check for potential security issues in Dart code
+          if grep -r "print.*password\|print.*secret\|print.*key\|print.*token" lib/ test/ 2>/dev/null; then
+            echo "⚠️ Found potential credential logging in print statements"
+          fi
+          
+          # Check for hardcoded URLs in production code
+          if grep -r "localhost\|127.0.0.1\|192.168\|10.0.0" lib/ --exclude-dir=test 2>/dev/null; then
+            echo "ℹ️ Found localhost references (may be intentional for dev)"
+          fi
+          
+          # Check for TODO/FIXME comments that might indicate security issues
+          if grep -r "TODO.*security\|FIXME.*security\|XXX.*security" lib/ 2>/dev/null; then
+            echo "ℹ️ Found security-related TODO/FIXME comments"
+          fi
+          
+          echo "✅ Security scan completed"
+      
       - name: ✅ Validation summary
         run: |
           echo "🎉 Frontend validation completed successfully!"
           echo "✅ Dependencies installed"
           echo "✅ Code analysis passed"
           echo "✅ Tests passed"
+          echo "✅ Security scan completed"
 
   build-and-deploy:
     name: Build and Deploy to Vercel
@@ -59,6 +95,10 @@ jobs:
     defaults:
       run:
         working-directory: ./frontend
+    
+    outputs:
+      deployment-url: ${{ steps.deploy.outputs.deployment-url }}
+      environment: ${{ steps.env-setup.outputs.environment }}
     
     steps:
       - name: 🔄 Checkout code
@@ -79,23 +119,37 @@ jobs:
       - name: 🔧 Install Vercel CLI
         run: npm install -g vercel@latest
       
+      - name: 🎯 Determine deployment environment
+        id: env-setup
+        run: |
+          if [ "${{ github.event.inputs.environment }}" = "staging" ]; then
+            echo "DEPLOY_ENV=staging" >> $GITHUB_ENV
+            echo "environment=staging" >> $GITHUB_OUTPUT
+          else
+            echo "DEPLOY_ENV=production" >> $GITHUB_ENV
+            echo "environment=production" >> $GITHUB_OUTPUT
+          fi
+          
+          echo "🎯 Deploying to: ${{ env.DEPLOY_ENV }} environment"
+          echo "📦 Using production Vercel app"
+      
       - name: 📦 Get Flutter dependencies
         run: flutter pub get
       
       - name: 🏗️ Build Flutter web app
         run: |
-          echo "🏗️ Building Flutter web app for production..."
+          echo "🏗️ Building Flutter web app for ${{ env.DEPLOY_ENV }}..."
           
           # Build with production configuration and all required environment variables
           flutter build web \
             --release \
             --base-href / \
-            --dart-define=ENVIRONMENT=production \
+            --dart-define=ENVIRONMENT=${{ env.DEPLOY_ENV }} \
             --dart-define=SUPABASE_URL=https://${{ secrets.SUPABASE_PROJECT_REF }}.supabase.co \
             --dart-define=SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }} \
             --dart-define=APP_URL=https://disciplefy.vercel.app \
             --dart-define=GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_OAUTH_CLIENT_ID }} \
-            --dart-define=FLUTTER_ENV=production \
+            --dart-define=FLUTTER_ENV=${{ env.DEPLOY_ENV }} \
             --dart-define=FLUTTER_WEB_BUILD=true \
             --dart-define=FLUTTER_WEB_USE_SKIA=true \
             --dart-define=FLUTTER_WEB_AUTO_DETECT=false \
@@ -106,11 +160,11 @@ jobs:
           du -sh build/web
           ls -la build/web/
           
-          echo "✅ Flutter web app built successfully"
+          echo "✅ Flutter web app built successfully for ${{ env.DEPLOY_ENV }}"
       
       - name: 📦 Optimize build
         run: |
-          echo "📦 Optimizing build for production..."
+          echo "📦 Optimizing build for ${{ env.DEPLOY_ENV }}..."
           
           # Remove source maps for production
           find build/web -name "*.map" -delete
@@ -154,49 +208,79 @@ jobs:
           }
           EOF
           
-          echo "✅ Build optimization completed"
+          echo "✅ Build optimization completed for ${{ env.DEPLOY_ENV }}"
       
       - name: 🔗 Link Vercel project
+        if: ${{ github.event.inputs.deploy_to_vercel != 'false' }}
         run: |
           echo "🔗 Linking to Vercel project..."
           vercel --token ${{ secrets.VERCEL_TOKEN }} --scope ${{ secrets.VERCEL_ORG_ID }} link --yes --project ${{ secrets.VERCEL_PROJECT_ID }} --cwd vercel-deploy
       
       - name: 🚀 Deploy to Vercel
+        id: deploy
+        if: ${{ github.event.inputs.deploy_to_vercel != 'false' }}
         run: |
           echo "🚀 Deploying to Vercel production..."
           
           # Deploy from clean deployment directory using --cwd flag
-          vercel --token ${{ secrets.VERCEL_TOKEN }} --prod --yes --cwd vercel-deploy
+          VERCEL_URL=$(vercel --token ${{ secrets.VERCEL_TOKEN }} --prod --yes --cwd vercel-deploy)
+          echo "deployment-url=$VERCEL_URL" >> $GITHUB_OUTPUT
+          echo "deployment-type=production" >> $GITHUB_OUTPUT
           
           echo "✅ Deployment to Vercel completed"
+          echo "🌐 Production URL: $VERCEL_URL"
       
       - name: 🧪 Test production deployment
+        if: ${{ github.event.inputs.deploy_to_vercel != 'false' }}
         run: |
-          echo "🧪 Testing production deployment..."
+          echo "🧪 Testing ${{ env.DEPLOY_ENV }} deployment..."
           
-          # Wait a moment for deployment to propagate
+          # Wait for deployment to propagate
           sleep 30
+          
+          DEPLOYMENT_URL="${{ steps.deploy.outputs.deployment-url }}"
+          
+          if [ -z "$DEPLOYMENT_URL" ]; then
+            echo "⚠️ No deployment URL found, using default production URL"
+            DEPLOYMENT_URL="https://disciplefy.vercel.app"
+          fi
+          
+          echo "🔍 Testing URL: $DEPLOYMENT_URL"
           
           # Test main routes
           ROUTES=("/" "/login" "/onboarding")
           
           for route in "${ROUTES[@]}"; do
             echo "Testing route: $route"
-            if curl -f -s "https://disciplefy.vercel.app$route" > /dev/null; then
-              echo "✅ Route $route is accessible"
+            HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" "$DEPLOYMENT_URL$route" || echo "000")
+            
+            if [ "$HTTP_CODE" = "200" ]; then
+              echo "✅ Route $route is accessible (HTTP $HTTP_CODE)"
             else
-              echo "⚠️ Route $route test failed"
+              echo "⚠️ Route $route returned HTTP $HTTP_CODE"
             fi
           done
           
-          echo "🎉 Production deployment tests completed"
+          echo "🎉 ${{ env.DEPLOY_ENV }} deployment tests completed"
       
       - name: 📊 Deployment summary
         run: |
-          echo "🎉 Frontend deployment completed successfully!"
-          echo "🌐 Production URL: https://disciplefy.vercel.app"
-          echo "📱 Progressive Web App ready"
-          echo "🔍 All routes tested and accessible"
+          echo "🎉 Frontend deployment to ${{ env.DEPLOY_ENV }} completed!"
+          
+          if [ "${{ github.event.inputs.deploy_to_vercel }}" != "false" ]; then
+            echo "🌐 ${{ env.DEPLOY_ENV }} URL: ${{ steps.deploy.outputs.deployment-url }}"
+            echo "📱 Progressive Web App features enabled"
+            echo "🔍 Routes tested and accessible"
+          else
+            echo "⏭️ Vercel deployment skipped (build-only mode)"
+          fi
+          
+          echo "📋 Configuration:"
+          echo "   • Environment: ${{ env.DEPLOY_ENV }}"
+          echo "   • Deployment: Production Vercel app"
+          echo "   • Logging: Disabled"
+          echo "   • Debug mode: Disabled"
+          echo "   • Source maps: Removed"
 
   notify-deployment:
     name: Notify Deployment Status
@@ -208,10 +292,17 @@ jobs:
       - name: 📢 Deployment notification
         run: |
           if [ "${{ needs.build-and-deploy.result }}" = "success" ]; then
-            echo "🎉 Frontend deployment to production was successful!"
-            echo "🌐 App is now live at: https://disciplefy.vercel.app"
-            echo "📱 Progressive Web App features are enabled"
-            echo "🔄 All routes are working correctly"
+            echo "🎉 Frontend deployment to ${{ needs.build-and-deploy.outputs.environment }} was successful!"
+            
+            if [ "${{ github.event.inputs.deploy_to_vercel }}" != "false" ]; then
+              echo "🌐 ${{ needs.build-and-deploy.outputs.environment }} app is now live"
+              echo "📱 Progressive Web App features are enabled"
+              echo "🔍 All routes tested and accessible"
+            else
+              echo "🏗️ Build completed successfully (deploy skipped)"
+            fi
+            
+            echo "🚀 Ready for production traffic"
           else
             echo "❌ Frontend deployment failed. Check the logs above."
             exit 1

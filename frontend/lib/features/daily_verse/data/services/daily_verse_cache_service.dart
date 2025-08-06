@@ -83,7 +83,8 @@ class DailyVerseCacheService {
   }
 
   /// Get today's cached verse
-  Future<DailyVerseEntity?> getTodaysCachedVerse() async => getCachedVerse(DateTime.now());
+  Future<DailyVerseEntity?> getTodaysCachedVerse() async =>
+      getCachedVerse(DateTime.now());
 
   /// Check if verse is cached for a specific date
   Future<bool> isVerseCached(DateTime date) async {

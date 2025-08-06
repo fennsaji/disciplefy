@@ -58,9 +58,11 @@ void main() {
       verify(mockAuthService.isAuthenticated).called(1);
     });
 
-    test('should delegate isAuthenticatedAsync to AuthenticationService', () async {
+    test('should delegate isAuthenticatedAsync to AuthenticationService',
+        () async {
       // Arrange
-      when(mockAuthService.isAuthenticatedAsync()).thenAnswer((_) async => true);
+      when(mockAuthService.isAuthenticatedAsync())
+          .thenAnswer((_) async => true);
 
       // Act
       final result = await authService.isAuthenticatedAsync();
@@ -82,10 +84,12 @@ void main() {
       verify(mockAuthService.signInWithGoogle()).called(1);
     });
 
-    test('should delegate processGoogleOAuthCallback to AuthenticationService', () async {
+    test('should delegate processGoogleOAuthCallback to AuthenticationService',
+        () async {
       // Arrange
       const params = GoogleOAuthCallbackParams(code: 'test_code');
-      when(mockAuthService.processGoogleOAuthCallback(params)).thenAnswer((_) async => true);
+      when(mockAuthService.processGoogleOAuthCallback(params))
+          .thenAnswer((_) async => true);
 
       // Act
       final result = await authService.processGoogleOAuthCallback(params);
@@ -107,7 +111,8 @@ void main() {
       verify(mockAuthService.signInWithApple()).called(1);
     });
 
-    test('should delegate signInAnonymously to AuthenticationService', () async {
+    test('should delegate signInAnonymously to AuthenticationService',
+        () async {
       // Arrange
       when(mockAuthService.signInAnonymously()).thenAnswer((_) async => true);
 
@@ -179,9 +184,11 @@ void main() {
       verify(mockStorageService.getUserId()).called(1);
     });
 
-    test('should delegate isOnboardingCompleted to AuthStorageService', () async {
+    test('should delegate isOnboardingCompleted to AuthStorageService',
+        () async {
       // Arrange
-      when(mockStorageService.isOnboardingCompleted()).thenAnswer((_) async => true);
+      when(mockStorageService.isOnboardingCompleted())
+          .thenAnswer((_) async => true);
 
       // Act
       final result = await authService.isOnboardingCompleted();

@@ -88,9 +88,10 @@ class StudyInputWidget extends StatelessWidget {
                       const SizedBox(width: 8),
                       Text(
                         _getHelpTitle(),
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                              color: Theme.of(context).colorScheme.primary,
-                            ),
+                        style:
+                            Theme.of(context).textTheme.titleMedium?.copyWith(
+                                  color: Theme.of(context).colorScheme.primary,
+                                ),
                       ),
                     ],
                   ),
@@ -114,24 +115,31 @@ class StudyInputWidget extends StatelessWidget {
     );
   }
 
-  String _getTitle(AppLocalizations l10n) =>
-      mode == StudyInputMode.verse ? l10n.studyInputVerseTab : l10n.studyInputTopicTab;
+  String _getTitle(AppLocalizations l10n) => mode == StudyInputMode.verse
+      ? l10n.studyInputVerseTab
+      : l10n.studyInputTopicTab;
 
   String _getDescription() => mode == StudyInputMode.verse
       ? 'Generate a detailed study guide for any Bible verse or passage.'
       : 'Generate a comprehensive study guide on any biblical topic or theme.';
 
-  String _getInputLabel(AppLocalizations l10n) =>
-      mode == StudyInputMode.verse ? l10n.studyInputVerseHint : l10n.studyInputTopicHint;
+  String _getInputLabel(AppLocalizations l10n) => mode == StudyInputMode.verse
+      ? l10n.studyInputVerseHint
+      : l10n.studyInputTopicHint;
 
-  String _getInputHint() =>
-      mode == StudyInputMode.verse ? 'John 3:16, Psalm 23:1-3, Romans 8:28' : 'faith, love, prayer, forgiveness';
+  String _getInputHint() => mode == StudyInputMode.verse
+      ? 'John 3:16, Psalm 23:1-3, Romans 8:28'
+      : 'faith, love, prayer, forgiveness';
 
-  IconData _getInputIcon() => mode == StudyInputMode.verse ? Icons.book : Icons.topic;
+  IconData _getInputIcon() =>
+      mode == StudyInputMode.verse ? Icons.book : Icons.topic;
 
-  IconData _getHelpIcon() => mode == StudyInputMode.verse ? Icons.info_outline : Icons.lightbulb_outline;
+  IconData _getHelpIcon() => mode == StudyInputMode.verse
+      ? Icons.info_outline
+      : Icons.lightbulb_outline;
 
-  String _getHelpTitle() => mode == StudyInputMode.verse ? 'Supported Formats' : 'Popular Topics';
+  String _getHelpTitle() =>
+      mode == StudyInputMode.verse ? 'Supported Formats' : 'Popular Topics';
 
   Widget _buildHelpContent(BuildContext context) {
     if (mode == StudyInputMode.verse) {
@@ -160,7 +168,16 @@ class StudyInputWidget extends StatelessWidget {
       return Wrap(
         spacing: 8,
         runSpacing: 4,
-        children: ['Faith', 'Love', 'Prayer', 'Forgiveness', 'Hope', 'Wisdom', 'Grace', 'Peace']
+        children: [
+          'Faith',
+          'Love',
+          'Prayer',
+          'Forgiveness',
+          'Hope',
+          'Wisdom',
+          'Grace',
+          'Peace'
+        ]
             .map((topic) => ActionChip(
                   label: Text(topic),
                   onPressed: () {
