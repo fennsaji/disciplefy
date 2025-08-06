@@ -217,9 +217,9 @@ jobs:
       run: |
         echo "🗄️ Deploying database migrations to production..."
         if [ -d "supabase/migrations" ] && [ "$(ls -A supabase/migrations 2>/dev/null)" ]; then
-          # Use DB_PASS environment variable for non-interactive authentication
-          export DB_PASS="${{ secrets.SUPABASE_DB_PASSWORD }}"
-          supabase db push --db-url "postgresql://postgres.${{ secrets.SUPABASE_PROJECT_REF }}:${{ secrets.SUPABASE_DB_PASSWORD }}@aws-0-us-east-2.pooler.supabase.com:6543/postgres"
+          # Use supabase db push without explicit connection string - let CLI handle it
+          echo "Using linked project for database migrations..."
+          supabase db push
           echo "✅ Database migrations deployed to production"
         else
           echo "ℹ️ No migrations to deploy"
@@ -237,7 +237,8 @@ jobs:
             if [ -f "$policy_file" ]; then
               policy_name=$(basename "$policy_file" .sql)
               echo "🔐 Applying policy: $policy_name"
-              supabase db query --file "$policy_file" --db-url "postgresql://postgres.${{ secrets.SUPABASE_PROJECT_REF }}:${{ secrets.SUPABASE_DB_PASSWORD }}@aws-0-us-east-2.pooler.supabase.com:6543/postgres"
+              # Use linked project instead of manual connection string
+              supabase db query --file "$policy_file"
             fi
           done
           echo "✅ RLS policies deployed to production"

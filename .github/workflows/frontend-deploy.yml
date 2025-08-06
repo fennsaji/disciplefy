@@ -169,6 +169,13 @@ jobs:
           # Remove source maps for production
           find build/web -name "*.map" -delete
           
+          echo "✅ Build optimization completed for ${{ env.DEPLOY_ENV }}"
+      
+      - name: 🔗 Link Vercel project
+        if: ${{ github.event.inputs.deploy_to_vercel != 'false' }}
+        run: |
+          echo "🔗 Linking to Vercel project..."
+          
           # Create clean deployment directory matching Vercel project configuration
           rm -rf vercel-deploy
           mkdir -p vercel-deploy/frontend
@@ -204,17 +211,16 @@ jobs:
                   }
                 ]
               }
-            ]
+            ],
+            "env": {
+              "ENVIRONMENT": "${{ env.DEPLOY_ENV }}"
+            }
           }
           EOF
           
-          echo "✅ Build optimization completed for ${{ env.DEPLOY_ENV }}"
-      
-      - name: 🔗 Link Vercel project
-        if: ${{ github.event.inputs.deploy_to_vercel != 'false' }}
-        run: |
-          echo "🔗 Linking to Vercel project..."
+          # Link using clean deployment directory  
           vercel --token ${{ secrets.VERCEL_TOKEN }} --scope ${{ secrets.VERCEL_ORG_ID }} link --yes --project ${{ secrets.VERCEL_PROJECT_ID }} --cwd vercel-deploy
+          echo "✅ Vercel project linked"
       
       - name: 🚀 Deploy to Vercel
         id: deploy
@@ -222,8 +228,8 @@ jobs:
         run: |
           echo "🚀 Deploying to Vercel production..."
           
-          # Deploy from clean deployment directory using --cwd flag
-          VERCEL_URL=$(vercel --token ${{ secrets.VERCEL_TOKEN }} --prod --yes --cwd vercel-deploy)
+          # Deploy from clean deployment directory using --cwd flag (same as dev workflow)
+          VERCEL_URL=$(vercel --token ${{ secrets.VERCEL_TOKEN }} --yes --prod --cwd vercel-deploy)
           echo "deployment-url=$VERCEL_URL" >> $GITHUB_OUTPUT
           echo "deployment-type=production" >> $GITHUB_OUTPUT
           
