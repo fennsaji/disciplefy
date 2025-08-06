@@ -188,7 +188,7 @@ jobs:
         
         # Application URLs (Production)
         SITE_URL=https://disciplefy.vercel.app
-        ADDITIONAL_REDIRECT_URLS=https://disciplefy.vercel.app/auth/callback,com.disciplefy.bible_study_app://auth/callback
+        ADDITIONAL_REDIRECT_URLS=http://localhost:59641/auth/callback,https://disciplefy.vercel.app/auth/callback,com.disciplefy.bible_study_app://auth/callback
         
         # Security (Production)
         JWT_SECRET=${{ secrets.JWT_SECRET }}
