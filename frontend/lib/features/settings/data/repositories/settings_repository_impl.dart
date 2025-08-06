@@ -39,8 +39,7 @@ class SettingsRepositoryImpl implements SettingsRepository {
   }
 
   @override
-  Future<Either<Failure, void>> updateThemeMode(
-      ThemeModeEntity themeMode) async {
+  Future<Either<Failure, void>> updateThemeMode(ThemeModeEntity themeMode) async {
     try {
       final themeModeModel = ThemeModeModel.fromEntity(themeMode);
       await localDataSource.updateThemeMode(themeModeModel);

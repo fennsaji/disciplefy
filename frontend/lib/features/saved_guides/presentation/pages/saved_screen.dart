@@ -19,8 +19,7 @@ class SavedScreen extends StatefulWidget {
   State<SavedScreen> createState() => _SavedScreenState();
 }
 
-class _SavedScreenState extends State<SavedScreen>
-    with TickerProviderStateMixin {
+class _SavedScreenState extends State<SavedScreen> with TickerProviderStateMixin {
   late TabController _tabController;
   late ScrollController _savedScrollController;
   late ScrollController _recentScrollController;
@@ -55,15 +54,13 @@ class _SavedScreenState extends State<SavedScreen>
   }
 
   void _onSavedScroll() {
-    if (_savedScrollController.position.pixels >=
-        _savedScrollController.position.maxScrollExtent * 0.8) {
+    if (_savedScrollController.position.pixels >= _savedScrollController.position.maxScrollExtent * 0.8) {
       _loadMoreSaved();
     }
   }
 
   void _onRecentScroll() {
-    if (_recentScrollController.position.pixels >=
-        _recentScrollController.position.maxScrollExtent * 0.8) {
+    if (_recentScrollController.position.pixels >= _recentScrollController.position.maxScrollExtent * 0.8) {
       _loadMoreRecent();
     }
   }
@@ -72,9 +69,7 @@ class _SavedScreenState extends State<SavedScreen>
     final bloc = _bloc;
     if (bloc != null) {
       final state = bloc.state;
-      if (state is SavedGuidesApiLoaded &&
-          !state.isLoadingSaved &&
-          state.hasMoreSaved) {
+      if (state is SavedGuidesApiLoaded && !state.isLoadingSaved && state.hasMoreSaved) {
         bloc.add(
           LoadSavedGuidesFromApi(offset: state.savedGuides.length),
         );
@@ -86,9 +81,7 @@ class _SavedScreenState extends State<SavedScreen>
     final bloc = _bloc;
     if (bloc != null) {
       final state = bloc.state;
-      if (state is SavedGuidesApiLoaded &&
-          !state.isLoadingRecent &&
-          state.hasMoreRecent) {
+      if (state is SavedGuidesApiLoaded && !state.isLoadingRecent && state.hasMoreRecent) {
         bloc.add(
           LoadRecentGuidesFromApi(offset: state.recentGuides.length),
         );
@@ -325,9 +318,7 @@ class _SavedScreenContent extends StatelessWidget {
         ),
       );
 
-  Widget _buildAuthRequiredState(
-          BuildContext context, SavedGuidesAuthRequired state) =>
-      Center(
+  Widget _buildAuthRequiredState(BuildContext context, SavedGuidesAuthRequired state) => Center(
         child: Padding(
           padding: const EdgeInsets.all(20),
           child: Column(
@@ -364,8 +355,7 @@ class _SavedScreenContent extends StatelessWidget {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppTheme.secondaryColor,
                   foregroundColor: AppTheme.textPrimary,
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+                  padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8),
                   ),
@@ -409,8 +399,7 @@ class _SavedScreenContent extends StatelessWidget {
               padding: EdgeInsets.symmetric(vertical: 16),
               child: Center(
                 child: CircularProgressIndicator(
-                  valueColor:
-                      AlwaysStoppedAnimation<Color>(AppTheme.primaryColor),
+                  valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primaryColor),
                 ),
               ),
             );
@@ -454,8 +443,7 @@ class _SavedScreenContent extends StatelessWidget {
               padding: EdgeInsets.symmetric(vertical: 16),
               child: Center(
                 child: CircularProgressIndicator(
-                  valueColor:
-                      AlwaysStoppedAnimation<Color>(AppTheme.primaryColor),
+                  valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primaryColor),
                 ),
               ),
             );
@@ -465,9 +453,7 @@ class _SavedScreenContent extends StatelessWidget {
           return GuideListItem(
             guide: guide,
             onTap: () => _openGuide(context, guide),
-            onSave: guide.isSaved
-                ? null
-                : () => _toggleSaveStatus(context, guide, true),
+            onSave: guide.isSaved ? null : () => _toggleSaveStatus(context, guide, true),
           );
         },
       ),
@@ -501,8 +487,7 @@ class _SavedScreenContent extends StatelessWidget {
     });
   }
 
-  void _toggleSaveStatus(
-      BuildContext context, SavedGuideEntity guide, bool save) {
+  void _toggleSaveStatus(BuildContext context, SavedGuideEntity guide, bool save) {
     context.read<UnifiedSavedGuidesBloc>().add(
           ToggleGuideApiEvent(
             guideId: guide.id,

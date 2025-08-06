@@ -70,10 +70,7 @@ class StudyGenerationHandler {
   /// Returns true if the user should be allowed to retry the operation.
   bool _isRetryableFailure(Failure failure) => switch (failure.runtimeType) {
         NetworkFailure _ || ServerFailure _ || RateLimitFailure _ => true,
-        ValidationFailure _ ||
-        AuthenticationFailure _ ||
-        AuthorizationFailure _ =>
-          false,
+        ValidationFailure _ || AuthenticationFailure _ || AuthorizationFailure _ => false,
         _ => true,
       };
 }

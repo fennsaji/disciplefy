@@ -16,11 +16,9 @@ class DebugHelper {
       final authToken = await _secureStorage.read(key: 'auth_token');
       final userType = await _secureStorage.read(key: 'user_type');
       final userId = await _secureStorage.read(key: 'user_id');
-      final onboardingCompleted =
-          await _secureStorage.read(key: 'onboarding_completed');
+      final onboardingCompleted = await _secureStorage.read(key: 'onboarding_completed');
 
-      print(
-          '🔑 Auth Token: ${authToken != null ? "${authToken.substring(0, 20)}..." : "null"}');
+      print('🔑 Auth Token: ${authToken != null ? "${authToken.substring(0, 20)}..." : "null"}');
       print('👤 User Type: $userType');
       print('🆔 User ID: $userId');
       print('✅ Onboarding: $onboardingCompleted');
@@ -36,8 +34,7 @@ class DebugHelper {
     try {
       final parts = token.split('.');
       if (parts.length != 3) {
-        print(
-            '❌ [DEBUG] Invalid JWT structure - expected 3 parts, got ${parts.length}');
+        print('❌ [DEBUG] Invalid JWT structure - expected 3 parts, got ${parts.length}');
         return null;
       }
 
@@ -68,8 +65,7 @@ class DebugHelper {
       print('👤 [DEBUG] Subject (user): ${payloadMap['sub']}');
       print('🔒 [DEBUG] Role: ${payloadMap['role']}');
       print('🎭 [DEBUG] Is Anonymous: ${payloadMap['is_anonymous']}');
-      print(
-          '⏰ [DEBUG] Expires: ${DateTime.fromMillisecondsSinceEpoch((payloadMap['exp'] ?? 0) * 1000)}');
+      print('⏰ [DEBUG] Expires: ${DateTime.fromMillisecondsSinceEpoch((payloadMap['exp'] ?? 0) * 1000)}');
 
       return payloadMap;
     } catch (e) {
@@ -110,10 +106,8 @@ class DebugHelper {
     if (!kDebugMode) return;
 
     print('📄 [DEBUG] === SUPABASE RESPONSE ===');
-    print(
-        '🔑 Access Token: ${response['access_token'] != null ? "Present" : "Missing"}');
-    print(
-        '🔄 Refresh Token: ${response['refresh_token'] != null ? "Present" : "Missing"}');
+    print('🔑 Access Token: ${response['access_token'] != null ? "Present" : "Missing"}');
+    print('🔄 Refresh Token: ${response['refresh_token'] != null ? "Present" : "Missing"}');
     print('⏰ Expires In: ${response['expires_in']}');
     print('⏰ Expires At: ${response['expires_at']}');
     print('🏷️ Token Type: ${response['token_type']}');

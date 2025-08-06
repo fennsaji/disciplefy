@@ -50,12 +50,10 @@ class UserProfileService {
   }
 
   /// Check if user has admin privileges
-  Future<bool> isCurrentUserAdmin(String userId) async =>
-      await _repository.isUserAdmin(userId);
+  Future<bool> isCurrentUserAdmin(String userId) async => await _repository.isUserAdmin(userId);
 
   /// Update user language preference
-  Future<void> updateLanguagePreference(
-      String userId, String languageCode) async {
+  Future<void> updateLanguagePreference(String userId, String languageCode) async {
     await _repository.updateLanguagePreference(userId, languageCode);
   }
 

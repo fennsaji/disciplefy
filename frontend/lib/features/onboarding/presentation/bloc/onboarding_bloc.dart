@@ -65,8 +65,7 @@ class OnboardingBloc extends Bloc<OnboardingEvent, OnboardingState> {
         }
       },
       emit: emit,
-      createErrorState: (message, errorCode) =>
-          OnboardingError(message: message),
+      createErrorState: (message, errorCode) => OnboardingError(message: message),
       operationName: 'load onboarding state',
     );
   }
@@ -96,8 +95,7 @@ class OnboardingBloc extends Bloc<OnboardingEvent, OnboardingState> {
         emit(OnboardingLoaded(onboardingState: _currentOnboardingState!));
       },
       emit: emit,
-      createErrorState: (message, errorCode) =>
-          OnboardingError(message: message),
+      createErrorState: (message, errorCode) => OnboardingError(message: message),
       operationName: 'save language preference',
     );
   }
@@ -110,8 +108,7 @@ class OnboardingBloc extends Bloc<OnboardingEvent, OnboardingState> {
     if (_currentOnboardingState == null) return;
 
     // Validate navigation using navigation handler
-    final validationError =
-        _navigationHandler.validateNextStepNavigation(_currentOnboardingState!);
+    final validationError = _navigationHandler.validateNextStepNavigation(_currentOnboardingState!);
     if (validationError != null) {
       emit(OnboardingError(message: validationError));
       return;
@@ -153,8 +150,7 @@ class OnboardingBloc extends Bloc<OnboardingEvent, OnboardingState> {
     final currentStep = _currentOnboardingState!.currentStep;
 
     // Validate navigation using navigation handler
-    final validationError =
-        _navigationHandler.validatePreviousStepNavigation(currentStep);
+    final validationError = _navigationHandler.validatePreviousStepNavigation(currentStep);
     if (validationError != null) {
       emit(OnboardingError(message: validationError));
       return;
@@ -204,8 +200,7 @@ class OnboardingBloc extends Bloc<OnboardingEvent, OnboardingState> {
         emit(const OnboardingCompleted());
       },
       emit: emit,
-      createErrorState: (message, errorCode) =>
-          OnboardingError(message: message),
+      createErrorState: (message, errorCode) => OnboardingError(message: message),
       operationName: 'complete onboarding',
     );
   }
@@ -220,16 +215,13 @@ class OnboardingBloc extends Bloc<OnboardingEvent, OnboardingState> {
     final currentStep = _currentOnboardingState!.currentStep;
     return OnboardingNavigationInfo(
       currentStep: currentStep,
-      currentStepDisplayName:
-          _navigationHandler.getStepDisplayName(currentStep),
+      currentStepDisplayName: _navigationHandler.getStepDisplayName(currentStep),
       stepIndex: _navigationHandler.getStepIndex(currentStep),
       totalSteps: _navigationHandler.totalSteps,
       progressPercentage: _navigationHandler.getProgressPercentage(currentStep),
-      canGoNext:
-          _navigationHandler.getNextStep(_currentOnboardingState!) != null,
+      canGoNext: _navigationHandler.getNextStep(_currentOnboardingState!) != null,
       canGoPrevious: _navigationHandler.getPreviousStep(currentStep) != null,
-      nextStepValidationError: _navigationHandler
-          .validateNextStepNavigation(_currentOnboardingState!),
+      nextStepValidationError: _navigationHandler.validateNextStepNavigation(_currentOnboardingState!),
     );
   }
 }

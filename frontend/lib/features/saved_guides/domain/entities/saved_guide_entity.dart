@@ -110,20 +110,15 @@ class SavedGuideEntity extends Equatable {
   /// Gets the content preview for display in lists
   String get contentPreview {
     if (hasStructuredContent && summary != null && summary!.isNotEmpty) {
-      return summary!.length > 120
-          ? '${summary!.substring(0, 120)}...'
-          : summary!;
+      return summary!.length > 120 ? '${summary!.substring(0, 120)}...' : summary!;
     }
 
     // Fallback to parsing legacy content format
     if (content.contains('**Summary:**')) {
-      final summaryMatch = RegExp(r'\*\*Summary:\*\*\s*([^\*]+)', dotAll: true)
-          .firstMatch(content);
+      final summaryMatch = RegExp(r'\*\*Summary:\*\*\s*([^\*]+)', dotAll: true).firstMatch(content);
       if (summaryMatch != null) {
         final summaryText = summaryMatch.group(1)?.trim() ?? '';
-        return summaryText.length > 120
-            ? '${summaryText.substring(0, 120)}...'
-            : summaryText;
+        return summaryText.length > 120 ? '${summaryText.substring(0, 120)}...' : summaryText;
       }
     }
 

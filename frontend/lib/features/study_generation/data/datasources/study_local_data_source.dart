@@ -71,8 +71,7 @@ class StudyLocalDataSourceImpl implements StudyLocalDataSource {
       // Cleanup old entries if cache exceeds limit
       if (box.length > AppConstants.MAX_STUDY_GUIDES_CACHE) {
         final allGuides = await getCachedStudyGuides();
-        final oldestGuides =
-            allGuides.skip(AppConstants.MAX_STUDY_GUIDES_CACHE);
+        final oldestGuides = allGuides.skip(AppConstants.MAX_STUDY_GUIDES_CACHE);
 
         for (final guide in oldestGuides) {
           await box.delete(guide.id);
@@ -102,24 +101,16 @@ class StudyLocalDataSourceImpl implements StudyLocalDataSource {
   }
 
   /// Parses a study guide from cached data.
-  StudyGuide _parseStudyGuideFromCache(Map<dynamic, dynamic> data) =>
-      StudyGuide(
+  StudyGuide _parseStudyGuideFromCache(Map<dynamic, dynamic> data) => StudyGuide(
         id: data['id'] as String,
         input: data['input'] as String,
         inputType: data['inputType'] as String,
         summary: data['summary'] as String,
-        interpretation:
-            data['interpretation'] as String? ?? 'No interpretation available',
+        interpretation: data['interpretation'] as String? ?? 'No interpretation available',
         context: data['context'] as String,
-        relatedVerses: (data['relatedVerses'] as List<dynamic>)
-            .map((e) => e.toString())
-            .toList(),
-        reflectionQuestions: (data['reflectionQuestions'] as List<dynamic>)
-            .map((e) => e.toString())
-            .toList(),
-        prayerPoints: (data['prayerPoints'] as List<dynamic>)
-            .map((e) => e.toString())
-            .toList(),
+        relatedVerses: (data['relatedVerses'] as List<dynamic>).map((e) => e.toString()).toList(),
+        reflectionQuestions: (data['reflectionQuestions'] as List<dynamic>).map((e) => e.toString()).toList(),
+        prayerPoints: (data['prayerPoints'] as List<dynamic>).map((e) => e.toString()).toList(),
         language: data['language'] as String? ?? AppConstants.DEFAULT_LANGUAGE,
         createdAt: DateTime.parse(data['createdAt'] as String),
         userId: data['userId'] as String?,

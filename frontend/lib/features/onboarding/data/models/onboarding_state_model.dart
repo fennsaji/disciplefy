@@ -9,8 +9,7 @@ class OnboardingStateModel extends OnboardingStateEntity {
   });
 
   /// Creates model from entity
-  factory OnboardingStateModel.fromEntity(OnboardingStateEntity entity) =>
-      OnboardingStateModel(
+  factory OnboardingStateModel.fromEntity(OnboardingStateEntity entity) => OnboardingStateModel(
         selectedLanguage: entity.selectedLanguage,
         isCompleted: entity.isCompleted,
         currentStep: entity.currentStep,

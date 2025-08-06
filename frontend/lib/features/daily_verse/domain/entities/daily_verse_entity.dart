@@ -39,9 +39,7 @@ class DailyVerseEntity extends Equatable {
   /// Check if verse is for today
   bool get isToday {
     final today = DateTime.now();
-    return date.year == today.year &&
-        date.month == today.month &&
-        date.day == today.day;
+    return date.year == today.year && date.month == today.month && date.day == today.day;
   }
 
   /// Get formatted date string

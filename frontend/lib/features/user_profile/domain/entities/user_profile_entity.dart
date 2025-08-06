@@ -48,23 +48,17 @@ class UserProfileEntity extends Equatable {
       };
 
   /// Creates entity from map (database result)
-  factory UserProfileEntity.fromMap(Map<String, dynamic> map) =>
-      UserProfileEntity(
+  factory UserProfileEntity.fromMap(Map<String, dynamic> map) => UserProfileEntity(
         id: map['id'] as String,
         languagePreference: map['language_preference'] as String? ?? 'en',
         themePreference: map['theme_preference'] as String? ?? 'light',
         isAdmin: map['is_admin'] as bool? ?? false,
-        createdAt: map['created_at'] != null
-            ? DateTime.tryParse(map['created_at'] as String)
-            : null,
-        updatedAt: map['updated_at'] != null
-            ? DateTime.tryParse(map['updated_at'] as String)
-            : null,
+        createdAt: map['created_at'] != null ? DateTime.tryParse(map['created_at'] as String) : null,
+        updatedAt: map['updated_at'] != null ? DateTime.tryParse(map['updated_at'] as String) : null,
       );
 
   @override
-  List<Object?> get props =>
-      [id, languagePreference, themePreference, isAdmin, createdAt, updatedAt];
+  List<Object?> get props => [id, languagePreference, themePreference, isAdmin, createdAt, updatedAt];
 
   @override
   String toString() =>

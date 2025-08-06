@@ -23,14 +23,12 @@ class SavedGuidesLocalDataSourceImpl implements SavedGuidesLocalDataSource {
   Box<SavedGuideModel>? _recentGuidesBox;
 
   Future<Box<SavedGuideModel>> get savedGuidesBox async {
-    _savedGuidesBox ??=
-        await Hive.openBox<SavedGuideModel>(_savedGuidesBoxName);
+    _savedGuidesBox ??= await Hive.openBox<SavedGuideModel>(_savedGuidesBoxName);
     return _savedGuidesBox!;
   }
 
   Future<Box<SavedGuideModel>> get recentGuidesBox async {
-    _recentGuidesBox ??=
-        await Hive.openBox<SavedGuideModel>(_recentGuidesBoxName);
+    _recentGuidesBox ??= await Hive.openBox<SavedGuideModel>(_recentGuidesBoxName);
     return _recentGuidesBox!;
   }
 
@@ -50,8 +48,7 @@ class SavedGuidesLocalDataSourceImpl implements SavedGuidesLocalDataSource {
   Future<List<SavedGuideModel>> getRecentGuides() async {
     try {
       final box = await recentGuidesBox;
-      final guides = box.values.toList()
-        ..sort((a, b) => b.lastAccessedAt.compareTo(a.lastAccessedAt));
+      final guides = box.values.toList()..sort((a, b) => b.lastAccessedAt.compareTo(a.lastAccessedAt));
       return guides.take(_maxRecentGuides).toList();
     } catch (e) {
       throw CacheException(message: 'Failed to get recent guides: $e');
@@ -98,8 +95,7 @@ class SavedGuidesLocalDataSourceImpl implements SavedGuidesLocalDataSource {
 
       // Keep only the most recent guides
       if (box.length > _maxRecentGuides) {
-        final guides = box.values.toList()
-          ..sort((a, b) => b.lastAccessedAt.compareTo(a.lastAccessedAt));
+        final guides = box.values.toList()..sort((a, b) => b.lastAccessedAt.compareTo(a.lastAccessedAt));
 
         // Remove oldest guides
         for (int i = _maxRecentGuides; i < guides.length; i++) {

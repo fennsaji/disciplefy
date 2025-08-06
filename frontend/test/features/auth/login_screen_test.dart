@@ -8,8 +8,7 @@ import 'package:go_router/go_router.dart';
 import 'package:disciplefy_bible_study/features/auth/presentation/pages/login_screen.dart';
 import 'package:disciplefy_bible_study/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:disciplefy_bible_study/features/auth/presentation/bloc/auth_event.dart';
-import 'package:disciplefy_bible_study/features/auth/presentation/bloc/auth_state.dart'
-    as auth_states;
+import 'package:disciplefy_bible_study/features/auth/presentation/bloc/auth_state.dart' as auth_states;
 import 'package:disciplefy_bible_study/core/theme/app_theme.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -37,31 +36,25 @@ void main() {
       );
 
   group('LoginScreen Widget Tests', () {
-    testWidgets('should display welcome text and sign-in buttons',
-        (tester) async {
+    testWidgets('should display welcome text and sign-in buttons', (tester) async {
       // Arrange
-      when(mockAuthBloc.state)
-          .thenReturn(const auth_states.UnauthenticatedState());
-      when(mockAuthBloc.stream).thenAnswer(
-          (_) => Stream.value(const auth_states.UnauthenticatedState()));
+      when(mockAuthBloc.state).thenReturn(const auth_states.UnauthenticatedState());
+      when(mockAuthBloc.stream).thenAnswer((_) => Stream.value(const auth_states.UnauthenticatedState()));
 
       // Act
       await tester.pumpWidget(createTestWidget());
 
       // Assert
       expect(find.text('Welcome to Disciplefy'), findsOneWidget);
-      expect(find.text('Deepen your faith through guided Bible study'),
-          findsOneWidget);
+      expect(find.text('Deepen your faith through guided Bible study'), findsOneWidget);
       expect(find.text('Continue with Google'), findsOneWidget);
       expect(find.text('Continue as Guest'), findsOneWidget);
     });
 
-    testWidgets('should show loading state when authentication is in progress',
-        (tester) async {
+    testWidgets('should show loading state when authentication is in progress', (tester) async {
       // Arrange
       when(mockAuthBloc.state).thenReturn(const auth_states.AuthLoadingState());
-      when(mockAuthBloc.stream).thenAnswer(
-          (_) => Stream.value(const auth_states.AuthLoadingState()));
+      when(mockAuthBloc.stream).thenAnswer((_) => Stream.value(const auth_states.AuthLoadingState()));
 
       // Act
       await tester.pumpWidget(createTestWidget());
@@ -84,13 +77,10 @@ void main() {
       expect(guestButtonWidget.onPressed, isNull);
     });
 
-    testWidgets('should trigger Google sign-in when Google button is tapped',
-        (tester) async {
+    testWidgets('should trigger Google sign-in when Google button is tapped', (tester) async {
       // Arrange
-      when(mockAuthBloc.state)
-          .thenReturn(const auth_states.UnauthenticatedState());
-      when(mockAuthBloc.stream).thenAnswer(
-          (_) => Stream.value(const auth_states.UnauthenticatedState()));
+      when(mockAuthBloc.state).thenReturn(const auth_states.UnauthenticatedState());
+      when(mockAuthBloc.stream).thenAnswer((_) => Stream.value(const auth_states.UnauthenticatedState()));
 
       // Act
       await tester.pumpWidget(createTestWidget());
@@ -101,13 +91,10 @@ void main() {
       verify(mockAuthBloc.add(const GoogleSignInRequested())).called(1);
     });
 
-    testWidgets('should trigger anonymous sign-in when Guest button is tapped',
-        (tester) async {
+    testWidgets('should trigger anonymous sign-in when Guest button is tapped', (tester) async {
       // Arrange
-      when(mockAuthBloc.state)
-          .thenReturn(const auth_states.UnauthenticatedState());
-      when(mockAuthBloc.stream).thenAnswer(
-          (_) => Stream.value(const auth_states.UnauthenticatedState()));
+      when(mockAuthBloc.state).thenReturn(const auth_states.UnauthenticatedState());
+      when(mockAuthBloc.stream).thenAnswer((_) => Stream.value(const auth_states.UnauthenticatedState()));
 
       // Set a larger test surface to avoid tap-outside-bounds issues
       await tester.binding.setSurfaceSize(const Size(800, 1200));
@@ -122,12 +109,10 @@ void main() {
       verify(mockAuthBloc.add(const AnonymousSignInRequested())).called(1);
     });
 
-    testWidgets('should show error snackbar when authentication fails',
-        (tester) async {
+    testWidgets('should show error snackbar when authentication fails', (tester) async {
       // Arrange
       const String errorMessage = 'Authentication failed';
-      when(mockAuthBloc.state)
-          .thenReturn(const auth_states.UnauthenticatedState());
+      when(mockAuthBloc.state).thenReturn(const auth_states.UnauthenticatedState());
       when(mockAuthBloc.stream).thenAnswer((_) => Stream.fromIterable([
             const auth_states.UnauthenticatedState(),
             const auth_states.AuthErrorState(message: errorMessage),
@@ -142,12 +127,10 @@ void main() {
       expect(find.byType(SnackBar), findsOneWidget);
     });
 
-    testWidgets('should show neutral snackbar when authentication is canceled',
-        (tester) async {
+    testWidgets('should show neutral snackbar when authentication is canceled', (tester) async {
       // Arrange
       const String cancelMessage = 'Google login canceled';
-      when(mockAuthBloc.state)
-          .thenReturn(const auth_states.UnauthenticatedState());
+      when(mockAuthBloc.state).thenReturn(const auth_states.UnauthenticatedState());
       when(mockAuthBloc.stream).thenAnswer((_) => Stream.fromIterable([
             const auth_states.UnauthenticatedState(),
             const auth_states.AuthErrorState(message: cancelMessage),
@@ -162,15 +145,13 @@ void main() {
       expect(find.byType(SnackBar), findsOneWidget);
     });
 
-    testWidgets('should navigate to home when authentication succeeds',
-        (tester) async {
+    testWidgets('should navigate to home when authentication succeeds', (tester) async {
       // Arrange
       final mockUser = MockUser();
       when(mockUser.id).thenReturn('test-user-id');
       when(mockUser.email).thenReturn('test@example.com');
 
-      when(mockAuthBloc.state)
-          .thenReturn(const auth_states.UnauthenticatedState());
+      when(mockAuthBloc.state).thenReturn(const auth_states.UnauthenticatedState());
       when(mockAuthBloc.stream).thenAnswer((_) => Stream.fromIterable([
             const auth_states.UnauthenticatedState(),
             auth_states.AuthenticatedState(
@@ -210,13 +191,10 @@ void main() {
       expect(find.text('Home Screen'), findsOneWidget);
     });
 
-    testWidgets('should display Google logo in Google sign-in button',
-        (tester) async {
+    testWidgets('should display Google logo in Google sign-in button', (tester) async {
       // Arrange
-      when(mockAuthBloc.state)
-          .thenReturn(const auth_states.UnauthenticatedState());
-      when(mockAuthBloc.stream).thenAnswer(
-          (_) => Stream.value(const auth_states.UnauthenticatedState()));
+      when(mockAuthBloc.state).thenReturn(const auth_states.UnauthenticatedState());
+      when(mockAuthBloc.stream).thenAnswer((_) => Stream.value(const auth_states.UnauthenticatedState()));
 
       // Act
       await tester.pumpWidget(createTestWidget());
@@ -235,28 +213,23 @@ void main() {
 
     testWidgets('should display privacy policy text', (tester) async {
       // Arrange
-      when(mockAuthBloc.state)
-          .thenReturn(const auth_states.UnauthenticatedState());
-      when(mockAuthBloc.stream).thenAnswer(
-          (_) => Stream.value(const auth_states.UnauthenticatedState()));
+      when(mockAuthBloc.state).thenReturn(const auth_states.UnauthenticatedState());
+      when(mockAuthBloc.stream).thenAnswer((_) => Stream.value(const auth_states.UnauthenticatedState()));
 
       // Act
       await tester.pumpWidget(createTestWidget());
 
       // Assert
       expect(
-        find.text(
-            'By continuing, you agree to our Terms of Service and Privacy Policy'),
+        find.text('By continuing, you agree to our Terms of Service and Privacy Policy'),
         findsOneWidget,
       );
     });
 
     testWidgets('should display app logo', (tester) async {
       // Arrange
-      when(mockAuthBloc.state)
-          .thenReturn(const auth_states.UnauthenticatedState());
-      when(mockAuthBloc.stream).thenAnswer(
-          (_) => Stream.value(const auth_states.UnauthenticatedState()));
+      when(mockAuthBloc.state).thenReturn(const auth_states.UnauthenticatedState());
+      when(mockAuthBloc.stream).thenAnswer((_) => Stream.value(const auth_states.UnauthenticatedState()));
 
       // Act
       await tester.pumpWidget(createTestWidget());
@@ -269,10 +242,8 @@ void main() {
   group('LoginScreen Error Handling Tests', () {
     testWidgets('should handle rate limit error appropriately', (tester) async {
       // Arrange
-      const String rateLimitMessage =
-          'Too many login attempts. Please try again later.';
-      when(mockAuthBloc.state)
-          .thenReturn(const auth_states.UnauthenticatedState());
+      const String rateLimitMessage = 'Too many login attempts. Please try again later.';
+      when(mockAuthBloc.state).thenReturn(const auth_states.UnauthenticatedState());
       when(mockAuthBloc.stream).thenAnswer((_) => Stream.fromIterable([
             const auth_states.UnauthenticatedState(),
             const auth_states.AuthErrorState(message: rateLimitMessage),
@@ -287,13 +258,10 @@ void main() {
       expect(find.byType(SnackBar), findsOneWidget);
     });
 
-    testWidgets('should handle CSRF validation error appropriately',
-        (tester) async {
+    testWidgets('should handle CSRF validation error appropriately', (tester) async {
       // Arrange
-      const String csrfMessage =
-          'Security validation failed. Please try again.';
-      when(mockAuthBloc.state)
-          .thenReturn(const auth_states.UnauthenticatedState());
+      const String csrfMessage = 'Security validation failed. Please try again.';
+      when(mockAuthBloc.state).thenReturn(const auth_states.UnauthenticatedState());
       when(mockAuthBloc.stream).thenAnswer((_) => Stream.fromIterable([
             const auth_states.UnauthenticatedState(),
             const auth_states.AuthErrorState(message: csrfMessage),
@@ -310,10 +278,8 @@ void main() {
 
     testWidgets('should handle network error appropriately', (tester) async {
       // Arrange
-      const String networkMessage =
-          'Network error. Please check your connection';
-      when(mockAuthBloc.state)
-          .thenReturn(const auth_states.UnauthenticatedState());
+      const String networkMessage = 'Network error. Please check your connection';
+      when(mockAuthBloc.state).thenReturn(const auth_states.UnauthenticatedState());
       when(mockAuthBloc.stream).thenAnswer((_) => Stream.fromIterable([
             const auth_states.UnauthenticatedState(),
             const auth_states.AuthErrorState(message: networkMessage),

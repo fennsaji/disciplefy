@@ -45,12 +45,10 @@ class StudyBloc extends Bloc<StudyEvent, StudyState> {
     );
 
     // Register event handlers
-    on<GenerateStudyGuideRequested>(
-        _generationHandler.handleGenerateStudyGuide);
+    on<GenerateStudyGuideRequested>(_generationHandler.handleGenerateStudyGuide);
     on<StudyGuideCleared>(_generationHandler.handleClearStudyGuide);
     on<SaveStudyGuideRequested>(_saveHandler.handleSaveStudyGuide);
     on<ValidateInputRequested>(_validationHandler.handleValidateInput);
-    on<CheckAuthenticationRequested>((event, emit) =>
-        _saveHandler.handleCheckAuthentication(event, emit, add));
+    on<CheckAuthenticationRequested>((event, emit) => _saveHandler.handleCheckAuthentication(event, emit, add));
   }
 }

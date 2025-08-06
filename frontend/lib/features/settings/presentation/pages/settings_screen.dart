@@ -54,8 +54,7 @@ class _SettingsScreenContent extends StatelessWidget {
               if (state is SettingsLoading) {
                 return const Center(
                   child: CircularProgressIndicator(
-                    valueColor:
-                        AlwaysStoppedAnimation<Color>(AppTheme.primaryColor),
+                    valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primaryColor),
                     strokeWidth: 3,
                   ),
                 );
@@ -118,8 +117,7 @@ class _SettingsScreenContent extends StatelessWidget {
       );
 
   /// User Profile Section - shows different content based on auth state
-  Widget _buildUserProfileSection(BuildContext context) =>
-      BlocBuilder<AuthBloc, auth_states.AuthState>(
+  Widget _buildUserProfileSection(BuildContext context) => BlocBuilder<AuthBloc, auth_states.AuthState>(
         builder: (context, authState) {
           if (authState is auth_states.AuthenticatedState) {
             return Column(
@@ -155,24 +153,18 @@ class _SettingsScreenContent extends StatelessWidget {
       );
 
   /// User Profile Tile showing user info
-  Widget _buildUserProfileTile(
-          BuildContext context, auth_states.AuthenticatedState authState) =>
-      Padding(
+  Widget _buildUserProfileTile(BuildContext context, auth_states.AuthenticatedState authState) => Padding(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
         child: Row(
           children: [
             // Profile Picture
             CircleAvatar(
               radius: 25,
-              backgroundImage: authState.photoUrl != null
-                  ? NetworkImage(authState.photoUrl!)
-                  : null,
+              backgroundImage: authState.photoUrl != null ? NetworkImage(authState.photoUrl!) : null,
               backgroundColor: AppTheme.primaryColor.withValues(alpha: 0.1),
               child: authState.photoUrl == null
                   ? Icon(
-                      authState.isAnonymous
-                          ? Icons.person_outline
-                          : Icons.person,
+                      authState.isAnonymous ? Icons.person_outline : Icons.person,
                       size: 25,
                       color: AppTheme.primaryColor,
                     )
@@ -187,9 +179,7 @@ class _SettingsScreenContent extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    authState.isAnonymous
-                        ? 'Guest User'
-                        : authState.displayName ?? 'User',
+                    authState.isAnonymous ? 'Guest User' : authState.displayName ?? 'User',
                     style: GoogleFonts.inter(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
@@ -198,9 +188,7 @@ class _SettingsScreenContent extends StatelessWidget {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    authState.isAnonymous
-                        ? 'Sign in to sync your data'
-                        : authState.email ?? 'No email',
+                    authState.isAnonymous ? 'Sign in to sync your data' : authState.email ?? 'No email',
                     style: GoogleFonts.inter(
                       fontSize: 14,
                       color: AppTheme.onSurfaceVariant,
@@ -228,9 +216,7 @@ class _SettingsScreenContent extends StatelessWidget {
       );
 
   /// Theme & Language Section
-  Widget _buildThemeLanguageSection(
-          BuildContext context, SettingsLoaded state) =>
-      _buildSection(
+  Widget _buildThemeLanguageSection(BuildContext context, SettingsLoaded state) => _buildSection(
         title: 'Appearance',
         children: [
           _buildSettingsTile(
@@ -252,16 +238,13 @@ class _SettingsScreenContent extends StatelessWidget {
               size: 16,
               color: AppTheme.onSurfaceVariant,
             ),
-            onTap: () =>
-                _showLanguageBottomSheet(context, state.settings.language),
+            onTap: () => _showLanguageBottomSheet(context, state.settings.language),
           ),
         ],
       );
 
   /// Notification Section
-  Widget _buildNotificationSection(
-          BuildContext context, SettingsLoaded state) =>
-      _buildSection(
+  Widget _buildNotificationSection(BuildContext context, SettingsLoaded state) => _buildSection(
         title: 'Notifications',
         children: [
           _buildSettingsTile(
@@ -276,8 +259,7 @@ class _SettingsScreenContent extends StatelessWidget {
       );
 
   /// Account Section with AuthBloc integration
-  Widget _buildAccountSection(BuildContext context) =>
-      BlocBuilder<AuthBloc, auth_states.AuthState>(
+  Widget _buildAccountSection(BuildContext context) => BlocBuilder<AuthBloc, auth_states.AuthState>(
         builder: (context, authState) {
           if (authState is auth_states.AuthenticatedState) {
             return _buildSection(
@@ -287,16 +269,13 @@ class _SettingsScreenContent extends StatelessWidget {
                   context: context,
                   icon: Icons.logout_outlined,
                   title: 'Sign Out',
-                  subtitle: authState.isAnonymous
-                      ? 'Clear guest session'
-                      : 'Sign out of your account',
+                  subtitle: authState.isAnonymous ? 'Clear guest session' : 'Sign out of your account',
                   trailing: const Icon(
                     Icons.arrow_forward_ios,
                     size: 16,
                     color: AppTheme.onSurfaceVariant,
                   ),
-                  onTap: () =>
-                      _showLogoutDialog(context, authState.isAnonymous),
+                  onTap: () => _showLogoutDialog(context, authState.isAnonymous),
                   iconColor: AppTheme.errorColor,
                 ),
               ],
@@ -326,8 +305,7 @@ class _SettingsScreenContent extends StatelessWidget {
       );
 
   /// About Section
-  Widget _buildAboutSection(BuildContext context, SettingsLoaded state) =>
-      _buildSection(
+  Widget _buildAboutSection(BuildContext context, SettingsLoaded state) => _buildSection(
         title: 'About',
         children: [
           _buildSettingsTile(
@@ -382,8 +360,7 @@ class _SettingsScreenContent extends StatelessWidget {
       );
 
   /// Account Settings Bottom Sheet
-  void _showAccountSettingsBottomSheet(
-      BuildContext context, auth_states.AuthenticatedState authState) {
+  void _showAccountSettingsBottomSheet(BuildContext context, auth_states.AuthenticatedState authState) {
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
@@ -438,15 +415,12 @@ class _SettingsScreenContent extends StatelessWidget {
             _buildAccountSettingItem(
               icon: Icons.palette_outlined,
               title: 'Theme Preference',
-              subtitle: _getThemeDisplayName(authState.themePreference == 'dark'
-                  ? ThemeModeEntity.dark()
-                  : ThemeModeEntity.light()),
+              subtitle: _getThemeDisplayName(
+                  authState.themePreference == 'dark' ? ThemeModeEntity.dark() : ThemeModeEntity.light()),
               onTap: () {
                 Navigator.pop(context);
                 // Toggle theme
-                final newTheme = authState.themePreference == 'dark'
-                    ? ThemeModeEntity.light()
-                    : ThemeModeEntity.dark();
+                final newTheme = authState.themePreference == 'dark' ? ThemeModeEntity.light() : ThemeModeEntity.dark();
                 context.read<SettingsBloc>().add(ThemeModeChanged(newTheme));
               },
             ),
@@ -647,8 +621,7 @@ class _SettingsScreenContent extends StatelessWidget {
                   width: 40,
                   height: 40,
                   decoration: BoxDecoration(
-                    color: (iconColor ?? AppTheme.primaryColor)
-                        .withValues(alpha: 0.1),
+                    color: (iconColor ?? AppTheme.primaryColor).withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Icon(
@@ -699,12 +672,10 @@ class _SettingsScreenContent extends StatelessWidget {
         color: AppTheme.primaryColor.withValues(alpha: 0.08),
       );
 
-  Widget _buildThemeSwitch(BuildContext context, SettingsLoaded state) =>
-      Switch(
+  Widget _buildThemeSwitch(BuildContext context, SettingsLoaded state) => Switch(
         value: state.settings.themeMode.isDarkMode,
         onChanged: (value) {
-          final newTheme =
-              value ? ThemeModeEntity.dark() : ThemeModeEntity.light();
+          final newTheme = value ? ThemeModeEntity.dark() : ThemeModeEntity.light();
           context.read<SettingsBloc>().add(ThemeModeChanged(newTheme));
         },
         activeColor: AppTheme.primaryColor,
@@ -713,8 +684,7 @@ class _SettingsScreenContent extends StatelessWidget {
         inactiveTrackColor: AppTheme.onSurfaceVariant.withValues(alpha: 0.3),
       );
 
-  Widget _buildNotificationSwitch(BuildContext context, SettingsLoaded state) =>
-      Switch(
+  Widget _buildNotificationSwitch(BuildContext context, SettingsLoaded state) => Switch(
         value: state.settings.notificationsEnabled,
         onChanged: (value) {
           context.read<SettingsBloc>().add(ToggleNotifications(value));
@@ -760,10 +730,8 @@ class _SettingsScreenContent extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 24),
-            _buildLanguageOption(
-                context, 'en', 'English', '🇺🇸', currentLanguage),
-            _buildLanguageOption(
-                context, 'hi', 'Hindi', '🇮🇳', currentLanguage),
+            _buildLanguageOption(context, 'en', 'English', '🇺🇸', currentLanguage),
+            _buildLanguageOption(context, 'hi', 'Hindi', '🇮🇳', currentLanguage),
             const SizedBox(height: 24),
           ],
         ),
@@ -791,9 +759,7 @@ class _SettingsScreenContent extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           decoration: BoxDecoration(
-            color: isSelected
-                ? AppTheme.primaryColor.withValues(alpha: 0.1)
-                : Colors.transparent,
+            color: isSelected ? AppTheme.primaryColor.withValues(alpha: 0.1) : Colors.transparent,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
               color: isSelected ? AppTheme.primaryColor : Colors.transparent,
@@ -810,9 +776,7 @@ class _SettingsScreenContent extends StatelessWidget {
                   style: GoogleFonts.inter(
                     fontSize: 16,
                     fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                    color: isSelected
-                        ? AppTheme.primaryColor
-                        : AppTheme.textPrimary,
+                    color: isSelected ? AppTheme.primaryColor : AppTheme.textPrimary,
                   ),
                 ),
               ),
@@ -1006,8 +970,7 @@ class _SettingsScreenContent extends StatelessWidget {
     );
   }
 
-  void _showSnackBar(
-      BuildContext context, String message, Color backgroundColor) {
+  void _showSnackBar(BuildContext context, String message, Color backgroundColor) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
@@ -1057,8 +1020,7 @@ class _SettingsScreenContent extends StatelessWidget {
   }
 
   Future<void> _launchFeedback() async {
-    final uri =
-        Uri.parse('mailto:fennsaji@gmail.com?subject=Disciplefy Feedback');
+    final uri = Uri.parse('mailto:fennsaji@gmail.com?subject=Disciplefy Feedback');
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri);
     }
