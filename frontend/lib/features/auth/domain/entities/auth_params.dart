@@ -17,7 +17,9 @@ class GoogleOAuthCallbackParams {
   });
 
   /// Create params from OAuth redirect URL query parameters
-  factory GoogleOAuthCallbackParams.fromQueryParams(Map<String, String> params) => GoogleOAuthCallbackParams(
+  factory GoogleOAuthCallbackParams.fromQueryParams(
+          Map<String, String> params) =>
+      GoogleOAuthCallbackParams(
         code: params['code'] ?? '',
         state: params['state'],
         error: params['error'],

@@ -14,7 +14,8 @@ class OnboardingLanguagePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => BlocProvider(
-        create: (context) => sl<OnboardingBloc>()..add(const LoadOnboardingState()),
+        create: (context) =>
+            sl<OnboardingBloc>()..add(const LoadOnboardingState()),
         child: const _OnboardingLanguageContent(),
       );
 }
@@ -61,7 +62,8 @@ class _OnboardingLanguageContent extends StatelessWidget {
         appBar: AppBar(
           leading: IconButton(
             icon: const Icon(Icons.arrow_back),
-            onPressed: () => context.read<OnboardingBloc>().add(const PreviousStep()),
+            onPressed: () =>
+                context.read<OnboardingBloc>().add(const PreviousStep()),
           ),
         ),
         body: SafeArea(
@@ -75,17 +77,19 @@ class _OnboardingLanguageContent extends StatelessWidget {
                   );
                 }
 
-                final selectedLanguage =
-                    state is OnboardingLoaded ? state.onboardingState.selectedLanguage ?? 'en' : 'en';
+                final selectedLanguage = state is OnboardingLoaded
+                    ? state.onboardingState.selectedLanguage ?? 'en'
+                    : 'en';
 
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       l10n.onboardingLanguageTitle,
-                      style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
+                      style:
+                          Theme.of(context).textTheme.headlineLarge?.copyWith(
+                                fontWeight: FontWeight.bold,
+                              ),
                     ),
 
                     const SizedBox(height: 8),
@@ -93,7 +97,8 @@ class _OnboardingLanguageContent extends StatelessWidget {
                     Text(
                       l10n.onboardingLanguageSubtitle,
                       style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                            color: Theme.of(context).colorScheme.onSurfaceVariant,
+                            color:
+                                Theme.of(context).colorScheme.onSurfaceVariant,
                           ),
                     ),
 
@@ -105,7 +110,9 @@ class _OnboardingLanguageContent extends StatelessWidget {
                       name: l10n.languageEnglish,
                       nativeName: 'English',
                       isSelected: selectedLanguage == 'en',
-                      onTap: () => context.read<OnboardingBloc>().add(const LanguageSelected('en')),
+                      onTap: () => context
+                          .read<OnboardingBloc>()
+                          .add(const LanguageSelected('en')),
                     ),
 
                     const SizedBox(height: 16),
@@ -115,7 +122,9 @@ class _OnboardingLanguageContent extends StatelessWidget {
                       name: l10n.languageHindi,
                       nativeName: 'हिन्दी',
                       isSelected: selectedLanguage == 'hi',
-                      onTap: () => context.read<OnboardingBloc>().add(const LanguageSelected('hi')),
+                      onTap: () => context
+                          .read<OnboardingBloc>()
+                          .add(const LanguageSelected('hi')),
                     ),
 
                     const SizedBox(height: 16),
@@ -125,14 +134,18 @@ class _OnboardingLanguageContent extends StatelessWidget {
                       name: l10n.languageMalayalam,
                       nativeName: 'മലയാളം',
                       isSelected: selectedLanguage == 'ml',
-                      onTap: () => context.read<OnboardingBloc>().add(const LanguageSelected('ml')),
+                      onTap: () => context
+                          .read<OnboardingBloc>()
+                          .add(const LanguageSelected('ml')),
                     ),
 
                     const Spacer(),
 
                     ElevatedButton(
                       onPressed: selectedLanguage.isNotEmpty
-                          ? () => context.read<OnboardingBloc>().add(const NextStep())
+                          ? () => context
+                              .read<OnboardingBloc>()
+                              .add(const NextStep())
                           : null,
                       style: ElevatedButton.styleFrom(
                         minimumSize: const Size.fromHeight(56),
@@ -173,11 +186,18 @@ class _LanguageOption extends StatelessWidget {
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             border: Border.all(
-              color: isSelected ? Theme.of(context).colorScheme.primary : Theme.of(context).dividerColor,
+              color: isSelected
+                  ? Theme.of(context).colorScheme.primary
+                  : Theme.of(context).dividerColor,
               width: isSelected ? 2 : 1,
             ),
             borderRadius: BorderRadius.circular(12),
-            color: isSelected ? Theme.of(context).colorScheme.primaryContainer.withValues(alpha: 0.3) : null,
+            color: isSelected
+                ? Theme.of(context)
+                    .colorScheme
+                    .primaryContainer
+                    .withValues(alpha: 0.3)
+                : null,
           ),
           child: Row(
             children: [
@@ -211,13 +231,16 @@ class _LanguageOption extends StatelessWidget {
                       name,
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
                             fontWeight: FontWeight.w600,
-                            color: isSelected ? Theme.of(context).colorScheme.primary : null,
+                            color: isSelected
+                                ? Theme.of(context).colorScheme.primary
+                                : null,
                           ),
                     ),
                     Text(
                       nativeName,
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: Theme.of(context).colorScheme.onSurfaceVariant,
+                            color:
+                                Theme.of(context).colorScheme.onSurfaceVariant,
                           ),
                     ),
                   ],

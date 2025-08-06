@@ -43,21 +43,25 @@ class StudyGenerationParams extends Equatable {
 
     if (input.trim().length < AppConstants.MIN_INPUT_LENGTH) {
       return const ValidationFailure(
-        message: 'Input must be at least ${AppConstants.MIN_INPUT_LENGTH} characters',
+        message:
+            'Input must be at least ${AppConstants.MIN_INPUT_LENGTH} characters',
         code: 'INPUT_TOO_SHORT',
       );
     }
 
-    if (inputType == 'scripture' && input.length > AppConstants.MAX_VERSE_LENGTH) {
+    if (inputType == 'scripture' &&
+        input.length > AppConstants.MAX_VERSE_LENGTH) {
       return const ValidationFailure(
-        message: 'Verse reference cannot exceed ${AppConstants.MAX_VERSE_LENGTH} characters',
+        message:
+            'Verse reference cannot exceed ${AppConstants.MAX_VERSE_LENGTH} characters',
         code: 'VERSE_TOO_LONG',
       );
     }
 
     if (inputType == 'topic' && input.length > AppConstants.MAX_TOPIC_LENGTH) {
       return const ValidationFailure(
-        message: 'Topic cannot exceed ${AppConstants.MAX_TOPIC_LENGTH} characters',
+        message:
+            'Topic cannot exceed ${AppConstants.MAX_TOPIC_LENGTH} characters',
         code: 'TOPIC_TOO_LONG',
       );
     }

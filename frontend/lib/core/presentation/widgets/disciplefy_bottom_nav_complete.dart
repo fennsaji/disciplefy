@@ -48,25 +48,29 @@ class DisciplefyBottomNav extends StatelessWidget {
       icon: Icons.home_outlined,
       activeIcon: Icons.home,
       label: 'Home',
-      semanticLabel: 'Navigate to Home screen. Shows daily verse and study recommendations.',
+      semanticLabel:
+          'Navigate to Home screen. Shows daily verse and study recommendations.',
     ),
     NavTab(
       icon: Icons.edit_note_outlined,
       activeIcon: Icons.edit_note,
       label: 'Study',
-      semanticLabel: 'Navigate to Study Generation screen. Create new Bible study guides.',
+      semanticLabel:
+          'Navigate to Study Generation screen. Create new Bible study guides.',
     ),
     NavTab(
       icon: Icons.bookmark_outline,
       activeIcon: Icons.bookmark,
       label: 'Saved',
-      semanticLabel: 'Navigate to Saved Guides screen. View your saved and recent study guides.',
+      semanticLabel:
+          'Navigate to Saved Guides screen. View your saved and recent study guides.',
     ),
     NavTab(
       icon: Icons.settings_outlined,
       activeIcon: Icons.settings,
       label: 'Settings',
-      semanticLabel: 'Navigate to Settings screen. Manage app preferences and account.',
+      semanticLabel:
+          'Navigate to Settings screen. Manage app preferences and account.',
     ),
   ];
 
@@ -81,7 +85,9 @@ class DisciplefyBottomNav extends StatelessWidget {
         color: isDark ? const Color(0xFF1E1E1E) : const Color(0xFFF9F8F3),
         boxShadow: [
           BoxShadow(
-            color: isDark ? Colors.black.withOpacity(0.3) : Colors.grey.withOpacity(0.2),
+            color: isDark
+                ? Colors.black.withOpacity(0.3)
+                : Colors.grey.withOpacity(0.2),
             blurRadius: 8,
             offset: const Offset(0, -2),
           ),
@@ -143,7 +149,8 @@ class _BottomNavItem extends StatelessWidget {
 
     // ✅ Theme colors as specified
     const activeColor = Color(0xFF6A4FB6); // Active icon color
-    const inactiveColor = Color(0xFF5E5E5E); // Inactive color for both light and dark
+    const inactiveColor =
+        Color(0xFF5E5E5E); // Inactive color for both light and dark
 
     return Material(
       color: Colors.transparent,
@@ -171,11 +178,15 @@ class _BottomNavItem extends StatelessWidget {
                   width: 32,
                   height: 32,
                   decoration: BoxDecoration(
-                    color: isSelected ? activeColor.withOpacity(0.12) : Colors.transparent,
+                    color: isSelected
+                        ? activeColor.withOpacity(0.12)
+                        : Colors.transparent,
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Icon(
-                    isSelected && tab.activeIcon != null ? tab.activeIcon! : tab.icon,
+                    isSelected && tab.activeIcon != null
+                        ? tab.activeIcon!
+                        : tab.icon,
                     size: 20,
                     color: isSelected ? activeColor : inactiveColor,
                   ),
