@@ -53,7 +53,8 @@ class _StudyGuideScreenContent extends StatefulWidget {
   });
 
   @override
-  State<_StudyGuideScreenContent> createState() => _StudyGuideScreenContentState();
+  State<_StudyGuideScreenContent> createState() =>
+      _StudyGuideScreenContentState();
 }
 
 class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
@@ -83,11 +84,13 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
     if (widget.studyGuide != null) {
       // This means we came from the generate screen
       _currentStudyGuide = widget.studyGuide!;
-    } else if (widget.routeExtra != null && widget.routeExtra!['study_guide'] != null) {
+    } else if (widget.routeExtra != null &&
+        widget.routeExtra!['study_guide'] != null) {
       // This means we came from the saved guides screen
       // Handle study guide data from saved guides navigation
       try {
-        final guideData = widget.routeExtra!['study_guide'] as Map<String, dynamic>;
+        final guideData =
+            widget.routeExtra!['study_guide'] as Map<String, dynamic>;
 
         // Create a SavedGuideModel from the route data to use the new structured approach
         final savedGuideModel = SavedGuideModel(
@@ -95,8 +98,11 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
           title: guideData['title'] ?? '',
           content: guideData['content'] ?? '',
           typeString: guideData['type'] ?? 'topic',
-          createdAt: DateTime.tryParse(guideData['created_at'] ?? '') ?? DateTime.now(),
-          lastAccessedAt: DateTime.tryParse(guideData['last_accessed_at'] ?? '') ?? DateTime.now(),
+          createdAt: DateTime.tryParse(guideData['created_at'] ?? '') ??
+              DateTime.now(),
+          lastAccessedAt:
+              DateTime.tryParse(guideData['last_accessed_at'] ?? '') ??
+                  DateTime.now(),
           isSaved: guideData['is_saved'] as bool? ?? false,
           verseReference: guideData['verse_reference'],
           topicName: guideData['topic_name'],
@@ -104,9 +110,13 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
           summary: guideData['summary'] as String?,
           interpretation: guideData['interpretation'] as String?,
           context: guideData['context'] as String?,
-          relatedVerses: (guideData['related_verses'] as List<dynamic>?)?.cast<String>(),
-          reflectionQuestions: (guideData['reflection_questions'] as List<dynamic>?)?.cast<String>(),
-          prayerPoints: (guideData['prayer_points'] as List<dynamic>?)?.cast<String>(),
+          relatedVerses:
+              (guideData['related_verses'] as List<dynamic>?)?.cast<String>(),
+          reflectionQuestions:
+              (guideData['reflection_questions'] as List<dynamic>?)
+                  ?.cast<String>(),
+          prayerPoints:
+              (guideData['prayer_points'] as List<dynamic>?)?.cast<String>(),
         );
 
         // Use the toStudyGuide method which handles both structured and legacy content
@@ -284,7 +294,9 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  _errorMessage.isEmpty ? 'Something went wrong. Please try again later.' : _errorMessage,
+                  _errorMessage.isEmpty
+                      ? 'Something went wrong. Please try again later.'
+                      : _errorMessage,
                   style: GoogleFonts.inter(
                     fontSize: 16,
                     color: AppTheme.onSurfaceVariant,
@@ -294,7 +306,8 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
                 ),
                 const SizedBox(height: 32),
                 ElevatedButton(
-                  onPressed: () => StudyNavigationService.navigateToSaved(context),
+                  onPressed: () =>
+                      StudyNavigationService.navigateToSaved(context),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppTheme.primaryColor,
                     foregroundColor: Colors.white,
@@ -373,7 +386,11 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
           _StudySection(
             title: 'Prayer Points',
             icon: Icons.favorite,
-            content: _currentStudyGuide.prayerPoints.asMap().entries.map((entry) => '• ${entry.value}').join('\n'),
+            content: _currentStudyGuide.prayerPoints
+                .asMap()
+                .entries
+                .map((entry) => '• ${entry.value}')
+                .join('\n'),
           ),
         ],
       );
@@ -417,7 +434,8 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
                 height: 1.5,
               ),
               decoration: InputDecoration(
-                hintText: 'Write your thoughts, insights, and reflections here...',
+                hintText:
+                    'Write your thoughts, insights, and reflections here...',
                 hintStyle: GoogleFonts.inter(
                   color: AppTheme.onSurfaceVariant,
                 ),
@@ -446,7 +464,8 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
             Expanded(
               child: BlocBuilder<StudyBloc, StudyState>(
                 builder: (context, state) {
-                  final isSaving = state is StudySaveInProgress && state.guideId == _currentStudyGuide.id;
+                  final isSaving = state is StudySaveInProgress &&
+                      state.guideId == _currentStudyGuide.id;
 
                   return isSaving
                       ? OutlinedButton.icon(
@@ -456,7 +475,8 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
                             height: 16,
                             child: CircularProgressIndicator(
                               strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primaryColor),
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                  AppTheme.primaryColor),
                             ),
                           ),
                           label: Text(
@@ -467,9 +487,11 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
                             ),
                           ),
                           style: OutlinedButton.styleFrom(
-                            foregroundColor: AppTheme.primaryColor.withValues(alpha: 0.6),
+                            foregroundColor:
+                                AppTheme.primaryColor.withValues(alpha: 0.6),
                             side: BorderSide(
-                              color: AppTheme.primaryColor.withValues(alpha: 0.6),
+                              color:
+                                  AppTheme.primaryColor.withValues(alpha: 0.6),
                               width: 2,
                             ),
                             minimumSize: const Size.fromHeight(56),
@@ -480,7 +502,9 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
                         )
                       : OutlinedButton.icon(
                           onPressed: _saveStudyGuide,
-                          icon: Icon(_isSaved ? Icons.bookmark : Icons.bookmark_border),
+                          icon: Icon(_isSaved
+                              ? Icons.bookmark
+                              : Icons.bookmark_border),
                           label: Text(
                             _isSaved ? 'Saved' : 'Save Study',
                             style: GoogleFonts.inter(
@@ -489,9 +513,13 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
                             ),
                           ),
                           style: OutlinedButton.styleFrom(
-                            foregroundColor: _isSaved ? AppTheme.successColor : AppTheme.primaryColor,
+                            foregroundColor: _isSaved
+                                ? AppTheme.successColor
+                                : AppTheme.primaryColor,
                             side: BorderSide(
-                              color: _isSaved ? AppTheme.successColor : AppTheme.primaryColor,
+                              color: _isSaved
+                                  ? AppTheme.successColor
+                                  : AppTheme.primaryColor,
                               width: 2,
                             ),
                             minimumSize: const Size.fromHeight(56),
@@ -534,7 +562,8 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
     if (_currentStudyGuide.inputType == 'scripture') {
       return _currentStudyGuide.input;
     } else {
-      return _currentStudyGuide.input.substring(0, 1).toUpperCase() + _currentStudyGuide.input.substring(1);
+      return _currentStudyGuide.input.substring(0, 1).toUpperCase() +
+          _currentStudyGuide.input.substring(1);
     }
   }
 
@@ -542,7 +571,8 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
   void _saveStudyGuide() {
     // Debounce rapid taps - prevent multiple requests within 2 seconds
     final now = DateTime.now();
-    if (_lastSaveAttempt != null && now.difference(_lastSaveAttempt!).inSeconds < 2) {
+    if (_lastSaveAttempt != null &&
+        now.difference(_lastSaveAttempt!).inSeconds < 2) {
       return;
     }
     _lastSaveAttempt = now;

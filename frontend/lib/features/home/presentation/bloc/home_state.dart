@@ -132,10 +132,14 @@ class HomeCombinedState extends HomeState {
       HomeCombinedState(
         topics: topics ?? this.topics,
         isLoadingTopics: isLoadingTopics ?? this.isLoadingTopics,
-        topicsError: clearTopicsError ? null : (topicsError ?? this.topicsError),
-        isGeneratingStudyGuide: isGeneratingStudyGuide ?? this.isGeneratingStudyGuide,
+        topicsError:
+            clearTopicsError ? null : (topicsError ?? this.topicsError),
+        isGeneratingStudyGuide:
+            isGeneratingStudyGuide ?? this.isGeneratingStudyGuide,
         generationInput: generationInput ?? this.generationInput,
         generationInputType: generationInputType ?? this.generationInputType,
-        generationError: clearGenerationError ? null : (generationError ?? this.generationError),
+        generationError: clearGenerationError
+            ? null
+            : (generationError ?? this.generationError),
       );
 }

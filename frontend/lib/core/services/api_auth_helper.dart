@@ -25,7 +25,8 @@ class ApiAuthHelper {
       final session = Supabase.instance.client.auth.currentSession;
       if (session != null && session.accessToken.isNotEmpty) {
         headers['Authorization'] = 'Bearer ${session.accessToken}';
-        print('🔐 [API] Using Supabase session token for user: ${session.user.id}');
+        print(
+            '🔐 [API] Using Supabase session token for user: ${session.user.id}');
       } else {
         // For anonymous users, add x-session-id header (as expected by backend)
         final sessionId = await _getOrCreateAnonymousSessionId();
@@ -85,7 +86,8 @@ class ApiAuthHelper {
     final session = Supabase.instance.client.auth.currentSession;
     if (session != null) {
       print('🔐 [DEBUG] Authenticated user: ${session.user.id}');
-      print('🔐 [DEBUG] Token expires: ${DateTime.fromMillisecondsSinceEpoch(session.expiresAt! * 1000)}');
+      print(
+          '🔐 [DEBUG] Token expires: ${DateTime.fromMillisecondsSinceEpoch(session.expiresAt! * 1000)}');
     } else {
       print('🔐 [DEBUG] Anonymous user - no active session');
     }

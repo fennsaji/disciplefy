@@ -41,7 +41,8 @@ class AuthValidator {
     if (supabaseUser != null) {
       return AuthStateValidationResult.authenticated(
         user: supabaseUser,
-        authType: supabaseUser.isAnonymous ? AuthType.anonymous : AuthType.supabase,
+        authType:
+            supabaseUser.isAnonymous ? AuthType.anonymous : AuthType.supabase,
       );
     }
 
@@ -75,7 +76,8 @@ class AuthValidator {
   }
 
   /// Creates a standardized authentication error message
-  static String getAuthErrorMessage(AuthFailureReason reason, [String? details]) {
+  static String getAuthErrorMessage(AuthFailureReason reason,
+      [String? details]) {
     switch (reason) {
       case AuthFailureReason.operationFailed:
         return 'Authentication operation failed${details != null ? ': $details' : ''}';
@@ -103,7 +105,8 @@ class AuthValidationResult {
     this.failureReason,
   });
 
-  factory AuthValidationResult.success({required User user}) => AuthValidationResult._(
+  factory AuthValidationResult.success({required User user}) =>
+      AuthValidationResult._(
         isSuccess: true,
         user: user,
       );
@@ -143,11 +146,13 @@ class AuthStateValidationResult {
         authType: authType,
       );
 
-  factory AuthStateValidationResult.unauthenticated() => const AuthStateValidationResult._(
+  factory AuthStateValidationResult.unauthenticated() =>
+      const AuthStateValidationResult._(
         status: AuthStateStatus.unauthenticated,
       );
 
-  factory AuthStateValidationResult.error({required String message}) => AuthStateValidationResult._(
+  factory AuthStateValidationResult.error({required String message}) =>
+      AuthStateValidationResult._(
         status: AuthStateStatus.error,
         errorMessage: message,
       );
