@@ -55,12 +55,10 @@ class StudyRemoteDataSourceImpl implements StudyRemoteDataSource {
       );
 
       if (response.status == 200 && response.data != null) {
-        return _parseStudyGuideFromResponse(
-            response.data, input, inputType, language);
+        return _parseStudyGuideFromResponse(response.data, input, inputType, language);
       } else if (response.status == 429) {
         throw const RateLimitException(
-          message:
-              'You have reached your study generation limit. Please try again later.',
+          message: 'You have reached your study generation limit. Please try again later.',
           code: 'RATE_LIMITED',
         );
       } else if (response.status >= 500) {
@@ -104,8 +102,7 @@ class StudyRemoteDataSourceImpl implements StudyRemoteDataSource {
     String language,
   ) {
     final responseData = data['data'] as Map<String, dynamic>? ?? {};
-    final studyGuide =
-        responseData['study_guide'] as Map<String, dynamic>? ?? {};
+    final studyGuide = responseData['study_guide'] as Map<String, dynamic>? ?? {};
     final content = studyGuide['content'] as Map<String, dynamic>? ?? {};
 
     return StudyGuide(
@@ -113,24 +110,13 @@ class StudyRemoteDataSourceImpl implements StudyRemoteDataSource {
       input: input, // Always use the original user input
       inputType: inputType, // Always use the original input type
       summary: content['summary'] as String? ?? 'No summary available',
-      interpretation:
-          content['interpretation'] as String? ?? 'No interpretation available',
+      interpretation: content['interpretation'] as String? ?? 'No interpretation available',
       context: content['context'] as String? ?? 'No context available',
-      relatedVerses: (content['relatedVerses'] as List<dynamic>?)
-              ?.map((e) => e.toString())
-              .toList() ??
-          [],
-      reflectionQuestions: (content['reflectionQuestions'] as List<dynamic>?)
-              ?.map((e) => e.toString())
-              .toList() ??
-          [],
-      prayerPoints: (content['prayerPoints'] as List<dynamic>?)
-              ?.map((e) => e.toString())
-              .toList() ??
-          [],
+      relatedVerses: (content['relatedVerses'] as List<dynamic>?)?.map((e) => e.toString()).toList() ?? [],
+      reflectionQuestions: (content['reflectionQuestions'] as List<dynamic>?)?.map((e) => e.toString()).toList() ?? [],
+      prayerPoints: (content['prayerPoints'] as List<dynamic>?)?.map((e) => e.toString()).toList() ?? [],
       language: language, // Always use the original language parameter
-      createdAt: DateTime.parse(studyGuide['createdAt'] as String? ??
-          DateTime.now().toIso8601String()),
+      createdAt: DateTime.parse(studyGuide['createdAt'] as String? ?? DateTime.now().toIso8601String()),
     );
   }
 }

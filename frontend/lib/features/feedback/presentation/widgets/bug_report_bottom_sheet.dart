@@ -98,12 +98,10 @@ class _BugReportBottomSheetState extends State<BugReportBottomSheet> {
         controller: _messageController,
         maxLines: 5,
         decoration: InputDecoration(
-          hintText:
-              'Describe the issue you encountered...\n\nSteps to reproduce:\n1. \n2. \n3. ',
+          hintText: 'Describe the issue you encountered...\n\nSteps to reproduce:\n1. \n2. \n3. ',
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
-            borderSide:
-                BorderSide(color: AppTheme.onSurfaceVariant.withOpacity(0.3)),
+            borderSide: BorderSide(color: AppTheme.onSurfaceVariant.withOpacity(0.3)),
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
@@ -172,8 +170,7 @@ class _BugReportBottomSheetState extends State<BugReportBottomSheet> {
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text(
-              'Failed to prepare bug report submission. Please try again.'),
+          content: Text('Failed to prepare bug report submission. Please try again.'),
           backgroundColor: AppTheme.errorColor,
         ),
       );

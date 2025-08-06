@@ -3,8 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../domain/entities/user_profile_entity.dart';
 import '../../domain/repositories/user_profile_repository.dart';
-import '../../../auth/domain/exceptions/auth_exceptions.dart'
-    as auth_exceptions;
+import '../../../auth/domain/exceptions/auth_exceptions.dart' as auth_exceptions;
 
 /// Supabase implementation of UserProfileRepository
 /// Handles all user profile database operations
@@ -16,11 +15,7 @@ class UserProfileRepositoryImpl implements UserProfileRepository {
   @override
   Future<UserProfileEntity?> getUserProfile(String userId) async {
     try {
-      final response = await _supabase
-          .from('user_profiles')
-          .select()
-          .eq('id', userId)
-          .maybeSingle();
+      final response = await _supabase.from('user_profiles').select().eq('id', userId).maybeSingle();
 
       if (response == null) return null;
 
@@ -41,8 +36,7 @@ class UserProfileRepositoryImpl implements UserProfileRepository {
       if (kDebugMode) {
         print('Error upserting user profile: $e');
       }
-      throw const auth_exceptions.AuthenticationFailedException(
-          'Failed to update user profile');
+      throw const auth_exceptions.AuthenticationFailedException('Failed to update user profile');
     }
   }
 
@@ -55,8 +49,7 @@ class UserProfileRepositoryImpl implements UserProfileRepository {
       if (kDebugMode) {
         print('Error deleting user profile: $e');
       }
-      throw const auth_exceptions.AuthenticationFailedException(
-          'Failed to delete user profile');
+      throw const auth_exceptions.AuthenticationFailedException('Failed to delete user profile');
     }
   }
 
@@ -74,8 +67,7 @@ class UserProfileRepositoryImpl implements UserProfileRepository {
   }
 
   @override
-  Future<void> updateLanguagePreference(
-      String userId, String languageCode) async {
+  Future<void> updateLanguagePreference(String userId, String languageCode) async {
     try {
       await _supabase.from('user_profiles').update({
         'language_preference': languageCode,
@@ -85,8 +77,7 @@ class UserProfileRepositoryImpl implements UserProfileRepository {
       if (kDebugMode) {
         print('Error updating language preference: $e');
       }
-      throw const auth_exceptions.AuthenticationFailedException(
-          'Failed to update language preference');
+      throw const auth_exceptions.AuthenticationFailedException('Failed to update language preference');
     }
   }
 
@@ -101,8 +92,7 @@ class UserProfileRepositoryImpl implements UserProfileRepository {
       if (kDebugMode) {
         print('Error updating theme preference: $e');
       }
-      throw const auth_exceptions.AuthenticationFailedException(
-          'Failed to update theme preference');
+      throw const auth_exceptions.AuthenticationFailedException('Failed to update theme preference');
     }
   }
 }

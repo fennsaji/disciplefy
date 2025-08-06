@@ -25,11 +25,9 @@ class SettingsLocalDataSourceImpl implements SettingsLocalDataSource {
   @override
   Future<AppSettingsModel> getSettings() async {
     try {
-      final themeString =
-          _box.get(_themeModeKey, defaultValue: 'light') as String;
+      final themeString = _box.get(_themeModeKey, defaultValue: 'light') as String;
       final language = _box.get(_languageKey, defaultValue: 'en') as String;
-      final notificationsEnabled =
-          _box.get(_notificationsKey, defaultValue: true) as bool;
+      final notificationsEnabled = _box.get(_notificationsKey, defaultValue: true) as bool;
       final appVersion = await getAppVersion();
 
       return AppSettingsModel(

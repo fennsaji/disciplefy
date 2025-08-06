@@ -166,8 +166,7 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
     Emitter<HomeState> emit,
   ) {
     _topicsBloc.add(const topics_events.ClearRecommendedTopicsError());
-    _studyGenerationBloc
-        .add(const generation_events.ClearHomeStudyGenerationError());
+    _studyGenerationBloc.add(const generation_events.ClearHomeStudyGenerationError());
   }
 
   @override

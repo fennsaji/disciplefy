@@ -27,8 +27,7 @@ class HomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => BlocProvider(
-        create: (context) =>
-            sl<HomeBloc>()..add(const LoadRecommendedTopics(limit: 6)),
+        create: (context) => sl<HomeBloc>()..add(const LoadRecommendedTopics(limit: 6)),
         child: const _HomeScreenContent(),
       );
 }
@@ -125,8 +124,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
                       ),
                     ),
                     const SizedBox(width: 12),
-                    Text(
-                        'Generating study guide for "${state.generationInput}"...'),
+                    Text('Generating study guide for "${state.generationInput}"...'),
                   ],
                 ),
                 duration: const Duration(minutes: 1),
@@ -137,8 +135,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
             ScaffoldMessenger.of(context).hideCurrentSnackBar();
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: Text(
-                    'Failed to generate study guide: ${state.generationError}'),
+                content: Text('Failed to generate study guide: ${state.generationError}'),
                 backgroundColor: Theme.of(context).colorScheme.error,
               ),
             );
@@ -164,8 +161,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
                   'User';
             }
             if (kDebugMode) {
-              print(
-                  '👤 [HOME] User loaded: $currentUserName (authenticated: ${!authState.isAnonymous})');
+              print('👤 [HOME] User loaded: $currentUserName (authenticated: ${!authState.isAnonymous})');
             }
           }
 
@@ -383,8 +379,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
 
   Widget _buildRecommendedTopics() => BlocBuilder<HomeBloc, HomeState>(
         builder: (context, state) {
-          final homeState =
-              state is HomeCombinedState ? state : const HomeCombinedState();
+          final homeState = state is HomeCombinedState ? state : const HomeCombinedState();
 
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -406,8 +401,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
                       height: 20,
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation<Color>(
-                            AppTheme.primaryColor),
+                        valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primaryColor),
                       ),
                     ),
                 ],
@@ -462,9 +456,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
             ),
             const SizedBox(height: 16),
             ElevatedButton(
-              onPressed: () => context
-                  .read<HomeBloc>()
-                  .add(const RefreshRecommendedTopics()),
+              onPressed: () => context.read<HomeBloc>().add(const RefreshRecommendedTopics()),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppTheme.primaryColor,
                 foregroundColor: Colors.white,
@@ -528,8 +520,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
                       height: 16,
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation<Color>(
-                            AppTheme.primaryColor),
+                        valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primaryColor),
                       ),
                     ),
                   ),
@@ -677,8 +668,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
     final dailyVerseBloc = context.read<DailyVerseBloc>();
     final currentState = dailyVerseBloc.state;
 
-    VerseLanguage selectedLanguage =
-        VerseLanguage.english; // Default to English
+    VerseLanguage selectedLanguage = VerseLanguage.english; // Default to English
     if (currentState is DailyVerseLoaded) {
       selectedLanguage = currentState.currentLanguage;
     } else if (currentState is DailyVerseOffline) {
@@ -728,8 +718,7 @@ class _RecommendedGuideTopicCard extends StatelessWidget {
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize:
-              MainAxisSize.min, // Important: Don't expand unnecessarily
+          mainAxisSize: MainAxisSize.min, // Important: Don't expand unnecessarily
           children: [
             // Header row with icon and difficulty badge
             Row(
@@ -751,8 +740,7 @@ class _RecommendedGuideTopicCard extends StatelessWidget {
                 Flexible(
                   // Use Flexible instead of Spacer
                   child: Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
                     decoration: BoxDecoration(
                       color: color.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(8),
@@ -872,8 +860,7 @@ class _RecommendedGuideTopicCard extends StatelessWidget {
     'advanced': Color(0xFFFF6B6B), // Accent red
   };
 
-  IconData _getIconForCategory(String category) =>
-      _categoryIcons[category.toLowerCase()] ?? Icons.menu_book;
+  IconData _getIconForCategory(String category) => _categoryIcons[category.toLowerCase()] ?? Icons.menu_book;
 
   Color _getColorForDifficulty(String difficulty) =>
       _difficultyColors[difficulty.toLowerCase()] ?? AppTheme.primaryColor;

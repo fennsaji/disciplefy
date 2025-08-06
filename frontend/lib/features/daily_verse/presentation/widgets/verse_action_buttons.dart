@@ -95,8 +95,7 @@ class VerseActionButtons extends StatelessWidget {
       );
 
   void _copyVerse(BuildContext context) {
-    final verseText =
-        '${verse.getVerseText(VerseLanguage.english)} - ${verse.reference}';
+    final verseText = '${verse.getVerseText(VerseLanguage.english)} - ${verse.reference}';
     Clipboard.setData(ClipboardData(text: verseText));
 
     ScaffoldMessenger.of(context).showSnackBar(
@@ -108,8 +107,7 @@ class VerseActionButtons extends StatelessWidget {
   }
 
   void _shareVerse(BuildContext context) {
-    final verseText =
-        '${verse.getVerseText(VerseLanguage.english)} - ${verse.reference}';
+    final verseText = '${verse.getVerseText(VerseLanguage.english)} - ${verse.reference}';
 
     // This would typically use share_plus package
     // For now, just copy to clipboard as fallback

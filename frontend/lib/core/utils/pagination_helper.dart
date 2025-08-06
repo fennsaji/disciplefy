@@ -14,8 +14,7 @@ class PaginationHelper {
   static const int minPageSize = 5;
 
   /// Calculate the next offset for pagination
-  static int calculateNextOffset(int currentOffset, int pageSize) =>
-      currentOffset + pageSize;
+  static int calculateNextOffset(int currentOffset, int pageSize) => currentOffset + pageSize;
 
   /// Calculate the previous offset for pagination
   static int calculatePreviousOffset(int currentOffset, int pageSize) {
@@ -24,16 +23,13 @@ class PaginationHelper {
   }
 
   /// Check if there are more items to load based on the returned count
-  static bool hasMoreItems(int returnedCount, int pageSize) =>
-      returnedCount == pageSize;
+  static bool hasMoreItems(int returnedCount, int pageSize) => returnedCount == pageSize;
 
   /// Calculate the total number of pages
-  static int calculateTotalPages(int totalItems, int pageSize) =>
-      (totalItems / pageSize).ceil();
+  static int calculateTotalPages(int totalItems, int pageSize) => (totalItems / pageSize).ceil();
 
   /// Calculate which page number we're currently on (1-based)
-  static int calculateCurrentPage(int offset, int pageSize) =>
-      (offset / pageSize).floor() + 1;
+  static int calculateCurrentPage(int offset, int pageSize) => (offset / pageSize).floor() + 1;
 
   /// Validate and clamp page size within acceptable bounds
   static int validatePageSize(int pageSize) {
@@ -59,15 +55,13 @@ class PaginationHelper {
       );
 
   /// Get the next page parameters
-  static PaginationParams nextPage(PaginationParams current) =>
-      PaginationParams(
+  static PaginationParams nextPage(PaginationParams current) => PaginationParams(
         limit: current.limit,
         offset: calculateNextOffset(current.offset, current.limit),
       );
 
   /// Get the previous page parameters
-  static PaginationParams previousPage(PaginationParams current) =>
-      PaginationParams(
+  static PaginationParams previousPage(PaginationParams current) => PaginationParams(
         limit: current.limit,
         offset: calculatePreviousOffset(current.offset, current.limit),
       );
@@ -111,9 +105,7 @@ class PaginationParams {
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
-    return other is PaginationParams &&
-        other.limit == limit &&
-        other.offset == offset;
+    return other is PaginationParams && other.limit == limit && other.offset == offset;
   }
 
   @override
@@ -168,8 +160,7 @@ mixin PaginationMixin {
 /// Extension to add pagination support to lists
 extension PaginationExtension<T> on List<T> {
   /// Check if the list indicates there might be more items
-  bool hasMoreItems(int pageSize) =>
-      PaginationHelper.hasMoreItems(length, pageSize);
+  bool hasMoreItems(int pageSize) => PaginationHelper.hasMoreItems(length, pageSize);
 
   /// Paginate a list locally (for in-memory pagination)
   List<T> paginate(PaginationParams params) {

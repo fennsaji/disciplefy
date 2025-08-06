@@ -107,8 +107,7 @@ class DailyVerseBloc extends Bloc<DailyVerseEvent, DailyVerseState> {
   ) async {
     try {
       // Save the preference first
-      await setPreferredLanguage(
-          SetPreferredLanguageParams(language: event.language));
+      await setPreferredLanguage(SetPreferredLanguageParams(language: event.language));
 
       // Update current state with new preferred language
       _updateStateWithNewLanguage(event.language, emit);
@@ -245,8 +244,7 @@ class DailyVerseBloc extends Bloc<DailyVerseEvent, DailyVerseState> {
           ));
         } else {
           emit(const DailyVerseError(
-            message:
-                'No cached verse available. Please connect to internet and try again.',
+            message: 'No cached verse available. Please connect to internet and try again.',
           ));
         }
       },

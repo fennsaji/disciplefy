@@ -24,8 +24,7 @@ class GetPreferredLanguage implements UseCase<VerseLanguage, NoParams> {
 }
 
 /// Use case for setting preferred verse language
-class SetPreferredLanguage
-    implements UseCase<void, SetPreferredLanguageParams> {
+class SetPreferredLanguage implements UseCase<void, SetPreferredLanguageParams> {
   final DailyVerseRepository repository;
 
   SetPreferredLanguage(this.repository);

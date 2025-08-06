@@ -45,24 +45,18 @@ class FeedbackRemoteDataSourceImpl implements FeedbackRemoteDataSource {
 
   /// Build request body from feedback entity
   Map<String, dynamic> _buildRequestBody(FeedbackEntity feedback) => {
-        if (feedback.studyGuideId != null)
-          'study_guide_id': feedback.studyGuideId,
-        if (feedback.jeffReedSessionId != null)
-          'jeff_reed_session_id': feedback.jeffReedSessionId,
+        if (feedback.studyGuideId != null) 'study_guide_id': feedback.studyGuideId,
+        if (feedback.jeffReedSessionId != null) 'jeff_reed_session_id': feedback.jeffReedSessionId,
         'was_helpful': feedback.wasHelpful,
-        if (feedback.message != null && feedback.message!.isNotEmpty)
-          'message': feedback.message,
-        if (feedback.category != null && feedback.category!.isNotEmpty)
-          'category': feedback.category,
+        if (feedback.message != null && feedback.message!.isNotEmpty) 'message': feedback.message,
+        if (feedback.category != null && feedback.category!.isNotEmpty) 'category': feedback.category,
         'user_context': _buildUserContextMap(feedback.userContext),
       };
 
   /// Build user context map from entity
   Map<String, dynamic> _buildUserContextMap(UserContextEntity userContext) => {
         'is_authenticated': userContext.isAuthenticated,
-        if (userContext.isAuthenticated && userContext.userId != null)
-          'user_id': userContext.userId,
-        if (!userContext.isAuthenticated && userContext.sessionId != null)
-          'session_id': userContext.sessionId,
+        if (userContext.isAuthenticated && userContext.userId != null) 'user_id': userContext.userId,
+        if (!userContext.isAuthenticated && userContext.sessionId != null) 'session_id': userContext.sessionId,
       };
 }

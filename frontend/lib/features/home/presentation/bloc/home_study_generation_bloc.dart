@@ -10,8 +10,7 @@ import 'home_study_generation_state.dart';
 ///
 /// This BLoC follows the Single Responsibility Principle by handling
 /// only study guide generation from verses and topics.
-class HomeStudyGenerationBloc
-    extends Bloc<HomeStudyGenerationEvent, HomeStudyGenerationState> {
+class HomeStudyGenerationBloc extends Bloc<HomeStudyGenerationEvent, HomeStudyGenerationState> {
   final GenerateStudyGuide _generateStudyGuideUseCase;
 
   HomeStudyGenerationBloc({

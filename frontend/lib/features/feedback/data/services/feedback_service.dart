@@ -23,8 +23,7 @@ class FeedbackService {
 
       final body = {
         if (studyGuideId != null) 'study_guide_id': studyGuideId,
-        if (jeffReedSessionId != null)
-          'jeff_reed_session_id': jeffReedSessionId,
+        if (jeffReedSessionId != null) 'jeff_reed_session_id': jeffReedSessionId,
         'was_helpful': wasHelpful,
         if (message != null && message.isNotEmpty) 'message': message,
         if (category != null && category.isNotEmpty) 'category': category,
@@ -42,14 +41,12 @@ class FeedbackService {
       );
 
       if (response.status != 200) {
-        throw Exception(
-            response.data['message'] ?? 'Failed to submit feedback');
+        throw Exception(response.data['message'] ?? 'Failed to submit feedback');
       }
 
       // Check if response indicates success
       if (response.data['success'] != true) {
-        throw Exception(
-            response.data['message'] ?? 'Feedback submission failed');
+        throw Exception(response.data['message'] ?? 'Feedback submission failed');
       }
     } catch (e) {
       // Re-throw with more context

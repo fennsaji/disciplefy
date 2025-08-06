@@ -11,8 +11,7 @@ class SaveGuide implements UseCase<void, SaveGuideParams> {
   const SaveGuide(this.repository);
 
   @override
-  Future<Either<Failure, void>> call(SaveGuideParams params) async =>
-      await repository.saveGuide(params.guide);
+  Future<Either<Failure, void>> call(SaveGuideParams params) async => await repository.saveGuide(params.guide);
 }
 
 class SaveGuideParams extends Equatable {
