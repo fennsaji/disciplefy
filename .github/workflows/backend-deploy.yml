@@ -144,12 +144,15 @@ jobs:
       id: env-setup
       run: |
         echo "DEPLOY_ENV=production" >> $GITHUB_ENV
-        echo "PROJECT_REF=${{ env.SUPABASE_PROJECT_REF }}" >> $GITHUB_ENV
+        echo "PROJECT_REF=${SUPABASE_PROJECT_REF}" >> $GITHUB_ENV
         echo "deploy_env=production" >> $GITHUB_OUTPUT
-        echo "project_ref=${{ env.SUPABASE_PROJECT_REF }}" >> $GITHUB_OUTPUT
+        echo "project_ref=${SUPABASE_PROJECT_REF}" >> $GITHUB_OUTPUT
         
-        echo "🎯 Deploying to: ${{ env.DEPLOY_ENV }}"
-        echo "📍 Project reference: ${{ env.PROJECT_REF }}"
+        echo "🎯 Deploying to: production"
+        echo "📍 Project reference: ${SUPABASE_PROJECT_REF}"
+      env:
+        SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+
       
     - name: ✅ Validate Supabase connection
       working-directory: ./backend
