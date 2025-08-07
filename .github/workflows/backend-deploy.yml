@@ -207,12 +207,10 @@ jobs:
       working-directory: ./backend
       run: |
         echo "🔗 Linking to Supabase production project..."
-        
-        # Link using password flag (should be non-interactive when provided)
-        supabase link --project-ref "${{ secrets.SUPABASE_PROJECT_REF }}" --password "$DB_PASSWORD"
+        supabase link --project-ref "${{ secrets.SUPABASE_PROJECT_REF }}" --password "$SUPABASE_DB_PASSWORD"
       env:
         SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
-        DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+        SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
     
     - name: 🗄️ Deploy Database Migrations
       if: ${{ github.event.inputs.deploy_migrations != 'false' }}
@@ -220,16 +218,17 @@ jobs:
       run: |
         echo "🗄️ Deploying database migrations to production..."
         if [ -d "supabase/migrations" ] && [ "$(ls -A supabase/migrations 2>/dev/null)" ]; then
-          echo "Using linked project for database migrations..."
-          # Since project is already linked, db push should work without additional auth
-          supabase db push
+          # Use DB_PASS environment variable for non-interactive authentication
+          export DB_PASS="$SUPABASE_DB_PASSWORD"
+          supabase db push --db-url "postgresql://postgres.${PROJECT_REF}:${SUPABASE_DB_PASSWORD}@aws-0-ap-south-1.pooler.supabase.com:6543/postgres"
           echo "✅ Database migrations deployed to production"
         else
           echo "ℹ️ No migrations to deploy"
         fi
       env:
         SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
-        DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+        SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+        PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
     
     - name: 🔒 Deploy RLS Policies
       if: ${{ github.event.inputs.deploy_policies == 'true' }}
@@ -241,8 +240,7 @@ jobs:
             if [ -f "$policy_file" ]; then
               policy_name=$(basename "$policy_file" .sql)
               echo "🔐 Applying policy: $policy_name"
-              # Since project is already linked, db query should work without additional auth
-              supabase db query --file "$policy_file"
+              supabase db query --file "$policy_file" --db-url "postgresql://postgres.${PROJECT_REF}:${SUPABASE_DB_PASSWORD}@aws-0-ap-south-1.pooler.supabase.com:6543/postgres"
             fi
           done
           echo "✅ RLS policies deployed to production"
@@ -251,7 +249,8 @@ jobs:
         fi
       env:
         SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
-        DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+        SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+        PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
         
     - name: 📦 Deploy Edge Functions
       if: ${{ github.event.inputs.deploy_functions != 'false' }}
