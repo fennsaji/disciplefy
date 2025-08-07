@@ -221,7 +221,6 @@ jobs:
       run: |
         echo "🗄️ Deploying database migrations to ${{ env.DEPLOY_ENV }}..."
         if [ -d "supabase/migrations" ] && [ "$(ls -A supabase/migrations 2>/dev/null)" ]; then
-          # Use DB_PASS environment variable for non-interactive authentication
           export DB_PASS="$SUPABASE_DB_PASSWORD"
           supabase db push --db-url "postgresql://postgres.${PROJECT_REF}:${SUPABASE_DB_PASSWORD}@aws-0-ap-south-1.pooler.supabase.com:6543/postgres"
           echo "✅ Database migrations deployed to ${{ env.DEPLOY_ENV }}"
@@ -231,6 +230,7 @@ jobs:
       env:
         SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
         SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+        PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }} # ✅ add this
     
     - name: 🔒 Deploy RLS Policies
       if: ${{ github.event.inputs.deploy_policies == 'true' }}
