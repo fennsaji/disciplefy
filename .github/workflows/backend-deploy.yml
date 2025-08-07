@@ -211,6 +211,8 @@ jobs:
       run: |
         echo "🔗 Linking to Supabase ${{ env.DEPLOY_ENV }} project..."
         supabase link --project-ref "${{ secrets.SUPABASE_PROJECT_REF }}" --password "${{ secrets.SUPABASE_DB_PASSWORD }}"
+      env:
+        SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
 
     - name: 🗄️ Deploy Database Migrations
       if: ${{ github.event.inputs.deploy_migrations != 'false' }}
