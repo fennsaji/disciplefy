@@ -222,7 +222,7 @@ jobs:
         echo "🗄️ Deploying database migrations to production..."
 
         if [ -d "supabase/migrations" ] && [ "$(ls -A supabase/migrations 2>/dev/null)" ]; then
-          supabase db push --db-url "postgresql://postgres.${{ secrets.SUPABASE_PROJECT_REF }}:${{ secrets.SUPABASE_DB_PASSWORD }}@aws-0-ap-south-1.pooler.supabase.com:6543/postgres"
+          supabase db push --db-url "postgresql://postgres:${{ secrets.SUPABASE_DB_PASSWORD }}@db.${{ secrets.SUPABASE_PROJECT_REF }}.supabase.co:5432/postgres"
           echo "✅ Database migrations deployed to production"
         else
           echo "ℹ️ No migrations to deploy"
