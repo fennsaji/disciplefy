@@ -205,35 +205,68 @@ jobs:
         API_REQUEST_LIMIT=100
         EOF
         echo "✅ ${{ env.DEPLOY_ENV }} environment file created"
-    - name: 🔗 Link to Supabase project
-      working-directory: ./backend
+
+    - name: 🔗 Link to Supabase production project
       run: |
-        echo "🔗 Linking to Supabase ${{ env.DEPLOY_ENV }} project..."
-        echo "Using SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}"
-        echo "Connecting with provided SUPABASE_DB_PASSWORD (length: ${#SUPABASE_DB_PASSWORD})"
-        supabase link --project-ref "${{ secrets.SUPABASE_PROJECT_REF }}" --password "${{ secrets.SUPABASE_DB_PASSWORD }}" --debug
+        echo "🔗 Linking to Supabase production project..."
+        
+        echo "📌 First character of SUPABASE_PROJECT_REF: ${SUPABASE_PROJECT_REF:0:1}"
+        echo "📌 First character of SUPABASE_DB_PASSWORD: ${SUPABASE_DB_PASSWORD:0:1}"
+        
+        echo "⚠️ Checking required environment variables..."
+        if [ -z "$SUPABASE_PROJECT_REF" ]; then
+          echo "❌ SUPABASE_PROJECT_REF is missing!"
+          exit 1
+        fi
+        if [ -z "$SUPABASE_DB_PASSWORD" ]; then
+          echo "❌ SUPABASE_DB_PASSWORD is missing!"
+          exit 1
+        fi
+
+        echo "✅ Environment variables look okay."
+
+        echo "🔐 Authenticating..."
+        supabase link --project-ref "$SUPABASE_PROJECT_REF"
+
+        echo "🔌 Connecting to remote database..."
+        supabase db remote set \
+          --db-url "postgres://postgres:${SUPABASE_DB_PASSWORD}@db.${SUPABASE_PROJECT_REF}.supabase.co:5432/postgres" \
+          --debug
       env:
-        SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
         SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
 
-    - name: 🗄️ Deploy Database Migrations
-      if: ${{ github.event.inputs.deploy_migrations != 'false' }}
-      working-directory: ./backend
+    - name: 🔗 Link Supabase & Run DB Migration
       run: |
-        echo "🗄️ Deploying database migrations to production..."
-        echo "Project Ref: ${{ secrets.SUPABASE_PROJECT_REF }}"
-        echo "PostgreSQL URL: postgresql://postgres:<REDACTED>@db.${{ secrets.SUPABASE_PROJECT_REF }}.supabase.co:5432/postgres"
+        echo "🔍 Debugging environment..."
 
-        if [ -d "supabase/migrations" ] && [ "$(ls -A supabase/migrations 2>/dev/null)" ]; then
-          echo "✅ Migration files found:"
-          ls -l supabase/migrations
-          supabase db push --debug --db-url "postgresql://postgres:${{ secrets.SUPABASE_DB_PASSWORD }}@db.${{ secrets.SUPABASE_PROJECT_REF }}.supabase.co:5432/postgres"
-          echo "✅ Database migrations deployed to production"
-        else
-          echo "ℹ️ No migrations to deploy"
+        echo "📌 First char of SUPABASE_PROJECT_REF: ${SUPABASE_PROJECT_REF:0:1}"
+        echo "📌 First char of SUPABASE_DB_PASSWORD: ${SUPABASE_DB_PASSWORD:0:1}"
+
+        echo "⚠️ Checking required environment variables..."
+        if [ -z "$SUPABASE_PROJECT_REF" ]; then
+          echo "❌ SUPABASE_PROJECT_REF is missing!"
+          exit 1
         fi
+        if [ -z "$SUPABASE_DB_PASSWORD" ]; then
+          echo "❌ SUPABASE_DB_PASSWORD is missing!"
+          exit 1
+        fi
+
+        echo "✅ Environment variables are set."
+
+        echo "🔐 Linking to Supabase project..."
+        supabase link --project-ref "$SUPABASE_PROJECT_REF"
+
+        echo "🔌 Setting up remote DB connection..."
+        supabase db remote set \
+          --db-url "postgres://postgres:${SUPABASE_DB_PASSWORD}@db.${SUPABASE_PROJECT_REF}.supabase.co:5432/postgres" \
+          --debug
+
+        echo "📦 Running DB migrations..."
+        supabase db push --debug
       env:
-        SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
         SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
 
     - name: 🔒 Deploy RLS Policies
