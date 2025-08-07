@@ -209,20 +209,6 @@ jobs:
     - name: 🔗 Link to Supabase production project
       run: |
         echo "🔗 Linking to Supabase production project..."
-        
-        echo "📌 First character of SUPABASE_PROJECT_REF: ${SUPABASE_PROJECT_REF:0:1}"
-        echo "📌 First character of SUPABASE_DB_PASSWORD: ${SUPABASE_DB_PASSWORD:0:1}"
-        
-        echo "⚠️ Checking required environment variables..."
-        if [ -z "$SUPABASE_PROJECT_REF" ]; then
-          echo "❌ SUPABASE_PROJECT_REF is missing!"
-          exit 1
-        fi
-        if [ -z "$SUPABASE_DB_PASSWORD" ]; then
-          echo "❌ SUPABASE_DB_PASSWORD is missing!"
-          exit 1
-        fi
-
         echo "✅ Environment variables look okay."
 
         echo "🔐 Authenticating..."
@@ -230,8 +216,8 @@ jobs:
 
         echo "🔌 Connecting to remote database..."
         supabase db remote set \
-          --db-url "postgres://postgres:${SUPABASE_DB_PASSWORD}@db.${SUPABASE_PROJECT_REF}.supabase.co:5432/postgres" \
-          --debug
+          --db-url "postgres://postgres:${SUPABASE_DB_PASSWORD}@db.${SUPABASE_PROJECT_REF}.supabase.co:5432/postgres"
+
       env:
         SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
         SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
@@ -240,20 +226,6 @@ jobs:
     - name: 🔗 Link Supabase & Run DB Migration
       run: |
         echo "🔍 Debugging environment..."
-
-        echo "📌 First char of SUPABASE_PROJECT_REF: ${SUPABASE_PROJECT_REF:0:1}"
-        echo "📌 First char of SUPABASE_DB_PASSWORD: ${SUPABASE_DB_PASSWORD:0:1}"
-
-        echo "⚠️ Checking required environment variables..."
-        if [ -z "$SUPABASE_PROJECT_REF" ]; then
-          echo "❌ SUPABASE_PROJECT_REF is missing!"
-          exit 1
-        fi
-        if [ -z "$SUPABASE_DB_PASSWORD" ]; then
-          echo "❌ SUPABASE_DB_PASSWORD is missing!"
-          exit 1
-        fi
-
         echo "✅ Environment variables are set."
 
         echo "🔐 Linking to Supabase project..."
@@ -261,11 +233,10 @@ jobs:
 
         echo "🔌 Setting up remote DB connection..."
         supabase db remote set \
-          --db-url "postgres://postgres:${SUPABASE_DB_PASSWORD}@db.${SUPABASE_PROJECT_REF}.supabase.co:5432/postgres" \
-          --debug
+          --db-url "postgres://postgres:${SUPABASE_DB_PASSWORD}@db.${SUPABASE_PROJECT_REF}.supabase.co:5432/postgres"
 
         echo "📦 Running DB migrations..."
-        supabase db push --debug
+        supabase db push
       env:
         SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
         SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
@@ -298,7 +269,7 @@ jobs:
         echo "🚀 Deploying Edge Functions to ${{ env.DEPLOY_ENV }}..."
 
         # Deploy all functions with ${{ env.DEPLOY_ENV }} settings
-        supabase functions deploy --no-verify-jwt --project-ref ${{ secrets.SUPABASE_PROJECT_REF }} --debug
+        supabase functions deploy --no-verify-jwt --project-ref ${{ secrets.SUPABASE_PROJECT_REF }}
 
         echo "✅ Edge Functions deployed successfully to ${{ env.DEPLOY_ENV }}"
       env:
@@ -309,7 +280,7 @@ jobs:
       working-directory: ./backend
       run: |
         echo "🔑 Updating Edge Function secrets for ${{ env.DEPLOY_ENV }}..."
-        supabase secrets set --env-file .env.${{ env.DEPLOY_ENV }} --project-ref ${{ secrets.SUPABASE_PROJECT_REF }} --debug
+        supabase secrets set --env-file .env.${{ env.DEPLOY_ENV }} --project-ref ${{ secrets.SUPABASE_PROJECT_REF }}
         echo "✅ Function secrets updated for ${{ env.DEPLOY_ENV }}"
       env:
         SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
