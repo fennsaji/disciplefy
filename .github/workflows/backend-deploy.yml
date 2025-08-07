@@ -218,15 +218,15 @@ jobs:
       run: |
         echo "🗄️ Deploying database migrations to production..."
         if [ -d "supabase/migrations" ] && [ "$(ls -A supabase/migrations 2>/dev/null)" ]; then
-          # Use supabase db push without explicit connection string - let CLI handle it
           echo "Using linked project for database migrations..."
-          supabase db push
+          printf "%s\n" "$DB_PASSWORD" | supabase db push
           echo "✅ Database migrations deployed to production"
         else
           echo "ℹ️ No migrations to deploy"
         fi
       env:
         SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
     
     - name: 🔒 Deploy RLS Policies
       if: ${{ github.event.inputs.deploy_policies == 'true' }}
@@ -238,8 +238,7 @@ jobs:
             if [ -f "$policy_file" ]; then
               policy_name=$(basename "$policy_file" .sql)
               echo "🔐 Applying policy: $policy_name"
-              # Use linked project instead of manual connection string
-              supabase db query --file "$policy_file"
+              printf "%s\n" "$DB_PASSWORD" | supabase db query --file "$policy_file"
             fi
           done
           echo "✅ RLS policies deployed to production"
@@ -248,6 +247,7 @@ jobs:
         fi
       env:
         SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
         
     - name: 📦 Deploy Edge Functions
       if: ${{ github.event.inputs.deploy_functions != 'false' }}
