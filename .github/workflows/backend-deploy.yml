@@ -205,7 +205,7 @@ jobs:
         API_REQUEST_LIMIT=100
         EOF
         echo "✅ ${{ env.DEPLOY_ENV }} environment file created"
-    
+
     - name: 🔗 Link to Supabase project
       working-directory: ./backend
       run: |
@@ -221,7 +221,9 @@ jobs:
         echo "🗄️ Deploying database migrations to production..."
 
         if [ -d "supabase/migrations" ] && [ "$(ls -A supabase/migrations 2>/dev/null)" ]; then
-          supabase db push --db-url "postgresql://postgres:${{ secrets.SUPABASE_DB_PASSWORD }}@db.${{ secrets.SUPABASE_PROJECT_REF }}.supabase.co:5432/postgres"
+          DB_URL="postgresql://postgres:${{ secrets.SUPABASE_DB_PASSWORD }}@db.${{ secrets.SUPABASE_PROJECT_REF }}.supabase.co:5432/postgres"
+          echo "Connecting with DB URL: $DB_URL"
+          supabase db push --db-url "$DB_URL"
           echo "✅ Database migrations deployed to production"
         else
           echo "ℹ️ No migrations to deploy"
@@ -229,7 +231,6 @@ jobs:
       env:
         SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
 
-    
     - name: 🔒 Deploy RLS Policies
       if: ${{ github.event.inputs.deploy_policies == 'true' }}
       working-directory: ./backend
