@@ -208,11 +208,8 @@ jobs:
       run: |
         echo "🔗 Linking to Supabase production project..."
         
-        # Create database URL with embedded password to avoid interactive prompt
-        DB_URL="postgresql://postgres.$(echo "${{ secrets.SUPABASE_PROJECT_REF }}" | tr -d '-'):$DB_PASSWORD@aws-0-ap-south-1.pooler.supabase.com:6543/postgres"
-        
-        # Link using database URL instead of interactive password
-        supabase link --project-ref "${{ secrets.SUPABASE_PROJECT_REF }}" --db-url "$DB_URL"
+        # Link using password flag (should be non-interactive when provided)
+        supabase link --project-ref "${{ secrets.SUPABASE_PROJECT_REF }}" --password "$DB_PASSWORD"
       env:
         SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
         DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
@@ -224,9 +221,8 @@ jobs:
         echo "🗄️ Deploying database migrations to production..."
         if [ -d "supabase/migrations" ] && [ "$(ls -A supabase/migrations 2>/dev/null)" ]; then
           echo "Using linked project for database migrations..."
-          # Create database URL for non-interactive migration
-          DB_URL="postgresql://postgres.$(echo "${{ secrets.SUPABASE_PROJECT_REF }}" | tr -d '-'):$DB_PASSWORD@aws-0-ap-south-1.pooler.supabase.com:6543/postgres"
-          supabase db push --db-url "$DB_URL"
+          # Since project is already linked, db push should work without additional auth
+          supabase db push
           echo "✅ Database migrations deployed to production"
         else
           echo "ℹ️ No migrations to deploy"
@@ -241,14 +237,12 @@ jobs:
       run: |
         echo "🔒 Deploying RLS policies to production..."
         if [ -d "supabase/policies" ] && [ "$(ls -A supabase/policies 2>/dev/null)" ]; then
-          # Create database URL for non-interactive policy deployment
-          DB_URL="postgresql://postgres.$(echo "${{ secrets.SUPABASE_PROJECT_REF }}" | tr -d '-'):$DB_PASSWORD@aws-0-ap-south-1.pooler.supabase.com:6543/postgres"
-          
           for policy_file in supabase/policies/*.sql; do
             if [ -f "$policy_file" ]; then
               policy_name=$(basename "$policy_file" .sql)
               echo "🔐 Applying policy: $policy_name"
-              supabase db query --file "$policy_file" --db-url "$DB_URL"
+              # Since project is already linked, db query should work without additional auth
+              supabase db query --file "$policy_file"
             fi
           done
           echo "✅ RLS policies deployed to production"
