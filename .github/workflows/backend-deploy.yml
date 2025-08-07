@@ -309,7 +309,7 @@ jobs:
       working-directory: ./backend
       run: |
         echo "🔑 Updating Edge Function secrets for ${{ env.DEPLOY_ENV }}..."
-        supabase secrets set --env-file .env.${{ env.DEPLOY_ENV }}
+        supabase secrets set --env-file .env.${{ env.DEPLOY_ENV }} --project-ref ${{ secrets.SUPABASE_PROJECT_REF }} --debug
         echo "✅ Function secrets updated for ${{ env.DEPLOY_ENV }}"
       env:
         SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
