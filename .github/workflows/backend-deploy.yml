@@ -235,6 +235,7 @@ jobs:
       env:
         SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
         SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+        SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
 
     - name: 🔗 Link Supabase & Run DB Migration
       run: |
@@ -268,6 +269,7 @@ jobs:
       env:
         SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
         SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+        SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
 
     - name: 🔒 Deploy RLS Policies
       if: ${{ github.event.inputs.deploy_policies == 'true' }}
