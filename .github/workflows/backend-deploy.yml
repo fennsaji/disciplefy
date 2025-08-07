@@ -144,20 +144,23 @@ jobs:
       id: env-setup
       run: |
         echo "DEPLOY_ENV=production" >> $GITHUB_ENV
-        echo "PROJECT_REF=${{ secrets.SUPABASE_PROJECT_REF }}" >> $GITHUB_ENV
+        echo "PROJECT_REF=${SUPABASE_PROJECT_REF}" >> $GITHUB_ENV
         echo "deploy_env=production" >> $GITHUB_OUTPUT
-        echo "project_ref=${{ secrets.SUPABASE_PROJECT_REF }}" >> $GITHUB_OUTPUT
+        echo "project_ref=${SUPABASE_PROJECT_REF}" >> $GITHUB_OUTPUT
         
         echo "🎯 Deploying to: production"
-        echo "📍 Project reference: ${{ secrets.SUPABASE_PROJECT_REF }}"
+        echo "📍 Project reference: ${SUPABASE_PROJECT_REF}"
+      env:
+        SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+
       
     - name: ✅ Validate Supabase connection
       working-directory: ./backend
       run: |
         export PATH="$HOME/.local/bin:$PATH"
-        echo "🔗 Testing Supabase connection to production..."
-        if [ -z "${{ secrets.SUPABASE_PROJECT_REF }}" ]; then
-          echo "❌ Project reference not set for production"
+        echo "🔗 Testing Supabase connection to ${{ env.DEPLOY_ENV }}..."
+        if [ -z "${{ env.PROJECT_REF }}" ]; then
+          echo "❌ Project reference not set for ${{ env.DEPLOY_ENV }}"
           exit 1
         fi
         supabase projects list > /dev/null
@@ -168,80 +171,91 @@ jobs:
     - name: 📝 Create production environment file
       working-directory: ./backend
       run: |
-        echo "📝 Creating production environment file..."
-        cat > .env.production << EOF
-        # Supabase Configuration (Production)
-        SUPABASE_PROJECT_REF=${{ secrets.SUPABASE_PROJECT_REF }}
+        echo "📝 Creating ${{ env.DEPLOY_ENV }} environment file..."
+        cat > .env.${{ env.DEPLOY_ENV }} << EOF
+        # Supabase Configuration (${{ env.DEPLOY_ENV }})
+        SUPABASE_PROJECT_REF=${{ env.PROJECT_REF }}
         SUPABASE_ACCESS_TOKEN=${{ secrets.SUPABASE_ACCESS_TOKEN }}
-        SUPABASE_URL=https://${{ secrets.SUPABASE_PROJECT_REF }}.supabase.co
+        SUPABASE_URL=https://${{ env.PROJECT_REF }}.supabase.co
         SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}
         SUPABASE_SERVICE_ROLE_KEY=${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
         
-        # LLM Configuration (Production)
+        # LLM Configuration (${{ env.DEPLOY_ENV }})
         OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}
         ANTHROPIC_API_KEY=${{ secrets.ANTHROPIC_API_KEY }}
         LLM_PROVIDER=${{ secrets.LLM_PROVIDER || 'openai' }}
         
-        # Authentication (Production)
+        # Authentication (${{ env.DEPLOY_ENV }})
         GOOGLE_OAUTH_CLIENT_ID=${{ secrets.GOOGLE_OAUTH_CLIENT_ID }}
         GOOGLE_OAUTH_CLIENT_SECRET=${{ secrets.GOOGLE_OAUTH_CLIENT_SECRET }}
         
-        # Application URLs (Production)
+        # Application URLs (${{ env.DEPLOY_ENV }})
         SITE_URL=https://disciplefy.vercel.app
-        ADDITIONAL_REDIRECT_URLS=http://localhost:59641/auth/callback,https://disciplefy.vercel.app/auth/callback,com.disciplefy.bible_study_app://auth/callback
+        ADDITIONAL_REDIRECT_URLS=http://localhost:59641/auth/callback,https://disciplefy.vercel.app/auth/callback
         
-        # Security (Production)
+        # Security (${{ env.DEPLOY_ENV }})
         JWT_SECRET=${{ secrets.JWT_SECRET }}
         
-        # Production settings
-        LOG_LEVEL=error
+        # ${{ env.DEPLOY_ENV }} settings
+        LOG_LEVEL=info
         USE_MOCK=false
-        NODE_ENV=production
+        NODE_ENV=${{ env.DEPLOY_ENV }}
         ANONYMOUS_RATE_LIMIT=5
         AUTHENTICATED_RATE_LIMIT=10
         API_REQUEST_LIMIT=100
         EOF
-        echo "✅ Production environment file created"
-    
-    - name: 🔗 Link to Supabase project
-      working-directory: ./backend
+        echo "✅ ${{ env.DEPLOY_ENV }} environment file created"
+
+    - name: 🔗 Link to Supabase production project
       run: |
         echo "🔗 Linking to Supabase production project..."
-        supabase link --project-ref "${{ secrets.SUPABASE_PROJECT_REF }}" --password "${{ secrets.SUPABASE_DB_PASSWORD }}"
+        echo "✅ Environment variables look okay."
+
+        echo "🔐 Authenticating..."
+        supabase link --project-ref "$SUPABASE_PROJECT_REF"
+
+        echo "🔌 Connecting to remote database..."
+        supabase db remote set \
+          --db-url "postgres://postgres:${SUPABASE_DB_PASSWORD}@db.${SUPABASE_PROJECT_REF}.supabase.co:5432/postgres"
+
       env:
+        SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+        SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
         SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
-    
-    - name: 🗄️ Deploy Database Migrations
-      if: ${{ github.event.inputs.deploy_migrations != 'false' }}
-      working-directory: ./backend
+
+    - name: 🔗 Link Supabase & Run DB Migration
       run: |
-        echo "🗄️ Deploying database migrations to production..."
-        if [ -d "supabase/migrations" ] && [ "$(ls -A supabase/migrations 2>/dev/null)" ]; then
-          # Use supabase db push without explicit connection string - let CLI handle it
-          echo "Using linked project for database migrations..."
-          supabase db push
-          echo "✅ Database migrations deployed to production"
-        else
-          echo "ℹ️ No migrations to deploy"
-        fi
+        echo "🔍 Debugging environment..."
+        echo "✅ Environment variables are set."
+
+        echo "🔐 Linking to Supabase project..."
+        supabase link --project-ref "$SUPABASE_PROJECT_REF"
+
+        echo "🔌 Setting up remote DB connection..."
+        supabase db remote set \
+          --db-url "postgres://postgres:${SUPABASE_DB_PASSWORD}@db.${SUPABASE_PROJECT_REF}.supabase.co:5432/postgres"
+
+        echo "📦 Running DB migrations..."
+        supabase db push
       env:
+        SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+        SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
         SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
-    
+
     - name: 🔒 Deploy RLS Policies
       if: ${{ github.event.inputs.deploy_policies == 'true' }}
       working-directory: ./backend
       run: |
-        echo "🔒 Deploying RLS policies to production..."
+        echo "🔒 Deploying RLS policies to ${{ env.DEPLOY_ENV }}..."
         if [ -d "supabase/policies" ] && [ "$(ls -A supabase/policies 2>/dev/null)" ]; then
           for policy_file in supabase/policies/*.sql; do
             if [ -f "$policy_file" ]; then
               policy_name=$(basename "$policy_file" .sql)
               echo "🔐 Applying policy: $policy_name"
-              # Use linked project instead of manual connection string
-              supabase db query --file "$policy_file"
+              supabase db query --file "$policy_file" --db-url "postgres://postgres:${SUPABASE_DB_PASSWORD}@db.${SUPABASE_PROJECT_REF}.supabase.co:5432/postgres" 
             fi
           done
-          echo "✅ RLS policies deployed to production"
+          echo "✅ RLS policies deployed to ${{ env.DEPLOY_ENV }}"
         else
           echo "ℹ️ No RLS policies to deploy"
         fi
@@ -252,31 +266,32 @@ jobs:
       if: ${{ github.event.inputs.deploy_functions != 'false' }}
       working-directory: ./backend
       run: |
-        echo "🚀 Deploying Edge Functions to production..."
-        
-        # Deploy all functions with production settings
-        supabase functions deploy --no-verify-jwt
-        
-        echo "✅ Edge Functions deployed successfully to production"
+        echo "🚀 Deploying Edge Functions to ${{ env.DEPLOY_ENV }}..."
+
+        # Deploy all functions with ${{ env.DEPLOY_ENV }} settings
+        supabase functions deploy --no-verify-jwt --project-ref ${{ secrets.SUPABASE_PROJECT_REF }}
+
+        echo "✅ Edge Functions deployed successfully to ${{ env.DEPLOY_ENV }}"
       env:
         SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
         
     - name: 🔑 Update Function Secrets
       working-directory: ./backend
       run: |
-        echo "🔑 Updating Edge Function secrets for production..."
-        supabase secrets set --env-file .env.production
-        echo "✅ Function secrets updated for production"
+        echo "🔑 Updating Edge Function secrets for ${{ env.DEPLOY_ENV }}..."
+        supabase secrets set --env-file .env.${{ env.DEPLOY_ENV }} --project-ref ${{ secrets.SUPABASE_PROJECT_REF }}
+        echo "✅ Function secrets updated for ${{ env.DEPLOY_ENV }}"
       env:
         SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
         
     - name: 🧪 Test production deployment
       working-directory: ./backend
       run: |
-        echo "🧪 Testing production deployment..."
+        echo "🧪 Testing ${{ env.DEPLOY_ENV }} deployment..."
         
         # Test health endpoint
-        BASE_URL="https://${{ secrets.SUPABASE_PROJECT_REF }}.supabase.co"
+        BASE_URL="https://${{ env.PROJECT_REF }}.supabase.co"
         
         if curl -f -s "$BASE_URL/rest/v1/" > /dev/null; then
           echo "✅ Supabase REST API is healthy"
@@ -294,12 +309,12 @@ jobs:
           fi
         done
         
-        echo "🎉 Production deployment tests completed"
+        echo "🎉 ${{ env.DEPLOY_ENV }} deployment tests completed"
         
     - name: 📊 Deployment summary
       run: |
-        echo "🎉 Backend deployment to production completed!"
-        echo "🌐 Production API: https://${{ secrets.SUPABASE_PROJECT_REF }}.supabase.co"
+        echo "🎉 Backend deployment to ${{ env.DEPLOY_ENV }} completed!"
+        echo "🌐 ${{ env.DEPLOY_ENV }} API: https://${{ env.PROJECT_REF }}.supabase.co"
         echo "📋 Deployed components:"
         echo "   • Edge Functions: ${{ github.event.inputs.deploy_functions != 'false' && '✅' || '⏭️' }}"
         echo "   • Database Migrations: ${{ github.event.inputs.deploy_migrations != 'false' && '✅' || '⏭️' }}"
@@ -310,13 +325,13 @@ jobs:
           echo "🔍 This is a PR deployment for testing purposes"
           echo "📝 Review the changes and test the deployment before merging"
         fi
-        
+      
     - name: 🧹 Security cleanup
       working-directory: ./backend
       if: always()
       run: |
         echo "🧹 Cleaning up sensitive files..."
-        rm -f .env.production
+        rm -f .env.${{ env.DEPLOY_ENV }}
         echo "✅ Cleanup completed"
 
   comment-pr:
@@ -335,7 +350,7 @@ jobs:
           
           const comment = `## 🚀 Backend Production Deployment
           
-          **Environment**: \\`production\\`
+          **Environment**: \`${deployEnv}\`
           **Status**: ✅ Deployment Successful
           
           ### 🔗 Test URLs:
@@ -369,9 +384,9 @@ jobs:
     - name: 📢 Deployment notification
       run: |
         if [ "${{ needs.deploy-to-production.result }}" = "success" ]; then
-          echo "🎉 Backend deployment to production was successful!"
+          echo "🎉 Backend deployment to ${{ github.event.inputs.environment || 'production' }} was successful!"
           echo "🌐 Production API is now live"
-          echo "🚀 Ready for production traffic"
+          echo "🧪 Ready for production traffic"
         else
           echo "❌ Backend deployment failed. Check the logs above."
           exit 1
