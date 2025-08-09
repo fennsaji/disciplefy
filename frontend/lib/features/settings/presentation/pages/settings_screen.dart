@@ -802,7 +802,6 @@ class _SettingsScreenContent extends StatelessWidget {
           ),
           child: Row(
             children: [
-              Text(flag, style: const TextStyle(fontSize: 24)),
               const SizedBox(width: 16),
               Expanded(
                 child: Text(

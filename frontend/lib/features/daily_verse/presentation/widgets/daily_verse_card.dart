@@ -448,7 +448,7 @@ class DailyVerseCard extends StatelessWidget {
                     : null,
               ),
               child: Text(
-                '${language.flag} ${language.displayName}',
+                language.displayName,
                 style: theme.textTheme.labelMedium?.copyWith(
                   fontWeight: FontWeight.w600,
                   color: textColor,

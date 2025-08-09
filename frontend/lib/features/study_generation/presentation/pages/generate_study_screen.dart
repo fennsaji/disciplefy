@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../../../core/theme/app_theme.dart';
@@ -7,6 +8,7 @@ import '../../domain/services/study_navigation_service.dart';
 import '../bloc/study_bloc.dart';
 import '../bloc/study_event.dart';
 import '../bloc/study_state.dart';
+import '../widgets/recent_guides_section.dart';
 
 /// Generate Study Screen allowing users to input scripture reference or topic.
 ///
@@ -134,6 +136,16 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen> {
           ),
         ),
         centerTitle: true,
+        actions: [
+          IconButton(
+            onPressed: () => context.push('/saved'),
+            icon: const Icon(
+              Icons.bookmark_outline,
+              color: AppTheme.primaryColor,
+            ),
+            tooltip: 'View Saved Guides',
+          ),
+        ],
       ),
       body: BlocListener<StudyBloc, StudyState>(
         listener: (context, state) {
@@ -150,40 +162,45 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen> {
           }
         },
         child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                SizedBox(height: isLargeScreen ? 32 : 24),
+          child: SingleChildScrollView(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  SizedBox(height: isLargeScreen ? 32 : 24),
 
-                // Mode Toggle
-                _buildModeToggle(),
+                  // Mode Toggle
+                  _buildModeToggle(),
 
-                SizedBox(height: isLargeScreen ? 24 : 16),
+                  SizedBox(height: isLargeScreen ? 24 : 16),
 
-                // Language Selection
-                _buildLanguageSelection(),
+                  // Language Selection
+                  _buildLanguageSelection(),
 
-                SizedBox(height: isLargeScreen ? 32 : 24),
+                  SizedBox(height: isLargeScreen ? 32 : 24),
 
-                // Input Section
-                _buildInputSection(),
+                  // Input Section
+                  _buildInputSection(),
 
-                SizedBox(height: isLargeScreen ? 24 : 16),
+                  SizedBox(height: isLargeScreen ? 24 : 16),
 
-                // Suggestions
-                _buildSuggestions(),
+                  // Suggestions
+                  _buildSuggestions(),
 
-                const Spacer(),
+                  SizedBox(height: isLargeScreen ? 32 : 24),
 
-                // Generate Button and Status
-                BlocBuilder<StudyBloc, StudyState>(
-                  builder: (context, state) => _buildGenerateButton(state),
-                ),
+                  // Generate Button and Status
+                  BlocBuilder<StudyBloc, StudyState>(
+                    builder: (context, state) => _buildGenerateButton(state),
+                  ),
 
-                SizedBox(height: isLargeScreen ? 40 : 24),
-              ],
+                  // Recent Guides Section (Bottom section as per Option 2)
+                  const RecentGuidesSection(),
+
+                  SizedBox(height: isLargeScreen ? 40 : 24),
+                ],
+              ),
             ),
           ),
         ),
@@ -677,10 +694,6 @@ class _LanguageToggleButton extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text(
-                flag,
-                style: const TextStyle(fontSize: 16),
-              ),
               const SizedBox(height: 4),
               Text(
                 label,
