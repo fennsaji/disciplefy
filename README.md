@@ -1,8 +1,8 @@
 # 📖 Disciplefy Bible Study App
 
-[![Build Status](https://github.com/TODO-org-name/disciplefy-bible-study/workflows/CI/badge.svg)](https://github.com/TODO-org-name/disciplefy-bible-study/actions)
+[![Build Status](https://github.com/fennsaji/disciplefy/workflows/CI/badge.svg)](https://github.com/fennsaji/disciplefy/actions)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](https://github.com/TODO-org-name/disciplefy-bible-study/releases)
+[![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](https://github.com/fennsaji/disciplefy/releases)
 [![Flutter](https://img.shields.io/badge/Flutter-3.16.0+-02569B.svg?logo=flutter)](https://flutter.dev)
 [![Supabase](https://img.shields.io/badge/Supabase-Powered-3ECF8E.svg?logo=supabase)](https://supabase.com)
 
@@ -86,8 +86,8 @@ VS Code with Flutter extension
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/TODO-org-name/disciplefy-bible-study.git
-   cd disciplefy-bible-study
+   git clone https://github.com/fennsaji/disciplefy
+   cd disciplefy
    ```
 
 2. **Environment configuration**
@@ -317,7 +317,7 @@ const RATE_LIMITS = {
 ## 📦 **Monorepo Structure**
 
 ```
-disciplefy-bible-study/
+disciplefy/
 ├── 📁 docs/                          # Technical documentation
 │   ├── Product Requirements Document.md
 │   ├── Technical Architecture Document.md
@@ -366,40 +366,14 @@ disciplefy-bible-study/
 
 ---
 
-## 📈 **Roadmap Summary**
-
-### **✅ v1.0 - Foundation (Sprint 1-3: Aug 1 - Sept 12)**
-- **Sprint 1**: Complete Flutter scaffold + Supabase backend ✅ **COMPLETED**
-- **Sprint 2**: LLM integration + study guide generation 🔄 **IN PROGRESS**
-- **Sprint 3**: UI polish + accessibility + internal testing ⏳ **PLANNED**
-
-### **🔄 v1.1 - Enhancement (Sept 13 - Oct 15)**
-- Jeff Reed sessions (multi-step guided studies)
-- Advanced study guide customization
-- Offline sync and conflict resolution
-
-### **⏳ v1.2 - Community (Oct 16 - Nov 30)**
-- Study group sharing and collaboration
-- Enhanced multi-language support
-- Performance optimizations
-
-### **🎯 v2.0 - Scale (Dec 1 - Feb 28)**
-- Advanced AI features and personalization
-- Mobile app store deployment
-- Community-driven content expansion
-
-**📚 Planning Baseline**: All roadmap items derived from `docs/Version 1.0.md` and related v1.0-docs-stable specifications.
-
----
-
 ## 🤝 **Contributing**
 
 ### **🔄 Development Workflow**
 
 1. **Fork and Clone**
    ```bash
-   git clone https://github.com/TODO-username/disciplefy-bible-study.git
-   cd disciplefy-bible-study
+   git clone https://github.com/fennsaji/disciplefy
+   cd disciplefy
    git checkout -b feature/your-feature-name
    ```
 
@@ -437,7 +411,6 @@ disciplefy-bible-study/
 
 **Bug Reports**: Include Flutter doctor output, device info, and reproduction steps
 **Feature Requests**: Reference theological accuracy and Jeff Reed methodology alignment
-**Security Issues**: Report privately to TODO-security-email@yourorg.com
 
 ### **📚 Documentation Contributions**
 
@@ -461,10 +434,10 @@ This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) 
 
 ### **👥 Core Maintainers**
 
-- **Project Lead**: [@TODO-username](https://github.com/TODO-username)
-- **Backend Lead**: [@TODO-backend-maintainer](https://github.com/TODO-backend-maintainer)
-- **Frontend Lead**: [@TODO-frontend-maintainer](https://github.com/TODO-frontend-maintainer)
-- **Theology Advisor**: [@TODO-theology-reviewer](https://github.com/TODO-theology-reviewer)
+- **Project Lead**: [@fennsaji](https://github.com/fennsaji)
+- **Backend Lead**:  [@fennsaji](https://github.com/fennsaji)
+- **Frontend Lead**:  [@fennsaji](https://github.com/fennsaji)
+- **Theology Advisor**: [@fennsaji](https://github.com/fennsaji)
 
 ### **🙏 Acknowledgments**
 
@@ -479,21 +452,9 @@ This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) 
 - **Documentation**: Comprehensive guides in `/docs/` directory
 - **Discussions**: GitHub Discussions for questions and ideas
 - **Issues**: GitHub Issues for bugs and feature requests
-- **Discord**: [TODO: Add Discord server link](https://discord.gg/TODO-server) for real-time support
 
 ---
 
 **🌟 Star this repository if Disciplefy Bible Study App helps deepen your faith journey!**
 
 *Built with ❤️ for transformational Bible study using modern technology and timeless wisdom.*
-
-
-## LLM Prompt Templates
-Analyse [File or Folder path]  and check if it is implemented and mark completed stuff as Completed. Also check if correctly implemented, if any bugs or logical errors update the respective document. Also if not completed mark as Pending. Update the same document with status
-
-
-Analyse [File or Folder path] and find out any bugs, logical errors, not complying Coding principles like DRY, SOLID and Clean Code Principles, and/or Compilation issues. And document in @[path]/docs and no coding 
-
-```
-act -W .github/workflows/frontend-deploy-dev.yml --container-daemon-socket /var/run/docker.sock
-```
