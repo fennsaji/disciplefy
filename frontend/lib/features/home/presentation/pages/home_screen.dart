@@ -758,7 +758,7 @@ class _RecommendedGuideTopicCard extends StatelessWidget {
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(
-                      topic.difficulty.toUpperCase(),
+                      'Foundational Doctrines',
                       style: GoogleFonts.inter(
                         fontSize: 9,
                         fontWeight: FontWeight.w600,
@@ -805,49 +805,49 @@ class _RecommendedGuideTopicCard extends StatelessWidget {
             const SizedBox(height: 12), // Fixed spacing instead of Spacer
 
             // Footer with metadata - use Wrap for overflow protection
-            Wrap(
-              spacing: 8,
-              runSpacing: 4,
-              crossAxisAlignment: WrapCrossAlignment.center,
-              children: [
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(
-                      Icons.schedule,
-                      size: 12,
-                      color: AppTheme.onSurfaceVariant,
-                    ),
-                    const SizedBox(width: 3),
-                    Text(
-                      '${topic.estimatedMinutes}min',
-                      style: GoogleFonts.inter(
-                        fontSize: 10,
-                        color: AppTheme.onSurfaceVariant,
-                      ),
-                    ),
-                  ],
-                ),
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(
-                      Icons.book_outlined,
-                      size: 12,
-                      color: AppTheme.onSurfaceVariant,
-                    ),
-                    const SizedBox(width: 3),
-                    Text(
-                      '${topic.scriptureCount}',
-                      style: GoogleFonts.inter(
-                        fontSize: 10,
-                        color: AppTheme.onSurfaceVariant,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
+            // Wrap(
+            //   spacing: 8,
+            //   runSpacing: 4,
+            //   crossAxisAlignment: WrapCrossAlignment.center,
+            //   children: [
+            //     Row(
+            //       mainAxisSize: MainAxisSize.min,
+            //       children: [
+            //         const Icon(
+            //           Icons.schedule,
+            //           size: 12,
+            //           color: AppTheme.onSurfaceVariant,
+            //         ),
+            //         const SizedBox(width: 3),
+            //         Text(
+            //           '${topic.estimatedMinutes}min',
+            //           style: GoogleFonts.inter(
+            //             fontSize: 10,
+            //             color: AppTheme.onSurfaceVariant,
+            //           ),
+            //         ),
+            //       ],
+            //     ),
+            //     Row(
+            //       mainAxisSize: MainAxisSize.min,
+            //       children: [
+            //         const Icon(
+            //           Icons.book_outlined,
+            //           size: 12,
+            //           color: AppTheme.onSurfaceVariant,
+            //         ),
+            //         const SizedBox(width: 3),
+            //         Text(
+            //           '${topic.scriptureCount}',
+            //           style: GoogleFonts.inter(
+            //             fontSize: 10,
+            //             color: AppTheme.onSurfaceVariant,
+            //           ),
+            //         ),
+            //       ],
+            //     ),
+            //   ],
+            // ),
           ],
         ),
       ),
@@ -856,7 +856,7 @@ class _RecommendedGuideTopicCard extends StatelessWidget {
 
   // Category to icon mapping
   static const Map<String, IconData> _categoryIcons = {
-    'faith foundations': Icons.foundation,
+    'Foundational Doctrines': Icons.foundation,
     'spiritual disciplines': Icons.self_improvement,
     'salvation': Icons.favorite,
     'christian living': Icons.directions_walk,
@@ -875,6 +875,5 @@ class _RecommendedGuideTopicCard extends StatelessWidget {
   IconData _getIconForCategory(String category) =>
       _categoryIcons[category.toLowerCase()] ?? Icons.menu_book;
 
-  Color _getColorForDifficulty(String difficulty) =>
-      _difficultyColors[difficulty.toLowerCase()] ?? AppTheme.primaryColor;
+  Color _getColorForDifficulty(String difficulty) => AppTheme.primaryColor;
 }

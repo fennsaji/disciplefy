@@ -13,7 +13,9 @@ import '../widgets/empty_state_widget.dart';
 
 /// Unified Saved Guides Screen with Clean Architecture
 class SavedScreen extends StatefulWidget {
-  const SavedScreen({super.key});
+  final int? initialTabIndex;
+
+  const SavedScreen({super.key, this.initialTabIndex});
 
   @override
   State<SavedScreen> createState() => _SavedScreenState();
@@ -29,7 +31,11 @@ class _SavedScreenState extends State<SavedScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
+    _tabController = TabController(
+      length: 2,
+      vsync: this,
+      initialIndex: widget.initialTabIndex ?? 0,
+    );
     _savedScrollController = ScrollController();
     _recentScrollController = ScrollController();
 
@@ -107,7 +113,7 @@ class _SavedScreenState extends State<SavedScreen>
             _onTabChanged(_tabController.index);
           });
 
-          // Load initial tab data based on the default tab (0 = saved)
+          // Load initial tab data based on the initial tab index
           final initialTab = _tabController.index;
           if (initialTab == 0) {
             bloc.add(const LoadSavedGuidesFromApi(refresh: true));
@@ -138,27 +144,35 @@ class _SavedScreenContent extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Scaffold(
         backgroundColor: AppTheme.backgroundColor,
+        appBar: AppBar(
+          backgroundColor: AppTheme.backgroundColor,
+          elevation: 0,
+          leading: IconButton(
+            onPressed: () => context.pop(),
+            icon: const Icon(
+              Icons.arrow_back_ios,
+              color: AppTheme.primaryColor,
+            ),
+          ),
+          title: Text(
+            'Study Guides',
+            style: GoogleFonts.playfairDisplay(
+              fontSize: 20,
+              fontWeight: FontWeight.w600,
+              color: AppTheme.primaryColor,
+            ),
+          ),
+          centerTitle: true,
+        ),
         body: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Header with title and tabs
+            // Header with tabs
             Container(
               padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Title
-                  Text(
-                    'Study Guides',
-                    style: GoogleFonts.playfairDisplay(
-                      fontSize: 32,
-                      fontWeight: FontWeight.bold,
-                      color: AppTheme.primaryColor,
-                    ),
-                  ),
-
-                  const SizedBox(height: 24),
-
                   // Custom Tab Bar
                   Container(
                     decoration: BoxDecoration(
