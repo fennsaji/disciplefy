@@ -68,27 +68,29 @@ class AppRouter {
               ),
             ],
           ),
-          // Saved Guides Branch
-          StatefulShellBranch(
-            routes: [
-              GoRoute(
-                path: AppRoutes.saved,
-                name: 'saved',
-                builder: (context, state) => const SavedScreen(),
-              ),
-            ],
-          ),
-          // Settings Branch
-          StatefulShellBranch(
-            routes: [
-              GoRoute(
-                path: AppRoutes.settings,
-                name: 'settings',
-                builder: (context, state) => const SettingsScreen(),
-              ),
-            ],
-          ),
         ],
+      ),
+
+      // Standalone Routes (outside shell)
+      GoRoute(
+        path: AppRoutes.saved,
+        name: 'saved',
+        builder: (context, state) {
+          // Parse tab parameter from query string
+          final tabParam = state.uri.queryParameters['tab'];
+          int? initialTabIndex;
+          if (tabParam == 'recent') {
+            initialTabIndex = 1; // Recent tab
+          } else if (tabParam == 'saved') {
+            initialTabIndex = 0; // Saved tab
+          }
+          return SavedScreen(initialTabIndex: initialTabIndex);
+        },
+      ),
+      GoRoute(
+        path: AppRoutes.settings,
+        name: 'settings',
+        builder: (context, state) => const SettingsScreen(),
       ),
 
       // Authentication Routes (outside app shell)
