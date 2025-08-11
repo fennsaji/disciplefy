@@ -31,14 +31,14 @@ class GuideQuickItem extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: AppTheme.surfaceColor,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: AppTheme.primaryColor.withOpacity(0.1),
+          color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
         ),
         boxShadow: [
           BoxShadow(
-            color: AppTheme.primaryColor.withOpacity(0.05),
+            color: Theme.of(context).colorScheme.primary.withOpacity(0.05),
             blurRadius: 4,
             offset: const Offset(0, 2),
           ),
@@ -58,7 +58,8 @@ class GuideQuickItem extends StatelessWidget {
                   width: 36,
                   height: 36,
                   decoration: BoxDecoration(
-                    color: AppTheme.primaryColor.withOpacity(0.1),
+                    color:
+                        Theme.of(context).colorScheme.primary.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Icon(
@@ -66,7 +67,7 @@ class GuideQuickItem extends StatelessWidget {
                         ? Icons.book_outlined
                         : Icons.lightbulb_outline,
                     size: 18,
-                    color: AppTheme.primaryColor,
+                    color: Theme.of(context).colorScheme.primary,
                   ),
                 ),
 
@@ -83,7 +84,7 @@ class GuideQuickItem extends StatelessWidget {
                         style: GoogleFonts.inter(
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
-                          color: AppTheme.textPrimary,
+                          color: Theme.of(context).colorScheme.onBackground,
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -97,7 +98,10 @@ class GuideQuickItem extends StatelessWidget {
                           Icon(
                             Icons.schedule,
                             size: 12,
-                            color: AppTheme.onSurfaceVariant,
+                            color: Theme.of(context)
+                                .colorScheme
+                                .onSurface
+                                .withOpacity(0.6),
                           ),
                           const SizedBox(width: 4),
                           Expanded(
@@ -105,7 +109,10 @@ class GuideQuickItem extends StatelessWidget {
                               _getTimeAgo(guide.lastAccessedAt),
                               style: GoogleFonts.inter(
                                 fontSize: 12,
-                                color: AppTheme.onSurfaceVariant,
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .onSurface
+                                    .withOpacity(0.6),
                               ),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
@@ -129,8 +136,11 @@ class GuideQuickItem extends StatelessWidget {
                         guide.isSaved ? Icons.bookmark : Icons.bookmark_border,
                         size: 16,
                         color: guide.isSaved
-                            ? AppTheme.primaryColor
-                            : AppTheme.onSurfaceVariant,
+                            ? Theme.of(context).colorScheme.primary
+                            : Theme.of(context)
+                                .colorScheme
+                                .onSurface
+                                .withOpacity(0.6),
                       ),
                     ),
                   ),

@@ -1,6 +1,8 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter/foundation.dart';
 import '../../../../core/usecases/usecase.dart';
 import '../../../../core/utils/error_handler.dart';
+import '../../../../core/services/theme_service.dart';
 import '../../domain/usecases/get_settings.dart';
 import '../../domain/usecases/update_theme_mode.dart';
 import '../../domain/usecases/get_app_version.dart';
@@ -13,12 +15,16 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
   final UpdateThemeMode updateThemeMode;
   final GetAppVersion getAppVersion;
   final SettingsRepository settingsRepository;
+  final ThemeService themeService;
+
+  bool _hasInitialized = false;
 
   SettingsBloc({
     required this.getSettings,
     required this.updateThemeMode,
     required this.getAppVersion,
     required this.settingsRepository,
+    required this.themeService,
   }) : super(SettingsInitial()) {
     on<LoadSettings>(_onLoadSettings);
     on<ThemeModeChanged>(_onThemeModeChanged);
@@ -26,6 +32,12 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
     on<ToggleNotifications>(_onToggleNotifications);
     on<LoadAppVersion>(_onLoadAppVersion);
     on<ClearAllSettings>(_onClearAllSettings);
+
+    // Auto-initialize settings once when bloc is created
+    if (!_hasInitialized) {
+      _hasInitialized = true;
+      add(LoadSettings());
+    }
   }
 
   Future<void> _onLoadSettings(
@@ -49,6 +61,8 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
     ThemeModeChanged event,
     Emitter<SettingsState> emit,
   ) async {
+    debugPrint(
+        'SettingsBloc: ThemeModeChanged event received - New theme: ${event.themeMode.mode}');
     if (state is SettingsLoaded) {
       final currentState = state as SettingsLoaded;
       emit(SettingsLoading());
@@ -63,14 +77,16 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
         createErrorState: (message, errorCode) =>
             SettingsError(message: message),
         onSuccess: (_) {
+          // Update settings with new theme mode directly
           final updatedSettings = currentState.settings.copyWith(
             themeMode: event.themeMode,
           );
+
+          // Update the global theme service directly without delay
+          themeService.updateTheme(event.themeMode);
+
+          // Emit loaded state with updated settings (no success message needed)
           emit(SettingsLoaded(settings: updatedSettings));
-          if (!emit.isDone) {
-            emit(const SettingsUpdateSuccess(
-                message: 'Theme updated successfully'));
-          }
         },
         operationName: 'update theme mode',
       );
@@ -97,10 +113,6 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
             language: event.language,
           );
           emit(SettingsLoaded(settings: updatedSettings));
-          if (!emit.isDone) {
-            emit(const SettingsUpdateSuccess(
-                message: 'Language updated successfully'));
-          }
         },
         operationName: 'update language',
       );
@@ -126,13 +138,6 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
             SettingsError(message: message),
         onSuccess: (_) {
           emit(SettingsLoaded(settings: updatedSettings));
-          if (!emit.isDone) {
-            emit(SettingsUpdateSuccess(
-              message: event.enabled
-                  ? 'Notifications enabled'
-                  : 'Notifications disabled',
-            ));
-          }
         },
         operationName: 'toggle notifications',
       );
