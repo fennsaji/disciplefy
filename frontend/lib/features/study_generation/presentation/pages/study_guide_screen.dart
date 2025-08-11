@@ -163,7 +163,7 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
           });
           _showSnackBar(
             state.message,
-            state.saved ? AppTheme.successColor : AppTheme.primaryColor,
+            state.saved ? Colors.green : Theme.of(context).colorScheme.primary,
             icon: state.saved ? Icons.check_circle : Icons.bookmark_remove,
           );
         } else if (state is StudySaveFailure) {
@@ -173,9 +173,9 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
         }
       },
       child: Scaffold(
-        backgroundColor: AppTheme.backgroundColor,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         appBar: AppBar(
-          backgroundColor: AppTheme.backgroundColor,
+          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
           elevation: 0,
           leading: IconButton(
             onPressed: () {
@@ -185,9 +185,9 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
                 source: widget.navigationSource,
               );
             },
-            icon: const Icon(
+            icon: Icon(
               Icons.arrow_back_ios,
-              color: AppTheme.primaryColor,
+              color: Theme.of(context).colorScheme.primary,
             ),
           ),
           title: Text(
@@ -195,16 +195,16 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
             style: GoogleFonts.playfairDisplay(
               fontSize: 18,
               fontWeight: FontWeight.w600,
-              color: AppTheme.primaryColor,
+              color: Theme.of(context).colorScheme.primary,
             ),
           ),
           centerTitle: true,
           actions: [
             IconButton(
               onPressed: _shareStudyGuide,
-              icon: const Icon(
+              icon: Icon(
                 Icons.share_outlined,
-                color: AppTheme.primaryColor,
+                color: Theme.of(context).colorScheme.primary,
               ),
             ),
           ],
@@ -244,9 +244,9 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
   }
 
   Widget _buildErrorScreen() => Scaffold(
-        backgroundColor: AppTheme.backgroundColor,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         appBar: AppBar(
-          backgroundColor: AppTheme.backgroundColor,
+          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
           elevation: 0,
           leading: IconButton(
             onPressed: () {
@@ -256,9 +256,9 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
                 source: widget.navigationSource,
               );
             },
-            icon: const Icon(
+            icon: Icon(
               Icons.arrow_back_ios,
-              color: AppTheme.primaryColor,
+              color: Theme.of(context).colorScheme.primary,
             ),
           ),
           title: Text(
@@ -266,7 +266,7 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
             style: GoogleFonts.playfairDisplay(
               fontSize: 18,
               fontWeight: FontWeight.w600,
-              color: AppTheme.primaryColor,
+              color: Theme.of(context).colorScheme.primary,
             ),
           ),
           centerTitle: true,
@@ -277,10 +277,10 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(
+                Icon(
                   Icons.error_outline,
                   size: 64,
-                  color: AppTheme.accentColor,
+                  color: Theme.of(context).colorScheme.secondary,
                 ),
                 const SizedBox(height: 24),
                 Text(
@@ -288,7 +288,7 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
                   style: GoogleFonts.playfairDisplay(
                     fontSize: 24,
                     fontWeight: FontWeight.w600,
-                    color: AppTheme.textPrimary,
+                    color: Theme.of(context).colorScheme.onBackground,
                   ),
                   textAlign: TextAlign.center,
                 ),
@@ -299,7 +299,10 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
                       : _errorMessage,
                   style: GoogleFonts.inter(
                     fontSize: 16,
-                    color: AppTheme.onSurfaceVariant,
+                    color: Theme.of(context)
+                        .colorScheme
+                        .onSurface
+                        .withOpacity(0.6),
                     height: 1.5,
                   ),
                   textAlign: TextAlign.center,
@@ -309,7 +312,7 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
                   onPressed: () =>
                       StudyNavigationService.navigateToSaved(context),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.primaryColor,
+                    backgroundColor: Theme.of(context).colorScheme.primary,
                     foregroundColor: Colors.white,
                     minimumSize: const Size(200, 48),
                     shape: RoundedRectangleBorder(
@@ -400,9 +403,9 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
         children: [
           Row(
             children: [
-              const Icon(
+              Icon(
                 Icons.edit_note,
-                color: AppTheme.primaryColor,
+                color: Theme.of(context).colorScheme.primary,
                 size: 24,
               ),
               const SizedBox(width: 8),
@@ -411,7 +414,7 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
                 style: GoogleFonts.inter(
                   fontSize: 18,
                   fontWeight: FontWeight.w600,
-                  color: AppTheme.textPrimary,
+                  color: Theme.of(context).colorScheme.onBackground,
                 ),
               ),
             ],
@@ -419,10 +422,10 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
           const SizedBox(height: 16),
           Container(
             decoration: BoxDecoration(
-              color: AppTheme.surfaceColor,
+              color: Theme.of(context).colorScheme.surface,
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                color: AppTheme.primaryColor.withValues(alpha: 0.2),
+                color: Theme.of(context).colorScheme.primary.withOpacity(0.2),
               ),
             ),
             child: TextField(
@@ -430,14 +433,15 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
               maxLines: 6,
               style: GoogleFonts.inter(
                 fontSize: 14,
-                color: AppTheme.textPrimary,
+                color: Theme.of(context).colorScheme.onBackground,
                 height: 1.5,
               ),
               decoration: InputDecoration(
                 hintText:
                     'Write your thoughts, insights, and reflections here...',
                 hintStyle: GoogleFonts.inter(
-                  color: AppTheme.onSurfaceVariant,
+                  color:
+                      Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
                 ),
                 border: InputBorder.none,
                 contentPadding: const EdgeInsets.all(16),
@@ -450,10 +454,10 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
   Widget _buildBottomActions() => Container(
         padding: const EdgeInsets.all(24),
         decoration: BoxDecoration(
-          color: AppTheme.surfaceColor,
+          color: Theme.of(context).colorScheme.surface,
           boxShadow: [
             BoxShadow(
-              color: AppTheme.primaryColor.withValues(alpha: 0.1),
+              color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
               blurRadius: 10,
               offset: const Offset(0, -2),
             ),
@@ -470,13 +474,13 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
                   return isSaving
                       ? OutlinedButton.icon(
                           onPressed: null,
-                          icon: const SizedBox(
+                          icon: SizedBox(
                             width: 16,
                             height: 16,
                             child: CircularProgressIndicator(
                               strokeWidth: 2,
                               valueColor: AlwaysStoppedAnimation<Color>(
-                                  AppTheme.primaryColor),
+                                  Theme.of(context).colorScheme.primary),
                             ),
                           ),
                           label: Text(
@@ -487,11 +491,15 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
                             ),
                           ),
                           style: OutlinedButton.styleFrom(
-                            foregroundColor:
-                                AppTheme.primaryColor.withValues(alpha: 0.6),
+                            foregroundColor: Theme.of(context)
+                                .colorScheme
+                                .primary
+                                .withOpacity(0.6),
                             side: BorderSide(
-                              color:
-                                  AppTheme.primaryColor.withValues(alpha: 0.6),
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .primary
+                                  .withOpacity(0.6),
                               width: 2,
                             ),
                             minimumSize: const Size.fromHeight(56),
@@ -514,12 +522,12 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
                           ),
                           style: OutlinedButton.styleFrom(
                             foregroundColor: _isSaved
-                                ? AppTheme.successColor
-                                : AppTheme.primaryColor,
+                                ? Colors.green
+                                : Theme.of(context).colorScheme.primary,
                             side: BorderSide(
                               color: _isSaved
-                                  ? AppTheme.successColor
-                                  : AppTheme.primaryColor,
+                                  ? Colors.green
+                                  : Theme.of(context).colorScheme.primary,
                               width: 2,
                             ),
                             minimumSize: const Size.fromHeight(56),
@@ -535,7 +543,7 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
             Expanded(
               child: ElevatedButton.icon(
                 onPressed: _shareStudyGuide,
-                icon: const Icon(Icons.share),
+                icon: Icon(Icons.share),
                 label: Text(
                   'Share',
                   style: GoogleFonts.inter(
@@ -544,7 +552,7 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
                   ),
                 ),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.primaryColor,
+                  backgroundColor: Theme.of(context).colorScheme.primary,
                   foregroundColor: Colors.white,
                   minimumSize: const Size.fromHeight(56),
                   shape: RoundedRectangleBorder(
@@ -672,7 +680,7 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
   /// Handle save operation errors from BLoC
   void _handleSaveError(Failure failure) {
     String message = 'Failed to save study guide. Please try again.';
-    Color backgroundColor = AppTheme.errorColor;
+    Color backgroundColor = Theme.of(context).colorScheme.error;
 
     if (failure.code == 'UNAUTHORIZED') {
       message = 'Authentication expired. Please sign in again.';
@@ -682,7 +690,7 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
       message = 'Study guide not found. It may have been deleted.';
     } else if (failure.code == 'ALREADY_SAVED') {
       message = 'This study guide is already saved!';
-      backgroundColor = AppTheme.primaryColor;
+      backgroundColor = Theme.of(context).colorScheme.primary;
       setState(() {
         _isSaved = true;
       });
@@ -773,14 +781,14 @@ class _StudySection extends StatelessWidget {
   Widget build(BuildContext context) => Container(
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: AppTheme.surfaceColor,
+          color: Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: AppTheme.primaryColor.withValues(alpha: 0.1),
+            color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
           ),
           boxShadow: [
             BoxShadow(
-              color: AppTheme.primaryColor.withValues(alpha: 0.05),
+              color: Theme.of(context).colorScheme.primary.withOpacity(0.05),
               blurRadius: 10,
               offset: const Offset(0, 2),
             ),
@@ -796,12 +804,13 @@ class _StudySection extends StatelessWidget {
                   width: 40,
                   height: 40,
                   decoration: BoxDecoration(
-                    color: AppTheme.primaryColor.withValues(alpha: 0.1),
+                    color:
+                        Theme.of(context).colorScheme.primary.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Icon(
                     icon,
-                    color: AppTheme.primaryColor,
+                    color: Theme.of(context).colorScheme.primary,
                     size: 20,
                   ),
                 ),
@@ -814,7 +823,7 @@ class _StudySection extends StatelessWidget {
                     style: GoogleFonts.inter(
                       fontSize: 18,
                       fontWeight: FontWeight.w600,
-                      color: AppTheme.textPrimary,
+                      color: Theme.of(context).colorScheme.onBackground,
                     ),
                   ),
                 ),
@@ -822,9 +831,12 @@ class _StudySection extends StatelessWidget {
                 // Copy button
                 IconButton(
                   onPressed: () => _copyToClipboard(context, content),
-                  icon: const Icon(
+                  icon: Icon(
                     Icons.copy,
-                    color: AppTheme.onSurfaceVariant,
+                    color: Theme.of(context)
+                        .colorScheme
+                        .onSurface
+                        .withOpacity(0.6),
                     size: 18,
                   ),
                   constraints: const BoxConstraints(),
@@ -840,7 +852,7 @@ class _StudySection extends StatelessWidget {
               content,
               style: GoogleFonts.inter(
                 fontSize: 14,
-                color: AppTheme.textPrimary,
+                color: Theme.of(context).colorScheme.onBackground,
                 height: 1.6,
               ),
             ),
@@ -856,7 +868,7 @@ class _StudySection extends StatelessWidget {
           'Copied to clipboard',
           style: GoogleFonts.inter(color: Colors.white),
         ),
-        backgroundColor: AppTheme.primaryColor,
+        backgroundColor: Theme.of(context).colorScheme.primary,
         behavior: SnackBarBehavior.floating,
         duration: const Duration(seconds: 2),
       ),

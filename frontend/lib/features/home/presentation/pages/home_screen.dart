@@ -170,7 +170,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
           }
 
           return Scaffold(
-            backgroundColor: AppTheme.backgroundColor,
+            backgroundColor: Theme.of(context).scaffoldBackgroundColor,
             body: SafeArea(
               child: Column(
                 children: [
@@ -289,7 +289,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
             style: GoogleFonts.inter(
               fontSize: 28,
               fontWeight: FontWeight.w600,
-              color: AppTheme.textPrimary,
+              color: Theme.of(context).colorScheme.onBackground,
               height: 1.2,
             ),
           ),
@@ -298,7 +298,8 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
             'Continue your spiritual journey with guided study',
             style: GoogleFonts.inter(
               fontSize: 16,
-              color: AppTheme.onSurfaceVariant,
+              color:
+                  Theme.of(context).colorScheme.onBackground.withOpacity(0.7),
               height: 1.4,
             ),
           ),
@@ -397,7 +398,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
                     style: GoogleFonts.inter(
                       fontSize: 20,
                       fontWeight: FontWeight.w600,
-                      color: AppTheme.textPrimary,
+                      color: Theme.of(context).colorScheme.onBackground,
                     ),
                   ),
                   if (homeState.isLoadingTopics)
@@ -448,7 +449,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
               style: GoogleFonts.inter(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
-                color: AppTheme.textPrimary,
+                color: Theme.of(context).colorScheme.onBackground,
               ),
             ),
             const SizedBox(height: 8),
@@ -456,7 +457,8 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
               error,
               style: GoogleFonts.inter(
                 fontSize: 14,
-                color: AppTheme.onSurfaceVariant,
+                color:
+                    Theme.of(context).colorScheme.onBackground.withOpacity(0.7),
               ),
               textAlign: TextAlign.center,
             ),
@@ -502,7 +504,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
   Widget _buildLoadingTopicCard() => Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: AppTheme.surfaceColor,
+          color: Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: AppTheme.primaryColor.withOpacity(0.1),
@@ -612,7 +614,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
   Widget _buildNoTopicsWidget() => Container(
         padding: const EdgeInsets.all(24),
         decoration: BoxDecoration(
-          color: AppTheme.surfaceColor,
+          color: Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: AppTheme.primaryColor.withOpacity(0.2),
@@ -631,7 +633,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
               style: GoogleFonts.inter(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
-                color: AppTheme.textPrimary,
+                color: Theme.of(context).colorScheme.onBackground,
               ),
             ),
             const SizedBox(height: 8),
@@ -639,7 +641,8 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
               'Check your connection and try again.',
               style: GoogleFonts.inter(
                 fontSize: 14,
-                color: AppTheme.onSurfaceVariant,
+                color:
+                    Theme.of(context).colorScheme.onBackground.withOpacity(0.7),
               ),
               textAlign: TextAlign.center,
             ),
@@ -713,7 +716,7 @@ class _RecommendedGuideTopicCard extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: AppTheme.surfaceColor,
+          color: Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: color.withOpacity(0.2),
@@ -779,7 +782,7 @@ class _RecommendedGuideTopicCard extends StatelessWidget {
               style: GoogleFonts.inter(
                 fontSize: 14, // Slightly smaller for better fit
                 fontWeight: FontWeight.w600,
-                color: AppTheme.textPrimary,
+                color: Theme.of(context).colorScheme.onSurface,
                 height: 1.2, // Tighter line height
               ),
               maxLines: 2, // Allow 2 lines for longer titles
@@ -794,7 +797,8 @@ class _RecommendedGuideTopicCard extends StatelessWidget {
                 topic.description,
                 style: GoogleFonts.inter(
                   fontSize: 11, // Smaller font for more content
-                  color: AppTheme.onSurfaceVariant,
+                  color:
+                      Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
                   height: 1.3,
                 ),
                 maxLines: 3, // Allow up to 3 lines
