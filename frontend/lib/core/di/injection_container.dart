@@ -63,6 +63,7 @@ import '../../features/user_profile/domain/usecases/get_user_profile.dart';
 import '../../features/user_profile/domain/usecases/update_user_profile.dart';
 import '../../features/user_profile/domain/usecases/delete_user_profile.dart';
 import '../../features/user_profile/presentation/bloc/user_profile_bloc.dart';
+import '../services/theme_service.dart';
 
 /// Service locator instance for dependency injection
 final sl = GetIt.instance;
@@ -81,6 +82,9 @@ Future<void> initializeDependencies() async {
   // Register SharedPreferences
   final sharedPreferences = await SharedPreferences.getInstance();
   sl.registerLazySingleton(() => sharedPreferences);
+
+  // Register ThemeService
+  sl.registerLazySingleton(() => ThemeService());
 
   //! Auth
   sl.registerLazySingleton(() => AuthService());
@@ -130,11 +134,12 @@ Future<void> initializeDependencies() async {
   sl.registerLazySingleton(() => UpdateThemeMode(sl()));
   sl.registerLazySingleton(() => GetAppVersion(sl()));
 
-  sl.registerFactory(() => SettingsBloc(
+  sl.registerLazySingleton(() => SettingsBloc(
         getSettings: sl(),
         updateThemeMode: sl(),
         getAppVersion: sl(),
         settingsRepository: sl(),
+        themeService: sl(),
       ));
 
   //! Daily Verse

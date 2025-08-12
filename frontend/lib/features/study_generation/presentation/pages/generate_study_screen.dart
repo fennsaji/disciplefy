@@ -122,9 +122,9 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen> {
     final isLargeScreen = screenHeight > 700;
 
     return Scaffold(
-      backgroundColor: AppTheme.backgroundColor,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: AppTheme.backgroundColor,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         elevation: 0,
         automaticallyImplyLeading: false,
         title: Text(
@@ -132,16 +132,16 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen> {
           style: GoogleFonts.playfairDisplay(
             fontSize: 20,
             fontWeight: FontWeight.w600,
-            color: AppTheme.primaryColor,
+            color: Theme.of(context).colorScheme.primary,
           ),
         ),
         centerTitle: true,
         actions: [
           IconButton(
             onPressed: () => context.push('/saved'),
-            icon: const Icon(
+            icon: Icon(
               Icons.bookmark_outline,
-              color: AppTheme.primaryColor,
+              color: Theme.of(context).colorScheme.primary,
             ),
             tooltip: 'View Saved Guides',
           ),
@@ -216,13 +216,13 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen> {
             style: GoogleFonts.inter(
               fontSize: 18,
               fontWeight: FontWeight.w600,
-              color: AppTheme.textPrimary,
+              color: Theme.of(context).colorScheme.onBackground,
             ),
           ),
           const SizedBox(height: 16),
           Container(
             decoration: BoxDecoration(
-              color: AppTheme.primaryColor.withOpacity(0.1),
+              color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Row(
@@ -255,13 +255,13 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen> {
             style: GoogleFonts.inter(
               fontSize: 16,
               fontWeight: FontWeight.w600,
-              color: AppTheme.textPrimary,
+              color: Theme.of(context).colorScheme.onBackground,
             ),
           ),
           const SizedBox(height: 12),
           Container(
             decoration: BoxDecoration(
-              color: AppTheme.primaryColor.withOpacity(0.1),
+              color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Row(
@@ -306,7 +306,7 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen> {
             style: GoogleFonts.inter(
               fontSize: 16,
               fontWeight: FontWeight.w600,
-              color: AppTheme.textPrimary,
+              color: Theme.of(context).colorScheme.onBackground,
             ),
           ),
           const SizedBox(height: 12),
@@ -315,25 +315,25 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen> {
             focusNode: _inputFocusNode,
             style: GoogleFonts.inter(
               fontSize: 16,
-              color: AppTheme.textPrimary,
+              color: Theme.of(context).colorScheme.onBackground,
             ),
             decoration: InputDecoration(
               hintText: _selectedMode == StudyInputMode.scripture
                   ? 'e.g., John 3:16, Matthew 5:1-12'
                   : 'e.g., Forgiveness, Love, Faith',
               hintStyle: GoogleFonts.inter(
-                color: AppTheme.onSurfaceVariant,
+                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
               ),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
                 borderSide: BorderSide(
-                  color: AppTheme.primaryColor.withOpacity(0.3),
+                  color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
                 ),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(
-                  color: AppTheme.primaryColor,
+                borderSide: BorderSide(
+                  color: Theme.of(context).colorScheme.primary,
                   width: 2,
                 ),
               ),
@@ -362,9 +362,12 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen> {
                         _inputController.clear();
                         _inputFocusNode.requestFocus();
                       },
-                      icon: const Icon(
+                      icon: Icon(
                         Icons.clear,
-                        color: AppTheme.onSurfaceVariant,
+                        color: Theme.of(context)
+                            .colorScheme
+                            .onSurface
+                            .withOpacity(0.6),
                       ),
                     )
                   : null,
@@ -386,7 +389,7 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen> {
           style: GoogleFonts.inter(
             fontSize: 14,
             fontWeight: FontWeight.w600,
-            color: AppTheme.onSurfaceVariant,
+            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
           ),
         ),
         const SizedBox(height: 12),
@@ -416,7 +419,7 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen> {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: AppTheme.primaryColor.withOpacity(0.1),
+              color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Column(
@@ -424,13 +427,13 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen> {
               children: [
                 Row(
                   children: [
-                    const SizedBox(
+                    SizedBox(
                       width: 20,
                       height: 20,
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
                         valueColor: AlwaysStoppedAnimation<Color>(
-                          AppTheme.primaryColor,
+                          Theme.of(context).colorScheme.primary,
                         ),
                       ),
                     ),
@@ -441,7 +444,7 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen> {
                         style: GoogleFonts.inter(
                           fontSize: 14,
                           fontWeight: FontWeight.w500,
-                          color: AppTheme.primaryColor,
+                          color: Theme.of(context).colorScheme.primary,
                         ),
                       ),
                     ),
@@ -452,7 +455,10 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen> {
                   'This may take a few moments.',
                   style: GoogleFonts.inter(
                     fontSize: 12,
-                    color: AppTheme.onSurfaceVariant,
+                    color: Theme.of(context)
+                        .colorScheme
+                        .onSurface
+                        .withOpacity(0.6),
                   ),
                 ),
               ],
@@ -465,9 +471,10 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen> {
           child: ElevatedButton(
             onPressed: _isInputValid && !isLoading ? _generateStudyGuide : null,
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.primaryColor,
+              backgroundColor: Theme.of(context).colorScheme.primary,
               foregroundColor: Colors.white,
-              disabledBackgroundColor: AppTheme.onSurfaceVariant,
+              disabledBackgroundColor:
+                  Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
               disabledForegroundColor: Colors.white,
               minimumSize: const Size.fromHeight(56),
               shape: RoundedRectangleBorder(
@@ -652,7 +659,9 @@ class _ModeToggleButton extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 12),
           decoration: BoxDecoration(
-            color: isSelected ? AppTheme.primaryColor : Colors.transparent,
+            color: isSelected
+                ? Theme.of(context).colorScheme.primary
+                : Colors.transparent,
             borderRadius: BorderRadius.circular(8),
           ),
           child: Text(
@@ -660,7 +669,9 @@ class _ModeToggleButton extends StatelessWidget {
             style: GoogleFonts.inter(
               fontSize: 14,
               fontWeight: FontWeight.w600,
-              color: isSelected ? Colors.white : AppTheme.primaryColor,
+              color: isSelected
+                  ? Colors.white
+                  : Theme.of(context).colorScheme.primary,
             ),
             textAlign: TextAlign.center,
           ),
@@ -688,7 +699,9 @@ class _LanguageToggleButton extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 10),
           decoration: BoxDecoration(
-            color: isSelected ? AppTheme.primaryColor : Colors.transparent,
+            color: isSelected
+                ? Theme.of(context).colorScheme.primary
+                : Colors.transparent,
             borderRadius: BorderRadius.circular(8),
           ),
           child: Column(
@@ -700,7 +713,9 @@ class _LanguageToggleButton extends StatelessWidget {
                 style: GoogleFonts.inter(
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
-                  color: isSelected ? Colors.white : AppTheme.primaryColor,
+                  color: isSelected
+                      ? Colors.white
+                      : Theme.of(context).colorScheme.primary,
                 ),
                 textAlign: TextAlign.center,
                 maxLines: 1,
@@ -728,10 +743,10 @@ class _SuggestionChip extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           decoration: BoxDecoration(
-            color: AppTheme.surfaceColor,
+            color: Theme.of(context).colorScheme.surface,
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
-              color: AppTheme.primaryColor.withOpacity(0.3),
+              color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
             ),
           ),
           child: Text(
@@ -739,7 +754,7 @@ class _SuggestionChip extends StatelessWidget {
             style: GoogleFonts.inter(
               fontSize: 12,
               fontWeight: FontWeight.w500,
-              color: AppTheme.primaryColor,
+              color: Theme.of(context).colorScheme.primary,
             ),
           ),
         ),

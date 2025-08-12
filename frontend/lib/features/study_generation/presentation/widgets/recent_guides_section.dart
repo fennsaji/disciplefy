@@ -61,7 +61,7 @@ class _RecentGuidesSectionState extends State<RecentGuidesSection> {
                   gradient: LinearGradient(
                     colors: [
                       Colors.transparent,
-                      AppTheme.primaryColor.withOpacity(0.2),
+                      Theme.of(context).colorScheme.primary.withOpacity(0.2),
                       Colors.transparent,
                     ],
                   ),
@@ -105,7 +105,7 @@ class _RecentGuidesSectionState extends State<RecentGuidesSection> {
               style: GoogleFonts.inter(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
-                color: AppTheme.textPrimary,
+                color: Theme.of(context).colorScheme.onBackground,
               ),
             ),
             if (state.recentGuides.length > 3)
@@ -116,7 +116,7 @@ class _RecentGuidesSectionState extends State<RecentGuidesSection> {
                   style: GoogleFonts.inter(
                     fontSize: 14,
                     fontWeight: FontWeight.w500,
-                    color: AppTheme.primaryColor,
+                    color: Theme.of(context).colorScheme.primary,
                   ),
                 ),
               ),
@@ -142,10 +142,10 @@ class _RecentGuidesSectionState extends State<RecentGuidesSection> {
       width: double.infinity,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: AppTheme.surfaceColor,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: AppTheme.primaryColor.withOpacity(0.1),
+          color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
         ),
       ),
       child: Column(
@@ -153,7 +153,7 @@ class _RecentGuidesSectionState extends State<RecentGuidesSection> {
           Icon(
             Icons.history,
             size: 40,
-            color: AppTheme.onSurfaceVariant.withOpacity(0.6),
+            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
           ),
           const SizedBox(height: 8),
           Text(
@@ -161,7 +161,7 @@ class _RecentGuidesSectionState extends State<RecentGuidesSection> {
             style: GoogleFonts.inter(
               fontSize: 16,
               fontWeight: FontWeight.w600,
-              color: AppTheme.onSurfaceVariant,
+              color: Theme.of(context).colorScheme.onSurface,
             ),
           ),
           const SizedBox(height: 4),
@@ -169,7 +169,7 @@ class _RecentGuidesSectionState extends State<RecentGuidesSection> {
             'Generate your first study guide to see it here',
             style: GoogleFonts.inter(
               fontSize: 12,
-              color: AppTheme.onSurfaceVariant.withOpacity(0.8),
+              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.8),
             ),
             textAlign: TextAlign.center,
           ),
@@ -187,7 +187,7 @@ class _RecentGuidesSectionState extends State<RecentGuidesSection> {
           style: GoogleFonts.inter(
             fontSize: 16,
             fontWeight: FontWeight.w600,
-            color: AppTheme.textPrimary,
+            color: Theme.of(context).colorScheme.onBackground,
           ),
         ),
         const SizedBox(height: 12),
@@ -198,7 +198,7 @@ class _RecentGuidesSectionState extends State<RecentGuidesSection> {
             height: 60,
             margin: const EdgeInsets.only(bottom: 12),
             decoration: BoxDecoration(
-              color: AppTheme.onSurfaceVariant.withOpacity(0.1),
+              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.1),
               borderRadius: BorderRadius.circular(12),
             ),
           ),
@@ -212,10 +212,10 @@ class _RecentGuidesSectionState extends State<RecentGuidesSection> {
       width: double.infinity,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: AppTheme.surfaceColor,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: AppTheme.primaryColor.withOpacity(0.1),
+          color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
         ),
       ),
       child: Column(
@@ -223,7 +223,7 @@ class _RecentGuidesSectionState extends State<RecentGuidesSection> {
           Icon(
             Icons.person_outline,
             size: 40,
-            color: AppTheme.primaryColor.withOpacity(0.6),
+            color: Theme.of(context).colorScheme.primary.withOpacity(0.6),
           ),
           const SizedBox(height: 8),
           Text(
@@ -231,7 +231,7 @@ class _RecentGuidesSectionState extends State<RecentGuidesSection> {
             style: GoogleFonts.inter(
               fontSize: 16,
               fontWeight: FontWeight.w600,
-              color: AppTheme.textPrimary,
+              color: Theme.of(context).colorScheme.onBackground,
             ),
           ),
           const SizedBox(height: 4),
@@ -239,7 +239,7 @@ class _RecentGuidesSectionState extends State<RecentGuidesSection> {
             'View your recent study guides across devices',
             style: GoogleFonts.inter(
               fontSize: 12,
-              color: AppTheme.onSurfaceVariant,
+              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
             ),
             textAlign: TextAlign.center,
           ),
@@ -247,8 +247,8 @@ class _RecentGuidesSectionState extends State<RecentGuidesSection> {
           ElevatedButton(
             onPressed: () => context.push('/login'),
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.secondaryColor,
-              foregroundColor: AppTheme.textPrimary,
+              backgroundColor: Theme.of(context).colorScheme.secondary,
+              foregroundColor: Theme.of(context).colorScheme.onSecondary,
               elevation: 0,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(8),
@@ -272,10 +272,10 @@ class _RecentGuidesSectionState extends State<RecentGuidesSection> {
       width: double.infinity,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: AppTheme.surfaceColor,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: AppTheme.errorColor.withOpacity(0.2),
+          color: Theme.of(context).colorScheme.error.withOpacity(0.2),
         ),
       ),
       child: Column(
@@ -283,7 +283,7 @@ class _RecentGuidesSectionState extends State<RecentGuidesSection> {
           Icon(
             Icons.error_outline,
             size: 40,
-            color: AppTheme.errorColor,
+            color: Theme.of(context).colorScheme.error,
           ),
           const SizedBox(height: 8),
           Text(
@@ -291,7 +291,7 @@ class _RecentGuidesSectionState extends State<RecentGuidesSection> {
             style: GoogleFonts.inter(
               fontSize: 16,
               fontWeight: FontWeight.w600,
-              color: AppTheme.textPrimary,
+              color: Theme.of(context).colorScheme.onBackground,
             ),
           ),
           const SizedBox(height: 4),
@@ -299,7 +299,7 @@ class _RecentGuidesSectionState extends State<RecentGuidesSection> {
             message,
             style: GoogleFonts.inter(
               fontSize: 12,
-              color: AppTheme.onSurfaceVariant,
+              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
             ),
             textAlign: TextAlign.center,
           ),
@@ -308,8 +308,8 @@ class _RecentGuidesSectionState extends State<RecentGuidesSection> {
             onPressed: () => _bloc
                 ?.add(const LoadRecentGuidesFromApi(refresh: true, limit: 5)),
             style: OutlinedButton.styleFrom(
-              foregroundColor: AppTheme.primaryColor,
-              side: BorderSide(color: AppTheme.primaryColor),
+              foregroundColor: Theme.of(context).colorScheme.primary,
+              side: BorderSide(color: Theme.of(context).colorScheme.primary),
             ),
             child: Text(
               'Retry',
