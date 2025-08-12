@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter/services.dart';
+import 'package:share_plus/share_plus.dart';
 
 import '../../../../core/utils/ui_utils.dart';
 import '../../domain/entities/daily_verse_entity.dart';
@@ -566,8 +567,7 @@ class DailyVerseCard extends StatelessWidget {
   }
 
   void _shareVerse(DailyVerseLoaded state) {
-    // TODO: Implement share functionality using share_plus package
-    // final text = '${state.verse.reference}\n\n${state.currentVerseText}\n\n- Shared from Disciplefy';
-    // Share.share(text);
+    final text = '${state.verse.reference}\n\n${state.currentVerseText}\n\n- Shared from Disciplefy';
+    Share.share(text);
   }
 }
