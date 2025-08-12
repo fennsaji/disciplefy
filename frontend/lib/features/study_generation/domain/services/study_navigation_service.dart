@@ -48,17 +48,24 @@ class StudyNavigationService {
     BuildContext context, {
     required StudyNavigationSource source,
   }) {
-    switch (source) {
-      case StudyNavigationSource.home:
-        context.go(AppRoutes.home);
-        break;
-      case StudyNavigationSource.generate:
-        context.go(AppRoutes.generateStudy);
-        break;
-      case StudyNavigationSource.saved:
-      case StudyNavigationSource.recent:
-        context.go(AppRoutes.saved);
-        break;
+    // Use context.pop() to go back in the navigation stack
+    // This preserves the navigation history and allows proper back navigation
+    if (context.canPop()) {
+      context.pop();
+    } else {
+      // Fallback to specific routes if there's nothing in the stack
+      switch (source) {
+        case StudyNavigationSource.home:
+          context.go(AppRoutes.home);
+          break;
+        case StudyNavigationSource.generate:
+          context.go(AppRoutes.generateStudy);
+          break;
+        case StudyNavigationSource.saved:
+        case StudyNavigationSource.recent:
+          context.go(AppRoutes.saved);
+          break;
+      }
     }
   }
 
