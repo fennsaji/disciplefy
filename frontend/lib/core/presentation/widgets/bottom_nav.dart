@@ -17,12 +17,12 @@ class NavTab {
   });
 }
 
-/// Disciplefy Bottom Navigation Bar - Light Theme
+/// Disciplefy Bottom Navigation Bar - Theme Aware
 ///
 /// Features:
 /// ✅ Fixed overflow issues with proper SafeArea usage
-/// ✅ Light background (#FAFAFA) with rounded top corners
-/// ✅ Correct theme colors: Active (#7A56DB), Inactive (#999999)
+/// ✅ Theme-aware background with rounded top corners
+/// ✅ Dynamic theme colors: Active (primary), Inactive (onSurface)
 /// ✅ Top border for visual separation
 /// ✅ No unnecessary padding or margins
 /// ✅ No swipe animations - uses IndexedStack
@@ -61,18 +61,18 @@ class DisciplefyBottomNav extends StatelessWidget {
   Widget build(BuildContext context) => ClipRRect(
         borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
         child: Container(
-          decoration: const BoxDecoration(
-            color: Color(0xFFFAFAFA), // Light background
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surface,
             border: Border(
               top: BorderSide(
-                color: Color(0xFFE5E5E5), // Top border for separation
+                color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
               ),
             ),
             boxShadow: [
               BoxShadow(
-                color: Color(0x0A000000), // Very subtle shadow for light theme
+                color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
                 blurRadius: 8,
-                offset: Offset(0, -2),
+                offset: const Offset(0, -2),
               ),
             ],
           ),
@@ -124,9 +124,10 @@ class _BottomNavItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Light theme colors as specified
-    const activeColor = Color(0xFF7A56DB); // Active icon color (primary purple)
-    const inactiveColor = Color(0xFF999999); // Inactive color (neutral gray)
+    // Theme-aware colors
+    final activeColor = Theme.of(context).colorScheme.primary;
+    final inactiveColor =
+        Theme.of(context).colorScheme.onSurface.withOpacity(0.6);
 
     return Material(
       color: Colors.transparent,
