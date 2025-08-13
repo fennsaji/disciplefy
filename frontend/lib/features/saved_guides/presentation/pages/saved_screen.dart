@@ -143,15 +143,15 @@ class _SavedScreenContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-        backgroundColor: AppTheme.backgroundColor,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         appBar: AppBar(
-          backgroundColor: AppTheme.backgroundColor,
+          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
           elevation: 0,
           leading: IconButton(
             onPressed: () => context.pop(),
-            icon: const Icon(
+            icon: Icon(
               Icons.arrow_back_ios,
-              color: AppTheme.primaryColor,
+              color: Theme.of(context).colorScheme.primary,
             ),
           ),
           title: Text(
@@ -159,7 +159,7 @@ class _SavedScreenContent extends StatelessWidget {
             style: GoogleFonts.playfairDisplay(
               fontSize: 20,
               fontWeight: FontWeight.w600,
-              color: AppTheme.primaryColor,
+              color: Theme.of(context).colorScheme.primary,
             ),
           ),
           centerTitle: true,
@@ -176,11 +176,14 @@ class _SavedScreenContent extends StatelessWidget {
                   // Custom Tab Bar
                   Container(
                     decoration: BoxDecoration(
-                      color: AppTheme.surfaceColor,
+                      color: Theme.of(context).colorScheme.surface,
                       borderRadius: BorderRadius.circular(12),
                       boxShadow: [
                         BoxShadow(
-                          color: AppTheme.primaryColor.withOpacity(0.08),
+                          color: Theme.of(context)
+                              .colorScheme
+                              .primary
+                              .withOpacity(0.08),
                           blurRadius: 8,
                           offset: const Offset(0, 2),
                         ),
@@ -188,10 +191,16 @@ class _SavedScreenContent extends StatelessWidget {
                     ),
                     child: TabBar(
                       controller: tabController,
-                      labelColor: AppTheme.primaryColor,
-                      unselectedLabelColor: AppTheme.onSurfaceVariant,
+                      labelColor: Theme.of(context).colorScheme.primary,
+                      unselectedLabelColor: Theme.of(context)
+                          .colorScheme
+                          .onSurface
+                          .withOpacity(0.6),
                       indicator: BoxDecoration(
-                        color: AppTheme.primaryColor.withOpacity(0.1),
+                        color: Theme.of(context)
+                            .colorScheme
+                            .primary
+                            .withOpacity(0.1),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       indicatorSize: TabBarIndicatorSize.tab,
@@ -228,7 +237,7 @@ class _SavedScreenContent extends StatelessWidget {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
                         content: Text(state.message),
-                        backgroundColor: AppTheme.errorColor,
+                        backgroundColor: Theme.of(context).colorScheme.error,
                         behavior: SnackBarBehavior.floating,
                       ),
                     );
@@ -236,7 +245,7 @@ class _SavedScreenContent extends StatelessWidget {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
                         content: Text(state.message),
-                        backgroundColor: AppTheme.successColor,
+                        backgroundColor: Colors.green,
                         behavior: SnackBarBehavior.floating,
                       ),
                     );
@@ -244,7 +253,7 @@ class _SavedScreenContent extends StatelessWidget {
                 },
                 builder: (context, state) {
                   if (state is SavedGuidesTabLoading) {
-                    return _buildLoadingIndicator(state.isRefresh);
+                    return _buildLoadingIndicator(context, state.isRefresh);
                   }
 
                   if (state is SavedGuidesAuthRequired) {
@@ -265,7 +274,7 @@ class _SavedScreenContent extends StatelessWidget {
                     return _buildErrorState(context, state.message);
                   }
 
-                  return _buildLoadingIndicator(false);
+                  return _buildLoadingIndicator(context, false);
                 },
               ),
             ),
@@ -273,19 +282,20 @@ class _SavedScreenContent extends StatelessWidget {
         ),
       );
 
-  Widget _buildLoadingIndicator(bool isRefresh) => Center(
+  Widget _buildLoadingIndicator(BuildContext context, bool isRefresh) => Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const CircularProgressIndicator(
-              valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primaryColor),
+            CircularProgressIndicator(
+              valueColor: AlwaysStoppedAnimation<Color>(
+                  Theme.of(context).colorScheme.primary),
             ),
             const SizedBox(height: 16),
             Text(
               isRefresh ? 'Refreshing guides...' : 'Loading guides...',
               style: GoogleFonts.inter(
                 fontSize: 16,
-                color: AppTheme.onSurfaceVariant,
+                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
               ),
             ),
           ],
@@ -298,10 +308,10 @@ class _SavedScreenContent extends StatelessWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(
+              Icon(
                 Icons.error_outline,
                 size: 64,
-                color: AppTheme.errorColor,
+                color: Theme.of(context).colorScheme.error,
               ),
               const SizedBox(height: 16),
               Text(
@@ -309,7 +319,7 @@ class _SavedScreenContent extends StatelessWidget {
                 style: GoogleFonts.inter(
                   fontSize: 20,
                   fontWeight: FontWeight.w600,
-                  color: AppTheme.textPrimary,
+                  color: Theme.of(context).colorScheme.onBackground,
                 ),
               ),
               const SizedBox(height: 8),
@@ -317,7 +327,8 @@ class _SavedScreenContent extends StatelessWidget {
                 message,
                 style: GoogleFonts.inter(
                   fontSize: 14,
-                  color: AppTheme.onSurfaceVariant,
+                  color:
+                      Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
                 ),
                 textAlign: TextAlign.center,
               ),
@@ -329,7 +340,7 @@ class _SavedScreenContent extends StatelessWidget {
                       );
                 },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.primaryColor,
+                  backgroundColor: Theme.of(context).colorScheme.primary,
                   foregroundColor: Colors.white,
                 ),
                 child: const Text('Retry'),
@@ -350,7 +361,7 @@ class _SavedScreenContent extends StatelessWidget {
               Icon(
                 state.isForSavedGuides ? Icons.bookmark_border : Icons.history,
                 size: 64,
-                color: AppTheme.primaryColor.withOpacity(0.6),
+                color: Theme.of(context).colorScheme.primary.withOpacity(0.6),
               ),
               const SizedBox(height: 16),
               Text(
@@ -358,7 +369,7 @@ class _SavedScreenContent extends StatelessWidget {
                 style: GoogleFonts.inter(
                   fontSize: 20,
                   fontWeight: FontWeight.w600,
-                  color: AppTheme.textPrimary,
+                  color: Theme.of(context).colorScheme.onBackground,
                 ),
               ),
               const SizedBox(height: 8),
@@ -366,7 +377,8 @@ class _SavedScreenContent extends StatelessWidget {
                 state.message,
                 style: GoogleFonts.inter(
                   fontSize: 14,
-                  color: AppTheme.onSurfaceVariant,
+                  color:
+                      Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
                 ),
                 textAlign: TextAlign.center,
               ),
@@ -376,8 +388,8 @@ class _SavedScreenContent extends StatelessWidget {
                   context.go('/auth');
                 },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.secondaryColor,
-                  foregroundColor: AppTheme.textPrimary,
+                  backgroundColor: Theme.of(context).colorScheme.secondary,
+                  foregroundColor: Theme.of(context).colorScheme.onSecondary,
                   padding:
                       const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
                   shape: RoundedRectangleBorder(
@@ -419,12 +431,12 @@ class _SavedScreenContent extends StatelessWidget {
         itemBuilder: (context, index) {
           if (index == state.savedGuides.length) {
             // Loading indicator at the bottom
-            return const Padding(
+            return Padding(
               padding: EdgeInsets.symmetric(vertical: 16),
               child: Center(
                 child: CircularProgressIndicator(
-                  valueColor:
-                      AlwaysStoppedAnimation<Color>(AppTheme.primaryColor),
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                      Theme.of(context).colorScheme.primary),
                 ),
               ),
             );
@@ -464,12 +476,12 @@ class _SavedScreenContent extends StatelessWidget {
         itemBuilder: (context, index) {
           if (index == state.recentGuides.length) {
             // Loading indicator at the bottom
-            return const Padding(
+            return Padding(
               padding: EdgeInsets.symmetric(vertical: 16),
               child: Center(
                 child: CircularProgressIndicator(
-                  valueColor:
-                      AlwaysStoppedAnimation<Color>(AppTheme.primaryColor),
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                      Theme.of(context).colorScheme.primary),
                 ),
               ),
             );

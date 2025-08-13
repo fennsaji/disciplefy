@@ -1,5 +1,8 @@
+import 'package:flutter/foundation.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 import '../../../../core/error/exceptions.dart';
 import '../models/app_settings_model.dart';
 import '../models/theme_mode_model.dart';
@@ -26,7 +29,7 @@ class SettingsLocalDataSourceImpl implements SettingsLocalDataSource {
   Future<AppSettingsModel> getSettings() async {
     try {
       final themeString =
-          _box.get(_themeModeKey, defaultValue: 'light') as String;
+          _box.get(_themeModeKey, defaultValue: 'system') as String;
       final language = _box.get(_languageKey, defaultValue: 'en') as String;
       final notificationsEnabled =
           _box.get(_notificationsKey, defaultValue: true) as bool;
@@ -80,7 +83,21 @@ class SettingsLocalDataSourceImpl implements SettingsLocalDataSource {
       final packageInfo = await PackageInfo.fromPlatform();
       return '${packageInfo.version}+${packageInfo.buildNumber}';
     } catch (e) {
-      throw CacheException(message: 'Failed to get app version: $e');
+      // Fallback for web environment - try to read version.json
+      if (kIsWeb) {
+        try {
+          final response = await http.get(Uri.parse('/version.json'));
+          if (response.statusCode == 200) {
+            final versionData = json.decode(response.body);
+            return versionData['version'] ?? '1.0.0+1';
+          }
+        } catch (webError) {
+          // If version.json also fails, use default version
+        }
+      }
+
+      // Default fallback version
+      return '1.0.0+1';
     }
   }
 

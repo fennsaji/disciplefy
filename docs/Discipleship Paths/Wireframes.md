@@ -49,6 +49,7 @@
   * 🔘 "Mark Complete" button
   * 📈 Progress Bar
   * 👤 Mentor Guidance (Optional Note)
+  * 💬 Discussion Thread Link
 
 ---
 
@@ -69,7 +70,7 @@
 
 ---
 
-## 5. Fellowship Request Screen( For Uninvited Users)
+## 5. Fellowship Request Screen (For Uninvited Users)
 
 * **Form Fields:**
 
@@ -81,7 +82,66 @@
 
 ---
 
-## 6. Donate Screen
+## 6. Discussion Forum Screen
+
+* **Header:** Fellowship Name + "Discussions"
+* **Content:**
+
+  * 📝 Create New Discussion Thread
+  * 📋 Discussion Threads List:
+    * Thread Title
+    * Author Name
+    * Last Activity
+    * Reply Count
+    * Lesson Association (if applicable)
+* **Thread Detail View:**
+
+  * Original Post
+  * Replies (threaded)
+  * Reply Box
+  * Mentor Badge Indicators
+
+---
+
+## 7. Profile Management Screen
+
+* **Profile Section:**
+
+  * Profile Photo (Upload/Edit)
+  * Name (Editable)
+  * Email (Display Only)
+  * Role Badge (User/Mentor)
+  * Donor Badge (if applicable)
+* **Settings Section:**
+
+  * Language Preference
+  * Notification Settings
+  * Privacy Settings
+  * Account Management
+
+---
+
+## 8. Mentor Dashboard Screen
+
+* **Overview Section:**
+
+  * Total Fellowships Managed
+  * Total Members
+  * Active Discipleship Paths
+* **Quick Actions:**
+
+  * Create New Fellowship
+  * View All Fellowships
+  * Member Requests
+* **Analytics Section:**
+
+  * Fellowship Progress Charts
+  * Member Engagement Metrics
+  * Recent Activities
+
+---
+
+## 9. Donate Screen
 
 * **Title:** Support Disciplefy
 * **Content:**
@@ -97,5 +157,58 @@
     * Badge or Tag in Profile
     * Early Access to new features (optional)
   * 🙏 Thank You Message + Cross & Coffee Icon Illustration
+
+---
+
+## 10. Fellowship Invitation Screen
+
+* **Header:** "Invite Members to [Fellowship Name]"
+* **Content:**
+
+  * 📧 Email Invitation Form
+  * 🔗 Invitation Link Generation
+  * 📋 Pending Invitations List
+  * ✅ Accepted Invitations List
+* **Actions:**
+
+  * Send Email Invitation
+  * Copy Invitation Link
+  * Resend Invitation
+  * Cancel Invitation
+
+---
+
+## 11. Progress Analytics Screen
+
+* **Personal Progress:**
+
+  * Overall Completion Percentage
+  * Path-wise Progress Charts
+  * Learning Streak Counter
+  * Recent Achievements
+* **Fellowship Progress (for Mentors):**
+
+  * Member Progress Comparison
+  * Group Completion Rates
+  * Engagement Metrics
+  * Recommendations
+
+---
+
+## 12. Search and Discovery Screen
+
+* **Search Bar:** Global search for content
+* **Filters:**
+
+  * Content Type (Lessons, Discussions, Fellowships)
+  * Language
+  * Difficulty Level
+  * Category
+* **Results:**
+
+  * Relevant Lessons
+  * Fellowship Discussions
+  * User Profiles (if applicable)
+  * Quick Actions (Join, Start, etc.)
 
 ---
