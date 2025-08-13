@@ -36,19 +36,19 @@ Flutter SDK >=3.16.0 • Node.js >=18.0.0 • Supabase CLI • Docker Desktop
 
 2. **Backend**
    ```bash
-   cd backend && supabase start && supabase db reset
-   supabase functions serve --env-file ../.env.local
+   cd backend && sh scripts/run_local_server.sh
    ```
 
 3. **Frontend**
    ```bash
-   cd frontend && flutter pub get && flutter run
+   cd frontend && flutter pub get
+   sh scripts/run_web_local.sh  # Run Web server
    ```
 
 ### Mock Mode (No API costs)
 ```bash
 # Runs with pre-built study guides for John 3:16, Romans 8:28, Faith, Love, Forgiveness
-cd backend && supabase functions serve --env-file ../.env.local
+cd backend && sh scripts/run_local_server.sh
 ```
 
 ## 🧪 **Testing & Development**
@@ -63,9 +63,12 @@ flutter test --coverage      API endpoint testing         Rate limiting (3/30 pe
 ## 📊 **Core APIs**
 
 - `POST /functions/v1/study-generate` - AI study guide generation with Jeff Reed methodology
-- `GET /functions/v1/topics-jeffreed` - Predefined biblical topics
+- `GET /functions/v1/topics-recommended` - Predefined biblical topics
 - `POST /functions/v1/auth-session` - Session management (anonymous/OAuth)
+- `GET /functions/v1/daily-verse` - Daily Bible verse in multiple languages
+- `GET /functions/v1/study-guides` - Retrieve saved study guides
 - `POST /functions/v1/feedback` - User feedback collection
+- `GET /functions/v1/auth-google-callback` - Google OAuth callback
 
 **Security**: 4-layer validation pipeline (format → sanitization → injection detection → rate limiting)  
 **Fallback**: OpenAI GPT-3.5 → Claude Haiku → Mock data when APIs unavailable  
