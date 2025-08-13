@@ -16,7 +16,10 @@ import 'features/auth/presentation/bloc/auth_bloc.dart';
 import 'features/auth/presentation/bloc/auth_event.dart';
 import 'features/daily_verse/presentation/bloc/daily_verse_bloc.dart';
 import 'features/daily_verse/presentation/bloc/daily_verse_event.dart';
+import 'features/settings/presentation/bloc/settings_bloc.dart';
+import 'features/settings/presentation/bloc/settings_event.dart';
 import 'core/utils/web_splash_controller.dart';
+import 'core/services/theme_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -54,6 +57,9 @@ void main() async {
     // Initialize daily verse cache service
     await sl<DailyVerseCacheService>().initialize();
 
+    // Initialize theme service
+    await sl<ThemeService>().initialize();
+
     runApp(const DisciplefyBibleStudyApp());
   } catch (e) {
     runApp(const ErrorApp());
@@ -79,25 +85,34 @@ class _DisciplefyBibleStudyAppState extends State<DisciplefyBibleStudyApp> {
   }
 
   @override
-  Widget build(BuildContext context) => MultiBlocProvider(
-        providers: [
-          BlocProvider<StudyBloc>(
-            create: (context) => sl<StudyBloc>(),
-          ),
-          BlocProvider<AuthBloc>(
-            create: (context) =>
-                sl<AuthBloc>()..add(const AuthInitializeRequested()),
-          ),
-          BlocProvider<DailyVerseBloc>(
-            create: (context) =>
-                sl<DailyVerseBloc>()..add(const LoadTodaysVerse()),
-          ),
-        ],
-        child: MaterialApp.router(
+  Widget build(BuildContext context) {
+    final themeService = sl<ThemeService>();
+
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider<StudyBloc>(
+          create: (context) => sl<StudyBloc>(),
+        ),
+        BlocProvider<AuthBloc>(
+          create: (context) =>
+              sl<AuthBloc>()..add(const AuthInitializeRequested()),
+        ),
+        BlocProvider<DailyVerseBloc>(
+          create: (context) =>
+              sl<DailyVerseBloc>()..add(const LoadTodaysVerse()),
+        ),
+        BlocProvider<SettingsBloc>(
+          create: (context) => sl<SettingsBloc>(),
+        ),
+      ],
+      child: ListenableBuilder(
+        listenable: themeService,
+        builder: (context, child) => MaterialApp.router(
           title: 'Disciplefy Bible Study',
           debugShowCheckedModeBanner: false,
 
-          // Theming
+          // Dynamic theming based on ThemeService
+          themeMode: themeService.flutterThemeMode,
           theme: AppTheme.lightTheme,
           darkTheme: AppTheme.darkTheme,
 
@@ -108,7 +123,9 @@ class _DisciplefyBibleStudyAppState extends State<DisciplefyBibleStudyApp> {
           // Navigation
           routerConfig: AppRouter.router,
         ),
-      );
+      ),
+    );
+  }
 }
 
 class ErrorApp extends StatelessWidget {

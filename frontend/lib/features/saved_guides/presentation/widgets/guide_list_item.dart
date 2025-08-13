@@ -28,11 +28,11 @@ class GuideListItem extends StatelessWidget {
         margin: const EdgeInsets.only(bottom: 12),
         elevation: 2,
         color: Theme.of(context).colorScheme.surface,
-        shadowColor: AppTheme.primaryColor.withValues(alpha: 0.1),
+        shadowColor: Theme.of(context).colorScheme.primary.withOpacity(0.1),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
           side: BorderSide(
-            color: AppTheme.primaryColor.withValues(alpha: 0.1),
+            color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
           ),
         ),
         child: InkWell(
@@ -47,7 +47,7 @@ class GuideListItem extends StatelessWidget {
                   children: [
                     Row(
                       children: [
-                        _buildIcon(),
+                        _buildIcon(context),
                         const SizedBox(width: 12),
                         Expanded(
                           child: Column(
@@ -100,14 +100,14 @@ class GuideListItem extends StatelessWidget {
                       color: Colors.white.withValues(alpha: 0.7),
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: const Center(
+                    child: Center(
                       child: SizedBox(
                         width: 20,
                         height: 20,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
                           valueColor: AlwaysStoppedAnimation<Color>(
-                              AppTheme.primaryColor),
+                              Theme.of(context).colorScheme.primary),
                         ),
                       ),
                     ),
@@ -118,16 +118,16 @@ class GuideListItem extends StatelessWidget {
         ),
       );
 
-  Widget _buildIcon() {
+  Widget _buildIcon(BuildContext context) {
     IconData iconData;
     Color iconColor;
 
     if (guide.isSaved) {
       iconData = Icons.bookmark;
-      iconColor = AppTheme.primaryColor;
+      iconColor = Theme.of(context).colorScheme.primary;
     } else {
       iconData = guide.type == GuideType.verse ? Icons.menu_book : Icons.topic;
-      iconColor = AppTheme.onSurfaceVariant;
+      iconColor = Theme.of(context).colorScheme.onSurface.withOpacity(0.6);
     }
 
     return Container(
@@ -156,11 +156,12 @@ class GuideListItem extends StatelessWidget {
           }
         },
         itemBuilder: (context) => [
-          const PopupMenuItem(
+          PopupMenuItem(
             value: 'remove',
             child: Row(
               children: [
-                Icon(Icons.bookmark_remove, color: AppTheme.errorColor),
+                Icon(Icons.bookmark_remove,
+                    color: Theme.of(context).colorScheme.error),
                 SizedBox(width: 8),
                 Text('Remove from Saved'),
               ],
@@ -185,8 +186,8 @@ class GuideListItem extends StatelessWidget {
         icon: Icon(
           Icons.bookmark_border,
           color: isLoading
-              ? AppTheme.primaryColor.withValues(alpha: 0.5)
-              : AppTheme.primaryColor,
+              ? Theme.of(context).colorScheme.primary.withOpacity(0.5)
+              : Theme.of(context).colorScheme.primary,
           size: 20,
         ),
         tooltip: 'Save Guide',
@@ -194,9 +195,9 @@ class GuideListItem extends StatelessWidget {
       );
     } else if (guide.isSaved) {
       // Show filled bookmark for already saved guides
-      return const Icon(
+      return Icon(
         Icons.bookmark,
-        color: AppTheme.primaryColor,
+        color: Theme.of(context).colorScheme.primary,
         size: 20,
       );
     }
@@ -243,7 +244,7 @@ class GuideListItem extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                 decoration: BoxDecoration(
-                  color: AppTheme.primaryColor.withValues(alpha: 0.1),
+                  color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(4),
                 ),
                 child: Text(
@@ -251,7 +252,7 @@ class GuideListItem extends StatelessWidget {
                   style: GoogleFonts.inter(
                     fontSize: 10,
                     fontWeight: FontWeight.w600,
-                    color: AppTheme.primaryColor,
+                    color: Theme.of(context).colorScheme.primary,
                   ),
                 ),
               )
@@ -259,7 +260,8 @@ class GuideListItem extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                 decoration: BoxDecoration(
-                  color: AppTheme.accentColor.withValues(alpha: 0.1),
+                  color:
+                      Theme.of(context).colorScheme.secondary.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(4),
                 ),
                 child: Text(
@@ -267,16 +269,16 @@ class GuideListItem extends StatelessWidget {
                   style: GoogleFonts.inter(
                     fontSize: 10,
                     fontWeight: FontWeight.w600,
-                    color: AppTheme.accentColor,
+                    color: Theme.of(context).colorScheme.secondary,
                   ),
                 ),
               ),
             const SizedBox(width: 8),
             if (guide.isSaved)
-              const Icon(
+              Icon(
                 Icons.bookmark,
                 size: 16,
-                color: AppTheme.primaryColor,
+                color: Theme.of(context).colorScheme.primary,
               ),
           ],
         ),

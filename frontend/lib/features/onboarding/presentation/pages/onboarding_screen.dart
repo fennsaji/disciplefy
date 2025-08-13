@@ -5,13 +5,12 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 
 import 'package:hive_flutter/hive_flutter.dart';
-import '../../../../core/theme/app_theme.dart';
 import '../../../auth/presentation/bloc/auth_bloc.dart';
 import '../../../auth/presentation/bloc/auth_state.dart' as auth_states;
 
 /// Onboarding carousel screen with 3 intro slides.
 ///
-/// Follows Disciplefy brand guidelines and UX specifications.
+/// Follows Disciplefy brand guidelines and UX specifications with dark mode support.
 /// Each slide introduces key app features following the design images.
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
@@ -107,9 +106,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   Widget build(BuildContext context) {
     final screenHeight = MediaQuery.of(context).size.height;
     final isLargeScreen = screenHeight > 700;
+    final theme = Theme.of(context);
 
     return Scaffold(
-      backgroundColor: AppTheme.backgroundColor,
+      backgroundColor: theme.scaffoldBackgroundColor,
       body: SafeArea(
         child: Column(
           children: [
@@ -126,12 +126,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                         width: 32,
                         height: 32,
                         decoration: BoxDecoration(
-                          color: AppTheme.primaryColor,
+                          color: theme.colorScheme.primary,
                           borderRadius: BorderRadius.circular(8),
                         ),
-                        child: const Icon(
+                        child: Icon(
                           Icons.menu_book,
-                          color: Colors.white,
+                          color: theme.colorScheme.onPrimary,
                           size: 20,
                         ),
                       ),
@@ -141,7 +141,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                         style: GoogleFonts.playfairDisplay(
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
-                          color: AppTheme.primaryColor,
+                          color: theme.colorScheme.primary,
                         ),
                       ),
                     ],
@@ -154,7 +154,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       style: GoogleFonts.inter(
                         fontSize: 14,
                         fontWeight: FontWeight.w500,
-                        color: AppTheme.onSurfaceVariant,
+                        color: theme.colorScheme.onSurface.withOpacity(0.6),
                       ),
                     ),
                   ),
@@ -186,8 +186,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 effect: WormEffect(
                   dotHeight: 8,
                   dotWidth: 8,
-                  activeDotColor: AppTheme.primaryColor,
-                  dotColor: AppTheme.primaryColor.withOpacity(0.3),
+                  activeDotColor: theme.colorScheme.primary,
+                  dotColor: theme.colorScheme.primary.withOpacity(0.3),
                   spacing: 12,
                 ),
               ),
@@ -201,8 +201,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 child: ElevatedButton(
                   onPressed: _navigateToWelcome,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.primaryColor,
-                    foregroundColor: Colors.white,
+                    backgroundColor: theme.colorScheme.primary,
+                    foregroundColor: theme.colorScheme.onPrimary,
                     minimumSize: const Size.fromHeight(56),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -239,106 +239,110 @@ class _OnboardingSlideWidget extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 32),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            // Icon container with brand styling
-            Container(
-              width: isLargeScreen ? 140 : 120,
-              height: isLargeScreen ? 140 : 120,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    AppTheme.primaryColor.withOpacity(0.1),
-                    AppTheme.secondaryColor.withOpacity(0.2),
-                  ],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: BorderRadius.circular(30),
-                border: Border.all(
-                  color: AppTheme.primaryColor.withOpacity(0.2),
-                  width: 2,
-                ),
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 32),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          // Icon container with brand styling
+          Container(
+            width: isLargeScreen ? 140 : 120,
+            height: isLargeScreen ? 140 : 120,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  theme.colorScheme.primary.withOpacity(0.1),
+                  theme.colorScheme.secondary.withOpacity(0.2),
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
               ),
-              child: Icon(
-                slide.iconData,
-                size: isLargeScreen ? 64 : 56,
-                color: AppTheme.primaryColor,
+              borderRadius: BorderRadius.circular(30),
+              border: Border.all(
+                color: theme.colorScheme.primary.withOpacity(0.2),
+                width: 2,
               ),
             ),
-
-            SizedBox(height: isLargeScreen ? 56 : 48),
-
-            // Title
-            Text(
-              slide.title,
-              style: GoogleFonts.playfairDisplay(
-                fontSize: isLargeScreen ? 32 : 28,
-                fontWeight: FontWeight.bold,
-                color: AppTheme.textPrimary,
-                height: 1.2,
-              ),
-              textAlign: TextAlign.center,
+            child: Icon(
+              slide.iconData,
+              size: isLargeScreen ? 64 : 56,
+              color: theme.colorScheme.primary,
             ),
+          ),
 
-            SizedBox(height: isLargeScreen ? 20 : 16),
+          SizedBox(height: isLargeScreen ? 56 : 48),
 
-            // Subtitle
-            Text(
-              slide.subtitle,
+          // Title
+          Text(
+            slide.title,
+            style: GoogleFonts.playfairDisplay(
+              fontSize: isLargeScreen ? 32 : 28,
+              fontWeight: FontWeight.bold,
+              color: theme.colorScheme.onBackground,
+              height: 1.2,
+            ),
+            textAlign: TextAlign.center,
+          ),
+
+          SizedBox(height: isLargeScreen ? 20 : 16),
+
+          // Subtitle
+          Text(
+            slide.subtitle,
+            style: GoogleFonts.inter(
+              fontSize: isLargeScreen ? 20 : 18,
+              fontWeight: FontWeight.w500,
+              color: theme.colorScheme.primary,
+              height: 1.4,
+            ),
+            textAlign: TextAlign.center,
+          ),
+
+          SizedBox(height: isLargeScreen ? 28 : 24),
+
+          // Description
+          Text(
+            slide.description,
+            style: GoogleFonts.inter(
+              fontSize: 16,
+              color: theme.colorScheme.onSurface.withOpacity(0.7),
+              height: 1.6,
+            ),
+            textAlign: TextAlign.center,
+            maxLines: 4,
+            overflow: TextOverflow.ellipsis,
+          ),
+
+          SizedBox(height: isLargeScreen ? 32 : 28),
+
+          // Bible verse (spiritual encouragement)
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: theme.colorScheme.secondary.withOpacity(0.3),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: theme.colorScheme.secondary.withOpacity(0.5),
+              ),
+            ),
+            child: Text(
+              slide.verse,
               style: GoogleFonts.inter(
-                fontSize: isLargeScreen ? 20 : 18,
-                fontWeight: FontWeight.w500,
-                color: AppTheme.primaryColor,
-                height: 1.4,
+                fontSize: 14,
+                fontStyle: FontStyle.italic,
+                color: theme.colorScheme.onBackground.withOpacity(0.8),
+                height: 1.5,
               ),
               textAlign: TextAlign.center,
             ),
-
-            SizedBox(height: isLargeScreen ? 28 : 24),
-
-            // Description
-            Text(
-              slide.description,
-              style: GoogleFonts.inter(
-                fontSize: 16,
-                color: AppTheme.onSurfaceVariant,
-                height: 1.6,
-              ),
-              textAlign: TextAlign.center,
-              maxLines: 4,
-              overflow: TextOverflow.ellipsis,
-            ),
-
-            SizedBox(height: isLargeScreen ? 32 : 28),
-
-            // Bible verse (spiritual encouragement)
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: AppTheme.secondaryColor.withOpacity(0.3),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(
-                  color: AppTheme.secondaryColor.withOpacity(0.5),
-                ),
-              ),
-              child: Text(
-                slide.verse,
-                style: GoogleFonts.inter(
-                  fontSize: 14,
-                  fontStyle: FontStyle.italic,
-                  color: AppTheme.textPrimary.withOpacity(0.8),
-                  height: 1.5,
-                ),
-                textAlign: TextAlign.center,
-              ),
-            ),
-          ],
-        ),
-      );
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 /// Data model for onboarding slide content.

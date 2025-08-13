@@ -27,13 +27,13 @@ class EmptyStateWidget extends StatelessWidget {
                 width: 80,
                 height: 80,
                 decoration: BoxDecoration(
-                  color: AppTheme.primaryColor.withOpacity(0.1),
+                  color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Icon(
                   icon,
                   size: 40,
-                  color: AppTheme.primaryColor.withOpacity(0.6),
+                  color: Theme.of(context).colorScheme.primary.withOpacity(0.6),
                 ),
               ),
               const SizedBox(height: 24),
@@ -42,7 +42,7 @@ class EmptyStateWidget extends StatelessWidget {
                 style: GoogleFonts.playfairDisplay(
                   fontSize: 24,
                   fontWeight: FontWeight.w600,
-                  color: AppTheme.textPrimary,
+                  color: Theme.of(context).colorScheme.onBackground,
                 ),
                 textAlign: TextAlign.center,
               ),
@@ -51,7 +51,8 @@ class EmptyStateWidget extends StatelessWidget {
                 subtitle,
                 style: GoogleFonts.inter(
                   fontSize: 16,
-                  color: AppTheme.onSurfaceVariant,
+                  color:
+                      Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
                   height: 1.5,
                 ),
                 textAlign: TextAlign.center,
