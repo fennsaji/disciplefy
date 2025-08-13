@@ -2,13 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../../../../core/theme/app_theme.dart';
 import '../bloc/auth_bloc.dart';
 import '../bloc/auth_event.dart';
 import '../bloc/auth_state.dart' as auth_states;
 
 /// Login screen with Google OAuth and anonymous sign-in options
-/// Follows Material Design 3 guidelines and brand theme
+/// Follows Material Design 3 guidelines and brand theme with dark mode support
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
@@ -49,13 +48,14 @@ class _LoginScreenState extends State<LoginScreen> {
             context.go('/');
           } else if (state is auth_states.AuthErrorState) {
             // Handle different types of errors
+            final theme = Theme.of(context);
             if (state.message.contains('canceled') ||
                 state.message.contains('cancelled')) {
               // Show neutral snackbar for cancelled operations
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text(state.message),
-                  backgroundColor: AppTheme.onSurfaceVariant,
+                  backgroundColor: theme.colorScheme.onSurface.withOpacity(0.8),
                   behavior: SnackBarBehavior.floating,
                   duration: const Duration(seconds: 2),
                 ),
@@ -65,7 +65,7 @@ class _LoginScreenState extends State<LoginScreen> {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text(state.message),
-                  backgroundColor: Theme.of(context).colorScheme.error,
+                  backgroundColor: theme.colorScheme.error,
                   behavior: SnackBarBehavior.floating,
                 ),
               );
@@ -73,7 +73,7 @@ class _LoginScreenState extends State<LoginScreen> {
           }
         },
         child: Scaffold(
-          backgroundColor: AppTheme.backgroundColor,
+          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
           body: SafeArea(
             child: Column(
               children: [
@@ -125,45 +125,53 @@ class _LoginScreenState extends State<LoginScreen> {
       );
 
   /// Builds the app logo with brand colors
-  Widget _buildAppLogo(BuildContext context) => Container(
-        width: 120,
-        height: 120,
-        decoration: BoxDecoration(
-          color: AppTheme.primaryColor.withValues(alpha: 0.1),
-          shape: BoxShape.circle,
-        ),
-        child: const Icon(
-          Icons.auto_stories,
-          size: 60,
-          color: AppTheme.primaryColor,
-        ),
-      );
+  Widget _buildAppLogo(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Container(
+      width: 120,
+      height: 120,
+      decoration: BoxDecoration(
+        color: theme.colorScheme.primary.withValues(alpha: 0.1),
+        shape: BoxShape.circle,
+      ),
+      child: Icon(
+        Icons.auto_stories,
+        size: 60,
+        color: theme.colorScheme.primary,
+      ),
+    );
+  }
 
   /// Builds the welcome text section
-  Widget _buildWelcomeText(BuildContext context) => Column(
-        children: [
-          Text(
-            'Welcome to Disciplefy',
-            style: GoogleFonts.playfairDisplay(
-              fontSize: 28,
-              fontWeight: FontWeight.w700,
-              color: AppTheme.textPrimary,
-            ),
-            textAlign: TextAlign.center,
+  Widget _buildWelcomeText(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Column(
+      children: [
+        Text(
+          'Welcome to Disciplefy',
+          style: GoogleFonts.playfairDisplay(
+            fontSize: 28,
+            fontWeight: FontWeight.w700,
+            color: theme.colorScheme.onBackground,
           ),
-          const SizedBox(height: 16),
-          Text(
-            'Deepen your faith through guided Bible study',
-            style: GoogleFonts.inter(
-              fontSize: 16,
-              fontWeight: FontWeight.normal,
-              color: AppTheme.onSurfaceVariant,
-              height: 1.5,
-            ),
-            textAlign: TextAlign.center,
+          textAlign: TextAlign.center,
+        ),
+        const SizedBox(height: 16),
+        Text(
+          'Deepen your faith through guided Bible study',
+          style: GoogleFonts.inter(
+            fontSize: 16,
+            fontWeight: FontWeight.normal,
+            color: theme.colorScheme.onSurface.withOpacity(0.7),
+            height: 1.5,
           ),
-        ],
-      );
+          textAlign: TextAlign.center,
+        ),
+      ],
+    );
+  }
 
   /// Builds the sign-in buttons with proper state management
   Widget _buildSignInButtons(BuildContext context) =>
@@ -186,156 +194,171 @@ class _LoginScreenState extends State<LoginScreen> {
       );
 
   /// Builds the Google sign-in button with proper branding
-  Widget _buildGoogleSignInButton(BuildContext context, bool isLoading) =>
-      SizedBox(
-        width: double.infinity,
-        height: 56,
-        child: ElevatedButton(
-          onPressed: isLoading ? null : () => _handleGoogleSignIn(context),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: AppTheme.primaryColor,
-            foregroundColor: Colors.white,
-            elevation: 0,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-            disabledBackgroundColor:
-                AppTheme.primaryColor.withValues(alpha: 0.5),
+  Widget _buildGoogleSignInButton(BuildContext context, bool isLoading) {
+    final theme = Theme.of(context);
+
+    return SizedBox(
+      width: double.infinity,
+      height: 56,
+      child: ElevatedButton(
+        onPressed: isLoading ? null : () => _handleGoogleSignIn(context),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: theme.colorScheme.primary,
+          foregroundColor: theme.colorScheme.onPrimary,
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
           ),
-          child: isLoading
-              ? const SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                  ),
-                )
-              : Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    // Google logo
-                    Container(
-                      width: 20,
-                      height: 20,
-                      decoration: const BoxDecoration(
-                        image: DecorationImage(
-                          image: AssetImage('assets/images/google_logo.png'),
-                          fit: BoxFit.contain,
-                        ),
-                      ),
-                    ),
-
-                    const SizedBox(width: 12),
-
-                    Text(
-                      'Continue with Google',
-                      style: GoogleFonts.inter(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ],
-                ),
+          disabledBackgroundColor:
+              theme.colorScheme.primary.withValues(alpha: 0.5),
         ),
-      );
+        child: isLoading
+            ? SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                      theme.colorScheme.onPrimary),
+                ),
+              )
+            : Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  // Google logo
+                  Container(
+                    width: 20,
+                    height: 20,
+                    decoration: const BoxDecoration(
+                      image: DecorationImage(
+                        image: AssetImage('assets/images/google_logo.png'),
+                        fit: BoxFit.contain,
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(width: 12),
+
+                  Text(
+                    'Continue with Google',
+                    style: GoogleFonts.inter(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+      ),
+    );
+  }
 
   /// Builds the guest sign-in button
-  Widget _buildGuestSignInButton(BuildContext context, bool isLoading) =>
-      SizedBox(
-        width: double.infinity,
-        height: 56,
-        child: OutlinedButton(
-          onPressed: isLoading ? null : () => _handleGuestSignIn(context),
-          style: OutlinedButton.styleFrom(
-            foregroundColor: AppTheme.primaryColor,
-            side: const BorderSide(
-              color: AppTheme.primaryColor,
-              width: 2,
-            ),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-            disabledForegroundColor:
-                AppTheme.primaryColor.withValues(alpha: 0.5),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(
-                Icons.person_outline,
-                size: 20,
-                color: AppTheme.primaryColor,
-              ),
-              const SizedBox(width: 12),
-              Text(
-                'Continue as Guest',
-                style: GoogleFonts.inter(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
+  Widget _buildGuestSignInButton(BuildContext context, bool isLoading) {
+    final theme = Theme.of(context);
 
-  /// Builds the features preview section
-  Widget _buildFeaturesSection(BuildContext context) => Container(
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: AppTheme.surfaceColor,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: AppTheme.primaryColor.withOpacity(0.08),
-              blurRadius: 16,
-              offset: const Offset(0, 4),
-            ),
-          ],
+    return SizedBox(
+      width: double.infinity,
+      height: 56,
+      child: OutlinedButton(
+        onPressed: isLoading ? null : () => _handleGuestSignIn(context),
+        style: OutlinedButton.styleFrom(
+          foregroundColor: theme.colorScheme.primary,
+          side: BorderSide(
+            color: theme.colorScheme.primary,
+            width: 2,
+          ),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          disabledForegroundColor:
+              theme.colorScheme.primary.withValues(alpha: 0.5),
         ),
-        child: Column(
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
+            Icon(
+              Icons.person_outline,
+              size: 20,
+              color: theme.colorScheme.primary,
+            ),
+            const SizedBox(width: 12),
             Text(
-              'What you\'ll get:',
+              'Continue as Guest',
               style: GoogleFonts.inter(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
-                color: AppTheme.textPrimary,
               ),
-            ),
-            const SizedBox(height: 16),
-            const _FeatureItem(
-              icon: Icons.auto_awesome,
-              title: 'AI-Powered Study Guides',
-              subtitle: 'Personalized insights for any verse or topic',
-            ),
-            const SizedBox(height: 12),
-            const _FeatureItem(
-              icon: Icons.school,
-              title: 'Structured Learning',
-              subtitle: 'Follow proven biblical study methodology',
-            ),
-            const SizedBox(height: 12),
-            const _FeatureItem(
-              icon: Icons.language,
-              title: 'Multi-Language Support',
-              subtitle: 'Study in English, Hindi, and Malayalam',
             ),
           ],
         ),
-      );
+      ),
+    );
+  }
+
+  /// Builds the features preview section
+  Widget _buildFeaturesSection(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: theme.colorScheme.primary.withOpacity(0.08),
+            blurRadius: 16,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          Text(
+            'What you\'ll get:',
+            style: GoogleFonts.inter(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: theme.colorScheme.onSurface,
+            ),
+          ),
+          const SizedBox(height: 16),
+          const _FeatureItem(
+            icon: Icons.auto_awesome,
+            title: 'AI-Powered Study Guides',
+            subtitle: 'Personalized insights for any verse or topic',
+          ),
+          const SizedBox(height: 12),
+          const _FeatureItem(
+            icon: Icons.school,
+            title: 'Structured Learning',
+            subtitle: 'Follow proven biblical study methodology',
+          ),
+          const SizedBox(height: 12),
+          const _FeatureItem(
+            icon: Icons.language,
+            title: 'Multi-Language Support',
+            subtitle: 'Study in English, Hindi, and Malayalam',
+          ),
+        ],
+      ),
+    );
+  }
 
   /// Builds the privacy policy text
-  Widget _buildPrivacyText(BuildContext context) => Text(
-        'By continuing, you agree to our Terms of Service and Privacy Policy',
-        style: GoogleFonts.inter(
-          fontSize: 12,
-          color: AppTheme.onSurfaceVariant,
-          height: 1.4,
-        ),
-        textAlign: TextAlign.center,
-      );
+  Widget _buildPrivacyText(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Text(
+      'By continuing, you agree to our Terms of Service and Privacy Policy',
+      style: GoogleFonts.inter(
+        fontSize: 12,
+        color: theme.colorScheme.onSurface.withOpacity(0.6),
+        height: 1.4,
+      ),
+      textAlign: TextAlign.center,
+    );
+  }
 
   /// Handles Google sign-in button tap
   void _handleGoogleSignIn(BuildContext context) {
@@ -361,53 +384,57 @@ class _FeatureItem extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) => Row(
-        children: [
-          // Icon container
-          Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              color: AppTheme.primaryColor.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(
-                color: AppTheme.primaryColor.withOpacity(0.2),
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Row(
+      children: [
+        // Icon container
+        Container(
+          width: 44,
+          height: 44,
+          decoration: BoxDecoration(
+            color: theme.colorScheme.primary.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(
+              color: theme.colorScheme.primary.withOpacity(0.2),
+            ),
+          ),
+          child: Icon(
+            icon,
+            size: 22,
+            color: theme.colorScheme.primary,
+          ),
+        ),
+
+        const SizedBox(width: 14),
+
+        // Text content
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: GoogleFonts.inter(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: theme.colorScheme.onSurface,
+                ),
               ),
-            ),
-            child: Icon(
-              icon,
-              size: 22,
-              color: AppTheme.primaryColor,
-            ),
-          ),
-
-          const SizedBox(width: 14),
-
-          // Text content
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: GoogleFonts.inter(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: AppTheme.textPrimary,
-                  ),
+              const SizedBox(height: 2),
+              Text(
+                subtitle,
+                style: GoogleFonts.inter(
+                  fontSize: 12,
+                  color: theme.colorScheme.onSurface.withOpacity(0.7),
+                  height: 1.3,
                 ),
-                const SizedBox(height: 2),
-                Text(
-                  subtitle,
-                  style: GoogleFonts.inter(
-                    fontSize: 12,
-                    color: AppTheme.onSurfaceVariant,
-                    height: 1.3,
-                  ),
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
-        ],
-      );
+        ),
+      ],
+    );
+  }
 }
