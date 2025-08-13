@@ -2,13 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../../../../core/theme/app_theme.dart';
 import '../bloc/auth_bloc.dart';
 import '../bloc/auth_event.dart';
 import '../bloc/auth_state.dart' as auth_states;
 
 /// Login screen with Google OAuth and anonymous sign-in options
-/// Follows Material Design 3 guidelines and brand theme
+/// Follows Material Design 3 guidelines and brand theme with dark mode support
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
@@ -49,13 +48,14 @@ class _LoginScreenState extends State<LoginScreen> {
             context.go('/');
           } else if (state is auth_states.AuthErrorState) {
             // Handle different types of errors
+            final theme = Theme.of(context);
             if (state.message.contains('canceled') ||
                 state.message.contains('cancelled')) {
               // Show neutral snackbar for cancelled operations
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text(state.message),
-                  backgroundColor: AppTheme.onSurfaceVariant,
+                  backgroundColor: theme.colorScheme.onSurface.withOpacity(0.8),
                   behavior: SnackBarBehavior.floating,
                   duration: const Duration(seconds: 2),
                 ),
@@ -65,7 +65,7 @@ class _LoginScreenState extends State<LoginScreen> {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text(state.message),
-                  backgroundColor: Theme.of(context).colorScheme.error,
+                  backgroundColor: theme.colorScheme.error,
                   behavior: SnackBarBehavior.floating,
                 ),
               );
@@ -73,7 +73,7 @@ class _LoginScreenState extends State<LoginScreen> {
           }
         },
         child: Scaffold(
-          backgroundColor: AppTheme.backgroundColor,
+          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
           body: SafeArea(
             child: Column(
               children: [
@@ -125,29 +125,36 @@ class _LoginScreenState extends State<LoginScreen> {
       );
 
   /// Builds the app logo with brand colors
-  Widget _buildAppLogo(BuildContext context) => Container(
+  Widget _buildAppLogo(BuildContext context) {
+    final theme = Theme.of(context);
+    
+    return Container(
         width: 120,
         height: 120,
         decoration: BoxDecoration(
-          color: AppTheme.primaryColor.withValues(alpha: 0.1),
+          color: theme.colorScheme.primary.withValues(alpha: 0.1),
           shape: BoxShape.circle,
         ),
-        child: const Icon(
+        child: Icon(
           Icons.auto_stories,
           size: 60,
-          color: AppTheme.primaryColor,
+          color: theme.colorScheme.primary,
         ),
       );
+  }
 
   /// Builds the welcome text section
-  Widget _buildWelcomeText(BuildContext context) => Column(
+  Widget _buildWelcomeText(BuildContext context) {
+    final theme = Theme.of(context);
+    
+    return Column(
         children: [
           Text(
             'Welcome to Disciplefy',
             style: GoogleFonts.playfairDisplay(
               fontSize: 28,
               fontWeight: FontWeight.w700,
-              color: AppTheme.textPrimary,
+              color: theme.colorScheme.onBackground,
             ),
             textAlign: TextAlign.center,
           ),
@@ -157,13 +164,14 @@ class _LoginScreenState extends State<LoginScreen> {
             style: GoogleFonts.inter(
               fontSize: 16,
               fontWeight: FontWeight.normal,
-              color: AppTheme.onSurfaceVariant,
+              color: theme.colorScheme.onSurface.withOpacity(0.7),
               height: 1.5,
             ),
             textAlign: TextAlign.center,
           ),
         ],
       );
+  }
 
   /// Builds the sign-in buttons with proper state management
   Widget _buildSignInButtons(BuildContext context) =>
@@ -186,29 +194,31 @@ class _LoginScreenState extends State<LoginScreen> {
       );
 
   /// Builds the Google sign-in button with proper branding
-  Widget _buildGoogleSignInButton(BuildContext context, bool isLoading) =>
-      SizedBox(
+  Widget _buildGoogleSignInButton(BuildContext context, bool isLoading) {
+    final theme = Theme.of(context);
+    
+    return SizedBox(
         width: double.infinity,
         height: 56,
         child: ElevatedButton(
           onPressed: isLoading ? null : () => _handleGoogleSignIn(context),
           style: ElevatedButton.styleFrom(
-            backgroundColor: AppTheme.primaryColor,
-            foregroundColor: Colors.white,
+            backgroundColor: theme.colorScheme.primary,
+            foregroundColor: theme.colorScheme.onPrimary,
             elevation: 0,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),
             ),
             disabledBackgroundColor:
-                AppTheme.primaryColor.withValues(alpha: 0.5),
+                theme.colorScheme.primary.withValues(alpha: 0.5),
           ),
           child: isLoading
-              ? const SizedBox(
+              ? SizedBox(
                   width: 20,
                   height: 20,
                   child: CircularProgressIndicator(
                     strokeWidth: 2,
-                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                    valueColor: AlwaysStoppedAnimation<Color>(theme.colorScheme.onPrimary),
                   ),
                 )
               : Row(
@@ -239,33 +249,36 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
         ),
       );
+  }
 
   /// Builds the guest sign-in button
-  Widget _buildGuestSignInButton(BuildContext context, bool isLoading) =>
-      SizedBox(
+  Widget _buildGuestSignInButton(BuildContext context, bool isLoading) {
+    final theme = Theme.of(context);
+    
+    return SizedBox(
         width: double.infinity,
         height: 56,
         child: OutlinedButton(
           onPressed: isLoading ? null : () => _handleGuestSignIn(context),
           style: OutlinedButton.styleFrom(
-            foregroundColor: AppTheme.primaryColor,
-            side: const BorderSide(
-              color: AppTheme.primaryColor,
+            foregroundColor: theme.colorScheme.primary,
+            side: BorderSide(
+              color: theme.colorScheme.primary,
               width: 2,
             ),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),
             ),
             disabledForegroundColor:
-                AppTheme.primaryColor.withValues(alpha: 0.5),
+                theme.colorScheme.primary.withValues(alpha: 0.5),
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(
+              Icon(
                 Icons.person_outline,
                 size: 20,
-                color: AppTheme.primaryColor,
+                color: theme.colorScheme.primary,
               ),
               const SizedBox(width: 12),
               Text(
@@ -279,16 +292,20 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
         ),
       );
+  }
 
   /// Builds the features preview section
-  Widget _buildFeaturesSection(BuildContext context) => Container(
+  Widget _buildFeaturesSection(BuildContext context) {
+    final theme = Theme.of(context);
+    
+    return Container(
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: AppTheme.surfaceColor,
+          color: theme.colorScheme.surface,
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: AppTheme.primaryColor.withOpacity(0.08),
+              color: theme.colorScheme.primary.withOpacity(0.08),
               blurRadius: 16,
               offset: const Offset(0, 4),
             ),
@@ -301,7 +318,7 @@ class _LoginScreenState extends State<LoginScreen> {
               style: GoogleFonts.inter(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
-                color: AppTheme.textPrimary,
+                color: theme.colorScheme.onSurface,
               ),
             ),
             const SizedBox(height: 16),
@@ -325,17 +342,22 @@ class _LoginScreenState extends State<LoginScreen> {
           ],
         ),
       );
+  }
 
   /// Builds the privacy policy text
-  Widget _buildPrivacyText(BuildContext context) => Text(
+  Widget _buildPrivacyText(BuildContext context) {
+    final theme = Theme.of(context);
+    
+    return Text(
         'By continuing, you agree to our Terms of Service and Privacy Policy',
         style: GoogleFonts.inter(
           fontSize: 12,
-          color: AppTheme.onSurfaceVariant,
+          color: theme.colorScheme.onSurface.withOpacity(0.6),
           height: 1.4,
         ),
         textAlign: TextAlign.center,
       );
+  }
 
   /// Handles Google sign-in button tap
   void _handleGoogleSignIn(BuildContext context) {
@@ -361,23 +383,26 @@ class _FeatureItem extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) => Row(
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    
+    return Row(
         children: [
           // Icon container
           Container(
             width: 44,
             height: 44,
             decoration: BoxDecoration(
-              color: AppTheme.primaryColor.withOpacity(0.1),
+              color: theme.colorScheme.primary.withOpacity(0.1),
               borderRadius: BorderRadius.circular(10),
               border: Border.all(
-                color: AppTheme.primaryColor.withOpacity(0.2),
+                color: theme.colorScheme.primary.withOpacity(0.2),
               ),
             ),
             child: Icon(
               icon,
               size: 22,
-              color: AppTheme.primaryColor,
+              color: theme.colorScheme.primary,
             ),
           ),
 
@@ -393,7 +418,7 @@ class _FeatureItem extends StatelessWidget {
                   style: GoogleFonts.inter(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
-                    color: AppTheme.textPrimary,
+                    color: theme.colorScheme.onSurface,
                   ),
                 ),
                 const SizedBox(height: 2),
@@ -401,7 +426,7 @@ class _FeatureItem extends StatelessWidget {
                   subtitle,
                   style: GoogleFonts.inter(
                     fontSize: 12,
-                    color: AppTheme.onSurfaceVariant,
+                    color: theme.colorScheme.onSurface.withOpacity(0.7),
                     height: 1.3,
                   ),
                 ),
@@ -410,4 +435,5 @@ class _FeatureItem extends StatelessWidget {
           ),
         ],
       );
+  }
 }
