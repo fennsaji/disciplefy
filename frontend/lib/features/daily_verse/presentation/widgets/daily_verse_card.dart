@@ -567,7 +567,8 @@ class DailyVerseCard extends StatelessWidget {
   }
 
   void _shareVerse(DailyVerseLoaded state) {
-    final text = '${state.verse.reference}\n\n${state.currentVerseText}\n\n- Shared from Disciplefy';
+    final text =
+        '${state.verse.reference}\n\n${state.currentVerseText}\n\n- Shared from Disciplefy';
     Share.share(text);
   }
 }

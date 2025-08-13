@@ -241,107 +241,107 @@ class _OnboardingSlideWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    
+
     return Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 32),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            // Icon container with brand styling
-            Container(
-              width: isLargeScreen ? 140 : 120,
-              height: isLargeScreen ? 140 : 120,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    theme.colorScheme.primary.withOpacity(0.1),
-                    theme.colorScheme.secondary.withOpacity(0.2),
-                  ],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: BorderRadius.circular(30),
-                border: Border.all(
-                  color: theme.colorScheme.primary.withOpacity(0.2),
-                  width: 2,
-                ),
+      padding: const EdgeInsets.symmetric(horizontal: 32),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          // Icon container with brand styling
+          Container(
+            width: isLargeScreen ? 140 : 120,
+            height: isLargeScreen ? 140 : 120,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  theme.colorScheme.primary.withOpacity(0.1),
+                  theme.colorScheme.secondary.withOpacity(0.2),
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
               ),
-              child: Icon(
-                slide.iconData,
-                size: isLargeScreen ? 64 : 56,
-                color: theme.colorScheme.primary,
+              borderRadius: BorderRadius.circular(30),
+              border: Border.all(
+                color: theme.colorScheme.primary.withOpacity(0.2),
+                width: 2,
               ),
             ),
-
-            SizedBox(height: isLargeScreen ? 56 : 48),
-
-            // Title
-            Text(
-              slide.title,
-              style: GoogleFonts.playfairDisplay(
-                fontSize: isLargeScreen ? 32 : 28,
-                fontWeight: FontWeight.bold,
-                color: theme.colorScheme.onBackground,
-                height: 1.2,
-              ),
-              textAlign: TextAlign.center,
+            child: Icon(
+              slide.iconData,
+              size: isLargeScreen ? 64 : 56,
+              color: theme.colorScheme.primary,
             ),
+          ),
 
-            SizedBox(height: isLargeScreen ? 20 : 16),
+          SizedBox(height: isLargeScreen ? 56 : 48),
 
-            // Subtitle
-            Text(
-              slide.subtitle,
+          // Title
+          Text(
+            slide.title,
+            style: GoogleFonts.playfairDisplay(
+              fontSize: isLargeScreen ? 32 : 28,
+              fontWeight: FontWeight.bold,
+              color: theme.colorScheme.onBackground,
+              height: 1.2,
+            ),
+            textAlign: TextAlign.center,
+          ),
+
+          SizedBox(height: isLargeScreen ? 20 : 16),
+
+          // Subtitle
+          Text(
+            slide.subtitle,
+            style: GoogleFonts.inter(
+              fontSize: isLargeScreen ? 20 : 18,
+              fontWeight: FontWeight.w500,
+              color: theme.colorScheme.primary,
+              height: 1.4,
+            ),
+            textAlign: TextAlign.center,
+          ),
+
+          SizedBox(height: isLargeScreen ? 28 : 24),
+
+          // Description
+          Text(
+            slide.description,
+            style: GoogleFonts.inter(
+              fontSize: 16,
+              color: theme.colorScheme.onSurface.withOpacity(0.7),
+              height: 1.6,
+            ),
+            textAlign: TextAlign.center,
+            maxLines: 4,
+            overflow: TextOverflow.ellipsis,
+          ),
+
+          SizedBox(height: isLargeScreen ? 32 : 28),
+
+          // Bible verse (spiritual encouragement)
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: theme.colorScheme.secondary.withOpacity(0.3),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: theme.colorScheme.secondary.withOpacity(0.5),
+              ),
+            ),
+            child: Text(
+              slide.verse,
               style: GoogleFonts.inter(
-                fontSize: isLargeScreen ? 20 : 18,
-                fontWeight: FontWeight.w500,
-                color: theme.colorScheme.primary,
-                height: 1.4,
+                fontSize: 14,
+                fontStyle: FontStyle.italic,
+                color: theme.colorScheme.onBackground.withOpacity(0.8),
+                height: 1.5,
               ),
               textAlign: TextAlign.center,
             ),
-
-            SizedBox(height: isLargeScreen ? 28 : 24),
-
-            // Description
-            Text(
-              slide.description,
-              style: GoogleFonts.inter(
-                fontSize: 16,
-                color: theme.colorScheme.onSurface.withOpacity(0.7),
-                height: 1.6,
-              ),
-              textAlign: TextAlign.center,
-              maxLines: 4,
-              overflow: TextOverflow.ellipsis,
-            ),
-
-            SizedBox(height: isLargeScreen ? 32 : 28),
-
-            // Bible verse (spiritual encouragement)
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: theme.colorScheme.secondary.withOpacity(0.3),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(
-                  color: theme.colorScheme.secondary.withOpacity(0.5),
-                ),
-              ),
-              child: Text(
-                slide.verse,
-                style: GoogleFonts.inter(
-                  fontSize: 14,
-                  fontStyle: FontStyle.italic,
-                  color: theme.colorScheme.onBackground.withOpacity(0.8),
-                  height: 1.5,
-                ),
-                textAlign: TextAlign.center,
-              ),
-            ),
-          ],
-        ),
-      );
+          ),
+        ],
+      ),
+    );
   }
 }
 
