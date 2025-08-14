@@ -28,15 +28,25 @@
   <meta name="apple-mobile-web-app-title" content="Disciplefy">
   <link rel="apple-touch-icon" href="icons/Icon-192.png">
   
-  <!-- iOS Splash Screens -->
-  <link rel="apple-touch-startup-image" href="splash_screen.png" media="(device-width: 428px) and (device-height: 926px) and (-webkit-device-pixel-ratio: 3)">
-  <link rel="apple-touch-startup-image" href="splash_screen.png" media="(device-width: 390px) and (device-height: 844px) and (-webkit-device-pixel-ratio: 3)">
-  <link rel="apple-touch-startup-image" href="splash_screen.png" media="(device-width: 375px) and (device-height: 812px) and (-webkit-device-pixel-ratio: 3)">
-  <link rel="apple-touch-startup-image" href="splash_screen.png" media="(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 2)">
-  <link rel="apple-touch-startup-image" href="splash_screen.png" media="(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 3)">
-  <link rel="apple-touch-startup-image" href="splash_screen.png" media="(device-width: 375px) and (device-height: 667px) and (-webkit-device-pixel-ratio: 2)">
-  <link rel="apple-touch-startup-image" href="splash_screen.png" media="(device-width: 414px) and (device-height: 736px) and (-webkit-device-pixel-ratio: 3)">
-  <link rel="apple-touch-startup-image" href="splash_screen.png" media="(device-width: 320px) and (device-height: 568px) and (-webkit-device-pixel-ratio: 2)">
+  <!-- iOS Splash Screens - Light theme -->
+  <link rel="apple-touch-startup-image" href="splash_screen.png" media="(device-width: 428px) and (device-height: 926px) and (-webkit-device-pixel-ratio: 3) and (prefers-color-scheme: light)">
+  <link rel="apple-touch-startup-image" href="splash_screen.png" media="(device-width: 390px) and (device-height: 844px) and (-webkit-device-pixel-ratio: 3) and (prefers-color-scheme: light)">
+  <link rel="apple-touch-startup-image" href="splash_screen.png" media="(device-width: 375px) and (device-height: 812px) and (-webkit-device-pixel-ratio: 3) and (prefers-color-scheme: light)">
+  <link rel="apple-touch-startup-image" href="splash_screen.png" media="(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 2) and (prefers-color-scheme: light)">
+  <link rel="apple-touch-startup-image" href="splash_screen.png" media="(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 3) and (prefers-color-scheme: light)">
+  <link rel="apple-touch-startup-image" href="splash_screen.png" media="(device-width: 375px) and (device-height: 667px) and (-webkit-device-pixel-ratio: 2) and (prefers-color-scheme: light)">
+  <link rel="apple-touch-startup-image" href="splash_screen.png" media="(device-width: 414px) and (device-height: 736px) and (-webkit-device-pixel-ratio: 3) and (prefers-color-scheme: light)">
+  <link rel="apple-touch-startup-image" href="splash_screen.png" media="(device-width: 320px) and (device-height: 568px) and (-webkit-device-pixel-ratio: 2) and (prefers-color-scheme: light)">
+  
+  <!-- iOS Splash Screens - Dark theme -->
+  <link rel="apple-touch-startup-image" href="splash_screen_dark.png" media="(device-width: 428px) and (device-height: 926px) and (-webkit-device-pixel-ratio: 3) and (prefers-color-scheme: dark)">
+  <link rel="apple-touch-startup-image" href="splash_screen_dark.png" media="(device-width: 390px) and (device-height: 844px) and (-webkit-device-pixel-ratio: 3) and (prefers-color-scheme: dark)">
+  <link rel="apple-touch-startup-image" href="splash_screen_dark.png" media="(device-width: 375px) and (device-height: 812px) and (-webkit-device-pixel-ratio: 3) and (prefers-color-scheme: dark)">
+  <link rel="apple-touch-startup-image" href="splash_screen_dark.png" media="(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 2) and (prefers-color-scheme: dark)">
+  <link rel="apple-touch-startup-image" href="splash_screen_dark.png" media="(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 3) and (prefers-color-scheme: dark)">
+  <link rel="apple-touch-startup-image" href="splash_screen_dark.png" media="(device-width: 375px) and (device-height: 667px) and (-webkit-device-pixel-ratio: 2) and (prefers-color-scheme: dark)">
+  <link rel="apple-touch-startup-image" href="splash_screen_dark.png" media="(device-width: 414px) and (device-height: 736px) and (-webkit-device-pixel-ratio: 3) and (prefers-color-scheme: dark)">
+  <link rel="apple-touch-startup-image" href="splash_screen_dark.png" media="(device-width: 320px) and (device-height: 568px) and (-webkit-device-pixel-ratio: 2) and (prefers-color-scheme: dark)">
   
   <!-- Android PWA meta tags -->
   <meta name="theme-color" content="#6A4FB6">
@@ -61,8 +71,9 @@
   <link rel="preload" href="flutter_bootstrap.js" as="script">
   <link rel="preload" href="splash_screen.png" as="image">
 
-  <!-- Favicon -->
-  <link rel="icon" type="image/png" href="favicon.png"/>
+  <!-- Favicon with theme support -->
+  <link rel="icon" type="image/png" href="favicon.png" media="(prefers-color-scheme: light)"/>
+  <link rel="icon" type="image/png" href="favicon_dark.png" media="(prefers-color-scheme: dark)"/>
 
   <title>Disciplefy | Bible Study App</title>
   <link rel="manifest" href="manifest.json">
@@ -82,6 +93,13 @@
       z-index: 9999;
       transition: opacity 0.5s ease-out;
       overflow: hidden;
+    }
+    
+    /* Dark theme splash screen */
+    @media (prefers-color-scheme: dark) {
+      #splash-screen {
+        background-color: #0f1012 !important;
+      }
     }
     
     #splash-screen.fade-out {
@@ -144,6 +162,21 @@
   </div>
   
   <script>
+    // Set splash screen image based on theme
+    function updateSplashScreenImage() {
+      const splashLogo = document.querySelector('.splash-logo');
+      if (splashLogo) {
+        const isDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        splashLogo.src = isDarkMode ? 'splash_screen_dark.png' : 'splash_screen.png';
+      }
+    }
+    
+    // Update on page load
+    updateSplashScreenImage();
+    
+    // Listen for theme changes
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', updateSplashScreenImage);
+    
     // Hide splash screen when Flutter is ready
     window.addEventListener('flutter-initialized', function() {
       hideSplashScreen();
