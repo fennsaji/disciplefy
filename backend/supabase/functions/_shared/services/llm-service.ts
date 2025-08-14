@@ -1306,41 +1306,41 @@ JSON ഫോർമാറ്റിംഗ് നിയമങ്ങൾ:
     
     const systemMessage = `You are a biblical scholar selecting meaningful Bible verses for daily encouragement.
 
-Your task is to select ONE inspiring Bible verse and provide it with accurate translations.
+      Your task is to select ONE inspiring Bible verse and provide it with accurate translations.
 
-OUTPUT REQUIREMENTS:
-- Return ONLY valid JSON with the exact structure specified
-- No markdown formatting, no extra text
-- Use proper JSON string escaping for any quotes
-- Ensure all translations are accurate and meaningful
+      OUTPUT REQUIREMENTS:
+      - Return ONLY valid JSON with the exact structure specified
+      - No markdown formatting, no extra text
+      - Use proper JSON string escaping for any quotes
+      - Ensure all translations are accurate and meaningful
 
-LANGUAGE CONTEXT: ${languageConfig.culturalContext}
-COMPLEXITY: ${languageConfig.promptModifiers.complexityInstruction}`
+      LANGUAGE CONTEXT: ${languageConfig.culturalContext}
+      COMPLEXITY: ${languageConfig.promptModifiers.complexityInstruction}`
 
     const userMessage = `Select one meaningful Bible verse for daily spiritual encouragement.${excludeList}
 
-Requirements:
-- Choose a verse that offers comfort, strength, hope, faith, peace, or guidance
-- Provide accurate translations in all three languages
-- Focus on well-known, inspiring verses
-- Ensure theological accuracy
+      Requirements:
+      - Choose a verse that offers comfort, strength, hope, faith, peace, or guidance
+      - Provide accurate translations in all three languages
+      - Focus on well-known, inspiring verses
+      - Ensure theological accuracy
 
-Return in this EXACT JSON format (no other text):
-{
-  "reference": "Book Chapter:Verse",
-  "translations": {
-    "esv": "English verse text (ESV translation)",
-    "hindi": "Hindi translation in Devanagari script",
-    "malayalam": "Malayalam translation in Malayalam script"
-  }
-}
+      Return in this EXACT JSON format (no other text):
+      {
+        "reference": "Book Chapter:Verse",
+        "translations": {
+          "esv": "English verse text (ESV translation)",
+          "hindi": "Hindi translation in Devanagari script",
+          "malayalam": "Malayalam translation in Malayalam script"
+        }
+      }
 
-Examples of good verse types:
-- God's love and grace (John 3:16, Romans 8:38-39)
-- Strength and courage (Philippians 4:13, Joshua 1:9)
-- Peace and comfort (Psalm 23:1, Matthew 11:28)
-- Hope and faith (Jeremiah 29:11, Hebrews 11:1)
-- Guidance and wisdom (Proverbs 3:5-6, Psalm 119:105)`
+      Examples of good verse types:
+      - God's love and grace (John 3:16, Romans 8:38-39)
+      - Strength and courage (Philippians 4:13, Joshua 1:9)
+      - Peace and comfort (Psalm 23:1, Matthew 11:28)
+      - Hope and faith (Jeremiah 29:11, Hebrews 11:1)
+      - Guidance and wisdom (Proverbs 3:5-6, Psalm 119:105)`
 
     return { systemMessage, userMessage }
   }

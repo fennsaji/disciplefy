@@ -30,6 +30,7 @@ async function handleFeedback(req: Request): Promise<Response> {
     )
   }
 
+  // TODO: Use user context for user id: authService.getUserContext(req)
   try {
     // Parse request body
     let requestBody: any
