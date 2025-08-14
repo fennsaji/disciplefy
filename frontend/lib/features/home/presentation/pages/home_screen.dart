@@ -6,14 +6,14 @@ import 'package:google_fonts/google_fonts.dart';
 
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/di/injection_container.dart';
+import '../../../../core/services/auth_state_provider.dart';
 import '../../domain/entities/recommended_guide_topic.dart';
 import '../../../daily_verse/presentation/bloc/daily_verse_bloc.dart';
 import '../../../daily_verse/presentation/bloc/daily_verse_event.dart';
 import '../../../daily_verse/presentation/bloc/daily_verse_state.dart';
 import '../../../daily_verse/presentation/widgets/daily_verse_card.dart';
 import '../../../daily_verse/domain/entities/daily_verse_entity.dart';
-import '../../../auth/presentation/bloc/auth_bloc.dart';
-import '../../../auth/presentation/bloc/auth_state.dart' as auth_states;
+
 import '../bloc/home_bloc.dart';
 import '../bloc/home_event.dart';
 import '../bloc/home_state.dart';
@@ -147,26 +147,16 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
           }
         }
       },
-      child: BlocBuilder<AuthBloc, auth_states.AuthState>(
-        builder: (context, authState) {
-          // Extract user information from AuthBloc state
-          String currentUserName = 'Guest';
+      child: ListenableBuilder(
+        listenable: sl<AuthStateProvider>(),
+        builder: (context, _) {
+          final authProvider = sl<AuthStateProvider>();
+          final currentUserName = authProvider.currentUserName;
 
-          if (authState is auth_states.AuthenticatedState) {
-            if (authState.isAnonymous) {
-              currentUserName = 'Guest';
-            } else {
-              // Extract user name from Google account
-              final user = authState.user;
-              currentUserName = user.userMetadata?['full_name'] ??
-                  user.userMetadata?['name'] ??
-                  user.email?.split('@').first ??
-                  'User';
-            }
-            if (kDebugMode) {
-              print(
-                  '👤 [HOME] User loaded: $currentUserName (authenticated: ${!authState.isAnonymous})');
-            }
+          if (kDebugMode) {
+            print(
+                '👤 [HOME] User loaded via AuthStateProvider: $currentUserName');
+            print('👤 [HOME] Auth state: ${authProvider.debugInfo}');
           }
 
           return Scaffold(
