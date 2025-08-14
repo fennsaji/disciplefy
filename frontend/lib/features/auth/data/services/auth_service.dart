@@ -32,6 +32,10 @@ class AuthService {
   Future<bool> isAuthenticatedAsync() async =>
       _authService.isAuthenticatedAsync();
 
+  /// Check if the current token is valid and not expiring soon
+  /// Returns false if token expires within 5 minutes or session is null
+  Future<bool> isTokenValid() async => _authService.isTokenValid();
+
   /// Listen to authentication state changes
   Stream<AuthState> get authStateChanges => _authService.authStateChanges;
 

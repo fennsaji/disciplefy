@@ -74,6 +74,33 @@ class AuthenticationService {
   /// Listen to authentication state changes
   Stream<AuthState> get authStateChanges => _supabase.auth.onAuthStateChange;
 
+  /// Check if the current token is valid and not expiring soon
+  /// Returns false if token expires within 5 minutes or session is null
+  Future<bool> isTokenValid() async {
+    final session = _supabase.auth.currentSession;
+    if (session == null) return false;
+
+    // Check if token expires within 5 minutes
+    final expiresAt =
+        DateTime.fromMillisecondsSinceEpoch(session.expiresAt! * 1000);
+    final fiveMinutesFromNow = DateTime.now().add(const Duration(minutes: 5));
+
+    final isValid = expiresAt.isAfter(fiveMinutesFromNow);
+
+    if (kDebugMode) {
+      print('🔐 [TOKEN VALIDATION] Current time: ${DateTime.now()}');
+      print('🔐 [TOKEN VALIDATION] Token expires at: $expiresAt');
+      print('🔐 [TOKEN VALIDATION] Token valid: $isValid');
+      if (!isValid) {
+        final timeUntilExpiry = expiresAt.difference(DateTime.now());
+        print(
+            '🔐 [TOKEN VALIDATION] ⚠️ Token expires in: ${timeUntilExpiry.inMinutes} minutes');
+      }
+    }
+
+    return isValid;
+  }
+
   /// Sign in with Google OAuth using native Supabase PKCE flow
   /// FIXED: Updated for corrected backend configuration
   Future<bool> signInWithGoogle() async {

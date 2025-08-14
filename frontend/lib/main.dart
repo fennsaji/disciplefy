@@ -20,6 +20,8 @@ import 'features/settings/presentation/bloc/settings_bloc.dart';
 import 'features/settings/presentation/bloc/settings_event.dart';
 import 'core/utils/web_splash_controller.dart';
 import 'core/services/theme_service.dart';
+import 'core/services/auth_state_provider.dart';
+import 'core/services/auth_session_validator.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -75,13 +77,35 @@ class DisciplefyBibleStudyApp extends StatefulWidget {
 }
 
 class _DisciplefyBibleStudyAppState extends State<DisciplefyBibleStudyApp> {
+  late AuthBloc _authBloc;
+  late AuthStateProvider _authStateProvider;
+  late AuthSessionValidator _authSessionValidator;
+
   @override
   void initState() {
     super.initState();
+
+    // Initialize auth components
+    _authBloc = sl<AuthBloc>()..add(const AuthInitializeRequested());
+    _authStateProvider = sl<AuthStateProvider>();
+    _authStateProvider.initialize(_authBloc);
+
+    // Initialize auth session validator for Phase 3 monitoring
+    _authSessionValidator = AuthSessionValidator(_authBloc);
+    _authSessionValidator.register();
+
     // Signal that Flutter is ready after the first frame
     WidgetsBinding.instance.addPostFrameCallback((_) {
       WebSplashController.signalFlutterReady();
     });
+  }
+
+  @override
+  void dispose() {
+    _authSessionValidator.unregister();
+    _authStateProvider.dispose();
+    _authBloc.close();
+    super.dispose();
   }
 
   @override
@@ -93,9 +117,8 @@ class _DisciplefyBibleStudyAppState extends State<DisciplefyBibleStudyApp> {
         BlocProvider<StudyBloc>(
           create: (context) => sl<StudyBloc>(),
         ),
-        BlocProvider<AuthBloc>(
-          create: (context) =>
-              sl<AuthBloc>()..add(const AuthInitializeRequested()),
+        BlocProvider<AuthBloc>.value(
+          value: _authBloc,
         ),
         BlocProvider<DailyVerseBloc>(
           create: (context) =>

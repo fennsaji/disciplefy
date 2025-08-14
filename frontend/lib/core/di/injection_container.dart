@@ -64,6 +64,7 @@ import '../../features/user_profile/domain/usecases/update_user_profile.dart';
 import '../../features/user_profile/domain/usecases/delete_user_profile.dart';
 import '../../features/user_profile/presentation/bloc/user_profile_bloc.dart';
 import '../services/theme_service.dart';
+import '../services/auth_state_provider.dart';
 
 /// Service locator instance for dependency injection
 final sl = GetIt.instance;
@@ -89,6 +90,9 @@ Future<void> initializeDependencies() async {
   //! Auth
   sl.registerLazySingleton(() => AuthService());
   sl.registerFactory(() => AuthBloc(authService: sl()));
+
+  // Register AuthStateProvider as singleton for consistent state across screens
+  sl.registerLazySingleton(() => AuthStateProvider());
 
   //! Study Generation Data Sources
   sl.registerLazySingleton<StudyRemoteDataSource>(
