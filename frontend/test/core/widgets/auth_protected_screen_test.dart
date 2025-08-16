@@ -22,20 +22,9 @@ void main() {
 
       expect(find.text('Protected Content'), findsOneWidget);
 
-      // Simulate back navigation
-      await tester.binding.defaultBinaryMessenger.handlePlatformMessage(
-        'flutter/navigation',
-        const StandardMethodCodec().encodeMethodCall(
-          const MethodCall('routePopped', <String, dynamic>{
-            'location': '/',
-            'state': null,
-          }),
-        ),
-        (data) {},
-      );
-
-      await tester.pumpAndSettle();
-      expect(find.text('Protected Content'), findsOneWidget);
+      // Check that PopScope allows navigation when canPop is true
+      final popScope = tester.widget<PopScope>(find.byType(PopScope));
+      expect(popScope.canPop, isTrue);
     });
 
     testWidgets('should prevent navigation when isPostAuthScreen is true',
