@@ -9,13 +9,18 @@ void main() {
   group('AuthAwareNavigationService', () {
     group('navigateAfterAuth', () {
       testWidgets('should navigate to home by default', (tester) async {
+        final router = _createTestRouter();
         await tester.pumpWidget(
           MaterialApp.router(
-            routerConfig: _createTestRouter(),
+            routerConfig: router,
           ),
         );
 
-        final context = tester.element(find.byType(MaterialApp));
+        // Wait for initial navigation to complete
+        await tester.pumpAndSettle();
+
+        // Get a context that has access to GoRouter
+        final context = router.routerDelegate.navigatorKey.currentContext!;
 
         // Test navigation after auth
         AuthAwareNavigationService.navigateAfterAuth(context);
@@ -27,13 +32,18 @@ void main() {
 
       testWidgets('should navigate to custom route when provided',
           (tester) async {
+        final router = _createTestRouter();
         await tester.pumpWidget(
           MaterialApp.router(
-            routerConfig: _createTestRouter(),
+            routerConfig: router,
           ),
         );
 
-        final context = tester.element(find.byType(MaterialApp));
+        // Wait for initial navigation to complete
+        await tester.pumpAndSettle();
+
+        // Get a context that has access to GoRouter
+        final context = router.routerDelegate.navigatorKey.currentContext!;
 
         // Test navigation to custom route
         AuthAwareNavigationService.navigateAfterAuth(context,
@@ -46,13 +56,18 @@ void main() {
 
     group('handleAuthLogout', () {
       testWidgets('should navigate to login screen', (tester) async {
+        final router = _createTestRouter(initialLocation: '/');
         await tester.pumpWidget(
           MaterialApp.router(
-            routerConfig: _createTestRouter(initialLocation: '/'),
+            routerConfig: router,
           ),
         );
 
-        final context = tester.element(find.byType(MaterialApp));
+        // Wait for initial navigation to complete
+        await tester.pumpAndSettle();
+
+        // Get a context that has access to GoRouter
+        final context = router.routerDelegate.navigatorKey.currentContext!;
 
         // Test logout navigation
         AuthAwareNavigationService.handleAuthLogout(context);
@@ -64,13 +79,18 @@ void main() {
 
     group('navigateWithContext', () {
       testWidgets('should perform normal navigation', (tester) async {
+        final router = _createTestRouter();
         await tester.pumpWidget(
           MaterialApp.router(
-            routerConfig: _createTestRouter(),
+            routerConfig: router,
           ),
         );
 
-        final context = tester.element(find.byType(MaterialApp));
+        // Wait for initial navigation to complete
+        await tester.pumpAndSettle();
+
+        // Get a context that has access to GoRouter
+        final context = router.routerDelegate.navigatorKey.currentContext!;
 
         AuthAwareNavigationService.navigateWithContext(
           context,
@@ -82,13 +102,18 @@ void main() {
       });
 
       testWidgets('should perform auth transition navigation', (tester) async {
+        final router = _createTestRouter();
         await tester.pumpWidget(
           MaterialApp.router(
-            routerConfig: _createTestRouter(),
+            routerConfig: router,
           ),
         );
 
-        final context = tester.element(find.byType(MaterialApp));
+        // Wait for initial navigation to complete
+        await tester.pumpAndSettle();
+
+        // Get a context that has access to GoRouter
+        final context = router.routerDelegate.navigatorKey.currentContext!;
 
         AuthAwareNavigationService.navigateWithContext(
           context,
@@ -182,13 +207,19 @@ void main() {
     group('navigateWithValidation', () {
       testWidgets('should redirect when navigation is prevented',
           (tester) async {
+        final router = _createTestRouter(initialLocation: '/');
         await tester.pumpWidget(
           MaterialApp.router(
-            routerConfig: _createTestRouter(initialLocation: '/'),
+            routerConfig: router,
           ),
         );
 
-        final context = tester.element(find.byType(MaterialApp));
+        // Wait for initial navigation to complete
+        await tester.pumpAndSettle();
+
+        // Find a context within the actual widget tree that has GoRouterState
+        final testContentWidget = find.byType(Scaffold).first;
+        final context = tester.element(testContentWidget);
 
         // Try to navigate to login while authenticated
         final result = await AuthAwareNavigationService.navigateWithValidation(
@@ -205,13 +236,19 @@ void main() {
       });
 
       testWidgets('should allow valid navigation', (tester) async {
+        final router = _createTestRouter();
         await tester.pumpWidget(
           MaterialApp.router(
-            routerConfig: _createTestRouter(),
+            routerConfig: router,
           ),
         );
 
-        final context = tester.element(find.byType(MaterialApp));
+        // Wait for initial navigation to complete
+        await tester.pumpAndSettle();
+
+        // Find a context within the actual widget tree that has GoRouterState
+        final testContentWidget = find.byType(Scaffold).first;
+        final context = tester.element(testContentWidget);
 
         // Navigate to settings while authenticated (valid)
         final result = await AuthAwareNavigationService.navigateWithValidation(
@@ -249,13 +286,18 @@ void main() {
     group('Context Extension Methods', () {
       testWidgets('should provide convenient navigation methods',
           (tester) async {
+        final router = _createTestRouter();
         await tester.pumpWidget(
           MaterialApp.router(
-            routerConfig: _createTestRouter(),
+            routerConfig: router,
           ),
         );
 
-        final context = tester.element(find.byType(MaterialApp));
+        // Wait for initial navigation to complete
+        await tester.pumpAndSettle();
+
+        // Get a context that has access to GoRouter
+        final context = router.routerDelegate.navigatorKey.currentContext!;
 
         // Test extension method
         context.navigateAfterAuth();
@@ -265,13 +307,18 @@ void main() {
       });
 
       testWidgets('should handle logout navigation', (tester) async {
+        final router = _createTestRouter(initialLocation: '/');
         await tester.pumpWidget(
           MaterialApp.router(
-            routerConfig: _createTestRouter(initialLocation: '/'),
+            routerConfig: router,
           ),
         );
 
-        final context = tester.element(find.byType(MaterialApp));
+        // Wait for initial navigation to complete
+        await tester.pumpAndSettle();
+
+        // Get a context that has access to GoRouter
+        final context = router.routerDelegate.navigatorKey.currentContext!;
 
         // Test logout extension method
         context.navigateAfterLogout();
@@ -281,13 +328,18 @@ void main() {
       });
 
       testWidgets('should handle typed navigation', (tester) async {
+        final router = _createTestRouter();
         await tester.pumpWidget(
           MaterialApp.router(
-            routerConfig: _createTestRouter(),
+            routerConfig: router,
           ),
         );
 
-        final context = tester.element(find.byType(MaterialApp));
+        // Wait for initial navigation to complete
+        await tester.pumpAndSettle();
+
+        // Get a context that has access to GoRouter
+        final context = router.routerDelegate.navigatorKey.currentContext!;
 
         // Test typed navigation
         context.navigateWithType(
@@ -300,13 +352,19 @@ void main() {
       });
 
       testWidgets('should handle validated navigation', (tester) async {
+        final router = _createTestRouter();
         await tester.pumpWidget(
           MaterialApp.router(
-            routerConfig: _createTestRouter(),
+            routerConfig: router,
           ),
         );
 
-        final context = tester.element(find.byType(MaterialApp));
+        // Wait for initial navigation to complete
+        await tester.pumpAndSettle();
+
+        // Find a context within the actual widget tree that has GoRouterState
+        final testContentWidget = find.byType(Scaffold).first;
+        final context = tester.element(testContentWidget);
 
         // Test validated navigation
         final result = await context.navigateWithAuthValidation(
