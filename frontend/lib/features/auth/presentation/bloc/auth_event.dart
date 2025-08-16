@@ -30,6 +30,11 @@ class SessionCheckRequested extends AuthEvent {
   const SessionCheckRequested();
 }
 
+/// Event to validate current session when app resumes from background
+class SessionValidationRequested extends AuthEvent {
+  const SessionValidationRequested();
+}
+
 /// Event to request sign-out
 class SignOutRequested extends AuthEvent {
   const SignOutRequested();

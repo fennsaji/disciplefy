@@ -6,6 +6,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/di/injection_container.dart';
 import '../../../../core/services/theme_service.dart';
+import '../../../../core/services/auth_state_provider.dart';
 import '../../../auth/presentation/bloc/auth_bloc.dart';
 import '../../../auth/presentation/bloc/auth_event.dart';
 import '../../../auth/presentation/bloc/auth_state.dart' as auth_states;
@@ -133,17 +134,19 @@ class _SettingsScreenContent extends StatelessWidget {
       );
 
   /// User Profile Section - shows different content based on auth state
-  Widget _buildUserProfileSection(BuildContext context) =>
-      BlocBuilder<AuthBloc, auth_states.AuthState>(
-        builder: (context, authState) {
-          if (authState is auth_states.AuthenticatedState) {
+  Widget _buildUserProfileSection(BuildContext context) => ListenableBuilder(
+        listenable: sl<AuthStateProvider>(),
+        builder: (context, _) {
+          final authProvider = sl<AuthStateProvider>();
+
+          if (authProvider.isAuthenticated) {
             return Column(
               children: [
                 _buildSection(
                   title: 'Account',
                   children: [
-                    _buildUserProfileTile(context, authState),
-                    if (!authState.isAnonymous) ...[
+                    _buildUserProfileTile(context, authProvider),
+                    if (!authProvider.isAnonymous) ...[
                       _buildDivider(),
                       // Account Settings - DISABLED (contained theme/language settings)
                       // _buildSettingsTile(
@@ -156,7 +159,7 @@ class _SettingsScreenContent extends StatelessWidget {
                       //     size: 16,
                       //     color: AppTheme.onSurfaceVariant,
                       //   ),
-                      //   onTap: () => _showAccountSettingsBottomSheet(context, authState),
+                      //   onTap: () => _showAccountSettingsBottomSheet(context, authProvider),
                       // ),
                     ],
                   ],
@@ -171,7 +174,7 @@ class _SettingsScreenContent extends StatelessWidget {
 
   /// User Profile Tile showing user info
   Widget _buildUserProfileTile(
-          BuildContext context, auth_states.AuthenticatedState authState) =>
+          BuildContext context, AuthStateProvider authProvider) =>
       Padding(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
         child: Row(
@@ -179,20 +182,13 @@ class _SettingsScreenContent extends StatelessWidget {
             // Profile Picture
             CircleAvatar(
               radius: 25,
-              backgroundImage: authState.photoUrl != null
-                  ? NetworkImage(authState.photoUrl!)
-                  : null,
               backgroundColor:
                   Theme.of(context).colorScheme.primary.withOpacity(0.1),
-              child: authState.photoUrl == null
-                  ? Icon(
-                      authState.isAnonymous
-                          ? Icons.person_outline
-                          : Icons.person,
-                      size: 25,
-                      color: Theme.of(context).colorScheme.primary,
-                    )
-                  : null,
+              child: Icon(
+                authProvider.isAnonymous ? Icons.person_outline : Icons.person,
+                size: 25,
+                color: Theme.of(context).colorScheme.primary,
+              ),
             ),
 
             const SizedBox(width: 16),
@@ -203,9 +199,7 @@ class _SettingsScreenContent extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    authState.isAnonymous
-                        ? 'Guest User'
-                        : authState.displayName ?? 'User',
+                    authProvider.currentUserName,
                     style: GoogleFonts.inter(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
@@ -214,9 +208,9 @@ class _SettingsScreenContent extends StatelessWidget {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    authState.isAnonymous
+                    authProvider.isAnonymous
                         ? 'Sign in to sync your data'
-                        : authState.email ?? 'No email',
+                        : authProvider.userEmail ?? 'No email',
                     style: GoogleFonts.inter(
                       fontSize: 14,
                       color: Theme.of(context)
@@ -230,7 +224,7 @@ class _SettingsScreenContent extends StatelessWidget {
             ),
 
             // Sign In Button for Anonymous Users
-            if (authState.isAnonymous)
+            if (authProvider.isAnonymous)
               TextButton(
                 onPressed: () => context.go('/login'),
                 child: Text(
@@ -301,11 +295,13 @@ class _SettingsScreenContent extends StatelessWidget {
         ],
       );
 
-  /// Account Section with AuthBloc integration
-  Widget _buildAccountSection(BuildContext context) =>
-      BlocBuilder<AuthBloc, auth_states.AuthState>(
-        builder: (context, authState) {
-          if (authState is auth_states.AuthenticatedState) {
+  /// Account Section with AuthStateProvider integration
+  Widget _buildAccountSection(BuildContext context) => ListenableBuilder(
+        listenable: sl<AuthStateProvider>(),
+        builder: (context, _) {
+          final authProvider = sl<AuthStateProvider>();
+
+          if (authProvider.isAuthenticated) {
             return _buildSection(
               title: 'Account Actions',
               children: [
@@ -313,7 +309,7 @@ class _SettingsScreenContent extends StatelessWidget {
                   context: context,
                   icon: Icons.logout_outlined,
                   title: 'Sign Out',
-                  subtitle: authState.isAnonymous
+                  subtitle: authProvider.isAnonymous
                       ? 'Clear guest session'
                       : 'Sign out of your account',
                   trailing: Icon(
@@ -325,7 +321,7 @@ class _SettingsScreenContent extends StatelessWidget {
                         .withOpacity(0.6),
                   ),
                   onTap: () =>
-                      _showLogoutDialog(context, authState.isAnonymous),
+                      _showLogoutDialog(context, authProvider.isAnonymous),
                   iconColor: Theme.of(context).colorScheme.error,
                 ),
               ],
@@ -413,7 +409,7 @@ class _SettingsScreenContent extends StatelessWidget {
 
   /// Account Settings Bottom Sheet
   void _showAccountSettingsBottomSheet(
-      BuildContext context, auth_states.AuthenticatedState authState) {
+      BuildContext context, AuthStateProvider authProvider) {
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
@@ -456,10 +452,11 @@ class _SettingsScreenContent extends StatelessWidget {
             _buildAccountSettingItem(
               icon: Icons.language_outlined,
               title: 'Language Preference',
-              subtitle: _getLanguageDisplayName(authState.languagePreference),
+              subtitle:
+                  'English', // Default since AuthStateProvider doesn't expose language preference
               onTap: () {
                 Navigator.pop(context);
-                _showLanguageBottomSheet(context, authState.languagePreference);
+                _showLanguageBottomSheet(context, 'en'); // Default to English
               },
             ),
 
@@ -469,15 +466,12 @@ class _SettingsScreenContent extends StatelessWidget {
             _buildAccountSettingItem(
               icon: Icons.palette_outlined,
               title: 'Theme Preference',
-              subtitle: _getThemeDisplayName(authState.themePreference == 'dark'
-                  ? ThemeModeEntity.dark()
-                  : ThemeModeEntity.light()),
+              subtitle:
+                  'System Default', // Default since AuthStateProvider doesn't expose theme preference
               onTap: () {
                 Navigator.pop(context);
-                // Toggle theme
-                final newTheme = authState.themePreference == 'dark'
-                    ? ThemeModeEntity.light()
-                    : ThemeModeEntity.dark();
+                // Toggle to light theme as default
+                final newTheme = ThemeModeEntity.light();
                 context.read<SettingsBloc>().add(ThemeModeChanged(newTheme));
               },
             ),
