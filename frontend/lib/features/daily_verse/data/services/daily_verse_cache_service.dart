@@ -3,10 +3,11 @@ import 'package:hive_flutter/hive_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../core/config/app_config.dart';
 import '../../domain/entities/daily_verse_entity.dart';
+import 'daily_verse_cache_interface.dart';
 
 /// Local caching service for daily verses using Hive for structured data
 /// and SharedPreferences for simple settings
-class DailyVerseCacheService {
+class DailyVerseCacheService implements DailyVerseCacheInterface {
   static const String _boxName = 'daily_verses';
   static const String _lastFetchKey = 'last_daily_verse_fetch';
   static const String _preferredLanguageKey = 'preferred_verse_language';
@@ -15,6 +16,7 @@ class DailyVerseCacheService {
   bool _isInitialized = false;
 
   /// Initialize the cache service
+  @override
   Future<void> initialize() async {
     if (_isInitialized) return;
 
@@ -36,6 +38,7 @@ class DailyVerseCacheService {
   }
 
   /// Cache a daily verse
+  @override
   Future<void> cacheVerse(DailyVerseEntity verse) async {
     await _ensureInitialized();
 
@@ -58,6 +61,7 @@ class DailyVerseCacheService {
   }
 
   /// Get cached verse for a specific date
+  @override
   Future<DailyVerseEntity?> getCachedVerse(DateTime date) async {
     await _ensureInitialized();
 
@@ -83,8 +87,39 @@ class DailyVerseCacheService {
   }
 
   /// Get today's cached verse
+  @override
   Future<DailyVerseEntity?> getTodaysCachedVerse() async =>
       getCachedVerse(DateTime.now());
+
+  /// Check if we need to fetch a new verse
+  @override
+  Future<bool> shouldFetchTodaysVerse() async {
+    await _ensureInitialized();
+
+    // Check if we have today's verse cached
+    final todaysVerse = await getTodaysCachedVerse();
+    if (todaysVerse == null) return true;
+
+    // Check if the cached verse is actually for today
+    if (!todaysVerse.isToday) return true;
+
+    // Check if we've exceeded the refresh threshold (e.g., 4 hours)
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final lastFetchStr = prefs.getString(_lastFetchKey);
+      if (lastFetchStr == null) return true;
+
+      final lastFetch = DateTime.parse(lastFetchStr);
+      final now = DateTime.now();
+      final hoursSinceLastFetch = now.difference(lastFetch).inHours;
+
+      // Refresh if it's been more than 4 hours
+      return hoursSinceLastFetch >= 4;
+    } catch (e) {
+      // If we can't determine last fetch time, err on the side of fetching
+      return true;
+    }
+  }
 
   /// Check if verse is cached for a specific date
   Future<bool> isVerseCached(DateTime date) async {
@@ -94,6 +129,7 @@ class DailyVerseCacheService {
   }
 
   /// Get preferred verse language
+  @override
   Future<VerseLanguage> getPreferredLanguage() async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -113,6 +149,7 @@ class DailyVerseCacheService {
   }
 
   /// Set preferred verse language
+  @override
   Future<void> setPreferredLanguage(VerseLanguage language) async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -136,6 +173,7 @@ class DailyVerseCacheService {
   }
 
   /// Check if cache should be refreshed based on configured duration
+  @override
   Future<bool> shouldRefresh() async {
     final lastFetch = await getLastFetchTime();
     if (lastFetch == null) return true;
@@ -145,6 +183,7 @@ class DailyVerseCacheService {
   }
 
   /// Get cache statistics
+  @override
   Future<Map<String, dynamic>> getCacheStats() async {
     await _ensureInitialized();
 
@@ -157,6 +196,7 @@ class DailyVerseCacheService {
   }
 
   /// Clear all cached verses
+  @override
   Future<void> clearCache() async {
     await _ensureInitialized();
 
