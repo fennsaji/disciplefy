@@ -224,7 +224,7 @@ class AuthAwareNavigationService {
   /// Checks if a route requires authentication
   static bool _isProtectedRoute(String route) {
     // Most routes are protected except auth and public routes
-    return !_isAuthRoute(route) && route != '/' && !route.startsWith('/public');
+    return !_isAuthRoute(route) && !route.startsWith('/public');
   }
 
   /// Handles complex navigation scenarios with validation
