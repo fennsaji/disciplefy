@@ -7,6 +7,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/di/injection_container.dart';
 import '../../../../core/services/auth_state_provider.dart';
+import '../../../../core/widgets/auth_protected_screen.dart';
 import '../../domain/entities/recommended_guide_topic.dart';
 import '../../../daily_verse/presentation/bloc/daily_verse_bloc.dart';
 import '../../../daily_verse/presentation/bloc/daily_verse_event.dart';
@@ -213,7 +214,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
                 ],
               ),
             ),
-          );
+          ).withHomeProtection();
         },
       ),
     );
