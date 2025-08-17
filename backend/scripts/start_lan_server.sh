@@ -11,15 +11,33 @@
 
 set -e
 
+# Determine script directory and backend root
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+BACKEND_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+
+# Change to backend root directory to ensure all relative paths work
+cd "$BACKEND_ROOT"
+
+echo "🔧 Script directory: $SCRIPT_DIR"
+echo "🔧 Backend root: $BACKEND_ROOT"
+echo "🔧 Working directory: $(pwd)"
+
+# Define absolute paths for config files
+CONFIG_TOML="$BACKEND_ROOT/supabase/config.toml"
+CONFIG_BACKUP="$BACKEND_ROOT/supabase/config.toml.backup"
+CONFIG_TMP="$BACKEND_ROOT/supabase/config.toml.tmp"
+
 # Cleanup function to restore original config
 cleanup() {
     echo -e "\n${YELLOW}🧹 Cleaning up network configuration...${NC}"
-    if [ -f "supabase/config.toml.backup" ]; then
-        mv supabase/config.toml.backup supabase/config.toml
+    
+    # Use absolute paths for cleanup to ensure it works from any directory
+    if [ -f "$CONFIG_BACKUP" ]; then
+        mv "$CONFIG_BACKUP" "$CONFIG_TOML"
         echo -e "${GREEN}✅ Restored original config.toml${NC}"
     fi
-    if [ -f "supabase/config.toml.tmp" ]; then
-        rm -f supabase/config.toml.tmp
+    if [ -f "$CONFIG_TMP" ]; then
+        rm -f "$CONFIG_TMP"
     fi
     echo -e "${GREEN}✅ Network session cleanup complete${NC}"
 }
@@ -35,16 +53,25 @@ YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
 # Default parameters
-ENV_FILE="${1:-.env.local}"
+# Handle environment file path - resolve relative to backend root
+ENV_FILE_PARAM="${1:-.env.local}"
+if [[ "$ENV_FILE_PARAM" = /* ]]; then
+    # Absolute path - use as is
+    ENV_FILE="$ENV_FILE_PARAM"
+else
+    # Relative path - resolve relative to backend root
+    ENV_FILE="$BACKEND_ROOT/$ENV_FILE_PARAM"
+fi
 
 echo -e "${BLUE}🌐 Starting Supabase Network Development Server...${NC}"
 echo -e "${BLUE}📄 Using environment file: ${ENV_FILE}${NC}"
+echo -e "${BLUE}📄 Resolved config.toml path: ${CONFIG_TOML}${NC}"
 
 # Check if specified env file exists
 if [ ! -f "$ENV_FILE" ]; then
     echo -e "${RED}❌ Environment file '$ENV_FILE' not found!${NC}"
     echo "Available environment files:"
-    ls -la .env* 2>/dev/null || echo "No .env* files found"
+    ls -la "$BACKEND_ROOT"/.env* 2>/dev/null || echo "No .env* files found"
     echo ""
     echo "Usage: $0 [env-file]"
     echo "Examples:"
@@ -75,12 +102,21 @@ echo -e "${BLUE}🔧 Configuring Supabase for network access...${NC}"
 
 # Create temporary config.toml with network settings
 echo -e "${BLUE}📝 Creating network configuration...${NC}"
-cp supabase/config.toml supabase/config.toml.backup
 
-# Update config.toml with network IP addresses
-sed -i.tmp "s|site_url = \"http://localhost:59641\"|site_url = \"http://${LOCAL_IP}:8080\"|g" supabase/config.toml
-sed -i.tmp "s|\"http://localhost:59641\"|\"http://${LOCAL_IP}:8080\"|g" supabase/config.toml
-sed -i.tmp "s|redirect_uri = \"http://127.0.0.1:54321/auth/v1/callback\"|redirect_uri = \"http://${LOCAL_IP}:54321/auth/v1/callback\"|g" supabase/config.toml
+# Verify config.toml exists
+if [ ! -f "$CONFIG_TOML" ]; then
+    echo -e "${RED}❌ Config file not found: $CONFIG_TOML${NC}"
+    echo "Please ensure you're running this script from a Supabase project directory"
+    exit 1
+fi
+
+# Create backup using absolute paths
+cp "$CONFIG_TOML" "$CONFIG_BACKUP"
+
+# Update config.toml with network IP addresses using absolute paths
+sed -i.tmp "s|site_url = \"http://localhost:59641\"|site_url = \"http://${LOCAL_IP}:8080\"|g" "$CONFIG_TOML"
+sed -i.tmp "s|\"http://localhost:59641\"|\"http://${LOCAL_IP}:8080\"|g" "$CONFIG_TOML"
+sed -i.tmp "s|redirect_uri = \"http://127.0.0.1:54321/auth/v1/callback\"|redirect_uri = \"http://${LOCAL_IP}:54321/auth/v1/callback\"|g" "$CONFIG_TOML"
 
 echo -e "${GREEN}✅ Updated OAuth configuration for network IP: ${LOCAL_IP}${NC}"
 

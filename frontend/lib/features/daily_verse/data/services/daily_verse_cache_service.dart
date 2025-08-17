@@ -106,10 +106,10 @@ class DailyVerseCacheService implements DailyVerseCacheInterface {
     // Check if we've exceeded the refresh threshold (e.g., 4 hours)
     try {
       final prefs = await SharedPreferences.getInstance();
-      final lastFetchStr = prefs.getString(_lastFetchKey);
-      if (lastFetchStr == null) return true;
+      final lastFetchInt = prefs.getInt(_lastFetchKey);
+      if (lastFetchInt == null) return true;
 
-      final lastFetch = DateTime.parse(lastFetchStr);
+      final lastFetch = DateTime.fromMillisecondsSinceEpoch(lastFetchInt);
       final now = DateTime.now();
       final hoursSinceLastFetch = now.difference(lastFetch).inHours;
 
