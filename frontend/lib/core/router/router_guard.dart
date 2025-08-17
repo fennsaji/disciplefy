@@ -142,6 +142,7 @@ class RouterGuard {
   }
 
   /// Log the current navigation state for debugging
+  /// Phase 2 Enhancement: More detailed analytics and route classification
   static void _logNavigationState(
     AuthenticationState authState,
     OnboardingState onboardingState,
@@ -149,35 +150,67 @@ class RouterGuard {
   ) {
     Logger.info(
       'Navigation state summary',
-      tag: 'ROUTER',
+      tag: 'ROUTER_ANALYTICS',
       context: {
         'authenticated': authState.isAuthenticated,
         'onboarding_completed': onboardingState.isCompleted,
         'current_route': routeAnalysis.currentPath,
+        'route_type': _getRouteType(routeAnalysis.currentPath),
         'is_public_route': routeAnalysis.isPublicRoute,
         'is_onboarding_route': routeAnalysis.isOnboardingRoute,
         'is_auth_route': routeAnalysis.isAuthRoute,
-        'user_type': authState.userType,
+        'user_type': authState.userType ?? 'unauthenticated',
+        'user_id': authState.userId,
+        'session_state': _getSessionState(authState, onboardingState),
       },
     );
   }
 
+  /// Phase 2: Get comprehensive session state for analytics
+  static String _getSessionState(
+    AuthenticationState authState,
+    OnboardingState onboardingState,
+  ) {
+    if (!authState.isAuthenticated) {
+      return onboardingState.isCompleted ? 'returning_visitor' : 'new_visitor';
+    }
+
+    switch (authState.userType) {
+      case 'anonymous':
+        return 'anonymous_session';
+      case 'guest':
+        return 'guest_session';
+      case 'google':
+      case 'supabase':
+        return 'authenticated_session';
+      default:
+        return 'unknown_session';
+    }
+  }
+
   /// Determine the appropriate redirect based on state
+  /// Phase 2 Enhancement: More comprehensive decision logging
   static String? _determineRedirect(
     AuthenticationState authState,
     OnboardingState onboardingState,
     RouteAnalysis routeAnalysis,
   ) {
-    // Log detailed state for debugging logout issues
+    // Phase 2: Enhanced decision matrix logging with more context
     Logger.info(
       'Router decision matrix',
-      tag: 'ROUTER',
+      tag: 'ROUTER_DECISION',
       context: {
         'is_authenticated': authState.isAuthenticated,
         'onboarding_completed': onboardingState.isCompleted,
         'current_path': routeAnalysis.currentPath,
-        'user_type': authState.userType,
+        'route_type': _getRouteType(routeAnalysis.currentPath),
+        'user_type': authState.userType ?? 'unauthenticated',
         'user_id': authState.userId,
+        'session_state': _getSessionState(authState, onboardingState),
+        'is_public_route': routeAnalysis.isPublicRoute,
+        'is_auth_route': routeAnalysis.isAuthRoute,
+        'is_onboarding_route': routeAnalysis.isOnboardingRoute,
+        'decision_timestamp': DateTime.now().toIso8601String(),
       },
     );
 
@@ -207,45 +240,87 @@ class RouterGuard {
   }
 
   /// Handle redirect logic for unauthenticated users
+  /// Phase 2 Enhancement: Better analytics and edge case handling
   static String? _handleUnauthenticatedUser(RouteAnalysis routeAnalysis) {
+    // Phase 2: Enhanced logging for public routes
     if (routeAnalysis.isPublicRoute) {
-      // Public routes don't need logging for security reasons
+      Logger.info(
+        'Unauthenticated user accessing public route',
+        tag: 'ROUTER_ANALYTICS',
+        context: {
+          'current_route': routeAnalysis.currentPath,
+          'route_type': _getRouteType(routeAnalysis.currentPath),
+          'access_allowed': true,
+          'user_type': 'unauthenticated',
+        },
+      );
       return null;
     }
+
+    // Phase 2: Enhanced handling for protected routes
+    final redirectTarget = _determineUnauthenticatedRedirect(routeAnalysis);
+    final redirectReason =
+        _getUnauthenticatedRedirectReason(routeAnalysis, redirectTarget);
+
+    Logger.info(
+      'Unauthenticated user redirected from protected route',
+      tag: 'ROUTER_SECURITY',
+      context: {
+        'attempted_route': routeAnalysis.currentPath,
+        'route_type': _getRouteType(routeAnalysis.currentPath),
+        'redirect_target': redirectTarget,
+        'redirect_reason': redirectReason,
+        'user_type': 'unauthenticated',
+        'security_action': 'access_denied',
+      },
+    );
+
+    return redirectTarget;
+  }
+
+  /// Phase 2: Determine redirect target for unauthenticated users
+  static String _determineUnauthenticatedRedirect(RouteAnalysis routeAnalysis) {
+    final onboardingState = _getOnboardingState();
 
     // Special handling for logout scenarios - ensure we go to login
     // even if there are temporary inconsistencies in storage
     if (routeAnalysis.currentPath == AppRoutes.settings ||
         routeAnalysis.currentPath == AppRoutes.generateStudy ||
         routeAnalysis.currentPath == AppRoutes.saved) {
-      Logger.info(
-        'Post-logout redirect to login from protected route',
-        tag: 'ROUTER',
-        context: {'attempted_route': routeAnalysis.currentPath},
-      );
       return AppRoutes.login;
     }
 
-    Logger.info(
-      'Unauthenticated user redirected to login',
-      tag: 'ROUTER',
-      context: {'attempted_route': routeAnalysis.currentPath},
-    );
-    final onboardingState = _getOnboardingState();
+    // Home page logic based on onboarding state
     if (routeAnalysis.currentPath == AppRoutes.home) {
-      if (onboardingState.isCompleted) {
-        return AppRoutes.login; // Returning user
-      }
+      return onboardingState.isCompleted
+          ? AppRoutes.login
+          : AppRoutes.onboarding;
     }
+
+    // Onboarding routes are allowed for new users
     if (routeAnalysis.isOnboardingRoute) {
-      Logger.info(
-        'Unauthenticated user redirected to onboarding',
-        tag: 'ROUTER',
-        context: {'attempted_route': routeAnalysis.currentPath},
-      );
-      return null; // New user
+      return routeAnalysis.currentPath; // Stay on onboarding route
     }
-    return AppRoutes.onboarding;
+
+    // Default: new users to onboarding, others to login
+    return onboardingState.isCompleted ? AppRoutes.login : AppRoutes.onboarding;
+  }
+
+  /// Phase 2: Get reason for unauthenticated user redirect
+  static String _getUnauthenticatedRedirectReason(
+      RouteAnalysis routeAnalysis, String redirectTarget) {
+    if (redirectTarget == AppRoutes.login) {
+      if (routeAnalysis.currentPath == AppRoutes.home) {
+        return 'returning_user_needs_auth';
+      }
+      return 'protected_route_requires_auth';
+    }
+
+    if (redirectTarget == AppRoutes.onboarding) {
+      return 'new_user_needs_onboarding';
+    }
+
+    return 'unknown_redirect_reason';
   }
 
   /// Handle redirect logic for authenticated users without completed onboarding
@@ -265,37 +340,110 @@ class RouterGuard {
   }
 
   /// Handle redirect logic for fully authenticated and onboarded users
+  /// Phase 2 Enhancement: More aggressive blocking and better analytics
   static String? _handleFullyAuthenticatedUser(
     RouteAnalysis routeAnalysis,
     AuthenticationState authState,
   ) {
+    // Phase 2: Enhanced auth route blocking
     if (routeAnalysis.isAuthRoute || routeAnalysis.isOnboardingRoute) {
-      // Special case: Allow anonymous users to access login screen for account upgrade
-      if (routeAnalysis.isAuthRoute && authState.userType == 'anonymous') {
-        Logger.info(
-          'Anonymous user allowed to access login screen for account upgrade',
-          tag: 'ROUTER',
-          context: {
-            'attempted_route': routeAnalysis.currentPath,
-            'user_type': authState.userType,
-          },
-        );
-        return null; // Allow access to login screen
-      }
+      return _handleAuthenticatedUserOnAuthRoutes(routeAnalysis, authState);
+    }
 
+    // Phase 2: Enhanced logging for successful navigation
+    Logger.info(
+      'Authenticated user navigation allowed',
+      tag: 'ROUTER',
+      context: {
+        'current_route': routeAnalysis.currentPath,
+        'user_type': authState.userType,
+        'user_id': authState.userId,
+        'route_type': _getRouteType(routeAnalysis.currentPath),
+        'navigation_source': 'direct_access',
+      },
+    );
+    return null;
+  }
+
+  /// Phase 2: Handle authenticated users trying to access auth/onboarding routes
+  /// Enhanced with more detailed analytics and stricter controls
+  static String? _handleAuthenticatedUserOnAuthRoutes(
+    RouteAnalysis routeAnalysis,
+    AuthenticationState authState,
+  ) {
+    // Special case: Allow anonymous users to access login screen for account upgrade
+    if (routeAnalysis.isAuthRoute &&
+        authState.userType == 'anonymous' &&
+        routeAnalysis.currentPath == AppRoutes.login) {
       Logger.info(
-        'Fully authenticated user redirected to home',
-        tag: 'ROUTER',
+        'Anonymous user accessing login for account upgrade',
+        tag: 'ROUTER_ANALYTICS',
         context: {
           'attempted_route': routeAnalysis.currentPath,
           'user_type': authState.userType,
+          'user_id': authState.userId,
+          'action': 'account_upgrade_attempt',
+          'allowed': true,
         },
       );
-      return AppRoutes.home;
+      return null; // Allow access to login screen
     }
 
-    Logger.info('Fully authenticated user, no redirect needed', tag: 'AUTH');
-    return null;
+    // Phase 2: More aggressive blocking for all other cases
+    final blockReason = _determineBlockReason(routeAnalysis, authState);
+
+    Logger.info(
+      'Authenticated user blocked from pre-auth route',
+      tag: 'ROUTER_SECURITY',
+      context: {
+        'attempted_route': routeAnalysis.currentPath,
+        'user_type': authState.userType,
+        'user_id': authState.userId,
+        'block_reason': blockReason,
+        'redirect_target': AppRoutes.home,
+        'security_action': 'force_redirect',
+      },
+    );
+
+    return AppRoutes.home;
+  }
+
+  /// Phase 2: Determine specific reason for blocking authenticated user
+  static String _determineBlockReason(
+    RouteAnalysis routeAnalysis,
+    AuthenticationState authState,
+  ) {
+    if (routeAnalysis.isOnboardingRoute) {
+      return 'onboarding_already_completed';
+    }
+
+    if (routeAnalysis.currentPath == AppRoutes.login) {
+      if (authState.userType == 'google' || authState.userType == 'supabase') {
+        return 'already_authenticated_with_account';
+      }
+      if (authState.userType == 'guest') {
+        return 'guest_user_blocked_from_login';
+      }
+    }
+
+    if (routeAnalysis.currentPath.startsWith('/auth/callback')) {
+      return 'oauth_callback_while_authenticated';
+    }
+
+    return 'authenticated_user_on_auth_route';
+  }
+
+  /// Phase 2: Classify route types for analytics
+  static String _getRouteType(String path) {
+    if (path == AppRoutes.home) return 'home';
+    if (path == AppRoutes.generateStudy) return 'study_generation';
+    if (path == AppRoutes.settings) return 'settings';
+    if (path == AppRoutes.saved) return 'saved_guides';
+    if (path.startsWith(AppRoutes.studyGuide)) return 'study_guide_view';
+    if (path == AppRoutes.login) return 'authentication';
+    if (path.startsWith(AppRoutes.onboarding)) return 'onboarding';
+    if (path.startsWith('/auth/callback')) return 'oauth_callback';
+    return 'unknown';
   }
 }
 

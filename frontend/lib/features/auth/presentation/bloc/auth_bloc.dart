@@ -29,6 +29,7 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
   final ClearUserDataUseCase _clearUserDataUseCase;
   late final StreamSubscription<AuthState> _authStateSubscription;
   late final StreamSubscription<String> _httpAuthFailureSubscription;
+  Timer? _tokenValidationTimer;
 
   // Error recovery configuration
   static const int _maxRetryAttempts = 3;
@@ -49,6 +50,7 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
     on<GoogleOAuthCallbackRequested>(_onGoogleOAuthCallback);
     on<AnonymousSignInRequested>(_onAnonymousSignIn);
     on<SessionCheckRequested>(_onSessionCheck);
+    on<SessionValidationRequested>(_onSessionValidation);
     on<SignOutRequested>(_onSignOut);
     on<AuthStateChanged>(_onAuthStateChanged);
     on<DeleteAccountRequested>(_onDeleteAccount);
@@ -72,14 +74,25 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
         add(ForceLogoutRequested(reason: reason));
       },
     );
+
+    // Start automatic token validation for authenticated non-anonymous users
+    _startTokenValidationTimer();
   }
 
   @override
   Future<void> close() {
     _authStateSubscription.cancel();
     _httpAuthFailureSubscription.cancel();
+    _tokenValidationTimer?.cancel();
     _authService.dispose();
     return super.close();
+  }
+
+  @override
+  void onChange(Change<auth_states.AuthState> change) {
+    super.onChange(change);
+    // Log auth state transitions for debugging
+    _logAuthStateTransition(change.currentState, change.nextState);
   }
 
   /// Initializes authentication state by checking current session
@@ -106,8 +119,32 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
       }
 
       // Check for anonymous session using async method
-      final isAuthenticated = await _authService.isAuthenticatedAsync();
-      if (isAuthenticated) {
+      final isStorageAuthenticated = await _authService.isAuthenticatedAsync();
+      if (isStorageAuthenticated) {
+        if (kDebugMode) {
+          print(
+              '🔐 [AUTH INIT] Storage indicates authentication - validating token...');
+        }
+
+        // Validate token before trusting storage
+        final isTokenValid = await _authService.isTokenValid();
+
+        if (!isTokenValid) {
+          if (kDebugMode) {
+            print(
+                '🔐 [AUTH INIT] ⚠️ Token invalid or expired - clearing stale data');
+          }
+
+          // Clear stale data and force re-authentication
+          await _clearUserDataUseCase.execute();
+          emit(const auth_states.UnauthenticatedState());
+          return;
+        }
+
+        if (kDebugMode) {
+          print('🔐 [AUTH INIT] ✅ Token valid - creating anonymous session');
+        }
+
         // Create mock user for anonymous session
         final user = _createAnonymousUser();
 
@@ -116,6 +153,10 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
           isAnonymous: true,
         ));
       } else {
+        if (kDebugMode) {
+          print(
+              '🔐 [AUTH INIT] No authentication found - emitting unauthenticated state');
+        }
         emit(const auth_states.UnauthenticatedState());
       }
     } catch (e) {
@@ -352,6 +393,93 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
     }
   }
 
+  /// Handles session validation on app resume (Phase 3 monitoring)
+  Future<void> _onSessionValidation(
+    SessionValidationRequested event,
+    Emitter<auth_states.AuthState> emit,
+  ) async {
+    try {
+      if (kDebugMode) {
+        print(
+            '🔍 [SESSION VALIDATION] App resumed - validating current session...');
+      }
+
+      final currentState = state;
+
+      // Only validate if currently authenticated
+      if (currentState is auth_states.AuthenticatedState) {
+        if (kDebugMode) {
+          print(
+              '🔍 [SESSION VALIDATION] Current user: ${currentState.isAnonymous ? "Anonymous" : currentState.user.email}');
+        }
+
+        // For non-anonymous users, validate Supabase session and token
+        if (!currentState.isAnonymous) {
+          final currentUser = _authService.currentUser;
+          final currentSession = Supabase.instance.client.auth.currentSession;
+
+          if (currentUser == null || currentSession == null) {
+            if (kDebugMode) {
+              print(
+                  '🔍 [SESSION VALIDATION] ❌ No valid Supabase session found - clearing stale data');
+            }
+
+            // Clear stale data and force re-authentication
+            await _clearUserDataUseCase.execute();
+            emit(const auth_states.UnauthenticatedState());
+            return;
+          }
+
+          // Validate token expiration
+          final isTokenValid = await _authService.isTokenValid();
+          if (!isTokenValid) {
+            if (kDebugMode) {
+              print(
+                  '🔍 [SESSION VALIDATION] ❌ Token expired - triggering refresh failure');
+            }
+            add(const TokenRefreshFailed(
+                reason: 'Token expired during session validation'));
+            return;
+          }
+
+          if (kDebugMode) {
+            print(
+                '🔍 [SESSION VALIDATION] ✅ Supabase session and token are valid');
+          }
+        } else {
+          // For anonymous users, validate storage consistency
+          final isStorageAuthenticated =
+              await _authService.isAuthenticatedAsync();
+          if (!isStorageAuthenticated) {
+            if (kDebugMode) {
+              print(
+                  '🔍 [SESSION VALIDATION] ❌ Anonymous session storage inconsistent - clearing');
+            }
+            await _clearUserDataUseCase.execute();
+            emit(const auth_states.UnauthenticatedState());
+            return;
+          }
+
+          if (kDebugMode) {
+            print(
+                '🔍 [SESSION VALIDATION] ✅ Anonymous session storage is valid');
+          }
+        }
+      } else {
+        if (kDebugMode) {
+          print(
+              '🔍 [SESSION VALIDATION] Current state: ${currentState.runtimeType} - no validation needed');
+        }
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('🔍 [SESSION VALIDATION] ❌ Validation error: $e');
+      }
+      // Don't emit error state for validation failures to avoid disrupting UX
+      // Let the current state persist and rely on other mechanisms to handle issues
+    }
+  }
+
   /// Handles sign-out flow
   Future<void> _onSignOut(
     SignOutRequested event,
@@ -359,6 +487,9 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
   ) async {
     try {
       emit(const auth_states.AuthLoadingState());
+
+      // Stop token validation when signing out
+      _stopTokenValidationTimer();
 
       // Clear all user data including authentication and storage
       await _clearUserDataUseCase.execute();
@@ -470,17 +601,40 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
   ) async {
     try {
       if (kDebugMode) {
-        print('Token refresh failed: ${event.reason}');
+        print('🚨 TOKEN EXPIRED: ${event.reason}');
+        print('🚨 TOKEN EXPIRED: Clearing all stale data');
+
+        // Log current storage state before cleanup for debugging
+        try {
+          final storedUserType = await _authService.getUserType();
+          final storedUserId = await _authService.getUserId();
+          final isOnboardingCompleted =
+              await _authService.isOnboardingCompleted();
+          print('🚨 Pre-cleanup storage state:');
+          print('🚨   UserType: $storedUserType');
+          print('🚨   UserId: $storedUserId');
+          print('🚨   Onboarding completed: $isOnboardingCompleted');
+        } catch (storageError) {
+          print('🚨 Error reading storage state: $storageError');
+        }
       }
+
+      // Stop token validation when token expires
+      _stopTokenValidationTimer();
 
       // Clear all authentication data using UseCase
       await _clearUserDataUseCase.execute();
+
+      if (kDebugMode) {
+        print(
+            '🚨 TOKEN EXPIRED: Cleanup completed, emitting unauthenticated state');
+      }
 
       // Emit unauthenticated state
       emit(const auth_states.UnauthenticatedState());
     } catch (e) {
       if (kDebugMode) {
-        print('Error handling token refresh failure: $e');
+        print('🚨 Error handling token refresh failure: $e');
       }
       // Still emit unauthenticated state even if cleanup fails
       emit(const auth_states.UnauthenticatedState());
@@ -494,19 +648,42 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
   ) async {
     try {
       if (kDebugMode) {
-        print('Force logout requested: ${event.reason}');
+        print('🚨 FORCE LOGOUT: ${event.reason}');
+        print('🚨 FORCE LOGOUT: Clearing all stale data');
+
+        // Log current storage state before cleanup for debugging
+        try {
+          final storedUserType = await _authService.getUserType();
+          final storedUserId = await _authService.getUserId();
+          final isOnboardingCompleted =
+              await _authService.isOnboardingCompleted();
+          print('🚨 Pre-cleanup storage state:');
+          print('🚨   UserType: $storedUserType');
+          print('🚨   UserId: $storedUserId');
+          print('🚨   Onboarding completed: $isOnboardingCompleted');
+        } catch (storageError) {
+          print('🚨 Error reading storage state: $storageError');
+        }
       }
 
       emit(const auth_states.AuthLoadingState());
 
+      // Stop token validation during force logout
+      _stopTokenValidationTimer();
+
       // Clear all authentication data using UseCase
       await _clearUserDataUseCase.execute();
+
+      if (kDebugMode) {
+        print(
+            '🚨 FORCE LOGOUT: Cleanup completed, emitting unauthenticated state');
+      }
 
       // Emit unauthenticated state
       emit(const auth_states.UnauthenticatedState());
     } catch (e) {
       if (kDebugMode) {
-        print('Error during force logout: $e');
+        print('🚨 Error during force logout: $e');
       }
       // Still emit unauthenticated state even if cleanup fails
       emit(const auth_states.UnauthenticatedState());
@@ -746,5 +923,95 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
 
     // Default to non-retryable for unknown errors to prevent infinite loops
     return false;
+  }
+
+  /// Starts periodic token validation for authenticated non-anonymous users
+  void _startTokenValidationTimer() {
+    _tokenValidationTimer?.cancel(); // Cancel existing timer if any
+
+    _tokenValidationTimer =
+        Timer.periodic(const Duration(minutes: 10), (_) async {
+      try {
+        if (state is auth_states.AuthenticatedState) {
+          final authState = state as auth_states.AuthenticatedState;
+
+          // Only validate tokens for non-anonymous users (they have Supabase sessions)
+          if (!authState.isAnonymous) {
+            if (kDebugMode) {
+              print('🔄 [TOKEN VALIDATION] Periodic validation check...');
+            }
+
+            final isTokenValid = await _authService.isTokenValid();
+
+            if (!isTokenValid) {
+              if (kDebugMode) {
+                print(
+                    '🔄 [TOKEN VALIDATION] ⚠️ Token expired - triggering refresh failure');
+              }
+              add(const TokenRefreshFailed(
+                  reason: 'Token expired during periodic validation'));
+            } else if (kDebugMode) {
+              print('🔄 [TOKEN VALIDATION] ✅ Token still valid');
+            }
+          }
+        }
+      } catch (e) {
+        if (kDebugMode) {
+          print('🔄 [TOKEN VALIDATION] Error during periodic validation: $e');
+        }
+        // Don't trigger logout on validation errors, just log them
+      }
+    });
+
+    if (kDebugMode) {
+      print(
+          '🔄 [TOKEN VALIDATION] Automatic token validation started (10-minute intervals)');
+    }
+  }
+
+  /// Stops the token validation timer
+  void _stopTokenValidationTimer() {
+    _tokenValidationTimer?.cancel();
+    _tokenValidationTimer = null;
+    if (kDebugMode) {
+      print('🔄 [TOKEN VALIDATION] Automatic token validation stopped');
+    }
+  }
+
+  /// Logs authentication state transitions for debugging and monitoring
+  Future<void> _logAuthStateTransition(
+      auth_states.AuthState from, auth_states.AuthState to) async {
+    if (kDebugMode) {
+      print('🔄 [AUTH TRANSITION] ${from.runtimeType} → ${to.runtimeType}');
+
+      if (to is auth_states.AuthenticatedState) {
+        final userInfo =
+            to.isAnonymous ? 'Anonymous' : (to.user.email ?? to.user.id);
+        print('🔄 [AUTH TRANSITION]   User: $userInfo');
+
+        try {
+          final storedUserType = await _authService.getUserType();
+          final storedUserId = await _authService.getUserId();
+          print('🔄 [AUTH TRANSITION]   Storage UserType: $storedUserType');
+          print('🔄 [AUTH TRANSITION]   Storage UserId: $storedUserId');
+        } catch (e) {
+          print('🔄 [AUTH TRANSITION]   Storage read error: $e');
+        }
+      } else if (to is auth_states.AuthErrorState) {
+        print('🔄 [AUTH TRANSITION]   Error: ${to.message}');
+      } else if (to is auth_states.UnauthenticatedState) {
+        print('🔄 [AUTH TRANSITION]   Cleared to unauthenticated state');
+      }
+
+      // Log critical transitions for monitoring
+      if (from is auth_states.AuthenticatedState &&
+          to is auth_states.UnauthenticatedState) {
+        print('🚨 [AUTH MONITOR] CRITICAL: User logged out or session expired');
+      }
+      if (from is auth_states.UnauthenticatedState &&
+          to is auth_states.AuthenticatedState) {
+        print('✅ [AUTH MONITOR] SUCCESS: User authenticated');
+      }
+    }
   }
 }

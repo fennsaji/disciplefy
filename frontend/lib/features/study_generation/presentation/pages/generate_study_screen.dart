@@ -1,9 +1,12 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/widgets/keyboard_aware_scaffold.dart';
+import '../../../../core/utils/device_keyboard_handler.dart';
 import '../../domain/services/study_navigation_service.dart';
 import '../bloc/study_bloc.dart';
 import '../bloc/study_event.dart';
@@ -120,92 +123,127 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen> {
   Widget build(BuildContext context) {
     final screenHeight = MediaQuery.of(context).size.height;
     final isLargeScreen = screenHeight > 700;
+    final keyboardHeight = MediaQuery.of(context).viewInsets.bottom;
+    final isKeyboardVisible = keyboardHeight > 0;
 
-    return Scaffold(
+    // 🔧 Phase 2: Enhanced device-specific keyboard handling
+    final useAdvancedKeyboardHandling =
+        DeviceKeyboardHandler.needsCustomKeyboardHandling;
+
+    if (kDebugMode && useAdvancedKeyboardHandling) {
+      print(
+          '🔧 [GENERATE STUDY] Using KeyboardAwareScaffold for: ${DeviceKeyboardHandler.deviceManufacturer}');
+    }
+
+    final appBar = AppBar(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      appBar: AppBar(
-        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-        elevation: 0,
-        automaticallyImplyLeading: false,
-        title: Text(
-          'Generate Study Guide',
-          style: GoogleFonts.playfairDisplay(
-            fontSize: 20,
-            fontWeight: FontWeight.w600,
+      elevation: 0,
+      automaticallyImplyLeading: false,
+      title: Text(
+        'Generate Study Guide',
+        style: GoogleFonts.playfairDisplay(
+          fontSize: 20,
+          fontWeight: FontWeight.w600,
+          color: Theme.of(context).colorScheme.primary,
+        ),
+      ),
+      centerTitle: true,
+      actions: [
+        IconButton(
+          onPressed: () => context.push('/saved'),
+          icon: Icon(
+            Icons.bookmark_outline,
             color: Theme.of(context).colorScheme.primary,
           ),
+          tooltip: 'View Saved Guides',
         ),
-        centerTitle: true,
-        actions: [
-          IconButton(
-            onPressed: () => context.push('/saved'),
-            icon: Icon(
-              Icons.bookmark_outline,
-              color: Theme.of(context).colorScheme.primary,
-            ),
-            tooltip: 'View Saved Guides',
-          ),
-        ],
-      ),
-      body: BlocListener<StudyBloc, StudyState>(
-        listener: (context, state) {
-          if (state is StudyGenerationSuccess) {
-            // Navigate to study guide screen with generated content
-            StudyNavigationService.navigateToStudyGuide(
-              context,
-              studyGuide: state.studyGuide,
-              source: StudyNavigationSource.generate,
-            );
-          } else if (state is StudyGenerationFailure) {
-            // Show error message with retry option
-            _showErrorDialog(context, state.failure.message, state.isRetryable);
-          }
-        },
-        child: SafeArea(
-          child: SingleChildScrollView(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  SizedBox(height: isLargeScreen ? 32 : 24),
+      ],
+    );
 
-                  // Mode Toggle
-                  _buildModeToggle(),
+    final body = BlocListener<StudyBloc, StudyState>(
+      listener: (context, state) {
+        if (state is StudyGenerationSuccess) {
+          // Navigate to study guide screen with generated content
+          StudyNavigationService.navigateToStudyGuide(
+            context,
+            studyGuide: state.studyGuide,
+            source: StudyNavigationSource.generate,
+          );
+        } else if (state is StudyGenerationFailure) {
+          // Show error message with retry option
+          _showErrorDialog(context, state.failure.message, state.isRetryable);
+        }
+      },
+      child: SafeArea(
+        child: Column(
+          children: [
+            Expanded(
+              child: SingleChildScrollView(
+                padding: EdgeInsets.only(
+                  left: 24,
+                  right: 24,
+                  bottom:
+                      isKeyboardVisible ? 20 : 0, // 🔧 FIX: Keyboard padding
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    SizedBox(height: isLargeScreen ? 32 : 24),
 
-                  SizedBox(height: isLargeScreen ? 24 : 16),
+                    // Mode Toggle
+                    _buildModeToggle(),
 
-                  // Language Selection
-                  _buildLanguageSelection(),
+                    SizedBox(height: isLargeScreen ? 24 : 16),
 
-                  SizedBox(height: isLargeScreen ? 32 : 24),
+                    // Language Selection
+                    _buildLanguageSelection(),
 
-                  // Input Section
-                  _buildInputSection(),
+                    SizedBox(height: isLargeScreen ? 32 : 24),
 
-                  SizedBox(height: isLargeScreen ? 24 : 16),
+                    // Input Section
+                    _buildInputSection(),
 
-                  // Suggestions
-                  _buildSuggestions(),
+                    SizedBox(height: isLargeScreen ? 24 : 16),
 
-                  SizedBox(height: isLargeScreen ? 32 : 24),
+                    // Suggestions
+                    _buildSuggestions(),
 
-                  // Generate Button and Status
-                  BlocBuilder<StudyBloc, StudyState>(
-                    builder: (context, state) => _buildGenerateButton(state),
-                  ),
+                    SizedBox(height: isLargeScreen ? 32 : 24),
 
-                  // Recent Guides Section (Bottom section as per Option 2)
-                  const RecentGuidesSection(),
+                    // Generate Button and Status
+                    BlocBuilder<StudyBloc, StudyState>(
+                      builder: (context, state) => _buildGenerateButton(state),
+                    ),
 
-                  SizedBox(height: isLargeScreen ? 40 : 24),
-                ],
+                    // 🔧 FIX: Only show recent guides when keyboard is hidden
+                    if (!isKeyboardVisible) ...[
+                      const RecentGuidesSection(),
+                      SizedBox(height: isLargeScreen ? 40 : 24),
+                    ],
+                  ],
+                ),
               ),
             ),
-          ),
+          ],
         ),
       ),
     );
+
+    // 🔧 Phase 2: Choose appropriate scaffold based on device requirements
+    if (useAdvancedKeyboardHandling) {
+      return KeyboardAwareScaffold(
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        appBar: appBar,
+        child: body,
+      );
+    } else {
+      return Scaffold(
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        resizeToAvoidBottomInset: true, // 🔧 FIX: Explicitly handle keyboard
+        appBar: appBar,
+        body: body,
+      );
+    }
   }
 
   Widget _buildModeToggle() => Column(

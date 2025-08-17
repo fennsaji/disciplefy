@@ -3,6 +3,7 @@ import 'package:http/http.dart' as http;
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter/foundation.dart';
 
 import '../network/network_info.dart';
 import '../../features/auth/data/services/auth_service.dart';
@@ -23,6 +24,8 @@ import '../../features/settings/domain/usecases/get_app_version.dart';
 import '../../features/settings/presentation/bloc/settings_bloc.dart';
 import '../../features/daily_verse/data/services/daily_verse_api_service.dart';
 import '../../features/daily_verse/data/services/daily_verse_cache_service.dart';
+import '../../features/daily_verse/data/services/daily_verse_web_cache_service.dart';
+import '../../features/daily_verse/data/services/daily_verse_cache_interface.dart';
 import '../../features/daily_verse/domain/repositories/daily_verse_repository.dart';
 import '../../features/daily_verse/data/repositories/daily_verse_repository_impl.dart';
 import '../../features/daily_verse/domain/usecases/get_daily_verse.dart';
@@ -64,6 +67,7 @@ import '../../features/user_profile/domain/usecases/update_user_profile.dart';
 import '../../features/user_profile/domain/usecases/delete_user_profile.dart';
 import '../../features/user_profile/presentation/bloc/user_profile_bloc.dart';
 import '../services/theme_service.dart';
+import '../services/auth_state_provider.dart';
 
 /// Service locator instance for dependency injection
 final sl = GetIt.instance;
@@ -89,6 +93,9 @@ Future<void> initializeDependencies() async {
   //! Auth
   sl.registerLazySingleton(() => AuthService());
   sl.registerFactory(() => AuthBloc(authService: sl()));
+
+  // Register AuthStateProvider as singleton for consistent state across screens
+  sl.registerLazySingleton(() => AuthStateProvider());
 
   //! Study Generation Data Sources
   sl.registerLazySingleton<StudyRemoteDataSource>(
@@ -147,9 +154,16 @@ Future<void> initializeDependencies() async {
     () => DailyVerseApiService(),
   );
 
-  sl.registerLazySingleton<DailyVerseCacheService>(
-    () => DailyVerseCacheService(),
-  );
+  // Register platform-specific cache service
+  if (kIsWeb) {
+    sl.registerLazySingleton<DailyVerseCacheInterface>(
+      () => DailyVerseWebCacheService(),
+    );
+  } else {
+    sl.registerLazySingleton<DailyVerseCacheInterface>(
+      () => DailyVerseCacheService(),
+    );
+  }
 
   sl.registerLazySingleton<DailyVerseRepository>(
     () => DailyVerseRepositoryImpl(
