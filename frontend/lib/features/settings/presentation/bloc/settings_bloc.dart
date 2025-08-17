@@ -3,6 +3,8 @@ import 'package:flutter/foundation.dart';
 import '../../../../core/usecases/usecase.dart';
 import '../../../../core/utils/error_handler.dart';
 import '../../../../core/services/theme_service.dart';
+import '../../../../core/services/language_preference_service.dart';
+import '../../../../core/models/app_language.dart';
 import '../../domain/usecases/get_settings.dart';
 import '../../domain/usecases/update_theme_mode.dart';
 import '../../domain/usecases/get_app_version.dart';
@@ -16,6 +18,7 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
   final GetAppVersion getAppVersion;
   final SettingsRepository settingsRepository;
   final ThemeService themeService;
+  final LanguagePreferenceService languagePreferenceService;
 
   bool _hasInitialized = false;
 
@@ -25,6 +28,7 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
     required this.getAppVersion,
     required this.settingsRepository,
     required this.themeService,
+    required this.languagePreferenceService,
   }) : super(SettingsInitial()) {
     on<LoadSettings>(_onLoadSettings);
     on<ThemeModeChanged>(_onThemeModeChanged);
@@ -101,21 +105,30 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
       final currentState = state as SettingsLoaded;
       emit(SettingsLoading());
 
-      final result = await settingsRepository.updateLanguage(event.language);
+      try {
+        // Update local settings first
+        final result = await settingsRepository.updateLanguage(event.language);
 
-      ErrorHandler.handleEitherResult(
-        result: result,
-        emit: emit,
-        createErrorState: (message, errorCode) =>
-            SettingsError(message: message),
-        onSuccess: (_) {
-          final updatedSettings = currentState.settings.copyWith(
-            language: event.language,
-          );
-          emit(SettingsLoaded(settings: updatedSettings));
-        },
-        operationName: 'update language',
-      );
+        await result.fold(
+          (failure) => throw Exception(failure.message),
+          (_) async {
+            // Convert language code to AppLanguage and sync with unified service
+            final appLanguage = AppLanguage.fromCode(event.language);
+            await languagePreferenceService.saveLanguagePreference(appLanguage);
+            await languagePreferenceService.syncWithProfile();
+
+            final updatedSettings = currentState.settings.copyWith(
+              language: event.language,
+            );
+            emit(SettingsLoaded(settings: updatedSettings));
+          },
+        );
+      } catch (e) {
+        if (kDebugMode) {
+          print('Error updating language: $e');
+        }
+        emit(SettingsError(message: 'Failed to update language: $e'));
+      }
     }
   }
 

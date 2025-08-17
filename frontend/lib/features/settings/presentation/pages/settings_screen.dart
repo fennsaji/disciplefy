@@ -889,10 +889,12 @@ class _SettingsScreenContent extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 24),
-            _buildLanguageOption(builderContext, settingsBloc, 'en', 'English',
-                '🇺🇸', currentLanguage),
-            _buildLanguageOption(builderContext, settingsBloc, 'hi', 'Hindi',
-                '🇮🇳', currentLanguage),
+            _buildLanguageOption(
+                builderContext, settingsBloc, 'en', 'English', currentLanguage),
+            _buildLanguageOption(
+                builderContext, settingsBloc, 'hi', 'हिन्दी', currentLanguage),
+            _buildLanguageOption(
+                builderContext, settingsBloc, 'ml', 'മലയാളം', currentLanguage),
             const SizedBox(height: 24),
           ],
         ),
@@ -1009,7 +1011,6 @@ class _SettingsScreenContent extends StatelessWidget {
     SettingsBloc settingsBloc,
     String value,
     String label,
-    String flag,
     String currentLanguage,
   ) {
     final isSelected = value == currentLanguage;
@@ -1278,9 +1279,9 @@ class _SettingsScreenContent extends StatelessWidget {
       case 'en':
         return 'English';
       case 'hi':
-        return 'Hindi';
+        return 'हिन्दी';
       case 'ml':
-        return 'Malayalam';
+        return 'മലയാളം';
       default:
         return 'English';
     }

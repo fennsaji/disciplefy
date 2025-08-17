@@ -4,6 +4,7 @@ import '../../domain/entities/daily_verse_entity.dart';
 import '../../domain/usecases/get_daily_verse.dart';
 import '../../domain/usecases/get_cached_verse.dart';
 import '../../domain/usecases/manage_verse_preferences.dart';
+import '../../domain/usecases/get_default_language.dart';
 import 'daily_verse_event.dart';
 import 'daily_verse_state.dart';
 
@@ -15,6 +16,7 @@ class DailyVerseBloc extends Bloc<DailyVerseEvent, DailyVerseState> {
   final SetPreferredLanguage setPreferredLanguage;
   final GetCacheStats getCacheStats;
   final ClearVerseCache clearVerseCache;
+  final GetDefaultLanguage getDefaultLanguage;
 
   DailyVerseBloc({
     required this.getDailyVerse,
@@ -23,6 +25,7 @@ class DailyVerseBloc extends Bloc<DailyVerseEvent, DailyVerseState> {
     required this.setPreferredLanguage,
     required this.getCacheStats,
     required this.clearVerseCache,
+    required this.getDefaultLanguage,
   }) : super(const DailyVerseInitial()) {
     on<LoadTodaysVerse>(_onLoadTodaysVerse);
     on<LoadVerseForDate>(_onLoadVerseForDate);
@@ -194,11 +197,21 @@ class DailyVerseBloc extends Bloc<DailyVerseEvent, DailyVerseState> {
   // Extracted to reduce method length and improve code organization
 
   /// Gets preferred language with English fallback
+  /// Uses unified language preference service first, then falls back to local preferences
   Future<VerseLanguage> _getPreferredLanguageWithFallback() async {
-    final preferredLanguageResult = await getPreferredLanguage(NoParams());
-    return preferredLanguageResult.fold(
-      (failure) => VerseLanguage.english,
-      (language) => language,
+    // Try to get default language from unified service first
+    final defaultLanguageResult = await getDefaultLanguage(NoParams());
+
+    return await defaultLanguageResult.fold(
+      (failure) async {
+        // If default language fails, try local preferences
+        final preferredLanguageResult = await getPreferredLanguage(NoParams());
+        return preferredLanguageResult.fold(
+          (failure) => VerseLanguage.english,
+          (language) => language,
+        );
+      },
+      (language) async => language,
     );
   }
 
