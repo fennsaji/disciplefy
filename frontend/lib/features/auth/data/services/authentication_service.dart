@@ -80,19 +80,32 @@ class AuthenticationService {
     final session = _supabase.auth.currentSession;
     if (session == null) return false;
 
-    // Check if token expires within 5 minutes
-    final expiresAt =
-        DateTime.fromMillisecondsSinceEpoch(session.expiresAt! * 1000);
-    final fiveMinutesFromNow = DateTime.now().add(const Duration(minutes: 5));
+    // Guard against null expiresAt
+    if (session.expiresAt == null) {
+      if (kDebugMode) {
+        print(
+            '🔐 [TOKEN VALIDATION] ⚠️ Session expiresAt is null, treating as invalid');
+      }
+      return false;
+    }
 
-    final isValid = expiresAt.isAfter(fiveMinutesFromNow);
+    // Check if token expires within 5 minutes - using consistent UTC timezone
+    final expiresAt = DateTime.fromMillisecondsSinceEpoch(
+      session.expiresAt! * 1000,
+      isUtc: true,
+    );
+    final currentTimeUtc = DateTime.now().toUtc();
+    final fiveMinutesFromNowUtc =
+        currentTimeUtc.add(const Duration(minutes: 5));
+
+    final isValid = expiresAt.isAfter(fiveMinutesFromNowUtc);
 
     if (kDebugMode) {
-      print('🔐 [TOKEN VALIDATION] Current time: ${DateTime.now()}');
-      print('🔐 [TOKEN VALIDATION] Token expires at: $expiresAt');
+      print('🔐 [TOKEN VALIDATION] Current time (UTC): $currentTimeUtc');
+      print('🔐 [TOKEN VALIDATION] Token expires at (UTC): $expiresAt');
       print('🔐 [TOKEN VALIDATION] Token valid: $isValid');
       if (!isValid) {
-        final timeUntilExpiry = expiresAt.difference(DateTime.now());
+        final timeUntilExpiry = expiresAt.difference(currentTimeUtc);
         print(
             '🔐 [TOKEN VALIDATION] ⚠️ Token expires in: ${timeUntilExpiry.inMinutes} minutes');
       }

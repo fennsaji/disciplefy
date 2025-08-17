@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/foundation.dart';
 
@@ -19,7 +18,7 @@ class DeviceKeyboardHandler {
   static Future<void> initialize() async {
     // Skip initialization on web platform
     if (kIsWeb) return;
-    if (!Platform.isAndroid) return;
+    if (defaultTargetPlatform != TargetPlatform.android) return;
 
     try {
       _deviceInfoPlugin = DeviceInfoPlugin();
@@ -45,7 +44,8 @@ class DeviceKeyboardHandler {
     // Skip on web platform
     if (kIsWeb) return false;
     // Default to false if not initialized or not Android
-    if (!Platform.isAndroid || _needsCustomHandling == null) {
+    if (defaultTargetPlatform != TargetPlatform.android ||
+        _needsCustomHandling == null) {
       return false;
     }
     return _needsCustomHandling!;

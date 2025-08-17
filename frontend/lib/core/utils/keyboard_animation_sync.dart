@@ -337,13 +337,31 @@ class KeyboardAwareAnimatedContainer extends StatelessWidget {
           );
         }
 
+        // Ensure only one of color or decoration is provided to AnimatedContainer
+        Color? containerColor;
+        Decoration? containerDecoration;
+
+        if (decoration != null) {
+          // If decoration is provided, use it and set color to null
+          containerDecoration = decoration;
+          containerColor = null;
+        } else if (color != null) {
+          // If only color is provided, create BoxDecoration with the color
+          containerDecoration = BoxDecoration(color: color);
+          containerColor = null;
+        } else {
+          // Neither color nor decoration provided
+          containerColor = null;
+          containerDecoration = null;
+        }
+
         return AnimatedContainer(
           duration: animationDuration,
           curve: curve,
           padding: adjustedPadding,
           margin: adjustedMargin,
-          color: color,
-          decoration: decoration,
+          color: containerColor,
+          decoration: containerDecoration,
           height: height,
           width: width,
           child: child,
