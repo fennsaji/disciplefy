@@ -85,13 +85,17 @@ class AppRouter {
         builder: (context, state) {
           // Parse tab parameter from query string
           final tabParam = state.uri.queryParameters['tab'];
+          final sourceParam = state.uri.queryParameters['source'];
           int? initialTabIndex;
           if (tabParam == 'recent') {
             initialTabIndex = 1; // Recent tab
           } else if (tabParam == 'saved') {
             initialTabIndex = 0; // Saved tab
           }
-          return SavedScreen(initialTabIndex: initialTabIndex);
+          return SavedScreen(
+            initialTabIndex: initialTabIndex,
+            navigationSource: sourceParam,
+          );
         },
       ),
       GoRoute(

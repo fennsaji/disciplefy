@@ -8,6 +8,7 @@ import '../services/auth_state_provider.dart';
 
 /// Service for managing user language preferences
 /// Enhanced version that checks database first for authenticated users
+/// Now includes change notifications via StreamController
 class LanguagePreferenceService {
   static const String _languagePreferenceKey = 'user_language_preference';
   static const String _hasCompletedLanguageSelectionKey =
@@ -18,6 +19,10 @@ class LanguagePreferenceService {
   final AuthStateProvider _authStateProvider;
   final UserProfileService _userProfileService;
 
+  // Stream controller for language change notifications
+  final StreamController<AppLanguage> _languageChangeController =
+      StreamController<AppLanguage>.broadcast();
+
   LanguagePreferenceService({
     required SharedPreferences prefs,
     required AuthService authService,
@@ -27,6 +32,14 @@ class LanguagePreferenceService {
         _authService = authService,
         _authStateProvider = authStateProvider,
         _userProfileService = userProfileService;
+
+  /// Stream of language preference changes
+  Stream<AppLanguage> get languageChanges => _languageChangeController.stream;
+
+  /// Dispose method to clean up resources
+  void dispose() {
+    _languageChangeController.close();
+  }
 
   /// Get the selected language preference with fallback logic
   /// For authenticated users, checks database first, then local storage
@@ -68,6 +81,7 @@ class LanguagePreferenceService {
   /// Save language preference to both local storage and database
   /// For authenticated users, saves to database first, then local storage
   /// For anonymous users, saves to local storage only
+  /// Notifies listeners of the language change
   Future<void> saveLanguagePreference(AppLanguage language) async {
     try {
       // Save to local storage first (always)
@@ -85,6 +99,10 @@ class LanguagePreferenceService {
               print('Language preference updated in database successfully'),
         );
       }
+
+      // Notify listeners of the language change
+      _languageChangeController.add(language);
+      print('🔄 Language preference changed to: ${language.displayName}');
     } catch (e) {
       print('Error saving language preference: $e');
     }

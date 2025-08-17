@@ -84,7 +84,19 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen> {
 
   /// Load the default language from user preferences
   Future<void> _loadDefaultLanguage() async {
+    if (kDebugMode) {
+      print('🔍 [GENERATE STUDY] Starting to load default language...');
+    }
+
     try {
+      // Test direct language preference service first
+      final directLanguage =
+          await _languagePreferenceService.getSelectedLanguage();
+      if (kDebugMode) {
+        print(
+            '🔍 [GENERATE STUDY] Direct language preference service result: ${directLanguage.code} (${directLanguage.displayName})');
+      }
+
       final getDefaultStudyLanguage = GetIt.instance<GetDefaultStudyLanguage>();
       final result = await getDefaultStudyLanguage(NoParams());
 
@@ -92,21 +104,32 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen> {
         (failure) {
           // Keep English as default if loading fails
           if (kDebugMode) {
-            print('Failed to load default language: ${failure.message}');
+            print(
+                '❌ [GENERATE STUDY] Failed to load default language: ${failure.message}');
           }
         },
         (language) {
+          if (kDebugMode) {
+            print(
+                '✅ [GENERATE STUDY] Use case returned language: ${language.code}');
+            print(
+                '🔄 [GENERATE STUDY] Setting _selectedLanguage to: ${language.code}');
+          }
           if (mounted) {
             setState(() {
               _selectedLanguage = language;
             });
+            if (kDebugMode) {
+              print(
+                  '✅ [GENERATE STUDY] State updated - _selectedLanguage is now: ${_selectedLanguage.code}');
+            }
           }
         },
       );
     } catch (e) {
       // Keep English as default if loading fails
       if (kDebugMode) {
-        print('Error loading default language: $e');
+        print('❌ [GENERATE STUDY] Error loading default language: $e');
       }
     }
   }
@@ -583,6 +606,10 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen> {
   }
 
   Future<void> _switchLanguage(StudyLanguage language) async {
+    if (kDebugMode) {
+      print('🔄 [GENERATE STUDY] User switching language to: ${language.code}');
+    }
+
     setState(() {
       _selectedLanguage = language;
     });
@@ -593,11 +620,11 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen> {
       await _languagePreferenceService.saveLanguagePreference(appLanguage);
 
       if (kDebugMode) {
-        print('Language preference saved: ${language.code}');
+        print('✅ [GENERATE STUDY] Language preference saved: ${language.code}');
       }
     } catch (e) {
       if (kDebugMode) {
-        print('Failed to save language preference: $e');
+        print('❌ [GENERATE STUDY] Failed to save language preference: $e');
       }
       // Continue silently - the local state is still updated
       // and the preference will be saved to database when possible
