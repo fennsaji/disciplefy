@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/services/auth_flow_service.dart';
 import '../bloc/auth_bloc.dart';
 import '../bloc/auth_event.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -83,15 +84,11 @@ class _AuthCallbackPageState extends State<AuthCallbackPage> {
       print(
           '🔍 [AUTH CALLBACK] - This suggests OAuth worked but configuration needs fixing');
 
-      // Session exists, trigger authentication success and redirect
+      // Session exists, trigger authentication success
       context.read<AuthBloc>().add(const SessionCheckRequested());
 
-      // Redirect to home since session is established
-      Future.delayed(const Duration(milliseconds: 500), () {
-        if (mounted) {
-          context.go('/');
-        }
-      });
+      // Check if user needs language selection before redirecting
+      _checkLanguageSelectionAndRedirect();
     } else {
       print('🔍 [AUTH CALLBACK] ❌ No session found - PKCE flow failed');
       print('🔍 [AUTH CALLBACK] ❌ This indicates configuration issues:');
@@ -340,4 +337,30 @@ class _AuthCallbackPageState extends State<AuthCallbackPage> {
           ],
         ),
       );
+
+  void _checkLanguageSelectionAndRedirect() async {
+    try {
+      // Check if user needs language selection
+      final shouldShowLanguageSelection =
+          await AuthFlowService.shouldShowLanguageSelection();
+
+      Future.delayed(const Duration(milliseconds: 500), () {
+        if (mounted) {
+          if (shouldShowLanguageSelection) {
+            context.go('/language-selection');
+          } else {
+            context.go('/');
+          }
+        }
+      });
+    } catch (e) {
+      print('Error checking language selection: $e');
+      // Fallback to home on error
+      Future.delayed(const Duration(milliseconds: 500), () {
+        if (mounted) {
+          context.go('/');
+        }
+      });
+    }
+  }
 }

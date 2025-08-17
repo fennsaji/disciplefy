@@ -1,6 +1,7 @@
 import 'package:go_router/go_router.dart';
 
 import '../../features/onboarding/presentation/pages/onboarding_screen.dart';
+import '../../features/onboarding/presentation/pages/language_selection_screen.dart';
 import '../../features/onboarding/presentation/pages/onboarding_language_page.dart';
 import '../../features/onboarding/presentation/pages/onboarding_purpose_page.dart';
 import '../../features/study_generation/presentation/pages/study_guide_screen.dart';
@@ -24,13 +25,19 @@ class AppRouter {
   static final GoRouter router = GoRouter(
     initialLocation: '/', // Let the redirect logic handle the initial route
     refreshListenable: _authNotifier, // Listen to auth state changes
-    redirect: (context, state) => RouterGuard.handleRedirect(state.uri.path),
+    redirect: (context, state) async =>
+        await RouterGuard.handleRedirect(state.uri.path),
     routes: [
       // Onboarding Flow (outside app shell)
       GoRoute(
         path: AppRoutes.onboarding,
         name: 'onboarding',
         builder: (context, state) => const OnboardingScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.languageSelection,
+        name: 'language_selection',
+        builder: (context, state) => const LanguageSelectionScreen(),
       ),
       // GoRoute(
       //   path: AppRoutes.onboardingLanguage,

@@ -1,7 +1,10 @@
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../utils/logger.dart';
+import '../services/language_preference_service.dart';
+import '../di/injection_container.dart';
 import 'app_routes.dart';
 
 /// Router guard that handles authentication and onboarding logic
@@ -13,7 +16,7 @@ class RouterGuard {
   static const String _onboardingCompletedKey = 'onboarding_completed';
 
   /// Main redirect logic for the app router
-  static String? handleRedirect(String currentPath) {
+  static Future<String?> handleRedirect(String currentPath) async {
     // Clean any hash fragments that might interfere with routing
     // This is a safeguard for OAuth callback URLs that might preserve fragments
     final cleanPath = currentPath.split('#').first;
@@ -29,11 +32,14 @@ class RouterGuard {
 
     final authState = _getAuthenticationState();
     final onboardingState = _getOnboardingState();
+    final languageSelectionState = await _getLanguageSelectionState();
     final routeAnalysis = _analyzeCurrentRoute(cleanPath);
 
-    _logNavigationState(authState, onboardingState, routeAnalysis);
+    _logNavigationState(
+        authState, onboardingState, routeAnalysis, languageSelectionState);
 
-    return _determineRedirect(authState, onboardingState, routeAnalysis);
+    return _determineRedirect(
+        authState, onboardingState, languageSelectionState, routeAnalysis);
   }
 
   /// Get authentication state from multiple sources
@@ -91,6 +97,37 @@ class RouterGuard {
     return const AuthenticationState(isAuthenticated: false);
   }
 
+  /// Get language selection completion state
+  static Future<LanguageSelectionState> _getLanguageSelectionState() async {
+    try {
+      final languageService = sl<LanguagePreferenceService>();
+      final isCompleted = await languageService.hasCompletedLanguageSelection();
+
+      Logger.info(
+        'Language selection state retrieved',
+        tag: 'LANGUAGE_SELECTION',
+        context: {
+          'language_selection_completed': isCompleted,
+        },
+      );
+
+      return LanguageSelectionState(isCompleted: isCompleted);
+    } catch (e) {
+      Logger.error(
+        'Failed to check language selection status',
+        tag: 'ROUTER',
+        error: e,
+      );
+      return const LanguageSelectionState(isCompleted: false);
+    }
+  }
+
+  /// Check if user has completed language selection (legacy method)
+  static Future<bool> _hasCompletedLanguageSelection() async {
+    final state = await _getLanguageSelectionState();
+    return state.isCompleted;
+  }
+
   /// Get onboarding completion state
   static OnboardingState _getOnboardingState() {
     try {
@@ -134,6 +171,7 @@ class RouterGuard {
     final publicRoutes = [
       AppRoutes.login,
       AppRoutes.authCallback,
+      AppRoutes.languageSelection,
     ];
 
     return publicRoutes.contains(path) ||
@@ -147,6 +185,7 @@ class RouterGuard {
     AuthenticationState authState,
     OnboardingState onboardingState,
     RouteAnalysis routeAnalysis,
+    LanguageSelectionState languageSelectionState,
   ) {
     Logger.info(
       'Navigation state summary',
@@ -154,6 +193,7 @@ class RouterGuard {
       context: {
         'authenticated': authState.isAuthenticated,
         'onboarding_completed': onboardingState.isCompleted,
+        'language_selection_completed': languageSelectionState.isCompleted,
         'current_route': routeAnalysis.currentPath,
         'route_type': _getRouteType(routeAnalysis.currentPath),
         'is_public_route': routeAnalysis.isPublicRoute,
@@ -193,6 +233,7 @@ class RouterGuard {
   static String? _determineRedirect(
     AuthenticationState authState,
     OnboardingState onboardingState,
+    LanguageSelectionState languageSelectionState,
     RouteAnalysis routeAnalysis,
   ) {
     // Phase 2: Enhanced decision matrix logging with more context
@@ -202,6 +243,7 @@ class RouterGuard {
       context: {
         'is_authenticated': authState.isAuthenticated,
         'onboarding_completed': onboardingState.isCompleted,
+        'language_selection_completed': languageSelectionState.isCompleted,
         'current_path': routeAnalysis.currentPath,
         'route_type': _getRouteType(routeAnalysis.currentPath),
         'user_type': authState.userType ?? 'unauthenticated',
@@ -227,9 +269,18 @@ class RouterGuard {
     //   return _handleAuthenticatedUserWithoutOnboarding(routeAnalysis);
     // }
 
-    // Case 3: Authenticated and onboarding completed
-    if (authState.isAuthenticated) {
-      Logger.info('Decision: User fully authenticated and onboarded',
+    // Case 3: Authenticated but language selection not completed
+    if (authState.isAuthenticated && !languageSelectionState.isCompleted) {
+      Logger.info(
+          'Decision: User authenticated but language selection incomplete',
+          tag: 'ROUTER');
+      return _handleAuthenticatedUserWithoutLanguageSelection(routeAnalysis);
+    }
+
+    // Case 4: Authenticated and language selection completed
+    if (authState.isAuthenticated && languageSelectionState.isCompleted) {
+      Logger.info(
+          'Decision: User fully authenticated with language preference set',
           tag: 'ROUTER');
       return _handleFullyAuthenticatedUser(routeAnalysis, authState);
     }
@@ -337,6 +388,27 @@ class RouterGuard {
       context: {'attempted_route': routeAnalysis.currentPath},
     );
     return AppRoutes.onboarding;
+  }
+
+  /// Handle redirect logic for authenticated users without language selection
+  static String? _handleAuthenticatedUserWithoutLanguageSelection(
+      RouteAnalysis routeAnalysis) {
+    // Allow access to language selection screen
+    if (routeAnalysis.currentPath == AppRoutes.languageSelection) {
+      return null;
+    }
+
+    // Allow access to auth routes (logout, etc.)
+    if (routeAnalysis.isAuthRoute) {
+      return null;
+    }
+
+    Logger.info(
+      'Authenticated user without language selection redirected to language selection',
+      tag: 'ROUTER',
+      context: {'attempted_route': routeAnalysis.currentPath},
+    );
+    return AppRoutes.languageSelection;
   }
 
   /// Handle redirect logic for fully authenticated and onboarded users
@@ -482,4 +554,11 @@ class RouteAnalysis {
     required this.isOnboardingRoute,
     required this.isAuthRoute,
   });
+}
+
+/// Data class for language selection state
+class LanguageSelectionState {
+  final bool isCompleted;
+
+  const LanguageSelectionState({required this.isCompleted});
 }
