@@ -5,6 +5,8 @@ import 'package:google_fonts/google_fonts.dart';
 import '../bloc/auth_bloc.dart';
 import '../bloc/auth_event.dart';
 import '../bloc/auth_state.dart' as auth_states;
+import '../../../../core/services/auth_aware_navigation_service.dart';
+import '../../../../core/utils/logger.dart';
 
 /// Login screen with Google OAuth and anonymous sign-in options
 /// Follows Material Design 3 guidelines and brand theme with dark mode support
@@ -30,8 +32,16 @@ class _LoginScreenState extends State<LoginScreen> {
       if (authState is auth_states.AuthenticatedState) {
         // Only redirect non-anonymous users - let anonymous users upgrade their account
         if (!authState.isAnonymous) {
-          // User is already authenticated with a real account, redirect to home
-          context.go('/');
+          Logger.info(
+            'Authenticated user detected on login screen - redirecting',
+            tag: 'LOGIN_SCREEN',
+            context: {
+              'user_type': 'authenticated',
+              'redirect_reason': 'already_authenticated',
+            },
+          );
+          // Use AuthAwareNavigationService for proper stack management
+          context.navigateAfterAuth();
         }
         // Anonymous users can stay on login screen to upgrade to real account
       }
@@ -44,9 +54,26 @@ class _LoginScreenState extends State<LoginScreen> {
       BlocListener<AuthBloc, auth_states.AuthState>(
         listener: (context, state) {
           if (state is auth_states.AuthenticatedState) {
-            // Navigate to home screen on successful authentication
-            context.go('/');
+            Logger.info(
+              'Authentication successful - navigating to home',
+              tag: 'LOGIN_SCREEN',
+              context: {
+                'user_type': state.isAnonymous ? 'anonymous' : 'authenticated',
+                'navigation_method': 'auth_aware_service',
+              },
+            );
+            // Use AuthAwareNavigationService for proper post-auth navigation
+            context.navigateAfterAuth();
           } else if (state is auth_states.AuthErrorState) {
+            Logger.error(
+              'Authentication error occurred',
+              tag: 'LOGIN_SCREEN',
+              context: {
+                'error_message': state.message,
+                'is_cancelled': state.message.contains('canceled') ||
+                    state.message.contains('cancelled'),
+              },
+            );
             // Handle different types of errors
             final theme = Theme.of(context);
             if (state.message.contains('canceled') ||

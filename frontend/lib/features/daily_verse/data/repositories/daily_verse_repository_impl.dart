@@ -8,16 +8,16 @@ import '../../../../core/error/failures.dart';
 import '../../domain/entities/daily_verse_entity.dart';
 import '../../domain/repositories/daily_verse_repository.dart';
 import '../services/daily_verse_api_service.dart';
-import '../services/daily_verse_cache_service.dart';
+import '../services/daily_verse_cache_interface.dart';
 
 /// Implementation of DailyVerseRepository with caching and offline support
 class DailyVerseRepositoryImpl implements DailyVerseRepository {
   final DailyVerseApiService _apiService;
-  final DailyVerseCacheService _cacheService;
+  final DailyVerseCacheInterface _cacheService;
 
   DailyVerseRepositoryImpl({
     required DailyVerseApiService apiService,
-    required DailyVerseCacheService cacheService,
+    required DailyVerseCacheInterface cacheService,
   })  : _apiService = apiService,
         _cacheService = cacheService;
 
