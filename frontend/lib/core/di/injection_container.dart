@@ -211,6 +211,7 @@ Future<void> initializeDependencies() async {
         getCacheStats: sl(),
         clearVerseCache: sl(),
         getDefaultLanguage: sl(),
+        languagePreferenceService: sl(),
       ));
 
   //! Saved Guides

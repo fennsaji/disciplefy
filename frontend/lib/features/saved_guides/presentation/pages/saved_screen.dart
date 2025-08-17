@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/di/injection_container.dart';
+import '../../../../core/router/app_routes.dart';
 import '../../domain/entities/saved_guide_entity.dart';
 import '../bloc/unified_saved_guides_bloc.dart';
 import '../bloc/saved_guides_event.dart';
@@ -14,8 +15,13 @@ import '../widgets/empty_state_widget.dart';
 /// Unified Saved Guides Screen with Clean Architecture
 class SavedScreen extends StatefulWidget {
   final int? initialTabIndex;
+  final String? navigationSource;
 
-  const SavedScreen({super.key, this.initialTabIndex});
+  const SavedScreen({
+    super.key,
+    this.initialTabIndex,
+    this.navigationSource,
+  });
 
   @override
   State<SavedScreen> createState() => _SavedScreenState();
@@ -126,6 +132,7 @@ class _SavedScreenState extends State<SavedScreen>
           tabController: _tabController,
           savedScrollController: _savedScrollController,
           recentScrollController: _recentScrollController,
+          navigationSource: widget.navigationSource,
         ),
       );
 }
@@ -134,11 +141,13 @@ class _SavedScreenContent extends StatelessWidget {
   final TabController tabController;
   final ScrollController savedScrollController;
   final ScrollController recentScrollController;
+  final String? navigationSource;
 
   const _SavedScreenContent({
     required this.tabController,
     required this.savedScrollController,
     required this.recentScrollController,
+    this.navigationSource,
   });
 
   @override
@@ -148,7 +157,7 @@ class _SavedScreenContent extends StatelessWidget {
           backgroundColor: Theme.of(context).scaffoldBackgroundColor,
           elevation: 0,
           leading: IconButton(
-            onPressed: () => context.pop(),
+            onPressed: () => _handleBackNavigation(context),
             icon: Icon(
               Icons.arrow_back_ios,
               color: Theme.of(context).colorScheme.primary,
@@ -535,5 +544,26 @@ class _SavedScreenContent extends StatelessWidget {
             save: save,
           ),
         );
+  }
+
+  /// Handles smart back navigation based on navigation source
+  void _handleBackNavigation(BuildContext context) {
+    // Check if we came from Generate Study screen
+    if (navigationSource == 'generate' ||
+        navigationSource == 'generate-study') {
+      // Go back to Generate Study screen
+      context.go(AppRoutes.generateStudy);
+      return;
+    }
+
+    // Check if there's a navigation stack to pop
+    if (context.canPop()) {
+      // Default pop behavior if there's a navigation stack
+      context.pop();
+      return;
+    }
+
+    // Fallback to home if no stack
+    context.go(AppRoutes.generateStudy);
   }
 }
