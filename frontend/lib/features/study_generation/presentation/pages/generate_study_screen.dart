@@ -10,6 +10,7 @@ import '../../../../core/widgets/keyboard_aware_scaffold.dart';
 import '../../../../core/utils/device_keyboard_handler.dart';
 import '../../../../core/services/language_preference_service.dart';
 import '../../../../core/models/app_language.dart';
+import '../../domain/mappers/app_language_mapper.dart';
 import '../../domain/services/study_navigation_service.dart';
 import '../../domain/usecases/get_default_study_language.dart';
 import '../../../../core/usecases/usecase.dart';
@@ -84,50 +85,26 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen> {
 
   /// Load the default language from user preferences
   Future<void> _loadDefaultLanguage() async {
-    if (kDebugMode) {
-      print('🔍 [GENERATE STUDY] Starting to load default language...');
-    }
-
     try {
-      // Test direct language preference service first
-      final directLanguage =
-          await _languagePreferenceService.getSelectedLanguage();
-      if (kDebugMode) {
-        print(
-            '🔍 [GENERATE STUDY] Direct language preference service result: ${directLanguage.code} (${directLanguage.displayName})');
-      }
-
       final getDefaultStudyLanguage = GetIt.instance<GetDefaultStudyLanguage>();
       final result = await getDefaultStudyLanguage(NoParams());
 
       result.fold(
         (failure) {
-          // Keep English as default if loading fails
           if (kDebugMode) {
             print(
                 '❌ [GENERATE STUDY] Failed to load default language: ${failure.message}');
           }
         },
         (language) {
-          if (kDebugMode) {
-            print(
-                '✅ [GENERATE STUDY] Use case returned language: ${language.code}');
-            print(
-                '🔄 [GENERATE STUDY] Setting _selectedLanguage to: ${language.code}');
-          }
           if (mounted) {
             setState(() {
               _selectedLanguage = language;
             });
-            if (kDebugMode) {
-              print(
-                  '✅ [GENERATE STUDY] State updated - _selectedLanguage is now: ${_selectedLanguage.code}');
-            }
           }
         },
       );
     } catch (e) {
-      // Keep English as default if loading fails
       if (kDebugMode) {
         print('❌ [GENERATE STUDY] Error loading default language: $e');
       }

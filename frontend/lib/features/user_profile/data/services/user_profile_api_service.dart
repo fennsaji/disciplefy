@@ -30,16 +30,34 @@ class UserProfileApiService {
       if (response.statusCode == 200) {
         return _parseProfileResponse(response.body);
       } else if (response.statusCode == 404) {
-        return const Left(ServerFailure(
+        return const Left(NotFoundFailure(
           message: 'User profile not found',
         ));
       } else {
-        final Map<String, dynamic>? errorData =
-            json.decode(response.body) as Map<String, dynamic>?;
+        // Check for authentication failure
+        if (response.statusCode == 401) {
+          return const Left(AuthenticationFailure(
+            message: 'Authentication required. Please log in again.',
+          ));
+        }
 
-        return Left(ServerFailure(
-          message: errorData?['error'] ?? 'Failed to fetch user profile',
-        ));
+        try {
+          final Map<String, dynamic>? errorData =
+              json.decode(response.body) as Map<String, dynamic>?;
+
+          return Left(ServerFailure(
+            message: errorData?['error'] ?? 'Failed to fetch user profile',
+          ));
+        } catch (e) {
+          // Safe handling of non-JSON responses
+          final bodyPreview = response.body.length > 100
+              ? '${response.body.substring(0, 100)}...'
+              : response.body.trim();
+          final fallbackMessage = bodyPreview.isNotEmpty
+              ? 'Failed to fetch user profile: $bodyPreview'
+              : 'Failed to fetch user profile';
+          return Left(ServerFailure(message: fallbackMessage));
+        }
       }
     } on SocketException {
       return const Left(NetworkFailure());
@@ -80,7 +98,9 @@ class UserProfileApiService {
   Future<Either<Failure, UserProfileEntity>> _updateProfile(
       Map<String, dynamic> updates) async {
     try {
-      final headers = await _httpService.createHeaders();
+      final baseHeaders = await _httpService.createHeaders();
+      final headers = Map<String, String>.from(baseHeaders)
+        ..['Content-Type'] = 'application/json';
       const url = '${AppConfig.supabaseUrl}$_userProfileEndpoint';
 
       final response = await _httpService.put(
@@ -92,23 +112,52 @@ class UserProfileApiService {
       if (response.statusCode == 200) {
         return _parseProfileResponse(response.body);
       } else if (response.statusCode == 404) {
-        return const Left(ServerFailure(
+        return const Left(NotFoundFailure(
           message: 'User profile not found',
         ));
       } else if (response.statusCode == 400) {
-        final Map<String, dynamic>? errorData =
-            json.decode(response.body) as Map<String, dynamic>?;
+        try {
+          final Map<String, dynamic>? errorData =
+              json.decode(response.body) as Map<String, dynamic>?;
 
-        return Left(ServerFailure(
-          message: errorData?['error'] ?? 'Invalid update data',
-        ));
+          return Left(ServerFailure(
+            message: errorData?['error'] ?? 'Invalid update data',
+          ));
+        } catch (e) {
+          // Safe handling of non-JSON responses
+          final bodyPreview = response.body.length > 100
+              ? '${response.body.substring(0, 100)}...'
+              : response.body.trim();
+          final fallbackMessage = bodyPreview.isNotEmpty
+              ? 'Invalid update data: $bodyPreview'
+              : 'Invalid update data';
+          return Left(ServerFailure(message: fallbackMessage));
+        }
       } else {
-        final Map<String, dynamic>? errorData =
-            json.decode(response.body) as Map<String, dynamic>?;
+        // Check for authentication failure
+        if (response.statusCode == 401) {
+          return const Left(AuthenticationFailure(
+            message: 'Authentication required. Please log in again.',
+          ));
+        }
 
-        return Left(ServerFailure(
-          message: errorData?['error'] ?? 'Failed to update user profile',
-        ));
+        try {
+          final Map<String, dynamic>? errorData =
+              json.decode(response.body) as Map<String, dynamic>?;
+
+          return Left(ServerFailure(
+            message: errorData?['error'] ?? 'Failed to update user profile',
+          ));
+        } catch (e) {
+          // Safe handling of non-JSON responses
+          final bodyPreview = response.body.length > 100
+              ? '${response.body.substring(0, 100)}...'
+              : response.body.trim();
+          final fallbackMessage = bodyPreview.isNotEmpty
+              ? 'Failed to update user profile: $bodyPreview'
+              : 'Failed to update user profile';
+          return Left(ServerFailure(message: fallbackMessage));
+        }
       }
     } on SocketException {
       return const Left(NetworkFailure());
