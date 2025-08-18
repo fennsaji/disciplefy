@@ -5,6 +5,7 @@ import '../../domain/entities/user_profile_entity.dart';
 import '../../domain/repositories/user_profile_repository.dart';
 import '../../../auth/domain/exceptions/auth_exceptions.dart'
     as auth_exceptions;
+import '../models/user_profile_model.dart';
 
 /// Supabase implementation of UserProfileRepository
 /// Handles all user profile database operations
@@ -24,7 +25,7 @@ class UserProfileRepositoryImpl implements UserProfileRepository {
 
       if (response == null) return null;
 
-      return UserProfileEntity.fromMap(response);
+      return UserProfileModel.fromMap(response).toEntity();
     } catch (e) {
       if (kDebugMode) {
         print('Error getting user profile: $e');
@@ -36,7 +37,8 @@ class UserProfileRepositoryImpl implements UserProfileRepository {
   @override
   Future<void> upsertUserProfile(UserProfileEntity profile) async {
     try {
-      await _supabase.from('user_profiles').upsert(profile.toMap());
+      final profileModel = UserProfileModel.fromEntity(profile);
+      await _supabase.from('user_profiles').upsert(profileModel.toMap());
     } catch (e) {
       if (kDebugMode) {
         print('Error upserting user profile: $e');

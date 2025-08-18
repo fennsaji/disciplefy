@@ -13,6 +13,7 @@ import '../../features/study_generation/data/repositories/study_repository_impl.
 import '../../features/study_generation/data/datasources/study_remote_data_source.dart';
 import '../../features/study_generation/data/datasources/study_local_data_source.dart';
 import '../../features/study_generation/domain/usecases/generate_study_guide.dart';
+import '../../features/study_generation/domain/usecases/get_default_study_language.dart';
 import '../../features/study_generation/domain/services/input_validation_service.dart';
 import '../../features/study_generation/presentation/bloc/study_bloc.dart';
 import '../../features/settings/domain/repositories/settings_repository.dart';
@@ -31,6 +32,7 @@ import '../../features/daily_verse/data/repositories/daily_verse_repository_impl
 import '../../features/daily_verse/domain/usecases/get_daily_verse.dart';
 import '../../features/daily_verse/domain/usecases/get_cached_verse.dart';
 import '../../features/daily_verse/domain/usecases/manage_verse_preferences.dart';
+import '../../features/daily_verse/domain/usecases/get_default_language.dart';
 import '../../features/daily_verse/presentation/bloc/daily_verse_bloc.dart';
 import '../../features/saved_guides/data/services/study_guides_api_service.dart';
 import '../../features/saved_guides/presentation/bloc/unified_saved_guides_bloc.dart';
@@ -68,6 +70,9 @@ import '../../features/user_profile/domain/usecases/delete_user_profile.dart';
 import '../../features/user_profile/presentation/bloc/user_profile_bloc.dart';
 import '../services/theme_service.dart';
 import '../services/auth_state_provider.dart';
+import '../services/language_preference_service.dart';
+import '../services/http_service.dart';
+import '../../features/user_profile/data/services/user_profile_api_service.dart';
 
 /// Service locator instance for dependency injection
 final sl = GetIt.instance;
@@ -89,6 +94,22 @@ Future<void> initializeDependencies() async {
 
   // Register ThemeService
   sl.registerLazySingleton(() => ThemeService());
+
+  // Register HttpService
+  sl.registerLazySingleton(() => HttpService(httpClient: sl()));
+
+  // Register User Profile API Service
+  sl.registerLazySingleton(() => UserProfileApiService(
+        httpService: sl<HttpService>(),
+      ));
+
+  // Register Language Preference Service
+  sl.registerLazySingleton(() => LanguagePreferenceService(
+        prefs: sl(),
+        authService: sl(),
+        authStateProvider: sl(),
+        userProfileService: sl(),
+      ));
 
   //! Auth
   sl.registerLazySingleton(() => AuthService());
@@ -118,6 +139,7 @@ Future<void> initializeDependencies() async {
   );
 
   sl.registerLazySingleton(() => GenerateStudyGuide(sl()));
+  sl.registerLazySingleton(() => GetDefaultStudyLanguage(sl()));
 
   sl.registerLazySingleton(() => InputValidationService());
 
@@ -147,6 +169,7 @@ Future<void> initializeDependencies() async {
         getAppVersion: sl(),
         settingsRepository: sl(),
         themeService: sl(),
+        languagePreferenceService: sl(),
       ));
 
   //! Daily Verse
@@ -178,6 +201,7 @@ Future<void> initializeDependencies() async {
   sl.registerLazySingleton(() => SetPreferredLanguage(sl()));
   sl.registerLazySingleton(() => GetCacheStats(sl()));
   sl.registerLazySingleton(() => ClearVerseCache(sl()));
+  sl.registerLazySingleton(() => GetDefaultLanguage(sl()));
 
   sl.registerFactory(() => DailyVerseBloc(
         getDailyVerse: sl(),
@@ -186,6 +210,8 @@ Future<void> initializeDependencies() async {
         setPreferredLanguage: sl(),
         getCacheStats: sl(),
         clearVerseCache: sl(),
+        getDefaultLanguage: sl(),
+        languagePreferenceService: sl(),
       ));
 
   //! Saved Guides
@@ -281,7 +307,10 @@ Future<void> initializeDependencies() async {
   );
 
   sl.registerLazySingleton<UserProfileService>(
-    () => UserProfileService(),
+    () => UserProfileService(
+      apiService: sl(),
+      authService: sl(),
+    ),
   );
 
   sl.registerLazySingleton(() => GetUserProfile(repository: sl()));
