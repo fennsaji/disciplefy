@@ -110,7 +110,7 @@ class _RecentGuidesSectionState extends State<RecentGuidesSection> {
             ),
             if (state.recentGuides.length > 3)
               GestureDetector(
-                onTap: () => context.push('/saved?tab=recent'),
+                onTap: () => context.push('/saved?tab=recent&source=generate'),
                 child: Text(
                   'View All',
                   style: GoogleFonts.inter(

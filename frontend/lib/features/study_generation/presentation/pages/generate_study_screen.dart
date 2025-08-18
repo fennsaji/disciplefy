@@ -3,11 +3,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:get_it/get_it.dart';
 
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widgets/keyboard_aware_scaffold.dart';
 import '../../../../core/utils/device_keyboard_handler.dart';
+import '../../../../core/services/language_preference_service.dart';
+import '../../../../core/models/app_language.dart';
+import '../../domain/mappers/app_language_mapper.dart';
 import '../../domain/services/study_navigation_service.dart';
+import '../../domain/usecases/get_default_study_language.dart';
+import '../../../../core/usecases/usecase.dart';
 import '../bloc/study_bloc.dart';
 import '../bloc/study_event.dart';
 import '../bloc/study_state.dart';
@@ -32,6 +38,9 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen> {
   StudyLanguage _selectedLanguage = StudyLanguage.english;
   bool _isInputValid = false;
   String? _validationError;
+
+  // Language preference service for database integration
+  late final LanguagePreferenceService _languagePreferenceService;
 
   // Scripture reference suggestions
   final List<String> _scriptureeSuggestions = [
@@ -69,7 +78,37 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen> {
   @override
   void initState() {
     super.initState();
+    _languagePreferenceService = GetIt.instance<LanguagePreferenceService>();
     _inputController.addListener(_validateInput);
+    _loadDefaultLanguage();
+  }
+
+  /// Load the default language from user preferences
+  Future<void> _loadDefaultLanguage() async {
+    try {
+      final getDefaultStudyLanguage = GetIt.instance<GetDefaultStudyLanguage>();
+      final result = await getDefaultStudyLanguage(NoParams());
+
+      result.fold(
+        (failure) {
+          if (kDebugMode) {
+            print(
+                '❌ [GENERATE STUDY] Failed to load default language: ${failure.message}');
+          }
+        },
+        (language) {
+          if (mounted) {
+            setState(() {
+              _selectedLanguage = language;
+            });
+          }
+        },
+      );
+    } catch (e) {
+      if (kDebugMode) {
+        print('❌ [GENERATE STUDY] Error loading default language: $e');
+      }
+    }
   }
 
   @override
@@ -306,26 +345,26 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen> {
               children: [
                 Expanded(
                   child: _LanguageToggleButton(
-                    flag: '🇺🇸',
                     label: 'English',
                     isSelected: _selectedLanguage == StudyLanguage.english,
-                    onTap: () => _switchLanguage(StudyLanguage.english),
+                    onTap: () async =>
+                        await _switchLanguage(StudyLanguage.english),
                   ),
                 ),
                 Expanded(
                   child: _LanguageToggleButton(
-                    flag: '🇮🇳',
                     label: 'हिन्दी',
                     isSelected: _selectedLanguage == StudyLanguage.hindi,
-                    onTap: () => _switchLanguage(StudyLanguage.hindi),
+                    onTap: () async =>
+                        await _switchLanguage(StudyLanguage.hindi),
                   ),
                 ),
                 Expanded(
                   child: _LanguageToggleButton(
-                    flag: '🇮🇳',
                     label: 'മലയാളം',
                     isSelected: _selectedLanguage == StudyLanguage.malayalam,
-                    onTap: () => _switchLanguage(StudyLanguage.malayalam),
+                    onTap: () async =>
+                        await _switchLanguage(StudyLanguage.malayalam),
                   ),
                 ),
               ],
@@ -543,10 +582,30 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen> {
     _inputFocusNode.requestFocus();
   }
 
-  void _switchLanguage(StudyLanguage language) {
+  Future<void> _switchLanguage(StudyLanguage language) async {
+    if (kDebugMode) {
+      print('🔄 [GENERATE STUDY] User switching language to: ${language.code}');
+    }
+
     setState(() {
       _selectedLanguage = language;
     });
+
+    // Save language preference to database via LanguagePreferenceService
+    try {
+      final appLanguage = language.toAppLanguage();
+      await _languagePreferenceService.saveLanguagePreference(appLanguage);
+
+      if (kDebugMode) {
+        print('✅ [GENERATE STUDY] Language preference saved: ${language.code}');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('❌ [GENERATE STUDY] Failed to save language preference: $e');
+      }
+      // Continue silently - the local state is still updated
+      // and the preference will be saved to database when possible
+    }
   }
 
   void _generateStudyGuide() {
@@ -719,13 +778,11 @@ class _ModeToggleButton extends StatelessWidget {
 
 /// Language toggle button widget.
 class _LanguageToggleButton extends StatelessWidget {
-  final String flag;
   final String label;
   final bool isSelected;
   final VoidCallback onTap;
 
   const _LanguageToggleButton({
-    required this.flag,
     required this.label,
     required this.isSelected,
     required this.onTap,
@@ -742,24 +799,18 @@ class _LanguageToggleButton extends StatelessWidget {
                 : Colors.transparent,
             borderRadius: BorderRadius.circular(8),
           ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const SizedBox(height: 4),
-              Text(
-                label,
-                style: GoogleFonts.inter(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: isSelected
-                      ? Colors.white
-                      : Theme.of(context).colorScheme.primary,
-                ),
-                textAlign: TextAlign.center,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ],
+          child: Text(
+            label,
+            style: GoogleFonts.inter(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: isSelected
+                  ? Colors.white
+                  : Theme.of(context).colorScheme.primary,
+            ),
+            textAlign: TextAlign.center,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
         ),
       );

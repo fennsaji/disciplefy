@@ -13,6 +13,7 @@ import '../../domain/entities/auth_params.dart';
 import '../../domain/exceptions/auth_exceptions.dart' as auth_exceptions;
 import '../../domain/usecases/clear_user_data_usecase.dart';
 import '../../domain/utils/auth_validator.dart';
+import '../../../../core/di/injection_container.dart';
 import 'auth_event.dart';
 import 'auth_state.dart' as auth_states;
 
@@ -41,7 +42,7 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
     UserProfileService? userProfileService,
     ClearUserDataUseCase? clearUserDataUseCase,
   })  : _authService = authService,
-        _userProfileService = userProfileService ?? UserProfileService(),
+        _userProfileService = userProfileService ?? sl<UserProfileService>(),
         _clearUserDataUseCase = clearUserDataUseCase ?? ClearUserDataUseCase(),
         super(const auth_states.AuthInitialState()) {
     // Register event handlers
@@ -108,7 +109,7 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
       if (supabaseUser != null) {
         // Load user profile data for Supabase users
         final profile =
-            await _userProfileService.getUserProfile(supabaseUser.id);
+            await _userProfileService.getUserProfileAsMap(supabaseUser.id);
 
         emit(auth_states.AuthenticatedState(
           user: supabaseUser,
@@ -198,7 +199,7 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
 
           // Load user profile data with retry
           final profile = await _retryOperation(
-              () => _userProfileService.getUserProfile(user.id));
+              () => _userProfileService.getUserProfileAsMap(user.id));
 
           emit(auth_states.AuthenticatedState(
             user: user,
@@ -274,7 +275,7 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
             print('🔐 [AUTH BLOC] 📄 Loading user profile...');
           }
           final profile = await _retryOperation(
-              () => _userProfileService.getUserProfile(user.id));
+              () => _userProfileService.getUserProfileAsMap(user.id));
           if (kDebugMode) {
             print(
                 '🔐 [AUTH BLOC] 📄 Profile loaded: ${profile != null ? "✅" : "❌"}');
@@ -370,7 +371,8 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
         // Load user profile if not anonymous
         Map<String, dynamic>? profile;
         if (!currentUser.isAnonymous) {
-          profile = await _userProfileService.getUserProfile(currentUser.id);
+          profile =
+              await _userProfileService.getUserProfileAsMap(currentUser.id);
         }
 
         emit(auth_states.AuthenticatedState(
@@ -517,7 +519,7 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
           // Load user profile if authenticated (not anonymous)
           final profile = user.isAnonymous
               ? null
-              : await _userProfileService.getUserProfile(user.id);
+              : await _userProfileService.getUserProfileAsMap(user.id);
 
           emit(auth_states.AuthenticatedState(
             user: user,
@@ -760,7 +762,7 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
       );
 
       // Refresh auth state to get updated profile
-      final profile = await _userProfileService.getUserProfile(user.id);
+      final profile = await _userProfileService.getUserProfileAsMap(user.id);
 
       emit(auth_states.AuthenticatedState(
         user: user,

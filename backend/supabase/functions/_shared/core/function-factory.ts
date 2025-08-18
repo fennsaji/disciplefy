@@ -71,7 +71,7 @@ const DEFAULT_CONFIG: Required<FunctionConfig> = {
   enableAnalytics: true,
   allowedMethods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
   maxBodySize: 10 * 1024 * 1024, // 10MB
-  timeout: 30000, // 30 seconds
+  timeout: 60000, // 60 seconds
   corsHeaders: {}
 }
 
