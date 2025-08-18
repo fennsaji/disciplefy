@@ -1,5 +1,6 @@
 import '../models/app_language.dart';
 import '../di/injection_container.dart';
+import '../router/app_routes.dart';
 import 'language_preference_service.dart';
 
 /// Service to handle authentication flow redirects including language selection
@@ -18,7 +19,7 @@ class AuthFlowService {
         final hasCompleted =
             await _languageService.hasCompletedLanguageSelection();
         if (!hasCompleted) {
-          return '/language-selection';
+          return AppRoutes.languageSelection;
         }
       }
 
@@ -26,7 +27,7 @@ class AuthFlowService {
       final hasCompleted =
           await _languageService.hasCompletedLanguageSelection();
       if (!hasCompleted) {
-        return '/language-selection';
+        return AppRoutes.languageSelection;
       }
 
       return null; // No redirect needed

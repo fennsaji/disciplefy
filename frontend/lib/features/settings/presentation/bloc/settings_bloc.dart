@@ -50,15 +50,55 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
   ) async {
     emit(SettingsLoading());
 
-    final result = await getSettings(NoParams());
+    try {
+      final result = await getSettings(NoParams());
 
-    ErrorHandler.handleEitherResult(
-      result: result,
-      emit: emit,
-      createErrorState: (message, errorCode) => SettingsError(message: message),
-      onSuccess: (dynamic settings) => emit(SettingsLoaded(settings: settings)),
-      operationName: 'load settings',
-    );
+      await result.fold(
+        (failure) async => emit(SettingsError(message: failure.message)),
+        (settings) async {
+          // Check if we need to sync language preference from LanguagePreferenceService
+          try {
+            final currentLanguage =
+                await languagePreferenceService.getSelectedLanguage();
+
+            // If settings language differs from LanguagePreferenceService, sync it
+            if (settings.language != currentLanguage.code) {
+              if (kDebugMode) {
+                print(
+                    'Settings language (${settings.language}) differs from LanguagePreferenceService (${currentLanguage.code}). Syncing...');
+              }
+
+              // Update settings repository with the correct language
+              await settingsRepository.updateLanguage(currentLanguage.code);
+
+              // Create updated settings object
+              final syncedSettings =
+                  settings.copyWith(language: currentLanguage.code);
+              if (!emit.isDone) {
+                emit(SettingsLoaded(settings: syncedSettings));
+              }
+              return;
+            }
+          } catch (e) {
+            if (kDebugMode) {
+              print('Error syncing language preference: $e');
+            }
+            // Continue with original settings if sync fails
+          }
+
+          if (!emit.isDone) {
+            emit(SettingsLoaded(settings: settings));
+          }
+        },
+      );
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error in _onLoadSettings: $e');
+      }
+      if (!emit.isDone) {
+        emit(SettingsError(message: 'Failed to load settings: $e'));
+      }
+    }
   }
 
   Future<void> _onThemeModeChanged(

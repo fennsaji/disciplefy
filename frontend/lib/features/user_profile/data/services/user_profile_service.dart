@@ -4,6 +4,7 @@ import '../../../../core/error/failures.dart';
 import '../../../../core/models/app_language.dart';
 import '../../../auth/data/services/auth_service.dart';
 import '../../domain/entities/user_profile_entity.dart';
+import '../models/user_profile_model.dart';
 import 'user_profile_api_service.dart';
 
 /// Service for managing user profile operations
@@ -98,8 +99,7 @@ class UserProfileService {
 
     final result = await getUserProfile();
     return result.fold(
-      (failure) =>
-          failure is! ServerFailure || !failure.message.contains('not found'),
+      (failure) => failure is! NotFoundFailure,
       (profile) => true,
     );
   }
@@ -125,7 +125,7 @@ class UserProfileService {
     return existingProfile.fold(
       (failure) {
         // If profile doesn't exist, create with initial values
-        if (failure is ServerFailure && failure.message.contains('not found')) {
+        if (failure is NotFoundFailure) {
           return updateProfile({
             'language_preference': language.code,
             'theme_preference': themePreference,
@@ -172,7 +172,7 @@ class UserProfileService {
     final result = await getUserProfileById(userId);
     return result.fold(
       (failure) => null,
-      (profile) => profile.toMap(),
+      (profile) => UserProfileModel.fromEntity(profile).toMap(),
     );
   }
 
@@ -181,7 +181,7 @@ class UserProfileService {
     final result = await getUserProfile();
     return result.fold(
       (failure) => null,
-      (profile) => profile.toMap(),
+      (profile) => UserProfileModel.fromEntity(profile).toMap(),
     );
   }
 }

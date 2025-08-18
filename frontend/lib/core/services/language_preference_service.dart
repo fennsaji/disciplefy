@@ -116,21 +116,54 @@ class LanguagePreferenceService {
       // For authenticated non-anonymous users, check if they have a language preference in DB
       if (_authStateProvider.isAuthenticated &&
           !_authStateProvider.isAnonymous) {
+        print(
+            '🔍 [LANGUAGE_SELECTION] Checking completion for authenticated user');
+
         final profileExists = await _userProfileService.profileExists();
+        print('🔍 [LANGUAGE_SELECTION] Profile exists: $profileExists');
+
         if (profileExists) {
           final languageResult =
               await _userProfileService.getLanguagePreference();
-          return languageResult.fold(
-            (failure) =>
-                false, // No language preference in DB means not completed
-            (language) => true, // Has language preference in DB means completed
+          final hasLanguage = languageResult.fold(
+            (failure) {
+              print(
+                  '🔍 [LANGUAGE_SELECTION] Failed to get language preference: ${failure.message}');
+              return false; // No language preference in DB means not completed
+            },
+            (language) {
+              print(
+                  '🔍 [LANGUAGE_SELECTION] Found language preference in DB: ${language.displayName}');
+              return true; // Has language preference in DB means completed
+            },
           );
+
+          // If we have a language preference in DB, also check if local storage is marked
+          if (hasLanguage) {
+            final locallyMarked =
+                _prefs.getBool(_hasCompletedLanguageSelectionKey) ?? false;
+            print(
+                '🔍 [LANGUAGE_SELECTION] Locally marked as completed: $locallyMarked');
+
+            // If not locally marked but has DB preference, mark it locally for consistency
+            if (!locallyMarked) {
+              print(
+                  '🔄 [LANGUAGE_SELECTION] Marking locally as completed for consistency');
+              await _prefs.setBool(_hasCompletedLanguageSelectionKey, true);
+            }
+          }
+
+          return hasLanguage;
         }
         return false; // No profile means not completed
       }
 
       // For anonymous users, check local storage completion flag
-      return _prefs.getBool(_hasCompletedLanguageSelectionKey) ?? false;
+      final isCompleted =
+          _prefs.getBool(_hasCompletedLanguageSelectionKey) ?? false;
+      print(
+          '🔍 [LANGUAGE_SELECTION] Anonymous user completion status: $isCompleted');
+      return isCompleted;
     } catch (e) {
       print('Error checking language selection completion: $e');
       return false;
