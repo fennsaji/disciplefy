@@ -11,10 +11,21 @@ import '../../features/auth/presentation/bloc/auth_state.dart' as auth_states;
 /// This provider listens to AuthBloc state changes and provides a centralized
 /// way to access current user information, preventing inconsistencies between
 /// Home screen showing user name while Settings shows guest mode.
+///
+/// Features:
+/// - Profile caching to prevent unnecessary API calls
+/// - Smart cache invalidation on language/theme changes
+/// - Efficient navigation without redundant profile fetching
 class AuthStateProvider extends ChangeNotifier {
   late AuthBloc _authBloc;
   StreamSubscription<auth_states.AuthState>? _authStateSubscription;
   auth_states.AuthState _currentState = const auth_states.AuthInitialState();
+
+  // Profile caching
+  Map<String, dynamic>? _cachedProfile;
+  DateTime? _profileCacheTime;
+  String? _cachedUserId;
+  static const Duration _profileCacheExpiry = Duration(minutes: 30);
 
   /// Initialize the provider with an AuthBloc instance
   void initialize(AuthBloc authBloc) {
@@ -33,6 +44,17 @@ class AuthStateProvider extends ChangeNotifier {
         }
       }
 
+      // Handle state-specific caching logic
+      if (state is auth_states.AuthenticatedState) {
+        // Cache the profile if it's available in the new state
+        if (state.profile != null) {
+          cacheProfile(state.user.id, state.profile);
+        }
+      } else if (state is auth_states.UnauthenticatedState) {
+        // Clear cache on logout
+        clearCache();
+      }
+
       _currentState = state;
       notifyListeners();
     });
@@ -47,6 +69,7 @@ class AuthStateProvider extends ChangeNotifier {
   @override
   void dispose() {
     _authStateSubscription?.cancel();
+    clearCache();
     if (kDebugMode) {
       print('🧹 [AUTH STATE PROVIDER] Disposed');
     }
@@ -106,10 +129,22 @@ class AuthStateProvider extends ChangeNotifier {
     return null;
   }
 
-  /// Get user profile if available
+  /// Get user profile if available (with caching)
   Map<String, dynamic>? get userProfile {
     if (_currentState is auth_states.AuthenticatedState) {
       final authState = _currentState as auth_states.AuthenticatedState;
+
+      // Return cached profile if available and fresh
+      if (_cachedProfile != null &&
+          _cachedUserId == authState.user.id &&
+          _isProfileCacheFresh()) {
+        if (kDebugMode) {
+          print('📄 [AUTH STATE PROVIDER] Using cached profile');
+        }
+        return _cachedProfile;
+      }
+
+      // Return profile from auth state (may be null)
       return authState.profile;
     }
     return null;
@@ -124,12 +159,80 @@ class AuthStateProvider extends ChangeNotifier {
     return null;
   }
 
+  /// Cache profile data for the current user
+  void cacheProfile(String userId, Map<String, dynamic>? profile) {
+    if (profile != null) {
+      _cachedProfile = Map<String, dynamic>.from(profile);
+      _profileCacheTime = DateTime.now();
+      _cachedUserId = userId;
+
+      if (kDebugMode) {
+        print('📄 [AUTH STATE PROVIDER] Profile cached for user: $userId');
+      }
+    }
+  }
+
+  /// Check if cached profile is still fresh
+  bool _isProfileCacheFresh() {
+    if (_profileCacheTime == null) return false;
+
+    final now = DateTime.now();
+    final cacheAge = now.difference(_profileCacheTime!);
+    return cacheAge < _profileCacheExpiry;
+  }
+
+  /// Check if we should fetch profile (cache is stale or missing)
+  bool shouldFetchProfile(String userId) {
+    // Always fetch if no cache
+    if (_cachedProfile == null || _cachedUserId != userId) {
+      return true;
+    }
+
+    // Fetch if cache is stale
+    if (!_isProfileCacheFresh()) {
+      if (kDebugMode) {
+        print('📄 [AUTH STATE PROVIDER] Profile cache expired, should fetch');
+      }
+      return true;
+    }
+
+    if (kDebugMode) {
+      print('📄 [AUTH STATE PROVIDER] Profile cache fresh, skipping fetch');
+    }
+    return false;
+  }
+
+  /// Invalidate profile cache (call when language/theme changes)
+  void invalidateProfileCache() {
+    _cachedProfile = null;
+    _profileCacheTime = null;
+    _cachedUserId = null;
+
+    if (kDebugMode) {
+      print('📄 [AUTH STATE PROVIDER] Profile cache invalidated');
+    }
+  }
+
+  /// Clear all cached data (call on logout)
+  void clearCache() {
+    invalidateProfileCache();
+
+    if (kDebugMode) {
+      print('🧹 [AUTH STATE PROVIDER] All cache cleared');
+    }
+  }
+
   /// Debug information about current state
   String get debugInfo {
+    final cacheInfo = _cachedProfile != null
+        ? 'cached(${_isProfileCacheFresh() ? "fresh" : "stale"})'
+        : 'no-cache';
+
     if (_currentState is auth_states.AuthenticatedState) {
       final authState = _currentState as auth_states.AuthenticatedState;
       return 'AuthenticatedState(isAnonymous: ${authState.isAnonymous}, '
-          'userId: ${authState.user.id}, email: ${authState.user.email})';
+          'userId: ${authState.user.id}, email: ${authState.user.email}, '
+          'profile: $cacheInfo)';
     } else if (_currentState is auth_states.AuthLoadingState) {
       return 'AuthLoadingState';
     } else if (_currentState is auth_states.AuthErrorState) {
