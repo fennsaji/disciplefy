@@ -82,6 +82,7 @@ class LanguagePreferenceService {
   /// For authenticated users, saves to database first, then local storage
   /// For anonymous users, saves to local storage only
   /// Notifies listeners of the language change
+  /// Invalidates profile cache to ensure fresh data is fetched
   Future<void> saveLanguagePreference(AppLanguage language) async {
     try {
       // Save to local storage first (always)
@@ -90,13 +91,21 @@ class LanguagePreferenceService {
       // For authenticated non-anonymous users, also save to database
       if (_authStateProvider.isAuthenticated &&
           !_authStateProvider.isAnonymous) {
+        // Invalidate profile cache before updating language preference
+        _authStateProvider.invalidateProfileCache();
+        print(
+            '📄 [LANGUAGE_SERVICE] Profile cache invalidated for language update');
+
         final updateResult =
             await _userProfileService.updateLanguagePreference(language);
         updateResult.fold(
           (failure) => print(
               'Failed to update language preference in database: ${failure.message}'),
-          (profile) =>
-              print('Language preference updated in database successfully'),
+          (profile) {
+            print('Language preference updated in database successfully');
+            print(
+                '📄 [LANGUAGE_SERVICE] Language preference updated, cache will be refreshed on next access');
+          },
         );
       }
 

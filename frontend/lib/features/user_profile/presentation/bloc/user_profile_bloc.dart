@@ -1,6 +1,8 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/utils/error_handler.dart';
+import '../../../../core/services/auth_state_provider.dart';
+import '../../../../core/di/injection_container.dart';
 import '../../domain/usecases/get_user_profile.dart';
 import '../../domain/usecases/update_user_profile.dart';
 import '../../domain/usecases/delete_user_profile.dart';
@@ -121,6 +123,14 @@ class UserProfileBloc extends Bloc<UserProfileEvent, UserProfileState> {
   ) async {
     await ErrorHandler.wrapAsyncOperation(
       operation: () async {
+        // Invalidate profile cache before updating
+        final authStateProvider = sl<AuthStateProvider>();
+        authStateProvider.invalidateProfileCache();
+        if (kDebugMode) {
+          print(
+              '📄 [USER_PROFILE_BLOC] Profile cache invalidated for language update');
+        }
+
         await _repository.updateLanguagePreference(
           event.userId,
           event.languageCode,
@@ -146,6 +156,14 @@ class UserProfileBloc extends Bloc<UserProfileEvent, UserProfileState> {
   ) async {
     await ErrorHandler.wrapAsyncOperation(
       operation: () async {
+        // Invalidate profile cache before updating
+        final authStateProvider = sl<AuthStateProvider>();
+        authStateProvider.invalidateProfileCache();
+        if (kDebugMode) {
+          print(
+              '📄 [USER_PROFILE_BLOC] Profile cache invalidated for theme update');
+        }
+
         await _repository.updateThemePreference(event.userId, event.theme);
         emit(ThemePreferenceUpdated(newTheme: event.theme));
 
