@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../utils/logger.dart';
 import '../services/language_preference_service.dart';
+import '../services/language_cache_coordinator.dart';
 import '../di/injection_container.dart';
 import 'app_routes.dart';
 
@@ -20,6 +21,9 @@ class RouterGuard {
   static LanguageSelectionState? _cachedLanguageState;
   static DateTime? _languageCacheTime;
   static const Duration _languageCacheExpiry = Duration(minutes: 10);
+
+  // Flag to track if we've registered with the cache coordinator
+  static bool _isRegisteredWithCoordinator = false;
 
   /// Main redirect logic for the app router
   static Future<String?> handleRedirect(String currentPath) async {
@@ -106,6 +110,9 @@ class RouterGuard {
   /// Get language selection completion state with router-level caching
   /// This prevents excessive API calls on every navigation
   static Future<LanguageSelectionState> _getLanguageSelectionState() async {
+    // Ensure we're registered with the cache coordinator
+    _registerWithCacheCoordinator();
+
     try {
       final currentUserId = Supabase.instance.client.auth.currentUser?.id;
 
@@ -569,6 +576,30 @@ class RouterGuard {
     _languageCacheTime = null;
     Logger.info('Router language selection cache invalidated',
         tag: 'ROUTER_CACHE');
+  }
+
+  /// Register router cache invalidation with the language cache coordinator
+  static void _registerWithCacheCoordinator() {
+    if (_isRegisteredWithCoordinator) return;
+
+    try {
+      final cacheCoordinator = sl<LanguageCacheCoordinator>();
+      cacheCoordinator.registerCacheInvalidationCallback(
+        invalidateLanguageSelectionCache,
+      );
+      _isRegisteredWithCoordinator = true;
+
+      Logger.info(
+        'RouterGuard registered with LanguageCacheCoordinator',
+        tag: 'ROUTER_CACHE',
+      );
+    } catch (e) {
+      Logger.error(
+        'Failed to register RouterGuard with LanguageCacheCoordinator',
+        tag: 'ROUTER_CACHE',
+        error: e,
+      );
+    }
   }
 }
 
