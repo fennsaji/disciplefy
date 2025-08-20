@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../utils/logger.dart';
 import '../services/language_preference_service.dart';
+import '../services/language_cache_coordinator.dart';
 import '../di/injection_container.dart';
 import 'app_routes.dart';
 
@@ -14,6 +15,15 @@ class RouterGuard {
   static const String _userTypeKey = 'user_type';
   static const String _userIdKey = 'user_id';
   static const String _onboardingCompletedKey = 'onboarding_completed';
+
+  // Router-level caching to prevent excessive API calls
+  static String? _cachedUserId;
+  static LanguageSelectionState? _cachedLanguageState;
+  static DateTime? _languageCacheTime;
+  static const Duration _languageCacheExpiry = Duration(minutes: 10);
+
+  // Flag to track if we've registered with the cache coordinator
+  static bool _isRegisteredWithCoordinator = false;
 
   /// Main redirect logic for the app router
   static Future<String?> handleRedirect(String currentPath) async {
@@ -97,17 +107,43 @@ class RouterGuard {
     return const AuthenticationState(isAuthenticated: false);
   }
 
-  /// Get language selection completion state
+  /// Get language selection completion state with router-level caching
+  /// This prevents excessive API calls on every navigation
   static Future<LanguageSelectionState> _getLanguageSelectionState() async {
+    // Ensure we're registered with the cache coordinator
+    _registerWithCacheCoordinator();
+
     try {
+      final currentUserId = Supabase.instance.client.auth.currentUser?.id;
+
+      // Use cached result if available and fresh for the same user
+      if (_isLanguageCacheFresh() &&
+          _cachedUserId == currentUserId &&
+          _cachedLanguageState != null) {
+        Logger.info(
+          'Using cached language selection state',
+          tag: 'LANGUAGE_SELECTION_CACHE',
+          context: {
+            'cached_completion_status': _cachedLanguageState!.isCompleted,
+            'user_id': currentUserId,
+          },
+        );
+        return _cachedLanguageState!;
+      }
+
       final languageService = sl<LanguagePreferenceService>();
       final isCompleted = await languageService.hasCompletedLanguageSelection();
 
+      // Cache the result
+      _cacheLanguageSelectionState(
+          currentUserId, LanguageSelectionState(isCompleted: isCompleted));
+
       Logger.info(
-        'Language selection state retrieved',
+        'Language selection state retrieved and cached',
         tag: 'LANGUAGE_SELECTION',
         context: {
           'language_selection_completed': isCompleted,
+          'user_id': currentUserId,
         },
       );
 
@@ -516,6 +552,54 @@ class RouterGuard {
     if (path.startsWith(AppRoutes.onboarding)) return 'onboarding';
     if (path.startsWith('/auth/callback')) return 'oauth_callback';
     return 'unknown';
+  }
+
+  /// Cache language selection state to prevent repeated API calls
+  static void _cacheLanguageSelectionState(
+      String? userId, LanguageSelectionState state) {
+    _cachedUserId = userId;
+    _cachedLanguageState = state;
+    _languageCacheTime = DateTime.now();
+  }
+
+  /// Check if cached language selection state is still fresh
+  static bool _isLanguageCacheFresh() {
+    if (_languageCacheTime == null) return false;
+    final age = DateTime.now().difference(_languageCacheTime!);
+    return age < _languageCacheExpiry;
+  }
+
+  /// Invalidate language selection cache (call when user logs in/out or changes language)
+  static void invalidateLanguageSelectionCache() {
+    _cachedUserId = null;
+    _cachedLanguageState = null;
+    _languageCacheTime = null;
+    Logger.info('Router language selection cache invalidated',
+        tag: 'ROUTER_CACHE');
+  }
+
+  /// Register router cache invalidation with the language cache coordinator
+  static void _registerWithCacheCoordinator() {
+    if (_isRegisteredWithCoordinator) return;
+
+    try {
+      final cacheCoordinator = sl<LanguageCacheCoordinator>();
+      cacheCoordinator.registerCacheInvalidationCallback(
+        invalidateLanguageSelectionCache,
+      );
+      _isRegisteredWithCoordinator = true;
+
+      Logger.info(
+        'RouterGuard registered with LanguageCacheCoordinator',
+        tag: 'ROUTER_CACHE',
+      );
+    } catch (e) {
+      Logger.error(
+        'Failed to register RouterGuard with LanguageCacheCoordinator',
+        tag: 'ROUTER_CACHE',
+        error: e,
+      );
+    }
   }
 }
 

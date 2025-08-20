@@ -700,11 +700,12 @@ class _RecommendedGuideTopicCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final iconData = _getIconForCategory(topic.category);
-    const color = AppTheme.primaryColor;
+    final color = _getColorForCategory(topic.category);
 
     return GestureDetector(
       onTap: onTap,
       child: Container(
+        height: 180, // Fixed height for uniform cards
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: Theme.of(context).colorScheme.surface,
@@ -752,7 +753,7 @@ class _RecommendedGuideTopicCard extends StatelessWidget {
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(
-                      'Foundational Doctrines',
+                      topic.category,
                       style: GoogleFonts.inter(
                         fontSize: 9,
                         fontWeight: FontWeight.w600,
@@ -851,15 +852,31 @@ class _RecommendedGuideTopicCard extends StatelessWidget {
 
   // Category to icon mapping
   static const Map<String, IconData> _categoryIcons = {
-    'Foundational Doctrines': Icons.foundation,
+    'apologetics & defense of faith': Icons.shield,
+    'christian life': Icons.directions_walk,
+    'church & community': Icons.groups,
+    'discipleship & growth': Icons.trending_up,
+    'family & relationships': Icons.family_restroom,
+    'foundations of faith': Icons.foundation,
+    'mission & service': Icons.volunteer_activism,
     'spiritual disciplines': Icons.self_improvement,
-    'salvation': Icons.favorite,
-    'christian living': Icons.directions_walk,
-    'character of god': Icons.auto_awesome,
-    'relationships': Icons.people,
-    'spiritual growth': Icons.trending_up,
+  };
+
+  // Category to color mapping
+  static const Map<String, Color> _categoryColors = {
+    'apologetics & defense of faith': Color(0xFF1565C0), // Deep Blue
+    'christian life': Color(0xFF2E7D32), // Green
+    'church & community': Color(0xFFE65100), // Orange
+    'discipleship & growth': Color(0xFF7B1FA2), // Purple
+    'family & relationships': Color(0xFFD32F2F), // Red
+    'foundations of faith': Color(0xFF5D4037), // Brown
+    'mission & service': Color(0xFF455A64), // Blue Grey
+    'spiritual disciplines': Color(0xFF00695C), // Teal
   };
 
   IconData _getIconForCategory(String category) =>
       _categoryIcons[category.toLowerCase()] ?? Icons.menu_book;
+
+  Color _getColorForCategory(String category) =>
+      _categoryColors[category.toLowerCase()] ?? AppTheme.primaryColor;
 }

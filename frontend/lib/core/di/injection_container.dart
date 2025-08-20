@@ -71,6 +71,7 @@ import '../../features/user_profile/presentation/bloc/user_profile_bloc.dart';
 import '../services/theme_service.dart';
 import '../services/auth_state_provider.dart';
 import '../services/language_preference_service.dart';
+import '../services/language_cache_coordinator.dart';
 import '../services/http_service.dart';
 import '../../features/user_profile/data/services/user_profile_api_service.dart';
 
@@ -103,12 +104,16 @@ Future<void> initializeDependencies() async {
         httpService: sl<HttpService>(),
       ));
 
+  // Register Language Cache Coordinator
+  sl.registerLazySingleton(() => LanguageCacheCoordinator());
+
   // Register Language Preference Service
   sl.registerLazySingleton(() => LanguagePreferenceService(
         prefs: sl(),
         authService: sl(),
         authStateProvider: sl(),
         userProfileService: sl(),
+        cacheCoordinator: sl(),
       ));
 
   //! Auth

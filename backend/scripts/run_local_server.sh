@@ -65,16 +65,19 @@ show_usage() {
     echo ""
     echo "Options:"
     echo "  --reset     Reset database on startup (WARNING: destroys all data)"
+    echo "  --restart   Restart Supabase services (stop and start again)"
     echo "  --help      Show this usage information"
     echo ""
     echo "Parameters:"
     echo "  env-file    Environment file to use (default: .env.local)"
     echo ""
     echo "Examples:"
-    echo "  $0                    # Start with .env.local, preserve database"
-    echo "  $0 .env.dev           # Start with .env.dev, preserve database"
+    echo "  $0                    # Start with .env.local, preserve database, skip restart"
+    echo "  $0 .env.dev           # Start with .env.dev, preserve database, skip restart"  
+    echo "  $0 --restart          # Restart services with .env.local, preserve database"
     echo "  $0 --reset            # Start with .env.local, reset database"
     echo "  $0 --reset .env.dev   # Start with .env.dev, reset database"
+    echo "  $0 --restart --reset  # Restart services and reset database"
     echo ""
     echo -e "${YELLOW}⚠️  Database Preservation:${NC}"
     echo "  By default, your database is preserved between runs."
@@ -83,12 +86,17 @@ show_usage() {
 
 # Parse command line arguments
 RESET_DB=false
+RESTART_SERVICES=false
 ENV_FILE_PARAM=""
 
 while [[ $# -gt 0 ]]; do
     case $1 in
         --reset)
             RESET_DB=true
+            shift
+            ;;
+        --restart)
+            RESTART_SERVICES=true
             shift
             ;;
         --help)
@@ -129,6 +137,13 @@ if [ "$RESET_DB" = true ]; then
 else
     echo -e "${GREEN}💾 Database mode: PRESERVE (existing data will be kept)${NC}"
 fi
+if [ "$RESTART_SERVICES" = true ]; then
+    echo -e "${BLUE}🔄 Service mode: RESTART (will stop and start services)${NC}"
+elif [ "$RESET_DB" = true ]; then
+    echo -e "${YELLOW}🔄 Service mode: RESTART (required for database reset)${NC}"
+else
+    echo -e "${GREEN}⚡ Service mode: QUICK START (will use existing services if available)${NC}"
+fi
 
 # Check if specified env file exists
 if [ ! -f "$ENV_FILE" ]; then
@@ -150,13 +165,16 @@ if [ ! -f "$CONFIG_TOML" ]; then
     exit 1
 fi
 
-# Stop any existing Supabase services
-if [ "$RESET_DB" = true ]; then
-    echo -e "${YELLOW}⚠️  Database reset requested - stopping services and clearing data...${NC}"
+# Stop any existing Supabase services (only if restart or reset is requested)
+if [ "$RESET_DB" = true ] || [ "$RESTART_SERVICES" = true ]; then
+    if [ "$RESET_DB" = true ]; then
+        echo -e "${YELLOW}⚠️  Database reset requested - stopping services and clearing data...${NC}"
+    else
+        echo -e "${BLUE}🔧 Restart requested - stopping existing Supabase services (preserving database)...${NC}"
+    fi
     supabase stop 2>/dev/null || true
 else
-    echo -e "${BLUE}🔧 Stopping any existing Supabase services (preserving database)...${NC}"
-    supabase stop --no-backup 2>/dev/null || true
+    echo -e "${GREEN}⚡ Skipping service restart - will start or use existing services...${NC}"
 fi
 
 # Check if config needs to be restored to localhost settings
@@ -239,6 +257,11 @@ if [ "$RESET_DB" = true ]; then
 else
     echo -e "  • ${GREEN}Database preserved - your data is intact${NC}"
     echo -e "  • ${BLUE}Use --reset flag if you need a clean database${NC}"
+fi
+if [ "$RESTART_SERVICES" = true ] || [ "$RESET_DB" = true ]; then
+    echo -e "  • ${BLUE}Services were restarted for clean state${NC}"
+else
+    echo -e "  • ${GREEN}Services were started quickly (use --restart to force restart)${NC}"
 fi
 echo -e ""
 
