@@ -7,6 +7,8 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../../core/services/http_service.dart';
 import '../../../../core/services/auth_state_provider.dart';
+import '../../../../core/services/language_preference_service.dart';
+import '../../../../core/router/router_guard.dart';
 import '../../../user_profile/data/services/user_profile_service.dart';
 import '../../../user_profile/domain/entities/user_profile_entity.dart';
 import '../../data/services/auth_service.dart';
@@ -201,6 +203,9 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
           final profile =
               await _retryOperation(() => _getProfileWithCache(user.id));
 
+          // Invalidate router cache since auth status changed
+          RouterGuard.invalidateLanguageSelectionCache();
+
           emit(auth_states.AuthenticatedState(
             user: user,
             profile: profile,
@@ -284,6 +289,9 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
           if (kDebugMode) {
             print('🔐 [AUTH BLOC] ✅ Emitting AuthenticatedState...');
           }
+          // Invalidate router cache since auth status changed
+          RouterGuard.invalidateLanguageSelectionCache();
+
           emit(auth_states.AuthenticatedState(
             user: user,
             isAnonymous: user.isAnonymous,
@@ -329,6 +337,9 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
           if (isAuthenticated) {
             // For anonymous users, create a mock user object since Supabase user is null
             final user = _authService.currentUser ?? _createAnonymousUser();
+
+            // Invalidate router cache since auth status changed
+            RouterGuard.invalidateLanguageSelectionCache();
 
             emit(auth_states.AuthenticatedState(
               user: user,
@@ -492,6 +503,22 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
       // Stop token validation when signing out
       _stopTokenValidationTimer();
 
+      // Invalidate all caches on sign out
+      try {
+        final languageService = sl<LanguagePreferenceService>();
+        languageService.invalidateLanguageCache();
+        RouterGuard.invalidateLanguageSelectionCache();
+        if (kDebugMode) {
+          print(
+              '📄 [AUTH BLOC] All caches invalidated on sign out (language + router)');
+        }
+      } catch (e) {
+        if (kDebugMode) {
+          print(
+              '📄 [AUTH BLOC] Warning: Could not invalidate caches on sign out: $e');
+        }
+      }
+
       // Clear all user data including authentication and storage
       await _clearUserDataUseCase.execute();
 
@@ -531,6 +558,9 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
         if (isAuthenticated) {
           // Keep anonymous session active
           final user = _createAnonymousUser();
+          // Invalidate router cache since auth status changed
+          RouterGuard.invalidateLanguageSelectionCache();
+
           emit(auth_states.AuthenticatedState(
             user: user,
             isAnonymous: true,
@@ -759,9 +789,25 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
         themePreference: event.themePreference,
       );
 
-      // Invalidate cache and fetch fresh profile data
+      // Invalidate both profile and language cache
       final authStateProvider = sl<AuthStateProvider>();
       authStateProvider.invalidateProfileCache();
+
+      // Also invalidate language and router cache since language preference changed
+      try {
+        final languageService = sl<LanguagePreferenceService>();
+        languageService.invalidateLanguageCache();
+        RouterGuard.invalidateLanguageSelectionCache();
+        if (kDebugMode) {
+          print(
+              '📄 [AUTH BLOC] All caches invalidated after profile update (language + router)');
+        }
+      } catch (e) {
+        if (kDebugMode) {
+          print(
+              '📄 [AUTH BLOC] Warning: Could not invalidate caches after profile update: $e');
+        }
+      }
 
       // Fetch fresh profile data
       final profile = await _userProfileService.getUserProfileAsMap(user.id);
