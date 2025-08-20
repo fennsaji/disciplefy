@@ -140,7 +140,7 @@ async function getFilteredTopics(
   // Get categories and total count
   const [categories, total] = await Promise.all([
     repository.getCategories(params.language),
-    repository.getTopicsCount(params.category, undefined, params.language)
+    repository.getTopicsCount(params.category, params.language)
   ])
 
   return {

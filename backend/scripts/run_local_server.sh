@@ -21,6 +21,9 @@ BACKEND_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 # Change to backend root directory to ensure all relative paths work
 cd "$BACKEND_ROOT"
 
+# Push into supabase directory where config.toml lives for all supabase CLI commands
+pushd supabase > /dev/null
+
 echo "🔧 Script directory: $SCRIPT_DIR"
 echo "🔧 Backend root: $BACKEND_ROOT"
 echo "🔧 Working directory: $(pwd)"
@@ -174,17 +177,29 @@ echo -e "${GREEN}✅ Ensured localhost configuration${NC}"
 if [ "$RESET_DB" = true ]; then
     echo -e "${YELLOW}🚀 Starting Supabase services with database reset...${NC}"
     echo -e "${RED}⚠️  WARNING: This will destroy all existing data!${NC}"
-    supabase start
+    
+    # Start services first (required for db reset)
+    if ! supabase start; then
+        echo -e "${RED}❌ Failed to start Supabase services${NC}"
+        echo "Please check the error messages above"
+        exit 1
+    fi
+    
+    # Then reset database
+    if ! supabase db reset; then
+        echo -e "${RED}❌ Failed to reset Supabase database${NC}"
+        echo "Please check the error messages above"
+        exit 1
+    fi
 else
     echo -e "${BLUE}🚀 Starting Supabase services (preserving existing database)...${NC}"
     echo -e "${GREEN}✓ Your database data will be preserved${NC}"
-    supabase start
-fi
-
-if [ $? -ne 0 ]; then
-    echo -e "${RED}❌ Failed to start Supabase services${NC}"
-    echo "Please check the error messages above"
-    exit 1
+    
+    if ! supabase start; then
+        echo -e "${RED}❌ Failed to start Supabase services${NC}"
+        echo "Please check the error messages above"
+        exit 1
+    fi
 fi
 
 # Wait for services to be ready
@@ -231,6 +246,9 @@ echo -e ""
 echo -e "${BLUE}🔧 Starting Edge Functions server for local development...${NC}"
 echo -e "${YELLOW}📋 Available endpoints will be shown below:${NC}"
 echo -e ""
+
+# Return to the original directory before starting functions server
+popd > /dev/null
 
 # Run the functions server
 echo -e "${BLUE}🚀 Starting Edge Functions with environment: ${ENV_FILE}${NC}"
