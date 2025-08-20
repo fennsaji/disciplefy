@@ -13,8 +13,6 @@ RecommendedGuideTopicModel _$RecommendedGuideTopicModelFromJson(
       title: json['title'] as String,
       description: json['description'] as String,
       category: json['category'] as String,
-      difficultyLevel: json['difficulty_level'] as String,
-      estimatedDuration: json['estimated_duration'] as String,
       keyVerses: (json['key_verses'] as List<dynamic>)
           .map((e) => e as String)
           .toList(),
@@ -35,8 +33,6 @@ Map<String, dynamic> _$RecommendedGuideTopicModelToJson(
       'tags': instance.tags,
       'is_featured': instance.isFeatured,
       'created_at': instance.createdAt.toIso8601String(),
-      'difficulty_level': instance.difficultyLevel,
-      'estimated_duration': instance.estimatedDuration,
       'key_verses': instance.keyVerses,
     };
 
