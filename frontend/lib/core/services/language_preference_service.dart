@@ -5,7 +5,7 @@ import '../models/app_language.dart';
 import '../../features/auth/data/services/auth_service.dart';
 import '../../features/user_profile/data/services/user_profile_service.dart';
 import '../services/auth_state_provider.dart';
-import '../router/router_guard.dart';
+import '../services/language_cache_coordinator.dart';
 
 /// Service for managing user language preferences
 /// Enhanced version that checks database first for authenticated users
@@ -20,6 +20,7 @@ class LanguagePreferenceService {
   final AuthService _authService;
   final AuthStateProvider _authStateProvider;
   final UserProfileService _userProfileService;
+  final LanguageCacheCoordinator _cacheCoordinator;
 
   // Stream controller for language change notifications
   final StreamController<AppLanguage> _languageChangeController =
@@ -37,10 +38,12 @@ class LanguagePreferenceService {
     required AuthService authService,
     required AuthStateProvider authStateProvider,
     required UserProfileService userProfileService,
+    required LanguageCacheCoordinator cacheCoordinator,
   })  : _prefs = prefs,
         _authService = authService,
         _authStateProvider = authStateProvider,
-        _userProfileService = userProfileService;
+        _userProfileService = userProfileService,
+        _cacheCoordinator = cacheCoordinator;
 
   /// Stream of language preference changes
   Stream<AppLanguage> get languageChanges => _languageChangeController.stream;
@@ -100,12 +103,12 @@ class LanguagePreferenceService {
       // For authenticated non-anonymous users, also save to database
       if (_authStateProvider.isAuthenticated &&
           !_authStateProvider.isAnonymous) {
-        // Invalidate both profile cache, language cache, and router cache
+        // Invalidate profile cache, language cache, and coordinate with other caches
         _authStateProvider.invalidateProfileCache();
         _invalidateLanguageCache();
-        RouterGuard.invalidateLanguageSelectionCache();
+        _cacheCoordinator.invalidateLanguageCaches();
         print(
-            '📄 [LANGUAGE_SERVICE] All caches invalidated for language update (including router cache)');
+            '📄 [LANGUAGE_SERVICE] All caches invalidated for language update (including coordinated caches)');
 
         final updateResult =
             await _userProfileService.updateLanguagePreference(language);
@@ -361,6 +364,7 @@ class LanguagePreferenceService {
       await _prefs.remove(_hasCompletedLanguageSelectionKey);
       await _prefs.remove(_languagePreferenceKey);
       _invalidateLanguageCache();
+      _cacheCoordinator.invalidateLanguageCaches();
     } catch (e) {
       print('Error resetting language selection: $e');
     }
