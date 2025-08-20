@@ -3,11 +3,14 @@
 # Supabase Local Development Script
 # This script starts Supabase services for local development
 # Perfect for localhost development with proper configuration management
-# Usage: ./run_local_server.sh [env-file]
+# Usage: ./run_local_server.sh [options] [env-file]
 # Default: ./run_local_server.sh .env.local
 # Examples:
-#   ./run_local_server.sh                # Uses .env.local
-#   ./run_local_server.sh .env.dev       # Uses .env.dev
+#   ./run_local_server.sh                # Uses .env.local, preserves DB
+#   ./run_local_server.sh .env.dev       # Uses .env.dev, preserves DB
+#   ./run_local_server.sh --reset        # Uses .env.local, resets DB
+#   ./run_local_server.sh --reset .env.dev  # Uses .env.dev, resets DB
+#   ./run_local_server.sh --help         # Show usage information
 
 set -e
 
@@ -17,6 +20,9 @@ BACKEND_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 # Change to backend root directory to ensure all relative paths work
 cd "$BACKEND_ROOT"
+
+# Push into supabase directory where config.toml lives for all supabase CLI commands
+pushd supabase > /dev/null
 
 echo "🔧 Script directory: $SCRIPT_DIR"
 echo "🔧 Backend root: $BACKEND_ROOT"
@@ -52,9 +58,61 @@ RED='\033[0;31m'
 YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
-# Default parameters
+# Function to show usage information
+show_usage() {
+    echo -e "${BLUE}Supabase Local Development Server${NC}"
+    echo -e "${BLUE}Usage: $0 [options] [env-file]${NC}"
+    echo ""
+    echo "Options:"
+    echo "  --reset     Reset database on startup (WARNING: destroys all data)"
+    echo "  --help      Show this usage information"
+    echo ""
+    echo "Parameters:"
+    echo "  env-file    Environment file to use (default: .env.local)"
+    echo ""
+    echo "Examples:"
+    echo "  $0                    # Start with .env.local, preserve database"
+    echo "  $0 .env.dev           # Start with .env.dev, preserve database"
+    echo "  $0 --reset            # Start with .env.local, reset database"
+    echo "  $0 --reset .env.dev   # Start with .env.dev, reset database"
+    echo ""
+    echo -e "${YELLOW}⚠️  Database Preservation:${NC}"
+    echo "  By default, your database is preserved between runs."
+    echo "  Only use --reset when you need a clean database state."
+}
+
+# Parse command line arguments
+RESET_DB=false
+ENV_FILE_PARAM=""
+
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        --reset)
+            RESET_DB=true
+            shift
+            ;;
+        --help)
+            show_usage
+            exit 0
+            ;;
+        -*)
+            echo -e "${RED}❌ Unknown option: $1${NC}"
+            show_usage
+            exit 1
+            ;;
+        *)
+            ENV_FILE_PARAM="$1"
+            shift
+            ;;
+    esac
+done
+
+# Set default env file if none provided
+if [[ -z "$ENV_FILE_PARAM" ]]; then
+    ENV_FILE_PARAM=".env.local"
+fi
+
 # Handle environment file path - resolve relative to backend root
-ENV_FILE_PARAM="${1:-.env.local}"
 if [[ "$ENV_FILE_PARAM" = /* ]]; then
     # Absolute path - use as is
     ENV_FILE="$ENV_FILE_PARAM"
@@ -66,6 +124,11 @@ fi
 echo -e "${BLUE}🏠 Starting Supabase Local Development Server...${NC}"
 echo -e "${BLUE}📄 Using environment file: ${ENV_FILE}${NC}"
 echo -e "${BLUE}📄 Resolved config.toml path: ${CONFIG_TOML}${NC}"
+if [ "$RESET_DB" = true ]; then
+    echo -e "${YELLOW}🔄 Database mode: RESET (will destroy existing data)${NC}"
+else
+    echo -e "${GREEN}💾 Database mode: PRESERVE (existing data will be kept)${NC}"
+fi
 
 # Check if specified env file exists
 if [ ! -f "$ENV_FILE" ]; then
@@ -88,8 +151,13 @@ if [ ! -f "$CONFIG_TOML" ]; then
 fi
 
 # Stop any existing Supabase services
-echo -e "${BLUE}🔧 Stopping any existing Supabase services...${NC}"
-supabase stop --no-backup 2>/dev/null || true
+if [ "$RESET_DB" = true ]; then
+    echo -e "${YELLOW}⚠️  Database reset requested - stopping services and clearing data...${NC}"
+    supabase stop 2>/dev/null || true
+else
+    echo -e "${BLUE}🔧 Stopping any existing Supabase services (preserving database)...${NC}"
+    supabase stop --no-backup 2>/dev/null || true
+fi
 
 # Check if config needs to be restored to localhost settings
 # (in case lan_server.sh modified it and didn't restore properly)
@@ -106,13 +174,32 @@ sed -i.tmp "s|redirect_uri = \"http://[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.
 echo -e "${GREEN}✅ Ensured localhost configuration${NC}"
 
 # Start Supabase services
-echo -e "${BLUE}🚀 Starting Supabase services...${NC}"
-supabase start
-
-if [ $? -ne 0 ]; then
-    echo -e "${RED}❌ Failed to start Supabase services${NC}"
-    echo "Please check the error messages above"
-    exit 1
+if [ "$RESET_DB" = true ]; then
+    echo -e "${YELLOW}🚀 Starting Supabase services with database reset...${NC}"
+    echo -e "${RED}⚠️  WARNING: This will destroy all existing data!${NC}"
+    
+    # Start services first (required for db reset)
+    if ! supabase start; then
+        echo -e "${RED}❌ Failed to start Supabase services${NC}"
+        echo "Please check the error messages above"
+        exit 1
+    fi
+    
+    # Then reset database
+    if ! supabase db reset; then
+        echo -e "${RED}❌ Failed to reset Supabase database${NC}"
+        echo "Please check the error messages above"
+        exit 1
+    fi
+else
+    echo -e "${BLUE}🚀 Starting Supabase services (preserving existing database)...${NC}"
+    echo -e "${GREEN}✓ Your database data will be preserved${NC}"
+    
+    if ! supabase start; then
+        echo -e "${RED}❌ Failed to start Supabase services${NC}"
+        echo "Please check the error messages above"
+        exit 1
+    fi
 fi
 
 # Wait for services to be ready
@@ -147,12 +234,21 @@ echo -e "  • Use frontend/scripts/run_web_local.sh for Flutter web"
 echo -e "  • Test locally by visiting: http://localhost:59641"
 echo -e "  • Google OAuth will work from localhost"
 echo -e "  • Database migrations and functions are available"
+if [ "$RESET_DB" = true ]; then
+    echo -e "  • ${YELLOW}Database was reset - all previous data destroyed${NC}"
+else
+    echo -e "  • ${GREEN}Database preserved - your data is intact${NC}"
+    echo -e "  • ${BLUE}Use --reset flag if you need a clean database${NC}"
+fi
 echo -e ""
 
 # Start the Edge Functions server for local development
 echo -e "${BLUE}🔧 Starting Edge Functions server for local development...${NC}"
 echo -e "${YELLOW}📋 Available endpoints will be shown below:${NC}"
 echo -e ""
+
+# Return to the original directory before starting functions server
+popd > /dev/null
 
 # Run the functions server
 echo -e "${BLUE}🚀 Starting Edge Functions with environment: ${ENV_FILE}${NC}"

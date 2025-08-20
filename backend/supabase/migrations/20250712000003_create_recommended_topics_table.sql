@@ -1,5 +1,6 @@
 -- Create recommended_topics table
 -- This table references the study_guides table to provide recommended topics
+-- ⚠️ NOTE: difficulty_level and estimated_duration columns are removed in migration 20250819000002
 
 BEGIN;
 

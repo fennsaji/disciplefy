@@ -177,8 +177,6 @@ GET /functions/v1/topics-recommended?category=Bible%20Study%20Methods&difficulty
         "id": "string",
         "title": "string",
         "description": "string",
-        "difficulty_level": "beginner | intermediate | advanced",
-        "estimated_duration": "string",
         "key_verses": ["string"],
         "category": "string",
         "tags": ["string"],

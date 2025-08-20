@@ -2,12 +2,13 @@
 -- These policies allow anonymous sessions to read public data
 
 -- First, create tables for public data that anonymous users can read
+-- NOTE: difficulty_level removed to match recommended_topics table structure
 CREATE TABLE IF NOT EXISTS topics (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   title VARCHAR(255) NOT NULL,
   description TEXT,
   category VARCHAR(100),
-  difficulty_level VARCHAR(20) DEFAULT 'beginner',
+  -- difficulty_level VARCHAR(20) DEFAULT 'beginner', -- Removed in migration 20250819000002
   estimated_reading_time INTEGER DEFAULT 10,
   tags TEXT[],
   is_featured BOOLEAN DEFAULT false,
@@ -45,15 +46,15 @@ CREATE POLICY "Only authenticated users can manage topics" ON topics
 CREATE POLICY "Only authenticated users can manage daily verse" ON daily_verse
   FOR ALL USING (auth.uid() IS NOT NULL);
 
--- Enhanced anonymous session policies
-DROP POLICY IF EXISTS "Anonymous sessions are session-scoped" ON anonymous_sessions;
-CREATE POLICY "Anonymous sessions read/write by session" ON anonymous_sessions
-  FOR ALL USING (
-    -- Allow session creation without authentication
-    auth.uid() IS NULL OR 
-    -- Allow authenticated users to manage their own sessions
-    auth.uid() IS NOT NULL
-  );
+-- Anonymous session policies removed - table dropped in migration 20250818000001
+-- DROP POLICY IF EXISTS "Anonymous sessions are session-scoped" ON anonymous_sessions;
+-- CREATE POLICY "Anonymous sessions read/write by session" ON anonymous_sessions
+--   FOR ALL USING (
+--     -- Allow session creation without authentication
+--     auth.uid() IS NULL OR 
+--     -- Allow authenticated users to manage their own sessions
+--     auth.uid() IS NOT NULL
+--   );
 
 -- Enhanced anonymous study guides policies
 DROP POLICY IF EXISTS "Anonymous guides are session-scoped" ON anonymous_study_guides;

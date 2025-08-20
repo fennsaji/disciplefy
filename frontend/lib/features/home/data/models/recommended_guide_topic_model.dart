@@ -9,12 +9,6 @@ part 'recommended_guide_topic_model.g.dart';
 /// from the backend API and converts them to domain entities.
 @JsonSerializable(fieldRename: FieldRename.snake)
 class RecommendedGuideTopicModel extends RecommendedGuideTopic {
-  @JsonKey(name: 'difficulty_level')
-  final String difficultyLevel;
-
-  @JsonKey(name: 'estimated_duration')
-  final String estimatedDuration;
-
   @JsonKey(name: 'key_verses')
   final List<String> keyVerses;
 
@@ -23,25 +17,14 @@ class RecommendedGuideTopicModel extends RecommendedGuideTopic {
     required super.title,
     required super.description,
     required super.category,
-    required this.difficultyLevel,
-    required this.estimatedDuration,
     required this.keyVerses,
     required super.tags,
     super.isFeatured = false, // Default to false if not provided
     DateTime? createdAt, // Allow null parameter
   }) : super(
-          difficulty: difficultyLevel,
-          estimatedMinutes: _parseDuration(estimatedDuration),
           scriptureCount: keyVerses.length,
           createdAt: createdAt ?? DateTime.now(),
         );
-
-  /// Parses duration string like "45 minutes" to integer minutes
-  static int _parseDuration(String duration) {
-    final regex = RegExp(r'(\d+)');
-    final match = regex.firstMatch(duration);
-    return int.tryParse(match?.group(1) ?? '30') ?? 30;
-  }
 
   /// Creates a [RecommendedGuideTopicModel] from JSON.
   factory RecommendedGuideTopicModel.fromJson(Map<String, dynamic> json) =>
@@ -56,8 +39,6 @@ class RecommendedGuideTopicModel extends RecommendedGuideTopic {
         title: title,
         description: description,
         category: category,
-        difficulty: difficulty,
-        estimatedMinutes: estimatedMinutes,
         scriptureCount: scriptureCount,
         tags: tags,
         isFeatured: isFeatured,
@@ -71,8 +52,6 @@ class RecommendedGuideTopicModel extends RecommendedGuideTopic {
         title: entity.title,
         description: entity.description,
         category: entity.category,
-        difficultyLevel: entity.difficulty,
-        estimatedDuration: '${entity.estimatedMinutes} minutes',
         keyVerses: List.generate(entity.scriptureCount,
             (index) => 'Verse ${index + 1}'), // Placeholder
         tags: entity.tags,

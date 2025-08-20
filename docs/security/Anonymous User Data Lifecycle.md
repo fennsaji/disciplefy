@@ -46,8 +46,12 @@ Anonymous users are individuals who access the Disciplefy: Bible Study app witho
 ## **3. 🔒 Privacy-First Session Management**
 
 ### **Anonymous Session Creation**
+⚠️ **UPDATE**: The anonymous_sessions table was removed in migration 20250818000001_remove_unused_tables.sql as it was identified as unused in the current codebase.
+
 ```sql
--- Anonymous session table
+-- Anonymous session table (REMOVED - for reference only)
+-- This table structure was originally planned but never used in production
+/*
 CREATE TABLE anonymous_sessions (
   session_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   device_fingerprint_hash VARCHAR(64), -- Hashed device identifier
@@ -59,6 +63,7 @@ CREATE TABLE anonymous_sessions (
   jeff_reed_sessions_count INTEGER DEFAULT 0,
   is_migrated BOOLEAN DEFAULT false
 );
+*/
 
 -- Automatic cleanup trigger
 CREATE OR REPLACE FUNCTION cleanup_expired_anonymous_sessions()
@@ -104,9 +109,10 @@ class PrivacySafeFingerprinting {
 ### **Anonymous Study Guide Management**
 ```sql
 -- Anonymous study guides with privacy controls
+-- Note: session_id is now a standalone UUID without FK constraint
 CREATE TABLE anonymous_study_guides (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  session_id UUID REFERENCES anonymous_sessions(session_id) ON DELETE CASCADE,
+  session_id UUID, -- No longer references anonymous_sessions (table removed)
   input_type VARCHAR(20) NOT NULL CHECK (input_type IN ('scripture', 'topic')),
   input_value_hash VARCHAR(64), -- Hashed input for duplicate detection
   summary TEXT NOT NULL,
@@ -128,9 +134,10 @@ CREATE INDEX idx_anonymous_guides_hash ON anonymous_study_guides(input_value_has
 ### **Jeff Reed Anonymous Sessions**
 ```sql
 -- Anonymous Jeff Reed sessions
+-- Note: This table likely needs to be renamed to match actual implementation
 CREATE TABLE anonymous_jeff_reed_sessions (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  session_id UUID REFERENCES anonymous_sessions(session_id) ON DELETE CASCADE,
+  session_id UUID, -- No longer references anonymous_sessions (table removed)
   topic VARCHAR(100) NOT NULL,
   current_step INTEGER DEFAULT 1 CHECK (current_step >= 1 AND current_step <= 4),
   step_1_context TEXT,

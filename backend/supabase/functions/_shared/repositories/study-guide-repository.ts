@@ -202,7 +202,7 @@ export class StudyGuideRepository {
   ): Promise<void> {
     // Use UPSERT with proper conflict resolution to handle race conditions gracefully
     const { error } = await this.supabase
-      .from('user_study_guides_new')
+      .from('user_study_guides')
       .upsert({
         user_id: userId,
         study_guide_id: contentId,
@@ -218,7 +218,7 @@ export class StudyGuideRepository {
       if (error.code === '23505') { // Unique constraint violation
         // Check if relationship already exists
         const { data: existing, error: selectError } = await this.supabase
-          .from('user_study_guides_new')
+          .from('user_study_guides')
           .select('id')
           .eq('user_id', userId)
           .eq('study_guide_id', contentId)
@@ -325,7 +325,7 @@ export class StudyGuideRepository {
     offset = 0
   ): Promise<StudyGuideResponse[]> {
     let query = this.supabase
-      .from('user_study_guides_new')
+      .from('user_study_guides')
       .select(`
         id,
         is_saved,
@@ -376,7 +376,7 @@ export class StudyGuideRepository {
     savedOnly?: boolean
   ): Promise<number> {
     let query = this.supabase
-      .from('user_study_guides_new')
+      .from('user_study_guides')
       .select('*', { count: 'exact', head: true })
       .eq('user_id', userId)
 
@@ -442,7 +442,7 @@ export class StudyGuideRepository {
 
     // Use UPSERT with explicit conflict resolution to handle missing relationship records
     const { data, error } = await this.supabase
-      .from('user_study_guides_new')
+      .from('user_study_guides')
       .upsert({
         user_id: userId,
         study_guide_id: studyGuideId,
@@ -495,7 +495,7 @@ export class StudyGuideRepository {
   ): Promise<void> {
     if (userContext.type === 'authenticated') {
       const { error } = await this.supabase
-        .from('user_study_guides_new')
+        .from('user_study_guides')
         .delete()
         .eq('study_guide_id', studyGuideId)
         .eq('user_id', userContext.userId!)
@@ -595,7 +595,7 @@ export class StudyGuideRepository {
   ): Promise<boolean> {
     if (userContext.type === 'authenticated') {
       const { data, error } = await this.supabase
-        .from('user_study_guides_new')
+        .from('user_study_guides')
         .select('id')
         .eq('study_guide_id', contentId)
         .eq('user_id', userContext.userId!)
@@ -617,7 +617,7 @@ export class StudyGuideRepository {
   ): Promise<StudyGuideResponse> {
     if (userContext.type === 'authenticated') {
       const { data, error } = await this.supabase
-        .from('user_study_guides_new')
+        .from('user_study_guides')
         .select(`
           id,
           is_saved,

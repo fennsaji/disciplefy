@@ -17,8 +17,6 @@ interface RecommendedGuideTopic {
   readonly id: string
   readonly title: string
   readonly description: string
-  readonly difficulty_level: 'beginner' | 'intermediate' | 'advanced'
-  readonly estimated_duration: string
   readonly key_verses: readonly string[]
   readonly category: string
   readonly tags: readonly string[]
@@ -32,8 +30,6 @@ interface DatabaseRecommendedTopic {
   readonly title: string
   readonly description: string
   readonly category: string
-  readonly difficulty_level: string
-  readonly estimated_duration: string
   readonly tags: readonly string[]
   readonly display_order: number
   readonly created_at: string
@@ -74,7 +70,6 @@ export class TopicsRepository {
     const { data, error } = await this.supabaseClient
       .rpc('get_recommended_topics', {
         p_category: null,
-        p_difficulty: null,
         p_limit: limit,
         p_offset: offset
       })
@@ -121,7 +116,6 @@ export class TopicsRepository {
     const { data, error } = await this.supabaseClient
       .rpc('get_recommended_topics', {
         p_category: category,
-        p_difficulty: null,
         p_limit: limit,
         p_offset: offset
       })
@@ -134,40 +128,6 @@ export class TopicsRepository {
     return this.mapDatabaseTopicsToInterface(data || [])
   }
 
-  /**
-   * Retrieves topics filtered by difficulty level.
-   * 
-   * @param difficulty - Difficulty level
-   * @param language - Language code
-   * @param limit - Maximum number of topics to return
-   * @param offset - Number of topics to skip
-   * @returns Promise resolving to filtered topics array
-   */
-  async getTopicsByDifficulty(
-    difficulty: 'beginner' | 'intermediate' | 'advanced',
-    language = 'en',
-    limit: number = 20,
-    offset: number = 0
-  ): Promise<readonly RecommendedGuideTopic[]> {
-    if (language !== 'en') {
-      return []
-    }
-
-    const { data, error } = await this.supabaseClient
-      .rpc('get_recommended_topics', {
-        p_category: null,
-        p_difficulty: difficulty,
-        p_limit: limit,
-        p_offset: offset
-      })
-
-    if (error) {
-      console.error('Error fetching topics by difficulty:', error)
-      return []
-    }
-
-    return this.mapDatabaseTopicsToInterface(data || [])
-  }
 
   /**
    * Retrieves all unique categories from available topics.
@@ -226,14 +186,12 @@ export class TopicsRepository {
    */
   async getTopics(options: {
     category?: string
-    difficulty?: 'beginner' | 'intermediate' | 'advanced'
     language?: string
     limit?: number
     offset?: number
   }): Promise<readonly RecommendedGuideTopic[]> {
     const {
       category,
-      difficulty,
       language = 'en',
       limit = 20,
       offset = 0
@@ -246,7 +204,6 @@ export class TopicsRepository {
     const { data, error } = await this.supabaseClient
       .rpc('get_recommended_topics', {
         p_category: category || null,
-        p_difficulty: difficulty || null,
         p_limit: limit,
         p_offset: offset
       })
@@ -263,13 +220,11 @@ export class TopicsRepository {
    * Gets the total count of topics for pagination.
    * 
    * @param category - Optional category filter
-   * @param difficulty - Optional difficulty filter
    * @param language - Language code
    * @returns Promise resolving to total count
    */
   async getTopicsCount(
     category?: string,
-    difficulty?: string,
     language = 'en'
   ): Promise<number> {
     if (language !== 'en') {
@@ -278,8 +233,7 @@ export class TopicsRepository {
 
     const { data, error } = await this.supabaseClient
       .rpc('get_recommended_topics_count', {
-        p_category: category || null,
-        p_difficulty: difficulty || null
+        p_category: category || null
       })
 
     if (error) {
@@ -303,8 +257,6 @@ export class TopicsRepository {
       id: dbTopic.id,
       title: dbTopic.title,
       description: dbTopic.description,
-      difficulty_level: dbTopic.difficulty_level as 'beginner' | 'intermediate' | 'advanced',
-      estimated_duration: dbTopic.estimated_duration,
       key_verses: [], // Empty for now - not stored in database
       category: dbTopic.category,
       tags: dbTopic.tags
