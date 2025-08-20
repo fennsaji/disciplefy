@@ -78,6 +78,9 @@ CREATE TABLE feedback (
 );
 
 -- Anonymous sessions table (from Anonymous User Data Lifecycle)
+-- ⚠️ WARNING: This table was removed in migration 20250818000001_remove_unused_tables.sql
+-- The table definition is commented out to preserve migration history
+/*
 CREATE TABLE anonymous_sessions (
   session_id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   device_fingerprint_hash VARCHAR(64),
@@ -89,11 +92,14 @@ CREATE TABLE anonymous_sessions (
   recommended_guide_sessions_count INTEGER DEFAULT 0,
   is_migrated BOOLEAN DEFAULT false
 );
+*/
 
 -- Anonymous study guides
+-- ⚠️ NOTE: This table structure needs updating due to anonymous_sessions removal
+-- The session_id reference was changed to UUID (without FK) in later migrations
 CREATE TABLE anonymous_study_guides (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  session_id UUID REFERENCES anonymous_sessions(session_id) ON DELETE CASCADE,
+  session_id UUID, -- Reference to anonymous_sessions removed, now standalone UUID
   input_type VARCHAR(20) NOT NULL CHECK (input_type IN ('scripture', 'topic')),
   input_value_hash VARCHAR(64),
   summary TEXT NOT NULL,
@@ -181,9 +187,9 @@ CREATE INDEX idx_feedback_recommended_guide_session_id ON feedback(recommended_g
 CREATE INDEX idx_feedback_user_id ON feedback(user_id);
 CREATE INDEX idx_feedback_created_at ON feedback(created_at DESC);
 
--- Anonymous sessions indexes
-CREATE INDEX idx_anonymous_sessions_expires_at ON anonymous_sessions(expires_at);
-CREATE INDEX idx_anonymous_sessions_device_hash ON anonymous_sessions(device_fingerprint_hash);
+-- Anonymous sessions indexes (removed - table deleted in migration 20250818000001)
+-- CREATE INDEX idx_anonymous_sessions_expires_at ON anonymous_sessions(expires_at);
+-- CREATE INDEX idx_anonymous_sessions_device_hash ON anonymous_sessions(device_fingerprint_hash);
 
 -- Anonymous study guides indexes
 CREATE INDEX idx_anonymous_guides_session ON anonymous_study_guides(session_id);

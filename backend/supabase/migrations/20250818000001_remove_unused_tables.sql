@@ -22,20 +22,25 @@ DECLARE
   recent_sessions_count INTEGER;
   total_sessions_count INTEGER;
 BEGIN
-  -- Count total sessions
-  SELECT COUNT(*) INTO total_sessions_count FROM anonymous_sessions;
-  
-  -- Count recent sessions (last 30 days)
-  SELECT COUNT(*) INTO recent_sessions_count 
-  FROM anonymous_sessions 
-  WHERE created_at > NOW() - INTERVAL '30 days';
-  
-  RAISE NOTICE 'SAFETY CHECK - anonymous_sessions: total=%, recent_30d=%', 
-    total_sessions_count, recent_sessions_count;
-  
-  -- Warn if there's recent activity
-  IF recent_sessions_count > 0 THEN
-    RAISE WARNING 'anonymous_sessions contains % recent records from last 30 days', recent_sessions_count;
+  -- Check if the table exists before querying
+  IF to_regclass('public.anonymous_sessions') IS NOT NULL THEN
+    -- Count total sessions
+    SELECT COUNT(*) INTO total_sessions_count FROM public.anonymous_sessions;
+    
+    -- Count recent sessions (last 30 days)
+    SELECT COUNT(*) INTO recent_sessions_count 
+    FROM public.anonymous_sessions 
+    WHERE created_at > NOW() - INTERVAL '30 days';
+    
+    RAISE NOTICE 'SAFETY CHECK - anonymous_sessions: total=%, recent_30d=%', 
+      total_sessions_count, recent_sessions_count;
+    
+    -- Warn if there's recent activity
+    IF recent_sessions_count > 0 THEN
+      RAISE WARNING 'anonymous_sessions contains % recent records from last 30 days', recent_sessions_count;
+    END IF;
+  ELSE
+    RAISE NOTICE 'SAFETY CHECK - anonymous_sessions: table does not exist, skipping data check';
   END IF;
 END
 $$;
@@ -45,12 +50,17 @@ DO $$
 DECLARE
   oauth_states_count INTEGER;
 BEGIN
-  SELECT COUNT(*) INTO oauth_states_count FROM oauth_states;
-  
-  RAISE NOTICE 'SAFETY CHECK - oauth_states: total=%', oauth_states_count;
-  
-  IF oauth_states_count > 0 THEN
-    RAISE WARNING 'oauth_states contains % records', oauth_states_count;
+  -- Check if the table exists before querying
+  IF to_regclass('public.oauth_states') IS NOT NULL THEN
+    SELECT COUNT(*) INTO oauth_states_count FROM public.oauth_states;
+    
+    RAISE NOTICE 'SAFETY CHECK - oauth_states: total=%', oauth_states_count;
+    
+    IF oauth_states_count > 0 THEN
+      RAISE WARNING 'oauth_states contains % records', oauth_states_count;
+    END IF;
+  ELSE
+    RAISE NOTICE 'SAFETY CHECK - oauth_states: table does not exist, skipping data check';
   END IF;
 END
 $$;
@@ -59,21 +69,44 @@ $$;
 -- BACKUP CRITICAL DATA (if any exists)
 -- ============================================================================
 
--- Create temporary backup tables for rollback capability
-CREATE TEMP TABLE backup_anonymous_sessions AS 
-SELECT * FROM anonymous_sessions;
-
-CREATE TEMP TABLE backup_oauth_states AS 
-SELECT * FROM oauth_states;
-
--- Log backup creation
-SELECT 
-  'anonymous_sessions' as table_name,
-  (SELECT COUNT(*) FROM backup_anonymous_sessions) as backed_up_rows
-UNION ALL
-SELECT 
-  'oauth_states' as table_name,
-  (SELECT COUNT(*) FROM backup_oauth_states) as backed_up_rows;
+-- Create persistent backup tables for rollback capability (idempotent)
+DO $$
+DECLARE
+  backup_rows INTEGER;
+BEGIN
+  -- Create persistent backup table for anonymous_sessions only if source table exists
+  IF to_regclass('public.anonymous_sessions') IS NOT NULL THEN
+    CREATE TABLE IF NOT EXISTS public.backup_anonymous_sessions AS 
+    SELECT * FROM public.anonymous_sessions WHERE false; -- Create empty table with same structure
+    
+    -- Clear any existing backup data first
+    DELETE FROM public.backup_anonymous_sessions;
+    -- Insert current data
+    INSERT INTO public.backup_anonymous_sessions SELECT * FROM public.anonymous_sessions;
+    
+    SELECT COUNT(*) INTO backup_rows FROM public.backup_anonymous_sessions;
+    RAISE NOTICE 'BACKUP: Created persistent backup_anonymous_sessions with % rows', backup_rows;
+  ELSE
+    RAISE NOTICE 'BACKUP: anonymous_sessions does not exist, skipping backup creation';
+  END IF;
+  
+  -- Create persistent backup table for oauth_states only if source table exists
+  IF to_regclass('public.oauth_states') IS NOT NULL THEN
+    CREATE TABLE IF NOT EXISTS public.backup_oauth_states AS 
+    SELECT * FROM public.oauth_states WHERE false; -- Create empty table with same structure
+    
+    -- Clear any existing backup data first
+    DELETE FROM public.backup_oauth_states;
+    -- Insert current data
+    INSERT INTO public.backup_oauth_states SELECT * FROM public.oauth_states;
+    
+    SELECT COUNT(*) INTO backup_rows FROM public.backup_oauth_states;
+    RAISE NOTICE 'BACKUP: Created persistent backup_oauth_states with % rows', backup_rows;
+  ELSE
+    RAISE NOTICE 'BACKUP: oauth_states does not exist, skipping backup creation';
+  END IF;
+END
+$$;
 
 -- ============================================================================
 -- FOREIGN KEY DEPENDENCY ANALYSIS
@@ -154,7 +187,7 @@ $$;
 DO $$
 BEGIN
   -- Check if the table still exists before attempting to drop
-  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'anonymous_sessions') THEN
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'anonymous_sessions' AND table_schema = 'public') THEN
     -- Drop the table with CASCADE to handle all dependencies
     DROP TABLE anonymous_sessions CASCADE;
     RAISE NOTICE 'SUCCESS: anonymous_sessions table removed with CASCADE';
@@ -172,7 +205,7 @@ $$;
 DO $$
 BEGIN
   -- Only drop policies if tables still exist (they shouldn't after CASCADE)
-  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'anonymous_sessions') THEN
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'anonymous_sessions' AND table_schema = 'public') THEN
     DROP POLICY IF EXISTS "Anonymous sessions are session-scoped" ON anonymous_sessions;
     DROP POLICY IF EXISTS "Anonymous sessions read/write by session" ON anonymous_sessions;
   END IF;
@@ -197,13 +230,13 @@ DROP VIEW IF EXISTS oauth_states_view CASCADE;
 -- Verify tables are removed
 DO $$
 BEGIN
-  IF NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'anonymous_sessions') THEN
+  IF NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'anonymous_sessions' AND table_schema = 'public') THEN
     RAISE NOTICE 'VERIFIED: anonymous_sessions table successfully removed';
   ELSE
     RAISE EXCEPTION 'VERIFICATION FAILED: anonymous_sessions table still exists';
   END IF;
   
-  IF NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'oauth_states') THEN
+  IF NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'oauth_states' AND table_schema = 'public') THEN
     RAISE NOTICE 'VERIFIED: oauth_states table successfully removed';
   ELSE
     RAISE EXCEPTION 'VERIFICATION FAILED: oauth_states table still exists';
@@ -241,8 +274,14 @@ COMMIT;
 -- 2. Recreate oauth_states table:
 --    (Copy structure from 20250730000001_create_oauth_states_table.sql)
 -- 
--- 3. Restore data from backup:
---    INSERT INTO anonymous_sessions SELECT * FROM backup_anonymous_sessions;
---    INSERT INTO oauth_states SELECT * FROM backup_oauth_states;
+-- 3. Restore data from persistent backup tables created by this migration:
+--    INSERT INTO anonymous_sessions SELECT * FROM public.backup_anonymous_sessions;
+--    INSERT INTO oauth_states SELECT * FROM public.backup_oauth_states;
 --
--- Note: Temp tables (backup_*) are only available during this transaction
+-- IMPORTANT: The persistent backup tables created by this migration are:
+--    - public.backup_anonymous_sessions (contains backed up data from before removal)
+--    - public.backup_oauth_states (contains backed up data from before removal)
+--
+-- Note: These persistent backup tables remain available after transaction commit
+--       Drop them manually when rollback capability is no longer needed:
+--       DROP TABLE IF EXISTS public.backup_anonymous_sessions, public.backup_oauth_states;

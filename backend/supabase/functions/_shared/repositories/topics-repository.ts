@@ -225,7 +225,6 @@ export class TopicsRepository {
    */
   async getTopicsCount(
     category?: string,
-    difficulty?: string,
     language = 'en'
   ): Promise<number> {
     if (language !== 'en') {
