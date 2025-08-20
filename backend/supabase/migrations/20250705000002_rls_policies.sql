@@ -6,7 +6,8 @@ ALTER TABLE user_profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE study_guides ENABLE ROW LEVEL SECURITY;
 ALTER TABLE recommended_guide_sessions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE feedback ENABLE ROW LEVEL SECURITY;
-ALTER TABLE anonymous_sessions ENABLE ROW LEVEL SECURITY;
+-- anonymous_sessions table removed in migration 20250818000001
+-- ALTER TABLE anonymous_sessions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE anonymous_study_guides ENABLE ROW LEVEL SECURITY;
 ALTER TABLE donations ENABLE ROW LEVEL SECURITY;
 ALTER TABLE llm_security_events ENABLE ROW LEVEL SECURITY;
@@ -60,8 +61,9 @@ CREATE POLICY "Users can update own feedback" ON feedback
   FOR UPDATE USING (auth.uid() = user_id);
 
 -- Anonymous Sessions RLS Policies (session-based access)
-CREATE POLICY "Anonymous sessions are session-scoped" ON anonymous_sessions
-  FOR ALL USING (true); -- Handled at application level via session_id
+-- anonymous_sessions table removed in migration 20250818000001
+-- CREATE POLICY "Anonymous sessions are session-scoped" ON anonymous_sessions
+--   FOR ALL USING (true); -- Handled at application level via session_id
 
 CREATE POLICY "Anonymous guides are session-scoped" ON anonymous_study_guides
   FOR ALL USING (true); -- Handled at application level via session_id

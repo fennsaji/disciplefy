@@ -8,11 +8,11 @@ import 'dart:async' as _i12;
 import 'package:disciplefy_bible_study/features/auth/presentation/bloc/auth_bloc.dart'
     as _i13;
 import 'package:disciplefy_bible_study/features/auth/presentation/bloc/auth_event.dart'
-    as _i14;
+    as _i15;
 import 'package:disciplefy_bible_study/features/auth/presentation/bloc/auth_state.dart'
     as _i8;
 import 'package:flutter/widgets.dart' as _i3;
-import 'package:flutter_bloc/flutter_bloc.dart' as _i15;
+import 'package:flutter_bloc/flutter_bloc.dart' as _i14;
 import 'package:go_router/src/configuration.dart' as _i2;
 import 'package:go_router/src/delegate.dart' as _i4;
 import 'package:go_router/src/information_provider.dart' as _i5;
@@ -480,6 +480,15 @@ class MockAuthBloc extends _i1.Mock implements _i13.AuthBloc {
       ) as _i12.Future<void>);
 
   @override
+  void onChange(_i14.Change<_i8.AuthState>? change) => super.noSuchMethod(
+        Invocation.method(
+          #onChange,
+          [change],
+        ),
+        returnValueForMissingStub: null,
+      );
+
+  @override
   _i12.Future<bool> isCurrentUserAdmin() => (super.noSuchMethod(
         Invocation.method(
           #isCurrentUserAdmin,
@@ -489,7 +498,7 @@ class MockAuthBloc extends _i1.Mock implements _i13.AuthBloc {
       ) as _i12.Future<bool>);
 
   @override
-  void add(_i14.AuthEvent? event) => super.noSuchMethod(
+  void add(_i15.AuthEvent? event) => super.noSuchMethod(
         Invocation.method(
           #add,
           [event],
@@ -498,7 +507,7 @@ class MockAuthBloc extends _i1.Mock implements _i13.AuthBloc {
       );
 
   @override
-  void onEvent(_i14.AuthEvent? event) => super.noSuchMethod(
+  void onEvent(_i15.AuthEvent? event) => super.noSuchMethod(
         Invocation.method(
           #onEvent,
           [event],
@@ -516,9 +525,9 @@ class MockAuthBloc extends _i1.Mock implements _i13.AuthBloc {
       );
 
   @override
-  void on<E extends _i14.AuthEvent>(
-    _i15.EventHandler<E, _i8.AuthState>? handler, {
-    _i15.EventTransformer<E>? transformer,
+  void on<E extends _i15.AuthEvent>(
+    _i14.EventHandler<E, _i8.AuthState>? handler, {
+    _i14.EventTransformer<E>? transformer,
   }) =>
       super.noSuchMethod(
         Invocation.method(
@@ -531,20 +540,11 @@ class MockAuthBloc extends _i1.Mock implements _i13.AuthBloc {
 
   @override
   void onTransition(
-          _i15.Transition<_i14.AuthEvent, _i8.AuthState>? transition) =>
+          _i14.Transition<_i15.AuthEvent, _i8.AuthState>? transition) =>
       super.noSuchMethod(
         Invocation.method(
           #onTransition,
           [transition],
-        ),
-        returnValueForMissingStub: null,
-      );
-
-  @override
-  void onChange(_i15.Change<_i8.AuthState>? change) => super.noSuchMethod(
-        Invocation.method(
-          #onChange,
-          [change],
         ),
         returnValueForMissingStub: null,
       );

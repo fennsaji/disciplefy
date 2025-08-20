@@ -700,7 +700,7 @@ class _RecommendedGuideTopicCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final iconData = _getIconForCategory(topic.category);
-    final color = _getColorForDifficulty(topic.difficulty);
+    const color = AppTheme.primaryColor;
 
     return GestureDetector(
       onTap: onTap,
@@ -725,7 +725,7 @@ class _RecommendedGuideTopicCard extends StatelessWidget {
           mainAxisSize:
               MainAxisSize.min, // Important: Don't expand unnecessarily
           children: [
-            // Header row with icon and difficulty badge
+            // Header row with icon
             Row(
               children: [
                 Container(
@@ -860,15 +860,6 @@ class _RecommendedGuideTopicCard extends StatelessWidget {
     'spiritual growth': Icons.trending_up,
   };
 
-  // Difficulty to color mapping
-  static const Map<String, Color> _difficultyColors = {
-    'beginner': Color(0xFF4CAF50), // Green
-    'intermediate': Color(0xFF6A4FB6), // Primary purple
-    'advanced': Color(0xFFFF6B6B), // Accent red
-  };
-
   IconData _getIconForCategory(String category) =>
       _categoryIcons[category.toLowerCase()] ?? Icons.menu_book;
-
-  Color _getColorForDifficulty(String difficulty) => AppTheme.primaryColor;
 }

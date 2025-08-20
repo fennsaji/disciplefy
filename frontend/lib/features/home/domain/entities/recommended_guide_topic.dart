@@ -14,12 +14,6 @@ class RecommendedGuideTopic extends Equatable {
   /// Category this topic belongs to (e.g., "Faith Foundations", "Spiritual Growth")
   final String category;
 
-  /// Difficulty level (e.g., "beginner", "intermediate", "advanced")
-  final String difficulty;
-
-  /// Estimated study duration in minutes
-  final int estimatedMinutes;
-
   /// Number of related scripture passages
   final int scriptureCount;
 
@@ -37,8 +31,6 @@ class RecommendedGuideTopic extends Equatable {
     required this.title,
     required this.description,
     required this.category,
-    required this.difficulty,
-    required this.estimatedMinutes,
     required this.scriptureCount,
     required this.tags,
     required this.isFeatured,
@@ -51,8 +43,6 @@ class RecommendedGuideTopic extends Equatable {
         title,
         description,
         category,
-        difficulty,
-        estimatedMinutes,
         scriptureCount,
         tags,
         isFeatured,
@@ -65,8 +55,6 @@ class RecommendedGuideTopic extends Equatable {
     String? title,
     String? description,
     String? category,
-    String? difficulty,
-    int? estimatedMinutes,
     int? scriptureCount,
     List<String>? tags,
     bool? isFeatured,
@@ -77,8 +65,6 @@ class RecommendedGuideTopic extends Equatable {
         title: title ?? this.title,
         description: description ?? this.description,
         category: category ?? this.category,
-        difficulty: difficulty ?? this.difficulty,
-        estimatedMinutes: estimatedMinutes ?? this.estimatedMinutes,
         scriptureCount: scriptureCount ?? this.scriptureCount,
         tags: tags ?? this.tags,
         isFeatured: isFeatured ?? this.isFeatured,
@@ -87,5 +73,5 @@ class RecommendedGuideTopic extends Equatable {
 
   @override
   String toString() =>
-      'RecommendedGuideTopic(id: $id, title: $title, category: $category, difficulty: $difficulty)';
+      'RecommendedGuideTopic(id: $id, title: $title, category: $category)';
 }

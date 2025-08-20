@@ -6,6 +6,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../../core/services/http_service.dart';
+import '../../../../core/services/auth_state_provider.dart';
 import '../../../user_profile/data/services/user_profile_service.dart';
 import '../../../user_profile/domain/entities/user_profile_entity.dart';
 import '../../data/services/auth_service.dart';
@@ -107,9 +108,8 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
       // Check if user is already authenticated (Supabase)
       final supabaseUser = _authService.currentUser;
       if (supabaseUser != null) {
-        // Load user profile data for Supabase users
-        final profile =
-            await _userProfileService.getUserProfileAsMap(supabaseUser.id);
+        // Load user profile data for Supabase users with caching
+        final profile = await _getProfileWithCache(supabaseUser.id);
 
         emit(auth_states.AuthenticatedState(
           user: supabaseUser,
@@ -197,9 +197,9 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
                 languagePreference: 'en', // Default language
               ));
 
-          // Load user profile data with retry
-          final profile = await _retryOperation(
-              () => _userProfileService.getUserProfileAsMap(user.id));
+          // Load user profile data with retry and caching
+          final profile =
+              await _retryOperation(() => _getProfileWithCache(user.id));
 
           emit(auth_states.AuthenticatedState(
             user: user,
@@ -270,12 +270,12 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
             print('🔐 [AUTH BLOC] 👤 User isAnonymous: ${user.isAnonymous}');
           }
 
-          // Load user profile data with retry
+          // Load user profile data with retry and caching
           if (kDebugMode) {
             print('🔐 [AUTH BLOC] 📄 Loading user profile...');
           }
-          final profile = await _retryOperation(
-              () => _userProfileService.getUserProfileAsMap(user.id));
+          final profile =
+              await _retryOperation(() => _getProfileWithCache(user.id));
           if (kDebugMode) {
             print(
                 '🔐 [AUTH BLOC] 📄 Profile loaded: ${profile != null ? "✅" : "❌"}');
@@ -368,11 +368,10 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
               '🔐 [AUTH BLOC] ✅ Valid session found: ${currentUser.email ?? currentUser.id}');
         }
 
-        // Load user profile if not anonymous
+        // Load user profile if not anonymous with caching
         Map<String, dynamic>? profile;
         if (!currentUser.isAnonymous) {
-          profile =
-              await _userProfileService.getUserProfileAsMap(currentUser.id);
+          profile = await _getProfileWithCache(currentUser.id);
         }
 
         emit(auth_states.AuthenticatedState(
@@ -516,10 +515,9 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
       if (authState.event == AuthChangeEvent.signedIn) {
         final user = authState.session?.user;
         if (user != null) {
-          // Load user profile if authenticated (not anonymous)
-          final profile = user.isAnonymous
-              ? null
-              : await _userProfileService.getUserProfileAsMap(user.id);
+          // Load user profile if authenticated (not anonymous) with caching
+          final profile =
+              user.isAnonymous ? null : await _getProfileWithCache(user.id);
 
           emit(auth_states.AuthenticatedState(
             user: user,
@@ -761,8 +759,15 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
         themePreference: event.themePreference,
       );
 
-      // Refresh auth state to get updated profile
+      // Invalidate cache and fetch fresh profile data
+      final authStateProvider = sl<AuthStateProvider>();
+      authStateProvider.invalidateProfileCache();
+
+      // Fetch fresh profile data
       final profile = await _userProfileService.getUserProfileAsMap(user.id);
+
+      // Cache the updated profile
+      authStateProvider.cacheProfile(user.id, profile);
 
       emit(auth_states.AuthenticatedState(
         user: user,
@@ -790,6 +795,45 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
       createdAt: DateTime.now().toIso8601String(),
       isAnonymous: true,
     );
+  }
+
+  /// Efficiently get user profile with caching support
+  /// Only fetches from API if cache is missing or stale
+  Future<Map<String, dynamic>?> _getProfileWithCache(String userId) async {
+    try {
+      final authStateProvider = sl<AuthStateProvider>();
+
+      // Check if we should fetch profile
+      if (authStateProvider.shouldFetchProfile(userId)) {
+        if (kDebugMode) {
+          print('📄 [AUTH BLOC] Fetching profile for user: $userId');
+        }
+
+        // Fetch profile from API
+        final profile = await _userProfileService.getUserProfileAsMap(userId);
+
+        // Cache the profile in AuthStateProvider
+        authStateProvider.cacheProfile(userId, profile);
+
+        if (kDebugMode) {
+          print('📄 [AUTH BLOC] Profile fetched and cached');
+        }
+
+        return profile;
+      } else {
+        if (kDebugMode) {
+          print('📄 [AUTH BLOC] Using cached profile for user: $userId');
+        }
+
+        // Return cached profile
+        return authStateProvider.userProfile;
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('📄 [AUTH BLOC] Error getting profile with cache: $e');
+      }
+      return null;
+    }
   }
 
   // ===== ERROR RECOVERY MECHANISMS =====

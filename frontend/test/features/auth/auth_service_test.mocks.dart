@@ -127,6 +127,15 @@ class MockAuthenticationService extends _i1.Mock
       ) as _i5.Future<bool>);
 
   @override
+  _i5.Future<bool> isTokenValid() => (super.noSuchMethod(
+        Invocation.method(
+          #isTokenValid,
+          [],
+        ),
+        returnValue: _i5.Future<bool>.value(false),
+      ) as _i5.Future<bool>);
+
+  @override
   _i5.Future<bool> signInWithGoogle() => (super.noSuchMethod(
         Invocation.method(
           #signInWithGoogle,

@@ -64,7 +64,7 @@ Content Reuse Statistics:
 
 ### **✅ Database Schema**
 - **`study_guides_cache`**: Content-only table with deduplication
-- **`user_study_guides_new`**: User ownership for authenticated users  
+- **`user_study_guides`**: User ownership for authenticated users  
 - **`anonymous_study_guides_new`**: Session ownership for anonymous users
 - **Proper indexes**: All critical performance indexes implemented
 - **RLS policies**: Security policies for user data isolation
