@@ -265,7 +265,7 @@ class _SettingsScreenContent extends StatelessWidget {
           _buildSettingsTile(
             context: context,
             icon: Icons.language_outlined,
-            title: 'Language',
+            title: 'Content Language',
             subtitle: _getLanguageDisplayName(state.settings.language),
             trailing: Icon(
               Icons.arrow_forward_ios,

@@ -15,6 +15,12 @@ class RouterGuard {
   static const String _userIdKey = 'user_id';
   static const String _onboardingCompletedKey = 'onboarding_completed';
 
+  // Router-level caching to prevent excessive API calls
+  static String? _cachedUserId;
+  static LanguageSelectionState? _cachedLanguageState;
+  static DateTime? _languageCacheTime;
+  static const Duration _languageCacheExpiry = Duration(minutes: 10);
+
   /// Main redirect logic for the app router
   static Future<String?> handleRedirect(String currentPath) async {
     // Clean any hash fragments that might interfere with routing
@@ -97,17 +103,40 @@ class RouterGuard {
     return const AuthenticationState(isAuthenticated: false);
   }
 
-  /// Get language selection completion state
+  /// Get language selection completion state with router-level caching
+  /// This prevents excessive API calls on every navigation
   static Future<LanguageSelectionState> _getLanguageSelectionState() async {
     try {
+      final currentUserId = Supabase.instance.client.auth.currentUser?.id;
+
+      // Use cached result if available and fresh for the same user
+      if (_isLanguageCacheFresh() &&
+          _cachedUserId == currentUserId &&
+          _cachedLanguageState != null) {
+        Logger.info(
+          'Using cached language selection state',
+          tag: 'LANGUAGE_SELECTION_CACHE',
+          context: {
+            'cached_completion_status': _cachedLanguageState!.isCompleted,
+            'user_id': currentUserId,
+          },
+        );
+        return _cachedLanguageState!;
+      }
+
       final languageService = sl<LanguagePreferenceService>();
       final isCompleted = await languageService.hasCompletedLanguageSelection();
 
+      // Cache the result
+      _cacheLanguageSelectionState(
+          currentUserId, LanguageSelectionState(isCompleted: isCompleted));
+
       Logger.info(
-        'Language selection state retrieved',
+        'Language selection state retrieved and cached',
         tag: 'LANGUAGE_SELECTION',
         context: {
           'language_selection_completed': isCompleted,
+          'user_id': currentUserId,
         },
       );
 
@@ -516,6 +545,30 @@ class RouterGuard {
     if (path.startsWith(AppRoutes.onboarding)) return 'onboarding';
     if (path.startsWith('/auth/callback')) return 'oauth_callback';
     return 'unknown';
+  }
+
+  /// Cache language selection state to prevent repeated API calls
+  static void _cacheLanguageSelectionState(
+      String? userId, LanguageSelectionState state) {
+    _cachedUserId = userId;
+    _cachedLanguageState = state;
+    _languageCacheTime = DateTime.now();
+  }
+
+  /// Check if cached language selection state is still fresh
+  static bool _isLanguageCacheFresh() {
+    if (_languageCacheTime == null) return false;
+    final age = DateTime.now().difference(_languageCacheTime!);
+    return age < _languageCacheExpiry;
+  }
+
+  /// Invalidate language selection cache (call when user logs in/out or changes language)
+  static void invalidateLanguageSelectionCache() {
+    _cachedUserId = null;
+    _cachedLanguageState = null;
+    _languageCacheTime = null;
+    Logger.info('Router language selection cache invalidated',
+        tag: 'ROUTER_CACHE');
   }
 }
 
