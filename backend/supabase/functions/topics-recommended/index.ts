@@ -19,8 +19,6 @@ interface RecommendedGuideTopic {
   readonly id: string
   readonly title: string
   readonly description: string
-  readonly difficulty_level: 'beginner' | 'intermediate' | 'advanced'
-  readonly estimated_duration: string
   readonly key_verses: readonly string[]
   readonly category: string
   readonly tags: readonly string[]
@@ -40,7 +38,6 @@ interface RecommendedGuideTopicsResponse extends ApiSuccessResponse<{
  */
 interface TopicsQueryParams {
   readonly category?: string
-  readonly difficulty?: string
   readonly language: string
   readonly limit: number
   readonly offset: number
@@ -65,7 +62,6 @@ async function handleTopicsRecommended(req: Request, services: ServiceContainer)
   // Log analytics event
   await services.analyticsLogger.logEvent('recommended_guide_topics_accessed', {
     category: queryParams.category,
-    difficulty: queryParams.difficulty,
     language: queryParams.language,
     total_results: topicsData.total
   }, req.headers.get('x-forwarded-for'))
@@ -116,7 +112,6 @@ function parseQueryParameters(url: string): TopicsQueryParams {
 
   return {
     category: searchParams.get('category') || undefined,
-    difficulty: searchParams.get('difficulty') || undefined,
     language: searchParams.get('language') || DEFAULT_LANGUAGE,
     limit,
     offset
@@ -137,7 +132,6 @@ async function getFilteredTopics(
   // Use the new efficient getTopics method that handles all filter combinations
   const topics = await repository.getTopics({
     category: params.category,
-    difficulty: params.difficulty as 'beginner' | 'intermediate' | 'advanced' | undefined,
     language: params.language,
     limit: params.limit,
     offset: params.offset
@@ -146,7 +140,7 @@ async function getFilteredTopics(
   // Get categories and total count
   const [categories, total] = await Promise.all([
     repository.getCategories(params.language),
-    repository.getTopicsCount(params.category, params.difficulty, params.language)
+    repository.getTopicsCount(params.category, undefined, params.language)
   ])
 
   return {
