@@ -740,19 +740,18 @@ export class LLMService {
 
   /**
    * Selects the optimal OpenAI model based on language.
+   * Updated to use gpt-4o-mini for all languages for better performance and cost efficiency.
    * 
    * @param language - Target language code
    * @returns OpenAI model name
    */
   private selectOpenAIModel(language: string): string {
-    switch (language) {
-      case 'hi': // Hindi
-      case 'ml': // Malayalam
-        return 'gpt-4o-mini' // Better multilingual performance
-      case 'en': // English
-      default:
-        return 'gpt-3.5-turbo-1106' // Cost-effective for English
-    }
+    // Use gpt-4o-mini for all languages due to:
+    // - 60-80% cost reduction vs gpt-3.5-turbo
+    // - Better instruction following and JSON formatting
+    // - Improved multilingual capabilities
+    // - Better theological accuracy and reasoning
+    return 'gpt-4o-mini'
   }
 
   /**
@@ -1084,64 +1083,64 @@ export class LLMService {
     switch (language) {
       case 'en':
         return `ENGLISH EXAMPLES & STYLE:
-Use clear, accessible English appropriate for all education levels.
+          Use clear, accessible English appropriate for all education levels.
 
-Example Summary: "This passage teaches us about God's unfailing love and how we can trust Him in difficult times."
+          Example Summary: "This passage teaches us about God's unfailing love and how we can trust Him in difficult times."
 
-Example Reflection Question: "How can you practically show God's love to someone in your family or community this week?"
+          Example Reflection Question: "How can you practically show God's love to someone in your family or community this week?"
 
-Example Prayer Point: "Ask God to help you trust His love even when circumstances are challenging."
+          Example Prayer Point: "Ask God to help you trust His love even when circumstances are challenging."
 
-Tone: Pastoral, encouraging, and practical with modern language that connects biblical truth to daily life.`
+          Tone: Pastoral, encouraging, and practical with modern language that connects biblical truth to daily life.`
 
       case 'hi':
         return `हिंदी में उदाहरण और शैली:
-सरल, रोजमर्रा की हिंदी का उपयोग करें। कठिन संस्कृत शब्दों से बचें।
+          सरल, रोजमर्रा की हिंदी का उपयोग करें। कठिन संस्कृत शब्दों से बचें।
 
-उदाहरण सारांश: "यह पद हमें दिखाता है कि परमेश्वर हमसे प्रेम करता है।"
+          उदाहरण सारांश: "यह पद हमें दिखाता है कि परमेश्वर हमसे प्रेम करता है।"
 
-उदाहरण प्रश्न: "आप अपने जीवन में परमेश्वर के प्रेम को कैसे देख सकते हैं?"
+          उदाहरण प्रश्न: "आप अपने जीवन में परमेश्वर के प्रेम को कैसे देख सकते हैं?"
 
-उदाहरण प्रार्थना: "हे प्रभु, हमें अपने प्रेम को समझने में मदद करें।"
+          उदाहरण प्रार्थना: "हे प्रभु, हमें अपने प्रेम को समझने में मदद करें।"
 
-उदाहरण व्याख्या: "इस पद में पौलुस हमें बताता है कि परमेश्वर का प्रेम कभी खत्म नहीं होता। यह प्रेम हमारे लिए इतना गहरा है कि वह अपने बेटे यीशु को हमारे लिए दे दिया।"
+          उदाहरण व्याख्या: "इस पद में पौलुस हमें बताता है कि परमेश्वर का प्रेम कभी खत्म नहीं होता। यह प्रेम हमारे लिए इतना गहरा है कि वह अपने बेटे यीशु को हमारे लिए दे दिया।"
 
-शैली: गांव के लोग समझ सकें, ऐसी सरल भाषा। आम बोलचाल के शब्द। बाइबल की सच्चाई को रोजाना की जिंदगी से जोड़ें।
+          शैली: गांव के लोग समझ सकें, ऐसी सरल भाषा। आम बोलचाल के शब्द। बाइबल की सच्चाई को रोजाना की जिंदगी से जोड़ें।
 
-शब्दावली गाइड:
-- "परमेश्वर" (न कि "ईश्वर")
-- "प्रेम" (न कि "प्रीति") 
-- "मदद" (न कि "सहायता")
-- "जिंदगी" (न कि "जीवन")
-- "दिल" (न कि "हृदय")
-- "प्रार्थना" (न कि "प्रार्थना")
-- "आशीर्वाद" (न कि "आशीष")`
+          शब्दावली गाइड:
+          - "परमेश्वर" (न कि "ईश्वर")
+          - "प्रेम" (न कि "प्रीति") 
+          - "मदद" (न कि "सहायता")
+          - "जिंदगी" (न कि "जीवन")
+          - "दिल" (न कि "हृदय")
+          - "प्रार्थना" (न कि "प्रार्थना")
+          - "आशीर्वाद" (न कि "आशीष")`
 
       case 'ml':
         return `മലയാളത്തിൽ ഉദാഹരണം:
-സാധാരണ മലയാളം ഉപയോഗിക്കുക. JSON പാഴ്സിംഗ് പ്രശ്നങ്ങൾ ഒഴിവാക്കാൻ:
+          സാധാരണ മലയാളം ഉപയോഗിക്കുക. JSON പാഴ്സിംഗ് പ്രശ്നങ്ങൾ ഒഴിവാക്കാൻ:
 
-JSON ഫോർമാറ്റിംഗ് നിയമങ്ങൾ:
-- ഉദ്ധരണി ചിഹ്നങ്ങൾ ഉപയോഗിക്കരുത്
-- ലളിതമായ വാക്യങ്ങൾ മാത്രം
-- പ്രത്യേക ചിഹ്നങ്ങൾ ഒഴിവാക്കുക
+          JSON ഫോർമാറ്റിംഗ് നിയമങ്ങൾ:
+          - ഉദ്ധരണി ചിഹ്നങ്ങൾ ഉപയോഗിക്കരുത്
+          - ലളിതമായ വാക്യങ്ങൾ മാത്രം
+          - പ്രത്യേക ചിഹ്നങ്ങൾ ഒഴിവാക്കുക
 
-ഉദാഹരണ സാരാംശം: ഈ വചനം ദൈവത്തിന്റെ സ്നേഹം കാണിക്കുന്നു.
+          ഉദാഹരണ സാരാംശം: ഈ വചനം ദൈവത്തിന്റെ സ്നേഹം കാണിക്കുന്നു.
 
-ഉദാഹരണ ചോദ്യം: നിങ്ങളുടെ ജീവിതത്തിൽ ദൈവത്തിന്റെ സ്നേഹം എങ്ങനെ കാണാം.
+          ഉദാഹരണ ചോദ്യം: നിങ്ങളുടെ ജീവിതത്തിൽ ദൈവത്തിന്റെ സ്നേഹം എങ്ങനെ കാണാം.
 
-ഉദാഹരണ പ്രാർത്ഥന: കർത്താവേ അങ്ങയുടെ സ്നേഹം മനസ്സിലാക്കാൻ സഹായിക്കേണമേ.
+          ഉദാഹരണ പ്രാർത്ഥന: കർത്താവേ അങ്ങയുടെ സ്നേഹം മനസ്സിലാക്കാൻ സഹായിക്കേണമേ.
 
-ശൈലി: ലളിതമായ മലയാളം. ബൈബിൾ സത്യത്തെ ദൈനംദിന ജീവിതവുമായി ബന്ധിപ്പിക്കുക.
+          ശൈലി: ലളിതമായ മലയാളം. ബൈബിൾ സത്യത്തെ ദൈനംദിന ജീവിതവുമായി ബന്ധിപ്പിക്കുക.
 
-പദാവലി:
-- ദൈവം
-- സ്നേഹം
-- സഹായം
-- ജീവിതം
-- മനസ്സ്
-- പ്രാർത്ഥന
-- അനുഗ്രഹം`
+          പദാവലി:
+          - ദൈവം
+          - സ്നേഹം
+          - സഹായം
+          - ജീവിതം
+          - മനസ്സ്
+          - പ്രാർത്ഥന
+          - അനുഗ്രഹം`
 
       default:
         return 'Use clear, accessible language appropriate for your target audience.'
@@ -1347,13 +1346,14 @@ JSON ഫോർമാറ്റിംഗ് നിയമങ്ങൾ:
 
   /**
    * Calls OpenAI API specifically for verse generation.
+   * Updated to use gpt-4o-mini for better accuracy and cost efficiency.
    * 
    * @param systemMessage - System prompt
    * @param userMessage - User prompt
    * @returns Raw response text
    */
   private async callOpenAIForVerse(systemMessage: string, userMessage: string): Promise<string> {
-    const model = 'gpt-3.5-turbo-1106'
+    const model = 'gpt-4o-mini' // Updated from gpt-3.5-turbo-1106
     
     const request: OpenAIRequest = {
       model,
