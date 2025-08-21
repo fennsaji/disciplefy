@@ -16,15 +16,17 @@ class LoadRecommendedTopics extends HomeEvent {
   final int? limit;
   final String? category;
   final String? difficulty;
+  final bool forceRefresh;
 
   const LoadRecommendedTopics({
     this.limit,
     this.category,
     this.difficulty,
+    this.forceRefresh = false,
   });
 
   @override
-  List<Object?> get props => [limit, category, difficulty];
+  List<Object?> get props => [limit, category, difficulty, forceRefresh];
 }
 
 /// Event to refresh recommended topics
