@@ -27,9 +27,8 @@ class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
 
   @override
-  Widget build(BuildContext context) => BlocProvider(
-        create: (context) =>
-            sl<HomeBloc>()..add(const LoadRecommendedTopics(limit: 6)),
+  Widget build(BuildContext context) => BlocProvider.value(
+        value: sl<HomeBloc>()..add(const LoadRecommendedTopics(limit: 6)),
         child: const _HomeScreenContent(),
       );
 }
@@ -109,6 +108,9 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
       listener: (context, state) {
         if (state is HomeStudyGuideGenerated) {
           // Navigate to study guide screen
+          context.go('/study-guide?source=home', extra: state.studyGuide);
+        } else if (state is HomeStudyGuideGeneratedCombined) {
+          // Navigate to study guide screen - this preserves topics in state
           context.go('/study-guide?source=home', extra: state.studyGuide);
         } else if (state is HomeCombinedState) {
           // Handle study guide generation states

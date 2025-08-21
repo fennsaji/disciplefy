@@ -143,3 +143,25 @@ class HomeCombinedState extends HomeState {
             : (generationError ?? this.generationError),
       );
 }
+
+/// Combined state when study guide generation is complete - preserves topics list
+class HomeStudyGuideGeneratedCombined extends HomeCombinedState {
+  final StudyGuide studyGuide;
+
+  const HomeStudyGuideGeneratedCombined({
+    required this.studyGuide,
+    super.topics,
+    super.isLoadingTopics,
+    super.topicsError,
+    super.isGeneratingStudyGuide,
+    super.generationInput,
+    super.generationInputType,
+    super.generationError,
+  });
+
+  @override
+  List<Object?> get props => [
+        studyGuide,
+        ...super.props,
+      ];
+}

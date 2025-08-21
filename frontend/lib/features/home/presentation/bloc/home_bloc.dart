@@ -99,12 +99,20 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
           ));
           break;
         case final generation_states.HomeStudyGenerationSuccess success:
+          // First, update combined state to stop generating
           emit(currentState.copyWith(
             isGeneratingStudyGuide: false,
             clearGenerationError: true,
           ));
-          // Emit navigation state
-          emit(HomeStudyGuideGenerated(studyGuide: success.studyGuide));
+          // Then emit navigation state, but preserve topics by extending HomeCombinedState
+          emit(HomeStudyGuideGeneratedCombined(
+            studyGuide: success.studyGuide,
+            topics: currentState.topics,
+            isLoadingTopics: currentState.isLoadingTopics,
+            topicsError: currentState.topicsError,
+            generationInput: currentState.generationInput,
+            generationInputType: currentState.generationInputType,
+          ));
           break;
         case final generation_states.HomeStudyGenerationError error:
           emit(currentState.copyWith(
@@ -127,6 +135,7 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
       limit: event.limit,
       category: event.category,
       difficulty: event.difficulty,
+      forceRefresh: event.forceRefresh,
     ));
   }
 

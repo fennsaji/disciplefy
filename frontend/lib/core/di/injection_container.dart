@@ -274,17 +274,18 @@ Future<void> initializeDependencies() async {
   //! Home
   sl.registerLazySingleton(() => RecommendedGuidesService());
 
-  sl.registerFactory(() => HomeBloc(
-        topicsBloc: sl(),
-        studyGenerationBloc: sl(),
-      ));
-
-  sl.registerFactory(() => RecommendedTopicsBloc(
+  // Register Home BLoCs as singletons to maintain state across navigation
+  sl.registerLazySingleton(() => RecommendedTopicsBloc(
         topicsService: sl(),
       ));
 
-  sl.registerFactory(() => HomeStudyGenerationBloc(
+  sl.registerLazySingleton(() => HomeStudyGenerationBloc(
         generateStudyGuideUseCase: sl(),
+      ));
+
+  sl.registerLazySingleton(() => HomeBloc(
+        topicsBloc: sl(),
+        studyGenerationBloc: sl(),
       ));
 
   //! Onboarding

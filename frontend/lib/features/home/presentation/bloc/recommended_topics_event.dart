@@ -19,14 +19,18 @@ class LoadRecommendedTopics extends RecommendedTopicsEvent {
   /// Difficulty filter for topics.
   final String? difficulty;
 
+  /// Force refresh bypassing cache (default: false)
+  final bool forceRefresh;
+
   const LoadRecommendedTopics({
     this.limit,
     this.category,
     this.difficulty,
+    this.forceRefresh = false,
   });
 
   @override
-  List<Object?> get props => [limit, category, difficulty];
+  List<Object?> get props => [limit, category, difficulty, forceRefresh];
 }
 
 /// Event to refresh recommended topics.
