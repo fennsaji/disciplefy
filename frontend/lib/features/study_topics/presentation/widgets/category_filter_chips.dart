@@ -21,7 +21,7 @@ class CategoryFilterChips extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (isLoading) {
-      return _buildLoadingChips();
+      return _buildLoadingChips(context: context);
     }
 
     if (categories.isEmpty) {
@@ -34,7 +34,7 @@ class CategoryFilterChips extends StatelessWidget {
         color: Theme.of(context).scaffoldBackgroundColor,
         border: Border(
           bottom: BorderSide(
-            color: AppTheme.primaryColor.withOpacity(0.1),
+            color: Theme.of(context).colorScheme.onBackground.withOpacity(0.5),
           ),
         ),
       ),
@@ -48,7 +48,7 @@ class CategoryFilterChips extends StatelessWidget {
                 style: GoogleFonts.inter(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
-                  color: AppTheme.textPrimary,
+                  color: Theme.of(context).colorScheme.onBackground,
                 ),
               ),
               const Spacer(),
@@ -138,7 +138,12 @@ class CategoryFilterChips extends StatelessWidget {
                 fontWeight: isSelected
                     ? FontWeight.w700
                     : FontWeight.w500, // Bolder when selected
-                color: isSelected ? Colors.white : AppTheme.textPrimary,
+                color: isSelected
+                    ? Colors.white
+                    : Theme.of(context)
+                        .colorScheme
+                        .onBackground
+                        .withOpacity(0.5),
               ),
             ),
             if (count != null && count > 0) ...[
@@ -148,7 +153,10 @@ class CategoryFilterChips extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: isSelected
                       ? Colors.white.withOpacity(0.2)
-                      : AppTheme.primaryColor.withOpacity(0.1),
+                      : Theme.of(context)
+                          .colorScheme
+                          .onBackground
+                          .withOpacity(0.5),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
@@ -186,14 +194,16 @@ class CategoryFilterChips extends StatelessWidget {
     );
   }
 
-  Widget _buildLoadingChips() {
+  Widget _buildLoadingChips({
+    required BuildContext context,
+  }) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
         color: Colors.grey.shade50,
         border: Border(
           bottom: BorderSide(
-            color: AppTheme.primaryColor.withOpacity(0.1),
+            color: Theme.of(context).colorScheme.onBackground.withOpacity(0.5),
           ),
         ),
       ),
@@ -205,7 +215,7 @@ class CategoryFilterChips extends StatelessWidget {
             style: GoogleFonts.inter(
               fontSize: 16,
               fontWeight: FontWeight.w600,
-              color: AppTheme.textPrimary,
+              color: Theme.of(context).colorScheme.onBackground,
             ),
           ),
           const SizedBox(height: 8),
@@ -221,7 +231,10 @@ class CategoryFilterChips extends StatelessWidget {
                     height: 32,
                     width: 80 + (index * 10), // Varying widths
                     decoration: BoxDecoration(
-                      color: AppTheme.primaryColor.withOpacity(0.1),
+                      color: Theme.of(context)
+                          .colorScheme
+                          .onBackground
+                          .withOpacity(0.5),
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: const Center(

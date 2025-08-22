@@ -102,7 +102,7 @@ class _StudyTopicsScreenContentState extends State<_StudyTopicsScreenContent> {
       scrolledUnderElevation: 0,
       leading: IconButton(
         icon: const Icon(Icons.arrow_back_ios),
-        color: AppTheme.textPrimary,
+        color: Theme.of(context).colorScheme.onBackground,
         onPressed: () {
           // Check if we can pop, otherwise navigate to home
           if (context.canPop()) {
@@ -119,13 +119,13 @@ class _StudyTopicsScreenContentState extends State<_StudyTopicsScreenContent> {
               style: GoogleFonts.inter(
                 fontSize: 20,
                 fontWeight: FontWeight.w600,
-                color: AppTheme.textPrimary,
+                color: Theme.of(context).colorScheme.onBackground,
               ),
             ),
       actions: [
         IconButton(
           icon: Icon(_isSearchExpanded ? Icons.close : Icons.search),
-          color: AppTheme.textPrimary,
+          color: Theme.of(context).colorScheme.onBackground,
           onPressed: _toggleSearch,
         ),
         const SizedBox(width: 8),
@@ -139,7 +139,7 @@ class _StudyTopicsScreenContentState extends State<_StudyTopicsScreenContent> {
       focusNode: _searchFocusNode,
       style: GoogleFonts.inter(
         fontSize: 16,
-        color: AppTheme.textPrimary,
+        color: Theme.of(context).colorScheme.onBackground,
       ),
       decoration: InputDecoration(
         hintText: 'Search topics...',
@@ -201,7 +201,7 @@ class _StudyTopicsScreenContentState extends State<_StudyTopicsScreenContent> {
               style: GoogleFonts.inter(
                 fontSize: 20,
                 fontWeight: FontWeight.w600,
-                color: AppTheme.textPrimary,
+                color: Theme.of(context).colorScheme.onBackground,
               ),
               textAlign: TextAlign.center,
             ),
@@ -258,7 +258,7 @@ class _StudyTopicsScreenContentState extends State<_StudyTopicsScreenContent> {
               style: GoogleFonts.inter(
                 fontSize: 20,
                 fontWeight: FontWeight.w600,
-                color: AppTheme.textPrimary,
+                color: Theme.of(context).colorScheme.onBackground,
               ),
             ),
             const SizedBox(height: 8),
@@ -371,7 +371,7 @@ class _StudyTopicsScreenContentState extends State<_StudyTopicsScreenContent> {
                     '${topics.length} topics found',
                     style: GoogleFonts.inter(
                       fontSize: 16,
-                      color: AppTheme.onSurfaceVariant,
+                      color: Theme.of(context).colorScheme.onBackground,
                     ),
                   ),
                   const SizedBox(height: 16),
