@@ -153,11 +153,12 @@ class HomeStudyGuideGeneratedCombined extends HomeCombinedState {
     super.topics,
     super.isLoadingTopics,
     super.topicsError,
-    super.isGeneratingStudyGuide,
     super.generationInput,
     super.generationInputType,
-    super.generationError,
-  });
+  }) : super(
+          isGeneratingStudyGuide: false,
+          generationError: null,
+        );
 
   @override
   List<Object?> get props => [

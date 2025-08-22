@@ -68,6 +68,10 @@ import '../../features/user_profile/domain/usecases/get_user_profile.dart';
 import '../../features/user_profile/domain/usecases/update_user_profile.dart';
 import '../../features/user_profile/domain/usecases/delete_user_profile.dart';
 import '../../features/user_profile/presentation/bloc/user_profile_bloc.dart';
+import '../../features/study_topics/data/datasources/study_topics_remote_datasource.dart';
+import '../../features/study_topics/data/repositories/study_topics_repository_impl.dart';
+import '../../features/study_topics/domain/repositories/study_topics_repository.dart';
+import '../../features/study_topics/presentation/bloc/study_topics_bloc.dart';
 import '../services/theme_service.dart';
 import '../services/auth_state_provider.dart';
 import '../services/language_preference_service.dart';
@@ -286,6 +290,19 @@ Future<void> initializeDependencies() async {
   sl.registerLazySingleton(() => HomeBloc(
         topicsBloc: sl(),
         studyGenerationBloc: sl(),
+      ));
+
+  //! Study Topics
+  sl.registerLazySingleton<StudyTopicsRemoteDataSource>(
+    () => StudyTopicsRemoteDataSourceImpl(httpService: sl()),
+  );
+
+  sl.registerLazySingleton<StudyTopicsRepository>(
+    () => StudyTopicsRepositoryImpl(remoteDataSource: sl()),
+  );
+
+  sl.registerFactory(() => StudyTopicsBloc(
+        repository: sl(),
       ));
 
   //! Onboarding

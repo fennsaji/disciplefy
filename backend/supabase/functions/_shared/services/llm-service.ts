@@ -740,18 +740,18 @@ export class LLMService {
 
   /**
    * Selects the optimal OpenAI model based on language.
-   * Updated to use gpt-4o-mini for all languages for better performance and cost efficiency.
+   * Currently uses gpt-4o-mini-2024-07-18 snapshot for all languages.
    * 
-   * @param language - Target language code
-   * @returns OpenAI model name
+   * @param language - Target language code (reserved for future routing, intentionally unused)
+   * @returns OpenAI model snapshot identifier
    */
   private selectOpenAIModel(language: string): string {
-    // Use gpt-4o-mini for all languages due to:
-    // - 60-80% cost reduction vs gpt-3.5-turbo
+    // Use gpt-4o-mini-2024-07-18 snapshot for all languages due to:
     // - Better instruction following and JSON formatting
     // - Improved multilingual capabilities
     // - Better theological accuracy and reasoning
-    return 'gpt-4o-mini'
+    // - Supports Chat Completions with response_format: { type: "json_object" }
+    return 'gpt-4o-mini-2024-07-18'
   }
 
   /**
@@ -1118,29 +1118,22 @@ export class LLMService {
 
       case 'ml':
         return `മലയാളത്തിൽ ഉദാഹരണം:
-          സാധാരണ മലയാളം ഉപയോഗിക്കുക. JSON പാഴ്സിംഗ് പ്രശ്നങ്ങൾ ഒഴിവാക്കാൻ:
+          സാധാരണ മലയാളം ഉപയോഗിക്കുക. സാധുവായ JSON ഔട്ട്‌പുട്ട് ഉറപ്പാക്കാൻ:
 
-          JSON ഫോർമാറ്റിംഗ് നിയമങ്ങൾ:
-          - ഉദ്ധരണി ചിഹ്നങ്ങൾ ഉപയോഗിക്കരുത്
-          - ലളിതമായ വാക്യങ്ങൾ മാത്രം
-          - പ്രത്യേക ചിഹ്നങ്ങൾ ഒഴിവാക്കുക
+          JSON ആവശ്യകതകൾ:
+          - എല്ലാ കീകൾക്കും സ്ട്രിംഗ് വാല്യൂകൾക്കും ഡബിൾ ക്വോട്ടുകൾ ഉപയോഗിക്കുക
+          - പ്രത്യേക പ്രതീകങ്ങൾ എസ്കേപ് ചെയ്യുക
+          - ബാക്ക്‌ടിക്കുകളോ കോട്ടേഷൻ ഇല്ലാതെയുള്ള വിരാമചിഹ്നങ്ങളോ ഒഴിവാക്കുക
 
-          ഉദാഹരണ സാരാംശം: ഈ വചനം ദൈവത്തിന്റെ സ്നേഹം കാണിക്കുന്നു.
+          ഉദാഹരണ സാരാംശം: ഈ വചനം ദൈവത്തിന്റെ സ്നേഹം കാണിക്കുന്നു
 
-          ഉദാഹരണ ചോദ്യം: നിങ്ങളുടെ ജീവിതത്തിൽ ദൈവത്തിന്റെ സ്നേഹം എങ്ങനെ കാണാം.
+          ഉദാഹരണ ചോദ്യം: നിങ്ങളുടെ ജീവിതത്തിൽ ദൈവത്തിന്റെ സ്നേഹം എങ്ങനെ കാണാം
 
-          ഉദാഹരണ പ്രാർത്ഥന: കർത്താവേ അങ്ങയുടെ സ്നേഹം മനസ്സിലാക്കാൻ സഹായിക്കേണമേ.
+          ഉദാഹരണ പ്രാർത്ഥന: കർത്താവേ അങ്ങയുടെ സ്നേഹം മനസ്സിലാക്കാൻ സഹായിക്കേണമേ
 
-          ശൈലി: ലളിതമായ മലയാളം. ബൈബിൾ സത്യത്തെ ദൈനംദിന ജീവിതവുമായി ബന്ധിപ്പിക്കുക.
+          ശൈലി: ലളിതമായ മലയാളം ഉപയോഗിച്ച് ബൈബിൾ സത്യത്തെ ദൈനംദിന ജീവിതവുമായി ബന്ധിപ്പിക്കുക
 
-          പദാവലി:
-          - ദൈവം
-          - സ്നേഹം
-          - സഹായം
-          - ജീവിതം
-          - മനസ്സ്
-          - പ്രാർത്ഥന
-          - അനുഗ്രഹം`
+          ഉപയോഗിക്കേണ്ട പദങ്ങൾ: ദൈവം സ്നേഹം സഹായം ജീവിതം മനസ്സ് പ്രാർത്ഥന അനുഗ്രഹം`
 
       default:
         return 'Use clear, accessible language appropriate for your target audience.'
