@@ -65,6 +65,9 @@ class StudyNavigationService {
         case StudyNavigationSource.recent:
           context.go(AppRoutes.saved);
           break;
+        case StudyNavigationSource.studyTopics:
+          context.go(AppRoutes.studyTopics);
+          break;
       }
     }
   }
@@ -155,6 +158,9 @@ enum StudyNavigationSource {
 
   /// Navigated from recent guides section.
   recent,
+
+  /// Navigated from study topics screen.
+  studyTopics,
 }
 
 /// Extension on StudyNavigationSource for convenience methods.
@@ -170,6 +176,8 @@ extension StudyNavigationSourceExtension on StudyNavigationSource {
         return 'Saved Guides';
       case StudyNavigationSource.recent:
         return 'Recent Guides';
+      case StudyNavigationSource.studyTopics:
+        return 'Study Topics';
     }
   }
 
@@ -183,6 +191,8 @@ extension StudyNavigationSourceExtension on StudyNavigationSource {
       case StudyNavigationSource.saved:
       case StudyNavigationSource.recent:
         return AppRoutes.saved;
+      case StudyNavigationSource.studyTopics:
+        return AppRoutes.studyTopics;
     }
   }
 }

@@ -37,6 +37,7 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen> {
   StudyInputMode _selectedMode = StudyInputMode.scripture;
   StudyLanguage _selectedLanguage = StudyLanguage.english;
   bool _isInputValid = false;
+  bool _isGeneratingStudyGuide = false;
   String? _validationError;
 
   // Language preference service for database integration
@@ -202,15 +203,31 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen> {
     final body = BlocListener<StudyBloc, StudyState>(
       listener: (context, state) {
         if (state is StudyGenerationSuccess) {
-          // Navigate to study guide screen with generated content
+          // Stop loading and navigate to study guide screen with generated content
+          setState(() {
+            _isGeneratingStudyGuide = false;
+          });
           StudyNavigationService.navigateToStudyGuide(
             context,
             studyGuide: state.studyGuide,
             source: StudyNavigationSource.generate,
           );
         } else if (state is StudyGenerationFailure) {
-          // Show error message with retry option
+          // Stop loading and show error message with retry option
+          setState(() {
+            _isGeneratingStudyGuide = false;
+          });
           _showErrorDialog(context, state.failure.message, state.isRetryable);
+        } else if (state is StudyGenerationInProgress) {
+          // Update loading state based on BLoC state
+          setState(() {
+            _isGeneratingStudyGuide = true;
+          });
+        } else if (state is StudyInitial) {
+          // Clear loading state when returning to initial state
+          setState(() {
+            _isGeneratingStudyGuide = false;
+          });
         }
       },
       child: SafeArea(
@@ -488,7 +505,8 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen> {
   }
 
   Widget _buildGenerateButton(StudyState state) {
-    final isLoading = state is StudyGenerationInProgress;
+    final isLoading =
+        state is StudyGenerationInProgress || _isGeneratingStudyGuide;
 
     return Column(
       children: [
@@ -546,7 +564,9 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen> {
         SizedBox(
           width: double.infinity,
           child: ElevatedButton(
-            onPressed: _isInputValid && !isLoading ? _generateStudyGuide : null,
+            onPressed: _isInputValid && !isLoading && !_isGeneratingStudyGuide
+                ? _generateStudyGuide
+                : null,
             style: ElevatedButton.styleFrom(
               backgroundColor: Theme.of(context).colorScheme.primary,
               foregroundColor: Colors.white,
@@ -611,10 +631,27 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen> {
   void _generateStudyGuide() {
     if (!_isInputValid) return;
 
+    // Prevent multiple clicks during generation
+    if (_isGeneratingStudyGuide) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+              'Study guide generation already in progress. Please wait...'),
+          duration: Duration(seconds: 2),
+        ),
+      );
+      return;
+    }
+
     final input = _inputController.text.trim();
     final inputType =
         _selectedMode == StudyInputMode.scripture ? 'scripture' : 'topic';
     final languageCode = _selectedLanguage.code;
+
+    // Set loading state immediately
+    setState(() {
+      _isGeneratingStudyGuide = true;
+    });
 
     // Trigger BLoC event to generate study guide
     context.read<StudyBloc>().add(

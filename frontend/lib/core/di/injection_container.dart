@@ -172,14 +172,17 @@ Future<void> initializeDependencies() async {
   sl.registerLazySingleton(() => UpdateThemeMode(sl()));
   sl.registerLazySingleton(() => GetAppVersion(sl()));
 
-  sl.registerLazySingleton(() => SettingsBloc(
-        getSettings: sl(),
-        updateThemeMode: sl(),
-        getAppVersion: sl(),
-        settingsRepository: sl(),
-        themeService: sl(),
-        languagePreferenceService: sl(),
-      ));
+  sl.registerLazySingleton(
+    () => SettingsBloc(
+      getSettings: sl(),
+      updateThemeMode: sl(),
+      getAppVersion: sl(),
+      settingsRepository: sl(),
+      themeService: sl(),
+      languagePreferenceService: sl(),
+    ),
+    dispose: (bloc) => bloc.close(),
+  );
 
   //! Daily Verse
   sl.registerLazySingleton<DailyVerseApiService>(
@@ -279,18 +282,27 @@ Future<void> initializeDependencies() async {
   sl.registerLazySingleton(() => RecommendedGuidesService());
 
   // Register Home BLoCs as singletons to maintain state across navigation
-  sl.registerLazySingleton(() => RecommendedTopicsBloc(
-        topicsService: sl(),
-      ));
+  sl.registerLazySingleton(
+    () => RecommendedTopicsBloc(
+      topicsService: sl(),
+    ),
+    dispose: (bloc) => bloc.close(),
+  );
 
-  sl.registerLazySingleton(() => HomeStudyGenerationBloc(
-        generateStudyGuideUseCase: sl(),
-      ));
+  sl.registerLazySingleton(
+    () => HomeStudyGenerationBloc(
+      generateStudyGuideUseCase: sl(),
+    ),
+    dispose: (bloc) => bloc.close(),
+  );
 
-  sl.registerLazySingleton(() => HomeBloc(
-        topicsBloc: sl(),
-        studyGenerationBloc: sl(),
-      ));
+  sl.registerLazySingleton(
+    () => HomeBloc(
+      topicsBloc: sl(),
+      studyGenerationBloc: sl(),
+    ),
+    dispose: (bloc) => bloc.close(),
+  );
 
   //! Study Topics
   sl.registerLazySingleton<StudyTopicsRemoteDataSource>(

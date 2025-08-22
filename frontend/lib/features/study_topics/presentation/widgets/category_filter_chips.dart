@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/utils/category_utils.dart';
 
 /// Horizontal scrollable chips for category filtering with multi-select capability.
 class CategoryFilterChips extends StatelessWidget {
@@ -28,83 +29,12 @@ class CategoryFilterChips extends StatelessWidget {
       return const SizedBox.shrink();
     }
 
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        color: Theme.of(context).scaffoldBackgroundColor,
-        border: Border(
-          bottom: BorderSide(
-            color: Theme.of(context).colorScheme.onBackground.withOpacity(0.5),
-          ),
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Text(
-                'Filter by Category',
-                style: GoogleFonts.inter(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: Theme.of(context).colorScheme.onBackground,
-                ),
-              ),
-              const Spacer(),
-              if (selectedCategories.isNotEmpty)
-                TextButton(
-                  onPressed: () => onCategoriesChanged([]),
-                  style: TextButton.styleFrom(
-                    foregroundColor: AppTheme.primaryColor,
-                    padding: const EdgeInsets.symmetric(horizontal: 8),
-                  ),
-                  child: Text(
-                    'Clear All',
-                    style: GoogleFonts.inter(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          SizedBox(
-            height: 40,
-            child: ListView.builder(
-              scrollDirection: Axis.horizontal,
-              itemCount: categories.length + 1, // +1 for "All" chip
-              itemBuilder: (context, index) {
-                if (index == 0) {
-                  // "All" chip
-                  final isSelected = selectedCategories.isEmpty;
-                  return _buildChip(
-                    context: context,
-                    label: 'All',
-                    isSelected: isSelected,
-                    onTap: () => onCategoriesChanged([]),
-                    icon: Icons.all_inclusive_rounded,
-                    originalCategory: 'All',
-                  );
-                }
-
-                final category = categories[index - 1];
-                final isSelected = selectedCategories.contains(category);
-
-                return _buildChip(
-                  context: context,
-                  label: _formatCategoryName(category),
-                  isSelected: isSelected,
-                  onTap: () => _toggleCategory(category),
-                  icon: _getCategoryIcon(category),
-                  originalCategory: category,
-                );
-              },
-            ),
-          ),
-        ],
-      ),
+    return _CategoryFilterSection(
+      categories: categories,
+      selectedCategories: selectedCategories,
+      onClearAll: () => onCategoriesChanged([]),
+      onToggleCategory: _toggleCategory,
+      onSelectAll: () => onCategoriesChanged([]),
     );
   }
 
@@ -115,7 +45,7 @@ class CategoryFilterChips extends StatelessWidget {
     required VoidCallback onTap,
     int? count,
     IconData? icon,
-    String? originalCategory,
+    String? category,
   }) {
     return Padding(
       padding: const EdgeInsets.only(right: 8),
@@ -127,23 +57,31 @@ class CategoryFilterChips extends StatelessWidget {
               Icon(
                 icon,
                 size: 16,
-                color: isSelected ? Colors.white : AppTheme.primaryColor,
+                color: isSelected
+                    ? Colors.white
+                    : category != null
+                        ? CategoryUtils.getColorForCategory(context, category)
+                        : AppTheme.primaryColor,
               ),
               const SizedBox(width: 6),
             ],
-            Text(
-              label,
-              style: GoogleFonts.inter(
-                fontSize: 14,
-                fontWeight: isSelected
-                    ? FontWeight.w700
-                    : FontWeight.w500, // Bolder when selected
-                color: isSelected
-                    ? Colors.white
-                    : Theme.of(context)
-                        .colorScheme
-                        .onBackground
-                        .withOpacity(0.5),
+            Flexible(
+              child: Text(
+                label,
+                style: GoogleFonts.inter(
+                  fontSize: 14,
+                  fontWeight: isSelected
+                      ? FontWeight.w700
+                      : FontWeight.w500, // Bolder when selected
+                  color: isSelected
+                      ? Colors.white
+                      : Theme.of(context)
+                          .colorScheme
+                          .onBackground
+                          .withOpacity(0.5),
+                ),
+                overflow: TextOverflow.ellipsis,
+                maxLines: 1,
               ),
             ),
             if (count != null && count > 0) ...[
@@ -164,7 +102,12 @@ class CategoryFilterChips extends StatelessWidget {
                   style: GoogleFonts.inter(
                     fontSize: 11,
                     fontWeight: FontWeight.w600,
-                    color: isSelected ? Colors.white : AppTheme.primaryColor,
+                    color: isSelected
+                        ? Colors.white
+                        : category != null
+                            ? CategoryUtils.getColorForCategory(
+                                context, category)
+                            : AppTheme.primaryColor,
                   ),
                 ),
               ),
@@ -174,18 +117,29 @@ class CategoryFilterChips extends StatelessWidget {
         selected: isSelected,
         onSelected: (_) => onTap(),
         backgroundColor: Theme.of(context).colorScheme.surface,
-        selectedColor: AppTheme.primaryColor,
+        selectedColor: category != null
+            ? CategoryUtils.getColorForCategory(context, category)
+            : AppTheme.primaryColor,
         checkmarkColor: Colors.white,
         elevation: isSelected ? 4 : 0, // Higher elevation for selected chips
         pressElevation: 6,
-        shadowColor: isSelected ? AppTheme.primaryColor.withOpacity(0.3) : null,
+        shadowColor: isSelected
+            ? (category != null
+                ? CategoryUtils.getColorForCategory(context, category)
+                    .withOpacity(0.3)
+                : AppTheme.primaryColor.withOpacity(0.3))
+            : null,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(20),
           side: BorderSide(
             color: isSelected
-                ? AppTheme.primaryColor
-                : AppTheme.primaryColor.withOpacity(
-                    0.3), // Slightly more visible border for unselected
+                ? (category != null
+                    ? CategoryUtils.getColorForCategory(context, category)
+                    : AppTheme.primaryColor)
+                : (category != null
+                        ? CategoryUtils.getColorForCategory(context, category)
+                        : AppTheme.primaryColor)
+                    .withOpacity(0.3),
             width: isSelected ? 2 : 1, // Thicker border for selected chips
           ),
         ),
@@ -269,38 +223,222 @@ class CategoryFilterChips extends StatelessWidget {
 
     onCategoriesChanged(newSelection);
   }
+}
 
-  /// Format category name for display (capitalize each word)
-  String _formatCategoryName(String category) {
-    return category
-        .split(' ')
-        .map((word) => word.isEmpty
-            ? word
-            : word[0].toUpperCase() + word.substring(1).toLowerCase())
-        .join(' ');
+/// Category filter section with header and horizontal scrollable chips.
+class _CategoryFilterSection extends StatelessWidget {
+  final List<String> categories;
+  final List<String> selectedCategories;
+  final VoidCallback onClearAll;
+  final Function(String) onToggleCategory;
+  final VoidCallback onSelectAll;
+
+  const _CategoryFilterSection({
+    required this.categories,
+    required this.selectedCategories,
+    required this.onClearAll,
+    required this.onToggleCategory,
+    required this.onSelectAll,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: Theme.of(context).scaffoldBackgroundColor,
+        border: Border(
+          bottom: BorderSide(
+            color: Theme.of(context).colorScheme.onBackground.withOpacity(0.5),
+          ),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _Header(
+            selectedCategories: selectedCategories,
+            onClearAll: onClearAll,
+          ),
+          const SizedBox(height: 8),
+          SizedBox(
+            height: 40,
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              itemCount: categories.length + 1, // +1 for "All" chip
+              itemBuilder: (context, index) {
+                if (index == 0) {
+                  // "All" chip
+                  final isSelected = selectedCategories.isEmpty;
+                  return _buildChip(
+                    context: context,
+                    label: 'All',
+                    isSelected: isSelected,
+                    onTap: onSelectAll,
+                    icon: Icons.all_inclusive_rounded,
+                  );
+                }
+
+                final category = categories[index - 1];
+                final isSelected = selectedCategories.contains(category);
+
+                return _buildChip(
+                  context: context,
+                  label: CategoryUtils.formatCategoryName(category),
+                  isSelected: isSelected,
+                  onTap: () => onToggleCategory(category),
+                  icon: CategoryUtils.getIconForCategory(category),
+                  category: category,
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
-  /// Get relevant icon for each category
-  IconData _getCategoryIcon(String category) {
-    switch (category.toLowerCase()) {
-      case 'foundations of faith':
-        return Icons.foundation_rounded; // Foundation/base icon
-      case 'spiritual disciplines':
-        return Icons.self_improvement_rounded; // Meditation/spiritual growth
-      case 'christian life':
-        return Icons.menu_book_rounded; // Book for learning
-      case 'church & community':
-        return Icons.groups_rounded; // Community/people icon
-      case 'family & relationships':
-        return Icons.family_restroom_rounded; // Family icon
-      case 'discipleship & growth':
-        return Icons.trending_up_rounded; // Growth/progress icon
-      case 'mission & service':
-        return Icons.volunteer_activism_rounded; // Service/helping hands
-      case 'apologetics & defense of faith':
-        return Icons.shield_rounded; // Shield for defense
-      default:
-        return Icons.category_rounded; // Default category icon
-    }
+  Widget _buildChip({
+    required BuildContext context,
+    required String label,
+    required bool isSelected,
+    required VoidCallback onTap,
+    int? count,
+    IconData? icon,
+    String? category,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.only(right: 8),
+      child: FilterChip(
+        label: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (icon != null) ...[
+              Icon(
+                icon,
+                size: 16,
+                color: isSelected ? Colors.white : AppTheme.primaryColor,
+              ),
+              const SizedBox(width: 6),
+            ],
+            Flexible(
+              child: Text(
+                label,
+                style: GoogleFonts.inter(
+                  fontSize: 14,
+                  fontWeight: isSelected
+                      ? FontWeight.w700
+                      : FontWeight.w500, // Bolder when selected
+                  color: isSelected
+                      ? Colors.white
+                      : Theme.of(context)
+                          .colorScheme
+                          .onBackground
+                          .withOpacity(0.5),
+                ),
+                overflow: TextOverflow.ellipsis,
+                maxLines: 1,
+              ),
+            ),
+            if (count != null && count > 0) ...[
+              const SizedBox(width: 4),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: isSelected
+                      ? Colors.white.withOpacity(0.2)
+                      : Theme.of(context)
+                          .colorScheme
+                          .onBackground
+                          .withOpacity(0.5),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  count.toString(),
+                  style: GoogleFonts.inter(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: isSelected ? Colors.white : AppTheme.primaryColor,
+                  ),
+                ),
+              ),
+            ],
+          ],
+        ),
+        selected: isSelected,
+        onSelected: (_) => onTap(),
+        backgroundColor: Theme.of(context).colorScheme.surface,
+        selectedColor: category != null
+            ? CategoryUtils.getColorForCategory(context, category)
+            : AppTheme.primaryColor,
+        checkmarkColor: Colors.white,
+        elevation: isSelected ? 4 : 0, // Higher elevation for selected chips
+        pressElevation: 6,
+        shadowColor: isSelected
+            ? (category != null
+                ? CategoryUtils.getColorForCategory(context, category)
+                    .withOpacity(0.3)
+                : AppTheme.primaryColor.withOpacity(0.3))
+            : null,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+          side: BorderSide(
+            color: isSelected
+                ? (category != null
+                    ? CategoryUtils.getColorForCategory(context, category)
+                    : AppTheme.primaryColor)
+                : (category != null
+                        ? CategoryUtils.getColorForCategory(context, category)
+                        : AppTheme.primaryColor)
+                    .withOpacity(0.3),
+            width: isSelected ? 2 : 1, // Thicker border for selected chips
+          ),
+        ),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      ),
+    );
+  }
+}
+
+/// Header widget with title and clear all button.
+class _Header extends StatelessWidget {
+  final List<String> selectedCategories;
+  final VoidCallback onClearAll;
+
+  const _Header({
+    required this.selectedCategories,
+    required this.onClearAll,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Text(
+          'Filter by Category',
+          style: GoogleFonts.inter(
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+            color: Theme.of(context).colorScheme.onBackground,
+          ),
+        ),
+        const Spacer(),
+        if (selectedCategories.isNotEmpty)
+          TextButton(
+            onPressed: onClearAll,
+            style: TextButton.styleFrom(
+              foregroundColor: AppTheme.primaryColor,
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+            ),
+            child: Text(
+              'Clear All',
+              style: GoogleFonts.inter(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+      ],
+    );
   }
 }

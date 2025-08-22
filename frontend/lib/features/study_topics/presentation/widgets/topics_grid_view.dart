@@ -6,12 +6,32 @@ import '../../../home/domain/entities/recommended_guide_topic.dart';
 import 'recommended_guide_topic_card.dart';
 
 /// Grid view widget for displaying topics in a responsive layout.
+///
+/// Displays topics in a 2-column grid with optional loading indicators
+/// and "Load More" functionality for pagination.
 class TopicsGridView extends StatelessWidget {
+  /// List of RecommendedGuideTopic objects to display in the grid.
   final List<RecommendedGuideTopic> topics;
+
+  /// Callback function invoked when a topic card is tapped.
+  /// Receives the tapped RecommendedGuideTopic as parameter.
   final Function(RecommendedGuideTopic) onTopicTap;
+
+  /// Whether a loading indicator should be shown at the bottom.
+  /// When true, displays a circular progress indicator.
   final bool isLoading;
+
+  /// Optional callback to request loading more topics.
+  /// If null, no "Load More" button is shown.
   final VoidCallback? onLoadMore;
+
+  /// Whether more topics are available to load.
+  /// Controls visibility of "Load More" button when not loading.
   final bool hasMore;
+
+  /// Whether a study guide is currently being generated.
+  /// When true, all topic cards should be disabled.
+  final bool isGeneratingStudyGuide;
 
   const TopicsGridView({
     super.key,
@@ -20,6 +40,7 @@ class TopicsGridView extends StatelessWidget {
     this.isLoading = false,
     this.onLoadMore,
     this.hasMore = false,
+    this.isGeneratingStudyGuide = false,
   });
 
   @override
@@ -42,6 +63,7 @@ class TopicsGridView extends StatelessWidget {
                         child: RecommendedGuideTopicCard(
                           topic: topic,
                           onTap: () => onTopicTap(topic),
+                          isDisabled: isGeneratingStudyGuide,
                         ),
                       ))
                   .toList(),
@@ -106,6 +128,8 @@ class TopicsGridView extends StatelessWidget {
 
 /// Loading skeleton for topics grid
 class TopicsGridLoadingSkeleton extends StatelessWidget {
+  /// Number of skeleton loading items to render in the grid.
+  /// Defaults to 6 items to fill typical mobile screen space.
   final int itemCount;
 
   const TopicsGridLoadingSkeleton({

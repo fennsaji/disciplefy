@@ -29,22 +29,9 @@ interface CategoriesQueryParams {
 const DEFAULT_LANGUAGE = 'en' as const
 
 /**
- * Main handler for topics categories
+ * Builds a successful categories response.
  */
-async function handleTopicsCategories(req: Request, services: ServiceContainer): Promise<Response> {
-  // Parse and validate query parameters
-  const queryParams = parseQueryParameters(req.url)
-
-  // Get all available categories
-  const categories = await services.topicsRepository.getCategories(queryParams.language)
-
-  // Log analytics event
-  await services.analyticsLogger.logEvent('topics_categories_accessed', {
-    language: queryParams.language,
-    total_categories: categories.length
-  }, req.headers.get('x-forwarded-for'))
-
-  // Build response
+function buildSuccessResponse(categories: readonly string[]): Response {
   const response: CategoriesResponse = {
     success: true,
     data: {
@@ -57,6 +44,48 @@ async function handleTopicsCategories(req: Request, services: ServiceContainer):
     status: 200,
     headers: { 'Content-Type': 'application/json' }
   })
+}
+
+/**
+ * Logs analytics event for categories access.
+ */
+async function logAccessEvent(
+  services: ServiceContainer,
+  req: Request,
+  language: string,
+  total: number
+): Promise<void> {
+  await services.analyticsLogger.logEvent('topics_categories_accessed', {
+    language: language,
+    total_categories: total
+  }, req.headers.get('x-forwarded-for'))
+}
+
+/**
+ * Main handler for topics categories
+ */
+async function handleTopicsCategories(req: Request, services: ServiceContainer): Promise<Response> {
+  try {
+    // Parse query parameters and fetch categories
+    const queryParams = parseQueryParameters(req.url)
+    const categories = await services.topicsRepository.getCategories(queryParams.language)
+
+    // Log analytics event
+    await logAccessEvent(services, req, queryParams.language, categories.length)
+
+    // Return success response
+    return buildSuccessResponse(categories)
+  } catch (error) {
+    console.error('Error in handleTopicsCategories:', error)
+    
+    return new Response(JSON.stringify({
+      success: false,
+      error: 'Failed to fetch categories'
+    }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' }
+    })
+  }
 }
 
 /**
