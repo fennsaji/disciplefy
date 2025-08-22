@@ -6,6 +6,7 @@ import '../../../../core/error/failures.dart';
 import '../../../home/domain/entities/recommended_guide_topic.dart';
 import '../../domain/entities/study_topics_filter.dart';
 import '../../domain/repositories/study_topics_repository.dart';
+import '../../domain/utils/topic_search_utils.dart';
 import '../datasources/study_topics_remote_datasource.dart';
 
 /// Cache entry for storing data with timestamp
@@ -14,6 +15,19 @@ class _CacheEntry<T> {
   final DateTime timestamp;
 
   _CacheEntry(this.data, this.timestamp);
+
+  bool isExpired(Duration cacheExpiry) {
+    return DateTime.now().difference(timestamp) > cacheExpiry;
+  }
+}
+
+/// Cache entry specifically for topics that includes total count
+class _TopicsCacheEntry {
+  final List<RecommendedGuideTopic> topics;
+  final int total;
+  final DateTime timestamp;
+
+  _TopicsCacheEntry(this.topics, this.total, this.timestamp);
 
   bool isExpired(Duration cacheExpiry) {
     return DateTime.now().difference(timestamp) > cacheExpiry;
@@ -29,7 +43,7 @@ class StudyTopicsRepositoryImpl implements StudyTopicsRepository {
   static const Duration _categoriesCacheExpiry = Duration(hours: 24);
 
   // In-memory cache
-  final Map<String, _CacheEntry<List<RecommendedGuideTopic>>> _topicsCache = {};
+  final Map<String, _TopicsCacheEntry> _topicsCache = {};
   _CacheEntry<List<String>>? _categoriesCache;
 
   StudyTopicsRepositoryImpl({
@@ -56,8 +70,8 @@ class StudyTopicsRepositoryImpl implements StudyTopicsRepository {
           }
 
           // Apply client-side search filtering
-          final filteredTopics =
-              _applySearchFilter(cacheEntry.data, filter.searchQuery);
+          final filteredTopics = TopicSearchUtils.applySearchFilter(
+              cacheEntry.topics, filter.searchQuery);
           return Right(filteredTopics);
         } else {
           // Remove expired cache entry
@@ -74,18 +88,20 @@ class StudyTopicsRepositoryImpl implements StudyTopicsRepository {
       final apiFilter = filter.copyWith(searchQuery: '');
 
       // Fetch from remote data source
-      final topics = await _remoteDataSource.getTopics(filter: apiFilter);
+      final result = await _remoteDataSource.getTopics(filter: apiFilter);
 
       // Cache the results
-      _topicsCache[cacheKey] = _CacheEntry(topics, DateTime.now());
+      _topicsCache[cacheKey] =
+          _TopicsCacheEntry(result.topics, result.total, DateTime.now());
 
       if (kDebugMode) {
         print(
-            '💾 [STUDY_TOPICS_REPO] Cached ${topics.length} topics for ${_topicsCacheExpiry.inHours} hours');
+            '💾 [STUDY_TOPICS_REPO] Cached ${result.topics.length} topics (total: ${result.total}) for ${_topicsCacheExpiry.inHours} hours');
       }
 
       // Apply client-side search filtering
-      final filteredTopics = _applySearchFilter(topics, filter.searchQuery);
+      final filteredTopics =
+          TopicSearchUtils.applySearchFilter(result.topics, filter.searchQuery);
 
       return Right(filteredTopics);
     } on NetworkException catch (e) {
@@ -173,18 +189,71 @@ class StudyTopicsRepositoryImpl implements StudyTopicsRepository {
   Future<Either<Failure, int>> getTopicsCount({
     StudyTopicsFilter filter = const StudyTopicsFilter(),
   }) async {
-    // For now, we'll get the total from the API response
-    // In a more sophisticated implementation, we might have a separate count endpoint
-    final result = await getAllTopics(filter: filter.copyWith(limit: 1));
+    try {
+      // Create cache key based on filter (excluding search which doesn't affect total count)
+      final cacheKey =
+          _generateTopicsCacheKey(filter.copyWith(searchQuery: ''));
 
-    return result.fold(
-      (failure) => Left(failure),
-      (topics) {
-        // This is a simplified implementation - in reality we'd need total count from API
-        // For now, return the number of topics we got (which may be limited by pagination)
-        return Right(topics.length);
-      },
-    );
+      // Check if we have cached data with total count
+      if (_topicsCache.containsKey(cacheKey)) {
+        final cacheEntry = _topicsCache[cacheKey]!;
+        if (!cacheEntry.isExpired(_topicsCacheExpiry)) {
+          if (kDebugMode) {
+            print(
+                '✅ [STUDY_TOPICS_REPO] Returning cached total count: ${cacheEntry.total}');
+          }
+          return Right(cacheEntry.total);
+        } else {
+          // Remove expired cache entry
+          _topicsCache.remove(cacheKey);
+        }
+      }
+
+      if (kDebugMode) {
+        print(
+            '🚀 [STUDY_TOPICS_REPO] Cache miss - fetching topics to get total count...');
+      }
+
+      // Create filter without search for API call (search is client-side)
+      // Also set a minimal limit since we only need the total count
+      final apiFilter = filter.copyWith(searchQuery: '', limit: 1);
+
+      // Fetch from remote data source to get total count
+      final result = await _remoteDataSource.getTopics(filter: apiFilter);
+
+      // Cache the results for future use
+      _topicsCache[cacheKey] =
+          _TopicsCacheEntry(result.topics, result.total, DateTime.now());
+
+      if (kDebugMode) {
+        print('✅ [STUDY_TOPICS_REPO] Fetched total count: ${result.total}');
+      }
+
+      return Right(result.total);
+    } on NetworkException catch (e) {
+      if (kDebugMode) {
+        print(
+            '🌐 [STUDY_TOPICS_REPO] Network error in getTopicsCount: ${e.message}');
+      }
+      return Left(NetworkFailure(message: e.message));
+    } on ServerException catch (e) {
+      if (kDebugMode) {
+        print(
+            '🔥 [STUDY_TOPICS_REPO] Server error in getTopicsCount: ${e.message}');
+      }
+      return Left(ServerFailure(message: e.message));
+    } on ClientException catch (e) {
+      if (kDebugMode) {
+        print(
+            '📱 [STUDY_TOPICS_REPO] Client error in getTopicsCount: ${e.message}');
+      }
+      return Left(ClientFailure(message: e.message));
+    } catch (e) {
+      if (kDebugMode) {
+        print('💥 [STUDY_TOPICS_REPO] Unexpected error in getTopicsCount: $e');
+      }
+      return Left(ClientFailure(message: 'Unexpected error occurred: $e'));
+    }
   }
 
   @override
@@ -206,23 +275,5 @@ class StudyTopicsRepositoryImpl implements StudyTopicsRepository {
       filter.offset.toString(),
     ];
     return parts.join('_');
-  }
-
-  /// Applies client-side search filtering to topics list
-  List<RecommendedGuideTopic> _applySearchFilter(
-    List<RecommendedGuideTopic> topics,
-    String searchQuery,
-  ) {
-    if (searchQuery.isEmpty) {
-      return topics;
-    }
-
-    final query = searchQuery.toLowerCase();
-    return topics.where((topic) {
-      return topic.title.toLowerCase().contains(query) ||
-          topic.description.toLowerCase().contains(query) ||
-          topic.category.toLowerCase().contains(query) ||
-          topic.tags.any((tag) => tag.toLowerCase().contains(query));
-    }).toList();
   }
 }
