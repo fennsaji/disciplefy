@@ -28,7 +28,7 @@ class HomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => BlocProvider.value(
-        value: sl<HomeBloc>()..add(const LoadRecommendedTopics(limit: 6)),
+        value: sl<HomeBloc>(),
         child: const _HomeScreenContent(),
       );
 }
@@ -47,6 +47,12 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
   void initState() {
     super.initState();
     _loadDailyVerse();
+    // Fire initial topics load once; HomeBloc is a singleton via DI
+    final homeBloc = sl<HomeBloc>();
+    final current = homeBloc.state;
+    if (current is! HomeCombinedState || current.topics.isEmpty) {
+      homeBloc.add(const LoadRecommendedTopics(limit: 6));
+    }
   }
 
   /// Load daily verse - called only once during initialization
@@ -402,6 +408,24 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
                         strokeWidth: 2,
                         valueColor: AlwaysStoppedAnimation<Color>(
                             AppTheme.primaryColor),
+                      ),
+                    )
+                  else if (homeState.topics.isNotEmpty)
+                    TextButton.icon(
+                      onPressed: () => context.go('/study-topics'),
+                      label: Text(
+                        'View All',
+                        style: GoogleFonts.inter(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: AppTheme.primaryColor,
+                        ),
+                      ),
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 4),
+                        minimumSize: Size.zero,
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                       ),
                     ),
                 ],
