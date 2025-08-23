@@ -101,7 +101,7 @@ export class TopicsRepository {
           category
         )
       `)
-      .eq('recommended_topics_translations.lang_code', language)
+      .or(`lang_code.eq.${language},lang_code.eq.en`, { foreignTable: 'recommended_topics_translations' })
       .order('display_order', { ascending: true })
       .range(offset, offset + limit - 1)
 
@@ -343,7 +343,7 @@ export class TopicsRepository {
         )
       `)
       .in('category', categories as string[])
-      .eq('recommended_topics_translations.lang_code', language)
+      .or(`lang_code.eq.${language},lang_code.is.null`, { foreignTable: 'recommended_topics_translations' })
       .order('display_order', { ascending: true })
       .range(offset, offset + limit - 1)
 
@@ -441,7 +441,7 @@ export class TopicsRepository {
     // For other languages, count from translations table
     const { count, error } = await this.supabaseClient
       .from('recommended_topics')
-      .select('id', { count: 'exact' })
+      .select('id, recommended_topics_translations(id)', { count: 'exact', head: true })
       .in('category', categories as string[])
       .eq('recommended_topics_translations.lang_code', language)
 
@@ -485,7 +485,12 @@ export class TopicsRepository {
     language: string
   ): readonly RecommendedGuideTopic[] {
     return dbTopics.map(dbTopic => {
-      const translation = dbTopic.recommended_topics_translations?.[0]
+      const translations = dbTopic.recommended_topics_translations || []
+      
+      // Prefer requested language translation, fallback to English
+      const preferredTranslation = translations.find((t: any) => t.lang_code === language)
+      const englishTranslation = translations.find((t: any) => t.lang_code === 'en')
+      const translation = preferredTranslation || englishTranslation
       
       return {
         id: dbTopic.id,

@@ -50,5 +50,11 @@ class ClearRecommendedTopicsError extends RecommendedTopicsEvent {
 
 /// Event for language preference change from settings.
 class LanguagePreferenceChanged extends RecommendedTopicsEvent {
-  const LanguagePreferenceChanged();
+  /// The new language code
+  final String languageCode;
+
+  const LanguagePreferenceChanged({required this.languageCode});
+
+  @override
+  List<Object?> get props => [languageCode];
 }
