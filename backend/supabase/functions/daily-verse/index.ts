@@ -39,14 +39,19 @@ async function handleDailyVerse(req: Request, services: ServiceContainer): Promi
   // Parse query parameters
   const url = new URL(req.url)
   const requestDate = url.searchParams.get('date')
+  const requestLanguage = url.searchParams.get('language')
 
   // Validate date parameter if provided
   if (requestDate && isNaN(new Date(requestDate).getTime())) {
     throw new AppError('VALIDATION_ERROR', 'Invalid date format. Please use YYYY-MM-DD.', 400)
   }
 
-  // Get daily verse data using injected service
-  const verseData = await services.dailyVerseService.getDailyVerse(requestDate)
+  // Validate and normalize language parameter
+  const allowedLanguages = ['en', 'hi', 'ml']
+  const language = allowedLanguages.includes(requestLanguage || '') ? requestLanguage! : 'en'
+
+  // Get daily verse data using injected service with language preference
+  const verseData = await services.dailyVerseService.getDailyVerse(requestDate, language)
 
   // Create response data with additional fields
   const responseData: DailyVerseData = {

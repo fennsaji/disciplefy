@@ -16,7 +16,7 @@ class GoRouterStudyNavigator implements StudyNavigator {
     required StudyGuide studyGuide,
     required StudyNavigationSource source,
   }) {
-    context.go(
+    context.push(
       '${AppRoutes.studyGuide}?source=${source.name}',
       extra: studyGuide,
     );
@@ -27,7 +27,7 @@ class GoRouterStudyNavigator implements StudyNavigator {
     BuildContext context, {
     required Map<String, dynamic> routeData,
   }) {
-    context.go(
+    context.push(
       '${AppRoutes.studyGuide}?source=${StudyNavigationSource.saved.name}',
       extra: routeData,
     );

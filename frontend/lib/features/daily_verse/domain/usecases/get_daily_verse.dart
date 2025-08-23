@@ -14,9 +14,9 @@ class GetDailyVerse implements UseCase<DailyVerseEntity, GetDailyVerseParams> {
   Future<Either<Failure, DailyVerseEntity>> call(
       GetDailyVerseParams params) async {
     if (params.date != null) {
-      return await repository.getDailyVerse(params.date!);
+      return await repository.getDailyVerse(params.date!, params.language);
     } else {
-      return await repository.getTodaysVerse();
+      return await repository.getTodaysVerse(params.language);
     }
   }
 }
@@ -24,13 +24,16 @@ class GetDailyVerse implements UseCase<DailyVerseEntity, GetDailyVerseParams> {
 /// Parameters for GetDailyVerse use case
 class GetDailyVerseParams {
   final DateTime? date;
+  final VerseLanguage? language;
 
-  GetDailyVerseParams({this.date});
+  GetDailyVerseParams({this.date, this.language});
 
   /// Create params for today's verse
-  factory GetDailyVerseParams.today() => GetDailyVerseParams();
+  factory GetDailyVerseParams.today([VerseLanguage? language]) =>
+      GetDailyVerseParams(language: language);
 
   /// Create params for specific date
-  factory GetDailyVerseParams.forDate(DateTime date) =>
-      GetDailyVerseParams(date: date);
+  factory GetDailyVerseParams.forDate(DateTime date,
+          [VerseLanguage? language]) =>
+      GetDailyVerseParams(date: date, language: language);
 }

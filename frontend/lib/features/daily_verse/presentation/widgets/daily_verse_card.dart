@@ -129,11 +129,7 @@ class DailyVerseCard extends StatelessWidget {
 
               const SizedBox(height: 20),
 
-              // Language tabs with better spacing - Commented out: Language can be changed from settings
-              // if (showLanguageTabs) ...[
-              //   _buildLanguageTabs(context, state.currentLanguage),
-              //   const SizedBox(height: 20),
-              // ],
+              // Language tabs removed - language preference handled in settings
 
               // Verse reference with highlight color and better spacing
               Padding(
@@ -246,11 +242,7 @@ class DailyVerseCard extends StatelessWidget {
 
           const SizedBox(height: 16),
 
-          // Language tabs - Commented out: Language can be changed from settings
-          // if (showLanguageTabs) ...[
-          //   _buildLanguageTabs(context, state.currentLanguage),
-          //   const SizedBox(height: 16),
-          // ],
+          // Language tabs removed - language preference handled in settings
 
           // Verse content
           Text(

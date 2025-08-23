@@ -33,8 +33,9 @@ class RecommendedGuidesService {
   static const Duration _defaultCacheExpiry = Duration(hours: 24);
   static const Duration _filteredCacheExpiry = Duration(hours: 6);
 
-  // In-memory cache
-  _CacheEntry<List<RecommendedGuideTopic>>? _allTopicsCache;
+  // In-memory cache - now language-aware
+  final Map<String, _CacheEntry<List<RecommendedGuideTopic>>> _allTopicsCache =
+      {};
   final Map<String, _CacheEntry<List<RecommendedGuideTopic>>>
       _filteredTopicsCache = {};
 
@@ -46,20 +47,29 @@ class RecommendedGuidesService {
   /// Returns [Right] with list of topics on success,
   /// [Left] with [Failure] on error.
   ///
+  /// [language] - Language code for topic translations (optional)
   /// [forceRefresh] - If true, bypasses cache and fetches fresh data
   Future<Either<Failure, List<RecommendedGuideTopic>>> getAllTopics({
+    String? language,
     bool forceRefresh = false,
   }) async {
+    // Create language-specific cache key
+    final cacheKey = 'all_topics_${language ?? 'en'}';
+
     // Check cache first (unless force refresh is requested)
-    if (!forceRefresh &&
-        _allTopicsCache != null &&
-        !_allTopicsCache!.isExpired(_defaultCacheExpiry)) {
-      if (kDebugMode) {
-        final cacheAge = DateTime.now().difference(_allTopicsCache!.timestamp);
-        print(
-            '✅ [TOPICS] Returning cached topics (cached ${cacheAge.inMinutes} minutes ago)');
+    if (!forceRefresh && _allTopicsCache.containsKey(cacheKey)) {
+      final cacheEntry = _allTopicsCache[cacheKey]!;
+      if (!cacheEntry.isExpired(_defaultCacheExpiry)) {
+        if (kDebugMode) {
+          final cacheAge = DateTime.now().difference(cacheEntry.timestamp);
+          print(
+              '✅ [TOPICS] Returning cached topics for ${language ?? 'en'} (cached ${cacheAge.inMinutes} minutes ago)');
+        }
+        return Right(cacheEntry.data);
+      } else {
+        // Remove expired cache entry
+        _allTopicsCache.remove(cacheKey);
       }
-      return Right(_allTopicsCache!.data);
     }
 
     try {
@@ -71,9 +81,18 @@ class RecommendedGuidesService {
       // Prepare headers for API request
       final headers = await _httpService.createHeaders();
 
+      // Build query parameters - normalize language to 'en' default
+      final normalizedLanguage = language ?? 'en';
+      final queryParams = <String, String>{
+        'language': normalizedLanguage,
+      };
+
+      final uri = Uri.parse('$_baseUrl$_topicsEndpoint').replace(
+          queryParameters: queryParams.isNotEmpty ? queryParams : null);
+
       // Make API request
       final response = await _httpService.get(
-        '$_baseUrl$_topicsEndpoint',
+        uri.toString(),
         headers: headers,
       );
 
@@ -84,14 +103,14 @@ class RecommendedGuidesService {
       if (response.statusCode == 200) {
         final result = _parseTopicsResponse(response.body);
 
-        // Cache successful responses
+        // Cache successful responses with language-specific key
         result.fold(
           (failure) => null, // Don't cache failures
           (topics) {
-            _allTopicsCache = _CacheEntry(topics, DateTime.now());
+            _allTopicsCache[cacheKey] = _CacheEntry(topics, DateTime.now());
             if (kDebugMode) {
               print(
-                  '💾 [TOPICS] Cached ${topics.length} topics for ${_defaultCacheExpiry.inHours} hours');
+                  '💾 [TOPICS] Cached ${topics.length} topics for ${language ?? 'en'} for ${_defaultCacheExpiry.inHours} hours');
             }
           },
         );
@@ -121,15 +140,17 @@ class RecommendedGuidesService {
   /// [category] - Filter by topic category (optional)
   /// [difficulty] - Filter by difficulty level (optional)
   /// [limit] - Maximum number of topics to return (optional)
+  /// [language] - Language code for topic translations (optional)
   /// [forceRefresh] - If true, bypasses cache and fetches fresh data
   Future<Either<Failure, List<RecommendedGuideTopic>>> getFilteredTopics({
     String? category,
     String? difficulty,
     int? limit,
+    String? language,
     bool forceRefresh = false,
   }) async {
     // Create cache key for filtered queries
-    final cacheKey = _generateCacheKey(category, difficulty, limit);
+    final cacheKey = _generateCacheKey(category, difficulty, limit, language);
 
     // Check cache first (unless force refresh is requested)
     if (!forceRefresh && _filteredTopicsCache.containsKey(cacheKey)) {
@@ -147,8 +168,11 @@ class RecommendedGuidesService {
       }
     }
     try {
-      // Build query parameters
-      final queryParams = <String, String>{};
+      // Build query parameters - normalize language to 'en' default
+      final normalizedLanguage = language ?? 'en';
+      final queryParams = <String, String>{
+        'language': normalizedLanguage,
+      };
       if (category != null) queryParams['category'] = category;
       if (difficulty != null) queryParams['difficulty'] = difficulty;
       if (limit != null) queryParams['limit'] = limit.toString();
@@ -238,19 +262,22 @@ class RecommendedGuidesService {
   }
 
   /// Generates a cache key for filtered queries
-  String _generateCacheKey(String? category, String? difficulty, int? limit) {
+  String _generateCacheKey(
+      String? category, String? difficulty, int? limit, String? language) {
+    final normalizedLanguage = language ?? 'en';
     final parts = <String>[
       'filtered',
       category ?? 'null',
       difficulty ?? 'null',
       limit?.toString() ?? 'null',
+      normalizedLanguage,
     ];
     return parts.join('_');
   }
 
   /// Clears all cached data (useful for logout or manual refresh)
   void clearCache() {
-    _allTopicsCache = null;
+    _allTopicsCache.clear();
     _filteredTopicsCache.clear();
     if (kDebugMode) {
       print('🗑️ [TOPICS] All caches cleared');
@@ -260,10 +287,8 @@ class RecommendedGuidesService {
   /// Gets cache status for debugging
   Map<String, dynamic> getCacheStatus() {
     return {
-      'all_topics_cached': _allTopicsCache != null,
-      'all_topics_cache_age_minutes': _allTopicsCache != null
-          ? DateTime.now().difference(_allTopicsCache!.timestamp).inMinutes
-          : null,
+      'all_topics_caches_count': _allTopicsCache.length,
+      'all_topics_cache_keys': _allTopicsCache.keys.toList(),
       'filtered_caches_count': _filteredTopicsCache.length,
       'cache_expiry_hours': _defaultCacheExpiry.inHours,
     };
