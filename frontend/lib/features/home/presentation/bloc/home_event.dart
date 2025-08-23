@@ -67,6 +67,11 @@ class ClearHomeError extends HomeEvent {
   const ClearHomeError();
 }
 
+/// Event for language preference change from settings
+class LanguagePreferenceChanged extends HomeEvent {
+  const LanguagePreferenceChanged();
+}
+
 // Internal coordination events (for BLoC implementation)
 
 /// Internal event triggered when topics BLoC state changes

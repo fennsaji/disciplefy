@@ -8,8 +8,8 @@
 const ALLOWED_ORIGINS = [
   'http://localhost:59641',           // Flutter web local development
   'http://localhost:3000',            // Alternative local development port
-  'https://disciplefy.vercel.app',    // Production web app
-  'https://*.vercel.app',             // Vercel preview deployments
+  'https://www.disciplefy.in',        // Production web app
+  'https://dev.disciplefy.in',             // Vercel preview deployments
 ]
 
 /**
@@ -24,7 +24,7 @@ export function getCorsHeaders(origin?: string | null): Record<string, string> {
     if (ALLOWED_ORIGINS.includes(origin)) {
       allowedOrigin = origin
     } else {
-      // Check wildcard patterns (like *.vercel.app)
+      // Check wildcard patterns
       const isAllowed = ALLOWED_ORIGINS.some(allowedOrigin => {
         if (allowedOrigin.includes('*')) {
           const pattern = allowedOrigin.replace(/\*/g, '.*')
