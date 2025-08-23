@@ -68,12 +68,18 @@ import '../../features/user_profile/domain/usecases/get_user_profile.dart';
 import '../../features/user_profile/domain/usecases/update_user_profile.dart';
 import '../../features/user_profile/domain/usecases/delete_user_profile.dart';
 import '../../features/user_profile/presentation/bloc/user_profile_bloc.dart';
+import '../../features/study_topics/data/datasources/study_topics_remote_datasource.dart';
+import '../../features/study_topics/data/repositories/study_topics_repository_impl.dart';
+import '../../features/study_topics/domain/repositories/study_topics_repository.dart';
+import '../../features/study_topics/presentation/bloc/study_topics_bloc.dart';
 import '../services/theme_service.dart';
 import '../services/auth_state_provider.dart';
 import '../services/language_preference_service.dart';
 import '../services/language_cache_coordinator.dart';
 import '../services/http_service.dart';
 import '../../features/user_profile/data/services/user_profile_api_service.dart';
+import '../navigation/study_navigator.dart';
+import '../navigation/go_router_study_navigator.dart';
 
 /// Service locator instance for dependency injection
 final sl = GetIt.instance;
@@ -92,6 +98,11 @@ Future<void> initializeDependencies() async {
   // Register SharedPreferences
   final sharedPreferences = await SharedPreferences.getInstance();
   sl.registerLazySingleton(() => sharedPreferences);
+
+  //! Navigation
+  sl.registerLazySingleton<StudyNavigator>(
+    () => GoRouterStudyNavigator(),
+  );
 
   // Register ThemeService
   sl.registerLazySingleton(() => ThemeService());
@@ -168,14 +179,17 @@ Future<void> initializeDependencies() async {
   sl.registerLazySingleton(() => UpdateThemeMode(sl()));
   sl.registerLazySingleton(() => GetAppVersion(sl()));
 
-  sl.registerLazySingleton(() => SettingsBloc(
-        getSettings: sl(),
-        updateThemeMode: sl(),
-        getAppVersion: sl(),
-        settingsRepository: sl(),
-        themeService: sl(),
-        languagePreferenceService: sl(),
-      ));
+  sl.registerLazySingleton(
+    () => SettingsBloc(
+      getSettings: sl(),
+      updateThemeMode: sl(),
+      getAppVersion: sl(),
+      settingsRepository: sl(),
+      themeService: sl(),
+      languagePreferenceService: sl(),
+    ),
+    dispose: (bloc) => bloc.close(),
+  );
 
   //! Daily Verse
   sl.registerLazySingleton<DailyVerseApiService>(
@@ -274,17 +288,40 @@ Future<void> initializeDependencies() async {
   //! Home
   sl.registerLazySingleton(() => RecommendedGuidesService());
 
-  sl.registerFactory(() => HomeBloc(
-        topicsBloc: sl(),
-        studyGenerationBloc: sl(),
-      ));
+  // Register Home BLoCs as singletons to maintain state across navigation
+  sl.registerLazySingleton(
+    () => RecommendedTopicsBloc(
+      topicsService: sl(),
+    ),
+    dispose: (bloc) => bloc.close(),
+  );
 
-  sl.registerFactory(() => RecommendedTopicsBloc(
-        topicsService: sl(),
-      ));
+  sl.registerLazySingleton(
+    () => HomeStudyGenerationBloc(
+      generateStudyGuideUseCase: sl(),
+    ),
+    dispose: (bloc) => bloc.close(),
+  );
 
-  sl.registerFactory(() => HomeStudyGenerationBloc(
-        generateStudyGuideUseCase: sl(),
+  sl.registerLazySingleton(
+    () => HomeBloc(
+      topicsBloc: sl(),
+      studyGenerationBloc: sl(),
+    ),
+    dispose: (bloc) => bloc.close(),
+  );
+
+  //! Study Topics
+  sl.registerLazySingleton<StudyTopicsRemoteDataSource>(
+    () => StudyTopicsRemoteDataSourceImpl(httpService: sl()),
+  );
+
+  sl.registerLazySingleton<StudyTopicsRepository>(
+    () => StudyTopicsRepositoryImpl(remoteDataSource: sl()),
+  );
+
+  sl.registerFactory(() => StudyTopicsBloc(
+        repository: sl(),
       ));
 
   //! Onboarding
