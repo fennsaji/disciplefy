@@ -301,8 +301,9 @@ class StudyTopicsBloc extends Bloc<StudyTopicsEvent, StudyTopicsState> {
       }
     }
 
-    // Always fetch English categories for consistent filter chip styling
+    // Fetch categories in user's preferred language for localized filter chips
     final categoriesResult = await _repository.getCategories(
+      language: languageCode,
       forceRefresh: forceRefresh,
     );
 

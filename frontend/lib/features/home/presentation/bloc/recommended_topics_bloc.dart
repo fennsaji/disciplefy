@@ -105,8 +105,8 @@ class RecommendedTopicsBloc
     _languageChangeSubscription =
         _languagePreferenceService.languageChanges.listen(
       (AppLanguage newLanguage) {
-        // Trigger refresh when language changes
-        add(const LanguagePreferenceChanged());
+        // Trigger refresh when language changes with new language code
+        add(LanguagePreferenceChanged(languageCode: newLanguage.code));
       },
     );
   }
@@ -122,9 +122,10 @@ class RecommendedTopicsBloc
     // Only reload if we have loaded topics
     final currentState = state;
     if (currentState is RecommendedTopicsLoaded) {
-      // Reload topics with new language preference
-      add(const LoadRecommendedTopics(
+      // Reload topics with the new language preference
+      add(LoadRecommendedTopics(
         limit: 6,
+        language: event.languageCode,
         forceRefresh: true,
       ));
     }

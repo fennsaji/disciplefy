@@ -81,9 +81,11 @@ class RecommendedGuidesService {
       // Prepare headers for API request
       final headers = await _httpService.createHeaders();
 
-      // Build query parameters
-      final queryParams = <String, String>{};
-      if (language != null) queryParams['language'] = language;
+      // Build query parameters - normalize language to 'en' default
+      final normalizedLanguage = language ?? 'en';
+      final queryParams = <String, String>{
+        'language': normalizedLanguage,
+      };
 
       final uri = Uri.parse('$_baseUrl$_topicsEndpoint').replace(
           queryParameters: queryParams.isNotEmpty ? queryParams : null);
@@ -166,12 +168,14 @@ class RecommendedGuidesService {
       }
     }
     try {
-      // Build query parameters
-      final queryParams = <String, String>{};
+      // Build query parameters - normalize language to 'en' default
+      final normalizedLanguage = language ?? 'en';
+      final queryParams = <String, String>{
+        'language': normalizedLanguage,
+      };
       if (category != null) queryParams['category'] = category;
       if (difficulty != null) queryParams['difficulty'] = difficulty;
       if (limit != null) queryParams['limit'] = limit.toString();
-      if (language != null) queryParams['language'] = language;
 
       final uri = Uri.parse('$_baseUrl$_topicsEndpoint').replace(
           queryParameters: queryParams.isNotEmpty ? queryParams : null);
@@ -260,12 +264,13 @@ class RecommendedGuidesService {
   /// Generates a cache key for filtered queries
   String _generateCacheKey(
       String? category, String? difficulty, int? limit, String? language) {
+    final normalizedLanguage = language ?? 'en';
     final parts = <String>[
       'filtered',
       category ?? 'null',
       difficulty ?? 'null',
       limit?.toString() ?? 'null',
-      language ?? 'null',
+      normalizedLanguage,
     ];
     return parts.join('_');
   }
