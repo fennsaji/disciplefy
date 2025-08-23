@@ -78,6 +78,8 @@ import '../services/language_preference_service.dart';
 import '../services/language_cache_coordinator.dart';
 import '../services/http_service.dart';
 import '../../features/user_profile/data/services/user_profile_api_service.dart';
+import '../navigation/study_navigator.dart';
+import '../navigation/go_router_study_navigator.dart';
 
 /// Service locator instance for dependency injection
 final sl = GetIt.instance;
@@ -96,6 +98,11 @@ Future<void> initializeDependencies() async {
   // Register SharedPreferences
   final sharedPreferences = await SharedPreferences.getInstance();
   sl.registerLazySingleton(() => sharedPreferences);
+
+  //! Navigation
+  sl.registerLazySingleton<StudyNavigator>(
+    () => GoRouterStudyNavigator(),
+  );
 
   // Register ThemeService
   sl.registerLazySingleton(() => ThemeService());

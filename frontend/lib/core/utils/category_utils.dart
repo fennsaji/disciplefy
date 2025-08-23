@@ -31,8 +31,8 @@ class CategoryUtils {
 
   /// Get color for a specific category with theme awareness
   static Color getColorForCategory(BuildContext context, String category) {
-    final baseColor =
-        _categoryColors[category.toLowerCase()] ?? AppTheme.primaryColor;
+    final normalized = category.trim().toLowerCase();
+    final baseColor = _categoryColors[normalized] ?? AppTheme.primaryColor;
 
     // Use lighter variant for dark theme
     if (Theme.of(context).brightness == Brightness.dark) {
@@ -44,7 +44,8 @@ class CategoryUtils {
 
   /// Get icon for a specific category
   static IconData getIconForCategory(String category) {
-    return _categoryIcons[category.toLowerCase()] ?? Icons.category_rounded;
+    final normalized = category.trim().toLowerCase();
+    return _categoryIcons[normalized] ?? Icons.category_rounded;
   }
 
   /// Format category name for display (capitalize each word)

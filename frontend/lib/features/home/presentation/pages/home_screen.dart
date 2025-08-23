@@ -793,154 +793,162 @@ class _RecommendedGuideTopicCard extends StatelessWidget {
     final iconData = CategoryUtils.getIconForCategory(topic.category);
     final color = CategoryUtils.getColorForCategory(context, topic.category);
 
-    return GestureDetector(
-      onTap: isDisabled ? null : onTap,
+    return Semantics(
+      button: true,
+      enabled: !isDisabled,
+      label: topic.title,
       child: AnimatedOpacity(
         opacity: isDisabled ? 0.5 : 1.0,
         duration: const Duration(milliseconds: 150),
-        child: Container(
-          height: 180, // Fixed height for uniform cards
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surface,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: color.withOpacity(0.2),
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: color.withOpacity(0.1),
-                blurRadius: 8,
-                offset: const Offset(0, 2),
+        child: Material(
+          color: Theme.of(context).colorScheme.surface,
+          borderRadius: BorderRadius.circular(12),
+          elevation: 2,
+          clipBehavior: Clip.hardEdge,
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              border: Border.all(
+                color: color.withOpacity(0.2),
               ),
-            ],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize:
-                MainAxisSize.min, // Important: Don't expand unnecessarily
-            children: [
-              // Header row with icon
-              Row(
-                children: [
-                  Container(
-                    width: 36, // Slightly smaller for better proportions
-                    height: 36,
-                    decoration: BoxDecoration(
-                      color: color.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Icon(
-                      iconData,
-                      color: color,
-                      size: 18,
-                    ),
-                  ),
-                  const SizedBox(width: 8), // Fixed spacing instead of Spacer
-                  Flexible(
-                    // Use Flexible instead of Spacer
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 6, vertical: 3),
-                      decoration: BoxDecoration(
-                        color: color.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        topic.category,
-                        style: GoogleFonts.inter(
-                          fontSize: 9,
-                          fontWeight: FontWeight.w600,
-                          color: color,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: InkWell(
+              onTap: isDisabled ? null : onTap,
+              borderRadius: BorderRadius.circular(12),
+              child: Container(
+                height: 180, // Fixed height for uniform cards
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize:
+                      MainAxisSize.min, // Important: Don't expand unnecessarily
+                  children: [
+                    // Header row with icon
+                    Row(
+                      children: [
+                        Container(
+                          width: 36, // Slightly smaller for better proportions
+                          height: 36,
+                          decoration: BoxDecoration(
+                            color: color.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Icon(
+                            iconData,
+                            color: color,
+                            size: 18,
+                          ),
                         ),
+                        const SizedBox(
+                            width: 8), // Fixed spacing instead of Spacer
+                        Flexible(
+                          // Use Flexible instead of Spacer
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 6, vertical: 3),
+                            decoration: BoxDecoration(
+                              color: color.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              topic.category,
+                              style: GoogleFonts.inter(
+                                fontSize: 9,
+                                fontWeight: FontWeight.w600,
+                                color: color,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 12),
+
+                    // Title with proper constraints
+                    Text(
+                      topic.title,
+                      style: GoogleFonts.inter(
+                        fontSize: 14, // Slightly smaller for better fit
+                        fontWeight: FontWeight.w600,
+                        color: Theme.of(context).colorScheme.onSurface,
+                        height: 1.2, // Tighter line height
+                      ),
+                      maxLines: 2, // Allow 2 lines for longer titles
+                      overflow: TextOverflow.ellipsis,
+                    ),
+
+                    const SizedBox(height: 6), // Reduced spacing
+
+                    // Description with flexible height
+                    Flexible(
+                      child: Text(
+                        topic.description,
+                        style: GoogleFonts.inter(
+                          fontSize: 11, // Smaller font for more content
+                          color: Theme.of(context)
+                              .colorScheme
+                              .onSurface
+                              .withOpacity(0.7),
+                          height: 1.3,
+                        ),
+                        maxLines: 3, // Allow up to 3 lines
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
-                  ),
-                ],
-              ),
 
-              const SizedBox(height: 12),
+                    const SizedBox(
+                        height: 12), // Fixed spacing instead of Spacer
 
-              // Title with proper constraints
-              Text(
-                topic.title,
-                style: GoogleFonts.inter(
-                  fontSize: 14, // Slightly smaller for better fit
-                  fontWeight: FontWeight.w600,
-                  color: Theme.of(context).colorScheme.onSurface,
-                  height: 1.2, // Tighter line height
+                    // Footer with metadata - use Wrap for overflow protection
+                    // Wrap(
+                    //   spacing: 8,
+                    //   runSpacing: 4,
+                    //   crossAxisAlignment: WrapCrossAlignment.center,
+                    //   children: [
+                    //     Row(
+                    //       mainAxisSize: MainAxisSize.min,
+                    //       children: [
+                    //         const Icon(
+                    //           Icons.schedule,
+                    //           size: 12,
+                    //           color: AppTheme.onSurfaceVariant,
+                    //         ),
+                    //         const SizedBox(width: 3),
+                    //         Text(
+                    //           '${topic.estimatedMinutes}min',
+                    //           style: GoogleFonts.inter(
+                    //             fontSize: 10,
+                    //             color: AppTheme.onSurfaceVariant,
+                    //           ),
+                    //         ),
+                    //       ],
+                    //     ),
+                    //     Row(
+                    //       mainAxisSize: MainAxisSize.min,
+                    //       children: [
+                    //         const Icon(
+                    //           Icons.book_outlined,
+                    //           size: 12,
+                    //           color: AppTheme.onSurfaceVariant,
+                    //         ),
+                    //         const SizedBox(width: 3),
+                    //         Text(
+                    //           '${topic.scriptureCount}',
+                    //           style: GoogleFonts.inter(
+                    //             fontSize: 10,
+                    //             color: AppTheme.onSurfaceVariant,
+                    //           ),
+                    //         ),
+                    //       ],
+                    //     ),
+                    //   ],
+                    // ),
+                  ],
                 ),
-                maxLines: 2, // Allow 2 lines for longer titles
-                overflow: TextOverflow.ellipsis,
               ),
-
-              const SizedBox(height: 6), // Reduced spacing
-
-              // Description with flexible height
-              Flexible(
-                child: Text(
-                  topic.description,
-                  style: GoogleFonts.inter(
-                    fontSize: 11, // Smaller font for more content
-                    color: Theme.of(context)
-                        .colorScheme
-                        .onSurface
-                        .withOpacity(0.7),
-                    height: 1.3,
-                  ),
-                  maxLines: 3, // Allow up to 3 lines
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-
-              const SizedBox(height: 12), // Fixed spacing instead of Spacer
-
-              // Footer with metadata - use Wrap for overflow protection
-              // Wrap(
-              //   spacing: 8,
-              //   runSpacing: 4,
-              //   crossAxisAlignment: WrapCrossAlignment.center,
-              //   children: [
-              //     Row(
-              //       mainAxisSize: MainAxisSize.min,
-              //       children: [
-              //         const Icon(
-              //           Icons.schedule,
-              //           size: 12,
-              //           color: AppTheme.onSurfaceVariant,
-              //         ),
-              //         const SizedBox(width: 3),
-              //         Text(
-              //           '${topic.estimatedMinutes}min',
-              //           style: GoogleFonts.inter(
-              //             fontSize: 10,
-              //             color: AppTheme.onSurfaceVariant,
-              //           ),
-              //         ),
-              //       ],
-              //     ),
-              //     Row(
-              //       mainAxisSize: MainAxisSize.min,
-              //       children: [
-              //         const Icon(
-              //           Icons.book_outlined,
-              //           size: 12,
-              //           color: AppTheme.onSurfaceVariant,
-              //         ),
-              //         const SizedBox(width: 3),
-              //         Text(
-              //           '${topic.scriptureCount}',
-              //           style: GoogleFonts.inter(
-              //             fontSize: 10,
-              //             color: AppTheme.onSurfaceVariant,
-              //           ),
-              //         ),
-              //       ],
-              //     ),
-              //   ],
-              // ),
-            ],
+            ),
           ),
         ),
       ),

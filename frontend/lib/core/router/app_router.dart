@@ -12,7 +12,8 @@ import '../presentation/widgets/app_shell.dart';
 import '../error/error_page.dart';
 import '../../features/home/presentation/pages/home_screen.dart';
 import '../../features/study_generation/presentation/pages/generate_study_screen.dart';
-import '../../features/study_generation/domain/services/study_navigation_service.dart';
+import '../navigation/study_navigator.dart';
+import '../di/injection_container.dart';
 import '../../features/saved_guides/presentation/pages/saved_screen.dart';
 import '../../features/settings/presentation/pages/settings_screen.dart';
 import '../../features/study_topics/presentation/pages/study_topics_screen.dart';
@@ -148,7 +149,7 @@ class AppRouter {
           // Parse navigation source from query parameters
           final sourceString = state.uri.queryParameters['source'];
           final navigationSource =
-              StudyNavigationService.parseNavigationSource(sourceString);
+              sl<StudyNavigator>().parseNavigationSource(sourceString);
 
           if (state.extra is StudyGuide) {
             studyGuide = state.extra as StudyGuide;
