@@ -292,6 +292,7 @@ Future<void> initializeDependencies() async {
   sl.registerLazySingleton(
     () => RecommendedTopicsBloc(
       topicsService: sl(),
+      languagePreferenceService: sl(),
     ),
     dispose: (bloc) => bloc.close(),
   );
@@ -307,6 +308,7 @@ Future<void> initializeDependencies() async {
     () => HomeBloc(
       topicsBloc: sl(),
       studyGenerationBloc: sl(),
+      languagePreferenceService: sl(),
     ),
     dispose: (bloc) => bloc.close(),
   );
@@ -322,6 +324,7 @@ Future<void> initializeDependencies() async {
 
   sl.registerFactory(() => StudyTopicsBloc(
         repository: sl(),
+        languagePreferenceService: sl(),
       ));
 
   //! Onboarding

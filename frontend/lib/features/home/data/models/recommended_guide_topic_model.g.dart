@@ -17,6 +17,9 @@ RecommendedGuideTopicModel _$RecommendedGuideTopicModelFromJson(
           .map((e) => e as String)
           .toList(),
       tags: (json['tags'] as List<dynamic>).map((e) => e as String).toList(),
+      englishTitle: json['english_title'] as String?,
+      englishDescription: json['english_description'] as String?,
+      englishCategory: json['english_category'] as String?,
       isFeatured: json['is_featured'] as bool? ?? false,
       createdAt: json['created_at'] == null
           ? null
@@ -34,6 +37,9 @@ Map<String, dynamic> _$RecommendedGuideTopicModelToJson(
       'is_featured': instance.isFeatured,
       'created_at': instance.createdAt.toIso8601String(),
       'key_verses': instance.keyVerses,
+      'english_title': instance.englishTitle,
+      'english_description': instance.englishDescription,
+      'english_category': instance.englishCategory,
     };
 
 RecommendedGuideTopicsResponse _$RecommendedGuideTopicsResponseFromJson(

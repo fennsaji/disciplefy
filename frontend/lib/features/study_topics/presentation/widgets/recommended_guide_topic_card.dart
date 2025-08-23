@@ -29,8 +29,8 @@ class RecommendedGuideTopicCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final iconData = CategoryUtils.getIconForCategory(topic.category);
-    final color = CategoryUtils.getColorForCategory(context, topic.category);
+    final iconData = CategoryUtils.getIconForTopic(topic);
+    final color = CategoryUtils.getColorForTopic(context, topic);
 
     return GestureDetector(
       onTap: isDisabled ? null : onTap,

@@ -75,7 +75,7 @@ class DailyVerseBloc extends Bloc<DailyVerseEvent, DailyVerseState> {
     try {
       final preferredLanguage = await _getPreferredLanguageWithFallback();
       await _loadAndEmitVerse(
-        getDailyVerse(GetDailyVerseParams.today()),
+        getDailyVerse(GetDailyVerseParams.today(preferredLanguage)),
         preferredLanguage,
         emit,
         errorMessage: 'Failed to load today\'s verse',
@@ -97,7 +97,8 @@ class DailyVerseBloc extends Bloc<DailyVerseEvent, DailyVerseState> {
     try {
       final preferredLanguage = await _getPreferredLanguageWithFallback();
       await _loadAndEmitVerse(
-        getDailyVerse(GetDailyVerseParams.forDate(event.date)),
+        getDailyVerse(
+            GetDailyVerseParams.forDate(event.date, preferredLanguage)),
         preferredLanguage,
         emit,
         errorMessage: 'Failed to load verse for ${event.date}',
@@ -110,19 +111,38 @@ class DailyVerseBloc extends Bloc<DailyVerseEvent, DailyVerseState> {
   }
 
   /// Change displayed language (temporary, not persisted)
-  void _onChangeVerseLanguage(
+  /// This now fetches a new verse with the selected language
+  Future<void> _onChangeVerseLanguage(
     ChangeVerseLanguage event,
     Emitter<DailyVerseState> emit,
-  ) {
-    // NULL SAFETY FIX: Add proper null checks and type validation
+  ) async {
+    // Get the current state to preserve the date
     final currentState = state;
+    DateTime? currentDate;
 
     if (currentState is DailyVerseLoaded) {
-      // Safe cast - we already verified the type
-      emit(currentState.copyWith(currentLanguage: event.language));
+      currentDate = currentState.verse.date;
     } else if (currentState is DailyVerseOffline) {
-      // Safe cast - we already verified the type
-      emit(currentState.copyWith(currentLanguage: event.language));
+      currentDate = currentState.verse.date;
+    }
+
+    if (currentDate != null) {
+      // Fetch verse with new language
+      emit(DailyVerseLoading(isRefreshing: true));
+
+      try {
+        await _loadAndEmitVerse(
+          getDailyVerse(
+              GetDailyVerseParams.forDate(currentDate, event.language)),
+          event.language,
+          emit,
+          errorMessage: 'Failed to load verse in ${event.language.displayName}',
+        );
+      } catch (e) {
+        emit(DailyVerseError(
+          message: 'Failed to load verse in ${event.language.displayName}: $e',
+        ));
+      }
     } else {
       // Invalid state for language change - emit error
       emit(const DailyVerseError(

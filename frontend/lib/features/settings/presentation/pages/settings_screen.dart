@@ -1288,7 +1288,7 @@ class _SettingsScreenContent extends StatelessWidget {
   }
 
   Future<void> _launchPrivacyPolicy() async {
-    final uri = Uri.parse('https://disciplefy.com/privacy');
+    final uri = Uri.parse('https://policies.disciplefy.in/privacy-policy');
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri, mode: LaunchMode.externalApplication);
     }
@@ -1296,7 +1296,7 @@ class _SettingsScreenContent extends StatelessWidget {
 
   Future<void> _launchFeedback() async {
     final uri =
-        Uri.parse('mailto:fennsaji@gmail.com?subject=Disciplefy Feedback');
+        Uri.parse('mailto:feedback@disciplefy.in?subject=Disciplefy Feedback');
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri);
     }

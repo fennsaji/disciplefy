@@ -23,11 +23,13 @@ abstract class StudyTopicsRepository {
 
   /// Fetches available topic categories.
   ///
+  /// [language] - Language code for localization (defaults to 'en')
   /// [forceRefresh] - If true, bypasses cache and fetches fresh data
   ///
   /// Returns [Right] with categories list on success,
   /// [Left] with [Failure] on error.
   Future<Either<Failure, List<String>>> getCategories({
+    String language = 'en',
     bool forceRefresh = false,
   });
 

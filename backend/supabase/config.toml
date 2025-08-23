@@ -113,8 +113,8 @@ site_url = "http://localhost:59641"
 additional_redirect_urls = [
   "http://localhost:59641",  # Flutter web app (development)
   "http://localhost:59641/",  # Flutter web app with trailing slash
-  "https://disciplefy.vercel.app", # Production Flutter app
-  "https://disciplefy.vercel.app/", # Production Flutter app with trailing slash
+  "https://www.disciplefy.in", # Production Flutter app
+  "https://www.disciplefy.in/", # Production Flutter app with trailing slash
   "com.disciplefy.bible_study_app://auth/callback",  # Mobile deep link
 ]
 # How long tokens are valid for, in seconds. Defaults to 3600 (1 hour), maximum 604,800 (1 week).

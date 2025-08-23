@@ -120,7 +120,7 @@ Navigate to your GitHub repository → Settings → Secrets and Variables → Ac
 5. Create **OAuth 2.0 Client ID** for web application
 6. Add authorized redirect URIs:
    - `https://your-project.supabase.co/auth/v1/callback`
-   - `https://disciplefy.vercel.app/auth/callback`
+   - `https://www.disciplefy.in/auth/callback`
 7. Copy the **Client ID** and **Client Secret**
 
 ### 4. Vercel Configuration
@@ -279,7 +279,7 @@ After setting up secrets, test the backend deployment:
 1. Go to **Actions** tab in your GitHub repository
 2. Click **Deploy Frontend to Production**
 3. Click **Run workflow** → **Run workflow**
-4. Check that https://disciplefy.vercel.app loads correctly
+4. Check that https://www.disciplefy.in loads correctly
 
 #### Development Deployment
 1. Go to **Actions** tab in your GitHub repository
