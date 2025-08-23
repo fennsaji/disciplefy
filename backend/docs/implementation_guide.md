@@ -58,7 +58,7 @@ UNION ALL
 SELECT 
   'New user relationships' as table_name,
   COUNT(*) as record_count
-FROM user_study_guides_new
+FROM user_study_guides
 
 UNION ALL
 
@@ -307,7 +307,7 @@ FROM pg_constraint
 WHERE contype = 'f' AND conname LIKE '%study_guide%';
 
 # Fix: Drop constraints before migration
-ALTER TABLE user_study_guides_new DROP CONSTRAINT IF EXISTS unique_user_guide_new;
+ALTER TABLE user_study_guides DROP CONSTRAINT IF EXISTS unique_user_guide_new;
 ```
 
 #### **Performance Issues**

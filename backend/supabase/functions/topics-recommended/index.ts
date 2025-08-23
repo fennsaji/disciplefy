@@ -19,8 +19,6 @@ interface RecommendedGuideTopic {
   readonly id: string
   readonly title: string
   readonly description: string
-  readonly difficulty_level: 'beginner' | 'intermediate' | 'advanced'
-  readonly estimated_duration: string
   readonly key_verses: readonly string[]
   readonly category: string
   readonly tags: readonly string[]
@@ -40,7 +38,7 @@ interface RecommendedGuideTopicsResponse extends ApiSuccessResponse<{
  */
 interface TopicsQueryParams {
   readonly category?: string
-  readonly difficulty?: string
+  readonly categories?: readonly string[]
   readonly language: string
   readonly limit: number
   readonly offset: number
@@ -65,7 +63,6 @@ async function handleTopicsRecommended(req: Request, services: ServiceContainer)
   // Log analytics event
   await services.analyticsLogger.logEvent('recommended_guide_topics_accessed', {
     category: queryParams.category,
-    difficulty: queryParams.difficulty,
     language: queryParams.language,
     total_results: topicsData.total
   }, req.headers.get('x-forwarded-for'))
@@ -96,6 +93,16 @@ function parseQueryParameters(url: string): TopicsQueryParams {
   const limit = parseInt(searchParams.get('limit') || String(DEFAULT_LIMIT))
   const offset = parseInt(searchParams.get('offset') || String(DEFAULT_OFFSET))
 
+  // Parse categories parameter (comma-separated values)
+  const categoriesParam = searchParams.get('categories')
+  let categories: readonly string[] | undefined
+  if (categoriesParam) {
+    categories = categoriesParam.split(',').map(cat => cat.trim()).filter(cat => cat.length > 0)
+    if (categories.length === 0) {
+      categories = undefined
+    }
+  }
+
   // Validate limit parameter
   if (limit > MAX_LIMIT) {
     throw new AppError(
@@ -114,9 +121,18 @@ function parseQueryParameters(url: string): TopicsQueryParams {
     throw new AppError('INVALID_PARAMETER', 'Offset must be a non-negative integer', 400)
   }
 
+  // Validate that only one of category or categories is provided
+  if (searchParams.get('category') && categories) {
+    throw new AppError(
+      'INVALID_PARAMETER', 
+      'Cannot specify both "category" and "categories" parameters. Use only one.',
+      400
+    )
+  }
+
   return {
     category: searchParams.get('category') || undefined,
-    difficulty: searchParams.get('difficulty') || undefined,
+    categories,
     language: searchParams.get('language') || DEFAULT_LANGUAGE,
     limit,
     offset
@@ -134,10 +150,10 @@ async function getFilteredTopics(
   categories: readonly string[]
   total: number
 }> {
-  // Use the new efficient getTopics method that handles all filter combinations
+  // Use the enhanced getTopics method that handles both single and multi-category filtering
   const topics = await repository.getTopics({
     category: params.category,
-    difficulty: params.difficulty as 'beginner' | 'intermediate' | 'advanced' | undefined,
+    categories: params.categories,
     language: params.language,
     limit: params.limit,
     offset: params.offset
@@ -146,7 +162,7 @@ async function getFilteredTopics(
   // Get categories and total count
   const [categories, total] = await Promise.all([
     repository.getCategories(params.language),
-    repository.getTopicsCount(params.category, params.difficulty, params.language)
+    repository.getTopicsCount(params.category, params.language, params.categories)
   ])
 
   return {

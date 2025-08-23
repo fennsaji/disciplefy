@@ -19,20 +19,34 @@ class DailyVerseApiService {
       : _httpService = httpService ?? HttpServiceProvider.instance;
 
   /// Get today's daily verse
-  Future<Either<Failure, DailyVerseEntity>> getTodaysVerse() async =>
-      getDailyVerse(null);
+  Future<Either<Failure, DailyVerseEntity>> getTodaysVerse(
+          [VerseLanguage? language]) async =>
+      getDailyVerse(null, language);
 
   /// Get daily verse for a specific date
-  Future<Either<Failure, DailyVerseEntity>> getDailyVerse(
-      DateTime? date) async {
+  Future<Either<Failure, DailyVerseEntity>> getDailyVerse(DateTime? date,
+      [VerseLanguage? language]) async {
     try {
       final headers = await _httpService.createHeaders();
 
-      // Build URL with optional date parameter
+      // Build URL with optional date and language parameters
       String url = '${AppConfig.supabaseUrl}$_dailyVerseEndpoint';
+      final queryParams = <String, String>{};
+
       if (date != null) {
         final dateString = date.toIso8601String().split('T')[0]; // YYYY-MM-DD
-        url += '?date=$dateString';
+        queryParams['date'] = dateString;
+      }
+
+      if (language != null) {
+        queryParams['language'] = language.code;
+      }
+
+      if (queryParams.isNotEmpty) {
+        final queryString = queryParams.entries
+            .map((e) => '${e.key}=${Uri.encodeComponent(e.value)}')
+            .join('&');
+        url += '?$queryString';
       }
 
       final response = await _httpService.get(url, headers: headers);

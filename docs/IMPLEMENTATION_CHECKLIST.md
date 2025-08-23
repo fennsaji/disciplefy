@@ -34,18 +34,15 @@ This checklist will guide you through completing all the ⚠️ placeholder sect
 emergency_contacts:
   technical_lead:
     name: "Fenn Ignatius Saji"
-    phone: "+91 70155 38461"
-    email: "fennsaji@gmail.com"
+    email: "fenn@disciplefy.in"
     
   security_officer:
     name: "Fenn Ignatius Saji"
-    phone: "+91 70155 38461"
-    email: "fennsaji@gmail.com"
+    email: "fenn@disciplefy.in"
     
   management_escalation:
     name: "Fenn Ignatius Saji"
-    phone: "+91 70155 38461"
-    email: "fennsaji@gmail.com"
+    email: "fenn@disciplefy.in"
 ```
 
 **Action Steps:**
@@ -57,8 +54,7 @@ emergency_contacts:
 *Note: Roles are consolidated under solo founder until additional team members are onboarded.*
 
 2. **Set Up 24/7 Contact Methods:**
-   - Emergency phone: +91 70155 38461 (primary contact)
-   - Emergency email: fennsaji@gmail.com (interim until disciplefy.app email setup)
+   - Emergency email: fenn@disciplefy.in (interim until disciplefy.app email setup)
    - Escalation procedures: Direct to founder for all critical issues
 
 3. **Update Documentation:**
@@ -76,22 +72,8 @@ emergency_contacts:
 legal_contacts:
   data_protection_officer:
     name: "Fenn Ignatius Saji (Interim DPO)"
-    email: "fennsaji@gmail.com"
-    phone: "+91 70155 38461"
+    email: "fenn@disciplefy.in"
     note: "Solo founder acting as interim DPO until formal certification"
-    
-  legal_counsel:
-    firm: "⚠️ To be completed after company registration"
-    contact: "⚠️ To be completed after company registration"
-    email: "⚠️ To be completed after company registration"
-    phone: "⚠️ To be completed after company registration"
-    speciality: "Data Privacy, Technology Law"
-    
-  grievance_officer_india:
-    name: "⚠️ To be completed after company registration"
-    email: "⚠️ To be completed after company registration"
-    phone: "⚠️ To be completed after company registration"
-    address: "⚠️ To be completed after company registration"
 ```
 
 *Currently operating as an unregistered early-stage startup. Legal roles and registrations will be finalized post incorporation.*
@@ -291,7 +273,7 @@ monitoring_stack:
    - Leverage Supabase built-in monitoring and logging
 
 2. **Alert Configuration:**
-   - Configure email alerts to fennsaji@gmail.com
+   - Configure email alerts to fenn@disciplefy.in
    - Set up basic uptime monitoring once domain is live
    - Plan for SMS/advanced alerting when budget allows
 
@@ -309,7 +291,7 @@ monitoring_stack:
 apple_setup:
   developer_account:
     type: "Individual (Solo Developer)"
-    apple_id: "fennsaji@gmail.com"
+    apple_id: "fenn@disciplefy.in"
     team_id: "⚠️ TBD - Will create when ready for App Store"
     
   app_configuration:
@@ -336,7 +318,7 @@ apple_setup:
 ```yaml
 google_setup:
   developer_account:
-    email: "fennsaji@gmail.com"
+    email: "fenn@disciplefy.in"
     verification: "⚠️ TBD - Will complete when ready for Play Store"
     
   app_configuration:

@@ -6,7 +6,7 @@ echo "🏗️  Building Flutter web for production..."
 # Load production environment variables
 export SUPABASE_URL="https://wzdcwxvyjuxjgzpnukvm.supabase.co"
 export SUPABASE_ANON_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind6ZGN3eHZ5anV4amd6cG51a3ZtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTE4MDY3MjMsImV4cCI6MjA2NzM4MjcyM30.FRwVStEigv5hh_-I8ct3QcY_GswCKWcEMCtkjXvq8FA"
-export APP_URL="https://disciplefy.vercel.app"
+export APP_URL="https://www.disciplefy.in"
 export GOOGLE_CLIENT_ID="587108000155-af542dhgo9rmp5hvsm1vepgqsgil438d.apps.googleusercontent.com"
 export FLUTTER_ENV="production"
 

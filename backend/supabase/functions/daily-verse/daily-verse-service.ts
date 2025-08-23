@@ -90,7 +90,7 @@ export class DailyVerseService {
   /**
    * Get daily verse for a specific date (defaults to today)
    */
-  async getDailyVerse(requestDate?: string | null): Promise<DailyVerseData> {
+  async getDailyVerse(requestDate?: string | null, language: string = 'en'): Promise<DailyVerseData> {
     const targetDate = requestDate ? new Date(requestDate) : new Date()
     const dateKey = this.formatDateKey(targetDate)
 
@@ -106,8 +106,8 @@ export class DailyVerseService {
 
       console.log(`No cached verse found, generating new verse for date: ${dateKey}`)
       
-      // Generate new verse for the date
-      const newVerse = await this.generateDailyVerse(targetDate)
+      // Generate new verse for the date with language preference
+      const newVerse = await this.generateDailyVerse(targetDate, language)
       
       // Try to cache the new verse (non-blocking)
       try {
@@ -132,7 +132,7 @@ export class DailyVerseService {
   /**
    * Generate a new daily verse using LLM with anti-repetition logic
    */
-  private async generateDailyVerse(date: Date): Promise<DailyVerseData> {
+  private async generateDailyVerse(date: Date, language: string = 'en'): Promise<DailyVerseData> {
     console.log('=== Starting daily verse generation ===')
     
     try {
@@ -144,7 +144,7 @@ export class DailyVerseService {
       
       // Always attempt LLM generation first
       console.log('Attempting LLM verse generation...')
-      const llmResponse = await this.generateVerseWithLLM(recentReferences)
+      const llmResponse = await this.generateVerseWithLLM(recentReferences, language)
       
       console.log('LLM generation successful:', llmResponse.reference)
       
@@ -194,12 +194,12 @@ export class DailyVerseService {
   /**
    * Generate verse using LLM with proper verse content generation
    */
-  private async generateVerseWithLLM(excludeReferences: string[]): Promise<DailyVerseData> {
-    console.log('Generating daily verse using dedicated LLM method...')
+  private async generateVerseWithLLM(excludeReferences: string[], language: string = 'en'): Promise<DailyVerseData> {
+    console.log(`Generating daily verse using dedicated LLM method for language: ${language}...`)
     
     try {
       // Use the dedicated daily verse generation method from LLM service
-      const llmResponse = await this.llmService.generateDailyVerse(excludeReferences, 'en')
+      const llmResponse = await this.llmService.generateDailyVerse(excludeReferences, language)
       
       console.log(`LLM generated verse: ${llmResponse.reference}`)
       

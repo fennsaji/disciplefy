@@ -1,9 +1,16 @@
--- OAuth States Table Migration
+-- OAuth States Table Migration - ARCHIVED
 -- 
--- This table supports custom OAuth state management for enhanced CSRF protection.
+-- ⚠️ WARNING: This migration is no longer active and should not be run
+-- Table oauth_states was removed in migration 20250818000001_remove_unused_tables.sql
+-- 
+-- Original purpose: Custom OAuth state management for enhanced CSRF protection.
 -- Note: Supabase handles OAuth state validation internally by default.
--- This table is optional and only needed for custom state management implementations.
+-- This table was optional and was never actually used in the codebase.
 
+-- ARCHIVED CONTENT - DO NOT RUN
+-- The following code has been disabled because the oauth_states table was removed
+
+/*
 -- Create oauth_states table
 CREATE TABLE oauth_states (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -58,3 +65,4 @@ COMMENT ON TABLE oauth_states IS 'Optional table for custom OAuth state manageme
 COMMENT ON COLUMN oauth_states.state IS 'Random state parameter for CSRF protection';
 COMMENT ON COLUMN oauth_states.used IS 'Whether this state has been consumed';
 COMMENT ON COLUMN oauth_states.expires_at IS 'State expiration time (15 minutes from creation)';
+*/

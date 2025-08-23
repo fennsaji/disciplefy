@@ -171,7 +171,7 @@ All critical roles are currently assigned to solo founder **Fenn Ignatius Saji**
 ## 📞 **Support & Contact**
 
 ### **🐛 Technical Issues**
-- **Email:** fennsaji@gmail.com
+- **Email:** fenn@disciplefy.in
 - **Issues:** GitHub repository issues section
 - **Documentation:** All technical details in respective specification documents
 

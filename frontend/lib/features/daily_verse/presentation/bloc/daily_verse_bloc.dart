@@ -1,9 +1,12 @@
+import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/usecases/usecase.dart';
+import '../../../../core/services/language_preference_service.dart';
 import '../../domain/entities/daily_verse_entity.dart';
 import '../../domain/usecases/get_daily_verse.dart';
 import '../../domain/usecases/get_cached_verse.dart';
 import '../../domain/usecases/manage_verse_preferences.dart';
+import '../../domain/usecases/get_default_language.dart';
 import 'daily_verse_event.dart';
 import 'daily_verse_state.dart';
 
@@ -15,6 +18,11 @@ class DailyVerseBloc extends Bloc<DailyVerseEvent, DailyVerseState> {
   final SetPreferredLanguage setPreferredLanguage;
   final GetCacheStats getCacheStats;
   final ClearVerseCache clearVerseCache;
+  final GetDefaultLanguage getDefaultLanguage;
+  final LanguagePreferenceService languagePreferenceService;
+
+  // Language change subscription
+  StreamSubscription<dynamic>? _languageChangeSubscription;
 
   DailyVerseBloc({
     required this.getDailyVerse,
@@ -23,6 +31,8 @@ class DailyVerseBloc extends Bloc<DailyVerseEvent, DailyVerseState> {
     required this.setPreferredLanguage,
     required this.getCacheStats,
     required this.clearVerseCache,
+    required this.getDefaultLanguage,
+    required this.languagePreferenceService,
   }) : super(const DailyVerseInitial()) {
     on<LoadTodaysVerse>(_onLoadTodaysVerse);
     on<LoadVerseForDate>(_onLoadVerseForDate);
@@ -32,6 +42,27 @@ class DailyVerseBloc extends Bloc<DailyVerseEvent, DailyVerseState> {
     on<LoadCachedVerse>(_onLoadCachedVerse);
     on<GetCacheStatsEvent>(_onGetCacheStats);
     on<ClearVerseCacheEvent>(_onClearVerseCache);
+    on<LanguagePreferenceChanged>(_onLanguagePreferenceChanged);
+
+    // Listen for language preference changes
+    _setupLanguageChangeListener();
+  }
+
+  /// Setup listener for language preference changes from settings
+  void _setupLanguageChangeListener() {
+    _languageChangeSubscription =
+        languagePreferenceService.languageChanges.listen(
+      (appLanguage) {
+        // Convert AppLanguage to VerseLanguage and trigger reload
+        add(const LanguagePreferenceChanged());
+      },
+    );
+  }
+
+  @override
+  Future<void> close() {
+    _languageChangeSubscription?.cancel();
+    return super.close();
   }
 
   /// Load today's verse
@@ -44,7 +75,7 @@ class DailyVerseBloc extends Bloc<DailyVerseEvent, DailyVerseState> {
     try {
       final preferredLanguage = await _getPreferredLanguageWithFallback();
       await _loadAndEmitVerse(
-        getDailyVerse(GetDailyVerseParams.today()),
+        getDailyVerse(GetDailyVerseParams.today(preferredLanguage)),
         preferredLanguage,
         emit,
         errorMessage: 'Failed to load today\'s verse',
@@ -66,7 +97,8 @@ class DailyVerseBloc extends Bloc<DailyVerseEvent, DailyVerseState> {
     try {
       final preferredLanguage = await _getPreferredLanguageWithFallback();
       await _loadAndEmitVerse(
-        getDailyVerse(GetDailyVerseParams.forDate(event.date)),
+        getDailyVerse(
+            GetDailyVerseParams.forDate(event.date, preferredLanguage)),
         preferredLanguage,
         emit,
         errorMessage: 'Failed to load verse for ${event.date}',
@@ -79,19 +111,38 @@ class DailyVerseBloc extends Bloc<DailyVerseEvent, DailyVerseState> {
   }
 
   /// Change displayed language (temporary, not persisted)
-  void _onChangeVerseLanguage(
+  /// This now fetches a new verse with the selected language
+  Future<void> _onChangeVerseLanguage(
     ChangeVerseLanguage event,
     Emitter<DailyVerseState> emit,
-  ) {
-    // NULL SAFETY FIX: Add proper null checks and type validation
+  ) async {
+    // Get the current state to preserve the date
     final currentState = state;
+    DateTime? currentDate;
 
     if (currentState is DailyVerseLoaded) {
-      // Safe cast - we already verified the type
-      emit(currentState.copyWith(currentLanguage: event.language));
+      currentDate = currentState.verse.date;
     } else if (currentState is DailyVerseOffline) {
-      // Safe cast - we already verified the type
-      emit(currentState.copyWith(currentLanguage: event.language));
+      currentDate = currentState.verse.date;
+    }
+
+    if (currentDate != null) {
+      // Fetch verse with new language
+      emit(DailyVerseLoading(isRefreshing: true));
+
+      try {
+        await _loadAndEmitVerse(
+          getDailyVerse(
+              GetDailyVerseParams.forDate(currentDate, event.language)),
+          event.language,
+          emit,
+          errorMessage: 'Failed to load verse in ${event.language.displayName}',
+        );
+      } catch (e) {
+        emit(DailyVerseError(
+          message: 'Failed to load verse in ${event.language.displayName}: $e',
+        ));
+      }
     } else {
       // Invalid state for language change - emit error
       emit(const DailyVerseError(
@@ -190,15 +241,38 @@ class DailyVerseBloc extends Bloc<DailyVerseEvent, DailyVerseState> {
     }
   }
 
+  /// Handle language preference change from settings
+  Future<void> _onLanguagePreferenceChanged(
+    LanguagePreferenceChanged event,
+    Emitter<DailyVerseState> emit,
+  ) async {
+    // Only reload if we have a loaded or offline verse
+    final currentState = state;
+    if (currentState is DailyVerseLoaded || currentState is DailyVerseOffline) {
+      // Reload today's verse with new language preference
+      add(const LoadTodaysVerse());
+    }
+  }
+
   // ===== PRIVATE HELPER METHODS =====
   // Extracted to reduce method length and improve code organization
 
   /// Gets preferred language with English fallback
+  /// Uses unified language preference service first, then falls back to local preferences
   Future<VerseLanguage> _getPreferredLanguageWithFallback() async {
-    final preferredLanguageResult = await getPreferredLanguage(NoParams());
-    return preferredLanguageResult.fold(
-      (failure) => VerseLanguage.english,
-      (language) => language,
+    // Try to get default language from unified service first
+    final defaultLanguageResult = await getDefaultLanguage(NoParams());
+
+    return await defaultLanguageResult.fold(
+      (failure) async {
+        // If default language fails, try local preferences
+        final preferredLanguageResult = await getPreferredLanguage(NoParams());
+        return preferredLanguageResult.fold(
+          (failure) => VerseLanguage.english,
+          (language) => language,
+        );
+      },
+      (language) async => language,
     );
   }
 

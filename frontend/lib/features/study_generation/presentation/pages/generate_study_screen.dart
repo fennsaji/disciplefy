@@ -1,10 +1,19 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:get_it/get_it.dart';
 
 import '../../../../core/theme/app_theme.dart';
-import '../../domain/services/study_navigation_service.dart';
+import '../../../../core/widgets/keyboard_aware_scaffold.dart';
+import '../../../../core/utils/device_keyboard_handler.dart';
+import '../../../../core/services/language_preference_service.dart';
+import '../../../../core/models/app_language.dart';
+import '../../domain/mappers/app_language_mapper.dart';
+import '../../domain/usecases/get_default_study_language.dart';
+import '../../../../core/navigation/study_navigator.dart';
+import '../../../../core/usecases/usecase.dart';
 import '../bloc/study_bloc.dart';
 import '../bloc/study_event.dart';
 import '../bloc/study_state.dart';
@@ -28,7 +37,14 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen> {
   StudyInputMode _selectedMode = StudyInputMode.scripture;
   StudyLanguage _selectedLanguage = StudyLanguage.english;
   bool _isInputValid = false;
+  bool _isGeneratingStudyGuide = false;
   String? _validationError;
+
+  // Language preference service for database integration
+  late final LanguagePreferenceService _languagePreferenceService;
+
+  // Navigation service
+  late final StudyNavigator _navigator;
 
   // Scripture reference suggestions
   final List<String> _scriptureeSuggestions = [
@@ -66,7 +82,38 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen> {
   @override
   void initState() {
     super.initState();
+    _languagePreferenceService = GetIt.instance<LanguagePreferenceService>();
+    _navigator = GetIt.instance<StudyNavigator>();
     _inputController.addListener(_validateInput);
+    _loadDefaultLanguage();
+  }
+
+  /// Load the default language from user preferences
+  Future<void> _loadDefaultLanguage() async {
+    try {
+      final getDefaultStudyLanguage = GetIt.instance<GetDefaultStudyLanguage>();
+      final result = await getDefaultStudyLanguage(NoParams());
+
+      result.fold(
+        (failure) {
+          if (kDebugMode) {
+            print(
+                '❌ [GENERATE STUDY] Failed to load default language: ${failure.message}');
+          }
+        },
+        (language) {
+          if (mounted) {
+            setState(() {
+              _selectedLanguage = language;
+            });
+          }
+        },
+      );
+    } catch (e) {
+      if (kDebugMode) {
+        print('❌ [GENERATE STUDY] Error loading default language: $e');
+      }
+    }
   }
 
   @override
@@ -120,106 +167,162 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen> {
   Widget build(BuildContext context) {
     final screenHeight = MediaQuery.of(context).size.height;
     final isLargeScreen = screenHeight > 700;
+    final keyboardHeight = MediaQuery.of(context).viewInsets.bottom;
+    final isKeyboardVisible = keyboardHeight > 0;
 
-    return Scaffold(
+    // 🔧 Phase 2: Enhanced device-specific keyboard handling
+    final useAdvancedKeyboardHandling =
+        DeviceKeyboardHandler.needsCustomKeyboardHandling;
+
+    if (kDebugMode && useAdvancedKeyboardHandling) {
+      print(
+          '🔧 [GENERATE STUDY] Using KeyboardAwareScaffold for: ${DeviceKeyboardHandler.deviceManufacturer}');
+    }
+
+    final appBar = AppBar(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      appBar: AppBar(
-        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-        elevation: 0,
-        automaticallyImplyLeading: false,
-        title: Text(
-          'Generate Study Guide',
-          style: GoogleFonts.playfairDisplay(
-            fontSize: 20,
-            fontWeight: FontWeight.w600,
+      elevation: 0,
+      automaticallyImplyLeading: false,
+      title: Text(
+        'Generate Study Guide',
+        style: GoogleFonts.playfairDisplay(
+          fontSize: 20,
+          fontWeight: FontWeight.w600,
+          color: Theme.of(context).colorScheme.primary,
+        ),
+      ),
+      centerTitle: true,
+      actions: [
+        IconButton(
+          onPressed: () => context.push('/saved'),
+          icon: Icon(
+            Icons.bookmark_outline,
             color: Theme.of(context).colorScheme.primary,
           ),
+          tooltip: 'View Saved Guides',
         ),
-        centerTitle: true,
-        actions: [
-          IconButton(
-            onPressed: () => context.push('/saved'),
-            icon: Icon(
-              Icons.bookmark_outline,
-              color: Theme.of(context).colorScheme.primary,
-            ),
-            tooltip: 'View Saved Guides',
-          ),
-        ],
-      ),
-      body: BlocListener<StudyBloc, StudyState>(
-        listener: (context, state) {
-          if (state is StudyGenerationSuccess) {
-            // Navigate to study guide screen with generated content
-            StudyNavigationService.navigateToStudyGuide(
-              context,
-              studyGuide: state.studyGuide,
-              source: StudyNavigationSource.generate,
-            );
-          } else if (state is StudyGenerationFailure) {
-            // Show error message with retry option
-            _showErrorDialog(context, state.failure.message, state.isRetryable);
-          }
-        },
-        child: SafeArea(
-          child: SingleChildScrollView(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  SizedBox(height: isLargeScreen ? 32 : 24),
+      ],
+    );
 
-                  // Mode Toggle
-                  _buildModeToggle(),
+    final body = BlocListener<StudyBloc, StudyState>(
+      listener: (context, state) {
+        if (state is StudyGenerationSuccess) {
+          // Stop loading and navigate to study guide screen with generated content
+          setState(() {
+            _isGeneratingStudyGuide = false;
+          });
+          _navigator.navigateToStudyGuide(
+            context,
+            studyGuide: state.studyGuide,
+            source: StudyNavigationSource.generate,
+          );
+        } else if (state is StudyGenerationFailure) {
+          // Stop loading and show error message with retry option
+          setState(() {
+            _isGeneratingStudyGuide = false;
+          });
 
-                  SizedBox(height: isLargeScreen ? 24 : 16),
+          final displayMessage = kDebugMode
+              ? state.failure.message
+              : 'Something went wrong. Please try again.';
 
-                  // Language Selection
-                  _buildLanguageSelection(),
+          _showErrorDialog(context, displayMessage, state.isRetryable);
+        } else if (state is StudyGenerationInProgress) {
+          // Update loading state based on BLoC state
+          setState(() {
+            _isGeneratingStudyGuide = true;
+          });
+        } else if (state is StudyInitial) {
+          // Clear loading state when returning to initial state
+          setState(() {
+            _isGeneratingStudyGuide = false;
+          });
+        }
+      },
+      child: SafeArea(
+        child: Column(
+          children: [
+            Expanded(
+              child: SingleChildScrollView(
+                padding: EdgeInsets.only(
+                  left: 24,
+                  right: 24,
+                  bottom:
+                      isKeyboardVisible ? 20 : 0, // 🔧 FIX: Keyboard padding
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    SizedBox(height: isLargeScreen ? 32 : 24),
 
-                  SizedBox(height: isLargeScreen ? 32 : 24),
+                    // Mode Toggle
+                    _buildModeToggle(),
 
-                  // Input Section
-                  _buildInputSection(),
+                    SizedBox(height: isLargeScreen ? 24 : 16),
 
-                  SizedBox(height: isLargeScreen ? 24 : 16),
+                    // Language Selection
+                    _buildLanguageSelection(),
 
-                  // Suggestions
-                  _buildSuggestions(),
+                    SizedBox(height: isLargeScreen ? 32 : 24),
 
-                  SizedBox(height: isLargeScreen ? 32 : 24),
+                    // Input Section
+                    _buildInputSection(),
 
-                  // Generate Button and Status
-                  BlocBuilder<StudyBloc, StudyState>(
-                    builder: (context, state) => _buildGenerateButton(state),
-                  ),
+                    SizedBox(height: isLargeScreen ? 24 : 16),
 
-                  // Recent Guides Section (Bottom section as per Option 2)
-                  const RecentGuidesSection(),
+                    // Suggestions
+                    _buildSuggestions(),
 
-                  SizedBox(height: isLargeScreen ? 40 : 24),
-                ],
+                    SizedBox(height: isLargeScreen ? 32 : 24),
+
+                    // Generate Button and Status
+                    BlocBuilder<StudyBloc, StudyState>(
+                      builder: (context, state) => _buildGenerateButton(state),
+                    ),
+
+                    // 🔧 FIX: Only show recent guides when keyboard is hidden
+                    if (!isKeyboardVisible) ...[
+                      const RecentGuidesSection(),
+                      SizedBox(height: isLargeScreen ? 40 : 24),
+                    ],
+                  ],
+                ),
               ),
             ),
-          ),
+          ],
         ),
       ),
     );
+
+    // 🔧 Phase 2: Choose appropriate scaffold based on device requirements
+    if (useAdvancedKeyboardHandling) {
+      return KeyboardAwareScaffold(
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        appBar: appBar,
+        child: body,
+      );
+    } else {
+      return Scaffold(
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        resizeToAvoidBottomInset: true, // 🔧 FIX: Explicitly handle keyboard
+        appBar: appBar,
+        body: body,
+      );
+    }
   }
 
   Widget _buildModeToggle() => Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'What would you like to study?',
-            style: GoogleFonts.inter(
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-              color: Theme.of(context).colorScheme.onBackground,
-            ),
-          ),
-          const SizedBox(height: 16),
+          // Text(
+          //   'What would you like to study?',
+          //   style: GoogleFonts.inter(
+          //     fontSize: 18,
+          //     fontWeight: FontWeight.w600,
+          //     color: Theme.of(context).colorScheme.onBackground,
+          //   ),
+          // ),
+          // const SizedBox(height: 16),
           Container(
             decoration: BoxDecoration(
               color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
@@ -268,26 +371,26 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen> {
               children: [
                 Expanded(
                   child: _LanguageToggleButton(
-                    flag: '🇺🇸',
                     label: 'English',
                     isSelected: _selectedLanguage == StudyLanguage.english,
-                    onTap: () => _switchLanguage(StudyLanguage.english),
+                    onTap: () async =>
+                        await _switchLanguage(StudyLanguage.english),
                   ),
                 ),
                 Expanded(
                   child: _LanguageToggleButton(
-                    flag: '🇮🇳',
                     label: 'हिन्दी',
                     isSelected: _selectedLanguage == StudyLanguage.hindi,
-                    onTap: () => _switchLanguage(StudyLanguage.hindi),
+                    onTap: () async =>
+                        await _switchLanguage(StudyLanguage.hindi),
                   ),
                 ),
                 Expanded(
                   child: _LanguageToggleButton(
-                    flag: '🇮🇳',
                     label: 'മലയാളം',
                     isSelected: _selectedLanguage == StudyLanguage.malayalam,
-                    onTap: () => _switchLanguage(StudyLanguage.malayalam),
+                    onTap: () async =>
+                        await _switchLanguage(StudyLanguage.malayalam),
                   ),
                 ),
               ],
@@ -411,7 +514,8 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen> {
   }
 
   Widget _buildGenerateButton(StudyState state) {
-    final isLoading = state is StudyGenerationInProgress;
+    final isLoading =
+        state is StudyGenerationInProgress || _isGeneratingStudyGuide;
 
     return Column(
       children: [
@@ -469,7 +573,9 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen> {
         SizedBox(
           width: double.infinity,
           child: ElevatedButton(
-            onPressed: _isInputValid && !isLoading ? _generateStudyGuide : null,
+            onPressed: _isInputValid && !isLoading && !_isGeneratingStudyGuide
+                ? _generateStudyGuide
+                : null,
             style: ElevatedButton.styleFrom(
               backgroundColor: Theme.of(context).colorScheme.primary,
               foregroundColor: Colors.white,
@@ -505,19 +611,56 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen> {
     _inputFocusNode.requestFocus();
   }
 
-  void _switchLanguage(StudyLanguage language) {
+  Future<void> _switchLanguage(StudyLanguage language) async {
+    if (kDebugMode) {
+      print('🔄 [GENERATE STUDY] User switching language to: ${language.code}');
+    }
+
     setState(() {
       _selectedLanguage = language;
     });
+
+    // Save language preference to database via LanguagePreferenceService
+    try {
+      final appLanguage = language.toAppLanguage();
+      await _languagePreferenceService.saveLanguagePreference(appLanguage);
+
+      if (kDebugMode) {
+        print('✅ [GENERATE STUDY] Language preference saved: ${language.code}');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('❌ [GENERATE STUDY] Failed to save language preference: $e');
+      }
+      // Continue silently - the local state is still updated
+      // and the preference will be saved to database when possible
+    }
   }
 
   void _generateStudyGuide() {
     if (!_isInputValid) return;
 
+    // Prevent multiple clicks during generation
+    if (_isGeneratingStudyGuide) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+              'Study guide generation already in progress. Please wait...'),
+          duration: Duration(seconds: 2),
+        ),
+      );
+      return;
+    }
+
     final input = _inputController.text.trim();
     final inputType =
         _selectedMode == StudyInputMode.scripture ? 'scripture' : 'topic';
     final languageCode = _selectedLanguage.code;
+
+    // Set loading state immediately
+    setState(() {
+      _isGeneratingStudyGuide = true;
+    });
 
     // Trigger BLoC event to generate study guide
     context.read<StudyBloc>().add(
@@ -681,13 +824,11 @@ class _ModeToggleButton extends StatelessWidget {
 
 /// Language toggle button widget.
 class _LanguageToggleButton extends StatelessWidget {
-  final String flag;
   final String label;
   final bool isSelected;
   final VoidCallback onTap;
 
   const _LanguageToggleButton({
-    required this.flag,
     required this.label,
     required this.isSelected,
     required this.onTap,
@@ -704,24 +845,18 @@ class _LanguageToggleButton extends StatelessWidget {
                 : Colors.transparent,
             borderRadius: BorderRadius.circular(8),
           ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const SizedBox(height: 4),
-              Text(
-                label,
-                style: GoogleFonts.inter(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: isSelected
-                      ? Colors.white
-                      : Theme.of(context).colorScheme.primary,
-                ),
-                textAlign: TextAlign.center,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ],
+          child: Text(
+            label,
+            style: GoogleFonts.inter(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: isSelected
+                  ? Colors.white
+                  : Theme.of(context).colorScheme.primary,
+            ),
+            textAlign: TextAlign.center,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
         ),
       );

@@ -107,3 +107,12 @@ class CacheFailure extends Failure {
     super.context,
   });
 }
+
+/// Failure when a requested resource is not found.
+class NotFoundFailure extends Failure {
+  const NotFoundFailure({
+    super.message = 'The requested resource was not found.',
+    super.code = 'NOT_FOUND_ERROR',
+    super.context,
+  });
+}

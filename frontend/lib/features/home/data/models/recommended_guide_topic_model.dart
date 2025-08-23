@@ -6,42 +6,41 @@ part 'recommended_guide_topic_model.g.dart';
 /// Data model for recommended guide topic API responses.
 ///
 /// This model handles the serialization/deserialization of recommended guide topics
-/// from the backend API and converts them to domain entities.
+/// from the backend API and converts them to domain entities. Now supports multilingual
+/// content with English fallback data for search functionality.
 @JsonSerializable(fieldRename: FieldRename.snake)
 class RecommendedGuideTopicModel extends RecommendedGuideTopic {
-  @JsonKey(name: 'difficulty_level')
-  final String difficultyLevel;
-
-  @JsonKey(name: 'estimated_duration')
-  final String estimatedDuration;
-
   @JsonKey(name: 'key_verses')
   final List<String> keyVerses;
+
+  /// English fallback fields for search functionality (null for English language responses)
+  @JsonKey(name: 'english_title')
+  final String? englishTitle;
+
+  @JsonKey(name: 'english_description')
+  final String? englishDescription;
+
+  @override
+  @JsonKey(name: 'english_category')
+  final String? englishCategory;
 
   RecommendedGuideTopicModel({
     required super.id,
     required super.title,
     required super.description,
     required super.category,
-    required this.difficultyLevel,
-    required this.estimatedDuration,
     required this.keyVerses,
     required super.tags,
+    this.englishTitle,
+    this.englishDescription,
+    this.englishCategory,
     super.isFeatured = false, // Default to false if not provided
     DateTime? createdAt, // Allow null parameter
   }) : super(
-          difficulty: difficultyLevel,
-          estimatedMinutes: _parseDuration(estimatedDuration),
+          englishCategory: englishCategory,
           scriptureCount: keyVerses.length,
           createdAt: createdAt ?? DateTime.now(),
         );
-
-  /// Parses duration string like "45 minutes" to integer minutes
-  static int _parseDuration(String duration) {
-    final regex = RegExp(r'(\d+)');
-    final match = regex.firstMatch(duration);
-    return int.tryParse(match?.group(1) ?? '30') ?? 30;
-  }
 
   /// Creates a [RecommendedGuideTopicModel] from JSON.
   factory RecommendedGuideTopicModel.fromJson(Map<String, dynamic> json) =>
@@ -56,8 +55,7 @@ class RecommendedGuideTopicModel extends RecommendedGuideTopic {
         title: title,
         description: description,
         category: category,
-        difficulty: difficulty,
-        estimatedMinutes: estimatedMinutes,
+        englishCategory: englishCategory,
         scriptureCount: scriptureCount,
         tags: tags,
         isFeatured: isFeatured,
@@ -71,14 +69,41 @@ class RecommendedGuideTopicModel extends RecommendedGuideTopic {
         title: entity.title,
         description: entity.description,
         category: entity.category,
-        difficultyLevel: entity.difficulty,
-        estimatedDuration: '${entity.estimatedMinutes} minutes',
         keyVerses: List.generate(entity.scriptureCount,
             (index) => 'Verse ${index + 1}'), // Placeholder
         tags: entity.tags,
         isFeatured: entity.isFeatured,
         createdAt: entity.createdAt,
       );
+
+  /// Gets the English content for searching, falling back to current content
+  String get searchableTitle => englishTitle ?? title;
+  String get searchableDescription => englishDescription ?? description;
+  String get searchableCategory => englishCategory ?? category;
+
+  /// Checks if this topic matches a search query using both translated and English content
+  bool matchesSearchQuery(String query) {
+    if (query.trim().isEmpty) return true;
+
+    final lowerQuery = query.toLowerCase();
+
+    // Search in translated content
+    if (title.toLowerCase().contains(lowerQuery) ||
+        description.toLowerCase().contains(lowerQuery) ||
+        category.toLowerCase().contains(lowerQuery)) {
+      return true;
+    }
+
+    // Search in English fallback content if available
+    if (englishTitle?.toLowerCase().contains(lowerQuery) == true ||
+        englishDescription?.toLowerCase().contains(lowerQuery) == true ||
+        englishCategory?.toLowerCase().contains(lowerQuery) == true) {
+      return true;
+    }
+
+    // Search in tags
+    return tags.any((tag) => tag.toLowerCase().contains(lowerQuery));
+  }
 }
 
 /// Response model for the recommended guide topics API endpoint.

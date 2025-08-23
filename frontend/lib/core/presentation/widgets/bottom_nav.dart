@@ -49,9 +49,9 @@ class DisciplefyBottomNav extends StatelessWidget {
           'Navigate to Home screen. Shows daily verse and study recommendations.',
     ),
     NavTab(
-      icon: Icons.edit_note_outlined,
-      activeIcon: Icons.edit_note,
-      label: 'Study',
+      icon: Icons.auto_awesome_outlined,
+      activeIcon: Icons.auto_awesome,
+      label: 'Generate',
       semanticLabel:
           'Navigate to Study Generation screen. Create new Bible study guides.',
     ),
