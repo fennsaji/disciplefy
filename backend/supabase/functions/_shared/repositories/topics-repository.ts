@@ -70,6 +70,7 @@ export class TopicsRepository {
     const { data, error } = await this.supabaseClient
       .rpc('get_recommended_topics', {
         p_category: null,
+        p_difficulty: null,
         p_limit: limit,
         p_offset: offset
       })
@@ -116,6 +117,7 @@ export class TopicsRepository {
     const { data, error } = await this.supabaseClient
       .rpc('get_recommended_topics', {
         p_category: category,
+        p_difficulty: null,
         p_limit: limit,
         p_offset: offset
       })
@@ -186,12 +188,14 @@ export class TopicsRepository {
    */
   async getTopics(options: {
     category?: string
+    categories?: readonly string[]
     language?: string
     limit?: number
     offset?: number
   }): Promise<readonly RecommendedGuideTopic[]> {
     const {
       category,
+      categories,
       language = 'en',
       limit = 20,
       offset = 0
@@ -201,9 +205,16 @@ export class TopicsRepository {
       return []
     }
 
+    // If multiple categories are specified, use the new multi-category function
+    if (categories && categories.length > 0) {
+      return this.getTopicsByMultipleCategories(categories, language, limit, offset)
+    }
+
+    // Otherwise use the existing single category logic
     const { data, error } = await this.supabaseClient
       .rpc('get_recommended_topics', {
         p_category: category || null,
+        p_difficulty: null,
         p_limit: limit,
         p_offset: offset
       })
@@ -217,18 +228,59 @@ export class TopicsRepository {
   }
 
   /**
+   * Retrieves topics filtered by multiple categories.
+   * 
+   * @param categories - Array of category names
+   * @param language - Language code
+   * @param limit - Maximum number of topics to return
+   * @param offset - Number of topics to skip
+   * @returns Promise resolving to filtered topics array
+   */
+  async getTopicsByMultipleCategories(
+    categories: readonly string[],
+    language = 'en',
+    limit: number = 20,
+    offset: number = 0
+  ): Promise<readonly RecommendedGuideTopic[]> {
+    if (language !== 'en' || categories.length === 0) {
+      return []
+    }
+
+    const { data, error } = await this.supabaseClient
+      .rpc('get_recommended_topics_by_categories', {
+        p_categories: categories as string[],
+        p_limit: limit,
+        p_offset: offset
+      })
+
+    if (error) {
+      console.error('Error fetching topics by multiple categories:', error)
+      return []
+    }
+
+    return this.mapDatabaseTopicsToInterface(data || [])
+  }
+
+  /**
    * Gets the total count of topics for pagination.
    * 
    * @param category - Optional category filter
+   * @param categories - Optional multiple categories filter
    * @param language - Language code
    * @returns Promise resolving to total count
    */
   async getTopicsCount(
     category?: string,
-    language = 'en'
+    language = 'en',
+    categories?: readonly string[]
   ): Promise<number> {
     if (language !== 'en') {
       return 0
+    }
+
+    // If multiple categories are specified, use the new multi-category count function
+    if (categories && categories.length > 0) {
+      return this.getTopicsCountByMultipleCategories(categories, language)
     }
 
     const { data, error } = await this.supabaseClient
@@ -238,6 +290,34 @@ export class TopicsRepository {
 
     if (error) {
       console.error('Error fetching topics count:', error)
+      return 0
+    }
+
+    return data || 0
+  }
+
+  /**
+   * Gets the total count of topics for multiple categories.
+   * 
+   * @param categories - Array of category names
+   * @param language - Language code
+   * @returns Promise resolving to total count
+   */
+  async getTopicsCountByMultipleCategories(
+    categories: readonly string[],
+    language = 'en'
+  ): Promise<number> {
+    if (language !== 'en' || categories.length === 0) {
+      return 0
+    }
+
+    const { data, error } = await this.supabaseClient
+      .rpc('get_recommended_topics_count_by_categories', {
+        p_categories: categories as string[]
+      })
+
+    if (error) {
+      console.error('Error fetching topics count by multiple categories:', error)
       return 0
     }
 

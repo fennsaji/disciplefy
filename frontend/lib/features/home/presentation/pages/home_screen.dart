@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/utils/category_utils.dart';
 import '../../../../core/di/injection_container.dart';
 import '../../../../core/services/auth_state_provider.dart';
 import '../../../../core/widgets/auth_protected_screen.dart';
@@ -27,9 +28,8 @@ class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
 
   @override
-  Widget build(BuildContext context) => BlocProvider(
-        create: (context) =>
-            sl<HomeBloc>()..add(const LoadRecommendedTopics(limit: 6)),
+  Widget build(BuildContext context) => BlocProvider.value(
+        value: sl<HomeBloc>(),
         child: const _HomeScreenContent(),
       );
 }
@@ -43,11 +43,18 @@ class _HomeScreenContent extends StatefulWidget {
 
 class _HomeScreenContentState extends State<_HomeScreenContent> {
   final bool _hasResumeableStudy = false;
+  bool _isGeneratingStudyGuide = false;
 
   @override
   void initState() {
     super.initState();
     _loadDailyVerse();
+    // Fire initial topics load once; HomeBloc is a singleton via DI
+    final homeBloc = sl<HomeBloc>();
+    final current = homeBloc.state;
+    if (current is! HomeCombinedState || current.topics.isEmpty) {
+      homeBloc.add(const LoadRecommendedTopics(limit: 6));
+    }
   }
 
   /// Load daily verse - called only once during initialization
@@ -61,17 +68,37 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
 
   /// Handle daily verse card tap to generate study guide
   void _onDailyVerseCardTap() {
+    // Prevent multiple clicks during generation
+    if (_isGeneratingStudyGuide) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+              'Study guide generation already in progress. Please wait...'),
+          duration: Duration(seconds: 2),
+        ),
+      );
+      return;
+    }
+
     // Get the current DailyVerseBloc state
     final dailyVerseBloc = context.read<DailyVerseBloc>();
     final currentState = dailyVerseBloc.state;
 
     if (currentState is DailyVerseLoaded) {
+      // Set loading state
+      setState(() {
+        _isGeneratingStudyGuide = true;
+      });
       // Generate study guide with verse reference and selected language
       context.read<HomeBloc>().add(GenerateStudyGuideFromVerse(
             verseReference: currentState.verse.reference,
             language: _getLanguageCode(currentState.currentLanguage),
           ));
     } else if (currentState is DailyVerseOffline) {
+      // Set loading state
+      setState(() {
+        _isGeneratingStudyGuide = true;
+      });
       // Generate study guide with cached verse reference and selected language
       context.read<HomeBloc>().add(GenerateStudyGuideFromVerse(
             verseReference: currentState.verse.reference,
@@ -108,9 +135,25 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
     return BlocListener<HomeBloc, HomeState>(
       listener: (context, state) {
         if (state is HomeStudyGuideGenerated) {
-          // Navigate to study guide screen
+          // Stop loading and navigate to study guide screen
+          setState(() {
+            _isGeneratingStudyGuide = false;
+          });
+          ScaffoldMessenger.of(context).hideCurrentSnackBar();
+          context.go('/study-guide?source=home', extra: state.studyGuide);
+        } else if (state is HomeStudyGuideGeneratedCombined) {
+          // Stop loading and navigate to study guide screen - this preserves topics in state
+          setState(() {
+            _isGeneratingStudyGuide = false;
+          });
+          ScaffoldMessenger.of(context).hideCurrentSnackBar();
           context.go('/study-guide?source=home', extra: state.studyGuide);
         } else if (state is HomeCombinedState) {
+          // Update loading state based on study guide generation status
+          setState(() {
+            _isGeneratingStudyGuide = state.isGeneratingStudyGuide;
+          });
+
           // Handle study guide generation states
           if (state.isGeneratingStudyGuide && state.generationInput != null) {
             ScaffoldMessenger.of(context).showSnackBar(
@@ -141,6 +184,11 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
                 content: Text(
                     'Failed to generate study guide: ${state.generationError}'),
                 backgroundColor: Theme.of(context).colorScheme.error,
+                action: SnackBarAction(
+                  label: 'Dismiss',
+                  onPressed: () =>
+                      ScaffoldMessenger.of(context).hideCurrentSnackBar(),
+                ),
               ),
             );
           } else if (!state.isGeneratingStudyGuide) {
@@ -188,6 +236,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
                           DailyVerseCard(
                             margin: EdgeInsets.zero,
                             onTap: _onDailyVerseCardTap,
+                            isDisabled: _isGeneratingStudyGuide,
                           ),
 
                           SizedBox(height: isLargeScreen ? 40 : 32),
@@ -300,7 +349,9 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
   Widget _buildGenerateStudyButton() => SizedBox(
         width: double.infinity,
         child: ElevatedButton.icon(
-          onPressed: () => context.go('/generate-study'),
+          onPressed: _isGeneratingStudyGuide
+              ? null
+              : () => context.go('/generate-study'),
           icon: const Icon(
             Icons.auto_awesome,
             size: 24,
@@ -400,6 +451,26 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
                         strokeWidth: 2,
                         valueColor: AlwaysStoppedAnimation<Color>(
                             AppTheme.primaryColor),
+                      ),
+                    )
+                  else if (homeState.topics.isNotEmpty)
+                    TextButton.icon(
+                      onPressed: _isGeneratingStudyGuide
+                          ? null
+                          : () => context.go('/study-topics'),
+                      label: Text(
+                        'View All',
+                        style: GoogleFonts.inter(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: AppTheme.primaryColor,
+                        ),
+                      ),
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 4),
+                        minimumSize: Size.zero,
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                       ),
                     ),
                 ],
@@ -658,6 +729,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
                     child: _RecommendedGuideTopicCard(
                       topic: topic,
                       onTap: () => _navigateToStudyGuide(topic),
+                      isDisabled: _isGeneratingStudyGuide,
                     ),
                   ))
               .toList(),
@@ -667,6 +739,18 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
   }
 
   void _navigateToStudyGuide(RecommendedGuideTopic topic) {
+    // Prevent multiple clicks during generation
+    if (_isGeneratingStudyGuide) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+              'Study guide generation already in progress. Please wait...'),
+          duration: Duration(seconds: 2),
+        ),
+      );
+      return;
+    }
+
     // Get the current language from Daily Verse state
     final dailyVerseBloc = context.read<DailyVerseBloc>();
     final currentState = dailyVerseBloc.state;
@@ -678,6 +762,11 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
     } else if (currentState is DailyVerseOffline) {
       selectedLanguage = currentState.currentLanguage;
     }
+
+    // Set loading state immediately
+    setState(() {
+      _isGeneratingStudyGuide = true;
+    });
 
     // Generate study guide using HomeBloc
     context.read<HomeBloc>().add(GenerateStudyGuideFromTopic(
@@ -691,192 +780,178 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
 class _RecommendedGuideTopicCard extends StatelessWidget {
   final RecommendedGuideTopic topic;
   final VoidCallback onTap;
+  final bool isDisabled;
 
   const _RecommendedGuideTopicCard({
     required this.topic,
     required this.onTap,
+    this.isDisabled = false,
   });
 
   @override
   Widget build(BuildContext context) {
-    final iconData = _getIconForCategory(topic.category);
-    final color = _getColorForCategory(topic.category);
+    final iconData = CategoryUtils.getIconForCategory(topic.category);
+    final color = CategoryUtils.getColorForCategory(context, topic.category);
 
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        height: 180, // Fixed height for uniform cards
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
+    return Semantics(
+      button: true,
+      enabled: !isDisabled,
+      label: topic.title,
+      child: AnimatedOpacity(
+        opacity: isDisabled ? 0.5 : 1.0,
+        duration: const Duration(milliseconds: 150),
+        child: Material(
           color: Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: color.withOpacity(0.2),
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: color.withOpacity(0.1),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
+          elevation: 2,
+          clipBehavior: Clip.hardEdge,
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              border: Border.all(
+                color: color.withOpacity(0.2),
+              ),
+              borderRadius: BorderRadius.circular(12),
             ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize:
-              MainAxisSize.min, // Important: Don't expand unnecessarily
-          children: [
-            // Header row with icon
-            Row(
-              children: [
-                Container(
-                  width: 36, // Slightly smaller for better proportions
-                  height: 36,
-                  decoration: BoxDecoration(
-                    color: color.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Icon(
-                    iconData,
-                    color: color,
-                    size: 18,
-                  ),
-                ),
-                const SizedBox(width: 8), // Fixed spacing instead of Spacer
-                Flexible(
-                  // Use Flexible instead of Spacer
-                  child: Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
-                    decoration: BoxDecoration(
-                      color: color.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(8),
+            child: InkWell(
+              onTap: isDisabled ? null : onTap,
+              borderRadius: BorderRadius.circular(12),
+              child: Container(
+                height: 180, // Fixed height for uniform cards
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize:
+                      MainAxisSize.min, // Important: Don't expand unnecessarily
+                  children: [
+                    // Header row with icon
+                    Row(
+                      children: [
+                        Container(
+                          width: 36, // Slightly smaller for better proportions
+                          height: 36,
+                          decoration: BoxDecoration(
+                            color: color.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Icon(
+                            iconData,
+                            color: color,
+                            size: 18,
+                          ),
+                        ),
+                        const SizedBox(
+                            width: 8), // Fixed spacing instead of Spacer
+                        Flexible(
+                          // Use Flexible instead of Spacer
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 6, vertical: 3),
+                            decoration: BoxDecoration(
+                              color: color.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              topic.category,
+                              style: GoogleFonts.inter(
+                                fontSize: 9,
+                                fontWeight: FontWeight.w600,
+                                color: color,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
-                    child: Text(
-                      topic.category,
+
+                    const SizedBox(height: 12),
+
+                    // Title with proper constraints
+                    Text(
+                      topic.title,
                       style: GoogleFonts.inter(
-                        fontSize: 9,
+                        fontSize: 14, // Slightly smaller for better fit
                         fontWeight: FontWeight.w600,
-                        color: color,
+                        color: Theme.of(context).colorScheme.onSurface,
+                        height: 1.2, // Tighter line height
                       ),
+                      maxLines: 2, // Allow 2 lines for longer titles
                       overflow: TextOverflow.ellipsis,
                     ),
-                  ),
+
+                    const SizedBox(height: 6), // Reduced spacing
+
+                    // Description with flexible height
+                    Flexible(
+                      child: Text(
+                        topic.description,
+                        style: GoogleFonts.inter(
+                          fontSize: 11, // Smaller font for more content
+                          color: Theme.of(context)
+                              .colorScheme
+                              .onSurface
+                              .withOpacity(0.7),
+                          height: 1.3,
+                        ),
+                        maxLines: 3, // Allow up to 3 lines
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+
+                    const SizedBox(
+                        height: 12), // Fixed spacing instead of Spacer
+
+                    // Footer with metadata - use Wrap for overflow protection
+                    // Wrap(
+                    //   spacing: 8,
+                    //   runSpacing: 4,
+                    //   crossAxisAlignment: WrapCrossAlignment.center,
+                    //   children: [
+                    //     Row(
+                    //       mainAxisSize: MainAxisSize.min,
+                    //       children: [
+                    //         const Icon(
+                    //           Icons.schedule,
+                    //           size: 12,
+                    //           color: AppTheme.onSurfaceVariant,
+                    //         ),
+                    //         const SizedBox(width: 3),
+                    //         Text(
+                    //           '${topic.estimatedMinutes}min',
+                    //           style: GoogleFonts.inter(
+                    //             fontSize: 10,
+                    //             color: AppTheme.onSurfaceVariant,
+                    //           ),
+                    //         ),
+                    //       ],
+                    //     ),
+                    //     Row(
+                    //       mainAxisSize: MainAxisSize.min,
+                    //       children: [
+                    //         const Icon(
+                    //           Icons.book_outlined,
+                    //           size: 12,
+                    //           color: AppTheme.onSurfaceVariant,
+                    //         ),
+                    //         const SizedBox(width: 3),
+                    //         Text(
+                    //           '${topic.scriptureCount}',
+                    //           style: GoogleFonts.inter(
+                    //             fontSize: 10,
+                    //             color: AppTheme.onSurfaceVariant,
+                    //           ),
+                    //         ),
+                    //       ],
+                    //     ),
+                    //   ],
+                    // ),
+                  ],
                 ),
-              ],
-            ),
-
-            const SizedBox(height: 12),
-
-            // Title with proper constraints
-            Text(
-              topic.title,
-              style: GoogleFonts.inter(
-                fontSize: 14, // Slightly smaller for better fit
-                fontWeight: FontWeight.w600,
-                color: Theme.of(context).colorScheme.onSurface,
-                height: 1.2, // Tighter line height
-              ),
-              maxLines: 2, // Allow 2 lines for longer titles
-              overflow: TextOverflow.ellipsis,
-            ),
-
-            const SizedBox(height: 6), // Reduced spacing
-
-            // Description with flexible height
-            Flexible(
-              child: Text(
-                topic.description,
-                style: GoogleFonts.inter(
-                  fontSize: 11, // Smaller font for more content
-                  color:
-                      Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
-                  height: 1.3,
-                ),
-                maxLines: 3, // Allow up to 3 lines
-                overflow: TextOverflow.ellipsis,
               ),
             ),
-
-            const SizedBox(height: 12), // Fixed spacing instead of Spacer
-
-            // Footer with metadata - use Wrap for overflow protection
-            // Wrap(
-            //   spacing: 8,
-            //   runSpacing: 4,
-            //   crossAxisAlignment: WrapCrossAlignment.center,
-            //   children: [
-            //     Row(
-            //       mainAxisSize: MainAxisSize.min,
-            //       children: [
-            //         const Icon(
-            //           Icons.schedule,
-            //           size: 12,
-            //           color: AppTheme.onSurfaceVariant,
-            //         ),
-            //         const SizedBox(width: 3),
-            //         Text(
-            //           '${topic.estimatedMinutes}min',
-            //           style: GoogleFonts.inter(
-            //             fontSize: 10,
-            //             color: AppTheme.onSurfaceVariant,
-            //           ),
-            //         ),
-            //       ],
-            //     ),
-            //     Row(
-            //       mainAxisSize: MainAxisSize.min,
-            //       children: [
-            //         const Icon(
-            //           Icons.book_outlined,
-            //           size: 12,
-            //           color: AppTheme.onSurfaceVariant,
-            //         ),
-            //         const SizedBox(width: 3),
-            //         Text(
-            //           '${topic.scriptureCount}',
-            //           style: GoogleFonts.inter(
-            //             fontSize: 10,
-            //             color: AppTheme.onSurfaceVariant,
-            //           ),
-            //         ),
-            //       ],
-            //     ),
-            //   ],
-            // ),
-          ],
+          ),
         ),
       ),
     );
   }
-
-  // Category to icon mapping
-  static const Map<String, IconData> _categoryIcons = {
-    'apologetics & defense of faith': Icons.shield,
-    'christian life': Icons.directions_walk,
-    'church & community': Icons.groups,
-    'discipleship & growth': Icons.trending_up,
-    'family & relationships': Icons.family_restroom,
-    'foundations of faith': Icons.foundation,
-    'mission & service': Icons.volunteer_activism,
-    'spiritual disciplines': Icons.self_improvement,
-  };
-
-  // Category to color mapping
-  static const Map<String, Color> _categoryColors = {
-    'apologetics & defense of faith': Color(0xFF1565C0), // Deep Blue
-    'christian life': Color(0xFF2E7D32), // Green
-    'church & community': Color(0xFFE65100), // Orange
-    'discipleship & growth': Color(0xFF7B1FA2), // Purple
-    'family & relationships': Color(0xFFD32F2F), // Red
-    'foundations of faith': Color(0xFF5D4037), // Brown
-    'mission & service': Color(0xFF455A64), // Blue Grey
-    'spiritual disciplines': Color(0xFF00695C), // Teal
-  };
-
-  IconData _getIconForCategory(String category) =>
-      _categoryIcons[category.toLowerCase()] ?? Icons.menu_book;
-
-  Color _getColorForCategory(String category) =>
-      _categoryColors[category.toLowerCase()] ?? AppTheme.primaryColor;
 }

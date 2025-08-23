@@ -9,6 +9,7 @@ class AppRoutes {
   static const String studyGuide = '/study-guide';
   static const String settings = '/settings';
   static const String saved = '/saved';
+  static const String studyTopics = '/study-topics';
   static const String login = '/login';
   static const String authCallback = '/auth/callback';
   static const String error = '/error';

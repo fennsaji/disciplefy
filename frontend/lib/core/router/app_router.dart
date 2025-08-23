@@ -12,9 +12,11 @@ import '../presentation/widgets/app_shell.dart';
 import '../error/error_page.dart';
 import '../../features/home/presentation/pages/home_screen.dart';
 import '../../features/study_generation/presentation/pages/generate_study_screen.dart';
-import '../../features/study_generation/domain/services/study_navigation_service.dart';
+import '../navigation/study_navigator.dart';
+import '../di/injection_container.dart';
 import '../../features/saved_guides/presentation/pages/saved_screen.dart';
 import '../../features/settings/presentation/pages/settings_screen.dart';
+import '../../features/study_topics/presentation/pages/study_topics_screen.dart';
 import 'app_routes.dart';
 import 'router_guard.dart';
 import 'auth_notifier.dart';
@@ -103,6 +105,11 @@ class AppRouter {
         name: 'settings',
         builder: (context, state) => const SettingsScreen(),
       ),
+      GoRoute(
+        path: AppRoutes.studyTopics,
+        name: 'study_topics',
+        builder: (context, state) => const StudyTopicsScreen(),
+      ),
 
       // Authentication Routes (outside app shell)
       GoRoute(
@@ -142,7 +149,7 @@ class AppRouter {
           // Parse navigation source from query parameters
           final sourceString = state.uri.queryParameters['source'];
           final navigationSource =
-              StudyNavigationService.parseNavigationSource(sourceString);
+              sl<StudyNavigator>().parseNavigationSource(sourceString);
 
           if (state.extra is StudyGuide) {
             studyGuide = state.extra as StudyGuide;
@@ -187,6 +194,7 @@ extension AppRouterExtension on GoRouter {
       go(AppRoutes.studyGuide, extra: extra);
   void goToSettings() => go(AppRoutes.settings);
   void goToSaved() => go(AppRoutes.saved);
+  void goToStudyTopics() => go(AppRoutes.studyTopics);
   void goToLogin() => go(AppRoutes.login);
   void goToAuthCallback() => go(AppRoutes.authCallback);
   void goToError(String error) => go(AppRoutes.error, extra: error);

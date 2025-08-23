@@ -8,7 +8,7 @@ import '../../../../core/theme/app_theme.dart';
 import '../../../../core/error/failures.dart';
 import '../../../../core/di/injection_container.dart';
 import '../../domain/entities/study_guide.dart';
-import '../../domain/services/study_navigation_service.dart';
+import '../../../../core/navigation/study_navigator.dart';
 import '../bloc/study_bloc.dart';
 import '../bloc/study_event.dart';
 import '../bloc/study_state.dart';
@@ -132,7 +132,7 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
       // Redirect to saved guides page when no data is provided
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
-          StudyNavigationService.navigateToSaved(context);
+          sl<StudyNavigator>().navigateToSaved(context);
         }
       });
       _showError('Redirecting to saved guides...');
@@ -180,7 +180,7 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
           leading: IconButton(
             onPressed: () {
               // Navigate back using the navigation service
-              StudyNavigationService.navigateBack(
+              sl<StudyNavigator>().navigateBack(
                 context,
                 source: widget.navigationSource,
               );
@@ -251,7 +251,7 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
           leading: IconButton(
             onPressed: () {
               // Navigate back using the navigation service
-              StudyNavigationService.navigateBack(
+              sl<StudyNavigator>().navigateBack(
                 context,
                 source: widget.navigationSource,
               );
@@ -310,7 +310,7 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
                 const SizedBox(height: 32),
                 ElevatedButton(
                   onPressed: () =>
-                      StudyNavigationService.navigateToSaved(context),
+                      sl<StudyNavigator>().navigateToSaved(context),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Theme.of(context).colorScheme.primary,
                     foregroundColor: Colors.white,
@@ -653,7 +653,7 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
           ElevatedButton(
             onPressed: () {
               Navigator.of(context).pop();
-              StudyNavigationService.navigateToLogin(context);
+              sl<StudyNavigator>().navigateToLogin(context);
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF7A56DB), // Primary purple

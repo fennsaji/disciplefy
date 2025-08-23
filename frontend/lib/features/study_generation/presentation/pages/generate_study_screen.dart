@@ -11,8 +11,8 @@ import '../../../../core/utils/device_keyboard_handler.dart';
 import '../../../../core/services/language_preference_service.dart';
 import '../../../../core/models/app_language.dart';
 import '../../domain/mappers/app_language_mapper.dart';
-import '../../domain/services/study_navigation_service.dart';
 import '../../domain/usecases/get_default_study_language.dart';
+import '../../../../core/navigation/study_navigator.dart';
 import '../../../../core/usecases/usecase.dart';
 import '../bloc/study_bloc.dart';
 import '../bloc/study_event.dart';
@@ -37,10 +37,14 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen> {
   StudyInputMode _selectedMode = StudyInputMode.scripture;
   StudyLanguage _selectedLanguage = StudyLanguage.english;
   bool _isInputValid = false;
+  bool _isGeneratingStudyGuide = false;
   String? _validationError;
 
   // Language preference service for database integration
   late final LanguagePreferenceService _languagePreferenceService;
+
+  // Navigation service
+  late final StudyNavigator _navigator;
 
   // Scripture reference suggestions
   final List<String> _scriptureeSuggestions = [
@@ -79,6 +83,7 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen> {
   void initState() {
     super.initState();
     _languagePreferenceService = GetIt.instance<LanguagePreferenceService>();
+    _navigator = GetIt.instance<StudyNavigator>();
     _inputController.addListener(_validateInput);
     _loadDefaultLanguage();
   }
@@ -202,15 +207,36 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen> {
     final body = BlocListener<StudyBloc, StudyState>(
       listener: (context, state) {
         if (state is StudyGenerationSuccess) {
-          // Navigate to study guide screen with generated content
-          StudyNavigationService.navigateToStudyGuide(
+          // Stop loading and navigate to study guide screen with generated content
+          setState(() {
+            _isGeneratingStudyGuide = false;
+          });
+          _navigator.navigateToStudyGuide(
             context,
             studyGuide: state.studyGuide,
             source: StudyNavigationSource.generate,
           );
         } else if (state is StudyGenerationFailure) {
-          // Show error message with retry option
-          _showErrorDialog(context, state.failure.message, state.isRetryable);
+          // Stop loading and show error message with retry option
+          setState(() {
+            _isGeneratingStudyGuide = false;
+          });
+
+          final displayMessage = kDebugMode
+              ? state.failure.message
+              : 'Something went wrong. Please try again.';
+
+          _showErrorDialog(context, displayMessage, state.isRetryable);
+        } else if (state is StudyGenerationInProgress) {
+          // Update loading state based on BLoC state
+          setState(() {
+            _isGeneratingStudyGuide = true;
+          });
+        } else if (state is StudyInitial) {
+          // Clear loading state when returning to initial state
+          setState(() {
+            _isGeneratingStudyGuide = false;
+          });
         }
       },
       child: SafeArea(
@@ -288,15 +314,15 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen> {
   Widget _buildModeToggle() => Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'What would you like to study?',
-            style: GoogleFonts.inter(
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-              color: Theme.of(context).colorScheme.onBackground,
-            ),
-          ),
-          const SizedBox(height: 16),
+          // Text(
+          //   'What would you like to study?',
+          //   style: GoogleFonts.inter(
+          //     fontSize: 18,
+          //     fontWeight: FontWeight.w600,
+          //     color: Theme.of(context).colorScheme.onBackground,
+          //   ),
+          // ),
+          // const SizedBox(height: 16),
           Container(
             decoration: BoxDecoration(
               color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
@@ -488,7 +514,8 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen> {
   }
 
   Widget _buildGenerateButton(StudyState state) {
-    final isLoading = state is StudyGenerationInProgress;
+    final isLoading =
+        state is StudyGenerationInProgress || _isGeneratingStudyGuide;
 
     return Column(
       children: [
@@ -546,7 +573,9 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen> {
         SizedBox(
           width: double.infinity,
           child: ElevatedButton(
-            onPressed: _isInputValid && !isLoading ? _generateStudyGuide : null,
+            onPressed: _isInputValid && !isLoading && !_isGeneratingStudyGuide
+                ? _generateStudyGuide
+                : null,
             style: ElevatedButton.styleFrom(
               backgroundColor: Theme.of(context).colorScheme.primary,
               foregroundColor: Colors.white,
@@ -611,10 +640,27 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen> {
   void _generateStudyGuide() {
     if (!_isInputValid) return;
 
+    // Prevent multiple clicks during generation
+    if (_isGeneratingStudyGuide) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+              'Study guide generation already in progress. Please wait...'),
+          duration: Duration(seconds: 2),
+        ),
+      );
+      return;
+    }
+
     final input = _inputController.text.trim();
     final inputType =
         _selectedMode == StudyInputMode.scripture ? 'scripture' : 'topic';
     final languageCode = _selectedLanguage.code;
+
+    // Set loading state immediately
+    setState(() {
+      _isGeneratingStudyGuide = true;
+    });
 
     // Trigger BLoC event to generate study guide
     context.read<StudyBloc>().add(
