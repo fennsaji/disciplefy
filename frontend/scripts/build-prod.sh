@@ -6,7 +6,7 @@ echo "🏗️  Building Flutter web for production..."
 # Load production environment variables
 export SUPABASE_URL="$SUPABASE_URL"
 export SUPABASE_ANON_KEY="$SUPABASE_ANON_KEY"
-export APP_URL="https://disciplefy.vercel.app"
+export APP_URL="https://www.disciplefy.in"
 export GOOGLE_CLIENT_ID="$GOOGLE_CLIENT_ID"
 export FLUTTER_ENV="production"
 

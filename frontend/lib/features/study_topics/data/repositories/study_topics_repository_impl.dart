@@ -44,7 +44,7 @@ class StudyTopicsRepositoryImpl implements StudyTopicsRepository {
 
   // In-memory cache
   final Map<String, _TopicsCacheEntry> _topicsCache = {};
-  _CacheEntry<List<String>>? _categoriesCache;
+  final Map<String, _CacheEntry<List<String>>> _categoriesCache = {};
 
   StudyTopicsRepositoryImpl({
     required StudyTopicsRemoteDataSource remoteDataSource,
@@ -129,36 +129,41 @@ class StudyTopicsRepositoryImpl implements StudyTopicsRepository {
 
   @override
   Future<Either<Failure, List<String>>> getCategories({
+    String language = 'en',
     bool forceRefresh = false,
   }) async {
     try {
       // Check cache first (unless force refresh is requested)
-      if (!forceRefresh &&
-          _categoriesCache != null &&
-          !_categoriesCache!.isExpired(_categoriesCacheExpiry)) {
-        if (kDebugMode) {
-          final cacheAge =
-              DateTime.now().difference(_categoriesCache!.timestamp);
-          print(
-              '✅ [STUDY_TOPICS_REPO] Returning cached categories (cached ${cacheAge.inMinutes} minutes ago)');
+      if (!forceRefresh && _categoriesCache.containsKey(language)) {
+        final cacheEntry = _categoriesCache[language]!;
+        if (!cacheEntry.isExpired(_categoriesCacheExpiry)) {
+          if (kDebugMode) {
+            final cacheAge = DateTime.now().difference(cacheEntry.timestamp);
+            print(
+                '✅ [STUDY_TOPICS_REPO] Returning cached categories for $language (cached ${cacheAge.inMinutes} minutes ago)');
+          }
+          return Right(cacheEntry.data);
+        } else {
+          // Remove expired cache entry
+          _categoriesCache.remove(language);
         }
-        return Right(_categoriesCache!.data);
       }
 
       if (kDebugMode) {
         print(
-            '🚀 [STUDY_TOPICS_REPO] ${forceRefresh ? "Force refreshing" : "Cache miss - fetching"} categories...');
+            '🚀 [STUDY_TOPICS_REPO] ${forceRefresh ? "Force refreshing" : "Cache miss - fetching"} categories for language: $language...');
       }
 
       // Fetch from remote data source
-      final categories = await _remoteDataSource.getCategories();
+      final categories =
+          await _remoteDataSource.getCategories(language: language);
 
       // Cache the results
-      _categoriesCache = _CacheEntry(categories, DateTime.now());
+      _categoriesCache[language] = _CacheEntry(categories, DateTime.now());
 
       if (kDebugMode) {
         print(
-            '💾 [STUDY_TOPICS_REPO] Cached ${categories.length} categories for ${_categoriesCacheExpiry.inHours} hours');
+            '💾 [STUDY_TOPICS_REPO] Cached ${categories.length} categories for $language for ${_categoriesCacheExpiry.inHours} hours');
       }
 
       return Right(categories);
@@ -259,7 +264,7 @@ class StudyTopicsRepositoryImpl implements StudyTopicsRepository {
   @override
   void clearCache() {
     _topicsCache.clear();
-    _categoriesCache = null;
+    _categoriesCache.clear();
     if (kDebugMode) {
       print('🗑️ [STUDY_TOPICS_REPO] All caches cleared');
     }

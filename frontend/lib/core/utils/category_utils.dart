@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../theme/app_theme.dart';
+import '../../features/home/domain/entities/recommended_guide_topic.dart';
 
 /// Shared utility class for study topic category colors and icons.
 /// Centralizes category-specific styling to ensure consistency across the app.
@@ -30,6 +31,7 @@ class CategoryUtils {
   };
 
   /// Get color for a specific category with theme awareness
+  /// Uses the English category name for consistent styling across languages
   static Color getColorForCategory(BuildContext context, String category) {
     final normalized = category.trim().toLowerCase();
     final baseColor = _categoryColors[normalized] ?? AppTheme.primaryColor;
@@ -42,10 +44,23 @@ class CategoryUtils {
     return baseColor;
   }
 
+  /// Get color for a recommended topic using its English category
+  /// This ensures consistent styling across all languages
+  static Color getColorForTopic(
+      BuildContext context, RecommendedGuideTopic topic) {
+    return getColorForCategory(context, topic.categoryForStyling);
+  }
+
   /// Get icon for a specific category
   static IconData getIconForCategory(String category) {
     final normalized = category.trim().toLowerCase();
     return _categoryIcons[normalized] ?? Icons.category_rounded;
+  }
+
+  /// Get icon for a recommended topic using its English category
+  /// This ensures consistent icons across all languages
+  static IconData getIconForTopic(RecommendedGuideTopic topic) {
+    return getIconForCategory(topic.categoryForStyling);
   }
 
   /// Format category name for display (capitalize each word)

@@ -6,11 +6,23 @@ part 'recommended_guide_topic_model.g.dart';
 /// Data model for recommended guide topic API responses.
 ///
 /// This model handles the serialization/deserialization of recommended guide topics
-/// from the backend API and converts them to domain entities.
+/// from the backend API and converts them to domain entities. Now supports multilingual
+/// content with English fallback data for search functionality.
 @JsonSerializable(fieldRename: FieldRename.snake)
 class RecommendedGuideTopicModel extends RecommendedGuideTopic {
   @JsonKey(name: 'key_verses')
   final List<String> keyVerses;
+
+  /// English fallback fields for search functionality (null for English language responses)
+  @JsonKey(name: 'english_title')
+  final String? englishTitle;
+
+  @JsonKey(name: 'english_description')
+  final String? englishDescription;
+
+  @override
+  @JsonKey(name: 'english_category')
+  final String? englishCategory;
 
   RecommendedGuideTopicModel({
     required super.id,
@@ -19,9 +31,13 @@ class RecommendedGuideTopicModel extends RecommendedGuideTopic {
     required super.category,
     required this.keyVerses,
     required super.tags,
+    this.englishTitle,
+    this.englishDescription,
+    this.englishCategory,
     super.isFeatured = false, // Default to false if not provided
     DateTime? createdAt, // Allow null parameter
   }) : super(
+          englishCategory: englishCategory,
           scriptureCount: keyVerses.length,
           createdAt: createdAt ?? DateTime.now(),
         );
@@ -39,6 +55,7 @@ class RecommendedGuideTopicModel extends RecommendedGuideTopic {
         title: title,
         description: description,
         category: category,
+        englishCategory: englishCategory,
         scriptureCount: scriptureCount,
         tags: tags,
         isFeatured: isFeatured,
@@ -58,6 +75,35 @@ class RecommendedGuideTopicModel extends RecommendedGuideTopic {
         isFeatured: entity.isFeatured,
         createdAt: entity.createdAt,
       );
+
+  /// Gets the English content for searching, falling back to current content
+  String get searchableTitle => englishTitle ?? title;
+  String get searchableDescription => englishDescription ?? description;
+  String get searchableCategory => englishCategory ?? category;
+
+  /// Checks if this topic matches a search query using both translated and English content
+  bool matchesSearchQuery(String query) {
+    if (query.trim().isEmpty) return true;
+
+    final lowerQuery = query.toLowerCase();
+
+    // Search in translated content
+    if (title.toLowerCase().contains(lowerQuery) ||
+        description.toLowerCase().contains(lowerQuery) ||
+        category.toLowerCase().contains(lowerQuery)) {
+      return true;
+    }
+
+    // Search in English fallback content if available
+    if (englishTitle?.toLowerCase().contains(lowerQuery) == true ||
+        englishDescription?.toLowerCase().contains(lowerQuery) == true ||
+        englishCategory?.toLowerCase().contains(lowerQuery) == true) {
+      return true;
+    }
+
+    // Search in tags
+    return tags.any((tag) => tag.toLowerCase().contains(lowerQuery));
+  }
 }
 
 /// Response model for the recommended guide topics API endpoint.

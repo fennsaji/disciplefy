@@ -190,9 +190,9 @@ jobs:
         GOOGLE_OAUTH_CLIENT_SECRET=${{ secrets.GOOGLE_OAUTH_CLIENT_SECRET }}
         
         # Application URLs (${{ env.DEPLOY_ENV }})
-        SITE_URL=https://disciplefy.vercel.app
-        ADDITIONAL_REDIRECT_URLS=http://localhost:59641/auth/callback,https://disciplefy.vercel.app/auth/callback
-        
+        SITE_URL=https://www.disciplefy.in
+        ADDITIONAL_REDIRECT_URLS=http://localhost:59641/auth/callback,https://www.disciplefy.in/auth/callback
+
         # Security (${{ env.DEPLOY_ENV }})
         JWT_SECRET=${{ secrets.JWT_SECRET }}
         

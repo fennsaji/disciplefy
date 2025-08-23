@@ -22,11 +22,13 @@ class DailyVerseRepositoryImpl implements DailyVerseRepository {
         _cacheService = cacheService;
 
   @override
-  Future<Either<Failure, DailyVerseEntity>> getTodaysVerse() async =>
-      getDailyVerse(DateTime.now());
+  Future<Either<Failure, DailyVerseEntity>> getTodaysVerse(
+          [VerseLanguage? language]) async =>
+      getDailyVerse(DateTime.now(), language);
 
   @override
-  Future<Either<Failure, DailyVerseEntity>> getDailyVerse(DateTime date) async {
+  Future<Either<Failure, DailyVerseEntity>> getDailyVerse(DateTime date,
+      [VerseLanguage? language]) async {
     try {
       // Check if we should try cache first (offline or recent fetch)
       final shouldRefresh = await _cacheService.shouldRefresh();
@@ -39,7 +41,7 @@ class DailyVerseRepositoryImpl implements DailyVerseRepository {
       }
 
       // Try to fetch from API
-      final apiResult = await _apiService.getDailyVerse(date);
+      final apiResult = await _apiService.getDailyVerse(date, language);
 
       return apiResult.fold(
         (failure) async {

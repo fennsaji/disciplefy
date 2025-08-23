@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 
 import '../../../../core/utils/error_handler.dart';
 import '../../../../core/utils/logger.dart';
+import '../../../../core/services/language_preference_service.dart';
 import '../../../home/domain/entities/recommended_guide_topic.dart';
 import '../../domain/entities/study_topics_filter.dart';
 import '../../domain/repositories/study_topics_repository.dart';
@@ -15,6 +16,7 @@ import 'study_topics_state.dart';
 /// BLoC for managing study topics screen state and operations.
 class StudyTopicsBloc extends Bloc<StudyTopicsEvent, StudyTopicsState> {
   final StudyTopicsRepository _repository;
+  final LanguagePreferenceService _languagePreferenceService;
 
   // Internal state tracking
   List<RecommendedGuideTopic> _allLoadedTopics = [];
@@ -24,7 +26,9 @@ class StudyTopicsBloc extends Bloc<StudyTopicsEvent, StudyTopicsState> {
 
   StudyTopicsBloc({
     required StudyTopicsRepository repository,
+    required LanguagePreferenceService languagePreferenceService,
   })  : _repository = repository,
+        _languagePreferenceService = languagePreferenceService,
         super(const StudyTopicsInitial()) {
     on<LoadStudyTopics>(_onLoadStudyTopics);
     on<FilterByCategories>(_onFilterByCategories);
@@ -63,7 +67,26 @@ class StudyTopicsBloc extends Bloc<StudyTopicsEvent, StudyTopicsState> {
 
     await _withAsyncGuard(emit, () async {
       await _loadCategoriesInternal(forceRefresh: event.forceRefresh);
-      _currentFilter = event.initialFilter ?? const StudyTopicsFilter();
+
+      // Get user's preferred language
+      String languageCode = 'en'; // Default fallback
+      try {
+        final appLanguage =
+            await _languagePreferenceService.getSelectedLanguage();
+        languageCode = appLanguage.code;
+      } catch (e) {
+        if (kDebugMode) {
+          print(
+              '⚠️ [STUDY_TOPICS_BLOC] Failed to get language preference, using default: $e');
+        }
+      }
+
+      // Initialize or update filter with user's language preference
+      _currentFilter =
+          (event.initialFilter ?? const StudyTopicsFilter()).copyWith(
+        language: languageCode,
+      );
+
       await _loadTopicsWithCurrentFilterInternal(
         emit,
         forceRefresh: event.forceRefresh,
@@ -265,6 +288,20 @@ class StudyTopicsBloc extends Bloc<StudyTopicsEvent, StudyTopicsState> {
 
   /// Load categories from repository (internal implementation)
   Future<void> _loadCategoriesInternal({required bool forceRefresh}) async {
+    // Get the user's preferred language
+    String languageCode = 'en'; // Default fallback
+    try {
+      final appLanguage =
+          await _languagePreferenceService.getSelectedLanguage();
+      languageCode = appLanguage.code;
+    } catch (e) {
+      if (kDebugMode) {
+        print(
+            '⚠️ [STUDY_TOPICS_BLOC] Failed to get language preference for categories, using default: $e');
+      }
+    }
+
+    // Always fetch English categories for consistent filter chip styling
     final categoriesResult = await _repository.getCategories(
       forceRefresh: forceRefresh,
     );

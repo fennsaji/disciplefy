@@ -43,11 +43,14 @@ abstract class StudyTopicsRemoteDataSource {
   ///
   /// Returns a list of category names that can be used for filtering topics.
   /// Categories are returned in display order based on faith level progression.
+  /// Categories are returned in the specified language if available.
+  ///
+  /// [language] - Language code for localization (defaults to 'en')
   ///
   /// Throws [ServerException] for API errors (4xx/5xx responses).
   /// Throws [NetworkException] for connection failures.
   /// Returns empty list if no categories are available.
-  Future<List<String>> getCategories();
+  Future<List<String>> getCategories({String language = 'en'});
 }
 
 class StudyTopicsRemoteDataSourceImpl implements StudyTopicsRemoteDataSource {
@@ -96,7 +99,12 @@ class StudyTopicsRemoteDataSourceImpl implements StudyTopicsRemoteDataSource {
     };
 
     if (filter.hasCategoryFilters) {
-      queryParams['categories'] = filter.categoriesAsString!;
+      // Convert translated category names to English keys for API calls
+      final englishCategories =
+          _convertToEnglishCategories(filter.selectedCategories);
+      queryParams['categories'] = englishCategories.join(',');
+      _logDebug(
+          '📋 [STUDY_TOPICS] Converted categories for API: ${filter.selectedCategories} → $englishCategories');
     }
 
     final uri = Uri.parse('$_baseUrl$_topicsEndpoint')
@@ -149,12 +157,14 @@ class StudyTopicsRemoteDataSourceImpl implements StudyTopicsRemoteDataSource {
 
   /// Fetches available topic categories from the API.
   @override
-  Future<List<String>> getCategories() async {
+  Future<List<String>> getCategories({String language = 'en'}) async {
     try {
-      if (kDebugMode) print('🚀 [STUDY_TOPICS] Fetching categories...');
+      if (kDebugMode) {
+        print('🚀 [STUDY_TOPICS] Fetching categories for language: $language');
+      }
 
       final headers = await _buildCategoriesHeaders();
-      final response = await _fetchCategoriesResponse(headers);
+      final response = await _fetchCategoriesResponse(headers, language);
       return _handleCategoriesSuccess(response.body);
     } catch (e) {
       if (kDebugMode) print('💥 [STUDY_TOPICS] Exception in getCategories: $e');
@@ -174,9 +184,13 @@ class StudyTopicsRemoteDataSourceImpl implements StudyTopicsRemoteDataSource {
   }
 
   /// Fetches categories response from the API.
-  Future<dynamic> _fetchCategoriesResponse(Map<String, String> headers) async {
+  Future<dynamic> _fetchCategoriesResponse(
+      Map<String, String> headers, String language) async {
+    final uri = Uri.parse('$_baseUrl$_categoriesEndpoint')
+        .replace(queryParameters: {'language': language});
+
     final response = await _httpService.get(
-      '$_baseUrl$_categoriesEndpoint',
+      uri.toString(),
       headers: headers,
     );
 
@@ -244,8 +258,8 @@ class StudyTopicsRemoteDataSourceImpl implements StudyTopicsRemoteDataSource {
       if (e is ClientException) rethrow;
 
       throw ClientException(
-        message: 'Failed to parse categories response: $e',
-        code: 'CATEGORIES_JSON_ERROR',
+        message: 'Failed to parse topics response: $e',
+        code: 'TOPICS_JSON_ERROR',
       );
     }
   }
@@ -319,9 +333,51 @@ class StudyTopicsRemoteDataSourceImpl implements StudyTopicsRemoteDataSource {
       }
 
       throw ClientException(
-        message: 'Failed to parse topics response: $e',
-        code: 'TOPICS_JSON_ERROR',
+        message: 'Failed to parse categories response: $e',
+        code: 'CATEGORIES_JSON_ERROR',
       );
     }
+  }
+
+  /// Convert translated category names to English keys for API calls.
+  /// This replaces the removed CategoryMapper with a simpler inline mapping.
+  List<String> _convertToEnglishCategories(List<String> translatedCategories) {
+    // Mapping from translated category names to English keys
+    const translatedToEnglish = <String, String>{
+      // Hindi translations
+      'विश्वास की नींव': 'Foundations of Faith',
+      'मसीही जीवन': 'Christian Life',
+      'कलीसिया और समुदाय': 'Church & Community',
+      'शिष्यत्व और विकास': 'Discipleship & Growth',
+      'आत्मिक अनुशासन': 'Spiritual Disciplines',
+      'धर्मशास्त्र और विश्वास की रक्षा': 'Apologetics & Defense of Faith',
+      'परिवार और रिश्ते': 'Family & Relationships',
+      'मिशन और सेवा': 'Mission & Service',
+
+      // Malayalam translations
+      'വിശ്വാസത്തിന്റെ അടിത്തറകൾ': 'Foundations of Faith',
+      'ക്രൈസ്തവ ജീവിതം': 'Christian Life',
+      'സഭയും സമൂഹവും': 'Church & Community',
+      'ശിഷ്യത്വവും വളർച്ചയും': 'Discipleship & Growth',
+      'ആത്മീയ അനുശാസനം': 'Spiritual Disciplines',
+      'ക്ഷമാപണവും വിശ്വാസത്തിന്റെ പ്രതിരോധവും':
+          'Apologetics & Defense of Faith',
+      'കുടുംബവും ബന്ധങ്ങളും': 'Family & Relationships',
+      'മിഷനും സേവനവും': 'Mission & Service',
+
+      // English categories (passthrough)
+      'Foundations of Faith': 'Foundations of Faith',
+      'Christian Life': 'Christian Life',
+      'Church & Community': 'Church & Community',
+      'Discipleship & Growth': 'Discipleship & Growth',
+      'Spiritual Disciplines': 'Spiritual Disciplines',
+      'Apologetics & Defense of Faith': 'Apologetics & Defense of Faith',
+      'Family & Relationships': 'Family & Relationships',
+      'Mission & Service': 'Mission & Service',
+    };
+
+    return translatedCategories
+        .map((category) => translatedToEnglish[category] ?? category)
+        .toList();
   }
 }

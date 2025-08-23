@@ -19,6 +19,9 @@ class LoadRecommendedTopics extends RecommendedTopicsEvent {
   /// Difficulty filter for topics.
   final String? difficulty;
 
+  /// Language code for topic translations.
+  final String? language;
+
   /// Force refresh bypassing cache (default: false)
   final bool forceRefresh;
 
@@ -26,11 +29,13 @@ class LoadRecommendedTopics extends RecommendedTopicsEvent {
     this.limit,
     this.category,
     this.difficulty,
+    this.language,
     this.forceRefresh = false,
   });
 
   @override
-  List<Object?> get props => [limit, category, difficulty, forceRefresh];
+  List<Object?> get props =>
+      [limit, category, difficulty, language, forceRefresh];
 }
 
 /// Event to refresh recommended topics.
@@ -41,4 +46,9 @@ class RefreshRecommendedTopics extends RecommendedTopicsEvent {
 /// Event to clear error state.
 class ClearRecommendedTopicsError extends RecommendedTopicsEvent {
   const ClearRecommendedTopicsError();
+}
+
+/// Event for language preference change from settings.
+class LanguagePreferenceChanged extends RecommendedTopicsEvent {
+  const LanguagePreferenceChanged();
 }
