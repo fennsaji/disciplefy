@@ -3,6 +3,7 @@ import 'package:http/http.dart' as http;
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter/foundation.dart';
 
 import '../network/network_info.dart';
 import '../../features/auth/data/services/auth_service.dart';
@@ -12,6 +13,7 @@ import '../../features/study_generation/data/repositories/study_repository_impl.
 import '../../features/study_generation/data/datasources/study_remote_data_source.dart';
 import '../../features/study_generation/data/datasources/study_local_data_source.dart';
 import '../../features/study_generation/domain/usecases/generate_study_guide.dart';
+import '../../features/study_generation/domain/usecases/get_default_study_language.dart';
 import '../../features/study_generation/domain/services/input_validation_service.dart';
 import '../../features/study_generation/presentation/bloc/study_bloc.dart';
 import '../../features/settings/domain/repositories/settings_repository.dart';
@@ -23,11 +25,14 @@ import '../../features/settings/domain/usecases/get_app_version.dart';
 import '../../features/settings/presentation/bloc/settings_bloc.dart';
 import '../../features/daily_verse/data/services/daily_verse_api_service.dart';
 import '../../features/daily_verse/data/services/daily_verse_cache_service.dart';
+import '../../features/daily_verse/data/services/daily_verse_web_cache_service.dart';
+import '../../features/daily_verse/data/services/daily_verse_cache_interface.dart';
 import '../../features/daily_verse/domain/repositories/daily_verse_repository.dart';
 import '../../features/daily_verse/data/repositories/daily_verse_repository_impl.dart';
 import '../../features/daily_verse/domain/usecases/get_daily_verse.dart';
 import '../../features/daily_verse/domain/usecases/get_cached_verse.dart';
 import '../../features/daily_verse/domain/usecases/manage_verse_preferences.dart';
+import '../../features/daily_verse/domain/usecases/get_default_language.dart';
 import '../../features/daily_verse/presentation/bloc/daily_verse_bloc.dart';
 import '../../features/saved_guides/data/services/study_guides_api_service.dart';
 import '../../features/saved_guides/presentation/bloc/unified_saved_guides_bloc.dart';
@@ -63,7 +68,18 @@ import '../../features/user_profile/domain/usecases/get_user_profile.dart';
 import '../../features/user_profile/domain/usecases/update_user_profile.dart';
 import '../../features/user_profile/domain/usecases/delete_user_profile.dart';
 import '../../features/user_profile/presentation/bloc/user_profile_bloc.dart';
+import '../../features/study_topics/data/datasources/study_topics_remote_datasource.dart';
+import '../../features/study_topics/data/repositories/study_topics_repository_impl.dart';
+import '../../features/study_topics/domain/repositories/study_topics_repository.dart';
+import '../../features/study_topics/presentation/bloc/study_topics_bloc.dart';
 import '../services/theme_service.dart';
+import '../services/auth_state_provider.dart';
+import '../services/language_preference_service.dart';
+import '../services/language_cache_coordinator.dart';
+import '../services/http_service.dart';
+import '../../features/user_profile/data/services/user_profile_api_service.dart';
+import '../navigation/study_navigator.dart';
+import '../navigation/go_router_study_navigator.dart';
 
 /// Service locator instance for dependency injection
 final sl = GetIt.instance;
@@ -83,12 +99,40 @@ Future<void> initializeDependencies() async {
   final sharedPreferences = await SharedPreferences.getInstance();
   sl.registerLazySingleton(() => sharedPreferences);
 
+  //! Navigation
+  sl.registerLazySingleton<StudyNavigator>(
+    () => GoRouterStudyNavigator(),
+  );
+
   // Register ThemeService
   sl.registerLazySingleton(() => ThemeService());
+
+  // Register HttpService
+  sl.registerLazySingleton(() => HttpService(httpClient: sl()));
+
+  // Register User Profile API Service
+  sl.registerLazySingleton(() => UserProfileApiService(
+        httpService: sl<HttpService>(),
+      ));
+
+  // Register Language Cache Coordinator
+  sl.registerLazySingleton(() => LanguageCacheCoordinator());
+
+  // Register Language Preference Service
+  sl.registerLazySingleton(() => LanguagePreferenceService(
+        prefs: sl(),
+        authService: sl(),
+        authStateProvider: sl(),
+        userProfileService: sl(),
+        cacheCoordinator: sl(),
+      ));
 
   //! Auth
   sl.registerLazySingleton(() => AuthService());
   sl.registerFactory(() => AuthBloc(authService: sl()));
+
+  // Register AuthStateProvider as singleton for consistent state across screens
+  sl.registerLazySingleton(() => AuthStateProvider());
 
   //! Study Generation Data Sources
   sl.registerLazySingleton<StudyRemoteDataSource>(
@@ -111,6 +155,7 @@ Future<void> initializeDependencies() async {
   );
 
   sl.registerLazySingleton(() => GenerateStudyGuide(sl()));
+  sl.registerLazySingleton(() => GetDefaultStudyLanguage(sl()));
 
   sl.registerLazySingleton(() => InputValidationService());
 
@@ -134,22 +179,33 @@ Future<void> initializeDependencies() async {
   sl.registerLazySingleton(() => UpdateThemeMode(sl()));
   sl.registerLazySingleton(() => GetAppVersion(sl()));
 
-  sl.registerLazySingleton(() => SettingsBloc(
-        getSettings: sl(),
-        updateThemeMode: sl(),
-        getAppVersion: sl(),
-        settingsRepository: sl(),
-        themeService: sl(),
-      ));
+  sl.registerLazySingleton(
+    () => SettingsBloc(
+      getSettings: sl(),
+      updateThemeMode: sl(),
+      getAppVersion: sl(),
+      settingsRepository: sl(),
+      themeService: sl(),
+      languagePreferenceService: sl(),
+    ),
+    dispose: (bloc) => bloc.close(),
+  );
 
   //! Daily Verse
   sl.registerLazySingleton<DailyVerseApiService>(
     () => DailyVerseApiService(),
   );
 
-  sl.registerLazySingleton<DailyVerseCacheService>(
-    () => DailyVerseCacheService(),
-  );
+  // Register platform-specific cache service
+  if (kIsWeb) {
+    sl.registerLazySingleton<DailyVerseCacheInterface>(
+      () => DailyVerseWebCacheService(),
+    );
+  } else {
+    sl.registerLazySingleton<DailyVerseCacheInterface>(
+      () => DailyVerseCacheService(),
+    );
+  }
 
   sl.registerLazySingleton<DailyVerseRepository>(
     () => DailyVerseRepositoryImpl(
@@ -164,6 +220,7 @@ Future<void> initializeDependencies() async {
   sl.registerLazySingleton(() => SetPreferredLanguage(sl()));
   sl.registerLazySingleton(() => GetCacheStats(sl()));
   sl.registerLazySingleton(() => ClearVerseCache(sl()));
+  sl.registerLazySingleton(() => GetDefaultLanguage(sl()));
 
   sl.registerFactory(() => DailyVerseBloc(
         getDailyVerse: sl(),
@@ -172,6 +229,8 @@ Future<void> initializeDependencies() async {
         setPreferredLanguage: sl(),
         getCacheStats: sl(),
         clearVerseCache: sl(),
+        getDefaultLanguage: sl(),
+        languagePreferenceService: sl(),
       ));
 
   //! Saved Guides
@@ -229,17 +288,43 @@ Future<void> initializeDependencies() async {
   //! Home
   sl.registerLazySingleton(() => RecommendedGuidesService());
 
-  sl.registerFactory(() => HomeBloc(
-        topicsBloc: sl(),
-        studyGenerationBloc: sl(),
-      ));
+  // Register Home BLoCs as singletons to maintain state across navigation
+  sl.registerLazySingleton(
+    () => RecommendedTopicsBloc(
+      topicsService: sl(),
+      languagePreferenceService: sl(),
+    ),
+    dispose: (bloc) => bloc.close(),
+  );
 
-  sl.registerFactory(() => RecommendedTopicsBloc(
-        topicsService: sl(),
-      ));
+  sl.registerLazySingleton(
+    () => HomeStudyGenerationBloc(
+      generateStudyGuideUseCase: sl(),
+    ),
+    dispose: (bloc) => bloc.close(),
+  );
 
-  sl.registerFactory(() => HomeStudyGenerationBloc(
-        generateStudyGuideUseCase: sl(),
+  sl.registerLazySingleton(
+    () => HomeBloc(
+      topicsBloc: sl(),
+      studyGenerationBloc: sl(),
+      languagePreferenceService: sl(),
+    ),
+    dispose: (bloc) => bloc.close(),
+  );
+
+  //! Study Topics
+  sl.registerLazySingleton<StudyTopicsRemoteDataSource>(
+    () => StudyTopicsRemoteDataSourceImpl(httpService: sl()),
+  );
+
+  sl.registerLazySingleton<StudyTopicsRepository>(
+    () => StudyTopicsRepositoryImpl(remoteDataSource: sl()),
+  );
+
+  sl.registerFactory(() => StudyTopicsBloc(
+        repository: sl(),
+        languagePreferenceService: sl(),
       ));
 
   //! Onboarding
@@ -267,7 +352,10 @@ Future<void> initializeDependencies() async {
   );
 
   sl.registerLazySingleton<UserProfileService>(
-    () => UserProfileService(),
+    () => UserProfileService(
+      apiService: sl(),
+      authService: sl(),
+    ),
   );
 
   sl.registerLazySingleton(() => GetUserProfile(repository: sl()));

@@ -14,11 +14,8 @@ class RecommendedGuideTopic extends Equatable {
   /// Category this topic belongs to (e.g., "Faith Foundations", "Spiritual Growth")
   final String category;
 
-  /// Difficulty level (e.g., "beginner", "intermediate", "advanced")
-  final String difficulty;
-
-  /// Estimated study duration in minutes
-  final int estimatedMinutes;
+  /// English category name for consistent styling (fallback to category if null)
+  final String? englishCategory;
 
   /// Number of related scripture passages
   final int scriptureCount;
@@ -37,8 +34,7 @@ class RecommendedGuideTopic extends Equatable {
     required this.title,
     required this.description,
     required this.category,
-    required this.difficulty,
-    required this.estimatedMinutes,
+    this.englishCategory,
     required this.scriptureCount,
     required this.tags,
     required this.isFeatured,
@@ -51,8 +47,7 @@ class RecommendedGuideTopic extends Equatable {
         title,
         description,
         category,
-        difficulty,
-        estimatedMinutes,
+        englishCategory,
         scriptureCount,
         tags,
         isFeatured,
@@ -65,8 +60,7 @@ class RecommendedGuideTopic extends Equatable {
     String? title,
     String? description,
     String? category,
-    String? difficulty,
-    int? estimatedMinutes,
+    String? englishCategory,
     int? scriptureCount,
     List<String>? tags,
     bool? isFeatured,
@@ -77,15 +71,17 @@ class RecommendedGuideTopic extends Equatable {
         title: title ?? this.title,
         description: description ?? this.description,
         category: category ?? this.category,
-        difficulty: difficulty ?? this.difficulty,
-        estimatedMinutes: estimatedMinutes ?? this.estimatedMinutes,
+        englishCategory: englishCategory ?? this.englishCategory,
         scriptureCount: scriptureCount ?? this.scriptureCount,
         tags: tags ?? this.tags,
         isFeatured: isFeatured ?? this.isFeatured,
         createdAt: createdAt ?? this.createdAt,
       );
 
+  /// Get the English category name for styling purposes
+  String get categoryForStyling => englishCategory ?? category;
+
   @override
   String toString() =>
-      'RecommendedGuideTopic(id: $id, title: $title, category: $category, difficulty: $difficulty)';
+      'RecommendedGuideTopic(id: $id, title: $title, category: $category, englishCategory: $englishCategory)';
 }

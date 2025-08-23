@@ -147,7 +147,7 @@ jobs:
             --dart-define=ENVIRONMENT=${{ env.DEPLOY_ENV }} \
             --dart-define=SUPABASE_URL=https://${{ secrets.SUPABASE_PROJECT_REF }}.supabase.co \
             --dart-define=SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }} \
-            --dart-define=APP_URL=https://disciplefy.vercel.app \
+            --dart-define=APP_URL=https://www.disciplefy.in \
             --dart-define=GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_OAUTH_CLIENT_ID }} \
             --dart-define=FLUTTER_ENV=${{ env.DEPLOY_ENV }} \
             --dart-define=FLUTTER_WEB_BUILD=true \
@@ -248,7 +248,7 @@ jobs:
           
           if [ -z "$DEPLOYMENT_URL" ]; then
             echo "⚠️ No deployment URL found, using default production URL"
-            DEPLOYMENT_URL="https://disciplefy.vercel.app"
+            DEPLOYMENT_URL="https://www.disciplefy.in"
           fi
           
           echo "🔍 Testing URL: $DEPLOYMENT_URL"

@@ -9,6 +9,8 @@ import 'recommended_topics_state.dart' as topics_states;
 import 'home_study_generation_bloc.dart';
 import 'home_study_generation_event.dart' as generation_events;
 import 'home_study_generation_state.dart' as generation_states;
+import '../../../../core/services/language_preference_service.dart';
+import '../../../../core/models/app_language.dart';
 
 /// Refactored BLoC for coordinating Home screen concerns.
 ///
@@ -17,15 +19,19 @@ import 'home_study_generation_state.dart' as generation_states;
 class HomeBloc extends Bloc<HomeEvent, HomeState> {
   final RecommendedTopicsBloc _topicsBloc;
   final HomeStudyGenerationBloc _studyGenerationBloc;
+  final LanguagePreferenceService _languagePreferenceService;
 
   late final StreamSubscription _topicsSubscription;
   late final StreamSubscription _studyGenerationSubscription;
+  StreamSubscription<dynamic>? _languageChangeSubscription;
 
   HomeBloc({
     required RecommendedTopicsBloc topicsBloc,
     required HomeStudyGenerationBloc studyGenerationBloc,
+    required LanguagePreferenceService languagePreferenceService,
   })  : _topicsBloc = topicsBloc,
         _studyGenerationBloc = studyGenerationBloc,
+        _languagePreferenceService = languagePreferenceService,
         super(const HomeCombinedState()) {
     // Subscribe to child BLoC states and trigger events instead of direct emit
     _topicsSubscription = _topicsBloc.stream.listen((state) {
@@ -41,10 +47,14 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
     on<GenerateStudyGuideFromVerse>(_onGenerateStudyGuideFromVerse);
     on<GenerateStudyGuideFromTopic>(_onGenerateStudyGuideFromTopic);
     on<ClearHomeError>(_onClearHomeError);
+    on<LanguagePreferenceChanged>(_onLanguagePreferenceChanged);
 
     // Register internal coordination events
     on<TopicsStateChangedEvent>(_onTopicsStateChanged);
     on<StudyGenerationStateChangedEvent>(_onStudyGenerationStateChanged);
+
+    // Listen for language preference changes
+    _setupLanguageChangeListener();
   }
 
   /// Handle topics state changes through proper event system
@@ -99,12 +109,20 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
           ));
           break;
         case final generation_states.HomeStudyGenerationSuccess success:
+          // First, update combined state to stop generating
           emit(currentState.copyWith(
             isGeneratingStudyGuide: false,
             clearGenerationError: true,
           ));
-          // Emit navigation state
-          emit(HomeStudyGuideGenerated(studyGuide: success.studyGuide));
+          // Then emit navigation state, but preserve topics by extending HomeCombinedState
+          emit(HomeStudyGuideGeneratedCombined(
+            studyGuide: success.studyGuide,
+            topics: currentState.topics,
+            isLoadingTopics: currentState.isLoadingTopics,
+            topicsError: currentState.topicsError,
+            generationInput: currentState.generationInput,
+            generationInputType: currentState.generationInputType,
+          ));
           break;
         case final generation_states.HomeStudyGenerationError error:
           emit(currentState.copyWith(
@@ -119,14 +137,27 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
   }
 
   /// Handle loading recommended topics by delegating to topics BLoC
-  void _onLoadRecommendedTopics(
+  Future<void> _onLoadRecommendedTopics(
     LoadRecommendedTopics event,
     Emitter<HomeState> emit,
-  ) {
+  ) async {
+    // Get the user's preferred language
+    String? languageCode;
+    try {
+      final appLanguage =
+          await _languagePreferenceService.getSelectedLanguage();
+      languageCode = appLanguage.code;
+    } catch (e) {
+      // Fall back to default language if getting language preference fails
+      languageCode = 'en';
+    }
+
     _topicsBloc.add(topics_events.LoadRecommendedTopics(
       limit: event.limit,
       category: event.category,
       difficulty: event.difficulty,
+      language: languageCode,
+      forceRefresh: event.forceRefresh,
     ));
   }
 
@@ -170,11 +201,35 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
         .add(const generation_events.ClearHomeStudyGenerationError());
   }
 
+  /// Handle language preference change from settings
+  Future<void> _onLanguagePreferenceChanged(
+    LanguagePreferenceChanged event,
+    Emitter<HomeState> emit,
+  ) async {
+    // Reload recommended topics with new language preference
+    add(const LoadRecommendedTopics(
+      limit: 6,
+      forceRefresh: true,
+    ));
+  }
+
+  /// Setup listener for language preference changes from settings
+  void _setupLanguageChangeListener() {
+    _languageChangeSubscription =
+        _languagePreferenceService.languageChanges.listen(
+      (AppLanguage newLanguage) {
+        // Trigger refresh when language changes
+        add(const LanguagePreferenceChanged());
+      },
+    );
+  }
+
   @override
   Future<void> close() async {
     // Cancel stream subscriptions first
     await _topicsSubscription.cancel();
     await _studyGenerationSubscription.cancel();
+    await _languageChangeSubscription?.cancel();
 
     // Close child BLoCs
     await _topicsBloc.close();

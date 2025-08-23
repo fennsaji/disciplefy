@@ -157,14 +157,27 @@ Authorization: Bearer YOUR_ACCESS_TOKEN
 ```
 
 **Query Parameters**:
-- `category` (optional): Filter by topic category
-- `difficulty` (optional): Filter by difficulty level ("beginner", "intermediate", "advanced")
-- `limit` (optional): Number of topics to return (default: 10, max: 50)
+- `category` (optional): Filter by single topic category (legacy - cannot be used with `categories`)
+- `categories` (optional): Filter by multiple topic categories (comma-separated, e.g., "Christian Life,Foundations of Faith")
+- `language` (optional): Language code (default: "en")
+- `limit` (optional): Number of topics to return (default: 20, max: 100)
 - `offset` (optional): Number of topics to skip for pagination (default: 0)
 
-**Example Request**:
+**Example Requests**:
+
+**Single Category (Legacy)**:
 ```
-GET /functions/v1/topics-recommended?category=Bible%20Study%20Methods&difficulty=beginner&limit=5&offset=0
+GET /functions/v1/topics-recommended?category=Christian%20Life&limit=5&offset=0
+```
+
+**Multiple Categories (New)**:
+```
+GET /functions/v1/topics-recommended?categories=Christian%20Life,Foundations%20of%20Faith&limit=10
+```
+
+**All Topics**:
+```
+GET /functions/v1/topics-recommended?language=en&limit=20&offset=0
 ```
 
 **Response Body**:
@@ -177,8 +190,6 @@ GET /functions/v1/topics-recommended?category=Bible%20Study%20Methods&difficulty
         "id": "string",
         "title": "string",
         "description": "string",
-        "difficulty_level": "beginner | intermediate | advanced",
-        "estimated_duration": "string",
         "key_verses": ["string"],
         "category": "string",
         "tags": ["string"],
@@ -202,10 +213,22 @@ GET /functions/v1/topics-recommended?category=Bible%20Study%20Methods&difficulty
 ```json
 {
   "success": false,
-  "error": "INVALID_PARAMETERS",
-  "message": "Invalid difficulty level. Must be: beginner, intermediate, or advanced",
+  "error": "INVALID_PARAMETER",
+  "message": "Cannot specify both \"category\" and \"categories\" parameters. Use only one.",
   "details": {
-    "valid_values": ["beginner", "intermediate", "advanced"]
+    "conflicting_parameters": ["category", "categories"]
+  }
+}
+```
+
+**400 Bad Request** (Invalid Limit):
+```json
+{
+  "success": false,
+  "error": "INVALID_PARAMETER",  
+  "message": "Limit cannot exceed 100",
+  "details": {
+    "max_limit": 100
   }
 }
 ```
@@ -213,12 +236,77 @@ GET /functions/v1/topics-recommended?category=Bible%20Study%20Methods&difficulty
 **Notes**:
 - Requires authentication (Bearer token or anonymous token)
 - Rate limiting applied per standard rate limits
-- Currently supports 15 predefined topics in English
-- Categories include: Bible Study Methods, Group Leadership, Spiritual Disciplines, etc.
+- **Multi-category filtering**: Use `categories` parameter with comma-separated values
+- **Backward compatible**: All existing single-category queries continue to work
+- **Cannot mix parameters**: Use either `category` OR `categories`, not both
+- Currently supports English language topics only
+- Available categories: Apologetics & Defense of Faith, Christian Life, Church & Community, Discipleship & Growth, Family & Relationships, Foundations of Faith, Mission & Service, Spiritual Disciplines
 
 ---
 
-### 3. Submit Feedback
+### 3. Get Topics Categories
+
+**Endpoint**: `GET /functions/v1/topics-categories`
+
+**Description**: Retrieves all available categories for Bible study topics.
+
+**Authentication**: Required (Bearer token from Supabase Auth or anonymous token)
+
+**Request Headers**:
+```
+Content-Type: application/json
+Authorization: Bearer YOUR_ACCESS_TOKEN
+```
+
+**Query Parameters**:
+- `language` (optional): Language code (default: "en")
+
+**Example Request**:
+```
+GET /functions/v1/topics-categories?language=en
+```
+
+**Response Body**:
+```json
+{
+  "success": true,
+  "data": {
+    "categories": [
+      "Apologetics & Defense of Faith",
+      "Christian Life", 
+      "Church & Community",
+      "Discipleship & Growth",
+      "Family & Relationships",
+      "Foundations of Faith",
+      "Mission & Service",
+      "Spiritual Disciplines"
+    ],
+    "total": 8
+  }
+}
+```
+
+**Error Responses**:
+
+**401 Unauthorized**:
+```json
+{
+  "success": false,
+  "error": "UNAUTHORIZED", 
+  "message": "Authorization header required"
+}
+```
+
+**Notes**:
+- Requires authentication (Bearer token or anonymous token)
+- Currently supports English language categories only
+- Useful for building category filter UI components
+- Categories are dynamically retrieved from the database
+- Rate limiting applied per standard rate limits
+
+---
+
+### 4. Submit Feedback
 
 **Endpoint**: `POST /functions/v1/feedback`
 
@@ -303,7 +391,7 @@ Authorization: Bearer YOUR_ACCESS_TOKEN (optional)
 
 ---
 
-### 4. Google OAuth Callback
+### 5. Google OAuth Callback
 
 **Endpoint**: `POST /functions/v1/auth-google-callback`
 
@@ -405,7 +493,7 @@ X-Anonymous-Session-ID: session_id (optional, for migration)
 
 ---
 
-### 5. Manage Anonymous Sessions
+### 6. Manage Anonymous Sessions
 
 **Endpoint**: `POST /functions/v1/auth-session`
 
@@ -516,7 +604,7 @@ Authorization: Bearer SUPABASE_ANON_KEY (creation) or Bearer USER_ACCESS_TOKEN (
 
 ---
 
-### 6. Daily Verse
+### 7. Daily Verse
 
 **Endpoint**: `GET /functions/v1/daily-verse`
 
@@ -586,7 +674,7 @@ GET /functions/v1/daily-verse?date=2025-07-20
 
 ---
 
-### 7. Manage Study Guides
+### 8. Manage Study Guides
 
 **Endpoint**: `GET /functions/v1/study-guides` and `POST /functions/v1/study-guides`
 
@@ -594,7 +682,7 @@ GET /functions/v1/daily-verse?date=2025-07-20
 
 **Authentication**: Required for saving/unsaving guides, optional for retrieval
 
-#### 7.1 Get Study Guides
+#### 8.1 Get Study Guides
 
 **Method**: `GET /functions/v1/study-guides`
 
@@ -643,7 +731,7 @@ GET /functions/v1/study-guides?saved=true&limit=10&offset=0
 }
 ```
 
-#### 7.2 Save/Unsave Study Guide
+#### 8.2 Save/Unsave Study Guide
 
 **Method**: `POST /functions/v1/study-guides`
 
@@ -822,6 +910,24 @@ const { data, error } = await supabase.functions.invoke('study-generate', {
 const studyGuide = data.study_guide;
 const content = studyGuide.content;
 
+// Get all topic categories
+const { data: categoriesData } = await supabase.functions.invoke('topics-categories');
+const categories = categoriesData.categories;
+
+// Get recommended topics (single category)
+const { data: topicsData } = await supabase.functions.invoke('topics-recommended', {
+  method: 'GET'
+}, {
+  query: { category: 'Christian Life', limit: '10' }
+});
+
+// Get recommended topics (multiple categories)  
+const { data: multiTopicsData } = await supabase.functions.invoke('topics-recommended', {
+  method: 'GET'
+}, {
+  query: { categories: 'Christian Life,Foundations of Faith', limit: '10' }
+});
+
 // Get saved study guides
 const { data: guides } = await supabase.functions.invoke('study-guides', {
   body: {},
@@ -852,6 +958,31 @@ final response = await Supabase.instance.client.functions.invoke(
 // Access the generated study guide
 final studyGuide = response.data['study_guide'];
 final content = studyGuide['content'];
+
+// Get all topic categories
+final categoriesResponse = await Supabase.instance.client.functions.invoke(
+  'topics-categories',
+  queryParameters: {'language': 'en'},
+);
+final categories = categoriesResponse.data['categories'];
+
+// Get recommended topics (single category)
+final topicsResponse = await Supabase.instance.client.functions.invoke(
+  'topics-recommended',
+  queryParameters: {
+    'category': 'Christian Life',
+    'limit': '10'
+  },
+);
+
+// Get recommended topics (multiple categories)
+final multiTopicsResponse = await Supabase.instance.client.functions.invoke(
+  'topics-recommended', 
+  queryParameters: {
+    'categories': 'Christian Life,Foundations of Faith',
+    'limit': '10'
+  },
+);
 
 // Get saved study guides
 final guidesResponse = await Supabase.instance.client.functions.invoke(
@@ -891,6 +1022,21 @@ curl -X POST "https://your-project.supabase.co/functions/v1/study-generate" \
     "input_value": "John 3:16",
     "language": "en"
   }'
+
+# Get all topic categories
+curl -X GET "https://your-project.supabase.co/functions/v1/topics-categories?language=en" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+
+# Get recommended topics (single category)
+curl -X GET "https://your-project.supabase.co/functions/v1/topics-recommended?category=Christian%20Life&limit=10" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+
+# Get recommended topics (multiple categories)  
+curl -X GET "https://your-project.supabase.co/functions/v1/topics-recommended?categories=Christian%20Life,Foundations%20of%20Faith&limit=10" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
 
 # Get saved study guides
 curl -X GET "https://your-project.supabase.co/functions/v1/study-guides?saved=true&limit=10" \
@@ -940,11 +1086,20 @@ All endpoints include comprehensive logging:
 
 ---
 
-**Last Updated**: July 2025  
-**API Version**: 1.2  
+**Last Updated**: August 2025  
+**API Version**: 1.4  
 **Support**: support@disciplefy.com
 
 ## Security Changelog
+
+### Version 1.4 (August 2025)
+- **NEW FEATURE**: Added `/topics-categories` endpoint for retrieving all available Bible study topic categories
+- **ENHANCEMENT**: Enhanced `/topics-recommended` endpoint with multi-category filtering via `categories` parameter
+- **IMPROVEMENT**: Added support for comma-separated category filtering (e.g., "Christian Life,Foundations of Faith")
+- **BACKWARD COMPATIBILITY**: Maintained full backward compatibility for existing single-category queries
+- **VALIDATION**: Added parameter validation to prevent using both `category` and `categories` parameters
+- **DATABASE**: Added PostgreSQL functions for efficient multi-category filtering with proper security
+- **PERFORMANCE**: Optimized category queries using array operations and database indexing
 
 ### Version 1.3 (July 2025)
 - **NEW FEATURE**: Added `/daily-verse` endpoint with LLM-powered verse generation

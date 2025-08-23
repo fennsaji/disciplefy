@@ -1,6 +1,7 @@
 import 'package:go_router/go_router.dart';
 
 import '../../features/onboarding/presentation/pages/onboarding_screen.dart';
+import '../../features/onboarding/presentation/pages/language_selection_screen.dart';
 import '../../features/onboarding/presentation/pages/onboarding_language_page.dart';
 import '../../features/onboarding/presentation/pages/onboarding_purpose_page.dart';
 import '../../features/study_generation/presentation/pages/study_guide_screen.dart';
@@ -11,9 +12,11 @@ import '../presentation/widgets/app_shell.dart';
 import '../error/error_page.dart';
 import '../../features/home/presentation/pages/home_screen.dart';
 import '../../features/study_generation/presentation/pages/generate_study_screen.dart';
-import '../../features/study_generation/domain/services/study_navigation_service.dart';
+import '../navigation/study_navigator.dart';
+import '../di/injection_container.dart';
 import '../../features/saved_guides/presentation/pages/saved_screen.dart';
 import '../../features/settings/presentation/pages/settings_screen.dart';
+import '../../features/study_topics/presentation/pages/study_topics_screen.dart';
 import 'app_routes.dart';
 import 'router_guard.dart';
 import 'auth_notifier.dart';
@@ -24,13 +27,19 @@ class AppRouter {
   static final GoRouter router = GoRouter(
     initialLocation: '/', // Let the redirect logic handle the initial route
     refreshListenable: _authNotifier, // Listen to auth state changes
-    redirect: (context, state) => RouterGuard.handleRedirect(state.uri.path),
+    redirect: (context, state) async =>
+        await RouterGuard.handleRedirect(state.uri.path),
     routes: [
       // Onboarding Flow (outside app shell)
       GoRoute(
         path: AppRoutes.onboarding,
         name: 'onboarding',
         builder: (context, state) => const OnboardingScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.languageSelection,
+        name: 'language_selection',
+        builder: (context, state) => const LanguageSelectionScreen(),
       ),
       // GoRoute(
       //   path: AppRoutes.onboardingLanguage,
@@ -78,19 +87,28 @@ class AppRouter {
         builder: (context, state) {
           // Parse tab parameter from query string
           final tabParam = state.uri.queryParameters['tab'];
+          final sourceParam = state.uri.queryParameters['source'];
           int? initialTabIndex;
           if (tabParam == 'recent') {
             initialTabIndex = 1; // Recent tab
           } else if (tabParam == 'saved') {
             initialTabIndex = 0; // Saved tab
           }
-          return SavedScreen(initialTabIndex: initialTabIndex);
+          return SavedScreen(
+            initialTabIndex: initialTabIndex,
+            navigationSource: sourceParam,
+          );
         },
       ),
       GoRoute(
         path: AppRoutes.settings,
         name: 'settings',
         builder: (context, state) => const SettingsScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.studyTopics,
+        name: 'study_topics',
+        builder: (context, state) => const StudyTopicsScreen(),
       ),
 
       // Authentication Routes (outside app shell)
@@ -131,7 +149,7 @@ class AppRouter {
           // Parse navigation source from query parameters
           final sourceString = state.uri.queryParameters['source'];
           final navigationSource =
-              StudyNavigationService.parseNavigationSource(sourceString);
+              sl<StudyNavigator>().parseNavigationSource(sourceString);
 
           if (state.extra is StudyGuide) {
             studyGuide = state.extra as StudyGuide;
@@ -176,6 +194,7 @@ extension AppRouterExtension on GoRouter {
       go(AppRoutes.studyGuide, extra: extra);
   void goToSettings() => go(AppRoutes.settings);
   void goToSaved() => go(AppRoutes.saved);
+  void goToStudyTopics() => go(AppRoutes.studyTopics);
   void goToLogin() => go(AppRoutes.login);
   void goToAuthCallback() => go(AppRoutes.authCallback);
   void goToError(String error) => go(AppRoutes.error, extra: error);

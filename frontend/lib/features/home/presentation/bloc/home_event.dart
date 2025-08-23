@@ -16,15 +16,17 @@ class LoadRecommendedTopics extends HomeEvent {
   final int? limit;
   final String? category;
   final String? difficulty;
+  final bool forceRefresh;
 
   const LoadRecommendedTopics({
     this.limit,
     this.category,
     this.difficulty,
+    this.forceRefresh = false,
   });
 
   @override
-  List<Object?> get props => [limit, category, difficulty];
+  List<Object?> get props => [limit, category, difficulty, forceRefresh];
 }
 
 /// Event to refresh recommended topics
@@ -63,6 +65,11 @@ class GenerateStudyGuideFromTopic extends HomeEvent {
 /// Event to clear any error states
 class ClearHomeError extends HomeEvent {
   const ClearHomeError();
+}
+
+/// Event for language preference change from settings
+class LanguagePreferenceChanged extends HomeEvent {
+  const LanguagePreferenceChanged();
 }
 
 // Internal coordination events (for BLoC implementation)

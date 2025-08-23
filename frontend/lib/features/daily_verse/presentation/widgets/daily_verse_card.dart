@@ -14,12 +14,14 @@ class DailyVerseCard extends StatelessWidget {
   final VoidCallback? onTap;
   final bool showLanguageTabs;
   final EdgeInsetsGeometry? margin;
+  final bool isDisabled;
 
   const DailyVerseCard({
     super.key,
     this.onTap,
     this.showLanguageTabs = true,
     this.margin,
+    this.isDisabled = false,
   });
 
   @override
@@ -113,92 +115,92 @@ class DailyVerseCard extends StatelessWidget {
     final theme = Theme.of(context);
 
     return GestureDetector(
-      onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Header with date - improved spacing
-            _buildHeader(context, state.formattedDate, state.isFromCache),
+      onTap: isDisabled ? null : onTap,
+      child: AnimatedOpacity(
+        opacity: isDisabled ? 0.5 : 1.0,
+        duration: const Duration(milliseconds: 150),
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header with date - improved spacing
+              _buildHeader(context, state.formattedDate, state.isFromCache),
 
-            const SizedBox(height: 20),
-
-            // Language tabs with better spacing
-            if (showLanguageTabs) ...[
-              _buildLanguageTabs(context, state.currentLanguage),
               const SizedBox(height: 20),
-            ],
 
-            // Verse reference with highlight color and better spacing
-            Padding(
-              padding: const EdgeInsets.only(bottom: 16),
-              child: Text(
-                state.verse.reference,
-                style: theme.textTheme.titleMedium?.copyWith(
-                  color: theme.colorScheme.onSecondary,
-                  fontWeight: FontWeight.w700,
-                  fontSize: 16,
-                  letterSpacing: 0.5,
-                ),
-              ),
-            ),
+              // Language tabs removed - language preference handled in settings
 
-            // Verse text with improved background and spacing
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(20),
-              margin: const EdgeInsets.only(bottom: 20),
-              decoration: BoxDecoration(
-                color: theme.colorScheme.secondary.withValues(alpha: 0.3),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(
-                  color: theme.colorScheme.secondary.withValues(alpha: 0.6),
-                ),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    state.currentVerseText,
-                    style: theme.textTheme.bodyLarge?.copyWith(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w500,
-                      color: theme.colorScheme.onSecondary,
-                      height: 1.7,
-                      letterSpacing: 0.3,
-                    ),
-                    textAlign: TextAlign.start,
+              // Verse reference with highlight color and better spacing
+              Padding(
+                padding: const EdgeInsets.only(bottom: 16),
+                child: Text(
+                  state.verse.reference,
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    color: theme.colorScheme.onSecondary,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 16,
+                    letterSpacing: 0.5,
                   ),
-                  if (onTap != null) ...[
-                    const SizedBox(height: 12),
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.auto_awesome,
-                          size: 14,
-                          color: theme.colorScheme.onSecondary
-                              .withValues(alpha: 0.6),
-                        ),
-                        const SizedBox(width: 6),
-                        Text(
-                          'Tap to generate study guide',
-                          style: theme.textTheme.bodySmall?.copyWith(
+                ),
+              ),
+
+              // Verse text with improved background and spacing
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(20),
+                margin: const EdgeInsets.only(bottom: 20),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.secondary.withValues(alpha: 0.3),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: theme.colorScheme.secondary.withValues(alpha: 0.6),
+                  ),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      state.currentVerseText,
+                      style: theme.textTheme.bodyLarge?.copyWith(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w500,
+                        color: theme.colorScheme.onSecondary,
+                        height: 1.7,
+                        letterSpacing: 0.3,
+                      ),
+                      textAlign: TextAlign.start,
+                    ),
+                    if (onTap != null && !isDisabled) ...[
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.auto_awesome,
+                            size: 14,
                             color: theme.colorScheme.onSecondary
                                 .withValues(alpha: 0.6),
-                            fontStyle: FontStyle.italic,
                           ),
-                        ),
-                      ],
-                    ),
+                          const SizedBox(width: 6),
+                          Text(
+                            'Tap to generate study guide',
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: theme.colorScheme.onSecondary
+                                  .withValues(alpha: 0.6),
+                              fontStyle: FontStyle.italic,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                   ],
-                ],
+                ),
               ),
-            ),
 
-            // Action buttons with improved spacing
-            _buildActionButtons(context, state),
-          ],
+              // Action buttons with improved spacing
+              _buildActionButtons(context, state),
+            ],
+          ),
         ),
       ),
     );
@@ -240,11 +242,7 @@ class DailyVerseCard extends StatelessWidget {
 
           const SizedBox(height: 16),
 
-          // Language tabs
-          if (showLanguageTabs) ...[
-            _buildLanguageTabs(context, state.currentLanguage),
-            const SizedBox(height: 16),
-          ],
+          // Language tabs removed - language preference handled in settings
 
           // Verse content
           Text(
@@ -361,7 +359,7 @@ class DailyVerseCard extends StatelessWidget {
                       color: theme.colorScheme.onSecondary,
                     ),
                   ),
-                  if (onTap != null) ...[
+                  if (onTap != null && !isDisabled) ...[
                     const SizedBox(width: 8),
                     Icon(
                       Icons.touch_app,

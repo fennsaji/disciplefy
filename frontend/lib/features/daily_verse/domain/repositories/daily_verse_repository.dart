@@ -5,10 +5,12 @@ import '../entities/daily_verse_entity.dart';
 /// Repository interface for daily verse operations
 abstract class DailyVerseRepository {
   /// Get today's daily verse with caching support
-  Future<Either<Failure, DailyVerseEntity>> getTodaysVerse();
+  Future<Either<Failure, DailyVerseEntity>> getTodaysVerse(
+      [VerseLanguage? language]);
 
   /// Get daily verse for a specific date
-  Future<Either<Failure, DailyVerseEntity>> getDailyVerse(DateTime date);
+  Future<Either<Failure, DailyVerseEntity>> getDailyVerse(DateTime date,
+      [VerseLanguage? language]);
 
   /// Get cached verse if available (offline support)
   Future<DailyVerseEntity?> getCachedVerse(DateTime date);

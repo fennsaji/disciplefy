@@ -8,25 +8,27 @@ import '../../../../core/error/failures.dart';
 import '../../domain/entities/daily_verse_entity.dart';
 import '../../domain/repositories/daily_verse_repository.dart';
 import '../services/daily_verse_api_service.dart';
-import '../services/daily_verse_cache_service.dart';
+import '../services/daily_verse_cache_interface.dart';
 
 /// Implementation of DailyVerseRepository with caching and offline support
 class DailyVerseRepositoryImpl implements DailyVerseRepository {
   final DailyVerseApiService _apiService;
-  final DailyVerseCacheService _cacheService;
+  final DailyVerseCacheInterface _cacheService;
 
   DailyVerseRepositoryImpl({
     required DailyVerseApiService apiService,
-    required DailyVerseCacheService cacheService,
+    required DailyVerseCacheInterface cacheService,
   })  : _apiService = apiService,
         _cacheService = cacheService;
 
   @override
-  Future<Either<Failure, DailyVerseEntity>> getTodaysVerse() async =>
-      getDailyVerse(DateTime.now());
+  Future<Either<Failure, DailyVerseEntity>> getTodaysVerse(
+          [VerseLanguage? language]) async =>
+      getDailyVerse(DateTime.now(), language);
 
   @override
-  Future<Either<Failure, DailyVerseEntity>> getDailyVerse(DateTime date) async {
+  Future<Either<Failure, DailyVerseEntity>> getDailyVerse(DateTime date,
+      [VerseLanguage? language]) async {
     try {
       // Check if we should try cache first (offline or recent fetch)
       final shouldRefresh = await _cacheService.shouldRefresh();
@@ -39,7 +41,7 @@ class DailyVerseRepositoryImpl implements DailyVerseRepository {
       }
 
       // Try to fetch from API
-      final apiResult = await _apiService.getDailyVerse(date);
+      final apiResult = await _apiService.getDailyVerse(date, language);
 
       return apiResult.fold(
         (failure) async {

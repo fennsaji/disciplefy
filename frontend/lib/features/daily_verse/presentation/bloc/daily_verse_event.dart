@@ -82,3 +82,8 @@ class ClearVerseCacheEvent extends DailyVerseEvent {
 class GetCacheStatsEvent extends DailyVerseEvent {
   const GetCacheStatsEvent();
 }
+
+/// Language preference changed via settings
+class LanguagePreferenceChanged extends DailyVerseEvent {
+  const LanguagePreferenceChanged();
+}

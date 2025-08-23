@@ -12,6 +12,8 @@
 .env.staging
 .env.production
 .env.*.local
+.env.*
+
 
 # Supabase environment
 backend/.env
