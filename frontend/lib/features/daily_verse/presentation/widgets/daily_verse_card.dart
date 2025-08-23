@@ -175,7 +175,7 @@ class DailyVerseCard extends StatelessWidget {
                       ),
                       textAlign: TextAlign.start,
                     ),
-                    if (onTap != null) ...[
+                    if (onTap != null && !isDisabled) ...[
                       const SizedBox(height: 12),
                       Row(
                         children: [
@@ -367,7 +367,7 @@ class DailyVerseCard extends StatelessWidget {
                       color: theme.colorScheme.onSecondary,
                     ),
                   ),
-                  if (onTap != null) ...[
+                  if (onTap != null && !isDisabled) ...[
                     const SizedBox(width: 8),
                     Icon(
                       Icons.touch_app,

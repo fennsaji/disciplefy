@@ -11,8 +11,8 @@ import '../../../../core/utils/device_keyboard_handler.dart';
 import '../../../../core/services/language_preference_service.dart';
 import '../../../../core/models/app_language.dart';
 import '../../domain/mappers/app_language_mapper.dart';
-import '../../domain/services/study_navigation_service.dart';
 import '../../domain/usecases/get_default_study_language.dart';
+import '../../../../core/navigation/study_navigator.dart';
 import '../../../../core/usecases/usecase.dart';
 import '../bloc/study_bloc.dart';
 import '../bloc/study_event.dart';
@@ -42,6 +42,9 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen> {
 
   // Language preference service for database integration
   late final LanguagePreferenceService _languagePreferenceService;
+
+  // Navigation service
+  late final StudyNavigator _navigator;
 
   // Scripture reference suggestions
   final List<String> _scriptureeSuggestions = [
@@ -80,6 +83,7 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen> {
   void initState() {
     super.initState();
     _languagePreferenceService = GetIt.instance<LanguagePreferenceService>();
+    _navigator = GetIt.instance<StudyNavigator>();
     _inputController.addListener(_validateInput);
     _loadDefaultLanguage();
   }
@@ -207,7 +211,7 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen> {
           setState(() {
             _isGeneratingStudyGuide = false;
           });
-          StudyNavigationService.navigateToStudyGuide(
+          _navigator.navigateToStudyGuide(
             context,
             studyGuide: state.studyGuide,
             source: StudyNavigationSource.generate,
@@ -217,7 +221,12 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen> {
           setState(() {
             _isGeneratingStudyGuide = false;
           });
-          _showErrorDialog(context, state.failure.message, state.isRetryable);
+
+          final displayMessage = kDebugMode
+              ? state.failure.message
+              : 'Something went wrong. Please try again.';
+
+          _showErrorDialog(context, displayMessage, state.isRetryable);
         } else if (state is StudyGenerationInProgress) {
           // Update loading state based on BLoC state
           setState(() {
@@ -305,15 +314,15 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen> {
   Widget _buildModeToggle() => Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'What would you like to study?',
-            style: GoogleFonts.inter(
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-              color: Theme.of(context).colorScheme.onBackground,
-            ),
-          ),
-          const SizedBox(height: 16),
+          // Text(
+          //   'What would you like to study?',
+          //   style: GoogleFonts.inter(
+          //     fontSize: 18,
+          //     fontWeight: FontWeight.w600,
+          //     color: Theme.of(context).colorScheme.onBackground,
+          //   ),
+          // ),
+          // const SizedBox(height: 16),
           Container(
             decoration: BoxDecoration(
               color: Theme.of(context).colorScheme.primary.withOpacity(0.1),

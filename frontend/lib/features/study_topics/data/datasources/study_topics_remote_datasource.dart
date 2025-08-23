@@ -244,8 +244,8 @@ class StudyTopicsRemoteDataSourceImpl implements StudyTopicsRemoteDataSource {
       if (e is ClientException) rethrow;
 
       throw ClientException(
-        message: 'Failed to parse topics response: $e',
-        code: 'TOPICS_JSON_ERROR',
+        message: 'Failed to parse categories response: $e',
+        code: 'CATEGORIES_JSON_ERROR',
       );
     }
   }
@@ -306,7 +306,7 @@ class StudyTopicsRemoteDataSourceImpl implements StudyTopicsRemoteDataSource {
       }
       throw const ClientException(
         message: 'API response missing categories data',
-        code: 'TOPICS_PARSE_ERROR',
+        code: 'CATEGORIES_PARSE_ERROR',
       );
     } catch (e) {
       if (kDebugMode) {

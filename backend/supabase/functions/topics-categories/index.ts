@@ -28,6 +28,12 @@ interface CategoriesQueryParams {
 // Configuration constants
 const DEFAULT_LANGUAGE = 'en' as const
 
+// Allowed language codes (BCP 47 subset)
+const ALLOWED_LANGUAGES = new Set(['en', 'hi', 'ml'])
+
+// BCP 47 language code validation regex (basic subset)
+const LANGUAGE_CODE_REGEX = /^[a-z]{2}(-[A-Z]{2})?$/
+
 /**
  * Builds a successful categories response.
  */
@@ -89,14 +95,37 @@ async function handleTopicsCategories(req: Request, services: ServiceContainer):
 }
 
 /**
+ * Validates and sanitizes a language code
+ */
+function validateLanguageCode(rawLanguage: string | null): string {
+  if (!rawLanguage) {
+    return DEFAULT_LANGUAGE
+  }
+
+  // Normalize: trim whitespace and convert to lowercase
+  const normalized = rawLanguage.trim().toLowerCase()
+
+  // Validate against allow-list
+  if (ALLOWED_LANGUAGES.has(normalized as any)) {
+    return normalized
+  }
+
+  // Fallback for any other value
+  return DEFAULT_LANGUAGE
+}
+
+/**
  * Parses and validates query parameters from request URL
  */
 function parseQueryParameters(url: string): CategoriesQueryParams {
   const urlObj = new URL(url)
   const searchParams = urlObj.searchParams
 
+  const rawLanguage = searchParams.get('language')
+  const validatedLanguage = validateLanguageCode(rawLanguage)
+
   return {
-    language: searchParams.get('language') || DEFAULT_LANGUAGE
+    language: validatedLanguage
   }
 }
 

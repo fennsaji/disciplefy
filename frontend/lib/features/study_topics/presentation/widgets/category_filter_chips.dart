@@ -314,11 +314,13 @@ class _CategoryFilterSection extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             if (icon != null) ...[
-              Icon(
-                icon,
-                size: 16,
-                color: isSelected ? Colors.white : AppTheme.primaryColor,
-              ),
+              Icon(icon,
+                  size: 16,
+                  color: isSelected
+                      ? Colors.white
+                      : category != null
+                          ? CategoryUtils.getColorForCategory(context, category)
+                          : AppTheme.primaryColor),
               const SizedBox(width: 6),
             ],
             Flexible(
@@ -358,7 +360,12 @@ class _CategoryFilterSection extends StatelessWidget {
                   style: GoogleFonts.inter(
                     fontSize: 11,
                     fontWeight: FontWeight.w600,
-                    color: isSelected ? Colors.white : AppTheme.primaryColor,
+                    color: isSelected
+                        ? Colors.white
+                        : category != null
+                            ? CategoryUtils.getColorForCategory(
+                                context, category)
+                            : AppTheme.primaryColor,
                   ),
                 ),
               ),

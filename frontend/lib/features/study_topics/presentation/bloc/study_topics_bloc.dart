@@ -36,6 +36,24 @@ class StudyTopicsBloc extends Bloc<StudyTopicsEvent, StudyTopicsState> {
     on<ChangeLanguage>(_onChangeLanguage);
   }
 
+  /// Reusable async guard wrapper for unified try/catch/emit-error behavior
+  Future<void> _withAsyncGuard(
+    Emitter<StudyTopicsState> emit,
+    Future<void> Function() operation,
+    String operationName,
+  ) async {
+    try {
+      await operation();
+    } catch (e) {
+      if (kDebugMode) {
+        print('💥 [STUDY_TOPICS_BLOC] Error in $operationName: $e');
+      }
+      emit(StudyTopicsError(
+        message: 'An unexpected error occurred: $e',
+      ));
+    }
+  }
+
   /// Handle initial loading of topics and categories
   Future<void> _onLoadStudyTopics(
     LoadStudyTopics event,
@@ -43,28 +61,14 @@ class StudyTopicsBloc extends Bloc<StudyTopicsEvent, StudyTopicsState> {
   ) async {
     emit(const StudyTopicsLoading());
 
-    try {
-      // Load categories first
-      final categoriesLoaded = await _loadCategories(
-        forceRefresh: event.forceRefresh,
-        emit: emit,
-      );
-      if (!categoriesLoaded) return; // Error was emitted, return early
-
-      // Set initial filter
+    await _withAsyncGuard(emit, () async {
+      await _loadCategoriesInternal(forceRefresh: event.forceRefresh);
       _currentFilter = event.initialFilter ?? const StudyTopicsFilter();
-
-      // Load topics
-      await _loadTopicsWithCurrentFilter(emit,
-          forceRefresh: event.forceRefresh);
-    } catch (e) {
-      if (kDebugMode) {
-        print('💥 [STUDY_TOPICS_BLOC] Unexpected error in load: $e');
-      }
-      emit(StudyTopicsError(
-        message: 'An unexpected error occurred: $e',
-      ));
-    }
+      await _loadTopicsWithCurrentFilterInternal(
+        emit,
+        forceRefresh: event.forceRefresh,
+      );
+    }, 'load study topics');
   }
 
   /// Handle category filtering
@@ -75,20 +79,18 @@ class StudyTopicsBloc extends Bloc<StudyTopicsEvent, StudyTopicsState> {
     if (state is StudyTopicsLoaded) {
       final currentState = state as StudyTopicsLoaded;
 
-      // Show filtering state
       emit(StudyTopicsFiltering(
         currentTopics: currentState.topics,
         categories: currentState.categories,
         currentFilter: currentState.currentFilter,
       ));
 
-      // Update filter with new categories, reset offset for new search
       _currentFilter = _currentFilter.copyWith(
         selectedCategories: event.selectedCategories,
         offset: 0,
       );
 
-      await _loadTopicsWithCurrentFilter(emit);
+      await _loadTopicsWithCurrentFilterInternal(emit);
     }
   }
 
@@ -107,35 +109,39 @@ class StudyTopicsBloc extends Bloc<StudyTopicsEvent, StudyTopicsState> {
     _performSearch(emit);
   }
 
+  /// Extract categories from current state
+  List<String> _categoriesFromState() {
+    if (state is StudyTopicsLoaded) {
+      return (state as StudyTopicsLoaded).categories;
+    } else if (state is StudyTopicsFiltering) {
+      return (state as StudyTopicsFiltering).categories;
+    } else if (state is StudyTopicsLoadingMore) {
+      return (state as StudyTopicsLoadingMore).categories;
+    } else if (state is StudyTopicsEmpty) {
+      return (state as StudyTopicsEmpty).categories;
+    }
+    return [];
+  }
+
+  /// Extract hasMore flag from current state
+  bool _hasMoreFromState() {
+    if (state is StudyTopicsLoaded) {
+      return (state as StudyTopicsLoaded).hasMore;
+    } else if (state is StudyTopicsLoadingMore) {
+      return (state as StudyTopicsLoadingMore).hasMore;
+    }
+    return false;
+  }
+
   /// Perform the actual search operation
   void _performSearch(Emitter<StudyTopicsState> emit) {
-    // Handle search for different states that have topics loaded
     if (state is StudyTopicsLoaded ||
         state is StudyTopicsFiltering ||
         state is StudyTopicsLoadingMore ||
         state is StudyTopicsEmpty) {
-      List<String> categories = [];
-      bool hasMore = false;
+      final categories = _categoriesFromState();
+      final hasMore = _hasMoreFromState();
 
-      if (state is StudyTopicsLoaded) {
-        final currentState = state as StudyTopicsLoaded;
-        categories = currentState.categories;
-        hasMore = currentState.hasMore;
-      } else if (state is StudyTopicsFiltering) {
-        final currentState = state as StudyTopicsFiltering;
-        categories = currentState.categories;
-        hasMore = false; // Filtering doesn't have hasMore
-      } else if (state is StudyTopicsLoadingMore) {
-        final currentState = state as StudyTopicsLoadingMore;
-        categories = currentState.categories;
-        hasMore = currentState.hasMore;
-      } else if (state is StudyTopicsEmpty) {
-        final currentState = state as StudyTopicsEmpty;
-        categories = currentState.categories;
-        hasMore = false; // Empty state doesn't have hasMore
-      }
-
-      // Apply client-side search filtering to loaded topics
       final filteredTopics = TopicSearchUtils.applySearchFilter(
         _allLoadedTopics,
         _currentFilter.searchQuery,
@@ -174,35 +180,30 @@ class StudyTopicsBloc extends Bloc<StudyTopicsEvent, StudyTopicsState> {
         hasMore: currentState.hasMore,
       ));
 
-      // Load next page
-      final nextPageFilter = _currentFilter.copyWith(
-        offset: _allLoadedTopics.length,
-      );
+      await _withAsyncGuard(emit, () async {
+        final nextPageFilter = _currentFilter.copyWith(
+          offset: _allLoadedTopics.length,
+        );
 
-      final result = await _repository.getAllTopics(filter: nextPageFilter);
+        final result = await _repository.getAllTopics(filter: nextPageFilter);
 
-      result.fold(
-        (failure) {
-          emit(StudyTopicsError(
-            message: failure.message,
-            errorCode: failure.code,
-            isInitialLoadError: false,
-          ));
-        },
-        (newTopics) {
-          _allLoadedTopics.addAll(newTopics);
+        result.fold(
+          (failure) {
+            throw Exception('Failed to load more topics: ${failure.message}');
+          },
+          (newTopics) {
+            _allLoadedTopics.addAll(newTopics);
+            final filteredTopics = _applyCurrentFilters(_allLoadedTopics);
 
-          // Apply current filters to all loaded topics
-          final filteredTopics = _applyCurrentFilters(_allLoadedTopics);
-
-          emit(StudyTopicsLoaded(
-            topics: filteredTopics,
-            categories: currentState.categories,
-            currentFilter: _currentFilter,
-            hasMore: newTopics.length >= _currentFilter.limit,
-          ));
-        },
-      );
+            emit(StudyTopicsLoaded(
+              topics: filteredTopics,
+              categories: currentState.categories,
+              currentFilter: _currentFilter,
+              hasMore: newTopics.length >= _currentFilter.limit,
+            ));
+          },
+        );
+      }, 'load more topics');
     }
   }
 
@@ -211,7 +212,6 @@ class StudyTopicsBloc extends Bloc<StudyTopicsEvent, StudyTopicsState> {
     RefreshStudyTopics event,
     Emitter<StudyTopicsState> emit,
   ) async {
-    // Clear repository cache and reload
     _repository.clearCache();
     add(LoadStudyTopics(
       initialFilter: _currentFilter,
@@ -224,10 +224,23 @@ class StudyTopicsBloc extends Bloc<StudyTopicsEvent, StudyTopicsState> {
     ClearFilters event,
     Emitter<StudyTopicsState> emit,
   ) async {
+    // Reset filter to default state
     _currentFilter = const StudyTopicsFilter();
-    _allLoadedTopics.clear();
 
-    add(const LoadStudyTopics());
+    // Re-apply filters to existing cached topics instead of clearing cache
+    if (_allLoadedTopics.isNotEmpty) {
+      final filteredTopics = _applyCurrentFilters(_allLoadedTopics);
+
+      emit(StudyTopicsLoaded(
+        topics: filteredTopics,
+        categories: _categories,
+        currentFilter: _currentFilter,
+        hasMore: _allLoadedTopics.length >= _currentFilter.limit,
+      ));
+    } else {
+      // Only reload if no cached topics exist
+      add(const LoadStudyTopics());
+    }
   }
 
   /// Handle clearing error state
@@ -247,34 +260,25 @@ class StudyTopicsBloc extends Bloc<StudyTopicsEvent, StudyTopicsState> {
   ) async {
     _currentFilter = _currentFilter.copyWith(language: event.language);
     _allLoadedTopics.clear();
-
     add(LoadStudyTopics(initialFilter: _currentFilter));
   }
 
-  /// Load categories from repository and handle failures
-  Future<bool> _loadCategories({
-    required bool forceRefresh,
-    required Emitter<StudyTopicsState> emit,
-  }) async {
+  /// Load categories from repository (internal implementation)
+  Future<void> _loadCategoriesInternal({required bool forceRefresh}) async {
     final categoriesResult = await _repository.getCategories(
       forceRefresh: forceRefresh,
     );
 
     if (categoriesResult.isLeft()) {
       final failure = categoriesResult.fold((l) => l, (r) => null)!;
-      emit(StudyTopicsError(
-        message: failure.message,
-        errorCode: failure.code,
-      ));
-      return false;
+      throw Exception('Failed to load categories: ${failure.message}');
     }
 
     _categories = categoriesResult.fold((l) => [], (r) => r);
-    return true;
   }
 
-  /// Load topics with current filter settings
-  Future<void> _loadTopicsWithCurrentFilter(
+  /// Load topics with current filter settings (internal implementation)
+  Future<void> _loadTopicsWithCurrentFilterInternal(
     Emitter<StudyTopicsState> emit, {
     bool forceRefresh = false,
   }) async {

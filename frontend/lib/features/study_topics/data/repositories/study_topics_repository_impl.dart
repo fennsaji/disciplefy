@@ -267,9 +267,12 @@ class StudyTopicsRepositoryImpl implements StudyTopicsRepository {
 
   /// Generates cache key for topics based on filter criteria (excluding search)
   String _generateTopicsCacheKey(StudyTopicsFilter filter) {
+    // Sort selectedCategories deterministically to ensure consistent cache keys
+    final sortedCategories = filter.selectedCategories.toList()..sort();
+
     final parts = <String>[
       'topics',
-      filter.selectedCategories.join(','),
+      sortedCategories.join(','),
       filter.language,
       filter.limit.toString(),
       filter.offset.toString(),
