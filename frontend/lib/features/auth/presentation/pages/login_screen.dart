@@ -274,7 +274,6 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-
   /// Builds the features preview section
   Widget _buildFeaturesSection(BuildContext context) {
     final theme = Theme.of(context);

@@ -2,7 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/mockito.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import '../../../lib/core/services/api_auth_helper.dart';
+import 'package:disciplefy_bible_study/core/services/api_auth_helper.dart';
 
 // Mock classes
 class MockSupabaseClient extends Mock implements SupabaseClient {}
