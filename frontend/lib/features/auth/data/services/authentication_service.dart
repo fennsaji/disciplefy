@@ -4,6 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../domain/entities/auth_params.dart';
 import '../../domain/exceptions/auth_exceptions.dart' as auth_exceptions;
 import '../../domain/utils/auth_validator.dart';
+import '../../../user_profile/data/services/user_profile_api_service.dart';
 import 'auth_storage_service.dart';
 import 'oauth_service.dart';
 
@@ -13,12 +14,15 @@ class AuthenticationService {
   final SupabaseClient _supabase = Supabase.instance.client;
   final AuthStorageService _storageService;
   final OAuthService _oauthService;
+  final UserProfileApiService _profileApiService;
 
   AuthenticationService({
     AuthStorageService? storageService,
     OAuthService? oauthService,
+    UserProfileApiService? profileApiService,
   })  : _storageService = storageService ?? AuthStorageService(),
-        _oauthService = oauthService ?? OAuthService();
+        _oauthService = oauthService ?? OAuthService(),
+        _profileApiService = profileApiService ?? UserProfileApiService();
 
   /// Get current authenticated user
   User? get currentUser => _supabase.auth.currentUser;
@@ -143,6 +147,9 @@ class AuthenticationService {
             ),
           );
 
+          // Extract and sync OAuth profile data
+          await _syncOAuthProfileData();
+
           return true;
         } else {
           print(
@@ -220,6 +227,9 @@ class AuthenticationService {
         print('🔍 [DEBUG] - Stored user ID: $storedUserId');
         print('🔍 [DEBUG] - Onboarding completed: $storedOnboarding');
 
+        // Extract and sync OAuth profile data
+        await _syncOAuthProfileData();
+
         return true;
       } else {
         throw const auth_exceptions.AuthenticationFailedException(
@@ -245,6 +255,9 @@ class AuthenticationService {
           userId: currentUser?.id,
         ),
       );
+
+      // Extract and sync OAuth profile data
+      await _syncOAuthProfileData();
     }
 
     return success;
@@ -339,6 +352,152 @@ class AuthenticationService {
       createdAt: DateTime.now().toIso8601String(),
       isAnonymous: true,
     );
+  }
+
+  /// Extract OAuth profile data from current user and sync to backend
+  Future<void> _syncOAuthProfileData() async {
+    if (kDebugMode) {
+      print('🔐 [PROFILE SYNC] 🚀 _syncOAuthProfileData() called');
+      print('🔐 [PROFILE SYNC] Current user: ${currentUser?.id}');
+      print('🔐 [PROFILE SYNC] User email: ${currentUser?.email}');
+      print('🔐 [PROFILE SYNC] Is anonymous: ${currentUser?.isAnonymous}');
+      print('🔐 [PROFILE SYNC] App metadata: ${currentUser?.appMetadata}');
+      print('🔐 [PROFILE SYNC] User metadata: ${currentUser?.userMetadata}');
+    }
+
+    if (currentUser == null) {
+      if (kDebugMode) {
+        print('🔐 [PROFILE SYNC] ⚠️ No current user, skipping profile sync');
+      }
+      return;
+    }
+
+    if (currentUser!.isAnonymous) {
+      if (kDebugMode) {
+        print(
+            '🔐 [PROFILE SYNC] ℹ️ User is anonymous, skipping OAuth profile sync');
+      }
+      return;
+    }
+
+    try {
+      if (kDebugMode) {
+        print('🔐 [PROFILE SYNC] ✅ Starting OAuth profile data extraction...');
+        print('🔐 [PROFILE SYNC] User ID: ${currentUser!.id}');
+        print(
+            '🔐 [PROFILE SYNC] User metadata raw: ${currentUser!.userMetadata}');
+      }
+
+      final userMetadata = currentUser!.userMetadata ?? {};
+      if (userMetadata.isEmpty) {
+        if (kDebugMode) {
+          print(
+              '🔐 [PROFILE SYNC] ℹ️ No user metadata available, skipping sync');
+        }
+        return;
+      }
+
+      // Extract profile data from OAuth metadata
+      final profileData = <String, dynamic>{};
+
+      // Extract name fields
+      if (userMetadata['full_name'] != null) {
+        final fullName = userMetadata['full_name'] as String;
+        final nameParts = fullName.trim().split(' ');
+        if (nameParts.isNotEmpty) {
+          profileData['firstName'] = nameParts.first;
+          if (nameParts.length > 1) {
+            profileData['lastName'] = nameParts.skip(1).join(' ');
+          }
+        }
+      }
+
+      // Extract individual name fields if available
+      if (userMetadata['name'] != null && profileData['firstName'] == null) {
+        final name = userMetadata['name'] as String;
+        final nameParts = name.trim().split(' ');
+        if (nameParts.isNotEmpty) {
+          profileData['firstName'] = nameParts.first;
+          if (nameParts.length > 1) {
+            profileData['lastName'] = nameParts.skip(1).join(' ');
+          }
+        }
+      }
+
+      // Try to get first_name and last_name directly
+      if (userMetadata['first_name'] != null) {
+        profileData['firstName'] = userMetadata['first_name'];
+      }
+      if (userMetadata['last_name'] != null) {
+        profileData['lastName'] = userMetadata['last_name'];
+      }
+
+      // Extract profile picture
+      if (userMetadata['avatar_url'] != null) {
+        profileData['profilePicture'] = userMetadata['avatar_url'];
+      } else if (userMetadata['picture'] != null) {
+        profileData['profilePicture'] = userMetadata['picture'];
+      }
+
+      // Extract email and phone
+      if (currentUser!.email != null) {
+        profileData['email'] = currentUser!.email;
+      }
+      if (currentUser!.phone != null) {
+        profileData['phone'] = currentUser!.phone;
+      }
+
+      if (profileData.isNotEmpty) {
+        if (kDebugMode) {
+          print('🔐 [PROFILE SYNC] 📤 Syncing profile data: $profileData');
+        }
+
+        // Sync profile data to backend
+        if (kDebugMode) {
+          print('🔐 [PROFILE SYNC] 📤 Making API call to sync profile data...');
+        }
+
+        final result = await _profileApiService.syncOAuthProfile(profileData);
+
+        if (kDebugMode) {
+          print('🔐 [PROFILE SYNC] 📊 API response: $result');
+        }
+
+        result.fold(
+          (failure) {
+            if (kDebugMode) {
+              print('🔐 [PROFILE SYNC] ❌ API call failed: ${failure.message}');
+            }
+          },
+          (profile) {
+            if (kDebugMode) {
+              print(
+                  '🔐 [PROFILE SYNC] ✅ Profile data sync completed successfully');
+              print(
+                  '🔐 [PROFILE SYNC] Updated profile: firstName=${profile.firstName}, lastName=${profile.lastName}');
+            }
+          },
+        );
+      } else {
+        if (kDebugMode) {
+          print('🔐 [PROFILE SYNC] ℹ️ No profile data to sync');
+        }
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('🔐 [PROFILE SYNC] ❌ Error syncing profile data: $e');
+      }
+      // Don't throw the error to avoid breaking the auth flow
+      // Profile sync is a best-effort operation
+    }
+  }
+
+  /// Manual test method for OAuth profile sync (DEBUG ONLY)
+  Future<void> testOAuthProfileSync() async {
+    if (kDebugMode) {
+      print('🔐 [PROFILE SYNC TEST] 🧪 Manual test triggered');
+      await _syncOAuthProfileData();
+    }
   }
 
   /// Dispose resources

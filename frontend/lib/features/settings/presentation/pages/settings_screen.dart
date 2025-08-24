@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -172,6 +173,65 @@ class _SettingsScreenContent extends StatelessWidget {
         },
       );
 
+  /// Build profile avatar with network image support
+  Widget _buildProfileAvatar(
+      BuildContext context, AuthStateProvider authProvider) {
+    final profilePictureUrl = authProvider.profilePictureUrl;
+
+    // Show network image if available and user is not anonymous
+    if (profilePictureUrl != null && !authProvider.isAnonymous) {
+      return CircleAvatar(
+        radius: 25,
+        backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+        child: ClipOval(
+          child: Image.network(
+            profilePictureUrl,
+            width: 50,
+            height: 50,
+            fit: BoxFit.cover,
+            loadingBuilder: (context, child, loadingProgress) {
+              if (loadingProgress == null) return child;
+              return Center(
+                child: SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                      Theme.of(context).colorScheme.primary,
+                    ),
+                  ),
+                ),
+              );
+            },
+            errorBuilder: (context, error, stackTrace) {
+              if (kDebugMode) {
+                print('🖼️ [SETTINGS] Failed to load profile picture: $error');
+              }
+              // Return icon fallback on error
+              return Icon(
+                Icons.person,
+                size: 25,
+                color: Theme.of(context).colorScheme.primary,
+              );
+            },
+          ),
+        ),
+      );
+    }
+
+    // Fallback to icon (anonymous users or no profile picture)
+    return CircleAvatar(
+      radius: 25,
+      backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+      child: Icon(
+        authProvider.isAnonymous ? Icons.person_outline : Icons.person,
+        size: 25,
+        color: Theme.of(context).colorScheme.primary,
+      ),
+    );
+  }
+
   /// User Profile Tile showing user info
   Widget _buildUserProfileTile(
           BuildContext context, AuthStateProvider authProvider) =>
@@ -179,17 +239,8 @@ class _SettingsScreenContent extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
         child: Row(
           children: [
-            // Profile Picture
-            CircleAvatar(
-              radius: 25,
-              backgroundColor:
-                  Theme.of(context).colorScheme.primary.withOpacity(0.1),
-              child: Icon(
-                authProvider.isAnonymous ? Icons.person_outline : Icons.person,
-                size: 25,
-                color: Theme.of(context).colorScheme.primary,
-              ),
-            ),
+            // Profile Picture with cached data support
+            _buildProfileAvatar(context, authProvider),
 
             const SizedBox(width: 16),
 
@@ -199,7 +250,7 @@ class _SettingsScreenContent extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    authProvider.currentUserName,
+                    authProvider.profileBasedDisplayName,
                     style: GoogleFonts.inter(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
