@@ -26,6 +26,12 @@ void main() {
     mockStorageService = MockAuthStorageService();
     mockUser = MockUser();
 
+    // Mock authStateChanges stream for profile sync monitoring
+    when(mockAuthService.authStateChanges).thenAnswer((_) => Stream.empty());
+
+    // Mock currentUser for profile sync check
+    when(mockAuthService.currentUser).thenReturn(null);
+
     // Initialize auth service with mocked dependencies
     authService = AuthService(
       authenticationService: mockAuthService,

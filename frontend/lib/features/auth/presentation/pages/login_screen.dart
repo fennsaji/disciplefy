@@ -187,7 +187,7 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
         const SizedBox(height: 16),
         Text(
-          'Deepen your faith through guided Bible study',
+          'Sign in with Google to deepen your faith through guided Bible study',
           style: GoogleFonts.inter(
             fontSize: 16,
             fontWeight: FontWeight.normal,
@@ -210,11 +210,6 @@ class _LoginScreenState extends State<LoginScreen> {
             children: [
               // Google Sign-In Button
               _buildGoogleSignInButton(context, isLoading),
-
-              const SizedBox(height: 16),
-
-              // Continue as Guest Button
-              _buildGuestSignInButton(context, isLoading),
             ],
           );
         },
@@ -279,48 +274,6 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  /// Builds the guest sign-in button
-  Widget _buildGuestSignInButton(BuildContext context, bool isLoading) {
-    final theme = Theme.of(context);
-
-    return SizedBox(
-      width: double.infinity,
-      height: 56,
-      child: OutlinedButton(
-        onPressed: isLoading ? null : () => _handleGuestSignIn(context),
-        style: OutlinedButton.styleFrom(
-          foregroundColor: theme.colorScheme.primary,
-          side: BorderSide(
-            color: theme.colorScheme.primary,
-            width: 2,
-          ),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          disabledForegroundColor:
-              theme.colorScheme.primary.withValues(alpha: 0.5),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.person_outline,
-              size: 20,
-              color: theme.colorScheme.primary,
-            ),
-            const SizedBox(width: 12),
-            Text(
-              'Continue as Guest',
-              style: GoogleFonts.inter(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 
   /// Builds the features preview section
   Widget _buildFeaturesSection(BuildContext context) {
@@ -390,11 +343,6 @@ class _LoginScreenState extends State<LoginScreen> {
   /// Handles Google sign-in button tap
   void _handleGoogleSignIn(BuildContext context) {
     context.read<AuthBloc>().add(const GoogleSignInRequested());
-  }
-
-  /// Handles guest sign-in button tap
-  void _handleGuestSignIn(BuildContext context) {
-    context.read<AuthBloc>().add(const AnonymousSignInRequested());
   }
 }
 
