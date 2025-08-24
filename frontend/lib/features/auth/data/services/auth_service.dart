@@ -60,6 +60,62 @@ class AuthService {
   /// Sign out current user
   Future<void> signOut() async => _authService.signOut();
 
+  /// Send OTP to phone number for authentication
+  Future<void> signInWithPhone(String phoneNumber) async {
+    try {
+      await Supabase.instance.client.auth.signInWithOtp(
+        phone: phoneNumber,
+      );
+    } catch (e) {
+      if (kDebugMode) {
+        print('Phone sign-in error: $e');
+      }
+      rethrow;
+    }
+  }
+
+  /// Send magic link to email for authentication
+  Future<void> signInWithEmail(String email) async {
+    try {
+      await Supabase.instance.client.auth.signInWithOtp(
+        email: email,
+      );
+    } catch (e) {
+      if (kDebugMode) {
+        print('Email sign-in error: $e');
+      }
+      rethrow;
+    }
+  }
+
+  /// Verify OTP for phone or email authentication
+  Future<AuthResponse> verifyOTP({
+    required String identifier,
+    required String otp,
+    required String method,
+  }) async {
+    try {
+      if (method == 'phone') {
+        return await Supabase.instance.client.auth.verifyOTP(
+          type: OtpType.sms,
+          phone: identifier,
+          token: otp,
+        );
+      } else {
+        return await Supabase.instance.client.auth.verifyOTP(
+          type: OtpType.email,
+          email: identifier,
+          token: otp,
+        );
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('OTP verification error: $e');
+      }
+      rethrow;
+    }
+  }
+
   /// Delete user account and all associated data
   Future<void> deleteAccount() async => _authService.deleteAccount();
 

@@ -107,3 +107,73 @@ class ForceLogoutRequested extends AuthEvent {
   @override
   List<Object?> get props => [reason];
 }
+
+/// Event to request phone number authentication
+class PhoneSignInRequested extends AuthEvent {
+  final String phoneNumber;
+
+  const PhoneSignInRequested({
+    required this.phoneNumber,
+  });
+
+  @override
+  List<Object?> get props => [phoneNumber];
+}
+
+/// Event to request email authentication
+class EmailSignInRequested extends AuthEvent {
+  final String email;
+
+  const EmailSignInRequested({
+    required this.email,
+  });
+
+  @override
+  List<Object?> get props => [email];
+}
+
+/// Event to verify OTP for phone or email authentication
+class OTPVerificationRequested extends AuthEvent {
+  final String otp;
+  final String identifier; // phone number or email
+  final String method; // 'phone' or 'email'
+
+  const OTPVerificationRequested({
+    required this.otp,
+    required this.identifier,
+    required this.method,
+  });
+
+  @override
+  List<Object?> get props => [otp, identifier, method];
+}
+
+/// Event to complete user profile for first-time users
+class ProfileCompletionRequested extends AuthEvent {
+  final String firstName;
+  final String lastName;
+  final String? profilePicturePath;
+
+  const ProfileCompletionRequested({
+    required this.firstName,
+    required this.lastName,
+    this.profilePicturePath,
+  });
+
+  @override
+  List<Object?> get props => [firstName, lastName, profilePicturePath];
+}
+
+/// Event to upload profile picture during onboarding
+class ProfilePictureUploadRequested extends AuthEvent {
+  final String userId;
+  final String imagePath; // Local file path
+
+  const ProfilePictureUploadRequested({
+    required this.userId,
+    required this.imagePath,
+  });
+
+  @override
+  List<Object?> get props => [userId, imagePath];
+}

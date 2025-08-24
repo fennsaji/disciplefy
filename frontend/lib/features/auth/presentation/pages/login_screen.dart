@@ -8,7 +8,7 @@ import '../bloc/auth_state.dart' as auth_states;
 import '../../../../core/services/auth_aware_navigation_service.dart';
 import '../../../../core/utils/logger.dart';
 
-/// Login screen with Google OAuth and anonymous sign-in options
+/// Login screen with Google, Phone, and Email authentication options
 /// Follows Material Design 3 guidelines and brand theme with dark mode support
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -17,11 +17,26 @@ class LoginScreen extends StatefulWidget {
   State<LoginScreen> createState() => _LoginScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
+class _LoginScreenState extends State<LoginScreen>
+    with SingleTickerProviderStateMixin {
+  late TabController _tabController;
+  final _phoneController = TextEditingController();
+  final _emailController = TextEditingController();
+  final _phoneFormKey = GlobalKey<FormState>();
+  final _emailFormKey = GlobalKey<FormState>();
   @override
   void initState() {
     super.initState();
+    _tabController = TabController(length: 3, vsync: this);
     _checkAuthenticationStatus();
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    _phoneController.dispose();
+    _emailController.dispose();
+    super.dispose();
   }
 
   /// Check if user is already authenticated and redirect if needed
@@ -200,20 +215,286 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  /// Builds the sign-in buttons with proper state management
+  /// Builds the tabbed authentication interface
   Widget _buildSignInButtons(BuildContext context) =>
       BlocBuilder<AuthBloc, auth_states.AuthState>(
         builder: (context, state) {
           final isLoading = state is auth_states.AuthLoadingState;
+          final theme = Theme.of(context);
 
           return Column(
             children: [
-              // Google Sign-In Button
-              _buildGoogleSignInButton(context, isLoading),
+              // Tab Bar
+              Container(
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.surface,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: theme.colorScheme.primary.withOpacity(0.08),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: TabBar(
+                  controller: _tabController,
+                  indicator: BoxDecoration(
+                    color: theme.colorScheme.primary.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  indicatorSize: TabBarIndicatorSize.tab,
+                  labelColor: theme.colorScheme.primary,
+                  unselectedLabelColor:
+                      theme.colorScheme.onSurface.withOpacity(0.6),
+                  labelStyle: GoogleFonts.inter(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  unselectedLabelStyle: GoogleFonts.inter(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                  ),
+                  tabs: const [
+                    Tab(
+                      icon: Icon(Icons.login, size: 20),
+                      text: 'Google',
+                    ),
+                    Tab(
+                      icon: Icon(Icons.phone, size: 20),
+                      text: 'Phone',
+                    ),
+                    Tab(
+                      icon: Icon(Icons.email, size: 20),
+                      text: 'Email',
+                    ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 24),
+
+              // Tab Views
+              SizedBox(
+                height: 200,
+                child: TabBarView(
+                  controller: _tabController,
+                  children: [
+                    // Google Sign-In Tab
+                    _buildGoogleSignInTab(context, isLoading),
+                    // Phone Sign-In Tab
+                    _buildPhoneSignInTab(context, isLoading),
+                    // Email Sign-In Tab
+                    _buildEmailSignInTab(context, isLoading),
+                  ],
+                ),
+              ),
             ],
           );
         },
       );
+
+  /// Builds the Google sign-in tab content
+  Widget _buildGoogleSignInTab(BuildContext context, bool isLoading) {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Text(
+          'Sign in with your Google account',
+          style: GoogleFonts.inter(
+            fontSize: 14,
+            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+          ),
+          textAlign: TextAlign.center,
+        ),
+        const SizedBox(height: 16),
+        _buildGoogleSignInButton(context, isLoading),
+      ],
+    );
+  }
+
+  /// Builds the phone sign-in tab content
+  Widget _buildPhoneSignInTab(BuildContext context, bool isLoading) {
+    final theme = Theme.of(context);
+
+    return Form(
+      key: _phoneFormKey,
+      child: Column(
+        children: [
+          Text(
+            'Enter your phone number to receive OTP',
+            style: GoogleFonts.inter(
+              fontSize: 14,
+              color: theme.colorScheme.onSurface.withOpacity(0.7),
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 16),
+          TextFormField(
+            controller: _phoneController,
+            keyboardType: TextInputType.phone,
+            decoration: InputDecoration(
+              labelText: 'Phone Number',
+              hintText: '+1 234 567 8900',
+              prefixIcon: const Icon(Icons.phone),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(
+                  color: theme.colorScheme.outline.withOpacity(0.5),
+                ),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(
+                  color: theme.colorScheme.primary,
+                  width: 2,
+                ),
+              ),
+            ),
+            validator: (value) {
+              if (value == null || value.isEmpty) {
+                return 'Please enter your phone number';
+              }
+              if (value.length < 10) {
+                return 'Please enter a valid phone number';
+              }
+              return null;
+            },
+          ),
+          const SizedBox(height: 16),
+          SizedBox(
+            width: double.infinity,
+            height: 48,
+            child: ElevatedButton(
+              onPressed: isLoading ? null : () => _handlePhoneSignIn(context),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: theme.colorScheme.primary,
+                foregroundColor: theme.colorScheme.onPrimary,
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                disabledBackgroundColor:
+                    theme.colorScheme.primary.withValues(alpha: 0.5),
+              ),
+              child: isLoading
+                  ? SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                            theme.colorScheme.onPrimary),
+                      ),
+                    )
+                  : Text(
+                      'Send OTP',
+                      style: GoogleFonts.inter(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Builds the email sign-in tab content
+  Widget _buildEmailSignInTab(BuildContext context, bool isLoading) {
+    final theme = Theme.of(context);
+
+    return Form(
+      key: _emailFormKey,
+      child: Column(
+        children: [
+          Text(
+            'Enter your email to receive verification link',
+            style: GoogleFonts.inter(
+              fontSize: 14,
+              color: theme.colorScheme.onSurface.withOpacity(0.7),
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 16),
+          TextFormField(
+            controller: _emailController,
+            keyboardType: TextInputType.emailAddress,
+            decoration: InputDecoration(
+              labelText: 'Email Address',
+              hintText: 'john@example.com',
+              prefixIcon: const Icon(Icons.email),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(
+                  color: theme.colorScheme.outline.withOpacity(0.5),
+                ),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(
+                  color: theme.colorScheme.primary,
+                  width: 2,
+                ),
+              ),
+            ),
+            validator: (value) {
+              if (value == null || value.isEmpty) {
+                return 'Please enter your email address';
+              }
+              if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$')
+                  .hasMatch(value)) {
+                return 'Please enter a valid email address';
+              }
+              return null;
+            },
+          ),
+          const SizedBox(height: 16),
+          SizedBox(
+            width: double.infinity,
+            height: 48,
+            child: ElevatedButton(
+              onPressed: isLoading ? null : () => _handleEmailSignIn(context),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: theme.colorScheme.primary,
+                foregroundColor: theme.colorScheme.onPrimary,
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                disabledBackgroundColor:
+                    theme.colorScheme.primary.withValues(alpha: 0.5),
+              ),
+              child: isLoading
+                  ? SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                            theme.colorScheme.onPrimary),
+                      ),
+                    )
+                  : Text(
+                      'Send Link',
+                      style: GoogleFonts.inter(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
   /// Builds the Google sign-in button with proper branding
   Widget _buildGoogleSignInButton(BuildContext context, bool isLoading) {
@@ -221,7 +502,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
     return SizedBox(
       width: double.infinity,
-      height: 56,
+      height: 48,
       child: ElevatedButton(
         onPressed: isLoading ? null : () => _handleGoogleSignIn(context),
         style: ElevatedButton.styleFrom(
@@ -236,8 +517,8 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
         child: isLoading
             ? SizedBox(
-                width: 20,
-                height: 20,
+                width: 16,
+                height: 16,
                 child: CircularProgressIndicator(
                   strokeWidth: 2,
                   valueColor: AlwaysStoppedAnimation<Color>(
@@ -258,9 +539,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                     ),
                   ),
-
                   const SizedBox(width: 12),
-
                   Text(
                     'Continue with Google',
                     style: GoogleFonts.inter(
@@ -273,7 +552,6 @@ class _LoginScreenState extends State<LoginScreen> {
       ),
     );
   }
-
 
   /// Builds the features preview section
   Widget _buildFeaturesSection(BuildContext context) {
@@ -343,6 +621,24 @@ class _LoginScreenState extends State<LoginScreen> {
   /// Handles Google sign-in button tap
   void _handleGoogleSignIn(BuildContext context) {
     context.read<AuthBloc>().add(const GoogleSignInRequested());
+  }
+
+  /// Handles phone sign-in form submission
+  void _handlePhoneSignIn(BuildContext context) {
+    if (_phoneFormKey.currentState!.validate()) {
+      final phoneNumber = _phoneController.text.trim();
+      context
+          .read<AuthBloc>()
+          .add(PhoneSignInRequested(phoneNumber: phoneNumber));
+    }
+  }
+
+  /// Handles email sign-in form submission
+  void _handleEmailSignIn(BuildContext context) {
+    if (_emailFormKey.currentState!.validate()) {
+      final email = _emailController.text.trim();
+      context.read<AuthBloc>().add(EmailSignInRequested(email: email));
+    }
   }
 }
 

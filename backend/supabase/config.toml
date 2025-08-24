@@ -138,9 +138,9 @@ password_requirements = ""
 
 [auth.rate_limit]
 # Number of emails that can be sent per hour. Requires auth.email.smtp to be enabled.
-email_sent = 2
+email_sent = 10
 # Number of SMS messages that can be sent per hour. Requires auth.sms to be enabled.
-sms_sent = 30
+sms_sent = 5
 # Number of anonymous sign-ins that can be made per hour per IP address. Requires enable_anonymous_sign_ins = true.
 anonymous_users = 30
 # Number of sessions that can be refreshed in a 5 minute interval per IP address.
@@ -210,13 +210,13 @@ content_path = "./supabase/templates/email_change.html"
 
 [auth.sms]
 # Allow/disallow new user signups via SMS to your project.
-enable_signup = false
+enable_signup = true
 # If enabled, users need to confirm their phone number before signing in.
-enable_confirmations = false
+enable_confirmations = true
 # Template for sending OTP to users
-template = "Your code is {{ .Code }}"
+template = "Your Disciplefy verification code is {{ .Code }}. Valid for 10 minutes."
 # Controls the minimum amount of time that must pass before sending another sms otp.
-max_frequency = "5s"
+max_frequency = "60s"
 
 # Use pre-defined map of phone number to OTP for testing.
 # [auth.sms.test_otp]
@@ -241,11 +241,11 @@ max_frequency = "5s"
 
 # Configure one of the supported SMS providers: `twilio`, `twilio_verify`, `messagebird`, `textlocal`, `vonage`.
 [auth.sms.twilio]
-enabled = false
-account_sid = ""
-message_service_sid = ""
+enabled = true
+account_sid = "env(TWILIO_ACCOUNT_SID)"
+message_service_sid = "env(TWILIO_MESSAGE_SERVICE_SID)"
 # DO NOT commit your Twilio auth token to git. Use environment variable substitution instead:
-auth_token = "env(SUPABASE_AUTH_SMS_TWILIO_AUTH_TOKEN)"
+auth_token = "env(TWILIO_AUTH_TOKEN)"
 
 # Multi-factor-authentication is available to Supabase Pro plan.
 [auth.mfa]

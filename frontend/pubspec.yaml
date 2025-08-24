@@ -34,6 +34,7 @@ dependencies:
   # Authentication
   google_sign_in: ^7.1.1
   sign_in_with_apple: ^7.0.1
+  pinput: ^5.0.0
   
   # UI & UX
   flutter_localizations:
@@ -55,6 +56,12 @@ dependencies:
   package_info_plus: ^8.3.0
   device_info_plus: ^11.5.0
   uuid: ^4.2.1
+  mime: ^2.0.0
+  
+  # Image Processing & Picking
+  image_picker: ^1.0.8
+  flutter_image_compress: ^2.3.0
+  path_provider: ^2.1.4
   
   # Development
   flutter_lints: ^6.0.0

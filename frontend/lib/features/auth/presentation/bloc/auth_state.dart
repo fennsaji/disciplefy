@@ -99,3 +99,78 @@ class AuthProfileUpdatedState extends AuthState {
   @override
   List<Object?> get props => [message];
 }
+
+/// State when OTP has been sent to phone or email
+class OTPSentState extends AuthState {
+  final String identifier; // phone number or email
+  final String method; // 'phone' or 'email'
+  final String message;
+
+  const OTPSentState({
+    required this.identifier,
+    required this.method,
+    required this.message,
+  });
+
+  @override
+  List<Object?> get props => [identifier, method, message];
+}
+
+/// State when OTP verification is in progress
+class OTPVerifyingState extends AuthState {
+  final String identifier;
+  final String method;
+
+  const OTPVerifyingState({
+    required this.identifier,
+    required this.method,
+  });
+
+  @override
+  List<Object?> get props => [identifier, method];
+}
+
+/// State when user needs to complete their profile (first-time users)
+class ProfileIncompleteState extends AuthState {
+  final User user;
+  final bool isFirstTime;
+  final String? tempProfilePicturePath;
+
+  const ProfileIncompleteState({
+    required this.user,
+    required this.isFirstTime,
+    this.tempProfilePicturePath,
+  });
+
+  @override
+  List<Object?> get props => [user, isFirstTime, tempProfilePicturePath];
+
+  /// Helper methods
+  String get userId => user.id;
+  String? get email => user.email;
+  String? get phone => user.phone;
+}
+
+/// State when profile picture is being uploaded
+class ProfilePictureUploadingState extends AuthState {
+  final String userId;
+  final double progress; // 0.0 to 1.0
+
+  const ProfilePictureUploadingState({
+    required this.userId,
+    this.progress = 0.0,
+  });
+
+  @override
+  List<Object?> get props => [userId, progress];
+}
+
+/// State when profile completion is in progress
+class ProfileCompletingState extends AuthState {
+  final String userId;
+
+  const ProfileCompletingState({required this.userId});
+
+  @override
+  List<Object?> get props => [userId];
+}

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 import 'dart:math';
 
 import 'package:flutter/foundation.dart';
@@ -8,6 +9,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/services/http_service.dart';
 import '../../../../core/services/auth_state_provider.dart';
 import '../../../../core/services/language_preference_service.dart';
+import '../../../../core/services/file_upload_service.dart';
 import '../../../../core/router/router_guard.dart';
 import '../../../user_profile/data/services/user_profile_service.dart';
 import '../../../user_profile/domain/entities/user_profile_entity.dart';
@@ -53,6 +55,10 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
     on<GoogleSignInRequested>(_onGoogleSignIn);
     on<GoogleOAuthCallbackRequested>(_onGoogleOAuthCallback);
     on<AnonymousSignInRequested>(_onAnonymousSignIn);
+    on<PhoneSignInRequested>(_onPhoneSignIn);
+    on<EmailSignInRequested>(_onEmailSignIn);
+    on<OTPVerificationRequested>(_onOTPVerification);
+    on<ProfileCompletionRequested>(_onProfileCompletion);
     on<SessionCheckRequested>(_onSessionCheck);
     on<SessionValidationRequested>(_onSessionValidation);
     on<SignOutRequested>(_onSignOut);
@@ -826,6 +832,205 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
       }
       emit(const auth_states.AuthErrorState(
           message: 'Failed to update profile'));
+    }
+  }
+
+  /// Handles phone sign-in requests
+  Future<void> _onPhoneSignIn(
+    PhoneSignInRequested event,
+    Emitter<auth_states.AuthState> emit,
+  ) async {
+    try {
+      emit(const auth_states.AuthLoadingState());
+      
+      // Send OTP via Supabase Auth
+      await _authService.signInWithPhone(event.phoneNumber);
+      
+      emit(auth_states.OTPSentState(
+        identifier: event.phoneNumber,
+        method: 'phone',
+        message: 'OTP sent to ${event.phoneNumber}',
+      ));
+    } on auth_exceptions.AuthException catch (e) {
+      if (kDebugMode) {
+        print('Phone sign-in error: $e');
+      }
+      emit(auth_states.AuthErrorState(message: e.message));
+    } catch (e) {
+      if (kDebugMode) {
+        print('Phone sign-in unexpected error: $e');
+      }
+      emit(const auth_states.AuthErrorState(
+        message: 'Failed to send OTP. Please try again.',
+      ));
+    }
+  }
+
+  /// Handles email sign-in requests
+  Future<void> _onEmailSignIn(
+    EmailSignInRequested event,
+    Emitter<auth_states.AuthState> emit,
+  ) async {
+    try {
+      emit(const auth_states.AuthLoadingState());
+      
+      // Send magic link via Supabase Auth
+      await _authService.signInWithEmail(event.email);
+      
+      emit(auth_states.OTPSentState(
+        identifier: event.email,
+        method: 'email',
+        message: 'Magic link sent to ${event.email}',
+      ));
+    } on auth_exceptions.AuthException catch (e) {
+      if (kDebugMode) {
+        print('Email sign-in error: $e');
+      }
+      emit(auth_states.AuthErrorState(message: e.message));
+    } catch (e) {
+      if (kDebugMode) {
+        print('Email sign-in unexpected error: $e');
+      }
+      emit(const auth_states.AuthErrorState(
+        message: 'Failed to send magic link. Please try again.',
+      ));
+    }
+  }
+
+  /// Handles OTP verification requests
+  Future<void> _onOTPVerification(
+    OTPVerificationRequested event,
+    Emitter<auth_states.AuthState> emit,
+  ) async {
+    try {
+      emit(const auth_states.AuthLoadingState());
+      
+      // Verify OTP via Supabase Auth
+      final authResponse = await _authService.verifyOTP(
+        identifier: event.identifier,
+        otp: event.otp,
+        method: event.method,
+      );
+      
+      final user = authResponse.user;
+      if (user == null) {
+        emit(const auth_states.AuthErrorState(
+          message: 'Authentication failed. Please try again.',
+        ));
+        return;
+      }
+      
+      // Check if this is a first-time user (profile doesn't exist)
+      final profile = await _userProfileService.getUserProfileAsMap(user.id);
+      final isFirstTime = profile == null || profile.isEmpty || 
+          profile['first_name'] == null ||
+          profile['last_name'] == null;
+      
+      if (isFirstTime) {
+        emit(auth_states.ProfileIncompleteState(
+          user: user,
+          isFirstTime: true,
+        ));
+      } else {
+        // Cache the profile
+        final authStateProvider = sl<AuthStateProvider>();
+        authStateProvider.cacheProfile(user.id, profile);
+        
+        emit(auth_states.AuthenticatedState(
+          user: user,
+          profile: profile,
+          isAnonymous: false,
+        ));
+      }
+    } on auth_exceptions.AuthException catch (e) {
+      if (kDebugMode) {
+        print('OTP verification error: $e');
+      }
+      emit(auth_states.AuthErrorState(message: e.message));
+    } catch (e) {
+      if (kDebugMode) {
+        print('OTP verification unexpected error: $e');
+      }
+      emit(const auth_states.AuthErrorState(
+        message: 'Invalid OTP. Please try again.',
+      ));
+    }
+  }
+
+  /// Handles profile completion requests
+  Future<void> _onProfileCompletion(
+    ProfileCompletionRequested event,
+    Emitter<auth_states.AuthState> emit,
+  ) async {
+    try {
+      final user = _authService.currentUser;
+      if (user == null) {
+        emit(const auth_states.AuthErrorState(
+          message: 'User not authenticated',
+        ));
+        return;
+      }
+      
+      // Handle profile picture upload if provided
+      String? profilePictureUrl;
+      if (event.profilePicturePath != null) {
+        emit(auth_states.ProfilePictureUploadingState(
+          userId: user.id,
+          progress: 0.0,
+        ));
+        
+        // Upload profile picture using file upload service
+        try {
+          final fileUploadService = sl<FileUploadService>();
+          final uploadResult = await fileUploadService.uploadProfilePicture(
+            userId: user.id,
+            imageFile: File(event.profilePicturePath!),
+            onProgress: (progress) {
+              emit(auth_states.ProfilePictureUploadingState(
+                userId: user.id,
+                progress: progress,
+              ));
+            },
+          );
+          
+          if (uploadResult.success) {
+            profilePictureUrl = uploadResult.publicUrl;
+          }
+        } catch (e) {
+          if (kDebugMode) {
+            print('Profile picture upload error: $e');
+          }
+          // Continue without profile picture - it's optional
+        }
+      }
+      
+      // Update user profile
+      await _userProfileService.upsertUserProfile(
+        userId: user.id,
+        firstName: event.firstName,
+        lastName: event.lastName,
+        profilePictureUrl: profilePictureUrl,
+      );
+      
+      // Fetch the complete profile
+      final profile = await _userProfileService.getUserProfileAsMap(user.id);
+      
+      // Cache the profile
+      final authStateProvider = sl<AuthStateProvider>();
+      authStateProvider.cacheProfile(user.id, profile);
+      
+      emit(auth_states.AuthenticatedState(
+        user: user,
+        profile: profile,
+        isAnonymous: false,
+      ));
+    } catch (e) {
+      if (kDebugMode) {
+        print('Profile completion error: $e');
+      }
+      emit(const auth_states.AuthErrorState(
+        message: 'Failed to complete profile. Please try again.',
+      ));
     }
   }
 
