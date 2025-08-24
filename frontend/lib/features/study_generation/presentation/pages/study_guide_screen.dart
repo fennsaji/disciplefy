@@ -850,11 +850,10 @@ class _StudySection extends StatelessWidget {
             // Section Content
             SelectableText(
               content,
-              style: GoogleFonts.inter(
-                fontSize: 14,
-                color: Theme.of(context).colorScheme.onBackground,
-                height: 1.6,
-              ),
+              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                    color: Theme.of(context).colorScheme.onBackground,
+                    height: 1.6,
+                  ),
             ),
           ],
         ),

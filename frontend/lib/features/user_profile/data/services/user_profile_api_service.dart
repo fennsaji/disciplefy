@@ -94,6 +94,85 @@ class UserProfileApiService {
     return _updateProfile(updates);
   }
 
+  /// Sync OAuth profile data to backend
+  Future<Either<Failure, UserProfileEntity>> syncOAuthProfile(
+      Map<String, dynamic> profileData) async {
+    try {
+      final baseHeaders = await _httpService.createHeaders();
+      final headers = Map<String, String>.from(baseHeaders)
+        ..['Content-Type'] = 'application/json';
+      const url = '${AppConfig.supabaseUrl}$_userProfileEndpoint';
+
+      final response = await _httpService.post(
+        url,
+        headers: headers,
+        body: json.encode(profileData),
+      );
+
+      if (response.statusCode == 200) {
+        return _parseProfileResponse(response.body);
+      } else if (response.statusCode == 404) {
+        return const Left(NotFoundFailure(
+          message: 'User profile not found',
+        ));
+      } else if (response.statusCode == 400) {
+        try {
+          final Map<String, dynamic>? errorData =
+              json.decode(response.body) as Map<String, dynamic>?;
+
+          return Left(ServerFailure(
+            message: errorData?['error'] ?? 'Invalid OAuth profile data',
+          ));
+        } catch (e) {
+          final bodyPreview = response.body.length > 100
+              ? '${response.body.substring(0, 100)}...'
+              : response.body.trim();
+          final fallbackMessage = bodyPreview.isNotEmpty
+              ? 'Invalid OAuth profile data: $bodyPreview'
+              : 'Invalid OAuth profile data';
+          return Left(ServerFailure(message: fallbackMessage));
+        }
+      } else {
+        if (response.statusCode == 401) {
+          return const Left(AuthenticationFailure(
+            message: 'Authentication required. Please log in again.',
+          ));
+        }
+
+        try {
+          final Map<String, dynamic>? errorData =
+              json.decode(response.body) as Map<String, dynamic>?;
+
+          return Left(ServerFailure(
+            message: errorData?['error'] ?? 'Failed to sync OAuth profile',
+          ));
+        } catch (e) {
+          final bodyPreview = response.body.length > 100
+              ? '${response.body.substring(0, 100)}...'
+              : response.body.trim();
+          final fallbackMessage = bodyPreview.isNotEmpty
+              ? 'Failed to sync OAuth profile: $bodyPreview'
+              : 'Failed to sync OAuth profile';
+          return Left(ServerFailure(message: fallbackMessage));
+        }
+      }
+    } on SocketException {
+      return const Left(NetworkFailure());
+    } on TimeoutException {
+      return const Left(NetworkFailure(
+        message: 'Request timeout. Please try again.',
+      ));
+    } on FormatException catch (e) {
+      return Left(ServerFailure(
+        message: 'Invalid response format: ${e.message}',
+      ));
+    } catch (e) {
+      return Left(ServerFailure(
+        message: 'Unexpected error: ${e.toString()}',
+      ));
+    }
+  }
+
   /// Internal method to handle profile updates
   Future<Either<Failure, UserProfileEntity>> _updateProfile(
       Map<String, dynamic> updates) async {

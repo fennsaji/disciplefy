@@ -88,7 +88,7 @@ class RecommendedGuideTopicCard extends StatelessWidget {
                       child: Text(
                         topic.category,
                         style: GoogleFonts.inter(
-                          fontSize: 9,
+                          fontSize: 12,
                           fontWeight: FontWeight.w600,
                           color: color,
                         ),
@@ -105,7 +105,7 @@ class RecommendedGuideTopicCard extends StatelessWidget {
               Text(
                 topic.title,
                 style: GoogleFonts.inter(
-                  fontSize: 14, // Slightly smaller for better fit
+                  fontSize: 16, // Increased for better readability
                   fontWeight: FontWeight.w600,
                   color: Theme.of(context).colorScheme.onSurface,
                   height: 1.2, // Tighter line height
@@ -121,7 +121,7 @@ class RecommendedGuideTopicCard extends StatelessWidget {
                 child: Text(
                   topic.description,
                   style: GoogleFonts.inter(
-                    fontSize: 11, // Smaller font for more content
+                    fontSize: 14, // Increased for better readability
                     color: Theme.of(context)
                         .colorScheme
                         .onSurface
