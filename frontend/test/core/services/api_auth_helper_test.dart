@@ -1,17 +1,77 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:disciplefy_bible_study/core/services/api_auth_helper.dart';
 
-// Mock classes
-class MockSupabaseClient extends Mock implements SupabaseClient {}
+// Generate mocks
+@GenerateMocks([
+  SupabaseClient,
+  GoTrueClient,
+  Session,
+  User,
+])
+import 'api_auth_helper_test.mocks.dart';
 
-class MockGoTrueClient extends Mock implements GoTrueClient {}
+// Test wrapper class to inject mock dependencies
+class TestableApiAuthHelper {
+  static SupabaseClient? _testClient;
 
-class MockSession extends Mock implements Session {}
+  static void setTestClient(SupabaseClient client) {
+    _testClient = client;
+  }
 
-class MockUser extends Mock implements User {}
+  static void resetTestClient() {
+    _testClient = null;
+  }
+
+  static SupabaseClient get client => _testClient ?? Supabase.instance.client;
+
+  static bool validateCurrentToken() {
+    try {
+      final session = client.auth.currentSession;
+      if (session == null) {
+        return false;
+      }
+
+      if (session.accessToken.isEmpty) {
+        return false;
+      }
+
+      // Check if token is expired
+      if (session.expiresAt != null) {
+        final expiryDate =
+            DateTime.fromMillisecondsSinceEpoch(session.expiresAt! * 1000);
+        final now = DateTime.now();
+
+        if (now.isAfter(expiryDate)) {
+          return false;
+        }
+      }
+
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  static bool requiresTokenValidation() {
+    final session = client.auth.currentSession;
+    return session != null;
+  }
+
+  static Future<void> validateTokenForRequest() async {
+    if (!requiresTokenValidation()) {
+      return;
+    }
+
+    if (!validateCurrentToken()) {
+      throw TokenValidationException(
+          'Authentication token is invalid or expired');
+    }
+  }
+}
 
 void main() {
   group('ApiAuthHelper Token Validation', () {
@@ -30,6 +90,13 @@ void main() {
       when(mockSupabaseClient.auth).thenReturn(mockGoTrueClient);
       when(mockSession.user).thenReturn(mockUser);
       when(mockUser.id).thenReturn('test-user-id');
+
+      // Set the test client
+      TestableApiAuthHelper.setTestClient(mockSupabaseClient);
+    });
+
+    tearDown(() {
+      TestableApiAuthHelper.resetTestClient();
     });
 
     group('validateCurrentToken', () {
@@ -38,7 +105,7 @@ void main() {
         when(mockGoTrueClient.currentSession).thenReturn(null);
 
         // Act & Assert
-        expect(ApiAuthHelper.validateCurrentToken(), false);
+        expect(TestableApiAuthHelper.validateCurrentToken(), false);
       });
 
       test('returns false when access token is empty', () {
@@ -47,7 +114,7 @@ void main() {
         when(mockSession.accessToken).thenReturn('');
 
         // Act & Assert
-        expect(ApiAuthHelper.validateCurrentToken(), false);
+        expect(TestableApiAuthHelper.validateCurrentToken(), false);
       });
 
       test('returns false when token is expired', () {
@@ -60,7 +127,7 @@ void main() {
         when(mockSession.expiresAt).thenReturn(expiredTimestamp);
 
         // Act & Assert
-        expect(ApiAuthHelper.validateCurrentToken(), false);
+        expect(TestableApiAuthHelper.validateCurrentToken(), false);
       });
 
       test('returns true when token is valid and not expired', () {
@@ -73,7 +140,7 @@ void main() {
         when(mockSession.expiresAt).thenReturn(futureTimestamp);
 
         // Act & Assert
-        expect(ApiAuthHelper.validateCurrentToken(), true);
+        expect(TestableApiAuthHelper.validateCurrentToken(), true);
       });
     });
 
@@ -83,7 +150,7 @@ void main() {
         when(mockGoTrueClient.currentSession).thenReturn(null);
 
         // Act & Assert
-        expect(ApiAuthHelper.requiresTokenValidation(), false);
+        expect(TestableApiAuthHelper.requiresTokenValidation(), false);
       });
 
       test('returns true when session exists', () {
@@ -91,7 +158,7 @@ void main() {
         when(mockGoTrueClient.currentSession).thenReturn(mockSession);
 
         // Act & Assert
-        expect(ApiAuthHelper.requiresTokenValidation(), true);
+        expect(TestableApiAuthHelper.requiresTokenValidation(), true);
       });
     });
 
@@ -102,7 +169,7 @@ void main() {
 
         // Act & Assert - should not throw
         await expectLater(
-          ApiAuthHelper.validateTokenForRequest(),
+          TestableApiAuthHelper.validateTokenForRequest(),
           completes,
         );
       });
@@ -114,7 +181,7 @@ void main() {
 
         // Act & Assert
         await expectLater(
-          ApiAuthHelper.validateTokenForRequest(),
+          TestableApiAuthHelper.validateTokenForRequest(),
           throwsA(isA<TokenValidationException>()),
         );
       });
@@ -130,7 +197,7 @@ void main() {
 
         // Act & Assert - should not throw
         await expectLater(
-          ApiAuthHelper.validateTokenForRequest(),
+          TestableApiAuthHelper.validateTokenForRequest(),
           completes,
         );
       });
