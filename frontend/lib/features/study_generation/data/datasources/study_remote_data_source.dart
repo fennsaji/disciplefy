@@ -97,6 +97,9 @@ class StudyRemoteDataSourceImpl implements StudyRemoteDataSource {
   }
 
   /// Parses a study guide from the API response.
+  ///
+  /// Handles both enhanced responses (with personal_notes and isSaved)
+  /// and legacy responses for backward compatibility.
   StudyGuide _parseStudyGuideFromResponse(
     Map<String, dynamic> data,
     String input,
@@ -107,6 +110,10 @@ class StudyRemoteDataSourceImpl implements StudyRemoteDataSource {
     final studyGuide =
         responseData['study_guide'] as Map<String, dynamic>? ?? {};
     final content = studyGuide['content'] as Map<String, dynamic>? ?? {};
+
+    // Extract enhanced fields (personal_notes and isSaved) if available
+    final personalNotes = studyGuide['personal_notes'] as String?;
+    final isSaved = studyGuide['isSaved'] as bool?;
 
     return StudyGuide(
       id: studyGuide['id'] as String? ?? _uuid.v4(),
@@ -131,6 +138,8 @@ class StudyRemoteDataSourceImpl implements StudyRemoteDataSource {
       language: language, // Always use the original language parameter
       createdAt: DateTime.parse(studyGuide['createdAt'] as String? ??
           DateTime.now().toIso8601String()),
+      personalNotes: personalNotes, // Enhanced field
+      isSaved: isSaved, // Enhanced field
     );
   }
 }

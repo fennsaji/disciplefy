@@ -42,6 +42,7 @@ export interface StudyGuideResponse {
   readonly isSaved: boolean
   readonly createdAt: string
   readonly updatedAt: string
+  personal_notes?: string | null
 }
 
 /**
@@ -329,6 +330,7 @@ export class StudyGuideRepository {
       .select(`
         id,
         is_saved,
+        personal_notes,
         created_at,
         updated_at,
         study_guides (
@@ -455,6 +457,7 @@ export class StudyGuideRepository {
       .select(`
         id,
         is_saved,
+        personal_notes,
         created_at,
         updated_at,
         study_guides (
@@ -586,27 +589,7 @@ export class StudyGuideRepository {
     }
   }
 
-  /**
-   * Check if user has content relationship
-   */
-  private async userHasContent(
-    contentId: string,
-    userContext: UserContext
-  ): Promise<boolean> {
-    if (userContext.type === 'authenticated') {
-      const { data, error } = await this.supabase
-        .from('user_study_guides')
-        .select('id')
-        .eq('study_guide_id', contentId)
-        .eq('user_id', userContext.userId!)
-        .single()
-
-      return !error && !!data
-    } else {
-      // Anonymous users can access cached content but don't have saved relationships
-      return false
-    }
-  }
+  // Removed duplicate private userHasContent method - using public version instead
 
   /**
    * Get user's relationship to content
@@ -621,11 +604,13 @@ export class StudyGuideRepository {
         .select(`
           id,
           is_saved,
+          personal_notes,
           created_at,
           updated_at,
           study_guides (
             id,
             input_type,
+            input_value,
             input_value_hash,
             language,
             summary,
@@ -662,6 +647,119 @@ export class StudyGuideRepository {
   }
 
   /**
+   * Updates personal notes for a user's study guide
+   * 
+   * @param studyGuideId - Study guide ID
+   * @param notes - Personal notes content (null to delete)
+   * @param userContext - User context
+   * @returns Updated timestamp
+   */
+  async updatePersonalNotes(
+    studyGuideId: string,
+    notes: string | null,
+    userContext: UserContext
+  ): Promise<string> {
+    if (userContext.type !== 'authenticated' || !userContext.userId) {
+      throw new AppError(
+        'UNAUTHORIZED',
+        'Personal notes are only available for authenticated users',
+        401
+      )
+    }
+
+    const updatedAt = new Date().toISOString()
+
+    const { error } = await this.supabase
+      .from('user_study_guides')
+      .update({
+        personal_notes: notes,
+        updated_at: updatedAt
+      })
+      .eq('user_id', userContext.userId)
+      .eq('study_guide_id', studyGuideId)
+
+    if (error) {
+      throw new AppError(
+        'DATABASE_ERROR',
+        `Failed to update personal notes: ${error.message}`,
+        500
+      )
+    }
+
+    return updatedAt
+  }
+
+  /**
+   * Retrieves personal notes for a user's study guide
+   * 
+   * @param studyGuideId - Study guide ID
+   * @param userContext - User context
+   * @returns Personal notes data or null if not found
+   */
+  async getPersonalNotes(
+    studyGuideId: string,
+    userContext: UserContext
+  ): Promise<{ notes: string | null; updatedAt: string } | null> {
+    if (userContext.type !== 'authenticated' || !userContext.userId) {
+      throw new AppError(
+        'UNAUTHORIZED',
+        'Personal notes are only available for authenticated users',
+        401
+      )
+    }
+
+    const { data, error } = await this.supabase
+      .from('user_study_guides')
+      .select('personal_notes, updated_at')
+      .eq('user_id', userContext.userId)
+      .eq('study_guide_id', studyGuideId)
+      .single()
+
+    if (error) {
+      if (error.code === 'PGRST116') {
+        return null // No relationship exists
+      }
+      throw new AppError(
+        'DATABASE_ERROR',
+        `Failed to retrieve personal notes: ${error.message}`,
+        500
+      )
+    }
+
+    return {
+      notes: data.personal_notes,
+      updatedAt: data.updated_at
+    }
+  }
+
+  /**
+   * Public method to check if user has access to content
+   * Exposes the private userHasContent method for the PersonalNotesService
+   * 
+   * @param contentId - Study guide content ID
+   * @param userContext - User context
+   * @returns Whether user has access to the content
+   */
+  async userHasContent(
+    contentId: string,
+    userContext: UserContext
+  ): Promise<boolean> {
+    if (userContext.type === 'authenticated') {
+      const { data, error } = await this.supabase
+        .from('user_study_guides')
+        .select('id')
+        .eq('study_guide_id', contentId)
+        .eq('user_id', userContext.userId!)
+        .single()
+
+      return !error && !!data
+    } else {
+      // Anonymous users can access cached content but don't have saved relationships
+      return false
+    }
+  }
+
+  /**
    * Generate consistent hash for input value
    */
   private async generateInputHash(inputValue: string): Promise<string> {
@@ -678,7 +776,7 @@ export class StudyGuideRepository {
   ): StudyGuideResponse {
     const studyGuide = data.study_guides
 
-    return {
+    const response: StudyGuideResponse = {
       id: studyGuide.id,
       input: {
         type: studyGuide.input_type as 'scripture' | 'topic',
@@ -697,5 +795,12 @@ export class StudyGuideRepository {
       createdAt: data.created_at,
       updatedAt: data.updated_at
     }
+
+    // Only include personal_notes for authenticated users who have this data
+    if (isAuthenticated && data.personal_notes !== undefined) {
+      response.personal_notes = data.personal_notes
+    }
+
+    return response
   }
 }

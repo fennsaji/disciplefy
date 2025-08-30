@@ -77,6 +77,7 @@ import '../services/auth_state_provider.dart';
 import '../services/language_preference_service.dart';
 import '../services/language_cache_coordinator.dart';
 import '../services/http_service.dart';
+import '../services/personal_notes_api_service.dart';
 import '../../features/user_profile/data/services/user_profile_api_service.dart';
 import '../navigation/study_navigator.dart';
 import '../navigation/go_router_study_navigator.dart';
@@ -109,6 +110,11 @@ Future<void> initializeDependencies() async {
 
   // Register HttpService
   sl.registerLazySingleton(() => HttpService(httpClient: sl()));
+
+  // Register Personal Notes API Service
+  sl.registerLazySingleton<PersonalNotesApiService>(
+    () => PersonalNotesApiService(httpClient: sl()),
+  );
 
   // Register User Profile API Service
   sl.registerLazySingleton(() => UserProfileApiService(
@@ -162,6 +168,7 @@ Future<void> initializeDependencies() async {
   sl.registerFactory(() => StudyBloc(
         generateStudyGuide: sl(),
         saveGuideService: sl(),
+        personalNotesService: sl(),
         validationService: sl(),
         authService: sl(),
       ));

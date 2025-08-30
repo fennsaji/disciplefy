@@ -14,6 +14,7 @@ import { TopicsRepository } from '../repositories/topics-repository.ts'
 import { FeedbackRepository } from '../repositories/feedback-repository.ts'
 import { StudyGuideService } from '../services/study-guide-service.ts'
 import { FeedbackService } from '../services/feedback-service.ts'
+import { PersonalNotesService } from '../services/personal-notes-service.ts'
 import { RateLimiter } from '../services/rate-limiter.ts'
 import { AnalyticsLogger } from '../services/analytics-service.ts'
 import { SecurityValidator } from '../utils/security-validator.ts'
@@ -43,6 +44,7 @@ export interface ServiceContainer {
   readonly feedbackRepository: FeedbackRepository
   readonly studyGuideService: StudyGuideService
   readonly feedbackService: FeedbackService
+  readonly personalNotesService: PersonalNotesService
   readonly rateLimiter: RateLimiter
   readonly analyticsLogger: AnalyticsLogger
   readonly securityValidator: SecurityValidator
@@ -121,6 +123,7 @@ async function initializeServiceContainer(): Promise<ServiceContainer> {
     const feedbackRepository = new FeedbackRepository(supabaseServiceClient)
     const studyGuideService = new StudyGuideService(llmService, studyGuideRepository)
     const feedbackService = new FeedbackService()
+    const personalNotesService = new PersonalNotesService(studyGuideRepository)
     const rateLimiterConfig = createRateLimiterConfig()
     const rateLimiter = new RateLimiter(supabaseServiceClient, rateLimiterConfig)
     const analyticsLogger = new AnalyticsLogger(supabaseServiceClient)
@@ -146,6 +149,7 @@ async function initializeServiceContainer(): Promise<ServiceContainer> {
       feedbackRepository,
       studyGuideService,
       feedbackService,
+      personalNotesService,
       rateLimiter,
       analyticsLogger,
       securityValidator,

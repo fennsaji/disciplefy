@@ -164,3 +164,215 @@ class StudyAuthenticationRequired extends StudyState {
   @override
   List<Object> get props => [guideId, save, message];
 }
+
+/// State indicating that an enhanced save operation is in progress.
+///
+/// This combines study guide saving with personal notes operations.
+class StudyEnhancedSaveInProgress extends StudyState {
+  /// The ID of the study guide being saved.
+  final String guideId;
+
+  /// Progress indicator for the operation (0.0 to 1.0).
+  final double? progress;
+
+  /// Current step being performed (for user feedback).
+  final String? currentStep;
+
+  const StudyEnhancedSaveInProgress({
+    required this.guideId,
+    this.progress,
+    this.currentStep,
+  });
+
+  @override
+  List<Object?> get props => [guideId, progress, currentStep];
+}
+
+/// State indicating successful enhanced save operation.
+///
+/// This state is emitted when both study guide and personal notes
+/// operations complete successfully.
+class StudyEnhancedSaveSuccess extends StudyState {
+  /// The ID of the study guide that was saved.
+  final String guideId;
+
+  /// Whether the guide was saved (true) or unsaved (false).
+  final bool guideSaved;
+
+  /// Whether personal notes were saved successfully.
+  final bool notesSaved;
+
+  /// Success message to display to user.
+  final String message;
+
+  /// The saved personal notes content (for state consistency).
+  final String? savedNotes;
+
+  const StudyEnhancedSaveSuccess({
+    required this.guideId,
+    required this.guideSaved,
+    required this.notesSaved,
+    required this.message,
+    this.savedNotes,
+  });
+
+  @override
+  List<Object?> get props =>
+      [guideId, guideSaved, notesSaved, message, savedNotes];
+}
+
+/// State indicating that an enhanced save operation failed.
+///
+/// This state provides detailed information about which operations
+/// succeeded and which failed for proper error handling.
+class StudyEnhancedSaveFailure extends StudyState {
+  /// The ID of the study guide that failed to save.
+  final String guideId;
+
+  /// Whether the guide save operation succeeded.
+  final bool guideSaveSuccess;
+
+  /// Whether the notes save operation succeeded.
+  final bool notesSaveSuccess;
+
+  /// The primary failure that occurred.
+  final Failure primaryFailure;
+
+  /// Secondary failure (if one operation succeeded and another failed).
+  final Failure? secondaryFailure;
+
+  /// Whether the failure is retryable.
+  final bool isRetryable;
+
+  const StudyEnhancedSaveFailure({
+    required this.guideId,
+    required this.guideSaveSuccess,
+    required this.notesSaveSuccess,
+    required this.primaryFailure,
+    this.secondaryFailure,
+    this.isRetryable = true,
+  });
+
+  @override
+  List<Object?> get props => [
+        guideId,
+        guideSaveSuccess,
+        notesSaveSuccess,
+        primaryFailure,
+        secondaryFailure,
+        isRetryable,
+      ];
+}
+
+/// State indicating that personal notes operation is in progress.
+class StudyPersonalNotesInProgress extends StudyState {
+  /// The ID of the study guide being updated.
+  final String guideId;
+
+  /// Whether this is an auto-save operation.
+  final bool isAutoSave;
+
+  const StudyPersonalNotesInProgress({
+    required this.guideId,
+    this.isAutoSave = false,
+  });
+
+  @override
+  List<Object> get props => [guideId, isAutoSave];
+}
+
+/// State indicating successful personal notes operation.
+class StudyPersonalNotesSuccess extends StudyState {
+  /// The ID of the study guide that was updated.
+  final String guideId;
+
+  /// The saved personal notes content.
+  final String? savedNotes;
+
+  /// Whether this was an auto-save operation.
+  final bool isAutoSave;
+
+  /// Success message to display to user (null for auto-save).
+  final String? message;
+
+  const StudyPersonalNotesSuccess({
+    required this.guideId,
+    this.savedNotes,
+    this.isAutoSave = false,
+    this.message,
+  });
+
+  @override
+  List<Object?> get props => [guideId, savedNotes, isAutoSave, message];
+}
+
+/// State indicating that personal notes operation failed.
+class StudyPersonalNotesFailure extends StudyState {
+  /// The ID of the study guide that failed to update.
+  final String guideId;
+
+  /// The failure that occurred.
+  final Failure failure;
+
+  /// Whether this was an auto-save operation.
+  final bool isAutoSave;
+
+  /// Whether the failure is retryable.
+  final bool isRetryable;
+
+  const StudyPersonalNotesFailure({
+    required this.guideId,
+    required this.failure,
+    this.isAutoSave = false,
+    this.isRetryable = true,
+  });
+
+  @override
+  List<Object> get props => [guideId, failure, isAutoSave, isRetryable];
+}
+
+/// State containing loaded personal notes.
+class StudyPersonalNotesLoaded extends StudyState {
+  /// The ID of the study guide.
+  final String guideId;
+
+  /// The loaded personal notes content.
+  final String? notes;
+
+  /// Timestamp when notes were loaded (for cache invalidation).
+  final DateTime loadedAt;
+
+  const StudyPersonalNotesLoaded({
+    required this.guideId,
+    this.notes,
+    required this.loadedAt,
+  });
+
+  @override
+  List<Object?> get props => [guideId, notes, loadedAt];
+}
+
+/// State indicating authentication is required for enhanced operations.
+class StudyEnhancedAuthenticationRequired extends StudyState {
+  /// The ID of the study guide that requires authentication.
+  final String guideId;
+
+  /// Whether to save (true) or unsave (false) the guide after authentication.
+  final bool save;
+
+  /// Personal notes to save after authentication.
+  final String? personalNotes;
+
+  /// Message to display to the user explaining why authentication is needed.
+  final String message;
+
+  const StudyEnhancedAuthenticationRequired({
+    required this.guideId,
+    required this.save,
+    this.personalNotes,
+    required this.message,
+  });
+
+  @override
+  List<Object?> get props => [guideId, save, personalNotes, message];
+}
