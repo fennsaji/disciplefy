@@ -1,5 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../../core/services/personal_notes_api_service.dart';
 import '../../domain/usecases/generate_study_guide.dart';
 import '../../domain/services/input_validation_service.dart';
 import '../../data/services/save_guide_api_service.dart';
@@ -24,11 +25,13 @@ class StudyBloc extends Bloc<StudyEvent, StudyState> {
   ///
   /// [generateStudyGuide] is the use case responsible for study generation.
   /// [saveGuideService] is the service responsible for save operations.
+  /// [personalNotesService] is the service responsible for personal notes operations.
   /// [validationService] is the service responsible for input validation.
   /// [authService] is the service responsible for authentication checks.
   StudyBloc({
     required GenerateStudyGuide generateStudyGuide,
     required SaveGuideApiService saveGuideService,
+    required PersonalNotesApiService personalNotesService,
     required InputValidationService validationService,
     required AuthService authService,
   }) : super(const StudyInitial()) {
@@ -38,6 +41,7 @@ class StudyBloc extends Bloc<StudyEvent, StudyState> {
     );
     _saveHandler = StudySaveHandler(
       saveGuideService: saveGuideService,
+      personalNotesService: personalNotesService,
       authService: authService,
     );
     _validationHandler = StudyValidationHandler(
@@ -52,5 +56,15 @@ class StudyBloc extends Bloc<StudyEvent, StudyState> {
     on<ValidateInputRequested>(_validationHandler.handleValidateInput);
     on<CheckAuthenticationRequested>((event, emit) =>
         _saveHandler.handleCheckAuthentication(event, emit, add));
+
+    // Register enhanced save event handlers
+    on<EnhancedSaveStudyGuideRequested>(
+        _saveHandler.handleEnhancedSaveStudyGuide);
+    on<CheckEnhancedAuthenticationRequested>((event, emit) =>
+        _saveHandler.handleCheckEnhancedAuthentication(event, emit, add));
+
+    // Register personal notes event handlers
+    on<UpdatePersonalNotesRequested>(_saveHandler.handleUpdatePersonalNotes);
+    on<LoadPersonalNotesRequested>(_saveHandler.handleLoadPersonalNotes);
   }
 }

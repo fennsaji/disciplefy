@@ -41,6 +41,12 @@ class StudyGuide extends Equatable {
   /// Optional user ID if the guide was saved by an authenticated user.
   final String? userId;
 
+  /// Optional personal notes associated with this study guide.
+  final String? personalNotes;
+
+  /// Whether this study guide is saved by the current user.
+  final bool? isSaved;
+
   /// Creates a new StudyGuide instance.
   ///
   /// All fields except [userId] are required to ensure the study guide
@@ -58,6 +64,8 @@ class StudyGuide extends Equatable {
     required this.language,
     required this.createdAt,
     this.userId,
+    this.personalNotes,
+    this.isSaved,
   });
 
   /// Creates a copy of this study guide with optionally modified fields.
@@ -77,6 +85,8 @@ class StudyGuide extends Equatable {
     String? language,
     DateTime? createdAt,
     String? userId,
+    String? personalNotes,
+    bool? isSaved,
   }) =>
       StudyGuide(
         id: id ?? this.id,
@@ -91,6 +101,8 @@ class StudyGuide extends Equatable {
         language: language ?? this.language,
         createdAt: createdAt ?? this.createdAt,
         userId: userId ?? this.userId,
+        personalNotes: personalNotes ?? this.personalNotes,
+        isSaved: isSaved ?? this.isSaved,
       );
 
   /// Gets the title of the study guide based on input type and content.
@@ -148,6 +160,8 @@ class StudyGuide extends Equatable {
         language,
         createdAt,
         userId,
+        personalNotes,
+        isSaved,
       ];
 
   @override
