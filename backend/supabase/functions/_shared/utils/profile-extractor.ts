@@ -23,6 +23,15 @@ export interface ProfileExtractionResult {
   source: 'google' | 'apple' | 'unknown';
 }
 
+interface AppleOAuthMetadata {
+  name?: {
+    firstName?: string;
+    lastName?: string;
+  };
+  picture?: string;
+  email?: string;
+}
+
 /**
  * Validates if a string is a valid URL
  * @param url - URL string to validate
@@ -42,34 +51,28 @@ function isValidUrl(url: string): boolean {
  * @param name - Name string to validate
  * @returns Sanitized name or undefined if invalid
  */
-function validateName(name: any): string | undefined {
+function validateName(name: unknown): string | undefined {
   if (typeof name !== 'string') return undefined;
   
-  const sanitized = name.trim();
-  if (sanitized.length === 0) return undefined;
-  if (sanitized.length > 50) return sanitized.substring(0, 50);
+  const trimmed = name.trim();
+  if (trimmed.length === 0) return undefined;
   
-  // Only allow letters, spaces, hyphens, apostrophes, and common accented characters
-  const nameRegex = /^[a-zA-Z\u00C0-\u017F\s\-']+$/;
+  // Truncate to 50 characters if needed
+  const sanitized = trimmed.length > 50 ? trimmed.substring(0, 50) : trimmed;
+  
+  // Unicode-aware regex: allow letters, combining marks, spaces, hyphens, and apostrophes
+  const nameRegex = /^[\p{L}\p{M}\s\-']+$/u;
   if (!nameRegex.test(sanitized)) return undefined;
   
   return sanitized;
 }
 
 /**
- * Validates profile picture URL
- * @param url - Profile picture URL
- * @returns Validated URL or undefined if invalid
+ * Checks if a URL is from a common image hosting domain
+ * @param url - URL to check
+ * @returns True if from common image host, false otherwise
  */
-function validateProfilePicture(url: any): string | undefined {
-  if (typeof url !== 'string') return undefined;
-  
-  const trimmed = url.trim();
-  if (trimmed.length === 0) return undefined;
-  if (!isValidUrl(trimmed)) return undefined;
-  
-  // Check if URL looks like an image (common image hosting domains or image extensions)
-  const imageUrlRegex = /\.(jpg|jpeg|png|gif|webp)(\?.*)?$/i;
+function isCommonImageHost(url: string): boolean {
   const commonImageHosts = [
     'googleusercontent.com',
     'fbcdn.net',
@@ -79,8 +82,25 @@ function validateProfilePicture(url: any): string | undefined {
     'gravatar.com'
   ];
   
+  return commonImageHosts.some(host => url.includes(host));
+}
+
+/**
+ * Validates profile picture URL
+ * @param url - Profile picture URL
+ * @returns Validated URL or undefined if invalid
+ */
+function validateProfilePicture(url: unknown): string | undefined {
+  if (typeof url !== 'string') return undefined;
+  
+  const trimmed = url.trim();
+  if (trimmed.length === 0) return undefined;
+  if (!isValidUrl(trimmed)) return undefined;
+  
+  // Check if URL looks like an image (extension or common host)
+  const imageUrlRegex = /\.(jpg|jpeg|png|gif|webp)(\?.*)?$/i;
   const hasImageExtension = imageUrlRegex.test(trimmed);
-  const isFromImageHost = commonImageHosts.some(host => trimmed.includes(host));
+  const isFromImageHost = isCommonImageHost(trimmed);
   
   if (!hasImageExtension && !isFromImageHost) {
     console.warn(`⚠️ Profile picture URL may not be an image: ${trimmed}`);
@@ -94,21 +114,24 @@ function validateProfilePicture(url: any): string | undefined {
  * @param userMetadata - User metadata from Google OAuth
  * @returns Extracted profile data
  */
-function extractGoogleProfileData(userMetadata: any): ExtractedProfileData {
+function extractGoogleProfileData(userMetadata: Record<string, unknown>): ExtractedProfileData {
   const data: ExtractedProfileData = {};
   
-  // Extract names
-  if (userMetadata.given_name) {
-    data.firstName = validateName(userMetadata.given_name);
+  // Extract names with type checking
+  if (typeof userMetadata.given_name === 'string') {
+    const givenName: string = userMetadata.given_name;
+    data.firstName = validateName(givenName);
   }
   
-  if (userMetadata.family_name) {
-    data.lastName = validateName(userMetadata.family_name);
+  if (typeof userMetadata.family_name === 'string') {
+    const familyName: string = userMetadata.family_name;
+    data.lastName = validateName(familyName);
   }
   
   // Fallback to parsing full name if individual names not available
-  if (!data.firstName && !data.lastName && userMetadata.name) {
-    const fullName = validateName(userMetadata.name);
+  if (!data.firstName && !data.lastName && typeof userMetadata.name === 'string') {
+    const nameValue: string = userMetadata.name;
+    const fullName = validateName(nameValue);
     if (fullName) {
       const nameParts = fullName.split(' ');
       if (nameParts.length >= 2) {
@@ -120,20 +143,23 @@ function extractGoogleProfileData(userMetadata: any): ExtractedProfileData {
     }
   }
   
-  // Extract profile picture
-  if (userMetadata.picture) {
-    data.profilePicture = validateProfilePicture(userMetadata.picture);
+  // Extract profile picture with type checking
+  if (typeof userMetadata.picture === 'string') {
+    const pictureUrl: string = userMetadata.picture;
+    data.profilePicture = validateProfilePicture(pictureUrl);
   }
   
-  // Store full name for reference
-  if (userMetadata.name) {
-    data.fullName = validateName(userMetadata.name);
+  // Store full name for reference with type checking
+  if (typeof userMetadata.name === 'string') {
+    const nameValue: string = userMetadata.name;
+    data.fullName = validateName(nameValue);
   }
   
   // Email and phone are typically in the main user object, not metadata
-  // But include them if present in metadata
-  if (userMetadata.email) {
-    data.email = userMetadata.email;
+  // But include them if present in metadata with type checking
+  if (typeof userMetadata.email === 'string') {
+    const emailValue: string = userMetadata.email;
+    data.email = emailValue;
   }
   
   return data;
@@ -144,27 +170,27 @@ function extractGoogleProfileData(userMetadata: any): ExtractedProfileData {
  * @param userMetadata - User metadata from Apple OAuth
  * @returns Extracted profile data
  */
-function extractAppleProfileData(userMetadata: any): ExtractedProfileData {
+function extractAppleProfileData(userMetadata: AppleOAuthMetadata): ExtractedProfileData {
   const data: ExtractedProfileData = {};
+  const { name, picture, email } = userMetadata;
   
   // Apple OAuth typically provides less data due to privacy settings
-  if (userMetadata.name) {
-    if (userMetadata.name.firstName) {
-      data.firstName = validateName(userMetadata.name.firstName);
-    }
-    if (userMetadata.name.lastName) {
-      data.lastName = validateName(userMetadata.name.lastName);
-    }
+  if (name?.firstName) {
+    data.firstName = validateName(name.firstName);
+  }
+  
+  if (name?.lastName) {
+    data.lastName = validateName(name.lastName);
   }
   
   // Apple OAuth rarely provides profile pictures
-  if (userMetadata.picture) {
-    data.profilePicture = validateProfilePicture(userMetadata.picture);
+  if (picture) {
+    data.profilePicture = validateProfilePicture(picture);
   }
   
   // Email is typically in the main user object for Apple OAuth
-  if (userMetadata.email) {
-    data.email = userMetadata.email;
+  if (email) {
+    data.email = email;
   }
   
   return data;
@@ -199,6 +225,53 @@ function detectOAuthProvider(user: User): 'google' | 'apple' | 'unknown' {
 }
 
 /**
+ * Extracts provider-specific profile data from user metadata
+ * @param provider - OAuth provider name
+ * @param userMetadata - User metadata object from OAuth
+ * @returns Extracted profile data
+ */
+function getProviderProfileData(provider: string, userMetadata: Record<string, unknown>): ExtractedProfileData {
+  switch (provider) {
+    case 'google':
+      return extractGoogleProfileData(userMetadata);
+    case 'apple':
+      // Convert Record<string, unknown> to AppleOAuthMetadata safely
+      const appleMetadata: AppleOAuthMetadata = {
+        name: typeof userMetadata.name === 'object' && userMetadata.name !== null 
+          ? userMetadata.name as { firstName?: string; lastName?: string }
+          : undefined,
+        picture: typeof userMetadata.picture === 'string' ? userMetadata.picture : undefined,
+        email: typeof userMetadata.email === 'string' ? userMetadata.email : undefined
+      };
+      return extractAppleProfileData(appleMetadata);
+    default:
+      // Try generic extraction for unknown providers
+      return extractGoogleProfileData(userMetadata);
+  }
+}
+
+/**
+ * Applies email and phone fallbacks from user object if not present in extracted data
+ * @param extractedData - Profile data extracted from metadata
+ * @param user - Supabase user object
+ * @returns Updated extracted data with contact fallbacks applied
+ */
+function applyContactFallbacks(extractedData: ExtractedProfileData, user: User): ExtractedProfileData {
+  const updatedData = { ...extractedData };
+  
+  // Always include email and phone from main user object if available
+  if (user.email && !updatedData.email) {
+    updatedData.email = user.email;
+  }
+  
+  if (user.phone && !updatedData.phone) {
+    updatedData.phone = user.phone;
+  }
+  
+  return updatedData;
+}
+
+/**
  * Main function to extract profile data from OAuth user
  * @param user - Supabase user object from OAuth authentication
  * @returns Profile extraction result with data and metadata
@@ -213,31 +286,13 @@ export function extractOAuthProfileData(user: User): ProfileExtractionResult {
   }
   
   const provider = detectOAuthProvider(user);
-  let extractedData: ExtractedProfileData = {};
   
   try {
-    // Extract based on provider
-    switch (provider) {
-      case 'google':
-        extractedData = extractGoogleProfileData(user.user_metadata || {});
-        break;
-      case 'apple':
-        extractedData = extractAppleProfileData(user.user_metadata || {});
-        break;
-      default:
-        // Try generic extraction for unknown providers
-        extractedData = extractGoogleProfileData(user.user_metadata || {});
-        break;
-    }
+    // Extract provider-specific data
+    let extractedData = getProviderProfileData(provider, user.user_metadata || {});
     
-    // Always include email and phone from main user object if available
-    if (user.email && !extractedData.email) {
-      extractedData.email = user.email;
-    }
-    
-    if (user.phone && !extractedData.phone) {
-      extractedData.phone = user.phone;
-    }
+    // Apply contact fallbacks
+    extractedData = applyContactFallbacks(extractedData, user);
     
     // Log extraction results for debugging
     console.log(`📊 [PROFILE_EXTRACTOR] Provider: ${provider}`);
@@ -269,7 +324,11 @@ export function createProfileUpdateData(extractedData: ExtractedProfileData): {
   last_name?: string;
   profile_picture?: string;
 } {
-  const updateData: any = {};
+  const updateData: {
+    first_name?: string;
+    last_name?: string;
+    profile_picture?: string;
+  } = {};
   
   if (extractedData.firstName) {
     updateData.first_name = extractedData.firstName;

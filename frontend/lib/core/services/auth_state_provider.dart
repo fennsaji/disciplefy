@@ -129,39 +129,78 @@ class AuthStateProvider extends ChangeNotifier {
     return null;
   }
 
+  /// Get profile picture URL from cached profile data
+  String? _profilePictureFromCache() {
+    final profile = userProfile;
+    if (profile == null) return null;
+
+    final profilePicture = profile['profile_picture'];
+    final pictureUrl = profilePicture?.toString();
+
+    if (pictureUrl != null && pictureUrl.isNotEmpty) {
+      if (kDebugMode) {
+        print(
+            '👤 [AUTH STATE PROVIDER] Using profile picture from cached data');
+      }
+      return pictureUrl;
+    }
+    return null;
+  }
+
+  /// Get profile picture URL from OAuth metadata
+  String? _profilePictureFromOAuth() {
+    if (_currentState is! auth_states.AuthenticatedState) return null;
+
+    final authState = _currentState as auth_states.AuthenticatedState;
+    final metadata = authState.user.userMetadata;
+    if (metadata == null) return null;
+
+    final avatarUrl =
+        (metadata['avatar_url'] ?? metadata['picture'])?.toString();
+
+    if (avatarUrl != null && avatarUrl.isNotEmpty) {
+      if (kDebugMode) {
+        print(
+            '👤 [AUTH STATE PROVIDER] Using profile picture from OAuth metadata');
+      }
+      return avatarUrl;
+    }
+    return null;
+  }
+
   /// Get profile picture URL with fallback chain
   /// Priority: cached profile data -> OAuth metadata -> null
   String? get profilePictureUrl {
-    // Primary: Try cached profile data first
-    final profile = userProfile;
-    if (profile != null) {
-      final profilePicture = profile['profile_picture'];
-      if (profilePicture != null && profilePicture.toString().isNotEmpty) {
-        if (kDebugMode) {
-          print(
-              '👤 [AUTH STATE PROVIDER] Using profile picture from cached data');
-        }
-        return profilePicture.toString();
-      }
-    }
+    // Try cached profile data first
+    final cachedUrl = _profilePictureFromCache();
+    if (cachedUrl != null) return cachedUrl;
 
-    // Fallback: OAuth metadata (avatar_url or picture)
-    if (_currentState is auth_states.AuthenticatedState) {
-      final authState = _currentState as auth_states.AuthenticatedState;
-      final user = authState.user;
-      final avatarUrl =
-          user.userMetadata?['avatar_url'] ?? user.userMetadata?['picture'];
-      if (avatarUrl != null && avatarUrl.toString().isNotEmpty) {
-        if (kDebugMode) {
-          print(
-              '👤 [AUTH STATE PROVIDER] Using profile picture from OAuth metadata');
-        }
-        return avatarUrl.toString();
-      }
-    }
+    // Fallback to OAuth metadata
+    final oauthUrl = _profilePictureFromOAuth();
+    if (oauthUrl != null) return oauthUrl;
 
     if (kDebugMode) {
       print('👤 [AUTH STATE PROVIDER] No profile picture available');
+    }
+    return null;
+  }
+
+  /// Extract display name from profile map (first_name + last_name)
+  String? _displayNameFromProfile(Map<String, dynamic>? profile) {
+    if (profile == null) return null;
+
+    final firstName = profile['first_name'];
+    final lastName = profile['last_name'];
+
+    if (firstName != null || lastName != null) {
+      final name = '${firstName ?? ''} ${lastName ?? ''}'.trim();
+      if (name.isNotEmpty) {
+        if (kDebugMode) {
+          print(
+              '👤 [AUTH STATE PROVIDER] Using display name from cached profile: $name');
+        }
+        return name;
+      }
     }
     return null;
   }
@@ -170,21 +209,9 @@ class AuthStateProvider extends ChangeNotifier {
   /// Priority: profile first_name + last_name -> OAuth metadata -> email -> 'User'
   String get profileBasedDisplayName {
     // Primary: Use cached profile first_name + last_name
-    final profile = userProfile;
-    if (profile != null) {
-      final firstName = profile['first_name'];
-      final lastName = profile['last_name'];
-
-      if (firstName != null || lastName != null) {
-        final name = '${firstName ?? ''} ${lastName ?? ''}'.trim();
-        if (name.isNotEmpty) {
-          if (kDebugMode) {
-            print(
-                '👤 [AUTH STATE PROVIDER] Using display name from cached profile: $name');
-          }
-          return name;
-        }
-      }
+    final profileName = _displayNameFromProfile(userProfile);
+    if (profileName != null) {
+      return profileName;
     }
 
     // Fallback: Existing OAuth-based currentUserName logic

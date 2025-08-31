@@ -40,6 +40,9 @@ class StudyRemoteDataSourceImpl implements StudyRemoteDataSource {
     required String language,
   }) async {
     try {
+      // Validate token before making authenticated request
+      await ApiAuthHelper.validateTokenForRequest();
+
       // Use unified authentication helper
       final headers = await ApiAuthHelper.getAuthHeaders();
 
@@ -87,6 +90,12 @@ class StudyRemoteDataSourceImpl implements StudyRemoteDataSource {
       rethrow;
     } on RateLimitException {
       rethrow;
+    } on TokenValidationException {
+      // Convert to AuthenticationException for consistency
+      throw const AuthenticationException(
+        message: 'Authentication token is invalid. Please sign in again.',
+        code: 'TOKEN_INVALID',
+      );
     } catch (e) {
       throw ClientException(
         message: 'We couldn\'t generate a study guide. Please try again later.',

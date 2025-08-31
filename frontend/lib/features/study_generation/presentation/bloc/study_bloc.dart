@@ -1,7 +1,7 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../../../../core/services/personal_notes_api_service.dart';
 import '../../domain/usecases/generate_study_guide.dart';
+import '../../domain/usecases/manage_personal_notes.dart';
 import '../../domain/services/input_validation_service.dart';
 import '../../data/services/save_guide_api_service.dart';
 import '../../../auth/data/services/auth_service.dart';
@@ -25,13 +25,13 @@ class StudyBloc extends Bloc<StudyEvent, StudyState> {
   ///
   /// [generateStudyGuide] is the use case responsible for study generation.
   /// [saveGuideService] is the service responsible for save operations.
-  /// [personalNotesService] is the service responsible for personal notes operations.
+  /// [managePersonalNotes] is the use case responsible for personal notes operations.
   /// [validationService] is the service responsible for input validation.
   /// [authService] is the service responsible for authentication checks.
   StudyBloc({
     required GenerateStudyGuide generateStudyGuide,
     required SaveGuideApiService saveGuideService,
-    required PersonalNotesApiService personalNotesService,
+    required ManagePersonalNotesUseCase managePersonalNotes,
     required InputValidationService validationService,
     required AuthService authService,
   }) : super(const StudyInitial()) {
@@ -41,7 +41,7 @@ class StudyBloc extends Bloc<StudyEvent, StudyState> {
     );
     _saveHandler = StudySaveHandler(
       saveGuideService: saveGuideService,
-      personalNotesService: personalNotesService,
+      managePersonalNotes: managePersonalNotes,
       authService: authService,
     );
     _validationHandler = StudyValidationHandler(

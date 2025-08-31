@@ -76,6 +76,7 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
   String? _loadedNotes;
   bool _notesLoaded = false;
   Timer? _autoSaveTimer;
+  VoidCallback? _autoSaveListener;
 
   @override
   void initState() {
@@ -86,6 +87,9 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
   @override
   void dispose() {
     _autoSaveTimer?.cancel();
+    if (_autoSaveListener != null) {
+      _notesController.removeListener(_autoSaveListener!);
+    }
     _notesController.dispose();
     _scrollController.dispose();
     super.dispose();
@@ -192,7 +196,13 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
 
   /// Setup auto-save for personal notes
   void _setupAutoSave() {
-    _notesController.addListener(() {
+    // Remove existing listener to prevent duplicates
+    if (_autoSaveListener != null) {
+      _notesController.removeListener(_autoSaveListener!);
+    }
+
+    // Create new listener callback
+    _autoSaveListener = () {
       _autoSaveTimer?.cancel();
       _autoSaveTimer = Timer(const Duration(milliseconds: 2000), () {
         final currentText = _notesController.text.trim();
@@ -207,7 +217,10 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
           }
         }
       });
-    });
+    };
+
+    // Add the listener
+    _notesController.addListener(_autoSaveListener!);
   }
 
   @override

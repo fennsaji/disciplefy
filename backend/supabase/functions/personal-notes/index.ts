@@ -230,10 +230,11 @@ async function handleDeletePersonalNotes(
 
 /**
  * Validates personal notes update request
- * Implements DRY principle by centralizing validation
+ * Implements DRY principle by centralizing validation with strict type safety
  */
-function validateUpdateRequest(requestData: any): void {
-  if (!requestData) {
+function validateUpdateRequest(requestData: unknown): void {
+  // First, ensure requestData is a non-null object
+  if (requestData === null || requestData === undefined) {
     throw new AppError(
       'VALIDATION_ERROR',
       'Request body is required',
@@ -241,23 +242,57 @@ function validateUpdateRequest(requestData: any): void {
     )
   }
 
-  if (!requestData.study_guide_id || typeof requestData.study_guide_id !== 'string') {
+  if (typeof requestData !== 'object') {
     throw new AppError(
       'VALIDATION_ERROR',
-      'study_guide_id is required and must be a string',
+      'Request body must be an object',
       400
     )
   }
 
-  // personal_notes can be null (for deletion) or string
-  if (requestData.personal_notes !== null && 
-      requestData.personal_notes !== undefined && 
-      typeof requestData.personal_notes !== 'string') {
+  // Type narrowing: now we know requestData is a non-null object
+  const data = requestData as Record<string, unknown>
+
+  // Validate study_guide_id is present and is a string
+  if (!('study_guide_id' in data)) {
     throw new AppError(
       'VALIDATION_ERROR',
-      'personal_notes must be a string or null',
+      'study_guide_id is required',
       400
     )
+  }
+
+  if (typeof data.study_guide_id !== 'string') {
+    throw new AppError(
+      'VALIDATION_ERROR',
+      'study_guide_id must be a string',
+      400
+    )
+  }
+
+  // Validate personal_notes: allow null, undefined, or string with length limit
+  if ('personal_notes' in data) {
+    const personalNotes = data.personal_notes
+
+    // Allow null or undefined for deletion
+    if (personalNotes !== null && personalNotes !== undefined) {
+      if (typeof personalNotes !== 'string') {
+        throw new AppError(
+          'VALIDATION_ERROR',
+          'personal_notes must be a string or null',
+          400
+        )
+      }
+
+      // Enforce maximum length of 2000 characters
+      if (personalNotes.length > 2000) {
+        throw new AppError(
+          'VALIDATION_ERROR',
+          'personal_notes cannot exceed 2000 characters',
+          400
+        )
+      }
+    }
   }
 }
 

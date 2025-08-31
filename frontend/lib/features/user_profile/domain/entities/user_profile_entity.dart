@@ -5,11 +5,22 @@ class UserProfileEntity extends Equatable {
   final String id;
   final String languagePreference;
   final String themePreference;
+
+  /// User's first name, null if not provided
   final String? firstName;
+
+  /// User's last name, null if not provided
   final String? lastName;
+
+  /// URL or path to user's profile picture, null if not set
   final String? profilePicture;
+
+  /// User's email address, null if not provided
   final String? email;
+
+  /// User's phone number, null if not provided
   final String? phone;
+
   final bool isAdmin;
   final DateTime createdAt;
   final DateTime updatedAt;
@@ -18,10 +29,20 @@ class UserProfileEntity extends Equatable {
     required this.id,
     required this.languagePreference,
     required this.themePreference,
+
+    /// User's first name, null if not provided
     this.firstName,
+
+    /// User's last name, null if not provided
     this.lastName,
+
+    /// URL or path to user's profile picture, null if not set
     this.profilePicture,
+
+    /// User's email address, null if not provided
     this.email,
+
+    /// User's phone number, null if not provided
     this.phone,
     required this.isAdmin,
     required this.createdAt,
