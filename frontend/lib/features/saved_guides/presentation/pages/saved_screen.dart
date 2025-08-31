@@ -342,7 +342,7 @@ class _SavedScreenContent extends StatelessWidget {
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 24),
-              ElevatedButton(
+              ElevatedButton.icon(
                 onPressed: () {
                   context.read<UnifiedSavedGuidesBloc>().add(
                         const LoadSavedGuidesFromApi(refresh: true),
@@ -352,7 +352,8 @@ class _SavedScreenContent extends StatelessWidget {
                   backgroundColor: Theme.of(context).colorScheme.primary,
                   foregroundColor: Colors.white,
                 ),
-                child: const Text('Retry'),
+                icon: const Icon(Icons.refresh),
+                label: const Text('Try Again'),
               ),
             ],
           ),

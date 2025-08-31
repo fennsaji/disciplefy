@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -18,6 +19,10 @@ import '../../../saved_guides/data/models/saved_guide_model.dart';
 ///
 /// Features scrollable content, note-taking, save/share functionality, and error handling
 /// following the UX specifications and brand guidelines.
+///
+/// Enhanced Integration: Utilizes personal notes and save status from StudyGuide entity
+/// when available (from enhanced API response) to eliminate redundant API calls and
+/// provide immediate access to user data.
 class StudyGuideScreen extends StatelessWidget {
   final StudyGuide? studyGuide;
   final Map<String, dynamic>? routeExtra;
@@ -67,6 +72,12 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
   bool _isSaved = false;
   DateTime? _lastSaveAttempt;
 
+  // Personal notes state
+  String? _loadedNotes;
+  bool _notesLoaded = false;
+  Timer? _autoSaveTimer;
+  VoidCallback? _autoSaveListener;
+
   @override
   void initState() {
     super.initState();
@@ -75,6 +86,10 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
 
   @override
   void dispose() {
+    _autoSaveTimer?.cancel();
+    if (_autoSaveListener != null) {
+      _notesController.removeListener(_autoSaveListener!);
+    }
     _notesController.dispose();
     _scrollController.dispose();
     super.dispose();
@@ -84,6 +99,26 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
     if (widget.studyGuide != null) {
       // This means we came from the generate screen
       _currentStudyGuide = widget.studyGuide!;
+
+      // Use enhanced entity data if available
+      if (_currentStudyGuide.isSaved != null) {
+        _isSaved = _currentStudyGuide.isSaved!;
+      }
+
+      // Pre-populate notes from entity if available
+      if (_currentStudyGuide.personalNotes != null) {
+        _loadedNotes = _currentStudyGuide.personalNotes;
+        _notesController.text = _currentStudyGuide.personalNotes!;
+        _notesLoaded = true;
+
+        // Setup auto-save if guide is saved
+        if (_isSaved) {
+          _setupAutoSave();
+        }
+      } else {
+        // Fallback to separate API call for personal notes if not in entity
+        _loadPersonalNotesIfSaved();
+      }
     } else if (widget.routeExtra != null &&
         widget.routeExtra!['study_guide'] != null) {
       // This means we came from the saved guides screen
@@ -124,6 +159,9 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
 
         // Set save status from route data for saved guides
         _isSaved = guideData['is_saved'] as bool? ?? false;
+
+        // Load personal notes for saved guides
+        _loadPersonalNotesIfSaved();
       } catch (e) {
         print('❌ [STUDY_GUIDE] Error parsing route data: $e');
         _showError('Invalid study guide data. Please try again.');
@@ -146,6 +184,45 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
     });
   }
 
+  /// Load personal notes if the guide is saved and notes not already available
+  void _loadPersonalNotesIfSaved() {
+    // Only load via API if guide is saved, notes not loaded, and entity doesn't have notes
+    if (_isSaved && !_notesLoaded && _currentStudyGuide.personalNotes == null) {
+      context.read<StudyBloc>().add(LoadPersonalNotesRequested(
+            guideId: _currentStudyGuide.id,
+          ));
+    }
+  }
+
+  /// Setup auto-save for personal notes
+  void _setupAutoSave() {
+    // Remove existing listener to prevent duplicates
+    if (_autoSaveListener != null) {
+      _notesController.removeListener(_autoSaveListener!);
+    }
+
+    // Create new listener callback
+    _autoSaveListener = () {
+      _autoSaveTimer?.cancel();
+      _autoSaveTimer = Timer(const Duration(milliseconds: 2000), () {
+        final currentText = _notesController.text.trim();
+        if (currentText != (_loadedNotes ?? '').trim()) {
+          // Only auto-save if notes have changed and guide is saved
+          if (_isSaved) {
+            context.read<StudyBloc>().add(UpdatePersonalNotesRequested(
+                  guideId: _currentStudyGuide.id,
+                  personalNotes: currentText.isEmpty ? null : currentText,
+                  isAutoSave: true,
+                ));
+          }
+        }
+      });
+    };
+
+    // Add the listener
+    _notesController.addListener(_autoSaveListener!);
+  }
+
   @override
   Widget build(BuildContext context) {
     final screenHeight = MediaQuery.of(context).size.height;
@@ -157,6 +234,7 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
 
     return BlocListener<StudyBloc, StudyState>(
       listener: (context, state) {
+        // Handle legacy save operations
         if (state is StudySaveSuccess) {
           setState(() {
             _isSaved = state.saved;
@@ -170,6 +248,59 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
           _handleSaveError(state.failure);
         } else if (state is StudyAuthenticationRequired) {
           _showAuthenticationRequiredDialog();
+        }
+        // Handle enhanced save operations
+        else if (state is StudyEnhancedSaveSuccess) {
+          setState(() {
+            _isSaved = state.guideSaved;
+            if (state.notesSaved && state.savedNotes != null) {
+              _loadedNotes = state.savedNotes;
+            }
+          });
+          _showSnackBar(
+            state.message,
+            Colors.green,
+            icon: Icons.check_circle,
+          );
+          // Setup auto-save if guide was saved
+          if (state.guideSaved) {
+            _setupAutoSave();
+          }
+        } else if (state is StudyEnhancedSaveFailure) {
+          _handleEnhancedSaveError(state);
+        } else if (state is StudyEnhancedAuthenticationRequired) {
+          _showEnhancedAuthenticationRequiredDialog(state);
+        }
+        // Handle personal notes operations
+        else if (state is StudyPersonalNotesLoaded) {
+          setState(() {
+            _notesLoaded = true;
+            _loadedNotes = state.notes;
+            if (state.notes != null) {
+              _notesController.text = state.notes!;
+            }
+          });
+          // Setup auto-save for saved guides
+          if (_isSaved) {
+            _setupAutoSave();
+          }
+        } else if (state is StudyPersonalNotesSuccess) {
+          if (!state.isAutoSave) {
+            _showSnackBar(
+              state.message ?? 'Personal notes saved!',
+              Colors.green,
+              icon: Icons.note_add,
+            );
+          }
+          setState(() {
+            _loadedNotes = state.savedNotes;
+          });
+        } else if (state is StudyPersonalNotesFailure && !state.isAutoSave) {
+          _showSnackBar(
+            'Failed to save personal notes: ${state.failure.message}',
+            Theme.of(context).colorScheme.error,
+            icon: Icons.error_outline,
+          );
         }
       },
       child: Scaffold(
@@ -468,8 +599,16 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
             Expanded(
               child: BlocBuilder<StudyBloc, StudyState>(
                 builder: (context, state) {
-                  final isSaving = state is StudySaveInProgress &&
-                      state.guideId == _currentStudyGuide.id;
+                  final isSaving = (state is StudySaveInProgress &&
+                          state.guideId == _currentStudyGuide.id) ||
+                      (state is StudyEnhancedSaveInProgress &&
+                          state.guideId == _currentStudyGuide.id);
+
+                  // Get current step for enhanced save progress
+                  String? currentStep;
+                  if (state is StudyEnhancedSaveInProgress) {
+                    currentStep = state.currentStep;
+                  }
 
                   return isSaving
                       ? OutlinedButton.icon(
@@ -484,7 +623,7 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
                             ),
                           ),
                           label: Text(
-                            'Saving...',
+                            currentStep ?? 'Saving...',
                             style: GoogleFonts.inter(
                               fontSize: 16,
                               fontWeight: FontWeight.w600,
@@ -575,7 +714,7 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
     }
   }
 
-  /// Toggle save/unsave status of the current study guide via BLoC
+  /// Toggle save/unsave status of the current study guide with personal notes via BLoC
   void _saveStudyGuide() {
     // Debounce rapid taps - prevent multiple requests within 2 seconds
     final now = DateTime.now();
@@ -587,18 +726,14 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
 
     // Determine action based on current save status
     final shouldSave = !_isSaved;
+    final personalNotes = _notesController.text.trim();
 
-    // Dispatch authentication check event to BLoC instead of direct Supabase access
-    context.read<StudyBloc>().add(CheckAuthenticationRequested(
+    // Use enhanced save functionality that combines guide saving with personal notes
+    context.read<StudyBloc>().add(CheckEnhancedAuthenticationRequested(
           guideId: _currentStudyGuide.id,
           save: shouldSave,
+          personalNotes: personalNotes.isEmpty ? null : personalNotes,
         ));
-
-    // TODO: Save notes locally if needed
-    final notes = _notesController.text.trim();
-    if (notes.isNotEmpty) {
-      debugPrint('Notes to save locally: $notes');
-    }
   }
 
   /// Show authentication required dialog
@@ -677,6 +812,87 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
     );
   }
 
+  /// Show enhanced authentication required dialog with personal notes info
+  void _showEnhancedAuthenticationRequiredDialog(
+      StudyEnhancedAuthenticationRequired state) {
+    final hasNotes = state.personalNotes?.isNotEmpty == true;
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: const Color(0xFFFAFAFA), // Light background
+        surfaceTintColor: Colors.transparent,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        elevation: 8,
+        shadowColor: Colors.black.withOpacity(0.1),
+        title: Text(
+          'Authentication Required',
+          style: GoogleFonts.playfairDisplay(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            color: const Color(0xFF333333), // Primary gray text
+          ),
+        ),
+        content: Text(
+          hasNotes
+              ? 'You need to be signed in to save study guides and personal notes. Would you like to sign in now?'
+              : 'You need to be signed in to save study guides. Would you like to sign in now?',
+          style: GoogleFonts.inter(
+            fontSize: 16,
+            color: const Color(0xFF333333), // Primary gray text
+            height: 1.5,
+          ),
+        ),
+        actionsPadding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            style: TextButton.styleFrom(
+              foregroundColor: const Color(0xFF888888), // Light gray for cancel
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            child: Text(
+              'Cancel',
+              style: GoogleFonts.inter(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: const Color(0xFF888888), // Light gray text
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              sl<StudyNavigator>().navigateToLogin(context);
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF7A56DB), // Primary purple
+              foregroundColor: Colors.white,
+              elevation: 0,
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            child: Text(
+              'Sign In',
+              style: GoogleFonts.inter(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   /// Handle save operation errors from BLoC
   void _handleSaveError(Failure failure) {
     String message = 'Failed to save study guide. Please try again.';
@@ -699,6 +915,44 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
     }
 
     _showSnackBar(message, backgroundColor, icon: Icons.error_outline);
+  }
+
+  /// Handle enhanced save operation errors from BLoC
+  void _handleEnhancedSaveError(StudyEnhancedSaveFailure state) {
+    String message;
+    Color backgroundColor = Theme.of(context).colorScheme.error;
+    IconData icon = Icons.error_outline;
+
+    if (state.guideSaveSuccess && !state.notesSaveSuccess) {
+      // Guide saved but notes failed
+      message = 'Study guide saved, but failed to save personal notes.';
+      setState(() {
+        _isSaved = true;
+      });
+      _setupAutoSave(); // Setup auto-save since guide is now saved
+    } else if (!state.guideSaveSuccess && state.notesSaveSuccess) {
+      // Notes saved but guide failed (shouldn't happen in normal flow)
+      message = 'Failed to save study guide: ${state.primaryFailure.message}';
+    } else {
+      // Both failed or primary failure
+      if (state.primaryFailure.code == 'UNAUTHORIZED') {
+        message = 'Authentication expired. Please sign in again.';
+      } else if (state.primaryFailure.code == 'NETWORK_ERROR') {
+        message = 'Network error. Please check your connection.';
+      } else if (state.primaryFailure.code == 'ALREADY_SAVED') {
+        message = 'This study guide is already saved!';
+        backgroundColor = Theme.of(context).colorScheme.primary;
+        icon = Icons.check_circle;
+        setState(() {
+          _isSaved = true;
+        });
+        _setupAutoSave();
+      } else {
+        message = state.primaryFailure.message;
+      }
+    }
+
+    _showSnackBar(message, backgroundColor, icon: icon);
   }
 
   /// Show snackbar with consistent styling
@@ -850,11 +1104,10 @@ class _StudySection extends StatelessWidget {
             // Section Content
             SelectableText(
               content,
-              style: GoogleFonts.inter(
-                fontSize: 14,
-                color: Theme.of(context).colorScheme.onBackground,
-                height: 1.6,
-              ),
+              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                    color: Theme.of(context).colorScheme.onBackground,
+                    height: 1.6,
+                  ),
             ),
           ],
         ),

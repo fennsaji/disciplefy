@@ -140,14 +140,14 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
             _isGeneratingStudyGuide = false;
           });
           ScaffoldMessenger.of(context).hideCurrentSnackBar();
-          context.go('/study-guide?source=home', extra: state.studyGuide);
+          context.push('/study-guide?source=home', extra: state.studyGuide);
         } else if (state is HomeStudyGuideGeneratedCombined) {
           // Stop loading and navigate to study guide screen - this preserves topics in state
           setState(() {
             _isGeneratingStudyGuide = false;
           });
           ScaffoldMessenger.of(context).hideCurrentSnackBar();
-          context.go('/study-guide?source=home', extra: state.studyGuide);
+          context.push('/study-guide?source=home', extra: state.studyGuide);
         } else if (state is HomeCombinedState) {
           // Update loading state based on study guide generation status
           setState(() {
@@ -310,7 +310,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
           // Settings Icon
           IconButton(
             onPressed: () {
-              context.go('/settings');
+              context.push('/settings');
             },
             icon: const Icon(
               Icons.settings_outlined,
@@ -457,7 +457,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
                     TextButton.icon(
                       onPressed: _isGeneratingStudyGuide
                           ? null
-                          : () => context.go('/study-topics'),
+                          : () => context.push('/study-topics'),
                       label: Text(
                         'View All',
                         style: GoogleFonts.inter(
@@ -516,7 +516,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
             ),
             const SizedBox(height: 8),
             Text(
-              error,
+              'Something went wrong!',
               style: GoogleFonts.inter(
                 fontSize: 14,
                 color:
@@ -525,7 +525,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 16),
-            ElevatedButton(
+            ElevatedButton.icon(
               onPressed: () => context
                   .read<HomeBloc>()
                   .add(const RefreshRecommendedTopics()),
@@ -536,10 +536,8 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
                   borderRadius: BorderRadius.circular(8),
                 ),
               ),
-              child: Text(
-                'Retry',
-                style: GoogleFonts.inter(fontWeight: FontWeight.w600),
-              ),
+              icon: const Icon(Icons.refresh),
+              label: const Text('Try Again'),
             ),
           ],
         ),
@@ -853,7 +851,7 @@ class _RecommendedGuideTopicCard extends StatelessWidget {
                             child: Text(
                               topic.category,
                               style: GoogleFonts.inter(
-                                fontSize: 9,
+                                fontSize: 12,
                                 fontWeight: FontWeight.w600,
                                 color: color,
                               ),
@@ -870,7 +868,7 @@ class _RecommendedGuideTopicCard extends StatelessWidget {
                     Text(
                       topic.title,
                       style: GoogleFonts.inter(
-                        fontSize: 14, // Slightly smaller for better fit
+                        fontSize: 16,
                         fontWeight: FontWeight.w600,
                         color: Theme.of(context).colorScheme.onSurface,
                         height: 1.2, // Tighter line height
@@ -886,7 +884,7 @@ class _RecommendedGuideTopicCard extends StatelessWidget {
                       child: Text(
                         topic.description,
                         style: GoogleFonts.inter(
-                          fontSize: 11, // Smaller font for more content
+                          fontSize: 14,
                           color: Theme.of(context)
                               .colorScheme
                               .onSurface

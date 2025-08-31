@@ -40,6 +40,9 @@ class StudyRemoteDataSourceImpl implements StudyRemoteDataSource {
     required String language,
   }) async {
     try {
+      // Validate token before making authenticated request
+      await ApiAuthHelper.validateTokenForRequest();
+
       // Use unified authentication helper
       final headers = await ApiAuthHelper.getAuthHeaders();
 
@@ -87,6 +90,12 @@ class StudyRemoteDataSourceImpl implements StudyRemoteDataSource {
       rethrow;
     } on RateLimitException {
       rethrow;
+    } on TokenValidationException {
+      // Convert to AuthenticationException for consistency
+      throw const AuthenticationException(
+        message: 'Authentication token is invalid. Please sign in again.',
+        code: 'TOKEN_INVALID',
+      );
     } catch (e) {
       throw ClientException(
         message: 'We couldn\'t generate a study guide. Please try again later.',
@@ -97,6 +106,9 @@ class StudyRemoteDataSourceImpl implements StudyRemoteDataSource {
   }
 
   /// Parses a study guide from the API response.
+  ///
+  /// Handles both enhanced responses (with personal_notes and isSaved)
+  /// and legacy responses for backward compatibility.
   StudyGuide _parseStudyGuideFromResponse(
     Map<String, dynamic> data,
     String input,
@@ -107,6 +119,10 @@ class StudyRemoteDataSourceImpl implements StudyRemoteDataSource {
     final studyGuide =
         responseData['study_guide'] as Map<String, dynamic>? ?? {};
     final content = studyGuide['content'] as Map<String, dynamic>? ?? {};
+
+    // Extract enhanced fields (personal_notes and isSaved) if available
+    final personalNotes = studyGuide['personal_notes'] as String?;
+    final isSaved = studyGuide['isSaved'] as bool?;
 
     return StudyGuide(
       id: studyGuide['id'] as String? ?? _uuid.v4(),
@@ -131,6 +147,8 @@ class StudyRemoteDataSourceImpl implements StudyRemoteDataSource {
       language: language, // Always use the original language parameter
       createdAt: DateTime.parse(studyGuide['createdAt'] as String? ??
           DateTime.now().toIso8601String()),
+      personalNotes: personalNotes, // Enhanced field
+      isSaved: isSaved, // Enhanced field
     );
   }
 }

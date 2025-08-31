@@ -296,7 +296,7 @@ class _RecentGuidesSectionState extends State<RecentGuidesSection> {
           ),
           const SizedBox(height: 4),
           Text(
-            message,
+            'Something went wrong!',
             style: GoogleFonts.inter(
               fontSize: 12,
               color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
@@ -304,20 +304,15 @@ class _RecentGuidesSectionState extends State<RecentGuidesSection> {
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 12),
-          OutlinedButton(
+          OutlinedButton.icon(
             onPressed: () => _bloc
                 ?.add(const LoadRecentGuidesFromApi(refresh: true, limit: 5)),
             style: OutlinedButton.styleFrom(
               foregroundColor: Theme.of(context).colorScheme.primary,
               side: BorderSide(color: Theme.of(context).colorScheme.primary),
             ),
-            child: Text(
-              'Retry',
-              style: GoogleFonts.inter(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
+            icon: const Icon(Icons.refresh),
+            label: const Text('Try Again'),
           ),
         ],
       ),
