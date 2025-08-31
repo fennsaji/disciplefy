@@ -1,11 +1,17 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient, SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { handleCors } from "../_shared/utils/cors.ts";
+import { extractOAuthProfileData, createProfileUpdateData, logProfileExtraction } from "../_shared/utils/profile-extractor.ts";
 
 interface UserProfile {
   id: string;
   language_preference: string;
   theme_preference: string;
+  first_name: string | null;
+  last_name: string | null;
+  profile_picture: string | null;
+  email: string | null;
+  phone: string | null;
   is_admin: boolean;
   created_at: string;
   updated_at: string;
@@ -14,6 +20,9 @@ interface UserProfile {
 interface UpdateProfileRequest {
   language_preference?: string;
   theme_preference?: string;
+  first_name?: string | null | undefined;
+  last_name?: string | null | undefined;
+  profile_picture?: string | null | undefined;
 }
 
 interface ValidationResult {
@@ -25,6 +34,35 @@ interface ValidationResult {
 // Helper Functions
 
 /**
+ * Validates if a string is a valid URL
+ * @param url - URL string to validate
+ * @returns True if valid URL, false otherwise
+ */
+function isValidUrl(url: string): boolean {
+  try {
+    const urlObj = new URL(url);
+    return urlObj.protocol === 'http:' || urlObj.protocol === 'https:';
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Validates a name field (first_name or last_name)
+ * @param name - Name to validate
+ * @returns True if valid, false otherwise
+ */
+function isValidName(name: string): boolean {
+  if (typeof name !== 'string') return false;
+  const trimmed = name.trim();
+  if (trimmed.length === 0 || trimmed.length > 50) return false;
+  
+  // Only allow letters, spaces, hyphens, apostrophes, and common accented characters
+  const nameRegex = /^[a-zA-Z\u00C0-\u017F\s\-']+$/;
+  return nameRegex.test(trimmed);
+}
+
+/**
  * Parses and validates profile update request body
  * @param body - Request body to validate
  * @returns Validation result with parsed data or error
@@ -32,6 +70,7 @@ interface ValidationResult {
 function parseAndValidateUpdate(body: any): ValidationResult {
   const updateData: UpdateProfileRequest = {};
 
+  // Validate language preference
   if (body.language_preference !== undefined) {
     const validLanguages = ['en', 'hi', 'ml'];
     if (!validLanguages.includes(body.language_preference)) {
@@ -40,12 +79,46 @@ function parseAndValidateUpdate(body: any): ValidationResult {
     updateData.language_preference = body.language_preference;
   }
 
+  // Validate theme preference
   if (body.theme_preference !== undefined) {
     const validThemes = ['light', 'dark', 'system'];
     if (!validThemes.includes(body.theme_preference)) {
       return { isValid: false, error: 'Invalid theme preference' };
     }
     updateData.theme_preference = body.theme_preference;
+  }
+
+  // Validate first name
+  if (body.first_name !== undefined) {
+    if (body.first_name === null || body.first_name === '') {
+      updateData.first_name = null; // Allow clearing the field
+    } else if (!isValidName(body.first_name)) {
+      return { isValid: false, error: 'Invalid first name format' };
+    } else {
+      updateData.first_name = body.first_name.trim();
+    }
+  }
+
+  // Validate last name
+  if (body.last_name !== undefined) {
+    if (body.last_name === null || body.last_name === '') {
+      updateData.last_name = null; // Allow clearing the field
+    } else if (!isValidName(body.last_name)) {
+      return { isValid: false, error: 'Invalid last name format' };
+    } else {
+      updateData.last_name = body.last_name.trim();
+    }
+  }
+
+  // Validate profile picture URL
+  if (body.profile_picture !== undefined) {
+    if (body.profile_picture === null || body.profile_picture === '') {
+      updateData.profile_picture = null; // Allow clearing the field
+    } else if (!isValidUrl(body.profile_picture)) {
+      return { isValid: false, error: 'Invalid profile picture URL format' };
+    } else {
+      updateData.profile_picture = body.profile_picture.trim();
+    }
   }
 
   if (Object.keys(updateData).length === 0) {
@@ -56,16 +129,52 @@ function parseAndValidateUpdate(body: any): ValidationResult {
 }
 
 /**
- * Creates a default user profile
+ * Creates a default user profile with OAuth data if available
+ * @param client - Supabase client instance
  * @param userId - User ID for the profile
  * @param updateData - Optional initial data for the profile
- * @returns Default profile object
+ * @returns Default profile object with extracted OAuth data
  */
-function createDefaultProfile(userId: string, updateData?: UpdateProfileRequest): UserProfile {
+async function createDefaultProfile(
+  client: SupabaseClient,
+  userId: string,
+  updateData?: UpdateProfileRequest
+): Promise<UserProfile> {
+  // Try to extract OAuth profile data
+  let oauthData: any = {};
+  
+  try {
+    // Get the current user to extract OAuth data
+    const { data: { user }, error: userError } = await client.auth.getUser();
+    
+    if (!userError && user && user.id === userId) {
+      // Extract OAuth profile data
+      const extractionResult = extractOAuthProfileData(user);
+      
+      if (extractionResult.success && extractionResult.data) {
+        const profileUpdateData = createProfileUpdateData(extractionResult.data);
+        oauthData = profileUpdateData;
+        
+        // Log the extraction for debugging
+        logProfileExtraction(user, extractionResult);
+        console.log('✅ [USER_PROFILE] OAuth data extracted for new profile');
+      } else {
+        console.log('⚠️ [USER_PROFILE] No OAuth data available for profile creation');
+      }
+    }
+  } catch (error) {
+    console.warn('⚠️ [USER_PROFILE] Failed to extract OAuth data:', error);
+  }
+
   return {
     id: userId,
     language_preference: updateData?.language_preference || 'en',
     theme_preference: updateData?.theme_preference || 'light',
+    first_name: updateData?.first_name || oauthData.first_name || null,
+    last_name: updateData?.last_name || oauthData.last_name || null,
+    profile_picture: updateData?.profile_picture || oauthData.profile_picture || null,
+    email: null, // Will be populated from auth.users in the calling function
+    phone: null, // Will be populated from auth.users in the calling function
     is_admin: false,
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
@@ -99,7 +208,7 @@ async function upsertProfile(
 
   if (updateError?.code === 'PGRST116') {
     // Profile doesn't exist, create it
-    const defaultProfile = createDefaultProfile(userId, updateData);
+    const defaultProfile = createDefaultProfile(client, userId, updateData);
     return await client
       .from('user_profiles')
       .insert([defaultProfile])
@@ -180,6 +289,9 @@ serve(async (req) => {
         return await handleGetProfile(supabaseClient, userId, corsHeaders);
       case 'PUT':
         return await handleUpdateProfile(supabaseClient, userId, req, corsHeaders);
+      case 'POST':
+        // Handle profile sync from OAuth providers
+        return await handleSyncProfile(supabaseClient, userId, corsHeaders);
       default:
         return new Response(
           JSON.stringify({ error: 'Method not allowed' }),
@@ -202,11 +314,11 @@ serve(async (req) => {
 });
 
 /**
- * Handles GET requests to retrieve user profile
+ * Handles GET requests to retrieve user profile with email/phone data
  * @param supabaseClient - Authenticated Supabase client
  * @param userId - User ID from JWT token
  * @param corsHeaders - CORS headers for response
- * @returns Promise resolving to HTTP response with user profile data
+ * @returns Promise resolving to HTTP response with complete user profile data
  */
 async function handleGetProfile(
   supabaseClient: SupabaseClient,
@@ -214,15 +326,18 @@ async function handleGetProfile(
   corsHeaders: Record<string, string>
 ): Promise<Response> {
   try {
+    // Get profile data from user_profiles table
     const { data: profile, error } = await supabaseClient
       .from('user_profiles')
       .select('*')
       .eq('id', userId)
       .single();
 
+    let userProfile: UserProfile;
+
     if (error?.code === 'PGRST116') {
-      // Profile not found, create default profile
-      const defaultProfile = createDefaultProfile(userId);
+      // Profile not found, create default profile with OAuth data
+      const defaultProfile = await createDefaultProfile(supabaseClient, userId);
       const { data: newProfile, error: insertError } = await supabaseClient
         .from('user_profiles')
         .insert([defaultProfile])
@@ -236,22 +351,27 @@ async function handleGetProfile(
           { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
-      return new Response(
-        JSON.stringify({ data: newProfile }),
-        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    if (error) {
+      userProfile = newProfile;
+    } else if (error) {
       console.error('Error fetching profile:', error);
       return new Response(
         JSON.stringify({ error: 'Failed to fetch user profile' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
+    } else {
+      userProfile = profile;
+    }
+
+    // Get email and phone from auth.users table
+    const { data: { user }, error: userError } = await supabaseClient.auth.getUser();
+    
+    if (!userError && user) {
+      userProfile.email = user.email || null;
+      userProfile.phone = user.phone || null;
     }
 
     return new Response(
-      JSON.stringify({ data: profile }),
+      JSON.stringify({ data: userProfile }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (error) {
@@ -311,6 +431,92 @@ async function handleUpdateProfile(
     return new Response(
       JSON.stringify({ error: 'Invalid request body' }),
       { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+  }
+}
+
+/**
+ * Handles POST requests to sync OAuth profile data
+ * @param supabaseClient - Authenticated Supabase client
+ * @param userId - User ID from JWT token
+ * @param corsHeaders - CORS headers for response
+ * @returns Promise resolving to HTTP response with sync result
+ */
+async function handleSyncProfile(
+  supabaseClient: SupabaseClient,
+  userId: string,
+  corsHeaders: Record<string, string>
+): Promise<Response> {
+  try {
+    // Get the current user to extract OAuth data
+    const { data: { user }, error: userError } = await supabaseClient.auth.getUser();
+    
+    if (userError || !user || user.id !== userId) {
+      return new Response(
+        JSON.stringify({ error: 'Failed to get user data for sync' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Extract OAuth profile data
+    const extractionResult = extractOAuthProfileData(user);
+    
+    if (!extractionResult.success || !extractionResult.data) {
+      return new Response(
+        JSON.stringify({ 
+          error: 'No OAuth profile data available to sync',
+          source: extractionResult.source
+        }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Convert extracted data to database format
+    const profileUpdateData = createProfileUpdateData(extractionResult.data);
+    
+    if (Object.keys(profileUpdateData).length === 0) {
+      return new Response(
+        JSON.stringify({ 
+          message: 'No profile data to sync',
+          source: extractionResult.source
+        }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Upsert the profile data
+    const { data: profile, error } = await upsertProfile(
+      supabaseClient,
+      userId,
+      profileUpdateData
+    );
+
+    if (error) {
+      console.error('Error syncing profile:', error);
+      return new Response(
+        JSON.stringify({ error: 'Failed to sync profile data' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Log successful sync
+    logProfileExtraction(user, extractionResult);
+    console.log(`✅ [USER_PROFILE] Profile synced successfully for user ${userId}`);
+
+    return new Response(
+      JSON.stringify({ 
+        message: 'Profile synced successfully',
+        data: profile,
+        source: extractionResult.source,
+        synced_fields: Object.keys(profileUpdateData)
+      }),
+      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+  } catch (error) {
+    console.error('Error in handleSyncProfile:', error);
+    return new Response(
+      JSON.stringify({ error: 'Internal server error during profile sync' }),
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
 }

@@ -63,6 +63,23 @@ class HttpService {
         code: 'CLIENT_DISPOSED',
       );
     }
+
+    // Pre-request token validation to prevent CORS errors
+    try {
+      await ApiAuthHelper.validateTokenForRequest();
+    } catch (e) {
+      if (e is TokenValidationException) {
+        print('🔐 [HTTP] Pre-request token validation failed: ${e.message}');
+        print('🔐 [HTTP] Triggering immediate logout to prevent CORS errors');
+        await _handleAuthenticationFailure();
+        throw AuthenticationException(
+          message: 'Authentication token is invalid. Please login again.',
+          code: 'TOKEN_INVALID',
+        );
+      }
+      rethrow;
+    }
+
     int retryCount = 0;
 
     while (retryCount <= _maxRetries) {
@@ -70,9 +87,10 @@ class HttpService {
         final response =
             await requestFunction().timeout(const Duration(seconds: 10));
 
-        // Handle 401 Unauthorized
+        // Handle 401 Unauthorized - this should rarely happen now with pre-validation
         if (response.statusCode == 401) {
-          print('🔐 [HTTP] 401 Unauthorized received for: $url');
+          print(
+              '🔐 [HTTP] 401 Unauthorized received for: $url (unexpected after pre-validation)');
 
           // Only attempt refresh if we have a session and haven't exceeded retries
           if (retryCount < _maxRetries && ApiAuthHelper.isAuthenticated) {
@@ -104,6 +122,7 @@ class HttpService {
 
         return response;
       } catch (e) {
+        print('🚨 [HTTP] Request error for $url: $e');
         if (e is AuthenticationException) {
           rethrow;
         }
@@ -188,7 +207,7 @@ class HttpService {
   /// Clear user-specific data from local storage
   Future<void> _clearUserData() async {
     try {
-      // Clear any Hive boxes or other local storage
+      // TODO: Clear any Hive boxes or other local storage
       // Add specific data clearing logic here as needed
       print('🔐 [HTTP] User data cleared');
     } catch (e) {
@@ -196,10 +215,25 @@ class HttpService {
     }
   }
 
-  /// Create headers with authentication
+  /// Create headers with authentication and pre-validate token
   Future<Map<String, String>> createHeaders({
     Map<String, String>? additionalHeaders,
   }) async {
+    // Pre-validate token before creating headers
+    try {
+      await ApiAuthHelper.validateTokenForRequest();
+    } catch (e) {
+      if (e is TokenValidationException) {
+        print(
+            '🔐 [HTTP] Header creation token validation failed: ${e.message}');
+        throw AuthenticationException(
+          message: 'Authentication token is invalid. Please login again.',
+          code: 'TOKEN_INVALID',
+        );
+      }
+      rethrow;
+    }
+
     final headers = await ApiAuthHelper.getAuthHeaders();
 
     if (additionalHeaders != null) {

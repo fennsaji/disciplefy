@@ -304,7 +304,7 @@ class DailyVerseCard extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            state.message,
+            'Something went wrong!',
             style: theme.textTheme.bodyMedium?.copyWith(
               color: theme.colorScheme.onSecondary.withValues(alpha: 0.8),
             ),
