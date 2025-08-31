@@ -2,7 +2,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../../core/error/failures.dart';
 import '../../../../../core/error/exceptions.dart';
-import '../../../../../core/services/personal_notes_api_service.dart';
+import '../../../domain/usecases/manage_personal_notes.dart';
 import '../../../data/services/save_guide_api_service.dart';
 import '../../../../auth/data/services/auth_service.dart';
 import '../study_event.dart';
@@ -15,15 +15,15 @@ import '../study_state.dart';
 /// following the Single Responsibility Principle.
 class StudySaveHandler {
   final SaveGuideApiService _saveGuideService;
-  final PersonalNotesApiService _personalNotesService;
+  final ManagePersonalNotesUseCase _managePersonalNotes;
   final AuthService _authService;
 
   const StudySaveHandler({
     required SaveGuideApiService saveGuideService,
-    required PersonalNotesApiService personalNotesService,
+    required ManagePersonalNotesUseCase managePersonalNotes,
     required AuthService authService,
   })  : _saveGuideService = saveGuideService,
-        _personalNotesService = personalNotesService,
+        _managePersonalNotes = managePersonalNotes,
         _authService = authService;
 
   /// Handles the save study guide request.
@@ -195,7 +195,7 @@ class StudySaveHandler {
         ));
 
         try {
-          final notesResponse = await _personalNotesService.updatePersonalNotes(
+          final notesResponse = await _managePersonalNotes.updatePersonalNotes(
             studyGuideId: event.guideId,
             notes: event.personalNotes!.trim().isEmpty
                 ? null
@@ -329,7 +329,7 @@ class StudySaveHandler {
     ));
 
     try {
-      final response = await _personalNotesService.updatePersonalNotes(
+      final response = await _managePersonalNotes.updatePersonalNotes(
         studyGuideId: event.guideId,
         notes: event.personalNotes?.trim().isEmpty == true
             ? null
@@ -381,7 +381,7 @@ class StudySaveHandler {
     Emitter<StudyState> emit,
   ) async {
     try {
-      final response = await _personalNotesService.getPersonalNotes(
+      final response = await _managePersonalNotes.getPersonalNotes(
         studyGuideId: event.guideId,
       );
 

@@ -23,8 +23,14 @@ class UserContextHelper {
   /// Get session ID for anonymous users
   static Future<String> _getSessionId() async {
     try {
+      // Validate token before getting auth headers
+      await ApiAuthHelper.validateTokenForRequest();
+
       final headers = await ApiAuthHelper.getAuthHeaders();
       return headers['x-session-id'] ?? 'unknown-session';
+    } on TokenValidationException {
+      // Return unknown session if token validation fails
+      return 'unknown-session';
     } catch (e) {
       return 'unknown-session';
     }

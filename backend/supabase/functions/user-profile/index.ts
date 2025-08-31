@@ -7,11 +7,11 @@ interface UserProfile {
   id: string;
   language_preference: string;
   theme_preference: string;
-  first_name?: string;
-  last_name?: string;
-  profile_picture?: string;
-  email?: string;
-  phone?: string;
+  first_name: string | null;
+  last_name: string | null;
+  profile_picture: string | null;
+  email: string | null;
+  phone: string | null;
   is_admin: boolean;
   created_at: string;
   updated_at: string;
@@ -20,9 +20,9 @@ interface UserProfile {
 interface UpdateProfileRequest {
   language_preference?: string;
   theme_preference?: string;
-  first_name?: string;
-  last_name?: string;
-  profile_picture?: string;
+  first_name?: string | null | undefined;
+  last_name?: string | null | undefined;
+  profile_picture?: string | null | undefined;
 }
 
 interface ValidationResult {
@@ -90,8 +90,8 @@ function parseAndValidateUpdate(body: any): ValidationResult {
 
   // Validate first name
   if (body.first_name !== undefined) {
-    if (body.first_name === undefined || body.first_name === '') {
-      updateData.first_name = undefined; // Allow clearing the field
+    if (body.first_name === null || body.first_name === '') {
+      updateData.first_name = null; // Allow clearing the field
     } else if (!isValidName(body.first_name)) {
       return { isValid: false, error: 'Invalid first name format' };
     } else {
@@ -101,8 +101,8 @@ function parseAndValidateUpdate(body: any): ValidationResult {
 
   // Validate last name
   if (body.last_name !== undefined) {
-    if (body.last_name === undefined || body.last_name === '') {
-      updateData.last_name = undefined; // Allow clearing the field
+    if (body.last_name === null || body.last_name === '') {
+      updateData.last_name = null; // Allow clearing the field
     } else if (!isValidName(body.last_name)) {
       return { isValid: false, error: 'Invalid last name format' };
     } else {
@@ -112,8 +112,8 @@ function parseAndValidateUpdate(body: any): ValidationResult {
 
   // Validate profile picture URL
   if (body.profile_picture !== undefined) {
-    if (body.profile_picture === undefined || body.profile_picture === '') {
-      updateData.profile_picture = undefined; // Allow clearing the field
+    if (body.profile_picture === null || body.profile_picture === '') {
+      updateData.profile_picture = null; // Allow clearing the field
     } else if (!isValidUrl(body.profile_picture)) {
       return { isValid: false, error: 'Invalid profile picture URL format' };
     } else {
@@ -173,6 +173,8 @@ async function createDefaultProfile(
     first_name: updateData?.first_name || oauthData.first_name || null,
     last_name: updateData?.last_name || oauthData.last_name || null,
     profile_picture: updateData?.profile_picture || oauthData.profile_picture || null,
+    email: null, // Will be populated from auth.users in the calling function
+    phone: null, // Will be populated from auth.users in the calling function
     is_admin: false,
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
@@ -364,8 +366,8 @@ async function handleGetProfile(
     const { data: { user }, error: userError } = await supabaseClient.auth.getUser();
     
     if (!userError && user) {
-      userProfile.email = user.email || undefined;
-      userProfile.phone = user.phone || undefined;
+      userProfile.email = user.email || null;
+      userProfile.phone = user.phone || null;
     }
 
     return new Response(
@@ -482,17 +484,11 @@ async function handleSyncProfile(
       );
     }
 
-    // Add timestamp for update
-    const updateWithTimestamp = {
-      ...profileUpdateData,
-      updated_at: new Date().toISOString(),
-    };
-
     // Upsert the profile data
     const { data: profile, error } = await upsertProfile(
       supabaseClient,
       userId,
-      updateWithTimestamp
+      profileUpdateData
     );
 
     if (error) {

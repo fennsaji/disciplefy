@@ -1,9 +1,11 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../config/app_config.dart';
 import '../error/exceptions.dart';
+import '../utils/logger.dart';
 
 /// Response model for personal notes operations
 class PersonalNotesResponse {
@@ -41,6 +43,60 @@ class PersonalNotesApiService {
   PersonalNotesApiService({http.Client? httpClient})
       : _httpClient = httpClient ?? http.Client();
 
+  /// Secure logger that redacts sensitive content and uses app Logger
+  void _secureLog(
+    String message, {
+    String? sensitiveData,
+    LogLevel level = LogLevel.debug,
+    Map<String, dynamic>? context,
+  }) {
+    final logContext = <String, dynamic>{
+      ...?context,
+    };
+
+    if (sensitiveData != null) {
+      // Redact sensitive content completely - never log actual content
+      final contentLength = sensitiveData.length;
+      final hasContent = contentLength > 0;
+
+      logContext.addAll({
+        'has_content': hasContent,
+        'content_length': contentLength,
+        'content_preview': hasContent ? '[REDACTED]' : 'null',
+      });
+
+      _logWithLevel(
+          level, '$message - Content redacted for security', logContext);
+    } else {
+      _logWithLevel(level, message, logContext);
+    }
+  }
+
+  /// Helper to call the appropriate Logger static method based on level
+  void _logWithLevel(
+      LogLevel level, String message, Map<String, dynamic>? context) {
+    switch (level) {
+      case LogLevel.verbose:
+        Logger.verbose(message, tag: 'PERSONAL_NOTES', context: context);
+        break;
+      case LogLevel.debug:
+        Logger.debug(message, tag: 'PERSONAL_NOTES', context: context);
+        break;
+      case LogLevel.info:
+        Logger.info(message, tag: 'PERSONAL_NOTES', context: context);
+        break;
+      case LogLevel.warning:
+        Logger.warning(message, tag: 'PERSONAL_NOTES', context: context);
+        break;
+      case LogLevel.error:
+        Logger.error(message, tag: 'PERSONAL_NOTES', context: context);
+        break;
+      case LogLevel.critical:
+        Logger.critical(message, tag: 'PERSONAL_NOTES', context: context);
+        break;
+    }
+  }
+
   /// Update personal notes for a study guide
   ///
   /// If the study guide is not saved, it will be saved automatically.
@@ -50,8 +106,11 @@ class PersonalNotesApiService {
     required String? notes,
   }) async {
     try {
-      print('🔍 [PERSONAL_NOTES] Updating notes for guide: $studyGuideId');
-      print('🔍 [PERSONAL_NOTES] Notes length: ${notes?.length ?? 0}');
+      _secureLog('Updating notes for study guide', context: {
+        'study_guide_id': '[REDACTED]',
+        'notes_length': notes?.length ?? 0,
+        'operation': 'update',
+      });
 
       final headers = await _getApiHeaders();
       final body = json.encode({
@@ -60,7 +119,11 @@ class PersonalNotesApiService {
       });
 
       final url = '$_baseUrl$_personalNotesEndpoint';
-      print('🔍 [PERSONAL_NOTES] Making POST request to: $url');
+      _secureLog('Making API request', context: {
+        'method': 'POST',
+        'endpoint': _personalNotesEndpoint,
+        'url': url,
+      });
 
       final response = await _httpClient
           .post(
@@ -70,8 +133,13 @@ class PersonalNotesApiService {
           )
           .timeout(const Duration(seconds: 10));
 
-      print('🔍 [PERSONAL_NOTES] Response status: ${response.statusCode}');
-      print('🔍 [PERSONAL_NOTES] Response body: ${response.body}');
+      _secureLog('API response received',
+          sensitiveData: response.body,
+          context: {
+            'status_code': response.statusCode,
+            'method': 'POST',
+            'endpoint': _personalNotesEndpoint,
+          });
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> jsonData = json.decode(response.body);
@@ -104,8 +172,12 @@ class PersonalNotesApiService {
         );
       }
     } catch (e) {
-      print('🚨 [PERSONAL_NOTES] Error caught: $e');
-      print('🚨 [PERSONAL_NOTES] Error type: ${e.runtimeType}');
+      _secureLog('Exception caught during update operation',
+          level: LogLevel.error,
+          context: {
+            'error_type': e.runtimeType.toString(),
+            'operation': 'update_personal_notes',
+          });
 
       if (e is AuthenticationException || e is ServerException) {
         rethrow;
@@ -123,23 +195,37 @@ class PersonalNotesApiService {
     required String studyGuideId,
   }) async {
     try {
-      print('🔍 [PERSONAL_NOTES] Getting notes for guide: $studyGuideId');
+      _secureLog('Getting notes for study guide', context: {
+        'study_guide_id': '[REDACTED]',
+        'operation': 'get',
+      });
 
       final headers = await _getApiHeaders();
-      final url =
-          '$_baseUrl$_personalNotesEndpoint?study_guide_id=$studyGuideId';
+      final uri = Uri.parse(_baseUrl).replace(
+        path: _personalNotesEndpoint,
+        queryParameters: {'study_guide_id': studyGuideId},
+      );
 
-      print('🔍 [PERSONAL_NOTES] Making GET request to: $url');
+      _secureLog('Making API request', context: {
+        'method': 'GET',
+        'endpoint': _personalNotesEndpoint,
+        'uri': uri.toString(),
+      });
 
       final response = await _httpClient
           .get(
-            Uri.parse(url),
+            uri,
             headers: headers,
           )
           .timeout(const Duration(seconds: 10));
 
-      print('🔍 [PERSONAL_NOTES] Response status: ${response.statusCode}');
-      print('🔍 [PERSONAL_NOTES] Response body: ${response.body}');
+      _secureLog('API response received',
+          sensitiveData: response.body,
+          context: {
+            'status_code': response.statusCode,
+            'method': 'GET',
+            'endpoint': _personalNotesEndpoint,
+          });
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> jsonData = json.decode(response.body);
@@ -173,7 +259,12 @@ class PersonalNotesApiService {
         );
       }
     } catch (e) {
-      print('🚨 [PERSONAL_NOTES] Error caught: $e');
+      _secureLog('Exception caught during get operation',
+          level: LogLevel.error,
+          context: {
+            'error_type': e.runtimeType.toString(),
+            'operation': 'get_personal_notes',
+          });
 
       if (e is AuthenticationException || e is ServerException) {
         rethrow;
@@ -191,23 +282,37 @@ class PersonalNotesApiService {
     required String studyGuideId,
   }) async {
     try {
-      print('🔍 [PERSONAL_NOTES] Deleting notes for guide: $studyGuideId');
+      _secureLog('Deleting notes for study guide', context: {
+        'study_guide_id': '[REDACTED]',
+        'operation': 'delete',
+      });
 
       final headers = await _getApiHeaders();
-      final url =
-          '$_baseUrl$_personalNotesEndpoint?study_guide_id=$studyGuideId';
+      final uri = Uri.parse(_baseUrl).replace(
+        path: _personalNotesEndpoint,
+        queryParameters: {'study_guide_id': studyGuideId},
+      );
 
-      print('🔍 [PERSONAL_NOTES] Making DELETE request to: $url');
+      _secureLog('Making API request', context: {
+        'method': 'DELETE',
+        'endpoint': _personalNotesEndpoint,
+        'uri': uri.toString(),
+      });
 
       final response = await _httpClient
           .delete(
-            Uri.parse(url),
+            uri,
             headers: headers,
           )
           .timeout(const Duration(seconds: 10));
 
-      print('🔍 [PERSONAL_NOTES] Response status: ${response.statusCode}');
-      print('🔍 [PERSONAL_NOTES] Response body: ${response.body}');
+      _secureLog('API response received',
+          sensitiveData: response.body,
+          context: {
+            'status_code': response.statusCode,
+            'method': 'DELETE',
+            'endpoint': _personalNotesEndpoint,
+          });
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> jsonData = json.decode(response.body);
@@ -241,7 +346,12 @@ class PersonalNotesApiService {
         );
       }
     } catch (e) {
-      print('🚨 [PERSONAL_NOTES] Error caught: $e');
+      _secureLog('Exception caught during delete operation',
+          level: LogLevel.error,
+          context: {
+            'error_type': e.runtimeType.toString(),
+            'operation': 'delete_personal_notes',
+          });
 
       if (e is AuthenticationException || e is ServerException) {
         rethrow;
@@ -265,10 +375,18 @@ class PersonalNotesApiService {
     final session = Supabase.instance.client.auth.currentSession;
     if (session != null && session.accessToken.isNotEmpty) {
       headers['Authorization'] = 'Bearer ${session.accessToken}';
-      print(
-          '🔐 [PERSONAL_NOTES] Using Supabase session token for user: ${session.user.id}');
+      _secureLog('Using Supabase session authentication', context: {
+        'auth_type': 'supabase_session',
+        'user_id': '[REDACTED]',
+        'has_access_token': session.accessToken.isNotEmpty,
+      });
     } else {
-      print('🔐 [PERSONAL_NOTES] No valid session found');
+      _secureLog('Authentication failed - no valid session',
+          level: LogLevel.warning,
+          context: {
+            'auth_type': 'supabase_session',
+            'session_exists': false,
+          });
       throw const AuthenticationException(
         message: 'Authentication required to access personal notes',
         code: 'UNAUTHORIZED',
@@ -283,7 +401,12 @@ class PersonalNotesApiService {
     try {
       return json.decode(responseBody) as Map<String, dynamic>?;
     } catch (e) {
-      print('🚨 [PERSONAL_NOTES] Failed to parse error response: $e');
+      _secureLog('Failed to parse error response',
+          level: LogLevel.warning,
+          context: {
+            'error_type': e.runtimeType.toString(),
+            'operation': 'parse_error_response',
+          });
       return null;
     }
   }

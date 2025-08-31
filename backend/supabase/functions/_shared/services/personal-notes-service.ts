@@ -9,14 +9,16 @@ import { StudyGuideRepository } from '../repositories/study-guide-repository.ts'
 import { UserContext } from '../types/index.ts'
 import { AppError } from '../utils/error-handler.ts'
 import { SecurityValidator } from '../utils/security-validator.ts'
+import { 
+  validateNotesInput, 
+  validateStudyGuideAccess,
+  PersonalNotesUpdateRequest,
+  ValidationResult,
+  NotesConfig
+} from './notes-validation.ts'
 
-/**
- * Personal notes update request
- */
-export interface PersonalNotesUpdateRequest {
-  readonly study_guide_id: string
-  readonly personal_notes: string | null
-}
+// Re-export types for external consumers
+export type { PersonalNotesUpdateRequest } from './notes-validation.ts'
 
 /**
  * Personal notes response
@@ -26,15 +28,6 @@ export interface PersonalNotesResponse {
   readonly personal_notes: string | null
   readonly updated_at: string
   readonly is_autosave: boolean
-}
-
-/**
- * Personal notes validation result
- */
-interface ValidationResult {
-  readonly isValid: boolean
-  readonly error?: string
-  readonly sanitizedNotes: string | null
 }
 
 /**
@@ -89,13 +82,13 @@ export class PersonalNotesService {
     this.validateAuthenticatedUser(userContext)
 
     // Validate and sanitize input
-    const validation = await this.validateNotesInput(request)
+    const validation = await validateNotesInput(request, this.config, this.securityValidator)
     if (!validation.isValid) {
       throw new AppError('VALIDATION_ERROR', validation.error!, 400)
     }
 
     // Check if user has access to the study guide
-    await this.validateStudyGuideAccess(request.study_guide_id, userContext)
+    await validateStudyGuideAccess(request.study_guide_id, userContext, this.studyGuideRepository)
 
     // Update notes in repository
     const updatedAt = await this.studyGuideRepository.updatePersonalNotes(
@@ -127,7 +120,7 @@ export class PersonalNotesService {
     this.validateAuthenticatedUser(userContext)
 
     // Validate study guide access
-    await this.validateStudyGuideAccess(study_guide_id, userContext)
+    await validateStudyGuideAccess(study_guide_id, userContext, this.studyGuideRepository)
 
     // Get notes from repository
     const result = await this.studyGuideRepository.getPersonalNotes(
@@ -135,16 +128,12 @@ export class PersonalNotesService {
       userContext
     )
 
-    if (!result) {
-      return null
-    }
-
-    return {
+    return result ? {
       study_guide_id: study_guide_id,
       personal_notes: result.notes,
       updated_at: result.updatedAt,
       is_autosave: false
-    }
+    } : null
   }
 
   /**
@@ -187,7 +176,7 @@ export class PersonalNotesService {
     this.validateAuthenticatedUser(userContext)
 
     // Validate study guide access
-    await this.validateStudyGuideAccess(study_guide_id, userContext)
+    await validateStudyGuideAccess(study_guide_id, userContext, this.studyGuideRepository)
 
     // Delete notes (set to null)
     await this.studyGuideRepository.updatePersonalNotes(
@@ -214,109 +203,6 @@ export class PersonalNotesService {
     }
   }
 
-  /**
-   * Validates and sanitizes notes input
-   * Implements DRY principle by centralizing validation logic
-   * 
-   * @param request - Request to validate
-   * @returns Validation result with sanitized notes
-   */
-  private async validateNotesInput(
-    request: PersonalNotesUpdateRequest
-  ): Promise<ValidationResult> {
-    // Validate study guide ID
-    if (!request.study_guide_id || typeof request.study_guide_id !== 'string') {
-      return {
-        isValid: false,
-        error: 'Study guide ID is required and must be a string',
-        sanitizedNotes: null
-      }
-    }
-
-    // Basic UUID format validation (simplified)
-    const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
-    if (!uuidPattern.test(request.study_guide_id)) {
-      return {
-        isValid: false,
-        error: 'Study guide ID must be a valid UUID format',
-        sanitizedNotes: null
-      }
-    }
-
-    // Handle null notes (deletion case)
-    if (request.personal_notes === null || request.personal_notes === undefined) {
-      return {
-        isValid: true,
-        error: undefined,
-        sanitizedNotes: null
-      }
-    }
-
-    // Validate notes content
-    if (typeof request.personal_notes !== 'string') {
-      return {
-        isValid: false,
-        error: 'Notes must be a string or null',
-        sanitizedNotes: null
-      }
-    }
-
-    // Check length constraint
-    if (request.personal_notes.length > this.config.maxNotesLength) {
-      return {
-        isValid: false,
-        error: `Notes cannot exceed ${this.config.maxNotesLength} characters`,
-        sanitizedNotes: null
-      }
-    }
-
-    // Sanitize content for security
-    const sanitizedNotes = this.securityValidator.sanitizeInput(request.personal_notes)
-
-    return {
-      isValid: true,
-      sanitizedNotes: sanitizedNotes && sanitizedNotes.length > 0 ? sanitizedNotes : null
-    } as ValidationResult
-  }
-
-  /**
-   * Validates that user has access to the study guide
-   * Implements security validation using existing repository logic
-   * 
-   * @param study_guide_id - Study guide ID to check
-   * @param userContext - User context for access check
-   * @throws AppError if user doesn't have access
-   */
-  private async validateStudyGuideAccess(
-    study_guide_id: string,
-    userContext: UserContext
-  ): Promise<void> {
-    try {
-      // Use existing repository method to check access
-      const hasAccess = await this.studyGuideRepository.userHasContent(
-        study_guide_id,
-        userContext
-      )
-
-      if (!hasAccess) {
-        throw new AppError(
-          'FORBIDDEN',
-          'You do not have access to this study guide',
-          403
-        )
-      }
-    } catch (error) {
-      if (error instanceof AppError) {
-        throw error
-      }
-      
-      throw new AppError(
-        'DATABASE_ERROR',
-        'Failed to validate study guide access',
-        500
-      )
-    }
-  }
 
   /**
    * Gets service health status
