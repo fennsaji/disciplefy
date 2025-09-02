@@ -96,6 +96,11 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
   }
 
   void _initializeStudyGuide() {
+    // Reset state for new guide instance
+    _notesLoaded = false;
+    _loadedNotes = null;
+    _notesController.clear();
+
     if (widget.studyGuide != null) {
       // This means we came from the generate screen
       _currentStudyGuide = widget.studyGuide!;
@@ -116,7 +121,7 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
           _setupAutoSave();
         }
       } else {
-        // Fallback to separate API call for personal notes if not in entity
+        // Always try to load personal notes for saved guides
         _loadPersonalNotesIfSaved();
       }
     } else if (widget.routeExtra != null &&
@@ -157,10 +162,14 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
         // Use the toStudyGuide method which handles both structured and legacy content
         _currentStudyGuide = savedGuideModel.toStudyGuide();
 
-        // Set save status from route data for saved guides
-        _isSaved = guideData['is_saved'] as bool? ?? false;
+        // Set save status from route data - this should always be true for saved guides
+        _isSaved = guideData['is_saved'] as bool? ??
+            true; // Default to true for saved guides
 
-        // Load personal notes for saved guides
+        print(
+            '🔍 [STUDY_GUIDE] Loading guide from saved: isSaved=$_isSaved, guideId=${_currentStudyGuide.id}');
+
+        // Always load personal notes for saved guides
         _loadPersonalNotesIfSaved();
       } catch (e) {
         print('❌ [STUDY_GUIDE] Error parsing route data: $e');
@@ -186,11 +195,20 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
 
   /// Load personal notes if the guide is saved and notes not already available
   void _loadPersonalNotesIfSaved() {
-    // Only load via API if guide is saved, notes not loaded, and entity doesn't have notes
-    if (_isSaved && !_notesLoaded && _currentStudyGuide.personalNotes == null) {
+    print(
+        '🔍 [STUDY_GUIDE] Loading personal notes: isSaved=$_isSaved, notesLoaded=$_notesLoaded, hasEntityNotes=${_currentStudyGuide.personalNotes != null}');
+
+    // Load notes if guide is saved and we haven't loaded them yet
+    // Simplified logic: if saved and not loaded, try to load
+    if (_isSaved && !_notesLoaded) {
+      print(
+          '📝 [STUDY_GUIDE] Requesting personal notes for guide: ${_currentStudyGuide.id}');
       context.read<StudyBloc>().add(LoadPersonalNotesRequested(
             guideId: _currentStudyGuide.id,
           ));
+    } else {
+      print(
+          '⏭️ [STUDY_GUIDE] Skipping notes load: isSaved=$_isSaved, notesLoaded=$_notesLoaded');
     }
   }
 
@@ -273,6 +291,8 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
         }
         // Handle personal notes operations
         else if (state is StudyPersonalNotesLoaded) {
+          print(
+              '📝 [STUDY_GUIDE] Personal notes loaded: ${state.notes?.length ?? 0} characters');
           setState(() {
             _notesLoaded = true;
             _loadedNotes = state.notes;
@@ -295,12 +315,16 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
           setState(() {
             _loadedNotes = state.savedNotes;
           });
-        } else if (state is StudyPersonalNotesFailure && !state.isAutoSave) {
-          _showSnackBar(
-            'Failed to save personal notes: ${state.failure.message}',
-            Theme.of(context).colorScheme.error,
-            icon: Icons.error_outline,
-          );
+        } else if (state is StudyPersonalNotesFailure) {
+          print(
+              '❌ [STUDY_GUIDE] Personal notes operation failed: ${state.failure.message}, isAutoSave: ${state.isAutoSave}');
+          if (!state.isAutoSave) {
+            _showSnackBar(
+              'Failed to save personal notes: ${state.failure.message}',
+              Theme.of(context).colorScheme.error,
+              icon: Icons.error_outline,
+            );
+          }
         }
       },
       child: Scaffold(
