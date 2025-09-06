@@ -711,23 +711,54 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
       );
 
   Widget _buildTopicsGrid(List<RecommendedGuideTopic> topics) {
-    // Use a different approach: Wrap or ListView instead of fixed-height GridView
+    // Use column-based layout with IntrinsicHeight for uniform row heights
     return LayoutBuilder(
       builder: (context, constraints) {
         // Calculate optimal card width (accounting for spacing)
         const double spacing = 16.0;
         final double cardWidth = (constraints.maxWidth - spacing) / 2;
 
-        return Wrap(
-          spacing: spacing,
-          runSpacing: spacing,
-          children: topics
-              .map((topic) => SizedBox(
-                    width: cardWidth,
-                    child: _RecommendedGuideTopicCard(
-                      topic: topic,
-                      onTap: () => _navigateToStudyGuide(topic),
-                      isDisabled: _isGeneratingStudyGuide,
+        // Group topics into pairs for rows
+        final List<List<RecommendedGuideTopic>> rows = [];
+        for (int i = 0; i < topics.length; i += 2) {
+          rows.add(topics.skip(i).take(2).toList());
+        }
+
+        return Column(
+          children: rows
+              .map((rowTopics) => Padding(
+                    padding: EdgeInsets.only(
+                      bottom: rowTopics != rows.last ? spacing : 0,
+                    ),
+                    child: IntrinsicHeight(
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          // First topic in the row
+                          Expanded(
+                            child: _RecommendedGuideTopicCard(
+                              topic: rowTopics[0],
+                              onTap: () => _navigateToStudyGuide(rowTopics[0]),
+                              isDisabled: _isGeneratingStudyGuide,
+                            ),
+                          ),
+                          // Second topic if available, otherwise spacer
+                          if (rowTopics.length > 1) ...[
+                            const SizedBox(width: spacing),
+                            Expanded(
+                              child: _RecommendedGuideTopicCard(
+                                topic: rowTopics[1],
+                                onTap: () =>
+                                    _navigateToStudyGuide(rowTopics[1]),
+                                isDisabled: _isGeneratingStudyGuide,
+                              ),
+                            ),
+                          ] else ...[
+                            const SizedBox(width: spacing),
+                            const Expanded(child: SizedBox()), // Empty space
+                          ],
+                        ],
+                      ),
                     ),
                   ))
               .toList(),
@@ -814,8 +845,10 @@ class _RecommendedGuideTopicCard extends StatelessWidget {
               onTap: isDisabled ? null : onTap,
               borderRadius: BorderRadius.circular(12),
               child: Container(
-                height: 180, // Fixed height for uniform cards
                 padding: const EdgeInsets.all(16),
+                constraints: const BoxConstraints(
+                  minHeight: 160, // Minimum height for visual consistency
+                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize:
@@ -879,8 +912,8 @@ class _RecommendedGuideTopicCard extends StatelessWidget {
 
                     const SizedBox(height: 6), // Reduced spacing
 
-                    // Description with flexible height
-                    Flexible(
+                    // Description with expanded height for better readability
+                    Expanded(
                       child: Text(
                         topic.description,
                         style: GoogleFonts.inter(
@@ -889,9 +922,11 @@ class _RecommendedGuideTopicCard extends StatelessWidget {
                               .colorScheme
                               .onSurface
                               .withOpacity(0.7),
-                          height: 1.3,
+                          height:
+                              1.4, // Slightly more line height for readability
                         ),
-                        maxLines: 3, // Allow up to 3 lines
+                        maxLines:
+                            4, // Allow up to 4 lines for better content display
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),

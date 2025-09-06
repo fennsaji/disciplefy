@@ -38,7 +38,7 @@ class RecommendedGuideTopicCard extends StatelessWidget {
         opacity: isDisabled ? 0.5 : 1.0,
         duration: const Duration(milliseconds: 150),
         child: Container(
-          height: 180, // Fixed height for uniform cards
+          constraints: const BoxConstraints(minHeight: 160),
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             color: Theme.of(context).colorScheme.surface,
@@ -116,8 +116,8 @@ class RecommendedGuideTopicCard extends StatelessWidget {
 
               const SizedBox(height: 6), // Reduced spacing
 
-              // Description with flexible height
-              Flexible(
+              // Description with expanded height
+              Expanded(
                 child: Text(
                   topic.description,
                   style: GoogleFonts.inter(
@@ -128,7 +128,7 @@ class RecommendedGuideTopicCard extends StatelessWidget {
                         .withOpacity(0.7),
                     height: 1.3,
                   ),
-                  maxLines: 3, // Allow up to 3 lines
+                  maxLines: 4, // Allow up to 4 lines
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
