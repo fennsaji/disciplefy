@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// Use case for clearing user data during logout and account deletion
@@ -14,6 +15,8 @@ class ClearUserDataUseCase {
     'cached_data',
     'study_guides_cache',
     'daily_verse_cache',
+    'saved_guides',
+    'recent_guides',
   ];
 
   /// Keys in app_settings box that should be cleared during logout
@@ -86,8 +89,42 @@ class ClearUserDataUseCase {
     }
   }
 
-  /// Clear all user-specific Hive boxes
+  /// Clear entire IndexedDB and recreate essential boxes
   Future<void> _clearHiveBoxes() async {
+    try {
+      // Close all open Hive boxes
+      await Hive.close();
+
+      // Delete all Hive data from IndexedDB
+      await Hive.deleteFromDisk();
+
+      // Reinitialize Hive for the app
+      await Hive.initFlutter();
+
+      // Reopen essential app_settings box to preserve app-level settings
+      final appSettingsBox = await Hive.openBox('app_settings');
+
+      // Restore essential app settings that should persist
+      await appSettingsBox.putAll({
+        'onboarding_completed': true, // Keep onboarding status
+        'app_version': '1.0.0', // Preserve app version info
+      });
+
+      if (kDebugMode) {
+        print(
+            '🧹 [CLEAR DATA] ✅ IndexedDB completely cleared and reinitialized');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('🧹 [CLEAR DATA] ❌ Error clearing IndexedDB: $e');
+      }
+      // Fallback to individual box clearing if full DB clear fails
+      await _clearIndividualBoxes();
+    }
+  }
+
+  /// Fallback method: Clear individual boxes if full DB clear fails
+  Future<void> _clearIndividualBoxes() async {
     final List<Future<void>> clearTasks = [];
 
     // Clear regular user data boxes completely
@@ -99,28 +136,34 @@ class ClearUserDataUseCase {
     clearTasks.add(_clearAppSettingsUserData());
 
     await Future.wait(clearTasks);
-
-    if (kDebugMode) {
-      print('🧹 [CLEAR DATA] ✅ All user-specific data cleared');
-    }
   }
 
-  /// Clear individual Hive box with error handling
+  /// Clear and completely delete individual Hive box from IndexedDB
   Future<void> _clearHiveBox(String boxName) async {
     try {
+      Box? box;
+
       if (Hive.isBoxOpen(boxName)) {
-        await Hive.box(boxName).clear();
-        if (kDebugMode) {
-          print('🧹 [CLEAR DATA] ✅ Cleared Hive box: $boxName');
-        }
+        box = Hive.box(boxName);
       } else {
-        if (kDebugMode) {
-          print('🧹 [CLEAR DATA] ℹ️ Box $boxName not open, skipping');
+        // Try to open the box to access existing data
+        try {
+          box = await Hive.openBox(boxName);
+        } catch (e) {
+          return;
         }
       }
+
+      final itemCount = box.length;
+      // Clear the data
+      await box.clear();
+      // Close the box
+      await box.close();
+      // Completely delete the box from IndexedDB
+      await Hive.deleteBoxFromDisk(boxName);
     } catch (e) {
       if (kDebugMode) {
-        print('🧹 [CLEAR DATA] ⚠️ Error clearing box $boxName: $e');
+        print('🧹 [CLEAR DATA] ❌ Error deleting box $boxName: $e');
       }
     }
   }
@@ -132,37 +175,11 @@ class ClearUserDataUseCase {
       if (Hive.isBoxOpen('app_settings')) {
         final box = Hive.box('app_settings');
 
-        // Log current state for debugging
-        if (kDebugMode) {
-          print(
-              '🧹 [CLEAR DATA] 📊 app_settings keys before cleanup: ${box.keys.toList()}');
-          print(
-              '🧹 [CLEAR DATA] 📊 onboarding_completed before: ${box.get('onboarding_completed')}');
-        }
-
         // Clear only user-specific keys
         for (final key in _appSettingsUserKeys) {
           if (box.containsKey(key)) {
             await box.delete(key);
-            if (kDebugMode) {
-              print('🧹 [CLEAR DATA] 🗑️ Removed user key: $key');
-            }
           }
-        }
-
-        // Log preserved state
-        if (kDebugMode) {
-          print(
-              '🧹 [CLEAR DATA] 📊 app_settings keys after cleanup: ${box.keys.toList()}');
-          print(
-              '🧹 [CLEAR DATA] 📊 onboarding_completed after: ${box.get('onboarding_completed')}');
-          print(
-              '🧹 [CLEAR DATA] ✅ app_settings user data cleared, app settings preserved');
-        }
-      } else {
-        if (kDebugMode) {
-          print(
-              '🧹 [CLEAR DATA] ℹ️ app_settings box not open, skipping selective clear');
         }
       }
     } catch (e) {
@@ -172,19 +189,20 @@ class ClearUserDataUseCase {
     }
   }
 
-  /// Clear additional app-specific storage (extend as needed)
+  /// Clear additional app-specific storage (SharedPreferences, web storage)
   Future<void> _clearAdditionalUserData() async {
+    // Clear SharedPreferences (web caching, daily verses, etc.)
     try {
-      // Add any additional cleanup logic here
-      // For example: SharedPreferences, temporary files, etc.
-
-      if (kDebugMode) {
-        print('🧹 [CLEAR DATA] ✅ Additional user data cleared');
-      }
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.clear();
     } catch (e) {
       if (kDebugMode) {
-        print('🧹 [CLEAR DATA] ⚠️ Error clearing additional data: $e');
+        print('🧹 [CLEAR DATA] ❌ Failed to clear SharedPreferences: $e');
       }
+    }
+
+    if (kDebugMode) {
+      print('🧹 [CLEAR DATA] ✅ Additional user data cleared');
     }
   }
 }

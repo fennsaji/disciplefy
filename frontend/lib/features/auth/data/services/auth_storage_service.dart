@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../domain/entities/auth_params.dart';
 
@@ -130,19 +131,75 @@ class AuthStorageService {
   }
 
   /// Signs out the user by clearing all stored data
+  /// Clears: FlutterSecureStorage, Hive app_settings, saved guides, recent guides
   Future<void> clearAllData() async {
-    await _secureStorage.deleteAll();
-
-    // Also clear Hive storage
+    // Clear FlutterSecureStorage (auth tokens, user data)
     try {
-      final box = Hive.box('app_settings');
-      await box.delete('user_type');
-      await box.delete('user_id');
-      await box.delete('onboarding_completed');
+      await _secureStorage.deleteAll();
     } catch (e) {
       if (kDebugMode) {
-        print('Warning: Failed to clear auth data from Hive: $e');
+        print('🔐 [AUTH STORAGE] ❌ Failed to clear FlutterSecureStorage: $e');
       }
+    }
+
+    // Clear Hive app_settings box
+    try {
+      final appSettingsBox = Hive.box('app_settings');
+      await appSettingsBox.clear();
+    } catch (e) {
+      if (kDebugMode) {
+        print('🔐 [AUTH STORAGE] ❌ Failed to clear app_settings: $e');
+      }
+    }
+
+    // Clear ALL Hive boxes - open them if needed, then clear
+    final boxesToClear = [
+      'saved_guides',
+      'recent_guides',
+      'user_preferences',
+      'cached_data',
+      'study_guides_cache',
+      'daily_verse_cache'
+    ];
+
+    for (final boxName in boxesToClear) {
+      try {
+        Box? box;
+        if (Hive.isBoxOpen(boxName)) {
+          box = Hive.box(boxName);
+        } else {
+          // Try to open the box to clear existing data
+          try {
+            box = await Hive.openBox(boxName);
+          } catch (e) {
+            continue;
+          }
+        }
+
+        final itemCount = box.length;
+        await box.clear();
+        // Close and delete the box completely from IndexedDB
+        await box.close();
+        await Hive.deleteBoxFromDisk(boxName);
+      } catch (e) {
+        if (kDebugMode) {
+          print('🔐 [AUTH STORAGE] ❌ Failed to clear $boxName: $e');
+        }
+      }
+    }
+
+    // Clear SharedPreferences (web caching, daily verses, etc.)
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.clear();
+    } catch (e) {
+      if (kDebugMode) {
+        print('🔐 [AUTH STORAGE] ❌ Failed to clear SharedPreferences: $e');
+      }
+    }
+
+    if (kDebugMode) {
+      print('🔐 [AUTH STORAGE] ✅ Comprehensive data cleanup completed');
     }
   }
 }
