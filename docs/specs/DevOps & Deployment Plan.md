@@ -295,7 +295,7 @@ testing:
 -- Test data seeding for development
 INSERT INTO auth.users (id, email, name) VALUES 
   ('test-user-1', 'test@example.com', 'Test User'),
-  ('admin-user-1', 'admin@disciplefy.com', 'Admin User');
+  ('admin-user-1', 'admin@disciplefy.in', 'Admin User');
 
 INSERT INTO study_guides (user_id, input_type, input_value, summary, context, related_verses, reflection_questions, prayer_points) VALUES
   ('test-user-1', 'scripture', 'John 3:16', 'Test summary', 'Test context', ARRAY['John 3:17'], ARRAY['Test question'], ARRAY['Test prayer']);

@@ -1088,7 +1088,7 @@ All endpoints include comprehensive logging:
 
 **Last Updated**: August 2025  
 **API Version**: 1.4  
-**Support**: support@disciplefy.com
+**Support**: support@disciplefy.in
 
 ## Security Changelog
 

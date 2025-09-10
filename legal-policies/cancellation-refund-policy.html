@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cancellation and Refund Policy - Disciplefy</title>
+    <link rel="icon" type="image/x-icon" href="https://wzdcwxvyjuxjgzpnukvm.supabase.co/storage/v1/object/public/disciplefy/Assets/favicon.png">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #f8f9fa;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: white;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-top: 20px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+        }
+
+        .header {
+            text-align: center;
+            border-bottom: 2px solid #6A4FB6;
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+
+        .logo {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 15px;
+            background-color: #6A4FB6;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 4px;
+            font-weight: bold;
+        }
+
+        h1 {
+            color: #6A4FB6;
+            font-size: 2.2em;
+            margin-bottom: 10px;
+        }
+
+        .effective-date {
+            background-color: #f0f0f0;
+            padding: 10px;
+            border-radius: 5px;
+            text-align: center;
+            color: #666;
+            margin-bottom: 20px;
+        }
+
+        h2 {
+            color: #6A4FB6;
+            font-size: 1.4em;
+            margin-top: 30px;
+            margin-bottom: 15px;
+            border-left: 4px solid #6A4FB6;
+            padding-left: 15px;
+        }
+
+        h3 {
+            color: #333;
+            font-size: 1.2em;
+            margin-top: 20px;
+            margin-bottom: 10px;
+        }
+
+        p {
+            margin-bottom: 15px;
+            text-align: justify;
+        }
+
+        ul, ol {
+            margin-left: 30px;
+            margin-bottom: 15px;
+        }
+
+        li {
+            margin-bottom: 8px;
+        }
+
+        .highlight {
+            background-color: #FFEEC0;
+            padding: 15px;
+            border-radius: 5px;
+            border-left: 4px solid #6A4FB6;
+            margin: 20px 0;
+        }
+
+        .success {
+            background-color: #d4edda;
+            border-left: 4px solid #28a745;
+            padding: 15px;
+            margin: 20px 0;
+        }
+
+        .warning {
+            background-color: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin: 20px 0;
+        }
+
+        .important {
+            background-color: #f8d7da;
+            border-left: 4px solid #dc3545;
+            padding: 15px;
+            margin: 20px 0;
+        }
+
+        .contact-info {
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 5px;
+            margin-top: 30px;
+        }
+
+        .refund-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+
+        .refund-table th,
+        .refund-table td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+
+        .refund-table th {
+            background-color: #6A4FB6;
+            color: white;
+        }
+
+        .refund-table tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+
+        .scenario-card {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 15px 0;
+            background-color: #fafafa;
+        }
+
+        .scenario-card h4 {
+            color: #6A4FB6;
+            margin-bottom: 10px;
+        }
+
+        .timeline {
+            position: relative;
+            padding-left: 30px;
+            margin: 20px 0;
+        }
+
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 10px;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: #6A4FB6;
+        }
+
+        .timeline-item {
+            position: relative;
+            margin-bottom: 20px;
+        }
+
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: -24px;
+            top: 8px;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #6A4FB6;
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #ddd;
+            color: #666;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                margin: 10px;
+                padding: 15px;
+            }
+            
+            h1 {
+                font-size: 1.8em;
+            }
+            
+            .refund-table {
+                font-size: 0.9em;
+            }
+
+            .timeline {
+                padding-left: 20px;
+            }
+
+            .timeline-item::before {
+                left: -19px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo"><img src="https://wzdcwxvyjuxjgzpnukvm.supabase.co/storage/v1/object/public/disciplefy/Assets/favicon.png" alt="Disciplefy Logo"></div>
+            <h1>Cancellation and Refund Policy</h1>
+            <p><strong>Disciplefy: AI-Powered Bible Study Application</strong></p>
+        </div>
+
+        <div class="effective-date">
+            <strong>Effective Date:</strong> January 10, 2025<br>
+            <strong>Last Updated:</strong> January 10, 2025
+        </div>
+
+        <div class="highlight">
+            <strong>Policy Summary:</strong> Disciplefy operates on a token-based system where purchased tokens are generally non-refundable once successfully delivered. However, we provide full refunds for technical failures, payment errors, and other exceptional circumstances. All refund requests must be made within 7 days of purchase.
+        </div>
+
+        <h2>1. Overview</h2>
+        <p>This Cancellation and Refund Policy governs token purchases made through Disciplefy, our AI-powered Bible study application. This policy applies to all token purchases processed through our payment gateway (Razorpay) and covers various scenarios where refunds may or may not be applicable.</p>
+        
+        <p>Our token-based system allows users to purchase credits that enable the generation of AI-powered Bible study guides. Understanding when refunds are available helps ensure a fair and transparent experience for all users.</p>
+
+        <h2>2. Token Purchase Model</h2>
+
+        <h3>2.1 How Token Purchases Work</h3>
+        <ul>
+            <li><strong>Digital Delivery:</strong> Tokens are delivered instantly upon successful payment</li>
+            <li><strong>Non-Physical Goods:</strong> Tokens are digital credits, not physical products</li>
+            <li><strong>Immediate Availability:</strong> Purchased tokens are immediately available for use</li>
+            <li><strong>Permanent Addition:</strong> Tokens never expire and are permanently added to your account</li>
+        </ul>
+
+        <h3>2.2 Token Consumption</h3>
+        <table class="refund-table">
+            <thead>
+                <tr>
+                    <th>Action</th>
+                    <th>Token Cost</th>
+                    <th>Refund Eligibility</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>English Study Guide</td>
+                    <td>10 tokens</td>
+                    <td>Refundable if generation fails</td>
+                </tr>
+                <tr>
+                    <td>Hindi Study Guide</td>
+                    <td>20 tokens</td>
+                    <td>Refundable if generation fails</td>
+                </tr>
+                <tr>
+                    <td>Malayalam Study Guide</td>
+                    <td>20 tokens</td>
+                    <td>Refundable if generation fails</td>
+                </tr>
+                <tr>
+                    <td>Failed Generation</td>
+                    <td>0 tokens (not deducted)</td>
+                    <td>N/A - no token consumption</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2>3. Refund Eligibility Criteria</h2>
+
+        <h3>3.1 Eligible for Full Refund</h3>
+        <div class="success">
+            <strong>The following situations qualify for 100% refund:</strong>
+            <ul>
+                <li><strong>Payment Processed, Tokens Not Delivered:</strong> Payment successful but tokens not added to account</li>
+                <li><strong>Duplicate Charges:</strong> Multiple charges for single purchase due to technical error</li>
+                <li><strong>Unauthorized Transactions:</strong> Fraudulent purchases made without user consent</li>
+                <li><strong>Technical Service Failure:</strong> Inability to use tokens due to widespread system issues</li>
+                <li><strong>Account Access Issues:</strong> Inability to access purchased tokens due to account problems</li>
+                <li><strong>Payment Gateway Errors:</strong> Incorrect charging amounts or currency conversion errors</li>
+            </ul>
+        </div>
+
+        <h3>3.2 Eligible for Partial Refund</h3>
+        <div class="warning">
+            <strong>Partial refunds may be considered for:</strong>
+            <ul>
+                <li><strong>Service Degradation:</strong> Significant reduction in service quality affecting token usage</li>
+                <li><strong>Feature Unavailability:</strong> Key features unavailable for extended periods</li>
+                <li><strong>Account Termination by Disciplefy:</strong> Account terminated due to policy violations (unused tokens only)</li>
+                <li><strong>Extraordinary Circumstances:</strong> Natural disasters, emergencies, or other exceptional situations</li>
+            </ul>
+        </div>
+
+        <h3>3.3 NOT Eligible for Refund</h3>
+        <div class="important">
+            <strong>No refunds are provided for:</strong>
+            <ul>
+                <li><strong>Successfully Delivered Tokens:</strong> Tokens delivered and available for use</li>
+                <li><strong>Used Tokens:</strong> Tokens consumed for successful study guide generation</li>
+                <li><strong>Change of Mind:</strong> User decides they no longer want the tokens</li>
+                <li><strong>Dissatisfaction with AI Content:</strong> Quality concerns about generated study guides</li>
+                <li><strong>Account Deletion by User:</strong> User voluntarily deletes account with remaining tokens</li>
+                <li><strong>Violation-Based Suspension:</strong> Account suspended due to terms of service violations</li>
+                <li><strong>Alternative Service Preference:</strong> User prefers competitor services or manual study methods</li>
+                <li><strong>Purchase Mistakes:</strong> Buying wrong token amounts or accidental purchases (unless within 1 hour)</li>
+            </ul>
+        </div>
+
+        <h2>4. Refund Scenarios and Procedures</h2>
+
+        <div class="scenario-card">
+            <h4>Scenario 1: Payment Success, No Token Delivery</h4>
+            <p><strong>Situation:</strong> Payment processed successfully but tokens not added to account within 30 minutes.</p>
+            <p><strong>Resolution:</strong></p>
+            <ul>
+                <li>Automatic system retry within 1 hour</li>
+                <li>Manual investigation if automatic retry fails</li>
+                <li>Full refund if tokens cannot be delivered within 24 hours</li>
+                <li>Alternative: Credit equivalent tokens to account</li>
+            </ul>
+        </div>
+
+        <div class="scenario-card">
+            <h4>Scenario 2: Duplicate Charges</h4>
+            <p><strong>Situation:</strong> Multiple charges for single purchase due to technical error or network issues.</p>
+            <p><strong>Resolution:</strong></p>
+            <ul>
+                <li>Immediate investigation of payment records</li>
+                <li>Full refund of duplicate charges within 3-5 business days</li>
+                <li>Retention of tokens from legitimate purchase</li>
+            </ul>
+        </div>
+
+        <div class="scenario-card">
+            <h4>Scenario 3: Service Outage During Token Usage</h4>
+            <p><strong>Situation:</strong> System failure prevents token usage after purchase.</p>
+            <p><strong>Resolution:</strong></p>
+            <ul>
+                <li>Service credits for affected users</li>
+                <li>Extension of daily limits during recovery period</li>
+                <li>Partial refund for extended outages (>24 hours)</li>
+            </ul>
+        </div>
+
+        <div class="scenario-card">
+            <h4>Scenario 4: Fraudulent Transaction</h4>
+            <p><strong>Situation:</strong> Unauthorized purchase made using stolen payment information.</p>
+            <p><strong>Resolution:</strong></p>
+            <ul>
+                <li>Immediate account investigation and security review</li>
+                <li>Full refund upon verification of fraud</li>
+                <li>Account security enhancement measures</li>
+                <li>Cooperation with law enforcement if required</li>
+            </ul>
+        </div>
+
+        <h2>5. Refund Request Process</h2>
+
+        <h3>5.1 How to Request a Refund</h3>
+        <div class="timeline">
+            <div class="timeline-item">
+                <h4>Step 1: Contact Support</h4>
+                <p>Email refunds@disciplefy.in with your refund request within 7 days of purchase</p>
+            </div>
+            <div class="timeline-item">
+                <h4>Step 2: Provide Information</h4>
+                <p>Include transaction ID, email address, purchase date, and reason for refund</p>
+            </div>
+            <div class="timeline-item">
+                <h4>Step 3: Verification</h4>
+                <p>Our team verifies your purchase and eligibility for refund (24-48 hours)</p>
+            </div>
+            <div class="timeline-item">
+                <h4>Step 4: Decision</h4>
+                <p>You receive email confirmation of refund approval or denial with explanation</p>
+            </div>
+            <div class="timeline-item">
+                <h4>Step 5: Processing</h4>
+                <p>Approved refunds processed within 5-7 business days</p>
+            </div>
+        </div>
+
+        <h3>5.2 Required Information for Refund Requests</h3>
+        <ul>
+            <li><strong>Transaction Details:</strong> Purchase date, amount, transaction ID from email receipt</li>
+            <li><strong>Account Information:</strong> Email address associated with Disciplefy account</li>
+            <li><strong>Payment Method:</strong> Last 4 digits of card or payment method used</li>
+            <li><strong>Detailed Reason:</strong> Specific explanation of why refund is being requested</li>
+            <li><strong>Supporting Evidence:</strong> Screenshots, error messages, or other relevant documentation</li>
+        </ul>
+
+        <h2>6. Refund Processing Timeline</h2>
+
+        <table class="refund-table">
+            <thead>
+                <tr>
+                    <th>Refund Type</th>
+                    <th>Investigation Time</th>
+                    <th>Processing Time</th>
+                    <th>Total Timeline</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Technical Failure</td>
+                    <td>24 hours</td>
+                    <td>3-5 business days</td>
+                    <td>4-6 business days</td>
+                </tr>
+                <tr>
+                    <td>Duplicate Charge</td>
+                    <td>48 hours</td>
+                    <td>5-7 business days</td>
+                    <td>6-8 business days</td>
+                </tr>
+                <tr>
+                    <td>Fraud/Unauthorized</td>
+                    <td>2-5 business days</td>
+                    <td>7-14 business days</td>
+                    <td>9-19 business days</td>
+                </tr>
+                <tr>
+                    <td>Service Issues</td>
+                    <td>3-7 business days</td>
+                    <td>5-10 business days</td>
+                    <td>8-17 business days</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2>7. Refund Methods</h2>
+
+        <h3>7.1 Primary Refund Method</h3>
+        <ul>
+            <li>Refunds processed to original payment method used for purchase</li>
+            <li>Credit card refunds appear as statement credits</li>
+            <li>UPI and net banking refunds credited to original account</li>
+            <li>Wallet payments refunded to original wallet balance</li>
+        </ul>
+
+        <h3>7.2 Alternative Refund Methods</h3>
+        <p>If original payment method is unavailable:</p>
+        <ul>
+            <li><strong>Bank Transfer:</strong> Direct transfer to user's bank account (requires verification)</li>
+            <li><strong>Account Credit:</strong> Equivalent token value credited to user account</li>
+            <li><strong>Service Extension:</strong> Extended premium features or additional daily limits</li>
+        </ul>
+
+        <h2>8. Special Circumstances</h2>
+
+        <h3>8.1 Account Termination</h3>
+        <ul>
+            <li><strong>Voluntary Account Deletion:</strong> No refunds for unused tokens</li>
+            <li><strong>Policy Violation Termination:</strong> No refunds for used tokens; unused tokens may be refunded at discretion</li>
+            <li><strong>Inactive Account Closure:</strong> Unused tokens refunded if requested within 30 days</li>
+        </ul>
+
+        <h3>8.2 Service Discontinuation</h3>
+        <ul>
+            <li>30-day advance notice for service changes affecting token usage</li>
+            <li>Full refund of unused tokens if service discontinued</li>
+            <li>Migration assistance to alternative services if available</li>
+        </ul>
+
+        <h3>8.3 Force Majeure Events</h3>
+        <ul>
+            <li>Natural disasters, government actions, or other events beyond our control</li>
+            <li>Service credits or extended access provided during recovery</li>
+            <li>Refunds considered on case-by-case basis for extended outages</li>
+        </ul>
+
+        <h2>9. Dispute Resolution</h2>
+
+        <h3>9.1 Internal Review Process</h3>
+        <ol>
+            <li><strong>Initial Review:</strong> Customer support team reviews refund request</li>
+            <li><strong>Escalation:</strong> Complex cases escalated to management</li>
+            <li><strong>Final Decision:</strong> Management provides final determination on refund eligibility</li>
+        </ol>
+
+        <h3>9.2 External Dispute Options</h3>
+        <ul>
+            <li><strong>Payment Provider:</strong> Dispute directly with credit card company or payment provider</li>
+            <li><strong>Consumer Protection:</strong> Contact local consumer protection agencies</li>
+            <li><strong>Legal Action:</strong> Pursue legal remedies as permitted by applicable law</li>
+        </ul>
+
+        <h2>10. Prevention and Best Practices</h2>
+
+        <h3>10.1 Avoiding Refund Situations</h3>
+        <ul>
+            <li><strong>Start Small:</strong> Purchase small token amounts initially to test service</li>
+            <li><strong>Check Connection:</strong> Ensure stable internet connection during purchases</li>
+            <li><strong>Verify Payment:</strong> Confirm payment method details before completing purchase</li>
+            <li><strong>Monitor Account:</strong> Check token balance after purchase to confirm delivery</li>
+        </ul>
+
+        <h3>10.2 Using Tokens Effectively</h3>
+        <ul>
+            <li>Understand token consumption rates for different languages</li>
+            <li>Use free daily tokens before consuming purchased tokens</li>
+            <li>Save frequently referenced study guides to avoid regeneration</li>
+            <li>Report service issues promptly to prevent token loss</li>
+        </ul>
+
+        <h2>11. Contact Information</h2>
+        <div class="contact-info">
+            <h3>Refund Support Team</h3>
+            <p><strong>Email:</strong> contact@disciplefy.in<br>
+            <strong>General Support:</strong> support@disciplefy.in<br>
+            
+            <h3>Response Times</h3>
+            <ul>
+                <li><strong>Refund Requests:</strong> 24-48 hours initial response</li>
+                <li><strong>Technical Issues:</strong> Same business day</li>
+                <li><strong>Fraud Reports:</strong> Immediate acknowledgment, 24-hour investigation start</li>
+                <li><strong>General Inquiries:</strong> Within 3 business days</li>
+            </ul>
+
+            <h3>Business Hours</h3>
+            <p><strong>Monday - Friday:</strong> 9:00 AM - 6:00 PM (IST)<br>
+            <strong>Saturday:</strong> Closed (Emergency support available)<br>
+            <strong>Sunday:</strong> Closed (Emergency support available)</p>
+        </div>
+
+        <h2>12. Policy Updates</h2>
+        <p>This Cancellation and Refund Policy may be updated periodically. Changes will be communicated through:</p>
+        <ul>
+            <li>Email notifications to all users</li>
+            <li>In-app announcements</li>
+            <li>Website policy page updates</li>
+        </ul>
+        
+        <p>Significant changes affecting refund eligibility will include a 30-day notice period before implementation.</p>
+
+        <div class="highlight">
+            <strong>Questions about Refunds?</strong><br>
+            Our refund support team is here to help resolve any issues with your token purchases. Contact us at refunds@disciplefy.in for assistance with any refund-related questions or concerns.
+        </div>
+
+        <div class="footer">
+            <p>&copy; 2025 Disciplefy. All rights reserved.</p>
+            <p>This Cancellation and Refund Policy is effective as of January 10, 2025</p>
+            <p><strong>For refund requests, email: refunds@disciplefy.in within 7 days of purchase</strong></p>
+        </div>
+    </div>
+</body>
+</html>
