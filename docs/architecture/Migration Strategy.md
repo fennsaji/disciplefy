@@ -149,7 +149,7 @@ ALTER TABLE auth.users ADD COLUMN is_admin BOOLEAN DEFAULT false;
 
 -- Migrate existing user data if needed
 UPDATE auth.users SET is_admin = true 
-WHERE email IN ('admin@disciplefy.com', 'support@disciplefy.com');
+WHERE email IN ('admin@disciplefy.in', 'support@disciplefy.in');
 
 -- Create comprehensive indexes
 CREATE INDEX idx_admin_logs_admin_user_id ON admin_logs(admin_user_id);
