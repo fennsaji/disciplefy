@@ -17,6 +17,7 @@ import '../di/injection_container.dart';
 import '../../features/saved_guides/presentation/pages/saved_screen.dart';
 import '../../features/settings/presentation/pages/settings_screen.dart';
 import '../../features/study_topics/presentation/pages/study_topics_screen.dart';
+import '../../features/tokens/presentation/pages/token_management_page.dart';
 import 'app_routes.dart';
 import 'router_guard.dart';
 import 'auth_notifier.dart';
@@ -110,6 +111,11 @@ class AppRouter {
         name: 'study_topics',
         builder: (context, state) => const StudyTopicsScreen(),
       ),
+      GoRoute(
+        path: AppRoutes.tokenManagement,
+        name: 'token_management',
+        builder: (context, state) => const TokenManagementPage(),
+      ),
 
       // Authentication Routes (outside app shell)
       GoRoute(
@@ -195,6 +201,7 @@ extension AppRouterExtension on GoRouter {
   void goToSettings() => go(AppRoutes.settings);
   void goToSaved() => go(AppRoutes.saved);
   void goToStudyTopics() => go(AppRoutes.studyTopics);
+  void goToTokenManagement() => go(AppRoutes.tokenManagement);
   void goToLogin() => go(AppRoutes.login);
   void goToAuthCallback() => go(AppRoutes.authCallback);
   void goToError(String error) => go(AppRoutes.error, extra: error);

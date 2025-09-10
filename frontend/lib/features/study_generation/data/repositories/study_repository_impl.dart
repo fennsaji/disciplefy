@@ -42,6 +42,7 @@ class StudyRepositoryImpl implements StudyRepository {
     required String language,
   }) async {
     try {
+      print('🚨 [STUDY_REPO] Starting study generation request');
       // Check network connectivity
       if (!await _networkInfo.isConnected) {
         return const Left(NetworkFailure(
@@ -85,6 +86,18 @@ class StudyRepositoryImpl implements StudyRepository {
         message: e.message,
         code: e.code,
         context: e.context,
+      ));
+    } on InsufficientTokensException catch (e) {
+      print('🚨 [STUDY_REPO] InsufficientTokensException caught: $e');
+      return Left(RateLimitFailure(
+        message: e.detailMessage,
+        code: e.code,
+        context: {
+          ...?e.context,
+          'requiredTokens': e.requiredTokens,
+          'availableTokens': e.availableTokens,
+          'nextResetTime': e.nextResetTime?.toIso8601String(),
+        },
       ));
     } on ClientException catch (e) {
       return Left(ClientFailure(

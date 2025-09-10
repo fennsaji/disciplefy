@@ -85,6 +85,51 @@ class RateLimitException extends AppException {
   });
 }
 
+/// Exception thrown when user has insufficient tokens for an operation.
+class InsufficientTokensException extends AppException {
+  /// Number of tokens required for the operation
+  final int requiredTokens;
+
+  /// Number of tokens currently available
+  final int availableTokens;
+
+  /// Time when tokens will reset (if applicable)
+  final DateTime? nextResetTime;
+
+  const InsufficientTokensException({
+    required super.message,
+    required super.code,
+    required this.requiredTokens,
+    required this.availableTokens,
+    this.nextResetTime,
+    super.context,
+  });
+
+  /// Get formatted message with token details
+  String get detailMessage {
+    final baseMessage =
+        'Need $requiredTokens tokens, but only $availableTokens available.';
+    if (nextResetTime != null) {
+      final now = DateTime.now();
+      final timeUntilReset = nextResetTime!.difference(now);
+      final hours = timeUntilReset.inHours;
+      final minutes = timeUntilReset.inMinutes.remainder(60);
+
+      String resetText;
+      if (hours > 0) {
+        resetText = 'Resets in ${hours}h ${minutes}m';
+      } else if (minutes > 0) {
+        resetText = 'Resets in ${minutes}m';
+      } else {
+        resetText = 'Resets soon';
+      }
+
+      return '$baseMessage $resetText.';
+    }
+    return baseMessage;
+  }
+}
+
 /// Exception thrown for general client-side errors.
 class ClientException extends AppException {
   const ClientException({
