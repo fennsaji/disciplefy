@@ -47,8 +47,16 @@
             align-items: center;
             justify-content: center;
             color: white;
-            font-size: 4px;
+            font-size: 24px;
             font-weight: bold;
+            overflow: hidden;
+        }
+        
+        .logo img {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            object-fit: cover;
         }
 
         h1 {
@@ -234,14 +242,16 @@
 <body>
     <div class="container">
         <div class="header">
-            <div class="logo"><img src="https://wzdcwxvyjuxjgzpnukvm.supabase.co/storage/v1/object/public/disciplefy/Assets/favicon.png" alt="Disciplefy Logo"></div>
+            <div class="logo">
+                <img src="https://wzdcwxvyjuxjgzpnukvm.supabase.co/storage/v1/object/public/disciplefy/Assets/favicon.png" alt="Disciplefy Logo" onerror="this.style.display='none'; this.parentElement.innerHTML='D';">
+            </div>
             <h1>Cancellation and Refund Policy</h1>
             <p><strong>Disciplefy: AI-Powered Bible Study Application</strong></p>
         </div>
 
         <div class="effective-date">
-            <strong>Effective Date:</strong> January 10, 2025<br>
-            <strong>Last Updated:</strong> January 10, 2025
+            <strong>Effective Date:</strong> September 10, 2025<br>
+            <strong>Last Updated:</strong> September 10, 2025
         </div>
 
         <div class="highlight">
@@ -391,7 +401,7 @@
         <div class="timeline">
             <div class="timeline-item">
                 <h4>Step 1: Contact Support</h4>
-                <p>Email refunds@disciplefy.in with your refund request within 7 days of purchase</p>
+                <p>Email support@disciplefy.in with your refund request within 7 days of purchase</p>
             </div>
             <div class="timeline-item">
                 <h4>Step 2: Provide Information</h4>
@@ -534,10 +544,19 @@
             <li>Report service issues promptly to prevent token loss</li>
         </ul>
 
-        <h2>11. Contact Information</h2>
+        <h2>11. Token Pricing Reference</h2>
+        <p>For current token pricing and exchange rates, please refer to our Terms of Service. Current rates:</p>
+        <ul>
+            <li><strong>Exchange Rate:</strong> 10 tokens = ₹1 (Indian Rupees)</li>
+            <li><strong>Minimum Purchase:</strong> 50 tokens (₹5)</li>
+            <li><strong>Maximum Purchase:</strong> 10,000 tokens (₹1,000) per transaction</li>
+        </ul>
+        
+        <h2>12. Contact Information</h2>
         <div class="contact-info">
             <h3>Refund Support Team</h3>
-            <p><strong>Email:</strong> contact@disciplefy.in<br>
+            <p><strong>Email:</strong> support@disciplefy.in<br>
+            <strong>Refund Requests:</strong> refunds@disciplefy.in<br>
             <strong>General Support:</strong> support@disciplefy.in<br>
             
             <h3>Response Times</h3>
@@ -554,7 +573,10 @@
             <strong>Sunday:</strong> Closed (Emergency support available)</p>
         </div>
 
-        <h2>12. Policy Updates</h2>
+        <h2>12. Governing Law</h2>
+        <p>This Cancellation and Refund Policy is governed by the laws of India, without regard to conflict of law principles. Any disputes arising from refund matters will be resolved in courts of competent jurisdiction in India.</p>
+        
+        <h2>13. Policy Updates</h2>
         <p>This Cancellation and Refund Policy may be updated periodically. Changes will be communicated through:</p>
         <ul>
             <li>Email notifications to all users</li>
@@ -566,13 +588,13 @@
 
         <div class="highlight">
             <strong>Questions about Refunds?</strong><br>
-            Our refund support team is here to help resolve any issues with your token purchases. Contact us at refunds@disciplefy.in for assistance with any refund-related questions or concerns.
+            Our refund support team is here to help resolve any issues with your token purchases. Contact us at support@disciplefy.in for general questions or refunds@disciplefy.in for refund-specific requests.
         </div>
 
         <div class="footer">
             <p>&copy; 2025 Disciplefy. All rights reserved.</p>
-            <p>This Cancellation and Refund Policy is effective as of January 10, 2025</p>
-            <p><strong>For refund requests, email: refunds@disciplefy.in within 7 days of purchase</strong></p>
+            <p>This Cancellation and Refund Policy is effective as of September 10, 2025</p>
+            <p><strong>For refund requests, email: support@disciplefy.in within 7 days of purchase</strong></p>
         </div>
     </div>
 </body>
