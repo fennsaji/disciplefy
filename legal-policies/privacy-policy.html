@@ -49,6 +49,14 @@
             color: white;
             font-size: 24px;
             font-weight: bold;
+            overflow: hidden;
+        }
+        
+        .logo img {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            object-fit: cover;
         }
 
         h1 {
@@ -153,6 +161,17 @@
             
             .data-table {
                 font-size: 0.9em;
+                overflow-x: auto;
+                display: block;
+                white-space: nowrap;
+            }
+            
+            .data-table tbody,
+            .data-table thead,
+            .data-table tr {
+                display: table;
+                width: 100%;
+                table-layout: fixed;
             }
         }
     </style>
@@ -160,14 +179,16 @@
 <body>
     <div class="container">
         <div class="header">
-            <div class="logo"><img src="https://wzdcwxvyjuxjgzpnukvm.supabase.co/storage/v1/object/public/disciplefy/Assets/favicon.png" alt="Disciplefy Logo"></div>
+            <div class="logo">
+                <img src="https://wzdcwxvyjuxjgzpnukvm.supabase.co/storage/v1/object/public/disciplefy/Assets/favicon.png" alt="Disciplefy Logo" onerror="this.style.display='none'; this.parentElement.innerHTML='D';">
+            </div>
             <h1>Privacy Policy</h1>
             <p><strong>Disciplefy: AI-Powered Bible Study Application</strong></p>
         </div>
 
         <div class="effective-date">
-            <strong>Effective Date:</strong> January 10, 2025<br>
-            <strong>Last Updated:</strong> January 10, 2025
+            <strong>Effective Date:</strong> September 10, 2025<br>
+            <strong>Last Updated:</strong> September 10, 2025
         </div>
 
         <div class="highlight">
@@ -363,7 +384,10 @@
         
         <p>You can control cookie preferences through your device settings or by contacting us.</p>
 
-        <h2>11. Changes to This Privacy Policy</h2>
+        <h2>11. Governing Law</h2>
+        <p>This Privacy Policy is governed by the laws of India. Any disputes arising from this policy will be resolved in courts of competent jurisdiction in India.</p>
+        
+        <h2>12. Changes to This Privacy Policy</h2>
         <p>We may update this Privacy Policy periodically to reflect changes in our practices or applicable laws. We will notify you of significant changes by:</p>
         <ul>
             <li>Posting the updated policy in the app</li>
@@ -373,11 +397,12 @@
         
         <p>Continued use of Disciplefy after changes become effective constitutes acceptance of the updated Privacy Policy.</p>
 
-        <h2>12. Contact Information</h2>
+        <h2>13. Contact Information</h2>
         <div class="contact-info">
             <h3>Data Protection Officer</h3>
             <p><strong>Disciplefy Privacy Team</strong><br>
-            Email: privacy@disciplefy.in<br>
+            Email: support@disciplefy.in<br>
+            Privacy Inquiries: privacy@disciplefy.in<br>
             
             <h3>Response Times</h3>
             <ul>
@@ -392,12 +417,12 @@
 
         <div class="highlight">
             <strong>Questions about this Privacy Policy?</strong><br>
-            We're committed to transparency and are happy to clarify any aspects of our privacy practices. Please don't hesitate to contact us at privacy@disciplefy.in.
+            We're committed to transparency and are happy to clarify any aspects of our privacy practices. Please don't hesitate to contact us at support@disciplefy.in for general inquiries or privacy@disciplefy.in for privacy-specific concerns.
         </div>
 
         <div class="footer">
             <p>&copy; 2025 Disciplefy. All rights reserved.</p>
-            <p>This Privacy Policy is effective as of January 10, 2025</p>
+            <p>This Privacy Policy is effective as of September 10, 2025</p>
         </div>
     </div>
 </body>

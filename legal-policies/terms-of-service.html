@@ -49,6 +49,14 @@
             color: white;
             font-size: 24px;
             font-weight: bold;
+            overflow: hidden;
+        }
+        
+        .logo img {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            object-fit: cover;
         }
 
         h1 {
@@ -198,14 +206,16 @@
 <body>
     <div class="container">
         <div class="header">
-            <div class="logo"><img src="https://wzdcwxvyjuxjgzpnukvm.supabase.co/storage/v1/object/public/disciplefy/Assets/favicon.png" alt="Disciplefy Logo"></div>
+            <div class="logo">
+                <img src="https://wzdcwxvyjuxjgzpnukvm.supabase.co/storage/v1/object/public/disciplefy/Assets/favicon.png" alt="Disciplefy Logo" onerror="this.style.display='none'; this.parentElement.innerHTML='D';">
+            </div>
             <h1>Terms of Service</h1>
             <p><strong>Disciplefy: AI-Powered Bible Study Application</strong></p>
         </div>
 
         <div class="effective-date">
-            <strong>Effective Date:</strong> January 10, 2025<br>
-            <strong>Last Updated:</strong> January 10, 2025
+            <strong>Effective Date:</strong> September 10, 2025<br>
+            <strong>Last Updated:</strong> September 10, 2025
         </div>
 
         <div class="highlight">
@@ -536,8 +546,8 @@
         <h3>15.4 Contact Information</h3>
         <div class="contact-info">
             <p><strong>Disciplefy Legal Team</strong><br>
-            Email: legal@disciplefy.in<br>
-            Support: support@disciplefy.in<br>
+            Email: support@disciplefy.in<br>
+            Legal Inquiries: legal@disciplefy.in<br>
             
             <p><strong>Response Times:</strong></p>
             <ul>
@@ -550,12 +560,12 @@
 
         <div class="highlight">
             <strong>Questions about these Terms?</strong><br>
-            We're here to help clarify any aspects of our Terms of Service. Please contact us at legal@disciplefy.in for any questions or concerns.
+            We're here to help clarify any aspects of our Terms of Service. Please contact us at support@disciplefy.in for general questions or legal@disciplefy.in for legal concerns.
         </div>
 
         <div class="footer">
             <p>&copy; 2025 Disciplefy. All rights reserved.</p>
-            <p>These Terms of Service are effective as of January 10, 2025</p>
+            <p>These Terms of Service are effective as of September 10, 2025</p>
             <p><strong>By using Disciplefy, you acknowledge that you have read, understood, and agree to these Terms.</strong></p>
         </div>
     </div>
