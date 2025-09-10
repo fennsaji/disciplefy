@@ -1,0 +1,505 @@
+import 'dart:async';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:dartz/dartz.dart';
+
+import '../../domain/entities/token_status.dart';
+import '../../domain/usecases/get_token_status.dart' as use_cases;
+import '../../domain/usecases/purchase_tokens.dart' as use_cases;
+import '../../domain/usecases/purchase_tokens.dart' show PurchaseTokensParams;
+import '../../../../core/error/failures.dart';
+import '../../../../core/usecases/usecase.dart';
+
+import 'token_event.dart';
+import 'token_state.dart';
+
+/// Token BLoC
+///
+/// Manages all token-related state and operations including:
+/// - Fetching and caching token status
+/// - Handling token purchases with Razorpay
+/// - Managing token consumption tracking
+/// - Plan upgrades and validations
+/// - Real-time token balance updates
+class TokenBloc extends Bloc<TokenEvent, TokenState> {
+  final use_cases.GetTokenStatus _getTokenStatus;
+  final use_cases.PurchaseTokens _purchaseTokens;
+
+  // Token status cache with timestamp
+  TokenStatus? _cachedTokenStatus;
+  DateTime? _lastCacheUpdate;
+  Timer? _refreshTimer;
+
+  static const Duration _cacheValidityDuration = Duration(minutes: 5);
+  static const Duration _autoRefreshInterval = Duration(minutes: 10);
+
+  TokenBloc({
+    required use_cases.GetTokenStatus getTokenStatus,
+    required use_cases.PurchaseTokens purchaseTokens,
+  })  : _getTokenStatus = getTokenStatus,
+        _purchaseTokens = purchaseTokens,
+        super(const TokenInitial()) {
+    // Register event handlers
+    on<GetTokenStatus>(_onGetTokenStatus);
+    on<RefreshTokenStatus>(_onRefreshTokenStatus);
+    on<PurchaseTokens>(_onPurchaseTokens);
+    on<ConsumeTokens>(_onConsumeTokens);
+    on<SimulateTokenConsumption>(_onSimulateTokenConsumption);
+    on<ResetDailyTokens>(_onResetDailyTokens);
+    on<UpgradeUserPlan>(_onUpgradeUserPlan);
+    on<ClearTokenError>(_onClearTokenError);
+    on<ValidateTokenSufficiency>(_onValidateTokenSufficiency);
+    on<PaymentSuccess>(_onPaymentSuccess);
+    on<PaymentFailure>(_onPaymentFailure);
+    on<ScheduleTokenResetNotification>(_onScheduleTokenResetNotification);
+    on<PrefetchTokenStatus>(_onPrefetchTokenStatus);
+
+    // Start auto-refresh timer
+    _startAutoRefreshTimer();
+  }
+
+  @override
+  Future<void> close() {
+    _refreshTimer?.cancel();
+    return super.close();
+  }
+
+  /// Handles fetching token status from API or cache
+  Future<void> _onGetTokenStatus(
+    GetTokenStatus event,
+    Emitter<TokenState> emit,
+  ) async {
+    // Check if cached data is valid
+    if (_isCacheValid() && _cachedTokenStatus != null) {
+      emit(TokenLoaded(
+        tokenStatus: _cachedTokenStatus!,
+        lastUpdated: _lastCacheUpdate!,
+      ));
+      return;
+    }
+
+    emit(const TokenLoading(operation: 'fetching'));
+
+    final result = await _getTokenStatus(NoParams());
+
+    result.fold(
+      (failure) => emit(TokenError(
+        failure: failure,
+        operation: 'fetching',
+        previousTokenStatus: _cachedTokenStatus,
+      )),
+      (tokenStatus) {
+        _updateCache(tokenStatus);
+        emit(TokenLoaded(
+          tokenStatus: tokenStatus,
+          lastUpdated: DateTime.now(),
+        ));
+      },
+    );
+  }
+
+  /// Handles refreshing token status (ignores cache)
+  Future<void> _onRefreshTokenStatus(
+    RefreshTokenStatus event,
+    Emitter<TokenState> emit,
+  ) async {
+    // If already loaded, show refresh indicator
+    if (state is TokenLoaded) {
+      final currentState = state as TokenLoaded;
+      emit(currentState.copyWith(isRefreshing: true));
+    } else {
+      emit(const TokenLoading(operation: 'refreshing'));
+    }
+
+    final result = await _getTokenStatus(NoParams());
+
+    result.fold(
+      (failure) => emit(TokenError(
+        failure: failure,
+        operation: 'refreshing',
+        previousTokenStatus: _cachedTokenStatus,
+      )),
+      (tokenStatus) {
+        _updateCache(tokenStatus);
+        emit(TokenLoaded(
+          tokenStatus: tokenStatus,
+          lastUpdated: DateTime.now(),
+        ));
+      },
+    );
+  }
+
+  /// Handles token purchase with Razorpay integration
+  Future<void> _onPurchaseTokens(
+    PurchaseTokens event,
+    Emitter<TokenState> emit,
+  ) async {
+    if (_cachedTokenStatus == null) {
+      emit(const TokenError(
+        failure: CacheFailure(message: 'Token status not available'),
+        operation: 'purchase',
+      ));
+      return;
+    }
+
+    // Only standard users can purchase tokens
+    if (_cachedTokenStatus!.userPlan != UserPlan.standard) {
+      emit(const TokenError(
+        failure: ValidationFailure(
+            message: 'Only standard users can purchase tokens'),
+        operation: 'purchase',
+      ));
+      return;
+    }
+
+    // Start purchase flow
+    emit(TokenPurchasing(
+      currentTokenStatus: _cachedTokenStatus!,
+      tokensToPurchase: event.tokenAmount,
+      amount: event.tokenAmount / 10.0, // 10 tokens = ₹1
+      step: PurchaseStep.initiating,
+    ));
+
+    // Process payment
+    emit(TokenPurchasing(
+      currentTokenStatus: _cachedTokenStatus!,
+      tokensToPurchase: event.tokenAmount,
+      amount: event.tokenAmount / 10.0,
+      step: PurchaseStep.processingPayment,
+    ));
+
+    // TODO: Implement actual Razorpay integration
+    // For now, use mock payment data
+    final purchaseParams = PurchaseTokensParams(
+      tokenAmount: event.tokenAmount,
+      paymentOrderId: 'mock_order_${DateTime.now().millisecondsSinceEpoch}',
+      paymentId: 'mock_payment_${DateTime.now().millisecondsSinceEpoch}',
+      signature: 'mock_signature',
+    );
+
+    final result = await _purchaseTokens(purchaseParams);
+
+    result.fold(
+      (failure) => emit(TokenError(
+        failure: failure,
+        operation: 'purchase',
+        previousTokenStatus: _cachedTokenStatus,
+      )),
+      (updatedTokenStatus) {
+        _updateCache(updatedTokenStatus);
+        emit(TokenPurchaseSuccess(
+          updatedTokenStatus: updatedTokenStatus,
+          tokensPurchased: event.tokenAmount,
+          amountPaid: event.tokenAmount / 10.0,
+          paymentId: 'mock_payment_id', // Will be real payment ID from Razorpay
+        ));
+
+        // Transition back to loaded state after success message
+        Timer(const Duration(seconds: 3), () {
+          if (!isClosed) {
+            add(const GetTokenStatus());
+          }
+        });
+      },
+    );
+  }
+
+  /// Handles local token consumption (immediate UI feedback)
+  Future<void> _onConsumeTokens(
+    ConsumeTokens event,
+    Emitter<TokenState> emit,
+  ) async {
+    if (_cachedTokenStatus == null) {
+      emit(const TokenError(
+        failure: CacheFailure(message: 'Token status not available'),
+        operation: 'consumption',
+      ));
+      return;
+    }
+
+    // Premium users have unlimited tokens
+    if (_cachedTokenStatus!.isPremium) {
+      return; // No need to consume tokens
+    }
+
+    // Check if sufficient tokens available
+    if (_cachedTokenStatus!.totalTokens < event.tokensConsumed) {
+      emit(TokenError(
+        failure: InsufficientTokensFailure(
+          requiredTokens: event.tokensConsumed,
+          availableTokens: _cachedTokenStatus!.totalTokens,
+        ),
+        operation: 'consumption',
+        previousTokenStatus: _cachedTokenStatus,
+      ));
+      return;
+    }
+
+    // Show consumption in progress
+    emit(TokenConsuming(
+      currentTokenStatus: _cachedTokenStatus!,
+      tokensBeingConsumed: event.tokensConsumed,
+      operationType: event.operationType,
+    ));
+
+    // Update cached token count immediately for UI responsiveness
+    final updatedTokenStatus = _cachedTokenStatus!.copyWith(
+      purchasedTokens:
+          (_cachedTokenStatus!.purchasedTokens - event.tokensConsumed)
+              .clamp(0, double.infinity)
+              .toInt(),
+      totalTokens: (_cachedTokenStatus!.totalTokens - event.tokensConsumed)
+          .clamp(0, double.infinity)
+          .toInt(),
+    );
+
+    _updateCache(updatedTokenStatus);
+
+    emit(TokenLoaded(
+      tokenStatus: updatedTokenStatus,
+      lastUpdated: DateTime.now(),
+    ));
+
+    // Refresh from server in background to sync with actual consumption
+    add(const RefreshTokenStatus());
+  }
+
+  /// Handles token consumption simulation for testing
+  Future<void> _onSimulateTokenConsumption(
+    SimulateTokenConsumption event,
+    Emitter<TokenState> emit,
+  ) async {
+    add(ConsumeTokens(
+      tokensConsumed: event.tokensToConsume,
+      operationType: 'simulation',
+    ));
+  }
+
+  /// Handles daily token reset (typically server-driven)
+  Future<void> _onResetDailyTokens(
+    ResetDailyTokens event,
+    Emitter<TokenState> emit,
+  ) async {
+    // Refresh token status to get updated daily allocation
+    add(const RefreshTokenStatus());
+  }
+
+  /// Handles plan upgrade process
+  Future<void> _onUpgradeUserPlan(
+    UpgradeUserPlan event,
+    Emitter<TokenState> emit,
+  ) async {
+    if (_cachedTokenStatus == null) {
+      emit(const TokenError(
+        failure: CacheFailure(message: 'Token status not available'),
+        operation: 'upgrade',
+      ));
+      return;
+    }
+
+    emit(TokenPlanUpgrading(
+      currentTokenStatus: _cachedTokenStatus!,
+      targetPlan: event.targetPlan,
+      step: PurchaseStep.initiating,
+    ));
+
+    // TODO: Implement actual plan upgrade logic with payment processing
+    // For now, simulate successful upgrade
+    await Future.delayed(const Duration(seconds: 2));
+
+    final upgradedPlan =
+        event.targetPlan == 'premium' ? UserPlan.premium : UserPlan.standard;
+    final newDailyLimit = upgradedPlan == UserPlan.premium
+        ? 0
+        : (upgradedPlan == UserPlan.standard ? 100 : 50);
+
+    final updatedTokenStatus = _cachedTokenStatus!.copyWith(
+      availableTokens: upgradedPlan == UserPlan.premium ? 0 : newDailyLimit,
+      totalTokens: upgradedPlan == UserPlan.premium
+          ? 0
+          : newDailyLimit + _cachedTokenStatus!.purchasedTokens,
+      dailyLimit: newDailyLimit,
+      userPlan: upgradedPlan,
+      isPremium: upgradedPlan == UserPlan.premium,
+      unlimitedUsage: upgradedPlan == UserPlan.premium,
+      canPurchaseTokens: upgradedPlan == UserPlan.standard,
+    );
+
+    _updateCache(updatedTokenStatus);
+
+    emit(TokenPlanUpgradeSuccess(
+      updatedTokenStatus: updatedTokenStatus,
+      newPlan: event.targetPlan,
+    ));
+
+    // Transition back to loaded state
+    Timer(const Duration(seconds: 3), () {
+      if (!isClosed) {
+        add(const GetTokenStatus());
+      }
+    });
+  }
+
+  /// Handles clearing error states
+  Future<void> _onClearTokenError(
+    ClearTokenError event,
+    Emitter<TokenState> emit,
+  ) async {
+    if (state is TokenError) {
+      final errorState = state as TokenError;
+      if (errorState.previousTokenStatus != null) {
+        emit(TokenLoaded(
+          tokenStatus: errorState.previousTokenStatus!,
+          lastUpdated: _lastCacheUpdate ?? DateTime.now(),
+        ));
+      } else {
+        emit(const TokenInitial());
+      }
+    }
+  }
+
+  /// Handles token sufficiency validation
+  Future<void> _onValidateTokenSufficiency(
+    ValidateTokenSufficiency event,
+    Emitter<TokenState> emit,
+  ) async {
+    if (_cachedTokenStatus == null) {
+      add(const GetTokenStatus());
+      return;
+    }
+
+    emit(TokenValidating(
+      requiredTokens: event.requiredTokens,
+      operationType: event.operationType,
+    ));
+
+    await Future.delayed(
+        const Duration(milliseconds: 300)); // Brief validation delay
+
+    final hasSufficientTokens =
+        _cachedTokenStatus!.hasSufficientTokens(event.requiredTokens);
+
+    emit(TokenValidated(
+      hasSufficientTokens: hasSufficientTokens,
+      requiredTokens: event.requiredTokens,
+      availableTokens: _cachedTokenStatus!.totalTokens,
+      operationType: event.operationType,
+    ));
+
+    // Return to loaded state
+    Timer(const Duration(seconds: 2), () {
+      if (!isClosed && _cachedTokenStatus != null) {
+        emit(TokenLoaded(
+          tokenStatus: _cachedTokenStatus!,
+          lastUpdated: _lastCacheUpdate ?? DateTime.now(),
+        ));
+      }
+    });
+  }
+
+  /// Handles successful payment callback from Razorpay
+  Future<void> _onPaymentSuccess(
+    PaymentSuccess event,
+    Emitter<TokenState> emit,
+  ) async {
+    if (_cachedTokenStatus == null) return;
+
+    emit(TokenPurchasing(
+      currentTokenStatus: _cachedTokenStatus!,
+      tokensToPurchase: event.tokensPurchased,
+      amount: event.tokensPurchased / 10.0,
+      step: PurchaseStep.verifyingPayment,
+    ));
+
+    // TODO: Verify payment with backend
+    await Future.delayed(const Duration(seconds: 1));
+
+    emit(TokenPurchasing(
+      currentTokenStatus: _cachedTokenStatus!,
+      tokensToPurchase: event.tokensPurchased,
+      amount: event.tokensPurchased / 10.0,
+      step: PurchaseStep.updatingBalance,
+    ));
+
+    // Update token balance
+    final updatedTokenStatus = _cachedTokenStatus!.copyWith(
+      purchasedTokens:
+          _cachedTokenStatus!.purchasedTokens + event.tokensPurchased,
+      totalTokens: _cachedTokenStatus!.totalTokens + event.tokensPurchased,
+    );
+
+    _updateCache(updatedTokenStatus);
+
+    emit(TokenPurchaseSuccess(
+      updatedTokenStatus: updatedTokenStatus,
+      tokensPurchased: event.tokensPurchased,
+      amountPaid: event.tokensPurchased / 10.0,
+      paymentId: event.paymentId,
+    ));
+  }
+
+  /// Handles failed payment callback from Razorpay
+  Future<void> _onPaymentFailure(
+    PaymentFailure event,
+    Emitter<TokenState> emit,
+  ) async {
+    emit(TokenError(
+      failure: TokenPaymentFailure(paymentError: event.error),
+      operation: 'payment',
+      previousTokenStatus: _cachedTokenStatus,
+    ));
+  }
+
+  /// Handles scheduling token reset notifications
+  Future<void> _onScheduleTokenResetNotification(
+    ScheduleTokenResetNotification event,
+    Emitter<TokenState> emit,
+  ) async {
+    // TODO: Integrate with local notification system
+    // For now, just acknowledge the event
+  }
+
+  /// Handles prefetching token status in background
+  Future<void> _onPrefetchTokenStatus(
+    PrefetchTokenStatus event,
+    Emitter<TokenState> emit,
+  ) async {
+    // Prefetch without emitting loading states
+    final result = await _getTokenStatus(NoParams());
+    result.fold(
+      (failure) => {}, // Ignore prefetch failures
+      (tokenStatus) => _updateCache(tokenStatus),
+    );
+  }
+
+  /// Updates the token status cache
+  void _updateCache(TokenStatus tokenStatus) {
+    _cachedTokenStatus = tokenStatus;
+    _lastCacheUpdate = DateTime.now();
+  }
+
+  /// Checks if cached data is still valid
+  bool _isCacheValid() {
+    if (_lastCacheUpdate == null) return false;
+    final now = DateTime.now();
+    return now.difference(_lastCacheUpdate!) < _cacheValidityDuration;
+  }
+
+  /// Starts auto-refresh timer for background updates
+  void _startAutoRefreshTimer() {
+    _refreshTimer = Timer.periodic(_autoRefreshInterval, (timer) {
+      if (_cachedTokenStatus != null && !isClosed) {
+        add(const PrefetchTokenStatus());
+      }
+    });
+  }
+}
+
+/// Cache-related failure
+class CacheFailure extends Failure {
+  const CacheFailure({String? message})
+      : super(
+            message: message ?? 'Cache operation failed', code: 'CACHE_ERROR');
+
+  @override
+  List<Object?> get props => [message];
+}

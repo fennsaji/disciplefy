@@ -13,6 +13,7 @@ import { ServiceContainer } from '../_shared/core/services.ts'
 import { RequestValidator } from '../_shared/utils/request-validator.ts'
 import { AppError } from '../_shared/utils/error-handler.ts'
 import { StudyGuideInput } from '../_shared/types/index.ts'
+import { SupportedLanguage } from '../_shared/types/token-types.ts'
 
 /**
  * Request payload for study guide generation
@@ -34,7 +35,7 @@ interface StudyGenerationRequest {
  * 2. Validate request body (no client-provided user context)
  * 3. Use injected services for business logic
  */
-async function handleStudyGenerate(req: Request, { authService, llmService, studyGuideRepository, rateLimiter, analyticsLogger, securityValidator }: ServiceContainer): Promise<Response> {
+async function handleStudyGenerate(req: Request, { authService, llmService, studyGuideRepository, tokenService, analyticsLogger, securityValidator }: ServiceContainer): Promise<Response> {
   // 1. Get user context SECURELY from the new AuthService
   const userContext = await authService.getUserContext(req)
   
@@ -86,20 +87,39 @@ async function handleStudyGenerate(req: Request, { authService, llmService, stud
     })
   }
 
-  // --- CACHE MISS: Only now enforce rate limiting for expensive LLM generation ---
+  // --- CACHE MISS: Only now enforce token consumption for expensive LLM generation ---
   
-  // 5. Rate limiting enforcement (only for new content generation)
+  // 5. Determine user plan and calculate token cost
+  const userPlan = await authService.getUserPlan(req)
+  const targetLanguage = language || 'en'
+  const tokenCost = tokenService.calculateTokenCost(targetLanguage as SupportedLanguage)
   const identifier = userContext.type === 'authenticated' ? userContext.userId! : userContext.sessionId!
-  await rateLimiter.enforceRateLimit(identifier, userContext.type)
+  
+  // 6. Token consumption enforcement (only for new content generation)
+  const consumptionResult = await tokenService.consumeTokens(
+    identifier,
+    userPlan,
+    tokenCost,
+    {
+      userId: userContext.userId,
+      sessionId: userContext.sessionId,
+      userPlan: userPlan,
+      operation: 'consume',
+      language: targetLanguage as SupportedLanguage,
+      ipAddress: req.headers.get('x-forwarded-for') || undefined,
+      userAgent: req.headers.get('user-agent') || undefined,
+      timestamp: new Date()
+    }
+  )
 
-  // 6. Generate new content using LLM service
+  // 7. Generate new content using LLM service
   const generatedContent = await llmService.generateStudyGuide({
     inputType: input_type,
     inputValue: input_value,
-    language: language || 'en'
+    language: targetLanguage
   })
 
-  // 7. Save to repository
+  // 8. Save to repository
   const savedGuide = await studyGuideRepository.saveStudyGuide(
     studyGuideInput,
     {
@@ -113,31 +133,33 @@ async function handleStudyGenerate(req: Request, { authService, llmService, stud
     userContext
   )
 
-  // 8. Record usage for rate limiting
-  await rateLimiter.recordUsage(identifier, userContext.type)
-
-  // 9. Log analytics
+  // 9. Log analytics for successful generation
   await analyticsLogger.logEvent('study_guide_generated', {
     input_type,
-    language: language || 'en',
+    language: targetLanguage,
     user_type: userContext.type,
+    user_plan: userPlan,
+    tokens_consumed: tokenCost,
     user_id: userContext.userId,
     session_id: userContext.sessionId
   }, req.headers.get('x-forwarded-for'))
 
-  // 10. Get rate limit status
-  const rateLimitResult = await rateLimiter.checkRateLimit(identifier, userContext.type)
-
-  // 11. Return response
+  // 10. Return response with token information
   return new Response(JSON.stringify({
     success: true,
     data: {
       study_guide: savedGuide,
       from_cache: false
     },
-    rate_limit: {
-      remaining: rateLimitResult.remaining,
-      reset_time: rateLimitResult.resetTime
+    tokens: {
+      consumed: tokenCost,
+      remaining: {
+        available_tokens: consumptionResult.availableTokens,
+        purchased_tokens: consumptionResult.purchasedTokens,
+        total_tokens: consumptionResult.totalTokens
+      },
+      daily_limit: consumptionResult.dailyLimit,
+      user_plan: userPlan
     }
   }), {
     status: 200,

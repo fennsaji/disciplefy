@@ -84,6 +84,12 @@ import '../../features/study_generation/domain/usecases/manage_personal_notes.da
 import '../../features/user_profile/data/services/user_profile_api_service.dart';
 import '../navigation/study_navigator.dart';
 import '../navigation/go_router_study_navigator.dart';
+import '../../features/tokens/data/datasources/token_remote_data_source.dart';
+import '../../features/tokens/data/repositories/token_repository_impl.dart';
+import '../../features/tokens/domain/repositories/token_repository.dart';
+import '../../features/tokens/domain/usecases/get_token_status.dart';
+import '../../features/tokens/domain/usecases/purchase_tokens.dart';
+import '../../features/tokens/presentation/bloc/token_bloc.dart';
 
 /// Service locator instance for dependency injection
 final sl = GetIt.instance;
@@ -387,5 +393,27 @@ Future<void> initializeDependencies() async {
         updateUserProfile: sl(),
         deleteUserProfile: sl(),
         repository: sl(),
+      ));
+
+  //! Tokens
+  sl.registerLazySingleton<TokenRemoteDataSource>(
+    () => TokenRemoteDataSourceImpl(
+      supabaseClient: sl(),
+    ),
+  );
+
+  sl.registerLazySingleton<TokenRepository>(
+    () => TokenRepositoryImpl(
+      remoteDataSource: sl(),
+      networkInfo: sl(),
+    ),
+  );
+
+  sl.registerLazySingleton(() => GetTokenStatus(sl()));
+  sl.registerLazySingleton(() => PurchaseTokens(sl()));
+
+  sl.registerFactory(() => TokenBloc(
+        getTokenStatus: sl(),
+        purchaseTokens: sl(),
       ));
 }
