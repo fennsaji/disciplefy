@@ -3,6 +3,8 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/error/exceptions.dart';
 import '../../../../core/services/api_auth_helper.dart';
 import '../models/token_status_model.dart';
+import '../models/purchase_history_model.dart';
+import '../models/saved_payment_method_model.dart';
 
 /// Abstract contract for remote token operations.
 abstract class TokenRemoteDataSource {
@@ -13,7 +15,161 @@ abstract class TokenRemoteDataSource {
   /// Throws [AuthenticationException] if authentication fails.
   Future<TokenStatusModel> getTokenStatus();
 
-  /// Purchases additional tokens for standard plan users.
+  /// Creates a payment order for token purchase (step 1 of new flow)
+  ///
+  /// [tokenAmount] - Number of tokens to purchase (must be positive)
+  ///
+  /// Returns order ID for Razorpay payment gateway
+  ///
+  /// Throws [NetworkException] if there's a network issue.
+  /// Throws [ServerException] if there's a server error.
+  /// Throws [AuthenticationException] if authentication fails.
+  /// Throws [ClientException] if order creation fails.
+  Future<String> createPaymentOrder({
+    required int tokenAmount,
+  });
+
+  /// Confirms payment after successful Razorpay transaction (step 2 of new flow)
+  ///
+  /// [paymentId] - Razorpay payment ID
+  /// [orderId] - Razorpay order ID
+  /// [signature] - Razorpay payment signature
+  /// [tokenAmount] - Number of tokens purchased
+  ///
+  /// Returns updated token status after purchase
+  ///
+  /// Throws [NetworkException] if there's a network issue.
+  /// Throws [ServerException] if there's a server error.
+  /// Throws [AuthenticationException] if authentication fails.
+  /// Throws [ClientException] if payment verification fails.
+  Future<TokenStatusModel> confirmPayment({
+    required String paymentId,
+    required String orderId,
+    required String signature,
+    required int tokenAmount,
+  });
+
+  /// Gets purchase history for the authenticated user.
+  ///
+  /// [limit] - Maximum number of purchases to return (optional)
+  /// [offset] - Number of purchases to skip (optional)
+  ///
+  /// Returns list of purchase history records
+  ///
+  /// Throws [NetworkException] if there's a network issue.
+  /// Throws [ServerException] if there's a server error.
+  /// Throws [AuthenticationException] if authentication fails.
+  Future<List<PurchaseHistoryModel>> getPurchaseHistory({
+    int? limit,
+    int? offset,
+  });
+
+  /// Gets purchase statistics for the authenticated user.
+  ///
+  /// Returns aggregated purchase statistics
+  ///
+  /// Throws [NetworkException] if there's a network issue.
+  /// Throws [ServerException] if there's a server error.
+  /// Throws [AuthenticationException] if authentication fails.
+  Future<PurchaseStatisticsModel> getPurchaseStatistics();
+
+  /// Gets saved payment methods for the authenticated user.
+  ///
+  /// Returns list of saved payment methods
+  ///
+  /// Throws [NetworkException] if there's a network issue.
+  /// Throws [ServerException] if there's a server error.
+  /// Throws [AuthenticationException] if authentication fails.
+  Future<List<SavedPaymentMethodModel>> getPaymentMethods();
+
+  /// Saves a new payment method for the authenticated user.
+  ///
+  /// Returns the ID of the saved payment method
+  ///
+  /// Throws [NetworkException] if there's a network issue.
+  /// Throws [ServerException] if there's a server error.
+  /// Throws [AuthenticationException] if authentication fails.
+  Future<String> savePaymentMethod({
+    required String methodType,
+    required String provider,
+    required String token,
+    String? lastFour,
+    String? brand,
+    String? displayName,
+    bool isDefault = false,
+    int? expiryMonth,
+    int? expiryYear,
+  });
+
+  /// Sets a payment method as default.
+  ///
+  /// Returns true on success
+  ///
+  /// Throws [NetworkException] if there's a network issue.
+  /// Throws [ServerException] if there's a server error.
+  /// Throws [AuthenticationException] if authentication fails.
+  Future<bool> setDefaultPaymentMethod(String methodId);
+
+  /// Updates payment method usage timestamp and increments usage count.
+  ///
+  /// This should be called whenever a payment method is used successfully
+  /// to track usage patterns and update last used timestamp.
+  ///
+  /// Returns true on success
+  ///
+  /// Throws [NetworkException] if there's a network issue.
+  /// Throws [ServerException] if there's a server error.
+  /// Throws [AuthenticationException] if authentication fails.
+  Future<bool> updatePaymentMethodUsage(String methodId);
+
+  /// Records payment method usage with additional context for analytics.
+  ///
+  /// [methodId] - ID of the payment method used
+  /// [transactionAmount] - Amount of the transaction
+  /// [transactionType] - Type of transaction ('token_purchase', 'subscription', etc.)
+  /// [metadata] - Additional tracking data
+  ///
+  /// Returns true on success
+  Future<bool> recordPaymentMethodUsage({
+    required String methodId,
+    required double transactionAmount,
+    required String transactionType,
+    Map<String, dynamic>? metadata,
+  });
+
+  /// Deletes a payment method.
+  ///
+  /// Returns true on success
+  ///
+  /// Throws [NetworkException] if there's a network issue.
+  /// Throws [ServerException] if there's a server error.
+  /// Throws [AuthenticationException] if authentication fails.
+  Future<bool> deletePaymentMethod(String methodId);
+
+  /// Gets payment preferences for the authenticated user.
+  ///
+  /// Returns payment preferences
+  ///
+  /// Throws [NetworkException] if there's a network issue.
+  /// Throws [ServerException] if there's a server error.
+  /// Throws [AuthenticationException] if authentication fails.
+  Future<PaymentPreferencesModel> getPaymentPreferences();
+
+  /// Updates payment preferences for the authenticated user.
+  ///
+  /// Returns updated preferences
+  ///
+  /// Throws [NetworkException] if there's a network issue.
+  /// Throws [ServerException] if there's a server error.
+  /// Throws [AuthenticationException] if authentication fails.
+  Future<PaymentPreferencesModel> updatePaymentPreferences({
+    bool? autoSavePaymentMethods,
+    String? preferredWallet,
+    bool? enableOneClickPurchase,
+    String? defaultPaymentType,
+  });
+
+  /// Legacy method - Purchases additional tokens for standard plan users.
   ///
   /// [tokenAmount] - Number of tokens to purchase (must be positive)
   /// [paymentOrderId] - Razorpay payment order ID
@@ -24,12 +180,6 @@ abstract class TokenRemoteDataSource {
   /// Throws [ServerException] if there's a server error.
   /// Throws [AuthenticationException] if authentication fails.
   /// Throws [ClientException] if purchase validation fails.
-  Future<TokenStatusModel> purchaseTokens({
-    required int tokenAmount,
-    required String paymentOrderId,
-    required String paymentId,
-    required String signature,
-  });
 }
 
 /// Implementation of TokenRemoteDataSource using Supabase.
@@ -115,11 +265,8 @@ class TokenRemoteDataSourceImpl implements TokenRemoteDataSource {
   }
 
   @override
-  Future<TokenStatusModel> purchaseTokens({
+  Future<String> createPaymentOrder({
     required int tokenAmount,
-    required String paymentOrderId,
-    required String paymentId,
-    required String signature,
   }) async {
     try {
       // Validate token before making authenticated request
@@ -128,7 +275,7 @@ class TokenRemoteDataSourceImpl implements TokenRemoteDataSource {
       // Use unified authentication helper
       final headers = await ApiAuthHelper.getAuthHeaders();
 
-      print('🪙 [TOKEN_API] Purchasing tokens: $tokenAmount');
+      print('🪙 [TOKEN_API] Creating payment order for $tokenAmount tokens...');
 
       // Validate input parameters
       if (tokenAmount <= 0) {
@@ -138,48 +285,38 @@ class TokenRemoteDataSourceImpl implements TokenRemoteDataSource {
         );
       }
 
-      if (paymentOrderId.isEmpty || paymentId.isEmpty || signature.isEmpty) {
-        throw const ClientException(
-          message: 'Payment verification details are required',
-          code: 'MISSING_PAYMENT_DETAILS',
-        );
-      }
-
-      // Call Supabase Edge Function for token purchase
+      // Call Supabase Edge Function for order creation
       final response = await _supabaseClient.functions.invoke(
         'purchase-tokens',
         body: {
           'token_amount': tokenAmount,
-          'payment_order_id': paymentOrderId,
-          'payment_id': paymentId,
-          'signature': signature,
+          // No payment details - this is just order creation
         },
         headers: headers,
       );
 
-      print('🪙 [TOKEN_API] Purchase response status: ${response.status}');
-      print('🪙 [TOKEN_API] Purchase response data: ${response.data}');
+      print(
+          '🪙 [TOKEN_API] Order creation response status: ${response.status}');
+      print('🪙 [TOKEN_API] Order creation response data: ${response.data}');
 
       if (response.status == 200 && response.data != null) {
         final responseData = response.data as Map<String, dynamic>;
 
         if (responseData['success'] == true) {
-          // Return updated token status after purchase
-          final tokenData = responseData['data'] as Map<String, dynamic>;
-          return TokenStatusModel.fromJson(tokenData);
+          final orderId = responseData['order_id'] as String;
+          return orderId;
         } else {
           final error = responseData['error'] as Map<String, dynamic>?;
           throw ServerException(
-            message: error?['message'] as String? ?? 'Token purchase failed',
-            code: error?['code'] as String? ?? 'PURCHASE_FAILED',
+            message: error?['message'] as String? ?? 'Order creation failed',
+            code: error?['code'] as String? ?? 'ORDER_CREATION_FAILED',
           );
         }
       } else if (response.status == 400) {
-        // Handle validation errors
         final errorData = response.data as Map<String, dynamic>?;
         final error = errorData?['error'] as Map<String, dynamic>?;
         throw ClientException(
-          message: error?['message'] as String? ?? 'Invalid purchase request',
+          message: error?['message'] as String? ?? 'Invalid order request',
           code: error?['code'] as String? ?? 'INVALID_REQUEST',
         );
       } else if (response.status == 401) {
@@ -189,19 +326,19 @@ class TokenRemoteDataSourceImpl implements TokenRemoteDataSource {
         );
       } else if (response.status == 403) {
         throw const ClientException(
-          message: 'Token purchase is not available for your account type.',
-          code: 'PURCHASE_NOT_ALLOWED',
+          message: 'Order creation is not available for your account type.',
+          code: 'ORDER_NOT_ALLOWED',
         );
       } else if (response.status >= 500) {
         throw const ServerException(
           message:
-              'Server error occurred during purchase. Please try again later.',
+              'Server error occurred during order creation. Please try again later.',
           code: 'SERVER_ERROR',
         );
       } else {
         throw const ServerException(
-          message: 'Token purchase failed. Please try again later.',
-          code: 'PURCHASE_FAILED',
+          message: 'Order creation failed. Please try again later.',
+          code: 'ORDER_CREATION_FAILED',
         );
       }
     } on NetworkException {
@@ -213,16 +350,663 @@ class TokenRemoteDataSourceImpl implements TokenRemoteDataSource {
     } on ClientException {
       rethrow;
     } on TokenValidationException {
-      // Convert to AuthenticationException for consistency
       throw const AuthenticationException(
         message: 'Authentication token is invalid. Please sign in again.',
         code: 'TOKEN_INVALID',
       );
     } catch (e) {
-      print('🚨 [TOKEN_API] Unexpected purchase error: $e');
+      print('🚨 [TOKEN_API] Unexpected order creation error: $e');
       throw ClientException(
-        message: 'Unable to complete token purchase. Please try again later.',
-        code: 'PURCHASE_FAILED',
+        message: 'Unable to create payment order. Please try again later.',
+        code: 'ORDER_CREATION_FAILED',
+        context: {'originalError': e.toString()},
+      );
+    }
+  }
+
+  @override
+  Future<TokenStatusModel> confirmPayment({
+    required String paymentId,
+    required String orderId,
+    required String signature,
+    required int tokenAmount,
+  }) async {
+    try {
+      // Validate token before making authenticated request
+      await ApiAuthHelper.validateTokenForRequest();
+
+      // Use unified authentication helper
+      final headers = await ApiAuthHelper.getAuthHeaders();
+
+      print('🪙 [TOKEN_API] Confirming payment: $paymentId');
+
+      // Validate input parameters
+      if (paymentId.isEmpty || orderId.isEmpty || signature.isEmpty) {
+        throw const ClientException(
+          message: 'Payment verification details are required',
+          code: 'MISSING_PAYMENT_DETAILS',
+        );
+      }
+
+      if (tokenAmount <= 0) {
+        throw const ClientException(
+          message: 'Token amount must be greater than zero',
+          code: 'INVALID_TOKEN_AMOUNT',
+        );
+      }
+
+      // Call Supabase Edge Function for payment confirmation
+      final response = await _supabaseClient.functions.invoke(
+        'confirm-token-purchase',
+        body: {
+          'payment_id': paymentId,
+          'order_id': orderId,
+          'signature': signature,
+          'token_amount': tokenAmount,
+        },
+        headers: headers,
+      );
+
+      print(
+          '🪙 [TOKEN_API] Payment confirmation response status: ${response.status}');
+      print(
+          '🪙 [TOKEN_API] Payment confirmation response data: ${response.data}');
+
+      if (response.status == 200 && response.data != null) {
+        final responseData = response.data as Map<String, dynamic>;
+
+        if (responseData['success'] == true) {
+          // Return updated token status after payment confirmation
+          final tokenData = responseData['data'] as Map<String, dynamic>;
+          return TokenStatusModel.fromJson(tokenData);
+        } else {
+          final error = responseData['error'] as Map<String, dynamic>?;
+          throw ServerException(
+            message:
+                error?['message'] as String? ?? 'Payment confirmation failed',
+            code: error?['code'] as String? ?? 'CONFIRMATION_FAILED',
+          );
+        }
+      } else if (response.status == 400) {
+        final errorData = response.data as Map<String, dynamic>?;
+        final error = errorData?['error'] as Map<String, dynamic>?;
+        throw ClientException(
+          message: error?['message'] as String? ??
+              'Invalid payment confirmation request',
+          code: error?['code'] as String? ?? 'INVALID_REQUEST',
+        );
+      } else if (response.status == 401) {
+        throw const AuthenticationException(
+          message: 'Authentication required. Please sign in to continue.',
+          code: 'UNAUTHORIZED',
+        );
+      } else if (response.status == 403) {
+        throw const ClientException(
+          message:
+              'Payment confirmation is not available for your account type.',
+          code: 'CONFIRMATION_NOT_ALLOWED',
+        );
+      } else if (response.status >= 500) {
+        throw const ServerException(
+          message:
+              'Server error occurred during payment confirmation. Please try again later.',
+          code: 'SERVER_ERROR',
+        );
+      } else {
+        throw const ServerException(
+          message: 'Payment confirmation failed. Please try again later.',
+          code: 'CONFIRMATION_FAILED',
+        );
+      }
+    } on NetworkException {
+      rethrow;
+    } on ServerException {
+      rethrow;
+    } on AuthenticationException {
+      rethrow;
+    } on ClientException {
+      rethrow;
+    } on TokenValidationException {
+      throw const AuthenticationException(
+        message: 'Authentication token is invalid. Please sign in again.',
+        code: 'TOKEN_INVALID',
+      );
+    } catch (e) {
+      print('🚨 [TOKEN_API] Unexpected payment confirmation error: $e');
+      throw ClientException(
+        message: 'Unable to confirm payment. Please try again later.',
+        code: 'CONFIRMATION_FAILED',
+        context: {'originalError': e.toString()},
+      );
+    }
+  }
+
+  @override
+  Future<List<PurchaseHistoryModel>> getPurchaseHistory({
+    int? limit,
+    int? offset,
+  }) async {
+    try {
+      // Validate token before making authenticated request
+      await ApiAuthHelper.validateTokenForRequest();
+
+      // Use unified authentication helper
+      final headers = await ApiAuthHelper.getAuthHeaders();
+
+      print('🪙 [TOKEN_API] Fetching purchase history...');
+
+      // Get purchase history from database
+      var query = _supabaseClient
+          .from('purchase_history')
+          .select()
+          .order('purchased_at');
+
+      if (limit != null) {
+        query = query.limit(limit);
+      }
+      if (offset != null) {
+        query = query.range(offset, offset + (limit ?? 50) - 1);
+      }
+
+      final response = await query;
+
+      print(
+          '🪙 [TOKEN_API] Purchase history response: ${response.length} records');
+
+      return response
+          .map((json) => PurchaseHistoryModel.fromJson(json))
+          .toList();
+    } on NetworkException {
+      rethrow;
+    } on ServerException {
+      rethrow;
+    } on AuthenticationException {
+      rethrow;
+    } on TokenValidationException {
+      throw const AuthenticationException(
+        message: 'Authentication token is invalid. Please sign in again.',
+        code: 'TOKEN_INVALID',
+      );
+    } catch (e) {
+      print('🚨 [TOKEN_API] Unexpected purchase history error: $e');
+      throw ClientException(
+        message: 'Unable to fetch purchase history. Please try again later.',
+        code: 'PURCHASE_HISTORY_FAILED',
+        context: {'originalError': e.toString()},
+      );
+    }
+  }
+
+  @override
+  Future<PurchaseStatisticsModel> getPurchaseStatistics() async {
+    try {
+      // Validate token before making authenticated request
+      await ApiAuthHelper.validateTokenForRequest();
+
+      // Use unified authentication helper
+      final headers = await ApiAuthHelper.getAuthHeaders();
+
+      print('🪙 [TOKEN_API] Fetching purchase statistics...');
+
+      // Get purchase statistics using the database function
+      final response = await _supabaseClient.rpc('get_purchase_statistics');
+
+      print('🪙 [TOKEN_API] Purchase statistics response: $response');
+
+      if (response != null) {
+        return PurchaseStatisticsModel.fromJson(
+            response as Map<String, dynamic>);
+      } else {
+        throw const ServerException(
+          message: 'No statistics data available',
+          code: 'NO_STATISTICS_DATA',
+        );
+      }
+    } on NetworkException {
+      rethrow;
+    } on ServerException {
+      rethrow;
+    } on AuthenticationException {
+      rethrow;
+    } on TokenValidationException {
+      throw const AuthenticationException(
+        message: 'Authentication token is invalid. Please sign in again.',
+        code: 'TOKEN_INVALID',
+      );
+    } catch (e) {
+      print('🚨 [TOKEN_API] Unexpected purchase statistics error: $e');
+      throw ClientException(
+        message: 'Unable to fetch purchase statistics. Please try again later.',
+        code: 'PURCHASE_STATISTICS_FAILED',
+        context: {'originalError': e.toString()},
+      );
+    }
+  }
+
+  @override
+  Future<List<SavedPaymentMethodModel>> getPaymentMethods() async {
+    try {
+      // Validate token before making authenticated request
+      await ApiAuthHelper.validateTokenForRequest();
+
+      print('💳 [TOKEN_API] Fetching saved payment methods...');
+
+      // Get payment methods from database using RPC function
+      final response = await _supabaseClient.rpc('get_user_payment_methods');
+
+      print(
+          '💳 [TOKEN_API] Payment methods response: ${response?.length ?? 0} methods');
+
+      if (response is List) {
+        return response
+            .map((json) =>
+                SavedPaymentMethodModel.fromJson(json as Map<String, dynamic>))
+            .toList();
+      } else {
+        return [];
+      }
+    } on NetworkException {
+      rethrow;
+    } on ServerException {
+      rethrow;
+    } on AuthenticationException {
+      rethrow;
+    } on TokenValidationException {
+      throw const AuthenticationException(
+        message: 'Authentication token is invalid. Please sign in again.',
+        code: 'TOKEN_INVALID',
+      );
+    } catch (e) {
+      print('🚨 [TOKEN_API] Unexpected payment methods error: $e');
+      throw ClientException(
+        message: 'Unable to fetch payment methods. Please try again later.',
+        code: 'PAYMENT_METHODS_FAILED',
+        context: {'originalError': e.toString()},
+      );
+    }
+  }
+
+  @override
+  Future<String> savePaymentMethod({
+    required String methodType,
+    required String provider,
+    required String token,
+    String? lastFour,
+    String? brand,
+    String? displayName,
+    bool isDefault = false,
+    int? expiryMonth,
+    int? expiryYear,
+  }) async {
+    try {
+      // Validate token before making authenticated request
+      await ApiAuthHelper.validateTokenForRequest();
+
+      print('💳 [TOKEN_API] Saving payment method: $methodType');
+
+      // Get current user ID
+      final user = _supabaseClient.auth.currentUser;
+      if (user == null) {
+        throw const AuthenticationException(
+          message: 'User not authenticated',
+          code: 'USER_NOT_AUTHENTICATED',
+        );
+      }
+
+      // Save payment method using database function
+      final response =
+          await _supabaseClient.rpc('save_payment_method', params: {
+        'p_user_id': user.id,
+        'p_method_type': methodType,
+        'p_provider': provider,
+        'p_token': token,
+        'p_last_four': lastFour,
+        'p_brand': brand,
+        'p_display_name': displayName,
+        'p_is_default': isDefault,
+        'p_expiry_month': expiryMonth,
+        'p_expiry_year': expiryYear,
+      });
+
+      print('💳 [TOKEN_API] Payment method saved: $response');
+
+      if (response != null) {
+        return response as String;
+      } else {
+        throw const ServerException(
+          message: 'Failed to save payment method',
+          code: 'SAVE_PAYMENT_METHOD_FAILED',
+        );
+      }
+    } on NetworkException {
+      rethrow;
+    } on ServerException {
+      rethrow;
+    } on AuthenticationException {
+      rethrow;
+    } on TokenValidationException {
+      throw const AuthenticationException(
+        message: 'Authentication token is invalid. Please sign in again.',
+        code: 'TOKEN_INVALID',
+      );
+    } catch (e) {
+      print('🚨 [TOKEN_API] Unexpected save payment method error: $e');
+      throw ClientException(
+        message: 'Unable to save payment method. Please try again later.',
+        code: 'SAVE_PAYMENT_METHOD_FAILED',
+        context: {'originalError': e.toString()},
+      );
+    }
+  }
+
+  @override
+  Future<bool> setDefaultPaymentMethod(String methodId) async {
+    try {
+      // Validate token before making authenticated request
+      await ApiAuthHelper.validateTokenForRequest();
+
+      print('💳 [TOKEN_API] Setting default payment method: $methodId');
+
+      // Get current user ID
+      final user = _supabaseClient.auth.currentUser;
+      if (user == null) {
+        throw const AuthenticationException(
+          message: 'User not authenticated',
+          code: 'USER_NOT_AUTHENTICATED',
+        );
+      }
+
+      // Set default payment method using database function
+      final response =
+          await _supabaseClient.rpc('set_default_payment_method', params: {
+        'p_method_id': methodId,
+        'p_user_id': user.id,
+      });
+
+      print('💳 [TOKEN_API] Default payment method result: $response');
+
+      return response == true;
+    } on NetworkException {
+      rethrow;
+    } on ServerException {
+      rethrow;
+    } on AuthenticationException {
+      rethrow;
+    } on TokenValidationException {
+      throw const AuthenticationException(
+        message: 'Authentication token is invalid. Please sign in again.',
+        code: 'TOKEN_INVALID',
+      );
+    } catch (e) {
+      print('🚨 [TOKEN_API] Unexpected set default payment method error: $e');
+      throw ClientException(
+        message:
+            'Unable to set default payment method. Please try again later.',
+        code: 'SET_DEFAULT_PAYMENT_METHOD_FAILED',
+        context: {'originalError': e.toString()},
+      );
+    }
+  }
+
+  @override
+  Future<bool> updatePaymentMethodUsage(String methodId) async {
+    try {
+      // Validate token before making authenticated request
+      await ApiAuthHelper.validateTokenForRequest();
+
+      print('💳 [TOKEN_API] Updating payment method usage: $methodId');
+
+      // Get current user ID
+      final user = _supabaseClient.auth.currentUser;
+      if (user == null) {
+        throw const AuthenticationException(
+          message: 'User not authenticated',
+          code: 'USER_NOT_AUTHENTICATED',
+        );
+      }
+
+      // Update payment method usage using database function
+      final response =
+          await _supabaseClient.rpc('update_payment_method_usage', params: {
+        'p_method_id': methodId,
+        'p_user_id': user.id,
+      });
+
+      print('💳 [TOKEN_API] Payment method usage updated: $response');
+
+      return response == true;
+    } on NetworkException {
+      rethrow;
+    } on ServerException {
+      rethrow;
+    } on AuthenticationException {
+      rethrow;
+    } on TokenValidationException {
+      throw const AuthenticationException(
+        message: 'Authentication token is invalid. Please sign in again.',
+        code: 'TOKEN_INVALID',
+      );
+    } catch (e) {
+      print('🚨 [TOKEN_API] Unexpected update payment method usage error: $e');
+      throw ClientException(
+        message:
+            'Unable to update payment method usage. Please try again later.',
+        code: 'UPDATE_PAYMENT_METHOD_USAGE_FAILED',
+        context: {'originalError': e.toString()},
+      );
+    }
+  }
+
+  @override
+  Future<bool> recordPaymentMethodUsage({
+    required String methodId,
+    required double transactionAmount,
+    required String transactionType,
+    Map<String, dynamic>? metadata,
+  }) async {
+    try {
+      // Validate token before making authenticated request
+      await ApiAuthHelper.validateTokenForRequest();
+
+      print(
+          '💳 [TOKEN_API] Recording payment method usage: $methodId for $transactionType');
+
+      // Get current user ID
+      final user = _supabaseClient.auth.currentUser;
+      if (user == null) {
+        throw const AuthenticationException(
+          message: 'User not authenticated',
+          code: 'USER_NOT_AUTHENTICATED',
+        );
+      }
+
+      // Record detailed payment method usage using database function
+      final response =
+          await _supabaseClient.rpc('record_payment_method_usage', params: {
+        'p_method_id': methodId,
+        'p_user_id': user.id,
+        'p_transaction_amount': transactionAmount,
+        'p_transaction_type': transactionType,
+        'p_metadata': metadata ?? {},
+      });
+
+      print('💳 [TOKEN_API] Payment method usage recorded: $response');
+
+      return response == true;
+    } on NetworkException {
+      rethrow;
+    } on ServerException {
+      rethrow;
+    } on AuthenticationException {
+      rethrow;
+    } on TokenValidationException {
+      throw const AuthenticationException(
+        message: 'Authentication token is invalid. Please sign in again.',
+        code: 'TOKEN_INVALID',
+      );
+    } catch (e) {
+      print('🚨 [TOKEN_API] Unexpected record payment method usage error: $e');
+      throw ClientException(
+        message:
+            'Unable to record payment method usage. Please try again later.',
+        code: 'RECORD_PAYMENT_METHOD_USAGE_FAILED',
+        context: {'originalError': e.toString()},
+      );
+    }
+  }
+
+  @override
+  Future<bool> deletePaymentMethod(String methodId) async {
+    try {
+      // Validate token before making authenticated request
+      await ApiAuthHelper.validateTokenForRequest();
+
+      print('💳 [TOKEN_API] Deleting payment method: $methodId');
+
+      // Get current user ID
+      final user = _supabaseClient.auth.currentUser;
+      if (user == null) {
+        throw const AuthenticationException(
+          message: 'User not authenticated',
+          code: 'USER_NOT_AUTHENTICATED',
+        );
+      }
+
+      // Delete payment method using database function
+      final response =
+          await _supabaseClient.rpc('delete_payment_method', params: {
+        'p_method_id': methodId,
+        'p_user_id': user.id,
+      });
+
+      print('💳 [TOKEN_API] Payment method deleted: $response');
+
+      return response == true;
+    } on NetworkException {
+      rethrow;
+    } on ServerException {
+      rethrow;
+    } on AuthenticationException {
+      rethrow;
+    } on TokenValidationException {
+      throw const AuthenticationException(
+        message: 'Authentication token is invalid. Please sign in again.',
+        code: 'TOKEN_INVALID',
+      );
+    } catch (e) {
+      print('🚨 [TOKEN_API] Unexpected delete payment method error: $e');
+      throw ClientException(
+        message: 'Unable to delete payment method. Please try again later.',
+        code: 'DELETE_PAYMENT_METHOD_FAILED',
+        context: {'originalError': e.toString()},
+      );
+    }
+  }
+
+  @override
+  Future<PaymentPreferencesModel> getPaymentPreferences() async {
+    try {
+      // Validate token before making authenticated request
+      await ApiAuthHelper.validateTokenForRequest();
+
+      print('💳 [TOKEN_API] Fetching payment preferences...');
+
+      // Get payment preferences using database function
+      final response =
+          await _supabaseClient.rpc('get_payment_preferences_for_user');
+
+      print('💳 [TOKEN_API] Payment preferences response: $response');
+
+      if (response != null) {
+        return PaymentPreferencesModel.fromJson(
+            response as Map<String, dynamic>);
+      } else {
+        throw const ServerException(
+          message: 'No payment preferences data available',
+          code: 'NO_PREFERENCES_DATA',
+        );
+      }
+    } on NetworkException {
+      rethrow;
+    } on ServerException {
+      rethrow;
+    } on AuthenticationException {
+      rethrow;
+    } on TokenValidationException {
+      throw const AuthenticationException(
+        message: 'Authentication token is invalid. Please sign in again.',
+        code: 'TOKEN_INVALID',
+      );
+    } catch (e) {
+      print('🚨 [TOKEN_API] Unexpected payment preferences error: $e');
+      throw ClientException(
+        message: 'Unable to fetch payment preferences. Please try again later.',
+        code: 'PAYMENT_PREFERENCES_FAILED',
+        context: {'originalError': e.toString()},
+      );
+    }
+  }
+
+  @override
+  Future<PaymentPreferencesModel> updatePaymentPreferences({
+    bool? autoSavePaymentMethods,
+    String? preferredWallet,
+    bool? enableOneClickPurchase,
+    String? defaultPaymentType,
+  }) async {
+    try {
+      // Validate token before making authenticated request
+      await ApiAuthHelper.validateTokenForRequest();
+
+      print('💳 [TOKEN_API] Updating payment preferences...');
+
+      // Get current user ID
+      final user = _supabaseClient.auth.currentUser;
+      if (user == null) {
+        throw const AuthenticationException(
+          message: 'User not authenticated',
+          code: 'USER_NOT_AUTHENTICATED',
+        );
+      }
+
+      // Update payment preferences using database function
+      final response = await _supabaseClient
+          .rpc('update_payment_preferences_for_user', params: {
+        'p_user_id': user.id,
+        'p_auto_save_payment_methods': autoSavePaymentMethods,
+        'p_preferred_wallet': preferredWallet,
+        'p_enable_one_click_purchase': enableOneClickPurchase,
+        'p_default_payment_type': defaultPaymentType,
+      });
+
+      print('💳 [TOKEN_API] Payment preferences updated: $response');
+
+      if (response != null) {
+        return PaymentPreferencesModel.fromJson(
+            response as Map<String, dynamic>);
+      } else {
+        throw const ServerException(
+          message: 'Failed to update payment preferences',
+          code: 'UPDATE_PREFERENCES_FAILED',
+        );
+      }
+    } on NetworkException {
+      rethrow;
+    } on ServerException {
+      rethrow;
+    } on AuthenticationException {
+      rethrow;
+    } on TokenValidationException {
+      throw const AuthenticationException(
+        message: 'Authentication token is invalid. Please sign in again.',
+        code: 'TOKEN_INVALID',
+      );
+    } catch (e) {
+      print('🚨 [TOKEN_API] Unexpected update payment preferences error: $e');
+      throw ClientException(
+        message:
+            'Unable to update payment preferences. Please try again later.',
+        code: 'UPDATE_PREFERENCES_FAILED',
         context: {'originalError': e.toString()},
       );
     }

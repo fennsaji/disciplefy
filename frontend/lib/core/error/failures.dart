@@ -116,3 +116,30 @@ class NotFoundFailure extends Failure {
     super.context,
   });
 }
+
+/// Failure related to database operations.
+class DatabaseFailure extends Failure {
+  const DatabaseFailure({
+    super.message = 'Database operation failed.',
+    super.code = 'DATABASE_ERROR',
+    super.context,
+  });
+}
+
+/// Failure related to payment processing.
+class PaymentFailure extends Failure {
+  const PaymentFailure({
+    super.message = 'Payment processing failed.',
+    super.code = 'PAYMENT_ERROR',
+    super.context,
+  });
+}
+
+/// Failure related to token operations.
+class TokenFailure extends Failure {
+  const TokenFailure({
+    super.message = 'Token operation failed.',
+    super.code = 'TOKEN_ERROR',
+    super.context,
+  });
+}

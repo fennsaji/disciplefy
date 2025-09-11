@@ -55,7 +55,7 @@ export interface TokenConsumptionResult {
  */
 export interface TokenPurchaseRequest {
   readonly token_amount: number         // Number of tokens to purchase (1-10,000)
-  readonly payment_method_id: string    // Razorpay payment method identifier
+  readonly payment_method_id?: string   // Razorpay payment method identifier (optional for order creation)
 }
 
 /**

@@ -147,3 +147,12 @@ class CacheException extends AppException {
     super.context,
   });
 }
+
+/// Exception thrown when token validation fails.
+class TokenValidationException extends AppException {
+  const TokenValidationException({
+    required super.message,
+    super.code = 'TOKEN_VALIDATION_ERROR',
+    super.context,
+  });
+}

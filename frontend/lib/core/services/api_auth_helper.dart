@@ -3,15 +3,7 @@ import 'package:uuid/uuid.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 
 import '../config/app_config.dart';
-
-/// Exception thrown when token validation fails
-class TokenValidationException implements Exception {
-  final String message;
-  const TokenValidationException(this.message);
-
-  @override
-  String toString() => 'TokenValidationException: $message';
-}
+import '../error/exceptions.dart';
 
 /// Unified authentication helper for all API services
 /// Ensures consistent authentication across the application
@@ -147,8 +139,10 @@ class ApiAuthHelper {
     if (!validateCurrentToken()) {
       print(
           '🔐 [TOKEN_VALIDATION] Token validation failed - throwing exception');
-      throw TokenValidationException(
-          'Authentication token is invalid or expired');
+      throw const TokenValidationException(
+        message: 'Authentication token is invalid or expired',
+        code: 'TOKEN_INVALID',
+      );
     }
 
     print(

@@ -11,6 +11,8 @@ import { ServiceContainer } from '../_shared/core/services.ts'
 import { RequestValidator } from '../_shared/utils/request-validator.ts'
 import { AppError } from '../_shared/utils/error-handler.ts'
 import { TokenPurchaseRequest, TokenPurchaseResult } from '../_shared/types/token-types.ts'
+import Razorpay from 'npm:razorpay@2.9.2'
+import { createHmac } from 'node:crypto'
 
 /**
  * Token purchase handler
@@ -48,84 +50,67 @@ async function handleTokenPurchase(req: Request, services: ServiceContainer): Pr
   }
 
   // 4. Parse and validate request
-  const { token_amount, payment_method_id } = await parseAndValidateRequest(req)
+  const { token_amount } = await parseAndValidateRequest(req)
   
   // 5. Calculate cost in paise for Razorpay (10 tokens = ₹1 = 100 paise)
   const costInRupees = tokenService.calculateCostInRupees(token_amount)
   const costInPaise = costInRupees * 100
   
   try {
-    // 6. Process payment via Razorpay
-    // Note: This is a placeholder for Razorpay integration
-    // In a real implementation, you would integrate with Razorpay SDK
+    // 6. Process payment via Razorpay - Create order
     const paymentResult = await processRazorpayPayment({
       amount: costInPaise,
       currency: 'INR',
-      payment_method_id,
       user_id: userContext.userId!,
+      token_amount,
       metadata: {
-        token_amount,
-        purchase_type: 'token_purchase'
+        user_plan: userPlan,
+        timestamp: new Date().toISOString()
       }
     })
 
-    if (paymentResult.status !== 'captured') {
+    if (!paymentResult.success) {
       throw new AppError(
         'PAYMENT_FAILED',
-        'Payment processing failed',
+        paymentResult.error || 'Payment processing failed',
         402
       )
     }
 
-    // 7. Add purchased tokens to user account
-    const addResult = await tokenService.addPurchasedTokens(
-      userContext.userId!,
-      userPlan,
+    // 7. Store pending purchase (will be confirmed by webhook)
+    await storePendingPurchase({
+      user_id: userContext.userId!,
+      order_id: paymentResult.order_id!,
       token_amount,
-      {
-        userId: userContext.userId,
-        userPlan: userPlan,
-        operation: 'purchase',
-        ipAddress: req.headers.get('x-forwarded-for') || undefined,
-        userAgent: req.headers.get('user-agent') || undefined,
-        timestamp: new Date()
-      }
-    )
+      amount_paise: costInPaise
+    }, services)
 
-    // 8. Get updated token information
-    const updatedTokenInfo = await tokenService.getUserTokens(
-      userContext.userId!,
-      userPlan
-    )
-
-    // 9. Log successful purchase for analytics
-    await analyticsLogger.logEvent('token_purchase_success', {
+    // 8. Log order creation for analytics
+    await analyticsLogger.logEvent('payment_order_created', {
       user_id: userContext.userId,
+      order_id: paymentResult.order_id,
       token_amount,
       cost_in_paise: costInPaise,
       cost_in_rupees: costInRupees,
-      payment_id: paymentResult.payment_id,
       user_plan: userPlan
     }, req.headers.get('x-forwarded-for'))
 
-    // 10. Build success response
-    const response: TokenPurchaseResult = {
+    // 9. Return order details for frontend payment
+    return new Response(JSON.stringify({
       success: true,
-      tokens_purchased: token_amount,
-      cost_paid: costInRupees,
-      tokens_per_rupee: 10,
-      new_token_balance: updatedTokenInfo,
-      payment_id: paymentResult.payment_id
-    }
-
-    return new Response(JSON.stringify(response), {
+      order_id: paymentResult.order_id,
+      amount: costInPaise,
+      currency: 'INR',
+      key_id: Deno.env.get('RAZORPAY_KEY_ID'),
+      token_amount
+    }), {
       status: 200,
       headers: { 'Content-Type': 'application/json' }
     })
 
   } catch (error) {
-    // Log failed purchase for analytics
-    await analyticsLogger.logEvent('token_purchase_failed', {
+    // Log failed order creation for analytics
+    await analyticsLogger.logEvent('payment_order_failed', {
       user_id: userContext.userId,
       token_amount,
       cost_in_paise: costInPaise,
@@ -140,8 +125,8 @@ async function handleTokenPurchase(req: Request, services: ServiceContainer): Pr
 
     console.error('[PurchaseTokens] Unexpected error:', error)
     throw new AppError(
-      'PURCHASE_ERROR',
-      'Failed to process token purchase',
+      'ORDER_CREATION_ERROR',
+      'Failed to create payment order',
       500
     )
   }
@@ -181,13 +166,8 @@ async function parseAndValidateRequest(req: Request): Promise<TokenPurchaseReque
     )
   }
 
-  if (!body.payment_method_id || typeof body.payment_method_id !== 'string') {
-    throw new AppError(
-      'VALIDATION_ERROR', 
-      'payment_method_id is required and must be a string',
-      400
-    )
-  }
+  // payment_method_id is no longer required for order creation
+  // Payment will be processed via frontend Razorpay checkout
 
   // Validate token amount range (1-10,000)
   if (!Number.isInteger(body.token_amount) || body.token_amount < 1 || body.token_amount > 10000) {
@@ -198,74 +178,94 @@ async function parseAndValidateRequest(req: Request): Promise<TokenPurchaseReque
     )
   }
 
-  // Validate payment method ID format (basic validation)
-  if (body.payment_method_id.length < 10 || body.payment_method_id.length > 100) {
-    throw new AppError(
-      'INVALID_PAYMENT_METHOD',
-      'Invalid payment method ID format',
-      400
-    )
-  }
+  // No payment method validation needed for order creation
 
   return {
-    token_amount: body.token_amount,
-    payment_method_id: body.payment_method_id
+    token_amount: body.token_amount
   }
 }
 
 /**
- * Processes Razorpay payment (placeholder implementation)
- * 
- * Note: This is a simplified implementation. In a real application,
- * you would integrate with the actual Razorpay SDK and handle
- * webhooks for payment confirmation.
+ * Processes Razorpay payment - Real implementation
+ * Creates a Razorpay order for frontend payment processing
  */
 async function processRazorpayPayment(params: {
-  amount: number
-  currency: string
-  payment_method_id: string
+  amount: number           // Amount in paise
+  currency: string         // 'INR'
   user_id: string
+  token_amount: number
   metadata: Record<string, any>
-}): Promise<{ status: string; payment_id: string }> {
-  // TODO: Replace with actual Razorpay integration
-  // This is a placeholder that simulates successful payment
-  
-  console.log('[PurchaseTokens] Processing Razorpay payment:', {
-    amount: params.amount,
-    currency: params.currency,
-    user_id: params.user_id,
-    metadata: params.metadata
-  })
-
-  // Simulate payment processing delay
-  await new Promise(resolve => setTimeout(resolve, 100))
-
-  // For development/testing: simulate successful payment
-  // In production, this would integrate with Razorpay SDK:
-  /*
+}): Promise<{ 
+  success: boolean
+  order_id?: string
+  payment_id?: string
+  error?: string 
+}> {
   const razorpay = new Razorpay({
-    key_id: process.env.RAZORPAY_KEY_ID!,
-    key_secret: process.env.RAZORPAY_KEY_SECRET!
+    key_id: Deno.env.get('RAZORPAY_KEY_ID')!,
+    key_secret: Deno.env.get('RAZORPAY_KEY_SECRET')!
   })
 
-  const order = await razorpay.orders.create({
-    amount: params.amount,
-    currency: params.currency,
-    payment_capture: true,
-    receipt: `token_purchase_${params.user_id}_${Date.now()}`,
-    notes: params.metadata
-  })
+  try {
+    console.log(`[Razorpay] Creating order for ${params.amount} paise`)
+    
+    // Create Razorpay order
+    const order = await razorpay.orders.create({
+      amount: params.amount,
+      currency: params.currency,
+      receipt: `token_${params.user_id}_${Date.now()}`,
+      notes: {
+        user_id: params.user_id,
+        token_amount: params.token_amount.toString(),
+        purchase_type: 'token_purchase',
+        ...params.metadata
+      }
+    })
 
-  // Process payment with payment_method_id
-  const payment = await razorpay.payments.capture(
-    params.payment_method_id,
-    params.amount
-  )
-  */
+    console.log(`[Razorpay] Order created: ${order.id}`)
+    
+    return {
+      success: true,
+      order_id: order.id,
+      payment_id: order.id  // Will be updated by webhook
+    }
 
-  return {
-    status: 'captured',
-    payment_id: `razorpay_${Date.now()}_${Math.random().toString(36).substring(2)}`
+  } catch (error) {
+    console.error('[Razorpay] Order creation failed:', error)
+    
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Payment processing failed'
+    }
+  }
+}
+
+/**
+ * Stores pending purchase for webhook confirmation
+ */
+async function storePendingPurchase(params: {
+  user_id: string
+  order_id: string
+  token_amount: number
+  amount_paise: number
+}, services: ServiceContainer): Promise<void> {
+  const { supabaseServiceClient } = services
+  
+  const { data, error } = await supabaseServiceClient
+    .rpc('store_pending_purchase', {
+      p_user_id: params.user_id,
+      p_order_id: params.order_id,
+      p_token_amount: params.token_amount,
+      p_amount_paise: params.amount_paise
+    })
+
+  if (error) {
+    console.error('[Database] Failed to store pending purchase:', error)
+    throw new AppError(
+      'DATABASE_ERROR',
+      'Failed to store purchase record',
+      500
+    )
   }
 }
 

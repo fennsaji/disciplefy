@@ -29,22 +29,6 @@ class RefreshTokenStatus extends TokenEvent {
   const RefreshTokenStatus();
 }
 
-/// Event to purchase additional tokens
-///
-/// Initiates Razorpay payment flow and updates token balance on success
-class PurchaseTokens extends TokenEvent {
-  final int tokenAmount;
-  final String? paymentMethodId; // For testing or pre-selected payment methods
-
-  const PurchaseTokens({
-    required this.tokenAmount,
-    this.paymentMethodId,
-  });
-
-  @override
-  List<Object?> get props => [tokenAmount, paymentMethodId];
-}
-
 /// Event triggered when tokens are consumed by an operation
 ///
 /// Updates the local token count without making API calls
@@ -177,4 +161,68 @@ class ScheduleTokenResetNotification extends TokenEvent {
 /// Proactively loads token data in background for faster UI responses
 class PrefetchTokenStatus extends TokenEvent {
   const PrefetchTokenStatus();
+}
+
+/// Event to create a payment order (step 1 of new payment flow)
+///
+/// Creates Razorpay order and returns order ID for payment gateway
+class CreatePaymentOrder extends TokenEvent {
+  final int tokenAmount;
+
+  const CreatePaymentOrder({
+    required this.tokenAmount,
+  });
+
+  @override
+  List<Object?> get props => [tokenAmount];
+}
+
+/// Event to confirm payment with signature verification
+///
+/// Called after successful Razorpay payment to verify and complete purchase
+class ConfirmPayment extends TokenEvent {
+  final String paymentId;
+  final String orderId;
+  final String signature;
+  final int tokenAmount;
+
+  const ConfirmPayment({
+    required this.paymentId,
+    required this.orderId,
+    required this.signature,
+    required this.tokenAmount,
+  });
+
+  @override
+  List<Object?> get props => [paymentId, orderId, signature, tokenAmount];
+}
+
+/// Event to fetch purchase history for the authenticated user
+///
+/// Loads transaction history with optional pagination
+class GetPurchaseHistory extends TokenEvent {
+  final int? limit;
+  final int? offset;
+
+  const GetPurchaseHistory({
+    this.limit,
+    this.offset,
+  });
+
+  @override
+  List<Object?> get props => [limit, offset];
+}
+
+/// Event to fetch purchase statistics for the authenticated user
+///
+/// Loads aggregated purchase data (total spent, purchases count, etc.)
+class GetPurchaseStatistics extends TokenEvent {
+  const GetPurchaseStatistics();
+}
+
+/// Event to refresh purchase history from the server
+///
+/// Forces a fresh API call for latest purchase data
+class RefreshPurchaseHistory extends TokenEvent {
+  const RefreshPurchaseHistory();
 }

@@ -20,6 +20,11 @@ class AppTheme {
   static const Color surfaceColor = Color(0xFFFFFFFF); // White
   static const Color onSurfaceVariant = Color(0xFF6B7280); // Gray text
 
+  // Additional theme properties that widgets expect
+  static const Color highlightColor =
+      secondaryColor; // Golden Glow for highlights
+  static const Color textSecondary = Color(0xFF6B7280); // Secondary text color
+
   static ThemeData get lightTheme => ThemeData(
         useMaterial3: true,
         colorScheme: ColorScheme.fromSeed(

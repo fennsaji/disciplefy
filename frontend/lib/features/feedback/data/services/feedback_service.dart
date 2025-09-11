@@ -1,5 +1,6 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/services/api_auth_helper.dart';
+import '../../../../core/error/exceptions.dart';
 
 /// Service for submitting user feedback to the backend
 /// References: API Reference v1.2 - Feedback endpoint
