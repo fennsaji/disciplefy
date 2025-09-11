@@ -4,6 +4,7 @@ import 'package:mockito/mockito.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:disciplefy_bible_study/core/services/api_auth_helper.dart';
+import 'package:disciplefy_bible_study/core/error/exceptions.dart';
 
 // Generate mocks
 @GenerateMocks([
@@ -67,8 +68,8 @@ class TestableApiAuthHelper {
     }
 
     if (!validateCurrentToken()) {
-      throw TokenValidationException(
-          'Authentication token is invalid or expired');
+      throw const TokenValidationException(
+          message: 'Authentication token is invalid or expired');
     }
   }
 }

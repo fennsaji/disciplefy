@@ -4,9 +4,16 @@ import 'package:dartz/dartz.dart';
 
 import '../../domain/entities/token_status.dart';
 import '../../domain/usecases/get_token_status.dart' as use_cases;
-import '../../domain/usecases/purchase_tokens.dart' as use_cases;
-import '../../domain/usecases/purchase_tokens.dart' show PurchaseTokensParams;
-import '../../../../core/error/failures.dart';
+import '../../domain/usecases/create_payment_order.dart' as use_cases;
+import '../../domain/usecases/create_payment_order.dart'
+    show CreatePaymentOrderParams;
+import '../../domain/usecases/confirm_payment.dart' as use_cases;
+import '../../domain/usecases/confirm_payment.dart' show ConfirmPaymentParams;
+import '../../domain/usecases/get_purchase_history.dart' as use_cases;
+import '../../domain/usecases/get_purchase_history.dart'
+    show GetPurchaseHistoryParams;
+import '../../domain/usecases/get_purchase_statistics.dart' as use_cases;
+import '../../../../core/error/failures.dart' as failures;
 import '../../../../core/usecases/usecase.dart';
 
 import 'token_event.dart';
@@ -22,7 +29,10 @@ import 'token_state.dart';
 /// - Real-time token balance updates
 class TokenBloc extends Bloc<TokenEvent, TokenState> {
   final use_cases.GetTokenStatus _getTokenStatus;
-  final use_cases.PurchaseTokens _purchaseTokens;
+  final use_cases.CreatePaymentOrder _createPaymentOrder;
+  final use_cases.ConfirmPayment _confirmPayment;
+  final use_cases.GetPurchaseHistory _getPurchaseHistory;
+  final use_cases.GetPurchaseStatistics _getPurchaseStatistics;
 
   // Token status cache with timestamp
   TokenStatus? _cachedTokenStatus;
@@ -34,14 +44,19 @@ class TokenBloc extends Bloc<TokenEvent, TokenState> {
 
   TokenBloc({
     required use_cases.GetTokenStatus getTokenStatus,
-    required use_cases.PurchaseTokens purchaseTokens,
+    required use_cases.CreatePaymentOrder createPaymentOrder,
+    required use_cases.ConfirmPayment confirmPayment,
+    required use_cases.GetPurchaseHistory getPurchaseHistory,
+    required use_cases.GetPurchaseStatistics getPurchaseStatistics,
   })  : _getTokenStatus = getTokenStatus,
-        _purchaseTokens = purchaseTokens,
+        _createPaymentOrder = createPaymentOrder,
+        _confirmPayment = confirmPayment,
+        _getPurchaseHistory = getPurchaseHistory,
+        _getPurchaseStatistics = getPurchaseStatistics,
         super(const TokenInitial()) {
     // Register event handlers
     on<GetTokenStatus>(_onGetTokenStatus);
     on<RefreshTokenStatus>(_onRefreshTokenStatus);
-    on<PurchaseTokens>(_onPurchaseTokens);
     on<ConsumeTokens>(_onConsumeTokens);
     on<SimulateTokenConsumption>(_onSimulateTokenConsumption);
     on<ResetDailyTokens>(_onResetDailyTokens);
@@ -52,6 +67,11 @@ class TokenBloc extends Bloc<TokenEvent, TokenState> {
     on<PaymentFailure>(_onPaymentFailure);
     on<ScheduleTokenResetNotification>(_onScheduleTokenResetNotification);
     on<PrefetchTokenStatus>(_onPrefetchTokenStatus);
+    on<CreatePaymentOrder>(_onCreatePaymentOrder);
+    on<ConfirmPayment>(_onConfirmPayment);
+    on<GetPurchaseHistory>(_onGetPurchaseHistory);
+    on<GetPurchaseStatistics>(_onGetPurchaseStatistics);
+    on<RefreshPurchaseHistory>(_onRefreshPurchaseHistory);
 
     // Start auto-refresh timer
     _startAutoRefreshTimer();
@@ -124,81 +144,6 @@ class TokenBloc extends Bloc<TokenEvent, TokenState> {
           tokenStatus: tokenStatus,
           lastUpdated: DateTime.now(),
         ));
-      },
-    );
-  }
-
-  /// Handles token purchase with Razorpay integration
-  Future<void> _onPurchaseTokens(
-    PurchaseTokens event,
-    Emitter<TokenState> emit,
-  ) async {
-    if (_cachedTokenStatus == null) {
-      emit(const TokenError(
-        failure: CacheFailure(message: 'Token status not available'),
-        operation: 'purchase',
-      ));
-      return;
-    }
-
-    // Only standard users can purchase tokens
-    if (_cachedTokenStatus!.userPlan != UserPlan.standard) {
-      emit(const TokenError(
-        failure: ValidationFailure(
-            message: 'Only standard users can purchase tokens'),
-        operation: 'purchase',
-      ));
-      return;
-    }
-
-    // Start purchase flow
-    emit(TokenPurchasing(
-      currentTokenStatus: _cachedTokenStatus!,
-      tokensToPurchase: event.tokenAmount,
-      amount: event.tokenAmount / 10.0, // 10 tokens = ₹1
-      step: PurchaseStep.initiating,
-    ));
-
-    // Process payment
-    emit(TokenPurchasing(
-      currentTokenStatus: _cachedTokenStatus!,
-      tokensToPurchase: event.tokenAmount,
-      amount: event.tokenAmount / 10.0,
-      step: PurchaseStep.processingPayment,
-    ));
-
-    // TODO: Implement actual Razorpay integration
-    // For now, use mock payment data
-    final purchaseParams = PurchaseTokensParams(
-      tokenAmount: event.tokenAmount,
-      paymentOrderId: 'mock_order_${DateTime.now().millisecondsSinceEpoch}',
-      paymentId: 'mock_payment_${DateTime.now().millisecondsSinceEpoch}',
-      signature: 'mock_signature',
-    );
-
-    final result = await _purchaseTokens(purchaseParams);
-
-    result.fold(
-      (failure) => emit(TokenError(
-        failure: failure,
-        operation: 'purchase',
-        previousTokenStatus: _cachedTokenStatus,
-      )),
-      (updatedTokenStatus) {
-        _updateCache(updatedTokenStatus);
-        emit(TokenPurchaseSuccess(
-          updatedTokenStatus: updatedTokenStatus,
-          tokensPurchased: event.tokenAmount,
-          amountPaid: event.tokenAmount / 10.0,
-          paymentId: 'mock_payment_id', // Will be real payment ID from Razorpay
-        ));
-
-        // Transition back to loaded state after success message
-        Timer(const Duration(seconds: 3), () {
-          if (!isClosed) {
-            add(const GetTokenStatus());
-          }
-        });
       },
     );
   }
@@ -471,6 +416,172 @@ class TokenBloc extends Bloc<TokenEvent, TokenState> {
     );
   }
 
+  /// Handles creating payment order (step 1 of new payment flow)
+  Future<void> _onCreatePaymentOrder(
+    CreatePaymentOrder event,
+    Emitter<TokenState> emit,
+  ) async {
+    if (_cachedTokenStatus == null) {
+      emit(const TokenError(
+        failure: CacheFailure(message: 'Token status not available'),
+        operation: 'order_creation',
+      ));
+      return;
+    }
+
+    // Only standard users can purchase tokens
+    if (_cachedTokenStatus!.userPlan != UserPlan.standard) {
+      emit(const TokenError(
+        failure: ValidationFailure(
+            message: 'Only standard users can purchase tokens'),
+        operation: 'order_creation',
+      ));
+      return;
+    }
+
+    // Emit order creating state
+    emit(TokenOrderCreating(
+      currentTokenStatus: _cachedTokenStatus!,
+      tokensToPurchase: event.tokenAmount,
+      amount: event.tokenAmount / 10.0, // 10 tokens = ₹1
+    ));
+
+    // Create payment order
+    final orderParams = CreatePaymentOrderParams(
+      tokenAmount: event.tokenAmount,
+    );
+
+    final result = await _createPaymentOrder(orderParams);
+
+    result.fold(
+      (failure) => emit(TokenError(
+        failure: failure,
+        operation: 'order_creation',
+        previousTokenStatus: _cachedTokenStatus,
+      )),
+      (orderId) => emit(TokenOrderCreated(
+        currentTokenStatus: _cachedTokenStatus!,
+        tokensToPurchase: event.tokenAmount,
+        amount: event.tokenAmount / 10.0,
+        orderId: orderId,
+      )),
+    );
+  }
+
+  /// Handles confirming payment (step 2 of new payment flow)
+  Future<void> _onConfirmPayment(
+    ConfirmPayment event,
+    Emitter<TokenState> emit,
+  ) async {
+    if (_cachedTokenStatus == null) {
+      emit(const TokenError(
+        failure: CacheFailure(message: 'Token status not available'),
+        operation: 'payment_confirmation',
+      ));
+      return;
+    }
+
+    // Emit payment confirming state
+    emit(TokenPaymentConfirming(
+      currentTokenStatus: _cachedTokenStatus!,
+      tokensPurchased: event.tokenAmount,
+      paymentId: event.paymentId,
+      orderId: event.orderId,
+      signature: event.signature,
+    ));
+
+    // Confirm payment
+    final confirmParams = ConfirmPaymentParams(
+      paymentId: event.paymentId,
+      orderId: event.orderId,
+      signature: event.signature,
+      tokenAmount: event.tokenAmount,
+    );
+
+    final result = await _confirmPayment(confirmParams);
+
+    result.fold(
+      (failure) => emit(TokenError(
+        failure: failure,
+        operation: 'payment_confirmation',
+        previousTokenStatus: _cachedTokenStatus,
+      )),
+      (updatedTokenStatus) {
+        _updateCache(updatedTokenStatus);
+        emit(TokenPurchaseSuccess(
+          updatedTokenStatus: updatedTokenStatus,
+          tokensPurchased: event.tokenAmount,
+          amountPaid: event.tokenAmount / 10.0,
+          paymentId: event.paymentId,
+        ));
+
+        // Transition back to loaded state after success message
+        Timer(const Duration(seconds: 3), () {
+          if (!isClosed) {
+            add(const GetTokenStatus());
+          }
+        });
+      },
+    );
+  }
+
+  /// Handles fetching purchase history
+  Future<void> _onGetPurchaseHistory(
+    GetPurchaseHistory event,
+    Emitter<TokenState> emit,
+  ) async {
+    emit(const PurchaseHistoryLoading());
+
+    final params = GetPurchaseHistoryParams(
+      limit: event.limit,
+      offset: event.offset,
+    );
+
+    final result = await _getPurchaseHistory(params);
+
+    result.fold(
+      (failure) => emit(PurchaseHistoryError(
+        failure: failure,
+        operation: 'fetch_history',
+      )),
+      (purchases) => emit(PurchaseHistoryLoaded(
+        purchases: purchases,
+        lastUpdated: DateTime.now(),
+      )),
+    );
+  }
+
+  /// Handles fetching purchase statistics
+  Future<void> _onGetPurchaseStatistics(
+    GetPurchaseStatistics event,
+    Emitter<TokenState> emit,
+  ) async {
+    emit(const PurchaseStatisticsLoading());
+
+    final result = await _getPurchaseStatistics(NoParams());
+
+    result.fold(
+      (failure) => emit(PurchaseHistoryError(
+        failure: failure,
+        operation: 'fetch_statistics',
+      )),
+      (statistics) => emit(PurchaseStatisticsLoaded(
+        statistics: statistics,
+        lastUpdated: DateTime.now(),
+      )),
+    );
+  }
+
+  /// Handles refreshing purchase history
+  Future<void> _onRefreshPurchaseHistory(
+    RefreshPurchaseHistory event,
+    Emitter<TokenState> emit,
+  ) async {
+    // Get fresh purchase history and statistics
+    add(const GetPurchaseHistory());
+    add(const GetPurchaseStatistics());
+  }
+
   /// Updates the token status cache
   void _updateCache(TokenStatus tokenStatus) {
     _cachedTokenStatus = tokenStatus;
@@ -495,10 +606,20 @@ class TokenBloc extends Bloc<TokenEvent, TokenState> {
 }
 
 /// Cache-related failure
-class CacheFailure extends Failure {
+class CacheFailure extends failures.Failure {
   const CacheFailure({String? message})
       : super(
             message: message ?? 'Cache operation failed', code: 'CACHE_ERROR');
+
+  @override
+  List<Object?> get props => [message];
+}
+
+/// Validation-related failure
+class ValidationFailure extends failures.Failure {
+  const ValidationFailure({String? message})
+      : super(
+            message: message ?? 'Validation failed', code: 'VALIDATION_ERROR');
 
   @override
   List<Object?> get props => [message];

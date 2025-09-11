@@ -1,6 +1,7 @@
 import 'package:equatable/equatable.dart';
 import '../../domain/entities/token_status.dart';
-import '../../../../core/error/failures.dart';
+import '../../domain/entities/purchase_history.dart';
+import '../../../../core/error/failures.dart' as failures;
 
 /// Token BLoC States
 ///
@@ -87,7 +88,7 @@ class TokenLoaded extends TokenState {
 ///
 /// Contains error information and maintains previous token data if available
 class TokenError extends TokenState {
-  final Failure failure;
+  final failures.Failure failure;
   final String? operation; // Which operation failed
   final TokenStatus? previousTokenStatus; // Keep previous data if available
 
@@ -103,16 +104,16 @@ class TokenError extends TokenState {
   /// Get user-friendly error message
   String get errorMessage {
     switch (failure.runtimeType) {
-      case NetworkFailure:
+      case failures.NetworkFailure:
         return 'Network error. Please check your connection and try again.';
-      case ServerFailure:
+      case failures.ServerFailure:
         return 'Server error occurred. Please try again later.';
       case InsufficientTokensFailure:
         final insufficientFailure = failure as InsufficientTokensFailure;
         return 'Insufficient tokens. Need ${insufficientFailure.requiredTokens} but only have ${insufficientFailure.availableTokens}.';
       case TokenPaymentFailure:
         return 'Payment failed. Please try again or contact support.';
-      case AuthenticationFailure:
+      case failures.AuthenticationFailure:
         return 'Authentication error. Please log in and try again.';
       default:
         return failure.message;
@@ -121,7 +122,8 @@ class TokenError extends TokenState {
 
   /// Check if error is recoverable by retrying
   bool get isRecoverable {
-    return failure is NetworkFailure || failure is ServerFailure;
+    return failure is failures.NetworkFailure ||
+        failure is failures.ServerFailure;
   }
 }
 
@@ -189,6 +191,68 @@ class TokenPurchasing extends TokenState {
         return 'Updating token balance...';
     }
   }
+}
+
+/// State when payment order is being created
+///
+/// First step of new payment flow - creates Razorpay order
+class TokenOrderCreating extends TokenState {
+  final TokenStatus currentTokenStatus;
+  final int tokensToPurchase;
+  final double amount;
+
+  const TokenOrderCreating({
+    required this.currentTokenStatus,
+    required this.tokensToPurchase,
+    required this.amount,
+  });
+
+  @override
+  List<Object?> get props => [currentTokenStatus, tokensToPurchase, amount];
+}
+
+/// State when payment order has been created successfully
+///
+/// Contains order ID for opening Razorpay payment gateway
+class TokenOrderCreated extends TokenState {
+  final TokenStatus currentTokenStatus;
+  final int tokensToPurchase;
+  final double amount;
+  final String orderId;
+
+  const TokenOrderCreated({
+    required this.currentTokenStatus,
+    required this.tokensToPurchase,
+    required this.amount,
+    required this.orderId,
+  });
+
+  @override
+  List<Object?> get props =>
+      [currentTokenStatus, tokensToPurchase, amount, orderId];
+}
+
+/// State when payment is being confirmed and verified
+///
+/// Final step after successful Razorpay payment
+class TokenPaymentConfirming extends TokenState {
+  final TokenStatus currentTokenStatus;
+  final int tokensPurchased;
+  final String paymentId;
+  final String orderId;
+  final String signature;
+
+  const TokenPaymentConfirming({
+    required this.currentTokenStatus,
+    required this.tokensPurchased,
+    required this.paymentId,
+    required this.orderId,
+    required this.signature,
+  });
+
+  @override
+  List<Object?> get props =>
+      [currentTokenStatus, tokensPurchased, paymentId, orderId, signature];
 }
 
 /// State when token purchase is completed successfully
@@ -319,7 +383,7 @@ enum PurchaseStep {
 }
 
 /// Custom failures for token-specific errors
-class InsufficientTokensFailure extends Failure {
+class InsufficientTokensFailure extends failures.Failure {
   final int requiredTokens;
   final int availableTokens;
 
@@ -335,7 +399,7 @@ class InsufficientTokensFailure extends Failure {
   List<Object?> get props => [requiredTokens, availableTokens];
 }
 
-class TokenPaymentFailure extends Failure {
+class TokenPaymentFailure extends failures.Failure {
   final String? paymentError;
 
   const TokenPaymentFailure({
@@ -349,7 +413,7 @@ class TokenPaymentFailure extends Failure {
   List<Object?> get props => [paymentError];
 }
 
-class PlanUpgradeFailure extends Failure {
+class PlanUpgradeFailure extends failures.Failure {
   final String? upgradeError;
 
   const PlanUpgradeFailure({
@@ -361,4 +425,118 @@ class PlanUpgradeFailure extends Failure {
 
   @override
   List<Object?> get props => [upgradeError];
+}
+
+/// State when purchase history is being loaded
+///
+/// Shows loading indicators for transaction history
+class PurchaseHistoryLoading extends TokenState {
+  const PurchaseHistoryLoading();
+}
+
+/// State when purchase history has been successfully loaded
+///
+/// Contains the transaction history for the user
+class PurchaseHistoryLoaded extends TokenState {
+  final List<PurchaseHistory> purchases;
+  final PurchaseStatistics? statistics;
+  final DateTime lastUpdated;
+
+  const PurchaseHistoryLoaded({
+    required this.purchases,
+    this.statistics,
+    required this.lastUpdated,
+  });
+
+  @override
+  List<Object?> get props => [purchases, statistics, lastUpdated];
+
+  /// Create a copy with updated fields
+  PurchaseHistoryLoaded copyWith({
+    List<PurchaseHistory>? purchases,
+    PurchaseStatistics? statistics,
+    DateTime? lastUpdated,
+  }) {
+    return PurchaseHistoryLoaded(
+      purchases: purchases ?? this.purchases,
+      statistics: statistics ?? this.statistics,
+      lastUpdated: lastUpdated ?? this.lastUpdated,
+    );
+  }
+
+  /// Check if purchase history is empty
+  bool get isEmpty => purchases.isEmpty;
+
+  /// Get total number of purchases
+  int get totalPurchases => purchases.length;
+
+  /// Get most recent purchase
+  PurchaseHistory? get mostRecentPurchase {
+    if (purchases.isEmpty) return null;
+    return purchases.first; // Assuming list is sorted by date descending
+  }
+}
+
+/// State when purchase statistics are being loaded
+///
+/// Shows loading indicators for aggregated data
+class PurchaseStatisticsLoading extends TokenState {
+  const PurchaseStatisticsLoading();
+}
+
+/// State when purchase statistics have been successfully loaded
+///
+/// Contains aggregated purchase data for the user
+class PurchaseStatisticsLoaded extends TokenState {
+  final PurchaseStatistics statistics;
+  final DateTime lastUpdated;
+
+  const PurchaseStatisticsLoaded({
+    required this.statistics,
+    required this.lastUpdated,
+  });
+
+  @override
+  List<Object?> get props => [statistics, lastUpdated];
+
+  /// Create a copy with updated fields
+  PurchaseStatisticsLoaded copyWith({
+    PurchaseStatistics? statistics,
+    DateTime? lastUpdated,
+  }) {
+    return PurchaseStatisticsLoaded(
+      statistics: statistics ?? this.statistics,
+      lastUpdated: lastUpdated ?? this.lastUpdated,
+    );
+  }
+}
+
+/// State when an error occurs in purchase history operations
+///
+/// Contains error information for history-related failures
+class PurchaseHistoryError extends TokenState {
+  final failures.Failure failure;
+  final String? operation; // Which operation failed
+
+  const PurchaseHistoryError({
+    required this.failure,
+    this.operation,
+  });
+
+  @override
+  List<Object?> get props => [failure, operation];
+
+  /// Get user-friendly error message
+  String get errorMessage {
+    switch (failure.runtimeType) {
+      case failures.NetworkFailure:
+        return 'Network error. Please check your connection and try again.';
+      case failures.ServerFailure:
+        return 'Server error occurred. Please try again later.';
+      case failures.AuthenticationFailure:
+        return 'Authentication error. Please log in and try again.';
+      default:
+        return failure.message;
+    }
+  }
 }

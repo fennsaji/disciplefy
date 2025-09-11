@@ -39,17 +39,45 @@ class _TokenManagementPageState extends State<TokenManagementPage> {
       context: context,
       builder: (context) => TokenPurchaseDialog(
         tokenStatus: tokenStatus,
-        onPurchase: (tokenAmount) {
-          // Handle purchase logic here
+        userEmail: 'user@example.com', // TODO: Get from auth
+        userPhone: '+1234567890', // TODO: Get from auth
+        onCreateOrder: (tokenAmount) {
+          // Create payment order
           context.read<TokenBloc>().add(
-                PurchaseTokens(
+                CreatePaymentOrder(
                   tokenAmount: tokenAmount,
-                  paymentMethodId:
-                      'razorpay', // Will be replaced with actual payment ID
                 ),
               );
         },
-        onCancel: () => Navigator.of(context).pop(),
+        onOrderCreated: (orderId, tokenAmount, amount) {
+          // Handle order created
+          print('Order created: $orderId for $tokenAmount tokens');
+        },
+        onPaymentSuccess: (response) {
+          // Handle payment success - need to store tokenAmount from order
+          // TODO: Get tokenAmount from stored order data
+          context.read<TokenBloc>().add(
+                ConfirmPayment(
+                  paymentId: response.paymentId!,
+                  orderId: response.orderId!,
+                  signature: response.signature!,
+                  tokenAmount:
+                      100, // TODO: Replace with actual token amount from order
+                ),
+              );
+        },
+        onPaymentFailure: (response) {
+          // Handle payment failure
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Payment failed: ${response.message}'),
+              backgroundColor: AppTheme.errorColor,
+            ),
+          );
+        },
+        onCancel: () {
+          Navigator.of(context).pop();
+        },
       ),
     );
   }

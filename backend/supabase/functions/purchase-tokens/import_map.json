@@ -1,0 +1,6 @@
+{
+  "imports": {
+    "razorpay": "npm:razorpay@2.9.2",
+    "crypto": "node:crypto"
+  }
+}

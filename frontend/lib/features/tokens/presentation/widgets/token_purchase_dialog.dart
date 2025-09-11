@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:razorpay_flutter/razorpay_flutter.dart';
 import '../../domain/entities/token_status.dart';
+import '../../domain/entities/saved_payment_method.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/services/payment_service.dart';
+import '../../../../core/constants/payment_constants.dart';
 
 /// Token Purchase Dialog Widget
 ///
@@ -13,14 +17,33 @@ import '../../../../core/theme/app_theme.dart';
 /// - Plan-specific restrictions
 class TokenPurchaseDialog extends StatefulWidget {
   final TokenStatus tokenStatus;
-  final Function(int tokenAmount) onPurchase;
+  final List<SavedPaymentMethod> savedPaymentMethods;
+  final PaymentPreferences? paymentPreferences;
+  final Function(int tokenAmount) onCreateOrder;
+  final Function(String orderId, int tokenAmount, double amount) onOrderCreated;
+  final Function(PaymentSuccessResponse) onPaymentSuccess;
+  final Function(PaymentFailureResponse) onPaymentFailure;
   final VoidCallback onCancel;
+  final String userEmail;
+  final String userPhone;
+  final Function(SavedPaymentMethod)? onUsePaymentMethod;
+  final Function(String methodType, Map<String, dynamic> paymentData)?
+      onSavePaymentMethod;
 
   const TokenPurchaseDialog({
     super.key,
     required this.tokenStatus,
-    required this.onPurchase,
+    this.savedPaymentMethods = const [],
+    this.paymentPreferences,
+    required this.onCreateOrder,
+    required this.onOrderCreated,
+    required this.onPaymentSuccess,
+    required this.onPaymentFailure,
     required this.onCancel,
+    required this.userEmail,
+    required this.userPhone,
+    this.onUsePaymentMethod,
+    this.onSavePaymentMethod,
   });
 
   @override
@@ -35,6 +58,14 @@ class _TokenPurchaseDialogState extends State<TokenPurchaseDialog>
   int _selectedPackageTokens = 0;
   int _customTokens = 50;
   bool _isLoading = false;
+  String? _currentOrderId;
+  String _paymentStatus =
+      'ready'; // ready, creating_order, payment_opened, processing
+
+  // Payment method selection
+  SavedPaymentMethod? _selectedPaymentMethod;
+  String _selectedPaymentType = 'card'; // card, upi, netbanking, wallet
+  bool _savePaymentMethod = false;
 
   // Predefined token packages with attractive pricing tiers
   static const List<TokenPackage> _packages = [
@@ -47,15 +78,40 @@ class _TokenPurchaseDialogState extends State<TokenPurchaseDialog>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
+    // Determine number of tabs based on available payment methods
+    final tabCount = widget.savedPaymentMethods.isNotEmpty ? 3 : 2;
+    _tabController = TabController(length: tabCount, vsync: this);
     _customAmountController =
         TextEditingController(text: _customTokens.toString());
+
+    // Initialize payment preferences
+    _initializePaymentPreferences();
+
+    // Initialize PaymentService
+    PaymentService().initialize();
+  }
+
+  void _initializePaymentPreferences() {
+    if (widget.paymentPreferences != null) {
+      _savePaymentMethod = widget.paymentPreferences!.autoSavePaymentMethods;
+      _selectedPaymentType =
+          widget.paymentPreferences!.defaultPaymentType ?? 'card';
+
+      // Set default payment method if one-click purchase is enabled
+      if (widget.paymentPreferences!.enableOneClickPurchase &&
+          widget.savedPaymentMethods.isNotEmpty) {
+        _selectedPaymentMethod = widget.savedPaymentMethods
+            .where((method) => method.isDefault)
+            .firstOrNull;
+      }
+    }
   }
 
   @override
   void dispose() {
     _tabController.dispose();
     _customAmountController.dispose();
+    PaymentService().dispose();
     super.dispose();
   }
 
@@ -198,9 +254,20 @@ class _TokenPurchaseDialogState extends State<TokenPurchaseDialog>
             labelColor: theme.colorScheme.primary,
             unselectedLabelColor: theme.colorScheme.onSurfaceVariant,
             indicatorColor: theme.colorScheme.primary,
-            tabs: const [
-              Tab(text: 'Packages'),
-              Tab(text: 'Custom Amount'),
+            tabs: [
+              if (widget.savedPaymentMethods.isNotEmpty)
+                const Tab(
+                  icon: Icon(Icons.payment, size: 20),
+                  text: 'Saved Methods',
+                ),
+              const Tab(
+                icon: Icon(Icons.local_offer, size: 20),
+                text: 'Packages',
+              ),
+              const Tab(
+                icon: Icon(Icons.edit, size: 20),
+                text: 'Custom',
+              ),
             ],
           ),
           const SizedBox(height: 16),
@@ -208,12 +275,171 @@ class _TokenPurchaseDialogState extends State<TokenPurchaseDialog>
             child: TabBarView(
               controller: _tabController,
               children: [
+                if (widget.savedPaymentMethods.isNotEmpty)
+                  _buildSavedPaymentMethods(theme),
                 _buildPackageSelection(theme),
                 _buildCustomAmountInput(theme),
               ],
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildSavedPaymentMethods(ThemeData theme) {
+    return SingleChildScrollView(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Choose a saved payment method:',
+            style: TextStyle(
+              color: theme.colorScheme.onSurfaceVariant,
+              fontSize: 16,
+            ),
+          ),
+          const SizedBox(height: 16),
+          ...widget.savedPaymentMethods
+              .map((method) => _buildSavedPaymentMethodCard(method, theme)),
+          const SizedBox(height: 16),
+          // Show token amount selection for saved methods
+          Text(
+            'Choose token amount:',
+            style: TextStyle(
+              color: theme.colorScheme.onSurfaceVariant,
+              fontSize: 16,
+            ),
+          ),
+          const SizedBox(height: 12),
+          ..._packages.map((package) => _buildPackageCard(package)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSavedPaymentMethodCard(
+      SavedPaymentMethod method, ThemeData theme) {
+    final isSelected = _selectedPaymentMethod?.id == method.id;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      child: Material(
+        borderRadius: BorderRadius.circular(12),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(12),
+          onTap: () {
+            setState(() {
+              _selectedPaymentMethod = isSelected ? null : method;
+            });
+          },
+          child: Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: isSelected
+                    ? theme.colorScheme.primary
+                    : theme.colorScheme.outline,
+                width: isSelected ? 2 : 1,
+              ),
+              color: isSelected
+                  ? theme.colorScheme.primary.withOpacity(0.05)
+                  : theme.cardColor,
+            ),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: isSelected
+                        ? theme.colorScheme.primary
+                        : theme.colorScheme.primary.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(
+                    _getPaymentMethodIcon(method.methodType),
+                    color: isSelected
+                        ? theme.colorScheme.onPrimary
+                        : theme.colorScheme.primary,
+                    size: 24,
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Text(
+                            method.displayName ??
+                                _getPaymentMethodName(method.methodType),
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: theme.colorScheme.onSurface,
+                            ),
+                          ),
+                          if (method.isDefault) ...[
+                            const SizedBox(width: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: Colors.blue.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: Text(
+                                'DEFAULT',
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.blue[700],
+                                ),
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        _getPaymentMethodDetails(method),
+                        style: TextStyle(
+                          color: theme.colorScheme.onSurfaceVariant,
+                          fontSize: 14,
+                        ),
+                      ),
+                      if (method.lastUsed != null) ...[
+                        const SizedBox(height: 2),
+                        Text(
+                          'Last used: ${_formatLastUsed(method.lastUsed!)}',
+                          style: TextStyle(
+                            color: theme.colorScheme.onSurfaceVariant,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+                if (isSelected)
+                  Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.primary,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(
+                      Icons.check,
+                      color: Colors.white,
+                      size: 16,
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -517,16 +743,36 @@ class _TokenPurchaseDialogState extends State<TokenPurchaseDialog>
     final isPackageSelected = _selectedPackageTokens > 0;
     final isCustomValid = _customTokens >= 10 && _customTokens <= 9999;
     final currentTab = _tabController.index;
+    final hasSavedMethods = widget.savedPaymentMethods.isNotEmpty;
 
-    final canPurchase = currentTab == 0 ? isPackageSelected : isCustomValid;
-    final tokenAmount =
-        currentTab == 0 ? _selectedPackageTokens : _customTokens;
-    final cost = currentTab == 0
-        ? _packages
-            .firstWhere((p) => p.tokens == _selectedPackageTokens,
-                orElse: () => const TokenPackage(tokens: 0, rupees: 0))
-            .rupees
-        : (_customTokens / 10).ceil();
+    // Determine purchase readiness based on current tab
+    bool canPurchase;
+    int tokenAmount;
+    int cost;
+
+    if (hasSavedMethods && currentTab == 0) {
+      // Saved payment methods tab
+      canPurchase = _selectedPaymentMethod != null && isPackageSelected;
+      tokenAmount = _selectedPackageTokens;
+      cost = _packages
+          .firstWhere((p) => p.tokens == _selectedPackageTokens,
+              orElse: () => const TokenPackage(tokens: 0, rupees: 0))
+          .rupees;
+    } else if ((hasSavedMethods && currentTab == 1) ||
+        (!hasSavedMethods && currentTab == 0)) {
+      // Packages tab
+      canPurchase = isPackageSelected;
+      tokenAmount = _selectedPackageTokens;
+      cost = _packages
+          .firstWhere((p) => p.tokens == _selectedPackageTokens,
+              orElse: () => const TokenPackage(tokens: 0, rupees: 0))
+          .rupees;
+    } else {
+      // Custom amount tab
+      canPurchase = isCustomValid;
+      tokenAmount = _customTokens;
+      cost = (_customTokens / 10).ceil();
+    }
 
     return Container(
       padding: const EdgeInsets.all(24),
@@ -611,10 +857,10 @@ class _TokenPurchaseDialogState extends State<TokenPurchaseDialog>
                       : Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            const Icon(Icons.payment, size: 20),
+                            Icon(_getPaymentStatusIcon(), size: 20),
                             const SizedBox(width: 8),
                             Text(
-                              canPurchase ? 'Purchase' : 'Select Amount',
+                              _getPaymentStatusText(canPurchase),
                               style: const TextStyle(
                                 fontWeight: FontWeight.w600,
                               ),
@@ -699,22 +945,204 @@ class _TokenPurchaseDialogState extends State<TokenPurchaseDialog>
     );
   }
 
+  String _getPaymentStatusText(bool canPurchase) {
+    if (!canPurchase) return 'Select Amount';
+
+    switch (_paymentStatus) {
+      case 'creating_order':
+        return 'Creating Order...';
+      case 'payment_opened':
+        return 'Payment Gateway Opened';
+      case 'processing':
+        return 'Processing...';
+      case 'ready':
+      default:
+        return 'Purchase';
+    }
+  }
+
+  IconData _getPaymentStatusIcon() {
+    switch (_paymentStatus) {
+      case 'creating_order':
+        return Icons.hourglass_empty;
+      case 'payment_opened':
+        return Icons.open_in_new;
+      case 'processing':
+        return Icons.sync;
+      case 'ready':
+      default:
+        return Icons.payment;
+    }
+  }
+
   Future<void> _handlePurchase(int tokenAmount) async {
     if (_isLoading) return;
 
     setState(() {
       _isLoading = true;
+      _paymentStatus = 'creating_order';
     });
 
     try {
-      // Trigger purchase flow - this will integrate with Razorpay
-      widget.onPurchase(tokenAmount);
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
+      // If using saved payment method, handle differently
+      if (_selectedPaymentMethod != null) {
+        await _handleSavedPaymentMethodPurchase(tokenAmount);
+      } else {
+        // Standard payment flow
+        widget.onCreateOrder(tokenAmount);
       }
+    } catch (e) {
+      setState(() {
+        _paymentStatus = 'ready';
+        _isLoading = false;
+      });
+
+      // Handle errors
+      widget.onPaymentFailure(PaymentFailureResponse(
+        1, // code
+        'Failed to initialize payment: ${e.toString()}', // message
+        {'error': 'INITIALIZATION_ERROR'}, // data
+      ));
+    }
+  }
+
+  Future<void> _handleSavedPaymentMethodPurchase(int tokenAmount) async {
+    if (_selectedPaymentMethod == null || widget.onUsePaymentMethod == null) {
+      throw Exception('Saved payment method not properly configured');
+    }
+
+    setState(() {
+      _paymentStatus = 'processing';
+    });
+
+    try {
+      // Use the saved payment method
+      widget.onUsePaymentMethod!(_selectedPaymentMethod!);
+
+      // For now, we'll still go through the normal payment flow
+      // In a real implementation, this might directly charge the saved method
+      widget.onCreateOrder(tokenAmount);
+    } catch (e) {
+      setState(() {
+        _paymentStatus = 'ready';
+        _isLoading = false;
+      });
+      rethrow;
+    }
+  }
+
+  // Helper methods for payment method display
+  IconData _getPaymentMethodIcon(String methodType) {
+    switch (methodType.toLowerCase()) {
+      case 'card':
+        return Icons.credit_card;
+      case 'upi':
+        return Icons.account_balance;
+      case 'netbanking':
+        return Icons.account_balance;
+      case 'wallet':
+        return Icons.account_balance_wallet;
+      default:
+        return Icons.payment;
+    }
+  }
+
+  String _getPaymentMethodName(String methodType) {
+    switch (methodType.toLowerCase()) {
+      case 'card':
+        return 'Credit/Debit Card';
+      case 'upi':
+        return 'UPI';
+      case 'netbanking':
+        return 'Net Banking';
+      case 'wallet':
+        return 'Mobile Wallet';
+      default:
+        return 'Payment Method';
+    }
+  }
+
+  String _getPaymentMethodDetails(SavedPaymentMethod method) {
+    if (method.methodType.toLowerCase() == 'card' && method.lastFour != null) {
+      final brand = method.brand ?? 'Card';
+      return '$brand •••• ${method.lastFour}';
+    }
+    if (method.methodType.toLowerCase() == 'upi' && method.lastFour != null) {
+      return '${method.lastFour}@upi';
+    }
+    if (method.methodType.toLowerCase() == 'wallet' && method.brand != null) {
+      return method.brand!;
+    }
+    return method.provider;
+  }
+
+  String _formatLastUsed(DateTime lastUsed) {
+    final now = DateTime.now();
+    final difference = now.difference(lastUsed);
+
+    if (difference.inDays == 0) {
+      if (difference.inHours == 0) {
+        return '${difference.inMinutes} minutes ago';
+      }
+      return '${difference.inHours} hours ago';
+    } else if (difference.inDays < 30) {
+      return '${difference.inDays} days ago';
+    } else {
+      return '${lastUsed.day}/${lastUsed.month}/${lastUsed.year}';
+    }
+  }
+
+  /// Called when order is created successfully - opens Razorpay payment gateway
+  Future<void> _openPaymentGateway(
+      String orderId, int tokenAmount, double amount) async {
+    setState(() {
+      _currentOrderId = orderId;
+      _paymentStatus = 'payment_opened';
+    });
+
+    try {
+      await PaymentService().openCheckout(
+        orderId: orderId,
+        amount: amount,
+        description: '$tokenAmount tokens for Disciplefy Bible Study',
+        userEmail: widget.userEmail,
+        userPhone: widget.userPhone,
+        onSuccess: (PaymentSuccessResponse response) {
+          setState(() {
+            _paymentStatus = 'processing';
+          });
+
+          // Handle payment success
+          widget.onPaymentSuccess(response);
+
+          // Close dialog after successful payment
+          Navigator.of(context).pop();
+        },
+        onError: (PaymentFailureResponse response) {
+          setState(() {
+            _paymentStatus = 'ready';
+            _isLoading = false;
+          });
+
+          // Handle payment failure
+          widget.onPaymentFailure(response);
+        },
+        onExternalWallet: (ExternalWalletResponse response) {
+          print('External wallet selected: ${response.walletName}');
+        },
+      );
+    } catch (e) {
+      setState(() {
+        _paymentStatus = 'ready';
+        _isLoading = false;
+      });
+
+      // Handle errors
+      widget.onPaymentFailure(PaymentFailureResponse(
+        2, // code
+        'Failed to open payment gateway: ${e.toString()}', // message
+        {'error': 'GATEWAY_ERROR'}, // data
+      ));
     }
   }
 }
