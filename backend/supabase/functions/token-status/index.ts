@@ -6,7 +6,7 @@
  * plan-based information and token details.
  */
 
-import { createSimpleFunction } from '../_shared/core/function-factory.ts'
+import { createFunction } from '../_shared/core/function-factory.ts'
 import { ServiceContainer } from '../_shared/core/services.ts'
 import { AppError } from '../_shared/utils/error-handler.ts'
 
@@ -132,7 +132,8 @@ async function parseAndValidateRequest(req: Request): Promise<void> {
 }
 
 // Create the Edge Function using the factory pattern
-createSimpleFunction(handleTokenStatus, {
+createFunction(handleTokenStatus, {
+  requireAuth: true,  // SECURITY: Force authentication for token status
   enableAnalytics: true,
   allowedMethods: ['GET']
 })

@@ -1,7 +1,9 @@
 import 'package:equatable/equatable.dart';
 import '../../domain/entities/token_status.dart';
 import '../../domain/entities/purchase_history.dart';
+import '../../domain/entities/purchase_statistics.dart';
 import '../../../../core/error/failures.dart' as failures;
+import '../../../../core/error/token_failures.dart';
 
 /// Token BLoC States
 ///
@@ -275,9 +277,9 @@ class TokenPurchaseSuccess extends TokenState {
   List<Object?> get props =>
       [updatedTokenStatus, tokensPurchased, amountPaid, paymentId];
 
-  /// Get success message
+  /// Get success message without currency formatting (view layer handles currency)
   String get successMessage {
-    return 'Successfully purchased $tokensPurchased tokens for ₹${amountPaid.toStringAsFixed(2)}';
+    return 'Successfully purchased $tokensPurchased tokens for ${amountPaid.toStringAsFixed(2)}';
   }
 }
 
@@ -380,51 +382,6 @@ enum PurchaseStep {
   processingPayment,
   verifyingPayment,
   updatingBalance,
-}
-
-/// Custom failures for token-specific errors
-class InsufficientTokensFailure extends failures.Failure {
-  final int requiredTokens;
-  final int availableTokens;
-
-  const InsufficientTokensFailure({
-    required this.requiredTokens,
-    required this.availableTokens,
-  }) : super(
-          message: 'Insufficient tokens for operation',
-          code: 'INSUFFICIENT_TOKENS',
-        );
-
-  @override
-  List<Object?> get props => [requiredTokens, availableTokens];
-}
-
-class TokenPaymentFailure extends failures.Failure {
-  final String? paymentError;
-
-  const TokenPaymentFailure({
-    this.paymentError,
-  }) : super(
-          message: 'Payment processing failed',
-          code: 'PAYMENT_FAILED',
-        );
-
-  @override
-  List<Object?> get props => [paymentError];
-}
-
-class PlanUpgradeFailure extends failures.Failure {
-  final String? upgradeError;
-
-  const PlanUpgradeFailure({
-    this.upgradeError,
-  }) : super(
-          message: 'Plan upgrade failed',
-          code: 'PLAN_UPGRADE_FAILED',
-        );
-
-  @override
-  List<Object?> get props => [upgradeError];
 }
 
 /// State when purchase history is being loaded

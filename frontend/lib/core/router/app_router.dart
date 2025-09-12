@@ -201,6 +201,8 @@ extension AppRouterExtension on GoRouter {
   void goToSettings() => go(AppRoutes.settings);
   void goToSaved() => go(AppRoutes.saved);
   void goToStudyTopics() => go(AppRoutes.studyTopics);
+
+  /// Navigates to the token management page where users can view balance, purchase tokens, and manage payment methods.
   void goToTokenManagement() => go(AppRoutes.tokenManagement);
   void goToLogin() => go(AppRoutes.login);
   void goToAuthCallback() => go(AppRoutes.authCallback);

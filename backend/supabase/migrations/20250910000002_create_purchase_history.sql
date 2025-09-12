@@ -1,5 +1,5 @@
 -- Migration: Create Purchase History System
--- Date: January 10, 2025
+-- Date: September 10, 2025
 -- Purpose: Add comprehensive purchase history tracking for Phase 2
 
 -- Create purchase_history table
@@ -48,9 +48,20 @@ CREATE POLICY "Service role can manage purchase history"
 ON purchase_history FOR ALL 
 USING (auth.role() = 'service_role');
 
--- Function to generate receipt number
+-- Create sequence for receipt numbers
+CREATE SEQUENCE purchase_receipt_seq START WITH 1;
+
+-- Create counter table for monthly reset tracking
+CREATE TABLE receipt_counters (
+  year_month TEXT PRIMARY KEY,
+  last_seq INTEGER NOT NULL DEFAULT 0,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Function to generate receipt number (concurrency-safe)
 CREATE OR REPLACE FUNCTION generate_receipt_number()
-RETURNS TEXT AS $$
+RETURNS TEXT AS $
 DECLARE
   receipt_num TEXT;
   year_month TEXT;
@@ -59,19 +70,20 @@ BEGIN
   -- Format: DISC-YYYYMM-NNNN (e.g., DISC-202501-0001)
   year_month := TO_CHAR(NOW(), 'YYYYMM');
   
-  -- Get next sequence number for this month
-  SELECT COALESCE(MAX(
-    CAST(SUBSTRING(receipt_number FROM 'DISC-[0-9]{6}-([0-9]{4})') AS INTEGER)
-  ), 0) + 1
-  INTO sequence_num
-  FROM purchase_history
-  WHERE receipt_number LIKE 'DISC-' || year_month || '-%';
+  -- Atomically get next sequence number for this month
+  INSERT INTO receipt_counters (year_month, last_seq)
+  VALUES (year_month, 1)
+  ON CONFLICT (year_month) DO UPDATE 
+  SET 
+    last_seq = receipt_counters.last_seq + 1,
+    updated_at = NOW()
+  RETURNING last_seq INTO sequence_num;
   
   receipt_num := 'DISC-' || year_month || '-' || LPAD(sequence_num::TEXT, 4, '0');
   
   RETURN receipt_num;
 END;
-$$ LANGUAGE plpgsql;
+$ LANGUAGE plpgsql;
 
 -- Function to record purchase in history
 CREATE OR REPLACE FUNCTION record_purchase_history(
@@ -168,12 +180,12 @@ BEGIN
   RETURN QUERY
   WITH stats AS (
     SELECT 
-      COUNT(*)::INTEGER as purchase_count,
-      SUM(ph.token_amount)::INTEGER as token_sum,
-      SUM(ph.cost_rupees)::DECIMAL(10,2) as spent_sum,
-      AVG(ph.cost_rupees)::DECIMAL(10,2) as avg_purchase,
+      COALESCE(COUNT(*)::INTEGER, 0) as purchase_count,
+      COALESCE(SUM(ph.token_amount)::INTEGER, 0) as token_sum,
+      COALESCE(SUM(ph.cost_rupees)::DECIMAL(10,2), 0.00) as spent_sum,
+      COALESCE(AVG(ph.cost_rupees)::DECIMAL(10,2), 0.00) as avg_purchase,
       MAX(ph.purchased_at) as last_purchase,
-      MODE() WITHIN GROUP (ORDER BY ph.payment_method) as common_method
+      COALESCE(MODE() WITHIN GROUP (ORDER BY ph.payment_method), 'unknown') as common_method
     FROM purchase_history ph
     WHERE ph.user_id = p_user_id
       AND ph.status = 'completed'

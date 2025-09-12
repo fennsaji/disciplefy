@@ -37,8 +37,14 @@ class ConfirmPaymentParams extends Equatable {
     required this.orderId,
     required this.signature,
     required this.tokenAmount,
-  });
+  })  : assert(paymentId != '', 'paymentId cannot be empty'),
+        assert(orderId != '', 'orderId cannot be empty'),
+        assert(signature != '', 'signature cannot be empty'),
+        assert(tokenAmount > 0, 'tokenAmount must be greater than 0');
 
   @override
   List<Object?> get props => [paymentId, orderId, signature, tokenAmount];
+
+  @override
+  String toString() => 'ConfirmPaymentParams(tokenAmount: $tokenAmount)';
 }

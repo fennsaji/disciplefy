@@ -318,7 +318,7 @@ class PaymentMethodValidator {
 
     // Validate wallet-specific fields
     if (methodType.toLowerCase() == 'wallet') {
-      final walletResult = validateWalletProvider(brand, methodType);
+      final walletResult = validateWalletProvider(provider, methodType);
       if (!walletResult.isValid) return walletResult;
     }
 
@@ -411,10 +411,22 @@ class TokenPurchaseValidator {
     return const ValidationResult.valid();
   }
 
-  /// Validate token to amount conversion
+  /// Token pricing configuration
+  static const int tokensPerRupee = 10; // 10 tokens = ₹1
+  static const int paisePerRupee = 100; // 100 paise = ₹1
+
+  /// Validate token to amount conversion with precise pricing calculation
   static ValidationResult validateTokenAmountConversion(
       int tokenAmount, double amount) {
-    final expectedAmount = (tokenAmount / 10).ceil().toDouble();
+    // Calculate expected amount using precise arithmetic
+    // Price per token in paise: 100 paise / 10 tokens = 10 paise per token
+    const pricePerTokenPaise = paisePerRupee ~/ tokensPerRupee;
+
+    // Calculate total cost in paise, then convert to rupees
+    final totalPaise = tokenAmount * pricePerTokenPaise;
+    final expectedAmount =
+        totalPaise / paisePerRupee; // Convert paise to rupees
+
     const tolerance = 0.01; // Allow for small floating point differences
 
     if ((amount - expectedAmount).abs() > tolerance) {
@@ -425,6 +437,8 @@ class TokenPurchaseValidator {
           'token_amount': tokenAmount,
           'provided_amount': amount,
           'expected_amount': expectedAmount,
+          'price_per_token_paise': pricePerTokenPaise,
+          'total_paise': totalPaise,
         },
       );
     }

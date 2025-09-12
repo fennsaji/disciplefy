@@ -3,7 +3,9 @@ import 'package:dartz/dartz.dart';
 import '../../../../core/error/exceptions.dart';
 import '../../../../core/error/failures.dart';
 import '../../../../core/network/network_info.dart';
+import '../../../../core/validation/payment_validators.dart';
 import '../../domain/entities/saved_payment_method.dart';
+import '../../domain/entities/payment_preferences.dart';
 import '../../domain/repositories/payment_method_repository.dart';
 import '../datasources/token_remote_data_source.dart';
 
@@ -25,9 +27,7 @@ class PaymentMethodRepositoryImpl implements PaymentMethodRepository {
         print('💳 [PAYMENT_REPO] Fetching payment methods from remote...');
 
         final paymentMethodModels = await _remoteDataSource.getPaymentMethods();
-        final paymentMethods = paymentMethodModels
-            .map((model) => model as SavedPaymentMethod)
-            .toList();
+        final paymentMethods = paymentMethodModels;
 
         print(
             '💳 [PAYMENT_REPO] Payment methods fetched successfully: ${paymentMethods.length} methods');
@@ -87,6 +87,27 @@ class PaymentMethodRepositoryImpl implements PaymentMethodRepository {
     int? expiryMonth,
     int? expiryYear,
   }) async {
+    // Validate inputs before making network call
+    final validationResult = _validateSavePaymentMethodInputs(
+      methodType: methodType,
+      provider: provider,
+      token: token,
+      lastFour: lastFour,
+      brand: brand,
+      displayName: displayName,
+      expiryMonth: expiryMonth,
+      expiryYear: expiryYear,
+    );
+
+    if (!validationResult.isValid) {
+      print(
+          '🚨 [PAYMENT_REPO] Input validation failed: ${validationResult.errorMessage}');
+      return Left(ClientFailure(
+        message: validationResult.errorMessage ?? 'Invalid input data',
+        code: validationResult.errorCode ?? 'VALIDATION_FAILED',
+      ));
+    }
+
     if (await _networkInfo.isConnected) {
       try {
         print('💳 [PAYMENT_REPO] Saving payment method: $methodType');
@@ -396,7 +417,7 @@ class PaymentMethodRepositoryImpl implements PaymentMethodRepository {
 
         final preferencesModel =
             await _remoteDataSource.getPaymentPreferences();
-        final preferences = preferencesModel as PaymentPreferences;
+        final preferences = preferencesModel;
 
         print('💳 [PAYMENT_REPO] Payment preferences fetched successfully');
 
@@ -466,7 +487,7 @@ class PaymentMethodRepositoryImpl implements PaymentMethodRepository {
           enableOneClickPurchase: enableOneClickPurchase,
           defaultPaymentType: defaultPaymentType,
         );
-        final preferences = preferencesModel as PaymentPreferences;
+        final preferences = preferencesModel;
 
         print('💳 [PAYMENT_REPO] Payment preferences updated successfully');
 
@@ -516,5 +537,94 @@ class PaymentMethodRepositoryImpl implements PaymentMethodRepository {
         code: 'NO_INTERNET',
       ));
     }
+  }
+
+  /// Validates inputs for savePaymentMethod before making remote calls
+  ValidationResult _validateSavePaymentMethodInputs({
+    required String methodType,
+    required String provider,
+    required String token,
+    String? lastFour,
+    String? brand,
+    String? displayName,
+    int? expiryMonth,
+    int? expiryYear,
+  }) {
+    // Validate required fields are non-empty
+    if (methodType.trim().isEmpty) {
+      return const ValidationResult.invalid(
+        errorMessage: 'Payment method type is required',
+        errorCode: 'MISSING_METHOD_TYPE',
+      );
+    }
+
+    if (provider.trim().isEmpty) {
+      return const ValidationResult.invalid(
+        errorMessage: 'Payment provider is required',
+        errorCode: 'MISSING_PROVIDER',
+      );
+    }
+
+    if (token.trim().isEmpty) {
+      return const ValidationResult.invalid(
+        errorMessage: 'Payment token is required',
+        errorCode: 'MISSING_TOKEN',
+      );
+    }
+
+    // Validate lastFour format if provided
+    if (lastFour != null && lastFour.isNotEmpty) {
+      final trimmedLastFour = lastFour.trim();
+      if (methodType.toLowerCase() == 'card' &&
+          !RegExp(r'^\d{4}$').hasMatch(trimmedLastFour)) {
+        return const ValidationResult.invalid(
+          errorMessage:
+              'Last four digits must be exactly 4 numbers for card payments',
+          errorCode: 'INVALID_LAST_FOUR_FORMAT',
+        );
+      }
+    }
+
+    // Validate expiry fields for cards
+    if (methodType.toLowerCase() == 'card') {
+      if (expiryMonth != null) {
+        if (expiryMonth < 1 || expiryMonth > 12) {
+          return ValidationResult.invalid(
+            errorMessage: 'Expiry month must be between 1 and 12',
+            errorCode: 'INVALID_EXPIRY_MONTH',
+          );
+        }
+      }
+
+      if (expiryYear != null) {
+        final currentYear = DateTime.now().year;
+        if (expiryYear < currentYear || expiryYear > currentYear + 20) {
+          return ValidationResult.invalid(
+            errorMessage:
+                'Expiry year must be between $currentYear and ${currentYear + 20}',
+            errorCode: 'INVALID_EXPIRY_YEAR',
+          );
+        }
+      }
+    }
+
+    // Validate display name length if provided
+    if (displayName != null && displayName.trim().length > 100) {
+      return const ValidationResult.invalid(
+        errorMessage: 'Display name must be 100 characters or less',
+        errorCode: 'DISPLAY_NAME_TOO_LONG',
+      );
+    }
+
+    // Use comprehensive payment method validation
+    return PaymentMethodValidator.validatePaymentMethod(
+      methodType: methodType.trim(),
+      provider: provider.trim(),
+      lastFour: lastFour?.trim(),
+      brand: brand?.trim(),
+      displayName: displayName?.trim(),
+      expiryMonth: expiryMonth,
+      expiryYear: expiryYear,
+    );
   }
 }

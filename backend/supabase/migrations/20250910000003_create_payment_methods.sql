@@ -7,8 +7,8 @@ CREATE TABLE saved_payment_methods (
   method_type TEXT NOT NULL CHECK (method_type IN ('card', 'upi', 'netbanking', 'wallet')),
   provider TEXT NOT NULL, -- 'razorpay', 'paytm', 'googlepay', etc.
   
-  -- Encrypted payment method details (tokenized)
-  token TEXT NOT NULL UNIQUE, -- Razorpay token for the payment method
+  -- NOTE: Plaintext token column intentionally omitted for security
+  -- Encrypted token storage will be added in 20250911000002_add_payment_method_encryption.sql
   last_four TEXT, -- Last 4 digits for cards, UPI ID suffix, etc.
   brand TEXT, -- 'visa', 'mastercard', 'upi', etc.
   
@@ -79,7 +79,6 @@ RETURNS TABLE(
   id UUID,
   method_type TEXT,
   provider TEXT,
-  token TEXT,
   last_four TEXT,
   brand TEXT,
   display_name TEXT,
@@ -106,7 +105,6 @@ BEGIN
     pm.id,
     pm.method_type,
     pm.provider,
-    pm.token,
     pm.last_four,
     pm.brand,
     pm.display_name,
@@ -128,7 +126,6 @@ CREATE OR REPLACE FUNCTION save_payment_method(
   p_user_id UUID,
   p_method_type TEXT,
   p_provider TEXT,
-  p_token TEXT,
   p_last_four TEXT DEFAULT NULL,
   p_brand TEXT DEFAULT NULL,
   p_display_name TEXT DEFAULT NULL,
@@ -144,12 +141,11 @@ BEGIN
     RAISE EXCEPTION 'Unauthorized: Cannot save payment method for another user';
   END IF;
   
-  -- Insert payment method
+  -- Insert payment method (token will be added via encryption migration)
   INSERT INTO saved_payment_methods (
     user_id,
     method_type,
     provider,
-    token,
     last_four,
     brand,
     display_name,
@@ -160,7 +156,6 @@ BEGIN
     p_user_id,
     p_method_type,
     p_provider,
-    p_token,
     p_last_four,
     p_brand,
     p_display_name,

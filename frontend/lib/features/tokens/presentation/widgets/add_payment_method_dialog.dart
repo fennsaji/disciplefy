@@ -1,8 +1,29 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
 
+/// A dialog widget for adding new payment methods to user's saved payment options.
+///
+/// Provides a form interface for users to input payment method details including
+/// method type (card, UPI, net banking, wallet), provider information, security tokens,
+/// and optional metadata like display names and default preferences.
+///
+/// Supports card-specific fields (brand, last 4 digits, expiry date) with appropriate
+/// validation and input formatters for enhanced security and user experience.
 class AddPaymentMethodDialog extends StatefulWidget {
+  /// Callback function invoked when the user saves a new payment method.
+  ///
+  /// Parameters:
+  /// - [methodType]: The type of payment method ('card', 'upi', 'netbanking', 'wallet')
+  /// - [provider]: The payment provider name (e.g., 'HDFC Bank', 'Google Pay')
+  /// - [token]: The secure payment token from the payment gateway
+  /// - [lastFour]: Last 4 digits of card number (nullable, card-specific)
+  /// - [brand]: Card brand name (nullable, card-specific, e.g., 'Visa', 'Mastercard')
+  /// - [displayName]: User-friendly name for the payment method (nullable)
+  /// - [isDefault]: Whether this should be set as the default payment method
+  /// - [expiryMonth]: Card expiry month (nullable, card-specific, 1-12)
+  /// - [expiryYear]: Card expiry year (nullable, card-specific)
   final Function(
     String methodType,
     String provider,
@@ -175,6 +196,13 @@ class _AddPaymentMethodDialogState extends State<AddPaymentMethodDialog> {
                     _selectedMethodType = type;
                     _providerController.clear();
                     _brandController.clear();
+
+                    // Clear card-specific fields when switching away from card
+                    if (type != 'card') {
+                      _lastFourController.clear();
+                      _expiryMonth = null;
+                      _expiryYear = null;
+                    }
                   });
                 }
               },
@@ -313,6 +341,11 @@ class _AddPaymentMethodDialogState extends State<AddPaymentMethodDialog> {
             hintText: 'Secure token from payment gateway',
             border: OutlineInputBorder(),
           ),
+          obscureText: true,
+          enableSuggestions: false,
+          autocorrect: false,
+          keyboardType: TextInputType.visiblePassword,
+          textInputAction: TextInputAction.next,
           validator: (value) {
             if (value == null || value.isEmpty) {
               return 'Please enter payment token';
@@ -384,6 +417,19 @@ class _AddPaymentMethodDialogState extends State<AddPaymentMethodDialog> {
                     ),
                     maxLength: 4,
                     keyboardType: TextInputType.number,
+                    inputFormatters: [
+                      FilteringTextInputFormatter.digitsOnly,
+                      LengthLimitingTextInputFormatter(4),
+                    ],
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Enter exactly 4 digits';
+                      }
+                      if (value.length != 4) {
+                        return 'Enter exactly 4 digits';
+                      }
+                      return null;
+                    },
                   ),
                 ],
               ),
@@ -422,6 +468,12 @@ class _AddPaymentMethodDialogState extends State<AddPaymentMethodDialog> {
                         _expiryMonth = value;
                       });
                     },
+                    validator: (value) {
+                      if (value == null) {
+                        return 'Select expiry month';
+                      }
+                      return _validateExpiryDate();
+                    },
                   ),
                 ],
               ),
@@ -455,6 +507,12 @@ class _AddPaymentMethodDialogState extends State<AddPaymentMethodDialog> {
                       setState(() {
                         _expiryYear = value;
                       });
+                    },
+                    validator: (value) {
+                      if (value == null) {
+                        return 'Select expiry year';
+                      }
+                      return _validateExpiryDate();
                     },
                   ),
                 ],
@@ -499,6 +557,23 @@ class _AddPaymentMethodDialogState extends State<AddPaymentMethodDialog> {
       default:
         return type;
     }
+  }
+
+  /// Validates that the expiry date is not in the past.
+  /// Returns error message if invalid, null if valid.
+  String? _validateExpiryDate() {
+    if (_selectedMethodType != 'card') return null;
+    if (_expiryMonth == null || _expiryYear == null) return null;
+
+    // Create expiry date at end of selected month
+    final expiryDate = DateTime(_expiryYear!, _expiryMonth! + 1, 0);
+    final today = DateTime.now();
+    final endOfToday = DateTime(today.year, today.month + 1, 0);
+
+    if (expiryDate.isBefore(endOfToday)) {
+      return 'Card has expired';
+    }
+    return null;
   }
 
   void _savePaymentMethod() {

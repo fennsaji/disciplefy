@@ -9,6 +9,7 @@ class PaymentService {
   PaymentService._internal();
 
   Razorpay? _razorpay;
+  bool _isWebPlatform = kIsWeb;
 
   // Callbacks
   Function(PaymentSuccessResponse)? _onPaymentSuccess;
@@ -16,10 +17,24 @@ class PaymentService {
   Function(ExternalWalletResponse)? _onExternalWallet;
 
   void initialize() {
-    _razorpay = Razorpay();
-    _razorpay?.on(Razorpay.EVENT_PAYMENT_SUCCESS, _handlePaymentSuccess);
-    _razorpay?.on(Razorpay.EVENT_PAYMENT_ERROR, _handlePaymentError);
-    _razorpay?.on(Razorpay.EVENT_EXTERNAL_WALLET, _handleExternalWallet);
+    if (_isWebPlatform) {
+      // Skip Razorpay initialization on web - use web-based payment flow
+      debugPrint(
+          '[PaymentService] Web platform detected - skipping native plugin initialization');
+      return;
+    }
+
+    try {
+      _razorpay = Razorpay();
+      _razorpay?.on(Razorpay.EVENT_PAYMENT_SUCCESS, _handlePaymentSuccess);
+      _razorpay?.on(Razorpay.EVENT_PAYMENT_ERROR, _handlePaymentError);
+      _razorpay?.on(Razorpay.EVENT_EXTERNAL_WALLET, _handleExternalWallet);
+      debugPrint('[PaymentService] Razorpay initialized successfully');
+    } catch (e) {
+      debugPrint('[PaymentService] Failed to initialize Razorpay: $e');
+      // Mark as web platform if initialization fails (common on web)
+      _isWebPlatform = true;
+    }
   }
 
   void dispose() {

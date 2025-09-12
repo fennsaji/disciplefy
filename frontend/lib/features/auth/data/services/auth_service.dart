@@ -82,7 +82,13 @@ class AuthService {
   Future<void> storeAuthData(AuthDataStorageParams params) async =>
       await _storageService.storeAuthData(params);
 
-  /// Clear all stored auth data
+  /// Clear stored auth data (secure storage only)
+  /// Use ClearUserDataUseCase for comprehensive data cleanup
+  Future<void> clearSecureStorage() async =>
+      await _storageService.clearSecureStorage();
+
+  /// Legacy method for backward compatibility
+  @Deprecated('Use ClearUserDataUseCase for comprehensive data cleanup instead')
   Future<void> clearAllData() async => await _storageService.clearAllData();
 
   /// Monitor authentication changes for profile sync

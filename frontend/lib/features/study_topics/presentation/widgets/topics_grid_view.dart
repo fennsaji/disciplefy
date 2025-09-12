@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -56,7 +57,7 @@ class TopicsGridView extends StatelessWidget {
             // Topics grid using rows for uniform heights
             ...List.generate((topics.length / 2).ceil(), (rowIndex) {
               final startIndex = rowIndex * 2;
-              final endIndex = (startIndex + 2).clamp(0, topics.length);
+              final endIndex = math.min(startIndex + 2, topics.length);
               final rowTopics = topics.sublist(startIndex, endIndex);
 
               return Padding(
@@ -168,7 +169,7 @@ class TopicsGridLoadingSkeleton extends StatelessWidget {
           children: [
             ...List.generate((itemCount / 2).ceil(), (rowIndex) {
               final startIndex = rowIndex * 2;
-              final endIndex = (startIndex + 2).clamp(0, itemCount);
+              final endIndex = (startIndex + 2).clamp(0, itemCount).toInt();
               final itemsInRow = endIndex - startIndex;
 
               return Padding(

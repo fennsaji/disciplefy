@@ -1,6 +1,16 @@
 import '../../domain/entities/purchase_history.dart';
+import '../../domain/entities/purchase_statistics.dart';
 
+/// Concrete data model implementing [PurchaseHistory] entity for serialization.
+///
+/// Used for serializing and deserializing purchase history records when
+/// communicating with the API or storing purchase data locally.
 class PurchaseHistoryModel extends PurchaseHistory {
+  /// Creates a PurchaseHistoryModel with transaction details and metadata.
+  ///
+  /// Constructs an immutable purchase history model with [id], [tokenAmount],
+  /// [costRupees], [costPaise], [paymentId], [orderId], [paymentMethod],
+  /// [status], optional [receiptNumber], and [purchasedAt] timestamp.
   const PurchaseHistoryModel({
     required super.id,
     required super.tokenAmount,
@@ -50,8 +60,10 @@ class PurchaseStatisticsModel extends PurchaseStatistics {
     required super.totalPurchases,
     required super.totalTokens,
     required super.totalSpent,
+    required super.averagePurchaseAmount,
     super.firstPurchaseDate,
     super.lastPurchaseDate,
+    super.mostUsedPaymentMethod,
   });
 
   factory PurchaseStatisticsModel.fromJson(Map<String, dynamic> json) {
@@ -59,12 +71,15 @@ class PurchaseStatisticsModel extends PurchaseStatistics {
       totalPurchases: json['total_purchases'] as int,
       totalTokens: json['total_tokens'] as int,
       totalSpent: (json['total_spent'] as num).toDouble(),
+      averagePurchaseAmount:
+          (json['average_purchase_amount'] as num).toDouble(),
       firstPurchaseDate: json['first_purchase_date'] != null
           ? DateTime.parse(json['first_purchase_date'] as String)
           : null,
       lastPurchaseDate: json['last_purchase_date'] != null
           ? DateTime.parse(json['last_purchase_date'] as String)
           : null,
+      mostUsedPaymentMethod: json['most_used_payment_method'] as String?,
     );
   }
 
@@ -73,8 +88,10 @@ class PurchaseStatisticsModel extends PurchaseStatistics {
       'total_purchases': totalPurchases,
       'total_tokens': totalTokens,
       'total_spent': totalSpent,
+      'average_purchase_amount': averagePurchaseAmount,
       'first_purchase_date': firstPurchaseDate?.toIso8601String(),
       'last_purchase_date': lastPurchaseDate?.toIso8601String(),
+      'most_used_payment_method': mostUsedPaymentMethod,
     };
   }
 }

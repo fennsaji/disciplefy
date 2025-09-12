@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/error/failures.dart';
 import '../../domain/entities/purchase_history.dart';
 import '../bloc/token_bloc.dart';
 import '../bloc/token_event.dart';
@@ -40,8 +41,11 @@ class _PurchaseHistoryPageState extends State<PurchaseHistoryPage> {
   }
 
   void _onScroll() {
+    // Prevent premature triggering - wait until much closer to bottom (95%)
+    // and ensure we have scrollable content
     if (_scrollController.position.pixels >=
-        _scrollController.position.maxScrollExtent * 0.9) {
+            _scrollController.position.maxScrollExtent * 0.95 &&
+        _scrollController.position.maxScrollExtent > 0) {
       _loadMoreHistory();
     }
   }
@@ -65,7 +69,38 @@ class _PurchaseHistoryPageState extends State<PurchaseHistoryPage> {
       _currentOffset = 0;
       _isLoadingMore = false;
     });
+    // Reload both purchase history AND statistics
     context.read<TokenBloc>().add(const RefreshPurchaseHistory());
+    context.read<TokenBloc>().add(const GetPurchaseStatistics());
+  }
+
+  /// Wait for BLoC refresh operations to complete
+  Future<void> _waitForRefreshCompletion() async {
+    // Wait for both purchase history and statistics to load or fail
+    await Future.any([
+      // Wait for purchase history completion
+      context
+          .read<TokenBloc>()
+          .stream
+          .where((state) =>
+              state is PurchaseHistoryLoaded || state is PurchaseHistoryError)
+          .first
+          .timeout(const Duration(seconds: 10)),
+      // Wait for statistics completion
+      context
+          .read<TokenBloc>()
+          .stream
+          .where((state) =>
+              state is PurchaseStatisticsLoaded ||
+              state
+                  is PurchaseHistoryError) // Note: Statistics errors use PurchaseHistoryError
+          .first
+          .timeout(const Duration(seconds: 10)),
+    ]).catchError((_) {
+      // Timeout or error - refresh indicator will complete anyway
+      return TokenError(
+          failure: NetworkFailure(message: 'Timeout during refresh'));
+    });
   }
 
   @override
@@ -93,8 +128,8 @@ class _PurchaseHistoryPageState extends State<PurchaseHistoryPage> {
       body: RefreshIndicator(
         onRefresh: () async {
           _onRefresh();
-          // Wait a bit for the refresh to complete
-          await Future.delayed(const Duration(seconds: 1));
+          // Wait for BLoC to complete refresh operations
+          await _waitForRefreshCompletion();
         },
         child: CustomScrollView(
           controller: _scrollController,
@@ -176,9 +211,13 @@ class _PurchaseHistoryPageState extends State<PurchaseHistoryPage> {
             // Purchase History List
             BlocConsumer<TokenBloc, TokenState>(
               listenWhen: (previous, current) =>
-                  current is PurchaseHistoryLoaded && _isLoadingMore,
+                  (current is PurchaseHistoryLoaded ||
+                      current is PurchaseHistoryError) &&
+                  _isLoadingMore,
               listener: (context, state) {
-                if (state is PurchaseHistoryLoaded) {
+                // Reset loading flag on both success and error
+                if (state is PurchaseHistoryLoaded ||
+                    state is PurchaseHistoryError) {
                   setState(() {
                     _isLoadingMore = false;
                   });

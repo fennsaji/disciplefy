@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:razorpay_flutter/razorpay_flutter.dart';
 import '../../domain/entities/token_status.dart';
 import '../../domain/entities/saved_payment_method.dart';
+import '../../domain/entities/payment_preferences.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/services/payment_service.dart';
 import '../../../../core/constants/payment_constants.dart';
@@ -93,12 +94,13 @@ class _TokenPurchaseDialogState extends State<TokenPurchaseDialog>
 
   void _initializePaymentPreferences() {
     if (widget.paymentPreferences != null) {
-      _savePaymentMethod = widget.paymentPreferences!.autoSavePaymentMethods;
+      _savePaymentMethod =
+          widget.paymentPreferences!.autoSavePaymentMethods ?? false;
       _selectedPaymentType =
           widget.paymentPreferences!.defaultPaymentType ?? 'card';
 
       // Set default payment method if one-click purchase is enabled
-      if (widget.paymentPreferences!.enableOneClickPurchase &&
+      if ((widget.paymentPreferences!.enableOneClickPurchase ?? false) &&
           widget.savedPaymentMethods.isNotEmpty) {
         _selectedPaymentMethod = widget.savedPaymentMethods
             .where((method) => method.isDefault)

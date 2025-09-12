@@ -10,23 +10,61 @@ import { createSimpleFunction } from '../_shared/core/function-factory.ts'
 import { ServiceContainer } from '../_shared/core/services.ts'
 import { RequestValidator } from '../_shared/utils/request-validator.ts'
 import { AppError } from '../_shared/utils/error-handler.ts'
-import { TokenPurchaseRequest, TokenPurchaseResult } from '../_shared/types/token-types.ts'
+import { TokenPurchaseRequest } from '../_shared/types/token-types.ts'
 import Razorpay from 'npm:razorpay@2.9.2'
 import { createHmac } from 'node:crypto'
 
 /**
- * Token purchase handler
+ * Token purchase handler - main orchestrator
  * 
- * This handler processes token purchases for authenticated users:
- * 1. Validates user is authenticated (no anonymous purchases)
- * 2. Validates token amount and payment information
- * 3. Processes payment via Razorpay integration
- * 4. Adds purchased tokens to user account
- * 5. Returns updated token balance
+ * This handler processes token purchases for authenticated users
  */
 async function handleTokenPurchase(req: Request, services: ServiceContainer): Promise<Response> {
-  const { authService, tokenService, analyticsLogger } = services
-  // 1. Get user context and ensure user is authenticated
+  try {
+    const userContext = await authenticateAndAuthorize(req, services.authService, services.rateLimiter)
+    const { tokenAmount, paymentId } = await parseAndValidateRequestBody(req)
+    await checkForDuplicatePayment(paymentId, services.supabaseServiceClient)
+    const { costInRupees, costInPaise } = computeCost(tokenAmount, services.tokenService)
+    const paymentResult = await createOrder({
+      amount: costInPaise,
+      currency: 'INR',
+      user_id: userContext.userId!,
+      token_amount: tokenAmount,
+      metadata: {
+        user_plan: userContext.userPlan,
+        timestamp: new Date().toISOString()
+      }
+    })
+    await persistPendingPurchase({
+      user_id: userContext.userId!,
+      order_id: paymentResult.order_id!,
+      token_amount: tokenAmount,
+      amount_paise: costInPaise
+    }, services.supabaseServiceClient)
+    
+    return logSuccessAndRespond({
+      orderId: paymentResult.order_id!,
+      amount: costInPaise,
+      tokenAmount,
+      costInRupees,
+      userPlan: userContext.userPlan,
+      userId: userContext.userId!
+    }, services.analyticsLogger, req.headers.get('x-forwarded-for'))
+    
+  } catch (error) {
+    await logFailure(error, services.analyticsLogger, req.headers.get('x-forwarded-for'))
+    throw error instanceof AppError ? error : new AppError(
+      'ORDER_CREATION_ERROR',
+      'Failed to create payment order',
+      500
+    )
+  }
+}
+
+/**
+ * Authenticate user and authorize purchase operation
+ */
+async function authenticateAndAuthorize(req: Request, authService: any, rateLimiter: any): Promise<{ userId: string, userPlan: string }> {
   const userContext = await authService.getUserContext(req)
   
   if (userContext.type !== 'authenticated') {
@@ -37,11 +75,10 @@ async function handleTokenPurchase(req: Request, services: ServiceContainer): Pr
     )
   }
 
-  // 2. Determine user plan
+  await rateLimiter.consume(userContext.userId!, 'purchase_tokens')
   const userPlan = await authService.getUserPlan(req)
   
-  // 3. Validate user can purchase tokens (only standard plan)
-  if (!tokenService.canPurchaseTokens(userPlan)) {
+  if (!authService.tokenService?.canPurchaseTokens(userPlan)) {
     throw new AppError(
       'PURCHASE_NOT_ALLOWED',
       `${userPlan} plan users cannot purchase tokens`,
@@ -49,93 +86,13 @@ async function handleTokenPurchase(req: Request, services: ServiceContainer): Pr
     )
   }
 
-  // 4. Parse and validate request
-  const { token_amount } = await parseAndValidateRequest(req)
-  
-  // 5. Calculate cost in paise for Razorpay (10 tokens = ₹1 = 100 paise)
-  const costInRupees = tokenService.calculateCostInRupees(token_amount)
-  const costInPaise = costInRupees * 100
-  
-  try {
-    // 6. Process payment via Razorpay - Create order
-    const paymentResult = await processRazorpayPayment({
-      amount: costInPaise,
-      currency: 'INR',
-      user_id: userContext.userId!,
-      token_amount,
-      metadata: {
-        user_plan: userPlan,
-        timestamp: new Date().toISOString()
-      }
-    })
-
-    if (!paymentResult.success) {
-      throw new AppError(
-        'PAYMENT_FAILED',
-        paymentResult.error || 'Payment processing failed',
-        402
-      )
-    }
-
-    // 7. Store pending purchase (will be confirmed by webhook)
-    await storePendingPurchase({
-      user_id: userContext.userId!,
-      order_id: paymentResult.order_id!,
-      token_amount,
-      amount_paise: costInPaise
-    }, services)
-
-    // 8. Log order creation for analytics
-    await analyticsLogger.logEvent('payment_order_created', {
-      user_id: userContext.userId,
-      order_id: paymentResult.order_id,
-      token_amount,
-      cost_in_paise: costInPaise,
-      cost_in_rupees: costInRupees,
-      user_plan: userPlan
-    }, req.headers.get('x-forwarded-for'))
-
-    // 9. Return order details for frontend payment
-    return new Response(JSON.stringify({
-      success: true,
-      order_id: paymentResult.order_id,
-      amount: costInPaise,
-      currency: 'INR',
-      key_id: Deno.env.get('RAZORPAY_KEY_ID'),
-      token_amount
-    }), {
-      status: 200,
-      headers: { 'Content-Type': 'application/json' }
-    })
-
-  } catch (error) {
-    // Log failed order creation for analytics
-    await analyticsLogger.logEvent('payment_order_failed', {
-      user_id: userContext.userId,
-      token_amount,
-      cost_in_paise: costInPaise,
-      error_message: error instanceof Error ? error.message : 'Unknown error',
-      user_plan: userPlan
-    }, req.headers.get('x-forwarded-for'))
-
-    // Re-throw AppErrors, wrap others
-    if (error instanceof AppError) {
-      throw error
-    }
-
-    console.error('[PurchaseTokens] Unexpected error:', error)
-    throw new AppError(
-      'ORDER_CREATION_ERROR',
-      'Failed to create payment order',
-      500
-    )
-  }
+  return { userId: userContext.userId!, userPlan }
 }
 
 /**
- * Parses and validates token purchase request
+ * Parse and validate request body
  */
-async function parseAndValidateRequest(req: Request): Promise<TokenPurchaseRequest> {
+async function parseAndValidateRequestBody(req: Request): Promise<{ tokenAmount: number, paymentId?: string }> {
   if (req.method !== 'POST') {
     throw new AppError(
       'METHOD_NOT_ALLOWED',
@@ -144,8 +101,6 @@ async function parseAndValidateRequest(req: Request): Promise<TokenPurchaseReque
     )
   }
 
-  const requestValidator = new RequestValidator()
-  
   let body
   try {
     body = await req.json()
@@ -157,7 +112,6 @@ async function parseAndValidateRequest(req: Request): Promise<TokenPurchaseReque
     )
   }
 
-  // Validate required fields
   if (!body.token_amount || typeof body.token_amount !== 'number') {
     throw new AppError(
       'VALIDATION_ERROR',
@@ -166,10 +120,6 @@ async function parseAndValidateRequest(req: Request): Promise<TokenPurchaseReque
     )
   }
 
-  // payment_method_id is no longer required for order creation
-  // Payment will be processed via frontend Razorpay checkout
-
-  // Validate token amount range (1-10,000)
   if (!Number.isInteger(body.token_amount) || body.token_amount < 1 || body.token_amount > 10000) {
     throw new AppError(
       'INVALID_TOKEN_AMOUNT',
@@ -178,15 +128,191 @@ async function parseAndValidateRequest(req: Request): Promise<TokenPurchaseReque
     )
   }
 
-  // No payment method validation needed for order creation
-
   return {
-    token_amount: body.token_amount
+    tokenAmount: body.token_amount,
+    paymentId: body.payment_id
   }
 }
 
 /**
- * Processes Razorpay payment - Real implementation
+ * Check for duplicate payment to prevent double-spending
+ */
+async function checkForDuplicatePayment(paymentId: string | undefined, supabaseServiceClient: any): Promise<void> {
+  if (!paymentId) return
+  
+  const { data, error } = await supabaseServiceClient
+    .from('purchase_history')
+    .select('id')
+    .eq('razorpay_payment_id', paymentId)
+    .single()
+
+  if (error && error.code !== 'PGRST116') {
+    console.error('[Database] Error checking existing payment:', error)
+    throw new AppError(
+      'DATABASE_ERROR',
+      'Failed to verify payment uniqueness',
+      500
+    )
+  }
+
+  if (data !== null) {
+    throw new AppError(
+      'DUPLICATE_PAYMENT',
+      'This payment has already been processed',
+      409
+    )
+  }
+}
+
+/**
+ * Compute cost in rupees and paise
+ */
+function computeCost(tokenAmount: number, tokenService: any): { costInRupees: number, costInPaise: number } {
+  const costInRupees = tokenService.calculateCostInRupees(tokenAmount)
+  
+  if (!Number.isFinite(costInRupees)) {
+    throw new AppError(
+      'INVALID_COST',
+      'Invalid cost calculation',
+      400
+    )
+  }
+  
+  const costInPaise = Math.round(costInRupees * 100)
+  return { costInRupees, costInPaise }
+}
+
+/**
+ * Create Razorpay order
+ */
+async function createOrder(params: {
+  amount: number
+  currency: string
+  user_id: string
+  token_amount: number
+  metadata: Record<string, any>
+}): Promise<{ success: boolean, order_id?: string, error?: string }> {
+  const paymentResult = await processRazorpayPayment(params)
+
+  if (!paymentResult.success) {
+    throw new AppError(
+      'PAYMENT_FAILED',
+      paymentResult.error || 'Payment processing failed',
+      402
+    )
+  }
+
+  return paymentResult
+}
+
+/**
+ * Persist pending purchase for webhook confirmation (idempotent)
+ */
+async function persistPendingPurchase(params: {
+  user_id: string
+  order_id: string
+  token_amount: number
+  amount_paise: number
+}, supabaseServiceClient: any): Promise<void> {
+  const { data, error } = await supabaseServiceClient
+    .rpc('store_pending_purchase', {
+      p_user_id: params.user_id,
+      p_order_id: params.order_id,
+      p_token_amount: params.token_amount,
+      p_amount_paise: params.amount_paise
+    })
+
+  if (error) {
+    console.error('[Database] Failed to store pending purchase:', error)
+    throw new AppError(
+      'DATABASE_ERROR',
+      'Failed to store purchase record',
+      500
+    )
+  }
+
+  if (!data?.success) {
+    const errorMsg = data?.error || 'Unknown error storing pending purchase'
+    console.error('[Database] Pending purchase storage failed:', data)
+    
+    if (data?.action === 'conflict') {
+      throw new AppError(
+        'ORDER_CONFLICT',
+        errorMsg,
+        409
+      )
+    }
+    
+    throw new AppError(
+      'DATABASE_ERROR',
+      errorMsg,
+      500
+    )
+  }
+
+  // Log the action taken (created vs exists)
+  console.log(`[Database] Pending purchase ${data.action}: ${params.order_id} (status: ${data.status})`)
+}
+
+/**
+ * Log success event and return response
+ */
+async function logSuccessAndRespond(params: {
+  orderId: string
+  amount: number
+  tokenAmount: number
+  costInRupees: number
+  userPlan: string
+  userId: string
+}, analyticsLogger: any, forwardedFor: string | null): Promise<Response> {
+  // Validate RAZORPAY_KEY_ID is configured before including in response
+  const razorpayKeyId = Deno.env.get('RAZORPAY_KEY_ID')
+  if (!razorpayKeyId) {
+    console.error('[Payment] RAZORPAY_KEY_ID not configured')
+    return new Response(JSON.stringify({
+      success: false,
+      error: 'Payment service is not properly configured'
+    }), {
+      status: 503,
+      headers: { 'Content-Type': 'application/json' }
+    })
+  }
+
+  await analyticsLogger.logEvent('payment_order_created', {
+    user_id: params.userId,
+    order_id: params.orderId,
+    token_amount: params.tokenAmount,
+    cost_in_paise: params.amount,
+    cost_in_rupees: params.costInRupees,
+    user_plan: params.userPlan
+  }, forwardedFor)
+
+  return new Response(JSON.stringify({
+    success: true,
+    order_id: params.orderId,
+    amount: params.amount,
+    currency: 'INR',
+    key_id: razorpayKeyId,
+    token_amount: params.tokenAmount
+  }), {
+    status: 200,
+    headers: { 'Content-Type': 'application/json' }
+  })
+}
+
+/**
+ * Log failure event
+ */
+async function logFailure(error: any, analyticsLogger: any, forwardedFor: string | null): Promise<void> {
+  await analyticsLogger.logEvent('payment_order_failed', {
+    error_message: error instanceof Error ? error.message : 'Unknown error'
+  }, forwardedFor)
+  
+  console.error('[PurchaseTokens] Unexpected error:', error)
+}
+
+/**
+ * Processes Razorpay payment - Real implementation with simulator fallback
  * Creates a Razorpay order for frontend payment processing
  */
 async function processRazorpayPayment(params: {
@@ -198,12 +324,43 @@ async function processRazorpayPayment(params: {
 }): Promise<{ 
   success: boolean
   order_id?: string
-  payment_id?: string
   error?: string 
 }> {
+  // Check if we should use simulator (only in development)
+  const useSimulator = Deno.env.get('SIMULATE_RAZORPAY') === 'true'
+  
+  if (useSimulator) {
+    console.log('[Razorpay Simulator] Creating mock order')
+    return {
+      success: true,
+      order_id: `order_sim_${Date.now()}`
+      // Note: payment_id will be provided by webhook once payment completes
+    }
+  }
+
+  // Production/staging Razorpay integration - validate environment variables
+  const keyId = Deno.env.get('RAZORPAY_KEY_ID')
+  const keySecret = Deno.env.get('RAZORPAY_KEY_SECRET')
+  
+  if (!keyId) {
+    console.error('[Razorpay] RAZORPAY_KEY_ID not configured')
+    return {
+      success: false,
+      error: 'Payment service not properly configured: RAZORPAY_KEY_ID missing'
+    }
+  }
+  
+  if (!keySecret) {
+    console.error('[Razorpay] RAZORPAY_KEY_SECRET not configured')
+    return {
+      success: false,
+      error: 'Payment service not properly configured: RAZORPAY_KEY_SECRET missing'
+    }
+  }
+
   const razorpay = new Razorpay({
-    key_id: Deno.env.get('RAZORPAY_KEY_ID')!,
-    key_secret: Deno.env.get('RAZORPAY_KEY_SECRET')!
+    key_id: keyId,
+    key_secret: keySecret
   })
 
   try {
@@ -224,10 +381,14 @@ async function processRazorpayPayment(params: {
 
     console.log(`[Razorpay] Order created: ${order.id}`)
     
+    // TODO: Implement signature verification for production
+    // For real integration, verify webhook signature and order details
+    // before accepting payments
+    
     return {
       success: true,
-      order_id: order.id,
-      payment_id: order.id  // Will be updated by webhook
+      order_id: order.id
+      // Note: payment_id will be provided by webhook once payment completes
     }
 
   } catch (error) {
@@ -240,34 +401,7 @@ async function processRazorpayPayment(params: {
   }
 }
 
-/**
- * Stores pending purchase for webhook confirmation
- */
-async function storePendingPurchase(params: {
-  user_id: string
-  order_id: string
-  token_amount: number
-  amount_paise: number
-}, services: ServiceContainer): Promise<void> {
-  const { supabaseServiceClient } = services
-  
-  const { data, error } = await supabaseServiceClient
-    .rpc('store_pending_purchase', {
-      p_user_id: params.user_id,
-      p_order_id: params.order_id,
-      p_token_amount: params.token_amount,
-      p_amount_paise: params.amount_paise
-    })
 
-  if (error) {
-    console.error('[Database] Failed to store pending purchase:', error)
-    throw new AppError(
-      'DATABASE_ERROR',
-      'Failed to store purchase record',
-      500
-    )
-  }
-}
 
 // Create the Edge Function using the factory pattern
 createSimpleFunction(handleTokenPurchase, {

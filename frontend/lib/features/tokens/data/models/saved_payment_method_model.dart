@@ -1,4 +1,5 @@
 import '../../domain/entities/saved_payment_method.dart';
+import '../../domain/entities/payment_preferences.dart';
 
 class SavedPaymentMethodModel extends SavedPaymentMethod {
   const SavedPaymentMethodModel({
@@ -102,9 +103,10 @@ class SavedPaymentMethodModel extends SavedPaymentMethod {
 class PaymentPreferencesModel extends PaymentPreferences {
   const PaymentPreferencesModel({
     required super.id,
-    required super.autoSavePaymentMethods,
+    required super.userId,
+    super.autoSavePaymentMethods,
     super.preferredWallet,
-    required super.enableOneClickPurchase,
+    super.enableOneClickPurchase,
     super.defaultPaymentType,
     required super.createdAt,
     required super.updatedAt,
@@ -113,9 +115,10 @@ class PaymentPreferencesModel extends PaymentPreferences {
   factory PaymentPreferencesModel.fromJson(Map<String, dynamic> json) {
     return PaymentPreferencesModel(
       id: json['id'] as String,
-      autoSavePaymentMethods: json['auto_save_payment_methods'] as bool,
+      userId: json['user_id'] as String,
+      autoSavePaymentMethods: json['auto_save_payment_methods'] as bool?,
       preferredWallet: json['preferred_wallet'] as String?,
-      enableOneClickPurchase: json['enable_one_click_purchase'] as bool,
+      enableOneClickPurchase: json['enable_one_click_purchase'] as bool?,
       defaultPaymentType: json['default_payment_type'] as String?,
       createdAt: DateTime.parse(json['created_at'] as String),
       updatedAt: DateTime.parse(json['updated_at'] as String),
@@ -125,6 +128,7 @@ class PaymentPreferencesModel extends PaymentPreferences {
   Map<String, dynamic> toJson() {
     return {
       'id': id,
+      'user_id': userId,
       'auto_save_payment_methods': autoSavePaymentMethods,
       'preferred_wallet': preferredWallet,
       'enable_one_click_purchase': enableOneClickPurchase,
@@ -137,6 +141,7 @@ class PaymentPreferencesModel extends PaymentPreferences {
   @override
   PaymentPreferencesModel copyWith({
     String? id,
+    String? userId,
     bool? autoSavePaymentMethods,
     String? preferredWallet,
     bool? enableOneClickPurchase,
@@ -146,6 +151,7 @@ class PaymentPreferencesModel extends PaymentPreferences {
   }) {
     return PaymentPreferencesModel(
       id: id ?? this.id,
+      userId: userId ?? this.userId,
       autoSavePaymentMethods:
           autoSavePaymentMethods ?? this.autoSavePaymentMethods,
       preferredWallet: preferredWallet ?? this.preferredWallet,

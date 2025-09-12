@@ -17,12 +17,69 @@ interface ConfirmPurchaseRequest {
 }
 
 /**
- * Handle payment confirmation with signature verification
+ * Handle payment confirmation with signature verification - main orchestrator
  */
 async function handleConfirmPurchase(req: Request, services: ServiceContainer): Promise<Response> {
-  const { authService, tokenService, supabaseServiceClient, analyticsLogger } = services
-  
-  // Authenticate user
+  try {
+    const userContext = await authenticateUser(req, services.authService)
+    const requestData = await parseAndValidateRequest(req)
+    await verifySignature(requestData)
+    const pendingPurchase = await loadPendingPurchase(requestData.order_id, userContext.userId!, services.supabaseServiceClient)
+    
+    // Check if already processed
+    const shortCircuitResponse = await shortCircuitIfCompletedOrFailed(pendingPurchase, userContext.userId!, services.tokenService)
+    if (shortCircuitResponse) {
+      return shortCircuitResponse
+    }
+    
+    // Atomic claim for processing to prevent double-processing
+    const claimedPurchase = await claimPendingPurchaseForProcessing(pendingPurchase.order_id, services.supabaseServiceClient)
+    
+    // Process the purchase
+    const addResult = await creditTokens(userContext.userId!, claimedPurchase.token_amount, services.tokenService)
+    await recordPurchaseHistory(claimedPurchase, requestData.payment_id, userContext.userId!, services.supabaseServiceClient)
+    await markPendingCompleted(claimedPurchase.order_id, requestData.payment_id, services.supabaseServiceClient)
+    
+    // Get updated tokens and log success
+    const updatedTokens = await services.tokenService.getUserTokens(userContext.userId!, 'standard')
+    await services.analyticsLogger.logEvent('purchase_confirmed_by_user', {
+      user_id: userContext.userId,
+      order_id: requestData.order_id,
+      payment_id: requestData.payment_id,
+      token_amount: claimedPurchase.token_amount,
+      new_purchased_balance: addResult.newPurchasedBalance
+    })
+    
+    return buildResponse({
+      success: true,
+      message: 'Purchase confirmed successfully',
+      tokens_added: claimedPurchase.token_amount,
+      token_balance: updatedTokens
+    })
+    
+  } catch (error) {
+    console.error('[Purchase] Failed to confirm purchase:', error)
+    
+    // Extract order_id for failure marking if available
+    try {
+      const requestData = await parseAndValidateRequest(req)
+      await markPendingFailed(requestData.order_id, error, services.supabaseServiceClient)
+    } catch {
+      // Ignore parsing errors during error handling
+    }
+    
+    throw error instanceof AppError ? error : new AppError(
+      'PURCHASE_CONFIRMATION_FAILED',
+      'Failed to confirm token purchase',
+      500
+    )
+  }
+}
+
+/**
+ * Authenticate user and ensure they're logged in
+ */
+async function authenticateUser(req: Request, authService: any): Promise<any> {
   const userContext = await authService.getUserContext(req)
   if (userContext.type !== 'authenticated') {
     throw new AppError(
@@ -31,19 +88,38 @@ async function handleConfirmPurchase(req: Request, services: ServiceContainer): 
       401
     )
   }
+  return userContext
+}
+
+/**
+ * Parse and validate request body
+ */
+async function parseAndValidateRequest(req: Request): Promise<ConfirmPurchaseRequest> {
+  const requestData: ConfirmPurchaseRequest = await req.json()
   
-  // Parse request
-  const { order_id, payment_id, signature }: ConfirmPurchaseRequest = await req.json()
+  if (!requestData.order_id || !requestData.payment_id || !requestData.signature) {
+    throw new AppError(
+      'INVALID_REQUEST',
+      'Missing required fields: order_id, payment_id, signature',
+      400
+    )
+  }
   
-  // Verify signature
+  return requestData
+}
+
+/**
+ * Verify Razorpay payment signature
+ */
+async function verifySignature(requestData: ConfirmPurchaseRequest): Promise<void> {
   const isValidSignature = verifyPaymentSignature({
-    orderId: order_id,
-    paymentId: payment_id,
-    signature
+    orderId: requestData.order_id,
+    paymentId: requestData.payment_id,
+    signature: requestData.signature
   })
   
   if (!isValidSignature) {
-    console.error(`[Security] Invalid signature for payment confirmation: ${payment_id}`)
+    console.error(`[Security] Invalid signature for payment confirmation: ${requestData.payment_id}`)
     throw new AppError(
       'INVALID_SIGNATURE',
       'Payment signature verification failed',
@@ -51,14 +127,18 @@ async function handleConfirmPurchase(req: Request, services: ServiceContainer): 
     )
   }
   
-  console.log(`[Security] ✅ Payment signature verified: ${payment_id}`)
-  
-  // Get and validate pending purchase
+  console.log(`[Security] ✅ Payment signature verified: ${requestData.payment_id}`)
+}
+
+/**
+ * Load pending purchase from database
+ */
+async function loadPendingPurchase(orderId: string, userId: string, supabaseServiceClient: any): Promise<any> {
   const { data: pendingPurchase, error } = await supabaseServiceClient
     .from('pending_token_purchases')
     .select('*')
-    .eq('order_id', order_id)
-    .eq('user_id', userContext.userId)
+    .eq('order_id', orderId)
+    .eq('user_id', userId)
     .single()
   
   if (error || !pendingPurchase) {
@@ -69,20 +149,45 @@ async function handleConfirmPurchase(req: Request, services: ServiceContainer): 
     )
   }
   
-  if (pendingPurchase.status === 'completed') {
-    // Already completed, return current status
-    const currentTokens = await tokenService.getUserTokens(
-      userContext.userId!,
-      'standard'
+  return pendingPurchase
+}
+
+/**
+ * Atomic claim operation - updates status from pending to processing 
+ */
+async function claimPendingPurchaseForProcessing(orderId: string, supabaseServiceClient: any): Promise<any> {
+  const { data: claimedPurchase, error } = await supabaseServiceClient
+    .from('pending_token_purchases')
+    .update({ 
+      status: 'processing', 
+      updated_at: new Date().toISOString() 
+    })
+    .eq('order_id', orderId)
+    .eq('status', 'pending') // Only update if still pending
+    .select('*')
+    .single()
+  
+  if (error || !claimedPurchase) {
+    throw new AppError(
+      'PURCHASE_ALREADY_PROCESSING',
+      'Purchase is already being processed or completed',
+      409
     )
-    
-    return new Response(JSON.stringify({
+  }
+  
+  return claimedPurchase
+}
+
+/**
+ * Short-circuit if purchase is already completed or failed
+ */
+async function shortCircuitIfCompletedOrFailed(pendingPurchase: any, userId: string, tokenService: any): Promise<Response | null> {
+  if (pendingPurchase.status === 'completed') {
+    const currentTokens = await tokenService.getUserTokens(userId, 'standard')
+    return buildResponse({
       success: true,
       message: 'Purchase already completed',
       token_balance: currentTokens
-    }), {
-      status: 200,
-      headers: { 'Content-Type': 'application/json' }
     })
   }
   
@@ -94,101 +199,95 @@ async function handleConfirmPurchase(req: Request, services: ServiceContainer): 
     )
   }
   
-  try {
-    // Complete the purchase
-    const addResult = await tokenService.addPurchasedTokens(
-      userContext.userId!,
-      'standard',
-      pendingPurchase.token_amount,
-      {
-        userId: userContext.userId,
-        userPlan: 'standard',
-        operation: 'purchase',
-        timestamp: new Date()
-      }
-    )
-    
-    if (!addResult.success) {
-      throw new Error('Failed to add purchased tokens')
+  return null
+}
+
+/**
+ * Credit tokens to user account
+ */
+async function creditTokens(userId: string, tokenAmount: number, tokenService: any): Promise<any> {
+  const addResult = await tokenService.addPurchasedTokens(
+    userId,
+    'standard',
+    tokenAmount,
+    {
+      userId,
+      userPlan: 'standard',
+      operation: 'purchase',
+      timestamp: new Date()
     }
-    
-    // Record purchase in history
-    const costRupees = pendingPurchase.amount_paise / 100
-    const paymentMethod = 'razorpay' // Frontend payment method
-    
-    const { data: historyId, error: historyError } = await supabaseServiceClient
-      .rpc('record_purchase_history', {
-        p_user_id: userContext.userId,
-        p_token_amount: pendingPurchase.token_amount,
-        p_cost_rupees: costRupees,
-        p_cost_paise: pendingPurchase.amount_paise,
-        p_payment_id: payment_id,
-        p_order_id: order_id,
-        p_payment_method: paymentMethod,
-        p_status: 'completed'
-      })
-    
-    if (historyError) {
-      console.error('[Purchase] Failed to record purchase history:', historyError)
-      // Continue despite history error - don't fail the purchase
-    } else {
-      console.log(`[Purchase] ✅ Purchase history recorded: ${historyId}`)
-    }
-    
-    // Mark as completed
-    await supabaseServiceClient
-      .from('pending_token_purchases')
-      .update({
-        status: 'completed',
-        payment_id,
-        updated_at: new Date().toISOString()
-      })
-      .eq('order_id', order_id)
-    
-    // Get updated token status
-    const updatedTokens = await tokenService.getUserTokens(
-      userContext.userId!,
-      'standard'
-    )
-    
-    // Log successful confirmation
-    await analyticsLogger.logEvent('purchase_confirmed_by_user', {
-      user_id: userContext.userId,
-      order_id,
-      payment_id,
-      token_amount: pendingPurchase.token_amount,
-      new_purchased_balance: addResult.newPurchasedBalance
-    })
-    
-    return new Response(JSON.stringify({
-      success: true,
-      message: 'Purchase confirmed successfully',
-      tokens_added: pendingPurchase.token_amount,
-      token_balance: updatedTokens
-    }), {
-      status: 200,
-      headers: { 'Content-Type': 'application/json' }
-    })
-    
-  } catch (error) {
-    console.error('[Purchase] Failed to confirm purchase:', error)
-    
-    // Mark as failed
-    await supabaseServiceClient
-      .from('pending_token_purchases')
-      .update({
-        status: 'failed',
-        error_message: error instanceof Error ? error.message : 'Unknown error',
-        updated_at: new Date().toISOString()
-      })
-      .eq('order_id', order_id)
-    
-    throw new AppError(
-      'PURCHASE_CONFIRMATION_FAILED',
-      'Failed to confirm token purchase',
-      500
-    )
+  )
+  
+  if (!addResult.success) {
+    throw new Error('Failed to add purchased tokens')
   }
+  
+  return addResult
+}
+
+/**
+ * Record purchase in history table
+ */
+async function recordPurchaseHistory(purchase: any, paymentId: string, userId: string, supabaseServiceClient: any): Promise<void> {
+  const costRupees = purchase.amount_paise / 100
+  const paymentMethod = 'razorpay'
+  
+  const { data: historyId, error: historyError } = await supabaseServiceClient
+    .rpc('record_purchase_history', {
+      p_user_id: userId,
+      p_token_amount: purchase.token_amount,
+      p_cost_rupees: costRupees,
+      p_cost_paise: purchase.amount_paise,
+      p_payment_id: paymentId,
+      p_order_id: purchase.order_id,
+      p_payment_method: paymentMethod,
+      p_status: 'completed'
+    })
+  
+  if (historyError) {
+    console.error('[Purchase] Failed to record purchase history:', historyError)
+    // Continue despite history error - don't fail the purchase
+  } else {
+    console.log(`[Purchase] ✅ Purchase history recorded: ${historyId}`)
+  }
+}
+
+/**
+ * Mark pending purchase as completed
+ */
+async function markPendingCompleted(orderId: string, paymentId: string, supabaseServiceClient: any): Promise<void> {
+  await supabaseServiceClient
+    .from('pending_token_purchases')
+    .update({
+      status: 'completed',
+      payment_id: paymentId,
+      updated_at: new Date().toISOString()
+    })
+    .eq('order_id', orderId)
+}
+
+/**
+ * Mark pending purchase as failed
+ */
+async function markPendingFailed(orderId: string, error: any, supabaseServiceClient: any): Promise<void> {
+  await supabaseServiceClient
+    .from('pending_token_purchases')
+    .update({
+      status: 'failed',
+      error_message: error instanceof Error ? error.message : 'Unknown error',
+      updated_at: new Date().toISOString()
+    })
+    .eq('order_id', orderId)
+}
+
+/**
+ * Build standardized response
+ */
+function buildResponse(data: any): Response {
+  return new Response(JSON.stringify(data), {
+    status: 200,
+    headers: { 'Content-Type': 'application/json' }
+  })
 }
 
 /**

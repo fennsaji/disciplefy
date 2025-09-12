@@ -59,9 +59,10 @@ User Purchase Request → UI Dialog → BLoC → UseCase → DataSource → Edge
 3. **Request Validation**
    ```typescript
    interface TokenPurchaseRequest {
-     token_amount: number     // 1-10,000 tokens
+     token_amount: number     // 50-10,000 tokens (enforced minimum 50 tokens = ₹5.00)
      payment_method_id: string // Razorpay payment method ID
    }
+   // Note: Razorpay enforces minimum payment of ₹1.00 (100 paise), but our minimum is 50 tokens (₹5.00)
    ```
 
 4. **Cost Calculation**
@@ -128,13 +129,14 @@ async addPurchasedTokens(
 **`calculateCostInRupees()`**
 ```typescript
 calculateCostInRupees(tokenAmount: number): number {
-  return Math.ceil(tokenAmount / this.config.purchaseConfig.tokensPerRupee)
+  const totalPaise = Math.ceil((tokenAmount * 100) / this.config.purchaseConfig.tokensPerRupee)
+  return totalPaise / 100
 }
 ```
 
 **Pricing Structure:**
 - **Rate**: 10 tokens = ₹1
-- **Minimum Purchase**: 1 token (₹0.10)
+- **Minimum Purchase**: 50 tokens (₹5.00)
 - **Maximum Purchase**: 10,000 tokens (₹1,000)
 
 #### Token Purchase Configuration:
@@ -142,7 +144,7 @@ calculateCostInRupees(tokenAmount: number): number {
 const DEFAULT_TOKEN_SERVICE_CONFIG = {
   purchaseConfig: {
     tokensPerRupee: 10,
-    minPurchase: 1,
+    minPurchase: 50,
     maxPurchase: 10000
   }
 }
@@ -195,13 +197,13 @@ interface DatabasePurchaseResult {
 **Location**: `frontend/lib/features/tokens/presentation/widgets/token_purchase_dialog.dart`
 
 #### Features:
-- **Predefined Packages**: Popular token bundles with discounts
-  - 50 tokens = ₹5
-  - 100 tokens = ₹9 (10% discount)
-  - 250 tokens = ₹20 (20% discount) 
-  - 500 tokens = ₹35 (30% discount)
+- **Predefined Packages**: Popular token bundles using linear pricing
+  - 50 tokens = ₹5.00
+  - 100 tokens = ₹10.00
+  - 250 tokens = ₹25.00
+  - 500 tokens = ₹50.00
 
-- **Custom Amount Input**: 10-9999 tokens with real-time cost calculation
+- **Custom Amount Input**: 50-9999 tokens with real-time cost calculation using linear pricing (10 tokens = ₹1)
 
 - **Plan Restrictions**: Shows appropriate message for Free/Premium users
 
@@ -209,9 +211,9 @@ interface DatabasePurchaseResult {
 ```dart
 class TokenPackage {
   final int tokens;
-  final int rupees;
+  final int rupees;  // Calculated using linear pricing: rupees = tokens / 10
   final bool isPopular;
-  final int discount;
+  // Note: discount field removed - all packages use linear pricing
 }
 ```
 
@@ -677,7 +679,7 @@ async function processRazorpayPayment(params: {
     return {
       success: true,
       order_id: order.id,
-      payment_id: order.id  // Will be updated by webhook
+      payment_id: null  // Will be populated later by webhook after payment capture
     }
 
   } catch (error) {
@@ -757,6 +759,22 @@ CREATE TABLE pending_token_purchases (
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
+-- Enable Row Level Security
+ALTER TABLE pending_token_purchases ENABLE ROW LEVEL SECURITY;
+
+-- RLS Policy: Users can only access their own purchases
+CREATE POLICY "Users can manage their own purchases" ON pending_token_purchases
+  FOR ALL USING (auth.uid() = user_id);
+
+-- RLS Policy: Service role can access all records for webhook processing
+CREATE POLICY "Service role can manage all purchases" ON pending_token_purchases
+  FOR ALL USING (auth.role() = 'service_role');
+
+-- Performance indexes
+CREATE INDEX idx_pending_purchases_status ON pending_token_purchases(status);
+CREATE INDEX idx_pending_purchases_order_id ON pending_token_purchases(order_id);
+CREATE INDEX idx_pending_purchases_user_status ON pending_token_purchases(user_id, status);
+
 CREATE OR REPLACE FUNCTION store_pending_purchase(
   p_user_id UUID,
   p_order_id TEXT,
@@ -776,6 +794,103 @@ EXCEPTION
     RETURN FALSE;
 END;
 $ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Atomic purchase completion function to prevent race conditions
+CREATE OR REPLACE FUNCTION complete_token_purchase(
+  p_order_id TEXT,
+  p_payment_id TEXT,
+  p_user_id UUID DEFAULT NULL
+) RETURNS JSONB AS $
+DECLARE
+  v_purchase RECORD;
+  v_token_result JSONB;
+  v_result JSONB;
+BEGIN
+  -- Acquire FOR UPDATE lock and verify status in one step
+  SELECT * INTO v_purchase
+  FROM pending_token_purchases
+  WHERE order_id = p_order_id
+    AND (p_user_id IS NULL OR user_id = p_user_id)
+    AND status = 'pending'
+  FOR UPDATE;
+  
+  -- Return early if not found or not pending
+  IF NOT FOUND THEN
+    -- Check if already completed
+    SELECT status INTO v_purchase.status
+    FROM pending_token_purchases
+    WHERE order_id = p_order_id
+      AND (p_user_id IS NULL OR user_id = p_user_id);
+    
+    IF v_purchase.status = 'completed' THEN
+      RETURN jsonb_build_object(
+        'success', true,
+        'already_processed', true,
+        'message', 'Purchase already completed'
+      );
+    ELSE
+      RETURN jsonb_build_object(
+        'success', false,
+        'error', 'Purchase not found or not in pending state'
+      );
+    END IF;
+  END IF;
+  
+  BEGIN
+    -- Call existing token addition function within transaction
+    SELECT add_purchased_tokens(
+      v_purchase.user_id::text,
+      'standard',
+      v_purchase.token_amount
+    ) INTO v_token_result;
+    
+    -- Check if token addition was successful
+    IF v_token_result->>'success' != 'true' THEN
+      RAISE EXCEPTION 'Token addition failed: %', v_token_result->>'error_message';
+    END IF;
+    
+    -- Update purchase status atomically
+    UPDATE pending_token_purchases
+    SET 
+      status = 'completed',
+      payment_id = p_payment_id,
+      updated_at = NOW()
+    WHERE order_id = p_order_id;
+    
+    -- Return success with token information
+    RETURN jsonb_build_object(
+      'success', true,
+      'already_processed', false,
+      'tokens_added', v_purchase.token_amount,
+      'new_purchased_balance', v_token_result->'new_purchased_balance',
+      'user_id', v_purchase.user_id,
+      'order_id', p_order_id,
+      'payment_id', p_payment_id
+    );
+    
+  EXCEPTION
+    WHEN OTHERS THEN
+      -- Mark as failed on any error during token addition
+      UPDATE pending_token_purchases
+      SET 
+        status = 'failed',
+        error_message = SQLERRM,
+        updated_at = NOW()
+      WHERE order_id = p_order_id;
+      
+      RETURN jsonb_build_object(
+        'success', false,
+        'error', SQLERRM,
+        'order_id', p_order_id
+      );
+  END;
+END;
+$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Grant permissions
+GRANT SELECT, INSERT, UPDATE ON pending_token_purchases TO authenticated;
+GRANT ALL ON pending_token_purchases TO service_role;
+GRANT EXECUTE ON FUNCTION complete_token_purchase TO authenticated, service_role;
 ```
 
 **Add helper function to backend**:
@@ -1322,43 +1437,37 @@ async function handlePaymentCaptured(
   }
   
   try {
-    // Add tokens to user account
-    const addResult = await tokenService.addPurchasedTokens(
-      pendingPurchase.user_id,
-      'standard', // Only standard users can purchase
-      pendingPurchase.token_amount,
-      {
-        userId: pendingPurchase.user_id,
-        userPlan: 'standard',
-        operation: 'purchase',
-        timestamp: new Date()
-      }
-    )
+    // Use atomic transaction to prevent double-crediting
+    const { data: completionResult, error: completionError } = await supabaseClient
+      .rpc('complete_token_purchase', {
+        p_order_id: orderId,
+        p_payment_id: paymentId,
+        p_user_id: null // Allow service role to process any order
+      })
     
-    if (!addResult.success) {
-      throw new Error('Failed to add purchased tokens')
+    if (completionError) {
+      throw new Error(`Purchase completion RPC failed: ${completionError.message}`)
     }
     
-    // Mark purchase as completed
-    await supabaseClient
-      .from('pending_token_purchases')
-      .update({
-        status: 'completed',
-        payment_id: paymentId,
-        updated_at: new Date().toISOString()
-      })
-      .eq('order_id', orderId)
+    if (!completionResult.success) {
+      if (completionResult.already_processed) {
+        console.log(`[Webhook] ✅ Purchase already completed: ${orderId}`)
+        return // Already processed, no error
+      } else {
+        throw new Error(completionResult.error || 'Purchase completion failed')
+      }
+    }
     
-    console.log(`[Webhook] ✅ Purchase completed: ${pendingPurchase.token_amount} tokens for user ${pendingPurchase.user_id}`)
+    console.log(`[Webhook] ✅ Purchase completed: ${completionResult.tokens_added} tokens for user ${completionResult.user_id}`)
     
     // Log successful purchase
     await analyticsLogger.logEvent('webhook_purchase_completed', {
-      user_id: pendingPurchase.user_id,
+      user_id: completionResult.user_id,
       order_id: orderId,
       payment_id: paymentId,
-      token_amount: pendingPurchase.token_amount,
+      token_amount: completionResult.tokens_added,
       amount_paise: amount,
-      new_purchased_balance: addResult.newPurchasedBalance
+      new_purchased_balance: completionResult.new_purchased_balance
     })
     
   } catch (error) {
@@ -1566,32 +1675,38 @@ async function handleConfirmPurchase(req: Request, services: ServiceContainer): 
   }
   
   try {
-    // Complete the purchase
-    const addResult = await tokenService.addPurchasedTokens(
-      userContext.userId!,
-      'standard',
-      pendingPurchase.token_amount,
-      {
-        userId: userContext.userId,
-        userPlan: 'standard',
-        operation: 'purchase',
-        timestamp: new Date()
-      }
-    )
+    // Use atomic transaction to prevent double-crediting
+    const { data: completionResult, error: completionError } = await supabaseClient
+      .rpc('complete_token_purchase', {
+        p_order_id: order_id,
+        p_payment_id: payment_id,
+        p_user_id: userContext.userId // Restrict to authenticated user
+      })
     
-    if (!addResult.success) {
-      throw new Error('Failed to add purchased tokens')
+    if (completionError) {
+      throw new Error(`Purchase completion RPC failed: ${completionError.message}`)
     }
     
-    // Mark as completed
-    await supabaseClient
-      .from('pending_token_purchases')
-      .update({
-        status: 'completed',
-        payment_id,
-        updated_at: new Date().toISOString()
-      })
-      .eq('order_id', order_id)
+    if (!completionResult.success) {
+      if (completionResult.already_processed) {
+        // Get current token status for already completed purchase
+        const currentTokens = await tokenService.getUserTokens(
+          userContext.userId!,
+          'standard'
+        )
+        
+        return new Response(JSON.stringify({
+          success: true,
+          message: 'Purchase already completed',
+          token_balance: currentTokens
+        }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' }
+        })
+      } else {
+        throw new Error(completionResult.error || 'Purchase completion failed')
+      }
+    }
     
     // Get updated token status
     const updatedTokens = await tokenService.getUserTokens(
@@ -1604,14 +1719,14 @@ async function handleConfirmPurchase(req: Request, services: ServiceContainer): 
       user_id: userContext.userId,
       order_id,
       payment_id,
-      token_amount: pendingPurchase.token_amount,
-      new_purchased_balance: addResult.newPurchasedBalance
+      token_amount: completionResult.tokens_added,
+      new_purchased_balance: completionResult.new_purchased_balance
     })
     
     return new Response(JSON.stringify({
       success: true,
       message: 'Purchase confirmed successfully',
-      tokens_added: pendingPurchase.token_amount,
+      tokens_added: completionResult.tokens_added,
       token_balance: updatedTokens
     }), {
       status: 200,

@@ -3,6 +3,7 @@ import 'package:dartz/dartz.dart';
 import '../../../../core/error/failures.dart';
 import '../entities/token_status.dart';
 import '../entities/purchase_history.dart';
+import '../entities/purchase_statistics.dart';
 
 /// Abstract repository for token-related operations.
 abstract class TokenRepository {
