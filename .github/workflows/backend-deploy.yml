@@ -200,9 +200,18 @@ jobs:
         LOG_LEVEL=info
         USE_MOCK=false
         NODE_ENV=${{ env.DEPLOY_ENV }}
+
+        RAZORPAY_KEY_ID=${{ secrets.RAZORPAY_KEY_ID }}
+        RAZORPAY_KEY_SECRET=${{ secrets.RAZORPAY_KEY_SECRET }}
+
+        TWILIO_ACCOUNT_SID=${{ secrets.TWILIO_ACCOUNT_SID }}
+        TWILIO_MESSAGE_SERVICE_SID=${{ secrets.TWILIO_MESSAGE_SERVICE_SID }}
+        TWILIO_AUTH_TOKEN=${{ secrets.TWILIO_AUTH_TOKEN }}
+
         ANONYMOUS_RATE_LIMIT=5
         AUTHENTICATED_RATE_LIMIT=10
         API_REQUEST_LIMIT=100
+
         EOF
         echo "✅ ${{ env.DEPLOY_ENV }} environment file created"
 
