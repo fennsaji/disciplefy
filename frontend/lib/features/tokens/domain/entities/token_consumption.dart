@@ -24,13 +24,14 @@ class TokenConsumption extends Equatable {
 
   /// Create TokenConsumption from API response
   factory TokenConsumption.fromJson(Map<String, dynamic> json) {
-    final remainingData = json['remaining'] as Map<String, dynamic>;
+    final remainingData =
+        json['remaining'] as Map<String, dynamic>? ?? <String, dynamic>{};
 
     return TokenConsumption(
-      consumed: json['consumed'] as int,
+      consumed: (json['consumed'] as num?)?.toInt() ?? 0,
       remaining: TokenRemaining.fromJson(remainingData),
-      dailyLimit: json['daily_limit'] as int,
-      userPlan: _parseUserPlan(json['user_plan'] as String),
+      dailyLimit: (json['daily_limit'] as num?)?.toInt() ?? 50,
+      userPlan: _parseUserPlan(json['user_plan'] as String? ?? 'free'),
     );
   }
 
@@ -104,9 +105,9 @@ class TokenRemaining extends Equatable {
   /// Create TokenRemaining from API response
   factory TokenRemaining.fromJson(Map<String, dynamic> json) {
     return TokenRemaining(
-      availableTokens: json['available_tokens'] as int,
-      purchasedTokens: json['purchased_tokens'] as int,
-      totalTokens: json['total_tokens'] as int,
+      availableTokens: (json['available_tokens'] as num?)?.toInt() ?? 0,
+      purchasedTokens: (json['purchased_tokens'] as num?)?.toInt() ?? 0,
+      totalTokens: (json['total_tokens'] as num?)?.toInt() ?? 0,
     );
   }
 

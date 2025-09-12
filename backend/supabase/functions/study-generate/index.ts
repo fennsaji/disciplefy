@@ -96,21 +96,36 @@ async function handleStudyGenerate(req: Request, { authService, llmService, stud
   const identifier = userContext.type === 'authenticated' ? userContext.userId! : userContext.sessionId!
   
   // 6. Token consumption enforcement (only for new content generation)
-  const consumptionResult = await tokenService.consumeTokens(
-    identifier,
-    userPlan,
-    tokenCost,
-    {
-      userId: userContext.userId,
-      sessionId: userContext.sessionId,
-      userPlan: userPlan,
-      operation: 'consume',
-      language: targetLanguage as SupportedLanguage,
-      ipAddress: req.headers.get('x-forwarded-for') || undefined,
-      userAgent: req.headers.get('user-agent') || undefined,
-      timestamp: new Date()
+  let consumptionResult
+  
+  if (tokenService.isUnlimitedPlan(userPlan)) {
+    // Premium/unlimited users are not charged tokens
+    consumptionResult = {
+      success: true,
+      availableTokens: 999999, // Unlimited indicator
+      purchasedTokens: 0,
+      dailyLimit: 999999,
+      totalTokens: 999999,
+      errorMessage: undefined
     }
-  )
+  } else {
+    // Standard and free users consume tokens normally
+    consumptionResult = await tokenService.consumeTokens(
+      identifier,
+      userPlan,
+      tokenCost,
+      {
+        userId: userContext.userId,
+        sessionId: userContext.sessionId,
+        userPlan: userPlan,
+        operation: 'consume',
+        language: targetLanguage as SupportedLanguage,
+        ipAddress: req.headers.get('x-forwarded-for') || undefined,
+        userAgent: req.headers.get('user-agent') || undefined,
+        timestamp: new Date()
+      }
+    )
+  }
 
   // 7. Generate new content using LLM service
   const generatedContent = await llmService.generateStudyGuide({

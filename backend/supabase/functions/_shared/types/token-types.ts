@@ -235,13 +235,11 @@ export interface DatabaseUserTokensResult {
 }
 
 /**
- * Database response for purchase_tokens function
+ * Database response for add_purchased_tokens function
+ * Matches the exact return shape from the SQL function
  */
 export interface DatabasePurchaseResult {
   readonly success: boolean
-  readonly available_tokens: number
-  readonly purchased_tokens: number
-  readonly daily_limit: number
   readonly new_purchased_balance: number
   readonly error_message?: string
 }

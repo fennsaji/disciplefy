@@ -46,7 +46,8 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
     ClearUserDataUseCase? clearUserDataUseCase,
   })  : _authService = authService,
         _userProfileService = userProfileService ?? sl<UserProfileService>(),
-        _clearUserDataUseCase = clearUserDataUseCase ?? ClearUserDataUseCase(),
+        _clearUserDataUseCase =
+            clearUserDataUseCase ?? sl<ClearUserDataUseCase>(),
         super(const auth_states.AuthInitialState()) {
     // Register event handlers
     on<AuthInitializeRequested>(_onAuthInitialize);

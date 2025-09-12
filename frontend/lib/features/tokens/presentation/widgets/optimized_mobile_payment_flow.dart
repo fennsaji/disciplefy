@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../domain/entities/saved_payment_method.dart';
+import '../../domain/entities/payment_preferences.dart';
 import '../bloc/payment_method_bloc.dart';
 import 'mobile_payment_methods_widget.dart';
 import 'upi_quick_pay_widget.dart';
@@ -188,7 +189,7 @@ class _OptimizedMobilePaymentFlowState extends State<OptimizedMobilePaymentFlow>
         ? widget.savedPaymentMethods.firstWhere((method) => method.isDefault)
         : null;
 
-    if (!hasDefault || !widget.preferences!.enableOneClickPurchase) {
+    if (!hasDefault || !(widget.preferences!.enableOneClickPurchase ?? false)) {
       return const SizedBox.shrink();
     }
 

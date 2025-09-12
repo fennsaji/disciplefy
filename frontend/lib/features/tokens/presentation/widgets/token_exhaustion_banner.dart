@@ -64,7 +64,7 @@ class TokenExhaustionBanner extends StatelessWidget {
                 _buildContent(bannerInfo, theme),
                 if (bannerInfo.hasActions) ...[
                   const SizedBox(height: 16),
-                  _buildActions(bannerInfo),
+                  _buildActions(context, bannerInfo),
                 ],
               ],
             ),
@@ -75,43 +75,11 @@ class TokenExhaustionBanner extends StatelessWidget {
   }
 
   Widget _buildHeader(BannerInfo bannerInfo, ThemeData theme) {
-    return Row(
-      children: [
-        Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: bannerInfo.color.withOpacity(0.2),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Icon(
-            bannerInfo.icon,
-            color: bannerInfo.color,
-            size: 20,
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Text(
-            bannerInfo.title,
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              color: bannerInfo.color,
-            ),
-          ),
-        ),
-        if (showDismissButton && onDismiss != null)
-          IconButton(
-            onPressed: onDismiss,
-            icon: Icon(
-              Icons.close,
-              size: 20,
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
-            padding: EdgeInsets.zero,
-            constraints: const BoxConstraints(),
-          ),
-      ],
+    return _BannerHeader(
+      bannerInfo: bannerInfo,
+      theme: theme,
+      showDismissButton: showDismissButton,
+      onDismiss: onDismiss,
     );
   }
 
@@ -148,7 +116,14 @@ class TokenExhaustionBanner extends StatelessWidget {
     );
   }
 
-  Widget _buildActions(BannerInfo bannerInfo) {
+  Widget _buildActions(BuildContext context, BannerInfo bannerInfo) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    // Determine appropriate "on" color based on banner color semantics
+    final Color onColor = _getOnColor(colorScheme, bannerInfo.color);
+    final Color outlinedTextColor = colorScheme.onSurface;
+
     return Row(
       children: [
         if (bannerInfo.primaryAction != null) ...[
@@ -157,7 +132,7 @@ class TokenExhaustionBanner extends StatelessWidget {
               onPressed: bannerInfo.primaryAction!.onPressed,
               style: ElevatedButton.styleFrom(
                 backgroundColor: bannerInfo.color,
-                foregroundColor: Colors.white,
+                foregroundColor: onColor,
                 padding: const EdgeInsets.symmetric(vertical: 10),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
@@ -195,13 +170,13 @@ class TokenExhaustionBanner extends StatelessWidget {
                   Icon(
                     bannerInfo.secondaryAction!.icon,
                     size: 18,
-                    color: bannerInfo.color,
+                    color: outlinedTextColor,
                   ),
                   const SizedBox(width: 8),
                   Text(
                     bannerInfo.secondaryAction!.text,
                     style: TextStyle(
-                      color: bannerInfo.color,
+                      color: outlinedTextColor,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -212,6 +187,28 @@ class TokenExhaustionBanner extends StatelessWidget {
         ],
       ],
     );
+  }
+
+  /// Gets appropriate "on" color for WCAG contrast based on banner color semantics
+  Color _getOnColor(ColorScheme colorScheme, Color bannerColor) {
+    // Map common banner colors to their semantic color scheme pairs
+    if (bannerColor == colorScheme.error) {
+      return colorScheme.onError;
+    } else if (bannerColor == colorScheme.primary) {
+      return colorScheme.onPrimary;
+    } else if (bannerColor == colorScheme.secondary) {
+      return colorScheme.onSecondary;
+    } else if (bannerColor == colorScheme.errorContainer) {
+      return colorScheme.onErrorContainer;
+    } else if (bannerColor == colorScheme.primaryContainer) {
+      return colorScheme.onPrimaryContainer;
+    } else if (bannerColor == colorScheme.secondaryContainer) {
+      return colorScheme.onSecondaryContainer;
+    } else {
+      // For custom colors, compute high-contrast color based on luminance
+      final luminance = bannerColor.computeLuminance();
+      return luminance > 0.5 ? colorScheme.onSurface : colorScheme.surface;
+    }
   }
 
   BannerInfo? _getBannerInfo(ThemeData theme) {
@@ -382,6 +379,63 @@ class TokenExhaustionBanner extends StatelessWidget {
     } else {
       return '${difference.inMinutes}m';
     }
+  }
+}
+
+/// Extracted header widget for token exhaustion banner
+class _BannerHeader extends StatelessWidget {
+  final BannerInfo bannerInfo;
+  final ThemeData theme;
+  final bool showDismissButton;
+  final VoidCallback? onDismiss;
+
+  const _BannerHeader({
+    required this.bannerInfo,
+    required this.theme,
+    required this.showDismissButton,
+    this.onDismiss,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: bannerInfo.color.withOpacity(0.2),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Icon(
+            bannerInfo.icon,
+            color: bannerInfo.color,
+            size: 20,
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Text(
+            bannerInfo.title,
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: bannerInfo.color,
+            ),
+          ),
+        ),
+        if (showDismissButton && onDismiss != null)
+          IconButton(
+            onPressed: onDismiss,
+            icon: Icon(
+              Icons.close,
+              size: 20,
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(),
+          ),
+      ],
+    );
   }
 }
 

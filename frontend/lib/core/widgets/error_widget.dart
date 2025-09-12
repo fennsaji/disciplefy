@@ -2,12 +2,28 @@ import 'package:flutter/material.dart';
 import '../constants/app_colors.dart';
 
 /// Standard error display widget with consistent styling
+///
+/// Provides a unified error UI component that displays error messages
+/// with optional descriptions, retry functionality, and custom icons.
 class AppErrorWidget extends StatelessWidget {
+  /// Primary error message to display to the user
   final String message;
+
+  /// Optional detailed description providing more context about the error
   final String? description;
+
+  /// Optional callback function executed when the retry button is pressed
   final VoidCallback? onRetry;
+
+  /// Optional custom icon to display (defaults to Icons.error_outline)
   final IconData? icon;
 
+  /// Creates an AppErrorWidget with the specified error information
+  ///
+  /// [message] is required and displays the main error text.
+  /// [description] provides additional context when present.
+  /// [onRetry] enables a retry button when provided.
+  /// [icon] allows custom error icon override.
   const AppErrorWidget({
     super.key,
     required this.message,

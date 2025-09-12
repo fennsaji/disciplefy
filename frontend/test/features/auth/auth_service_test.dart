@@ -225,6 +225,7 @@ void main() {
       when(mockStorageService.clearAllData()).thenAnswer((_) async {});
 
       // Act
+      // ignore: deprecated_member_use_from_same_package
       await authService.clearAllData();
 
       // Assert

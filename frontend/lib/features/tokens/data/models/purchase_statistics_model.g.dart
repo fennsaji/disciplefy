@@ -9,11 +9,12 @@ part of 'purchase_statistics_model.dart';
 PurchaseStatisticsModel _$PurchaseStatisticsModelFromJson(
         Map<String, dynamic> json) =>
     PurchaseStatisticsModel(
-      totalPurchases: (json['total_purchases'] as num).toInt(),
-      totalAmountSpent: (json['total_amount_spent'] as num).toDouble(),
-      totalTokensPurchased: (json['total_tokens_purchased'] as num).toInt(),
+      totalPurchases: (json['total_purchases'] as num?)?.toInt() ?? 0,
+      totalAmountSpent: (json['total_amount_spent'] as num?)?.toDouble() ?? 0.0,
+      totalTokensPurchased:
+          (json['total_tokens_purchased'] as num?)?.toInt() ?? 0,
       averagePurchaseAmount:
-          (json['average_purchase_amount'] as num).toDouble(),
+          (json['average_purchase_amount'] as num?)?.toDouble() ?? 0.0,
       firstPurchaseDate: json['first_purchase_date'] == null
           ? null
           : DateTime.parse(json['first_purchase_date'] as String),

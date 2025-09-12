@@ -44,14 +44,30 @@ This document outlines the design and implementation plan for replacing the curr
 
 ### Cost Calculation Logic
 ```typescript
-function calculateTokenCost(language: string): number {
+function calculateTokenCost(languages: string[]): number {
+  // Validate single language constraint
+  if (languages.length > 1) {
+    throw new Error('Multiple languages not supported. Please select only one language.')
+  }
+  
+  if (languages.length === 0) {
+    throw new Error('At least one language must be specified.')
+  }
+  
   const languageCosts = {
     'en': 10,    // English
     'hi': 20,    // Hindi  
     'ml': 20     // Malayalam
   }
   
-  return languageCosts[language] || 10 // Default to English cost
+  const language = languages[0]
+  const cost = languageCosts[language]
+  
+  if (cost === undefined) {
+    throw new Error(`Unsupported language: ${language}. Supported languages: en, hi, ml`)
+  }
+  
+  return cost
 }
 ```
 
@@ -67,7 +83,7 @@ CREATE TABLE user_tokens (
   available_tokens INTEGER NOT NULL DEFAULT 0, -- Daily allocation tokens
   purchased_tokens INTEGER NOT NULL DEFAULT 0, -- Purchased tokens (never reset)
   daily_limit INTEGER NOT NULL,
-  last_reset DATE NOT NULL DEFAULT CURRENT_DATE,
+  last_reset TIMESTAMPTZ NOT NULL DEFAULT (NOW() AT TIME ZONE 'UTC'),
   total_consumed_today INTEGER NOT NULL DEFAULT 0,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
@@ -104,7 +120,9 @@ COMMENT ON COLUMN user_tokens.total_consumed_today IS 'Total tokens consumed sin
 ### Database Functions
 
 ```sql
--- Function to get or create user tokens record
+-- SECURITY CRITICAL: Function to get or create user tokens record
+-- This function must NOT be exposed to clients due to p_identifier bypass risk
+-- Only service_role should have EXECUTE permission on this function
 CREATE OR REPLACE FUNCTION get_or_create_user_tokens(
   p_identifier TEXT,
   p_user_plan TEXT
@@ -116,7 +134,7 @@ RETURNS TABLE(
   available_tokens INTEGER,
   purchased_tokens INTEGER,
   daily_limit INTEGER,
-  last_reset DATE,
+  last_reset TIMESTAMPTZ,
   total_consumed_today INTEGER
 ) AS $
 DECLARE
@@ -138,18 +156,18 @@ BEGIN
     ut.user_plan,
     CASE 
       WHEN ut.user_plan = 'premium' THEN default_limit  -- Premium users always have max tokens
-      WHEN ut.last_reset < CURRENT_DATE THEN default_limit
+      WHEN (ut.last_reset AT TIME ZONE 'UTC')::date < (NOW() AT TIME ZONE 'UTC')::date THEN default_limit
       ELSE ut.available_tokens
     END as available_tokens,
     ut.purchased_tokens, -- Purchased tokens never reset
     default_limit as daily_limit,
     CASE 
-      WHEN ut.last_reset < CURRENT_DATE THEN CURRENT_DATE
+      WHEN (ut.last_reset AT TIME ZONE 'UTC')::date < (NOW() AT TIME ZONE 'UTC')::date THEN (NOW() AT TIME ZONE 'UTC')
       ELSE ut.last_reset
     END as last_reset,
     CASE 
       WHEN ut.user_plan = 'premium' THEN 0  -- Premium users don't track consumption
-      WHEN ut.last_reset < CURRENT_DATE THEN 0
+      WHEN (ut.last_reset AT TIME ZONE 'UTC')::date < (NOW() AT TIME ZONE 'UTC')::date THEN 0
       ELSE ut.total_consumed_today
     END as total_consumed_today
   FROM user_tokens ut
@@ -171,6 +189,84 @@ BEGIN
   END IF;
 END;
 $ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- CRITICAL SECURITY: Revoke EXECUTE from anon and authenticated roles
+-- This function MUST only be called by service_role from Edge Functions
+REVOKE EXECUTE ON FUNCTION get_or_create_user_tokens FROM anon;
+REVOKE EXECUTE ON FUNCTION get_or_create_user_tokens FROM authenticated;
+GRANT EXECUTE ON FUNCTION get_or_create_user_tokens TO service_role;
+
+-- Alternative SECURE implementation: Remove p_identifier parameter
+-- This version derives identifier from auth.uid() and is safe for client access
+CREATE OR REPLACE FUNCTION get_or_create_user_tokens_secure(
+  p_user_plan TEXT
+)
+RETURNS TABLE(
+  id UUID,
+  identifier TEXT,
+  user_plan TEXT,
+  available_tokens INTEGER,
+  purchased_tokens INTEGER,
+  daily_limit INTEGER,
+  last_reset TIMESTAMPTZ,
+  total_consumed_today INTEGER
+) AS $
+DECLARE
+  default_limit INTEGER;
+  current_identifier TEXT;
+BEGIN
+  -- Get identifier from auth context - secure against bypass
+  current_identifier := COALESCE(auth.uid()::text, 'anonymous_' || gen_random_uuid()::text);
+  
+  -- Set default daily limit based on user plan
+  default_limit := CASE 
+    WHEN p_user_plan = 'premium' THEN 999999999  -- Effectively unlimited
+    WHEN p_user_plan = 'standard' THEN 100
+    WHEN p_user_plan = 'free' THEN 20
+    ELSE 20  -- Fallback to free plan
+  END;
+
+  -- Try to get existing record, reset if needed
+  RETURN QUERY
+  SELECT 
+    ut.id,
+    ut.identifier,
+    ut.user_plan,
+    CASE 
+      WHEN ut.user_plan = 'premium' THEN default_limit  -- Premium users always have max tokens
+      WHEN (ut.last_reset AT TIME ZONE 'UTC')::date < (NOW() AT TIME ZONE 'UTC')::date THEN default_limit
+      ELSE ut.available_tokens
+    END as available_tokens,
+    ut.purchased_tokens, -- Purchased tokens never reset
+    default_limit as daily_limit,
+    CASE 
+      WHEN (ut.last_reset AT TIME ZONE 'UTC')::date < (NOW() AT TIME ZONE 'UTC')::date THEN (NOW() AT TIME ZONE 'UTC')
+      ELSE ut.last_reset
+    END as last_reset,
+    CASE 
+      WHEN ut.user_plan = 'premium' THEN 0  -- Premium users don't track consumption
+      WHEN (ut.last_reset AT TIME ZONE 'UTC')::date < (NOW() AT TIME ZONE 'UTC')::date THEN 0
+      ELSE ut.total_consumed_today
+    END as total_consumed_today
+  FROM user_tokens ut
+  WHERE ut.identifier = current_identifier AND ut.user_plan = p_user_plan;
+  
+  -- If no record found, create one
+  IF NOT FOUND THEN
+    INSERT INTO user_tokens (identifier, user_plan, available_tokens, purchased_tokens, daily_limit)
+    VALUES (current_identifier, p_user_plan, default_limit, 0, default_limit)
+    RETURNING 
+      user_tokens.id,
+      user_tokens.identifier,
+      user_tokens.user_plan,
+      user_tokens.available_tokens,
+      user_tokens.purchased_tokens,
+      user_tokens.daily_limit,
+      user_tokens.last_reset,
+      user_tokens.total_consumed_today;
+  END IF;
+END;
+$ LANGUAGE plpgsql SECURITY INVOKER;  -- SECURITY INVOKER ensures auth context is preserved
 
 -- Function to consume tokens atomically
 CREATE OR REPLACE FUNCTION consume_user_tokens(
@@ -204,11 +300,11 @@ BEGIN
   SELECT 
     CASE 
       WHEN ut.user_plan = 'premium' THEN default_limit  -- Premium always has unlimited
-      WHEN ut.last_reset < CURRENT_DATE THEN default_limit 
+      WHEN (ut.last_reset AT TIME ZONE 'UTC')::date < (NOW() AT TIME ZONE 'UTC')::date THEN default_limit 
       ELSE ut.available_tokens 
     END,
     ut.purchased_tokens,
-    ut.last_reset < CURRENT_DATE AND ut.user_plan != 'premium'
+    (ut.last_reset AT TIME ZONE 'UTC')::date < (NOW() AT TIME ZONE 'UTC')::date AND ut.user_plan != 'premium'
   INTO current_daily_tokens, current_purchased_tokens, needs_reset
   FROM user_tokens ut
   WHERE ut.identifier = p_identifier AND ut.user_plan = p_user_plan;
@@ -261,7 +357,7 @@ BEGIN
         available_tokens = default_limit,
         purchased_tokens = purchased_tokens - p_token_cost,
         total_consumed_today = 0,
-        last_reset = CURRENT_DATE,
+        last_reset = (NOW() AT TIME ZONE 'UTC'),
         updated_at = NOW()
       WHERE identifier = p_identifier AND user_plan = p_user_plan;
       
@@ -288,7 +384,7 @@ BEGIN
         available_tokens = default_limit - (p_token_cost - purchased_tokens),
         purchased_tokens = 0,
         total_consumed_today = p_token_cost - current_purchased_tokens,
-        last_reset = CURRENT_DATE,
+        last_reset = (NOW() AT TIME ZONE 'UTC'),
         updated_at = NOW()
       WHERE identifier = p_identifier AND user_plan = p_user_plan;
       
@@ -569,8 +665,29 @@ export class TokenService {
   }
 
   calculateTokenCost(languages: string[]): number {
-    const uniqueLanguages = [...new Set(languages)]
-    return uniqueLanguages.length * 10
+    // Validate single language constraint
+    if (languages.length > 1) {
+      throw new AppError('MULTIPLE_LANGUAGES_NOT_SUPPORTED', 'Multiple languages not supported. Please select only one language.', 400)
+    }
+    
+    if (languages.length === 0) {
+      throw new AppError('LANGUAGE_REQUIRED', 'At least one language must be specified.', 400)
+    }
+    
+    const languageCosts = {
+      'en': 10,    // English
+      'hi': 20,    // Hindi  
+      'ml': 20     // Malayalam
+    }
+    
+    const language = languages[0]
+    const cost = languageCosts[language]
+    
+    if (cost === undefined) {
+      throw new AppError('UNSUPPORTED_LANGUAGE', `Unsupported language: ${language}. Supported languages: en, hi, ml`, 400)
+    }
+    
+    return cost
   }
 
   async purchaseTokens(identifier: string, userPlan: UserPlan, tokenAmount: number): Promise<void> {
@@ -792,8 +909,9 @@ async function handleTokenPurchase(req: Request, services: ServiceContainer): Pr
   }
 
   try {
-    // Calculate cost (10 tokens = ₹1)
-    const costInPaise = Math.ceil(token_amount / 10) * 100 // Convert to paise for Razorpay
+    // Calculate cost (10 tokens = ₹1) - Convert to paise first to avoid overcharging
+    const paise = token_amount * 10 // Convert tokens to paise (1 token = 10 paise)
+    const costInPaise = Math.ceil(paise) // Round up to nearest paise for Razorpay
     
     // Process payment via Razorpay
     const paymentResult = await services.paymentService.processTokenPurchase({
@@ -902,8 +1020,58 @@ interface UserContext {
 
 ### Phase 1: Database Setup
 1. Create `user_tokens` table with functions
-2. Test database functions in isolation
-3. Enable RLS policies
+2. **CRITICAL SECURITY STEP**: Lock down function permissions
+   ```sql
+   -- Secure the get_or_create_user_tokens function
+   REVOKE EXECUTE ON FUNCTION get_or_create_user_tokens FROM anon;
+   REVOKE EXECUTE ON FUNCTION get_or_create_user_tokens FROM authenticated;
+   GRANT EXECUTE ON FUNCTION get_or_create_user_tokens TO service_role;
+   
+   -- Use secure version for client access
+   GRANT EXECUTE ON FUNCTION get_or_create_user_tokens_secure TO authenticated;
+   GRANT EXECUTE ON FUNCTION get_or_create_user_tokens_secure TO anon;
+   ```
+3. Test database functions in isolation
+4. Enable RLS policies
+
+### **PREFERRED SECURITY APPROACH: Service Role Only**
+
+For maximum security, the original `get_or_create_user_tokens` function should:
+1. **Only be accessible to `service_role`** (implemented above)
+2. **Be called exclusively from trusted Edge Functions**
+3. **Never be exposed to client-side code**
+
+**Migration Steps**:
+```sql
+-- 1. Revoke all public access
+REVOKE ALL ON FUNCTION get_or_create_user_tokens FROM PUBLIC;
+REVOKE EXECUTE ON FUNCTION get_or_create_user_tokens FROM anon;
+REVOKE EXECUTE ON FUNCTION get_or_create_user_tokens FROM authenticated;
+
+-- 2. Grant only to service_role
+GRANT EXECUTE ON FUNCTION get_or_create_user_tokens TO service_role;
+
+-- 3. Use the secure variant for any client-accessible operations
+-- (This variant automatically uses auth.uid() and cannot be bypassed)
+GRANT EXECUTE ON FUNCTION get_or_create_user_tokens_secure TO authenticated;
+GRANT EXECUTE ON FUNCTION get_or_create_user_tokens_secure TO anon;
+```
+
+**Edge Function Implementation**:
+```typescript
+// In Edge Functions, use service_role client
+const serviceClient = createClient(
+  Deno.env.get('SUPABASE_URL')!,
+  Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!, // Service role key
+  { auth: { persistSession: false } }
+)
+
+// Safe to call with service_role
+const { data } = await serviceClient.rpc('get_or_create_user_tokens', {
+  p_identifier: userIdentifier,
+  p_user_plan: userPlan
+})
+```
 
 ### Phase 2: Service Implementation
 1. Implement `TokenService` class
@@ -935,10 +1103,23 @@ interface UserContext {
    - Add caching for subscription data to reduce database queries
    - Handle subscription status changes (upgrades/downgrades/cancellations)
 
-### Phase 5: Cleanup
-1. Remove `RateLimiter` service usage
-2. Drop `rate_limit_usage` table
-3. Update documentation
+### Phase 5: Security Validation & Cleanup
+1. **SECURITY AUDIT**: Verify function permissions are correctly set
+   ```sql
+   -- Verify no unauthorized access
+   SELECT 
+     routine_name,
+     routine_type,
+     security_type,
+     grantee,
+     privilege_type
+   FROM information_schema.routine_privileges 
+   WHERE routine_name LIKE '%user_tokens%';
+   ```
+2. Remove `RateLimiter` service usage
+3. Drop `rate_limit_usage` table
+4. Update documentation
+5. **PENETRATION TEST**: Verify p_identifier bypass is impossible
 
 ## Error Handling
 

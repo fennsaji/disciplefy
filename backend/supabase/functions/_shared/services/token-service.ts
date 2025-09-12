@@ -10,6 +10,7 @@
  */
 
 import { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import type { PostgrestError } from 'https://esm.sh/@supabase/supabase-js@2'
 import { AppError } from '../utils/error-handler.ts'
 import { 
   UserPlan, 
@@ -72,42 +73,15 @@ export class TokenService {
     this.validateUserPlan(userPlan)
 
     try {
-      const { data, error } = await this.supabaseClient
-        .rpc('get_or_create_user_tokens', {
-          p_identifier: identifier,
-          p_user_plan: userPlan
-        })
-        .single() as { data: DatabaseUserTokensResult | null, error: any }
+      const data = await this.rpcSingle<
+        { p_identifier: string; p_user_plan: UserPlan },
+        DatabaseUserTokensResult
+      >('get_or_create_user_tokens', {
+        p_identifier: identifier,
+        p_user_plan: userPlan
+      })
 
-      if (error) {
-        console.error('[TokenService] Failed to get user tokens:', error)
-        throw new AppError(
-          'TOKEN_SERVICE_ERROR', 
-          'Failed to retrieve token information', 
-          500
-        )
-      }
-
-      if (!data) {
-        throw new AppError(
-          'TOKEN_SERVICE_ERROR',
-          'No token data returned from database',
-          500
-        )
-      }
-
-      // Transform database result to TokenInfo interface
-      const tokenInfo: TokenInfo = {
-        availableTokens: data.available_tokens,
-        purchasedTokens: data.purchased_tokens,
-        dailyLimit: data.daily_limit,
-        lastReset: data.last_reset,
-        totalConsumedToday: data.total_consumed_today,
-        totalTokens: data.available_tokens + data.purchased_tokens,
-        userPlan: userPlan
-      }
-
-      return tokenInfo
+      return this.mapUserTokens(data, userPlan)
 
     } catch (error) {
       if (error instanceof AppError) {
@@ -149,39 +123,8 @@ export class TokenService {
     this.validateTokenCost(tokenCost)
 
     try {
-      const { data, error } = await this.supabaseClient
-        .rpc('consume_user_tokens', {
-          p_identifier: identifier,
-          p_user_plan: userPlan,
-          p_token_cost: tokenCost
-        })
-        .single() as { data: DatabaseTokenResult | null, error: any }
-
-      if (error) {
-        console.error('[TokenService] Failed to consume tokens:', error)
-        throw new AppError(
-          'TOKEN_SERVICE_ERROR',
-          'Failed to process token consumption',
-          500
-        )
-      }
-
-      if (!data) {
-        throw new AppError(
-          'TOKEN_SERVICE_ERROR',
-          'No result returned from token consumption',
-          500
-        )
-      }
-
-      const result: TokenConsumptionResult = {
-        success: data.success,
-        availableTokens: data.available_tokens,
-        purchasedTokens: data.purchased_tokens,
-        dailyLimit: data.daily_limit,
-        totalTokens: data.available_tokens + data.purchased_tokens,
-        errorMessage: data.error_message
-      }
+      const data = await this.callConsumeRpc(identifier, userPlan, tokenCost)
+      const result = this.mapConsumptionResult(data)
 
       // If consumption failed, throw appropriate error
       if (!data.success) {
@@ -192,19 +135,9 @@ export class TokenService {
         )
       }
 
-      // Log successful consumption for analytics (optional since DB function also logs)
+      // Log successful consumption for analytics if context provided
       if (context) {
-        await this.logTokenAnalytics(
-          identifier,
-          'token_consumed',
-          {
-            user_plan: userPlan,
-            token_cost: tokenCost,
-            remaining_daily: data.available_tokens,
-            remaining_purchased: data.purchased_tokens
-          },
-          context
-        )
+        await this.logConsumptionAnalytics(identifier, userPlan, tokenCost, data, context)
       }
 
       return result
@@ -263,7 +196,7 @@ export class TokenService {
           p_user_plan: userPlan,
           p_token_amount: tokenAmount
         })
-        .single() as { data: DatabasePurchaseResult | null, error: any }
+        .single() as { data: DatabasePurchaseResult | null, error: PostgrestError | null }
 
       if (error) {
         console.error('[TokenService] Failed to add purchased tokens:', error)
@@ -382,6 +315,128 @@ export class TokenService {
    */
   isUnlimitedPlan(userPlan: UserPlan): boolean {
     return this.config.planConfigs[userPlan].isUnlimited
+  }
+
+  /**
+   * Generic RPC call helper that handles single result
+   * 
+   * @param fn - RPC function name to call
+   * @param args - Arguments to pass to the function
+   * @returns Promise resolving to typed data
+   * @throws AppError on RPC errors or missing data
+   */
+  private async rpcSingle<TArgs, TOut>(fn: string, args: TArgs): Promise<TOut> {
+    const { data, error } = await this.supabaseClient
+      .rpc(fn, args)
+      .single() as { data: TOut | null, error: PostgrestError | null }
+
+    if (error) {
+      console.error(`[TokenService] RPC ${fn} failed:`, error)
+      throw new AppError(
+        'TOKEN_SERVICE_ERROR',
+        `Failed to execute ${fn}`,
+        500
+      )
+    }
+
+    if (!data) {
+      throw new AppError(
+        'TOKEN_SERVICE_ERROR',
+        `No data returned from ${fn}`,
+        500
+      )
+    }
+
+    return data
+  }
+
+  /**
+   * Maps database user tokens result to TokenInfo
+   * 
+   * @param data - Database result from get_or_create_user_tokens
+   * @param plan - User plan for the token info
+   * @returns Mapped TokenInfo object
+   */
+  private mapUserTokens(data: DatabaseUserTokensResult, plan: UserPlan): TokenInfo {
+    return {
+      availableTokens: data.available_tokens,
+      purchasedTokens: data.purchased_tokens,
+      dailyLimit: data.daily_limit,
+      lastReset: data.last_reset,
+      totalConsumedToday: data.total_consumed_today,
+      totalTokens: data.available_tokens + data.purchased_tokens,
+      userPlan: plan
+    }
+  }
+
+  /**
+   * Calls the consume_user_tokens RPC function
+   * 
+   * @param identifier - User ID or session ID
+   * @param userPlan - User's subscription plan
+   * @param tokenCost - Number of tokens to consume
+   * @returns Promise resolving to database consumption result
+   * @throws AppError on RPC errors or missing data
+   */
+  private async callConsumeRpc(
+    identifier: string,
+    userPlan: UserPlan,
+    tokenCost: number
+  ): Promise<DatabaseTokenResult> {
+    return this.rpcSingle<
+      { p_identifier: string; p_user_plan: UserPlan; p_token_cost: number },
+      DatabaseTokenResult
+    >('consume_user_tokens', {
+      p_identifier: identifier,
+      p_user_plan: userPlan,
+      p_token_cost: tokenCost
+    })
+  }
+
+  /**
+   * Maps database consumption result to domain result
+   * 
+   * @param data - Database result from consume_user_tokens
+   * @returns Mapped TokenConsumptionResult object
+   */
+  private mapConsumptionResult(data: DatabaseTokenResult): TokenConsumptionResult {
+    return {
+      success: data.success,
+      availableTokens: data.available_tokens,
+      purchasedTokens: data.purchased_tokens,
+      dailyLimit: data.daily_limit,
+      totalTokens: data.available_tokens + data.purchased_tokens,
+      errorMessage: data.error_message
+    }
+  }
+
+  /**
+   * Logs token consumption analytics
+   * 
+   * @param identifier - User ID or session ID
+   * @param userPlan - User's subscription plan
+   * @param tokenCost - Number of tokens consumed
+   * @param data - Database result data
+   * @param context - Operation context
+   */
+  private async logConsumptionAnalytics(
+    identifier: string,
+    userPlan: UserPlan,
+    tokenCost: number,
+    data: DatabaseTokenResult,
+    context: Partial<TokenOperationContext>
+  ): Promise<void> {
+    await this.logTokenAnalytics(
+      identifier,
+      'token_consumed',
+      {
+        user_plan: userPlan,
+        token_cost: tokenCost,
+        remaining_daily: data.available_tokens,
+        remaining_purchased: data.purchased_tokens
+      },
+      context
+    )
   }
 
   /**

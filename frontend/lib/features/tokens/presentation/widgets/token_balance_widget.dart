@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../domain/entities/token_status.dart';
+import '../extensions/duration_extensions.dart';
 
 /// Widget that displays current token balance with visual indicators.
 class TokenBalanceWidget extends StatelessWidget {
@@ -30,9 +31,6 @@ class TokenBalanceWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final textTheme = theme.textTheme;
-
     return Card(
       elevation: 2,
       child: InkWell(
@@ -44,14 +42,18 @@ class TokenBalanceWidget extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
-              _buildHeader(context, theme, textTheme),
+              _Header(
+                tokenStatus: tokenStatus,
+                showRefreshButton: showRefreshButton,
+                onRefresh: onRefresh,
+              ),
               const SizedBox(height: 12),
-              _buildTokenDisplay(context, theme, textTheme),
+              _TokenDisplay(tokenStatus: tokenStatus),
               if (showDetails) ...[
                 const SizedBox(height: 12),
-                _buildProgressBar(context, theme),
+                _ProgressBar(tokenStatus: tokenStatus),
                 const SizedBox(height: 8),
-                _buildDetails(context, textTheme),
+                _Details(tokenStatus: tokenStatus),
               ],
             ],
           ),
@@ -59,14 +61,30 @@ class TokenBalanceWidget extends StatelessWidget {
       ),
     );
   }
+}
 
-  Widget _buildHeader(
-      BuildContext context, ThemeData theme, TextTheme textTheme) {
+/// Header section with title and optional refresh button
+class _Header extends StatelessWidget {
+  final TokenStatus tokenStatus;
+  final bool showRefreshButton;
+  final VoidCallback? onRefresh;
+
+  const _Header({
+    required this.tokenStatus,
+    required this.showRefreshButton,
+    this.onRefresh,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final textTheme = theme.textTheme;
+
     return Row(
       children: [
         Icon(
           Icons.token,
-          color: _getStatusColor(),
+          color: _getStatusColor(tokenStatus),
           size: 20,
         ),
         const SizedBox(width: 8),
@@ -87,9 +105,21 @@ class TokenBalanceWidget extends StatelessWidget {
       ],
     );
   }
+}
 
-  Widget _buildTokenDisplay(
-      BuildContext context, ThemeData theme, TextTheme textTheme) {
+/// Token count display with status text and plan chip
+class _TokenDisplay extends StatelessWidget {
+  final TokenStatus tokenStatus;
+
+  const _TokenDisplay({
+    required this.tokenStatus,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final textTheme = theme.textTheme;
+
     return Row(
       children: [
         Column(
@@ -98,12 +128,12 @@ class TokenBalanceWidget extends StatelessWidget {
             Text(
               '${tokenStatus.totalTokens}',
               style: textTheme.headlineMedium?.copyWith(
-                color: _getStatusColor(),
+                color: _getStatusColor(tokenStatus),
                 fontWeight: FontWeight.bold,
               ),
             ),
             Text(
-              _getStatusText(),
+              _getStatusText(tokenStatus),
               style: textTheme.bodySmall?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
               ),
@@ -111,32 +141,57 @@ class TokenBalanceWidget extends StatelessWidget {
           ],
         ),
         const Spacer(),
-        _buildPlanChip(context, theme),
+        _PlanChip(tokenStatus: tokenStatus),
       ],
     );
   }
+}
 
-  Widget _buildPlanChip(BuildContext context, ThemeData theme) {
+/// Plan chip showing user's current plan
+class _PlanChip extends StatelessWidget {
+  final TokenStatus tokenStatus;
+
+  const _PlanChip({
+    required this.tokenStatus,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final planColor = _getPlanColor(tokenStatus.userPlan);
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: _getPlanColor().withOpacity(0.1),
+        color: planColor.withOpacity(0.1),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: _getPlanColor().withOpacity(0.3),
+          color: planColor.withOpacity(0.3),
         ),
       ),
       child: Text(
         tokenStatus.userPlan.displayName,
         style: theme.textTheme.bodySmall?.copyWith(
-          color: _getPlanColor(),
+          color: planColor,
           fontWeight: FontWeight.w600,
         ),
       ),
     );
   }
+}
 
-  Widget _buildProgressBar(BuildContext context, ThemeData theme) {
+/// Progress bar showing token usage
+class _ProgressBar extends StatelessWidget {
+  final TokenStatus tokenStatus;
+
+  const _ProgressBar({
+    required this.tokenStatus,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     if (tokenStatus.isPremium) {
       return Container(
         height: 6,
@@ -161,19 +216,32 @@ class TokenBalanceWidget extends StatelessWidget {
       ),
       child: FractionallySizedBox(
         alignment: Alignment.centerLeft,
-        widthFactor:
-            (tokenStatus.totalTokens / tokenStatus.dailyLimit).clamp(0.0, 1.0),
+        widthFactor: tokenStatus.dailyLimit > 0
+            ? (tokenStatus.totalTokens / tokenStatus.dailyLimit).clamp(0.0, 1.0)
+            : 0.0,
         child: Container(
           decoration: BoxDecoration(
-            color: _getStatusColor(),
+            color: _getStatusColor(tokenStatus),
             borderRadius: BorderRadius.circular(3),
           ),
         ),
       ),
     );
   }
+}
 
-  Widget _buildDetails(BuildContext context, TextTheme textTheme) {
+/// Detailed information section
+class _Details extends StatelessWidget {
+  final TokenStatus tokenStatus;
+
+  const _Details({
+    required this.tokenStatus,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+
     return Column(
       children: [
         if (!tokenStatus.isPremium) ...[
@@ -213,7 +281,7 @@ class TokenBalanceWidget extends StatelessWidget {
               ),
               const Spacer(),
               Text(
-                'Resets: ${tokenStatus.formattedTimeUntilReset}',
+                'Resets: ${tokenStatus.timeUntilReset.toShortLabel()}',
                 style: textTheme.bodySmall?.copyWith(
                   color: Theme.of(context).colorScheme.primary,
                 ),
@@ -242,43 +310,52 @@ class TokenBalanceWidget extends StatelessWidget {
       ],
     );
   }
+}
 
-  Color _getStatusColor() {
-    if (tokenStatus.isPremium) {
+// Utility functions moved to top-level to be shared
+Color _getStatusColor(TokenStatus tokenStatus) {
+  if (tokenStatus.isPremium) {
+    return Colors.amber[700]!;
+  }
+
+  final percentage = tokenStatus.dailyLimit > 0
+      ? tokenStatus.totalTokens / tokenStatus.dailyLimit
+      : 0.0;
+
+  if (percentage < 0.25) {
+    return Colors.red[600]!;
+  } else if (percentage < 0.5) {
+    return Colors.orange[600]!;
+  } else {
+    return Colors.green[600]!;
+  }
+}
+
+String _getStatusText(TokenStatus tokenStatus) {
+  if (tokenStatus.isPremium) {
+    return 'Unlimited access';
+  }
+
+  final percentage = tokenStatus.dailyLimit > 0
+      ? tokenStatus.totalTokens / tokenStatus.dailyLimit
+      : 0.0;
+
+  if (percentage < 0.25) {
+    return 'Running low';
+  } else if (percentage < 0.5) {
+    return 'Getting low';
+  } else {
+    return 'Available';
+  }
+}
+
+Color _getPlanColor(UserPlan plan) {
+  switch (plan) {
+    case UserPlan.free:
+      return Colors.grey[600]!;
+    case UserPlan.standard:
+      return Colors.blue[600]!;
+    case UserPlan.premium:
       return Colors.amber[700]!;
-    }
-
-    if (tokenStatus.totalTokens == 0) {
-      return Colors.red[600]!;
-    } else if (tokenStatus.isRunningLow) {
-      return Colors.orange[600]!;
-    } else {
-      return Colors.green[600]!;
-    }
-  }
-
-  Color _getPlanColor() {
-    switch (tokenStatus.userPlan) {
-      case UserPlan.free:
-        return Colors.grey[600]!;
-      case UserPlan.standard:
-        return Colors.blue[600]!;
-      case UserPlan.premium:
-        return Colors.amber[700]!;
-    }
-  }
-
-  String _getStatusText() {
-    if (tokenStatus.isPremium) {
-      return 'Unlimited';
-    }
-
-    if (tokenStatus.totalTokens == 0) {
-      return 'No tokens remaining';
-    } else if (tokenStatus.isRunningLow) {
-      return 'Running low';
-    } else {
-      return 'Available tokens';
-    }
   }
 }

@@ -163,21 +163,6 @@ class TokenStatus extends Equatable {
         : Duration.zero;
   }
 
-  /// Format time until reset as human-readable string
-  String get formattedTimeUntilReset {
-    final duration = timeUntilReset;
-    final hours = duration.inHours;
-    final minutes = duration.inMinutes.remainder(60);
-
-    if (hours > 0) {
-      return '${hours}h ${minutes}m';
-    } else if (minutes > 0) {
-      return '${minutes}m';
-    } else {
-      return 'Soon';
-    }
-  }
-
   @override
   List<Object?> get props => [
         availableTokens,

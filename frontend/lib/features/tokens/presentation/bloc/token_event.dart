@@ -81,6 +81,9 @@ class UpgradeUserPlan extends TokenEvent {
 
   @override
   List<Object?> get props => [targetPlan, paymentMethodId];
+
+  @override
+  String toString() => 'UpgradeUserPlan(targetPlan: $targetPlan)';
 }
 
 /// Event to clear any error states and reset to initial state
@@ -124,6 +127,9 @@ class PaymentSuccess extends TokenEvent {
 
   @override
   List<Object?> get props => [paymentId, orderId, signature, tokensPurchased];
+
+  @override
+  String toString() => 'PaymentSuccess(tokensPurchased: $tokensPurchased)';
 }
 
 /// Event to handle payment failure callback from Razorpay
@@ -195,6 +201,9 @@ class ConfirmPayment extends TokenEvent {
 
   @override
   List<Object?> get props => [paymentId, orderId, signature, tokenAmount];
+
+  @override
+  String toString() => 'ConfirmPayment(tokenAmount: $tokenAmount)';
 }
 
 /// Event to fetch purchase history for the authenticated user

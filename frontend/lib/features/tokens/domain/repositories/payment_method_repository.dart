@@ -2,6 +2,7 @@ import 'package:dartz/dartz.dart';
 
 import '../../../../core/error/failures.dart';
 import '../entities/saved_payment_method.dart';
+import '../entities/payment_preferences.dart';
 
 /// Abstract repository for payment method management operations.
 abstract class PaymentMethodRepository {

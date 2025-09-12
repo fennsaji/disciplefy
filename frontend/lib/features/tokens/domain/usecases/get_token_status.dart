@@ -5,31 +5,28 @@ import '../../../../core/usecases/usecase.dart';
 import '../entities/token_status.dart';
 import '../repositories/token_repository.dart';
 
-/// Use case for fetching current token status.
+/// Use case for fetching current token status from the remote data source.
+///
+/// This use case retrieves the user's token balance, including:
+/// - Available tokens from daily allocation
+/// - Purchased tokens from token purchases
+/// - Total token count
+/// - User's current plan information
+///
+/// Returns either a [Failure] if the operation fails, or a [TokenStatus] entity
+/// containing the complete token information for the authenticated user.
 class GetTokenStatus implements UseCase<TokenStatus, NoParams> {
   final TokenRepository _repository;
 
   const GetTokenStatus(this._repository);
 
+  /// Executes the use case to retrieve current token status.
+  ///
+  /// Returns [Either<Failure, TokenStatus>] where:
+  /// - [Left] contains a [Failure] if the operation fails
+  /// - [Right] contains [TokenStatus] with current token information
   @override
   Future<Either<Failure, TokenStatus>> call(NoParams params) async {
-    print('🪙 [USE_CASE] Getting token status...');
-
-    final result = await _repository.getTokenStatus();
-
-    return result.fold(
-      (failure) {
-        print('🚨 [USE_CASE] Get token status failed: ${failure.message}');
-        return Left(failure);
-      },
-      (tokenStatus) {
-        print('🪙 [USE_CASE] Token status retrieved successfully');
-        print('🪙 [USE_CASE] Available: ${tokenStatus.availableTokens}, '
-            'Purchased: ${tokenStatus.purchasedTokens}, '
-            'Total: ${tokenStatus.totalTokens}, '
-            'Plan: ${tokenStatus.userPlan.displayName}');
-        return Right(tokenStatus);
-      },
-    );
+    return await _repository.getTokenStatus();
   }
 }

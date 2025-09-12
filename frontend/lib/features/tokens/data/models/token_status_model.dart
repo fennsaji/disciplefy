@@ -23,14 +23,16 @@ class TokenStatusModel extends TokenStatus {
     final data = json['data'] as Map<String, dynamic>? ?? json;
 
     return TokenStatusModel(
-      availableTokens: data['available_tokens'] as int,
-      purchasedTokens: data['purchased_tokens'] as int,
-      totalTokens: data['total_tokens'] as int,
-      dailyLimit: data['daily_limit'] as int,
-      totalConsumedToday: data['total_consumed_today'] as int,
+      availableTokens: (data['available_tokens'] as num).toInt(),
+      purchasedTokens: (data['purchased_tokens'] as num).toInt(),
+      totalTokens: (data['total_tokens'] as num).toInt(),
+      dailyLimit: (data['daily_limit'] as num).toInt(),
+      totalConsumedToday: (data['total_consumed_today'] as num).toInt(),
       userPlan: _parseUserPlan(data['user_plan'] as String),
       lastReset: DateTime.parse(data['last_reset'] as String),
-      nextResetTime: DateTime.parse(data['next_reset_time'] as String),
+      nextResetTime: data['next_reset_time'] != null
+          ? DateTime.parse(data['next_reset_time'] as String)
+          : DateTime.now().add(const Duration(days: 1)),
       authenticationType: _parseAuthType(data['authentication_type'] as String),
       isPremium: data['is_premium'] as bool? ?? false,
       unlimitedUsage: data['unlimited_usage'] as bool? ?? false,

@@ -15,6 +15,17 @@ class CreatePaymentOrder implements UseCase<String, CreatePaymentOrderParams> {
 
   @override
   Future<Either<Failure, String>> call(CreatePaymentOrderParams params) async {
+    // Validate tokenAmount is positive
+    if (params.tokenAmount <= 0) {
+      return Left(ValidationFailure(
+        message: 'Token amount must be greater than 0',
+        code: 'INVALID_TOKEN_AMOUNT',
+        context: {
+          'tokenAmount': params.tokenAmount,
+        },
+      ));
+    }
+
     return await _repository.createPaymentOrder(
       tokenAmount: params.tokenAmount,
     );

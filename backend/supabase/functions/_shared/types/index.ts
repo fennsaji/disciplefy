@@ -16,6 +16,7 @@ export interface UserContext {
   readonly type: 'authenticated' | 'anonymous'
   readonly userId?: string
   readonly sessionId?: string
+  readonly userType?: 'admin' | 'user' // Admin users get premium access temporarily
 }
 
 /**

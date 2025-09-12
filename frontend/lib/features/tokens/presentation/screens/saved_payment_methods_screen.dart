@@ -101,7 +101,14 @@ class _SavedPaymentMethodsScreenState extends State<SavedPaymentMethodsScreen> {
 
     return RefreshIndicator(
       onRefresh: () async {
-        context.read<PaymentMethodBloc>().add(LoadPaymentMethods());
+        final bloc = context.read<PaymentMethodBloc>();
+        bloc.add(LoadPaymentMethods());
+
+        // Wait for either loaded or error state to complete refresh
+        await bloc.stream.firstWhere(
+          (state) =>
+              state is PaymentMethodsLoaded || state is PaymentMethodError,
+        );
       },
       child: ListView.builder(
         padding: const EdgeInsets.all(16),

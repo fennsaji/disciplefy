@@ -9,10 +9,42 @@ import { ServiceContainer } from '../_shared/core/services.ts'
 
 /**
  * Simple test handler to isolate token system issues
+ * SECURITY: Only accessible to authenticated admin/premium users
  */
 async function handleTestToken(req: Request, services: ServiceContainer): Promise<Response> {
   try {
     console.log('[TestToken] Starting test...')
+    
+    // SECURITY CHECK: Verify user is authenticated and authorized
+    const userContext = await services.authService.getUserContext(req)
+    
+    if (userContext.type !== 'authenticated') {
+      return new Response(JSON.stringify({
+        success: false,
+        error: 'Authentication required'
+      }), {
+        status: 401,
+        headers: { 'Content-Type': 'application/json' }
+      })
+    }
+    
+    const userPlan = await services.authService.getUserPlan(req)
+    
+    // SECURITY CHECK: Only admin or premium users can access debug data
+    const isAdmin = userContext.userType === 'admin'
+    const isPremium = userPlan === 'premium'
+    
+    if (!isAdmin && !isPremium) {
+      return new Response(JSON.stringify({
+        success: false,
+        error: 'Unauthorized: Admin or premium access required'
+      }), {
+        status: 403,
+        headers: { 'Content-Type': 'application/json' }
+      })
+    }
+    
+    console.log('[TestToken] Authorized user accessing debug endpoint')
     
     // Test 1: Check if services are available
     console.log('[TestToken] Services available:', {
@@ -20,17 +52,10 @@ async function handleTestToken(req: Request, services: ServiceContainer): Promis
       tokenService: !!services.tokenService
     })
     
-    // Test 2: Try to get user context
-    console.log('[TestToken] Getting user context...')
-    const userContext = await services.authService.getUserContext(req)
     console.log('[TestToken] User context:', userContext)
-    
-    // Test 3: Try to get user plan
-    console.log('[TestToken] Getting user plan...')
-    const userPlan = await services.authService.getUserPlan(req)
     console.log('[TestToken] User plan:', userPlan)
     
-    // Test 4: Try basic token service methods
+    // Test 2: Try basic token service methods
     console.log('[TestToken] Testing token service methods...')
     const canPurchase = services.tokenService.canPurchaseTokens(userPlan)
     const isUnlimited = services.tokenService.isUnlimitedPlan(userPlan)
@@ -43,12 +68,17 @@ async function handleTestToken(req: Request, services: ServiceContainer): Promis
     return new Response(JSON.stringify({
       success: true,
       data: {
-        userContext,
+        userContext: {
+          type: userContext.type,
+          userId: userContext.userId,
+          userType: userContext.userType
+        },
         userPlan,
         tokenServiceMethods: {
           canPurchase,
           isUnlimited
-        }
+        },
+        timestamp: new Date().toISOString()
       }
     }), {
       status: 200,
@@ -56,14 +86,14 @@ async function handleTestToken(req: Request, services: ServiceContainer): Promis
     })
     
   } catch (error) {
+    // Log full error details server-side for debugging
     console.error('[TestToken] Error:', error)
+    console.error('[TestToken] Stack trace:', error instanceof Error ? error.stack : 'No stack trace')
     
+    // Return sanitized error response to client
     return new Response(JSON.stringify({
       success: false,
-      error: {
-        message: error instanceof Error ? error.message : 'Unknown error',
-        stack: error instanceof Error ? error.stack : undefined
-      }
+      error: 'Internal server error'
     }), {
       status: 500,
       headers: { 'Content-Type': 'application/json' }
@@ -73,7 +103,7 @@ async function handleTestToken(req: Request, services: ServiceContainer): Promis
 
 // Create and export the Edge Function
 export default createFunction(handleTestToken, {
-  requireAuth: false,
+  requireAuth: true,  // SECURITY: Force authentication
   enableAnalytics: false,
   allowedMethods: ['GET']
 })

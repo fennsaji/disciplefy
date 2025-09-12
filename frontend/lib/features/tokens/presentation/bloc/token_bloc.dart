@@ -3,17 +3,19 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:dartz/dartz.dart';
 
 import '../../domain/entities/token_status.dart';
-import '../../domain/usecases/get_token_status.dart' as use_cases;
-import '../../domain/usecases/create_payment_order.dart' as use_cases;
+import '../../domain/entities/purchase_history.dart';
+import '../../domain/entities/purchase_statistics.dart';
+import '../../domain/usecases/get_token_status.dart' as get_token_status;
 import '../../domain/usecases/create_payment_order.dart'
-    show CreatePaymentOrderParams;
-import '../../domain/usecases/confirm_payment.dart' as use_cases;
-import '../../domain/usecases/confirm_payment.dart' show ConfirmPaymentParams;
-import '../../domain/usecases/get_purchase_history.dart' as use_cases;
+    as create_payment_order;
+import '../../domain/usecases/confirm_payment.dart' as confirm_payment;
 import '../../domain/usecases/get_purchase_history.dart'
-    show GetPurchaseHistoryParams;
-import '../../domain/usecases/get_purchase_statistics.dart' as use_cases;
+    as get_purchase_history;
+import '../../domain/usecases/get_purchase_statistics.dart'
+    as get_purchase_statistics;
 import '../../../../core/error/failures.dart' as failures;
+import '../../../../core/error/token_failures.dart';
+import '../../../../core/error/cache_failure.dart';
 import '../../../../core/usecases/usecase.dart';
 
 import 'token_event.dart';
@@ -28,11 +30,11 @@ import 'token_state.dart';
 /// - Plan upgrades and validations
 /// - Real-time token balance updates
 class TokenBloc extends Bloc<TokenEvent, TokenState> {
-  final use_cases.GetTokenStatus _getTokenStatus;
-  final use_cases.CreatePaymentOrder _createPaymentOrder;
-  final use_cases.ConfirmPayment _confirmPayment;
-  final use_cases.GetPurchaseHistory _getPurchaseHistory;
-  final use_cases.GetPurchaseStatistics _getPurchaseStatistics;
+  final get_token_status.GetTokenStatus _getTokenStatus;
+  final create_payment_order.CreatePaymentOrder _createPaymentOrder;
+  final confirm_payment.ConfirmPayment _confirmPayment;
+  final get_purchase_history.GetPurchaseHistory _getPurchaseHistory;
+  final get_purchase_statistics.GetPurchaseStatistics _getPurchaseStatistics;
 
   // Token status cache with timestamp
   TokenStatus? _cachedTokenStatus;
@@ -43,11 +45,12 @@ class TokenBloc extends Bloc<TokenEvent, TokenState> {
   static const Duration _autoRefreshInterval = Duration(minutes: 10);
 
   TokenBloc({
-    required use_cases.GetTokenStatus getTokenStatus,
-    required use_cases.CreatePaymentOrder createPaymentOrder,
-    required use_cases.ConfirmPayment confirmPayment,
-    required use_cases.GetPurchaseHistory getPurchaseHistory,
-    required use_cases.GetPurchaseStatistics getPurchaseStatistics,
+    required get_token_status.GetTokenStatus getTokenStatus,
+    required create_payment_order.CreatePaymentOrder createPaymentOrder,
+    required confirm_payment.ConfirmPayment confirmPayment,
+    required get_purchase_history.GetPurchaseHistory getPurchaseHistory,
+    required get_purchase_statistics.GetPurchaseStatistics
+        getPurchaseStatistics,
   })  : _getTokenStatus = getTokenStatus,
         _createPaymentOrder = createPaymentOrder,
         _confirmPayment = confirmPayment,
@@ -447,7 +450,7 @@ class TokenBloc extends Bloc<TokenEvent, TokenState> {
     ));
 
     // Create payment order
-    final orderParams = CreatePaymentOrderParams(
+    final orderParams = create_payment_order.CreatePaymentOrderParams(
       tokenAmount: event.tokenAmount,
     );
 
@@ -481,6 +484,17 @@ class TokenBloc extends Bloc<TokenEvent, TokenState> {
       return;
     }
 
+    // Comprehensive input validation before payment confirmation
+    final validationError = _validatePaymentConfirmationInputs(event);
+    if (validationError != null) {
+      emit(TokenError(
+        failure: validationError,
+        operation: 'payment_confirmation',
+        previousTokenStatus: _cachedTokenStatus,
+      ));
+      return;
+    }
+
     // Emit payment confirming state
     emit(TokenPaymentConfirming(
       currentTokenStatus: _cachedTokenStatus!,
@@ -491,7 +505,7 @@ class TokenBloc extends Bloc<TokenEvent, TokenState> {
     ));
 
     // Confirm payment
-    final confirmParams = ConfirmPaymentParams(
+    final confirmParams = confirm_payment.ConfirmPaymentParams(
       paymentId: event.paymentId,
       orderId: event.orderId,
       signature: event.signature,
@@ -532,7 +546,7 @@ class TokenBloc extends Bloc<TokenEvent, TokenState> {
   ) async {
     emit(const PurchaseHistoryLoading());
 
-    final params = GetPurchaseHistoryParams(
+    final params = get_purchase_history.GetPurchaseHistoryParams(
       limit: event.limit,
       offset: event.offset,
     );
@@ -603,16 +617,61 @@ class TokenBloc extends Bloc<TokenEvent, TokenState> {
       }
     });
   }
-}
 
-/// Cache-related failure
-class CacheFailure extends failures.Failure {
-  const CacheFailure({String? message})
-      : super(
-            message: message ?? 'Cache operation failed', code: 'CACHE_ERROR');
+  /// Validates payment confirmation inputs before processing
+  ///
+  /// Returns [ValidationFailure] if validation fails, null if valid
+  ValidationFailure? _validatePaymentConfirmationInputs(ConfirmPayment event) {
+    // Validate paymentId
+    if (event.paymentId.trim().isEmpty) {
+      return const ValidationFailure(message: 'Payment ID cannot be empty');
+    }
 
-  @override
-  List<Object?> get props => [message];
+    // Basic Razorpay payment ID format validation
+    if (!RegExp(r'^pay_[A-Za-z0-9]{14}$').hasMatch(event.paymentId.trim())) {
+      return const ValidationFailure(message: 'Invalid payment ID format');
+    }
+
+    // Validate orderId
+    if (event.orderId.trim().isEmpty) {
+      return const ValidationFailure(message: 'Order ID cannot be empty');
+    }
+
+    // Basic Razorpay order ID format validation
+    if (!RegExp(r'^order_[A-Za-z0-9]{14}$').hasMatch(event.orderId.trim())) {
+      return const ValidationFailure(message: 'Invalid order ID format');
+    }
+
+    // Validate signature
+    if (event.signature.trim().isEmpty) {
+      return const ValidationFailure(
+          message: 'Payment signature cannot be empty');
+    }
+
+    // Basic signature format validation (hex string)
+    if (!RegExp(r'^[a-fA-F0-9]{64}$').hasMatch(event.signature.trim())) {
+      return const ValidationFailure(
+          message: 'Invalid payment signature format');
+    }
+
+    // Validate token amount
+    if (event.tokenAmount <= 0) {
+      return const ValidationFailure(
+          message: 'Token amount must be greater than zero');
+    }
+
+    if (event.tokenAmount < 50) {
+      return const ValidationFailure(
+          message: 'Minimum token purchase is 50 tokens');
+    }
+
+    if (event.tokenAmount > 9999) {
+      return const ValidationFailure(
+          message: 'Maximum token purchase is 9,999 tokens per transaction');
+    }
+
+    return null; // All validations passed
+  }
 }
 
 /// Validation-related failure

@@ -69,7 +69,13 @@ class AuthStorageService {
 
     // STEP 3: Store in Hive for synchronous router access
     try {
-      final box = Hive.box('app_settings');
+      // Ensure app_settings box is opened before accessing
+      Box box;
+      if (Hive.isBoxOpen('app_settings')) {
+        box = Hive.box('app_settings');
+      } else {
+        box = await Hive.openBox('app_settings');
+      }
 
       // Use transaction to ensure atomic writes to Hive
       await box.putAll(hiveData);
@@ -130,76 +136,29 @@ class AuthStorageService {
     return completed == 'true';
   }
 
-  /// Signs out the user by clearing all stored data
-  /// Clears: FlutterSecureStorage, Hive app_settings, saved guides, recent guides
-  Future<void> clearAllData() async {
-    // Clear FlutterSecureStorage (auth tokens, user data)
+  /// Clears only secure storage (auth tokens, user credentials)
+  /// Other storage concerns are handled by their respective repositories
+  Future<void> clearSecureStorage() async {
     try {
       await _secureStorage.deleteAll();
+      if (kDebugMode) {
+        print('🔐 [AUTH STORAGE] ✅ Secure storage cleared');
+      }
     } catch (e) {
       if (kDebugMode) {
         print('🔐 [AUTH STORAGE] ❌ Failed to clear FlutterSecureStorage: $e');
       }
+      rethrow;
     }
+  }
 
-    // Clear Hive app_settings box
-    try {
-      final appSettingsBox = Hive.box('app_settings');
-      await appSettingsBox.clear();
-    } catch (e) {
-      if (kDebugMode) {
-        print('🔐 [AUTH STORAGE] ❌ Failed to clear app_settings: $e');
-      }
-    }
-
-    // Clear ALL Hive boxes - open them if needed, then clear
-    final boxesToClear = [
-      'saved_guides',
-      'recent_guides',
-      'user_preferences',
-      'cached_data',
-      'study_guides_cache',
-      'daily_verse_cache'
-    ];
-
-    for (final boxName in boxesToClear) {
-      try {
-        Box? box;
-        if (Hive.isBoxOpen(boxName)) {
-          box = Hive.box(boxName);
-        } else {
-          // Try to open the box to clear existing data
-          try {
-            box = await Hive.openBox(boxName);
-          } catch (e) {
-            continue;
-          }
-        }
-
-        final itemCount = box.length;
-        await box.clear();
-        // Close and delete the box completely from IndexedDB
-        await box.close();
-        await Hive.deleteBoxFromDisk(boxName);
-      } catch (e) {
-        if (kDebugMode) {
-          print('🔐 [AUTH STORAGE] ❌ Failed to clear $boxName: $e');
-        }
-      }
-    }
-
-    // Clear SharedPreferences (web caching, daily verses, etc.)
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.clear();
-    } catch (e) {
-      if (kDebugMode) {
-        print('🔐 [AUTH STORAGE] ❌ Failed to clear SharedPreferences: $e');
-      }
-    }
-
+  /// Legacy method - redirects to ClearUserDataUseCase for proper orchestration
+  @Deprecated('Use ClearUserDataUseCase for comprehensive data cleanup instead')
+  Future<void> clearAllData() async {
     if (kDebugMode) {
-      print('🔐 [AUTH STORAGE] ✅ Comprehensive data cleanup completed');
+      print(
+          '🔐 [AUTH STORAGE] ⚠️ clearAllData is deprecated. Use ClearUserDataUseCase instead.');
     }
+    await clearSecureStorage();
   }
 }

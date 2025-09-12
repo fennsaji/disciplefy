@@ -8,6 +8,15 @@ import 'package:flutter/foundation.dart';
 import '../network/network_info.dart';
 import '../../features/auth/data/services/auth_service.dart';
 import '../../features/auth/presentation/bloc/auth_bloc.dart';
+import '../../features/auth/domain/repositories/storage_repository.dart';
+import '../../features/auth/data/repositories/storage_repository_impl.dart';
+import '../../features/auth/domain/repositories/auth_session_repository.dart';
+import '../../features/auth/data/repositories/auth_session_repository_impl.dart';
+import '../../features/auth/domain/repositories/secure_store_repository.dart';
+import '../../features/auth/data/repositories/secure_store_repository_impl.dart';
+import '../../features/auth/domain/repositories/local_store_repository.dart';
+import '../../features/auth/data/repositories/local_store_repository_impl.dart';
+import '../../features/auth/domain/usecases/clear_user_data_usecase.dart';
 import '../../features/study_generation/domain/repositories/study_repository.dart';
 import '../../features/study_generation/data/repositories/study_repository_impl.dart';
 import '../../features/study_generation/data/datasources/study_remote_data_source.dart';
@@ -102,6 +111,7 @@ import '../../features/tokens/domain/usecases/get_purchase_history.dart';
 import '../../features/tokens/domain/usecases/get_purchase_statistics.dart';
 import '../../features/tokens/presentation/bloc/token_bloc.dart';
 import '../../features/tokens/presentation/bloc/payment_method_bloc.dart';
+import '../../features/tokens/di/tokens_injection.dart';
 
 /// Service locator instance for dependency injection
 final sl = GetIt.instance;
@@ -170,6 +180,21 @@ Future<void> initializeDependencies() async {
 
   // Register AuthStateProvider as singleton for consistent state across screens
   sl.registerLazySingleton(() => AuthStateProvider());
+
+  // Storage Repository and Use Cases
+  sl.registerLazySingleton<StorageRepository>(() => StorageRepositoryImpl());
+  sl.registerLazySingleton<AuthSessionRepository>(
+      () => AuthSessionRepositoryImpl());
+  sl.registerLazySingleton<SecureStoreRepository>(
+      () => SecureStoreRepositoryImpl());
+  sl.registerLazySingleton<LocalStoreRepository>(
+      () => LocalStoreRepositoryImpl());
+  sl.registerLazySingleton(() => ClearUserDataUseCase(
+        authSessionRepository: sl(),
+        secureStoreRepository: sl(),
+        localStoreRepository: sl(),
+        storageRepository: sl(), // Legacy - for backward compatibility
+      ));
 
   //! Study Generation Data Sources
   sl.registerLazySingleton<StudyRemoteDataSource>(
@@ -408,60 +433,5 @@ Future<void> initializeDependencies() async {
       ));
 
   //! Tokens
-  sl.registerLazySingleton<TokenRemoteDataSource>(
-    () => TokenRemoteDataSourceImpl(
-      supabaseClient: sl(),
-    ),
-  );
-
-  sl.registerLazySingleton<TokenRepository>(
-    () => TokenRepositoryImpl(
-      remoteDataSource: sl(),
-      networkInfo: sl(),
-    ),
-  );
-
-  sl.registerLazySingleton<PaymentMethodRepository>(
-    () => PaymentMethodRepositoryImpl(
-      remoteDataSource: sl(),
-      networkInfo: sl(),
-    ),
-  );
-
-  sl.registerLazySingleton(() => GetTokenStatus(sl()));
-  sl.registerLazySingleton(() => ConfirmPayment(sl()));
-  sl.registerLazySingleton(() => CreatePaymentOrder(sl()));
-  sl.registerLazySingleton(() => GetPurchaseHistory(sl()));
-  sl.registerLazySingleton(() => GetPurchaseStatistics(sl()));
-
-  // Payment Method Use Cases
-  sl.registerLazySingleton(
-      () => GetPaymentMethods(sl<PaymentMethodRepository>()));
-  sl.registerLazySingleton(
-      () => SavePaymentMethod(sl<PaymentMethodRepository>()));
-  sl.registerLazySingleton(
-      () => SetDefaultPaymentMethod(sl<PaymentMethodRepository>()));
-  sl.registerLazySingleton(
-      () => DeletePaymentMethod(sl<PaymentMethodRepository>()));
-  sl.registerLazySingleton(
-      () => GetPaymentPreferences(sl<PaymentMethodRepository>()));
-  sl.registerLazySingleton(
-      () => UpdatePaymentPreferences(sl<PaymentMethodRepository>()));
-
-  sl.registerFactory(() => TokenBloc(
-        getTokenStatus: sl(),
-        confirmPayment: sl(),
-        createPaymentOrder: sl(),
-        getPurchaseHistory: sl(),
-        getPurchaseStatistics: sl(),
-      ));
-
-  sl.registerFactory(() => PaymentMethodBloc(
-        getPaymentMethods: sl(),
-        savePaymentMethod: sl(),
-        setDefaultPaymentMethod: sl(),
-        deletePaymentMethod: sl(),
-        getPaymentPreferences: sl(),
-        updatePaymentPreferences: sl(),
-      ));
+  registerTokenDependencies(sl);
 }

@@ -39,7 +39,10 @@ DROP POLICY IF EXISTS "Prevent direct client deletions" ON user_tokens;
 CREATE POLICY "Edge Functions can manage all token data" ON user_tokens
   FOR ALL USING (
     -- Allow all operations for service role (Edge Functions, server-side operations)
-    current_setting('role') = 'service_role'
+    auth.role() = 'service_role'
+  ) WITH CHECK (
+    -- Enforce same condition for writes as for reads
+    auth.role() = 'service_role'
   );
 
 -- Policy 2: Allow authenticated users to read their own token data
@@ -52,16 +55,10 @@ CREATE POLICY "Users can read own token data" ON user_tokens
     user_plan IN ('standard', 'premium')
   );
 
--- Policy 3: Allow anonymous sessions to read their own token data  
--- Anonymous users can view their session-based token data
-CREATE POLICY "Anonymous users can read own session token data" ON user_tokens
-  FOR SELECT USING (
-    -- Anonymous users can read records matching their session
-    auth.jwt() IS NULL AND 
-    user_plan = 'free'
-    -- Note: Cannot validate session_id in RLS since it's not in JWT for anonymous users
-    -- Session validation will be handled at the application layer
-  );
+-- Policy 3: Anonymous token access removed for security
+-- Anonymous token access is now served via Edge Functions only to ensure proper session validation
+-- The previous policy (auth.jwt() IS NULL AND user_plan = 'free') allowed unauthenticated
+-- SELECT access to all free-plan rows, which is a security risk
 
 -- Policy 4: Prevent direct INSERT/UPDATE/DELETE from client applications
 -- All token modifications must go through database functions called by Edge Functions
@@ -80,24 +77,19 @@ CREATE POLICY "Prevent direct client deletions" ON user_tokens
 -- STEP 4: Grant Function Execution Rights (Safe)
 -- =====================================
 
--- Grant EXECUTE permission on token functions to authenticated users
--- This allows client applications to call these functions via RPC
+-- Grant EXECUTE permission on token functions to service_role only
+-- All token functions use SECURITY DEFINER and should only be called by Edge Functions
+-- This prevents bypassing RLS and arbitrary identifier access
 DO $$
 BEGIN
-    -- Grant permissions safely (won't error if already granted)
+    -- Grant get_or_create_user_tokens to service_role only
     BEGIN
-        GRANT EXECUTE ON FUNCTION get_or_create_user_tokens(TEXT, TEXT) TO authenticated;
+        GRANT EXECUTE ON FUNCTION get_or_create_user_tokens(TEXT, TEXT) TO service_role;
     EXCEPTION WHEN OTHERS THEN
         NULL; -- Function might not exist yet, ignore
     END;
     
-    BEGIN
-        GRANT EXECUTE ON FUNCTION get_or_create_user_tokens(TEXT, TEXT) TO anon;
-    EXCEPTION WHEN OTHERS THEN
-        NULL; -- Function might not exist yet, ignore
-    END;
-    
-    -- Restrict token consumption and purchase functions to service role only
+    -- Grant token consumption and purchase functions to service role only
     BEGIN
         GRANT EXECUTE ON FUNCTION consume_user_tokens(TEXT, TEXT, INTEGER) TO service_role;
     EXCEPTION WHEN OTHERS THEN
@@ -134,7 +126,7 @@ RETURNS BOOLEAN AS $$
 BEGIN
   -- Check if the current operation is being performed by service role
   -- This provides an additional layer of security for sensitive operations
-  RETURN current_setting('role') = 'service_role';
+  RETURN auth.role() = 'service_role';
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
@@ -143,7 +135,7 @@ CREATE OR REPLACE FUNCTION check_token_modification_authorization()
 RETURNS TRIGGER AS $$
 BEGIN
   -- Allow operations from service role (Edge Functions)
-  IF current_setting('role') = 'service_role' THEN
+  IF auth.role() = 'service_role' THEN
     RETURN COALESCE(NEW, OLD);
   END IF;
   
@@ -172,8 +164,7 @@ COMMENT ON POLICY "Edge Functions can manage all token data" ON user_tokens IS
 COMMENT ON POLICY "Users can read own token data" ON user_tokens IS 
   'Allows authenticated users to view their own token balance and history';
 
-COMMENT ON POLICY "Anonymous users can read own session token data" ON user_tokens IS 
-  'Allows anonymous users to view token data for their session (free plan only)';
+-- Removed: Anonymous users policy was insecure and allowed unauthenticated access to free-plan rows
 
 COMMENT ON POLICY "Prevent direct client modifications" ON user_tokens IS 
   'Prevents client applications from directly inserting token records';

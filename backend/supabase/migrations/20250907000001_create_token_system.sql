@@ -14,11 +14,11 @@ CREATE TABLE user_tokens (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   identifier TEXT NOT NULL, -- user_id for authenticated, session_id for anonymous
   user_plan TEXT NOT NULL CHECK (user_plan IN ('free', 'standard', 'premium')),
-  available_tokens INTEGER NOT NULL DEFAULT 0, -- Daily allocation tokens
-  purchased_tokens INTEGER NOT NULL DEFAULT 0, -- Purchased tokens (never reset)
-  daily_limit INTEGER NOT NULL,
+  available_tokens INTEGER NOT NULL DEFAULT 0 CHECK (available_tokens >= 0), -- Daily allocation tokens
+  purchased_tokens INTEGER NOT NULL DEFAULT 0 CHECK (purchased_tokens >= 0), -- Purchased tokens (never reset)
+  daily_limit INTEGER NOT NULL CHECK (daily_limit >= 0),
   last_reset DATE NOT NULL DEFAULT CURRENT_DATE,
-  total_consumed_today INTEGER NOT NULL DEFAULT 0,
+  total_consumed_today INTEGER NOT NULL DEFAULT 0 CHECK (total_consumed_today >= 0),
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
@@ -60,6 +60,28 @@ COMMENT ON COLUMN user_tokens.last_reset IS 'Last date when tokens were reset to
 COMMENT ON COLUMN user_tokens.total_consumed_today IS 'Total tokens consumed since last reset';
 
 -- =====================================
+-- STEP 3.5: Create Update Timestamp Trigger
+-- =====================================
+
+-- Create trigger function to update updated_at timestamp
+CREATE OR REPLACE FUNCTION update_updated_at_column()
+RETURNS TRIGGER AS $
+BEGIN
+  NEW.updated_at = NOW();
+  RETURN NEW;
+END;
+$ LANGUAGE plpgsql;
+
+-- Create trigger for user_tokens table
+CREATE TRIGGER trigger_user_tokens_updated_at
+  BEFORE UPDATE ON user_tokens
+  FOR EACH ROW
+  EXECUTE FUNCTION update_updated_at_column();
+
+COMMENT ON FUNCTION update_updated_at_column() IS 'Automatically updates updated_at column on row modification';
+COMMENT ON TRIGGER trigger_user_tokens_updated_at ON user_tokens IS 'Keeps updated_at timestamp current on every update';
+
+-- =====================================
 -- STEP 4: Create Database Functions
 -- =====================================
 
@@ -77,10 +99,18 @@ RETURNS TABLE(
   daily_limit INTEGER,
   last_reset DATE,
   total_consumed_today INTEGER
-) AS $$
+) AS $
 DECLARE
   default_limit INTEGER;
+  current_date_utc DATE;
+  needs_reset BOOLEAN;
 BEGIN
+  -- SECURITY: Set explicit search_path to prevent hijacking
+  SET LOCAL search_path = public, pg_catalog;
+  
+  -- Use UTC timezone for consistent date comparisons
+  current_date_utc := (NOW() AT TIME ZONE 'UTC')::date;
+  
   -- Set default daily limit based on user plan
   default_limit := CASE 
     WHEN p_user_plan = 'premium' THEN 999999999  -- Effectively unlimited
@@ -89,35 +119,45 @@ BEGIN
     ELSE 20  -- Fallback to free plan
   END;
 
-  -- Try to get existing record, reset if needed
+  -- Check if user needs reset and perform UPDATE to persist reset before SELECT
+  UPDATE user_tokens 
+  SET 
+    available_tokens = CASE 
+      WHEN user_plan = 'premium' THEN 999999999
+      WHEN last_reset < current_date_utc THEN default_limit
+      ELSE available_tokens
+    END,
+    last_reset = CASE 
+      WHEN last_reset < current_date_utc THEN current_date_utc
+      ELSE last_reset
+    END,
+    total_consumed_today = CASE 
+      WHEN user_plan = 'premium' THEN 0
+      WHEN last_reset < current_date_utc THEN 0
+      ELSE total_consumed_today
+    END,
+    updated_at = NOW()
+  WHERE identifier = p_identifier AND user_plan = p_user_plan
+    AND (last_reset < current_date_utc OR user_plan = 'premium');
+
+  -- Return existing record (now with persisted reset if needed)
   RETURN QUERY
   SELECT 
     ut.id,
     ut.identifier,
     ut.user_plan,
-    CASE 
-      WHEN ut.user_plan = 'premium' THEN default_limit  -- Premium users always have max tokens
-      WHEN ut.last_reset < CURRENT_DATE THEN default_limit
-      ELSE ut.available_tokens
-    END as available_tokens,
-    ut.purchased_tokens, -- Purchased tokens never reset
-    default_limit as daily_limit,
-    CASE 
-      WHEN ut.last_reset < CURRENT_DATE THEN CURRENT_DATE
-      ELSE ut.last_reset
-    END as last_reset,
-    CASE 
-      WHEN ut.user_plan = 'premium' THEN 0  -- Premium users don't track consumption
-      WHEN ut.last_reset < CURRENT_DATE THEN 0
-      ELSE ut.total_consumed_today
-    END as total_consumed_today
+    ut.available_tokens,
+    ut.purchased_tokens,
+    ut.daily_limit,
+    ut.last_reset,
+    ut.total_consumed_today
   FROM user_tokens ut
   WHERE ut.identifier = p_identifier AND ut.user_plan = p_user_plan;
   
   -- If no record found, create one
   IF NOT FOUND THEN
-    INSERT INTO user_tokens (identifier, user_plan, available_tokens, purchased_tokens, daily_limit)
-    VALUES (p_identifier, p_user_plan, default_limit, 0, default_limit)
+    INSERT INTO user_tokens (identifier, user_plan, available_tokens, purchased_tokens, daily_limit, last_reset)
+    VALUES (p_identifier, p_user_plan, default_limit, 0, default_limit, current_date_utc)
     RETURNING 
       user_tokens.id,
       user_tokens.identifier,
@@ -129,7 +169,7 @@ BEGIN
       user_tokens.total_consumed_today;
   END IF;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- Function to consume tokens atomically with proper priority logic
 CREATE OR REPLACE FUNCTION consume_user_tokens(
@@ -143,14 +183,23 @@ RETURNS TABLE(
   purchased_tokens INTEGER,
   daily_limit INTEGER,
   error_message TEXT
-) AS $$
+) AS $
 DECLARE
   current_daily_tokens INTEGER;
   current_purchased_tokens INTEGER;
   total_available INTEGER;
   default_limit INTEGER;
   needs_reset BOOLEAN;
+  updated_rows INTEGER;
 BEGIN
+  -- SECURITY: Set explicit search_path to prevent hijacking
+  SET LOCAL search_path = public, pg_catalog;
+  
+  -- INPUT VALIDATION: Check p_token_cost
+  IF p_token_cost IS NULL OR p_token_cost <= 0 THEN
+    RETURN QUERY SELECT false, 0, 0, 0, 'Invalid token cost: must be positive integer'::TEXT;
+    RETURN;
+  END IF;
   -- Set default daily limit based on user plan
   default_limit := CASE 
     WHEN p_user_plan = 'premium' THEN 999999999  -- Effectively unlimited
@@ -159,7 +208,7 @@ BEGIN
     ELSE 20  -- Fallback to free plan
   END;
 
-  -- Check if user needs daily reset and get current tokens
+  -- Check if user needs daily reset and get current tokens WITH ROW LOCK
   SELECT 
     CASE 
       WHEN ut.user_plan = 'premium' THEN default_limit  -- Premium always has unlimited
@@ -170,7 +219,8 @@ BEGIN
     ut.last_reset < CURRENT_DATE AND ut.user_plan != 'premium'
   INTO current_daily_tokens, current_purchased_tokens, needs_reset
   FROM user_tokens ut
-  WHERE ut.identifier = p_identifier AND ut.user_plan = p_user_plan;
+  WHERE ut.identifier = p_identifier AND ut.user_plan = p_user_plan
+  FOR UPDATE;  -- CRITICAL: Lock row to prevent race conditions
   
   -- Calculate total available tokens (daily + purchased)
   total_available := COALESCE(current_daily_tokens, 0) + COALESCE(current_purchased_tokens, 0);
@@ -214,7 +264,7 @@ BEGIN
   ELSIF needs_reset THEN
     -- Reset daily data and consume tokens
     IF current_purchased_tokens >= p_token_cost THEN
-      -- Consume from purchased tokens only
+      -- Consume from purchased tokens only with atomic guard
       UPDATE user_tokens 
       SET 
         available_tokens = default_limit,
@@ -222,7 +272,14 @@ BEGIN
         total_consumed_today = 0,
         last_reset = CURRENT_DATE,
         updated_at = NOW()
-      WHERE identifier = p_identifier AND user_plan = p_user_plan;
+      WHERE identifier = p_identifier AND user_plan = p_user_plan
+        AND purchased_tokens >= p_token_cost;  -- ATOMIC: Enforce sufficient tokens
+      
+      GET DIAGNOSTICS updated_rows = ROW_COUNT;
+      IF updated_rows = 0 THEN
+        RETURN QUERY SELECT false, current_daily_tokens, current_purchased_tokens, default_limit, 'Insufficient tokens'::TEXT;
+        RETURN;
+      END IF;
       
       -- Log token consumption event
       PERFORM log_token_event(
@@ -241,7 +298,7 @@ BEGIN
       
       RETURN QUERY SELECT true, default_limit, current_purchased_tokens - p_token_cost, default_limit, ''::TEXT;
     ELSE
-      -- Consume all purchased tokens + some daily tokens
+      -- Consume all purchased tokens + some daily tokens with atomic guard
       UPDATE user_tokens 
       SET 
         available_tokens = default_limit - (p_token_cost - purchased_tokens),
@@ -249,7 +306,14 @@ BEGIN
         total_consumed_today = p_token_cost - current_purchased_tokens,
         last_reset = CURRENT_DATE,
         updated_at = NOW()
-      WHERE identifier = p_identifier AND user_plan = p_user_plan;
+      WHERE identifier = p_identifier AND user_plan = p_user_plan
+        AND (purchased_tokens + default_limit) >= p_token_cost;  -- ATOMIC: Enforce sufficient total tokens
+      
+      GET DIAGNOSTICS updated_rows = ROW_COUNT;
+      IF updated_rows = 0 THEN
+        RETURN QUERY SELECT false, current_daily_tokens, current_purchased_tokens, default_limit, 'Insufficient tokens'::TEXT;
+        RETURN;
+      END IF;
       
       -- Log token consumption event
       PERFORM log_token_event(
@@ -271,12 +335,19 @@ BEGIN
   ELSE
     -- Just consume tokens (prioritize purchased tokens)
     IF current_purchased_tokens >= p_token_cost THEN
-      -- Consume from purchased tokens only
+      -- Consume from purchased tokens only with atomic guard
       UPDATE user_tokens 
       SET 
         purchased_tokens = purchased_tokens - p_token_cost,
         updated_at = NOW()
-      WHERE identifier = p_identifier AND user_plan = p_user_plan;
+      WHERE identifier = p_identifier AND user_plan = p_user_plan
+        AND purchased_tokens >= p_token_cost;  -- ATOMIC: Enforce sufficient purchased tokens
+      
+      GET DIAGNOSTICS updated_rows = ROW_COUNT;
+      IF updated_rows = 0 THEN
+        RETURN QUERY SELECT false, current_daily_tokens, current_purchased_tokens, default_limit, 'Insufficient tokens'::TEXT;
+        RETURN;
+      END IF;
       
       -- Log token consumption event
       PERFORM log_token_event(
@@ -295,14 +366,21 @@ BEGIN
       
       RETURN QUERY SELECT true, current_daily_tokens, current_purchased_tokens - p_token_cost, default_limit, ''::TEXT;
     ELSE
-      -- Consume all purchased tokens + some daily tokens
+      -- Consume all purchased tokens + some daily tokens with atomic guard
       UPDATE user_tokens 
       SET 
         available_tokens = available_tokens - (p_token_cost - purchased_tokens),
         purchased_tokens = 0,
         total_consumed_today = total_consumed_today + (p_token_cost - current_purchased_tokens),
         updated_at = NOW()
-      WHERE identifier = p_identifier AND user_plan = p_user_plan;
+      WHERE identifier = p_identifier AND user_plan = p_user_plan
+        AND (available_tokens + purchased_tokens) >= p_token_cost;  -- ATOMIC: Enforce sufficient total tokens
+      
+      GET DIAGNOSTICS updated_rows = ROW_COUNT;
+      IF updated_rows = 0 THEN
+        RETURN QUERY SELECT false, current_daily_tokens, current_purchased_tokens, default_limit, 'Insufficient tokens'::TEXT;
+        RETURN;
+      END IF;
       
       -- Log token consumption event
       PERFORM log_token_event(

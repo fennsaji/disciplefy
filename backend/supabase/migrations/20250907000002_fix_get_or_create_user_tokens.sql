@@ -6,7 +6,7 @@
 
 BEGIN;
 
--- Replace the buggy function with the corrected version
+-- Replace the buggy function with the corrected and secured version
 CREATE OR REPLACE FUNCTION get_or_create_user_tokens(
   p_identifier TEXT,
   p_user_plan TEXT
@@ -20,11 +20,18 @@ RETURNS TABLE(
   daily_limit INTEGER,
   last_reset DATE,
   total_consumed_today INTEGER
-) AS $$
+) AS $
 DECLARE
   default_limit INTEGER;
   record_exists BOOLEAN;
+  current_date_utc DATE;
 BEGIN
+  -- SECURITY: Set explicit search_path to prevent hijacking
+  SET LOCAL search_path = public, pg_catalog;
+  
+  -- Use UTC timezone for consistent date comparisons
+  current_date_utc := (NOW() AT TIME ZONE 'UTC')::date;
+  
   -- Set default daily limit based on user plan
   default_limit := CASE 
     WHEN p_user_plan = 'premium' THEN 999999999  -- Effectively unlimited
@@ -38,36 +45,46 @@ BEGIN
   
   -- If no record exists, create one
   IF NOT record_exists THEN
-    INSERT INTO user_tokens (identifier, user_plan, available_tokens, purchased_tokens, daily_limit)
-    VALUES (p_identifier, p_user_plan, default_limit, 0, default_limit);
+    INSERT INTO user_tokens (identifier, user_plan, available_tokens, purchased_tokens, daily_limit, last_reset)
+    VALUES (p_identifier, p_user_plan, default_limit, 0, default_limit, current_date_utc);
+  ELSE
+    -- CRITICAL FIX: Persist daily reset BEFORE SELECT to avoid virtual reset issues
+    UPDATE user_tokens 
+    SET 
+      available_tokens = CASE 
+        WHEN user_plan = 'premium' THEN 999999999
+        WHEN last_reset < current_date_utc THEN default_limit
+        ELSE available_tokens
+      END,
+      last_reset = CASE 
+        WHEN last_reset < current_date_utc THEN current_date_utc
+        ELSE last_reset
+      END,
+      total_consumed_today = CASE 
+        WHEN user_plan = 'premium' THEN 0
+        WHEN last_reset < current_date_utc THEN 0
+        ELSE total_consumed_today
+      END,
+      updated_at = NOW()
+    WHERE identifier = p_identifier AND user_plan = p_user_plan
+      AND (last_reset < current_date_utc OR user_plan = 'premium');
   END IF;
   
-  -- Return the record (existing or newly created), with daily reset logic
+  -- Return the record (existing or newly created), now with persisted reset
   RETURN QUERY
   SELECT 
     ut.id,
     ut.identifier,
     ut.user_plan,
-    CASE 
-      WHEN ut.user_plan = 'premium' THEN default_limit  -- Premium users always have max tokens
-      WHEN ut.last_reset < CURRENT_DATE THEN default_limit
-      ELSE ut.available_tokens
-    END as available_tokens,
-    ut.purchased_tokens, -- Purchased tokens never reset
-    default_limit as daily_limit,
-    CASE 
-      WHEN ut.last_reset < CURRENT_DATE THEN CURRENT_DATE
-      ELSE ut.last_reset
-    END as last_reset,
-    CASE 
-      WHEN ut.user_plan = 'premium' THEN 0  -- Premium users don't track consumption
-      WHEN ut.last_reset < CURRENT_DATE THEN 0
-      ELSE ut.total_consumed_today
-    END as total_consumed_today
+    ut.available_tokens,  -- Now returns actual persisted values
+    ut.purchased_tokens,
+    ut.daily_limit,
+    ut.last_reset,
+    ut.total_consumed_today
   FROM user_tokens ut
   WHERE ut.identifier = p_identifier AND ut.user_plan = p_user_plan;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- Update function documentation
 COMMENT ON FUNCTION get_or_create_user_tokens(TEXT, TEXT) IS 'Get or create user tokens record with automatic daily reset logic (FIXED: NOT FOUND bug resolved)';

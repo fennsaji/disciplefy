@@ -3,6 +3,7 @@ import 'package:equatable/equatable.dart';
 import '../../../../core/error/failures.dart';
 import '../../../../core/usecases/usecase.dart';
 import '../../domain/entities/saved_payment_method.dart';
+import '../../domain/entities/payment_preferences.dart';
 import '../../domain/usecases/get_payment_methods.dart';
 import '../../domain/usecases/save_payment_method.dart';
 import '../../domain/usecases/set_default_payment_method.dart';

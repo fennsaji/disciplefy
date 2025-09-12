@@ -7,8 +7,15 @@ ADD COLUMN IF NOT EXISTS preferred_wallet TEXT,
 ADD COLUMN IF NOT EXISTS default_payment_type TEXT CHECK (default_payment_type IN ('card', 'upi', 'netbanking', 'wallet'));
 
 -- Update existing preferred_method_type to default_payment_type for consistency
+-- Only assign values that match the CHECK constraint
 UPDATE payment_preferences 
-SET default_payment_type = preferred_method_type 
+SET default_payment_type = CASE 
+  WHEN preferred_method_type IN ('card', 'upi', 'netbanking', 'wallet') THEN preferred_method_type
+  WHEN preferred_method_type = 'credit_card' OR preferred_method_type = 'debit_card' THEN 'card'
+  WHEN preferred_method_type = 'mobile_wallet' THEN 'wallet'
+  WHEN preferred_method_type = 'net_banking' THEN 'netbanking'
+  ELSE 'card' -- Safe default for unrecognized values
+END 
 WHERE preferred_method_type IS NOT NULL;
 
 -- Map existing mobile wallet preferences to new structure
@@ -20,18 +27,18 @@ END
 WHERE preferred_wallet IS NULL;
 
 -- Update the database functions to use correct column names
-CREATE OR REPLACE FUNCTION get_or_create_payment_preferences(p_user_id UUID DEFAULT NULL)
-RETURNS payment_preferences AS $$
+CREATE OR REPLACE FUNCTION get_or_create_payment_preferences()
+RETURNS payment_preferences AS $
 DECLARE
   v_preferences payment_preferences;
   v_user_id UUID;
 BEGIN
-  -- Use current user if no user specified
-  v_user_id := COALESCE(p_user_id, auth.uid());
+  -- Always use current authenticated user
+  v_user_id := auth.uid();
   
-  -- Check authorization
-  IF v_user_id != auth.uid() THEN
-    RAISE EXCEPTION 'Unauthorized access to payment preferences';
+  -- Ensure user is authenticated
+  IF v_user_id IS NULL THEN
+    RAISE EXCEPTION 'Authentication required';
   END IF;
   
   -- Try to get existing preferences
@@ -214,8 +221,6 @@ RETURNS TABLE(
 ) AS $$
 DECLARE
   v_user_id UUID;
-  v_current_year INTEGER;
-  v_current_month INTEGER;
 BEGIN
   -- Use current user if no user specified
   v_user_id := COALESCE(p_user_id, auth.uid());
@@ -224,10 +229,6 @@ BEGIN
   IF v_user_id != auth.uid() THEN
     RAISE EXCEPTION 'Unauthorized access to payment methods';
   END IF;
-  
-  -- Get current year and month
-  SELECT EXTRACT(YEAR FROM NOW())::INTEGER, EXTRACT(MONTH FROM NOW())::INTEGER 
-  INTO v_current_year, v_current_month;
   
   RETURN QUERY
   SELECT 
@@ -242,11 +243,15 @@ BEGIN
     pm.is_active,
     pm.expiry_month,
     pm.expiry_year,
-    -- Check if card is expired (only for cards)
+    -- Check if card is expired (only for cards) - using proper date comparison
     CASE 
       WHEN pm.method_type = 'card' AND pm.expiry_year IS NOT NULL AND pm.expiry_month IS NOT NULL
-      THEN (pm.expiry_year < v_current_year OR 
-            (pm.expiry_year = v_current_year AND pm.expiry_month < v_current_month))
+      THEN (
+        -- Construct the last day of the expiry month and compare against current UTC date
+        make_date(pm.expiry_year, pm.expiry_month, 
+                 EXTRACT(DAY FROM (make_date(pm.expiry_year, pm.expiry_month, 1) + INTERVAL '1 month - 1 day'))::INTEGER
+        ) < (NOW() AT TIME ZONE 'UTC')::date
+      )
       ELSE FALSE
     END as is_expired,
     pm.created_at,

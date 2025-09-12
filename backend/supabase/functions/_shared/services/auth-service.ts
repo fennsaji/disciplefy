@@ -13,16 +13,7 @@
 import { SupabaseClient, createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { AppError } from '../utils/error-handler.ts'
 import { UserPlan } from '../types/token-types.ts'
-
-/**
- * User context representing authenticated or anonymous users
- */
-export interface UserContext {
-  readonly type: 'authenticated' | 'anonymous'
-  readonly id: string // User ID for authenticated, Session ID for anonymous
-  readonly userId?: string // Explicit user ID for authenticated users
-  readonly sessionId?: string // Explicit session ID for anonymous users
-}
+import { UserContext } from '../types/index.ts'
 
 /**
  * Authentication result with additional metadata
@@ -98,12 +89,25 @@ export class AuthService {
         throw new AppError('UNAUTHORIZED', 'Invalid user data in token', 401)
       }
       
+      // For authenticated users, check if they are admin
+      let userType: 'admin' | 'user' | undefined = undefined
+      if (!user.is_anonymous && user.id) {
+        try {
+          const userProfile = await this.getUserProfile(user.id)
+          userType = userProfile?.is_admin ? 'admin' : 'user'
+        } catch (error) {
+          // If profile lookup fails, default to regular user
+          console.warn('[AuthService] Failed to fetch user profile for userType:', error)
+          userType = 'user'
+        }
+      }
+      
       // Create standardized user context
       const userContext: UserContext = {
         type: user.is_anonymous ? 'anonymous' : 'authenticated',
-        id: user.id,
         userId: user.is_anonymous ? undefined : user.id,
-        sessionId: user.is_anonymous ? user.id : undefined
+        sessionId: user.is_anonymous ? user.id : undefined,
+        userType
       }
       
       return userContext
@@ -139,7 +143,6 @@ export class AuthService {
     
     const userContext: UserContext = {
       type: user.is_anonymous ? 'anonymous' : 'authenticated',
-      id: user.id,
       userId: user.is_anonymous ? undefined : user.id,
       sessionId: user.is_anonymous ? user.id : undefined
     }
@@ -225,7 +228,7 @@ export class AuthService {
    */
   async getUserId(req: Request): Promise<string> {
     const userContext = await this.getUserContext(req)
-    return userContext.id
+    return userContext.userId || userContext.sessionId || ''
   }
   
   /**

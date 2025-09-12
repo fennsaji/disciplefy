@@ -3,8 +3,10 @@ import 'package:dartz/dartz.dart';
 import '../../../../core/error/exceptions.dart';
 import '../../../../core/error/failures.dart';
 import '../../../../core/network/network_info.dart';
+import '../../../../core/validation/payment_validators.dart';
 import '../../domain/entities/token_status.dart';
 import '../../domain/entities/purchase_history.dart';
+import '../../domain/entities/purchase_statistics.dart';
 import '../../domain/repositories/token_repository.dart';
 import '../datasources/token_remote_data_source.dart';
 
@@ -19,52 +21,30 @@ class TokenRepositoryImpl implements TokenRepository {
   })  : _remoteDataSource = remoteDataSource,
         _networkInfo = networkInfo;
 
-  @override
-  Future<Either<Failure, TokenStatus>> getTokenStatus() async {
+  /// Generic error handler that converts exceptions to failures
+  Future<Either<Failure, T>> _execute<T>(
+    Future<T> Function() operation,
+    String operationName,
+  ) async {
     if (await _networkInfo.isConnected) {
       try {
-        print('🪙 [TOKEN_REPO] Fetching token status from remote...');
-
-        final tokenStatusModel = await _remoteDataSource.getTokenStatus();
-        final tokenStatus = tokenStatusModel.toEntity();
-
-        print(
-            '🪙 [TOKEN_REPO] Token status fetched successfully: ${tokenStatus.totalTokens} tokens');
-
-        return Right(tokenStatus);
+        final result = await operation();
+        return Right(result);
       } on ServerException catch (e) {
-        print('🚨 [TOKEN_REPO] Server exception: ${e.message}');
-        return Left(ServerFailure(
-          message: e.message,
-          code: e.code,
-        ));
+        return Left(ServerFailure(message: e.message, code: e.code));
       } on AuthenticationException catch (e) {
-        print('🚨 [TOKEN_REPO] Authentication exception: ${e.message}');
-        return Left(AuthenticationFailure(
-          message: e.message,
-          code: e.code,
-        ));
+        return Left(AuthenticationFailure(message: e.message, code: e.code));
       } on ClientException catch (e) {
-        print('🚨 [TOKEN_REPO] Client exception: ${e.message}');
-        return Left(ClientFailure(
-          message: e.message,
-          code: e.code,
-        ));
+        return Left(ClientFailure(message: e.message, code: e.code));
       } on NetworkException catch (e) {
-        print('🚨 [TOKEN_REPO] Network exception: ${e.message}');
-        return Left(NetworkFailure(
-          message: e.message,
-          code: e.code,
-        ));
+        return Left(NetworkFailure(message: e.message, code: e.code));
       } catch (e) {
-        print('🚨 [TOKEN_REPO] Unexpected exception: $e');
         return Left(ClientFailure(
-          message: 'An unexpected error occurred while fetching token status',
+          message: 'An unexpected error occurred during $operationName',
           code: 'UNEXPECTED_ERROR',
         ));
       }
     } else {
-      print('🚨 [TOKEN_REPO] No internet connection');
       return const Left(NetworkFailure(
         message:
             'No internet connection. Please check your network and try again.',
@@ -74,64 +54,54 @@ class TokenRepositoryImpl implements TokenRepository {
   }
 
   @override
+  Future<Either<Failure, TokenStatus>> getTokenStatus() async {
+    return _execute<TokenStatus>(
+      () async {
+        final tokenStatusModel = await _remoteDataSource.getTokenStatus();
+        return tokenStatusModel.toEntity();
+      },
+      'token status fetch',
+    );
+  }
+
+  @override
   Future<Either<Failure, String>> createPaymentOrder({
     required int tokenAmount,
   }) async {
-    if (await _networkInfo.isConnected) {
-      try {
-        print(
-            '🪙 [TOKEN_REPO] Creating payment order for $tokenAmount tokens...');
+    // Comprehensive input validation using TokenPurchaseValidator
+    final validationResult =
+        TokenPurchaseValidator.validateTokenAmount(tokenAmount);
 
-        final orderId = await _remoteDataSource.createPaymentOrder(
-          tokenAmount: tokenAmount,
-        );
-
-        print('🪙 [TOKEN_REPO] Payment order created successfully: $orderId');
-
-        return Right(orderId);
-      } on ServerException catch (e) {
-        print(
-            '🚨 [TOKEN_REPO] Server exception during order creation: ${e.message}');
-        return Left(ServerFailure(
-          message: e.message,
-          code: e.code,
-        ));
-      } on AuthenticationException catch (e) {
-        print(
-            '🚨 [TOKEN_REPO] Authentication exception during order creation: ${e.message}');
-        return Left(AuthenticationFailure(
-          message: e.message,
-          code: e.code,
-        ));
-      } on ClientException catch (e) {
-        print(
-            '🚨 [TOKEN_REPO] Client exception during order creation: ${e.message}');
-        return Left(ClientFailure(
-          message: e.message,
-          code: e.code,
-        ));
-      } on NetworkException catch (e) {
-        print(
-            '🚨 [TOKEN_REPO] Network exception during order creation: ${e.message}');
-        return Left(NetworkFailure(
-          message: e.message,
-          code: e.code,
-        ));
-      } catch (e) {
-        print('🚨 [TOKEN_REPO] Unexpected exception during order creation: $e');
-        return Left(ClientFailure(
-          message: 'An unexpected error occurred during order creation',
-          code: 'UNEXPECTED_ERROR',
-        ));
-      }
-    } else {
-      print('🚨 [TOKEN_REPO] No internet connection for order creation');
-      return const Left(NetworkFailure(
-        message:
-            'No internet connection. Please check your network and try again.',
-        code: 'NO_INTERNET',
+    if (!validationResult.isValid) {
+      return Left(ClientFailure(
+        message: validationResult.errorMessage ?? 'Invalid token amount',
+        code: validationResult.errorCode ?? 'INVALID_TOKEN_AMOUNT',
       ));
     }
+
+    // Additional business rule validation
+    if (tokenAmount < 50) {
+      return const Left(ClientFailure(
+        message: 'Minimum token purchase is 50 tokens',
+        code: 'TOKEN_AMOUNT_BELOW_MINIMUM',
+      ));
+    }
+
+    if (tokenAmount > 9999) {
+      return const Left(ClientFailure(
+        message: 'Maximum token purchase is 9,999 tokens per transaction',
+        code: 'TOKEN_AMOUNT_EXCEEDS_MAXIMUM',
+      ));
+    }
+
+    return _execute<String>(
+      () async {
+        return await _remoteDataSource.createPaymentOrder(
+          tokenAmount: tokenAmount,
+        );
+      },
+      'payment order creation',
+    );
   }
 
   @override
@@ -141,67 +111,79 @@ class TokenRepositoryImpl implements TokenRepository {
     required String signature,
     required int tokenAmount,
   }) async {
-    if (await _networkInfo.isConnected) {
-      try {
-        print('🪙 [TOKEN_REPO] Confirming payment: $paymentId');
+    // Comprehensive input validation before network calls
 
+    // Validate paymentId - non-null, non-empty, expected format
+    if (paymentId.trim().isEmpty) {
+      return const Left(ClientFailure(
+        message: 'Payment ID is required',
+        code: 'MISSING_PAYMENT_ID',
+      ));
+    }
+
+    // Basic format validation for Razorpay payment IDs
+    if (!RegExp(r'^pay_[A-Za-z0-9]{14}$').hasMatch(paymentId.trim())) {
+      return const Left(ClientFailure(
+        message: 'Invalid payment ID format',
+        code: 'INVALID_PAYMENT_ID_FORMAT',
+      ));
+    }
+
+    // Validate orderId - non-null, non-empty, expected format
+    if (orderId.trim().isEmpty) {
+      return const Left(ClientFailure(
+        message: 'Order ID is required',
+        code: 'MISSING_ORDER_ID',
+      ));
+    }
+
+    // Basic format validation for Razorpay order IDs
+    if (!RegExp(r'^order_[A-Za-z0-9]{14}$').hasMatch(orderId.trim())) {
+      return const Left(ClientFailure(
+        message: 'Invalid order ID format',
+        code: 'INVALID_ORDER_ID_FORMAT',
+      ));
+    }
+
+    // Validate signature - non-null, non-empty, hex format
+    if (signature.trim().isEmpty) {
+      return const Left(ClientFailure(
+        message: 'Payment signature is required',
+        code: 'MISSING_SIGNATURE',
+      ));
+    }
+
+    // Basic validation for signature format (hex string)
+    if (!RegExp(r'^[a-fA-F0-9]{64}$').hasMatch(signature.trim())) {
+      return const Left(ClientFailure(
+        message: 'Invalid payment signature format',
+        code: 'INVALID_SIGNATURE_FORMAT',
+      ));
+    }
+
+    // Comprehensive token amount validation
+    final tokenValidationResult =
+        TokenPurchaseValidator.validateTokenAmount(tokenAmount);
+
+    if (!tokenValidationResult.isValid) {
+      return Left(ClientFailure(
+        message: tokenValidationResult.errorMessage ?? 'Invalid token amount',
+        code: tokenValidationResult.errorCode ?? 'INVALID_TOKEN_AMOUNT',
+      ));
+    }
+
+    return _execute<TokenStatus>(
+      () async {
         final tokenStatusModel = await _remoteDataSource.confirmPayment(
           paymentId: paymentId,
           orderId: orderId,
           signature: signature,
           tokenAmount: tokenAmount,
         );
-
-        final tokenStatus = tokenStatusModel.toEntity();
-
-        print(
-            '🪙 [TOKEN_REPO] Payment confirmed successfully: ${tokenStatus.totalTokens} total tokens');
-
-        return Right(tokenStatus);
-      } on ServerException catch (e) {
-        print(
-            '🚨 [TOKEN_REPO] Server exception during payment confirmation: ${e.message}');
-        return Left(ServerFailure(
-          message: e.message,
-          code: e.code,
-        ));
-      } on AuthenticationException catch (e) {
-        print(
-            '🚨 [TOKEN_REPO] Authentication exception during payment confirmation: ${e.message}');
-        return Left(AuthenticationFailure(
-          message: e.message,
-          code: e.code,
-        ));
-      } on ClientException catch (e) {
-        print(
-            '🚨 [TOKEN_REPO] Client exception during payment confirmation: ${e.message}');
-        return Left(ClientFailure(
-          message: e.message,
-          code: e.code,
-        ));
-      } on NetworkException catch (e) {
-        print(
-            '🚨 [TOKEN_REPO] Network exception during payment confirmation: ${e.message}');
-        return Left(NetworkFailure(
-          message: e.message,
-          code: e.code,
-        ));
-      } catch (e) {
-        print(
-            '🚨 [TOKEN_REPO] Unexpected exception during payment confirmation: $e');
-        return Left(ClientFailure(
-          message: 'An unexpected error occurred during payment confirmation',
-          code: 'UNEXPECTED_ERROR',
-        ));
-      }
-    } else {
-      print('🚨 [TOKEN_REPO] No internet connection for payment confirmation');
-      return const Left(NetworkFailure(
-        message:
-            'No internet connection. Please check your network and try again.',
-        code: 'NO_INTERNET',
-      ));
-    }
+        return tokenStatusModel.toEntity();
+      },
+      'payment confirmation',
+    );
   }
 
   @override
@@ -209,129 +191,28 @@ class TokenRepositoryImpl implements TokenRepository {
     int? limit,
     int? offset,
   }) async {
-    if (await _networkInfo.isConnected) {
-      try {
-        print('🪙 [TOKEN_REPO] Fetching purchase history...');
-
+    return _execute<List<PurchaseHistory>>(
+      () async {
         final purchaseHistoryModels =
             await _remoteDataSource.getPurchaseHistory(
           limit: limit,
           offset: offset,
         );
-
-        final purchaseHistory = purchaseHistoryModels
-            .map((model) => model as PurchaseHistory)
-            .toList();
-
-        print(
-            '🪙 [TOKEN_REPO] Purchase history fetched successfully: ${purchaseHistory.length} records');
-
-        return Right(purchaseHistory);
-      } on ServerException catch (e) {
-        print(
-            '🚨 [TOKEN_REPO] Server exception during purchase history fetch: ${e.message}');
-        return Left(ServerFailure(
-          message: e.message,
-          code: e.code,
-        ));
-      } on AuthenticationException catch (e) {
-        print(
-            '🚨 [TOKEN_REPO] Authentication exception during purchase history fetch: ${e.message}');
-        return Left(AuthenticationFailure(
-          message: e.message,
-          code: e.code,
-        ));
-      } on ClientException catch (e) {
-        print(
-            '🚨 [TOKEN_REPO] Client exception during purchase history fetch: ${e.message}');
-        return Left(ClientFailure(
-          message: e.message,
-          code: e.code,
-        ));
-      } on NetworkException catch (e) {
-        print(
-            '🚨 [TOKEN_REPO] Network exception during purchase history fetch: ${e.message}');
-        return Left(NetworkFailure(
-          message: e.message,
-          code: e.code,
-        ));
-      } catch (e) {
-        print(
-            '🚨 [TOKEN_REPO] Unexpected exception during purchase history fetch: $e');
-        return Left(ClientFailure(
-          message:
-              'An unexpected error occurred while fetching purchase history',
-          code: 'UNEXPECTED_ERROR',
-        ));
-      }
-    } else {
-      print('🚨 [TOKEN_REPO] No internet connection for purchase history');
-      return const Left(NetworkFailure(
-        message:
-            'No internet connection. Please check your network and try again.',
-        code: 'NO_INTERNET',
-      ));
-    }
+        return purchaseHistoryModels;
+      },
+      'purchase history fetch',
+    );
   }
 
   @override
   Future<Either<Failure, PurchaseStatistics>> getPurchaseStatistics() async {
-    if (await _networkInfo.isConnected) {
-      try {
-        print('🪙 [TOKEN_REPO] Fetching purchase statistics...');
-
+    return _execute<PurchaseStatistics>(
+      () async {
         final purchaseStatisticsModel =
             await _remoteDataSource.getPurchaseStatistics();
-        final purchaseStatistics =
-            purchaseStatisticsModel as PurchaseStatistics;
-
-        print('🪙 [TOKEN_REPO] Purchase statistics fetched successfully');
-
-        return Right(purchaseStatistics);
-      } on ServerException catch (e) {
-        print(
-            '🚨 [TOKEN_REPO] Server exception during purchase statistics fetch: ${e.message}');
-        return Left(ServerFailure(
-          message: e.message,
-          code: e.code,
-        ));
-      } on AuthenticationException catch (e) {
-        print(
-            '🚨 [TOKEN_REPO] Authentication exception during purchase statistics fetch: ${e.message}');
-        return Left(AuthenticationFailure(
-          message: e.message,
-          code: e.code,
-        ));
-      } on ClientException catch (e) {
-        print(
-            '🚨 [TOKEN_REPO] Client exception during purchase statistics fetch: ${e.message}');
-        return Left(ClientFailure(
-          message: e.message,
-          code: e.code,
-        ));
-      } on NetworkException catch (e) {
-        print(
-            '🚨 [TOKEN_REPO] Network exception during purchase statistics fetch: ${e.message}');
-        return Left(NetworkFailure(
-          message: e.message,
-          code: e.code,
-        ));
-      } catch (e) {
-        print(
-            '🚨 [TOKEN_REPO] Unexpected exception during purchase statistics fetch: $e');
-        return Left(ClientFailure(
-          message:
-              'An unexpected error occurred while fetching purchase statistics',
-          code: 'UNEXPECTED_ERROR',
-        ));
-      }
-    } else {
-      print('🚨 [TOKEN_REPO] No internet connection for purchase statistics');
-      return const Left(NetworkFailure(
-        message:
-            'No internet connection. Please check your network and try again.',
-        code: 'NO_INTERNET',
-      ));
-    }
+        return purchaseStatisticsModel.toEntity();
+      },
+      'purchase statistics fetch',
+    );
   }
 }

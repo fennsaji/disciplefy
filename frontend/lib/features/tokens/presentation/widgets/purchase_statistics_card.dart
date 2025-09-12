@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 
 import '../../../../core/theme/app_theme.dart';
 import '../../domain/entities/purchase_history.dart';
+import '../../domain/entities/purchase_statistics.dart';
 
 class PurchaseStatisticsCard extends StatelessWidget {
   final PurchaseStatistics statistics;

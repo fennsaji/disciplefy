@@ -4,6 +4,8 @@ import '../../../../core/error/exceptions.dart';
 import '../../../../core/services/api_auth_helper.dart';
 import '../models/token_status_model.dart';
 import '../models/purchase_history_model.dart';
+import '../models/purchase_statistics_model.dart' as stats;
+import '../models/payment_preferences_model.dart' as prefs;
 import '../models/saved_payment_method_model.dart';
 
 /// Abstract contract for remote token operations.
@@ -71,7 +73,7 @@ abstract class TokenRemoteDataSource {
   /// Throws [NetworkException] if there's a network issue.
   /// Throws [ServerException] if there's a server error.
   /// Throws [AuthenticationException] if authentication fails.
-  Future<PurchaseStatisticsModel> getPurchaseStatistics();
+  Future<stats.PurchaseStatisticsModel> getPurchaseStatistics();
 
   /// Gets saved payment methods for the authenticated user.
   ///
@@ -153,7 +155,7 @@ abstract class TokenRemoteDataSource {
   /// Throws [NetworkException] if there's a network issue.
   /// Throws [ServerException] if there's a server error.
   /// Throws [AuthenticationException] if authentication fails.
-  Future<PaymentPreferencesModel> getPaymentPreferences();
+  Future<prefs.PaymentPreferencesModel> getPaymentPreferences();
 
   /// Updates payment preferences for the authenticated user.
   ///
@@ -162,7 +164,7 @@ abstract class TokenRemoteDataSource {
   /// Throws [NetworkException] if there's a network issue.
   /// Throws [ServerException] if there's a server error.
   /// Throws [AuthenticationException] if authentication fails.
-  Future<PaymentPreferencesModel> updatePaymentPreferences({
+  Future<prefs.PaymentPreferencesModel> updatePaymentPreferences({
     bool? autoSavePaymentMethods,
     String? preferredWallet,
     bool? enableOneClickPurchase,
@@ -372,92 +374,22 @@ class TokenRemoteDataSourceImpl implements TokenRemoteDataSource {
     required int tokenAmount,
   }) async {
     try {
-      // Validate token before making authenticated request
       await ApiAuthHelper.validateTokenForRequest();
-
-      // Use unified authentication helper
       final headers = await ApiAuthHelper.getAuthHeaders();
 
       print('🪙 [TOKEN_API] Confirming payment: $paymentId');
 
-      // Validate input parameters
-      if (paymentId.isEmpty || orderId.isEmpty || signature.isEmpty) {
-        throw const ClientException(
-          message: 'Payment verification details are required',
-          code: 'MISSING_PAYMENT_DETAILS',
-        );
-      }
+      _validateConfirmPaymentParams(paymentId, orderId, signature, tokenAmount);
 
-      if (tokenAmount <= 0) {
-        throw const ClientException(
-          message: 'Token amount must be greater than zero',
-          code: 'INVALID_TOKEN_AMOUNT',
-        );
-      }
-
-      // Call Supabase Edge Function for payment confirmation
-      final response = await _supabaseClient.functions.invoke(
-        'confirm-token-purchase',
-        body: {
-          'payment_id': paymentId,
-          'order_id': orderId,
-          'signature': signature,
-          'token_amount': tokenAmount,
-        },
+      final response = await _callConfirmPaymentAPI(
+        paymentId: paymentId,
+        orderId: orderId,
+        signature: signature,
+        tokenAmount: tokenAmount,
         headers: headers,
       );
 
-      print(
-          '🪙 [TOKEN_API] Payment confirmation response status: ${response.status}');
-      print(
-          '🪙 [TOKEN_API] Payment confirmation response data: ${response.data}');
-
-      if (response.status == 200 && response.data != null) {
-        final responseData = response.data as Map<String, dynamic>;
-
-        if (responseData['success'] == true) {
-          // Return updated token status after payment confirmation
-          final tokenData = responseData['data'] as Map<String, dynamic>;
-          return TokenStatusModel.fromJson(tokenData);
-        } else {
-          final error = responseData['error'] as Map<String, dynamic>?;
-          throw ServerException(
-            message:
-                error?['message'] as String? ?? 'Payment confirmation failed',
-            code: error?['code'] as String? ?? 'CONFIRMATION_FAILED',
-          );
-        }
-      } else if (response.status == 400) {
-        final errorData = response.data as Map<String, dynamic>?;
-        final error = errorData?['error'] as Map<String, dynamic>?;
-        throw ClientException(
-          message: error?['message'] as String? ??
-              'Invalid payment confirmation request',
-          code: error?['code'] as String? ?? 'INVALID_REQUEST',
-        );
-      } else if (response.status == 401) {
-        throw const AuthenticationException(
-          message: 'Authentication required. Please sign in to continue.',
-          code: 'UNAUTHORIZED',
-        );
-      } else if (response.status == 403) {
-        throw const ClientException(
-          message:
-              'Payment confirmation is not available for your account type.',
-          code: 'CONFIRMATION_NOT_ALLOWED',
-        );
-      } else if (response.status >= 500) {
-        throw const ServerException(
-          message:
-              'Server error occurred during payment confirmation. Please try again later.',
-          code: 'SERVER_ERROR',
-        );
-      } else {
-        throw const ServerException(
-          message: 'Payment confirmation failed. Please try again later.',
-          code: 'CONFIRMATION_FAILED',
-        );
-      }
+      return _processConfirmPaymentResponse(response);
     } on NetworkException {
       rethrow;
     } on ServerException {
@@ -499,7 +431,7 @@ class TokenRemoteDataSourceImpl implements TokenRemoteDataSource {
       var query = _supabaseClient
           .from('purchase_history')
           .select()
-          .order('purchased_at');
+          .order('purchased_at', ascending: false);
 
       if (limit != null) {
         query = query.limit(limit);
@@ -538,7 +470,7 @@ class TokenRemoteDataSourceImpl implements TokenRemoteDataSource {
   }
 
   @override
-  Future<PurchaseStatisticsModel> getPurchaseStatistics() async {
+  Future<stats.PurchaseStatisticsModel> getPurchaseStatistics() async {
     try {
       // Validate token before making authenticated request
       await ApiAuthHelper.validateTokenForRequest();
@@ -554,7 +486,7 @@ class TokenRemoteDataSourceImpl implements TokenRemoteDataSource {
       print('🪙 [TOKEN_API] Purchase statistics response: $response');
 
       if (response != null) {
-        return PurchaseStatisticsModel.fromJson(
+        return stats.PurchaseStatisticsModel.fromJson(
             response as Map<String, dynamic>);
       } else {
         throw const ServerException(
@@ -904,7 +836,7 @@ class TokenRemoteDataSourceImpl implements TokenRemoteDataSource {
   }
 
   @override
-  Future<PaymentPreferencesModel> getPaymentPreferences() async {
+  Future<prefs.PaymentPreferencesModel> getPaymentPreferences() async {
     try {
       // Validate token before making authenticated request
       await ApiAuthHelper.validateTokenForRequest();
@@ -918,7 +850,7 @@ class TokenRemoteDataSourceImpl implements TokenRemoteDataSource {
       print('💳 [TOKEN_API] Payment preferences response: $response');
 
       if (response != null) {
-        return PaymentPreferencesModel.fromJson(
+        return prefs.PaymentPreferencesModel.fromJson(
             response as Map<String, dynamic>);
       } else {
         throw const ServerException(
@@ -948,7 +880,7 @@ class TokenRemoteDataSourceImpl implements TokenRemoteDataSource {
   }
 
   @override
-  Future<PaymentPreferencesModel> updatePaymentPreferences({
+  Future<prefs.PaymentPreferencesModel> updatePaymentPreferences({
     bool? autoSavePaymentMethods,
     String? preferredWallet,
     bool? enableOneClickPurchase,
@@ -982,7 +914,7 @@ class TokenRemoteDataSourceImpl implements TokenRemoteDataSource {
       print('💳 [TOKEN_API] Payment preferences updated: $response');
 
       if (response != null) {
-        return PaymentPreferencesModel.fromJson(
+        return prefs.PaymentPreferencesModel.fromJson(
             response as Map<String, dynamic>);
       } else {
         throw const ServerException(
@@ -1008,6 +940,103 @@ class TokenRemoteDataSourceImpl implements TokenRemoteDataSource {
             'Unable to update payment preferences. Please try again later.',
         code: 'UPDATE_PREFERENCES_FAILED',
         context: {'originalError': e.toString()},
+      );
+    }
+  }
+
+  /// Validates parameters for payment confirmation
+  void _validateConfirmPaymentParams(
+    String paymentId,
+    String orderId,
+    String signature,
+    int tokenAmount,
+  ) {
+    if (paymentId.isEmpty || orderId.isEmpty || signature.isEmpty) {
+      throw const ClientException(
+        message: 'Payment verification details are required',
+        code: 'MISSING_PAYMENT_DETAILS',
+      );
+    }
+
+    if (tokenAmount <= 0) {
+      throw const ClientException(
+        message: 'Token amount must be greater than zero',
+        code: 'INVALID_TOKEN_AMOUNT',
+      );
+    }
+  }
+
+  /// Makes the API call for payment confirmation
+  Future<FunctionResponse> _callConfirmPaymentAPI({
+    required String paymentId,
+    required String orderId,
+    required String signature,
+    required int tokenAmount,
+    required Map<String, String> headers,
+  }) async {
+    final response = await _supabaseClient.functions.invoke(
+      'confirm-token-purchase',
+      body: {
+        'payment_id': paymentId,
+        'order_id': orderId,
+        'signature': signature,
+        'token_amount': tokenAmount,
+      },
+      headers: headers,
+    );
+
+    print(
+        '🪙 [TOKEN_API] Payment confirmation response status: ${response.status}');
+    print(
+        '🪙 [TOKEN_API] Payment confirmation response data: ${response.data}');
+
+    return response;
+  }
+
+  /// Processes the API response for payment confirmation
+  TokenStatusModel _processConfirmPaymentResponse(FunctionResponse response) {
+    if (response.status == 200 && response.data != null) {
+      final responseData = response.data as Map<String, dynamic>;
+
+      if (responseData['success'] == true) {
+        final tokenData = responseData['data'] as Map<String, dynamic>;
+        return TokenStatusModel.fromJson(tokenData);
+      } else {
+        final error = responseData['error'] as Map<String, dynamic>?;
+        throw ServerException(
+          message:
+              error?['message'] as String? ?? 'Payment confirmation failed',
+          code: error?['code'] as String? ?? 'CONFIRMATION_FAILED',
+        );
+      }
+    } else if (response.status == 400) {
+      final errorData = response.data as Map<String, dynamic>?;
+      final error = errorData?['error'] as Map<String, dynamic>?;
+      throw ClientException(
+        message: error?['message'] as String? ??
+            'Invalid payment confirmation request',
+        code: error?['code'] as String? ?? 'INVALID_REQUEST',
+      );
+    } else if (response.status == 401) {
+      throw const AuthenticationException(
+        message: 'Authentication required. Please sign in to continue.',
+        code: 'UNAUTHORIZED',
+      );
+    } else if (response.status == 403) {
+      throw const ClientException(
+        message: 'Payment confirmation is not available for your account type.',
+        code: 'CONFIRMATION_NOT_ALLOWED',
+      );
+    } else if (response.status >= 500) {
+      throw const ServerException(
+        message:
+            'Server error occurred during payment confirmation. Please try again later.',
+        code: 'SERVER_ERROR',
+      );
+    } else {
+      throw const ServerException(
+        message: 'Payment confirmation failed. Please try again later.',
+        code: 'CONFIRMATION_FAILED',
       );
     }
   }

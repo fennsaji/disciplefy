@@ -53,15 +53,48 @@ async function handleRazorpayWebhook(req: Request, services: ServiceContainer): 
   
   console.log('[Webhook] Valid signature verified')
   
-  // Parse webhook payload
-  const payload = JSON.parse(body)
-  const event = payload.event
-  const paymentEntity = payload.payload?.payment?.entity
-  const orderEntity = payload.payload?.order?.entity
-  
-  console.log(`[Webhook] Processing event: ${event}`)
+  // Declare variables outside try block to make them accessible in catch block
+  let event: string | undefined
+  let paymentEntity: any = undefined
+  let orderEntity: any = undefined
   
   try {
+    // Parse webhook payload with error handling
+    let payload
+    try {
+      payload = JSON.parse(body)
+    } catch (parseError) {
+      console.error('[Webhook] Failed to parse JSON payload:', parseError)
+      throw new AppError(
+        'INVALID_PAYLOAD',
+        'Webhook payload must be valid JSON',
+        400
+      )
+    }
+    
+    // Validate required payload structure
+    if (!payload.event) {
+      throw new AppError(
+        'INVALID_PAYLOAD',
+        'Webhook payload missing required event field',
+        400
+      )
+    }
+    
+    if (!payload.payload) {
+      throw new AppError(
+        'INVALID_PAYLOAD',
+        'Webhook payload missing required payload field',
+        400
+      )
+    }
+    
+    event = payload.event
+    paymentEntity = payload.payload?.payment?.entity
+    orderEntity = payload.payload?.order?.entity
+    
+    console.log(`[Webhook] Processing event: ${event}`)
+    
     if (event === 'payment.captured') {
       await handlePaymentCaptured(paymentEntity, orderEntity, services)
     } else if (event === 'payment.failed') {
@@ -124,6 +157,7 @@ async function handlePaymentCaptured(
   const orderId = order?.id || payment?.order_id
   const paymentId = payment?.id
   const amount = payment?.amount // In paise
+  const currency = payment?.currency // Currency code (e.g., 'INR')
   
   console.log(`[Webhook] Payment captured: ${paymentId} for order: ${orderId}`)
   
@@ -144,10 +178,19 @@ async function handlePaymentCaptured(
     return // Already processed
   }
   
-  // Verify amount matches
+  // Verify both currency and amount match expected values
+  const expectedCurrency = 'INR' // We only support INR currently
+  
+  if (currency !== expectedCurrency) {
+    const errorMsg = `Currency mismatch for order ${orderId}: expected ${expectedCurrency}, got ${currency}`
+    console.error(`[Webhook] ${errorMsg}`)
+    throw new Error(`Payment currency verification failed: ${errorMsg}`)
+  }
+  
   if (amount !== pendingPurchase.amount_paise) {
-    console.error(`[Webhook] Amount mismatch for order ${orderId}: expected ${pendingPurchase.amount_paise}, got ${amount}`)
-    throw new Error('Payment amount verification failed')
+    const errorMsg = `Amount mismatch for order ${orderId}: expected ${pendingPurchase.amount_paise} paise, got ${amount} paise`
+    console.error(`[Webhook] ${errorMsg}`)
+    throw new Error(`Payment amount verification failed: ${errorMsg}`)
   }
   
   try {

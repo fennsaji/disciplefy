@@ -24,8 +24,12 @@ DECLARE
   current_purchased_tokens INTEGER;
   total_available INTEGER;
   default_limit INTEGER;
+  effective_limit INTEGER;
   needs_reset BOOLEAN;
 BEGIN
+  -- Set secure search_path to prevent schema injection attacks
+  SET LOCAL search_path = pg_temp, public;
+
   -- Set default daily limit based on user plan
   default_limit := CASE 
     WHEN p_user_plan = 'premium' THEN 999999999  -- Effectively unlimited
