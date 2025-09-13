@@ -18,6 +18,7 @@ import '../../features/saved_guides/presentation/pages/saved_screen.dart';
 import '../../features/settings/presentation/pages/settings_screen.dart';
 import '../../features/study_topics/presentation/pages/study_topics_screen.dart';
 import '../../features/tokens/presentation/pages/token_management_page.dart';
+import '../../features/tokens/presentation/pages/purchase_history_page.dart';
 import 'app_routes.dart';
 import 'router_guard.dart';
 import 'auth_notifier.dart';
@@ -116,6 +117,11 @@ class AppRouter {
         name: 'token_management',
         builder: (context, state) => const TokenManagementPage(),
       ),
+      GoRoute(
+        path: AppRoutes.purchaseHistory,
+        name: 'purchase_history',
+        builder: (context, state) => const PurchaseHistoryPage(),
+      ),
 
       // Authentication Routes (outside app shell)
       GoRoute(
@@ -204,6 +210,9 @@ extension AppRouterExtension on GoRouter {
 
   /// Navigates to the token management page where users can view balance, purchase tokens, and manage payment methods.
   void goToTokenManagement() => go(AppRoutes.tokenManagement);
+
+  /// Navigates to the purchase history page where users can view their past token purchases.
+  void goToPurchaseHistory() => go(AppRoutes.purchaseHistory);
   void goToLogin() => go(AppRoutes.login);
   void goToAuthCallback() => go(AppRoutes.authCallback);
   void goToError(String error) => go(AppRoutes.error, extra: error);

@@ -221,17 +221,24 @@ class TokenOrderCreated extends TokenState {
   final int tokensToPurchase;
   final double amount;
   final String orderId;
+  final String keyId; // Add keyId from API response
 
   const TokenOrderCreated({
     required this.currentTokenStatus,
     required this.tokensToPurchase,
     required this.amount,
     required this.orderId,
+    required this.keyId, // Add keyId parameter
   });
 
   @override
-  List<Object?> get props =>
-      [currentTokenStatus, tokensToPurchase, amount, orderId];
+  List<Object?> get props => [
+        currentTokenStatus,
+        tokensToPurchase,
+        amount,
+        orderId,
+        keyId
+      ]; // Add keyId to props
 }
 
 /// State when payment is being confirmed and verified

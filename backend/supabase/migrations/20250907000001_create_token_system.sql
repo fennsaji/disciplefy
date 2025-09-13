@@ -6,12 +6,15 @@
 -- Begin transaction for atomic migration
 BEGIN;
 
+-- Enable UUID extension if not already enabled
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
 -- =====================================
 -- STEP 1: Create user_tokens Table
 -- =====================================
 
 CREATE TABLE user_tokens (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   identifier TEXT NOT NULL, -- user_id for authenticated, session_id for anonymous
   user_plan TEXT NOT NULL CHECK (user_plan IN ('free', 'standard', 'premium')),
   available_tokens INTEGER NOT NULL DEFAULT 0 CHECK (available_tokens >= 0), -- Daily allocation tokens
@@ -65,12 +68,12 @@ COMMENT ON COLUMN user_tokens.total_consumed_today IS 'Total tokens consumed sin
 
 -- Create trigger function to update updated_at timestamp
 CREATE OR REPLACE FUNCTION update_updated_at_column()
-RETURNS TRIGGER AS $
+RETURNS TRIGGER AS $$
 BEGIN
   NEW.updated_at = NOW();
   RETURN NEW;
 END;
-$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql;
 
 -- Create trigger for user_tokens table
 CREATE TRIGGER trigger_user_tokens_updated_at
@@ -99,7 +102,7 @@ RETURNS TABLE(
   daily_limit INTEGER,
   last_reset DATE,
   total_consumed_today INTEGER
-) AS $
+) AS $$
 DECLARE
   default_limit INTEGER;
   current_date_utc DATE;
@@ -169,7 +172,7 @@ BEGIN
       user_tokens.total_consumed_today;
   END IF;
 END;
-$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- Function to consume tokens atomically with proper priority logic
 CREATE OR REPLACE FUNCTION consume_user_tokens(
@@ -183,7 +186,7 @@ RETURNS TABLE(
   purchased_tokens INTEGER,
   daily_limit INTEGER,
   error_message TEXT
-) AS $
+) AS $$
 DECLARE
   current_daily_tokens INTEGER;
   current_purchased_tokens INTEGER;
@@ -490,7 +493,7 @@ BEGIN
     created_at
   )
   VALUES (
-    uuid_generate_v4(),
+    gen_random_uuid(),
     p_user_id,
     p_session_id,
     p_event_type,

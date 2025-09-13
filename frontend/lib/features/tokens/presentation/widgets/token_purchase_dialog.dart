@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:razorpay_flutter/razorpay_flutter.dart';
 import '../../domain/entities/token_status.dart';
 import '../../domain/entities/saved_payment_method.dart';
@@ -7,6 +8,8 @@ import '../../domain/entities/payment_preferences.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/services/payment_service.dart';
 import '../../../../core/constants/payment_constants.dart';
+import '../bloc/token_bloc.dart';
+import '../bloc/token_state.dart';
 
 /// Token Purchase Dialog Widget
 ///
@@ -126,22 +129,50 @@ class _TokenPurchaseDialogState extends State<TokenPurchaseDialog>
       return _buildRestrictedDialog(context);
     }
 
-    return Dialog(
-      backgroundColor: theme.scaffoldBackgroundColor,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: Container(
-        constraints: const BoxConstraints(maxWidth: 500, maxHeight: 700),
-        decoration: BoxDecoration(
-          color: theme.scaffoldBackgroundColor,
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            _buildHeader(theme),
-            Flexible(child: _buildContent(theme)),
-            _buildFooter(theme),
-          ],
+    return BlocListener<TokenBloc, TokenState>(
+      listener: (context, state) {
+        if (state is TokenOrderCreated) {
+          // Order created successfully - only call external callback
+          // Payment gateway opening is handled by parent (TokenManagementPage)
+          debugPrint('[TokenPurchaseDialog] Order created: ${state.orderId}');
+
+          widget.onOrderCreated(
+            state.orderId,
+            state.tokensToPurchase,
+            state.amount,
+          );
+        } else if (state is TokenError && state.operation == 'order_creation') {
+          // Order creation failed
+          setState(() {
+            _isLoading = false;
+            _paymentStatus = 'ready';
+          });
+
+          // Handle the error
+          widget.onPaymentFailure(PaymentFailureResponse(
+            1, // code
+            state.failure.message, // message
+            {'error': 'ORDER_CREATION_FAILED'}, // data
+          ));
+        }
+      },
+      child: Dialog(
+        backgroundColor: theme.scaffoldBackgroundColor,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        child: Container(
+          constraints: const BoxConstraints(maxWidth: 500, maxHeight: 700),
+          decoration: BoxDecoration(
+            color: theme.scaffoldBackgroundColor,
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _buildHeader(theme),
+              Flexible(child: _buildContent(theme)),
+              _buildFooter(theme),
+            ],
+          ),
         ),
       ),
     );
@@ -1096,7 +1127,7 @@ class _TokenPurchaseDialogState extends State<TokenPurchaseDialog>
 
   /// Called when order is created successfully - opens Razorpay payment gateway
   Future<void> _openPaymentGateway(
-      String orderId, int tokenAmount, double amount) async {
+      String orderId, int tokenAmount, double amount, String keyId) async {
     setState(() {
       _currentOrderId = orderId;
       _paymentStatus = 'payment_opened';
@@ -1109,6 +1140,7 @@ class _TokenPurchaseDialogState extends State<TokenPurchaseDialog>
         description: '$tokenAmount tokens for Disciplefy Bible Study',
         userEmail: widget.userEmail,
         userPhone: widget.userPhone,
+        keyId: keyId, // Pass the keyId from API response
         onSuccess: (PaymentSuccessResponse response) {
           setState(() {
             _paymentStatus = 'processing';

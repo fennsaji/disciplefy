@@ -3,7 +3,11 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/router/app_routes.dart';
+import 'package:razorpay_flutter/razorpay_flutter.dart';
+
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/services/payment_service.dart';
 import '../bloc/token_bloc.dart';
 import '../bloc/token_event.dart';
 import '../bloc/token_state.dart';
@@ -31,6 +35,9 @@ class TokenManagementPage extends StatefulWidget {
 }
 
 class _TokenManagementPageState extends State<TokenManagementPage> {
+  // Payment confirmation guard to prevent duplicate calls
+  final Set<String> _processingPayments = <String>{};
+
   @override
   void initState() {
     super.initState();
@@ -41,46 +48,96 @@ class _TokenManagementPageState extends State<TokenManagementPage> {
   void _showPurchaseDialog(TokenStatus tokenStatus) {
     showDialog(
       context: context,
-      builder: (context) => TokenPurchaseDialog(
-        tokenStatus: tokenStatus,
-        // savedPaymentMethods defaults to const []
-        // paymentPreferences defaults to null - TODO: Load payment preferences
-        userEmail: 'user@example.com', // TODO: Get from auth
-        userPhone: '+1234567890', // TODO: Get from auth
-        onCreateOrder: (tokenAmount) {
-          // Create payment order
-          context.read<TokenBloc>().add(
-                CreatePaymentOrder(
-                  tokenAmount: tokenAmount,
-                ),
-              );
+      builder: (context) => BlocListener<TokenBloc, TokenState>(
+        listener: (context, state) {
+          if (state is TokenPurchaseSuccess) {
+            // Payment confirmed successfully, close dialog
+            debugPrint(
+                '[TokenManagementPage] Payment confirmed, closing dialog');
+
+            // Clean up processing payments set
+            _processingPayments.clear();
+            debugPrint(
+                '[TokenManagementPage] 🧹 Processing payments cleared after success');
+
+            Navigator.of(context).pop();
+
+            // Show success message
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                    'Successfully purchased ${state.tokensPurchased} tokens!'),
+                backgroundColor: Colors.green,
+              ),
+            );
+          } else if (state is TokenError &&
+              state.operation == 'payment_confirmation') {
+            // Payment confirmation failed
+            debugPrint(
+                '[TokenManagementPage] Payment confirmation failed: ${state.failure.message}');
+
+            // Clean up processing payments set on error
+            _processingPayments.clear();
+            debugPrint(
+                '[TokenManagementPage] 🧹 Processing payments cleared after error');
+
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                    'Payment confirmation failed: ${state.failure.message}'),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
         },
-        onOrderCreated: (orderId, tokenAmount, amount) {
-          // Handle order creation success
-        },
-        onPaymentSuccess: (response) {
-          // Confirm payment
-          context.read<TokenBloc>().add(
-                ConfirmPayment(
-                  paymentId: response.paymentId ?? '',
-                  orderId: response.orderId ?? '',
-                  signature: response.signature ?? '',
-                  tokenAmount: 0, // TODO: Get from context
-                ),
-              );
-        },
-        onPaymentFailure: (response) {
-          // Handle payment failure
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Payment failed: ${response.message}'),
-              backgroundColor: Colors.red,
-            ),
-          );
-        },
-        onCancel: () {
-          Navigator.of(context).pop();
-        },
+        child: TokenPurchaseDialog(
+          tokenStatus: tokenStatus,
+          // savedPaymentMethods defaults to const []
+          // paymentPreferences defaults to null - TODO: Load payment preferences
+          userEmail: 'user@example.com', // TODO: Get from auth
+          userPhone: '+1234567890', // TODO: Get from auth
+          onCreateOrder: (tokenAmount) {
+            // Create payment order
+            context.read<TokenBloc>().add(
+                  CreatePaymentOrder(
+                    tokenAmount: tokenAmount,
+                  ),
+                );
+          },
+          onOrderCreated: (orderId, tokenAmount, amount) {
+            // Handle order creation success by opening payment gateway
+            debugPrint(
+                '[TokenManagementPage] Order created: $orderId for $tokenAmount tokens (₹$amount)');
+
+            // Get the keyId from current BLoC state
+            final currentState = context.read<TokenBloc>().state;
+            String? keyId;
+            if (currentState is TokenOrderCreated) {
+              keyId = currentState.keyId;
+            }
+
+            // Open payment gateway with the created order
+            _openPaymentGateway(orderId, tokenAmount, amount,
+                keyId ?? 'rzp_test_RFzzBvMdQzOOyA');
+          },
+          onPaymentSuccess: (response) {
+            debugPrint(
+                '[TokenManagementPage] Payment success callback - already handled in _openPaymentGateway');
+            // Payment confirmation is now handled in _openPaymentGateway method
+          },
+          onPaymentFailure: (response) {
+            // Handle payment failure
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Payment failed: ${response.message}'),
+                backgroundColor: Colors.red,
+              ),
+            );
+          },
+          onCancel: () {
+            Navigator.of(context).pop();
+          },
+        ),
       ),
     );
   }
@@ -93,6 +150,83 @@ class _TokenManagementPageState extends State<TokenManagementPage> {
         duration: Duration(seconds: 2),
       ),
     );
+  }
+
+  /// Opens payment gateway for the given order
+  Future<void> _openPaymentGateway(
+      String orderId, int tokenAmount, double amount, String keyId) async {
+    try {
+      debugPrint(
+          '[TokenManagementPage] Opening payment gateway for order: $orderId');
+
+      await PaymentService().openCheckout(
+        orderId: orderId,
+        amount: amount,
+        description: '$tokenAmount tokens for Disciplefy Bible Study',
+        userEmail: 'user@example.com', // TODO: Get from auth
+        userPhone: '+1234567890', // TODO: Get from auth
+        keyId: keyId,
+        onSuccess: (response) {
+          debugPrint(
+              '[TokenManagementPage] Payment gateway success - triggering confirmation');
+
+          final paymentId = response.paymentId ?? '';
+          final orderId = response.orderId ?? '';
+
+          // Prevent duplicate confirmation calls
+          if (_processingPayments.contains(paymentId)) {
+            debugPrint(
+                '[TokenManagementPage] ⚠️ Payment $paymentId already being processed - ignoring duplicate');
+            return;
+          }
+
+          // Mark payment as being processed
+          _processingPayments.add(paymentId);
+          debugPrint(
+              '[TokenManagementPage] 🔒 Payment $paymentId marked as processing');
+
+          // Get current token amount from BLoC state
+          final currentState = context.read<TokenBloc>().state;
+          int tokenAmount = 50; // Default minimum
+
+          // Extract token amount from TokenOrderCreated state
+          if (currentState is TokenOrderCreated) {
+            tokenAmount = currentState.tokensToPurchase;
+          }
+
+          debugPrint(
+              '[TokenManagementPage] Payment success - confirming with $tokenAmount tokens');
+
+          // Confirm payment
+          context.read<TokenBloc>().add(
+                ConfirmPayment(
+                  paymentId: paymentId,
+                  orderId: orderId,
+                  signature: response.signature ?? '',
+                  tokenAmount: tokenAmount,
+                ),
+              );
+        },
+        onError: (response) {
+          debugPrint(
+              '[TokenManagementPage] Payment gateway error: ${response.message}');
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Payment failed: ${response.message}'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        },
+      );
+    } catch (e) {
+      debugPrint('[TokenManagementPage] Error opening payment gateway: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error opening payment: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 
   void _upgradeToPremium() {
@@ -137,6 +271,16 @@ class _TokenManagementPageState extends State<TokenManagementPage> {
         actions: [
           IconButton(
             onPressed: () {
+              context.push('/token-management/purchase-history');
+            },
+            icon: Icon(
+              Icons.history,
+              color: Theme.of(context).colorScheme.primary,
+            ),
+            tooltip: 'View purchase history',
+          ),
+          IconButton(
+            onPressed: () {
               context.read<TokenBloc>().add(const RefreshTokenStatus());
             },
             icon: Icon(
@@ -147,7 +291,17 @@ class _TokenManagementPageState extends State<TokenManagementPage> {
           ),
         ],
       ),
-      body: BlocBuilder<TokenBloc, TokenState>(
+      body: BlocConsumer<TokenBloc, TokenState>(
+        listener: (context, state) {
+          // If we encounter a purchase-related state but need token info,
+          // refresh the token status to get back to TokenLoaded state
+          if (state is PurchaseHistoryLoaded ||
+              state is PurchaseStatisticsLoaded ||
+              state is PurchaseHistoryError) {
+            // Only refresh if we don't already have token data from a previous TokenLoaded state
+            context.read<TokenBloc>().add(const GetTokenStatus());
+          }
+        },
         builder: (context, state) {
           if (state is TokenLoading) {
             return const Center(
@@ -196,10 +350,32 @@ class _TokenManagementPageState extends State<TokenManagementPage> {
             );
           } else if (state is TokenLoaded) {
             return _buildTokenManagement(state.tokenStatus);
+          } else if (state is PurchaseHistoryLoaded ||
+              state is PurchaseStatisticsLoaded ||
+              state is PurchaseHistoryError) {
+            // Show loading while we refresh token status
+            return const Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  CircularProgressIndicator(),
+                  SizedBox(height: 16),
+                  Text('Refreshing token information...'),
+                ],
+              ),
+            );
           }
 
+          // Handle any other unexpected states
           return const Center(
-            child: Text('Loading token information...'),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                CircularProgressIndicator(),
+                SizedBox(height: 16),
+                Text('Loading token information...'),
+              ],
+            ),
           );
         },
       ),
@@ -241,6 +417,8 @@ class _TokenManagementPageState extends State<TokenManagementPage> {
             onUpgrade: tokenStatus.userPlan == UserPlan.free
                 ? _upgradeToStandard
                 : _upgradeToPremium,
+            onViewHistory: () =>
+                context.push('/token-management/purchase-history'),
           ),
 
           const SizedBox(height: 24),

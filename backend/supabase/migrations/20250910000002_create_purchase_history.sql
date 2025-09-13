@@ -61,7 +61,7 @@ CREATE TABLE receipt_counters (
 
 -- Function to generate receipt number (concurrency-safe)
 CREATE OR REPLACE FUNCTION generate_receipt_number()
-RETURNS TEXT AS $
+RETURNS TEXT AS $$
 DECLARE
   receipt_num TEXT;
   year_month TEXT;
@@ -83,7 +83,7 @@ BEGIN
   
   RETURN receipt_num;
 END;
-$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql;
 
 -- Function to record purchase in history
 CREATE OR REPLACE FUNCTION record_purchase_history(

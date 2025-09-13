@@ -163,9 +163,9 @@ class _PurchaseHistoryPageState extends State<PurchaseHistoryPage> {
                           padding: const EdgeInsets.all(16.0),
                           child: Column(
                             children: [
-                              const Icon(
+                              Icon(
                                 Icons.error_outline,
-                                color: Colors.red,
+                                color: theme.colorScheme.error,
                                 size: 32,
                               ),
                               const SizedBox(height: 8),
@@ -198,7 +198,7 @@ class _PurchaseHistoryPageState extends State<PurchaseHistoryPage> {
                   'Transaction History',
                   style: theme.textTheme.headlineSmall?.copyWith(
                     fontWeight: FontWeight.bold,
-                    color: AppTheme.textPrimary,
+                    color: theme.colorScheme.onBackground,
                   ),
                 ),
               ),

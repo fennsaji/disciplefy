@@ -31,12 +31,12 @@ class PurchaseStatisticsCard extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: AppTheme.primaryColor.withOpacity(0.1),
+                    color: theme.colorScheme.primary.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: const Icon(
+                  child: Icon(
                     Icons.analytics,
-                    color: AppTheme.primaryColor,
+                    color: theme.colorScheme.primary,
                     size: 24,
                   ),
                 ),
@@ -49,14 +49,14 @@ class PurchaseStatisticsCard extends StatelessWidget {
                         'Purchase Summary',
                         style: theme.textTheme.titleLarge?.copyWith(
                           fontWeight: FontWeight.bold,
-                          color: AppTheme.textPrimary,
+                          color: theme.colorScheme.onSurface,
                         ),
                       ),
                       if (statistics.firstPurchaseDate != null)
                         Text(
                           'Since ${dateFormatter.format(statistics.firstPurchaseDate!)}',
                           style: theme.textTheme.bodySmall?.copyWith(
-                            color: AppTheme.textSecondary,
+                            color: theme.colorScheme.onSurface.withOpacity(0.6),
                           ),
                         ),
                     ],
@@ -84,7 +84,7 @@ class PurchaseStatisticsCard extends StatelessWidget {
                     icon: Icons.token,
                     label: 'Total Tokens',
                     value: statistics.totalTokens.toString(),
-                    color: AppTheme.primaryColor,
+                    color: theme.colorScheme.primary,
                   ),
                 ),
               ],
@@ -121,10 +121,10 @@ class PurchaseStatisticsCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: AppTheme.highlightColor.withOpacity(0.1),
+                  color: theme.colorScheme.primary.withOpacity(0.05),
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(
-                    color: AppTheme.highlightColor.withOpacity(0.3),
+                    color: theme.colorScheme.primary.withOpacity(0.2),
                   ),
                 ),
                 child: Row(
@@ -132,13 +132,13 @@ class PurchaseStatisticsCard extends StatelessWidget {
                     Icon(
                       Icons.access_time,
                       size: 16,
-                      color: AppTheme.textSecondary,
+                      color: theme.colorScheme.onSurface.withOpacity(0.6),
                     ),
                     const SizedBox(width: 8),
                     Text(
                       'Last purchase: ${dateFormatter.format(statistics.lastPurchaseDate!)}',
                       style: theme.textTheme.bodySmall?.copyWith(
-                        color: AppTheme.textSecondary,
+                        color: theme.colorScheme.onSurface.withOpacity(0.6),
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -194,7 +194,7 @@ class _StatisticItem extends StatelessWidget {
                 child: Text(
                   label,
                   style: theme.textTheme.bodySmall?.copyWith(
-                    color: AppTheme.textSecondary,
+                    color: theme.colorScheme.onSurface.withOpacity(0.6),
                     fontWeight: FontWeight.w500,
                   ),
                   maxLines: 1,

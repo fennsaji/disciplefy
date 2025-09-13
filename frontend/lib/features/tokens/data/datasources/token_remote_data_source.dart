@@ -7,6 +7,7 @@ import '../models/purchase_history_model.dart';
 import '../models/purchase_statistics_model.dart' as stats;
 import '../models/payment_preferences_model.dart' as prefs;
 import '../models/saved_payment_method_model.dart';
+import '../../domain/entities/payment_order_response.dart';
 
 /// Abstract contract for remote token operations.
 abstract class TokenRemoteDataSource {
@@ -27,7 +28,7 @@ abstract class TokenRemoteDataSource {
   /// Throws [ServerException] if there's a server error.
   /// Throws [AuthenticationException] if authentication fails.
   /// Throws [ClientException] if order creation fails.
-  Future<String> createPaymentOrder({
+  Future<PaymentOrderResponse> createPaymentOrder({
     required int tokenAmount,
   });
 
@@ -189,6 +190,9 @@ class TokenRemoteDataSourceImpl implements TokenRemoteDataSource {
   /// Supabase client for API calls.
   final SupabaseClient _supabaseClient;
 
+  /// Track ongoing payment confirmations to prevent duplicates
+  final Set<String> _processingPayments = <String>{};
+
   /// Creates a new TokenRemoteDataSourceImpl instance.
   TokenRemoteDataSourceImpl({
     required SupabaseClient supabaseClient,
@@ -267,7 +271,7 @@ class TokenRemoteDataSourceImpl implements TokenRemoteDataSource {
   }
 
   @override
-  Future<String> createPaymentOrder({
+  Future<PaymentOrderResponse> createPaymentOrder({
     required int tokenAmount,
   }) async {
     try {
@@ -306,7 +310,18 @@ class TokenRemoteDataSourceImpl implements TokenRemoteDataSource {
 
         if (responseData['success'] == true) {
           final orderId = responseData['order_id'] as String;
-          return orderId;
+          final keyId = responseData['key_id'] as String;
+          final tokenAmount = responseData['token_amount'] as int;
+          final amount = responseData['amount'] as int;
+          final currency = responseData['currency'] as String;
+
+          return PaymentOrderResponse(
+            orderId: orderId,
+            keyId: keyId,
+            tokenAmount: tokenAmount,
+            amount: amount,
+            currency: currency,
+          );
         } else {
           final error = responseData['error'] as Map<String, dynamic>?;
           throw ServerException(
@@ -373,6 +388,21 @@ class TokenRemoteDataSourceImpl implements TokenRemoteDataSource {
     required String signature,
     required int tokenAmount,
   }) async {
+    // Prevent duplicate payment confirmation calls
+    if (_processingPayments.contains(paymentId)) {
+      print(
+          '⚠️ [TOKEN_API] Payment $paymentId already being confirmed - throwing duplicate error');
+      throw const ClientException(
+        message: 'Payment confirmation already in progress',
+        code: 'DUPLICATE_PAYMENT_CONFIRMATION',
+      );
+    }
+
+    // Mark payment as being processed
+    _processingPayments.add(paymentId);
+    print(
+        '🔒 [TOKEN_API] Payment $paymentId marked as processing at HTTP level');
+
     try {
       await ApiAuthHelper.validateTokenForRequest();
       final headers = await ApiAuthHelper.getAuthHeaders();
@@ -389,21 +419,46 @@ class TokenRemoteDataSourceImpl implements TokenRemoteDataSource {
         headers: headers,
       );
 
-      return _processConfirmPaymentResponse(response);
+      final result = _processConfirmPaymentResponse(response);
+
+      // Clean up processing set on success
+      _processingPayments.remove(paymentId);
+      print(
+          '🧹 [TOKEN_API] Payment $paymentId removed from processing set (success)');
+
+      return result;
     } on NetworkException {
+      _processingPayments.remove(paymentId);
+      print(
+          '🧹 [TOKEN_API] Payment $paymentId removed from processing set (NetworkException)');
       rethrow;
     } on ServerException {
+      _processingPayments.remove(paymentId);
+      print(
+          '🧹 [TOKEN_API] Payment $paymentId removed from processing set (ServerException)');
       rethrow;
     } on AuthenticationException {
+      _processingPayments.remove(paymentId);
+      print(
+          '🧹 [TOKEN_API] Payment $paymentId removed from processing set (AuthenticationException)');
       rethrow;
     } on ClientException {
+      _processingPayments.remove(paymentId);
+      print(
+          '🧹 [TOKEN_API] Payment $paymentId removed from processing set (ClientException)');
       rethrow;
     } on TokenValidationException {
+      _processingPayments.remove(paymentId);
+      print(
+          '🧹 [TOKEN_API] Payment $paymentId removed from processing set (TokenValidationException)');
       throw const AuthenticationException(
         message: 'Authentication token is invalid. Please sign in again.',
         code: 'TOKEN_INVALID',
       );
     } catch (e) {
+      _processingPayments.remove(paymentId);
+      print(
+          '🧹 [TOKEN_API] Payment $paymentId removed from processing set (UnexpectedException)');
       print('🚨 [TOKEN_API] Unexpected payment confirmation error: $e');
       throw ClientException(
         message: 'Unable to confirm payment. Please try again later.',
@@ -480,18 +535,46 @@ class TokenRemoteDataSourceImpl implements TokenRemoteDataSource {
 
       print('🪙 [TOKEN_API] Fetching purchase statistics...');
 
-      // Get purchase statistics using the database function
-      final response = await _supabaseClient.rpc('get_purchase_statistics');
+      // Get current user ID for the statistics query
+      final user = _supabaseClient.auth.currentUser;
+      if (user?.id == null) {
+        throw const AuthenticationException(
+          message: 'User ID not available for statistics request',
+          code: 'NO_USER_ID',
+        );
+      }
+
+      // Get purchase statistics using the database function with user ID
+      final response =
+          await _supabaseClient.rpc('get_user_purchase_stats', params: {
+        'p_user_id': user!.id,
+      });
 
       print('🪙 [TOKEN_API] Purchase statistics response: $response');
 
-      if (response != null) {
-        return stats.PurchaseStatisticsModel.fromJson(
-            response as Map<String, dynamic>);
+      if (response != null && response is List && response.isNotEmpty) {
+        // The RPC function returns a table (array of rows), we need the first row
+        final statsData = response[0] as Map<String, dynamic>;
+
+        // Transform the field names to match what the model expects
+        final transformedData = {
+          'total_purchases': statsData['total_purchases'],
+          'total_amount_spent': statsData['total_spent'],
+          'total_tokens_purchased': statsData['total_tokens'],
+          'average_purchase_amount': statsData['average_purchase'],
+          'first_purchase_date': null, // Not provided by the database function
+          'last_purchase_date': statsData['last_purchase_date'],
+          'most_used_payment_method': statsData['most_used_payment_method'],
+        };
+
+        return stats.PurchaseStatisticsModel.fromJson(transformedData);
       } else {
-        throw const ServerException(
-          message: 'No statistics data available',
-          code: 'NO_STATISTICS_DATA',
+        // Return empty statistics if no data available
+        return const stats.PurchaseStatisticsModel(
+          totalPurchases: 0,
+          totalAmountSpent: 0.0,
+          totalTokensPurchased: 0,
+          averagePurchaseAmount: 0.0,
         );
       }
     } on NetworkException {
@@ -999,7 +1082,8 @@ class TokenRemoteDataSourceImpl implements TokenRemoteDataSource {
       final responseData = response.data as Map<String, dynamic>;
 
       if (responseData['success'] == true) {
-        final tokenData = responseData['data'] as Map<String, dynamic>;
+        // The token data is in the 'token_balance' field, not 'data'
+        final tokenData = responseData['token_balance'] as Map<String, dynamic>;
         return TokenStatusModel.fromJson(tokenData);
       } else {
         final error = responseData['error'] as Map<String, dynamic>?;

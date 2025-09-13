@@ -9,7 +9,8 @@ ALTER TABLE saved_payment_methods
 ADD COLUMN IF NOT EXISTS encrypted_token TEXT,
 ADD COLUMN IF NOT EXISTS encryption_key_id TEXT DEFAULT 'default_key',
 ADD COLUMN IF NOT EXISTS token_hash TEXT,
-ADD COLUMN IF NOT EXISTS security_metadata JSONB DEFAULT '{}'::jsonb;
+ADD COLUMN IF NOT EXISTS security_metadata JSONB DEFAULT '{}'::jsonb,
+ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMP WITH TIME ZONE;
 
 -- Create function to encrypt payment tokens
 CREATE OR REPLACE FUNCTION encrypt_payment_token(
@@ -221,6 +222,8 @@ END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- Update get_user_payment_methods to handle encryption
+-- Drop existing function to avoid return type conflicts
+DROP FUNCTION IF EXISTS get_user_payment_methods(UUID);
 CREATE OR REPLACE FUNCTION get_user_payment_methods(p_user_id UUID DEFAULT NULL)
 RETURNS TABLE(
   id UUID,

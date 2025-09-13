@@ -208,10 +208,18 @@ async function upsertProfile(
 
   if (updateError?.code === 'PGRST116') {
     // Profile doesn't exist, create it
-    const defaultProfile = createDefaultProfile(client, userId, updateData);
+    const defaultProfile = await createDefaultProfile(client, userId, updateData);
     return await client
       .from('user_profiles')
-      .insert([defaultProfile])
+      .insert({
+        id: userId,
+        language_preference: defaultProfile.language_preference,
+        theme_preference: defaultProfile.theme_preference,
+        first_name: defaultProfile.first_name,
+        last_name: defaultProfile.last_name,
+        profile_picture: defaultProfile.profile_picture,
+        is_admin: defaultProfile.is_admin
+      })
       .select()
       .single();
   }
@@ -340,7 +348,15 @@ async function handleGetProfile(
       const defaultProfile = await createDefaultProfile(supabaseClient, userId);
       const { data: newProfile, error: insertError } = await supabaseClient
         .from('user_profiles')
-        .insert([defaultProfile])
+        .insert({
+          id: userId,
+          language_preference: defaultProfile.language_preference,
+          theme_preference: defaultProfile.theme_preference,
+          first_name: defaultProfile.first_name,
+          last_name: defaultProfile.last_name,
+          profile_picture: defaultProfile.profile_picture,
+          is_admin: defaultProfile.is_admin
+        })
         .select()
         .single();
 

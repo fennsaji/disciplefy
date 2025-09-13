@@ -21,7 +21,7 @@ import { createHmac } from 'node:crypto'
  */
 async function handleTokenPurchase(req: Request, services: ServiceContainer): Promise<Response> {
   try {
-    const userContext = await authenticateAndAuthorize(req, services.authService, services.rateLimiter)
+    const userContext = await authenticateAndAuthorize(req, services.authService, services.rateLimiter, services.tokenService)
     const { tokenAmount, paymentId } = await parseAndValidateRequestBody(req)
     await checkForDuplicatePayment(paymentId, services.supabaseServiceClient)
     const { costInRupees, costInPaise } = computeCost(tokenAmount, services.tokenService)
@@ -64,7 +64,7 @@ async function handleTokenPurchase(req: Request, services: ServiceContainer): Pr
 /**
  * Authenticate user and authorize purchase operation
  */
-async function authenticateAndAuthorize(req: Request, authService: any, rateLimiter: any): Promise<{ userId: string, userPlan: string }> {
+async function authenticateAndAuthorize(req: Request, authService: any, rateLimiter: any, tokenService: any): Promise<{ userId: string, userPlan: string }> {
   const userContext = await authService.getUserContext(req)
   
   if (userContext.type !== 'authenticated') {
@@ -75,10 +75,10 @@ async function authenticateAndAuthorize(req: Request, authService: any, rateLimi
     )
   }
 
-  await rateLimiter.consume(userContext.userId!, 'purchase_tokens')
+  await rateLimiter.enforceRateLimit(userContext.userId!, 'authenticated')
   const userPlan = await authService.getUserPlan(req)
   
-  if (!authService.tokenService?.canPurchaseTokens(userPlan)) {
+  if (!tokenService.canPurchaseTokens(userPlan)) {
     throw new AppError(
       'PURCHASE_NOT_ALLOWED',
       `${userPlan} plan users cannot purchase tokens`,
@@ -214,7 +214,7 @@ async function persistPendingPurchase(params: {
   token_amount: number
   amount_paise: number
 }, supabaseServiceClient: any): Promise<void> {
-  const { data, error } = await supabaseServiceClient
+  const { data: purchaseId, error } = await supabaseServiceClient
     .rpc('store_pending_purchase', {
       p_user_id: params.user_id,
       p_order_id: params.order_id,
@@ -231,27 +231,16 @@ async function persistPendingPurchase(params: {
     )
   }
 
-  if (!data?.success) {
-    const errorMsg = data?.error || 'Unknown error storing pending purchase'
-    console.error('[Database] Pending purchase storage failed:', data)
-    
-    if (data?.action === 'conflict') {
-      throw new AppError(
-        'ORDER_CONFLICT',
-        errorMsg,
-        409
-      )
-    }
-    
+  if (!purchaseId) {
+    console.error('[Database] Pending purchase storage returned null ID')
     throw new AppError(
       'DATABASE_ERROR',
-      errorMsg,
+      'Failed to create pending purchase record',
       500
     )
   }
 
-  // Log the action taken (created vs exists)
-  console.log(`[Database] Pending purchase ${data.action}: ${params.order_id} (status: ${data.status})`)
+  console.log(`[Database] Pending purchase stored successfully: ${params.order_id} (ID: ${purchaseId})`)
 }
 
 /**
@@ -370,7 +359,7 @@ async function processRazorpayPayment(params: {
     const order = await razorpay.orders.create({
       amount: params.amount,
       currency: params.currency,
-      receipt: `token_${params.user_id}_${Date.now()}`,
+      receipt: `tk_${params.user_id.slice(-8)}_${Date.now()}`.slice(0, 40),
       notes: {
         user_id: params.user_id,
         token_amount: params.token_amount.toString(),

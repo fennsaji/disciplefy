@@ -4,6 +4,7 @@ import '../../../../core/error/failures.dart';
 import '../entities/token_status.dart';
 import '../entities/purchase_history.dart';
 import '../entities/purchase_statistics.dart';
+import '../entities/payment_order_response.dart';
 
 /// Abstract repository for token-related operations.
 abstract class TokenRepository {
@@ -17,9 +18,9 @@ abstract class TokenRepository {
   ///
   /// [tokenAmount] - Number of tokens to purchase (must be positive)
   ///
-  /// Returns order ID for Razorpay payment gateway on success.
+  /// Returns complete payment order response with order ID and key ID on success.
   /// Returns [Failure] on error (network, server, authentication, validation, etc.).
-  Future<Either<Failure, String>> createPaymentOrder({
+  Future<Either<Failure, PaymentOrderResponse>> createPaymentOrder({
     required int tokenAmount,
   });
 
