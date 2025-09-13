@@ -38,23 +38,23 @@ class PurchaseHistoryCard extends StatelessWidget {
                         vertical: 4,
                       ),
                       decoration: BoxDecoration(
-                        color: AppTheme.highlightColor.withOpacity(0.2),
+                        color: theme.colorScheme.primary.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Icon(
+                          Icon(
                             Icons.token,
                             size: 16,
-                            color: AppTheme.primaryColor,
+                            color: theme.colorScheme.primary,
                           ),
                           const SizedBox(width: 4),
                           Text(
                             '${purchase.tokenAmount} tokens',
                             style: theme.textTheme.titleMedium?.copyWith(
                               fontWeight: FontWeight.bold,
-                              color: AppTheme.primaryColor,
+                              color: theme.colorScheme.primary,
                             ),
                           ),
                         ],
@@ -78,7 +78,7 @@ class PurchaseHistoryCard extends StatelessWidget {
                     Text(
                       'Amount Paid',
                       style: theme.textTheme.bodySmall?.copyWith(
-                        color: AppTheme.textSecondary,
+                        color: theme.colorScheme.onSurface.withOpacity(0.6),
                       ),
                     ),
                     const SizedBox(height: 2),
@@ -86,7 +86,7 @@ class PurchaseHistoryCard extends StatelessWidget {
                       '₹${purchase.costRupees.toStringAsFixed(2)}',
                       style: theme.textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.w600,
-                        color: AppTheme.textPrimary,
+                        color: theme.colorScheme.onSurface,
                       ),
                     ),
                   ],
@@ -97,7 +97,7 @@ class PurchaseHistoryCard extends StatelessWidget {
                     Text(
                       'Payment Method',
                       style: theme.textTheme.bodySmall?.copyWith(
-                        color: AppTheme.textSecondary,
+                        color: theme.colorScheme.onSurface.withOpacity(0.6),
                       ),
                     ),
                     const SizedBox(height: 2),
@@ -107,14 +107,14 @@ class PurchaseHistoryCard extends StatelessWidget {
                         Icon(
                           _getPaymentMethodIcon(purchase.paymentMethod),
                           size: 16,
-                          color: AppTheme.textSecondary,
+                          color: theme.colorScheme.onSurface.withOpacity(0.6),
                         ),
                         const SizedBox(width: 4),
                         Text(
                           _getPaymentMethodLabel(purchase.paymentMethod),
                           style: theme.textTheme.bodyMedium?.copyWith(
                             fontWeight: FontWeight.w500,
-                            color: AppTheme.textPrimary,
+                            color: theme.colorScheme.onSurface,
                           ),
                         ),
                       ],
@@ -136,14 +136,14 @@ class PurchaseHistoryCard extends StatelessWidget {
                     Text(
                       'Purchase Date',
                       style: theme.textTheme.bodySmall?.copyWith(
-                        color: AppTheme.textSecondary,
+                        color: theme.colorScheme.onSurface.withOpacity(0.6),
                       ),
                     ),
                     const SizedBox(height: 2),
                     Text(
                       dateFormatter.format(purchase.purchasedAt),
                       style: theme.textTheme.bodyMedium?.copyWith(
-                        color: AppTheme.textPrimary,
+                        color: theme.colorScheme.onSurface,
                       ),
                     ),
                   ],
@@ -155,7 +155,7 @@ class PurchaseHistoryCard extends StatelessWidget {
                       Text(
                         'Receipt #',
                         style: theme.textTheme.bodySmall?.copyWith(
-                          color: AppTheme.textSecondary,
+                          color: theme.colorScheme.onSurface.withOpacity(0.6),
                         ),
                       ),
                       const SizedBox(height: 2),
@@ -171,15 +171,15 @@ class PurchaseHistoryCard extends StatelessWidget {
                             Text(
                               purchase.receiptNumber!,
                               style: theme.textTheme.bodyMedium?.copyWith(
-                                color: AppTheme.primaryColor,
+                                color: theme.colorScheme.primary,
                                 fontWeight: FontWeight.w500,
                               ),
                             ),
                             const SizedBox(width: 4),
-                            const Icon(
+                            Icon(
                               Icons.copy,
                               size: 14,
-                              color: AppTheme.primaryColor,
+                              color: theme.colorScheme.primary,
                             ),
                           ],
                         ),
@@ -197,7 +197,7 @@ class PurchaseHistoryCard extends StatelessWidget {
                 'Transaction Details',
                 style: theme.textTheme.bodyMedium?.copyWith(
                   fontWeight: FontWeight.w500,
-                  color: AppTheme.textPrimary,
+                  color: theme.colorScheme.onSurface,
                 ),
               ),
               tilePadding: EdgeInsets.zero,
@@ -354,7 +354,7 @@ class _TransactionDetailRow extends StatelessWidget {
           child: Text(
             label,
             style: theme.textTheme.bodySmall?.copyWith(
-              color: AppTheme.textSecondary,
+              color: theme.colorScheme.onSurface.withOpacity(0.6),
             ),
           ),
         ),
@@ -368,17 +368,17 @@ class _TransactionDetailRow extends StatelessWidget {
                   child: Text(
                     value,
                     style: theme.textTheme.bodySmall?.copyWith(
-                      color: AppTheme.primaryColor,
+                      color: theme.colorScheme.primary,
                       fontWeight: FontWeight.w500,
                       fontFamily: 'monospace',
                     ),
                   ),
                 ),
                 const SizedBox(width: 4),
-                const Icon(
+                Icon(
                   Icons.copy,
                   size: 12,
-                  color: AppTheme.primaryColor,
+                  color: theme.colorScheme.primary,
                 ),
               ],
             ),

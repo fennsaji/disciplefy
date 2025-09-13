@@ -8,12 +8,14 @@ class TokenActionsSection extends StatelessWidget {
   final TokenStatus tokenStatus;
   final VoidCallback onPurchase;
   final VoidCallback onUpgrade;
+  final VoidCallback? onViewHistory;
 
   const TokenActionsSection({
     super.key,
     required this.tokenStatus,
     required this.onPurchase,
     required this.onUpgrade,
+    this.onViewHistory,
   });
 
   @override
@@ -75,6 +77,23 @@ class TokenActionsSection extends StatelessWidget {
                     backgroundColor: Colors.amber[700],
                     foregroundColor: Colors.white,
                     minimumSize: const Size(double.infinity, 48),
+                  ),
+                ),
+              ),
+            ],
+            // Purchase History button (always show if callback provided)
+            if (onViewHistory != null) ...[
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: onViewHistory,
+                  icon: const Icon(Icons.history),
+                  label: const Text('View Purchase History'),
+                  style: OutlinedButton.styleFrom(
+                    minimumSize: const Size(double.infinity, 48),
+                    side: BorderSide(
+                        color: Theme.of(context).colorScheme.outline),
                   ),
                 ),
               ),

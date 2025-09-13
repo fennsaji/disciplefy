@@ -28,7 +28,7 @@ WHERE preferred_wallet IS NULL;
 
 -- Update the database functions to use correct column names
 CREATE OR REPLACE FUNCTION get_or_create_payment_preferences()
-RETURNS payment_preferences AS $
+RETURNS payment_preferences AS $$
 DECLARE
   v_preferences payment_preferences;
   v_user_id UUID;

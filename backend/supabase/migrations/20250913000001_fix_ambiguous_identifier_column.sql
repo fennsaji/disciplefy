@@ -1,19 +1,12 @@
--- =====================================
--- Migration: Fix get_or_create_user_tokens Function
--- Date: 2025-09-07
--- Purpose: Fix the NOT FOUND logic bug in get_or_create_user_tokens function
--- =====================================
+-- Fix ambiguous column reference in get_or_create_user_tokens function
+-- Migration: 20250913000001_fix_ambiguous_identifier_column.sql
 
-BEGIN;
-
--- Replace the buggy function with the corrected and secured version
 CREATE OR REPLACE FUNCTION get_or_create_user_tokens(
-  p_identifier TEXT,
+  p_identifier UUID,
   p_user_plan TEXT
-)
-RETURNS TABLE(
+) RETURNS TABLE(
   id UUID,
-  identifier TEXT,
+  identifier UUID,
   user_plan TEXT,
   available_tokens INTEGER,
   purchased_tokens INTEGER,
@@ -52,22 +45,22 @@ BEGIN
     UPDATE user_tokens 
     SET 
       available_tokens = CASE 
-        WHEN user_plan = 'premium' THEN 999999999
-        WHEN last_reset < current_date_utc THEN default_limit
-        ELSE available_tokens
+        WHEN user_tokens.user_plan = 'premium' THEN 999999999
+        WHEN user_tokens.last_reset < current_date_utc THEN default_limit
+        ELSE user_tokens.available_tokens
       END,
       last_reset = CASE 
-        WHEN last_reset < current_date_utc THEN current_date_utc
-        ELSE last_reset
+        WHEN user_tokens.last_reset < current_date_utc THEN current_date_utc
+        ELSE user_tokens.last_reset
       END,
       total_consumed_today = CASE 
-        WHEN user_plan = 'premium' THEN 0
-        WHEN last_reset < current_date_utc THEN 0
-        ELSE total_consumed_today
+        WHEN user_tokens.user_plan = 'premium' THEN 0
+        WHEN user_tokens.last_reset < current_date_utc THEN 0
+        ELSE user_tokens.total_consumed_today
       END,
       updated_at = NOW()
-    WHERE identifier = p_identifier AND user_plan = p_user_plan
-      AND (last_reset < current_date_utc OR user_plan = 'premium');
+    WHERE user_tokens.identifier = p_identifier AND user_tokens.user_plan = p_user_plan
+      AND (user_tokens.last_reset < current_date_utc OR user_tokens.user_plan = 'premium');
   END IF;
   
   -- Return the record (existing or newly created), now with persisted reset
@@ -85,8 +78,3 @@ BEGIN
   WHERE ut.identifier = p_identifier AND ut.user_plan = p_user_plan;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
-
--- Update function documentation
-COMMENT ON FUNCTION get_or_create_user_tokens(TEXT, TEXT) IS 'Get or create user tokens record with automatic daily reset logic (FIXED: NOT FOUND bug resolved)';
-
-COMMIT;

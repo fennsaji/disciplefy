@@ -7,6 +7,7 @@ import '../../../../core/validation/payment_validators.dart';
 import '../../domain/entities/token_status.dart';
 import '../../domain/entities/purchase_history.dart';
 import '../../domain/entities/purchase_statistics.dart';
+import '../../domain/entities/payment_order_response.dart';
 import '../../domain/repositories/token_repository.dart';
 import '../datasources/token_remote_data_source.dart';
 
@@ -65,7 +66,7 @@ class TokenRepositoryImpl implements TokenRepository {
   }
 
   @override
-  Future<Either<Failure, String>> createPaymentOrder({
+  Future<Either<Failure, PaymentOrderResponse>> createPaymentOrder({
     required int tokenAmount,
   }) async {
     // Comprehensive input validation using TokenPurchaseValidator
@@ -94,7 +95,7 @@ class TokenRepositoryImpl implements TokenRepository {
       ));
     }
 
-    return _execute<String>(
+    return _execute<PaymentOrderResponse>(
       () async {
         return await _remoteDataSource.createPaymentOrder(
           tokenAmount: tokenAmount,

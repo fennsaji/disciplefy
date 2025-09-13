@@ -23,21 +23,41 @@ class TokenStatusModel extends TokenStatus {
     final data = json['data'] as Map<String, dynamic>? ?? json;
 
     return TokenStatusModel(
-      availableTokens: (data['available_tokens'] as num).toInt(),
-      purchasedTokens: (data['purchased_tokens'] as num).toInt(),
-      totalTokens: (data['total_tokens'] as num).toInt(),
-      dailyLimit: (data['daily_limit'] as num).toInt(),
-      totalConsumedToday: (data['total_consumed_today'] as num).toInt(),
-      userPlan: _parseUserPlan(data['user_plan'] as String),
-      lastReset: DateTime.parse(data['last_reset'] as String),
-      nextResetTime: data['next_reset_time'] != null
-          ? DateTime.parse(data['next_reset_time'] as String)
+      // Handle both camelCase (from confirm-payment API) and snake_case (from other APIs)
+      availableTokens:
+          ((data['availableTokens'] ?? data['available_tokens']) as num)
+              .toInt(),
+      purchasedTokens:
+          ((data['purchasedTokens'] ?? data['purchased_tokens']) as num)
+              .toInt(),
+      totalTokens:
+          ((data['totalTokens'] ?? data['total_tokens']) as num).toInt(),
+      dailyLimit: ((data['dailyLimit'] ?? data['daily_limit']) as num).toInt(),
+      totalConsumedToday:
+          ((data['totalConsumedToday'] ?? data['total_consumed_today']) as num)
+              .toInt(),
+      userPlan:
+          _parseUserPlan((data['userPlan'] ?? data['user_plan']) as String),
+      lastReset:
+          DateTime.parse((data['lastReset'] ?? data['last_reset']) as String),
+      nextResetTime: (data['nextResetTime'] ?? data['next_reset_time']) != null
+          ? DateTime.parse(
+              (data['nextResetTime'] ?? data['next_reset_time']) as String)
           : DateTime.now().add(const Duration(days: 1)),
-      authenticationType: _parseAuthType(data['authentication_type'] as String),
-      isPremium: data['is_premium'] as bool? ?? false,
-      unlimitedUsage: data['unlimited_usage'] as bool? ?? false,
-      canPurchaseTokens: data['can_purchase_tokens'] as bool? ?? false,
-      planDescription: data['plan_description'] as String? ?? '',
+      authenticationType: _parseAuthType((data['authenticationType'] ??
+              data['authentication_type']) as String? ??
+          'authenticated'),
+      isPremium: (data['isPremium'] ?? data['is_premium']) as bool? ?? false,
+      unlimitedUsage:
+          (data['unlimitedUsage'] ?? data['unlimited_usage']) as bool? ?? false,
+      canPurchaseTokens:
+          (data['canPurchaseTokens'] ?? data['can_purchase_tokens']) as bool? ??
+              // Default to true for standard users if not explicitly provided
+              ((data['userPlan'] ?? data['user_plan']) == 'standard'),
+      planDescription:
+          (data['planDescription'] ?? data['plan_description']) as String? ??
+              _getDefaultPlanDescription(
+                  (data['userPlan'] ?? data['user_plan']) as String? ?? 'free'),
     );
   }
 
@@ -64,6 +84,20 @@ class TokenStatusModel extends TokenStatus {
         return AuthenticationType.authenticated;
       default:
         return AuthenticationType.anonymous;
+    }
+  }
+
+  /// Get default plan description based on user plan
+  static String _getDefaultPlanDescription(String userPlan) {
+    switch (userPlan.toLowerCase()) {
+      case 'free':
+        return 'Free users with daily token limit';
+      case 'standard':
+        return 'Authenticated users with 100 tokens daily + purchase option';
+      case 'premium':
+        return 'Premium users with unlimited token usage';
+      default:
+        return 'Free users with daily token limit';
     }
   }
 

@@ -4,17 +4,20 @@ import 'package:equatable/equatable.dart';
 import '../../../../core/error/failures.dart';
 import '../../../../core/usecases/usecase.dart';
 import '../repositories/token_repository.dart';
+import '../entities/payment_order_response.dart';
 
 /// Use case for creating a payment order (step 1 of new payment flow)
 ///
-/// Creates a Razorpay order and returns order ID for payment gateway
-class CreatePaymentOrder implements UseCase<String, CreatePaymentOrderParams> {
+/// Creates a Razorpay order and returns complete payment order response
+class CreatePaymentOrder
+    implements UseCase<PaymentOrderResponse, CreatePaymentOrderParams> {
   final TokenRepository _repository;
 
   CreatePaymentOrder(this._repository);
 
   @override
-  Future<Either<Failure, String>> call(CreatePaymentOrderParams params) async {
+  Future<Either<Failure, PaymentOrderResponse>> call(
+      CreatePaymentOrderParams params) async {
     // Validate tokenAmount is positive
     if (params.tokenAmount <= 0) {
       return Left(ValidationFailure(

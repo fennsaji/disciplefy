@@ -1,10 +1,12 @@
 import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:dartz/dartz.dart';
+import 'package:flutter/foundation.dart';
 
 import '../../domain/entities/token_status.dart';
 import '../../domain/entities/purchase_history.dart';
 import '../../domain/entities/purchase_statistics.dart';
+import '../../domain/entities/payment_order_response.dart';
 import '../../domain/usecases/get_token_status.dart' as get_token_status;
 import '../../domain/usecases/create_payment_order.dart'
     as create_payment_order;
@@ -462,11 +464,12 @@ class TokenBloc extends Bloc<TokenEvent, TokenState> {
         operation: 'order_creation',
         previousTokenStatus: _cachedTokenStatus,
       )),
-      (orderId) => emit(TokenOrderCreated(
+      (orderResponse) => emit(TokenOrderCreated(
         currentTokenStatus: _cachedTokenStatus!,
         tokensToPurchase: event.tokenAmount,
         amount: event.tokenAmount / 10.0,
-        orderId: orderId,
+        orderId: orderResponse.orderId,
+        keyId: orderResponse.keyId,
       )),
     );
   }
@@ -476,6 +479,8 @@ class TokenBloc extends Bloc<TokenEvent, TokenState> {
     ConfirmPayment event,
     Emitter<TokenState> emit,
   ) async {
+    debugPrint(
+        '🔍 [TOKEN_BLOC] _onConfirmPayment called for payment: ${event.paymentId}');
     if (_cachedTokenStatus == null) {
       emit(const TokenError(
         failure: CacheFailure(message: 'Token status not available'),

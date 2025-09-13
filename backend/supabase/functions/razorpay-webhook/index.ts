@@ -173,10 +173,28 @@ async function handlePaymentCaptured(
     throw new Error(`Pending purchase not found: ${orderId}`)
   }
   
-  if (pendingPurchase.status !== 'pending') {
-    console.log(`[Webhook] Purchase already processed: ${orderId}`)
-    return // Already processed
+  // Atomic claim for processing to prevent race condition with manual confirmation
+  console.log(`[Webhook] 🔒 Attempting atomic claim for order: ${orderId}`)
+  const { data: claimedPurchase, error: claimError } = await supabaseServiceClient
+    .from('pending_token_purchases')
+    .update({ 
+      status: 'processing', 
+      updated_at: new Date().toISOString() 
+    })
+    .eq('order_id', orderId)
+    .eq('status', 'pending') // Only update if still pending
+    .select('*')
+    .single()
+  
+  if (claimError || !claimedPurchase) {
+    console.log(`[Webhook] ✅ Purchase already processed by another handler: ${orderId}`)
+    return // Already processed by manual confirmation or another webhook
   }
+  
+  console.log(`[Webhook] ✅ Purchase claimed successfully - Status: processing`)
+  
+  // Use the claimed purchase data for the rest of the processing
+  const processingPurchase = claimedPurchase
   
   // Verify both currency and amount match expected values
   const expectedCurrency = 'INR' // We only support INR currently
@@ -187,8 +205,8 @@ async function handlePaymentCaptured(
     throw new Error(`Payment currency verification failed: ${errorMsg}`)
   }
   
-  if (amount !== pendingPurchase.amount_paise) {
-    const errorMsg = `Amount mismatch for order ${orderId}: expected ${pendingPurchase.amount_paise} paise, got ${amount} paise`
+  if (amount !== processingPurchase.amount_paise) {
+    const errorMsg = `Amount mismatch for order ${orderId}: expected ${processingPurchase.amount_paise} paise, got ${amount} paise`
     console.error(`[Webhook] ${errorMsg}`)
     throw new Error(`Payment amount verification failed: ${errorMsg}`)
   }
@@ -196,11 +214,11 @@ async function handlePaymentCaptured(
   try {
     // Add tokens to user account
     const addResult = await tokenService.addPurchasedTokens(
-      pendingPurchase.user_id,
+      processingPurchase.user_id,
       'standard', // Only standard users can purchase
-      pendingPurchase.token_amount,
+      processingPurchase.token_amount,
       {
-        userId: pendingPurchase.user_id,
+        userId: processingPurchase.user_id,
         userPlan: 'standard',
         operation: 'purchase',
         timestamp: new Date()
@@ -212,15 +230,15 @@ async function handlePaymentCaptured(
     }
     
     // Record purchase in history
-    const costRupees = pendingPurchase.amount_paise / 100
+    const costRupees = processingPurchase.amount_paise / 100
     const paymentMethod = payment?.method || 'unknown'
     
     const { data: historyId, error: historyError } = await supabaseServiceClient
       .rpc('record_purchase_history', {
-        p_user_id: pendingPurchase.user_id,
-        p_token_amount: pendingPurchase.token_amount,
+        p_user_id: processingPurchase.user_id,
+        p_token_amount: processingPurchase.token_amount,
         p_cost_rupees: costRupees,
-        p_cost_paise: pendingPurchase.amount_paise,
+        p_cost_paise: processingPurchase.amount_paise,
         p_payment_id: paymentId,
         p_order_id: orderId,
         p_payment_method: paymentMethod,
@@ -244,14 +262,14 @@ async function handlePaymentCaptured(
       })
       .eq('order_id', orderId)
     
-    console.log(`[Webhook] ✅ Purchase completed: ${pendingPurchase.token_amount} tokens for user ${pendingPurchase.user_id}`)
+    console.log(`[Webhook] ✅ Purchase completed: ${processingPurchase.token_amount} tokens for user ${processingPurchase.user_id}`)
     
     // Log successful purchase
     await analyticsLogger.logEvent('webhook_purchase_completed', {
-      user_id: pendingPurchase.user_id,
+      user_id: processingPurchase.user_id,
       order_id: orderId,
       payment_id: paymentId,
-      token_amount: pendingPurchase.token_amount,
+      token_amount: processingPurchase.token_amount,
       amount_paise: amount,
       new_purchased_balance: addResult.newPurchasedBalance
     })
