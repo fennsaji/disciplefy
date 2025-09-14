@@ -5,7 +5,7 @@ class PaymentConstants {
   // Razorpay Configuration
   static const String razorpayKeyId = String.fromEnvironment(
     'RAZORPAY_KEY_ID',
-    // defaultValue removed - set RAZORPAY_KEY_ID via --dart-define // Development key
+    // defaultValue removed - set RAZORPAY_KEY_ID via --dart-define // Valid test key from your backend
   );
 
   static const String companyName = 'Disciplefy';

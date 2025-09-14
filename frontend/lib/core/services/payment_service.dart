@@ -70,6 +70,8 @@ class PaymentService {
       debugPrint('[PaymentService] Description: $description');
       debugPrint('[PaymentService] User Email: $userEmail');
       debugPrint(
+          '[PaymentService] Key ID: ${keyId ?? PaymentConstants.razorpayKeyId}');
+      debugPrint(
           '[PaymentService] Platform: ${_isWebPlatform ? "WEB" : "MOBILE"}');
 
       // Store callbacks
@@ -89,11 +91,21 @@ class PaymentService {
           'contact': userPhone,
           'email': userEmail,
         },
-        'external': {
-          'wallets': ['paytm']
+        'method': {
+          'netbanking': true,
+          'card': true,
+          'upi': true,
+          'wallet': true,
         },
         'theme': PaymentConstants.razorpayTheme,
       };
+
+      debugPrint('[PaymentService] 📋 PAYMENT OPTIONS CONFIGURED:');
+      debugPrint('[PaymentService] Key: ${options['key']}');
+      debugPrint('[PaymentService] Amount (paise): ${options['amount']}');
+      debugPrint('[PaymentService] Methods enabled: ${options['method']}');
+      debugPrint('[PaymentService] External wallets: ${options['external']}');
+      debugPrint('[PaymentService] Config: ${options['config']}');
 
       if (_isWebPlatform) {
         await _openWebCheckout(options);

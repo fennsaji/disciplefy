@@ -283,7 +283,7 @@ class TokenBloc extends Bloc<TokenEvent, TokenState> {
 
     // Transition back to loaded state
     Timer(const Duration(seconds: 3), () {
-      if (!isClosed) {
+      if (!isClosed && !_shouldPreservePurchaseHistoryState()) {
         add(const GetTokenStatus());
       }
     });
@@ -536,7 +536,7 @@ class TokenBloc extends Bloc<TokenEvent, TokenState> {
 
         // Transition back to loaded state after success message
         Timer(const Duration(seconds: 3), () {
-          if (!isClosed) {
+          if (!isClosed && !_shouldPreservePurchaseHistoryState()) {
             add(const GetTokenStatus());
           }
         });
@@ -549,7 +549,22 @@ class TokenBloc extends Bloc<TokenEvent, TokenState> {
     GetPurchaseHistory event,
     Emitter<TokenState> emit,
   ) async {
-    emit(const PurchaseHistoryLoading());
+    final offset = event.offset ?? 0;
+    final limit = event.limit ?? 20;
+
+    debugPrint(
+        '🔍 [TOKEN_BLOC] GetPurchaseHistory called - offset: $offset, limit: $limit');
+    debugPrint('🔍 [TOKEN_BLOC] Current state: ${state.runtimeType}');
+
+    // Only show loading if this is the first load (offset = 0)
+    if (offset == 0) {
+      debugPrint(
+          '🔍 [TOKEN_BLOC] Emitting PurchaseHistoryLoading (offset = 0)');
+      emit(const PurchaseHistoryLoading());
+    } else {
+      debugPrint(
+          '🔍 [TOKEN_BLOC] Skipping loading state (offset > 0, pagination)');
+    }
 
     final params = get_purchase_history.GetPurchaseHistoryParams(
       limit: event.limit,
@@ -559,14 +574,53 @@ class TokenBloc extends Bloc<TokenEvent, TokenState> {
     final result = await _getPurchaseHistory(params);
 
     result.fold(
-      (failure) => emit(PurchaseHistoryError(
-        failure: failure,
-        operation: 'fetch_history',
-      )),
-      (purchases) => emit(PurchaseHistoryLoaded(
-        purchases: purchases,
-        lastUpdated: DateTime.now(),
-      )),
+      (failure) {
+        debugPrint(
+            '😨 [TOKEN_BLOC] Purchase history fetch failed: ${failure.message}');
+        emit(PurchaseHistoryError(
+          failure: failure,
+          operation: 'fetch_history',
+        ));
+      },
+      (newPurchases) {
+        debugPrint(
+            '🔍 [TOKEN_BLOC] Received ${newPurchases.length} new purchases from API');
+        debugPrint(
+            '🔍 [TOKEN_BLOC] Checking pagination condition: offset=$offset > 0 = ${offset > 0}');
+        debugPrint(
+            '🔍 [TOKEN_BLOC] Current state is PurchaseHistoryLoaded: ${state is PurchaseHistoryLoaded}');
+
+        // If this is pagination (offset > 0), accumulate with existing data
+        if (offset > 0 && state is PurchaseHistoryLoaded) {
+          final currentState = state as PurchaseHistoryLoaded;
+          final combinedPurchases =
+              List<PurchaseHistory>.from(currentState.purchases)
+                ..addAll(newPurchases);
+
+          debugPrint(
+              '🔄 [TOKEN_BLOC] Pagination: Added ${newPurchases.length} purchases to existing ${currentState.purchases.length}, total: ${combinedPurchases.length}');
+
+          // Preserve existing statistics if they exist
+          emit(PurchaseHistoryLoaded(
+            purchases: combinedPurchases,
+            statistics: currentState.statistics, // Preserve statistics
+            lastUpdated: DateTime.now(),
+          ));
+        } else {
+          // First load or refresh - replace data
+          final reason = offset == 0
+              ? 'Initial load'
+              : (state is! PurchaseHistoryLoaded
+                  ? 'State not PurchaseHistoryLoaded'
+                  : 'Unknown');
+          debugPrint(
+              '🔄 [TOKEN_BLOC] Initial/Refresh load ($reason): ${newPurchases.length} purchases');
+          emit(PurchaseHistoryLoaded(
+            purchases: newPurchases,
+            lastUpdated: DateTime.now(),
+          ));
+        }
+      },
     );
   }
 
@@ -575,6 +629,20 @@ class TokenBloc extends Bloc<TokenEvent, TokenState> {
     GetPurchaseStatistics event,
     Emitter<TokenState> emit,
   ) async {
+    debugPrint('🔍 [TOKEN_BLOC] GetPurchaseStatistics called');
+    debugPrint(
+        '🔍 [TOKEN_BLOC] Current state before statistics fetch: ${state.runtimeType}');
+
+    // Check if we currently have purchase history loaded
+    final currentState = state;
+    List<PurchaseHistory>? existingPurchases;
+
+    if (currentState is PurchaseHistoryLoaded) {
+      existingPurchases = currentState.purchases;
+      debugPrint(
+          '🔍 [TOKEN_BLOC] Found existing purchase history with ${existingPurchases.length} items');
+    }
+
     emit(const PurchaseStatisticsLoading());
 
     final result = await _getPurchaseStatistics(NoParams());
@@ -584,10 +652,28 @@ class TokenBloc extends Bloc<TokenEvent, TokenState> {
         failure: failure,
         operation: 'fetch_statistics',
       )),
-      (statistics) => emit(PurchaseStatisticsLoaded(
-        statistics: statistics,
-        lastUpdated: DateTime.now(),
-      )),
+      (statistics) {
+        debugPrint('🔍 [TOKEN_BLOC] Statistics loaded successfully');
+
+        // If we had existing purchase history, preserve it with the new statistics
+        if (existingPurchases != null && existingPurchases.isNotEmpty) {
+          debugPrint(
+              '🔍 [TOKEN_BLOC] Preserving ${existingPurchases.length} existing purchases with new statistics');
+          emit(PurchaseHistoryLoaded(
+            purchases: existingPurchases,
+            statistics: statistics,
+            lastUpdated: DateTime.now(),
+          ));
+        } else {
+          // No existing history, emit statistics only
+          debugPrint(
+              '🔍 [TOKEN_BLOC] No existing purchases to preserve, emitting statistics only');
+          emit(PurchaseStatisticsLoaded(
+            statistics: statistics,
+            lastUpdated: DateTime.now(),
+          ));
+        }
+      },
     );
   }
 
@@ -596,9 +682,10 @@ class TokenBloc extends Bloc<TokenEvent, TokenState> {
     RefreshPurchaseHistory event,
     Emitter<TokenState> emit,
   ) async {
-    // Get fresh purchase history and statistics
-    add(const GetPurchaseHistory());
-    add(const GetPurchaseStatistics());
+    // Get fresh purchase history (statistics will be auto-loaded after completion)
+    debugPrint(
+        '🔄 [TOKEN_BLOC] RefreshPurchaseHistory - loading fresh data from offset 0');
+    add(const GetPurchaseHistory(limit: 20, offset: 0));
   }
 
   /// Updates the token status cache
@@ -621,6 +708,17 @@ class TokenBloc extends Bloc<TokenEvent, TokenState> {
         add(const PrefetchTokenStatus());
       }
     });
+  }
+
+  /// Checks if current state should be preserved (purchase history related)
+  ///
+  /// Returns true if current state is purchase history related and should not be overwritten
+  bool _shouldPreservePurchaseHistoryState() {
+    return state is PurchaseHistoryLoaded ||
+        state is PurchaseStatisticsLoaded ||
+        state is PurchaseStatisticsLoading ||
+        state is PurchaseHistoryLoading ||
+        state is PurchaseHistoryError;
   }
 
   /// Validates payment confirmation inputs before processing
