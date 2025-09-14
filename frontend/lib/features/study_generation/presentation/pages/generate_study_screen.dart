@@ -22,7 +22,6 @@ import '../widgets/recent_guides_section.dart';
 import '../../../tokens/presentation/bloc/token_bloc.dart';
 import '../../../tokens/presentation/bloc/token_event.dart';
 import '../../../tokens/presentation/bloc/token_state.dart';
-import '../../../tokens/presentation/widgets/token_balance_widget.dart';
 import '../../../tokens/domain/entities/token_status.dart';
 
 /// Generate Study Screen allowing users to input scripture reference or topic.

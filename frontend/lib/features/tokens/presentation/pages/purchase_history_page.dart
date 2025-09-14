@@ -23,6 +23,7 @@ class _PurchaseHistoryPageState extends State<PurchaseHistoryPage> {
   static const int _pageSize = 20;
   int _currentOffset = 0;
   bool _isLoadingMore = false;
+  bool _hasTriggeredStatistics = false;
 
   @override
   void initState() {
@@ -30,7 +31,9 @@ class _PurchaseHistoryPageState extends State<PurchaseHistoryPage> {
     _scrollController.addListener(_onScroll);
     // Load initial data
     context.read<TokenBloc>().add(const GetPurchaseHistory(limit: _pageSize));
-    context.read<TokenBloc>().add(const GetPurchaseStatistics());
+
+    // Load statistics after purchase history completes
+    _waitForPurchaseHistoryAndLoadStats();
   }
 
   @override
@@ -69,9 +72,38 @@ class _PurchaseHistoryPageState extends State<PurchaseHistoryPage> {
       _currentOffset = 0;
       _isLoadingMore = false;
     });
-    // Reload both purchase history AND statistics
+    // Reload purchase history
     context.read<TokenBloc>().add(const RefreshPurchaseHistory());
-    context.read<TokenBloc>().add(const GetPurchaseStatistics());
+
+    // Statistics will be loaded automatically when purchase history completes
+    _waitForPurchaseHistoryAndLoadStats();
+  }
+
+  /// Wait for initial purchase history to load, then load statistics
+  Future<void> _waitForPurchaseHistoryAndLoadStats() async {
+    // Reset the flag for fresh operations
+    if (_currentOffset == 0) {
+      _hasTriggeredStatistics = false;
+    }
+
+    // Listen to BLoC state changes and trigger statistics when purchase history loads
+    final subscription = context.read<TokenBloc>().stream.listen((state) {
+      if (state is PurchaseHistoryLoaded &&
+          mounted &&
+          !_hasTriggeredStatistics &&
+          state.statistics == null) {
+        // Purchase history has loaded successfully and we haven't triggered stats yet
+        _hasTriggeredStatistics = true;
+        debugPrint(
+            '📊 [PURCHASE_HISTORY_PAGE] Purchase history loaded, triggering statistics (one-time)');
+        context.read<TokenBloc>().add(const GetPurchaseStatistics());
+      }
+    });
+
+    // Clean up subscription after a reasonable timeout
+    Future.delayed(const Duration(seconds: 10), () {
+      subscription.cancel();
+    });
   }
 
   /// Wait for BLoC refresh operations to complete
@@ -142,11 +174,17 @@ class _PurchaseHistoryPageState extends State<PurchaseHistoryPage> {
                   buildWhen: (previous, current) =>
                       current is PurchaseStatisticsLoading ||
                       current is PurchaseStatisticsLoaded ||
+                      current is PurchaseHistoryLoaded ||
                       current is PurchaseHistoryError,
                   builder: (context, state) {
                     if (state is PurchaseStatisticsLoaded) {
                       return PurchaseStatisticsCard(
                         statistics: state.statistics,
+                      );
+                    } else if (state is PurchaseHistoryLoaded &&
+                        state.statistics != null) {
+                      return PurchaseStatisticsCard(
+                        statistics: state.statistics!,
                       );
                     } else if (state is PurchaseStatisticsLoading) {
                       return const Card(
@@ -221,6 +259,18 @@ class _PurchaseHistoryPageState extends State<PurchaseHistoryPage> {
                   setState(() {
                     _isLoadingMore = false;
                   });
+                }
+
+                // If this was a refresh (offset was reset), reload from beginning
+                if (state is PurchaseHistoryLoaded && _currentOffset == 0) {
+                  // Reset scroll position to top after refresh
+                  if (_scrollController.hasClients) {
+                    _scrollController.animateTo(
+                      0,
+                      duration: const Duration(milliseconds: 300),
+                      curve: Curves.easeOut,
+                    );
+                  }
                 }
               },
               buildWhen: (previous, current) =>

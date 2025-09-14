@@ -5,7 +5,7 @@ class PaymentConstants {
   // Razorpay Configuration
   static const String razorpayKeyId = String.fromEnvironment(
     'RAZORPAY_KEY_ID',
-    defaultValue: 'rzp_test_xxxxx', // Development key
+    defaultValue: 'rzp_test_RFzzBvMdQzOOyA', // Valid test key from your backend
   );
 
   static const String companyName = 'Disciplefy';

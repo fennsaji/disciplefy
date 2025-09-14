@@ -488,11 +488,14 @@ class TokenRemoteDataSourceImpl implements TokenRemoteDataSource {
           .select()
           .order('purchased_at', ascending: false);
 
-      if (limit != null) {
-        query = query.limit(limit);
-      }
-      if (offset != null) {
-        query = query.range(offset, offset + (limit ?? 50) - 1);
+      // Use range for pagination (don't combine with limit as they conflict)
+      if (offset != null || limit != null) {
+        final startRange = offset ?? 0;
+        final endRange = startRange + (limit ?? 50) - 1;
+        query = query.range(startRange, endRange);
+
+        print(
+            '🔍 [TOKEN_API] Using pagination range: $startRange to $endRange (offset: ${offset ?? 0}, limit: ${limit ?? 50})');
       }
 
       final response = await query;

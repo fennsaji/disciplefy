@@ -18,6 +18,8 @@ import '../widgets/token_actions_section.dart';
 import '../widgets/usage_info_section.dart';
 import '../widgets/plan_comparison_section.dart';
 import '../../domain/entities/token_status.dart';
+import '../../../auth/presentation/bloc/auth_bloc.dart';
+import '../../../auth/presentation/bloc/auth_state.dart' as auth_states;
 
 /// Token Management Page
 ///
@@ -43,6 +45,37 @@ class _TokenManagementPageState extends State<TokenManagementPage> {
     super.initState();
     // Load token status when page opens
     context.read<TokenBloc>().add(const GetTokenStatus());
+  }
+
+  /// Get user email from auth state with fallback
+  String _getUserEmail() {
+    final authState = context.read<AuthBloc>().state;
+    if (authState is auth_states.AuthenticatedState) {
+      // Try auth email first, then profile email
+      final email = authState.email ??
+          authState.profile?['email'] as String? ??
+          'nil@email.com';
+      debugPrint('[TokenManagement] User email: $email');
+      return email;
+    }
+    debugPrint('[TokenManagement] No auth state - using fallback email');
+    return 'nil@email.com';
+  }
+
+  /// Get user phone from auth state with fallback
+  String _getUserPhone() {
+    final authState = context.read<AuthBloc>().state;
+    if (authState is auth_states.AuthenticatedState) {
+      // Try to get phone from profile or user metadata
+      final phone = authState.profile?['phone'] as String? ??
+          authState.user.userMetadata?['phone'] as String? ??
+          authState.user.phone ??
+          '+1234567890';
+      debugPrint('[TokenManagement] User phone: $phone');
+      return phone;
+    }
+    debugPrint('[TokenManagement] No auth state - using fallback phone');
+    return '+1234567890';
   }
 
   void _showPurchaseDialog(TokenStatus tokenStatus) {
@@ -94,8 +127,8 @@ class _TokenManagementPageState extends State<TokenManagementPage> {
           tokenStatus: tokenStatus,
           // savedPaymentMethods defaults to const []
           // paymentPreferences defaults to null - TODO: Load payment preferences
-          userEmail: 'user@example.com', // TODO: Get from auth
-          userPhone: '+1234567890', // TODO: Get from auth
+          userEmail: _getUserEmail(), // ✅ Get from authenticated user
+          userPhone: _getUserPhone(), // ✅ Get from authenticated user
           onCreateOrder: (tokenAmount) {
             // Create payment order
             context.read<TokenBloc>().add(
@@ -163,8 +196,8 @@ class _TokenManagementPageState extends State<TokenManagementPage> {
         orderId: orderId,
         amount: amount,
         description: '$tokenAmount tokens for Disciplefy Bible Study',
-        userEmail: 'user@example.com', // TODO: Get from auth
-        userPhone: '+1234567890', // TODO: Get from auth
+        userEmail: _getUserEmail(), // ✅ Get from authenticated user
+        userPhone: _getUserPhone(), // ✅ Get from authenticated user
         keyId: keyId,
         onSuccess: (response) {
           debugPrint(
@@ -291,18 +324,22 @@ class _TokenManagementPageState extends State<TokenManagementPage> {
           ),
         ],
       ),
-      body: BlocConsumer<TokenBloc, TokenState>(
-        listener: (context, state) {
-          // If we encounter a purchase-related state but need token info,
-          // refresh the token status to get back to TokenLoaded state
+      body: BlocBuilder<TokenBloc, TokenState>(
+        builder: (context, state) {
+          // If state is not token-related, trigger token refresh
+          // but only if this page is currently visible (not in background)
           if (state is PurchaseHistoryLoaded ||
               state is PurchaseStatisticsLoaded ||
               state is PurchaseHistoryError) {
-            // Only refresh if we don't already have token data from a previous TokenLoaded state
-            context.read<TokenBloc>().add(const GetTokenStatus());
+            // Only trigger refresh if this page is currently visible
+            if (ModalRoute.of(context)?.isCurrent == true) {
+              // Use post-frame callback to avoid calling add during build
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                context.read<TokenBloc>().add(const GetTokenStatus());
+              });
+            }
           }
-        },
-        builder: (context, state) {
+
           if (state is TokenLoading) {
             return const Center(
               child: CircularProgressIndicator(),
@@ -350,20 +387,6 @@ class _TokenManagementPageState extends State<TokenManagementPage> {
             );
           } else if (state is TokenLoaded) {
             return _buildTokenManagement(state.tokenStatus);
-          } else if (state is PurchaseHistoryLoaded ||
-              state is PurchaseStatisticsLoaded ||
-              state is PurchaseHistoryError) {
-            // Show loading while we refresh token status
-            return const Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  CircularProgressIndicator(),
-                  SizedBox(height: 16),
-                  Text('Refreshing token information...'),
-                ],
-              ),
-            );
           }
 
           // Handle any other unexpected states
