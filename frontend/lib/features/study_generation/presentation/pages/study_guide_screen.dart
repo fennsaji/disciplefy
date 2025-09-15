@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -22,7 +23,8 @@ import '../../../saved_guides/data/models/saved_guide_model.dart';
 ///
 /// Enhanced Integration: Utilizes personal notes and save status from StudyGuide entity
 /// when available (from enhanced API response) to eliminate redundant API calls and
-/// provide immediate access to user data.
+/// provide immediate access to user data. Supports navigation from both generate screen
+/// and saved guides screen with proper state management and auto-save functionality.
 class StudyGuideScreen extends StatelessWidget {
   final StudyGuide? studyGuide;
   final Map<String, dynamic>? routeExtra;
@@ -96,94 +98,96 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
   }
 
   void _initializeStudyGuide() {
-    // Reset state for new guide instance
+    _resetNotesState();
+
+    if (widget.studyGuide != null) {
+      _handleGeneratedStudyGuide();
+    } else if (widget.routeExtra != null &&
+        widget.routeExtra!['study_guide'] != null) {
+      _handleSavedStudyGuide();
+    } else {
+      _handleMissingStudyGuide();
+    }
+  }
+
+  void _resetNotesState() {
     _notesLoaded = false;
     _loadedNotes = null;
     _notesController.clear();
+  }
 
-    if (widget.studyGuide != null) {
-      // This means we came from the generate screen
-      _currentStudyGuide = widget.studyGuide!;
+  void _handleGeneratedStudyGuide() {
+    _currentStudyGuide = widget.studyGuide!;
 
-      // Use enhanced entity data if available
-      if (_currentStudyGuide.isSaved != null) {
-        _isSaved = _currentStudyGuide.isSaved!;
-      }
+    if (_currentStudyGuide.isSaved != null) {
+      _isSaved = _currentStudyGuide.isSaved!;
+    }
 
-      // Pre-populate notes from entity if available
-      if (_currentStudyGuide.personalNotes != null) {
-        _loadedNotes = _currentStudyGuide.personalNotes;
-        _notesController.text = _currentStudyGuide.personalNotes!;
-        _notesLoaded = true;
+    _processGeneratedGuideNotes();
+  }
 
-        // Setup auto-save if guide is saved
-        if (_isSaved) {
-          _setupAutoSave();
-        }
-      } else {
-        // Always try to load personal notes for saved guides
-        _loadPersonalNotesIfSaved();
-      }
-    } else if (widget.routeExtra != null &&
-        widget.routeExtra!['study_guide'] != null) {
-      // This means we came from the saved guides screen
-      // Handle study guide data from saved guides navigation
-      try {
-        final guideData =
-            widget.routeExtra!['study_guide'] as Map<String, dynamic>;
+  void _processGeneratedGuideNotes() {
+    if (_currentStudyGuide.personalNotes != null) {
+      _loadedNotes = _currentStudyGuide.personalNotes;
+      _notesController.text = _currentStudyGuide.personalNotes!;
+      _notesLoaded = true;
 
-        // Create a SavedGuideModel from the route data to use the new structured approach
-        final savedGuideModel = SavedGuideModel(
-          id: guideData['id'] ?? '',
-          title: guideData['title'] ?? '',
-          content: guideData['content'] ?? '',
-          typeString: guideData['type'] ?? 'topic',
-          createdAt: DateTime.tryParse(guideData['created_at'] ?? '') ??
-              DateTime.now(),
-          lastAccessedAt:
-              DateTime.tryParse(guideData['last_accessed_at'] ?? '') ??
-                  DateTime.now(),
-          isSaved: guideData['is_saved'] as bool? ?? false,
-          verseReference: guideData['verse_reference'],
-          topicName: guideData['topic_name'],
-          // Include structured content fields from navigation data
-          summary: guideData['summary'] as String?,
-          interpretation: guideData['interpretation'] as String?,
-          context: guideData['context'] as String?,
-          relatedVerses:
-              (guideData['related_verses'] as List<dynamic>?)?.cast<String>(),
-          reflectionQuestions:
-              (guideData['reflection_questions'] as List<dynamic>?)
-                  ?.cast<String>(),
-          prayerPoints:
-              (guideData['prayer_points'] as List<dynamic>?)?.cast<String>(),
-        );
-
-        // Use the toStudyGuide method which handles both structured and legacy content
-        _currentStudyGuide = savedGuideModel.toStudyGuide();
-
-        // Set save status from route data - this should always be true for saved guides
-        _isSaved = guideData['is_saved'] as bool? ??
-            true; // Default to true for saved guides
-
-        print(
-            '🔍 [STUDY_GUIDE] Loading guide from saved: isSaved=$_isSaved, guideId=${_currentStudyGuide.id}');
-
-        // Always load personal notes for saved guides
-        _loadPersonalNotesIfSaved();
-      } catch (e) {
-        print('❌ [STUDY_GUIDE] Error parsing route data: $e');
-        _showError('Invalid study guide data. Please try again.');
+      if (_isSaved) {
+        _setupAutoSave();
       }
     } else {
-      // Redirect to saved guides page when no data is provided
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) {
-          sl<StudyNavigator>().navigateToSaved(context);
-        }
-      });
-      _showError('Redirecting to saved guides...');
+      _loadPersonalNotesIfSaved();
     }
+  }
+
+  void _handleSavedStudyGuide() {
+    try {
+      final guideData =
+          widget.routeExtra!['study_guide'] as Map<String, dynamic>;
+
+      final savedGuideModel = _createSavedGuideModel(guideData);
+      _currentStudyGuide = savedGuideModel.toStudyGuide();
+
+      _isSaved = guideData['is_saved'] as bool? ?? true;
+
+      _loadPersonalNotesIfSaved();
+    } catch (e) {
+      _showError('Invalid study guide data. Please try again.');
+    }
+  }
+
+  SavedGuideModel _createSavedGuideModel(Map<String, dynamic> guideData) {
+    return SavedGuideModel(
+      id: guideData['id'] ?? '',
+      title: guideData['title'] ?? '',
+      content: guideData['content'] ?? '',
+      typeString: guideData['type'] ?? 'topic',
+      createdAt:
+          DateTime.tryParse(guideData['created_at'] ?? '') ?? DateTime.now(),
+      lastAccessedAt: DateTime.tryParse(guideData['last_accessed_at'] ?? '') ??
+          DateTime.now(),
+      isSaved: guideData['is_saved'] as bool? ?? false,
+      verseReference: guideData['verse_reference'],
+      topicName: guideData['topic_name'],
+      summary: guideData['summary'] as String?,
+      interpretation: guideData['interpretation'] as String?,
+      context: guideData['context'] as String?,
+      relatedVerses:
+          (guideData['related_verses'] as List<dynamic>?)?.cast<String>(),
+      reflectionQuestions:
+          (guideData['reflection_questions'] as List<dynamic>?)?.cast<String>(),
+      prayerPoints:
+          (guideData['prayer_points'] as List<dynamic>?)?.cast<String>(),
+    );
+  }
+
+  void _handleMissingStudyGuide() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        sl<StudyNavigator>().navigateToSaved(context);
+      }
+    });
+    _showError('Redirecting to saved guides...');
   }
 
   void _showError(String message) {
@@ -195,20 +199,26 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
 
   /// Load personal notes if the guide is saved and notes not already available
   void _loadPersonalNotesIfSaved() {
-    print(
-        '🔍 [STUDY_GUIDE] Loading personal notes: isSaved=$_isSaved, notesLoaded=$_notesLoaded, hasEntityNotes=${_currentStudyGuide.personalNotes != null}');
+    if (kDebugMode) {
+      print(
+          '🔍 [STUDY_GUIDE] Loading personal notes: isSaved=$_isSaved, notesLoaded=$_notesLoaded, hasEntityNotes=${_currentStudyGuide.personalNotes != null}');
+    }
 
     // Load notes if guide is saved and we haven't loaded them yet
     // Simplified logic: if saved and not loaded, try to load
     if (_isSaved && !_notesLoaded) {
-      print(
-          '📝 [STUDY_GUIDE] Requesting personal notes for guide: ${_currentStudyGuide.id}');
+      if (kDebugMode) {
+        print(
+            '📝 [STUDY_GUIDE] Requesting personal notes for guide: ${_currentStudyGuide.id}');
+      }
       context.read<StudyBloc>().add(LoadPersonalNotesRequested(
             guideId: _currentStudyGuide.id,
           ));
     } else {
-      print(
-          '⏭️ [STUDY_GUIDE] Skipping notes load: isSaved=$_isSaved, notesLoaded=$_notesLoaded');
+      if (kDebugMode) {
+        print(
+            '⏭️ [STUDY_GUIDE] Skipping notes load: isSaved=$_isSaved, notesLoaded=$_notesLoaded');
+      }
     }
   }
 
@@ -291,8 +301,10 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
         }
         // Handle personal notes operations
         else if (state is StudyPersonalNotesLoaded) {
-          print(
-              '📝 [STUDY_GUIDE] Personal notes loaded: ${state.notes?.length ?? 0} characters');
+          if (kDebugMode) {
+            print(
+                '📝 [STUDY_GUIDE] Personal notes loaded: ${state.notes?.length ?? 0} characters');
+          }
           setState(() {
             _notesLoaded = true;
             _loadedNotes = state.notes;
@@ -316,8 +328,10 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
             _loadedNotes = state.savedNotes;
           });
         } else if (state is StudyPersonalNotesFailure) {
-          print(
-              '❌ [STUDY_GUIDE] Personal notes operation failed: ${state.failure.message}, isAutoSave: ${state.isAutoSave}');
+          if (kDebugMode) {
+            print(
+                '❌ [STUDY_GUIDE] Personal notes operation failed: ${state.failure.message}, isAutoSave: ${state.isAutoSave}');
+          }
           if (!state.isAutoSave) {
             _showSnackBar(
               'Failed to save personal notes: ${state.failure.message}',
@@ -344,6 +358,7 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
               Icons.arrow_back_ios,
               color: Theme.of(context).colorScheme.primary,
             ),
+            tooltip: 'Go back',
           ),
           title: Text(
             _getDisplayTitle(),
@@ -361,6 +376,7 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
                 Icons.share_outlined,
                 color: Theme.of(context).colorScheme.primary,
               ),
+              tooltip: 'Share study guide',
             ),
           ],
         ),
@@ -415,6 +431,7 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
               Icons.arrow_back_ios,
               color: Theme.of(context).colorScheme.primary,
             ),
+            tooltip: 'Go back',
           ),
           title: Text(
             'Study Guide',
@@ -1119,6 +1136,7 @@ class _StudySection extends StatelessWidget {
                   ),
                   constraints: const BoxConstraints(),
                   padding: EdgeInsets.zero,
+                  tooltip: 'Copy $title',
                 ),
               ],
             ),

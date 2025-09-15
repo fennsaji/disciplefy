@@ -48,9 +48,8 @@ class TopicsGridView extends StatelessWidget {
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        // Calculate optimal card width (accounting for spacing)
+        // Calculate spacing between cards
         const double spacing = 16.0;
-        final double cardWidth = (constraints.maxWidth - spacing) / 2;
 
         return Column(
           children: [
