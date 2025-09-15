@@ -19,6 +19,7 @@ import 'features/daily_verse/presentation/bloc/daily_verse_event.dart';
 import 'features/settings/presentation/bloc/settings_bloc.dart';
 import 'features/settings/presentation/bloc/settings_event.dart';
 import 'features/tokens/presentation/bloc/token_bloc.dart';
+import 'features/feedback/presentation/bloc/feedback_bloc.dart';
 import 'core/utils/web_splash_controller.dart';
 import 'core/services/theme_service.dart';
 import 'core/services/auth_state_provider.dart';
@@ -163,6 +164,9 @@ class _DisciplefyBibleStudyAppState extends State<DisciplefyBibleStudyApp> {
         ),
         BlocProvider<TokenBloc>(
           create: (context) => sl<TokenBloc>(),
+        ),
+        BlocProvider<FeedbackBloc>(
+          create: (context) => sl<FeedbackBloc>(),
         ),
       ],
       child: ListenableBuilder(
