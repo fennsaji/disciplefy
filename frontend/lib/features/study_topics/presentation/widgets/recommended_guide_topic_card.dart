@@ -116,8 +116,8 @@ class RecommendedGuideTopicCard extends StatelessWidget {
 
               const SizedBox(height: 6), // Reduced spacing
 
-              // Description with expanded height
-              Expanded(
+              // Description with flexible height
+              Flexible(
                 child: Text(
                   topic.description,
                   style: GoogleFonts.inter(
