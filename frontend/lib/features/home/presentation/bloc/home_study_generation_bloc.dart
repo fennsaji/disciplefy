@@ -20,6 +20,7 @@ class HomeStudyGenerationBloc
         super(const HomeStudyGenerationInitial()) {
     on<GenerateStudyGuideFromVerse>(_onGenerateFromVerse);
     on<GenerateStudyGuideFromTopic>(_onGenerateFromTopic);
+    on<GenerateStudyGuideFromQuestion>(_onGenerateFromQuestion);
     on<ClearHomeStudyGenerationError>(_onClearError);
   }
 
@@ -44,6 +45,19 @@ class HomeStudyGenerationBloc
     await _generateStudyGuide(
       input: event.topicName,
       inputType: 'topic',
+      language: event.language,
+      emit: emit,
+    );
+  }
+
+  /// Handle generating study guide from question
+  Future<void> _onGenerateFromQuestion(
+    GenerateStudyGuideFromQuestion event,
+    Emitter<HomeStudyGenerationState> emit,
+  ) async {
+    await _generateStudyGuide(
+      input: event.question,
+      inputType: 'question',
       language: event.language,
       emit: emit,
     );

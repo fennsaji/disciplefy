@@ -18,7 +18,7 @@ export interface StudyGuideContent {
  * Study guide input parameters
  */
 export interface StudyGuideInput {
-  readonly type: 'scripture' | 'topic'
+  readonly type: 'scripture' | 'topic' | 'question'
   readonly value: string
   readonly language: string
 }

@@ -22,7 +22,7 @@ import { SupportedLanguage } from '../_shared/types/token-types.ts'
  * client-provided user impersonation attacks
  */
 interface StudyGenerationRequest {
-  readonly input_type: 'scripture' | 'topic'
+  readonly input_type: 'scripture' | 'topic' | 'question'
   readonly input_value: string
   readonly language?: string
 }
@@ -200,7 +200,7 @@ async function parseAndValidateRequest(req: Request): Promise<StudyGenerationReq
   const validationRules = {
     input_type: {
       required: true,
-      allowedValues: ['scripture', 'topic']
+      allowedValues: ['scripture', 'topic', 'question']
     },
     input_value: {
       required: true,
