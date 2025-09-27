@@ -14,6 +14,7 @@ import 'features/study_generation/presentation/bloc/study_bloc.dart';
 import 'features/saved_guides/data/models/saved_guide_model.dart';
 import 'features/auth/presentation/bloc/auth_bloc.dart';
 import 'features/auth/presentation/bloc/auth_event.dart';
+import 'features/auth/presentation/bloc/phone_auth_bloc.dart';
 import 'features/daily_verse/presentation/bloc/daily_verse_bloc.dart';
 import 'features/daily_verse/presentation/bloc/daily_verse_event.dart';
 import 'features/settings/presentation/bloc/settings_bloc.dart';
@@ -154,6 +155,9 @@ class _DisciplefyBibleStudyAppState extends State<DisciplefyBibleStudyApp> {
         ),
         BlocProvider<AuthBloc>.value(
           value: _authBloc,
+        ),
+        BlocProvider<PhoneAuthBloc>(
+          create: (context) => sl<PhoneAuthBloc>(),
         ),
         BlocProvider<DailyVerseBloc>(
           create: (context) =>

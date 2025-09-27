@@ -17,6 +17,10 @@ import '../../features/auth/data/repositories/secure_store_repository_impl.dart'
 import '../../features/auth/domain/repositories/local_store_repository.dart';
 import '../../features/auth/data/repositories/local_store_repository_impl.dart';
 import '../../features/auth/domain/usecases/clear_user_data_usecase.dart';
+import '../../features/auth/data/datasources/phone_auth_remote_datasource.dart';
+import '../../features/auth/domain/repositories/phone_auth_repository.dart';
+import '../../features/auth/data/repositories/phone_auth_repository_impl.dart';
+import '../../features/auth/presentation/bloc/phone_auth_bloc.dart';
 import '../../features/study_generation/domain/repositories/study_repository.dart';
 import '../../features/study_generation/data/repositories/study_repository_impl.dart';
 import '../../features/study_generation/data/datasources/study_remote_data_source.dart';
@@ -177,6 +181,25 @@ Future<void> initializeDependencies() async {
   //! Auth
   sl.registerLazySingleton(() => AuthService());
   sl.registerFactory(() => AuthBloc(authService: sl()));
+
+  // Phone Auth DataSource
+  sl.registerLazySingleton<PhoneAuthRemoteDataSource>(
+    () => PhoneAuthRemoteDataSourceImpl(
+      supabaseClient: sl(),
+    ),
+  );
+
+  // Phone Auth Repository
+  sl.registerLazySingleton<PhoneAuthRepository>(
+    () => PhoneAuthRepositoryImpl(
+      remoteDataSource: sl(),
+    ),
+  );
+
+  // Phone Auth BLoC
+  sl.registerFactory(() => PhoneAuthBloc(
+        phoneAuthRepository: sl(),
+      ));
 
   // Register AuthStateProvider as singleton for consistent state across screens
   sl.registerLazySingleton(() => AuthStateProvider());

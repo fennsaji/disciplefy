@@ -13,6 +13,9 @@ class AppRoutes {
   static const String tokenManagement = '/token-management';
   static const String purchaseHistory = '/token-management/purchase-history';
   static const String login = '/login';
+  static const String phoneAuth = '/phone-auth';
+  static const String phoneAuthVerify = '/phone-auth/verify';
+  static const String profileSetup = '/profile-setup';
   static const String authCallback = '/auth/callback';
   static const String error = '/error';
 }

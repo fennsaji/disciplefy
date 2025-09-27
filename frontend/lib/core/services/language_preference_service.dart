@@ -154,104 +154,54 @@ class LanguagePreferenceService {
         print(
             '🔍 [LANGUAGE_SELECTION] Checking completion for authenticated user');
 
-        // First, check if we can get language preference from AuthStateProvider cache
-        // This prevents API calls in most cases
-        final profile = _authStateProvider.userProfile;
-        if (profile != null) {
-          // Check if profile explicitly has language preference data
-          if (profile.containsKey('language_preference')) {
-            final hasLanguage = profile['language_preference'] != null &&
-                profile['language_preference'].toString().isNotEmpty;
-            print(
-                '🔍 [LANGUAGE_SELECTION] Found language preference in cached profile: $hasLanguage (${profile['language_preference']})');
-
-            // Cache the result to avoid future checks
-            _cacheLanguageCompletion(currentUserId, hasLanguage);
-
-            // Ensure local storage is marked for consistency
-            if (hasLanguage) {
-              final locallyMarked =
-                  _prefs.getBool(_hasCompletedLanguageSelectionKey) ?? false;
-              if (!locallyMarked) {
-                print(
-                    '🔄 [LANGUAGE_SELECTION] Marking locally as completed for consistency');
-                await _prefs.setBool(_hasCompletedLanguageSelectionKey, true);
-              }
-            }
-
-            return hasLanguage;
-          } else {
-            // Profile exists but doesn't have language_preference key - likely means not set
-            print(
-                '🔍 [LANGUAGE_SELECTION] Profile exists but no language_preference key - assuming not completed');
-            _cacheLanguageCompletion(currentUserId, false);
-            return false;
-          }
-        }
-
-        // If no cached profile, check if there's a language preference stored locally
-        // This avoids API calls for users who have already completed language selection
-        final localLanguageCode = _prefs.getString(_languagePreferenceKey);
-        final locallyMarked =
-            _prefs.getBool(_hasCompletedLanguageSelectionKey) ?? false;
-
-        if (localLanguageCode != null && locallyMarked) {
-          print(
-              '🔍 [LANGUAGE_SELECTION] Found language preference in local storage: $localLanguageCode');
-
-          // Cache the result to avoid future checks
-          _cacheLanguageCompletion(currentUserId, true);
-          return true;
-        }
-
-        // Only make API call if we don't have any local indicators
-        // This should only happen for new users or after cache expiry
-        print(
-            '🔍 [LANGUAGE_SELECTION] No local indicators found, checking database as last resort');
-
+        // For new phone auth users, we need to check if they actually have a profile
+        // If no profile exists, they haven't completed language selection
         final profileExists = await _userProfileService.profileExists();
         print('🔍 [LANGUAGE_SELECTION] Profile exists: $profileExists');
 
-        if (profileExists) {
-          final languageResult =
-              await _userProfileService.getLanguagePreference();
-          final hasLanguage = languageResult.fold(
-            (failure) {
-              print(
-                  '🔍 [LANGUAGE_SELECTION] Failed to get language preference: ${failure.message}');
-              return false; // No language preference in DB means not completed
-            },
-            (language) {
-              print(
-                  '🔍 [LANGUAGE_SELECTION] Found language preference in DB: ${language.displayName}');
-              return true; // Has language preference in DB means completed
-            },
-          );
-
-          // Cache the result
-          _cacheLanguageCompletion(currentUserId, hasLanguage);
-
-          // If we have a language preference in DB, also mark local storage for consistency
-          if (hasLanguage) {
-            final locallyMarked =
-                _prefs.getBool(_hasCompletedLanguageSelectionKey) ?? false;
-            print(
-                '🔍 [LANGUAGE_SELECTION] Locally marked as completed: $locallyMarked');
-
-            // If not locally marked but has DB preference, mark it locally for consistency
-            if (!locallyMarked) {
-              print(
-                  '🔄 [LANGUAGE_SELECTION] Marking locally as completed for consistency');
-              await _prefs.setBool(_hasCompletedLanguageSelectionKey, true);
-            }
-          }
-
-          return hasLanguage;
+        if (!profileExists) {
+          // New user - no profile means language selection not completed
+          print(
+              '🔍 [LANGUAGE_SELECTION] New user detected - no profile exists');
+          _cacheLanguageCompletion(currentUserId, false);
+          return false;
         }
 
-        // Cache negative result
-        _cacheLanguageCompletion(currentUserId, false);
-        return false; // No profile means not completed
+        // Profile exists - check if it has language preference
+        final languageResult =
+            await _userProfileService.getLanguagePreference();
+        final hasLanguage = languageResult.fold(
+          (failure) {
+            print(
+                '🔍 [LANGUAGE_SELECTION] Failed to get language preference: ${failure.message}');
+            return false; // No language preference in DB means not completed
+          },
+          (language) {
+            print(
+                '🔍 [LANGUAGE_SELECTION] Found language preference in DB: ${language.displayName}');
+            return true; // Has language preference in DB means completed
+          },
+        );
+
+        // Cache the result
+        _cacheLanguageCompletion(currentUserId, hasLanguage);
+
+        // If we have a language preference in DB, also mark local storage for consistency
+        if (hasLanguage) {
+          final locallyMarked =
+              _prefs.getBool(_hasCompletedLanguageSelectionKey) ?? false;
+          print(
+              '🔍 [LANGUAGE_SELECTION] Locally marked as completed: $locallyMarked');
+
+          // If not locally marked but has DB preference, mark it locally for consistency
+          if (!locallyMarked) {
+            print(
+                '🔄 [LANGUAGE_SELECTION] Marking locally as completed for consistency');
+            await _prefs.setBool(_hasCompletedLanguageSelectionKey, true);
+          }
+        }
+
+        return hasLanguage;
       }
 
       // For anonymous users, check local storage completion flag

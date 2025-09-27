@@ -14,7 +14,7 @@ class ApiAuthHelper {
 
   /// Get API headers with proper authentication
   /// Uses live Supabase session for authenticated users
-  /// Uses x-session-id header for anonymous users
+  /// Uses anon key authorization for unauthenticated users (required for Edge Functions)
   static Future<Map<String, String>> getAuthHeaders() async {
     try {
       final headers = <String, String>{
@@ -29,10 +29,15 @@ class ApiAuthHelper {
         print(
             '🔐 [API] Using Supabase session token for user: ${session.user.id}');
       } else {
-        // For anonymous users, add x-session-id header (as expected by backend)
+        // For unauthenticated users, use anon key in Authorization header
+        // This is required for Edge Functions to accept the request
+        headers['Authorization'] = 'Bearer ${AppConfig.supabaseAnonKey}';
+
+        // Also add x-session-id header for backend session tracking
         final sessionId = await _getOrCreateAnonymousSessionId();
         headers['x-session-id'] = sessionId;
-        print('🔐 [API] Using anonymous session ID: $sessionId');
+        print(
+            '🔐 [API] Using anon key authorization with session ID: $sessionId');
       }
 
       return headers;

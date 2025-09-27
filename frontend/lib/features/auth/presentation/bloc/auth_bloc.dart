@@ -543,6 +543,29 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
       if (authState.event == AuthChangeEvent.signedIn) {
         final user = authState.session?.user;
         if (user != null) {
+          if (kDebugMode) {
+            print(
+                '🔐 [AUTH BLOC] User signed in - Phone: ${user.phone != null}, Anonymous: ${user.isAnonymous}');
+          }
+
+          // For phone authentication, clear language selection cache for new users
+          if (user.phone != null && !user.isAnonymous) {
+            try {
+              final languageService = sl<LanguagePreferenceService>();
+              languageService.invalidateLanguageCache();
+              RouterGuard.invalidateLanguageSelectionCache();
+              if (kDebugMode) {
+                print(
+                    '📄 [AUTH BLOC] Language selection cache cleared for phone auth user');
+              }
+            } catch (e) {
+              if (kDebugMode) {
+                print(
+                    '📄 [AUTH BLOC] Warning: Could not clear language cache: $e');
+              }
+            }
+          }
+
           // Load user profile if authenticated (not anonymous) with caching
           final profile =
               user.isAnonymous ? null : await _getProfileWithCache(user.id);
