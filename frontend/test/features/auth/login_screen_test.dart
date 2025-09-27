@@ -168,6 +168,7 @@ void main() {
       final mockUser = MockUser();
       when(mockUser.id).thenReturn('test-user-id');
       when(mockUser.email).thenReturn('test@example.com');
+      when(mockUser.phone).thenReturn(null);
 
       when(mockAuthBloc.state)
           .thenReturn(const auth_states.UnauthenticatedState());

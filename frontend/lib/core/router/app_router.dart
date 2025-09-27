@@ -7,7 +7,10 @@ import '../../features/onboarding/presentation/pages/onboarding_purpose_page.dar
 import '../../features/study_generation/presentation/pages/study_guide_screen.dart';
 import '../../features/study_generation/domain/entities/study_guide.dart';
 import '../../features/auth/presentation/pages/login_screen.dart';
+import '../../features/auth/presentation/pages/phone_number_input_screen.dart';
+import '../../features/auth/presentation/pages/otp_verification_screen.dart';
 import '../../features/auth/presentation/pages/auth_callback_page.dart';
+import '../../features/profile_setup/presentation/pages/profile_setup_screen.dart';
 import '../presentation/widgets/app_shell.dart';
 import '../error/error_page.dart';
 import '../../features/home/presentation/pages/home_screen.dart';
@@ -42,6 +45,11 @@ class AppRouter {
         path: AppRoutes.languageSelection,
         name: 'language_selection',
         builder: (context, state) => const LanguageSelectionScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.profileSetup,
+        name: 'profile_setup',
+        builder: (context, state) => const ProfileSetupScreen(),
       ),
       // GoRoute(
       //   path: AppRoutes.onboardingLanguage,
@@ -130,6 +138,30 @@ class AppRouter {
         builder: (context, state) => const LoginScreen(),
       ),
       GoRoute(
+        path: AppRoutes.phoneAuth,
+        name: 'phone_auth',
+        builder: (context, state) => const PhoneNumberInputScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.phoneAuthVerify,
+        name: 'phone_auth_verify',
+        builder: (context, state) {
+          // Extract phone auth parameters from extra data
+          final extra = state.extra as Map<String, dynamic>? ?? {};
+          final phoneNumber = extra['phoneNumber'] as String? ?? '';
+          final countryCode = extra['countryCode'] as String? ?? '+1';
+          final expiresIn = extra['expiresIn'] as int? ?? 60;
+          final sentAt = extra['sentAt'] as DateTime? ?? DateTime.now();
+
+          return OTPVerificationScreen(
+            phoneNumber: phoneNumber,
+            countryCode: countryCode,
+            expiresIn: expiresIn,
+            sentAt: sentAt,
+          );
+        },
+      ),
+      GoRoute(
         path: AppRoutes.authCallback,
         name: 'auth_callback',
         builder: (context, state) {
@@ -214,6 +246,19 @@ extension AppRouterExtension on GoRouter {
   /// Navigates to the purchase history page where users can view their past token purchases.
   void goToPurchaseHistory() => go(AppRoutes.purchaseHistory);
   void goToLogin() => go(AppRoutes.login);
+  void goToPhoneAuth() => go(AppRoutes.phoneAuth);
+  void goToPhoneAuthVerify({
+    required String phoneNumber,
+    required String countryCode,
+    required int expiresIn,
+    required DateTime sentAt,
+  }) =>
+      go(AppRoutes.phoneAuthVerify, extra: {
+        'phoneNumber': phoneNumber,
+        'countryCode': countryCode,
+        'expiresIn': expiresIn,
+        'sentAt': sentAt,
+      });
   void goToAuthCallback() => go(AppRoutes.authCallback);
   void goToError(String error) => go(AppRoutes.error, extra: error);
 }

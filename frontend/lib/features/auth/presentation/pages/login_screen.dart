@@ -6,6 +6,7 @@ import '../bloc/auth_bloc.dart';
 import '../bloc/auth_event.dart';
 import '../bloc/auth_state.dart' as auth_states;
 import '../../../../core/services/auth_aware_navigation_service.dart';
+import '../../../../core/router/app_routes.dart';
 import '../../../../core/utils/logger.dart';
 
 /// Login screen with Google OAuth and anonymous sign-in options
@@ -18,6 +19,9 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
+  // Flag to prevent navigation conflicts during phone auth flow
+  final bool _isPhoneAuthInProgress = false;
+
   @override
   void initState() {
     super.initState();
@@ -54,6 +58,24 @@ class _LoginScreenState extends State<LoginScreen> {
       BlocListener<AuthBloc, auth_states.AuthState>(
         listener: (context, state) {
           if (state is auth_states.AuthenticatedState) {
+            // Check if this is a phone auth user by checking if they have a phone number
+            final isPhoneAuthUser = state.user.phone != null;
+
+            if (isPhoneAuthUser) {
+              Logger.info(
+                'Phone auth user detected - letting router handle navigation',
+                tag: 'LOGIN_SCREEN',
+                context: {
+                  'user_type': 'phone_auth',
+                  'phone': state.user.phone,
+                  'skip_navigation': 'router_will_handle',
+                },
+              );
+              // Don't navigate for phone auth users - let the router handle it
+              // This prevents conflicts with OTP verification screen navigation
+              return;
+            }
+
             Logger.info(
               'Authentication successful - navigating to home',
               tag: 'LOGIN_SCREEN',
@@ -213,6 +235,11 @@ class _LoginScreenState extends State<LoginScreen> {
 
               const SizedBox(height: 16),
 
+              // Phone Sign-In Button - COMMENTED OUT FOR NOW
+              // _buildPhoneSignInButton(context, isLoading),
+              //
+              // const SizedBox(height: 16),
+
               // Continue as Guest Button
               _buildGuestSignInButton(context, isLoading),
             ],
@@ -278,6 +305,49 @@ class _LoginScreenState extends State<LoginScreen> {
       ),
     );
   }
+
+  /// Builds the phone sign-in button - COMMENTED OUT FOR NOW
+  // Widget _buildPhoneSignInButton(BuildContext context, bool isLoading) {
+  //   final theme = Theme.of(context);
+  //
+  //   return SizedBox(
+  //     width: double.infinity,
+  //     height: 56,
+  //     child: OutlinedButton(
+  //       onPressed: isLoading ? null : () => _handlePhoneSignIn(context),
+  //       style: OutlinedButton.styleFrom(
+  //         foregroundColor: theme.colorScheme.primary,
+  //         side: BorderSide(
+  //           color: theme.colorScheme.primary,
+  //           width: 2,
+  //         ),
+  //         shape: RoundedRectangleBorder(
+  //           borderRadius: BorderRadius.circular(12),
+  //         ),
+  //         disabledForegroundColor:
+  //             theme.colorScheme.primary.withValues(alpha: 0.5),
+  //       ),
+  //       child: Row(
+  //         mainAxisAlignment: MainAxisAlignment.center,
+  //         children: [
+  //           Icon(
+  //             Icons.phone,
+  //             size: 20,
+  //             color: theme.colorScheme.primary,
+  //           ),
+  //           const SizedBox(width: 12),
+  //           Text(
+  //             'Continue with Phone',
+  //             style: GoogleFonts.inter(
+  //               fontSize: 16,
+  //               fontWeight: FontWeight.w600,
+  //             ),
+  //           ),
+  //         ],
+  //       ),
+  //     ),
+  //   );
+  // }
 
   /// Builds the guest sign-in button
   Widget _buildGuestSignInButton(BuildContext context, bool isLoading) {
@@ -391,6 +461,11 @@ class _LoginScreenState extends State<LoginScreen> {
   void _handleGoogleSignIn(BuildContext context) {
     context.read<AuthBloc>().add(const GoogleSignInRequested());
   }
+
+  /// Handles phone sign-in button tap - COMMENTED OUT FOR NOW
+  // void _handlePhoneSignIn(BuildContext context) {
+  //   context.push(AppRoutes.phoneAuth);
+  // }
 
   /// Handles guest sign-in button tap
   void _handleGuestSignIn(BuildContext context) {

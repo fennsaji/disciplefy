@@ -1,7 +1,6 @@
 {
-  "importMap": "./import_map.json",
+  "nodeModulesDir": "auto",
   "compilerOptions": {
-    "allowJs": true,
     "strict": true,
     "noImplicitAny": true,
     "noImplicitReturns": true,
@@ -9,7 +8,7 @@
     "noUnusedLocals": false,
     "noUnusedParameters": false
   },
-  "supabase": {
-    "verifyJWT": false
+  "imports": {
+    "@types/node": "npm:@types/node@^20.0.0"
   }
 }
