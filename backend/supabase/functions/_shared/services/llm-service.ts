@@ -19,7 +19,7 @@ export interface LLMServiceConfig {
  * Parameters for LLM study guide generation.
  */
 interface LLMGenerationParams {
-  readonly inputType: 'scripture' | 'topic'
+  readonly inputType: 'scripture' | 'topic' | 'question'
   readonly inputValue: string
   readonly language: string
 }
@@ -371,7 +371,7 @@ export class LLMService {
    * @throws {Error} When parameters are invalid
    */
   private validateParams(params: LLMGenerationParams): void {
-    if (!params.inputType || !['scripture', 'topic'].includes(params.inputType)) {
+    if (!params.inputType || !['scripture', 'topic', 'question'].includes(params.inputType)) {
       throw new Error('Invalid input type')
     }
 
@@ -1049,17 +1049,42 @@ export class LLMService {
     const { inputType, inputValue } = params
     const languageExamples = this.getLanguageSpecificExamples(params.language)
 
-    return `TASK: Create a Bible study guide for the ${inputType === 'scripture' ? 'scripture reference' : 'topic'}: "${inputValue}"
+    // Create type-specific task description
+    let taskDescription: string
+    if (inputType === 'scripture') {
+      taskDescription = `Create a Bible study guide for the scripture reference: "${inputValue}"`
+    } else if (inputType === 'topic') {
+      taskDescription = `Create a Bible study guide for the topic: "${inputValue}"`
+    } else if (inputType === 'question') {
+      taskDescription = `Answer the biblical/theological question and create a comprehensive study guide: "${inputValue}"`
+    } else {
+      taskDescription = `Create a Bible study guide for: "${inputValue}"`
+    }
+
+    // Create input-specific instructions
+    let specificInstructions = ''
+    if (inputType === 'question') {
+      specificInstructions = `
+      QUESTION-SPECIFIC REQUIREMENTS:
+      - Provide a direct, biblically grounded answer to the question
+      - Support your answer with relevant scripture passages
+      - Address common misconceptions if applicable
+      - Include practical applications of the biblical teaching
+      - Maintain theological accuracy and pastoral sensitivity
+      `
+    }
+
+    return `TASK: ${taskDescription}
 
       REQUIRED JSON OUTPUT FORMAT (follow exactly):
       {
-        "summary": "Brief overview (2-3 sentences) capturing the main message",
-        "interpretation": "Theological interpretation (3-4 paragraphs) explaining meaning and key teachings", 
+        "summary": "Brief overview (2-3 sentences) capturing the main message${inputType === 'question' ? ' and answering the question' : ''}",
+        "interpretation": "Theological interpretation (3-4 paragraphs) explaining meaning and key teachings${inputType === 'question' ? ' with direct answer to the question' : ''}", 
         "context": "Historical and cultural background (1-2 paragraphs) for understanding",
         "relatedVerses": ["3-5 relevant Bible verses with references"],
         "reflectionQuestions": ["4-6 practical application questions"],
         "prayerPoints": ["3-4 prayer suggestions"]
-      }
+      }${specificInstructions}
 
       CRITICAL JSON FORMATTING RULES:
       - Output ONLY valid JSON - no markdown, no extra text before or after

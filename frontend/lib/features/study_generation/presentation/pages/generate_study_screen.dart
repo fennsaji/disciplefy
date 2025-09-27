@@ -94,6 +94,25 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
     'Redemption',
   ];
 
+  // Question suggestions
+  final List<String> _questionSuggestions = [
+    'What does the Bible say about anxiety?',
+    'How can I strengthen my faith?',
+    'What is the purpose of prayer?',
+    'Why does God allow suffering?',
+    'How do I know God\'s will for my life?',
+    'What does it mean to have faith?',
+    'How can I overcome fear?',
+    'What is God\'s love like?',
+    'How should I handle difficult relationships?',
+    'What happens after we die?',
+    'How can I find peace in troubled times?',
+    'What does it mean to be saved?',
+    'How do I pray effectively?',
+    'What is the meaning of grace?',
+    'How can I serve God better?',
+  ];
+
   @override
   void initState() {
     super.initState();
@@ -206,7 +225,13 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
         _validationError = _isInputValid
             ? null
             : 'Please enter a valid scripture reference (e.g., John 3:16)';
+      } else if (_selectedMode == StudyInputMode.question) {
+        _isInputValid = text.length >= 10;
+        _validationError = _isInputValid
+            ? null
+            : 'Please enter a complete question (at least 10 characters)';
       } else {
+        // Topic mode
         _isInputValid = text.length >= 2;
         _validationError =
             _isInputValid ? null : 'Please enter at least 2 characters';
@@ -246,7 +271,9 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
   List<String> _getFilteredSuggestions() {
     final suggestions = _selectedMode == StudyInputMode.scripture
         ? _scriptureeSuggestions
-        : _topicSuggestions;
+        : _selectedMode == StudyInputMode.topic
+            ? _topicSuggestions
+            : _questionSuggestions;
 
     final query = _inputController.text.trim().toLowerCase();
     if (query.isEmpty) return suggestions.take(5).toList();
@@ -602,6 +629,13 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
                     onTap: () => _switchMode(StudyInputMode.topic),
                   ),
                 ),
+                Expanded(
+                  child: _ModeToggleButton(
+                    label: 'Question',
+                    isSelected: _selectedMode == StudyInputMode.question,
+                    onTap: () => _switchMode(StudyInputMode.question),
+                  ),
+                ),
               ],
             ),
           ),
@@ -667,7 +701,9 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
           Text(
             _selectedMode == StudyInputMode.scripture
                 ? 'Enter Scripture Reference'
-                : 'Enter Topic',
+                : _selectedMode == StudyInputMode.topic
+                    ? 'Enter Topic'
+                    : 'Ask Your Question',
             style: GoogleFonts.inter(
               fontSize: 16,
               fontWeight: FontWeight.w600,
@@ -678,6 +714,11 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
           TextField(
             controller: _inputController,
             focusNode: _inputFocusNode,
+            maxLines: _selectedMode == StudyInputMode.question ? 4 : 1,
+            minLines: _selectedMode == StudyInputMode.question ? 3 : 1,
+            textInputAction: _selectedMode == StudyInputMode.question
+                ? TextInputAction.newline
+                : TextInputAction.done,
             style: GoogleFonts.inter(
               fontSize: 16,
               color: Theme.of(context).colorScheme.onBackground,
@@ -685,7 +726,9 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
             decoration: InputDecoration(
               hintText: _selectedMode == StudyInputMode.scripture
                   ? 'e.g., John 3:16, Matthew 5:1-12'
-                  : 'e.g., Forgiveness, Love, Faith',
+                  : _selectedMode == StudyInputMode.topic
+                      ? 'e.g., Forgiveness, Love, Faith'
+                      : 'e.g., What does the Bible say about anxiety?',
               hintStyle: GoogleFonts.inter(
                 color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
               ),
@@ -717,9 +760,9 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
                 ),
               ),
               errorText: _validationError,
-              contentPadding: const EdgeInsets.symmetric(
+              contentPadding: EdgeInsets.symmetric(
                 horizontal: 16,
-                vertical: 16,
+                vertical: _selectedMode == StudyInputMode.question ? 20 : 16,
               ),
               suffixIcon: _inputController.text.isNotEmpty
                   ? IconButton(
@@ -943,8 +986,11 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
     }
 
     final input = _inputController.text.trim();
-    final inputType =
-        _selectedMode == StudyInputMode.scripture ? 'scripture' : 'topic';
+    final inputType = _selectedMode == StudyInputMode.scripture
+        ? 'scripture'
+        : _selectedMode == StudyInputMode.topic
+            ? 'topic'
+            : 'question';
     final languageCode = _selectedLanguage.code;
 
     // Set loading state immediately
@@ -1230,6 +1276,7 @@ class _SuggestionChip extends StatelessWidget {
 enum StudyInputMode {
   scripture,
   topic,
+  question,
 }
 
 /// Enum for study language selection.
