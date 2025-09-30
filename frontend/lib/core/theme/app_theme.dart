@@ -82,15 +82,15 @@ class AppTheme {
 
           // Body text uses Inter
           bodyLarge: GoogleFonts.inter(
-            fontSize: 16,
+            fontSize: 18,
             height: 1.5,
           ),
           bodyMedium: GoogleFonts.inter(
-            fontSize: 14,
+            fontSize: 16,
             height: 1.5,
           ),
           bodySmall: GoogleFonts.inter(
-            fontSize: 12,
+            fontSize: 14,
             height: 1.4,
           ),
 
@@ -205,17 +205,17 @@ class AppTheme {
 
           // Body text uses Inter with proper dark theme colors
           bodyLarge: GoogleFonts.inter(
-            fontSize: 16,
+            fontSize: 18,
             height: 1.5,
             color: const Color(0xFFE0E0E0),
           ),
           bodyMedium: GoogleFonts.inter(
-            fontSize: 14,
+            fontSize: 16,
             height: 1.5,
             color: const Color(0xFFE0E0E0),
           ),
           bodySmall: GoogleFonts.inter(
-            fontSize: 12,
+            fontSize: 14,
             height: 1.4,
             color: const Color(0xFFB0B0B0),
           ),

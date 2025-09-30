@@ -13,7 +13,7 @@ ALTER TABLE user_profiles ADD COLUMN onboarding_status VARCHAR(20) DEFAULT 'pend
 
 -- Create OTP requests table for rate limiting and security
 CREATE TABLE otp_requests (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   phone_number TEXT NOT NULL,
   otp_code VARCHAR(6) NOT NULL,
   ip_address INET,

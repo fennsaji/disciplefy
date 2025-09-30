@@ -59,7 +59,8 @@ class _LoginScreenState extends State<LoginScreen> {
         listener: (context, state) {
           if (state is auth_states.AuthenticatedState) {
             // Check if this is a phone auth user by checking if they have a phone number
-            final isPhoneAuthUser = state.user.phone != null;
+            final isPhoneAuthUser =
+                state.user.phone != null && state.user.phone!.isNotEmpty;
 
             if (isPhoneAuthUser) {
               Logger.info(
