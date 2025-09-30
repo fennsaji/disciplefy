@@ -286,15 +286,30 @@ export function createPostFunction(
 
 /**
  * Parses user context from JWT token
+ * Supports both header-based auth (standard) and query-based auth (EventSource)
  */
 async function parseUserContext(
   req: Request,
   services: ServiceContainer
 ): Promise<UserContext> {
-  const authToken = req.headers.get('Authorization') || ''
-  
+  let authToken = req.headers.get('Authorization') || ''
+  console.log('[AUTH] Header auth token:', authToken ? 'PRESENT' : 'MISSING')
+
+  // For EventSource requests, check query parameters as fallback
   if (!authToken) {
-    throw new Error('Authorization header required')
+    const url = new URL(req.url)
+    const queryAuthToken = url.searchParams.get('authorization')
+    console.log('[AUTH] Query auth token:', queryAuthToken ? 'PRESENT' : 'MISSING')
+    console.log('[AUTH] Full URL:', req.url)
+    if (queryAuthToken) {
+      authToken = `Bearer ${queryAuthToken}`
+      console.log('[AUTH] Using query auth token, final token:', authToken.substring(0, 20) + '...')
+    }
+  }
+
+  if (!authToken) {
+    console.log('[AUTH] ERROR: No auth token found in headers or query params')
+    throw new Error('Missing authorization header')
   }
 
   const userSupabaseClient = createUserSupabaseClient(authToken, config.supabaseUrl, config.supabaseAnonKey)

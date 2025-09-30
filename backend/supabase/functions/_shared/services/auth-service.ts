@@ -171,11 +171,23 @@ export class AuthService {
         500
       )
     }
-    
+
+    // Get authorization token from header or query parameters (for EventSource)
+    let authToken = req.headers.get('Authorization') || ''
+
+    // For EventSource requests, check query parameters as fallback
+    if (!authToken) {
+      const url = new URL(req.url)
+      const queryAuthToken = url.searchParams.get('authorization')
+      if (queryAuthToken) {
+        authToken = `Bearer ${queryAuthToken}`
+      }
+    }
+
     return createClient(this.supabaseUrl, this.supabaseAnonKey, {
       global: {
         headers: {
-          Authorization: req.headers.get('Authorization') ?? ''
+          Authorization: authToken
         }
       }
     })

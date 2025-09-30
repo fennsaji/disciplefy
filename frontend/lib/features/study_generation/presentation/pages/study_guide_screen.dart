@@ -15,6 +15,8 @@ import '../bloc/study_bloc.dart';
 import '../bloc/study_event.dart';
 import '../bloc/study_state.dart';
 import '../../../saved_guides/data/models/saved_guide_model.dart';
+import '../../../follow_up_chat/presentation/widgets/follow_up_chat_widget.dart';
+import '../../../follow_up_chat/presentation/bloc/follow_up_chat_bloc.dart';
 
 /// Study Guide Screen displaying generated content with sections and user interactions.
 ///
@@ -38,8 +40,15 @@ class StudyGuideScreen extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) => BlocProvider(
-        create: (context) => sl<StudyBloc>(),
+  Widget build(BuildContext context) => MultiBlocProvider(
+        providers: [
+          BlocProvider(
+            create: (context) => sl<StudyBloc>(),
+          ),
+          BlocProvider(
+            create: (context) => sl<FollowUpChatBloc>(),
+          ),
+        ],
         child: _StudyGuideScreenContent(
           studyGuide: studyGuide,
           routeExtra: routeExtra,
@@ -79,6 +88,9 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
   bool _notesLoaded = false;
   Timer? _autoSaveTimer;
   VoidCallback? _autoSaveListener;
+
+  // Follow-up chat state
+  bool _isChatExpanded = false;
 
   @override
   void initState() {
@@ -363,7 +375,7 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
           title: Text(
             _getDisplayTitle(),
             style: GoogleFonts.playfairDisplay(
-              fontSize: 18,
+              fontSize: 20,
               fontWeight: FontWeight.w600,
               color: Theme.of(context).colorScheme.primary,
             ),
@@ -394,6 +406,20 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
 
                     // Study Guide Content
                     _buildStudyContent(),
+
+                    SizedBox(height: isLargeScreen ? 32 : 24),
+
+                    // Follow-up Chat Section
+                    FollowUpChatWidget(
+                      studyGuideId: _currentStudyGuide.id,
+                      studyGuideTitle: _getDisplayTitle(),
+                      isExpanded: _isChatExpanded,
+                      onToggleExpanded: () {
+                        setState(() {
+                          _isChatExpanded = !_isChatExpanded;
+                        });
+                      },
+                    ),
 
                     SizedBox(height: isLargeScreen ? 32 : 24),
 
@@ -436,7 +462,7 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
           title: Text(
             'Study Guide',
             style: GoogleFonts.playfairDisplay(
-              fontSize: 18,
+              fontSize: 20,
               fontWeight: FontWeight.w600,
               color: Theme.of(context).colorScheme.primary,
             ),
@@ -458,7 +484,7 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
                 Text(
                   'We couldn\'t generate a study guide',
                   style: GoogleFonts.playfairDisplay(
-                    fontSize: 24,
+                    fontSize: 28,
                     fontWeight: FontWeight.w600,
                     color: Theme.of(context).colorScheme.onBackground,
                   ),
@@ -470,7 +496,7 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
                       ? 'Something went wrong. Please try again later.'
                       : _errorMessage,
                   style: GoogleFonts.inter(
-                    fontSize: 16,
+                    fontSize: 18,
                     color: Theme.of(context)
                         .colorScheme
                         .onSurface
@@ -494,7 +520,7 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
                   child: Text(
                     'View Saved Guides',
                     style: GoogleFonts.inter(
-                      fontSize: 16,
+                      fontSize: 18,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -584,7 +610,7 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
               Text(
                 'Personal Notes',
                 style: GoogleFonts.inter(
-                  fontSize: 18,
+                  fontSize: 20,
                   fontWeight: FontWeight.w600,
                   color: Theme.of(context).colorScheme.onBackground,
                 ),
@@ -604,7 +630,7 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
               controller: _notesController,
               maxLines: 6,
               style: GoogleFonts.inter(
-                fontSize: 14,
+                fontSize: 16,
                 color: Theme.of(context).colorScheme.onBackground,
                 height: 1.5,
               ),
@@ -666,7 +692,7 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
                           label: Text(
                             currentStep ?? 'Saving...',
                             style: GoogleFonts.inter(
-                              fontSize: 16,
+                              fontSize: 18,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
@@ -696,7 +722,7 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
                           label: Text(
                             _isSaved ? 'Saved' : 'Save Study',
                             style: GoogleFonts.inter(
-                              fontSize: 16,
+                              fontSize: 18,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
@@ -727,7 +753,7 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
                 label: Text(
                   'Share',
                   style: GoogleFonts.inter(
-                    fontSize: 16,
+                    fontSize: 18,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -792,7 +818,7 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
         title: Text(
           'Authentication Required',
           style: GoogleFonts.playfairDisplay(
-            fontSize: 20,
+            fontSize: 22,
             fontWeight: FontWeight.bold,
             color: const Color(0xFF333333), // Primary gray text
           ),
@@ -800,7 +826,7 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
         content: Text(
           'You need to be signed in to save study guides. Would you like to sign in now?',
           style: GoogleFonts.inter(
-            fontSize: 16,
+            fontSize: 18,
             color: const Color(0xFF333333), // Primary gray text
             height: 1.5,
           ),
@@ -819,7 +845,7 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
             child: Text(
               'Cancel',
               style: GoogleFonts.inter(
-                fontSize: 16,
+                fontSize: 18,
                 fontWeight: FontWeight.w600,
                 color: const Color(0xFF888888), // Light gray text
               ),
@@ -843,7 +869,7 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
             child: Text(
               'Sign In',
               style: GoogleFonts.inter(
-                fontSize: 16,
+                fontSize: 18,
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -881,7 +907,7 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
               ? 'You need to be signed in to save study guides and personal notes. Would you like to sign in now?'
               : 'You need to be signed in to save study guides. Would you like to sign in now?',
           style: GoogleFonts.inter(
-            fontSize: 16,
+            fontSize: 18,
             color: const Color(0xFF333333), // Primary gray text
             height: 1.5,
           ),
@@ -900,7 +926,7 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
             child: Text(
               'Cancel',
               style: GoogleFonts.inter(
-                fontSize: 16,
+                fontSize: 18,
                 fontWeight: FontWeight.w600,
                 color: const Color(0xFF888888), // Light gray text
               ),
@@ -924,7 +950,7 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
             child: Text(
               'Sign In',
               style: GoogleFonts.inter(
-                fontSize: 16,
+                fontSize: 18,
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -1116,7 +1142,7 @@ class _StudySection extends StatelessWidget {
                   child: Text(
                     title,
                     style: GoogleFonts.inter(
-                      fontSize: 18,
+                      fontSize: 20,
                       fontWeight: FontWeight.w600,
                       color: Theme.of(context).colorScheme.onBackground,
                     ),

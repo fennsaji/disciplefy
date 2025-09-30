@@ -1,0 +1,472 @@
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_markdown/flutter_markdown.dart';
+
+import '../../../../core/constants/app_constants.dart';
+import '../bloc/follow_up_chat_state.dart';
+
+/// A chat bubble widget for displaying messages in the follow-up chat
+class ChatBubble extends StatelessWidget {
+  final ChatMessage message;
+  final VoidCallback? onRetry;
+
+  const ChatBubble({
+    super.key,
+    required this.message,
+    this.onRetry,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isUser = message.isUser;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppConstants.DEFAULT_PADDING,
+        vertical: AppConstants.EXTRA_SMALL_PADDING,
+      ),
+      child: Row(
+        mainAxisAlignment:
+            isUser ? MainAxisAlignment.end : MainAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (!isUser) _buildAvatar(theme),
+          if (!isUser) const SizedBox(width: AppConstants.SMALL_PADDING),
+          Flexible(
+            child: _buildMessageContainer(context, theme, isUser),
+          ),
+          if (isUser) const SizedBox(width: AppConstants.SMALL_PADDING),
+          if (isUser) _buildUserAvatar(theme),
+        ],
+      ),
+    );
+  }
+
+  /// Builds the assistant avatar
+  Widget _buildAvatar(ThemeData theme) {
+    return Container(
+      width: 32,
+      height: 32,
+      decoration: BoxDecoration(
+        color: theme.colorScheme.primary,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Icon(
+        Icons.auto_awesome,
+        color: theme.colorScheme.onPrimary,
+        size: 18,
+      ),
+    );
+  }
+
+  /// Builds the user avatar
+  Widget _buildUserAvatar(ThemeData theme) {
+    return Container(
+      width: 32,
+      height: 32,
+      decoration: BoxDecoration(
+        color: theme.colorScheme.secondary,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Icon(
+        Icons.person,
+        color: theme.colorScheme.onSecondary,
+        size: 18,
+      ),
+    );
+  }
+
+  /// Builds the main message container
+  Widget _buildMessageContainer(
+      BuildContext context, ThemeData theme, bool isUser) {
+    return Container(
+      constraints: BoxConstraints(
+        maxWidth: MediaQuery.of(context).size.width * 0.75,
+      ),
+      decoration: BoxDecoration(
+        color: _getBackgroundColor(theme, isUser),
+        borderRadius: BorderRadius.only(
+          topLeft: const Radius.circular(AppConstants.BORDER_RADIUS),
+          topRight: const Radius.circular(AppConstants.BORDER_RADIUS),
+          bottomLeft: Radius.circular(isUser
+              ? AppConstants.BORDER_RADIUS
+              : AppConstants.EXTRA_SMALL_PADDING),
+          bottomRight: Radius.circular(isUser
+              ? AppConstants.EXTRA_SMALL_PADDING
+              : AppConstants.BORDER_RADIUS),
+        ),
+        border: Border.all(
+          color: _getBorderColor(theme, isUser),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildMessageContent(theme, isUser),
+          _buildMessageFooter(context, theme, isUser),
+        ],
+      ),
+    );
+  }
+
+  /// Builds the message content
+  Widget _buildMessageContent(ThemeData theme, bool isUser) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppConstants.DEFAULT_PADDING,
+        AppConstants.SMALL_PADDING,
+        AppConstants.DEFAULT_PADDING,
+        AppConstants.EXTRA_SMALL_PADDING,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildMessageText(theme, isUser),
+          if (_shouldShowStatusIndicator()) ...[
+            const SizedBox(height: AppConstants.EXTRA_SMALL_PADDING),
+            _buildStatusIndicator(theme),
+          ],
+        ],
+      ),
+    );
+  }
+
+  /// Builds the message text with streaming support and proper formatting
+  Widget _buildMessageText(ThemeData theme, bool isUser) {
+    final content =
+        message.content.isEmpty && message.status == ChatMessageStatus.streaming
+            ? '...'
+            : message.content;
+
+    // For AI messages, use markdown rendering for proper formatting
+    if (!isUser && content != '...') {
+      return MarkdownBody(
+        data: content,
+        selectable: true,
+        styleSheet: MarkdownStyleSheet(
+          p: theme.textTheme.bodyMedium?.copyWith(
+            color: _getTextColor(theme, isUser),
+            height: 1.5,
+          ),
+          h1: theme.textTheme.headlineMedium?.copyWith(
+            color: _getTextColor(theme, isUser),
+            fontWeight: FontWeight.bold,
+          ),
+          h2: theme.textTheme.headlineSmall?.copyWith(
+            color: _getTextColor(theme, isUser),
+            fontWeight: FontWeight.bold,
+          ),
+          h3: theme.textTheme.titleLarge?.copyWith(
+            color: _getTextColor(theme, isUser),
+            fontWeight: FontWeight.w600,
+          ),
+          h4: theme.textTheme.titleMedium?.copyWith(
+            color: _getTextColor(theme, isUser),
+            fontWeight: FontWeight.w600,
+          ),
+          h5: theme.textTheme.titleSmall?.copyWith(
+            color: _getTextColor(theme, isUser),
+            fontWeight: FontWeight.w600,
+          ),
+          h6: theme.textTheme.titleSmall?.copyWith(
+            color: _getTextColor(theme, isUser),
+            fontWeight: FontWeight.w500,
+          ),
+          strong: theme.textTheme.bodyMedium?.copyWith(
+            color: _getTextColor(theme, isUser),
+            fontWeight: FontWeight.bold,
+          ),
+          em: theme.textTheme.bodyMedium?.copyWith(
+            color: _getTextColor(theme, isUser),
+            fontStyle: FontStyle.italic,
+          ),
+          blockquote: theme.textTheme.bodyMedium?.copyWith(
+            color: _getTextColor(theme, isUser).withOpacity(0.8),
+            fontStyle: FontStyle.italic,
+          ),
+          code: theme.textTheme.bodySmall?.copyWith(
+            color: _getTextColor(theme, isUser),
+            backgroundColor: theme.colorScheme.surfaceContainer,
+            fontFamily: 'monospace',
+          ),
+          listBullet: theme.textTheme.bodyMedium?.copyWith(
+            color: _getTextColor(theme, isUser),
+          ),
+          tableBody: theme.textTheme.bodyMedium?.copyWith(
+            color: _getTextColor(theme, isUser),
+          ),
+        ),
+        onTapLink: (text, href, title) {
+          // Handle link taps if needed
+        },
+      );
+    }
+
+    // For user messages or streaming state, use SelectableText
+    return SelectableText(
+      content,
+      style: theme.textTheme.bodyMedium?.copyWith(
+        color: _getTextColor(theme, isUser),
+        height: 1.5,
+      ),
+    );
+  }
+
+  /// Builds the status indicator for streaming/failed messages
+  Widget _buildStatusIndicator(ThemeData theme) {
+    switch (message.status) {
+      case ChatMessageStatus.streaming:
+        return Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            SizedBox(
+              width: 12,
+              height: 12,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                valueColor: AlwaysStoppedAnimation<Color>(
+                  theme.colorScheme.primary.withOpacity(0.6),
+                ),
+              ),
+            ),
+            const SizedBox(width: AppConstants.EXTRA_SMALL_PADDING),
+            Text(
+              'Responding...',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurface.withOpacity(0.6),
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+          ],
+        );
+      case ChatMessageStatus.failed:
+        return Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.error_outline,
+              size: 16,
+              color: theme.colorScheme.error,
+            ),
+            const SizedBox(width: AppConstants.EXTRA_SMALL_PADDING),
+            Text(
+              'Failed to send',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.error,
+              ),
+            ),
+          ],
+        );
+      case ChatMessageStatus.sending:
+        return Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            SizedBox(
+              width: 12,
+              height: 12,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                valueColor: AlwaysStoppedAnimation<Color>(
+                  theme.colorScheme.primary.withOpacity(0.6),
+                ),
+              ),
+            ),
+            const SizedBox(width: AppConstants.EXTRA_SMALL_PADDING),
+            Text(
+              'Sending...',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurface.withOpacity(0.6),
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+          ],
+        );
+      default:
+        return const SizedBox.shrink();
+    }
+  }
+
+  /// Builds the message footer with timestamp and actions
+  Widget _buildMessageFooter(
+      BuildContext context, ThemeData theme, bool isUser) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppConstants.DEFAULT_PADDING,
+        0,
+        AppConstants.DEFAULT_PADDING,
+        AppConstants.SMALL_PADDING,
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          _buildTimestamp(theme),
+          _buildActions(context, theme, isUser),
+        ],
+      ),
+    );
+  }
+
+  /// Builds the timestamp
+  Widget _buildTimestamp(ThemeData theme) {
+    final timeString = _formatTime(message.timestamp);
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          timeString,
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: theme.colorScheme.onSurface.withOpacity(0.6),
+            fontSize: AppConstants.FONT_SIZE_14,
+          ),
+        ),
+        if (message.tokensConsumed != null && message.tokensConsumed! > 0) ...[
+          const SizedBox(width: AppConstants.EXTRA_SMALL_PADDING),
+          Container(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppConstants.EXTRA_SMALL_PADDING,
+              vertical: 1,
+            ),
+            decoration: BoxDecoration(
+              color: theme.colorScheme.primary.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(
+                color: theme.colorScheme.primary.withOpacity(0.3),
+                width: 0.5,
+              ),
+            ),
+            child: Text(
+              '${message.tokensConsumed} tokens',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.primary,
+                fontSize: AppConstants.FONT_SIZE_14,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  /// Builds action buttons
+  Widget _buildActions(BuildContext context, ThemeData theme, bool isUser) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (!isUser && message.content.isNotEmpty) ...[
+          _buildCopyButton(context, theme),
+        ],
+        if (message.status == ChatMessageStatus.failed && onRetry != null) ...[
+          const SizedBox(width: AppConstants.EXTRA_SMALL_PADDING),
+          _buildRetryButton(context, theme),
+        ],
+      ],
+    );
+  }
+
+  /// Builds the copy button
+  Widget _buildCopyButton(BuildContext context, ThemeData theme) {
+    return InkWell(
+      onTap: () => _copyToClipboard(context),
+      borderRadius: BorderRadius.circular(AppConstants.SMALL_BORDER_RADIUS),
+      child: Padding(
+        padding: const EdgeInsets.all(AppConstants.EXTRA_SMALL_PADDING),
+        child: Icon(
+          Icons.copy,
+          size: 16,
+          color: theme.colorScheme.onSurface.withOpacity(0.6),
+        ),
+      ),
+    );
+  }
+
+  /// Builds the retry button
+  Widget _buildRetryButton(BuildContext context, ThemeData theme) {
+    return InkWell(
+      onTap: onRetry,
+      borderRadius: BorderRadius.circular(AppConstants.SMALL_BORDER_RADIUS),
+      child: Padding(
+        padding: const EdgeInsets.all(AppConstants.EXTRA_SMALL_PADDING),
+        child: Icon(
+          Icons.refresh,
+          size: 16,
+          color: theme.colorScheme.error,
+        ),
+      ),
+    );
+  }
+
+  /// Gets the background color based on message type and status
+  Color _getBackgroundColor(ThemeData theme, bool isUser) {
+    if (message.status == ChatMessageStatus.failed) {
+      return theme.colorScheme.error.withOpacity(0.1);
+    }
+
+    if (isUser) {
+      return theme.colorScheme.primary.withOpacity(0.1);
+    } else {
+      return theme.colorScheme.surface;
+    }
+  }
+
+  /// Gets the border color based on message type and status
+  Color _getBorderColor(ThemeData theme, bool isUser) {
+    if (message.status == ChatMessageStatus.failed) {
+      return theme.colorScheme.error.withOpacity(0.3);
+    }
+
+    if (isUser) {
+      return theme.colorScheme.primary.withOpacity(0.3);
+    } else {
+      return theme.colorScheme.outline.withOpacity(0.2);
+    }
+  }
+
+  /// Gets the text color based on message type
+  Color _getTextColor(ThemeData theme, bool isUser) {
+    if (message.status == ChatMessageStatus.failed) {
+      return theme.colorScheme.error;
+    }
+
+    return theme.colorScheme.onSurface;
+  }
+
+  /// Determines whether to show status indicator
+  bool _shouldShowStatusIndicator() {
+    return message.status == ChatMessageStatus.streaming ||
+        message.status == ChatMessageStatus.sending ||
+        message.status == ChatMessageStatus.failed;
+  }
+
+  /// Formats the timestamp
+  String _formatTime(DateTime timestamp) {
+    final now = DateTime.now();
+    final difference = now.difference(timestamp);
+
+    if (difference.inDays > 0) {
+      return '${difference.inDays}d ago';
+    } else if (difference.inHours > 0) {
+      return '${difference.inHours}h ago';
+    } else if (difference.inMinutes > 0) {
+      return '${difference.inMinutes}m ago';
+    } else {
+      return 'Just now';
+    }
+  }
+
+  /// Copies message content to clipboard
+  Future<void> _copyToClipboard(BuildContext context) async {
+    await Clipboard.setData(ClipboardData(text: message.content));
+
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Message copied to clipboard'),
+          duration: Duration(seconds: 2),
+        ),
+      );
+    }
+  }
+}
