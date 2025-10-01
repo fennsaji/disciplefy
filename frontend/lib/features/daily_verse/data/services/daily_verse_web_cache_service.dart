@@ -34,6 +34,9 @@ class DailyVerseWebCacheService implements DailyVerseCacheInterface {
       final dateKey = _formatDateKey(verse.date);
       final verseData = {
         'reference': verse.reference,
+        'referenceEn': verse.referenceTranslations.en,
+        'referenceHi': verse.referenceTranslations.hi,
+        'referenceMl': verse.referenceTranslations.ml,
         'esv': verse.translations.esv,
         'hindi': verse.translations.hindi,
         'malayalam': verse.translations.malayalam,
@@ -187,6 +190,11 @@ class DailyVerseWebCacheService implements DailyVerseCacheInterface {
   DailyVerseEntity _createVerseFromMap(Map<String, dynamic> map) {
     return DailyVerseEntity(
       reference: map['reference'] as String,
+      referenceTranslations: ReferenceTranslations(
+        en: map['referenceEn'] as String? ?? map['reference'] as String,
+        hi: map['referenceHi'] as String? ?? map['reference'] as String,
+        ml: map['referenceMl'] as String? ?? map['reference'] as String,
+      ),
       translations: DailyVerseTranslations(
         esv: map['esv'] as String,
         hindi: map['hindi'] as String,

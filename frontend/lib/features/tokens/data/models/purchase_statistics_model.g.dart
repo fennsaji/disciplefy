@@ -10,17 +10,14 @@ PurchaseStatisticsModel _$PurchaseStatisticsModelFromJson(
         Map<String, dynamic> json) =>
     PurchaseStatisticsModel(
       totalPurchases: (json['total_purchases'] as num?)?.toInt() ?? 0,
-      totalAmountSpent: (json['total_amount_spent'] as num?)?.toDouble() ?? 0.0,
+      totalAmountSpent:
+          PurchaseStatisticsModel._parseAmountSpent(json['total_amount_spent']),
       totalTokensPurchased:
           (json['total_tokens_purchased'] as num?)?.toInt() ?? 0,
-      averagePurchaseAmount:
-          (json['average_purchase_amount'] as num?)?.toDouble() ?? 0.0,
-      firstPurchaseDate: json['first_purchase_date'] == null
-          ? null
-          : DateTime.parse(json['first_purchase_date'] as String),
-      lastPurchaseDate: json['last_purchase_date'] == null
-          ? null
-          : DateTime.parse(json['last_purchase_date'] as String),
+      averagePurchaseAmount: PurchaseStatisticsModel._parseAverageAmount(
+          json['average_purchase_amount']),
+      firstPurchaseDate: parseNullableDateTime(json['first_purchase_date']),
+      lastPurchaseDate: parseNullableDateTime(json['last_purchase_date']),
       mostUsedPaymentMethod: json['most_used_payment_method'] as String?,
     );
 

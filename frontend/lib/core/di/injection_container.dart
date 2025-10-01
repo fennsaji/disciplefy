@@ -91,6 +91,7 @@ import '../services/language_preference_service.dart';
 import '../services/language_cache_coordinator.dart';
 import '../services/http_service.dart';
 import '../services/personal_notes_api_service.dart';
+import '../i18n/translation_service.dart';
 import '../../features/study_generation/domain/repositories/personal_notes_repository.dart';
 import '../../features/study_generation/data/repositories/personal_notes_repository_impl.dart';
 import '../../features/study_generation/domain/usecases/manage_personal_notes.dart';
@@ -179,6 +180,9 @@ Future<void> initializeDependencies() async {
         userProfileService: sl(),
         cacheCoordinator: sl(),
       ));
+
+  // Register Translation Service
+  sl.registerLazySingleton(() => TranslationService(sl(), sl()));
 
   //! Auth
   sl.registerLazySingleton(() => AuthService());

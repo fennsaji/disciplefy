@@ -7,11 +7,13 @@ part 'daily_verse_model.g.dart';
 @JsonSerializable()
 class DailyVerseModel {
   final String reference;
+  final ReferenceTranslationsModel referenceTranslations;
   final DailyVerseTranslationsModel translations;
   final String date;
 
   const DailyVerseModel({
     required this.reference,
+    required this.referenceTranslations,
     required this.translations,
     required this.date,
   });
@@ -24,8 +26,34 @@ class DailyVerseModel {
   /// Convert to domain entity
   DailyVerseEntity toEntity() => DailyVerseEntity(
         reference: reference,
+        referenceTranslations: referenceTranslations.toEntity(),
         translations: translations.toEntity(),
         date: DateTime.parse(date),
+      );
+}
+
+@JsonSerializable()
+class ReferenceTranslationsModel {
+  final String en;
+  final String hi;
+  final String ml;
+
+  const ReferenceTranslationsModel({
+    required this.en,
+    required this.hi,
+    required this.ml,
+  });
+
+  factory ReferenceTranslationsModel.fromJson(Map<String, dynamic> json) =>
+      _$ReferenceTranslationsModelFromJson(json);
+
+  Map<String, dynamic> toJson() => _$ReferenceTranslationsModelToJson(this);
+
+  /// Convert to domain entity
+  ReferenceTranslations toEntity() => ReferenceTranslations(
+        en: en,
+        hi: hi,
+        ml: ml,
       );
 }
 

@@ -11,6 +11,8 @@ import '../bloc/saved_guides_event.dart';
 import '../bloc/saved_guides_state.dart';
 import '../widgets/guide_list_item.dart';
 import '../widgets/empty_state_widget.dart';
+import '../../../../core/extensions/translation_extension.dart';
+import '../../../../core/i18n/translation_keys.dart';
 
 /// Unified Saved Guides Screen with Clean Architecture
 class SavedScreen extends StatefulWidget {
@@ -164,7 +166,7 @@ class _SavedScreenContent extends StatelessWidget {
             ),
           ),
           title: Text(
-            'Study Guides',
+            context.tr(TranslationKeys.savedGuidesTitle),
             style: GoogleFonts.playfairDisplay(
               fontSize: 20,
               fontWeight: FontWeight.w600,
@@ -222,14 +224,14 @@ class _SavedScreenContent extends StatelessWidget {
                         fontSize: 16,
                         fontWeight: FontWeight.w500,
                       ),
-                      tabs: const [
+                      tabs: [
                         Tab(
                           icon: Icon(Icons.bookmark, size: 20),
-                          text: 'Saved',
+                          text: context.tr(TranslationKeys.savedGuidesSaved),
                         ),
                         Tab(
                           icon: Icon(Icons.history, size: 20),
-                          text: 'Recent',
+                          text: context.tr(TranslationKeys.savedGuidesRecent),
                         ),
                       ],
                     ),
@@ -324,7 +326,7 @@ class _SavedScreenContent extends StatelessWidget {
               ),
               const SizedBox(height: 16),
               Text(
-                'Error Loading Guides',
+                context.tr(TranslationKeys.savedGuidesErrorTitle),
                 style: GoogleFonts.inter(
                   fontSize: 20,
                   fontWeight: FontWeight.w600,
@@ -353,7 +355,7 @@ class _SavedScreenContent extends StatelessWidget {
                   foregroundColor: Colors.white,
                 ),
                 icon: const Icon(Icons.refresh),
-                label: const Text('Try Again'),
+                label: Text(context.tr(TranslationKeys.savedGuidesRetry)),
               ),
             ],
           ),
@@ -375,7 +377,7 @@ class _SavedScreenContent extends StatelessWidget {
               ),
               const SizedBox(height: 16),
               Text(
-                'Sign In Required',
+                context.tr(TranslationKeys.savedGuidesAuthRequired),
                 style: GoogleFonts.inter(
                   fontSize: 20,
                   fontWeight: FontWeight.w600,
@@ -407,7 +409,7 @@ class _SavedScreenContent extends StatelessWidget {
                   ),
                 ),
                 child: Text(
-                  'Sign In',
+                  context.tr(TranslationKeys.recentGuidesSignIn),
                   style: GoogleFonts.inter(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
@@ -421,10 +423,10 @@ class _SavedScreenContent extends StatelessWidget {
 
   Widget _buildSavedTab(BuildContext context, SavedGuidesApiLoaded state) {
     if (state.savedGuides.isEmpty && !state.isLoadingSaved) {
-      return const EmptyStateWidget(
+      return EmptyStateWidget(
         icon: Icons.bookmark_border,
-        title: 'No Saved Guides',
-        subtitle: 'Save your favorite study guides to access them here',
+        title: context.tr(TranslationKeys.savedGuidesEmptyTitle),
+        subtitle: context.tr(TranslationKeys.savedGuidesEmptyMessage),
       );
     }
 
@@ -466,10 +468,10 @@ class _SavedScreenContent extends StatelessWidget {
 
   Widget _buildRecentTab(BuildContext context, SavedGuidesApiLoaded state) {
     if (state.recentGuides.isEmpty && !state.isLoadingRecent) {
-      return const EmptyStateWidget(
+      return EmptyStateWidget(
         icon: Icons.history,
-        title: 'No Recent Guides',
-        subtitle: 'Your recently viewed study guides will appear here',
+        title: context.tr(TranslationKeys.savedGuidesRecentEmptyTitle),
+        subtitle: context.tr(TranslationKeys.savedGuidesRecentEmptyMessage),
       );
     }
 
