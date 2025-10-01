@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../domain/entities/token_status.dart';
 import '../extensions/duration_extensions.dart';
+import '../../../../core/extensions/translation_extension.dart';
 
 /// Widget that displays current token balance with visual indicators.
 class TokenBalanceWidget extends StatelessWidget {
@@ -89,7 +90,7 @@ class _Header extends StatelessWidget {
         ),
         const SizedBox(width: 8),
         Text(
-          'Tokens',
+          context.tr('tokens.balance.title'),
           style: textTheme.titleMedium?.copyWith(
             fontWeight: FontWeight.w600,
           ),
@@ -99,7 +100,7 @@ class _Header extends StatelessWidget {
           IconButton(
             onPressed: onRefresh,
             icon: const Icon(Icons.refresh),
-            tooltip: 'Refresh token balance',
+            tooltip: context.tr('tokens.balance.refresh'),
             visualDensity: VisualDensity.compact,
           ),
       ],
@@ -133,7 +134,7 @@ class _TokenDisplay extends StatelessWidget {
               ),
             ),
             Text(
-              _getStatusText(tokenStatus),
+              _getStatusText(tokenStatus, context),
               style: textTheme.bodySmall?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
               ),
@@ -248,12 +249,12 @@ class _Details extends StatelessWidget {
           Row(
             children: [
               Text(
-                'Daily: ${tokenStatus.availableTokens}',
+                '${context.tr('tokens.balance.daily')}: ${tokenStatus.availableTokens}',
                 style: textTheme.bodySmall,
               ),
               const Spacer(),
               Text(
-                'Limit: ${tokenStatus.dailyLimit}',
+                '${context.tr('tokens.balance.limit')}: ${tokenStatus.dailyLimit}',
                 style: textTheme.bodySmall,
               ),
             ],
@@ -263,7 +264,7 @@ class _Details extends StatelessWidget {
             Row(
               children: [
                 Text(
-                  'Purchased: ${tokenStatus.purchasedTokens}',
+                  '${context.tr('tokens.balance.purchased')}: ${tokenStatus.purchasedTokens}',
                   style: textTheme.bodySmall?.copyWith(
                     color: Colors.purple[600],
                     fontWeight: FontWeight.w500,
@@ -276,12 +277,12 @@ class _Details extends StatelessWidget {
           Row(
             children: [
               Text(
-                'Used today: ${tokenStatus.totalConsumedToday}',
+                '${context.tr('tokens.balance.used_today')}: ${tokenStatus.totalConsumedToday}',
                 style: textTheme.bodySmall,
               ),
               const Spacer(),
               Text(
-                'Resets: ${tokenStatus.timeUntilReset.toShortLabel()}',
+                '${context.tr('tokens.balance.resets')}: ${tokenStatus.timeUntilReset.toShortLabel()}',
                 style: textTheme.bodySmall?.copyWith(
                   color: Theme.of(context).colorScheme.primary,
                 ),
@@ -298,7 +299,7 @@ class _Details extends StatelessWidget {
               ),
               const SizedBox(width: 4),
               Text(
-                'Unlimited tokens',
+                context.tr('tokens.balance.unlimited_tokens'),
                 style: textTheme.bodySmall?.copyWith(
                   color: Colors.amber[700],
                   fontWeight: FontWeight.w600,
@@ -331,9 +332,9 @@ Color _getStatusColor(TokenStatus tokenStatus) {
   }
 }
 
-String _getStatusText(TokenStatus tokenStatus) {
+String _getStatusText(TokenStatus tokenStatus, BuildContext context) {
   if (tokenStatus.isPremium) {
-    return 'Unlimited access';
+    return context.tr('tokens.balance.unlimited');
   }
 
   final percentage = tokenStatus.dailyLimit > 0
@@ -341,11 +342,11 @@ String _getStatusText(TokenStatus tokenStatus) {
       : 0.0;
 
   if (percentage < 0.25) {
-    return 'Running low';
+    return context.tr('tokens.balance.running_low');
   } else if (percentage < 0.5) {
-    return 'Getting low';
+    return context.tr('tokens.balance.getting_low');
   } else {
-    return 'Available';
+    return context.tr('tokens.balance.available');
   }
 }
 

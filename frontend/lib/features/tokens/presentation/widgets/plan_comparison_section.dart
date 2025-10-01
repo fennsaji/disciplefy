@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../domain/entities/token_status.dart';
+import '../../../../core/extensions/translation_extension.dart';
 
 /// Widget that displays a comparison of all available plans
 class PlanComparisonSection extends StatelessWidget {
@@ -22,7 +23,7 @@ class PlanComparisonSection extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Plan Comparison',
+              context.tr('tokens.plans.comparison'),
               style: GoogleFonts.inter(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
@@ -32,25 +33,25 @@ class PlanComparisonSection extends StatelessWidget {
             const SizedBox(height: 16),
             PlanCard(
               plan: UserPlan.free,
-              title: 'Free Plan',
-              subtitle: '20 daily tokens',
-              description: 'Perfect for casual Bible study',
+              title: context.tr('tokens.plans.free'),
+              subtitle: context.tr('tokens.plans.free_subtitle'),
+              description: context.tr('tokens.plans.free_desc'),
               isCurrentPlan: tokenStatus.userPlan == UserPlan.free,
             ),
             const SizedBox(height: 12),
             PlanCard(
               plan: UserPlan.standard,
-              title: 'Standard Plan',
-              subtitle: '100 daily tokens + purchase more',
-              description: 'Great for regular study and group leaders',
+              title: context.tr('tokens.plans.standard'),
+              subtitle: context.tr('tokens.plans.standard_subtitle'),
+              description: context.tr('tokens.plans.standard_desc'),
               isCurrentPlan: tokenStatus.userPlan == UserPlan.standard,
             ),
             const SizedBox(height: 12),
             PlanCard(
               plan: UserPlan.premium,
-              title: 'Premium Plan',
-              subtitle: 'Unlimited tokens',
-              description: 'Best for pastors and heavy users',
+              title: context.tr('tokens.plans.premium'),
+              subtitle: context.tr('tokens.plans.premium_subtitle'),
+              description: context.tr('tokens.plans.premium_desc'),
               isCurrentPlan: tokenStatus.userPlan == UserPlan.premium,
             ),
           ],
@@ -125,7 +126,7 @@ class PlanCard extends StatelessWidget {
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Text(
-                          'Current',
+                          context.tr('tokens.plans.current'),
                           style: GoogleFonts.inter(
                             fontSize: 10,
                             fontWeight: FontWeight.w600,

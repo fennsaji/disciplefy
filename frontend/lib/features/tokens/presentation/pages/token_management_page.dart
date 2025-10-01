@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/router/app_routes.dart';
+import '../../../../core/extensions/translation_extension.dart';
 import 'package:razorpay_flutter/razorpay_flutter.dart';
 
 import '../../../../core/theme/app_theme.dart';
@@ -280,7 +281,7 @@ class _TokenManagementPageState extends State<TokenManagementPage> {
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         elevation: 0,
         title: Text(
-          'Token Management',
+          context.tr('tokens.management.title'),
           style: GoogleFonts.playfairDisplay(
             fontSize: 20,
             fontWeight: FontWeight.w600,
@@ -310,7 +311,7 @@ class _TokenManagementPageState extends State<TokenManagementPage> {
               Icons.history,
               color: Theme.of(context).colorScheme.primary,
             ),
-            tooltip: 'View purchase history',
+            tooltip: context.tr('tokens.management.view_history'),
           ),
           IconButton(
             onPressed: () {
@@ -320,7 +321,7 @@ class _TokenManagementPageState extends State<TokenManagementPage> {
               Icons.refresh,
               color: Theme.of(context).colorScheme.primary,
             ),
-            tooltip: 'Refresh token status',
+            tooltip: context.tr('tokens.management.refresh_status'),
           ),
         ],
       ),
@@ -356,7 +357,7 @@ class _TokenManagementPageState extends State<TokenManagementPage> {
                   ),
                   const SizedBox(height: 16),
                   Text(
-                    'Failed to load token information',
+                    context.tr('tokens.management.load_error'),
                     style: GoogleFonts.inter(
                       fontSize: 18,
                       fontWeight: FontWeight.w600,
@@ -380,7 +381,7 @@ class _TokenManagementPageState extends State<TokenManagementPage> {
                     onPressed: () {
                       context.read<TokenBloc>().add(const RefreshTokenStatus());
                     },
-                    child: const Text('Retry'),
+                    child: Text(context.tr('common.retry')),
                   ),
                 ],
               ),
@@ -390,13 +391,13 @@ class _TokenManagementPageState extends State<TokenManagementPage> {
           }
 
           // Handle any other unexpected states
-          return const Center(
+          return Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                CircularProgressIndicator(),
-                SizedBox(height: 16),
-                Text('Loading token information...'),
+                const CircularProgressIndicator(),
+                const SizedBox(height: 16),
+                Text(context.tr('tokens.management.loading')),
               ],
             ),
           );

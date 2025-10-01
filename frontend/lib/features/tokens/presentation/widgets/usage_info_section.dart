@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 
 import '../../domain/entities/token_status.dart';
 import '../extensions/duration_extensions.dart';
+import '../../../../core/extensions/translation_extension.dart';
 
 /// Widget that displays detailed usage information for user's tokens
 class UsageInfoSection extends StatelessWidget {
@@ -23,7 +24,7 @@ class UsageInfoSection extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Usage Information',
+              context.tr('tokens.stats.usage_info'),
               style: GoogleFonts.inter(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
@@ -32,17 +33,17 @@ class UsageInfoSection extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             if (!tokenStatus.isPremium) ...[
-              _buildInfoRow(
-                  context, 'Daily Limit', '${tokenStatus.dailyLimit} tokens'),
-              _buildInfoRow(context, 'Daily Available',
+              _buildInfoRow(context, context.tr('tokens.stats.daily_limit'),
+                  '${tokenStatus.dailyLimit} tokens'),
+              _buildInfoRow(context, context.tr('tokens.stats.daily_available'),
                   '${tokenStatus.availableTokens} tokens'),
-              _buildInfoRow(context, 'Purchased Tokens',
+              _buildInfoRow(context, context.tr('tokens.stats.purchased'),
                   '${tokenStatus.purchasedTokens} tokens'),
-              _buildInfoRow(context, 'Total Available',
+              _buildInfoRow(context, context.tr('tokens.stats.total_available'),
                   '${tokenStatus.totalTokens} tokens'),
-              _buildInfoRow(context, 'Used Today',
+              _buildInfoRow(context, context.tr('tokens.stats.used_today'),
                   '${tokenStatus.totalConsumedToday} tokens'),
-              _buildInfoRow(context, 'Next Reset',
+              _buildInfoRow(context, context.tr('tokens.stats.next_reset'),
                   tokenStatus.timeUntilReset.toShortLabel()),
             ] else ...[
               Row(
@@ -54,7 +55,7 @@ class UsageInfoSection extends StatelessWidget {
                   ),
                   const SizedBox(width: 8),
                   Text(
-                    'Unlimited tokens available',
+                    context.tr('tokens.stats.unlimited_available'),
                     style: GoogleFonts.inter(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
@@ -65,7 +66,7 @@ class UsageInfoSection extends StatelessWidget {
               ),
               const SizedBox(height: 8),
               Text(
-                'Generate as many study guides as you want!',
+                context.tr('tokens.stats.unlimited_description'),
                 style: GoogleFonts.inter(
                   fontSize: 14,
                   color:

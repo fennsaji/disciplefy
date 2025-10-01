@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../domain/entities/token_status.dart';
+import '../../../../core/extensions/translation_extension.dart';
 
 /// Widget that displays action buttons for token-related operations
 class TokenActionsSection extends StatelessWidget {
@@ -28,7 +29,7 @@ class TokenActionsSection extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Actions',
+              context.tr('tokens.management.actions'),
               style: GoogleFonts.inter(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
@@ -42,7 +43,7 @@ class TokenActionsSection extends StatelessWidget {
                 child: ElevatedButton.icon(
                   onPressed: onPurchase,
                   icon: const Icon(Icons.add_shopping_cart),
-                  label: const Text('Purchase Tokens'),
+                  label: Text(context.tr('tokens.purchase.title')),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Theme.of(context).colorScheme.primary,
                     foregroundColor: Colors.white,
@@ -58,7 +59,7 @@ class TokenActionsSection extends StatelessWidget {
                 child: ElevatedButton.icon(
                   onPressed: onUpgrade,
                   icon: const Icon(Icons.upgrade),
-                  label: const Text('Upgrade to Standard'),
+                  label: Text(context.tr('tokens.plans.upgrade_to_standard')),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.blue[600],
                     foregroundColor: Colors.white,
@@ -72,7 +73,7 @@ class TokenActionsSection extends StatelessWidget {
                 child: ElevatedButton.icon(
                   onPressed: onUpgrade,
                   icon: const Icon(Icons.star),
-                  label: const Text('Upgrade to Premium'),
+                  label: Text(context.tr('tokens.plans.upgrade_to_premium')),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.amber[700],
                     foregroundColor: Colors.white,
@@ -89,7 +90,7 @@ class TokenActionsSection extends StatelessWidget {
                 child: OutlinedButton.icon(
                   onPressed: onViewHistory,
                   icon: const Icon(Icons.history),
-                  label: const Text('View Purchase History'),
+                  label: Text(context.tr('tokens.management.view_history')),
                   style: OutlinedButton.styleFrom(
                     minimumSize: const Size(double.infinity, 48),
                     side: BorderSide(

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/extensions/translation_extension.dart';
 import '../../domain/entities/purchase_history.dart';
 import '../../domain/entities/purchase_statistics.dart';
 
@@ -46,7 +47,7 @@ class PurchaseStatisticsCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Purchase Summary',
+                        context.tr('tokens.stats.purchase_summary'),
                         style: theme.textTheme.titleLarge?.copyWith(
                           fontWeight: FontWeight.bold,
                           color: theme.colorScheme.onSurface,
@@ -54,7 +55,7 @@ class PurchaseStatisticsCard extends StatelessWidget {
                       ),
                       if (statistics.firstPurchaseDate != null)
                         Text(
-                          'Since ${dateFormatter.format(statistics.firstPurchaseDate!)}',
+                          '${context.tr('tokens.stats.since')} ${dateFormatter.format(statistics.firstPurchaseDate!)}',
                           style: theme.textTheme.bodySmall?.copyWith(
                             color: theme.colorScheme.onSurface.withOpacity(0.6),
                           ),
@@ -72,8 +73,9 @@ class PurchaseStatisticsCard extends StatelessWidget {
               children: [
                 Expanded(
                   child: _StatisticItem(
+                    context: context,
                     icon: Icons.shopping_cart,
-                    label: 'Total Purchases',
+                    label: context.tr('tokens.stats.total_purchases'),
                     value: statistics.totalPurchases.toString(),
                     color: Colors.blue,
                   ),
@@ -81,8 +83,9 @@ class PurchaseStatisticsCard extends StatelessWidget {
                 const SizedBox(width: 16),
                 Expanded(
                   child: _StatisticItem(
+                    context: context,
                     icon: Icons.token,
-                    label: 'Total Tokens',
+                    label: context.tr('tokens.stats.total_tokens'),
                     value: statistics.totalTokens.toString(),
                     color: theme.colorScheme.primary,
                   ),
@@ -96,8 +99,9 @@ class PurchaseStatisticsCard extends StatelessWidget {
               children: [
                 Expanded(
                   child: _StatisticItem(
+                    context: context,
                     icon: Icons.currency_rupee,
-                    label: 'Total Spent',
+                    label: context.tr('tokens.stats.total_spent'),
                     value: '₹${statistics.totalSpent.toStringAsFixed(2)}',
                     color: Colors.green,
                   ),
@@ -105,8 +109,9 @@ class PurchaseStatisticsCard extends StatelessWidget {
                 const SizedBox(width: 16),
                 Expanded(
                   child: _StatisticItem(
+                    context: context,
                     icon: Icons.calculate,
-                    label: 'Avg per Token',
+                    label: context.tr('tokens.stats.avg_per_token'),
                     value: statistics.totalTokens > 0
                         ? '₹${(statistics.totalSpent / statistics.totalTokens).toStringAsFixed(3)}'
                         : '₹0.000',
@@ -136,7 +141,7 @@ class PurchaseStatisticsCard extends StatelessWidget {
                     ),
                     const SizedBox(width: 8),
                     Text(
-                      'Last purchase: ${dateFormatter.format(statistics.lastPurchaseDate!)}',
+                      '${context.tr('tokens.stats.last_purchase')}: ${dateFormatter.format(statistics.lastPurchaseDate!)}',
                       style: theme.textTheme.bodySmall?.copyWith(
                         color: theme.colorScheme.onSurface.withOpacity(0.6),
                         fontWeight: FontWeight.w500,
@@ -154,12 +159,14 @@ class PurchaseStatisticsCard extends StatelessWidget {
 }
 
 class _StatisticItem extends StatelessWidget {
+  final BuildContext context;
   final IconData icon;
   final String label;
   final String value;
   final Color color;
 
   const _StatisticItem({
+    required this.context,
     required this.icon,
     required this.label,
     required this.value,
