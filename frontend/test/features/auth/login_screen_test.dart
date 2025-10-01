@@ -11,27 +11,52 @@ import 'package:disciplefy_bible_study/features/auth/presentation/bloc/auth_even
 import 'package:disciplefy_bible_study/features/auth/presentation/bloc/auth_state.dart'
     as auth_states;
 import 'package:disciplefy_bible_study/core/theme/app_theme.dart';
+import 'package:disciplefy_bible_study/core/di/injection_container.dart';
+import 'package:disciplefy_bible_study/core/i18n/translation_service.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'login_screen_test.mocks.dart';
+import '../../../test/helpers/mock_translation_provider.dart';
 
-@GenerateMocks([GoRouter, AuthBloc, User])
+@GenerateMocks([GoRouter, AuthBloc, User, TranslationService])
 void main() {
   late MockAuthBloc mockAuthBloc;
+  late MockTranslationService mockTranslationService;
+
+  setUpAll(() {
+    // Register mock translation service
+    mockTranslationService = MockTranslationService();
+    sl.registerLazySingleton<TranslationService>(() => mockTranslationService);
+  });
 
   setUp(() {
     mockAuthBloc = MockAuthBloc();
+
+    // Setup mock translation responses
+    when(mockTranslationService.getTranslation(any, any)).thenAnswer(
+      (invocation) {
+        final key = invocation.positionalArguments[0] as String;
+        // Return the key as the translation for simplicity in tests
+        return _getMockTranslation(key);
+      },
+    );
   });
 
-  Widget createTestWidget() => MaterialApp(
-        theme: ThemeData(
-          primarySwatch: Colors.blue,
-          colorScheme: ColorScheme.fromSeed(seedColor: AppTheme.primaryColor),
-        ),
-        home: Scaffold(
-          body: BlocProvider<AuthBloc>(
-            create: (context) => mockAuthBloc,
-            child: const LoginScreen(),
+  tearDownAll(() {
+    sl.reset();
+  });
+
+  Widget createTestWidget() => MockTranslationProvider(
+        child: MaterialApp(
+          theme: ThemeData(
+            primarySwatch: Colors.blue,
+            colorScheme: ColorScheme.fromSeed(seedColor: AppTheme.primaryColor),
+          ),
+          home: Scaffold(
+            body: BlocProvider<AuthBloc>(
+              create: (context) => mockAuthBloc,
+              child: const LoginScreen(),
+            ),
           ),
         ),
       );
@@ -47,6 +72,8 @@ void main() {
 
       // Act
       await tester.pumpWidget(createTestWidget());
+      await tester
+          .pump(); // Use pump() instead of pumpAndSettle() to avoid timeout with loading indicator
 
       // Assert
       expect(find.text('Welcome to Disciplefy'), findsOneWidget);
@@ -65,6 +92,8 @@ void main() {
 
       // Act
       await tester.pumpWidget(createTestWidget());
+      await tester
+          .pump(); // Use pump() instead of pumpAndSettle() to avoid timeout with loading indicator
 
       // Assert
       expect(find.byType(CircularProgressIndicator), findsOneWidget);
@@ -94,6 +123,7 @@ void main() {
 
       // Act
       await tester.pumpWidget(createTestWidget());
+      await tester.pumpAndSettle();
       await tester.tap(find.text('Continue with Google'));
       await tester.pump();
 
@@ -135,6 +165,7 @@ void main() {
 
       // Act
       await tester.pumpWidget(createTestWidget());
+      await tester.pumpAndSettle(); // Wait for localization
       await tester.pump(); // Trigger the stream emission
 
       // Assert
@@ -155,6 +186,7 @@ void main() {
 
       // Act
       await tester.pumpWidget(createTestWidget());
+      await tester.pumpAndSettle(); // Wait for localization
       await tester.pump(); // Trigger the stream emission
 
       // Assert
@@ -221,6 +253,7 @@ void main() {
 
       // Act
       await tester.pumpWidget(createTestWidget());
+      await tester.pumpAndSettle();
 
       // Assert
       expect(find.byType(Container), findsWidgets);
@@ -243,6 +276,7 @@ void main() {
 
       // Act
       await tester.pumpWidget(createTestWidget());
+      await tester.pumpAndSettle();
 
       // Assert
       expect(
@@ -261,6 +295,7 @@ void main() {
 
       // Act
       await tester.pumpWidget(createTestWidget());
+      await tester.pumpAndSettle();
 
       // Assert
       expect(find.byIcon(Icons.auto_stories), findsOneWidget);
@@ -281,6 +316,7 @@ void main() {
 
       // Act
       await tester.pumpWidget(createTestWidget());
+      await tester.pumpAndSettle();
       await tester.pump();
 
       // Assert
@@ -302,6 +338,7 @@ void main() {
 
       // Act
       await tester.pumpWidget(createTestWidget());
+      await tester.pumpAndSettle();
       await tester.pump();
 
       // Assert
@@ -322,6 +359,7 @@ void main() {
 
       // Act
       await tester.pumpWidget(createTestWidget());
+      await tester.pumpAndSettle();
       await tester.pump();
 
       // Assert
@@ -329,4 +367,29 @@ void main() {
       expect(find.byType(SnackBar), findsOneWidget);
     });
   });
+}
+
+/// Mock translation helper that returns English text for translation keys
+String _getMockTranslation(String key) {
+  // Map of translation keys to their English values
+  const translations = {
+    'login.welcome': 'Welcome to Disciplefy',
+    'login.subtitle': 'Deepen your faith through guided Bible study',
+    'login.continue_with_google': 'Continue with Google',
+    'login.continue_as_guest': 'Continue as Guest',
+    'login.privacy_policy':
+        'By continuing, you agree to our Terms of Service and Privacy Policy',
+    'login.features.title': 'What you\'ll get:',
+    'login.features.ai_study_guides': 'AI-Powered Study Guides',
+    'login.features.ai_study_guides_subtitle':
+        'Get personalized Bible study insights',
+    'login.features.structured_learning': 'Structured Learning',
+    'login.features.structured_learning_subtitle':
+        'Follow proven study methodologies',
+    'login.features.multi_language': 'Multi-Language Support',
+    'login.features.multi_language_subtitle':
+        'Study in your preferred language',
+  };
+
+  return translations[key] ?? key;
 }
