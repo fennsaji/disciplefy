@@ -267,6 +267,11 @@ export class LLMService {
     const mockVerses = [
       {
         reference: "John 3:16",
+        referenceTranslations: {
+          en: "John 3:16",
+          hi: "यूहन्ना 3:16",
+          ml: "യോഹന്നാൻ 3:16"
+        },
         translations: {
           esv: "For God so loved the world, that he gave his only Son, that whoever believes in him should not perish but have eternal life.",
           hindi: "क्योंकि परमेश्वर ने जगत से ऐसा प्रेम रखा कि उसने अपना एकलौता पुत्र दे दिया, ताकि जो कोई उस पर विश्वास करे वह नष्ट न हो, परन्तु अनन्त जीवन पाए।",
@@ -275,6 +280,11 @@ export class LLMService {
       },
       {
         reference: "Philippians 4:13",
+        referenceTranslations: {
+          en: "Philippians 4:13",
+          hi: "फिलिप्पियों 4:13",
+          ml: "ഫിലിപ്പിയർ 4:13"
+        },
         translations: {
           esv: "I can do all things through him who strengthens me.",
           hindi: "मैं उसके द्वारा जो मुझे सामर्थ्य देता है, सब कुछ कर सकता हूँ।",
@@ -283,6 +293,11 @@ export class LLMService {
       },
       {
         reference: "Psalm 23:1",
+        referenceTranslations: {
+          en: "Psalm 23:1",
+          hi: "भजन संहिता 23:1",
+          ml: "സങ്കീർത്തനം 23:1"
+        },
         translations: {
           esv: "The Lord is my shepherd; I shall not want.",
           hindi: "यहोवा मेरा चरवाहा है; मुझे कमी न होगी।",
@@ -1278,12 +1293,18 @@ export class LLMService {
       Requirements:
       - Choose a verse that offers comfort, strength, hope, faith, peace, or guidance
       - Provide accurate translations in all three languages
+      - Provide the Bible book name and reference in all three languages
       - Focus on well-known, inspiring verses
       - Ensure theological accuracy
 
       Return in this EXACT JSON format (no other text):
       {
-        "reference": "Book Chapter:Verse",
+        "reference": "Book Chapter:Verse (in English)",
+        "referenceTranslations": {
+          "en": "English book name and reference (e.g., Philippians 4:13)",
+          "hi": "Hindi book name and reference in Devanagari (e.g., फिलिप्पियों 4:13)",
+          "ml": "Malayalam book name and reference in Malayalam script (e.g., ഫിലിപ്പിയർ 4:13)"
+        },
         "translations": {
           "esv": "English verse text (ESV translation)",
           "hindi": "Hindi translation in Devanagari script (Hindi OV - Re-edited Bible Society of India)",
@@ -1421,6 +1442,24 @@ export class LLMService {
         throw new Error('Missing or invalid reference field')
       }
       
+      if (!parsed.referenceTranslations || typeof parsed.referenceTranslations !== 'object') {
+        throw new Error('Missing or invalid referenceTranslations field')
+      }
+      
+      const { en, hi, ml } = parsed.referenceTranslations
+      
+      if (!en || typeof en !== 'string') {
+        throw new Error('Missing or invalid English reference translation')
+      }
+      
+      if (!hi || typeof hi !== 'string') {
+        throw new Error('Missing or invalid Hindi reference translation')
+      }
+      
+      if (!ml || typeof ml !== 'string') {
+        throw new Error('Missing or invalid Malayalam reference translation')
+      }
+      
       if (!parsed.translations || typeof parsed.translations !== 'object') {
         throw new Error('Missing or invalid translations field')
       }
@@ -1442,6 +1481,11 @@ export class LLMService {
       // Sanitize and return
       return {
         reference: this.sanitizeText(parsed.reference),
+        referenceTranslations: {
+          en: this.sanitizeText(en),
+          hi: this.sanitizeText(hi),
+          ml: this.sanitizeText(ml)
+        },
         translations: {
           esv: this.sanitizeText(esv),
           hindi: this.sanitizeText(hindi),

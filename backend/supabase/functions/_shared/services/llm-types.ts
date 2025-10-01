@@ -48,6 +48,11 @@ export interface LLMResponse {
  */
 export interface DailyVerseResponse {
   readonly reference: string
+  readonly referenceTranslations: {
+    readonly en: string
+    readonly hi: string
+    readonly ml: string
+  }
   readonly translations: {
     readonly esv: string
     readonly hindi: string

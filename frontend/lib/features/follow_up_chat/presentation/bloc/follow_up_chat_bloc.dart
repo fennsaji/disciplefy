@@ -51,16 +51,10 @@ class FollowUpChatBloc extends Bloc<FollowUpChatEvent, FollowUpChatState> {
     StartConversationEvent event,
     Emitter<FollowUpChatState> emit,
   ) async {
-    print(
-        '[FollowUpChat] 🚀 Starting conversation for study guide: ${event.studyGuideId}');
-    print('[FollowUpChat] 📝 Study guide title: ${event.studyGuideTitle}');
-
     emit(const FollowUpChatLoading());
-    print('[FollowUpChat] ⏳ Emitted FollowUpChatLoading state');
 
     try {
       // Try to load existing conversation history
-      print('[FollowUpChat] 🔍 Loading existing conversation history...');
       final conversationHistory = await _conversationService
           .loadConversationHistory(event.studyGuideId);
 
@@ -71,14 +65,10 @@ class FollowUpChatBloc extends Bloc<FollowUpChatEvent, FollowUpChatState> {
         // No existing conversation - create new one
         conversationId = _uuid.v4();
         messages = [];
-        print(
-            '[FollowUpChat] 🆕 No existing conversation found, created new ID: $conversationId');
       } else {
         // Load existing conversation
         conversationId = conversationHistory.conversationId;
         messages = conversationHistory.messages;
-        print(
-            '[FollowUpChat] 📥 Loaded existing conversation: $conversationId with ${messages.length} messages');
       }
 
       final loadedState = FollowUpChatLoaded(
@@ -89,11 +79,7 @@ class FollowUpChatBloc extends Bloc<FollowUpChatEvent, FollowUpChatState> {
       );
 
       emit(loadedState);
-      print('[FollowUpChat] ✅ Emitted FollowUpChatLoaded state successfully');
-      print(
-          '[FollowUpChat] 📊 Loaded state details: studyGuideId=${loadedState.studyGuideId}, conversationId=${loadedState.conversationId}, messageCount=${messages.length}');
     } catch (e) {
-      print('[FollowUpChat] ❌ Error starting conversation: ${e.toString()}');
       emit(FollowUpChatError('Failed to start conversation: ${e.toString()}'));
     }
   }
@@ -103,14 +89,11 @@ class FollowUpChatBloc extends Bloc<FollowUpChatEvent, FollowUpChatState> {
     SendQuestionEvent event,
     Emitter<FollowUpChatState> emit,
   ) async {
-    print('[FollowUpChat] 🚀 Sending question: ${event.question}');
     final currentState = state;
     if (currentState is! FollowUpChatLoaded) {
-      print('[FollowUpChat] ❌ No active conversation');
       emit(const FollowUpChatError('No active conversation'));
       return;
     }
-    print('[FollowUpChat] ✅ Current state is loaded, proceeding...');
 
     // Add user message immediately
     final userMessage = ChatMessage(
@@ -241,29 +224,22 @@ class FollowUpChatBloc extends Bloc<FollowUpChatEvent, FollowUpChatState> {
       // Add authentication parameters to query (since EventSource can't send headers)
       if (authToken != null) {
         queryParams['authorization'] = authToken;
-        print('[FollowUpChat] 🔐 Added auth token to query parameters');
       }
 
       if (apiKey != null) {
         queryParams['apikey'] = apiKey;
-        print('[FollowUpChat] 🔑 Added API key to query parameters');
       }
 
       if (sessionId != null) {
         queryParams['x-session-id'] = sessionId;
-        print('[FollowUpChat] 🆔 Added session ID to query parameters');
       }
 
-      if (authToken == null && apiKey == null) {
-        print('[FollowUpChat] ⚠️ No authentication found - request may fail');
-      }
+      if (authToken == null && apiKey == null) {}
 
       // Create URI with query parameters
       final uri = Uri.parse('$baseUrl/functions/v1/study-followup').replace(
         queryParameters: queryParams,
       );
-
-      print('[FollowUpChat] 🌐 EventSource URL: ${uri.toString()}');
 
       // Create EventSource connection with fetch-event-source bridge
       final stream = EventSourceBridge.connect(

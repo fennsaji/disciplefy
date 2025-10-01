@@ -3,6 +3,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 
 import '../../../../core/constants/app_constants.dart';
+import '../../../../core/extensions/translation_extension.dart';
+import '../../../../core/i18n/translation_keys.dart';
 import '../bloc/follow_up_chat_state.dart';
 
 /// A chat bubble widget for displaying messages in the follow-up chat
@@ -103,7 +105,7 @@ class ChatBubble extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildMessageContent(theme, isUser),
+          _buildMessageContent(context, theme, isUser),
           _buildMessageFooter(context, theme, isUser),
         ],
       ),
@@ -111,7 +113,8 @@ class ChatBubble extends StatelessWidget {
   }
 
   /// Builds the message content
-  Widget _buildMessageContent(ThemeData theme, bool isUser) {
+  Widget _buildMessageContent(
+      BuildContext context, ThemeData theme, bool isUser) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(
         AppConstants.DEFAULT_PADDING,
@@ -125,7 +128,7 @@ class ChatBubble extends StatelessWidget {
           _buildMessageText(theme, isUser),
           if (_shouldShowStatusIndicator()) ...[
             const SizedBox(height: AppConstants.EXTRA_SMALL_PADDING),
-            _buildStatusIndicator(theme),
+            _buildStatusIndicator(context, theme),
           ],
         ],
       ),
@@ -300,7 +303,7 @@ class ChatBubble extends StatelessWidget {
   }
 
   /// Builds the status indicator for streaming/failed messages
-  Widget _buildStatusIndicator(ThemeData theme) {
+  Widget _buildStatusIndicator(BuildContext context, ThemeData theme) {
     switch (message.status) {
       case ChatMessageStatus.streaming:
         return Row(
@@ -318,7 +321,7 @@ class ChatBubble extends StatelessWidget {
             ),
             const SizedBox(width: AppConstants.EXTRA_SMALL_PADDING),
             Text(
-              'Responding...',
+              context.tr(TranslationKeys.followUpChatResponding),
               style: theme.textTheme.bodySmall?.copyWith(
                 color: theme.colorScheme.onSurface.withOpacity(0.6),
                 fontStyle: FontStyle.italic,
@@ -337,7 +340,7 @@ class ChatBubble extends StatelessWidget {
             ),
             const SizedBox(width: AppConstants.EXTRA_SMALL_PADDING),
             Text(
-              'Failed to send',
+              context.tr(TranslationKeys.followUpChatFailedToSend),
               style: theme.textTheme.bodySmall?.copyWith(
                 color: theme.colorScheme.error,
               ),
@@ -360,7 +363,7 @@ class ChatBubble extends StatelessWidget {
             ),
             const SizedBox(width: AppConstants.EXTRA_SMALL_PADDING),
             Text(
-              'Sending...',
+              context.tr(TranslationKeys.followUpChatSending),
               style: theme.textTheme.bodySmall?.copyWith(
                 color: theme.colorScheme.onSurface.withOpacity(0.6),
                 fontStyle: FontStyle.italic,
@@ -395,44 +398,49 @@ class ChatBubble extends StatelessWidget {
 
   /// Builds the timestamp
   Widget _buildTimestamp(ThemeData theme) {
-    final timeString = _formatTime(message.timestamp);
+    return Builder(
+      builder: (context) {
+        final timeString = _formatTimeWithContext(context, message.timestamp);
 
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Text(
-          timeString,
-          style: theme.textTheme.bodySmall?.copyWith(
-            color: theme.colorScheme.onSurface.withOpacity(0.6),
-            fontSize: AppConstants.FONT_SIZE_14,
-          ),
-        ),
-        if (message.tokensConsumed != null && message.tokensConsumed! > 0) ...[
-          const SizedBox(width: AppConstants.EXTRA_SMALL_PADDING),
-          Container(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppConstants.EXTRA_SMALL_PADDING,
-              vertical: 1,
-            ),
-            decoration: BoxDecoration(
-              color: theme.colorScheme.primary.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(
-                color: theme.colorScheme.primary.withOpacity(0.3),
-                width: 0.5,
-              ),
-            ),
-            child: Text(
-              '${message.tokensConsumed} tokens',
+        return Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              timeString,
               style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.colorScheme.primary,
+                color: theme.colorScheme.onSurface.withOpacity(0.6),
                 fontSize: AppConstants.FONT_SIZE_14,
-                fontWeight: FontWeight.w500,
               ),
             ),
-          ),
-        ],
-      ],
+            if (message.tokensConsumed != null &&
+                message.tokensConsumed! > 0) ...[
+              const SizedBox(width: AppConstants.EXTRA_SMALL_PADDING),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppConstants.EXTRA_SMALL_PADDING,
+                  vertical: 1,
+                ),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.primary.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: theme.colorScheme.primary.withOpacity(0.3),
+                    width: 0.5,
+                  ),
+                ),
+                child: Text(
+                  '${message.tokensConsumed} ${context.tr(TranslationKeys.followUpChatTokens)}',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.primary,
+                    fontSize: AppConstants.FONT_SIZE_14,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+            ],
+          ],
+        );
+      },
     );
   }
 
@@ -531,14 +539,26 @@ class ChatBubble extends StatelessWidget {
     final now = DateTime.now();
     final difference = now.difference(timestamp);
 
+    // Need BuildContext for translation, this is handled in the build method
+    return '';
+  }
+
+  /// Formats the timestamp with translation support
+  String _formatTimeWithContext(BuildContext context, DateTime timestamp) {
+    final now = DateTime.now();
+    final difference = now.difference(timestamp);
+
     if (difference.inDays > 0) {
-      return '${difference.inDays}d ago';
+      return context.tr(TranslationKeys.followUpChatDaysAgo,
+          {'count': difference.inDays.toString()});
     } else if (difference.inHours > 0) {
-      return '${difference.inHours}h ago';
+      return context.tr(TranslationKeys.followUpChatHoursAgo,
+          {'count': difference.inHours.toString()});
     } else if (difference.inMinutes > 0) {
-      return '${difference.inMinutes}m ago';
+      return context.tr(TranslationKeys.followUpChatMinutesAgo,
+          {'count': difference.inMinutes.toString()});
     } else {
-      return 'Just now';
+      return context.tr(TranslationKeys.followUpChatJustNow);
     }
   }
 
@@ -548,9 +568,9 @@ class ChatBubble extends StatelessWidget {
 
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Message copied to clipboard'),
-          duration: Duration(seconds: 2),
+        SnackBar(
+          content: Text(context.tr(TranslationKeys.followUpChatMessageCopied)),
+          duration: const Duration(seconds: 2),
         ),
       );
     }

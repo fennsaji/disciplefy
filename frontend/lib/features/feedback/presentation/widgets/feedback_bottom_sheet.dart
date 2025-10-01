@@ -3,6 +3,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/di/injection_container.dart';
+import '../../../../core/extensions/translation_extension.dart';
+import '../../../../core/i18n/translation_keys.dart';
 import '../bloc/feedback_bloc.dart';
 import '../bloc/feedback_event.dart';
 import '../bloc/feedback_state.dart';
@@ -112,7 +114,7 @@ class _FeedbackBottomSheetState extends State<FeedbackBottomSheet> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Send Feedback',
+            context.tr(TranslationKeys.feedbackSendFeedback),
             style: GoogleFonts.playfairDisplay(
               fontSize: 24,
               fontWeight: FontWeight.bold,
@@ -121,7 +123,7 @@ class _FeedbackBottomSheetState extends State<FeedbackBottomSheet> {
           ),
           const SizedBox(height: 8),
           Text(
-            'Help us improve Disciplefy by sharing your thoughts',
+            context.tr(TranslationKeys.feedbackSubtitle),
             style: GoogleFonts.inter(
               fontSize: 14,
               color: colorScheme.onSurface.withOpacity(0.7),
@@ -145,7 +147,7 @@ class _FeedbackBottomSheetState extends State<FeedbackBottomSheet> {
             ),
             const SizedBox(width: 12),
             Text(
-              'Is the app helpful?',
+              context.tr(TranslationKeys.feedbackIsHelpful),
               style: GoogleFonts.inter(
                 fontSize: 14,
                 fontWeight: FontWeight.w500,
@@ -176,17 +178,27 @@ class _FeedbackBottomSheetState extends State<FeedbackBottomSheet> {
             style: theme.textTheme.bodyMedium,
             onChanged: (value) =>
                 setState(() => _selectedCategory = value ?? 'general'),
-            items: const [
+            items: [
               DropdownMenuItem(
-                  value: 'general', child: Text('General Feedback')),
+                  value: 'general',
+                  child: Text(
+                      context.tr(TranslationKeys.feedbackCategoryGeneral))),
               DropdownMenuItem(
-                  value: 'content', child: Text('Content & Study Guides')),
+                  value: 'content',
+                  child: Text(
+                      context.tr(TranslationKeys.feedbackCategoryContent))),
               DropdownMenuItem(
-                  value: 'usability', child: Text('App Usability')),
+                  value: 'usability',
+                  child: Text(
+                      context.tr(TranslationKeys.feedbackCategoryUsability))),
               DropdownMenuItem(
-                  value: 'technical', child: Text('Technical Issues')),
+                  value: 'technical',
+                  child: Text(
+                      context.tr(TranslationKeys.feedbackCategoryTechnical))),
               DropdownMenuItem(
-                  value: 'suggestion', child: Text('Feature Suggestion')),
+                  value: 'suggestion',
+                  child: Text(
+                      context.tr(TranslationKeys.feedbackCategorySuggestion))),
             ],
           ),
         ),
@@ -197,7 +209,7 @@ class _FeedbackBottomSheetState extends State<FeedbackBottomSheet> {
         maxLines: 4,
         style: theme.textTheme.bodyMedium,
         decoration: InputDecoration(
-          hintText: 'Tell us what you think...',
+          hintText: context.tr(TranslationKeys.feedbackHintText),
           hintStyle: TextStyle(
             color: theme.colorScheme.onSurface.withOpacity(0.6),
           ),
@@ -246,7 +258,7 @@ class _FeedbackBottomSheetState extends State<FeedbackBottomSheet> {
                       ),
                     )
                   : Text(
-                      'Send Feedback',
+                      context.tr(TranslationKeys.feedbackButtonSend),
                       style: GoogleFonts.inter(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
@@ -261,7 +273,7 @@ class _FeedbackBottomSheetState extends State<FeedbackBottomSheet> {
     if (_messageController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text('Please enter a message'),
+          content: Text(context.tr(TranslationKeys.feedbackEmptyMessage)),
           backgroundColor: AppTheme.errorColor,
           behavior: SnackBarBehavior.floating,
         ),
@@ -283,8 +295,7 @@ class _FeedbackBottomSheetState extends State<FeedbackBottomSheet> {
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text(
-              'Failed to prepare feedback submission. Please try again.'),
+          content: Text(context.tr(TranslationKeys.feedbackSubmitError)),
           backgroundColor: AppTheme.errorColor,
           behavior: SnackBarBehavior.floating,
         ),

@@ -9,6 +9,8 @@ import '../../../../core/utils/category_utils.dart';
 import '../../../../core/di/injection_container.dart';
 import '../../../../core/services/auth_state_provider.dart';
 import '../../../../core/widgets/auth_protected_screen.dart';
+import '../../../../core/extensions/translation_extension.dart';
+import '../../../../core/i18n/translation_keys.dart';
 import '../../domain/entities/recommended_guide_topic.dart';
 import '../../../daily_verse/presentation/bloc/daily_verse_bloc.dart';
 import '../../../daily_verse/presentation/bloc/daily_verse_event.dart';
@@ -71,10 +73,9 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
     // Prevent multiple clicks during generation
     if (_isGeneratingStudyGuide) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-              'Study guide generation already in progress. Please wait...'),
-          duration: Duration(seconds: 2),
+        SnackBar(
+          content: Text(context.tr(TranslationKeys.homeGenerationInProgress)),
+          duration: const Duration(seconds: 2),
         ),
       );
       return;
@@ -107,8 +108,8 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
     } else {
       // Show error if verse is not loaded
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Daily verse is not yet loaded. Please try again.'),
+        SnackBar(
+          content: Text(context.tr(TranslationKeys.homeVerseNotLoaded)),
           backgroundColor: Colors.red,
         ),
       );
@@ -169,8 +170,8 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
                       ),
                     ),
                     const SizedBox(width: 12),
-                    Text(
-                        'Generating study guide for "${state.generationInput}"...'),
+                    Text(context.tr(TranslationKeys.homeGeneratingStudyGuide,
+                        {'input': state.generationInput})),
                   ],
                 ),
                 duration: const Duration(minutes: 1),
@@ -181,11 +182,11 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
             ScaffoldMessenger.of(context).hideCurrentSnackBar();
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: Text(
-                    'Failed to generate study guide: ${state.generationError}'),
+                content: Text(context.tr(TranslationKeys.homeFailedToGenerate,
+                    {'error': state.generationError})),
                 backgroundColor: Theme.of(context).colorScheme.error,
                 action: SnackBarAction(
-                  label: 'Dismiss',
+                  label: context.tr(TranslationKeys.homeDismiss),
                   onPressed: () =>
                       ScaffoldMessenger.of(context).hideCurrentSnackBar(),
                 ),
@@ -325,7 +326,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Welcome back, $userName',
+            context.tr(TranslationKeys.homeWelcomeBack, {'name': userName}),
             style: GoogleFonts.inter(
               fontSize: 28,
               fontWeight: FontWeight.w600,
@@ -335,7 +336,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
           ),
           const SizedBox(height: 8),
           Text(
-            'Continue your spiritual journey with guided study',
+            context.tr(TranslationKeys.homeContinueJourney),
             style: GoogleFonts.inter(
               fontSize: 16,
               color:
@@ -357,7 +358,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
             size: 24,
           ),
           label: Text(
-            'Generate Study Guide',
+            context.tr(TranslationKeys.homeGenerateStudyGuide),
             style: GoogleFonts.inter(
               fontSize: 18,
               fontWeight: FontWeight.w600,
@@ -397,7 +398,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Resume your last study',
+                    context.tr(TranslationKeys.homeResumeLastStudy),
                     style: GoogleFonts.inter(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
@@ -406,7 +407,8 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    'Continue studying "Faith in Trials"',
+                    context.tr(TranslationKeys.homeContinueStudying,
+                        {'topic': 'Faith in Trials'}),
                     style: GoogleFonts.inter(
                       fontSize: 14,
                       color: AppTheme.onSurfaceVariant,
@@ -436,7 +438,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    'Recommended Study Topics',
+                    context.tr(TranslationKeys.homeRecommendedTopics),
                     style: GoogleFonts.inter(
                       fontSize: 20,
                       fontWeight: FontWeight.w600,
@@ -459,7 +461,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
                           ? null
                           : () => context.push('/study-topics'),
                       label: Text(
-                        'View All',
+                        context.tr(TranslationKeys.homeViewAll),
                         style: GoogleFonts.inter(
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
@@ -507,7 +509,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
             ),
             const SizedBox(height: 12),
             Text(
-              'Failed to load topics',
+              context.tr(TranslationKeys.homeFailedToLoadTopics),
               style: GoogleFonts.inter(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
@@ -516,7 +518,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
             ),
             const SizedBox(height: 8),
             Text(
-              'Something went wrong!',
+              context.tr(TranslationKeys.homeSomethingWentWrong),
               style: GoogleFonts.inter(
                 fontSize: 14,
                 color:
@@ -537,7 +539,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
                 ),
               ),
               icon: const Icon(Icons.refresh),
-              label: const Text('Try Again'),
+              label: Text(context.tr(TranslationKeys.homeTryAgain)),
             ),
           ],
         ),
@@ -689,7 +691,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
             ),
             const SizedBox(height: 12),
             Text(
-              'No topics available',
+              context.tr(TranslationKeys.homeNoTopicsAvailable),
               style: GoogleFonts.inter(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
@@ -698,7 +700,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
             ),
             const SizedBox(height: 8),
             Text(
-              'Check your connection and try again.',
+              context.tr(TranslationKeys.homeCheckConnection),
               style: GoogleFonts.inter(
                 fontSize: 14,
                 color:
@@ -771,10 +773,9 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
     // Prevent multiple clicks during generation
     if (_isGeneratingStudyGuide) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-              'Study guide generation already in progress. Please wait...'),
-          duration: Duration(seconds: 2),
+        SnackBar(
+          content: Text(context.tr(TranslationKeys.homeGenerationInProgress)),
+          duration: const Duration(seconds: 2),
         ),
       );
       return;

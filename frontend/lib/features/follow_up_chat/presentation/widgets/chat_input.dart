@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/constants/app_constants.dart';
+import '../../../../core/extensions/translation_extension.dart';
+import '../../../../core/i18n/translation_keys.dart';
 
 /// Input widget for sending follow-up questions
 class ChatInput extends StatefulWidget {
@@ -126,7 +128,7 @@ class _ChatInputState extends State<ChatInput> {
           const SizedBox(width: AppConstants.SMALL_PADDING),
           Expanded(
             child: Text(
-              'Getting response...',
+              context.tr(TranslationKeys.followUpChatGettingResponse),
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: theme.colorScheme.primary,
                 fontWeight: FontWeight.w500,
@@ -136,7 +138,7 @@ class _ChatInputState extends State<ChatInput> {
           TextButton(
             onPressed: _cancelRequest,
             child: Text(
-              'Cancel',
+              context.tr(TranslationKeys.followUpChatCancel),
               style: theme.textTheme.bodySmall?.copyWith(
                 color: theme.colorScheme.error,
                 fontWeight: FontWeight.w600,
@@ -188,7 +190,7 @@ class _ChatInputState extends State<ChatInput> {
         textInputAction: TextInputAction.send,
         onSubmitted: (_) => _sendMessage(),
         decoration: InputDecoration(
-          hintText: 'Ask a follow-up question...',
+          hintText: context.tr(TranslationKeys.followUpChatInputHint),
           hintStyle: theme.textTheme.bodyMedium?.copyWith(
             color: theme.colorScheme.onSurface.withOpacity(0.6),
           ),
@@ -252,7 +254,7 @@ class _ChatInputState extends State<ChatInput> {
           const SizedBox(width: AppConstants.EXTRA_SMALL_PADDING),
           Expanded(
             child: Text(
-              'Each follow-up question costs 5 tokens',
+              context.tr(TranslationKeys.followUpChatTokenCost),
               style: theme.textTheme.bodySmall?.copyWith(
                 color: theme.colorScheme.onSurface.withOpacity(0.6),
                 fontSize: AppConstants.FONT_SIZE_14,

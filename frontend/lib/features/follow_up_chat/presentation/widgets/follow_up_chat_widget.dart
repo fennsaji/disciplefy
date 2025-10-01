@@ -5,6 +5,8 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/di/injection_container.dart';
 import '../../../../core/router/app_routes.dart';
+import '../../../../core/extensions/translation_extension.dart';
+import '../../../../core/i18n/translation_keys.dart';
 import '../bloc/follow_up_chat_bloc.dart';
 import '../bloc/follow_up_chat_event.dart';
 import '../bloc/follow_up_chat_state.dart';
@@ -200,7 +202,7 @@ class _FollowUpChatWidgetState extends State<FollowUpChatWidget>
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Follow-up Questions',
+                  context.tr(TranslationKeys.followUpChatTitle),
                   style: theme.textTheme.titleSmall?.copyWith(
                     fontWeight: FontWeight.w600,
                     color: theme.colorScheme.onSurface,
@@ -228,7 +230,9 @@ class _FollowUpChatWidgetState extends State<FollowUpChatWidget>
                 color: theme.colorScheme.onSurface,
               ),
             ),
-            tooltip: widget.isExpanded ? 'Collapse chat' : 'Expand chat',
+            tooltip: widget.isExpanded
+                ? context.tr(TranslationKeys.followUpChatCollapseTooltip)
+                : context.tr(TranslationKeys.followUpChatExpandTooltip),
           ),
         ],
       ),
@@ -281,7 +285,7 @@ class _FollowUpChatWidgetState extends State<FollowUpChatWidget>
             ),
             const SizedBox(height: AppConstants.DEFAULT_PADDING),
             Text(
-              'Starting conversation...',
+              context.tr(TranslationKeys.followUpChatStartingConversation),
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: theme.colorScheme.onSurface.withOpacity(0.7),
               ),
@@ -309,7 +313,7 @@ class _FollowUpChatWidgetState extends State<FollowUpChatWidget>
             ),
             const SizedBox(height: AppConstants.DEFAULT_PADDING),
             Text(
-              'Chat Error',
+              context.tr(TranslationKeys.followUpChatError),
               style: theme.textTheme.titleMedium?.copyWith(
                 color: theme.colorScheme.error,
                 fontWeight: FontWeight.w600,
@@ -333,7 +337,7 @@ class _FollowUpChatWidgetState extends State<FollowUpChatWidget>
                       ),
                     );
               },
-              child: const Text('Try Again'),
+              child: Text(context.tr(TranslationKeys.followUpChatTryAgain)),
             ),
           ],
         ),
@@ -358,7 +362,7 @@ class _FollowUpChatWidgetState extends State<FollowUpChatWidget>
             ),
             const SizedBox(height: AppConstants.DEFAULT_PADDING),
             Text(
-              'Insufficient Tokens',
+              context.tr(TranslationKeys.followUpChatInsufficientTokens),
               style: theme.textTheme.titleMedium?.copyWith(
                 color: theme.colorScheme.onSurface,
                 fontWeight: FontWeight.w600,
@@ -366,7 +370,11 @@ class _FollowUpChatWidgetState extends State<FollowUpChatWidget>
             ),
             const SizedBox(height: AppConstants.SMALL_PADDING),
             Text(
-              'You need ${state.required} tokens but only have ${state.available} available.',
+              context
+                  .tr(TranslationKeys.followUpChatInsufficientTokensMessage, {
+                'required': state.required,
+                'available': state.available,
+              }),
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: theme.colorScheme.onSurface.withOpacity(0.7),
               ),
@@ -386,14 +394,15 @@ class _FollowUpChatWidgetState extends State<FollowUpChatWidget>
                           ),
                         );
                   },
-                  child: const Text('Dismiss'),
+                  child: Text(context.tr(TranslationKeys.followUpChatDismiss)),
                 ),
                 const SizedBox(width: AppConstants.SMALL_PADDING),
                 ElevatedButton(
                   onPressed: () {
                     context.push(AppRoutes.tokenManagement);
                   },
-                  child: const Text('Get More Tokens'),
+                  child: Text(
+                      context.tr(TranslationKeys.followUpChatGetMoreTokens)),
                 ),
               ],
             ),
@@ -420,7 +429,7 @@ class _FollowUpChatWidgetState extends State<FollowUpChatWidget>
             ),
             const SizedBox(height: AppConstants.DEFAULT_PADDING),
             Text(
-              'Follow-up Questions Not Available',
+              context.tr(TranslationKeys.followUpChatNotAvailable),
               style: theme.textTheme.titleMedium?.copyWith(
                 color: theme.colorScheme.onSurface,
                 fontWeight: FontWeight.w600,
@@ -437,7 +446,7 @@ class _FollowUpChatWidgetState extends State<FollowUpChatWidget>
             ),
             const SizedBox(height: AppConstants.DEFAULT_PADDING),
             Text(
-              'Upgrade to Standard or Premium to ask follow-up questions',
+              context.tr(TranslationKeys.followUpChatUpgradeMessage),
               style: theme.textTheme.bodySmall?.copyWith(
                 color: theme.colorScheme.primary,
                 fontWeight: FontWeight.w500,
@@ -458,7 +467,7 @@ class _FollowUpChatWidgetState extends State<FollowUpChatWidget>
                           ),
                         );
                   },
-                  child: const Text('Dismiss'),
+                  child: Text(context.tr(TranslationKeys.followUpChatDismiss)),
                 ),
                 const SizedBox(width: AppConstants.SMALL_PADDING),
                 ElevatedButton(
@@ -466,7 +475,8 @@ class _FollowUpChatWidgetState extends State<FollowUpChatWidget>
                     // Navigate to token management page for upgrade
                     context.push(AppRoutes.tokenManagement);
                   },
-                  child: const Text('Upgrade Plan'),
+                  child:
+                      Text(context.tr(TranslationKeys.followUpChatUpgradePlan)),
                 ),
               ],
             ),
@@ -493,7 +503,7 @@ class _FollowUpChatWidgetState extends State<FollowUpChatWidget>
             ),
             const SizedBox(height: AppConstants.DEFAULT_PADDING),
             Text(
-              'Follow-up Limit Reached',
+              context.tr(TranslationKeys.followUpChatLimitReached),
               style: theme.textTheme.titleMedium?.copyWith(
                 color: theme.colorScheme.onSurface,
                 fontWeight: FontWeight.w600,
@@ -509,7 +519,7 @@ class _FollowUpChatWidgetState extends State<FollowUpChatWidget>
             ),
             const SizedBox(height: AppConstants.DEFAULT_PADDING),
             Text(
-              'Generate a new study guide to continue asking questions',
+              context.tr(TranslationKeys.followUpChatLimitMessage),
               style: theme.textTheme.bodySmall?.copyWith(
                 color: theme.colorScheme.primary,
                 fontWeight: FontWeight.w500,
@@ -530,7 +540,7 @@ class _FollowUpChatWidgetState extends State<FollowUpChatWidget>
                           ),
                         );
                   },
-                  child: const Text('Dismiss'),
+                  child: Text(context.tr(TranslationKeys.followUpChatDismiss)),
                 ),
                 const SizedBox(width: AppConstants.SMALL_PADDING),
                 ElevatedButton(
@@ -565,7 +575,7 @@ class _FollowUpChatWidgetState extends State<FollowUpChatWidget>
             ),
             const SizedBox(height: AppConstants.DEFAULT_PADDING),
             Text(
-              'Ask Follow-up Questions',
+              context.tr(TranslationKeys.followUpChatInitialTitle),
               style: theme.textTheme.titleMedium?.copyWith(
                 color: theme.colorScheme.onSurface,
                 fontWeight: FontWeight.w600,
@@ -573,7 +583,7 @@ class _FollowUpChatWidgetState extends State<FollowUpChatWidget>
             ),
             const SizedBox(height: AppConstants.SMALL_PADDING),
             Text(
-              'Get deeper insights about this study guide by asking follow-up questions.',
+              context.tr(TranslationKeys.followUpChatInitialMessage),
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: theme.colorScheme.onSurface.withOpacity(0.7),
               ),

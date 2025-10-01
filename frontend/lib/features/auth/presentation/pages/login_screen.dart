@@ -8,6 +8,8 @@ import '../bloc/auth_state.dart' as auth_states;
 import '../../../../core/services/auth_aware_navigation_service.dart';
 import '../../../../core/router/app_routes.dart';
 import '../../../../core/utils/logger.dart';
+import '../../../../core/extensions/translation_extension.dart';
+import '../../../../core/i18n/translation_keys.dart';
 
 /// Login screen with Google OAuth and anonymous sign-in options
 /// Follows Material Design 3 guidelines and brand theme with dark mode support
@@ -200,7 +202,7 @@ class _LoginScreenState extends State<LoginScreen> {
     return Column(
       children: [
         Text(
-          'Welcome to Disciplefy',
+          context.tr(TranslationKeys.loginWelcome),
           style: GoogleFonts.playfairDisplay(
             fontSize: 28,
             fontWeight: FontWeight.w700,
@@ -210,7 +212,7 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
         const SizedBox(height: 16),
         Text(
-          'Deepen your faith through guided Bible study',
+          context.tr(TranslationKeys.loginSubtitle),
           style: GoogleFonts.inter(
             fontSize: 16,
             fontWeight: FontWeight.normal,
@@ -295,7 +297,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   const SizedBox(width: 12),
 
                   Text(
-                    'Continue with Google',
+                    context.tr(TranslationKeys.loginContinueWithGoogle),
                     style: GoogleFonts.inter(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
@@ -381,7 +383,7 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
             const SizedBox(width: 12),
             Text(
-              'Continue as Guest',
+              context.tr(TranslationKeys.loginContinueAsGuest),
               style: GoogleFonts.inter(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
@@ -413,7 +415,7 @@ class _LoginScreenState extends State<LoginScreen> {
       child: Column(
         children: [
           Text(
-            'What you\'ll get:',
+            context.tr(TranslationKeys.loginFeaturesTitle),
             style: GoogleFonts.inter(
               fontSize: 16,
               fontWeight: FontWeight.w600,
@@ -421,22 +423,25 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
           ),
           const SizedBox(height: 16),
-          const _FeatureItem(
+          _FeatureItem(
             icon: Icons.auto_awesome,
-            title: 'AI-Powered Study Guides',
-            subtitle: 'Personalized insights for any verse or topic',
+            title: context.tr(TranslationKeys.loginFeatureAiStudyGuides),
+            subtitle:
+                context.tr(TranslationKeys.loginFeatureAiStudyGuidesSubtitle),
           ),
           const SizedBox(height: 12),
-          const _FeatureItem(
+          _FeatureItem(
             icon: Icons.school,
-            title: 'Structured Learning',
-            subtitle: 'Follow proven biblical study methodology',
+            title: context.tr(TranslationKeys.loginFeatureStructuredLearning),
+            subtitle: context
+                .tr(TranslationKeys.loginFeatureStructuredLearningSubtitle),
           ),
           const SizedBox(height: 12),
-          const _FeatureItem(
+          _FeatureItem(
             icon: Icons.language,
-            title: 'Multi-Language Support',
-            subtitle: 'Study in English, Hindi, and Malayalam',
+            title: context.tr(TranslationKeys.loginFeatureMultiLanguage),
+            subtitle:
+                context.tr(TranslationKeys.loginFeatureMultiLanguageSubtitle),
           ),
         ],
       ),
@@ -448,7 +453,7 @@ class _LoginScreenState extends State<LoginScreen> {
     final theme = Theme.of(context);
 
     return Text(
-      'By continuing, you agree to our Terms of Service and Privacy Policy',
+      context.tr(TranslationKeys.loginPrivacyPolicy),
       style: GoogleFonts.inter(
         fontSize: 12,
         color: theme.colorScheme.onSurface.withOpacity(0.6),

@@ -9,6 +9,8 @@ import 'package:share_plus/share_plus.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/error/failures.dart';
 import '../../../../core/di/injection_container.dart';
+import '../../../../core/extensions/translation_extension.dart';
+import '../../../../core/i18n/translation_keys.dart';
 import '../../domain/entities/study_guide.dart';
 import '../../../../core/navigation/study_navigator.dart';
 import '../bloc/study_bloc.dart';
@@ -536,7 +538,7 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
         children: [
           // Summary Section
           _StudySection(
-            title: 'Summary',
+            title: context.tr(TranslationKeys.studyGuideSummary),
             icon: Icons.summarize,
             content: _currentStudyGuide.summary,
           ),
@@ -545,7 +547,7 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
 
           // Interpretation Section
           _StudySection(
-            title: 'Interpretation',
+            title: context.tr(TranslationKeys.studyGuideInterpretation),
             icon: Icons.lightbulb_outline,
             content: _currentStudyGuide.interpretation,
           ),
@@ -554,7 +556,7 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
 
           // Context Section
           _StudySection(
-            title: 'Context',
+            title: context.tr(TranslationKeys.studyGuideContext),
             icon: Icons.history_edu,
             content: _currentStudyGuide.context,
           ),
@@ -563,7 +565,7 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
 
           // Related Verses Section
           _StudySection(
-            title: 'Related Verses',
+            title: context.tr(TranslationKeys.studyGuideRelatedVerses),
             icon: Icons.menu_book,
             content: _currentStudyGuide.relatedVerses.join('\n\n'),
           ),
@@ -572,7 +574,7 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
 
           // Discussion Questions Section
           _StudySection(
-            title: 'Discussion Questions',
+            title: context.tr(TranslationKeys.studyGuideDiscussionQuestions),
             icon: Icons.quiz,
             content: _currentStudyGuide.reflectionQuestions
                 .asMap()
@@ -585,7 +587,7 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
 
           // Prayer Points Section
           _StudySection(
-            title: 'Prayer Points',
+            title: context.tr(TranslationKeys.studyGuidePrayerPoints),
             icon: Icons.favorite,
             content: _currentStudyGuide.prayerPoints
                 .asMap()
@@ -608,7 +610,7 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
               ),
               const SizedBox(width: 8),
               Text(
-                'Personal Notes',
+                context.tr(TranslationKeys.studyGuidePersonalNotes),
                 style: GoogleFonts.inter(
                   fontSize: 20,
                   fontWeight: FontWeight.w600,
@@ -635,8 +637,8 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
                 height: 1.5,
               ),
               decoration: InputDecoration(
-                hintText:
-                    'Write your thoughts, insights, and reflections here...',
+                hintText: context
+                    .tr(TranslationKeys.studyGuidePersonalNotesPlaceholder),
                 hintStyle: GoogleFonts.inter(
                   color:
                       Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
@@ -720,7 +722,10 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
                               ? Icons.bookmark
                               : Icons.bookmark_border),
                           label: Text(
-                            _isSaved ? 'Saved' : 'Save Study',
+                            _isSaved
+                                ? context.tr(TranslationKeys.studyGuideSaved)
+                                : context
+                                    .tr(TranslationKeys.studyGuideSaveStudy),
                             style: GoogleFonts.inter(
                               fontSize: 18,
                               fontWeight: FontWeight.w600,
@@ -751,7 +756,7 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
                 onPressed: _shareStudyGuide,
                 icon: Icon(Icons.share),
                 label: Text(
-                  'Share',
+                  context.tr(TranslationKeys.studyGuideShare),
                   style: GoogleFonts.inter(
                     fontSize: 18,
                     fontWeight: FontWeight.w600,
@@ -816,7 +821,7 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
         elevation: 8,
         shadowColor: Colors.black.withOpacity(0.1),
         title: Text(
-          'Authentication Required',
+          context.tr(TranslationKeys.studyGuideAuthRequired),
           style: GoogleFonts.playfairDisplay(
             fontSize: 22,
             fontWeight: FontWeight.bold,
@@ -824,7 +829,7 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
           ),
         ),
         content: Text(
-          'You need to be signed in to save study guides. Would you like to sign in now?',
+          context.tr(TranslationKeys.studyGuideAuthRequiredMessage),
           style: GoogleFonts.inter(
             fontSize: 18,
             color: const Color(0xFF333333), // Primary gray text
@@ -843,7 +848,7 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
               ),
             ),
             child: Text(
-              'Cancel',
+              context.tr(TranslationKeys.commonCancel),
               style: GoogleFonts.inter(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
@@ -867,7 +872,7 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
               ),
             ),
             child: Text(
-              'Sign In',
+              context.tr(TranslationKeys.studyGuideSignIn),
               style: GoogleFonts.inter(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
@@ -895,7 +900,7 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
         elevation: 8,
         shadowColor: Colors.black.withOpacity(0.1),
         title: Text(
-          'Authentication Required',
+          context.tr(TranslationKeys.studyGuideAuthRequired),
           style: GoogleFonts.playfairDisplay(
             fontSize: 20,
             fontWeight: FontWeight.bold,
@@ -903,9 +908,7 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
           ),
         ),
         content: Text(
-          hasNotes
-              ? 'You need to be signed in to save study guides and personal notes. Would you like to sign in now?'
-              : 'You need to be signed in to save study guides. Would you like to sign in now?',
+          context.tr(TranslationKeys.studyGuideAuthRequiredMessage),
           style: GoogleFonts.inter(
             fontSize: 18,
             color: const Color(0xFF333333), // Primary gray text
@@ -924,7 +927,7 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
               ),
             ),
             child: Text(
-              'Cancel',
+              context.tr(TranslationKeys.commonCancel),
               style: GoogleFonts.inter(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
@@ -948,7 +951,7 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
               ),
             ),
             child: Text(
-              'Sign In',
+              context.tr(TranslationKeys.studyGuideSignIn),
               style: GoogleFonts.inter(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
@@ -1058,22 +1061,22 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
     final shareText = '''
 ${_getDisplayTitle()}
 
-Summary:
+${context.tr(TranslationKeys.studyGuideSummary)}:
 ${_currentStudyGuide.summary}
 
-Interpretation:
+${context.tr(TranslationKeys.studyGuideInterpretation)}:
 ${_currentStudyGuide.interpretation}
 
-Context:
+${context.tr(TranslationKeys.studyGuideContext)}:
 ${_currentStudyGuide.context}
 
-Related Verses:
+${context.tr(TranslationKeys.studyGuideRelatedVerses)}:
 ${_currentStudyGuide.relatedVerses.join('\n')}
 
-Discussion Questions:
+${context.tr(TranslationKeys.studyGuideDiscussionQuestions)}:
 ${_currentStudyGuide.reflectionQuestions.asMap().entries.map((e) => '${e.key + 1}. ${e.value}').join('\n')}
 
-Prayer Points:
+${context.tr(TranslationKeys.studyGuidePrayerPoints)}:
 ${_currentStudyGuide.prayerPoints.map((p) => '• $p').join('\n')}
 
 Generated by Disciplefy - Bible Study App
@@ -1186,7 +1189,7 @@ class _StudySection extends StatelessWidget {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
-          'Copied to clipboard',
+          context.tr(TranslationKeys.studyGuideCopiedToClipboard),
           style: GoogleFonts.inter(color: Colors.white),
         ),
         backgroundColor: Theme.of(context).colorScheme.primary,

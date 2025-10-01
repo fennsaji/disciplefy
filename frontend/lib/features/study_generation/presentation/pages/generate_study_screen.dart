@@ -7,6 +7,8 @@ import 'package:get_it/get_it.dart';
 
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widgets/keyboard_aware_scaffold.dart';
+import '../../../../core/extensions/translation_extension.dart';
+import '../../../../core/i18n/translation_keys.dart';
 import '../../../../core/utils/device_keyboard_handler.dart';
 import '../../../../core/services/language_preference_service.dart';
 import '../../../../core/models/app_language.dart';
@@ -224,17 +226,18 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
         _isInputValid = _validateScriptureReference(text);
         _validationError = _isInputValid
             ? null
-            : 'Please enter a valid scripture reference (e.g., John 3:16)';
+            : context.tr(TranslationKeys.generateStudyScriptureError);
       } else if (_selectedMode == StudyInputMode.question) {
         _isInputValid = text.length >= 10;
         _validationError = _isInputValid
             ? null
-            : 'Please enter a complete question (at least 10 characters)';
+            : context.tr(TranslationKeys.generateStudyQuestionError);
       } else {
         // Topic mode
         _isInputValid = text.length >= 2;
-        _validationError =
-            _isInputValid ? null : 'Please enter at least 2 characters';
+        _validationError = _isInputValid
+            ? null
+            : context.tr(TranslationKeys.generateStudyTopicError);
       }
     });
   }
@@ -324,7 +327,7 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
       elevation: 0,
       automaticallyImplyLeading: false,
       title: Text(
-        'Generate Study Guide',
+        context.tr(TranslationKeys.generateStudyTitle),
         style: GoogleFonts.playfairDisplay(
           fontSize: 20,
           fontWeight: FontWeight.w600,
@@ -553,7 +556,7 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
                             size: 18,
                           ),
                           label: Text(
-                            'View Saved Guides',
+                            context.tr(TranslationKeys.generateStudyViewSaved),
                             style: GoogleFonts.inter(
                               fontSize: 14,
                               fontWeight: FontWeight.w600,
@@ -617,21 +620,23 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
               children: [
                 Expanded(
                   child: _ModeToggleButton(
-                    label: 'Scripture Reference',
+                    label:
+                        context.tr(TranslationKeys.generateStudyScriptureMode),
                     isSelected: _selectedMode == StudyInputMode.scripture,
                     onTap: () => _switchMode(StudyInputMode.scripture),
                   ),
                 ),
                 Expanded(
                   child: _ModeToggleButton(
-                    label: 'Topic',
+                    label: context.tr(TranslationKeys.generateStudyTopicMode),
                     isSelected: _selectedMode == StudyInputMode.topic,
                     onTap: () => _switchMode(StudyInputMode.topic),
                   ),
                 ),
                 Expanded(
                   child: _ModeToggleButton(
-                    label: 'Question',
+                    label:
+                        context.tr(TranslationKeys.generateStudyQuestionMode),
                     isSelected: _selectedMode == StudyInputMode.question,
                     onTap: () => _switchMode(StudyInputMode.question),
                   ),
@@ -646,7 +651,7 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Language',
+            context.tr(TranslationKeys.generateStudyLanguage),
             style: GoogleFonts.inter(
               fontSize: 16,
               fontWeight: FontWeight.w600,
@@ -663,7 +668,7 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
               children: [
                 Expanded(
                   child: _LanguageToggleButton(
-                    label: 'English',
+                    label: context.tr(TranslationKeys.generateStudyEnglish),
                     isSelected: _selectedLanguage == StudyLanguage.english,
                     onTap: () async =>
                         await _switchLanguage(StudyLanguage.english),
@@ -671,7 +676,7 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
                 ),
                 Expanded(
                   child: _LanguageToggleButton(
-                    label: 'हिन्दी',
+                    label: context.tr(TranslationKeys.generateStudyHindi),
                     isSelected: _selectedLanguage == StudyLanguage.hindi,
                     onTap: () async =>
                         await _switchLanguage(StudyLanguage.hindi),
@@ -679,7 +684,7 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
                 ),
                 Expanded(
                   child: _LanguageToggleButton(
-                    label: 'മലയാളം',
+                    label: context.tr(TranslationKeys.generateStudyMalayalam),
                     isSelected: _selectedLanguage == StudyLanguage.malayalam,
                     onTap: () async =>
                         await _switchLanguage(StudyLanguage.malayalam),
@@ -700,10 +705,10 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
         children: [
           Text(
             _selectedMode == StudyInputMode.scripture
-                ? 'Enter Scripture Reference'
+                ? context.tr(TranslationKeys.generateStudyEnterScripture)
                 : _selectedMode == StudyInputMode.topic
-                    ? 'Enter Topic'
-                    : 'Ask Your Question',
+                    ? context.tr(TranslationKeys.generateStudyEnterTopic)
+                    : context.tr(TranslationKeys.generateStudyAskQuestion),
             style: GoogleFonts.inter(
               fontSize: 16,
               fontWeight: FontWeight.w600,
@@ -725,10 +730,10 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
             ),
             decoration: InputDecoration(
               hintText: _selectedMode == StudyInputMode.scripture
-                  ? 'e.g., John 3:16, Matthew 5:1-12'
+                  ? context.tr(TranslationKeys.generateStudyScriptureHint)
                   : _selectedMode == StudyInputMode.topic
-                      ? 'e.g., Forgiveness, Love, Faith'
-                      : 'e.g., What does the Bible say about anxiety?',
+                      ? context.tr(TranslationKeys.generateStudyTopicHint)
+                      : context.tr(TranslationKeys.generateStudyQuestionHint),
               hintStyle: GoogleFonts.inter(
                 color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
               ),
@@ -793,7 +798,7 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Suggestions',
+          context.tr(TranslationKeys.generateStudySuggestions),
           style: GoogleFonts.inter(
             fontSize: 14,
             fontWeight: FontWeight.w600,
@@ -851,7 +856,7 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
                     const SizedBox(width: 16),
                     Expanded(
                       child: Text(
-                        'Generating your study guide...',
+                        context.tr(TranslationKeys.generateStudyGenerating),
                         style: GoogleFonts.inter(
                           fontSize: 14,
                           fontWeight: FontWeight.w500,
@@ -863,7 +868,8 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Consuming $tokenCost tokens • This may take a few moments.',
+                  context.tr(TranslationKeys.generateStudyConsumingTokens,
+                      {'tokens': tokenCost.toString()}),
                   style: GoogleFonts.inter(
                     fontSize: 12,
                     color: Theme.of(context)
@@ -897,7 +903,11 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
               children: [
                 Expanded(
                   child: Text(
-                    isLoading ? 'Generating...' : 'Generate Study Guide',
+                    isLoading
+                        ? context
+                            .tr(TranslationKeys.generateStudyButtonGenerating)
+                        : context
+                            .tr(TranslationKeys.generateStudyButtonGenerate),
                     style: GoogleFonts.inter(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
@@ -946,27 +956,20 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
 
   Future<void> _switchLanguage(StudyLanguage language) async {
     if (kDebugMode) {
-      print('🔄 [GENERATE STUDY] User switching language to: ${language.code}');
+      print(
+          '🔄 [GENERATE STUDY] User switching content language to: ${language.code}');
     }
 
+    // Update local state only - this affects content generation language, not UI language
     setState(() {
       _selectedLanguage = language;
     });
 
-    // Save language preference to database via LanguagePreferenceService
-    try {
-      final appLanguage = language.toAppLanguage();
-      await _languagePreferenceService.saveLanguagePreference(appLanguage);
-
-      if (kDebugMode) {
-        print('✅ [GENERATE STUDY] Language preference saved: ${language.code}');
-      }
-    } catch (e) {
-      if (kDebugMode) {
-        print('❌ [GENERATE STUDY] Failed to save language preference: $e');
-      }
-      // Continue silently - the local state is still updated
-      // and the preference will be saved to database when possible
+    if (kDebugMode) {
+      print(
+          '✅ [GENERATE STUDY] Content generation language updated: ${language.code}');
+      print(
+          'ℹ️  [GENERATE STUDY] Note: This does not change the app UI language');
     }
   }
 
@@ -976,10 +979,9 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
     // Prevent multiple clicks during generation
     if (_isGeneratingStudyGuide) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-              'Study guide generation already in progress. Please wait...'),
-          duration: Duration(seconds: 2),
+        SnackBar(
+          content: Text(context.tr(TranslationKeys.generateStudyInProgress)),
+          duration: const Duration(seconds: 2),
         ),
       );
       return;
@@ -1043,7 +1045,7 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
             ),
             const SizedBox(width: 12),
             Text(
-              'Generation Failed',
+              context.tr(TranslationKeys.generateStudyGenerationFailed),
               style: GoogleFonts.playfairDisplay(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
@@ -1072,7 +1074,8 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Text(
-                'We couldn\'t generate a study guide right now. Please try again later.',
+                context
+                    .tr(TranslationKeys.generateStudyGenerationFailedMessage),
                 style: GoogleFonts.inter(
                   fontSize: 14,
                   color: theme.colorScheme.onSurfaceVariant,
@@ -1121,7 +1124,7 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
                 ),
               ),
               child: Text(
-                'Manage Tokens',
+                context.tr(TranslationKeys.generateStudyManageTokens),
                 style: GoogleFonts.inter(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
