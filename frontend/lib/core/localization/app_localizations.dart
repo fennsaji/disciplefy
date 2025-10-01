@@ -26,7 +26,7 @@ class AppLocalizations {
   static final Map<String, Map<String, String>> _localizedValues = {
     'en': {
       // Common
-      'app_title': 'Disciplefy Bible Study',
+      'app_title': 'Disciplefy | Bible Study App',
       'continue_button': 'Continue',
       'back_button': 'Back',
       'next_button': 'Next',
