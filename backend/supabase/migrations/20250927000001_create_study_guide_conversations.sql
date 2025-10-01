@@ -151,9 +151,10 @@ WITH CHECK (
     )
 );
 
--- Only allow updates to assistant messages (for streaming)
-CREATE POLICY "System can update assistant messages"
+-- Only allow service role to update assistant messages (for streaming)
+CREATE POLICY "Service role can update assistant messages for streaming"
 ON conversation_messages FOR UPDATE
+TO service_role
 USING (role = 'assistant')
 WITH CHECK (role = 'assistant');
 
@@ -181,6 +182,10 @@ USING (
 -- Grant necessary permissions
 GRANT SELECT, INSERT, UPDATE, DELETE ON study_guide_conversations TO authenticated;
 GRANT SELECT, INSERT, UPDATE, DELETE ON conversation_messages TO authenticated;
+
+-- Grant same permissions to anonymous users (for session-based access)
+GRANT SELECT, INSERT, UPDATE, DELETE ON study_guide_conversations TO anon;
+GRANT SELECT, INSERT, UPDATE, DELETE ON conversation_messages TO anon;
 
 -- Add helpful comments
 COMMENT ON TABLE study_guide_conversations IS 'Conversation threads for follow-up questions on study guides';

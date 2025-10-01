@@ -219,9 +219,10 @@ template = "Your Disciplefy verification code is {{ .Code }}. Do not share this 
 max_frequency = "5s"
 
 # Use pre-defined map of phone number to OTP for testing.
-# Temporarily enabled due to trial account limitations with Alphanumeric Sender ID
-[auth.sms.test_otp]
-"+917015538461" = "123456"
+# For local development, create a local override file (e.g., config.local.toml)
+# and add it to .gitignore. Never commit real phone numbers to source control.
+# [auth.sms.test_otp]
+# "+1XXXXXXXXXX" = "000000"
 
 # Configure logged in session timeouts.
 # [auth.sessions]

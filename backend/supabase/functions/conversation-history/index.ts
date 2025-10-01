@@ -2,16 +2,26 @@
  * Conversation History Edge Function
  *
  * Retrieves existing conversation history for a study guide.
+ *
+ * Authentication: REQUIRED (enforced via createAuthenticatedFunction)
+ * - Supports both authenticated users and anonymous sessions
+ * - Authenticated users: Queries by user_id
+ * - Anonymous users: Queries by session_id
+ *
  * Features:
- * - Loads conversation and message history for authenticated users
+ * - Validates study guide access before loading conversation history
+ * - Loads conversation and message history with proper access control
  * - Returns formatted message history for chat interface
- * - Handles both authenticated and anonymous users
+ * - Enforces ownership validation via validateStudyGuideAccess
  */
 
 import { createAuthenticatedFunction } from '../_shared/core/function-factory.ts'
 import { ServiceContainer } from '../_shared/core/services.ts'
 import { AppError } from '../_shared/utils/error-handler.ts'
 import { UserContext } from '../_shared/types/index.ts'
+import { getCorsHeaders } from '../_shared/utils/cors.ts'
+import { validateStudyGuideAccess } from '../_shared/services/notes-validation.ts'
+import { StudyGuideRepository } from '../_shared/repositories/study-guide-repository.ts'
 
 /**
  * Conversation history request parameters
@@ -41,80 +51,120 @@ interface ConversationHistoryResponse {
 }
 
 /**
+ * Handles preflight CORS requests
+ */
+function handlePreflight(req: Request): Response {
+  const corsHeaders = getCorsHeaders(req.headers.get('origin'))
+  return new Response(null, { status: 200, headers: corsHeaders })
+}
+
+/**
+ * Returns method not allowed response
+ */
+function methodNotAllowedResponse(req: Request): Response {
+  const corsHeaders = getCorsHeaders(req.headers.get('origin'))
+  return new Response(
+    JSON.stringify({ error: 'METHOD_NOT_ALLOWED', message: 'Only GET requests are supported' }),
+    { status: 405, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+  )
+}
+
+/**
+ * Parses request or returns bad request response
+ */
+function parseRequestOrBadRequest(req: Request): ConversationHistoryRequest | Response {
+  const corsHeaders = getCorsHeaders(req.headers.get('origin'))
+  try {
+    return parseAndValidateRequest(req)
+  } catch (error) {
+    const message = error instanceof AppError ? error.message : 'Invalid request format'
+    return new Response(
+      JSON.stringify({ error: 'INVALID_REQUEST', message }),
+      { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    )
+  }
+}
+
+/**
+ * Loads history or returns error response
+ */
+async function loadHistoryOrErrorResponse(
+  studyGuideId: string,
+  userContext: UserContext,
+  services: ServiceContainer,
+  req: Request
+): Promise<Response> {
+  const corsHeaders = getCorsHeaders(req.headers.get('origin'))
+  try {
+    const conversationHistory = await loadConversationHistory(studyGuideId, userContext, services)
+    return successResponse(conversationHistory, req)
+  } catch (error) {
+    if (error instanceof AppError && error.message.includes('not found')) {
+      return new Response(
+        JSON.stringify({ error: 'NOT_FOUND', message: 'No conversation history found' }),
+        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+    return serverErrorResponse(error, req)
+  }
+}
+
+/**
+ * Returns success response with conversation history
+ */
+function successResponse(data: ConversationHistoryResponse, req: Request): Response {
+  const corsHeaders = getCorsHeaders(req.headers.get('origin'))
+  return new Response(
+    JSON.stringify({ success: true, data }),
+    { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+  )
+}
+
+/**
+ * Returns server error response
+ */
+function serverErrorResponse(error: unknown, req: Request): Response {
+  const corsHeaders = getCorsHeaders(req.headers.get('origin'))
+  const message = error instanceof AppError ? error.message : 'Failed to load conversation history'
+  return new Response(
+    JSON.stringify({ error: 'SERVER_ERROR', message }),
+    { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+  )
+}
+
+/**
  * Handles loading conversation history for a study guide
  */
 async function handleConversationHistory(
   req: Request,
-  { authService }: ServiceContainer,
+  services: ServiceContainer,
   userContext?: UserContext
 ): Promise<Response> {
-  console.log('🚀 [CONVERSATION-HISTORY] NEW FUNCTION CALLED - createAuthenticatedFunction working!')
-  console.log('🚀 [CONVERSATION-HISTORY] Request URL:', req.url)
-  console.log('🚀 [CONVERSATION-HISTORY] User context provided:', !!userContext)
-
-  // Add CORS headers for all responses
-  const corsHeaders = {
-    'Access-Control-Allow-Origin': req.headers.get('origin') || '*',
-    'Access-Control-Allow-Methods': 'GET, OPTIONS',
-    'Access-Control-Allow-Headers': 'authorization, content-type, x-client-info, apikey',
-    'Access-Control-Allow-Credentials': 'true',
-  };
-
-  // Handle preflight requests
+  // Handle preflight
   if (req.method === 'OPTIONS') {
-    return new Response(null, { status: 200, headers: corsHeaders });
+    return handlePreflight(req)
   }
 
-  // Only support GET requests
+  // Only support GET
   if (req.method !== 'GET') {
-    return new Response(
-      JSON.stringify({ error: 'METHOD_NOT_ALLOWED', message: 'Only GET requests are supported' }),
-      { status: 405, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+    return methodNotAllowedResponse(req)
   }
 
-  // 1. Ensure we have user context (provided by createAuthenticatedFunction)
+  // Require authentication
   if (!userContext) {
-    throw new AppError('UNAUTHORIZED', 'User context is required', 401);
+    throw new AppError('UNAUTHORIZED', 'User context is required', 401)
   }
 
-  // 2. Parse and validate request
-  try {
-    var { study_guide_id } = parseAndValidateRequest(req);
-  } catch (error) {
-    const message = error instanceof AppError ? error.message : 'Invalid request format';
-    return new Response(
-      JSON.stringify({ error: 'INVALID_REQUEST', message }),
-      { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+  // Parse and validate request
+  const parseResult = parseRequestOrBadRequest(req)
+  if (parseResult instanceof Response) {
+    return parseResult
   }
 
-  // 3. Load conversation history
-  try {
-    const conversationHistory = await loadConversationHistory(study_guide_id, userContext);
+  const { study_guide_id } = parseResult
 
-    return new Response(JSON.stringify({
-      success: true,
-      data: conversationHistory
-    }), {
-      status: 200,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-    });
-  } catch (error) {
-    if (error instanceof AppError && error.message.includes('not found')) {
-      // No conversation found - return 404
-      return new Response(
-        JSON.stringify({ error: 'NOT_FOUND', message: 'No conversation history found' }),
-        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    const message = error instanceof AppError ? error.message : 'Failed to load conversation history';
-    return new Response(
-      JSON.stringify({ error: 'SERVER_ERROR', message }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
-  }
+  // Load and return conversation history
+  return await loadHistoryOrErrorResponse(study_guide_id, userContext, services, req)
 }
 
 /**
@@ -140,43 +190,65 @@ function parseAndValidateRequest(req: Request): ConversationHistoryRequest {
 }
 
 /**
- * Loads conversation history from the database
+ * Finds conversation for study guide and user
  */
-async function loadConversationHistory(studyGuideId: string, userContext: any): Promise<ConversationHistoryResponse> {
-  const { createClient } = await import('https://esm.sh/@supabase/supabase-js@2');
-  const supabase = createClient(
-    Deno.env.get('SUPABASE_URL') ?? '',
-    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-  );
-
-  // Find existing conversation
-  const { data: conversation, error: conversationError } = await supabase
+async function findConversation(
+  studyGuideId: string,
+  userContext: UserContext,
+  services: ServiceContainer
+): Promise<any> {
+  const supabase = services.supabaseServiceClient
+  let query = supabase
     .from('study_guide_conversations')
     .select('*')
     .eq('study_guide_id', studyGuideId)
-    .eq('user_id', userContext.userId || userContext.sessionId)
-    .single();
 
-  if (conversationError || !conversation) {
-    throw new AppError('NOT_FOUND', 'Conversation not found', 404);
-  }
+  query = userContext.userId
+    ? query.eq('user_id', userContext.userId)
+    : userContext.sessionId
+    ? query.eq('session_id', userContext.sessionId)
+    : (() => { throw new AppError('INVALID_CONTEXT', 'User context must have userId or sessionId', 400) })()
 
-  // Load messages for the conversation
-  const { data: messages, error: messagesError } = await supabase
+  const { data, error } = await query.single()
+  if (error || !data) throw new AppError('NOT_FOUND', 'Conversation not found', 404)
+  return data
+}
+
+/**
+ * Loads messages for a conversation
+ */
+async function loadMessages(conversationId: string, services: ServiceContainer): Promise<MessageResponse[]> {
+  const { data, error } = await services.supabaseServiceClient
     .from('conversation_messages')
     .select('id, role, content, tokens_consumed, created_at')
-    .eq('conversation_id', conversation.id)
-    .order('created_at', { ascending: true });
+    .eq('conversation_id', conversationId)
+    .order('created_at', { ascending: true })
 
-  if (messagesError) {
-    throw new AppError('DATABASE_ERROR', 'Failed to load messages', 500);
-  }
+  if (error) throw new AppError('DATABASE_ERROR', 'Failed to load messages', 500)
+  return data || []
+}
+
+/**
+ * Loads conversation history from the database
+ */
+async function loadConversationHistory(
+  studyGuideId: string,
+  userContext: UserContext,
+  services: ServiceContainer
+): Promise<ConversationHistoryResponse> {
+  // Validate study guide access
+  const studyGuideRepository = new StudyGuideRepository(services.supabaseServiceClient)
+  await validateStudyGuideAccess(studyGuideId, userContext, studyGuideRepository)
+
+  // Load conversation and messages
+  const conversation = await findConversation(studyGuideId, userContext, services)
+  const messages = await loadMessages(conversation.id, services)
 
   return {
     conversation_id: conversation.id,
     study_guide_id: studyGuideId,
-    messages: messages || []
-  };
+    messages
+  }
 }
 
 // Wrap the handler in the authenticated function factory

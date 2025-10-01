@@ -173,21 +173,35 @@ class LanguagePreferenceService {
         final hasLanguage = languageResult.fold(
           (failure) {
             print(
-                '🔍 [LANGUAGE_SELECTION] Failed to get language preference: ${failure.message}');
-            return false; // No language preference in DB means not completed
+                '❌ [LANGUAGE_SELECTION] Failed to get language preference: ${failure.message}');
+
+            // Failure: Use locally stored/cached value as fallback instead of overwriting
+            final locallyMarked =
+                _prefs.getBool(_hasCompletedLanguageSelectionKey) ?? false;
+            print(
+                '📦 [LANGUAGE_SELECTION] Using cached local completion status: $locallyMarked');
+
+            // Return local state, DO NOT cache false when remote call failed
+            return locallyMarked;
           },
           (language) {
             print(
-                '🔍 [LANGUAGE_SELECTION] Found language preference in DB: ${language.displayName}');
+                '✅ [LANGUAGE_SELECTION] Found language preference in DB: ${language.displayName}');
             return true; // Has language preference in DB means completed
           },
         );
 
-        // Cache the result
-        _cacheLanguageCompletion(currentUserId, hasLanguage);
+        // Only cache the result if it came from a successful remote call
+        // Don't cache when using fallback local state
+        if (languageResult.isRight()) {
+          _cacheLanguageCompletion(currentUserId, hasLanguage);
+        } else {
+          print(
+              '⚠️ [LANGUAGE_SELECTION] Not caching result - using fallback local state due to API failure');
+        }
 
-        // If we have a language preference in DB, also mark local storage for consistency
-        if (hasLanguage) {
+        // If we have a language preference in DB (successful call), mark local storage for consistency
+        if (hasLanguage && languageResult.isRight()) {
           final locallyMarked =
               _prefs.getBool(_hasCompletedLanguageSelectionKey) ?? false;
           print(

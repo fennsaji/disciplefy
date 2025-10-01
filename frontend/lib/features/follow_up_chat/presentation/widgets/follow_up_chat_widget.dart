@@ -616,6 +616,7 @@ class _FollowUpChatWidgetState extends State<FollowUpChatWidget>
       itemBuilder: (context, index) {
         final message = state.messages[index];
         return ChatBubble(
+          key: ValueKey('${message.id}_${message.status.toString()}'),
           message: message,
           onRetry: message.status == ChatMessageStatus.failed
               ? () => context

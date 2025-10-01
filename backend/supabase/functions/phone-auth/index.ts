@@ -1,8 +1,8 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
+import { createClient, SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2"
 
 interface ServiceContainer {
-  supabase: any;
+  supabase: SupabaseClient;
 }
 
 interface PhoneAuthRequest {
@@ -25,12 +25,54 @@ function validatePhoneNumber(phoneNumber: string): boolean {
 
 function formatPhoneNumber(phoneNumber: string): string {
   let formatted = phoneNumber.replace(/[^\d+]/g, '');
-  
+
   if (!formatted.startsWith('+')) {
     formatted = '+1' + formatted;
   }
-  
+
   return formatted;
+}
+
+/**
+ * Extracts country calling code from formatted phone number
+ * Uses ITU E.164 format rules to identify country codes (1-3 digits)
+ *
+ * @param formattedPhone - Phone number with leading '+' (e.g., '+919876543210')
+ * @returns Country code including '+' (e.g., '+91') or '+1' as fallback
+ */
+function extractCountryCode(formattedPhone: string): string {
+  if (!formattedPhone.startsWith('+')) {
+    return '+1';
+  }
+
+  // Remove the '+' prefix for easier matching
+  const digits = formattedPhone.substring(1);
+
+  // Common country codes by length (most specific to least specific)
+  // Try 3-digit codes first, then 2-digit, then 1-digit
+
+  // 3-digit codes (less common, but exist)
+  // No need to check these exhaustively - if first digit is 1-9 and length >= 3, try it
+
+  // 2-digit codes (most common internationally)
+  // Check if first 2 digits form a valid pattern
+  if (digits.length >= 2) {
+    const twoDigit = digits.substring(0, 2);
+    const firstDigit = parseInt(twoDigit[0]);
+
+    // Country codes 20-99 are 2 digits
+    if (firstDigit >= 2 && firstDigit <= 9) {
+      return '+' + twoDigit;
+    }
+  }
+
+  // 1-digit codes (only North America uses country code 1)
+  if (digits.length >= 1 && digits[0] === '1') {
+    return '+1';
+  }
+
+  // Fallback
+  return '+1';
 }
 
 // Core functions
@@ -128,8 +170,8 @@ async function verifyOTP(phoneNumber: string, otpCode: string, services: Service
 
     if (profileError || !existingProfile) {
       // Create new user profile for phone auth user
-      const countryCode = formattedPhone.split(/\d/)[0] || '+1';
-      
+      const countryCode = extractCountryCode(formattedPhone);
+
       const { error: insertError } = await services.supabase
         .from('user_profiles')
         .insert({
@@ -145,16 +187,20 @@ async function verifyOTP(phoneNumber: string, otpCode: string, services: Service
 
       if (insertError) {
         console.error('Failed to create user profile:', insertError);
-      } else {
-        onboardingStatus = 'profile_setup';
-        requiresOnboarding = true;
+        return {
+          success: false,
+          error: `Failed to create user profile: ${insertError.message}`
+        };
       }
+
+      onboardingStatus = 'profile_setup';
+      requiresOnboarding = true;
     } else {
       // Update existing profile with phone number if not set
       if (!existingProfile.phone_number) {
-        const countryCode = formattedPhone.split(/\d/)[0] || '+1';
-        
-        await services.supabase
+        const countryCode = extractCountryCode(formattedPhone);
+
+        const { error: updateError } = await services.supabase
           .from('user_profiles')
           .update({
             phone_number: formattedPhone,
@@ -163,8 +209,16 @@ async function verifyOTP(phoneNumber: string, otpCode: string, services: Service
             updated_at: new Date().toISOString()
           })
           .eq('id', user.id);
+
+        if (updateError) {
+          console.error('Failed to update user profile:', updateError);
+          return {
+            success: false,
+            error: `Failed to update user profile: ${updateError.message}`
+          };
+        }
       }
-      
+
       onboardingStatus = existingProfile.onboarding_status || 'completed';
       requiresOnboarding = onboardingStatus !== 'completed';
     }

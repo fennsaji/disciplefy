@@ -286,29 +286,46 @@ export function createPostFunction(
 
 /**
  * Parses user context from JWT token
- * Supports both header-based auth (standard) and query-based auth (EventSource)
+ *
+ * SECURITY WARNING: Query-based authentication (via URL parameters) is INSECURE and should
+ * only be used as a last resort for EventSource connections that cannot send custom headers.
+ * Query parameters appear in:
+ * - Browser history
+ * - Server logs
+ * - Proxy logs
+ * - Referrer headers
+ *
+ * RECOMMENDED: Use Authorization headers, secure cookies, or implement a proper EventSource
+ * authentication handshake (e.g., initial POST to exchange credentials for a session token,
+ * then use that token in EventSource URL without exposing the primary auth token).
+ *
+ * @param req - Incoming request
+ * @param services - Service container
+ * @returns User context extracted from JWT
  */
 async function parseUserContext(
   req: Request,
   services: ServiceContainer
 ): Promise<UserContext> {
   let authToken = req.headers.get('Authorization') || ''
-  console.log('[AUTH] Header auth token:', authToken ? 'PRESENT' : 'MISSING')
+  const hasHeaderAuth = !!authToken
+  console.log('[AUTH] Header auth:', hasHeaderAuth ? 'PRESENT' : 'MISSING')
 
-  // For EventSource requests, check query parameters as fallback
+  // For EventSource requests, check query parameters as fallback (INSECURE - see JSDoc warning)
   if (!authToken) {
     const url = new URL(req.url)
     const queryAuthToken = url.searchParams.get('authorization')
-    console.log('[AUTH] Query auth token:', queryAuthToken ? 'PRESENT' : 'MISSING')
-    console.log('[AUTH] Full URL:', req.url)
+    const hasQueryAuth = !!queryAuthToken
+    console.log('[AUTH] Query auth:', hasQueryAuth ? 'PRESENT' : 'MISSING')
+
     if (queryAuthToken) {
       authToken = `Bearer ${queryAuthToken}`
-      console.log('[AUTH] Using query auth token, final token:', authToken.substring(0, 20) + '...')
+      console.log('[AUTH] Using query-based auth (insecure)')
     }
   }
 
   if (!authToken) {
-    console.log('[AUTH] ERROR: No auth token found in headers or query params')
+    console.log('[AUTH] ERROR: No auth token found')
     throw new Error('Missing authorization header')
   }
 

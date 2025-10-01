@@ -1,8 +1,8 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
+import { createClient, SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2"
 
 interface ServiceContainer {
-  supabase: any;
+  supabase: SupabaseClient;
 }
 
 interface ProfileData {
@@ -18,10 +18,22 @@ interface ProfileSetupRequest {
   profile_data?: ProfileData;
 }
 
+/**
+ * Success payload for profile operations
+ */
+interface ProfileSuccessData {
+  profile: any; // User profile from database
+  next_step?: string; // Next onboarding step (for update_profile)
+}
+
+/**
+ * Profile setup response with proper typing and status code
+ */
 interface ProfileSetupResponse {
   success: boolean;
-  data?: any;
+  data?: ProfileSuccessData;
   error?: string;
+  statusCode?: number; // HTTP status code for the response
 }
 
 // Validation utilities
@@ -105,7 +117,8 @@ async function updateProfile(profileData: ProfileData, services: ServiceContaine
     if (authError || !user) {
       return {
         success: false,
-        error: 'Authentication required'
+        error: 'Authentication required',
+        statusCode: 401
       };
     }
 
@@ -114,7 +127,8 @@ async function updateProfile(profileData: ProfileData, services: ServiceContaine
     if (validationError) {
       return {
         success: false,
-        error: validationError
+        error: validationError,
+        statusCode: 400
       };
     }
 
@@ -141,7 +155,8 @@ async function updateProfile(profileData: ProfileData, services: ServiceContaine
       console.error('Profile update error:', error);
       return {
         success: false,
-        error: 'Failed to update profile'
+        error: 'Failed to update profile',
+        statusCode: 500
       };
     }
 
@@ -157,7 +172,8 @@ async function updateProfile(profileData: ProfileData, services: ServiceContaine
     console.error('Update profile error:', error);
     return {
       success: false,
-      error: 'Internal server error'
+      error: 'Internal server error',
+      statusCode: 500
     };
   }
 }
@@ -186,7 +202,8 @@ async function getProfile(services: ServiceContainer, authToken?: string): Promi
     if (authError || !user) {
       return {
         success: false,
-        error: 'Authentication required'
+        error: 'Authentication required',
+        statusCode: 401
       };
     }
 
@@ -201,7 +218,8 @@ async function getProfile(services: ServiceContainer, authToken?: string): Promi
       console.error('Get profile error:', error);
       return {
         success: false,
-        error: 'Failed to retrieve profile'
+        error: 'Failed to retrieve profile',
+        statusCode: 500
       };
     }
 
@@ -209,14 +227,16 @@ async function getProfile(services: ServiceContainer, authToken?: string): Promi
       success: true,
       data: {
         profile: data
-      }
+      },
+      statusCode: 200
     };
 
   } catch (error) {
     console.error('Get profile error:', error);
     return {
       success: false,
-      error: 'Internal server error'
+      error: 'Internal server error',
+      statusCode: 500
     };
   }
 }
@@ -308,7 +328,8 @@ async function handleRequest(request: Request): Promise<Response> {
         );
     }
 
-    const status = result.success ? 200 : 400;
+    // Use statusCode from result, default to 200 for success, 400 for failure
+    const status = result.statusCode || (result.success ? 200 : 400);
     
     return new Response(
       JSON.stringify(result),
@@ -321,13 +342,17 @@ async function handleRequest(request: Request): Promise<Response> {
   } catch (error) {
     console.error('Request handling error:', error);
     
+    // Determine status code based on error type
+    const isValidationError = error instanceof SyntaxError; // JSON parsing errors
+    const status = isValidationError ? 400 : 500;
+    
     return new Response(
       JSON.stringify({ 
         success: false, 
-        error: 'Invalid request format' 
+        error: isValidationError ? 'Invalid request format' : 'Internal server error'
       }),
       { 
-        status: 400, 
+        status, 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       }
     );

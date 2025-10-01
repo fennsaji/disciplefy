@@ -146,8 +146,16 @@ class AppRouter {
         path: AppRoutes.phoneAuthVerify,
         name: 'phone_auth_verify',
         builder: (context, state) {
-          // Extract phone auth parameters from extra data
-          final extra = state.extra as Map<String, dynamic>? ?? {};
+          // Safely extract phone auth parameters from extra data
+          // Type-safe casting to prevent runtime crashes
+          final Map<String, dynamic> extra;
+          if (state.extra is Map<String, dynamic>) {
+            extra = state.extra as Map<String, dynamic>;
+          } else {
+            // Graceful degradation: use empty map if extra is not a Map
+            extra = {};
+          }
+
           final phoneNumber = extra['phoneNumber'] as String? ?? '';
           final countryCode = extra['countryCode'] as String? ?? '+1';
           final expiresIn = extra['expiresIn'] as int? ?? 60;

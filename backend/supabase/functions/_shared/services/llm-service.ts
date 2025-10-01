@@ -170,15 +170,15 @@ export class LLMService {
 
   /**
    * Generates a follow-up response for study guide questions.
-   * 
+   *
    * @param prompt - The prompt containing system and user messages
    * @param language - Target language for the response
-   * @returns Promise resolving to follow-up response text
+   * @returns Promise resolving to follow-up response text with preserved Markdown structure
    * @throws {Error} When generation fails
    */
   async generateFollowUpResponse(prompt: {systemMessage: string, userMessage: string}, language: string): Promise<string> {
     console.log(`[LLM] Generating follow-up response for language: ${language}`)
-    
+
     if (this.useMockData) {
       console.log('[LLM] Using mock data for follow-up response')
       return this.getMockFollowUpResponse(prompt.userMessage, language)
@@ -188,22 +188,22 @@ export class LLMService {
       // Select optimal provider for follow-up response
       const selectedProvider = this.selectOptimalProvider(language)
       console.log(`[LLM] Selected ${selectedProvider} for follow-up response generation`)
-      
+
       let rawResponse: string
-      
+
       // Call the selected provider
       if (selectedProvider === 'openai') {
         rawResponse = await this.callOpenAIForFollowUp(prompt.systemMessage, prompt.userMessage, language)
       } else {
         rawResponse = await this.callAnthropicForFollowUp(prompt.systemMessage, prompt.userMessage, language)
       }
-      
-      // Sanitize and return response
-      const sanitizedResponse = this.sanitizeText(rawResponse)
-      
+
+      // Use Markdown-safe sanitizer for follow-up responses to preserve formatting
+      const sanitizedResponse = this.sanitizeMarkdownText(rawResponse)
+
       console.log(`[LLM] Successfully generated follow-up response: ${sanitizedResponse.length} characters`)
       return sanitizedResponse
-      
+
     } catch (error) {
       console.error(`[LLM] Follow-up response generation failed:`, error)
       throw new Error(`Follow-up response generation failed: ${error instanceof Error ? error.message : String(error)}`)
@@ -1581,8 +1581,54 @@ export class LLMService {
   }
 
   /**
+   * Sanitizes Markdown text while preserving formatting structure.
+   *
+   * This sanitizer is designed for follow-up responses and other Markdown content
+   * where preserving blank lines, lists, numbering, and code blocks is essential.
+   *
+   * Security measures:
+   * - Removes dangerous control characters (except newlines and tabs)
+   * - Removes potential HTML tags
+   * - Trims leading/trailing blank lines
+   * - Normalizes trailing spaces on each line
+   *
+   * Preserves:
+   * - Newline characters (\n)
+   * - Blank lines for paragraph separation
+   * - List markers (-, *, numbered lists)
+   * - Code fence markers (```)
+   * - Indentation (tabs and spaces)
+   *
+   * @param text - Markdown text to sanitize
+   * @returns Sanitized Markdown with preserved structure
+   */
+  private sanitizeMarkdownText(text: string): string {
+    if (typeof text !== 'string') {
+      return ''
+    }
+
+    return text
+      // Remove dangerous control characters (keep \n, \t, and printable chars)
+      .replace(/[\x00-\x08\x0B-\x0C\x0E-\x1F\x7F]/g, '')
+      // Remove potential HTML tags
+      .replace(/[<>]/g, '')
+      // Normalize trailing spaces on each line (but keep the newlines)
+      .split('\n')
+      .map(line => line.trimEnd())
+      .join('\n')
+      // Trim leading and trailing blank lines
+      .replace(/^\n+/, '')
+      .replace(/\n+$/, '')
+      // Apply reasonable length limit
+      .substring(0, 10000) // Higher limit for Markdown content
+  }
+
+  /**
    * Sanitizes text content to prevent XSS and ensure data quality.
-   * 
+   *
+   * This sanitizer is designed for short text fields like titles, references,
+   * and single-line content where whitespace normalization is desired.
+   *
    * @param text - Text to sanitize
    * @returns Sanitized text
    */
@@ -1598,6 +1644,53 @@ export class LLMService {
       .substring(0, 2000) // Reasonable length limit
   }
 }
+
+/*
+UNIT TEST FOR MARKDOWN SANITIZER:
+
+The sanitizeMarkdownText method must preserve Markdown structure while removing dangerous content.
+Test with the following input:
+
+const testMarkdownInput = `
+This is a paragraph with trailing spaces.
+
+## Heading with blank line above
+
+- List item 1
+- List item 2
+  - Nested item
+
+1. Numbered item 1
+2. Numbered item 2
+
+* Asterisk list
+* Another item
+
+\`\`\`javascript
+const code = "block";
+\`\`\`
+
+Final paragraph.
+
+
+`
+
+Expected output after sanitizeMarkdownText:
+- All blank lines preserved (for paragraph separation)
+- List markers (-, *, 1., 2.) intact
+- Code fence markers (```) intact
+- Indentation preserved
+- Trailing spaces removed from each line
+- Leading/trailing blank lines trimmed
+- No <> characters
+- No dangerous control characters
+
+Assertion: output.split('\n').length should be >= 15 (preserves newlines)
+Assertion: output should include '- List item 1'
+Assertion: output should include '1. Numbered item 1'
+Assertion: output should include '```'
+Assertion: output should not include '<' or '>'
+*/
 
 /*
 EXAMPLE USAGE AND TESTING:

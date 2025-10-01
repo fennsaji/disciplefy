@@ -1,18 +1,18 @@
-// ignore_for_file: avoid_web_libraries_in_flutter
-
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
-
-// Web-only functionality - only used on web platform
-import 'dart:html' as html;
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../../../core/services/http_service.dart';
 import '../../../../core/di/injection_container.dart';
 import '../../../../core/utils/logger.dart';
+import '../../../../core/config/app_config.dart';
+
+// Platform-conditional import for image picker
+import '../../utils/profile_image_picker_stub.dart'
+    if (dart.library.html) '../../utils/profile_image_picker_web.dart';
 
 /// Profile setup screen for new users after phone verification
 class ProfileSetupScreen extends StatefulWidget {
@@ -499,24 +499,20 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
   }
 
   Future<void> _pickImageWeb() async {
-    final input = html.FileUploadInputElement()..accept = 'image/*';
-    input.click();
+    final result = await ProfileImagePicker.pickImage();
 
-    await input.onChange.first;
-    if (input.files?.isNotEmpty == true) {
-      final file = input.files!.first;
-      final reader = html.FileReader();
-      reader.readAsArrayBuffer(file);
-      await reader.onLoad.first;
+    if (result != null) {
+      final data = result['data'] as Uint8List;
+      final fileName = result['name'] as String;
+      final fileType = result['type'] as String;
 
-      final data = reader.result as List<int>;
       setState(() {
-        _profileImageData = Uint8List.fromList(data);
+        _profileImageData = data;
       });
 
       // Upload image (non-blocking - continue even if upload fails)
       try {
-        await _uploadImage(file.name, file.type, base64Encode(data));
+        await _uploadImage(fileName, fileType, base64Encode(data));
       } catch (e) {
         Logger.error(
           'Image upload failed, but continuing with local image',
@@ -547,7 +543,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
       );
 
       final response = await _httpService.post(
-        'http://127.0.0.1:54321/functions/v1/upload-profile-image',
+        '${AppConfig.baseApiUrl}/upload-profile-image',
         headers: headers,
         body: jsonEncode({
           'action': 'upload_image',
@@ -634,7 +630,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
       );
 
       final response = await _httpService.post(
-        'http://127.0.0.1:54321/functions/v1/profile-setup',
+        '${AppConfig.baseApiUrl}/profile-setup',
         headers: headers,
         body: jsonEncode({
           'action': 'update_profile',

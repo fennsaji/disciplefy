@@ -320,6 +320,22 @@ export class AuthService {
   }
 
   /**
+   * Handles Supabase query errors for user profile lookups
+   * 
+   * @param err - Error from Supabase query
+   * @param context - Context string for logging
+   * @returns True if error should be treated as "no rows found" (return null)
+   */
+  private handleSupabaseError(err: any, context: string): boolean {
+    if (err?.code === 'PGRST116') {
+      // PGRST116 = no rows found - this is expected for new users
+      return true
+    }
+    console.error(`[AuthService] ${context}:`, err)
+    return true // Treat all errors as "not found" for safe degradation
+  }
+
+  /**
    * Gets user profile information from database
    * 
    * @param userId - User ID to get profile for
@@ -331,28 +347,17 @@ export class AuthService {
       return null
     }
     
-    try {
-      const { data, error } = await this.supabaseServiceClient
-        .from('user_profiles')
-        .select('id, is_admin, language_preference, theme_preference')
-        .eq('id', userId)
-        .single()
-      
-      if (error) {
-        if (error.code === 'PGRST116') {
-          // No user profile found - this is okay, user might be newly created
-          return null
-        }
-        console.error('[AuthService] Failed to get user profile:', error)
-        return null
-      }
-      
-      return data as UserProfile
-      
-    } catch (error) {
-      console.error('[AuthService] Unexpected error getting user profile:', error)
+    const { data, error } = await this.supabaseServiceClient
+      .from('user_profiles')
+      .select('id, is_admin, language_preference, theme_preference')
+      .eq('id', userId)
+      .single()
+    
+    if (error && this.handleSupabaseError(error, 'Failed to get user profile')) {
       return null
     }
+    
+    return data as UserProfile
   }
 
 

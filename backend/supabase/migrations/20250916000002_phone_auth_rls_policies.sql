@@ -23,13 +23,11 @@ WITH CHECK (auth.uid() = id);
 DROP POLICY IF EXISTS "Users can access own OTP requests" ON otp_requests;
 DROP POLICY IF EXISTS "Service role can manage OTP requests" ON otp_requests;
 
--- Allow reading OTP requests for verification (no authentication required initially)
-CREATE POLICY "Allow OTP verification reads" ON otp_requests
+-- Allow reading OTP requests for service role only
+-- Security: All user-facing verification must use the verify_user_otp() security definer function
+CREATE POLICY "Service role only OTP reads" ON otp_requests
 FOR SELECT USING (
-  -- Service role for backend functions
-  auth.role() = 'service_role' OR
-  -- Allow reading for verification process (limited to recent, non-expired OTPs)
-  (expires_at > NOW() AND created_at > NOW() - INTERVAL '1 hour')
+  auth.role() = 'service_role'
 );
 
 -- Allow inserting new OTP requests (for sending OTPs)
@@ -40,18 +38,14 @@ FOR INSERT WITH CHECK (
   auth.role() = 'service_role'
 );
 
--- Allow updating OTP requests for verification and attempt tracking
--- Note: Simplified policy - detailed validation will be handled by functions
-CREATE POLICY "Allow OTP verification updates" ON otp_requests
+-- Allow updating OTP requests for service role only
+-- Security: All verification and attempt tracking must use the verify_user_otp() security definer function
+CREATE POLICY "Service role only OTP updates" ON otp_requests
 FOR UPDATE USING (
-  auth.role() = 'service_role' OR
-  -- Allow updating attempts and verification status for recent OTPs
-  (expires_at > NOW() AND created_at > NOW() - INTERVAL '1 hour')
+  auth.role() = 'service_role'
 )
 WITH CHECK (
-  auth.role() = 'service_role' OR
-  -- Allow updates for recent, non-expired OTPs
-  (expires_at > NOW() AND created_at > NOW() - INTERVAL '1 hour')
+  auth.role() = 'service_role'
 );
 
 -- Service role can delete expired OTP requests
@@ -164,12 +158,12 @@ BEGIN
   VALUES (user_phone_number, otp_code, user_ip_address)
   RETURNING id INTO new_otp_id;
 
-  -- Return success with OTP code (only for backend functions)
+  -- Return success WITHOUT exposing the OTP code
+  -- Security: OTP code must be sent via SMS, never returned to client
   RETURN jsonb_build_object(
     'success', true,
-    'message', 'OTP created successfully',
+    'message', 'OTP sent successfully',
     'otp_id', new_otp_id,
-    'otp_code', otp_code,
     'expires_in', 600
   );
 END;

@@ -397,7 +397,56 @@ async function handleStudyFollowUp(
     maxFollowUps
   })
 
-  // Consume tokens for follow-up question
+  // CRITICAL: Load conversation history FIRST to check limits BEFORE consuming tokens
+  let conversationHistory: any[] = []
+  let userQuestionCount = 0
+  try {
+    const { data, error } = await supabaseServiceClient
+      .from('conversation_messages')
+      .select('id, role, content, created_at')
+      .eq('conversation_id', conversation.id)
+      .order('created_at', { ascending: true })
+
+    if (!error && data) {
+      conversationHistory = data
+      // Count user questions (to check against limit)
+      userQuestionCount = data.filter(msg => msg.role === 'user').length
+      
+      console.log('📜 [FOLLOW-UP] Loaded conversation history:', {
+        totalMessages: conversationHistory.length,
+        userQuestions: userQuestionCount,
+        maxAllowed: maxFollowUps
+      })
+
+      // Check if user has exceeded follow-up limit BEFORE consuming tokens
+      if (userQuestionCount >= maxFollowUps) {
+        console.warn('🚫 [FOLLOW-UP] Follow-up limit exceeded (BEFORE token consumption):', {
+          currentCount: userQuestionCount,
+          maxAllowed: maxFollowUps,
+          userPlan
+        })
+        return new Response(
+          JSON.stringify({
+            error: 'FOLLOW_UP_LIMIT_EXCEEDED',
+            message: `You have reached the maximum of ${maxFollowUps} follow-up questions for this study guide`,
+            current: userQuestionCount,
+            max: maxFollowUps,
+            plan: userPlan
+          }),
+          { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        )
+      }
+    }
+
+  } catch (error) {
+    console.error('❌ [FOLLOW-UP] Failed to load conversation history:', error)
+    return new Response(
+      JSON.stringify({ error: 'SERVER_ERROR', message: 'Failed to load conversation history' }),
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    )
+  }
+
+  // Only consume tokens AFTER passing the limit check
   try {
     const result = await tokenService.consumeTokens(
       userContext.userId || userContext.sessionId || 'unknown',
@@ -459,7 +508,7 @@ async function handleStudyFollowUp(
     )
   }
 
-  // Store user message in database
+  // Store user message in database AFTER token consumption succeeds
   let userMessage: any
   try {
     const { data, error } = await supabaseServiceClient
@@ -490,52 +539,6 @@ async function handleStudyFollowUp(
       JSON.stringify({ error: 'SERVER_ERROR', message: 'Failed to store message' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
-  }
-
-  // Load conversation history for context and check limits
-  let conversationHistory: any[] = []
-  let userQuestionCount = 0
-  try {
-    const { data, error } = await supabaseServiceClient
-      .from('conversation_messages')
-      .select('id, role, content, created_at')
-      .eq('conversation_id', conversation.id)
-      .order('created_at', { ascending: true })
-
-    if (!error && data) {
-      conversationHistory = data
-      // Count user questions (excluding the one we're about to add)
-      userQuestionCount = data.filter(msg => msg.role === 'user').length
-      
-      console.log('📜 [FOLLOW-UP] Loaded conversation history:', {
-        totalMessages: conversationHistory.length,
-        userQuestions: userQuestionCount,
-        maxAllowed: maxFollowUps
-      })
-
-      // Check if user has exceeded follow-up limit
-      if (userQuestionCount >= maxFollowUps) {
-        console.warn('🚫 [FOLLOW-UP] Follow-up limit exceeded:', {
-          currentCount: userQuestionCount,
-          maxAllowed: maxFollowUps,
-          userPlan
-        })
-        return new Response(
-          JSON.stringify({
-            error: 'FOLLOW_UP_LIMIT_EXCEEDED',
-            message: `You have reached the maximum of ${maxFollowUps} follow-up questions for this study guide`,
-            current: userQuestionCount,
-            max: maxFollowUps,
-            plan: userPlan
-          }),
-          { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        )
-      }
-    }
-
-  } catch (error) {
-    console.warn('⚠️ [FOLLOW-UP] Failed to load conversation history:', error)
-    // Continue without history - not critical for follow-up
   }
 
   // Check if this is an EventSource request
