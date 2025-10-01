@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/error/failures.dart';
+import '../../../../core/extensions/translation_extension.dart';
 import '../../domain/entities/purchase_history.dart';
 import '../bloc/token_bloc.dart';
 import '../bloc/token_event.dart';
@@ -142,7 +143,7 @@ class _PurchaseHistoryPageState extends State<PurchaseHistoryPage> {
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text('Purchase History'),
+        title: Text(context.tr('tokens.history.title')),
         backgroundColor: theme.scaffoldBackgroundColor,
         elevation: 0,
         leading: IconButton(
@@ -153,7 +154,7 @@ class _PurchaseHistoryPageState extends State<PurchaseHistoryPage> {
           IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: _onRefresh,
-            tooltip: 'Refresh',
+            tooltip: context.tr('tokens.balance.refresh'),
           ),
         ],
       ),
@@ -208,7 +209,7 @@ class _PurchaseHistoryPageState extends State<PurchaseHistoryPage> {
                               ),
                               const SizedBox(height: 8),
                               Text(
-                                'Failed to load statistics',
+                                context.tr('tokens.stats.failed_to_load'),
                                 style: theme.textTheme.titleMedium,
                               ),
                               const SizedBox(height: 4),
@@ -233,7 +234,7 @@ class _PurchaseHistoryPageState extends State<PurchaseHistoryPage> {
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16.0),
                 child: Text(
-                  'Transaction History',
+                  context.tr('tokens.history.transaction_details'),
                   style: theme.textTheme.headlineSmall?.copyWith(
                     fontWeight: FontWeight.bold,
                     color: theme.colorScheme.onBackground,
@@ -293,7 +294,7 @@ class _PurchaseHistoryPageState extends State<PurchaseHistoryPage> {
                             ),
                             const SizedBox(height: 16),
                             Text(
-                              'No Purchase History',
+                              context.tr('tokens.history.empty'),
                               style: theme.textTheme.headlineSmall?.copyWith(
                                 color: theme.colorScheme.onSurface
                                     .withOpacity(0.6),
@@ -301,7 +302,7 @@ class _PurchaseHistoryPageState extends State<PurchaseHistoryPage> {
                             ),
                             const SizedBox(height: 8),
                             Text(
-                              'Your token purchases will appear here',
+                              context.tr('tokens.history.empty_message'),
                               style: theme.textTheme.bodyMedium?.copyWith(
                                 color: theme.colorScheme.onSurface
                                     .withOpacity(0.5),
@@ -363,7 +364,7 @@ class _PurchaseHistoryPageState extends State<PurchaseHistoryPage> {
                             ),
                             const SizedBox(height: 16),
                             Text(
-                              'Failed to Load History',
+                              context.tr('tokens.history.failed'),
                               style: theme.textTheme.headlineSmall?.copyWith(
                                 color: theme.colorScheme.error,
                               ),
@@ -377,7 +378,7 @@ class _PurchaseHistoryPageState extends State<PurchaseHistoryPage> {
                             const SizedBox(height: 16),
                             ElevatedButton(
                               onPressed: _onRefresh,
-                              child: const Text('Retry'),
+                              child: Text(context.tr('tokens.history.retry')),
                             ),
                           ],
                         ),

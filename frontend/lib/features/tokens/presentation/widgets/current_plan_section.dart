@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../domain/entities/token_status.dart';
+import '../../../../core/extensions/translation_extension.dart';
 
 /// Widget that displays the current user plan information
 class CurrentPlanSection extends StatelessWidget {
@@ -32,7 +33,7 @@ class CurrentPlanSection extends StatelessWidget {
                 ),
                 const SizedBox(width: 12),
                 Text(
-                  'Current Plan',
+                  context.tr('tokens.plans.current_plan'),
                   style: GoogleFonts.inter(
                     fontSize: 18,
                     fontWeight: FontWeight.w600,
@@ -70,15 +71,15 @@ class CurrentPlanSection extends StatelessWidget {
                     onPressed: onUpgrade,
                     child: Text(
                       tokenStatus.userPlan == UserPlan.free
-                          ? 'Upgrade Plan'
-                          : 'Go Premium',
+                          ? context.tr('tokens.plans.upgrade_plan')
+                          : context.tr('tokens.plans.go_premium'),
                     ),
                   ),
               ],
             ),
             const SizedBox(height: 12),
             Text(
-              _getPlanDescription(tokenStatus.userPlan),
+              _getPlanDescription(tokenStatus.userPlan, context),
               style: GoogleFonts.inter(
                 fontSize: 14,
                 color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
@@ -112,14 +113,14 @@ class CurrentPlanSection extends StatelessWidget {
     }
   }
 
-  String _getPlanDescription(UserPlan plan) {
+  String _getPlanDescription(UserPlan plan, BuildContext context) {
     switch (plan) {
       case UserPlan.free:
-        return 'Get 20 daily tokens to generate Bible study guides. Perfect for personal study and exploration.';
+        return context.tr('tokens.plans.free_description');
       case UserPlan.standard:
-        return 'Enjoy 100 daily tokens plus the ability to purchase additional tokens. Great for group leaders and regular users.';
+        return context.tr('tokens.plans.standard_description');
       case UserPlan.premium:
-        return 'Unlimited token access for unlimited Bible study generation. Perfect for pastors, teachers, and heavy users.';
+        return context.tr('tokens.plans.premium_description');
     }
   }
 }
