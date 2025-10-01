@@ -1,5 +1,6 @@
 {
   "nodeModulesDir": "auto",
+  "importMap": "./supabase/functions/_shared/import_map.json",
   "compilerOptions": {
     "strict": true,
     "noImplicitAny": true,

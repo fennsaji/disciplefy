@@ -1,8 +1,8 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
+import { createClient, SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2"
 
 interface ServiceContainer {
-  supabase: any;
+  supabase: SupabaseClient;
 }
 
 interface UploadImageRequest {
@@ -12,11 +12,40 @@ interface UploadImageRequest {
   image_data?: string; // Base64 encoded image data
 }
 
-interface UploadImageResponse {
-  success: boolean;
-  data?: any;
-  error?: string;
+/**
+ * Upload response payload with image URL and metadata
+ */
+interface UploadSuccessData {
+  readonly image_url: string;
+  readonly file_name: string;
+  readonly profile: any; // User profile from database
 }
+
+/**
+ * Delete response payload with confirmation message
+ */
+interface DeleteSuccessData {
+  readonly message: string;
+  readonly profile: any; // Updated user profile from database
+}
+
+/**
+ * Upload URL response payload with signed URL
+ */
+interface UploadUrlData {
+  readonly upload_url: string;
+  readonly file_name: string;
+  readonly expires_in: number; // Expiration time in seconds
+}
+
+/**
+ * Discriminated union of all possible response types
+ */
+type UploadImageResponse = 
+  | { success: true; data: UploadSuccessData }
+  | { success: true; data: DeleteSuccessData }
+  | { success: true; data: UploadUrlData }
+  | { success: false; error: string }
 
 // Configuration
 const STORAGE_BUCKET = 'profile-images';
@@ -379,11 +408,11 @@ async function getUploadUrl(fileName: string, fileType: string, services: Servic
     // Generate unique file name
     const uniqueFileName = generateUniqueFileName(user.id, fileName);
 
-    // Create signed upload URL (valid for 1 hour)
+    // Create signed upload URL (upsert allows replacing existing file)
     const { data, error } = await services.supabase.storage
       .from(STORAGE_BUCKET)
       .createSignedUploadUrl(uniqueFileName, {
-        expiresIn: 3600 // 1 hour
+        upsert: true
       });
 
     if (error) {

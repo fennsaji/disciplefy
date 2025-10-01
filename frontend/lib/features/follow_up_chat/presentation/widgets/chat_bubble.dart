@@ -134,45 +134,83 @@ class ChatBubble extends StatelessWidget {
 
   /// Builds the message text with streaming support and proper formatting
   Widget _buildMessageText(ThemeData theme, bool isUser) {
-    final content =
-        message.content.isEmpty && message.status == ChatMessageStatus.streaming
-            ? '...'
-            : message.content;
+    final content = message.content;
 
-    // For AI messages, use markdown rendering for proper formatting
-    if (!isUser && content != '...') {
+    // Debug logging
+    // During streaming, show plain text to avoid incomplete markdown parsing issues
+    if (message.status == ChatMessageStatus.streaming) {
+      return SelectableText(
+        content.isEmpty ? '...' : content,
+        key: ValueKey('${message.id}_streaming_text'),
+        style: theme.textTheme.bodyMedium?.copyWith(
+          color: _getTextColor(theme, isUser),
+          height: 1.5,
+        ),
+      );
+    }
+
+    // For AI messages with complete content, use markdown rendering
+    if (!isUser && content.isNotEmpty) {
+      // Add blank lines before lists for proper markdown parsing
+      final fixedContent = content
+          // Fix: **bold**1. -> **bold**\n\n1.
+          .replaceAllMapped(
+            RegExp(r'(\*\*[^*]+\*\*)(\d+\.)', multiLine: true),
+            (match) => '${match.group(1)}\n\n${match.group(2)}',
+          )
+          // Fix: *italic*1. -> *italic*\n\n1.
+          .replaceAllMapped(
+            RegExp(r'(\*[^*]+\*)(\d+\.)', multiLine: true),
+            (match) => '${match.group(1)}\n\n${match.group(2)}',
+          )
+          // Fix: "text"1. -> "text"\n\n1.
+          .replaceAllMapped(
+            RegExp(r'("[^"]+")(\d+\.)', multiLine: true),
+            (match) => '${match.group(1)}\n\n${match.group(2)}',
+          );
       return MarkdownBody(
-        data: content,
+        key: ValueKey(
+            '${message.id}_${message.status.toString()}_${content.hashCode}'),
+        data: fixedContent,
         selectable: true,
         styleSheet: MarkdownStyleSheet(
+          // Paragraph styling with proper line height
           p: theme.textTheme.bodyMedium?.copyWith(
             color: _getTextColor(theme, isUser),
-            height: 1.5,
+            height: 1.6,
           ),
+          // Heading styles with proper spacing
           h1: theme.textTheme.headlineMedium?.copyWith(
             color: _getTextColor(theme, isUser),
             fontWeight: FontWeight.bold,
+            height: 1.3,
           ),
           h2: theme.textTheme.headlineSmall?.copyWith(
             color: _getTextColor(theme, isUser),
             fontWeight: FontWeight.bold,
+            height: 1.3,
           ),
           h3: theme.textTheme.titleLarge?.copyWith(
             color: _getTextColor(theme, isUser),
             fontWeight: FontWeight.w600,
+            height: 1.4,
           ),
           h4: theme.textTheme.titleMedium?.copyWith(
             color: _getTextColor(theme, isUser),
             fontWeight: FontWeight.w600,
+            height: 1.4,
           ),
           h5: theme.textTheme.titleSmall?.copyWith(
             color: _getTextColor(theme, isUser),
             fontWeight: FontWeight.w600,
+            height: 1.4,
           ),
           h6: theme.textTheme.titleSmall?.copyWith(
             color: _getTextColor(theme, isUser),
             fontWeight: FontWeight.w500,
+            height: 1.4,
           ),
+          // Text formatting
           strong: theme.textTheme.bodyMedium?.copyWith(
             color: _getTextColor(theme, isUser),
             fontWeight: FontWeight.bold,
@@ -181,20 +219,68 @@ class ChatBubble extends StatelessWidget {
             color: _getTextColor(theme, isUser),
             fontStyle: FontStyle.italic,
           ),
+          // Blockquote with border and padding
           blockquote: theme.textTheme.bodyMedium?.copyWith(
             color: _getTextColor(theme, isUser).withOpacity(0.8),
             fontStyle: FontStyle.italic,
+            height: 1.5,
           ),
+          blockquotePadding: const EdgeInsets.all(AppConstants.SMALL_PADDING),
+          blockquoteDecoration: BoxDecoration(
+            color: theme.colorScheme.surface,
+            border: Border(
+              left: BorderSide(
+                color: theme.colorScheme.primary.withOpacity(0.3),
+                width: 3,
+              ),
+            ),
+          ),
+          // Inline code styling
           code: theme.textTheme.bodySmall?.copyWith(
             color: _getTextColor(theme, isUser),
-            backgroundColor: theme.colorScheme.surfaceContainer,
-            fontFamily: 'monospace',
+            backgroundColor: theme.colorScheme.primary.withOpacity(0.1),
+            fontFamily: 'Courier',
+            fontSize: 14,
           ),
+          // Code block styling
+          codeblockPadding: const EdgeInsets.all(AppConstants.SMALL_PADDING),
+          codeblockDecoration: BoxDecoration(
+            color: theme.colorScheme.surface,
+            borderRadius:
+                BorderRadius.circular(AppConstants.SMALL_BORDER_RADIUS),
+            border: Border.all(
+              color: theme.colorScheme.outline.withOpacity(0.2),
+            ),
+          ),
+          // List styling
           listBullet: theme.textTheme.bodyMedium?.copyWith(
             color: _getTextColor(theme, isUser),
+            height: 1.5,
+          ),
+          listIndent: AppConstants.DEFAULT_PADDING,
+          // Table styling
+          tableHead: theme.textTheme.bodyMedium?.copyWith(
+            color: _getTextColor(theme, isUser),
+            fontWeight: FontWeight.w600,
           ),
           tableBody: theme.textTheme.bodyMedium?.copyWith(
             color: _getTextColor(theme, isUser),
+          ),
+          tableBorder: TableBorder.all(
+            color: theme.colorScheme.outline.withOpacity(0.2),
+          ),
+          // Horizontal rule
+          horizontalRuleDecoration: BoxDecoration(
+            border: Border(
+              top: BorderSide(
+                color: theme.colorScheme.outline.withOpacity(0.3),
+              ),
+            ),
+          ),
+          // Link styling
+          a: theme.textTheme.bodyMedium?.copyWith(
+            color: theme.colorScheme.primary,
+            decoration: TextDecoration.underline,
           ),
         ),
         onTapLink: (text, href, title) {
@@ -203,7 +289,7 @@ class ChatBubble extends StatelessWidget {
       );
     }
 
-    // For user messages or streaming state, use SelectableText
+    // For user messages, use SelectableText
     return SelectableText(
       content,
       style: theme.textTheme.bodyMedium?.copyWith(

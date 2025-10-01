@@ -56,20 +56,14 @@ class OTPVerifiedResponse {
       );
     }
 
+    // Parse user and session data (throws if parsing fails)
     final user = User.fromJson(userData as Map<String, dynamic>);
     final session = Session.fromJson(sessionData as Map<String, dynamic>);
 
-    if (user == null) {
+    if (user == null || session == null) {
       throw const ServerException(
-        message: 'Failed to parse user data from response',
-        code: 'INVALID_USER_DATA',
-      );
-    }
-
-    if (session == null) {
-      throw const ServerException(
-        message: 'Failed to parse session data from response',
-        code: 'INVALID_SESSION_DATA',
+        message: 'Failed to parse user/session data from response',
+        code: 'PARSING_ERROR',
       );
     }
 
@@ -200,16 +194,42 @@ class PhoneAuthRemoteDataSourceImpl implements PhoneAuthRemoteDataSource {
         );
       }
 
-      // Check if user needs onboarding (new user without profile setup)
-      final isNewUser = user.userMetadata?['phone_verified_at'] == null ||
-          user.userMetadata?['first_login'] == true;
+      // Check onboarding status from user_profiles table
+      bool requiresOnboarding = false;
+      String onboardingStatus = 'completed';
+
+      try {
+        final profileResponse = await _supabaseClient
+            .from('user_profiles')
+            .select('onboarding_status')
+            .eq('id', user.id)
+            .maybeSingle();
+
+        if (profileResponse != null) {
+          onboardingStatus =
+              profileResponse['onboarding_status'] ?? 'completed';
+          requiresOnboarding = onboardingStatus == 'profile_setup' ||
+              onboardingStatus == 'language_selection' ||
+              onboardingStatus == 'pending';
+        } else {
+          // No profile found - treat as new user requiring onboarding
+          requiresOnboarding = true;
+          onboardingStatus = 'profile_setup';
+        }
+      } catch (e) {
+        // On error, default to non-new user to avoid blocking authentication
+        // Log for debugging but don't fail the auth flow
+        print('Failed to fetch onboarding status: ${e.toString()}');
+        requiresOnboarding = false;
+        onboardingStatus = 'completed';
+      }
 
       return OTPVerifiedResponse(
         message: 'OTP verification successful',
         user: user,
         session: session,
-        requiresOnboarding: isNewUser,
-        onboardingStatus: isNewUser ? 'pending' : 'completed',
+        requiresOnboarding: requiresOnboarding,
+        onboardingStatus: onboardingStatus,
       );
     } catch (e) {
       if (e is ServerException) {

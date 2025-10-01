@@ -113,9 +113,126 @@ WHERE phone_number IS NOT NULL;
 
 #### **RLS Policies for OTP Table**
 ```sql
--- Users can only access their own OTP records
-CREATE POLICY "Users can access own OTP requests" ON otp_requests
-FOR ALL USING (auth.uid()::text = phone_number OR auth.role() = 'service_role');
+-- SECURITY: Restrict all OTP access to service role only
+-- Users must use security definer functions (verify_user_otp, create_otp_request)
+
+CREATE POLICY "Service role only OTP reads" ON otp_requests
+FOR SELECT USING (auth.role() = 'service_role');
+
+CREATE POLICY "Allow OTP request creation" ON otp_requests
+FOR INSERT WITH CHECK (auth.role() = 'service_role');
+
+CREATE POLICY "Service role only OTP updates" ON otp_requests
+FOR UPDATE USING (auth.role() = 'service_role')
+WITH CHECK (auth.role() = 'service_role');
+
+CREATE POLICY "Service role can delete expired OTPs" ON otp_requests
+FOR DELETE USING (
+  auth.role() = 'service_role' AND
+  expires_at < NOW()
+);
+
+-- Security definer functions for user-facing OTP operations
+CREATE OR REPLACE FUNCTION verify_user_otp(
+  user_phone_number TEXT,
+  provided_otp_code TEXT
+)
+RETURNS JSONB
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $
+DECLARE
+  otp_record RECORD;
+BEGIN
+  -- Find valid OTP record
+  SELECT * INTO otp_record
+  FROM otp_requests
+  WHERE phone_number = user_phone_number
+    AND otp_code = provided_otp_code
+    AND is_verified = false
+    AND expires_at > NOW()
+    AND attempts < 5
+  ORDER BY created_at DESC
+  LIMIT 1;
+
+  IF NOT FOUND THEN
+    UPDATE otp_requests
+    SET attempts = attempts + 1
+    WHERE phone_number = user_phone_number
+      AND is_verified = false
+      AND expires_at > NOW();
+
+    RETURN jsonb_build_object(
+      'success', false,
+      'message', 'Invalid or expired OTP code'
+    );
+  END IF;
+
+  -- Mark OTP as verified
+  UPDATE otp_requests
+  SET is_verified = true
+  WHERE id = otp_record.id;
+
+  RETURN jsonb_build_object(
+    'success', true,
+    'message', 'OTP verified successfully',
+    'otp_id', otp_record.id
+  );
+END;
+$;
+
+CREATE OR REPLACE FUNCTION create_otp_request(
+  user_phone_number TEXT,
+  user_ip_address INET DEFAULT NULL
+)
+RETURNS JSONB
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $
+DECLARE
+  existing_count INTEGER;
+  otp_code TEXT;
+  new_otp_id UUID;
+BEGIN
+  -- Rate limiting: max 3 requests per hour
+  SELECT COUNT(*) INTO existing_count
+  FROM otp_requests
+  WHERE phone_number = user_phone_number
+    AND created_at > NOW() - INTERVAL '1 hour';
+
+  IF existing_count >= 3 THEN
+    RETURN jsonb_build_object(
+      'success', false,
+      'message', 'Too many OTP requests. Please wait before requesting a new code.'
+    );
+  END IF;
+
+  -- Generate 6-digit OTP
+  otp_code := LPAD(FLOOR(RANDOM() * 1000000)::TEXT, 6, '0');
+
+  -- Insert new OTP request
+  INSERT INTO otp_requests (phone_number, otp_code, ip_address)
+  VALUES (user_phone_number, otp_code, user_ip_address)
+  RETURNING id INTO new_otp_id;
+
+  -- Return success WITHOUT exposing OTP code
+  -- OTP must be sent via SMS, never returned to client
+  RETURN jsonb_build_object(
+    'success', true,
+    'message', 'OTP sent successfully',
+    'otp_id', new_otp_id,
+    'expires_in', 600
+  );
+END;
+$;
+
+-- Grant execute permissions
+GRANT EXECUTE ON FUNCTION verify_user_otp(TEXT, TEXT) TO authenticated;
+GRANT EXECUTE ON FUNCTION create_otp_request(TEXT, INET) TO authenticated;
+GRANT EXECUTE ON FUNCTION verify_user_otp(TEXT, TEXT) TO service_role;
+GRANT EXECUTE ON FUNCTION create_otp_request(TEXT, INET) TO service_role;
 ```
 
 ### **2. Supabase Configuration**
