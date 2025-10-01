@@ -176,7 +176,7 @@ class _DisciplefyBibleStudyAppState extends State<DisciplefyBibleStudyApp> {
       child: ListenableBuilder(
         listenable: themeService,
         builder: (context, child) => MaterialApp.router(
-          title: 'Disciplefy Bible Study',
+          title: 'Disciplefy | Bible Study App',
           debugShowCheckedModeBanner: false,
 
           // Dynamic theming based on ThemeService
@@ -201,7 +201,7 @@ class ErrorApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => MaterialApp(
-        title: 'Disciplefy Bible Study - Error',
+        title: 'Disciplefy | Bible Study App - Error',
         theme: ThemeData(
           useMaterial3: true,
           colorScheme: ColorScheme.fromSeed(
