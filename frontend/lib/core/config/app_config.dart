@@ -39,7 +39,7 @@ class AppConfig {
   /// Get OAuth redirect URL (compile-time constant, not runtime)
   /// Build examples:
   /// - Development: flutter run --dart-define=WEB_OAUTH_REDIRECT_URL=http://localhost:3000/auth/callback
-  /// - Production: flutter build web --dart-define=WEB_OAUTH_REDIRECT_URL=https://disciplefy.com/auth/callback
+  /// - Production: flutter build web --dart-define=WEB_OAUTH_REDIRECT_URL=https://disciplefy.in/auth/callback
   static String get authRedirectUrl {
     if (kIsWeb) {
       // SECURITY FIX: Use pre-configured URL from build time, not runtime Uri.base

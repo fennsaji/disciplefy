@@ -28,7 +28,8 @@ class InputValidationService {
   static final List<RegExp> _xssPatterns = [
     RegExp(r'<script[^>]*>.*?</script>', caseSensitive: false),
     RegExp(r'javascript:', caseSensitive: false),
-    RegExp(r'on\w+\s*=', caseSensitive: false), // onclick=, onerror=, etc.
+    // Match on* attributes only within HTML tags (e.g., <div onclick=)
+    RegExp(r'<[^>]*\s+on\w+\s*=', caseSensitive: false),
     RegExp(r'<iframe', caseSensitive: false),
     RegExp(r'<embed', caseSensitive: false),
     RegExp(r'<object', caseSensitive: false),
@@ -38,7 +39,8 @@ class InputValidationService {
   static final List<RegExp> _promptInjectionPatterns = [
     RegExp(r'ignore\s+(previous|all|above)\s+instructions?',
         caseSensitive: false),
-    RegExp(r'system\s*:', caseSensitive: false),
+    // Match standalone "system:" with word boundaries (not "ecosystem:")
+    RegExp(r'\bsystem\b\s*:', caseSensitive: false),
     RegExp(r'<\|.*?\|>', caseSensitive: false), // Special tokens
     RegExp(r'###\s*instruction', caseSensitive: false),
     RegExp(r'ENDOFTEXT', caseSensitive: false),

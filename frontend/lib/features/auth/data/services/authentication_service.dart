@@ -1,7 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:device_info_plus/device_info_plus.dart';
-import 'dart:io' show Platform;
 import 'package:crypto/crypto.dart';
 import 'dart:convert';
 
@@ -671,7 +670,7 @@ class AuthenticationService {
           webInfo.language ?? '',
         ];
         fingerprint = components.join('|');
-      } else if (Platform.isAndroid) {
+      } else if (defaultTargetPlatform == TargetPlatform.android) {
         final androidInfo = await deviceInfo.androidInfo;
         // Combine device characteristics for Android
         final components = [
@@ -681,7 +680,7 @@ class AuthenticationService {
           androidInfo.product,
         ];
         fingerprint = components.join('|');
-      } else if (Platform.isIOS) {
+      } else if (defaultTargetPlatform == TargetPlatform.iOS) {
         final iosInfo = await deviceInfo.iosInfo;
         // Combine device characteristics for iOS
         final components = [
