@@ -86,6 +86,7 @@ echo -e "  SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY:0:20}..." # Show only first 20
 echo -e "  GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}"
 echo -e "  APP_URL: ${APP_URL}"
 echo -e "  FLUTTER_ENV: ${FLUTTER_ENV}"
+echo -e "  WEB_OAUTH_REDIRECT_URL: http://localhost:59641/auth/callback"
 echo -e ""
 
 flutter run -d chrome \
@@ -95,6 +96,7 @@ flutter run -d chrome \
   --dart-define=SUPABASE_ANON_KEY="$SUPABASE_ANON_KEY" \
   --dart-define=GOOGLE_CLIENT_ID="$GOOGLE_CLIENT_ID" \
   --dart-define=APP_URL="$APP_URL" \
-  --dart-define=FLUTTER_ENV="$FLUTTER_ENV"
+  --dart-define=FLUTTER_ENV="$FLUTTER_ENV" \
+  --dart-define=WEB_OAUTH_REDIRECT_URL="http://localhost:59641/auth/callback"
 
 echo -e "${GREEN}✅ Flutter development session ended${NC}"

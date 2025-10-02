@@ -1,12 +1,17 @@
 -- =====================================
--- Migration: Fix consume_user_tokens Function
--- Date: 2025-09-07
--- Purpose: Fix table alias issues and ambiguous column references in consume_user_tokens function
+-- Migration: Fix Ambiguous Column Reference and Analytics Duplicate Key Issue
+-- Date: 2025-10-03
+-- Purpose:
+--   1. Fix ambiguous "available_tokens" column reference in consume_user_tokens function
+--   2. Add default gen_random_uuid() to analytics_events.id to prevent duplicate key violations
 -- =====================================
 
 BEGIN;
 
--- Replace the buggy function with the corrected version
+-- =====================================================
+-- FIX 1: Resolve ambiguous column reference in consume_user_tokens
+-- =====================================================
+
 CREATE OR REPLACE FUNCTION consume_user_tokens(
   p_identifier TEXT,
   p_user_plan TEXT,
@@ -31,7 +36,7 @@ BEGIN
   SET LOCAL search_path = pg_temp, public;
 
   -- Set default daily limit based on user plan
-  default_limit := CASE 
+  default_limit := CASE
     WHEN p_user_plan = 'premium' THEN 999999999  -- Effectively unlimited
     WHEN p_user_plan = 'standard' THEN 100
     WHEN p_user_plan = 'free' THEN 20
@@ -52,10 +57,10 @@ BEGIN
   FROM user_tokens
   WHERE user_tokens.identifier = p_identifier AND user_tokens.user_plan = p_user_plan
   FOR UPDATE;
-  
+
   -- Calculate total available tokens (daily + purchased)
   total_available := COALESCE(current_daily_tokens, 0) + COALESCE(current_purchased_tokens, 0);
-  
+
   -- If user doesn't exist, create with default tokens
   IF current_daily_tokens IS NULL THEN
     INSERT INTO user_tokens (identifier, user_plan, available_tokens, purchased_tokens, daily_limit)
@@ -67,18 +72,24 @@ BEGIN
   END IF;
 
   -- Check if user has enough tokens (skip check for premium users)
+  -- FIX: Explicitly use local variables instead of column names to avoid ambiguity
   IF p_user_plan != 'premium' AND total_available < p_token_cost THEN
-    RETURN QUERY SELECT false, current_daily_tokens, current_purchased_tokens, default_limit, 'Insufficient tokens'::TEXT;
+    RETURN QUERY SELECT
+      false::BOOLEAN,
+      current_daily_tokens::INTEGER,
+      current_purchased_tokens::INTEGER,
+      default_limit::INTEGER,
+      'Insufficient tokens'::TEXT;
     RETURN;
   END IF;
 
   -- Consume tokens with atomic update (prioritize purchased tokens first)
   IF p_user_plan = 'premium' THEN
     -- Premium users don't consume tokens, just update timestamp
-    UPDATE user_tokens 
+    UPDATE user_tokens
     SET updated_at = NOW()
     WHERE identifier = p_identifier AND user_plan = p_user_plan;
-    
+
     -- Log premium usage event
     PERFORM log_token_event(
       p_identifier,
@@ -90,21 +101,26 @@ BEGIN
         'tokens_consumed', 0
       )
     );
-    
-    RETURN QUERY SELECT true, current_daily_tokens, current_purchased_tokens, default_limit, ''::TEXT;
+
+    RETURN QUERY SELECT
+      true::BOOLEAN,
+      current_daily_tokens::INTEGER,
+      current_purchased_tokens::INTEGER,
+      default_limit::INTEGER,
+      ''::TEXT;
   ELSIF needs_reset THEN
     -- Reset daily data and consume tokens
     IF current_purchased_tokens >= p_token_cost THEN
       -- Consume from purchased tokens only
-      UPDATE user_tokens 
-      SET 
+      UPDATE user_tokens
+      SET
         available_tokens = default_limit,
         purchased_tokens = user_tokens.purchased_tokens - p_token_cost,
         total_consumed_today = 0,
         last_reset = CURRENT_DATE,
         updated_at = NOW()
       WHERE identifier = p_identifier AND user_plan = p_user_plan;
-      
+
       -- Log token consumption event
       PERFORM log_token_event(
         p_identifier,
@@ -119,19 +135,24 @@ BEGIN
           'remaining_daily', default_limit
         )
       );
-      
-      RETURN QUERY SELECT true, default_limit, current_purchased_tokens - p_token_cost, default_limit, ''::TEXT;
+
+      RETURN QUERY SELECT
+        true::BOOLEAN,
+        default_limit::INTEGER,
+        (current_purchased_tokens - p_token_cost)::INTEGER,
+        default_limit::INTEGER,
+        ''::TEXT;
     ELSE
       -- Consume all purchased tokens + some daily tokens
-      UPDATE user_tokens 
-      SET 
+      UPDATE user_tokens
+      SET
         available_tokens = default_limit - (p_token_cost - user_tokens.purchased_tokens),
         purchased_tokens = 0,
         total_consumed_today = p_token_cost - current_purchased_tokens,
         last_reset = CURRENT_DATE,
         updated_at = NOW()
       WHERE identifier = p_identifier AND user_plan = p_user_plan;
-      
+
       -- Log token consumption event
       PERFORM log_token_event(
         p_identifier,
@@ -146,19 +167,24 @@ BEGIN
           'remaining_daily', default_limit - (p_token_cost - current_purchased_tokens)
         )
       );
-      
-      RETURN QUERY SELECT true, default_limit - (p_token_cost - current_purchased_tokens), 0, default_limit, ''::TEXT;
+
+      RETURN QUERY SELECT
+        true::BOOLEAN,
+        (default_limit - (p_token_cost - current_purchased_tokens))::INTEGER,
+        0::INTEGER,
+        default_limit::INTEGER,
+        ''::TEXT;
     END IF;
   ELSE
     -- Just consume tokens (prioritize purchased tokens)
     IF current_purchased_tokens >= p_token_cost THEN
       -- Consume from purchased tokens only
-      UPDATE user_tokens 
-      SET 
+      UPDATE user_tokens
+      SET
         purchased_tokens = user_tokens.purchased_tokens - p_token_cost,
         updated_at = NOW()
       WHERE identifier = p_identifier AND user_plan = p_user_plan;
-      
+
       -- Log token consumption event
       PERFORM log_token_event(
         p_identifier,
@@ -173,18 +199,23 @@ BEGIN
           'remaining_daily', current_daily_tokens
         )
       );
-      
-      RETURN QUERY SELECT true, current_daily_tokens, current_purchased_tokens - p_token_cost, default_limit, ''::TEXT;
+
+      RETURN QUERY SELECT
+        true::BOOLEAN,
+        current_daily_tokens::INTEGER,
+        (current_purchased_tokens - p_token_cost)::INTEGER,
+        default_limit::INTEGER,
+        ''::TEXT;
     ELSE
       -- Consume all purchased tokens + some daily tokens
-      UPDATE user_tokens 
-      SET 
+      UPDATE user_tokens
+      SET
         available_tokens = user_tokens.available_tokens - (p_token_cost - user_tokens.purchased_tokens),
         purchased_tokens = 0,
         total_consumed_today = user_tokens.total_consumed_today + (p_token_cost - current_purchased_tokens),
         updated_at = NOW()
       WHERE identifier = p_identifier AND user_plan = p_user_plan;
-      
+
       -- Log token consumption event
       PERFORM log_token_event(
         p_identifier,
@@ -199,14 +230,30 @@ BEGIN
           'remaining_daily', current_daily_tokens - (p_token_cost - current_purchased_tokens)
         )
       );
-      
-      RETURN QUERY SELECT true, current_daily_tokens - (p_token_cost - current_purchased_tokens), 0, default_limit, ''::TEXT;
+
+      RETURN QUERY SELECT
+        true::BOOLEAN,
+        (current_daily_tokens - (p_token_cost - current_purchased_tokens))::INTEGER,
+        0::INTEGER,
+        default_limit::INTEGER,
+        ''::TEXT;
     END IF;
   END IF;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- Update function documentation
-COMMENT ON FUNCTION consume_user_tokens(TEXT, TEXT, INTEGER) IS 'Atomically consume tokens with purchased-first priority and premium user handling (FIXED: race condition with FOR UPDATE lock)';
+COMMENT ON FUNCTION consume_user_tokens(TEXT, TEXT, INTEGER) IS
+  'Atomically consume tokens with purchased-first priority and premium user handling (FIXED: ambiguous column reference with explicit casts)';
+
+-- =====================================================
+-- FIX 2: Add default UUID generation to analytics_events table
+-- =====================================================
+
+-- Add default gen_random_uuid() to prevent duplicate key violations
+ALTER TABLE analytics_events
+  ALTER COLUMN id SET DEFAULT gen_random_uuid();
+
+COMMENT ON COLUMN analytics_events.id IS
+  'Primary key with auto-generated UUID to prevent duplicate key violations';
 
 COMMIT;

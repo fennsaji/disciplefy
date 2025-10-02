@@ -41,47 +41,64 @@ class OAuthApiCallbackParams {
 }
 
 /// Parameters for storing authentication data
+/// SECURITY FIX: Added session expiration and device binding
 class AuthDataStorageParams {
   final String accessToken;
   final String userType;
   final String? userId;
+  final DateTime? expiresAt; // SECURITY FIX: Track session expiration
+  final String? deviceId; // SECURITY FIX: Bind session to device
 
   const AuthDataStorageParams({
     required this.accessToken,
     required this.userType,
     this.userId,
+    this.expiresAt,
+    this.deviceId,
   });
 
   /// Create params for Google authentication
   factory AuthDataStorageParams.google({
     required String accessToken,
     String? userId,
+    DateTime? expiresAt,
+    String? deviceId,
   }) =>
       AuthDataStorageParams(
         accessToken: accessToken,
         userType: 'google',
         userId: userId,
+        expiresAt: expiresAt,
+        deviceId: deviceId,
       );
 
   /// Create params for guest authentication
   factory AuthDataStorageParams.guest({
     required String accessToken,
     required String userId,
+    DateTime? expiresAt,
+    String? deviceId,
   }) =>
       AuthDataStorageParams(
         accessToken: accessToken,
         userType: 'guest',
         userId: userId,
+        expiresAt: expiresAt,
+        deviceId: deviceId,
       );
 
   /// Create params for Apple authentication
   factory AuthDataStorageParams.apple({
     required String accessToken,
     String? userId,
+    DateTime? expiresAt,
+    String? deviceId,
   }) =>
       AuthDataStorageParams(
         accessToken: accessToken,
         userType: 'apple',
         userId: userId,
+        expiresAt: expiresAt,
+        deviceId: deviceId,
       );
 }

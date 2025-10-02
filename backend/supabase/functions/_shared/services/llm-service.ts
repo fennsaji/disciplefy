@@ -409,27 +409,50 @@ export class LLMService {
           throw new Error(`Unsupported provider: ${selectedProvider}`)
         }
       } catch (primaryError) {
+        const primaryErrorObj = primaryError instanceof Error ? primaryError : new Error(String(primaryError))
+
         console.error(`[LLM] Primary provider ${selectedProvider} failed:`, {
-          error: primaryError instanceof Error ? primaryError.message : String(primaryError),
-          stack: primaryError instanceof Error ? primaryError.stack : undefined,
+          error: primaryErrorObj.message,
+          stack: primaryErrorObj.stack,
           provider: selectedProvider,
           language: params.language,
           timestamp: new Date().toISOString()
         })
         console.warn(`[LLM] Primary provider ${selectedProvider} failed, attempting fallback`)
-        
+
         // Attempt fallback to alternative provider
         const fallbackProvider = this.getFallbackProvider(selectedProvider)
         if (fallbackProvider && fallbackProvider !== selectedProvider) {
           console.log(`[LLM] Using fallback provider: ${fallbackProvider}`)
-          
-          if (fallbackProvider === 'openai') {
-            rawResponse = await this.callOpenAI(prompt.systemMessage, prompt.userMessage, languageConfig, params)
-          } else {
-            rawResponse = await this.callAnthropic(prompt.systemMessage, prompt.userMessage, languageConfig, params)
+
+          try {
+            if (fallbackProvider === 'openai') {
+              rawResponse = await this.callOpenAI(prompt.systemMessage, prompt.userMessage, languageConfig, params)
+            } else {
+              rawResponse = await this.callAnthropic(prompt.systemMessage, prompt.userMessage, languageConfig, params)
+            }
+
+            console.log(`[LLM] ✅ Fallback provider ${fallbackProvider} succeeded after ${selectedProvider} failure`)
+          } catch (fallbackError) {
+            const fallbackErrorObj = fallbackError instanceof Error ? fallbackError : new Error(String(fallbackError))
+
+            console.error(`[LLM] Fallback provider ${fallbackProvider} also failed:`, {
+              error: fallbackErrorObj.message,
+              stack: fallbackErrorObj.stack,
+              provider: fallbackProvider,
+              language: params.language,
+              timestamp: new Date().toISOString()
+            })
+
+            // Throw composite error with both failures
+            throw new Error(
+              `Both LLM providers failed. ` +
+              `Primary (${selectedProvider}): ${primaryErrorObj.message}. ` +
+              `Fallback (${fallbackProvider}): ${fallbackErrorObj.message}`
+            )
           }
         } else {
-          throw primaryError
+          throw primaryErrorObj
         }
       }
       
@@ -1686,7 +1709,15 @@ Return in this EXACT JSON format (no other text, no markdown):
     try {
       // Clean the response
       const cleaned = this.cleanJSONResponse(rawResponse)
+      console.log('[LLM] Cleaned LLM response:', cleaned.substring(0, 500))
+      
       const parsed = JSON.parse(cleaned)
+      console.log('[LLM] Parsed LLM response structure:', {
+        hasReference: !!parsed.reference,
+        hasReferenceTranslations: !!parsed.referenceTranslations,
+        hasTranslations: !!parsed.translations,
+        translationKeys: parsed.translations ? Object.keys(parsed.translations) : []
+      })
       
       // Validate structure
       if (!parsed.reference || typeof parsed.reference !== 'string') {
@@ -1704,11 +1735,11 @@ Return in this EXACT JSON format (no other text, no markdown):
       }
       
       if (!hi || typeof hi !== 'string') {
-        throw new Error('Missing or invalid Hindi reference translation')
+        console.warn('[LLM] Missing Hindi reference translation, using fallback')
       }
       
       if (!ml || typeof ml !== 'string') {
-        throw new Error('Missing or invalid Malayalam reference translation')
+        console.warn('[LLM] Missing Malayalam reference translation, using fallback')
       }
       
       if (!parsed.translations || typeof parsed.translations !== 'object') {
@@ -1722,11 +1753,11 @@ Return in this EXACT JSON format (no other text, no markdown):
       }
       
       if (!hindi || typeof hindi !== 'string') {
-        throw new Error('Missing or invalid Hindi translation')
+        console.warn('[LLM] ⚠️ LLM did not return Hindi translation')
       }
       
       if (!malayalam || typeof malayalam !== 'string') {
-        throw new Error('Missing or invalid Malayalam translation')
+        console.warn('[LLM] ⚠️ LLM did not return Malayalam translation')
       }
       
       // Sanitize and return

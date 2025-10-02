@@ -139,10 +139,29 @@ export class SecurityValidator {
   }
 
   sanitizeInput(input: string): string {
-    return input
-      .replace(/<[^>]*>/g, '') // Remove HTML tags
-      .replace(/[<>&"']/g, '') // Remove dangerous characters
+    // Remove control characters by char code (keep tab (9), newline (10), carriage return (13))
+    const filtered = Array.from(input)
+      .filter(char => {
+        const code = char.charCodeAt(0);
+        // Remove: 0-8, 11, 12, 14-31, 127
+        if (code <= 8) return false;
+        if (code === 11 || code === 12) return false;
+        if (code >= 14 && code <= 31) return false;
+        if (code === 127) return false;
+        return true;
+      })
+      .join('');
+
+    return filtered
+      // Normalize Unicode to prevent homograph attacks
+      .normalize('NFKC')
+      // Remove HTML tags
+      .replace(/<[^>]*>/g, '')
+      // Remove dangerous characters
+      .replace(/[<>&"']/g, '')
+      // Trim whitespace
       .trim()
+      // Limit length
       .substring(0, this.maxInputLength)
   }
 

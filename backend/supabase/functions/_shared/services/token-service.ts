@@ -473,15 +473,18 @@ export class TokenService {
 
   /**
    * Validates token cost amount
-   * 
+   *
+   * IMPORTANT: Maximum matches LLM service cap of 8000 tokens
+   * (from calculateOptimalTokens in llm-service.ts line 778)
+   *
    * @param tokenCost - Token cost to validate
    * @throws AppError for invalid amounts
    */
   private validateTokenCost(tokenCost: number): void {
-    if (!Number.isInteger(tokenCost) || tokenCost <= 0 || tokenCost > 1000) {
+    if (!Number.isInteger(tokenCost) || tokenCost <= 0 || tokenCost > 8000) {
       throw new AppError(
         'VALIDATION_ERROR',
-        'Token cost must be a positive integer between 1 and 1000',
+        'Token cost must be a positive integer between 1 and 8000',
         400
       )
     }
