@@ -197,7 +197,10 @@ jobs:
         OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY_DEV }}
         ANTHROPIC_API_KEY=${{ secrets.ANTHROPIC_API_KEY_DEV }}
         LLM_PROVIDER=${{ secrets.LLM_PROVIDER_DEV || 'openai' }}
-        
+
+        # Bible API Configuration (Development)
+        BIBLE_API=${{ secrets.BIBLE_API }}
+
         # Authentication (Development)
         GOOGLE_OAUTH_CLIENT_ID=${{ secrets.GOOGLE_OAUTH_CLIENT_ID_DEV }}
         GOOGLE_OAUTH_CLIENT_SECRET=${{ secrets.GOOGLE_OAUTH_CLIENT_SECRET_DEV }}
