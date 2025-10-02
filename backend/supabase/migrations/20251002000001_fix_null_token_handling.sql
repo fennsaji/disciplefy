@@ -1,12 +1,13 @@
 -- =====================================
--- Migration: Fix consume_user_tokens Function
--- Date: 2025-09-07
--- Purpose: Fix table alias issues and ambiguous column references in consume_user_tokens function
+-- Migration: Fix NULL Token Handling in consume_user_tokens
+-- Date: 2025-10-02
+-- Purpose: Fix token corruption after INSERT by using RETURNING clause
+--          to properly capture inserted values instead of manual variable assignment
 -- =====================================
 
 BEGIN;
 
--- Replace the buggy function with the corrected version
+-- Replace function with fixed NULL handling
 CREATE OR REPLACE FUNCTION consume_user_tokens(
   p_identifier TEXT,
   p_user_plan TEXT,
@@ -26,6 +27,7 @@ DECLARE
   default_limit INTEGER;
   effective_limit INTEGER;
   needs_reset BOOLEAN;
+  user_exists BOOLEAN;
 BEGIN
   -- Set secure search_path to prevent schema injection attacks
   SET LOCAL search_path = pg_temp, public;
@@ -38,33 +40,36 @@ BEGIN
     ELSE 20  -- Fallback to free plan
   END;
 
-  -- Check if user needs daily reset and get current tokens
-  -- CRITICAL: FOR UPDATE locks the row to prevent race conditions in concurrent token consumption
+  -- Check if user exists and get current tokens with row lock
+  -- CRITICAL: FOR UPDATE locks the row to prevent race conditions
   SELECT
     CASE
-      WHEN user_tokens.user_plan = 'premium' THEN default_limit  -- Premium always has unlimited
+      WHEN user_tokens.user_plan = 'premium' THEN default_limit
       WHEN user_tokens.last_reset < CURRENT_DATE THEN default_limit
       ELSE user_tokens.available_tokens
     END,
     user_tokens.purchased_tokens,
-    user_tokens.last_reset < CURRENT_DATE AND user_tokens.user_plan != 'premium'
-  INTO current_daily_tokens, current_purchased_tokens, needs_reset
+    user_tokens.last_reset < CURRENT_DATE AND user_tokens.user_plan != 'premium',
+    true
+  INTO current_daily_tokens, current_purchased_tokens, needs_reset, user_exists
   FROM user_tokens
   WHERE user_tokens.identifier = p_identifier AND user_tokens.user_plan = p_user_plan
   FOR UPDATE;
   
+  -- If user doesn't exist, create with default tokens using RETURNING clause
+  IF NOT FOUND THEN
+    INSERT INTO user_tokens (identifier, user_plan, available_tokens, purchased_tokens, daily_limit)
+    VALUES (p_identifier, p_user_plan, default_limit, 0, default_limit)
+    RETURNING available_tokens, purchased_tokens
+    INTO current_daily_tokens, current_purchased_tokens;
+    
+    -- Set remaining variables for new user
+    needs_reset := false;
+    user_exists := true;
+  END IF;
+  
   -- Calculate total available tokens (daily + purchased)
   total_available := COALESCE(current_daily_tokens, 0) + COALESCE(current_purchased_tokens, 0);
-  
-  -- If user doesn't exist, create with default tokens
-  IF current_daily_tokens IS NULL THEN
-    INSERT INTO user_tokens (identifier, user_plan, available_tokens, purchased_tokens, daily_limit)
-    VALUES (p_identifier, p_user_plan, default_limit, 0, default_limit);
-    current_daily_tokens := default_limit;
-    current_purchased_tokens := 0;
-    total_available := default_limit;
-    needs_reset := false;
-  END IF;
 
   -- Check if user has enough tokens (skip check for premium users)
   IF p_user_plan != 'premium' AND total_available < p_token_cost THEN
@@ -207,6 +212,8 @@ END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- Update function documentation
-COMMENT ON FUNCTION consume_user_tokens(TEXT, TEXT, INTEGER) IS 'Atomically consume tokens with purchased-first priority and premium user handling (FIXED: race condition with FOR UPDATE lock)';
+COMMENT ON FUNCTION consume_user_tokens(TEXT, TEXT, INTEGER) IS 
+'Atomically consume tokens with purchased-first priority and premium user handling. 
+FIXED: NULL corruption after INSERT using RETURNING clause, race condition with FOR UPDATE lock';
 
 COMMIT;

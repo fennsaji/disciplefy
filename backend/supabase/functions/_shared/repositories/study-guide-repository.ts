@@ -67,7 +67,7 @@ export class StudyGuideRepository {
     userContext: UserContext
   ): Promise<StudyGuideResponse> {
     // 1. Generate consistent hash for content deduplication
-    const inputHash = await this.generateInputHash(input.value)
+    const inputHash = await this.generateInputHash(input)
 
     // 2. Find or create cached content
     const cachedContent = await this.findOrCreateCachedContent(
@@ -102,39 +102,22 @@ export class StudyGuideRepository {
   }
 
   /**
-   * Find existing cached content or create new
+   * Find existing cached content or create new using UPSERT
+   *
+   * Uses UPSERT (INSERT ... ON CONFLICT DO UPDATE) to handle concurrent
+   * creation atomically without SELECT retry pattern. This prevents race
+   * conditions where content is deleted between INSERT failure and SELECT retry.
    */
   private async findOrCreateCachedContent(
     input: StudyGuideInput,
     inputHash: string,
     content: StudyGuideContent
   ): Promise<any> {
-    // Check if content already exists
-    const { data: existingContent, error: selectError } = await this.supabase
+    // CRITICAL: Use UPSERT instead of INSERT + SELECT retry
+    // This handles concurrent creation atomically and prevents race conditions
+    const { data: upsertedContent, error: upsertError } = await this.supabase
       .from('study_guides')
-      .select('*')
-      .eq('input_type', input.type)
-      .eq('input_value_hash', inputHash)
-      .eq('language', input.language)
-      .single()
-
-    if (selectError && selectError.code !== 'PGRST116') {
-      throw new AppError(
-        'DATABASE_ERROR',
-        `Failed to check existing content: ${selectError.message}`,
-        500
-      )
-    }
-
-    // Return existing content if found
-    if (existingContent) {
-      return existingContent
-    }
-
-    // Create new cached content
-    const { data: newContent, error: insertError } = await this.supabase
-      .from('study_guides')
-      .insert({
+      .upsert({
         input_type: input.type,
         input_value: input.value,
         input_value_hash: inputHash,
@@ -144,42 +127,38 @@ export class StudyGuideRepository {
         context: content.context,
         related_verses: content.relatedVerses,
         reflection_questions: content.reflectionQuestions,
-        prayer_points: content.prayerPoints
+        prayer_points: content.prayerPoints,
+        updated_at: new Date().toISOString()
+      }, {
+        // Specify conflict target (unique constraint columns)
+        onConflict: 'input_type,input_value_hash,language',
+        // On conflict: UPDATE the existing row to refresh timestamp
+        // This prevents returning stale data and provides audit trail
+        ignoreDuplicates: false
       })
       .select()
       .single()
 
-    if (insertError) {
-      // Handle race condition - another user might have created the same content
-      if (insertError.code === '23505') { // Unique constraint violation
-        // Retry finding the content
-        const { data: raceContent, error: raceError } = await this.supabase
-          .from('study_guides')
-          .select('*')
-          .eq('input_type', input.type)
-          .eq('input_value_hash', inputHash)
-          .eq('language', input.language)
-          .single()
-
-        if (raceError || !raceContent) {
-          throw new AppError(
-            'DATABASE_ERROR',
-            'Failed to handle concurrent content creation',
-            500
-          )
-        }
-
-        return raceContent
-      }
-
+    if (upsertError) {
+      console.error('[StudyGuideRepository] UPSERT failed:', upsertError)
       throw new AppError(
-        'DATABASE_ERROR',
-        `Failed to create cached content: ${insertError.message}`,
+        'CACHE_CREATION_ERROR',
+        `Failed to create or retrieve cached content: ${upsertError.message}`,
         500
       )
     }
 
-    return newContent
+    if (!upsertedContent) {
+      throw new AppError(
+        'CACHE_CORRUPTION',
+        'UPSERT succeeded but returned no data',
+        500
+      )
+    }
+
+    console.log(`[StudyGuideRepository] Content cached/retrieved: ${upsertedContent.id}`)
+
+    return upsertedContent
   }
 
   /**
@@ -527,7 +506,7 @@ export class StudyGuideRepository {
     input: StudyGuideInput,
     userContext: UserContext
   ): Promise<StudyGuideResponse | null> {
-    const inputHash = await this.generateInputHash(input.value)
+    const inputHash = await this.generateInputHash(input)
 
     // Check if content exists in cache
     const { data: content, error } = await this.supabase
@@ -762,8 +741,20 @@ export class StudyGuideRepository {
   /**
    * Generate consistent hash for input value
    */
-  private async generateInputHash(inputValue: string): Promise<string> {
-    return await this.securityValidator.hashSensitiveData(inputValue)
+  /**
+   * Generate hash for study guide input
+   *
+   * Includes type and language to prevent collisions where same value
+   * means different things (e.g., "Faith" as topic vs "Faith" as scripture reference)
+   */
+  private async generateInputHash(input: StudyGuideInput): Promise<string> {
+    // Normalize the value for consistent hashing
+    const normalizedValue = input.value.toLowerCase().trim().replace(/\s+/g, ' ')
+
+    // Include type and language to prevent collisions
+    const hashInput = `${input.type}:${input.language}:${normalizedValue}`
+
+    return await this.securityValidator.hashSensitiveData(hashInput)
   }
 
   /**

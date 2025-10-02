@@ -43,9 +43,9 @@ Map<String, dynamic> _$ReferenceTranslationsModelToJson(
 DailyVerseTranslationsModel _$DailyVerseTranslationsModelFromJson(
         Map<String, dynamic> json) =>
     DailyVerseTranslationsModel(
-      esv: json['esv'] as String,
-      hindi: json['hindi'] as String,
-      malayalam: json['malayalam'] as String,
+      esv: json['esv'] as String?,
+      hindi: json['hindi'] as String?,
+      malayalam: json['malayalam'] as String?,
     );
 
 Map<String, dynamic> _$DailyVerseTranslationsModelToJson(

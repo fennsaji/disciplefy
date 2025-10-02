@@ -128,7 +128,31 @@ async function handleRazorpayWebhook(req: Request, services: ServiceContainer): 
 }
 
 /**
- * Verify Razorpay webhook signature
+ * Constant-time string comparison to prevent timing attacks
+ *
+ * @param a - First string to compare
+ * @param b - Second string to compare
+ * @returns true if strings are equal, false otherwise
+ */
+function timingSafeEqual(a: string, b: string): boolean {
+  if (a.length !== b.length) {
+    return false
+  }
+
+  let result = 0
+  for (let i = 0; i < a.length; i++) {
+    result |= a.charCodeAt(i) ^ b.charCodeAt(i)
+  }
+
+  return result === 0
+}
+
+/**
+ * Verify Razorpay webhook signature using constant-time comparison
+ *
+ * SECURITY: Uses timingSafeEqual to prevent timing attack vulnerabilities
+ * where attackers could determine the correct signature by measuring
+ * comparison time differences
  */
 function verifyWebhookSignature(body: string, signature: string): boolean {
   const webhookSecret = Deno.env.get('RAZORPAY_WEBHOOK_SECRET')
@@ -136,12 +160,13 @@ function verifyWebhookSignature(body: string, signature: string): boolean {
     console.error('[Webhook] RAZORPAY_WEBHOOK_SECRET not configured')
     return false
   }
-  
+
   const expectedSignature = createHmac('sha256', webhookSecret)
     .update(body)
     .digest('hex')
-  
-  return signature === expectedSignature
+
+  // CRITICAL: Use constant-time comparison to prevent timing attacks
+  return timingSafeEqual(signature, expectedSignature)
 }
 
 /**

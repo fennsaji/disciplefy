@@ -395,58 +395,31 @@ export class RateLimiter {
 
   /**
    * Calculates time until rate limit resets (in minutes).
-   * 
+   *
+   * Uses the same window calculation logic as calculateWindowStart() to ensure
+   * consistency and prevent window drift issues. This method calculates the
+   * current window start, adds the window duration, then calculates time remaining.
+   *
    * @param userType - Type of user to calculate reset time for
    * @returns Minutes until the rate limit window resets
    */
   private calculateResetTime(userType: UserType): number {
     const now = new Date()
-    const windowMinutes = userType === 'anonymous' 
+    const windowMinutes = userType === 'anonymous'
       ? this.config.anonymousWindowMinutes!
       : this.config.authenticatedWindowMinutes!
-    
-    const nextWindow = new Date(now)
-    
-    // For windows larger than 60 minutes, calculate based on hours
-    if (windowMinutes >= 60) {
-      const hours = now.getHours()
-      const windowHours = windowMinutes / 60
-      
-      // Calculate current window start
-      const currentWindowStart = Math.floor(hours / windowHours) * windowHours
-      
-      // Calculate next window start
-      const nextWindowHour = currentWindowStart + windowHours
-      
-      // Handle day boundary properly
-      if (nextWindowHour >= 24) {
-        nextWindow.setDate(nextWindow.getDate() + 1)
-        nextWindow.setHours(nextWindowHour - 24)
-      } else {
-        nextWindow.setHours(nextWindowHour)
-      }
-      nextWindow.setMinutes(0)
-      nextWindow.setSeconds(0)
-      nextWindow.setMilliseconds(0)
-    } else {
-      // For sub-hour windows, use minute-based calculation
-      const minutes = now.getMinutes()
-      const nextWindowMinutes = Math.ceil(minutes / windowMinutes) * windowMinutes
-      
-      // Handle hour boundary properly
-      if (nextWindowMinutes >= 60) {
-        nextWindow.setHours(nextWindow.getHours() + 1)
-        nextWindow.setMinutes(nextWindowMinutes - 60)
-      } else {
-        nextWindow.setMinutes(nextWindowMinutes)
-      }
-      nextWindow.setSeconds(0)
-      nextWindow.setMilliseconds(0)
-    }
-    
-    const diffMinutes = Math.ceil((nextWindow.getTime() - now.getTime()) / (1000 * 60))
-    
-    // Ensure we never return negative values
+
+    // Get the current window start using the same logic as calculateWindowStart
+    const currentWindowStart = this.calculateWindowStart(userType)
+
+    // Calculate next window start by adding the window duration
+    const nextWindow = new Date(currentWindowStart.getTime() + (windowMinutes * 60 * 1000))
+
+    // Calculate difference in minutes
+    const diffMillis = nextWindow.getTime() - now.getTime()
+    const diffMinutes = Math.ceil(diffMillis / (1000 * 60))
+
+    // Ensure we never return negative values (should not happen with correct logic)
     return Math.max(0, diffMinutes)
   }
 }

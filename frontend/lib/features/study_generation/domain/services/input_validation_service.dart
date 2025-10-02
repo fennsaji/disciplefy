@@ -10,6 +10,8 @@ import '../usecases/generate_study_guide.dart';
 /// This service encapsulates all business rules for validating
 /// study generation inputs, providing a single source of truth
 /// for validation logic across the application.
+///
+/// SECURITY FIX: Enhanced with XSS and prompt injection protection
 class InputValidationService {
   /// Regular expression pattern for scripture references.
   ///
@@ -22,12 +24,39 @@ class InputValidationService {
     r'^[1-3]?\s*[a-zA-Z]+\s+\d+(?::\d+(?:-\d+)?)?$',
   );
 
+  /// SECURITY FIX: XSS prevention patterns
+  static final List<RegExp> _xssPatterns = [
+    RegExp(r'<script[^>]*>.*?</script>', caseSensitive: false),
+    RegExp(r'javascript:', caseSensitive: false),
+    RegExp(r'on\w+\s*=', caseSensitive: false), // onclick=, onerror=, etc.
+    RegExp(r'<iframe', caseSensitive: false),
+    RegExp(r'<embed', caseSensitive: false),
+    RegExp(r'<object', caseSensitive: false),
+  ];
+
+  /// SECURITY FIX: Prompt injection patterns
+  static final List<RegExp> _promptInjectionPatterns = [
+    RegExp(r'ignore\s+(previous|all|above)\s+instructions?',
+        caseSensitive: false),
+    RegExp(r'system\s*:', caseSensitive: false),
+    RegExp(r'<\|.*?\|>', caseSensitive: false), // Special tokens
+    RegExp(r'###\s*instruction', caseSensitive: false),
+    RegExp(r'ENDOFTEXT', caseSensitive: false),
+    RegExp(r'\[INST\]', caseSensitive: false),
+    RegExp(r'<\?php', caseSensitive: false),
+  ];
+
+  /// SECURITY FIX: Control character pattern (null bytes, etc.)
+  static final RegExp _controlCharPattern =
+      RegExp(r'[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]');
+
   /// Validates input text based on type and returns validation result.
   ///
   /// [input] The input text to validate
   /// [inputType] The type of input ('scripture' or 'topic')
   ///
   /// Returns [ValidationResult] containing validity status and error message.
+  /// SECURITY FIX: Now includes XSS and prompt injection detection
   ValidationResult validateInput(String input, String inputType) {
     // Use ValidationUtils for consistent empty check
     if (ValidationUtils.isNullOrEmptyString(input)) {
@@ -37,6 +66,34 @@ class InputValidationService {
     }
 
     final trimmedInput = input.trim();
+
+    // SECURITY FIX: Check for control characters
+    if (_controlCharPattern.hasMatch(trimmedInput)) {
+      return const ValidationResult(
+        isValid: false,
+        errorMessage: 'Invalid characters detected',
+      );
+    }
+
+    // SECURITY FIX: Check for XSS patterns
+    for (final pattern in _xssPatterns) {
+      if (pattern.hasMatch(trimmedInput)) {
+        return const ValidationResult(
+          isValid: false,
+          errorMessage: 'Invalid characters detected',
+        );
+      }
+    }
+
+    // SECURITY FIX: Check for prompt injection patterns
+    for (final pattern in _promptInjectionPatterns) {
+      if (pattern.hasMatch(trimmedInput)) {
+        return const ValidationResult(
+          isValid: false,
+          errorMessage: 'Invalid input format',
+        );
+      }
+    }
 
     // Validate based on input type
     if (inputType == 'scripture') {
@@ -110,12 +167,28 @@ class InputValidationService {
     return const ValidationResult(isValid: true);
   }
 
+  /// SECURITY FIX: Sanitize input by removing potentially dangerous characters
+  /// This is a defense-in-depth measure - validation should catch most issues
+  String sanitizeInput(String input) {
+    return input
+        // Remove HTML/XML tags
+        .replaceAll(RegExp(r'<[^>]*>'), '')
+        // Remove dangerous characters
+        .replaceAll(RegExp(r'''[<>&"']'''), '')
+        // Remove control characters (except newline, tab, carriage return)
+        .replaceAll(_controlCharPattern, '')
+        // Normalize whitespace
+        .replaceAll(RegExp(r'\s+'), ' ')
+        .trim();
+  }
+
   /// Creates parameters object with validation.
   ///
   /// This method combines validation with parameter creation,
   /// ensuring that only valid parameters can be created.
   ///
   /// Returns Either a [ValidationFailure] or valid parameters.
+  /// SECURITY FIX: Now sanitizes input before creating params
   Either<ValidationFailure, StudyGenerationParams> createValidatedParams({
     required String input,
     required String inputType,
@@ -136,8 +209,11 @@ class InputValidationService {
       ));
     }
 
+    // SECURITY FIX: Sanitize input as defense-in-depth
+    final sanitizedInput = sanitizeInput(input);
+
     return Right(StudyGenerationParams(
-      input: input.trim(),
+      input: sanitizedInput,
       inputType: inputType,
       language: language,
     ));
