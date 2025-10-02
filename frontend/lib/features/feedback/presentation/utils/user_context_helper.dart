@@ -1,5 +1,6 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/services/api_auth_helper.dart';
+import '../../../../core/error/exceptions.dart';
 import '../../domain/entities/feedback_entity.dart';
 
 /// Helper class to create user context for feedback submissions

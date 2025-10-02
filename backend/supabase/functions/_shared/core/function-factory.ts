@@ -286,15 +286,47 @@ export function createPostFunction(
 
 /**
  * Parses user context from JWT token
+ *
+ * SECURITY WARNING: Query-based authentication (via URL parameters) is INSECURE and should
+ * only be used as a last resort for EventSource connections that cannot send custom headers.
+ * Query parameters appear in:
+ * - Browser history
+ * - Server logs
+ * - Proxy logs
+ * - Referrer headers
+ *
+ * RECOMMENDED: Use Authorization headers, secure cookies, or implement a proper EventSource
+ * authentication handshake (e.g., initial POST to exchange credentials for a session token,
+ * then use that token in EventSource URL without exposing the primary auth token).
+ *
+ * @param req - Incoming request
+ * @param services - Service container
+ * @returns User context extracted from JWT
  */
 async function parseUserContext(
   req: Request,
   services: ServiceContainer
 ): Promise<UserContext> {
-  const authToken = req.headers.get('Authorization') || ''
-  
+  let authToken = req.headers.get('Authorization') || ''
+  const hasHeaderAuth = !!authToken
+  console.log('[AUTH] Header auth:', hasHeaderAuth ? 'PRESENT' : 'MISSING')
+
+  // For EventSource requests, check query parameters as fallback (INSECURE - see JSDoc warning)
   if (!authToken) {
-    throw new Error('Authorization header required')
+    const url = new URL(req.url)
+    const queryAuthToken = url.searchParams.get('authorization')
+    const hasQueryAuth = !!queryAuthToken
+    console.log('[AUTH] Query auth:', hasQueryAuth ? 'PRESENT' : 'MISSING')
+
+    if (queryAuthToken) {
+      authToken = `Bearer ${queryAuthToken}`
+      console.log('[AUTH] Using query-based auth (insecure)')
+    }
+  }
+
+  if (!authToken) {
+    console.log('[AUTH] ERROR: No auth token found')
+    throw new Error('Missing authorization header')
   }
 
   const userSupabaseClient = createUserSupabaseClient(authToken, config.supabaseUrl, config.supabaseAnonKey)

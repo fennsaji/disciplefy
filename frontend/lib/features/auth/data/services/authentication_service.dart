@@ -312,8 +312,8 @@ class AuthenticationService {
       // Sign out from Supabase
       await _supabase.auth.signOut();
 
-      // Clear stored auth data
-      await _storageService.clearAllData();
+      // Clear stored auth data - only secure storage (use ClearUserDataUseCase for comprehensive cleanup)
+      await _storageService.clearSecureStorage();
     } catch (e) {
       if (kDebugMode) {
         print('Sign-Out Error: $e');

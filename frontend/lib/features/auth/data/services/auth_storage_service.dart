@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../domain/entities/auth_params.dart';
 
@@ -68,7 +69,13 @@ class AuthStorageService {
 
     // STEP 3: Store in Hive for synchronous router access
     try {
-      final box = Hive.box('app_settings');
+      // Ensure app_settings box is opened before accessing
+      Box box;
+      if (Hive.isBoxOpen('app_settings')) {
+        box = Hive.box('app_settings');
+      } else {
+        box = await Hive.openBox('app_settings');
+      }
 
       // Use transaction to ensure atomic writes to Hive
       await box.putAll(hiveData);
@@ -129,20 +136,29 @@ class AuthStorageService {
     return completed == 'true';
   }
 
-  /// Signs out the user by clearing all stored data
-  Future<void> clearAllData() async {
-    await _secureStorage.deleteAll();
-
-    // Also clear Hive storage
+  /// Clears only secure storage (auth tokens, user credentials)
+  /// Other storage concerns are handled by their respective repositories
+  Future<void> clearSecureStorage() async {
     try {
-      final box = Hive.box('app_settings');
-      await box.delete('user_type');
-      await box.delete('user_id');
-      await box.delete('onboarding_completed');
+      await _secureStorage.deleteAll();
+      if (kDebugMode) {
+        print('🔐 [AUTH STORAGE] ✅ Secure storage cleared');
+      }
     } catch (e) {
       if (kDebugMode) {
-        print('Warning: Failed to clear auth data from Hive: $e');
+        print('🔐 [AUTH STORAGE] ❌ Failed to clear FlutterSecureStorage: $e');
       }
+      rethrow;
     }
+  }
+
+  /// Legacy method - redirects to ClearUserDataUseCase for proper orchestration
+  @Deprecated('Use ClearUserDataUseCase for comprehensive data cleanup instead')
+  Future<void> clearAllData() async {
+    if (kDebugMode) {
+      print(
+          '🔐 [AUTH STORAGE] ⚠️ clearAllData is deprecated. Use ClearUserDataUseCase instead.');
+    }
+    await clearSecureStorage();
   }
 }

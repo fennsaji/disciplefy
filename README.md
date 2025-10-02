@@ -97,6 +97,14 @@ disciplefy/
 
 **Maintainer**: [@fennsaji](https://github.com/fennsaji) | **License**: MIT | **Support**: GitHub Issues & Discussions
 
+
+## 📜 Policies
+
+- [Privacy Policy](https://policies.disciplefy.in/privacy-policy)
+- [Terms of Service](https://policies.disciplefy.in/terms-of-service)
+- [Refund Policy](https://policies.disciplefy.in/refund-policy)
+
+
 ---
 
 *Built with ❤️ for transformational Bible study using modern technology and timeless wisdom.*

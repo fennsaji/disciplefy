@@ -24,6 +24,7 @@ class StudyGenerationHandler {
     GenerateStudyGuideRequested event,
     Emitter<StudyState> emit,
   ) async {
+    print('🚨 [STUDY_BLOC] Starting study generation handling');
     emit(const StudyGenerationInProgress());
 
     try {
@@ -36,14 +37,21 @@ class StudyGenerationHandler {
       );
 
       result.fold(
-        (failure) => emit(StudyGenerationFailure(
-          failure: failure,
-          isRetryable: _isRetryableFailure(failure),
-        )),
-        (studyGuide) => emit(StudyGenerationSuccess(
-          studyGuide: studyGuide,
-          generatedAt: DateTime.now(),
-        )),
+        (failure) {
+          print(
+              '🚨 [STUDY_BLOC] Emitting StudyGenerationFailure: ${failure.runtimeType} - ${failure.message}');
+          emit(StudyGenerationFailure(
+            failure: failure,
+            isRetryable: _isRetryableFailure(failure),
+          ));
+        },
+        (studyGuide) {
+          print('🚨 [STUDY_BLOC] Emitting StudyGenerationSuccess');
+          emit(StudyGenerationSuccess(
+            studyGuide: studyGuide,
+            generatedAt: DateTime.now(),
+          ));
+        },
       );
     } catch (e) {
       emit(StudyGenerationFailure(

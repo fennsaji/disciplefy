@@ -5,6 +5,8 @@ import 'package:google_fonts/google_fonts.dart';
 
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/di/injection_container.dart';
+import '../../../../core/extensions/translation_extension.dart';
+import '../../../../core/i18n/translation_keys.dart';
 import '../../../saved_guides/domain/entities/saved_guide_entity.dart';
 import '../../../saved_guides/presentation/bloc/unified_saved_guides_bloc.dart';
 import '../../../saved_guides/presentation/bloc/saved_guides_event.dart';
@@ -101,7 +103,7 @@ class _RecentGuidesSectionState extends State<RecentGuidesSection> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
-              'Recent Studies',
+              context.tr(TranslationKeys.recentGuidesTitle),
               style: GoogleFonts.inter(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
@@ -112,7 +114,7 @@ class _RecentGuidesSectionState extends State<RecentGuidesSection> {
               GestureDetector(
                 onTap: () => context.push('/saved?tab=recent&source=generate'),
                 child: Text(
-                  'View All',
+                  context.tr(TranslationKeys.recentGuidesViewAll),
                   style: GoogleFonts.inter(
                     fontSize: 14,
                     fontWeight: FontWeight.w500,
@@ -157,7 +159,7 @@ class _RecentGuidesSectionState extends State<RecentGuidesSection> {
           ),
           const SizedBox(height: 8),
           Text(
-            'No Recent Studies',
+            context.tr(TranslationKeys.recentGuidesEmpty),
             style: GoogleFonts.inter(
               fontSize: 16,
               fontWeight: FontWeight.w600,
@@ -166,7 +168,7 @@ class _RecentGuidesSectionState extends State<RecentGuidesSection> {
           ),
           const SizedBox(height: 4),
           Text(
-            'Generate your first study guide to see it here',
+            context.tr(TranslationKeys.recentGuidesEmptyMessage),
             style: GoogleFonts.inter(
               fontSize: 12,
               color: Theme.of(context).colorScheme.onSurface.withOpacity(0.8),
@@ -183,7 +185,7 @@ class _RecentGuidesSectionState extends State<RecentGuidesSection> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Recent Studies',
+          context.tr(TranslationKeys.recentGuidesTitle),
           style: GoogleFonts.inter(
             fontSize: 16,
             fontWeight: FontWeight.w600,
@@ -227,7 +229,7 @@ class _RecentGuidesSectionState extends State<RecentGuidesSection> {
           ),
           const SizedBox(height: 8),
           Text(
-            'Sign In for Recent Studies',
+            context.tr(TranslationKeys.recentGuidesAuthRequired),
             style: GoogleFonts.inter(
               fontSize: 16,
               fontWeight: FontWeight.w600,
@@ -236,7 +238,7 @@ class _RecentGuidesSectionState extends State<RecentGuidesSection> {
           ),
           const SizedBox(height: 4),
           Text(
-            'View your recent study guides across devices',
+            context.tr(TranslationKeys.recentGuidesAuthMessage),
             style: GoogleFonts.inter(
               fontSize: 12,
               color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
@@ -255,7 +257,7 @@ class _RecentGuidesSectionState extends State<RecentGuidesSection> {
               ),
             ),
             child: Text(
-              'Sign In',
+              context.tr(TranslationKeys.recentGuidesSignIn),
               style: GoogleFonts.inter(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
@@ -287,7 +289,7 @@ class _RecentGuidesSectionState extends State<RecentGuidesSection> {
           ),
           const SizedBox(height: 8),
           Text(
-            'Unable to Load Recent Studies',
+            context.tr(TranslationKeys.recentGuidesError),
             style: GoogleFonts.inter(
               fontSize: 16,
               fontWeight: FontWeight.w600,
@@ -296,7 +298,7 @@ class _RecentGuidesSectionState extends State<RecentGuidesSection> {
           ),
           const SizedBox(height: 4),
           Text(
-            'Something went wrong!',
+            context.tr(TranslationKeys.recentGuidesErrorMessage),
             style: GoogleFonts.inter(
               fontSize: 12,
               color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
@@ -312,7 +314,7 @@ class _RecentGuidesSectionState extends State<RecentGuidesSection> {
               side: BorderSide(color: Theme.of(context).colorScheme.primary),
             ),
             icon: const Icon(Icons.refresh),
-            label: const Text('Try Again'),
+            label: Text(context.tr(TranslationKeys.homeTryAgain)),
           ),
         ],
       ),

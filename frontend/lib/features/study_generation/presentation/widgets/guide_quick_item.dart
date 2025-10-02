@@ -3,6 +3,8 @@ import 'package:google_fonts/google_fonts.dart';
 
 import '../../../../core/theme/app_theme.dart';
 import '../../../saved_guides/domain/entities/saved_guide_entity.dart';
+import '../../../../core/extensions/translation_extension.dart';
+import '../../../../core/i18n/translation_keys.dart';
 
 /// Compact guide list item for the recent studies section
 ///
@@ -106,7 +108,7 @@ class GuideQuickItem extends StatelessWidget {
                           const SizedBox(width: 4),
                           Expanded(
                             child: Text(
-                              _getTimeAgo(guide.lastAccessedAt),
+                              _getTimeAgo(context, guide.lastAccessedAt),
                               style: GoogleFonts.inter(
                                 fontSize: 12,
                                 color: Theme.of(context)
@@ -153,18 +155,21 @@ class GuideQuickItem extends StatelessWidget {
     );
   }
 
-  String _getTimeAgo(DateTime dateTime) {
+  String _getTimeAgo(BuildContext context, DateTime dateTime) {
     final now = DateTime.now();
     final difference = now.difference(dateTime);
 
     if (difference.inDays > 0) {
-      return '${difference.inDays}d ago';
+      return context.tr(TranslationKeys.recentGuidesDaysAgo,
+          {'count': difference.inDays.toString()});
     } else if (difference.inHours > 0) {
-      return '${difference.inHours}h ago';
+      return context.tr(TranslationKeys.recentGuidesHoursAgo,
+          {'count': difference.inHours.toString()});
     } else if (difference.inMinutes > 0) {
-      return '${difference.inMinutes}m ago';
+      return context.tr(TranslationKeys.recentGuidesMinutesAgo,
+          {'count': difference.inMinutes.toString()});
     } else {
-      return 'Just now';
+      return context.tr(TranslationKeys.recentGuidesJustNow);
     }
   }
 }

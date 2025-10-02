@@ -210,17 +210,19 @@ content_path = "./supabase/templates/email_change.html"
 
 [auth.sms]
 # Allow/disallow new user signups via SMS to your project.
-enable_signup = false
+enable_signup = true
 # If enabled, users need to confirm their phone number before signing in.
-enable_confirmations = false
+enable_confirmations = true
 # Template for sending OTP to users
-template = "Your code is {{ .Code }}"
+template = "Your Disciplefy verification code is {{ .Code }}. Do not share this code with anyone."
 # Controls the minimum amount of time that must pass before sending another sms otp.
 max_frequency = "5s"
 
 # Use pre-defined map of phone number to OTP for testing.
+# For local development, create a local override file (e.g., config.local.toml)
+# and add it to .gitignore. Never commit real phone numbers to source control.
 # [auth.sms.test_otp]
-# 4152127777 = "123456"
+# "+1XXXXXXXXXX" = "000000"
 
 # Configure logged in session timeouts.
 # [auth.sessions]
@@ -241,11 +243,12 @@ max_frequency = "5s"
 
 # Configure one of the supported SMS providers: `twilio`, `twilio_verify`, `messagebird`, `textlocal`, `vonage`.
 [auth.sms.twilio]
-enabled = false
-account_sid = ""
-message_service_sid = ""
+enabled = true
+account_sid = "env(TWILIO_ACCOUNT_SID)"
+# Use messaging service with phone number for cheapest option
+message_service_sid = "env(TWILIO_MESSAGE_SERVICE_SID)"
 # DO NOT commit your Twilio auth token to git. Use environment variable substitution instead:
-auth_token = "env(SUPABASE_AUTH_SMS_TWILIO_AUTH_TOKEN)"
+auth_token = "env(TWILIO_AUTH_TOKEN)"
 
 # Multi-factor-authentication is available to Supabase Pro plan.
 [auth.mfa]
@@ -262,7 +265,7 @@ verify_enabled = false
 enroll_enabled = false
 verify_enabled = false
 otp_length = 6
-template = "Your code is {{ .Code }}"
+template = "Your Disciplefy verification code is {{ .Code }}. Do not share this code with anyone."
 max_frequency = "5s"
 
 # Configure MFA via WebAuthn
