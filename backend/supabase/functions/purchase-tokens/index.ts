@@ -11,7 +11,7 @@ import { ServiceContainer } from '../_shared/core/services.ts'
 import { RequestValidator } from '../_shared/utils/request-validator.ts'
 import { AppError } from '../_shared/utils/error-handler.ts'
 import { TokenPurchaseRequest } from '../_shared/types/token-types.ts'
-import Razorpay from 'razorpay'
+import Razorpay from 'npm:razorpay'
 import { createHmac } from 'node:crypto'
 
 /**
