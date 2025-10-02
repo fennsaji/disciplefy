@@ -31,6 +31,18 @@ interface ConversationHistoryRequest {
 }
 
 /**
+ * Conversation database record
+ */
+interface Conversation {
+  readonly id: string
+  readonly study_guide_id: string
+  readonly user_id: string | null
+  readonly session_id: string | null
+  readonly created_at: string
+  readonly updated_at: string
+}
+
+/**
  * Message interface for response
  */
 interface MessageResponse {
@@ -190,28 +202,32 @@ function parseAndValidateRequest(req: Request): ConversationHistoryRequest {
 }
 
 /**
+ * Applies user context filter to query (userId or sessionId)
+ */
+function applyUserContextFilter(query: any, userContext: UserContext): any {
+  if (userContext.userId) return query.eq('user_id', userContext.userId)
+  if (userContext.sessionId) return query.eq('session_id', userContext.sessionId)
+  throw new AppError('INVALID_CONTEXT', 'User context must have userId or sessionId', 400)
+}
+
+/**
  * Finds conversation for study guide and user
  */
 async function findConversation(
   studyGuideId: string,
   userContext: UserContext,
   services: ServiceContainer
-): Promise<any> {
+): Promise<Conversation> {
   const supabase = services.supabaseServiceClient
-  let query = supabase
+  const baseQuery = supabase
     .from('study_guide_conversations')
     .select('*')
     .eq('study_guide_id', studyGuideId)
 
-  query = userContext.userId
-    ? query.eq('user_id', userContext.userId)
-    : userContext.sessionId
-    ? query.eq('session_id', userContext.sessionId)
-    : (() => { throw new AppError('INVALID_CONTEXT', 'User context must have userId or sessionId', 400) })()
-
+  const query = applyUserContextFilter(baseQuery, userContext)
   const { data, error } = await query.single()
   if (error || !data) throw new AppError('NOT_FOUND', 'Conversation not found', 404)
-  return data
+  return data as Conversation
 }
 
 /**

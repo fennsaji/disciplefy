@@ -15,6 +15,7 @@ import { ServiceContainer } from '../_shared/core/services.ts'
 import { AppError } from '../_shared/utils/error-handler.ts'
 import { SupportedLanguage } from '../_shared/types/token-types.ts'
 import { UserContext } from '../_shared/types/index.ts'
+import { getCorsHeaders } from '../_shared/utils/cors.ts'
 
 /**
  * Request payload for follow-up questions
@@ -36,17 +37,6 @@ interface ConversationMessage {
   readonly created_at: string
 }
 
-/**
- * CORS headers configuration
- */
-function getCorsHeaders(origin?: string | null): Record<string, string> {
-  return {
-    'Access-Control-Allow-Origin': origin || '*',
-    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'authorization, content-type, x-client-info, apikey',
-    'Access-Control-Allow-Credentials': 'true',
-  };
-}
 
 /**
  * Extract authentication credentials from request
@@ -173,36 +163,36 @@ function buildLLMContext(
   const languageInstruction = languageInstructions[targetLanguage] || languageInstructions['en']
 
   const systemMessage = `You are a Bible study assistant helping users explore Scripture deeper.
-Provide thoughtful, theologically sound responses to follow-up questions about this study guide.
-Keep responses pastoral, accessible, and grounded in orthodox Christian theology.
+  Provide thoughtful, theologically sound responses to follow-up questions about this study guide.
+  Keep responses pastoral, accessible, and grounded in orthodox Christian theology.
 
-**CRITICAL LANGUAGE REQUIREMENT:**
-${languageInstruction}
-You MUST respond in ${targetLanguage === 'hi' ? 'Hindi' : targetLanguage === 'ml' ? 'Malayalam' : 'English'} language ONLY. Do not use any other language.
+  **CRITICAL LANGUAGE REQUIREMENT:**
+  ${languageInstruction}
+  You MUST respond in ${targetLanguage === 'hi' ? 'Hindi' : targetLanguage === 'ml' ? 'Malayalam' : 'English'} language ONLY. Do not use any other language.
 
-**IMPORTANT: Keep responses brief and concise (2-3 sentences max, 50-75 words). Be direct and helpful.**
-**STRICT FORMAT & LENGTH RULES:
-- Output must be valid **Markdown**.
-- Keep it brief: **2–3 sentences total (50–75 words)** unless the user explicitly requests more.
-- Use **bold** for emphasis.
-- Use *italics* for Scripture references (e.g., *John 3:16*).
-- **Insert a blank line between paragraphs.**
-- For lists, always use **numbered Markdown lists** (e.g., "1. ", "2. ", "3. "). Each item on its own line.
-- Never return code fences unless the user asks for code.
+  **IMPORTANT: Keep responses brief and concise (3-4 sentences max, 80-100 words). Be direct and helpful.**
+  **STRICT FORMAT & LENGTH RULES:
+  - Output must be valid **Markdown**.
+  - Keep it brief: **3-4 sentences total (80–100 words)** unless the user explicitly requests more.
+  - Use **bold** for emphasis.
+  - Use *italics* for Scripture references (e.g., *John 3:16*).
+  - **Insert a blank line between paragraphs.**
+  - For lists, always use **numbered Markdown lists** (e.g., "1. ", "2. ", "3. "). Each item on its own line.
+  - Never return code fences unless the user asks for code.
 
-EXAMPLE OF CORRECT MARKDOWN:
-Bold sentence with a key idea.
+  EXAMPLE OF CORRECT MARKDOWN:
+  Bold sentence with a key idea.
 
-1. First item  
-2. Second item  
-3. Third item
-**
+  1. First item  
+  2. Second item  
+  3. Third item
+  **
 
-Study Guide Context:
-${studyContext}
+  Study Guide Context:
+  ${studyContext}
 
-Previous Conversation:
-${conversationContext}`
+  Previous Conversation:
+  ${conversationContext}`
 
   return { systemMessage, conversationContext }
 }

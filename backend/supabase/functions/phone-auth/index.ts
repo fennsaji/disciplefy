@@ -23,55 +23,50 @@ function validatePhoneNumber(phoneNumber: string): boolean {
   return phoneRegex.test(phoneNumber);
 }
 
+/**
+ * Normalizes phone number by stripping non-numeric characters and converting international prefixes
+ * Does NOT guess country codes - returns cleaned value for subsequent validation
+ *
+ * @param phoneNumber - Raw phone number input (e.g., "00971501234567", "+91 98765 43210", "9876543210")
+ * @returns Normalized phone number (e.g., "+971501234567", "+919876543210", "9876543210")
+ */
 function formatPhoneNumber(phoneNumber: string): string {
-  let formatted = phoneNumber.replace(/[^\d+]/g, '');
+  // Strip all characters except digits and leading '+'
+  let cleaned = phoneNumber.replace(/[^\d+]/g, '');
 
-  if (!formatted.startsWith('+')) {
-    formatted = '+1' + formatted;
+  // Convert "00" international prefix to "+"
+  if (cleaned.startsWith('00')) {
+    cleaned = '+' + cleaned.substring(2);
   }
 
-  return formatted;
+  // Return as-is - do NOT default to +1 if no prefix exists
+  // Let validation handle ambiguous numbers without guessing country codes
+  return cleaned;
 }
 
 /**
  * Extracts country calling code from formatted phone number
- * Uses ITU E.164 format rules to identify country codes (1-3 digits)
+ * Uses robust regex to correctly parse 1, 2, and 3-digit country codes
  *
- * @param formattedPhone - Phone number with leading '+' (e.g., '+919876543210')
- * @returns Country code including '+' (e.g., '+91') or '+1' as fallback
+ * @param formattedPhone - Phone number with leading '+' (e.g., '+919876543210', '+971501234567')
+ * @returns Country code including '+' (e.g., '+91', '+971') or '+1' as fallback
  */
 function extractCountryCode(formattedPhone: string): string {
   if (!formattedPhone.startsWith('+')) {
     return '+1';
   }
 
-  // Remove the '+' prefix for easier matching
-  const digits = formattedPhone.substring(1);
+  // Robust regex: tries 3-digit codes ([2-9]\d{2}), then 2-digit ([2-9]\d?), then 1-digit (1)
+  // Special case: +1 must be handled explicitly to avoid matching +1X as +1
+  // Pattern matches: +971 (3-digit), +91 (2-digit), +1 (1-digit)
+  const countryCodePattern = /^\+((?:[2-9]\d{2})|(?:[2-9]\d?)|1)/;
+  const match = formattedPhone.match(countryCodePattern);
 
-  // Common country codes by length (most specific to least specific)
-  // Try 3-digit codes first, then 2-digit, then 1-digit
-
-  // 3-digit codes (less common, but exist)
-  // No need to check these exhaustively - if first digit is 1-9 and length >= 3, try it
-
-  // 2-digit codes (most common internationally)
-  // Check if first 2 digits form a valid pattern
-  if (digits.length >= 2) {
-    const twoDigit = digits.substring(0, 2);
-    const firstDigit = parseInt(twoDigit[0]);
-
-    // Country codes 20-99 are 2 digits
-    if (firstDigit >= 2 && firstDigit <= 9) {
-      return '+' + twoDigit;
-    }
+  if (match && match[1]) {
+    return '+' + match[1];
   }
 
-  // 1-digit codes (only North America uses country code 1)
-  if (digits.length >= 1 && digits[0] === '1') {
-    return '+1';
-  }
-
-  // Fallback
+  // Fallback to +1 if no valid pattern matched
   return '+1';
 }
 
