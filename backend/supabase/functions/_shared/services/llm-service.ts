@@ -712,7 +712,7 @@ export class LLMService {
       case 'hi': // Hindi
       case 'ml': // Malayalam
       // return 'claude-3-5-sonnet-20241022' // Better multilingual understanding
-        return 'claude-4-sonnet-20240806' // Fast and cost-effective
+        return 'claude-sonnet-4-20250514' // Fast and cost-effective
       case 'en': // English
       default:
         return 'claude-3-5-haiku-20241022' // Fast and cost-effective
@@ -1382,7 +1382,7 @@ export class LLMService {
    * @returns Raw response text
    */
   private async callAnthropicForVerse(systemMessage: string, userMessage: string): Promise<string> {
-    const model = 'claude-4-sonnet-20240806'
+    const model = 'claude-sonnet-4-20250514'
     
     const request: AnthropicRequest = {
       model,
@@ -1562,7 +1562,7 @@ export class LLMService {
    * @returns Raw response text
    */
   private async callAnthropicForFollowUp(systemMessage: string, userMessage: string, language: string): Promise<string> {
-    const model = language === 'en' ? 'claude-3-5-haiku-20241022' : 'claude-4-sonnet-20240806'
+    const model = language === 'en' ? 'claude-3-5-haiku-20241022' : 'claude-sonnet-4-20250514'
     
     const request: AnthropicRequest = {
       model,

@@ -321,18 +321,29 @@ export class AuthService {
 
   /**
    * Handles Supabase query errors for user profile lookups
-   * 
+   *
    * @param err - Error from Supabase query
    * @param context - Context string for logging
    * @returns True if error should be treated as "no rows found" (return null)
+   * @throws Error if the error is not a "no rows found" error
    */
   private handleSupabaseError(err: any, context: string): boolean {
     if (err?.code === 'PGRST116') {
       // PGRST116 = no rows found - this is expected for new users
       return true
     }
-    console.error(`[AuthService] ${context}:`, err)
-    return true // Treat all errors as "not found" for safe degradation
+
+    // Log actual errors with higher severity and full details
+    console.error(`[AuthService] CRITICAL ERROR in ${context}:`, {
+      message: err?.message,
+      code: err?.code,
+      details: err?.details,
+      hint: err?.hint,
+      fullError: err
+    })
+
+    // Re-throw the error so callers can handle it appropriately
+    throw new Error(`Database error in ${context}: ${err?.message || 'Unknown error'}`)
   }
 
   /**

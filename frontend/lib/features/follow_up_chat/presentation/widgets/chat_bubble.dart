@@ -139,7 +139,6 @@ class ChatBubble extends StatelessWidget {
   Widget _buildMessageText(ThemeData theme, bool isUser) {
     final content = message.content;
 
-    // Debug logging
     // During streaming, show plain text to avoid incomplete markdown parsing issues
     if (message.status == ChatMessageStatus.streaming) {
       return SelectableText(
@@ -153,7 +152,10 @@ class ChatBubble extends StatelessWidget {
     }
 
     // For AI messages with complete content, use markdown rendering
-    if (!isUser && content.isNotEmpty) {
+    // Force widget rebuild by using unique key that includes content length
+    if (!isUser &&
+        content.isNotEmpty &&
+        message.status == ChatMessageStatus.sent) {
       // Add blank lines before lists for proper markdown parsing
       final fixedContent = content
           // Fix: **bold**1. -> **bold**\n\n1.
@@ -172,8 +174,7 @@ class ChatBubble extends StatelessWidget {
             (match) => '${match.group(1)}\n\n${match.group(2)}',
           );
       return MarkdownBody(
-        key: ValueKey(
-            '${message.id}_${message.status.toString()}_${content.hashCode}'),
+        key: ValueKey('${message.id}_markdown_${content.length}'),
         data: fixedContent,
         selectable: true,
         styleSheet: MarkdownStyleSheet(
