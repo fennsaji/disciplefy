@@ -10,42 +10,37 @@ class ErrorMessageSanitizer {
   ///
   /// Returns a user-friendly message that doesn't expose internal details
   static String sanitize(Failure failure) {
-    // Use switch expression for type-safe handling
-    return switch (failure.runtimeType) {
+    // Use switch on instance for proper type pattern matching
+    return switch (failure) {
       // Network errors
-      NetworkFailure _ => _sanitizeNetworkError(failure as NetworkFailure),
+      final NetworkFailure f => _sanitizeNetworkError(f),
 
       // Server errors
-      ServerFailure _ => _sanitizeServerError(failure as ServerFailure),
+      final ServerFailure f => _sanitizeServerError(f),
 
       // Authentication errors
-      AuthenticationFailure _ =>
-        _sanitizeAuthError(failure as AuthenticationFailure),
+      final AuthenticationFailure f => _sanitizeAuthError(f),
 
       // Authorization errors
-      AuthorizationFailure _ =>
-        _sanitizeAuthzError(failure as AuthorizationFailure),
+      final AuthorizationFailure f => _sanitizeAuthzError(f),
 
       // Validation errors (safe to show)
-      ValidationFailure _ =>
-        _sanitizeValidationError(failure as ValidationFailure),
+      final ValidationFailure f => _sanitizeValidationError(f),
 
       // Rate limiting
-      RateLimitFailure _ =>
-        _sanitizeRateLimitError(failure as RateLimitFailure),
+      final RateLimitFailure f => _sanitizeRateLimitError(f),
 
       // Insufficient tokens
-      InsufficientTokensFailure _ =>
-        _sanitizeInsufficientTokensError(failure as InsufficientTokensFailure),
+      final InsufficientTokensFailure f => _sanitizeInsufficientTokensError(f),
 
       // Storage errors
-      StorageFailure _ => _sanitizeStorageError(failure as StorageFailure),
+      final StorageFailure f => _sanitizeStorageError(f),
 
       // Client errors
-      ClientFailure _ => _sanitizeClientError(failure as ClientFailure),
+      final ClientFailure f => _sanitizeClientError(f),
 
       // Cache errors
-      CacheFailure _ => _sanitizeCacheError(failure as CacheFailure),
+      final CacheFailure f => _sanitizeCacheError(f),
 
       // Unknown/unexpected errors
       _ => _sanitizeUnknownError(failure),

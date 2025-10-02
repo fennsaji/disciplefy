@@ -1,6 +1,7 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../../core/error/failures.dart';
+import '../../../../../core/error/token_failures.dart';
 import '../../../../../core/utils/error_message_sanitizer.dart';
 import '../../../domain/usecases/generate_study_guide.dart';
 import '../study_event.dart';
@@ -100,35 +101,83 @@ class StudyGenerationHandler {
   /// the message with a sanitized version.
   Failure _createSanitizedFailure(
       Failure originalFailure, String sanitizedMessage) {
-    return switch (originalFailure.runtimeType) {
-      NetworkFailure _ => NetworkFailure(
+    return switch (originalFailure) {
+      final NetworkFailure f => NetworkFailure(
           message: sanitizedMessage,
-          code: originalFailure.code,
+          code: f.code,
+          context: f.context,
         ),
-      ServerFailure _ => ServerFailure(
+      final ServerFailure f => ServerFailure(
           message: sanitizedMessage,
-          code: originalFailure.code,
+          code: f.code,
+          context: f.context,
         ),
-      AuthenticationFailure _ => AuthenticationFailure(
+      final AuthenticationFailure f => AuthenticationFailure(
           message: sanitizedMessage,
-          code: originalFailure.code,
+          code: f.code,
+          context: f.context,
         ),
-      AuthorizationFailure _ => AuthorizationFailure(
+      final AuthorizationFailure f => AuthorizationFailure(
           message: sanitizedMessage,
-          code: originalFailure.code,
+          code: f.code,
+          context: f.context,
         ),
-      ValidationFailure _ => ValidationFailure(
+      final ValidationFailure f => ValidationFailure(
           message: sanitizedMessage,
-          code: originalFailure.code,
+          code: f.code,
+          context: f.context,
         ),
-      RateLimitFailure _ => RateLimitFailure(
+      final RateLimitFailure f => RateLimitFailure(
           message: sanitizedMessage,
-          code: originalFailure.code,
-          retryAfter: (originalFailure as RateLimitFailure).retryAfter,
+          code: f.code,
+          retryAfter: f.retryAfter,
+          context: f.context,
+        ),
+      final InsufficientTokensFailure f => InsufficientTokensFailure(
+          requiredTokens: f.requiredTokens,
+          availableTokens: f.availableTokens,
+          nextResetTime: f.nextResetTime,
+        ),
+      final TokenPaymentFailure f => TokenPaymentFailure(
+          paymentError: f.paymentError,
+        ),
+      final PlanUpgradeFailure f => PlanUpgradeFailure(
+          upgradeError: f.upgradeError,
+        ),
+      final StorageFailure f => StorageFailure(
+          message: sanitizedMessage,
+          code: f.code,
+          context: f.context,
+        ),
+      final CacheFailure f => CacheFailure(
+          message: sanitizedMessage,
+          code: f.code,
+          context: f.context,
+        ),
+      final NotFoundFailure f => NotFoundFailure(
+          message: sanitizedMessage,
+          code: f.code,
+          context: f.context,
+        ),
+      final DatabaseFailure f => DatabaseFailure(
+          message: sanitizedMessage,
+          code: f.code,
+          context: f.context,
+        ),
+      final PaymentFailure f => PaymentFailure(
+          message: sanitizedMessage,
+          code: f.code,
+          context: f.context,
+        ),
+      final TokenFailure f => TokenFailure(
+          message: sanitizedMessage,
+          code: f.code,
+          context: f.context,
         ),
       _ => ClientFailure(
           message: sanitizedMessage,
           code: originalFailure.code,
+          context: originalFailure.context,
         ),
     };
   }

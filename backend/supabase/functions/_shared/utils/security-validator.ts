@@ -139,9 +139,20 @@ export class SecurityValidator {
   }
 
   sanitizeInput(input: string): string {
-    return input
-      // Remove null bytes and control characters (except newline, tab, carriage return)
-      .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '')
+    // Remove control characters by char code (keep tab (9), newline (10), carriage return (13))
+    const filtered = Array.from(input)
+      .filter(char => {
+        const code = char.charCodeAt(0);
+        // Remove: 0-8, 11, 12, 14-31, 127
+        if (code <= 8) return false;
+        if (code === 11 || code === 12) return false;
+        if (code >= 14 && code <= 31) return false;
+        if (code === 127) return false;
+        return true;
+      })
+      .join('');
+
+    return filtered
       // Normalize Unicode to prevent homograph attacks
       .normalize('NFKC')
       // Remove HTML tags
