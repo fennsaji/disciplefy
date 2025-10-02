@@ -296,6 +296,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
 
           const SizedBox(width: 12),
 
+          // TODO: Use same log as fav icon and Same font for app title
           // App Title
           Text(
             'Disciplefy',

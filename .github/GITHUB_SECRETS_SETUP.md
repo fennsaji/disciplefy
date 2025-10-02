@@ -47,6 +47,14 @@ Navigate to your GitHub repository → Settings → Secrets and Variables → Ac
 | `OPENAI_API_KEY_DEV` | OpenAI API key (development) | Create separate key for dev/testing | 🔶 Optional |
 | `ANTHROPIC_API_KEY_DEV` | Anthropic Claude API key (development) | Create separate key for dev/testing | 🔶 Optional |
 
+### 📖 Bible API Configuration
+
+| Secret Name | Description | How to Get | Required |
+|-------------|-------------|------------|----------|
+| `BIBLE_API` | API.Bible API key | [API.Bible Signup](https://scripture.api.bible/signup) → Create account → Copy API key | ✅ Yes |
+
+> **Note**: The same API key can be used for both production and development environments. API.Bible offers 5,000 free queries per day for non-commercial use.
+
 ### 🔐 Authentication Configuration
 
 #### Production Environment
@@ -181,6 +189,9 @@ gh secret set SUPABASE_SERVICE_ROLE_KEY -b "your-service-key"
 # LLM secrets
 gh secret set OPENAI_API_KEY -b "your-openai-key"
 gh secret set LLM_PROVIDER -b "openai"
+
+# Bible API secret
+gh secret set BIBLE_API -b "your-bible-api-key"
 
 # OAuth secrets
 gh secret set GOOGLE_OAUTH_CLIENT_ID -b "your-client-id"
