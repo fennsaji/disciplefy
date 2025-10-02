@@ -16,6 +16,7 @@ export interface UserContext {
   readonly type: 'authenticated' | 'anonymous'
   readonly userId?: string
   readonly sessionId?: string
+  readonly userType?: 'admin' | 'user' // Admin users get premium access temporarily
 }
 
 /**
@@ -47,7 +48,7 @@ export interface StudyGuideContent {
  * Study guide input parameters
  */
 export interface StudyGuideInput {
-  readonly type: 'scripture' | 'topic'
+  readonly type: 'scripture' | 'topic' | 'question'
   readonly value: string
   readonly language: string
 }
@@ -112,7 +113,7 @@ export interface PaginatedResponse<T = any> {
  * LLM generation parameters
  */
 export interface LLMGenerationParams {
-  readonly inputType: 'scripture' | 'topic'
+  readonly inputType: 'scripture' | 'topic' | 'question'
   readonly inputValue: string
   readonly language: string
 }

@@ -16,6 +16,7 @@ import { StudyGuideService } from '../services/study-guide-service.ts'
 import { FeedbackService } from '../services/feedback-service.ts'
 import { PersonalNotesService } from '../services/personal-notes-service.ts'
 import { RateLimiter } from '../services/rate-limiter.ts'
+import { TokenService } from '../services/token-service.ts'
 import { AnalyticsLogger } from '../services/analytics-service.ts'
 import { SecurityValidator } from '../utils/security-validator.ts'
 import { AppError } from '../utils/error-handler.ts'
@@ -46,6 +47,7 @@ export interface ServiceContainer {
   readonly feedbackService: FeedbackService
   readonly personalNotesService: PersonalNotesService
   readonly rateLimiter: RateLimiter
+  readonly tokenService: TokenService
   readonly analyticsLogger: AnalyticsLogger
   readonly securityValidator: SecurityValidator
   readonly dailyVerseService: DailyVerseService
@@ -107,7 +109,7 @@ async function initializeServiceContainer(): Promise<ServiceContainer> {
     }
 
     // Initialize services with dependency injection
-    const authService = new AuthService(config.supabaseUrl, config.supabaseAnonKey)
+    const authService = new AuthService(config.supabaseUrl, config.supabaseAnonKey, supabaseServiceClient)
     
     // Create LLM service config from centralized config
     const llmConfig: LLMServiceConfig = {
@@ -126,6 +128,7 @@ async function initializeServiceContainer(): Promise<ServiceContainer> {
     const personalNotesService = new PersonalNotesService(studyGuideRepository)
     const rateLimiterConfig = createRateLimiterConfig()
     const rateLimiter = new RateLimiter(supabaseServiceClient, rateLimiterConfig)
+    const tokenService = new TokenService(supabaseServiceClient)
     const analyticsLogger = new AnalyticsLogger(supabaseServiceClient)
     const securityValidator = new SecurityValidator()
     const dailyVerseService = new DailyVerseService(supabaseServiceClient, llmService)
@@ -151,6 +154,7 @@ async function initializeServiceContainer(): Promise<ServiceContainer> {
       feedbackService,
       personalNotesService,
       rateLimiter,
+      tokenService,
       analyticsLogger,
       securityValidator,
       dailyVerseService,

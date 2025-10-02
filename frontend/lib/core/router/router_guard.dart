@@ -199,6 +199,8 @@ class RouterGuard {
         isPublicRoute: _isPublicRoute(currentPath),
         isOnboardingRoute: currentPath.startsWith(AppRoutes.onboarding),
         isAuthRoute: currentPath == AppRoutes.login ||
+            currentPath == AppRoutes.phoneAuth ||
+            currentPath == AppRoutes.phoneAuthVerify ||
             currentPath.startsWith('/auth/callback'),
       );
 
@@ -208,11 +210,14 @@ class RouterGuard {
       AppRoutes.login,
       AppRoutes.authCallback,
       AppRoutes.languageSelection,
+      AppRoutes.phoneAuth,
+      AppRoutes.phoneAuthVerify, // /phone-auth/verify
     ];
 
     return publicRoutes.contains(path) ||
         path.startsWith(AppRoutes.onboarding) ||
-        path.startsWith('/auth/callback');
+        path.startsWith('/auth/callback') ||
+        path.startsWith('/phone-auth'); // Allow all phone auth related routes
   }
 
   /// Log the current navigation state for debugging
@@ -549,6 +554,8 @@ class RouterGuard {
     if (path == AppRoutes.saved) return 'saved_guides';
     if (path.startsWith(AppRoutes.studyGuide)) return 'study_guide_view';
     if (path == AppRoutes.login) return 'authentication';
+    if (path == AppRoutes.phoneAuth) return 'phone_authentication';
+    if (path == AppRoutes.phoneAuthVerify) return 'phone_verification';
     if (path.startsWith(AppRoutes.onboarding)) return 'onboarding';
     if (path.startsWith('/auth/callback')) return 'oauth_callback';
     return 'unknown';

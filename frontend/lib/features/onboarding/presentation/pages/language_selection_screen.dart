@@ -6,6 +6,8 @@ import '../../../../core/models/app_language.dart';
 import '../../../../core/services/language_preference_service.dart';
 import '../../../../core/di/injection_container.dart';
 import '../widgets/language_selection_card.dart';
+import '../../../../core/extensions/translation_extension.dart';
+import '../../../../core/i18n/translation_keys.dart';
 
 /// Screen for selecting preferred language during onboarding
 class LanguageSelectionScreen extends StatefulWidget {
@@ -77,7 +79,7 @@ class _LanguageSelectionScreenState extends State<LanguageSelectionScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              'Language preference saved locally. Will sync when online.',
+              context.tr(TranslationKeys.onboardingLanguageSavedLocally),
               style: GoogleFonts.inter(),
             ),
             backgroundColor: Colors.orange,
@@ -117,7 +119,7 @@ class _LanguageSelectionScreenState extends State<LanguageSelectionScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              'Default language (English) set. Will sync when online.',
+              context.tr(TranslationKeys.onboardingDefaultLanguageSet),
               style: GoogleFonts.inter(),
             ),
             backgroundColor: Colors.orange,
@@ -153,7 +155,7 @@ class _LanguageSelectionScreenState extends State<LanguageSelectionScreen> {
 
               // Welcome text
               Text(
-                'Welcome to Disciplefy!',
+                context.tr(TranslationKeys.onboardingWelcome),
                 style: GoogleFonts.playfairDisplay(
                   fontSize: isLargeScreen ? 32 : 28,
                   fontWeight: FontWeight.bold,
@@ -166,7 +168,7 @@ class _LanguageSelectionScreenState extends State<LanguageSelectionScreen> {
 
               // Subtitle
               Text(
-                'Choose your preferred language for Bible verses and study guides.',
+                context.tr(TranslationKeys.onboardingSelectLanguageSubtitle),
                 style: GoogleFonts.inter(
                   fontSize: 16,
                   color: theme.colorScheme.onSurface.withOpacity(0.7),
@@ -178,7 +180,7 @@ class _LanguageSelectionScreenState extends State<LanguageSelectionScreen> {
 
               // Language selection header
               Text(
-                'Select Language',
+                context.tr(TranslationKeys.onboardingSelectLanguage),
                 style: GoogleFonts.inter(
                   fontSize: 18,
                   fontWeight: FontWeight.w600,
@@ -236,7 +238,7 @@ class _LanguageSelectionScreenState extends State<LanguageSelectionScreen> {
                           ),
                         )
                       : Text(
-                          'Continue',
+                          context.tr(TranslationKeys.onboardingContinue),
                           style: GoogleFonts.inter(
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
@@ -258,7 +260,7 @@ class _LanguageSelectionScreenState extends State<LanguageSelectionScreen> {
                     minimumSize: const Size.fromHeight(48),
                   ),
                   child: Text(
-                    'Skip for now',
+                    context.tr(TranslationKeys.onboardingSkip),
                     style: GoogleFonts.inter(
                       fontSize: 14,
                       fontWeight: FontWeight.w500,

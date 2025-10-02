@@ -7,7 +7,10 @@ import '../../features/onboarding/presentation/pages/onboarding_purpose_page.dar
 import '../../features/study_generation/presentation/pages/study_guide_screen.dart';
 import '../../features/study_generation/domain/entities/study_guide.dart';
 import '../../features/auth/presentation/pages/login_screen.dart';
+import '../../features/auth/presentation/pages/phone_number_input_screen.dart';
+import '../../features/auth/presentation/pages/otp_verification_screen.dart';
 import '../../features/auth/presentation/pages/auth_callback_page.dart';
+import '../../features/profile_setup/presentation/pages/profile_setup_screen.dart';
 import '../presentation/widgets/app_shell.dart';
 import '../error/error_page.dart';
 import '../../features/home/presentation/pages/home_screen.dart';
@@ -17,6 +20,8 @@ import '../di/injection_container.dart';
 import '../../features/saved_guides/presentation/pages/saved_screen.dart';
 import '../../features/settings/presentation/pages/settings_screen.dart';
 import '../../features/study_topics/presentation/pages/study_topics_screen.dart';
+import '../../features/tokens/presentation/pages/token_management_page.dart';
+import '../../features/tokens/presentation/pages/purchase_history_page.dart';
 import 'app_routes.dart';
 import 'router_guard.dart';
 import 'auth_notifier.dart';
@@ -40,6 +45,11 @@ class AppRouter {
         path: AppRoutes.languageSelection,
         name: 'language_selection',
         builder: (context, state) => const LanguageSelectionScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.profileSetup,
+        name: 'profile_setup',
+        builder: (context, state) => const ProfileSetupScreen(),
       ),
       // GoRoute(
       //   path: AppRoutes.onboardingLanguage,
@@ -110,12 +120,54 @@ class AppRouter {
         name: 'study_topics',
         builder: (context, state) => const StudyTopicsScreen(),
       ),
+      GoRoute(
+        path: AppRoutes.tokenManagement,
+        name: 'token_management',
+        builder: (context, state) => const TokenManagementPage(),
+      ),
+      GoRoute(
+        path: AppRoutes.purchaseHistory,
+        name: 'purchase_history',
+        builder: (context, state) => const PurchaseHistoryPage(),
+      ),
 
       // Authentication Routes (outside app shell)
       GoRoute(
         path: AppRoutes.login,
         name: 'login',
         builder: (context, state) => const LoginScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.phoneAuth,
+        name: 'phone_auth',
+        builder: (context, state) => const PhoneNumberInputScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.phoneAuthVerify,
+        name: 'phone_auth_verify',
+        builder: (context, state) {
+          // Safely extract phone auth parameters from extra data
+          // Type-safe casting to prevent runtime crashes
+          final Map<String, dynamic> extra;
+          if (state.extra is Map<String, dynamic>) {
+            extra = state.extra as Map<String, dynamic>;
+          } else {
+            // Graceful degradation: use empty map if extra is not a Map
+            extra = {};
+          }
+
+          final phoneNumber = extra['phoneNumber'] as String? ?? '';
+          final countryCode = extra['countryCode'] as String? ?? '+1';
+          final expiresIn = extra['expiresIn'] as int? ?? 60;
+          final sentAt = extra['sentAt'] as DateTime? ?? DateTime.now();
+
+          return OTPVerificationScreen(
+            phoneNumber: phoneNumber,
+            countryCode: countryCode,
+            expiresIn: expiresIn,
+            sentAt: sentAt,
+          );
+        },
       ),
       GoRoute(
         path: AppRoutes.authCallback,
@@ -195,7 +247,26 @@ extension AppRouterExtension on GoRouter {
   void goToSettings() => go(AppRoutes.settings);
   void goToSaved() => go(AppRoutes.saved);
   void goToStudyTopics() => go(AppRoutes.studyTopics);
+
+  /// Navigates to the token management page where users can view balance, purchase tokens, and manage payment methods.
+  void goToTokenManagement() => go(AppRoutes.tokenManagement);
+
+  /// Navigates to the purchase history page where users can view their past token purchases.
+  void goToPurchaseHistory() => go(AppRoutes.purchaseHistory);
   void goToLogin() => go(AppRoutes.login);
+  void goToPhoneAuth() => go(AppRoutes.phoneAuth);
+  void goToPhoneAuthVerify({
+    required String phoneNumber,
+    required String countryCode,
+    required int expiresIn,
+    required DateTime sentAt,
+  }) =>
+      go(AppRoutes.phoneAuthVerify, extra: {
+        'phoneNumber': phoneNumber,
+        'countryCode': countryCode,
+        'expiresIn': expiresIn,
+        'sentAt': sentAt,
+      });
   void goToAuthCallback() => go(AppRoutes.authCallback);
   void goToError(String error) => go(AppRoutes.error, extra: error);
 }

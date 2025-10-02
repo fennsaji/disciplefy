@@ -17,6 +17,11 @@ import { ServiceContainer } from '../_shared/core/services.ts'
  */
 interface DailyVerseData {
   readonly reference: string
+  readonly referenceTranslations: {
+    readonly en: string
+    readonly hi: string
+    readonly ml: string
+  }
   readonly date: string
   readonly translations: {
     readonly esv?: string
@@ -53,9 +58,20 @@ async function handleDailyVerse(req: Request, services: ServiceContainer): Promi
   // Get daily verse data using injected service with language preference
   const verseData = await services.dailyVerseService.getDailyVerse(requestDate, language)
 
+  // Validate that referenceTranslations exists
+  if (!verseData.referenceTranslations) {
+    console.error('[API] Verse data missing referenceTranslations:', verseData)
+    throw new AppError('INTERNAL_ERROR', 'Verse data is incomplete', 500)
+  }
+
   // Create response data with additional fields
   const responseData: DailyVerseData = {
     reference: verseData.reference,
+    referenceTranslations: {
+      en: verseData.referenceTranslations.en,
+      hi: verseData.referenceTranslations.hi,
+      ml: verseData.referenceTranslations.ml
+    },
     date: verseData.date,
     translations: {
       esv: verseData.translations.esv,

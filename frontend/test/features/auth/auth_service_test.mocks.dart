@@ -276,6 +276,16 @@ class MockAuthStorageService extends _i1.Mock
       ) as _i5.Future<bool>);
 
   @override
+  _i5.Future<void> clearSecureStorage() => (super.noSuchMethod(
+        Invocation.method(
+          #clearSecureStorage,
+          [],
+        ),
+        returnValue: _i5.Future<void>.value(),
+        returnValueForMissingStub: _i5.Future<void>.value(),
+      ) as _i5.Future<void>);
+
+  @override
   _i5.Future<void> clearAllData() => (super.noSuchMethod(
         Invocation.method(
           #clearAllData,

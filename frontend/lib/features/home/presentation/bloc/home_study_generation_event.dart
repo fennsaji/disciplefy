@@ -42,6 +42,23 @@ class GenerateStudyGuideFromTopic extends HomeStudyGenerationEvent {
   List<Object?> get props => [topicName, language];
 }
 
+/// Event to generate a study guide from a question.
+class GenerateStudyGuideFromQuestion extends HomeStudyGenerationEvent {
+  /// The question to generate a study guide from.
+  final String question;
+
+  /// The language for the study guide.
+  final String language;
+
+  const GenerateStudyGuideFromQuestion({
+    required this.question,
+    required this.language,
+  });
+
+  @override
+  List<Object?> get props => [question, language];
+}
+
 /// Event to clear error state.
 class ClearHomeStudyGenerationError extends HomeStudyGenerationEvent {
   const ClearHomeStudyGenerationError();

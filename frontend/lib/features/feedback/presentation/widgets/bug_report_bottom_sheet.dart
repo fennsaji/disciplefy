@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/extensions/translation_extension.dart';
+import '../../../../core/i18n/translation_keys.dart';
 import '../bloc/feedback_bloc.dart';
 import '../bloc/feedback_event.dart';
 import '../bloc/feedback_state.dart';
@@ -74,7 +76,7 @@ class _BugReportBottomSheetState extends State<BugReportBottomSheet> {
               ),
               const SizedBox(width: 12),
               Text(
-                'Report Issue',
+                context.tr(TranslationKeys.bugReportTitle),
                 style: GoogleFonts.playfairDisplay(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
@@ -85,7 +87,7 @@ class _BugReportBottomSheetState extends State<BugReportBottomSheet> {
           ),
           const SizedBox(height: 8),
           Text(
-            'Found a bug? Describe what happened and we\'ll fix it',
+            context.tr(TranslationKeys.bugReportSubtitle),
             style: GoogleFonts.inter(
               fontSize: 14,
               color: AppTheme.onSurfaceVariant,
@@ -98,8 +100,7 @@ class _BugReportBottomSheetState extends State<BugReportBottomSheet> {
         controller: _messageController,
         maxLines: 5,
         decoration: InputDecoration(
-          hintText:
-              'Describe the issue you encountered...\n\nSteps to reproduce:\n1. \n2. \n3. ',
+          hintText: context.tr(TranslationKeys.bugReportHintText),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
             borderSide:
@@ -138,7 +139,7 @@ class _BugReportBottomSheetState extends State<BugReportBottomSheet> {
                       ),
                     )
                   : Text(
-                      'Report Issue',
+                      context.tr(TranslationKeys.bugReportButtonReport),
                       style: GoogleFonts.inter(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
@@ -152,8 +153,8 @@ class _BugReportBottomSheetState extends State<BugReportBottomSheet> {
   Future<void> _submitBugReport() async {
     if (_messageController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please describe the issue'),
+        SnackBar(
+          content: Text(context.tr(TranslationKeys.bugReportEmptyMessage)),
           backgroundColor: AppTheme.errorColor,
         ),
       );
@@ -171,9 +172,8 @@ class _BugReportBottomSheetState extends State<BugReportBottomSheet> {
           );
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-              'Failed to prepare bug report submission. Please try again.'),
+        SnackBar(
+          content: Text(context.tr(TranslationKeys.bugReportSubmitError)),
           backgroundColor: AppTheme.errorColor,
         ),
       );

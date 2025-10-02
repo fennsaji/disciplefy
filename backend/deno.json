@@ -1,7 +1,7 @@
 {
-  "importMap": "../_shared/import_map.json",
+  "nodeModulesDir": "auto",
+  "importMap": "./supabase/functions/_shared/import_map.json",
   "compilerOptions": {
-    "allowJs": true,
     "strict": true,
     "noImplicitAny": true,
     "noImplicitReturns": true,
@@ -9,7 +9,7 @@
     "noUnusedLocals": false,
     "noUnusedParameters": false
   },
-  "supabase": {
-    "verifyJWT": false
+  "imports": {
+    "@types/node": "npm:@types/node@^20.0.0"
   }
 }
