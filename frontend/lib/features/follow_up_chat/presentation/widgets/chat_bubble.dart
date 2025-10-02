@@ -141,18 +141,20 @@ class ChatBubble extends StatelessWidget {
 
     // During streaming, show plain text to avoid incomplete markdown parsing issues
     if (message.status == ChatMessageStatus.streaming) {
-      return SelectableText(
-        content.isEmpty ? '...' : content,
-        key: ValueKey('${message.id}_streaming_text'),
-        style: theme.textTheme.bodyMedium?.copyWith(
-          color: _getTextColor(theme, isUser),
-          height: 1.5,
+      return Container(
+        key: ValueKey('${message.id}_streaming_container'),
+        child: SelectableText(
+          content.isEmpty ? '...' : content,
+          style: theme.textTheme.bodyMedium?.copyWith(
+            color: _getTextColor(theme, isUser),
+            height: 1.5,
+          ),
         ),
       );
     }
 
     // For AI messages with complete content, use markdown rendering
-    // Force widget rebuild by using unique key that includes content length
+    // Force widget rebuild by using unique key that includes status
     if (!isUser &&
         content.isNotEmpty &&
         message.status == ChatMessageStatus.sent) {
@@ -173,123 +175,126 @@ class ChatBubble extends StatelessWidget {
             RegExp(r'("[^"]+")(\d+\.)', multiLine: true),
             (match) => '${match.group(1)}\n\n${match.group(2)}',
           );
-      return MarkdownBody(
-        key: ValueKey('${message.id}_markdown_${content.length}'),
-        data: fixedContent,
-        selectable: true,
-        styleSheet: MarkdownStyleSheet(
-          // Paragraph styling with proper line height
-          p: theme.textTheme.bodyMedium?.copyWith(
-            color: _getTextColor(theme, isUser),
-            height: 1.6,
-          ),
-          // Heading styles with proper spacing
-          h1: theme.textTheme.headlineMedium?.copyWith(
-            color: _getTextColor(theme, isUser),
-            fontWeight: FontWeight.bold,
-            height: 1.3,
-          ),
-          h2: theme.textTheme.headlineSmall?.copyWith(
-            color: _getTextColor(theme, isUser),
-            fontWeight: FontWeight.bold,
-            height: 1.3,
-          ),
-          h3: theme.textTheme.titleLarge?.copyWith(
-            color: _getTextColor(theme, isUser),
-            fontWeight: FontWeight.w600,
-            height: 1.4,
-          ),
-          h4: theme.textTheme.titleMedium?.copyWith(
-            color: _getTextColor(theme, isUser),
-            fontWeight: FontWeight.w600,
-            height: 1.4,
-          ),
-          h5: theme.textTheme.titleSmall?.copyWith(
-            color: _getTextColor(theme, isUser),
-            fontWeight: FontWeight.w600,
-            height: 1.4,
-          ),
-          h6: theme.textTheme.titleSmall?.copyWith(
-            color: _getTextColor(theme, isUser),
-            fontWeight: FontWeight.w500,
-            height: 1.4,
-          ),
-          // Text formatting
-          strong: theme.textTheme.bodyMedium?.copyWith(
-            color: _getTextColor(theme, isUser),
-            fontWeight: FontWeight.bold,
-          ),
-          em: theme.textTheme.bodyMedium?.copyWith(
-            color: _getTextColor(theme, isUser),
-            fontStyle: FontStyle.italic,
-          ),
-          // Blockquote with border and padding
-          blockquote: theme.textTheme.bodyMedium?.copyWith(
-            color: _getTextColor(theme, isUser).withOpacity(0.8),
-            fontStyle: FontStyle.italic,
-            height: 1.5,
-          ),
-          blockquotePadding: const EdgeInsets.all(AppConstants.SMALL_PADDING),
-          blockquoteDecoration: BoxDecoration(
-            color: theme.colorScheme.surface,
-            border: Border(
-              left: BorderSide(
-                color: theme.colorScheme.primary.withOpacity(0.3),
-                width: 3,
+      return Container(
+        key: ValueKey('${message.id}_sent_container'),
+        child: MarkdownBody(
+          key: ValueKey('${message.id}_${message.status}_markdown'),
+          data: fixedContent,
+          selectable: true,
+          styleSheet: MarkdownStyleSheet(
+            // Paragraph styling with proper line height
+            p: theme.textTheme.bodyMedium?.copyWith(
+              color: _getTextColor(theme, isUser),
+              height: 1.6,
+            ),
+            // Heading styles with proper spacing
+            h1: theme.textTheme.headlineMedium?.copyWith(
+              color: _getTextColor(theme, isUser),
+              fontWeight: FontWeight.bold,
+              height: 1.3,
+            ),
+            h2: theme.textTheme.headlineSmall?.copyWith(
+              color: _getTextColor(theme, isUser),
+              fontWeight: FontWeight.bold,
+              height: 1.3,
+            ),
+            h3: theme.textTheme.titleLarge?.copyWith(
+              color: _getTextColor(theme, isUser),
+              fontWeight: FontWeight.w600,
+              height: 1.4,
+            ),
+            h4: theme.textTheme.titleMedium?.copyWith(
+              color: _getTextColor(theme, isUser),
+              fontWeight: FontWeight.w600,
+              height: 1.4,
+            ),
+            h5: theme.textTheme.titleSmall?.copyWith(
+              color: _getTextColor(theme, isUser),
+              fontWeight: FontWeight.w600,
+              height: 1.4,
+            ),
+            h6: theme.textTheme.titleSmall?.copyWith(
+              color: _getTextColor(theme, isUser),
+              fontWeight: FontWeight.w500,
+              height: 1.4,
+            ),
+            // Text formatting
+            strong: theme.textTheme.bodyMedium?.copyWith(
+              color: _getTextColor(theme, isUser),
+              fontWeight: FontWeight.bold,
+            ),
+            em: theme.textTheme.bodyMedium?.copyWith(
+              color: _getTextColor(theme, isUser),
+              fontStyle: FontStyle.italic,
+            ),
+            // Blockquote with border and padding
+            blockquote: theme.textTheme.bodyMedium?.copyWith(
+              color: _getTextColor(theme, isUser).withOpacity(0.8),
+              fontStyle: FontStyle.italic,
+              height: 1.5,
+            ),
+            blockquotePadding: const EdgeInsets.all(AppConstants.SMALL_PADDING),
+            blockquoteDecoration: BoxDecoration(
+              color: theme.colorScheme.surface,
+              border: Border(
+                left: BorderSide(
+                  color: theme.colorScheme.primary.withOpacity(0.3),
+                  width: 3,
+                ),
               ),
             ),
-          ),
-          // Inline code styling
-          code: theme.textTheme.bodySmall?.copyWith(
-            color: _getTextColor(theme, isUser),
-            backgroundColor: theme.colorScheme.primary.withOpacity(0.1),
-            fontFamily: 'Courier',
-            fontSize: 14,
-          ),
-          // Code block styling
-          codeblockPadding: const EdgeInsets.all(AppConstants.SMALL_PADDING),
-          codeblockDecoration: BoxDecoration(
-            color: theme.colorScheme.surface,
-            borderRadius:
-                BorderRadius.circular(AppConstants.SMALL_BORDER_RADIUS),
-            border: Border.all(
+            // Inline code styling
+            code: theme.textTheme.bodySmall?.copyWith(
+              color: _getTextColor(theme, isUser),
+              backgroundColor: theme.colorScheme.primary.withOpacity(0.1),
+              fontFamily: 'Courier',
+              fontSize: 14,
+            ),
+            // Code block styling
+            codeblockPadding: const EdgeInsets.all(AppConstants.SMALL_PADDING),
+            codeblockDecoration: BoxDecoration(
+              color: theme.colorScheme.surface,
+              borderRadius:
+                  BorderRadius.circular(AppConstants.SMALL_BORDER_RADIUS),
+              border: Border.all(
+                color: theme.colorScheme.outline.withOpacity(0.2),
+              ),
+            ),
+            // List styling
+            listBullet: theme.textTheme.bodyMedium?.copyWith(
+              color: _getTextColor(theme, isUser),
+              height: 1.5,
+            ),
+            listIndent: AppConstants.DEFAULT_PADDING,
+            // Table styling
+            tableHead: theme.textTheme.bodyMedium?.copyWith(
+              color: _getTextColor(theme, isUser),
+              fontWeight: FontWeight.w600,
+            ),
+            tableBody: theme.textTheme.bodyMedium?.copyWith(
+              color: _getTextColor(theme, isUser),
+            ),
+            tableBorder: TableBorder.all(
               color: theme.colorScheme.outline.withOpacity(0.2),
             ),
-          ),
-          // List styling
-          listBullet: theme.textTheme.bodyMedium?.copyWith(
-            color: _getTextColor(theme, isUser),
-            height: 1.5,
-          ),
-          listIndent: AppConstants.DEFAULT_PADDING,
-          // Table styling
-          tableHead: theme.textTheme.bodyMedium?.copyWith(
-            color: _getTextColor(theme, isUser),
-            fontWeight: FontWeight.w600,
-          ),
-          tableBody: theme.textTheme.bodyMedium?.copyWith(
-            color: _getTextColor(theme, isUser),
-          ),
-          tableBorder: TableBorder.all(
-            color: theme.colorScheme.outline.withOpacity(0.2),
-          ),
-          // Horizontal rule
-          horizontalRuleDecoration: BoxDecoration(
-            border: Border(
-              top: BorderSide(
-                color: theme.colorScheme.outline.withOpacity(0.3),
+            // Horizontal rule
+            horizontalRuleDecoration: BoxDecoration(
+              border: Border(
+                top: BorderSide(
+                  color: theme.colorScheme.outline.withOpacity(0.3),
+                ),
               ),
             ),
+            // Link styling
+            a: theme.textTheme.bodyMedium?.copyWith(
+              color: theme.colorScheme.primary,
+              decoration: TextDecoration.underline,
+            ),
           ),
-          // Link styling
-          a: theme.textTheme.bodyMedium?.copyWith(
-            color: theme.colorScheme.primary,
-            decoration: TextDecoration.underline,
-          ),
+          onTapLink: (text, href, title) {
+            // Handle link taps if needed
+          },
         ),
-        onTapLink: (text, href, title) {
-          // Handle link taps if needed
-        },
       );
     }
 
