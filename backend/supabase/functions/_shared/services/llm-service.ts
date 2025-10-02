@@ -219,42 +219,86 @@ export class LLMService {
    * @throws {Error} When generation fails
    */
   async generateDailyVerse(
-    excludeReferences: string[] = [], 
+    excludeReferences: string[] = [],
     language: string = 'en'
   ): Promise<DailyVerseResponse> {
     console.log(`[LLM] Generating daily verse, excluding: ${excludeReferences.join(', ')}`)
-    
+
     if (this.useMockData) {
       console.log('[LLM] Using mock data for daily verse')
       return this.getMockDailyVerse()
     }
 
     try {
-      // Create verse-specific prompt
-      const prompt = this.createDailyVersePrompt(excludeReferences, language)
-      
-      // Select optimal provider for verse generation
+      // Import Bible API service
+      const { fetchVerseAllLanguages, getCachedVerses, cacheVerses } = await import('./bible-api-service.ts')
+
+      // Check cache first
+      const today = new Date()
+      const cachedVerses = await getCachedVerses(today)
+
+      if (cachedVerses) {
+        console.log(`[LLM] Using cached verses from ${today.toISOString().split('T')[0]}`)
+        return {
+          reference: cachedVerses.en.reference,
+          referenceTranslations: {
+            en: cachedVerses.en.reference,
+            hi: cachedVerses.hi.reference,
+            ml: cachedVerses.ml.reference,
+          },
+          translations: {
+            esv: cachedVerses.en.text,
+            hindi: cachedVerses.hi.text,
+            malayalam: cachedVerses.ml.text,
+          }
+        }
+      }
+
+      // Create simplified prompt for reference generation only
+      const prompt = this.createVerseReferencePrompt(excludeReferences, language)
+
+      // Select optimal provider for reference generation
       const selectedProvider = this.selectOptimalProvider(language)
-      console.log(`[LLM] Selected ${selectedProvider} for daily verse generation`)
-      
+      console.log(`[LLM] Selected ${selectedProvider} for verse reference generation`)
+
       let rawResponse: string
-      
+
       // Call the selected provider
       if (selectedProvider === 'openai') {
         rawResponse = await this.callOpenAIForVerse(prompt.systemMessage, prompt.userMessage)
       } else {
         rawResponse = await this.callAnthropicForVerse(prompt.systemMessage, prompt.userMessage)
       }
-      
-      // Parse and validate the response
-      const parsedResponse = await this.parseVerseResponse(rawResponse)
-      
-      console.log(`[LLM] Successfully generated daily verse: ${parsedResponse.reference}`)
-      return parsedResponse
-      
+
+      // Parse reference from LLM response
+      const parsedReference = await this.parseVerseReferenceResponse(rawResponse)
+      console.log(`[LLM] LLM selected reference: ${parsedReference.reference}`)
+
+      // Fetch actual verse text from Bible API
+      const allVerses = await fetchVerseAllLanguages(parsedReference.reference)
+
+      // Cache the verses
+      await cacheVerses(allVerses, today)
+
+      const response: DailyVerseResponse = {
+        reference: parsedReference.reference,
+        referenceTranslations: parsedReference.referenceTranslations,
+        translations: {
+          esv: allVerses.en.text,
+          hindi: allVerses.hi.text,
+          malayalam: allVerses.ml.text,
+        }
+      }
+
+      console.log(`[LLM] Successfully generated daily verse from Bible API: ${response.reference}`)
+      return response
+
     } catch (error) {
       console.error(`[LLM] Daily verse generation failed:`, error)
-      throw new Error(`Daily verse generation failed: ${error instanceof Error ? error.message : String(error)}`)
+      console.error(`[LLM] Falling back to LLM-generated verse`)
+
+      // Fallback to LLM-generated verse if Bible API fails
+      return this.generateDailyVerseLLMFallback(excludeReferences, language)
     }
   }
 
@@ -1269,57 +1313,264 @@ export class LLMService {
    * @returns Prompt object with system and user messages
    */
   private createDailyVersePrompt(excludeReferences: string[], language: string): {systemMessage: string, userMessage: string} {
-    const excludeList = excludeReferences.length > 0 
+    const excludeList = excludeReferences.length > 0
       ? ` Avoid these recently used verses: ${excludeReferences.join(', ')}.`
       : ''
-    
+
     const languageConfig = this.languageConfigs.get(language) || this.languageConfigs.get('en')!
-    
-    const systemMessage = `You are a biblical scholar selecting meaningful Bible verses for daily encouragement.
 
-      Your task is to select ONE inspiring Bible verse and provide it with accurate translations.
+    const systemMessage = `You are an expert biblical translator and theologian with deep knowledge of:
+- English Standard Version (ESV) Bible translation principles
+- Hindi biblical translation conventions (formal equivalence tradition)
+- Malayalam biblical translation conventions (formal equivalence tradition)
+- Original Greek (New Testament) and Hebrew (Old Testament) Scripture
+- Christian theological terminology across all three languages
 
-      OUTPUT REQUIREMENTS:
-      - Return ONLY valid JSON with the exact structure specified
-      - No markdown formatting, no extra text
-      - Use proper JSON string escaping for any quotes
-      - Ensure all translations are accurate and meaningful
+Your task is to select ONE inspiring Bible verse and provide HIGHLY ACCURATE translations that match the style and terminology of established Bible translations.
 
-      LANGUAGE CONTEXT: ${languageConfig.culturalContext}
-      COMPLEXITY: ${languageConfig.promptModifiers.complexityInstruction}`
+CRITICAL TRANSLATION PRINCIPLES:
+1. **Formal Equivalence**: Translate word-for-word while maintaining natural grammar
+2. **Theological Precision**: Use correct theological terms (e.g., "grace" = अनुग्रह/കൃപ, "salvation" = उद्धार/രക്ഷ)
+3. **Consistency**: Use standard biblical terminology, not modern paraphrases
+4. **Reverent Language**: Maintain formal, reverent tone in all languages
+5. **Scripture Integrity**: Preserve the exact meaning and structure of the original text
+
+OUTPUT REQUIREMENTS:
+- Return ONLY valid JSON with the exact structure specified
+- No markdown formatting, no code blocks, no extra text
+- Use proper JSON string escaping for any quotes within verse text
+- ALL translations must be theologically accurate and match established Bible translation styles
+
+LANGUAGE CONTEXT: ${languageConfig.culturalContext}
+COMPLEXITY: ${languageConfig.promptModifiers.complexityInstruction}`
 
     const userMessage = `Select one meaningful Bible verse for daily spiritual encouragement.${excludeList}
 
-      Requirements:
-      - Choose a verse that offers comfort, strength, hope, faith, peace, or guidance
-      - Provide accurate translations in all three languages
-      - Provide the Bible book name and reference in all three languages
-      - Focus on well-known, inspiring verses
-      - Ensure theological accuracy
+VERSE SELECTION CRITERIA:
+- Choose verses that offer comfort, strength, hope, faith, peace, or guidance
+- Focus on well-known, doctrinally sound verses
+- Prefer single verses (not multi-verse passages) for clarity
+- Ensure the verse is self-contained and understandable alone
 
-      Return in this EXACT JSON format (no other text):
-      {
-        "reference": "Book Chapter:Verse (in English)",
-        "referenceTranslations": {
-          "en": "English book name and reference (e.g., Philippians 4:13)",
-          "hi": "Hindi book name and reference in Devanagari (e.g., फिलिप्पियों 4:13)",
-          "ml": "Malayalam book name and reference in Malayalam script (e.g., ഫിലിപ്പിയർ 4:13)"
-        },
-        "translations": {
-          "esv": "English verse text (ESV translation)",
-          "hindi": "Hindi translation in Devanagari script (Hindi OV - Re-edited Bible Society of India)",
-          "malayalam": "Malayalam translation in Malayalam script (Malayalam OV - Bible Society of India)"
+TRANSLATION QUALITY REQUIREMENTS:
+
+**English (ESV Style)**:
+- Use formal English with "his/him" pronouns for God
+- Follow ESV translation conventions (formal equivalence)
+- Examples of ESV style:
+  * "For God so loved the world, that he gave his only Son..." (John 3:16)
+  * "I can do all things through him who strengthens me." (Philippians 4:13)
+  * "The Lord is my shepherd; I shall not want." (Psalm 23:1)
+- Avoid modern paraphrases or casual language
+
+**Hindi (हिन्दी - Formal Bible Translation Style)**:
+- Use traditional biblical Hindi with Devanagari script
+- Follow formal equivalence translation principles
+- Use established theological terms:
+  * परमेश्वर (God), प्रभु (Lord), यीशु/येशु मसीह (Jesus Christ)
+  * उद्धार (salvation), विश्वास (faith), अनुग्रह (grace)
+  * पवित्र आत्मा (Holy Spirit), स्वर्ग (heaven)
+- Maintain reverent, formal tone (आप form, not तुम)
+- Examples of correct style:
+  * "क्योंकि परमेश्वर ने जगत से ऐसा प्रेम रखा..." (John 3:16)
+  * "मैं उसके द्वारा जो मुझे सामर्थ्य देता है..." (Philippians 4:13)
+
+**Malayalam (മലയാളം - Formal Bible Translation Style)**:
+- Use traditional biblical Malayalam script
+- Follow formal equivalence translation principles
+- Use established theological terms:
+  * ദൈവം (God), കർത്താവ് (Lord), യേശുക്രിസ്തു (Jesus Christ)
+  * രക്ഷ (salvation), വിശ്വാസം (faith), കൃപ (grace)
+  * പരിശുദ്ധാത്മാവ് (Holy Spirit), സ്വർഗ്ഗം (heaven)
+- Maintain reverent, formal tone
+- Examples of correct style:
+  * "ദൈവം ലോകത്തെ ഇങ്ങനെ സ്നേഹിച്ചു..." (John 3:16)
+  * "എന്നെ ബലപ്പെടുത്തുന്ന ക്രിസ്തുവിൽ..." (Philippians 4:13)
+
+REFERENCE TRANSLATIONS (Book Names):
+**English**: Use standard English book names (e.g., "Philippians 4:13", "Psalm 23:1", "John 3:16")
+**Hindi**: Use traditional Hindi book names:
+- यूहन्ना (John), फिलिप्पियों (Philippians), भजन संहिता (Psalms)
+- मत्ती (Matthew), रोमियों (Romans), इब्रानियों (Hebrews)
+**Malayalam**: Use traditional Malayalam book names:
+- യോഹന്നാൻ (John), ഫിലിപ്പിയർ (Philippians), സങ്കീർത്തനം (Psalms)
+- മത്തായി (Matthew), റോമർ (Romans), എബ്രായർ (Hebrews)
+
+Return in this EXACT JSON format (no other text, no markdown):
+{
+  "reference": "Book Chapter:Verse (in English, e.g., John 3:16)",
+  "referenceTranslations": {
+    "en": "English book name with reference (e.g., John 3:16)",
+    "hi": "Hindi book name in Devanagari (e.g., यूहन्ना 3:16)",
+    "ml": "Malayalam book name in Malayalam script (e.g., യോഹന്നാൻ 3:16)"
+  },
+  "translations": {
+    "esv": "English verse text in ESV formal style",
+    "hindi": "Hindi translation in Devanagari - formal biblical style matching traditional Hindi Bible translations",
+    "malayalam": "Malayalam translation in Malayalam script - formal biblical style matching traditional Malayalam Bible translations"
+  }
+}
+
+VERSE THEME SUGGESTIONS (choose ONE verse from these categories):
+- **God's Love & Grace**: John 3:16, Romans 8:38-39, Ephesians 2:8-9, 1 John 4:19
+- **Strength & Courage**: Philippians 4:13, Joshua 1:9, Isaiah 41:10, 2 Timothy 1:7
+- **Peace & Comfort**: Psalm 23:1, Matthew 11:28, John 14:27, Philippians 4:6-7
+- **Hope & Faith**: Jeremiah 29:11, Hebrews 11:1, Romans 15:13, Proverbs 3:5-6
+- **Guidance & Wisdom**: Psalm 119:105, Proverbs 3:5-6, James 1:5, Psalm 32:8
+- **Provision & Protection**: Philippians 4:19, Psalm 91:1-2, Matthew 6:33, Psalm 46:1
+
+CRITICAL: Ensure every translation preserves the EXACT theological meaning and formal reverent tone of established Bible translations. Do NOT use modern casual paraphrases.`
+
+    return { systemMessage, userMessage }
+  }
+
+  /**
+   * Creates a simplified prompt for generating only a Bible verse reference
+   * (verse text will be fetched from Bible API)
+   *
+   * @param excludeReferences - List of recently used references to avoid
+   * @param language - Target language for cultural context
+   * @returns System and user messages for reference generation
+   */
+  private createVerseReferencePrompt(excludeReferences: string[], language: string): {systemMessage: string, userMessage: string} {
+    const excludeList = excludeReferences.length > 0
+      ? ` Avoid these recently used verses: ${excludeReferences.join(', ')}.`
+      : ''
+
+    const languageConfig = this.languageConfigs.get(language) || this.languageConfigs.get('en')!
+
+    const systemMessage = `You are a biblical scholar selecting inspiring Bible verses for daily spiritual encouragement.
+
+Your task is to select ONE meaningful Bible verse reference. The actual verse text will be fetched from an authentic Bible API.
+
+OUTPUT REQUIREMENTS:
+- Return ONLY valid JSON with the exact structure specified
+- No markdown formatting, no code blocks, no extra text
+- Use proper JSON string escaping
+
+LANGUAGE CONTEXT: ${languageConfig.culturalContext}`
+
+    const userMessage = `Select one meaningful Bible verse reference for daily spiritual encouragement.${excludeList}
+
+VERSE SELECTION CRITERIA:
+- Choose verses that offer comfort, strength, hope, faith, peace, or guidance
+- Focus on well-known, doctrinally sound verses
+- Prefer single verses (not multi-verse passages) for clarity
+- Ensure the verse is self-contained and understandable alone
+
+VERSE THEME SUGGESTIONS (choose ONE verse from these categories):
+- **God's Love & Grace**: John 3:16, Romans 8:38-39, Ephesians 2:8-9, 1 John 4:19
+- **Strength & Courage**: Philippians 4:13, Joshua 1:9, Isaiah 41:10, 2 Timothy 1:7
+- **Peace & Comfort**: Psalm 23:1, Matthew 11:28, John 14:27, Philippians 4:6-7
+- **Hope & Faith**: Jeremiah 29:11, Hebrews 11:1, Romans 15:13, Proverbs 3:5-6
+- **Guidance & Wisdom**: Psalm 119:105, Proverbs 3:5-6, James 1:5, Psalm 32:8
+- **Provision & Protection**: Philippians 4:19, Psalm 91:1-2, Matthew 6:33, Psalm 46:1
+
+Return in this EXACT JSON format (no other text, no markdown):
+{
+  "reference": "Book Chapter:Verse (in English, e.g., John 3:16)",
+  "referenceTranslations": {
+    "en": "English book name with reference (e.g., John 3:16)",
+    "hi": "Hindi book name in Devanagari (e.g., यूहन्ना 3:16)",
+    "ml": "Malayalam book name in Malayalam script (e.g., യോഹന്നാൻ 3:16)"
+  }
+}`
+
+    return { systemMessage, userMessage }
+  }
+
+  /**
+   * Parses verse reference response from LLM (simplified version)
+   *
+   * @param rawResponse - Raw response from LLM
+   * @returns Parsed reference data
+   */
+  private async parseVerseReferenceResponse(rawResponse: string): Promise<{
+    reference: string;
+    referenceTranslations: { en: string; hi: string; ml: string };
+  }> {
+    try {
+      const cleaned = this.cleanJSONResponse(rawResponse)
+      const parsed = JSON.parse(cleaned)
+
+      if (!parsed.reference || typeof parsed.reference !== 'string') {
+        throw new Error('Missing or invalid reference field')
+      }
+
+      if (!parsed.referenceTranslations || typeof parsed.referenceTranslations !== 'object') {
+        throw new Error('Missing or invalid referenceTranslations field')
+      }
+
+      const { en, hi, ml } = parsed.referenceTranslations
+
+      if (!en || typeof en !== 'string') {
+        throw new Error('Missing or invalid English reference translation')
+      }
+
+      if (!hi || typeof hi !== 'string') {
+        throw new Error('Missing or invalid Hindi reference translation')
+      }
+
+      if (!ml || typeof ml !== 'string') {
+        throw new Error('Missing or invalid Malayalam reference translation')
+      }
+
+      return {
+        reference: this.sanitizeText(parsed.reference),
+        referenceTranslations: {
+          en: this.sanitizeText(en),
+          hi: this.sanitizeText(hi),
+          ml: this.sanitizeText(ml)
         }
       }
 
-      Examples of good verse types:
-      - God's love and grace (John 3:16, Romans 8:38-39)
-      - Strength and courage (Philippians 4:13, Joshua 1:9)
-      - Peace and comfort (Psalm 23:1, Matthew 11:28)
-      - Hope and faith (Jeremiah 29:11, Hebrews 11:1)
-      - Guidance and wisdom (Proverbs 3:5-6, Psalm 119:105)`
+    } catch (error) {
+      console.error('[LLM] Failed to parse verse reference response:', error)
+      console.error('[LLM] Raw response:', rawResponse.substring(0, 500))
+      throw new Error(`Failed to parse verse reference: ${error instanceof Error ? error.message : String(error)}`)
+    }
+  }
 
-    return { systemMessage, userMessage }
+  /**
+   * Fallback method to generate daily verse using LLM when Bible API fails
+   *
+   * @param excludeReferences - List of recently used references to avoid
+   * @param language - Target language
+   * @returns Promise resolving to daily verse response
+   */
+  private async generateDailyVerseLLMFallback(
+    excludeReferences: string[],
+    language: string
+  ): Promise<DailyVerseResponse> {
+    try {
+      // Create verse-specific prompt (full prompt with translations)
+      const prompt = this.createDailyVersePrompt(excludeReferences, language)
+
+      // Select optimal provider for verse generation
+      const selectedProvider = this.selectOptimalProvider(language)
+      console.log(`[LLM] Using ${selectedProvider} for LLM fallback verse generation`)
+
+      let rawResponse: string
+
+      // Call the selected provider
+      if (selectedProvider === 'openai') {
+        rawResponse = await this.callOpenAIForVerse(prompt.systemMessage, prompt.userMessage)
+      } else {
+        rawResponse = await this.callAnthropicForVerse(prompt.systemMessage, prompt.userMessage)
+      }
+
+      // Parse and validate the response
+      const parsedResponse = await this.parseVerseResponse(rawResponse)
+
+      console.log(`[LLM] LLM fallback verse generated: ${parsedResponse.reference}`)
+      return parsedResponse
+
+    } catch (error) {
+      console.error(`[LLM] LLM fallback generation failed:`, error)
+      // Final fallback to mock data
+      console.log('[LLM] Using mock data as final fallback')
+      return this.getMockDailyVerse()
+    }
   }
 
   /**
