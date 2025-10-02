@@ -40,6 +40,21 @@ const BOOK_CODES: Record<string, string> = {
   '2 Thessalonians': '2TH', '1 Timothy': '1TI', '2 Timothy': '2TI', 'Titus': 'TIT',
   'Philemon': 'PHM', 'Hebrews': 'HEB', 'James': 'JAS', '1 Peter': '1PE', '2 Peter': '2PE',
   '1 John': '1JN', '2 John': '2JN', '3 John': '3JN', 'Jude': 'JUD', 'Revelation': 'REV',
+
+  // Common aliases (singular/plural variations and alternative names)
+  'Psalm': 'PSA',
+  'Song of Songs': 'SNG',
+  'Canticle of Canticles': 'SNG',
+  'Canticles': 'SNG',
+  '1 Sam': '1SA', '2 Sam': '2SA',
+  '1 Kgs': '1KI', '2 Kgs': '2KI',
+  '1 Chr': '1CH', '2 Chr': '2CH',
+  '1 Cor': '1CO', '2 Cor': '2CO',
+  '1 Thess': '1TH', '2 Thess': '2TH',
+  '1 Tim': '1TI', '2 Tim': '2TI',
+  '1 Pet': '1PE', '2 Pet': '2PE',
+  'Rev': 'REV',
+  'Revelations': 'REV', // Common mistake
 };
 
 export interface BibleVerse {
