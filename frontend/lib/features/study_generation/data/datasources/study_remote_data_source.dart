@@ -3,6 +3,7 @@ import 'package:uuid/uuid.dart';
 
 import '../../../../core/error/exceptions.dart';
 import '../../../../core/services/api_auth_helper.dart';
+import '../../../../core/utils/rate_limiter.dart';
 import '../../domain/entities/study_guide.dart';
 import '../../../tokens/domain/entities/token_consumption.dart';
 
@@ -29,6 +30,13 @@ class StudyRemoteDataSourceImpl implements StudyRemoteDataSource {
   /// UUID generator for creating unique IDs.
   final Uuid _uuid = const Uuid();
 
+  /// SECURITY FIX: Client-side rate limiter
+  /// Limits to 5 requests per minute to prevent API abuse
+  final RateLimiter _rateLimiter = RateLimiter(
+    maxRequests: 5,
+    window: const Duration(minutes: 1),
+  );
+
   /// Creates a new StudyRemoteDataSourceImpl instance.
   StudyRemoteDataSourceImpl({
     required SupabaseClient supabaseClient,
@@ -41,6 +49,22 @@ class StudyRemoteDataSourceImpl implements StudyRemoteDataSource {
     required String language,
   }) async {
     print('🚨 [STUDY_API] Starting study generation request');
+
+    // SECURITY FIX: Check client-side rate limit before making request
+    if (!_rateLimiter.canMakeRequest()) {
+      final retryAfter = _rateLimiter.getRetryAfter();
+      final waitSeconds = retryAfter.inSeconds;
+
+      print('🚨 [STUDY_API] Rate limited: wait $waitSeconds seconds');
+
+      throw RateLimitException(
+        message:
+            'Please wait $waitSeconds seconds before generating another study guide.',
+        code: 'CLIENT_RATE_LIMITED',
+        retryAfter: retryAfter,
+      );
+    }
+
     try {
       // Validate token before making authenticated request
       await ApiAuthHelper.validateTokenForRequest();

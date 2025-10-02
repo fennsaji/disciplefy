@@ -83,11 +83,18 @@ class StorageFailure extends Failure {
 
 /// Failure related to rate limiting.
 class RateLimitFailure extends Failure {
+  /// SECURITY FIX: Duration until rate limit expires
+  final Duration? retryAfter;
+
   const RateLimitFailure({
     super.message = 'Too many requests. Please wait before trying again.',
     super.code = 'RATE_LIMIT_ERROR',
+    this.retryAfter,
     super.context,
   });
+
+  @override
+  List<Object?> get props => [...super.props, retryAfter];
 }
 
 /// General client-side failure.

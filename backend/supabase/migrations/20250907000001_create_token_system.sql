@@ -195,9 +195,12 @@ DECLARE
   needs_reset BOOLEAN;
   updated_rows INTEGER;
 BEGIN
+  -- CRITICAL: Set serializable isolation to prevent phantom reads
+  SET LOCAL TRANSACTION ISOLATION LEVEL SERIALIZABLE;
+
   -- SECURITY: Set explicit search_path to prevent hijacking
   SET LOCAL search_path = public, pg_catalog;
-  
+
   -- INPUT VALIDATION: Check p_token_cost
   IF p_token_cost IS NULL OR p_token_cost <= 0 THEN
     RETURN QUERY SELECT false, 0, 0, 0, 'Invalid token cost: must be positive integer'::TEXT;

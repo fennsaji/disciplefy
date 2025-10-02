@@ -140,9 +140,17 @@ export class SecurityValidator {
 
   sanitizeInput(input: string): string {
     return input
-      .replace(/<[^>]*>/g, '') // Remove HTML tags
-      .replace(/[<>&"']/g, '') // Remove dangerous characters
+      // Remove null bytes and control characters (except newline, tab, carriage return)
+      .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '')
+      // Normalize Unicode to prevent homograph attacks
+      .normalize('NFKC')
+      // Remove HTML tags
+      .replace(/<[^>]*>/g, '')
+      // Remove dangerous characters
+      .replace(/[<>&"']/g, '')
+      // Trim whitespace
       .trim()
+      // Limit length
       .substring(0, this.maxInputLength)
   }
 

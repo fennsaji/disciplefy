@@ -1,6 +1,7 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../../core/error/failures.dart';
+import '../../../../../core/utils/error_message_sanitizer.dart';
 import '../../../domain/usecases/generate_study_guide.dart';
 import '../study_event.dart';
 import '../study_state.dart';
@@ -40,8 +41,16 @@ class StudyGenerationHandler {
         (failure) {
           print(
               '🚨 [STUDY_BLOC] Emitting StudyGenerationFailure: ${failure.runtimeType} - ${failure.message}');
+
+          // SECURITY FIX: Sanitize error message before exposing to user
+          final sanitizedMessage = ErrorMessageSanitizer.sanitize(failure);
+
+          // Create a new failure with sanitized message
+          final sanitizedFailure =
+              _createSanitizedFailure(failure, sanitizedMessage);
+
           emit(StudyGenerationFailure(
-            failure: failure,
+            failure: sanitizedFailure,
             isRetryable: _isRetryableFailure(failure),
           ));
         },
@@ -84,4 +93,43 @@ class StudyGenerationHandler {
           false,
         _ => true,
       };
+
+  /// SECURITY FIX: Creates a new failure with sanitized message
+  ///
+  /// Preserves the failure type and important fields while replacing
+  /// the message with a sanitized version.
+  Failure _createSanitizedFailure(
+      Failure originalFailure, String sanitizedMessage) {
+    return switch (originalFailure.runtimeType) {
+      NetworkFailure _ => NetworkFailure(
+          message: sanitizedMessage,
+          code: originalFailure.code,
+        ),
+      ServerFailure _ => ServerFailure(
+          message: sanitizedMessage,
+          code: originalFailure.code,
+        ),
+      AuthenticationFailure _ => AuthenticationFailure(
+          message: sanitizedMessage,
+          code: originalFailure.code,
+        ),
+      AuthorizationFailure _ => AuthorizationFailure(
+          message: sanitizedMessage,
+          code: originalFailure.code,
+        ),
+      ValidationFailure _ => ValidationFailure(
+          message: sanitizedMessage,
+          code: originalFailure.code,
+        ),
+      RateLimitFailure _ => RateLimitFailure(
+          message: sanitizedMessage,
+          code: originalFailure.code,
+          retryAfter: (originalFailure as RateLimitFailure).retryAfter,
+        ),
+      _ => ClientFailure(
+          message: sanitizedMessage,
+          code: originalFailure.code,
+        ),
+    };
+  }
 }

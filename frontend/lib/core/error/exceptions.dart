@@ -78,9 +78,13 @@ class StorageException extends AppException {
 
 /// Exception thrown when rate limits are exceeded.
 class RateLimitException extends AppException {
+  /// SECURITY FIX: Duration until rate limit expires
+  final Duration? retryAfter;
+
   const RateLimitException({
     required super.message,
     required super.code,
+    this.retryAfter,
     super.context,
   });
 }
