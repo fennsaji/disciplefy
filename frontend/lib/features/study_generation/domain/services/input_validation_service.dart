@@ -175,8 +175,6 @@ class InputValidationService {
     return input
         // Remove HTML/XML tags
         .replaceAll(RegExp(r'<[^>]*>'), '')
-        // Remove dangerous characters
-        .replaceAll(RegExp(r'''[<>&"']'''), '')
         // Remove control characters (except newline, tab, carriage return)
         .replaceAll(_controlCharPattern, '')
         // Normalize whitespace
