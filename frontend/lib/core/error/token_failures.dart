@@ -6,17 +6,19 @@ import 'failures.dart';
 class InsufficientTokensFailure extends Failure {
   final int requiredTokens;
   final int availableTokens;
+  final DateTime? nextResetTime;
 
   const InsufficientTokensFailure({
     required this.requiredTokens,
     required this.availableTokens,
+    this.nextResetTime,
   }) : super(
           message: 'Insufficient tokens for operation',
           code: 'INSUFFICIENT_TOKENS',
         );
 
   @override
-  List<Object?> get props => [requiredTokens, availableTokens];
+  List<Object?> get props => [requiredTokens, availableTokens, nextResetTime];
 }
 
 /// Failure when token payment processing fails

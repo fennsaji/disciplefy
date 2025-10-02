@@ -40,6 +40,21 @@ const BOOK_CODES: Record<string, string> = {
   '2 Thessalonians': '2TH', '1 Timothy': '1TI', '2 Timothy': '2TI', 'Titus': 'TIT',
   'Philemon': 'PHM', 'Hebrews': 'HEB', 'James': 'JAS', '1 Peter': '1PE', '2 Peter': '2PE',
   '1 John': '1JN', '2 John': '2JN', '3 John': '3JN', 'Jude': 'JUD', 'Revelation': 'REV',
+
+  // Common aliases (singular/plural variations and alternative names)
+  'Psalm': 'PSA',
+  'Song of Songs': 'SNG',
+  'Canticle of Canticles': 'SNG',
+  'Canticles': 'SNG',
+  '1 Sam': '1SA', '2 Sam': '2SA',
+  '1 Kgs': '1KI', '2 Kgs': '2KI',
+  '1 Chr': '1CH', '2 Chr': '2CH',
+  '1 Cor': '1CO', '2 Cor': '2CO',
+  '1 Thess': '1TH', '2 Thess': '2TH',
+  '1 Tim': '1TI', '2 Tim': '2TI',
+  '1 Pet': '1PE', '2 Pet': '2PE',
+  'Rev': 'REV',
+  'Revelations': 'REV', // Common mistake
 };
 
 export interface BibleVerse {
@@ -52,6 +67,117 @@ export interface BibleVerse {
 export interface BibleApiError {
   error: string;
   details?: string;
+}
+
+/**
+ * Retry configuration for API calls
+ */
+interface RetryConfig {
+  maxAttempts: number;
+  initialDelayMs: number;
+  maxDelayMs: number;
+  backoffMultiplier: number;
+}
+
+const DEFAULT_RETRY_CONFIG: RetryConfig = {
+  maxAttempts: 3,
+  initialDelayMs: 500,
+  maxDelayMs: 5000,
+  backoffMultiplier: 2,
+};
+
+/**
+ * Delays execution for specified milliseconds
+ */
+function delay(ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+/**
+ * Fetch with timeout support
+ *
+ * @param url - URL to fetch
+ * @param options - Fetch options
+ * @param timeoutMs - Timeout in milliseconds (default: 30000ms = 30s)
+ * @returns Promise<Response>
+ * @throws Error if request times out
+ */
+export async function fetchWithTimeout(
+  url: string,
+  options: RequestInit = {},
+  timeoutMs: number = 30000
+): Promise<Response> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    const response = await fetch(url, {
+      ...options,
+      signal: controller.signal,
+    });
+    return response;
+  } catch (error) {
+    if (error instanceof Error && error.name === 'AbortError') {
+      throw new Error(`Request timeout after ${timeoutMs}ms: ${url}`);
+    }
+    throw error;
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+/**
+ * Retries an async operation with exponential backoff
+ *
+ * @param operation - The async function to retry
+ * @param config - Retry configuration
+ * @returns Result of the operation
+ * @throws Error if all retry attempts fail
+ */
+async function withRetry<T>(
+  operation: () => Promise<T>,
+  config: RetryConfig = DEFAULT_RETRY_CONFIG
+): Promise<T> {
+  let lastError: Error | undefined;
+  let delayMs = config.initialDelayMs;
+
+  for (let attempt = 1; attempt <= config.maxAttempts; attempt++) {
+    try {
+      return await operation();
+    } catch (error) {
+      lastError = error instanceof Error ? error : new Error(String(error));
+
+      // Don't retry on the last attempt
+      if (attempt === config.maxAttempts) {
+        break;
+      }
+
+      // Check if error is retryable (network errors, rate limits, server errors)
+      const isRetryable = lastError.message.includes('500') ||
+                         lastError.message.includes('502') ||
+                         lastError.message.includes('503') ||
+                         lastError.message.includes('504') ||
+                         lastError.message.includes('429') ||
+                         lastError.message.includes('fetch');
+
+      if (!isRetryable) {
+        // Don't retry on client errors (400, 401, 404, etc.)
+        break;
+      }
+
+      console.warn(
+        `[Bible API] Attempt ${attempt}/${config.maxAttempts} failed: ${lastError.message}. ` +
+        `Retrying in ${delayMs}ms...`
+      );
+
+      await delay(delayMs);
+
+      // Exponential backoff with max cap
+      delayMs = Math.min(delayMs * config.backoffMultiplier, config.maxDelayMs);
+    }
+  }
+
+  throw lastError || new Error('Operation failed without error details');
 }
 
 /**
@@ -102,52 +228,108 @@ export async function fetchBibleVerse(
 
   const url = `https://api.scripture.api.bible/v1/bibles/${bibleId}/verses/${verseId}`;
 
-  try {
-    const response = await fetch(url, {
-      headers: {
-        'api-key': apiKey,
-      },
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(
-        `API.Bible request failed: ${response.status} - ${JSON.stringify(errorData)}`
+  // Wrap the fetch operation with retry logic
+  return withRetry(async () => {
+    try {
+      // Fetch with 10 second timeout (Bible API should respond quickly)
+      const response = await fetchWithTimeout(
+        url,
+        {
+          headers: {
+            'api-key': apiKey,
+          },
+        },
+        10000 // 10 second timeout
       );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(
+          `API.Bible request failed: ${response.status} - ${JSON.stringify(errorData)}`
+        );
+      }
+
+      const data = await response.json();
+
+      // Extract clean text (remove HTML tags, verse numbers, footnotes)
+      const verseText = cleanVerseText(data.data.content);
+
+      return {
+        reference,
+        text: verseText,
+        translation: getTranslationName(language),
+        language,
+      };
+    } catch (error) {
+      console.error(`[Bible API] Error fetching verse ${reference} (${language}):`, error);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      throw new Error(`Failed to fetch Bible verse: ${errorMessage}`);
     }
-
-    const data = await response.json();
-
-    // Extract clean text (remove HTML tags, verse numbers, footnotes)
-    const verseText = cleanVerseText(data.data.content);
-
-    return {
-      reference,
-      text: verseText,
-      translation: getTranslationName(language),
-      language,
-    };
-  } catch (error) {
-    console.error(`[Bible API] Error fetching verse ${reference} (${language}):`, error);
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    throw new Error(`Failed to fetch Bible verse: ${errorMessage}`);
-  }
+  });
 }
 
 /**
- * Fetches a Bible verse in all three languages
+ * Fetches a Bible verse in all three languages with graceful fallback
  *
  * @param reference - Bible reference (e.g., "John 3:16")
- * @returns Promise<Record<string, BibleVerse>> - Verses in all languages
+ * @returns Promise<Record<string, BibleVerse>> - Verses in all languages (falls back to empty string if a language fails)
  */
 export async function fetchVerseAllLanguages(
   reference: string
 ): Promise<Record<'en' | 'hi' | 'ml', BibleVerse>> {
-  const [en, hi, ml] = await Promise.all([
+  console.log(`[Bible API] Fetching verse in all languages: ${reference}`);
+
+  // Fetch all languages with individual error handling
+  const results = await Promise.allSettled([
     fetchBibleVerse(reference, 'en'),
     fetchBibleVerse(reference, 'hi'),
     fetchBibleVerse(reference, 'ml'),
   ]);
+
+  // Extract results with detailed logging
+  const en = results[0].status === 'fulfilled' 
+    ? results[0].value 
+    : (() => {
+        console.error(`[Bible API] ❌ Failed to fetch English translation:`, results[0].reason);
+        throw new Error(`English translation required but failed: ${results[0].reason}`);
+      })();
+
+  const hi = results[1].status === 'fulfilled'
+    ? results[1].value
+    : (() => {
+        console.error(`[Bible API] ⚠️ Failed to fetch Hindi translation:`, results[1].reason);
+        console.error(`[Bible API] Hindi version ID: ${BIBLE_VERSIONS.hi}`);
+        console.error(`[Bible API] Using empty fallback for Hindi`);
+        return {
+          reference,
+          text: '',
+          translation: getTranslationName('hi'),
+          language: 'hi',
+        } as BibleVerse;
+      })();
+
+  const ml = results[2].status === 'fulfilled'
+    ? results[2].value
+    : (() => {
+        console.error(`[Bible API] ⚠️ Failed to fetch Malayalam translation:`, results[2].reason);
+        console.error(`[Bible API] Malayalam version ID: ${BIBLE_VERSIONS.ml}`);
+        console.error(`[Bible API] Using empty fallback for Malayalam`);
+        return {
+          reference,
+          text: '',
+          translation: getTranslationName('ml'),
+          language: 'ml',
+        } as BibleVerse;
+      })();
+
+  console.log('[Bible API] ✅ Fetch results:', {
+    en_success: results[0].status === 'fulfilled',
+    hi_success: results[1].status === 'fulfilled',
+    ml_success: results[2].status === 'fulfilled',
+    en_length: en.text.length,
+    hi_length: hi.text.length,
+    ml_length: ml.text.length,
+  });
 
   return { en, hi, ml };
 }
@@ -164,6 +346,9 @@ function cleanVerseText(content: string): string {
 
   // Remove verse numbers in brackets [1], [2], etc.
   cleaned = cleaned.replace(/\[\d+\]/g, '');
+
+  // Remove verse numbers at the start (e.g., "13I can do..." -> "I can do...")
+  cleaned = cleaned.replace(/^\d+\s*/g, '');
 
   // Remove footnote markers
   cleaned = cleaned.replace(/\s*\*+\s*/g, ' ');
@@ -226,7 +411,9 @@ export async function cacheVerses(
   const supabase = createClient(supabaseUrl, supabaseKey);
 
   const dateKey = verseDate.toISOString().split('T')[0];
-  const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+  // Cache for 6 months (same as daily verse cache)
+  const expiresAt = new Date();
+  expiresAt.setMonth(expiresAt.getMonth() + 6);
 
   const verseData = {
     reference: verses.en.reference,

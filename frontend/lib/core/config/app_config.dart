@@ -25,46 +25,41 @@ class AppConfig {
   static const String apiVersion = 'v1';
   static const String packageName = 'com.disciplefy.bible_study';
 
-  // OAuth Redirect URLs
+  // OAuth Redirect URLs - SECURITY FIX: Use compile-time constants
+  // CRITICAL: These MUST be set via --dart-define at build time
+  static const String webOAuthRedirectUrl = String.fromEnvironment(
+    'WEB_OAUTH_REDIRECT_URL',
+  );
+
+  static const String mobileOAuthRedirectScheme = String.fromEnvironment(
+    'MOBILE_OAUTH_REDIRECT_SCHEME',
+    defaultValue: 'com.disciplefy.bible_study_app',
+  );
+
+  /// Get OAuth redirect URL (compile-time constant, not runtime)
+  /// Build examples:
+  /// - Development: flutter run --dart-define=WEB_OAUTH_REDIRECT_URL=http://localhost:3000/auth/callback
+  /// - Production: flutter build web --dart-define=WEB_OAUTH_REDIRECT_URL=https://disciplefy.in/auth/callback
   static String get authRedirectUrl {
     if (kIsWeb) {
-      // DYNAMIC FIX: Use current origin for OAuth redirects to handle localhost correctly
-      final currentOrigin = _getCurrentWebOrigin();
-      return '$currentOrigin/auth/callback';
-    }
-    // Use deep link scheme for mobile apps (both development and production)
-    return 'com.disciplefy.bible_study_app://auth/callback';
-  }
-
-  /// Get the current web origin dynamically
-  /// This ensures OAuth redirects work correctly in both development and production
-  /// Uses Uri.base which is safe and doesn't rely on deprecated dart:html
-  static String _getCurrentWebOrigin() {
-    if (kIsWeb) {
-      try {
-        // Use Uri.base to get the current origin - this is the modern, safe approach
-        final baseUri = Uri.base;
-        final origin =
-            '${baseUri.scheme}://${baseUri.host}${baseUri.hasPort ? ':${baseUri.port}' : ''}';
-
+      // SECURITY FIX: Use pre-configured URL from build time, not runtime Uri.base
+      if (webOAuthRedirectUrl.isEmpty) {
+        // In development, fall back to localhost for convenience
         if (isDevelopment) {
-          print('🔧 [AppConfig] Dynamic web origin detected: $origin');
+          return 'http://localhost:3000/auth/callback';
         }
-        return origin;
-      } catch (e) {
-        if (isDevelopment) {
-          print(
-              '🔧 [AppConfig] ⚠️ Failed to get dynamic origin, falling back to appUrl: $e');
-        }
-      }
 
-      // Fallback to configured appUrl if dynamic detection fails
-      if (isDevelopment) {
-        print('🔧 [AppConfig] Using fallback appUrl: $appUrl');
+        // In production, this is a CRITICAL configuration error
+        throw Exception(
+            'CRITICAL SECURITY ERROR: WEB_OAUTH_REDIRECT_URL not configured.\n'
+            'OAuth redirect URL MUST be set via --dart-define at build time.\n'
+            'Example: flutter build web --dart-define=WEB_OAUTH_REDIRECT_URL=https://your-domain.com/auth/callback');
       }
-      return appUrl;
+      return webOAuthRedirectUrl;
     }
-    return appUrl;
+
+    // Mobile uses deep link scheme
+    return '$mobileOAuthRedirectScheme://auth/callback';
   }
 
   // OAuth redirect schemes for deep linking
@@ -150,6 +145,12 @@ class AppConfig {
       missingConfigs.add('GOOGLE_CLIENT_ID (required for web)');
     }
 
+    // SECURITY FIX: Validate OAuth redirect URL configuration
+    if (kIsWeb && !isDevelopment && webOAuthRedirectUrl.isEmpty) {
+      missingConfigs
+          .add('WEB_OAUTH_REDIRECT_URL (required for production web builds)');
+    }
+
     if (missingConfigs.isNotEmpty) {
       throw Exception(
           'Missing required environment variables: ${missingConfigs.join(', ')}. '
@@ -159,6 +160,23 @@ class AppConfig {
     // Validate format of critical URLs
     if (!supabaseUrl.startsWith('http')) {
       throw Exception('SUPABASE_URL must be a valid HTTP/HTTPS URL');
+    }
+
+    // SECURITY FIX: Validate OAuth redirect URL format
+    if (kIsWeb) {
+      try {
+        final redirectUri = Uri.parse(authRedirectUrl);
+        if (!redirectUri.isScheme('https') && !redirectUri.isScheme('http')) {
+          throw Exception('OAuth redirect URL must use HTTP or HTTPS scheme');
+        }
+
+        // In production, enforce HTTPS
+        if (isProduction && !redirectUri.isScheme('https')) {
+          throw Exception('Production OAuth redirect URL MUST use HTTPS');
+        }
+      } catch (e) {
+        throw Exception('Invalid OAuth redirect URL format: $e');
+      }
     }
 
     if (isDevelopment) {
@@ -178,10 +196,9 @@ class AppConfig {
           '  - Google OAuth: ${isOAuthConfigValid ? "✅ Configured" : "❌ Missing"}');
       print('  - Platform: ${kIsWeb ? "Web" : "Mobile"}');
       if (kIsWeb) {
-        print('  - Current Origin (Dynamic): ${_getCurrentWebOrigin()}');
-        print('  - Static App URL: $appUrl');
+        print('  - Configured OAuth Redirect: $webOAuthRedirectUrl');
       }
-      print('  - Auth Redirect URL (Dynamic): $authRedirectUrl');
+      print('  - Auth Redirect URL: $authRedirectUrl');
       print('  - Package Name: $packageName');
     }
   }

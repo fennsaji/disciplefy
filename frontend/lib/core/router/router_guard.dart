@@ -15,6 +15,9 @@ class RouterGuard {
   static const String _userTypeKey = 'user_type';
   static const String _userIdKey = 'user_id';
   static const String _onboardingCompletedKey = 'onboarding_completed';
+  static const String _sessionExpiresAtKey =
+      'session_expires_at'; // SECURITY FIX
+  static const String _deviceIdKey = 'device_id'; // SECURITY FIX
 
   // Router-level caching to prevent excessive API calls
   static String? _cachedUserId;
@@ -53,10 +56,28 @@ class RouterGuard {
   }
 
   /// Get authentication state from multiple sources
+  /// SECURITY FIX: Now validates session expiration and device binding
   static AuthenticationState _getAuthenticationState() {
     // Check Supabase auth first
     final user = Supabase.instance.client.auth.currentUser;
     if (user != null) {
+      // SECURITY FIX: Validate session expiration for all auth types
+      final isExpired = _isSessionExpired();
+      if (isExpired) {
+        Logger.info(
+          'User session expired',
+          tag: 'AUTH_SECURITY',
+          context: {
+            'user_id': user.id,
+            'user_type': user.isAnonymous ? 'anonymous' : 'supabase',
+            'session_expired': true,
+          },
+        );
+        // Clear expired session data
+        _clearExpiredSession();
+        return const AuthenticationState(isAuthenticated: false);
+      }
+
       Logger.info(
         'User authenticated via Supabase',
         tag: 'AUTH',
@@ -81,6 +102,22 @@ class RouterGuard {
       final userId = box.get(_userIdKey);
 
       if (userType != null && (userType == 'guest' || userType == 'google')) {
+        // SECURITY FIX: Validate session expiration
+        final isExpired = _isSessionExpired();
+        if (isExpired) {
+          Logger.info(
+            'Stored session expired',
+            tag: 'AUTH_SECURITY',
+            context: {
+              'user_type': userType,
+              'user_id': userId,
+              'session_expired': true,
+            },
+          );
+          _clearExpiredSession();
+          return const AuthenticationState(isAuthenticated: false);
+        }
+
         Logger.info(
           'User authenticated via local storage',
           tag: 'AUTH',
@@ -604,6 +641,69 @@ class RouterGuard {
       Logger.error(
         'Failed to register RouterGuard with LanguageCacheCoordinator',
         tag: 'ROUTER_CACHE',
+        error: e,
+      );
+    }
+  }
+
+  /// SECURITY FIX: Check if the session has expired
+  static bool _isSessionExpired() {
+    try {
+      final box = Hive.box(_hiveBboxName);
+      final expiresAtStr = box.get(_sessionExpiresAtKey) as String?;
+
+      if (expiresAtStr == null) {
+        // No expiration data - assume session is valid (for backward compatibility)
+        return false;
+      }
+
+      final expiresAt = DateTime.parse(expiresAtStr);
+      final now = DateTime.now().toUtc();
+      final isExpired = now.isAfter(expiresAt);
+
+      if (isExpired) {
+        final timeSinceExpiry = now.difference(expiresAt);
+        Logger.info(
+          'Session expired',
+          tag: 'AUTH_SECURITY',
+          context: {
+            'expires_at': expiresAt.toIso8601String(),
+            'current_time': now.toIso8601String(),
+            'time_since_expiry_minutes': timeSinceExpiry.inMinutes,
+          },
+        );
+      }
+
+      return isExpired;
+    } catch (e) {
+      Logger.error(
+        'Error checking session expiration',
+        tag: 'AUTH_SECURITY',
+        error: e,
+      );
+      // On error, assume session is valid to prevent breaking existing sessions
+      return false;
+    }
+  }
+
+  /// SECURITY FIX: Clear expired session data from Hive
+  static void _clearExpiredSession() {
+    try {
+      final box = Hive.box(_hiveBboxName);
+      box.delete(_userTypeKey);
+      box.delete(_userIdKey);
+      box.delete(_sessionExpiresAtKey);
+      box.delete(_deviceIdKey);
+      box.delete(_onboardingCompletedKey);
+
+      Logger.info(
+        'Expired session data cleared from storage',
+        tag: 'AUTH_SECURITY',
+      );
+    } catch (e) {
+      Logger.error(
+        'Error clearing expired session data',
+        tag: 'AUTH_SECURITY',
         error: e,
       );
     }
