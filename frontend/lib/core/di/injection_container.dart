@@ -96,6 +96,15 @@ import '../../features/study_generation/domain/repositories/personal_notes_repos
 import '../../features/study_generation/data/repositories/personal_notes_repository_impl.dart';
 import '../../features/study_generation/domain/usecases/manage_personal_notes.dart';
 import '../../features/user_profile/data/services/user_profile_api_service.dart';
+import '../../features/notifications/data/repositories/notification_repository_impl.dart';
+import '../../features/notifications/domain/repositories/notification_repository.dart';
+import '../../features/notifications/domain/usecases/get_notification_preferences.dart';
+import '../../features/notifications/domain/usecases/update_notification_preferences.dart'
+    as notification_usecases;
+import '../../features/notifications/domain/usecases/request_notification_permissions.dart'
+    as notification_usecases;
+import '../../features/notifications/presentation/bloc/notification_bloc.dart';
+import '../services/notification_service.dart';
 import '../navigation/study_navigator.dart';
 import '../navigation/go_router_study_navigator.dart';
 import '../../features/tokens/data/datasources/token_remote_data_source.dart';
@@ -472,5 +481,24 @@ Future<void> initializeDependencies() async {
   sl.registerFactory(() => FollowUpChatBloc(
         httpService: sl(),
         conversationService: sl(),
+      ));
+
+  //! Notifications
+  sl.registerLazySingleton<NotificationRepository>(
+      () => NotificationRepositoryImpl(
+            supabaseClient: sl(),
+            notificationService: sl(),
+          ));
+
+  sl.registerLazySingleton(() => GetNotificationPreferences(sl()));
+  sl.registerLazySingleton(
+      () => notification_usecases.UpdateNotificationPreferences(sl()));
+  sl.registerLazySingleton(
+      () => notification_usecases.RequestNotificationPermissions(sl()));
+
+  sl.registerFactory(() => NotificationBloc(
+        getPreferences: sl(),
+        updatePreferences: sl(),
+        requestPermissions: sl(),
       ));
 }
