@@ -139,7 +139,7 @@ export async function selectTopicForUser(
       .order('display_order', { ascending: true });
 
     if (allExcludedIds.length > 0) {
-      query = query.not('id', 'in', `(${allExcludedIds.join(',')})`);
+      query = query.not('id', 'in', allExcludedIds);
     }
 
     const { data: topics, error: topicsError } = await query;

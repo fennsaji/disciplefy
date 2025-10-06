@@ -25,12 +25,12 @@ async function handleTokenCleanup(
   req: Request,
   services: ServiceContainer
 ): Promise<Response> {
-  // Verify service role authentication
-  const authHeader = req.headers.get('Authorization');
-  const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+  // Verify cron authentication using dedicated secret
+  const cronHeader = req.headers.get('X-Cron-Secret');
+  const cronSecret = Deno.env.get('CRON_SECRET');
 
-  if (!authHeader || !authHeader.startsWith('Bearer ') || authHeader.replace('Bearer ', '') !== serviceRoleKey) {
-    throw new AppError('UNAUTHORIZED', 'Service role authentication required', 401);
+  if (!cronHeader || cronHeader !== cronSecret) {
+    throw new AppError('UNAUTHORIZED', 'Cron secret authentication required', 401);
   }
 
   console.log('Starting FCM token cleanup process...');

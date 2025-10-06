@@ -6,15 +6,16 @@ import 'package:bloc/bloc.dart';
 import '../../../../core/usecases/usecase.dart';
 import '../../domain/usecases/get_notification_preferences.dart';
 import '../../domain/usecases/request_notification_permissions.dart'
-    as usecases;
-import '../../domain/usecases/update_notification_preferences.dart' as usecases;
+    as request_usecases;
+import '../../domain/usecases/update_notification_preferences.dart'
+    as update_usecases;
 import 'notification_event.dart';
 import 'notification_state.dart';
 
 class NotificationBloc extends Bloc<NotificationEvent, NotificationState> {
   final GetNotificationPreferences getPreferences;
-  final usecases.UpdateNotificationPreferences updatePreferences;
-  final usecases.RequestNotificationPermissions requestPermissions;
+  final update_usecases.UpdateNotificationPreferences updatePreferences;
+  final request_usecases.RequestNotificationPermissions requestPermissions;
 
   NotificationBloc({
     required this.getPreferences,
@@ -51,7 +52,7 @@ class NotificationBloc extends Bloc<NotificationEvent, NotificationState> {
     emit(const NotificationLoading());
 
     final result = await updatePreferences(
-      usecases.UpdatePreferencesParams(
+      update_usecases.UpdatePreferencesParams(
         dailyVerseEnabled: event.dailyVerseEnabled,
         recommendedTopicEnabled: event.recommendedTopicEnabled,
       ),

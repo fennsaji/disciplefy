@@ -51,6 +51,7 @@ interface FCMMessage {
       };
     };
   };
+  validateOnly?: boolean;
 }
 
 interface FCMResponse {
@@ -221,13 +222,19 @@ export class FCMService {
       // Construct FCM v1 API request
       const fcmEndpoint = `https://fcm.googleapis.com/v1/projects/${this.credentials.projectId}/messages:send`;
 
+      // Build request body, add validate_only flag if present
+      const requestBody: any = { message };
+      if (message.validateOnly) {
+        requestBody.validate_only = true;
+      }
+
       const response = await fetch(fcmEndpoint, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${accessToken}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ message }),
+        body: JSON.stringify(requestBody),
       });
 
       if (!response.ok) {
@@ -299,16 +306,17 @@ export class FCMService {
   // ==========================================================================
 
   /**
-   * Check if FCM token is valid by attempting a dry-run send
+   * Check if FCM token is valid using validate-only mode (no notification sent)
    */
   async validateToken(token: string): Promise<boolean> {
     try {
       const result = await this.sendNotification({
         token,
         notification: {
-          title: 'Test',
+          title: 'Validation',
           body: 'Token validation',
         },
+        validateOnly: true,
       });
       return result.success;
     } catch {

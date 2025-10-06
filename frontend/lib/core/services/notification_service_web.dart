@@ -7,7 +7,11 @@
 import 'dart:async';
 import 'dart:convert';
 // ignore: avoid_web_libraries_in_flutter
+import 'dart:html' as html;
+// ignore: avoid_web_libraries_in_flutter
 import 'dart:js' as js;
+// ignore: avoid_web_libraries_in_flutter
+import 'dart:js_util' as js_util;
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
@@ -37,6 +41,20 @@ class NotificationServiceWeb {
     required GoRouter router,
   })  : _supabaseClient = supabaseClient,
         _router = router;
+
+  // ============================================================================
+  // Helper Methods
+  // ============================================================================
+
+  /// Mask FCM token for secure logging (show first 6 and last 4 chars)
+  String _maskToken(String? token) {
+    if (token == null || token.isEmpty) return 'null';
+    if (token.length <= 10) return '***'; // Too short to mask safely
+
+    final prefix = token.substring(0, 6);
+    final suffix = token.substring(token.length - 4);
+    return '$prefix...$suffix';
+  }
 
   // ============================================================================
   // Initialization
@@ -70,35 +88,26 @@ class NotificationServiceWeb {
       print(
           '[FCM Web] 🔄 After Firebase instance - continuing to permissions...');
 
-      // Check service worker availability first
+      // Check service worker availability first (CSP-safe using dart:html)
       print('[FCM Web] 🔍 Checking service worker status...');
       try {
         if (kIsWeb) {
-          // Use JavaScript to check service worker
-          final swReady = await js.context.callMethod('eval', [
-            '''
-            (async function() {
-              try {
-                if (!('serviceWorker' in navigator)) {
-                  return { available: false, error: 'Service Worker not supported' };
-                }
-                const registration = await navigator.serviceWorker.ready;
-                console.log('[FCM Web] Service worker registration:', registration);
-                console.log('[FCM Web] Service worker active:', registration.active);
-                console.log('[FCM Web] Push manager available:', !!registration.pushManager);
-                return {
-                  available: true,
-                  hasPushManager: !!registration.pushManager,
-                  scope: registration.scope
-                };
-              } catch (error) {
-                console.error('[FCM Web] Service worker check error:', error);
-                return { available: false, error: error.message };
-              }
-            })();
-            '''
-          ]);
-          print('[FCM Web] 📊 Service worker check result: $swReady');
+          final serviceWorkerSupported =
+              html.window.navigator.serviceWorker != null;
+
+          if (!serviceWorkerSupported) {
+            print('[FCM Web] ❌ Service Worker not supported in this browser');
+          } else {
+            // Wait for service worker to be ready
+            final registration =
+                await html.window.navigator.serviceWorker!.ready;
+
+            if (kDebugMode) {
+              print('[FCM Web] ✅ Service worker ready');
+              print('[FCM Web] 📊 Scope: ${registration.scope}');
+              print('[FCM Web] 📊 Active: ${registration.active != null}');
+            }
+          }
         }
       } catch (e) {
         print('[FCM Web] ⚠️  Service worker check error: $e');
@@ -274,7 +283,7 @@ class NotificationServiceWeb {
       if (_fcmToken != null) {
         if (kDebugMode) {
           print('[FCM Web] ✅ Token received successfully');
-          print('[FCM Web] 📋 Full token: $_fcmToken');
+          print('[FCM Web] 📋 Masked token: ${_maskToken(_fcmToken)}');
           print('[FCM Web] 📏 Token length: ${_fcmToken!.length} characters');
         }
       } else {
@@ -413,38 +422,46 @@ class NotificationServiceWeb {
     }
 
     try {
-      // Listen for messages from the service worker
-      js.context.callMethod('eval', [
-        '''
-        (function() {
-          console.log('[FCM Web] 📬 Setting up service worker message listener');
+      // Listen for messages from the service worker (CSP-safe using dart:html)
+      if (kDebugMode) {
+        print('[FCM Web] 📬 Setting up service worker message listener');
+      }
 
-          navigator.serviceWorker.addEventListener('message', (event) => {
-            console.log('[FCM Web] 📨 Received message from service worker:', event.data);
+      final serviceWorker = html.window.navigator.serviceWorker;
+      if (serviceWorker != null) {
+        serviceWorker.onMessage.listen((html.MessageEvent event) {
+          if (kDebugMode) {
+            print('[FCM Web] 📨 Received message from service worker');
+          }
 
-            if (event.data && event.data.type === 'NOTIFICATION_CLICK') {
-              console.log('[FCM Web] 🔗 Notification click detected, navigating to:', event.data.url);
-
-              // Extract the path from the full URL
-              const url = new URL(event.data.url);
-              const path = url.pathname + url.search + url.hash;
-
-              console.log('[FCM Web] 🎯 Extracted path:', path);
-
-              // Trigger navigation by dispatching a custom event that Flutter can listen to
-              window.dispatchEvent(new CustomEvent('notificationClick', {
-                detail: {
-                  path: path,
-                  data: event.data.data
-                }
-              }));
+          final data = event.data;
+          if (data is Map && data['type'] == 'NOTIFICATION_CLICK') {
+            if (kDebugMode) {
+              print('[FCM Web] 🔗 Notification click detected');
             }
-          });
 
-          console.log('[FCM Web] ✅ Service worker message listener registered');
-        })();
-        '''
-      ]);
+            final url = data['url'] as String?;
+            if (url != null) {
+              final uri = Uri.parse(url);
+              final path = uri.path +
+                  (uri.query.isNotEmpty ? '?${uri.query}' : '') +
+                  uri.fragment;
+
+              if (kDebugMode) {
+                print('[FCM Web] 🎯 Extracted path: $path');
+              }
+
+              // Dispatch custom event for Flutter
+              html.window.dispatchEvent(html.CustomEvent('notificationClick',
+                  detail: {'path': path, 'data': data['data']}));
+            }
+          }
+        });
+
+        if (kDebugMode) {
+          print('[FCM Web] ✅ Service worker message listener registered');
+        }
+      }
 
       // Listen for the custom event in Dart
       js.context['addEventListener'].apply([
@@ -672,52 +689,40 @@ class NotificationServiceWeb {
               '[FCM Web] 🌐 Platform is web - executing JavaScript notification code...');
         }
 
-        // Properly escape strings for JavaScript
-        final escapedTitle = _escapeJsString(title);
-        final escapedBody = _escapeJsString(body);
-        final dataJson = jsonEncode(data);
+        // Show notification through service worker (CSP-safe using dart:html)
+        try {
+          final registration = await html.window.navigator.serviceWorker!.ready;
 
-        // Call JavaScript to show notification through service worker
-        js.context.callMethod('eval', [
-          '''
-          (async function() {
-            try {
-              console.log('${'=' * 80}');
-              console.log('[FCM Web JS] 🔍 Checking service worker registration...');
-              const registration = await navigator.serviceWorker.ready;
-              console.log('[FCM Web JS] ✅ Service worker ready:', registration);
-              console.log('[FCM Web JS] Service worker scope:', registration.scope);
-              console.log('[FCM Web JS] Service worker active:', !!registration.active);
+          if (kDebugMode) {
+            print('[FCM Web] 🔍 Service worker ready');
+            print('[FCM Web] 📊 Scope: ${registration.scope}');
+            print('[FCM Web] 🔔 Showing notification...');
+            print('[FCM Web]    Title: $title');
+            print('[FCM Web]    Body: $body');
+          }
 
-              console.log('[FCM Web JS] 🔔 Calling showNotification...');
-              console.log('[FCM Web JS]    Title: $escapedTitle');
-              console.log('[FCM Web JS]    Body: $escapedBody');
-              console.log('[FCM Web JS]    Data: $dataJson');
+          // Create notification options using js_util for proper interop
+          final options = js_util.jsify({
+            'body': body,
+            'icon': '/icons/Icon-192.png',
+            'badge': '/icons/Icon-192.png',
+            'data': data,
+            'requireInteraction': false,
+            'tag': 'foreground-notification',
+          });
 
-              await registration.showNotification('$escapedTitle', {
-                body: '$escapedBody',
-                icon: '/icons/Icon-192.png',
-                badge: '/icons/Icon-192.png',
-                data: $dataJson,
-                requireInteraction: false,
-                tag: 'foreground-notification'
-              });
-              console.log('[FCM Web JS] ✅ ✅ ✅ FOREGROUND NOTIFICATION SHOWN SUCCESSFULLY ✅ ✅ ✅');
-              console.log('${'=' * 80}');
-            } catch (error) {
-              console.log('${'=' * 80}');
-              console.error('[FCM Web JS] ❌ ❌ ❌ FAILED TO SHOW NOTIFICATION ❌ ❌ ❌');
-              console.error('[FCM Web JS] Error:', error);
-              console.error('[FCM Web JS] Error details:', {
-                name: error.name,
-                message: error.message,
-                stack: error.stack
-              });
-              console.log('${'=' * 80}');
-            }
-          })();
-          '''
-        ]);
+          // Show notification via service worker registration
+          await js_util.promiseToFuture(js_util
+              .callMethod(registration, 'showNotification', [title, options]));
+
+          if (kDebugMode) {
+            print('[FCM Web] ✅ Foreground notification shown successfully');
+          }
+        } catch (error) {
+          if (kDebugMode) {
+            print('[FCM Web] ❌ Failed to show notification: $error');
+          }
+        }
 
         if (kDebugMode) {
           print('[FCM Web] ✅ JavaScript notification code executed');

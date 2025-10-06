@@ -1,31 +1,20 @@
-name: Send Push Notifications (Production)
+name: Send Push Notifications (Development)
 
 on:
   schedule:
     # ============================================================================
-    # Daily Verse Notifications (6 AM across timezones)
+    # Daily Verse Notifications (6 AM across timezones) - Development
     # ============================================================================
-    - cron: '0 18 * * *'  # UTC 18:00 → 6 AM UTC+12 (Oceania: Fiji, New Zealand)
-    - cron: '0 21 * * *'  # UTC 21:00 → 6 AM UTC+9 (East Asia: Japan, Korea)
+    # Run less frequently in dev (only 2 times per day for key timezones)
     - cron: '0 0 * * *'   # UTC 00:00 → 6 AM UTC+6 (South Asia: India, Sri Lanka)
-    - cron: '0 3 * * *'   # UTC 03:00 → 6 AM UTC+3 (East Africa, Middle East)
-    - cron: '0 6 * * *'   # UTC 06:00 → 6 AM UTC+0 (UK, West Africa)
-    - cron: '0 9 * * *'   # UTC 09:00 → 6 AM UTC-3 (Brazil, Argentina)
     - cron: '0 12 * * *'  # UTC 12:00 → 6 AM UTC-6 (Central US, Mexico)
-    - cron: '0 15 * * *'  # UTC 15:00 → 6 AM UTC-9 (Alaska, Hawaii)
-    
+
     # ============================================================================
-    # Recommended Topic Notifications (8 AM across timezones)
+    # Recommended Topic Notifications (8 AM across timezones) - Development
     # ============================================================================
-    - cron: '0 20 * * *'  # UTC 20:00 → 8 AM UTC+12 (Oceania)
-    - cron: '0 23 * * *'  # UTC 23:00 → 8 AM UTC+9 (East Asia)
     - cron: '0 2 * * *'   # UTC 02:00 → 8 AM UTC+6 (South Asia)
-    - cron: '0 5 * * *'   # UTC 05:00 → 8 AM UTC+3 (East Africa)
-    - cron: '0 8 * * *'   # UTC 08:00 → 8 AM UTC+0 (UK)
-    - cron: '0 11 * * *'  # UTC 11:00 → 8 AM UTC-3 (Brazil)
     - cron: '0 14 * * *'  # UTC 14:00 → 8 AM UTC-6 (Central US)
-    - cron: '0 17 * * *'  # UTC 17:00 → 8 AM UTC-9 (Alaska)
-  
+
   # Allow manual triggering for testing
   workflow_dispatch:
     inputs:
@@ -40,50 +29,44 @@ on:
 
 jobs:
   # ==========================================================================
-  # Job 1: Send Daily Verse Notifications
+  # Job 1: Send Daily Verse Notifications (Development)
   # ==========================================================================
   send-daily-verse:
     runs-on: ubuntu-latest
-    name: Send Daily Verse Notifications (Prod)
-    
+    name: Send Daily Verse Notifications (Dev)
+
     # Only run on scheduled events during verse hours OR manual dispatch
     if: |
-      (github.event_name == 'schedule' && 
-       (github.event.schedule == '0 18 * * *' ||
-        github.event.schedule == '0 21 * * *' ||
-        github.event.schedule == '0 0 * * *' ||
-        github.event.schedule == '0 3 * * *' ||
-        github.event.schedule == '0 6 * * *' ||
-        github.event.schedule == '0 9 * * *' ||
-        github.event.schedule == '0 12 * * *' ||
-        github.event.schedule == '0 15 * * *')) ||
-      (github.event_name == 'workflow_dispatch' && 
+      (github.event_name == 'schedule' &&
+       (github.event.schedule == '0 0 * * *' ||
+        github.event.schedule == '0 12 * * *')) ||
+      (github.event_name == 'workflow_dispatch' &&
        (github.event.inputs.notification_type == 'daily_verse' ||
         github.event.inputs.notification_type == 'both'))
-    
+
     steps:
-      - name: Send Daily Verse Push Notifications (Prod)
+      - name: Send Daily Verse Push Notifications (Dev)
         run: |
-          echo "Triggering Daily Verse notification Edge Function (Production)..."
+          echo "Triggering Daily Verse notification Edge Function (Development)..."
 
           response=$(curl -X POST \
-            "https://${{ secrets.SUPABASE_PROJECT_REF }}.supabase.co/functions/v1/send-daily-verse-notification" \
-            -H "X-Cron-Secret: ${{ secrets.CRON_SECRET }}" \
+            "https://${{ secrets.SUPABASE_DEV_PROJECT_REF }}.supabase.co/functions/v1/send-daily-verse-notification" \
+            -H "X-Cron-Secret: ${{ secrets.CRON_SECRET_DEV }}" \
             -H "Content-Type: application/json" \
             -w "\n%{http_code}" \
             -s)
-          
+
           http_code=$(echo "$response" | tail -n1)
           body=$(echo "$response" | sed '$d')
-          
+
           echo "Response Code: $http_code"
           echo "Response Body: $body"
-          
+
           if [ "$http_code" -ge 200 ] && [ "$http_code" -lt 300 ]; then
-            echo "✅ Daily Verse notifications sent successfully (Production)"
+            echo "✅ Daily Verse notifications sent successfully (Dev)"
             exit 0
           else
-            echo "❌ Failed to send Daily Verse notifications (Production)"
+            echo "❌ Failed to send Daily Verse notifications (Dev)"
             exit 1
           fi
 
@@ -92,54 +75,48 @@ jobs:
         run: |
           echo "Job Status: ${{ job.status }}"
           echo "Triggered at: $(date -u)"
-          echo "Environment: Production"
+          echo "Environment: Development"
           echo "Notification Type: Daily Verse (6 AM)"
 
   # ==========================================================================
-  # Job 2: Send Recommended Topic Notifications
+  # Job 2: Send Recommended Topic Notifications (Development)
   # ==========================================================================
   send-recommended-topic:
     runs-on: ubuntu-latest
-    name: Send Recommended Topic Notifications (Prod)
-    
+    name: Send Recommended Topic Notifications (Dev)
+
     # Only run on scheduled events during topic hours OR manual dispatch
     if: |
-      (github.event_name == 'schedule' && 
-       (github.event.schedule == '0 20 * * *' ||
-        github.event.schedule == '0 23 * * *' ||
-        github.event.schedule == '0 2 * * *' ||
-        github.event.schedule == '0 5 * * *' ||
-        github.event.schedule == '0 8 * * *' ||
-        github.event.schedule == '0 11 * * *' ||
-        github.event.schedule == '0 14 * * *' ||
-        github.event.schedule == '0 17 * * *')) ||
-      (github.event_name == 'workflow_dispatch' && 
+      (github.event_name == 'schedule' &&
+       (github.event.schedule == '0 2 * * *' ||
+        github.event.schedule == '0 14 * * *')) ||
+      (github.event_name == 'workflow_dispatch' &&
        (github.event.inputs.notification_type == 'recommended_topic' ||
         github.event.inputs.notification_type == 'both'))
-    
+
     steps:
-      - name: Send Recommended Topic Push Notifications (Prod)
+      - name: Send Recommended Topic Push Notifications (Dev)
         run: |
-          echo "Triggering Recommended Topic notification Edge Function (Production)..."
+          echo "Triggering Recommended Topic notification Edge Function (Development)..."
 
           response=$(curl -X POST \
-            "https://${{ secrets.SUPABASE_PROJECT_REF }}.supabase.co/functions/v1/send-recommended-topic-notification" \
-            -H "X-Cron-Secret: ${{ secrets.CRON_SECRET }}" \
+            "https://${{ secrets.SUPABASE_DEV_PROJECT_REF }}.supabase.co/functions/v1/send-recommended-topic-notification" \
+            -H "X-Cron-Secret: ${{ secrets.CRON_SECRET_DEV }}" \
             -H "Content-Type: application/json" \
             -w "\n%{http_code}" \
             -s)
-          
+
           http_code=$(echo "$response" | tail -n1)
           body=$(echo "$response" | sed '$d')
-          
+
           echo "Response Code: $http_code"
           echo "Response Body: $body"
-          
+
           if [ "$http_code" -ge 200 ] && [ "$http_code" -lt 300 ]; then
-            echo "✅ Recommended Topic notifications sent successfully (Production)"
+            echo "✅ Recommended Topic notifications sent successfully (Dev)"
             exit 0
           else
-            echo "❌ Failed to send Recommended Topic notifications (Production)"
+            echo "❌ Failed to send Recommended Topic notifications (Dev)"
             exit 1
           fi
 
@@ -148,15 +125,15 @@ jobs:
         run: |
           echo "Job Status: ${{ job.status }}"
           echo "Triggered at: $(date -u)"
-          echo "Environment: Production"
+          echo "Environment: Development"
           echo "Notification Type: Recommended Topic (8 AM)"
 
   # ==========================================================================
-  # Job 3: Monitor Notification Health
+  # Job 3: Monitor Notification Health (Development)
   # ==========================================================================
   monitor-health:
     runs-on: ubuntu-latest
-    name: Monitor Notification System Health (Prod)
+    name: Monitor Notification System Health (Dev)
     needs: [send-daily-verse, send-recommended-topic]
     if: always()
 
@@ -167,9 +144,9 @@ jobs:
           echo "Recommended Topic Job Status: ${{ needs.send-recommended-topic.result }}"
 
           if [ "${{ needs.send-daily-verse.result }}" == "failure" ] || [ "${{ needs.send-recommended-topic.result }}" == "failure" ]; then
-            echo "⚠️ One or more notification jobs failed in Production"
+            echo "⚠️ One or more notification jobs failed in Development"
             echo "Please check Supabase Edge Function logs for details"
             exit 1
           else
-            echo "✅ All notification jobs completed successfully (Production)"
+            echo "✅ All notification jobs completed successfully (Dev)"
           fi

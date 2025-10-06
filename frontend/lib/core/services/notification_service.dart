@@ -546,14 +546,31 @@ class NotificationService {
 
   /// Send test notification (for testing purposes)
   Future<void> sendTestNotification() async {
-    await _showLocalNotification(
-      RemoteMessage(
-        notification: const RemoteNotification(
-          title: '📖 Test Notification',
-          body: 'This is a test notification from Disciplefy',
-        ),
-        data: {'type': 'test'},
-      ),
+    const androidDetails = AndroidNotificationDetails(
+      'daily_notifications',
+      'Daily Notifications',
+      channelDescription: 'Daily verse and study topic notifications',
+      importance: Importance.high,
+      priority: Priority.high,
+    );
+
+    const iosDetails = DarwinNotificationDetails(
+      presentAlert: true,
+      presentBadge: true,
+      presentSound: true,
+    );
+
+    const details = NotificationDetails(
+      android: androidDetails,
+      iOS: iosDetails,
+    );
+
+    await _localNotifications.show(
+      DateTime.now().millisecondsSinceEpoch ~/ 1000, // Unique notification ID
+      '📖 Test Notification',
+      'This is a test notification from Disciplefy',
+      details,
+      payload: {'type': 'test'}.toString(),
     );
   }
 
