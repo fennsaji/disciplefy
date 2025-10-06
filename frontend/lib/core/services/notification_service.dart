@@ -425,42 +425,63 @@ class NotificationService {
 
   /// Navigate based on notification type
   void _navigateFromNotification(Map<String, dynamic> data) {
-    final type = data['type'] as String?;
-
-    if (type == null) {
+    // Input validation: Ensure data is not null and is a Map
+    if (data.isEmpty) {
       if (kDebugMode) {
-        print('[NotificationService] No notification type specified');
+        print('[NotificationService] ⚠️  Empty notification data');
       }
       return;
     }
 
+    // Validate notification type exists and is a string
+    final type = data['type'];
+    if (type == null || type is! String || type.isEmpty) {
+      if (kDebugMode) {
+        print('[NotificationService] ⚠️  Invalid or missing notification type');
+        print('[NotificationService] Data received: $data');
+      }
+      return;
+    }
+
+    // Validate against known notification types
+    const validTypes = {'daily_verse', 'recommended_topic'};
+    if (!validTypes.contains(type)) {
+      if (kDebugMode) {
+        print('[NotificationService] ⚠️  Unknown notification type: $type');
+        print('[NotificationService] Valid types: $validTypes');
+      }
+      // Navigate to home as safe fallback
+      _router.go('/');
+      return;
+    }
+
+    // Handle navigation based on validated type
     switch (type) {
       case 'daily_verse':
         // Navigate to daily verse screen
         _router.go('/daily-verse');
         if (kDebugMode) {
-          print('[NotificationService] Navigating to daily verse');
+          print('[NotificationService] ✅ Navigating to daily verse');
         }
         break;
 
       case 'recommended_topic':
-        // Navigate to study topics with topic ID
-        final topicId = data['topic_id'] as String?;
-        if (topicId != null) {
+        // Validate topic_id if provided
+        final topicId = data['topic_id'];
+
+        if (topicId != null && topicId is String && topicId.isNotEmpty) {
           _router.go('/study-topics?topic_id=$topicId');
+          if (kDebugMode) {
+            print('[NotificationService] ✅ Navigating to topic: $topicId');
+          }
         } else {
           _router.go('/study-topics');
-        }
-        if (kDebugMode) {
-          print('[NotificationService] Navigating to study topics');
+          if (kDebugMode) {
+            print(
+                '[NotificationService] ✅ Navigating to study topics (no specific topic)');
+          }
         }
         break;
-
-      default:
-        if (kDebugMode) {
-          print('[NotificationService] Unknown notification type: $type');
-        }
-        _router.go('/');
     }
   }
 

@@ -8,6 +8,7 @@ import { createSimpleFunction } from '../_shared/core/function-factory.ts';
 import { ServiceContainer } from '../_shared/core/services.ts';
 import { FCMService, logNotification, hasReceivedNotificationToday } from '../_shared/fcm-service.ts';
 import { AppError } from '../_shared/utils/error-handler.ts';
+import { formatError } from '../_shared/utils/error-formatter.ts';
 
 // ============================================================================
 // Notification Titles by Language
@@ -172,8 +173,7 @@ async function handleDailyVerseNotification(
     };
   } catch (error) {
     console.error('Failed to get daily verse:', error);
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    throw new AppError('INTERNAL_ERROR', `Failed to get daily verse: ${errorMessage}`, 500);
+    throw new AppError('INTERNAL_ERROR', `Failed to get daily verse: ${formatError(error)}`, 500);
   }
 
   // Step 6: Get user language preferences

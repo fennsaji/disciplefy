@@ -112,8 +112,11 @@ CREATE INDEX idx_notification_logs_sent_at
 CREATE INDEX idx_notification_logs_status
   ON notification_logs(delivery_status);
 
--- Note: Composite date index removed due to PostgreSQL IMMUTABLE constraint
--- Queries can use idx_notification_logs_user_id + idx_notification_logs_sent_at
+-- Composite index for user notification history (CRITICAL for performance)
+-- This index significantly speeds up queries like "get user's recent notifications"
+-- which filter by user_id and order by sent_at
+CREATE INDEX idx_notification_logs_user_sent
+  ON notification_logs(user_id, sent_at DESC);
 
 CREATE INDEX idx_notification_logs_topic_id
   ON notification_logs(topic_id)

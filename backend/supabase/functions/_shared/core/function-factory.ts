@@ -21,6 +21,7 @@ import { ErrorHandler } from '../utils/error-handler.ts'
 import { getServiceContainer, createUserSupabaseClient, ServiceContainer } from './services.ts'
 import { config } from './config.ts'
 import { UserContext } from '../types/index.ts'
+import { defaultServiceRoleLimiter, getRequestIdentifier } from '../utils/rate-limiter.ts'
 
 /**
  * Handler function signature that Edge Functions must implement
@@ -313,6 +314,35 @@ export function createServiceRoleFunction(
         return new Response('ok', { headers: corsHeaders })
       }
 
+      // Rate limiting check (protects against abuse if service role key is compromised)
+      const requestIdentifier = getRequestIdentifier(req)
+      if (!defaultServiceRoleLimiter.allow(requestIdentifier)) {
+        const resetTime = defaultServiceRoleLimiter.getResetTime(requestIdentifier || 'unknown')
+        const retryAfter = Math.ceil((resetTime - Date.now()) / 1000)
+
+        return new Response(
+          JSON.stringify({
+            success: false,
+            error: {
+              code: 'RATE_LIMIT_EXCEEDED',
+              message: 'Too many requests. Please try again later.',
+              retryAfter,
+            }
+          }),
+          {
+            status: 429,
+            headers: {
+              ...corsHeaders,
+              'Content-Type': 'application/json',
+              'Retry-After': String(retryAfter),
+              'X-RateLimit-Limit': '10',
+              'X-RateLimit-Remaining': '0',
+              'X-RateLimit-Reset': String(Math.floor(resetTime / 1000)),
+            }
+          }
+        )
+      }
+
       // Validate service role authentication
       const authHeader = req.headers.get('Authorization')
       if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -354,12 +384,22 @@ export function createServiceRoleFunction(
       const services = await getServiceContainer()
       const result = await handler(req, services.supabaseServiceClient)
 
+      // Add rate limit headers to success response
+      const remaining = defaultServiceRoleLimiter.getRemaining(requestIdentifier || 'unknown')
+      const resetTime = defaultServiceRoleLimiter.getResetTime(requestIdentifier || 'unknown')
+
       // Return success response
       return new Response(
         JSON.stringify(result),
         {
           status: 200,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          headers: {
+            ...corsHeaders,
+            'Content-Type': 'application/json',
+            'X-RateLimit-Limit': '10',
+            'X-RateLimit-Remaining': String(remaining),
+            'X-RateLimit-Reset': String(Math.floor(resetTime / 1000)),
+          }
         }
       )
 

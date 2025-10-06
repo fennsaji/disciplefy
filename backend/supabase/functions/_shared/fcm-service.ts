@@ -5,6 +5,25 @@
 // Uses Firebase Admin SDK with service account credentials from Supabase secrets
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
+import { formatError, formatFCMError } from './utils/error-formatter.ts';
+
+// ============================================================================
+// Configuration Constants
+// ============================================================================
+
+const FCM_CONFIG = {
+  // Token refresh buffer: 5 minutes before expiry
+  TOKEN_REFRESH_BUFFER_MS: 5 * 60 * 1000,
+  
+  // Batch processing: 10 notifications per batch (rate limiting)
+  BATCH_SIZE: 10,
+  
+  // JWT expiry: 1 hour (Google OAuth requirement)
+  JWT_EXPIRY_SECONDS: 3600,
+  
+  // OAuth scope for Firebase Cloud Messaging
+  OAUTH_SCOPE: 'https://www.googleapis.com/auth/firebase.messaging',
+} as const;
 
 // Firebase Admin SDK types
 interface FirebaseCredentials {
@@ -72,9 +91,9 @@ export class FCMService {
    * Uses service account credentials to generate JWT and exchange for access token
    */
   private async getAccessToken(): Promise<string> {
-    // Return cached token if still valid (with 5-minute buffer)
+    // Return cached token if still valid (with buffer before expiry)
     const now = Date.now();
-    if (this.accessToken && this.tokenExpiry > now + 300000) {
+    if (this.accessToken && this.tokenExpiry > now + FCM_CONFIG.TOKEN_REFRESH_BUFFER_MS) {
       return this.accessToken;
     }
 
@@ -93,8 +112,8 @@ export class FCMService {
       });
 
       if (!tokenResponse.ok) {
-        const error = await tokenResponse.text();
-        throw new Error(`Failed to get access token: ${error}`);
+        const errorText = await tokenResponse.text();
+        throw new Error(`Failed to get access token: ${errorText}`);
       }
 
       const tokenData = await tokenResponse.json();
@@ -108,8 +127,7 @@ export class FCMService {
       return this.accessToken;
     } catch (error) {
       console.error('Error getting access token:', error);
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      throw new Error(`Failed to authenticate with Firebase: ${errorMessage}`);
+      throw new Error(`Failed to authenticate with Firebase: ${formatError(error)}`);
     }
   }
 
@@ -118,7 +136,7 @@ export class FCMService {
    */
   private async createServiceAccountJWT(): Promise<string> {
     const now = Math.floor(Date.now() / 1000);
-    const expiry = now + 3600; // 1 hour
+    const expiry = now + FCM_CONFIG.JWT_EXPIRY_SECONDS;
 
     // JWT header
     const header = {
@@ -133,7 +151,7 @@ export class FCMService {
       aud: 'https://oauth2.googleapis.com/token',
       iat: now,
       exp: expiry,
-      scope: 'https://www.googleapis.com/auth/firebase.messaging',
+      scope: FCM_CONFIG.OAUTH_SCOPE,
     };
 
     // Encode header and payload
@@ -217,7 +235,7 @@ export class FCMService {
         console.error('FCM API error:', error);
         return {
           success: false,
-          error: error.error?.message || 'Unknown FCM error',
+          error: formatFCMError(error),
         };
       }
 
@@ -228,10 +246,9 @@ export class FCMService {
       };
     } catch (error) {
       console.error('Error sending notification:', error);
-      const errorMessage = error instanceof Error ? error.message : String(error);
       return {
         success: false,
-        error: errorMessage,
+        error: formatError(error),
       };
     }
   }
@@ -249,9 +266,8 @@ export class FCMService {
     let failureCount = 0;
 
     // Send notifications in parallel (with rate limiting)
-    const batchSize = 10;
-    for (let i = 0; i < tokens.length; i += batchSize) {
-      const batch = tokens.slice(i, i + batchSize);
+    for (let i = 0; i < tokens.length; i += FCM_CONFIG.BATCH_SIZE) {
+      const batch = tokens.slice(i, i + FCM_CONFIG.BATCH_SIZE);
       const batchPromises = batch.map(token =>
         this.sendNotification({
           token,
