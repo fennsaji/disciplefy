@@ -31,6 +31,13 @@ interface UpdatePreferencesRequest {
   timezoneOffsetMinutes?: number
 }
 
+interface PreferencesUpdate {
+  daily_verse_enabled?: boolean
+  recommended_topic_enabled?: boolean
+  timezone_offset_minutes?: number
+  updated_at?: string
+}
+
 // ============================================================================
 // Main Handler (Routes all methods)
 // ============================================================================
@@ -144,7 +151,7 @@ async function handleUpdatePreferences(
   const requestData = await req.json() as UpdatePreferencesRequest
 
   // Build update object with only provided fields
-  const updateData: any = {}
+  const updateData: PreferencesUpdate = {}
   if (requestData.dailyVerseEnabled !== undefined) {
     updateData.daily_verse_enabled = requestData.dailyVerseEnabled
   }

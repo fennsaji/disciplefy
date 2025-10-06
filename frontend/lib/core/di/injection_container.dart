@@ -98,11 +98,12 @@ import '../../features/study_generation/domain/usecases/manage_personal_notes.da
 import '../../features/user_profile/data/services/user_profile_api_service.dart';
 import '../../features/notifications/data/repositories/notification_repository_impl.dart';
 import '../../features/notifications/domain/repositories/notification_repository.dart';
-import '../../features/notifications/domain/usecases/get_notification_preferences.dart';
+import '../../features/notifications/domain/usecases/get_notification_preferences.dart'
+    as get_preferences_usecase;
 import '../../features/notifications/domain/usecases/update_notification_preferences.dart'
-    as notification_usecases;
+    as update_preferences_usecase;
 import '../../features/notifications/domain/usecases/request_notification_permissions.dart'
-    as notification_usecases;
+    as request_permissions_usecase;
 import '../../features/notifications/presentation/bloc/notification_bloc.dart';
 import '../services/notification_service.dart';
 import '../navigation/study_navigator.dart';
@@ -484,17 +485,24 @@ Future<void> initializeDependencies() async {
       ));
 
   //! Notifications
+  // Register NotificationService first (required by repository)
+  sl.registerLazySingleton<NotificationService>(() => NotificationService(
+        supabaseClient: sl(),
+        router: sl(),
+      ));
+
   sl.registerLazySingleton<NotificationRepository>(
       () => NotificationRepositoryImpl(
             supabaseClient: sl(),
             notificationService: sl(),
           ));
 
-  sl.registerLazySingleton(() => GetNotificationPreferences(sl()));
   sl.registerLazySingleton(
-      () => notification_usecases.UpdateNotificationPreferences(sl()));
+      () => get_preferences_usecase.GetNotificationPreferences(sl()));
   sl.registerLazySingleton(
-      () => notification_usecases.RequestNotificationPermissions(sl()));
+      () => update_preferences_usecase.UpdateNotificationPreferences(sl()));
+  sl.registerLazySingleton(
+      () => request_permissions_usecase.RequestNotificationPermissions(sl()));
 
   sl.registerFactory(() => NotificationBloc(
         getPreferences: sl(),

@@ -28,12 +28,13 @@ async function handleDailyVerseNotification(
   req: Request,
   services: ServiceContainer
 ): Promise<Response> {
-  // Verify service role authentication
-  const authHeader = req.headers.get('Authorization');
-  const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+  // Verify cron authentication using dedicated secret
+  const cronHeader = req.headers.get('X-Cron-Secret');
+  const cronSecret = Deno.env.get('CRON_SECRET');
+  const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY'); // still used later for Supabase client helpers
 
-  if (!authHeader || !authHeader.startsWith('Bearer ') || authHeader.replace('Bearer ', '') !== serviceRoleKey) {
-    throw new AppError('UNAUTHORIZED', 'Service role authentication required', 401);
+  if (!cronHeader || cronHeader !== cronSecret) {
+    throw new AppError('UNAUTHORIZED', 'Cron secret authentication required', 401);
   }
 
   console.log('Starting daily verse notification process...');
@@ -52,18 +53,29 @@ async function handleDailyVerseNotification(
   console.log(`Current UTC hour: ${currentHour}`);
 
   // Step 2: Calculate timezone offset range for users who should receive notification now
+  // targetOffsetMinutes represents minutes to add to UTC to reach 6 AM local time
   // Example: If UTC hour is 0, we want users with timezone offset +360 minutes (UTC+6)
-  // because for them, it's 6:00 AM local time
-  const targetOffsetMinutes = (currentHour - 6) * 60; // 6 AM target
-  const offsetRangeMin = targetOffsetMinutes - 180; // ±3 hours buffer
-  const offsetRangeMax = targetOffsetMinutes + 180;
+  // because for them, localTime = UTC + offset = 0 + 6 hours = 6:00 AM
+  const targetOffsetMinutes = (6 - currentHour) * 60; // 6 AM target
+  const unclamped_offsetRangeMin = targetOffsetMinutes - 180; // ±3 hours buffer
+  const unclamped_offsetRangeMax = targetOffsetMinutes + 180;
 
-  console.log(`Targeting users with timezone offset: ${targetOffsetMinutes} minutes (±3 hours)`);
+  // Clamp timezone offsets to valid range: -720 (UTC-12) to +840 (UTC+14)
+  const offsetRangeMin = Math.max(-720, unclamped_offsetRangeMin);
+  const offsetRangeMax = Math.min(840, unclamped_offsetRangeMax);
 
-  // Step 3: Fetch eligible users
+  console.log(`Targeting users with timezone offset: ${targetOffsetMinutes} minutes (±3 hours, clamped to ${offsetRangeMin}-${offsetRangeMax})`);
+
+  // Step 3: Fetch eligible users with valid FCM tokens (join preferences with tokens)
   const { data: allUsers, error: usersError } = await supabase
     .from('user_notification_preferences')
-    .select('user_id, fcm_token, timezone_offset_minutes')
+    .select(`
+      user_id,
+      timezone_offset_minutes,
+      user_notification_tokens!inner(
+        fcm_token
+      )
+    `)
     .eq('daily_verse_enabled', true)
     .gte('timezone_offset_minutes', offsetRangeMin)
     .lte('timezone_offset_minutes', offsetRangeMax);
@@ -87,22 +99,57 @@ async function handleDailyVerseNotification(
     );
   }
 
-  // Step 4: Filter out anonymous/guest users
-  const { data: authUsers, error: authError } = await supabase.auth.admin.listUsers();
-
-  if (authError) {
-    throw new AppError('DATABASE_ERROR', `Failed to fetch auth users: ${authError.message}`, 500);
+  // Flatten the joined data structure (user can have multiple tokens)
+  const usersWithTokens: Array<{ user_id: string; fcm_token: string; timezone_offset_minutes: number }> = [];
+  for (const user of allUsers) {
+    if (user.user_notification_tokens && Array.isArray(user.user_notification_tokens)) {
+      for (const tokenData of user.user_notification_tokens) {
+        if (tokenData.fcm_token) {
+          usersWithTokens.push({
+            user_id: user.user_id,
+            fcm_token: tokenData.fcm_token,
+            timezone_offset_minutes: user.timezone_offset_minutes,
+          });
+        }
+      }
+    }
   }
 
-  // Create set of anonymous user IDs
-  const anonymousUserIds = new Set(
-    authUsers.users.filter(u => u.is_anonymous).map(u => u.id)
-  );
+  // Step 4: Filter out anonymous/guest users using batched concurrent getUserById calls
+  const CONCURRENCY_LIMIT = 10;
+  const anonymousUserIds = new Set<string>();
+  let authCheckErrors = 0;
 
-  // Filter out anonymous users
-  const users = allUsers.filter(u => !anonymousUserIds.has(u.user_id));
+  // Process user IDs in concurrent batches (get unique user IDs)
+  const uniqueUserIds = [...new Set(usersWithTokens.map(u => u.user_id))];
+  const eligibleUserIds = uniqueUserIds;
+  for (let i = 0; i < eligibleUserIds.length; i += CONCURRENCY_LIMIT) {
+    const batch = eligibleUserIds.slice(i, i + CONCURRENCY_LIMIT);
 
-  console.log(`Found ${allUsers.length} eligible users (${anonymousUserIds.size} anonymous users excluded, ${users.length} authenticated users)`);
+    const results = await Promise.allSettled(
+      batch.map(async (userId: string) => {
+        const { data, error } = await supabase.auth.admin.getUserById(userId);
+        if (error) {
+          console.warn(`Failed to fetch auth user ${userId}:`, error.message);
+          authCheckErrors++;
+          return null;
+        }
+        return data.user;
+      })
+    );
+
+    // Collect anonymous user IDs from successful fetches
+    for (const result of results) {
+      if (result.status === 'fulfilled' && result.value && result.value.is_anonymous) {
+        anonymousUserIds.add(result.value.id);
+      }
+    }
+  }
+
+  // Filter out anonymous users from tokens list
+  const users = usersWithTokens.filter(u => !anonymousUserIds.has(u.user_id));
+
+  console.log(`Found ${uniqueUserIds.length} unique users with ${usersWithTokens.length} total tokens (${anonymousUserIds.size} anonymous users excluded, ${users.length} authenticated user tokens, ${authCheckErrors} auth check errors)`);
 
   if (!users || users.length === 0) {
     console.log('No authenticated users found for this time window');

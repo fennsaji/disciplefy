@@ -41,8 +41,16 @@ function validateImageUpload(fileName: string, fileType: string, imageData: stri
   if (!isValidBase64(imageData)) {
     throw new AppError('VALIDATION_ERROR', 'Invalid image data format', 400)
   }
-  
-  const sizeInBytes = (imageData.length * 3) / 4
+
+  // Strip data URI prefix (e.g., "data:image/png;base64,") to get only base64 payload
+  const base64Payload = imageData.includes(',')
+    ? imageData.split(',')[1]
+    : imageData;
+
+  // Calculate actual byte size: count padding characters ('=')
+  const paddingCount = (base64Payload.match(/=/g) || []).length;
+  const sizeInBytes = (base64Payload.length * 3) / 4 - paddingCount;
+
   if (sizeInBytes > MAX_FILE_SIZE) {
     throw new AppError('VALIDATION_ERROR', `File too large. Max: ${MAX_FILE_SIZE / (1024 * 1024)}MB`, 400)
   }

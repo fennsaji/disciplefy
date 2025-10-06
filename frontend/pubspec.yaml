@@ -11,7 +11,10 @@ dependencies:
     sdk: flutter
   flutter_web_plugins:
     sdk: flutter
-  
+
+  # Core Utilities
+  collection: ^1.18.0
+
   # State Management
   bloc: ^9.0.0
   flutter_bloc: ^9.1.1
