@@ -24,7 +24,10 @@ import '../widgets/category_filter_chips.dart';
 
 /// Screen for browsing all study topics with filtering and search capabilities.
 class StudyTopicsScreen extends StatelessWidget {
-  const StudyTopicsScreen({super.key});
+  /// Optional topic ID from deep link (e.g., from notification)
+  final String? topicId;
+
+  const StudyTopicsScreen({super.key, this.topicId});
 
   @override
   Widget build(BuildContext context) => MultiBlocProvider(
@@ -37,12 +40,15 @@ class StudyTopicsScreen extends StatelessWidget {
             value: sl<HomeBloc>(),
           ),
         ],
-        child: const _StudyTopicsScreenContent(),
+        child: _StudyTopicsScreenContent(topicId: topicId),
       );
 }
 
 class _StudyTopicsScreenContent extends StatefulWidget {
-  const _StudyTopicsScreenContent();
+  /// Optional topic ID from deep link (e.g., from notification)
+  final String? topicId;
+
+  const _StudyTopicsScreenContent({this.topicId});
 
   @override
   State<_StudyTopicsScreenContent> createState() =>
@@ -60,6 +66,63 @@ class _StudyTopicsScreenContentState extends State<_StudyTopicsScreenContent> {
   void initState() {
     super.initState();
     _searchController.addListener(_onSearchChanged);
+
+    // Handle deep link navigation from notification
+    if (widget.topicId != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _handleTopicDeepLink(widget.topicId!);
+      });
+    }
+  }
+
+  /// Handle deep link to specific topic (e.g., from notification)
+  void _handleTopicDeepLink(String topicId) async {
+    print('[StudyTopics] Deep link detected for topic ID: $topicId');
+
+    // Wait for topics to load first
+    final studyTopicsBloc = context.read<StudyTopicsBloc>();
+    final studyTopicsState = studyTopicsBloc.state;
+
+    // If topics aren't loaded yet, wait for them
+    if (studyTopicsState is StudyTopicsLoading ||
+        studyTopicsState is StudyTopicsInitial) {
+      print('[StudyTopics] Waiting for topics to load...');
+      await Future.delayed(const Duration(milliseconds: 1000));
+    }
+
+    // Find the topic with the matching ID
+    final currentState = studyTopicsBloc.state;
+    if (currentState is StudyTopicsLoaded) {
+      final topic =
+          currentState.topics.where((t) => t.id == topicId).firstOrNull;
+
+      if (topic != null) {
+        print('[StudyTopics] Found topic: ${topic.title}');
+
+        if (mounted) {
+          // Automatically generate study guide for this topic
+          print(
+              '[StudyTopics] Auto-generating study guide for deep-linked topic...');
+          _navigateToStudyGuide(topic);
+        }
+
+        // TODO: Scroll to and highlight the topic card
+        // This would require adding a ScrollController and
+        // calculating the position of the topic in the grid
+      } else {
+        print('[StudyTopics] Topic with ID $topicId not found');
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Recommended topic not found'),
+              backgroundColor: Colors.orange,
+            ),
+          );
+        }
+      }
+    } else {
+      print('[StudyTopics] Topics not loaded - cannot handle deep link');
+    }
   }
 
   @override

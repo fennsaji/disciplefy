@@ -388,14 +388,21 @@ export class DailyVerseService {
           is_active: true,
           created_at: new Date().toISOString(),
           expires_at: this.getExpirationDate()
+        }, {
+          onConflict: 'date_key',
+          ignoreDuplicates: false  // Update existing record if conflict
         })
 
       if (error) {
-        console.error('Error caching verse:', error)
+        console.error('[Error] Error caching verse:', error)
+        throw error
       }
 
+      console.log(`[Info] Verse cached successfully for date: ${dateKey}`)
+
     } catch (error) {
-      console.error('Error in cacheVerse:', error)
+      console.error('[Error] Error in cacheVerse:', error)
+      throw error
     }
   }
 

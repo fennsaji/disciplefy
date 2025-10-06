@@ -46,6 +46,15 @@ export type SimpleFunctionHandler = (
 export type Handler = SimpleFunctionHandler
 
 /**
+ * Service role handler for background jobs and scheduled tasks
+ * Returns plain objects instead of Response
+ */
+export type ServiceRoleFunctionHandler = (
+  req: Request,
+  supabaseClient: any
+) => Promise<Record<string, any>>
+
+/**
  * Configuration options for the function factory
  */
 interface FunctionConfig {
@@ -273,7 +282,7 @@ export function createGetFunction(
 
 /**
  * Utility function to create a POST-only endpoint
- * 
+ *
  * @param handler - Handler function
  * @param config - Configuration options
  */
@@ -282,6 +291,95 @@ export function createPostFunction(
   config: FunctionConfig = {}
 ): void {
   createSimpleFunction(handler, { ...config, allowedMethods: ['POST'] })
+}
+
+/**
+ * Creates a service role function for background jobs and scheduled tasks
+ * Validates service role authentication and returns JSON responses
+ *
+ * @param handler - Handler function that receives Supabase service client
+ * @param config - Configuration options
+ */
+export function createServiceRoleFunction(
+  handler: ServiceRoleFunctionHandler,
+  config: FunctionConfig = {}
+): (req: Request) => Promise<Response> {
+  return async (req: Request): Promise<Response> => {
+    const corsHeaders = handleCors(req)
+
+    try {
+      // Handle CORS preflight
+      if (req.method === 'OPTIONS') {
+        return new Response('ok', { headers: corsHeaders })
+      }
+
+      // Validate service role authentication
+      const authHeader = req.headers.get('Authorization')
+      if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return new Response(
+          JSON.stringify({
+            success: false,
+            error: {
+              code: 'UNAUTHORIZED',
+              message: 'Auth header is not \'Bearer {token}\''
+            }
+          }),
+          {
+            status: 401,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          }
+        )
+      }
+
+      const token = authHeader.replace('Bearer ', '')
+      const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
+
+      if (token !== serviceRoleKey) {
+        return new Response(
+          JSON.stringify({
+            success: false,
+            error: {
+              code: 'FORBIDDEN',
+              message: 'Invalid service role key'
+            }
+          }),
+          {
+            status: 403,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          }
+        )
+      }
+
+      // Get service container and execute handler
+      const services = await getServiceContainer()
+      const result = await handler(req, services.supabaseServiceClient)
+
+      // Return success response
+      return new Response(
+        JSON.stringify(result),
+        {
+          status: 200,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      )
+
+    } catch (error) {
+      console.error('[ServiceRoleFunction] Error:', error)
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: {
+            code: 'INTERNAL_ERROR',
+            message: error instanceof Error ? error.message : 'Unknown error occurred'
+          }
+        }),
+        {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      )
+    }
+  }
 }
 
 /**
