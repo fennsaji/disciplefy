@@ -5,6 +5,7 @@
 // Avoids recently sent topics and considers user study history
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
+import { formatError } from './utils/error-formatter.ts';
 
 // ============================================================================
 // Types
@@ -79,8 +80,56 @@ export async function selectTopicForUser(
       recentNotifications?.map((n: any) => n.topic_id).filter(Boolean) || []
     );
 
-    // Note: study_guides table doesn't have topic_id column, so we only exclude based on notifications
-    const allExcludedIds = [...excludedFromNotifications];
+    // Fallback: If no recent notifications, check user's study history
+    // This prevents first-time users from getting repetitive recommendations
+    let excludedFromStudyHistory: string[] = [];
+    
+    if (excludedFromNotifications.size === 0) {
+      const fourteenDaysAgo = new Date();
+      fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14);
+
+      // Get recently generated study guides with topic input
+      const { data: recentGuides, error: guidesError } = await supabase
+        .from('study_guides')
+        .select('input_value')
+        .eq('user_id', userId)
+        .eq('input_type', 'topic')
+        .gte('created_at', fourteenDaysAgo.toISOString())
+        .order('created_at', { ascending: false })
+        .limit(10);
+
+      if (guidesError) {
+        console.error('Error fetching recent study guides:', guidesError);
+      }
+
+      if (recentGuides && recentGuides.length > 0) {
+        // Extract topic titles from study guides
+        const recentTopicTitles = recentGuides
+          .map((g: any) => g.input_value)
+          .filter(Boolean);
+
+        // Find matching topic IDs from recommended_topics
+        if (recentTopicTitles.length > 0) {
+          const { data: matchedTopics, error: matchError } = await supabase
+            .from('recommended_topics')
+            .select('id')
+            .in('title', recentTopicTitles);
+
+          if (matchError) {
+            console.error('Error matching topic titles:', matchError);
+          }
+
+          excludedFromStudyHistory = matchedTopics?.map((t: any) => t.id) || [];
+          console.log(`Fallback: Excluding ${excludedFromStudyHistory.length} topics from study history`);
+        }
+      }
+    }
+
+    // Combine exclusions from both notifications and study history
+    const allExcludedIds = [
+      ...excludedFromNotifications,
+      ...excludedFromStudyHistory,
+    ];
 
     // Fetch all active topics, excluding recently sent ones
     let query = supabase
@@ -151,7 +200,7 @@ export async function selectTopicForUser(
   } catch (error) {
     return {
       success: false,
-      error: `Topic selection error: ${error instanceof Error ? error.message : String(error)}`,
+      error: formatError(error, 'Topic selection error'),
     };
   }
 }

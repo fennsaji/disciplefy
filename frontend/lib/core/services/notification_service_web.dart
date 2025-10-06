@@ -759,33 +759,62 @@ class NotificationServiceWeb {
 
   /// Handle navigation based on message data
   void _handleMessageNavigation(Map<String, dynamic> data) {
-    try {
-      final type = data['type'] as String?;
-
-      if (type == null) return;
-
-      String? targetRoute;
-
-      switch (type) {
-        case 'daily_verse':
-          targetRoute = '/'; // Home page has daily verse
-          break;
-        case 'recommended_topic':
-          final topicId = data['topic_id'] as String?;
-          targetRoute = topicId != null
-              ? '/study-topics?topic_id=$topicId'
-              : '/study-topics';
-          break;
-        default:
-          if (kDebugMode) print('[FCM Web] Unknown notification type: $type');
+    // Input validation: Ensure data is not null and is a Map
+    if (data.isEmpty) {
+      if (kDebugMode) {
+        print('[FCM Web] ⚠️  Empty notification data');
       }
+      return;
+    }
 
-      if (targetRoute != null) {
-        if (kDebugMode) print('[FCM Web] Navigating to: $targetRoute');
-        _router.go(targetRoute);
+    // Validate notification type exists and is a string
+    final type = data['type'];
+    if (type == null || type is! String || type.isEmpty) {
+      if (kDebugMode) {
+        print('[FCM Web] ⚠️  Invalid or missing notification type');
+        print('[FCM Web] Data received: $data');
       }
-    } catch (e) {
-      if (kDebugMode) print('[FCM Web] Navigation error: $e');
+      return;
+    }
+
+    // Validate against known notification types
+    const validTypes = {'daily_verse', 'recommended_topic'};
+    if (!validTypes.contains(type)) {
+      if (kDebugMode) {
+        print('[FCM Web] ⚠️  Unknown notification type: $type');
+        print('[FCM Web] Valid types: $validTypes');
+      }
+      // Navigate to home as safe fallback
+      _router.go('/');
+      return;
+    }
+
+    // Handle navigation based on validated type
+    switch (type) {
+      case 'daily_verse':
+        // Navigate to home page (has daily verse)
+        _router.go('/');
+        if (kDebugMode) {
+          print('[FCM Web] ✅ Navigating to daily verse');
+        }
+        break;
+
+      case 'recommended_topic':
+        // Validate topic_id if provided
+        final topicId = data['topic_id'];
+
+        if (topicId != null && topicId is String && topicId.isNotEmpty) {
+          _router.go('/study-topics?topic_id=$topicId');
+          if (kDebugMode) {
+            print('[FCM Web] ✅ Navigating to topic: $topicId');
+          }
+        } else {
+          _router.go('/study-topics');
+          if (kDebugMode) {
+            print('[FCM Web] ✅ Navigating to study topics (no specific topic)');
+          }
+        }
+        break;
     }
   }
 

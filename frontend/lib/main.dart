@@ -35,6 +35,41 @@ import 'core/utils/keyboard_animation_sync.dart';
 import 'core/utils/custom_viewport_handler.dart';
 import 'core/utils/keyboard_performance_monitor.dart';
 
+// ============================================================================
+// Firebase Configuration (Environment Variables)
+// ============================================================================
+// Use --dart-define to pass Firebase config for different environments
+// Example: flutter run --dart-define=FIREBASE_API_KEY=your_key_here
+
+const firebaseApiKey = String.fromEnvironment(
+  'FIREBASE_API_KEY',
+  defaultValue: 'AIzaSyDfCd9JuqJKvi3Dq2pD87ZXe6bhVYWoSmc',
+);
+const firebaseAuthDomain = String.fromEnvironment(
+  'FIREBASE_AUTH_DOMAIN',
+  defaultValue: 'disciplefy---bible-study.firebaseapp.com',
+);
+const firebaseProjectId = String.fromEnvironment(
+  'FIREBASE_PROJECT_ID',
+  defaultValue: 'disciplefy---bible-study',
+);
+const firebaseStorageBucket = String.fromEnvironment(
+  'FIREBASE_STORAGE_BUCKET',
+  defaultValue: 'disciplefy---bible-study.firebasestorage.app',
+);
+const firebaseMessagingSenderId = String.fromEnvironment(
+  'FIREBASE_MESSAGING_SENDER_ID',
+  defaultValue: '16888340359',
+);
+const firebaseAppId = String.fromEnvironment(
+  'FIREBASE_APP_ID',
+  defaultValue: '1:16888340359:web:36ad4ae0d1ef1adf8e3d22',
+);
+const firebaseMeasurementId = String.fromEnvironment(
+  'FIREBASE_MEASUREMENT_ID',
+  defaultValue: 'G-TY0KDPH5TS',
+);
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -64,16 +99,16 @@ void main() async {
       if (kDebugMode) print('🔧 [MAIN] Initializing Firebase...');
 
       if (kIsWeb) {
-        // Initialize Firebase for web with configuration
+        // Initialize Firebase for web with environment-based configuration
         await Firebase.initializeApp(
           options: const FirebaseOptions(
-            apiKey: 'AIzaSyDfCd9JuqJKvi3Dq2pD87ZXe6bhVYWoSmc',
-            authDomain: 'disciplefy---bible-study.firebaseapp.com',
-            projectId: 'disciplefy---bible-study',
-            storageBucket: 'disciplefy---bible-study.firebasestorage.app',
-            messagingSenderId: '16888340359',
-            appId: '1:16888340359:web:36ad4ae0d1ef1adf8e3d22',
-            measurementId: 'G-TY0KDPH5TS',
+            apiKey: firebaseApiKey,
+            authDomain: firebaseAuthDomain,
+            projectId: firebaseProjectId,
+            storageBucket: firebaseStorageBucket,
+            messagingSenderId: firebaseMessagingSenderId,
+            appId: firebaseAppId,
+            measurementId: firebaseMeasurementId,
           ),
         );
       } else {
