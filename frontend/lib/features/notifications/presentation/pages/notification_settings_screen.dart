@@ -10,6 +10,14 @@ import '../bloc/notification_event.dart';
 import '../bloc/notification_state.dart';
 import '../widgets/notification_preference_card.dart';
 
+/// Screen that displays and manages user notification preferences.
+///
+/// Allows users to view their current notification settings, check OS permission
+/// status, and configure which types of notifications they want to receive
+/// (daily verse, recommended topics). Uses [NotificationBloc] to load and
+/// update preferences, and checks actual device-level notification permissions.
+///
+/// The screen automatically loads notification preferences on initialization.
 class NotificationSettingsScreen extends StatelessWidget {
   const NotificationSettingsScreen({super.key});
 

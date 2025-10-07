@@ -139,8 +139,7 @@ class NotificationServiceWeb {
       await _getFCMToken();
 
       if (_fcmToken != null) {
-        print(
-            '[FCM Web] ✅ FCM Token obtained: ${_fcmToken!.substring(0, 50)}...');
+        print('[FCM Web] ✅ FCM Token obtained: ${_maskToken(_fcmToken)}');
       } else {
         print(
             '[FCM Web] ❌ Failed to get FCM token - notifications will NOT work');
@@ -302,8 +301,7 @@ class NotificationServiceWeb {
       }
       _firebaseMessaging!.onTokenRefresh.listen((newToken) {
         if (kDebugMode) {
-          print('[FCM Web] 🔄 Token refreshed!');
-          print('[FCM Web] 🆕 New token: $newToken');
+          print('[FCM Web] 🔄 Token refreshed - registering with backend');
         }
         _fcmToken = newToken;
         _registerTokenWithBackend();
@@ -360,7 +358,7 @@ class NotificationServiceWeb {
       if (kDebugMode) {
         print('[FCM Web] ✅ User is authenticated (not anonymous)');
         print('[FCM Web] 📤 Registering FCM token with backend...');
-        print('[FCM Web] 🔐 Token: ${_fcmToken!.substring(0, 50)}...');
+        print('[FCM Web] 🔐 Token: ${_maskToken(_fcmToken)}');
       }
 
       final timezoneOffset = DateTime.now().timeZoneOffset.inMinutes;
@@ -445,7 +443,7 @@ class NotificationServiceWeb {
               final uri = Uri.parse(url);
               final path = uri.path +
                   (uri.query.isNotEmpty ? '?${uri.query}' : '') +
-                  uri.fragment;
+                  (uri.hasFragment ? '#${uri.fragment}' : '');
 
               if (kDebugMode) {
                 print('[FCM Web] 🎯 Extracted path: $path');

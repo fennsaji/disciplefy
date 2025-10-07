@@ -61,15 +61,21 @@ jobs:
         env:
           CRON_SECRET: ${{ secrets.CRON_SECRET_DEV }}
           SUPABASE_URL: ${{ secrets.SUPABASE_DEV_URL }}
+          DRY_RUN: ${{ inputs.dry_run }}
         run: |
           echo "Starting FCM token cleanup (Development)..."
           echo "Timestamp: $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+
+          # Set dry_run to false if empty (scheduled runs)
+          dry_run_value="${DRY_RUN:-false}"
+          echo "Dry run mode: $dry_run_value"
 
           # Call the cleanup Edge Function with dedicated cron secret
           response=$(curl -s -w "\n%{http_code}" -X POST \
             "${SUPABASE_URL}/functions/v1/cleanup-fcm-tokens" \
             -H "X-Cron-Secret: ${CRON_SECRET}" \
-            -H "Content-Type: application/json")
+            -H "Content-Type: application/json" \
+            -d "{\"dry_run\": ${dry_run_value}}")
 
           # Extract HTTP status code (last line)
           http_code=$(echo "$response" | tail -n1)

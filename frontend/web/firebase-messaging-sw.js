@@ -1,5 +1,16 @@
 // Firebase Cloud Messaging Service Worker
 // This file handles background push notifications for the web app
+// Also integrates Flutter's PWA caching for offline support
+
+// IMPORTANT: Import Flutter's service worker first for PWA caching
+// This provides offline support and app shell caching
+try {
+  importScripts('flutter_service_worker.js');
+  console.log('[FCM SW] ✅ Flutter service worker imported successfully');
+} catch (error) {
+  console.warn('[FCM SW] ⚠️  Flutter service worker not found (may not be built yet):', error.message);
+  // Continue without Flutter caching - FCM will still work
+}
 
 // Import Firebase scripts from CDN
 importScripts('https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js');

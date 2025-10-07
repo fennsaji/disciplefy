@@ -4,6 +4,8 @@
 
 import 'package:bloc/bloc.dart';
 import '../../../../core/usecases/usecase.dart';
+import '../../domain/usecases/check_notification_permissions.dart'
+    as check_permissions_usecase;
 import '../../domain/usecases/get_notification_preferences.dart';
 import '../../domain/usecases/request_notification_permissions.dart'
     as request_usecases;
@@ -16,11 +18,13 @@ class NotificationBloc extends Bloc<NotificationEvent, NotificationState> {
   final GetNotificationPreferences getPreferences;
   final update_usecases.UpdateNotificationPreferences updatePreferences;
   final request_usecases.RequestNotificationPermissions requestPermissions;
+  final check_permissions_usecase.CheckNotificationPermissions checkPermissions;
 
   NotificationBloc({
     required this.getPreferences,
     required this.updatePreferences,
     required this.requestPermissions,
+    required this.checkPermissions,
   }) : super(const NotificationInitial()) {
     on<LoadNotificationPreferences>(_onLoadPreferences);
     on<UpdateNotificationPreferences>(_onUpdatePreferences);
@@ -34,14 +38,27 @@ class NotificationBloc extends Bloc<NotificationEvent, NotificationState> {
   ) async {
     emit(const NotificationLoading());
 
-    final result = await getPreferences(NoParams());
+    final preferencesResult = await getPreferences(NoParams());
 
-    result.fold(
-      (failure) => emit(NotificationError(message: failure.message)),
-      (preferences) => emit(NotificationPreferencesLoaded(
-        preferences: preferences,
-        permissionsGranted: true, // Will be checked separately
-      )),
+    await preferencesResult.fold(
+      (failure) async => emit(NotificationError(message: failure.message)),
+      (preferences) async {
+        // Check actual OS permission status
+        final permissionResult = await checkPermissions(NoParams());
+
+        permissionResult.fold(
+          // If permission check fails, treat as not granted
+          (_) => emit(NotificationPreferencesLoaded(
+            preferences: preferences,
+            permissionsGranted: false,
+          )),
+          // Use actual permission status
+          (granted) => emit(NotificationPreferencesLoaded(
+            preferences: preferences,
+            permissionsGranted: granted,
+          )),
+        );
+      },
     );
   }
 

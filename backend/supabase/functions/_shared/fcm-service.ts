@@ -60,6 +60,12 @@ interface FCMResponse {
   error?: string;
 }
 
+// FCM API v1 request body structure
+interface FCMRequestBody {
+  message: Omit<FCMMessage, 'validateOnly'>;
+  validate_only?: boolean;
+}
+
 // ============================================================================
 // FCM Service Class
 // ============================================================================
@@ -222,9 +228,15 @@ export class FCMService {
       // Construct FCM v1 API request
       const fcmEndpoint = `https://fcm.googleapis.com/v1/projects/${this.credentials.projectId}/messages:send`;
 
-      // Build request body, add validate_only flag if present
-      const requestBody: any = { message };
-      if (message.validateOnly) {
+      // Extract validateOnly flag and remove it from message
+      const { validateOnly, ...messageWithoutValidateOnly } = message;
+
+      // Build request body with validate_only at top level (FCM v1 API requirement)
+      const requestBody: FCMRequestBody = {
+        message: messageWithoutValidateOnly,
+      };
+      
+      if (validateOnly) {
         requestBody.validate_only = true;
       }
 
