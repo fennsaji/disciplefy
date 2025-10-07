@@ -4,6 +4,8 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_web_plugins/url_strategy.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'core/config/app_config.dart';
 import 'core/di/injection_container.dart';
 import 'features/daily_verse/data/services/daily_verse_cache_interface.dart';
@@ -21,14 +23,52 @@ import 'features/settings/presentation/bloc/settings_bloc.dart';
 import 'features/settings/presentation/bloc/settings_event.dart';
 import 'features/tokens/presentation/bloc/token_bloc.dart';
 import 'features/feedback/presentation/bloc/feedback_bloc.dart';
+import 'features/notifications/presentation/bloc/notification_bloc.dart';
 import 'core/utils/web_splash_controller.dart';
 import 'core/services/theme_service.dart';
 import 'core/services/auth_state_provider.dart';
 import 'core/services/auth_session_validator.dart';
+import 'core/services/notification_service.dart';
+import 'core/services/notification_service_web.dart';
 import 'core/utils/device_keyboard_handler.dart';
 import 'core/utils/keyboard_animation_sync.dart';
 import 'core/utils/custom_viewport_handler.dart';
 import 'core/utils/keyboard_performance_monitor.dart';
+
+// ============================================================================
+// Firebase Configuration (Environment Variables)
+// ============================================================================
+// Use --dart-define to pass Firebase config for different environments
+// Example: flutter run --dart-define=FIREBASE_API_KEY=your_key_here
+
+const firebaseApiKey = String.fromEnvironment(
+  'FIREBASE_API_KEY',
+  defaultValue: 'AIzaSyDfCd9JuqJKvi3Dq2pD87ZXe6bhVYWoSmc',
+);
+const firebaseAuthDomain = String.fromEnvironment(
+  'FIREBASE_AUTH_DOMAIN',
+  defaultValue: 'disciplefy---bible-study.firebaseapp.com',
+);
+const firebaseProjectId = String.fromEnvironment(
+  'FIREBASE_PROJECT_ID',
+  defaultValue: 'disciplefy---bible-study',
+);
+const firebaseStorageBucket = String.fromEnvironment(
+  'FIREBASE_STORAGE_BUCKET',
+  defaultValue: 'disciplefy---bible-study.firebasestorage.app',
+);
+const firebaseMessagingSenderId = String.fromEnvironment(
+  'FIREBASE_MESSAGING_SENDER_ID',
+  defaultValue: '16888340359',
+);
+const firebaseAppId = String.fromEnvironment(
+  'FIREBASE_APP_ID',
+  defaultValue: '1:16888340359:web:36ad4ae0d1ef1adf8e3d22',
+);
+const firebaseMeasurementId = String.fromEnvironment(
+  'FIREBASE_MEASUREMENT_ID',
+  defaultValue: 'G-TY0KDPH5TS',
+);
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -53,6 +93,42 @@ void main() async {
     // Validate and log configuration
     AppConfig.validateConfiguration();
     AppConfig.logConfiguration();
+
+    // Initialize Firebase for push notifications
+    try {
+      if (kDebugMode) print('🔧 [MAIN] Initializing Firebase...');
+
+      if (kIsWeb) {
+        // Initialize Firebase for web with environment-based configuration
+        await Firebase.initializeApp(
+          options: const FirebaseOptions(
+            apiKey: firebaseApiKey,
+            authDomain: firebaseAuthDomain,
+            projectId: firebaseProjectId,
+            storageBucket: firebaseStorageBucket,
+            messagingSenderId: firebaseMessagingSenderId,
+            appId: firebaseAppId,
+            measurementId: firebaseMeasurementId,
+          ),
+        );
+      } else {
+        // Initialize Firebase for mobile platforms
+        // Note: Requires firebase_options.dart generated via FlutterFire CLI
+        await Firebase.initializeApp();
+
+        // Set up background message handler (mobile only)
+        FirebaseMessaging.onBackgroundMessage(
+          firebaseMessagingBackgroundHandler,
+        );
+      }
+
+      if (kDebugMode) print('✅ [MAIN] Firebase initialized successfully');
+    } catch (e) {
+      if (kDebugMode) {
+        print('⚠️  [MAIN] Firebase initialization error: $e');
+        print('   For mobile: Run "flutterfire configure" to set up Firebase');
+      }
+    }
 
     // Initialize Supabase
     await Supabase.initialize(
@@ -114,6 +190,8 @@ class _DisciplefyBibleStudyAppState extends State<DisciplefyBibleStudyApp> {
   late AuthBloc _authBloc;
   late AuthStateProvider _authStateProvider;
   AuthSessionValidator? _authSessionValidator;
+  NotificationService? _notificationService;
+  NotificationServiceWeb? _notificationServiceWeb;
 
   @override
   void initState() {
@@ -128,6 +206,12 @@ class _DisciplefyBibleStudyAppState extends State<DisciplefyBibleStudyApp> {
     if (!kIsWeb) {
       _authSessionValidator = AuthSessionValidator(_authBloc);
       _authSessionValidator?.register();
+
+      // Initialize notification service (mobile only)
+      _initializeNotifications();
+    } else {
+      // Initialize web notification service
+      _initializeWebNotifications();
     }
 
     // Signal that Flutter is ready after the first frame
@@ -136,9 +220,53 @@ class _DisciplefyBibleStudyAppState extends State<DisciplefyBibleStudyApp> {
     });
   }
 
+  /// Initialize push notification service (mobile)
+  Future<void> _initializeNotifications() async {
+    try {
+      _notificationService = NotificationService(
+        supabaseClient: sl(),
+        router: AppRouter.router,
+      );
+
+      await _notificationService!.initialize();
+
+      if (kDebugMode) {
+        print('✅ [MAIN] NotificationService initialized successfully');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('⚠️  [MAIN] NotificationService initialization failed: $e');
+        print('   This is expected if Firebase is not configured yet');
+      }
+    }
+  }
+
+  /// Initialize web push notification service
+  Future<void> _initializeWebNotifications() async {
+    try {
+      _notificationServiceWeb = NotificationServiceWeb(
+        supabaseClient: sl(),
+        router: AppRouter.router,
+      );
+
+      await _notificationServiceWeb!.initialize();
+
+      if (kDebugMode) {
+        print('✅ [MAIN] Web NotificationService initialized successfully');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('⚠️  [MAIN] Web NotificationService initialization failed: $e');
+        print('   This is expected if Firebase is not configured yet');
+      }
+    }
+  }
+
   @override
   void dispose() {
     _authSessionValidator?.unregister();
+    _notificationService?.dispose();
+    _notificationServiceWeb?.dispose();
     _authStateProvider.dispose();
     _authBloc.close();
     super.dispose();
@@ -171,6 +299,9 @@ class _DisciplefyBibleStudyAppState extends State<DisciplefyBibleStudyApp> {
         ),
         BlocProvider<FeedbackBloc>(
           create: (context) => sl<FeedbackBloc>(),
+        ),
+        BlocProvider<NotificationBloc>(
+          create: (context) => sl<NotificationBloc>(),
         ),
       ],
       child: ListenableBuilder(

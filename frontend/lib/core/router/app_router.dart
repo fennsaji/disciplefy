@@ -118,7 +118,11 @@ class AppRouter {
       GoRoute(
         path: AppRoutes.studyTopics,
         name: 'study_topics',
-        builder: (context, state) => const StudyTopicsScreen(),
+        builder: (context, state) {
+          // Extract topic_id from query parameters for notification deep linking
+          final topicId = state.uri.queryParameters['topic_id'];
+          return StudyTopicsScreen(topicId: topicId);
+        },
       ),
       GoRoute(
         path: AppRoutes.tokenManagement,
