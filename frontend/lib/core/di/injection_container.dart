@@ -4,6 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/foundation.dart';
+import 'package:go_router/go_router.dart';
 
 import '../network/network_info.dart';
 import '../../features/auth/data/services/auth_service.dart';
@@ -96,8 +97,21 @@ import '../../features/study_generation/domain/repositories/personal_notes_repos
 import '../../features/study_generation/data/repositories/personal_notes_repository_impl.dart';
 import '../../features/study_generation/domain/usecases/manage_personal_notes.dart';
 import '../../features/user_profile/data/services/user_profile_api_service.dart';
+import '../../features/notifications/data/repositories/notification_repository_impl.dart';
+import '../../features/notifications/domain/repositories/notification_repository.dart';
+import '../../features/notifications/domain/usecases/check_notification_permissions.dart'
+    as check_permissions_usecase;
+import '../../features/notifications/domain/usecases/get_notification_preferences.dart'
+    as get_preferences_usecase;
+import '../../features/notifications/domain/usecases/update_notification_preferences.dart'
+    as update_preferences_usecase;
+import '../../features/notifications/domain/usecases/request_notification_permissions.dart'
+    as request_permissions_usecase;
+import '../../features/notifications/presentation/bloc/notification_bloc.dart';
+import '../services/notification_service.dart';
 import '../navigation/study_navigator.dart';
 import '../navigation/go_router_study_navigator.dart';
+import '../router/app_router.dart';
 import '../../features/tokens/data/datasources/token_remote_data_source.dart';
 import '../../features/tokens/data/repositories/token_repository_impl.dart';
 import '../../features/tokens/data/repositories/payment_method_repository_impl.dart';
@@ -472,5 +486,37 @@ Future<void> initializeDependencies() async {
   sl.registerFactory(() => FollowUpChatBloc(
         httpService: sl(),
         conversationService: sl(),
+      ));
+
+  //! Notifications
+  // Register GoRouter (required by NotificationService)
+  sl.registerLazySingleton<GoRouter>(() => AppRouter.router);
+
+  // Register NotificationService first (required by repository)
+  sl.registerLazySingleton<NotificationService>(() => NotificationService(
+        supabaseClient: sl(),
+        router: sl(),
+      ));
+
+  sl.registerLazySingleton<NotificationRepository>(
+      () => NotificationRepositoryImpl(
+            supabaseClient: sl(),
+            notificationService: sl(),
+          ));
+
+  sl.registerLazySingleton(
+      () => get_preferences_usecase.GetNotificationPreferences(sl()));
+  sl.registerLazySingleton(
+      () => update_preferences_usecase.UpdateNotificationPreferences(sl()));
+  sl.registerLazySingleton(
+      () => request_permissions_usecase.RequestNotificationPermissions(sl()));
+  sl.registerLazySingleton(
+      () => check_permissions_usecase.CheckNotificationPermissions(sl()));
+
+  sl.registerFactory(() => NotificationBloc(
+        getPreferences: sl(),
+        updatePreferences: sl(),
+        requestPermissions: sl(),
+        checkPermissions: sl(),
       ));
 }

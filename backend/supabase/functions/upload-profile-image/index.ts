@@ -1,571 +1,376 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { createClient, SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2"
+/**
+ * Upload Profile Image Edge Function
+ * 
+ * Refactored to use clean architecture with function factory
+ */
 
-interface ServiceContainer {
-  supabase: SupabaseClient;
-}
+import { createAuthenticatedFunction } from '../_shared/core/function-factory.ts'
+import { ServiceContainer } from '../_shared/core/services.ts'
+import { UserContext } from '../_shared/types/index.ts'
+import { AppError } from '../_shared/utils/error-handler.ts'
 
 interface UploadImageRequest {
-  action: 'upload_image' | 'delete_image' | 'get_upload_url';
-  file_name?: string;
-  file_type?: string;
-  image_data?: string; // Base64 encoded image data
+  action: 'upload_image' | 'delete_image' | 'get_upload_url'
+  file_name?: string
+  file_type?: string
+  image_data?: string // Base64 encoded
 }
-
-/**
- * Upload response payload with image URL and metadata
- */
-interface UploadSuccessData {
-  readonly image_url: string;
-  readonly file_name: string;
-  readonly profile: any; // User profile from database
-}
-
-/**
- * Delete response payload with confirmation message
- */
-interface DeleteSuccessData {
-  readonly message: string;
-  readonly profile: any; // Updated user profile from database
-}
-
-/**
- * Upload URL response payload with signed URL
- */
-interface UploadUrlData {
-  readonly upload_url: string;
-  readonly file_name: string;
-  readonly expires_in: number; // Expiration time in seconds
-}
-
-/**
- * Discriminated union of all possible response types
- */
-type UploadImageResponse = 
-  | { success: true; data: UploadSuccessData }
-  | { success: true; data: DeleteSuccessData }
-  | { success: true; data: UploadUrlData }
-  | { success: false; error: string }
 
 // Configuration
-const STORAGE_BUCKET = 'profile-images';
-const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
-const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+const STORAGE_BUCKET = 'profile-images'
+const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB
+const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp']
 
-// Validation utilities
-function validateImageUpload(fileName: string, fileType: string, imageData: string): string | null {
+// ============================================================================
+// Validation Utilities
+// ============================================================================
+
+function validateImageUpload(fileName: string, fileType: string, imageData: string): void {
   if (!fileName || fileName.trim().length === 0) {
-    return "File name is required";
+    throw new AppError('VALIDATION_ERROR', 'File name is required', 400)
   }
   
   if (!fileType || !ALLOWED_TYPES.includes(fileType)) {
-    return `Invalid file type. Allowed types: ${ALLOWED_TYPES.join(', ')}`;
+    throw new AppError('VALIDATION_ERROR', `Invalid file type. Allowed: ${ALLOWED_TYPES.join(', ')}`, 400)
   }
   
   if (!imageData || imageData.trim().length === 0) {
-    return "Image data is required";
+    throw new AppError('VALIDATION_ERROR', 'Image data is required', 400)
   }
   
-  // Validate base64 format
   if (!isValidBase64(imageData)) {
-    return "Invalid image data format";
+    throw new AppError('VALIDATION_ERROR', 'Invalid image data format', 400)
   }
-  
-  // Check file size (approximate from base64)
-  const sizeInBytes = (imageData.length * 3) / 4;
+
+  // Strip data URI prefix (e.g., "data:image/png;base64,") to get only base64 payload
+  const base64Payload = imageData.includes(',')
+    ? imageData.split(',')[1]
+    : imageData;
+
+  // Calculate actual byte size: count padding characters ('=')
+  const paddingCount = (base64Payload.match(/=/g) || []).length;
+  const sizeInBytes = (base64Payload.length * 3) / 4 - paddingCount;
+
   if (sizeInBytes > MAX_FILE_SIZE) {
-    return `File size too large. Maximum size: ${MAX_FILE_SIZE / (1024 * 1024)}MB`;
+    throw new AppError('VALIDATION_ERROR', `File too large. Max: ${MAX_FILE_SIZE / (1024 * 1024)}MB`, 400)
   }
   
-  // Validate file extension
-  const allowedExtensions = ['.jpg', '.jpeg', '.png', '.webp'];
+  const allowedExtensions = ['.jpg', '.jpeg', '.png', '.webp']
   const hasValidExtension = allowedExtensions.some(ext => 
     fileName.toLowerCase().endsWith(ext)
-  );
+  )
   
   if (!hasValidExtension) {
-    return `Invalid file extension. Allowed extensions: ${allowedExtensions.join(', ')}`;
+    throw new AppError('VALIDATION_ERROR', `Invalid extension. Allowed: ${allowedExtensions.join(', ')}`, 400)
   }
-  
-  return null;
 }
 
 function isValidBase64(str: string): boolean {
   try {
-    // Remove data URL prefix if present
-    const base64Data = str.replace(/^data:image\/[a-z]+;base64,/, '');
-    
-    // Check if it's valid base64
-    const decoded = atob(base64Data);
-    return btoa(decoded) === base64Data;
+    const base64Data = str.replace(/^data:image\/[a-z]+;base64,/, '')
+    const decoded = atob(base64Data)
+    return btoa(decoded) === base64Data
   } catch {
-    return false;
+    return false
   }
 }
 
 function generateUniqueFileName(userId: string, originalFileName: string): string {
-  const timestamp = Date.now();
-  const extension = originalFileName.substring(originalFileName.lastIndexOf('.'));
-  return `${userId}_${timestamp}${extension}`;
+  const timestamp = Date.now()
+  const extension = originalFileName.substring(originalFileName.lastIndexOf('.'))
+  return `${userId}_${timestamp}${extension}`
+}
+
+/**
+ * Extract storage object key from profile image URL
+ * Handles query strings, URL encoding, and bucket prefixes
+ */
+function extractStorageKey(imageUrl: string | null | undefined): string | null {
+  if (!imageUrl || imageUrl.trim().length === 0) {
+    return null
+  }
+
+  try {
+    // Parse URL to handle query strings and fragments properly
+    const parsedUrl = new URL(imageUrl)
+    
+    // Extract pathname (e.g., "/storage/v1/object/public/profile-images/user_123.jpg")
+    let pathname = parsedUrl.pathname
+    
+    // Strip leading '/'
+    if (pathname.startsWith('/')) {
+      pathname = pathname.substring(1)
+    }
+    
+    // Strip common Supabase storage prefixes
+    // Patterns: "storage/v1/object/public/profile-images/file.jpg"
+    //           "profile-images/file.jpg"
+    const bucketPrefixes = [
+      `storage/v1/object/public/${STORAGE_BUCKET}/`,
+      `storage/v1/object/${STORAGE_BUCKET}/`,
+      `object/public/${STORAGE_BUCKET}/`,
+      `${STORAGE_BUCKET}/`
+    ]
+    
+    for (const prefix of bucketPrefixes) {
+      if (pathname.startsWith(prefix)) {
+        pathname = pathname.substring(prefix.length)
+        break
+      }
+    }
+    
+    // Decode URL-encoded characters (e.g., "%20" -> " ")
+    const decodedKey = decodeURIComponent(pathname)
+    
+    // Return null if empty after processing
+    return decodedKey.trim().length > 0 ? decodedKey : null
+  } catch (error) {
+    // Invalid URL format
+    console.error('Failed to parse profile image URL:', error)
+    return null
+  }
 }
 
 function base64ToUint8Array(base64: string): Uint8Array {
-  // Remove data URL prefix if present
-  const base64Data = base64.replace(/^data:image\/[a-z]+;base64,/, '');
-  const binaryString = atob(base64Data);
-  const bytes = new Uint8Array(binaryString.length);
+  const base64Data = base64.replace(/^data:image\/[a-z]+;base64,/, '')
+  const binaryString = atob(base64Data)
+  const bytes = new Uint8Array(binaryString.length)
   
   for (let i = 0; i < binaryString.length; i++) {
-    bytes[i] = binaryString.charCodeAt(i);
+    bytes[i] = binaryString.charCodeAt(i)
   }
   
-  return bytes;
+  return bytes
 }
 
-// Core functions
-async function uploadImage(fileName: string, fileType: string, imageData: string, services: ServiceContainer, authToken?: string): Promise<UploadImageResponse> {
-  try {
-    // Create a client with the user's auth token for user operations
-    let userSupabaseClient = services.supabase;
-    if (authToken) {
-      userSupabaseClient = createClient(
-        Deno.env.get('SUPABASE_URL')!,
-        Deno.env.get('SUPABASE_ANON_KEY')!,
-        {
-          global: {
-            headers: {
-              Authorization: `Bearer ${authToken}`,
-            },
-          },
-        }
-      );
-    }
+// ============================================================================
+// Core Functions
+// ============================================================================
 
-    // Get current user using the user token
-    const { data: { user }, error: authError } = await userSupabaseClient.auth.getUser();
+async function uploadImage(
+  fileName: string,
+  fileType: string,
+  imageData: string,
+  services: ServiceContainer,
+  userId: string
+): Promise<Response> {
+  validateImageUpload(fileName, fileType, imageData)
 
-    if (authError || !user) {
-      console.error('Auth error:', authError);
-      return {
-        success: false,
-        error: 'Authentication required'
-      };
-    }
-
-    // Validate upload
-    const validationError = validateImageUpload(fileName, fileType, imageData);
-    if (validationError) {
-      return {
-        success: false,
-        error: validationError
-      };
-    }
-
-    // Generate unique file name
-    const uniqueFileName = generateUniqueFileName(user.id, fileName);
-    
-    // Convert base64 to Uint8Array
-    const imageBytes = base64ToUint8Array(imageData);
-    
-    // Delete old profile image if exists
-    const { data: profileData } = await services.supabase
-      .from('user_profiles')
-      .select('profile_image_url')
-      .eq('id', user.id)
-      .single();
-    
-    if (profileData?.profile_image_url) {
-      // Extract file name from URL and delete
-      const oldFileName = profileData.profile_image_url.split('/').pop();
-      if (oldFileName) {
-        await services.supabase.storage
-          .from(STORAGE_BUCKET)
-          .remove([oldFileName]);
-      }
-    }
-
-    // Upload new image
-    const { data: uploadData, error: uploadError } = await services.supabase.storage
-      .from(STORAGE_BUCKET)
-      .upload(uniqueFileName, imageBytes, {
-        contentType: fileType,
-        cacheControl: '3600',
-        upsert: true
-      });
-
-    if (uploadError) {
-      console.error('Upload error:', uploadError);
-      return {
-        success: false,
-        error: 'Failed to upload image'
-      };
-    }
-
-    // Get public URL
-    const { data: urlData } = services.supabase.storage
-      .from(STORAGE_BUCKET)
-      .getPublicUrl(uniqueFileName);
-
-    if (!urlData?.publicUrl) {
-      return {
-        success: false,
-        error: 'Failed to get public URL'
-      };
-    }
-
-    // Update user profile with new image URL
-    const { data: updateData, error: updateError } = await services.supabase
-      .from('user_profiles')
-      .update({
-        profile_image_url: urlData.publicUrl,
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', user.id)
-      .select('*')
-      .single();
-
-    if (updateError) {
-      console.error('Profile update error:', updateError);
-      // Try to clean up uploaded file
-      await services.supabase.storage
+  const uniqueFileName = generateUniqueFileName(userId, fileName)
+  const imageBytes = base64ToUint8Array(imageData)
+  
+  // Delete old image if exists
+  const { data: profileData } = await services.supabaseServiceClient
+    .from('user_profiles')
+    .select('profile_image_url')
+    .eq('id', userId)
+    .single()
+  
+  if (profileData?.profile_image_url) {
+    const oldStorageKey = extractStorageKey(profileData.profile_image_url)
+    if (oldStorageKey) {
+      await services.supabaseServiceClient.storage
         .from(STORAGE_BUCKET)
-        .remove([uniqueFileName]);
-      
-      return {
-        success: false,
-        error: 'Failed to update profile'
-      };
+        .remove([oldStorageKey])
     }
+  }
 
-    return {
+  // Upload new image
+  const { error: uploadError } = await services.supabaseServiceClient.storage
+    .from(STORAGE_BUCKET)
+    .upload(uniqueFileName, imageBytes, {
+      contentType: fileType,
+      cacheControl: '3600',
+      upsert: true
+    })
+
+  if (uploadError) {
+    throw new AppError('UPLOAD_ERROR', 'Failed to upload image', 500)
+  }
+
+  // Get public URL
+  const { data: urlData } = services.supabaseServiceClient.storage
+    .from(STORAGE_BUCKET)
+    .getPublicUrl(uniqueFileName)
+
+  if (!urlData?.publicUrl) {
+    throw new AppError('UPLOAD_ERROR', 'Failed to get public URL', 500)
+  }
+
+  // Update profile
+  const { data: updateData, error: updateError } = await services.supabaseServiceClient
+    .from('user_profiles')
+    .update({
+      profile_image_url: urlData.publicUrl,
+      updated_at: new Date().toISOString()
+    })
+    .eq('id', userId)
+    .select('*')
+    .single()
+
+  if (updateError) {
+    await services.supabaseServiceClient.storage
+      .from(STORAGE_BUCKET)
+      .remove([uniqueFileName])
+    throw new AppError('DATABASE_ERROR', 'Failed to update profile', 500)
+  }
+
+  return new Response(
+    JSON.stringify({
       success: true,
       data: {
         image_url: urlData.publicUrl,
         file_name: uniqueFileName,
         profile: updateData
       }
-    };
-
-  } catch (error) {
-    console.error('Upload image error:', error);
-    return {
-      success: false,
-      error: 'Internal server error'
-    };
-  }
+    }),
+    { status: 200, headers: { 'Content-Type': 'application/json' } }
+  )
 }
 
-async function deleteImage(services: ServiceContainer, authToken?: string): Promise<UploadImageResponse> {
-  try {
-    // Create a client with the user's auth token for user operations
-    let userSupabaseClient = services.supabase;
-    if (authToken) {
-      userSupabaseClient = createClient(
-        Deno.env.get('SUPABASE_URL')!,
-        Deno.env.get('SUPABASE_ANON_KEY')!,
-        {
-          global: {
-            headers: {
-              Authorization: `Bearer ${authToken}`,
-            },
-          },
-        }
-      );
-    }
+async function deleteImage(
+  services: ServiceContainer,
+  userId: string
+): Promise<Response> {
+  const { data: profileData, error: profileError } = await services.supabaseServiceClient
+    .from('user_profiles')
+    .select('profile_image_url')
+    .eq('id', userId)
+    .single()
 
-    // Get current user using the user token
-    const { data: { user }, error: authError } = await userSupabaseClient.auth.getUser();
-    
-    if (authError || !user) {
-      return {
-        success: false,
-        error: 'Authentication required'
-      };
-    }
+  if (profileError) {
+    throw new AppError('DATABASE_ERROR', 'Failed to get profile data', 500)
+  }
 
-    // Get current profile image URL
-    const { data: profileData, error: profileError } = await services.supabase
-      .from('user_profiles')
-      .select('profile_image_url')
-      .eq('id', user.id)
-      .single();
+  if (!profileData?.profile_image_url) {
+    throw new AppError('VALIDATION_ERROR', 'No profile image to delete', 400)
+  }
 
-    if (profileError) {
-      return {
-        success: false,
-        error: 'Failed to get profile data'
-      };
-    }
+  const storageKey = extractStorageKey(profileData.profile_image_url)
+  if (!storageKey) {
+    throw new AppError('VALIDATION_ERROR', 'Invalid image URL', 400)
+  }
 
-    if (!profileData?.profile_image_url) {
-      return {
-        success: false,
-        error: 'No profile image to delete'
-      };
-    }
+  const { error: deleteError } = await services.supabaseServiceClient.storage
+    .from(STORAGE_BUCKET)
+    .remove([storageKey])
 
-    // Extract file name from URL
-    const fileName = profileData.profile_image_url.split('/').pop();
-    if (!fileName) {
-      return {
-        success: false,
-        error: 'Invalid image URL'
-      };
-    }
+  if (deleteError) {
+    throw new AppError('DELETE_ERROR', 'Failed to delete image', 500)
+  }
 
-    // Delete from storage
-    const { error: deleteError } = await services.supabase.storage
-      .from(STORAGE_BUCKET)
-      .remove([fileName]);
+  const { data: updateData, error: updateError } = await services.supabaseServiceClient
+    .from('user_profiles')
+    .update({
+      profile_image_url: null,
+      updated_at: new Date().toISOString()
+    })
+    .eq('id', userId)
+    .select('*')
+    .single()
 
-    if (deleteError) {
-      console.error('Delete error:', deleteError);
-      return {
-        success: false,
-        error: 'Failed to delete image'
-      };
-    }
+  if (updateError) {
+    throw new AppError('DATABASE_ERROR', 'Failed to update profile', 500)
+  }
 
-    // Update profile to remove image URL
-    const { data: updateData, error: updateError } = await services.supabase
-      .from('user_profiles')
-      .update({
-        profile_image_url: null,
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', user.id)
-      .select('*')
-      .single();
-
-    if (updateError) {
-      console.error('Profile update error:', updateError);
-      return {
-        success: false,
-        error: 'Failed to update profile'
-      };
-    }
-
-    return {
+  return new Response(
+    JSON.stringify({
       success: true,
       data: {
         message: 'Image deleted successfully',
         profile: updateData
       }
-    };
-
-  } catch (error) {
-    console.error('Delete image error:', error);
-    return {
-      success: false,
-      error: 'Internal server error'
-    };
-  }
+    }),
+    { status: 200, headers: { 'Content-Type': 'application/json' } }
+  )
 }
 
-async function getUploadUrl(fileName: string, fileType: string, services: ServiceContainer, authToken?: string): Promise<UploadImageResponse> {
-  try {
-    // Create a client with the user's auth token for user operations
-    let userSupabaseClient = services.supabase;
-    if (authToken) {
-      userSupabaseClient = createClient(
-        Deno.env.get('SUPABASE_URL')!,
-        Deno.env.get('SUPABASE_ANON_KEY')!,
-        {
-          global: {
-            headers: {
-              Authorization: `Bearer ${authToken}`,
-            },
-          },
-        }
-      );
-    }
+async function getUploadUrl(
+  fileName: string,
+  fileType: string,
+  services: ServiceContainer,
+  userId: string
+): Promise<Response> {
+  if (!fileName || !fileType) {
+    throw new AppError('VALIDATION_ERROR', 'File name and type are required', 400)
+  }
 
-    // Get current user using the user token
-    const { data: { user }, error: authError } = await userSupabaseClient.auth.getUser();
-    
-    if (authError || !user) {
-      return {
-        success: false,
-        error: 'Authentication required'
-      };
-    }
+  if (!ALLOWED_TYPES.includes(fileType)) {
+    throw new AppError('VALIDATION_ERROR', `Invalid file type. Allowed: ${ALLOWED_TYPES.join(', ')}`, 400)
+  }
 
-    // Basic validation
-    if (!fileName || !fileType) {
-      return {
-        success: false,
-        error: 'File name and type are required'
-      };
-    }
+  const uniqueFileName = generateUniqueFileName(userId, fileName)
 
-    if (!ALLOWED_TYPES.includes(fileType)) {
-      return {
-        success: false,
-        error: `Invalid file type. Allowed types: ${ALLOWED_TYPES.join(', ')}`
-      };
-    }
+  const { data, error } = await services.supabaseServiceClient.storage
+    .from(STORAGE_BUCKET)
+    .createSignedUploadUrl(uniqueFileName, {
+      upsert: true
+    })
 
-    // Generate unique file name
-    const uniqueFileName = generateUniqueFileName(user.id, fileName);
+  if (error) {
+    throw new AppError('UPLOAD_ERROR', 'Failed to create upload URL', 500)
+  }
 
-    // Create signed upload URL (upsert allows replacing existing file)
-    const { data, error } = await services.supabase.storage
-      .from(STORAGE_BUCKET)
-      .createSignedUploadUrl(uniqueFileName, {
-        upsert: true
-      });
-
-    if (error) {
-      console.error('Signed URL error:', error);
-      return {
-        success: false,
-        error: 'Failed to create upload URL'
-      };
-    }
-
-    return {
+  return new Response(
+    JSON.stringify({
       success: true,
       data: {
         upload_url: data.signedUrl,
         file_name: uniqueFileName,
         expires_in: 3600
       }
-    };
+    }),
+    { status: 200, headers: { 'Content-Type': 'application/json' } }
+  )
+}
 
-  } catch (error) {
-    console.error('Get upload URL error:', error);
-    return {
-      success: false,
-      error: 'Internal server error'
-    };
+// ============================================================================
+// Main Handler
+// ============================================================================
+
+async function handleUploadProfileImage(
+  req: Request,
+  services: ServiceContainer,
+  userContext?: UserContext
+): Promise<Response> {
+  if (!userContext || userContext.type !== 'authenticated') {
+    throw new AppError('UNAUTHORIZED', 'Authentication required', 401)
+  }
+
+  const userId = userContext.userId!
+  const body: UploadImageRequest = await req.json()
+
+  if (!body.action) {
+    throw new AppError('VALIDATION_ERROR', 'Action is required', 400)
+  }
+
+  switch (body.action) {
+    case 'upload_image':
+      if (!body.file_name || !body.file_type || !body.image_data) {
+        throw new AppError('VALIDATION_ERROR', 'File name, type, and data required for upload', 400)
+      }
+      return uploadImage(body.file_name, body.file_type, body.image_data, services, userId)
+      
+    case 'delete_image':
+      return deleteImage(services, userId)
+
+    case 'get_upload_url':
+      if (!body.file_name || !body.file_type) {
+        throw new AppError('VALIDATION_ERROR', 'File name and type required for upload URL', 400)
+      }
+      return getUploadUrl(body.file_name, body.file_type, services, userId)
+      
+    default:
+      throw new AppError('VALIDATION_ERROR', 'Invalid action', 400)
   }
 }
 
-// Factory function
-function createServices(): ServiceContainer {
-  const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-  const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-  
-  return {
-    supabase: createClient(supabaseUrl, supabaseServiceKey)
-  };
-}
+// ============================================================================
+// Create Function with Factory
+// ============================================================================
 
-// Request handler
-async function handleRequest(request: Request): Promise<Response> {
-  // CORS headers
-  const corsHeaders = {
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-    'Access-Control-Allow-Methods': 'POST, OPTIONS',
-  };
-
-  // Handle preflight requests
-  if (request.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
-  }
-
-  // Only allow POST requests
-  if (request.method !== 'POST') {
-    return new Response(
-      JSON.stringify({ error: 'Method not allowed' }),
-      { 
-        status: 405, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      }
-    );
-  }
-
-  try {
-    // Parse request body
-    const body: UploadImageRequest = await request.json();
-
-    if (!body.action) {
-      return new Response(
-        JSON.stringify({ error: 'Action is required' }),
-        {
-          status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        }
-      );
-    }
-
-    // Extract auth token from request headers
-    const authHeader = request.headers.get('authorization');
-    const authToken = authHeader?.replace('Bearer ', '');
-
-    // Create services
-    const services = createServices();
-
-    let result: UploadImageResponse;
-
-    // Route to appropriate handler
-    switch (body.action) {
-      case 'upload_image':
-        if (!body.file_name || !body.file_type || !body.image_data) {
-          return new Response(
-            JSON.stringify({ error: 'File name, file type, and image data are required for upload_image action' }),
-            { 
-              status: 400, 
-              headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-            }
-          );
-        }
-        result = await uploadImage(body.file_name, body.file_type, body.image_data, services, authToken);
-        break;
-        
-      case 'delete_image':
-        result = await deleteImage(services, authToken);
-        break;
-
-      case 'get_upload_url':
-        if (!body.file_name || !body.file_type) {
-          return new Response(
-            JSON.stringify({ error: 'File name and file type are required for get_upload_url action' }),
-            {
-              status: 400,
-              headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-            }
-          );
-        }
-        result = await getUploadUrl(body.file_name, body.file_type, services, authToken);
-        break;
-        
-      default:
-        return new Response(
-          JSON.stringify({ error: 'Invalid action' }),
-          { 
-            status: 400, 
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-          }
-        );
-    }
-
-    const status = result.success ? 200 : 400;
-    
-    return new Response(
-      JSON.stringify(result),
-      { 
-        status, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      }
-    );
-
-  } catch (error) {
-    console.error('Request handling error:', error);
-    
-    return new Response(
-      JSON.stringify({ 
-        success: false, 
-        error: 'Invalid request format' 
-      }),
-      { 
-        status: 400, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      }
-    );
-  }
-}
-
-// Start the server
-serve(handleRequest)
+createAuthenticatedFunction(handleUploadProfileImage, {
+  allowedMethods: ['POST'],
+  enableAnalytics: true,
+  timeout: 30000 // 30s for image uploads
+})

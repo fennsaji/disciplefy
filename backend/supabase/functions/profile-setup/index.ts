@@ -1,84 +1,71 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { createClient, SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2"
+/**
+ * Profile Setup Edge Function
+ * 
+ * Refactored to use clean architecture with function factory
+ */
 
-interface ServiceContainer {
-  supabase: SupabaseClient;
-}
+import { createAuthenticatedFunction } from '../_shared/core/function-factory.ts'
+import { ServiceContainer } from '../_shared/core/services.ts'
+import { UserContext } from '../_shared/types/index.ts'
+import { AppError } from '../_shared/utils/error-handler.ts'
 
 interface ProfileData {
-  first_name: string;
-  last_name: string;
-  age_group: string;
-  interests: string[];
-  profile_image_url?: string;
+  first_name: string
+  last_name: string
+  age_group: string
+  interests: string[]
+  profile_image_url?: string
 }
 
 interface ProfileSetupRequest {
-  action: 'update_profile' | 'get_profile';
-  profile_data?: ProfileData;
+  action: 'update_profile' | 'get_profile'
+  profile_data?: ProfileData
 }
 
-/**
- * Success payload for profile operations
- */
-interface ProfileSuccessData {
-  profile: any; // User profile from database
-  next_step?: string; // Next onboarding step (for update_profile)
-}
+// ============================================================================
+// Validation
+// ============================================================================
 
-/**
- * Profile setup response with proper typing and status code
- */
-interface ProfileSetupResponse {
-  success: boolean;
-  data?: ProfileSuccessData;
-  error?: string;
-  statusCode?: number; // HTTP status code for the response
-}
-
-// Validation utilities
-function validateProfileData(data: ProfileData): string | null {
+function validateProfileData(data: ProfileData): void {
   if (!data.first_name || data.first_name.trim().length === 0) {
-    return "First name is required";
+    throw new AppError('VALIDATION_ERROR', 'First name is required', 400)
   }
   
   if (!data.last_name || data.last_name.trim().length === 0) {
-    return "Last name is required";
+    throw new AppError('VALIDATION_ERROR', 'Last name is required', 400)
   }
   
-  if (!data.age_group || !['13-17', '18-25', '26-35', '36-50', '51+'].includes(data.age_group)) {
-    return "Valid age group is required";
+  const validAgeGroups = ['13-17', '18-25', '26-35', '36-50', '51+']
+  if (!data.age_group || !validAgeGroups.includes(data.age_group)) {
+    throw new AppError('VALIDATION_ERROR', 'Valid age group is required', 400)
   }
   
   if (!Array.isArray(data.interests) || data.interests.length === 0) {
-    return "At least one interest must be selected";
+    throw new AppError('VALIDATION_ERROR', 'At least one interest must be selected', 400)
   }
   
-  // Validate interests against allowed values
   const validInterests = [
     'prayer', 'worship', 'community', 'bible_study', 'theology',
     'missions', 'youth_ministry', 'family', 'leadership', 'evangelism'
-  ];
+  ]
   
   for (const interest of data.interests) {
     if (!validInterests.includes(interest)) {
-      return `Invalid interest: ${interest}`;
+      throw new AppError('VALIDATION_ERROR', `Invalid interest: ${interest}`, 400)
     }
   }
   
   if (data.profile_image_url && !isValidUrl(data.profile_image_url)) {
-    return "Invalid profile image URL";
+    throw new AppError('VALIDATION_ERROR', 'Invalid profile image URL', 400)
   }
-  
-  return null;
 }
 
 function isValidUrl(string: string): boolean {
   try {
-    new URL(string);
-    return true;
-  } catch (_) {
-    return false;
+    new URL(string)
+    return true
+  } catch {
+    return false
   }
 }
 
@@ -89,275 +76,116 @@ function sanitizeProfileData(data: ProfileData): ProfileData {
     age_group: data.age_group,
     interests: data.interests.filter(i => i.trim().length > 0),
     profile_image_url: data.profile_image_url?.trim() || undefined
-  };
+  }
 }
 
-// Core functions
-async function updateProfile(profileData: ProfileData, services: ServiceContainer, authToken?: string): Promise<ProfileSetupResponse> {
-  try {
-    // Create a client with the user's auth token for user operations
-    let userSupabaseClient = services.supabase;
-    if (authToken) {
-      userSupabaseClient = createClient(
-        Deno.env.get('SUPABASE_URL')!,
-        Deno.env.get('SUPABASE_ANON_KEY')!,
-        {
-          global: {
-            headers: {
-              Authorization: `Bearer ${authToken}`,
-            },
-          },
-        }
-      );
-    }
+// ============================================================================
+// Handlers
+// ============================================================================
 
-    // Get current user using the user token
-    const { data: { user }, error: authError } = await userSupabaseClient.auth.getUser();
-    
-    if (authError || !user) {
-      return {
-        success: false,
-        error: 'Authentication required',
-        statusCode: 401
-      };
-    }
+async function updateProfile(
+  profileData: ProfileData,
+  services: ServiceContainer,
+  userId: string
+): Promise<Response> {
+  validateProfileData(profileData)
+  const sanitizedData = sanitizeProfileData(profileData)
 
-    // Validate profile data
-    const validationError = validateProfileData(profileData);
-    if (validationError) {
-      return {
-        success: false,
-        error: validationError,
-        statusCode: 400
-      };
-    }
+  const { data, error } = await services.supabaseServiceClient
+    .from('user_profiles')
+    .update({
+      first_name: sanitizedData.first_name,
+      last_name: sanitizedData.last_name,
+      age_group: sanitizedData.age_group,
+      interests: sanitizedData.interests,
+      profile_image_url: sanitizedData.profile_image_url,
+      onboarding_status: 'language_selection',
+      updated_at: new Date().toISOString()
+    })
+    .eq('id', userId)
+    .select('*')
+    .single()
 
-    // Sanitize data
-    const sanitizedData = sanitizeProfileData(profileData);
+  if (error) {
+    throw new AppError('DATABASE_ERROR', 'Failed to update profile', 500)
+  }
 
-    // Update user profile using the user-scoped client
-    const { data, error } = await userSupabaseClient
-      .from('user_profiles')
-      .update({
-        first_name: sanitizedData.first_name,
-        last_name: sanitizedData.last_name,
-        age_group: sanitizedData.age_group,
-        interests: sanitizedData.interests,
-        profile_image_url: sanitizedData.profile_image_url,
-        onboarding_status: 'language_selection', // Move to next step
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', user.id)
-      .select('*')
-      .single();
-
-    if (error) {
-      console.error('Profile update error:', error);
-      return {
-        success: false,
-        error: 'Failed to update profile',
-        statusCode: 500
-      };
-    }
-
-    return {
+  return new Response(
+    JSON.stringify({
       success: true,
       data: {
         profile: data,
         next_step: 'language_selection'
       }
-    };
-
-  } catch (error) {
-    console.error('Update profile error:', error);
-    return {
-      success: false,
-      error: 'Internal server error',
-      statusCode: 500
-    };
-  }
+    }),
+    { status: 200, headers: { 'Content-Type': 'application/json' } }
+  )
 }
 
-async function getProfile(services: ServiceContainer, authToken?: string): Promise<ProfileSetupResponse> {
-  try {
-    // Create a client with the user's auth token for user operations
-    let userSupabaseClient = services.supabase;
-    if (authToken) {
-      userSupabaseClient = createClient(
-        Deno.env.get('SUPABASE_URL')!,
-        Deno.env.get('SUPABASE_ANON_KEY')!,
-        {
-          global: {
-            headers: {
-              Authorization: `Bearer ${authToken}`,
-            },
-          },
-        }
-      );
-    }
+async function getProfile(
+  services: ServiceContainer,
+  userId: string
+): Promise<Response> {
+  const { data, error } = await services.supabaseServiceClient
+    .from('user_profiles')
+    .select('*')
+    .eq('id', userId)
+    .single()
 
-    // Get current user using the user token
-    const { data: { user }, error: authError } = await userSupabaseClient.auth.getUser();
-    
-    if (authError || !user) {
-      return {
-        success: false,
-        error: 'Authentication required',
-        statusCode: 401
-      };
-    }
+  if (error) {
+    throw new AppError('DATABASE_ERROR', 'Failed to retrieve profile', 500)
+  }
 
-    // Get user profile using the user-scoped client
-    const { data, error } = await userSupabaseClient
-      .from('user_profiles')
-      .select('*')
-      .eq('id', user.id)
-      .single();
-
-    if (error) {
-      console.error('Get profile error:', error);
-      return {
-        success: false,
-        error: 'Failed to retrieve profile',
-        statusCode: 500
-      };
-    }
-
-    return {
+  return new Response(
+    JSON.stringify({
       success: true,
-      data: {
-        profile: data
-      },
-      statusCode: 200
-    };
+      data: { profile: data }
+    }),
+    { status: 200, headers: { 'Content-Type': 'application/json' } }
+  )
+}
 
-  } catch (error) {
-    console.error('Get profile error:', error);
-    return {
-      success: false,
-      error: 'Internal server error',
-      statusCode: 500
-    };
+// ============================================================================
+// Main Handler
+// ============================================================================
+
+async function handleProfileSetup(
+  req: Request,
+  services: ServiceContainer,
+  userContext?: UserContext
+): Promise<Response> {
+  if (!userContext || userContext.type !== 'authenticated') {
+    throw new AppError('UNAUTHORIZED', 'Authentication required', 401)
+  }
+
+  const userId = userContext.userId!
+  const body: ProfileSetupRequest = await req.json()
+
+  if (!body.action) {
+    throw new AppError('VALIDATION_ERROR', 'Action is required', 400)
+  }
+
+  switch (body.action) {
+    case 'update_profile':
+      if (!body.profile_data) {
+        throw new AppError('VALIDATION_ERROR', 'Profile data required for update', 400)
+      }
+      return updateProfile(body.profile_data, services, userId)
+
+    case 'get_profile':
+      return getProfile(services, userId)
+      
+    default:
+      throw new AppError('VALIDATION_ERROR', 'Invalid action', 400)
   }
 }
 
-// Factory function
-function createServices(): ServiceContainer {
-  const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-  const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-  
-  return {
-    supabase: createClient(supabaseUrl, supabaseServiceKey)
-  };
-}
+// ============================================================================
+// Create Function with Factory
+// ============================================================================
 
-// Request handler
-async function handleRequest(request: Request): Promise<Response> {
-  // CORS headers
-  const corsHeaders = {
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-    'Access-Control-Allow-Methods': 'POST, OPTIONS',
-  };
-
-  // Handle preflight requests
-  if (request.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
-  }
-
-  // Only allow POST requests
-  if (request.method !== 'POST') {
-    return new Response(
-      JSON.stringify({ error: 'Method not allowed' }),
-      { 
-        status: 405, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      }
-    );
-  }
-
-  try {
-    // Extract auth token from request headers
-    const authHeader = request.headers.get('authorization');
-    const authToken = authHeader?.replace('Bearer ', '');
-
-    // Parse request body
-    const body: ProfileSetupRequest = await request.json();
-
-    if (!body.action) {
-      return new Response(
-        JSON.stringify({ error: 'Action is required' }),
-        {
-          status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        }
-      );
-    }
-
-    // Create services
-    const services = createServices();
-
-    let result: ProfileSetupResponse;
-
-    // Route to appropriate handler
-    switch (body.action) {
-      case 'update_profile':
-        if (!body.profile_data) {
-          return new Response(
-            JSON.stringify({ error: 'Profile data is required for update_profile action' }),
-            {
-              status: 400,
-              headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-            }
-          );
-        }
-        result = await updateProfile(body.profile_data, services, authToken);
-        break;
-
-      case 'get_profile':
-        result = await getProfile(services, authToken);
-        break;
-        
-      default:
-        return new Response(
-          JSON.stringify({ error: 'Invalid action' }),
-          { 
-            status: 400, 
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-          }
-        );
-    }
-
-    // Use statusCode from result, default to 200 for success, 400 for failure
-    const status = result.statusCode || (result.success ? 200 : 400);
-    
-    return new Response(
-      JSON.stringify(result),
-      { 
-        status, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      }
-    );
-
-  } catch (error) {
-    console.error('Request handling error:', error);
-    
-    // Determine status code based on error type
-    const isValidationError = error instanceof SyntaxError; // JSON parsing errors
-    const status = isValidationError ? 400 : 500;
-    
-    return new Response(
-      JSON.stringify({ 
-        success: false, 
-        error: isValidationError ? 'Invalid request format' : 'Internal server error'
-      }),
-      { 
-        status, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      }
-    );
-  }
-}
-
-// Start the server
-serve(handleRequest)
+createAuthenticatedFunction(handleProfileSetup, {
+  allowedMethods: ['POST'],
+  enableAnalytics: true,
+  timeout: 15000
+})

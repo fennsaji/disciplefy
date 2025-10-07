@@ -21,6 +21,7 @@ import { ErrorHandler } from '../utils/error-handler.ts'
 import { getServiceContainer, createUserSupabaseClient, ServiceContainer } from './services.ts'
 import { config } from './config.ts'
 import { UserContext } from '../types/index.ts'
+import { defaultServiceRoleLimiter, getRequestIdentifier } from '../utils/rate-limiter.ts'
 
 /**
  * Handler function signature that Edge Functions must implement
@@ -44,6 +45,15 @@ export type SimpleFunctionHandler = (
  * Legacy handler type for backward compatibility
  */
 export type Handler = SimpleFunctionHandler
+
+/**
+ * Service role handler for background jobs and scheduled tasks
+ * Returns plain objects instead of Response
+ */
+export type ServiceRoleFunctionHandler = (
+  req: Request,
+  supabaseClient: any
+) => Promise<Record<string, any>>
 
 /**
  * Configuration options for the function factory
@@ -273,7 +283,7 @@ export function createGetFunction(
 
 /**
  * Utility function to create a POST-only endpoint
- * 
+ *
  * @param handler - Handler function
  * @param config - Configuration options
  */
@@ -282,6 +292,134 @@ export function createPostFunction(
   config: FunctionConfig = {}
 ): void {
   createSimpleFunction(handler, { ...config, allowedMethods: ['POST'] })
+}
+
+/**
+ * Creates a service role function for background jobs and scheduled tasks
+ * Validates service role authentication and returns JSON responses
+ *
+ * @param handler - Handler function that receives Supabase service client
+ * @param config - Configuration options
+ */
+export function createServiceRoleFunction(
+  handler: ServiceRoleFunctionHandler,
+  config: FunctionConfig = {}
+): (req: Request) => Promise<Response> {
+  return async (req: Request): Promise<Response> => {
+    const corsHeaders = handleCors(req)
+
+    try {
+      // Handle CORS preflight
+      if (req.method === 'OPTIONS') {
+        return new Response('ok', { headers: corsHeaders })
+      }
+
+      // Rate limiting check (protects against abuse if service role key is compromised)
+      const requestIdentifier = getRequestIdentifier(req)
+      if (!defaultServiceRoleLimiter.allow(requestIdentifier)) {
+        const resetTime = defaultServiceRoleLimiter.getResetTime(requestIdentifier || 'unknown')
+        const retryAfter = Math.ceil((resetTime - Date.now()) / 1000)
+
+        return new Response(
+          JSON.stringify({
+            success: false,
+            error: {
+              code: 'RATE_LIMIT_EXCEEDED',
+              message: 'Too many requests. Please try again later.',
+              retryAfter,
+            }
+          }),
+          {
+            status: 429,
+            headers: {
+              ...corsHeaders,
+              'Content-Type': 'application/json',
+              'Retry-After': String(retryAfter),
+              'X-RateLimit-Limit': '10',
+              'X-RateLimit-Remaining': '0',
+              'X-RateLimit-Reset': String(Math.floor(resetTime / 1000)),
+            }
+          }
+        )
+      }
+
+      // Validate service role authentication
+      const authHeader = req.headers.get('Authorization')
+      if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return new Response(
+          JSON.stringify({
+            success: false,
+            error: {
+              code: 'UNAUTHORIZED',
+              message: 'Auth header is not \'Bearer {token}\''
+            }
+          }),
+          {
+            status: 401,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          }
+        )
+      }
+
+      const token = authHeader.replace('Bearer ', '')
+      const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
+
+      if (token !== serviceRoleKey) {
+        return new Response(
+          JSON.stringify({
+            success: false,
+            error: {
+              code: 'FORBIDDEN',
+              message: 'Invalid service role key'
+            }
+          }),
+          {
+            status: 403,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          }
+        )
+      }
+
+      // Get service container and execute handler
+      const services = await getServiceContainer()
+      const result = await handler(req, services.supabaseServiceClient)
+
+      // Add rate limit headers to success response
+      const remaining = defaultServiceRoleLimiter.getRemaining(requestIdentifier || 'unknown')
+      const resetTime = defaultServiceRoleLimiter.getResetTime(requestIdentifier || 'unknown')
+
+      // Return success response
+      return new Response(
+        JSON.stringify(result),
+        {
+          status: 200,
+          headers: {
+            ...corsHeaders,
+            'Content-Type': 'application/json',
+            'X-RateLimit-Limit': '10',
+            'X-RateLimit-Remaining': String(remaining),
+            'X-RateLimit-Reset': String(Math.floor(resetTime / 1000)),
+          }
+        }
+      )
+
+    } catch (error) {
+      console.error('[ServiceRoleFunction] Error:', error)
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: {
+            code: 'INTERNAL_ERROR',
+            message: error instanceof Error ? error.message : 'Unknown error occurred'
+          }
+        }),
+        {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      )
+    }
+  }
 }
 
 /**
