@@ -29,12 +29,17 @@ class NotificationRepositoryImpl implements NotificationRepository {
       );
 
       if (response.status == 200 && response.data != null) {
-        final preferences =
-            response.data['preferences'] as Map<String, dynamic>?;
+        // Safely access nested data structure: response.data['data']['preferences']
+        final dataWrapper = response.data['data'] as Map<String, dynamic>?;
 
-        if (preferences != null) {
-          final model = NotificationPreferencesModel.fromJson(preferences);
-          return Right(model);
+        if (dataWrapper != null) {
+          final preferences =
+              dataWrapper['preferences'] as Map<String, dynamic>?;
+
+          if (preferences != null) {
+            final model = NotificationPreferencesModel.fromJson(preferences);
+            return Right(model);
+          }
         }
 
         // Return default preferences if none exist
@@ -73,12 +78,17 @@ class NotificationRepositoryImpl implements NotificationRepository {
       );
 
       if (response.status == 200 && response.data != null) {
-        final preferences =
-            response.data['preferences'] as Map<String, dynamic>?;
+        // Safely access nested data structure: response.data['data']['preferences']
+        final dataWrapper = response.data['data'] as Map<String, dynamic>?;
 
-        if (preferences != null) {
-          final model = NotificationPreferencesModel.fromJson(preferences);
-          return Right(model);
+        if (dataWrapper != null) {
+          final preferences =
+              dataWrapper['preferences'] as Map<String, dynamic>?;
+
+          if (preferences != null) {
+            final model = NotificationPreferencesModel.fromJson(preferences);
+            return Right(model);
+          }
         }
       }
 

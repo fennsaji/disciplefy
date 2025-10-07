@@ -33,7 +33,17 @@ async function handleTokenCleanup(
     throw new AppError('UNAUTHORIZED', 'Cron secret authentication required', 401);
   }
 
-  console.log('Starting FCM token cleanup process...');
+  // Parse request body for optional dry_run parameter
+  let dryRun = false;
+  try {
+    const body = await req.json();
+    dryRun = body?.dry_run === true;
+  } catch {
+    // If body parsing fails, default to non-dry-run mode
+    dryRun = false;
+  }
+
+  console.log(`Starting FCM token cleanup process... (dry_run: ${dryRun})`);
 
   const supabase = services.supabaseServiceClient;
 
@@ -93,17 +103,29 @@ async function handleTokenCleanup(
       break;
     }
 
-    // Delete this batch
-    const userIds = expiredTokens.map(t => t.user_id);
-    const { error: deleteError } = await supabase
-      .from('user_notification_preferences')
-      .delete()
-      .in('user_id', userIds);
-
-    if (deleteError) {
-      console.error(`Error deleting batch: ${deleteError.message}`);
-      // Continue with next batch instead of failing completely
+    // Delete this batch (or count in dry-run mode)
+    if (dryRun) {
+      // Dry run: just count, don't delete
+      totalRemoved += expiredTokens.length;
+      console.log(`[DRY RUN] Would delete batch of ${expiredTokens.length} tokens (total: ${totalRemoved}/${totalCount})`);
     } else {
+      // Actual deletion
+      const userIds = expiredTokens.map(t => t.user_id);
+      const { error: deleteError } = await supabase
+        .from('user_notification_preferences')
+        .delete()
+        .in('user_id', userIds);
+
+      if (deleteError) {
+        console.error(`Error deleting batch: ${deleteError.message}`);
+        // Stop processing to prevent infinite loop on persistent errors
+        throw new AppError(
+          'DATABASE_ERROR',
+          `Failed to delete token batch: ${deleteError.message}`,
+          500
+        );
+      }
+
       totalRemoved += expiredTokens.length;
       console.log(`Deleted batch of ${expiredTokens.length} tokens (total: ${totalRemoved}/${totalCount})`);
     }
@@ -112,16 +134,21 @@ async function handleTokenCleanup(
     hasMore = expiredTokens.length === CLEANUP_CONFIG.BATCH_SIZE;
   }
 
-  console.log(`Token cleanup complete: ${totalRemoved} tokens removed`);
+  const completionMessage = dryRun
+    ? `Token cleanup dry run complete: ${totalRemoved} tokens would be removed`
+    : `Token cleanup complete: ${totalRemoved} tokens removed`;
+  
+  console.log(completionMessage);
 
   return new Response(
     JSON.stringify({
       success: true,
-      message: 'FCM token cleanup completed',
+      message: dryRun ? 'FCM token cleanup dry run completed' : 'FCM token cleanup completed',
       removedCount: totalRemoved,
       expectedCount: totalCount,
       cutoffDate: cutoffDateStr,
       daysInactive: CLEANUP_CONFIG.DAYS_INACTIVE,
+      dryRun,
     }),
     {
       status: 200,

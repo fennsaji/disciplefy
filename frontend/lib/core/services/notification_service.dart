@@ -5,6 +5,7 @@
 // Handles token registration, notification display, and deep linking
 
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -401,7 +402,7 @@ class NotificationService {
       notification.title,
       notification.body,
       details,
-      payload: message.data.toString(),
+      payload: jsonEncode(message.data),
     );
 
     if (kDebugMode) print('[NotificationService] Local notification displayed');
@@ -415,8 +416,32 @@ class NotificationService {
     }
 
     // Parse payload and navigate
-    // Note: payload is string representation, would need proper parsing
-    // For now, we'll rely on FCM notification taps which have proper data
+    if (response.payload == null || response.payload!.isEmpty) {
+      if (kDebugMode) {
+        print('[NotificationService] ⚠️  Empty payload, cannot navigate');
+      }
+      return;
+    }
+
+    try {
+      // Decode JSON payload
+      final data = jsonDecode(response.payload!) as Map<String, dynamic>;
+
+      if (kDebugMode) {
+        print('[NotificationService] Decoded payload: $data');
+      }
+
+      // Emit notification tap event
+      _notificationTapController.add(data);
+
+      // Navigate based on notification data
+      _navigateFromNotification(data);
+    } catch (e) {
+      if (kDebugMode) {
+        print('[NotificationService] ❌ Failed to parse payload: $e');
+        print('[NotificationService] Raw payload: ${response.payload}');
+      }
+    }
   }
 
   // ============================================================================
@@ -570,7 +595,7 @@ class NotificationService {
       '📖 Test Notification',
       'This is a test notification from Disciplefy',
       details,
-      payload: {'type': 'test'}.toString(),
+      payload: jsonEncode({'type': 'test'}),
     );
   }
 

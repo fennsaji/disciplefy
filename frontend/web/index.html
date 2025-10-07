@@ -212,14 +212,17 @@
     }
     
     // Enhanced PWA Service Worker Registration
-    // IMPORTANT: Only register Firebase Messaging service worker to avoid conflicts
-    // Firebase Messaging service worker will handle both push notifications and caching
+    // IMPORTANT: Register unified service worker that handles both FCM and PWA caching
+    // firebase-messaging-sw.js imports flutter_service_worker.js for offline support
+    // This ensures a single service worker handles both notifications AND app caching
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', function() {
-        // Register Firebase Cloud Messaging service worker (handles both notifications and caching)
+        // Register unified service worker (Firebase Messaging + Flutter PWA caching)
         navigator.serviceWorker.register('/firebase-messaging-sw.js')
           .then(function(registration) {
-            console.log('Firebase Messaging ServiceWorker registered with scope: ', registration.scope);
+            console.log('Unified ServiceWorker registered with scope: ', registration.scope);
+            console.log('  ✅ Firebase Cloud Messaging (push notifications)');
+            console.log('  ✅ Flutter PWA Caching (offline support)');
 
             // Check for service worker updates
             registration.addEventListener('updatefound', () => {
@@ -235,7 +238,8 @@
             });
           })
           .catch(function(error) {
-            console.log('Firebase Messaging ServiceWorker registration failed: ', error);
+            console.error('Unified ServiceWorker registration failed: ', error);
+            console.error('  ❌ Firebase Cloud Messaging and PWA caching unavailable');
           });
       });
     }

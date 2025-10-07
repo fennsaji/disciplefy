@@ -97,6 +97,23 @@ async function handleRegisterToken(
   // Detect timezone offset
   const timezoneOffset = requestData.timezoneOffsetMinutes ?? 0
 
+  // Fetch existing preferences to preserve user's notification toggles
+  const { data: existingPrefs } = await services.supabaseServiceClient
+    .from('user_notification_preferences')
+    .select('daily_verse_enabled, recommended_topic_enabled')
+    .eq('user_id', userId)
+    .single()
+
+  // Preserve existing values if request doesn't explicitly provide them
+  // Only default to true when no existing record exists
+  const dailyVerseEnabled = requestData.dailyVerseEnabled !== undefined
+    ? requestData.dailyVerseEnabled
+    : (existingPrefs?.daily_verse_enabled ?? true)
+
+  const recommendedTopicEnabled = requestData.recommendedTopicEnabled !== undefined
+    ? requestData.recommendedTopicEnabled
+    : (existingPrefs?.recommended_topic_enabled ?? true)
+
   // Upsert token and preferences
   const { data, error } = await services.supabaseServiceClient
     .from('user_notification_preferences')
@@ -105,8 +122,8 @@ async function handleRegisterToken(
       fcm_token: requestData.fcmToken,
       platform: requestData.platform,
       timezone_offset_minutes: timezoneOffset,
-      daily_verse_enabled: requestData.dailyVerseEnabled ?? true,
-      recommended_topic_enabled: requestData.recommendedTopicEnabled ?? true,
+      daily_verse_enabled: dailyVerseEnabled,
+      recommended_topic_enabled: recommendedTopicEnabled,
       token_updated_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     }, {

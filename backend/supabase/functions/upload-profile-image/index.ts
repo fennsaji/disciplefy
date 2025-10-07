@@ -81,6 +81,56 @@ function generateUniqueFileName(userId: string, originalFileName: string): strin
   return `${userId}_${timestamp}${extension}`
 }
 
+/**
+ * Extract storage object key from profile image URL
+ * Handles query strings, URL encoding, and bucket prefixes
+ */
+function extractStorageKey(imageUrl: string | null | undefined): string | null {
+  if (!imageUrl || imageUrl.trim().length === 0) {
+    return null
+  }
+
+  try {
+    // Parse URL to handle query strings and fragments properly
+    const parsedUrl = new URL(imageUrl)
+    
+    // Extract pathname (e.g., "/storage/v1/object/public/profile-images/user_123.jpg")
+    let pathname = parsedUrl.pathname
+    
+    // Strip leading '/'
+    if (pathname.startsWith('/')) {
+      pathname = pathname.substring(1)
+    }
+    
+    // Strip common Supabase storage prefixes
+    // Patterns: "storage/v1/object/public/profile-images/file.jpg"
+    //           "profile-images/file.jpg"
+    const bucketPrefixes = [
+      `storage/v1/object/public/${STORAGE_BUCKET}/`,
+      `storage/v1/object/${STORAGE_BUCKET}/`,
+      `object/public/${STORAGE_BUCKET}/`,
+      `${STORAGE_BUCKET}/`
+    ]
+    
+    for (const prefix of bucketPrefixes) {
+      if (pathname.startsWith(prefix)) {
+        pathname = pathname.substring(prefix.length)
+        break
+      }
+    }
+    
+    // Decode URL-encoded characters (e.g., "%20" -> " ")
+    const decodedKey = decodeURIComponent(pathname)
+    
+    // Return null if empty after processing
+    return decodedKey.trim().length > 0 ? decodedKey : null
+  } catch (error) {
+    // Invalid URL format
+    console.error('Failed to parse profile image URL:', error)
+    return null
+  }
+}
+
 function base64ToUint8Array(base64: string): Uint8Array {
   const base64Data = base64.replace(/^data:image\/[a-z]+;base64,/, '')
   const binaryString = atob(base64Data)
@@ -117,11 +167,11 @@ async function uploadImage(
     .single()
   
   if (profileData?.profile_image_url) {
-    const oldFileName = profileData.profile_image_url.split('/').pop()
-    if (oldFileName) {
+    const oldStorageKey = extractStorageKey(profileData.profile_image_url)
+    if (oldStorageKey) {
       await services.supabaseServiceClient.storage
         .from(STORAGE_BUCKET)
-        .remove([oldFileName])
+        .remove([oldStorageKey])
     }
   }
 
@@ -196,14 +246,14 @@ async function deleteImage(
     throw new AppError('VALIDATION_ERROR', 'No profile image to delete', 400)
   }
 
-  const fileName = profileData.profile_image_url.split('/').pop()
-  if (!fileName) {
+  const storageKey = extractStorageKey(profileData.profile_image_url)
+  if (!storageKey) {
     throw new AppError('VALIDATION_ERROR', 'Invalid image URL', 400)
   }
 
   const { error: deleteError } = await services.supabaseServiceClient.storage
     .from(STORAGE_BUCKET)
-    .remove([fileName])
+    .remove([storageKey])
 
   if (deleteError) {
     throw new AppError('DELETE_ERROR', 'Failed to delete image', 500)

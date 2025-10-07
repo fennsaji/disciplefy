@@ -62,29 +62,89 @@ async function handleRecommendedTopicNotification(
   // targetOffsetMinutes represents minutes to add to UTC to reach 8 AM local time
   // Example: If UTC hour is 2, we want users with timezone offset +360 minutes (UTC+6)
   // because for them, localTime = UTC + offset = 2 + 6 hours = 8:00 AM
-  const targetOffsetMinutes = (8 - currentHour) * 60; // 8 AM target
-  const unclamped_offsetRangeMin = targetOffsetMinutes - 180; // ±3 hours buffer
+  let targetOffsetMinutes = (8 - currentHour) * 60; // 8 AM target
+
+  // Normalize targetOffsetMinutes to valid timezone range: -720 (UTC-12) to +840 (UTC+14)
+  if (targetOffsetMinutes < -720) {
+    targetOffsetMinutes += 1440; // Add 24 hours
+  } else if (targetOffsetMinutes > 840) {
+    targetOffsetMinutes -= 1440; // Subtract 24 hours
+  }
+
+  // Calculate ±3 hour window (180 minutes) without clamping
+  const unclamped_offsetRangeMin = targetOffsetMinutes - 180;
   const unclamped_offsetRangeMax = targetOffsetMinutes + 180;
 
-  // Clamp timezone offsets to valid range: -720 (UTC-12) to +840 (UTC+14)
+  // Clamp to valid timezone range
   const offsetRangeMin = Math.max(-720, unclamped_offsetRangeMin);
   const offsetRangeMax = Math.min(840, unclamped_offsetRangeMax);
 
-  console.log(`Targeting users with timezone offset: ${targetOffsetMinutes} minutes (±3 hours, clamped to ${offsetRangeMin}-${offsetRangeMax})`);
+  console.log(`Targeting users with timezone offset: ${targetOffsetMinutes} minutes (±3 hours, range: ${offsetRangeMin} to ${offsetRangeMax})`);
 
   // Step 3: Fetch eligible users with valid FCM tokens (join preferences with tokens)
-  const { data: allUsers, error: usersError } = await supabase
-    .from('user_notification_preferences')
-    .select(`
-      user_id,
-      timezone_offset_minutes,
-      user_notification_tokens!inner(
-        fcm_token
-      )
-    `)
-    .eq('recommended_topic_enabled', true)
-    .gte('timezone_offset_minutes', offsetRangeMin)
-    .lte('timezone_offset_minutes', offsetRangeMax);
+  // Handle wrap-around case: if min > max, query requires two ranges
+  let allUsers;
+  let usersError;
+
+  if (offsetRangeMin > offsetRangeMax) {
+    // Wrap-around case: split into two ranges
+    // Range 1: offsetRangeMin to 840 (max valid)
+    // Range 2: -720 (min valid) to offsetRangeMax
+    console.log(`Wrap-around detected: querying ranges [${offsetRangeMin}, 840] and [-720, ${offsetRangeMax}]`);
+
+    const [result1, result2] = await Promise.all([
+      supabase
+        .from('user_notification_preferences')
+        .select(`
+          user_id,
+          timezone_offset_minutes,
+          user_notification_tokens!inner(
+            fcm_token
+          )
+        `)
+        .eq('recommended_topic_enabled', true)
+        .gte('timezone_offset_minutes', offsetRangeMin)
+        .lte('timezone_offset_minutes', 840),
+      
+      supabase
+        .from('user_notification_preferences')
+        .select(`
+          user_id,
+          timezone_offset_minutes,
+          user_notification_tokens!inner(
+            fcm_token
+          )
+        `)
+        .eq('recommended_topic_enabled', true)
+        .gte('timezone_offset_minutes', -720)
+        .lte('timezone_offset_minutes', offsetRangeMax)
+    ]);
+
+    if (result1.error || result2.error) {
+      usersError = result1.error || result2.error;
+      allUsers = null;
+    } else {
+      // Combine results from both ranges
+      allUsers = [...(result1.data || []), ...(result2.data || [])];
+    }
+  } else {
+    // Normal case: single range query
+    const result = await supabase
+      .from('user_notification_preferences')
+      .select(`
+        user_id,
+        timezone_offset_minutes,
+        user_notification_tokens!inner(
+          fcm_token
+        )
+      `)
+      .eq('recommended_topic_enabled', true)
+      .gte('timezone_offset_minutes', offsetRangeMin)
+      .lte('timezone_offset_minutes', offsetRangeMax);
+    
+    allUsers = result.data;
+    usersError = result.error;
+  }
 
   if (usersError) {
     throw new AppError('DATABASE_ERROR', `Failed to fetch users: ${usersError.message}`, 500);
