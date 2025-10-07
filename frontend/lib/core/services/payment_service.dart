@@ -4,10 +4,8 @@ import 'package:flutter/services.dart';
 import '../constants/payment_constants.dart';
 
 // Conditional imports for web platform
-// ignore: avoid_web_libraries_in_flutter
-import 'dart:html' as html;
-// ignore: avoid_web_libraries_in_flutter
-import 'dart:js' as js;
+import 'payment_service_stub.dart'
+    if (dart.library.html) 'payment_service_web.dart';
 
 class PaymentService {
   static final PaymentService _instance = PaymentService._internal();
@@ -179,7 +177,7 @@ class PaymentService {
 
       // Add web-specific handlers
       debugPrint('[PaymentService] Step 2: Setting up payment handlers...');
-      options['handler'] = js.allowInterop((response) {
+      options['handler'] = PaymentServiceWeb.allowInterop((response) {
         debugPrint(
             '[PaymentService] ✅ WEB PAYMENT SUCCESS CALLBACK TRIGGERED!');
         debugPrint('[PaymentService] Success response: $response');
@@ -208,7 +206,7 @@ class PaymentService {
       });
 
       options['modal'] = {
-        'ondismiss': js.allowInterop(() {
+        'ondismiss': PaymentServiceWeb.allowInterop(() {
           debugPrint('[PaymentService] ❌ WEB PAYMENT DISMISSED BY USER');
           final paymentFailureResponse = PaymentFailureResponse(
             0, // User cancelled
@@ -223,25 +221,26 @@ class PaymentService {
       // Create and open Razorpay checkout
       debugPrint('[PaymentService] Step 3: Creating Razorpay checkout...');
       debugPrint('[PaymentService] Converting options to JS object...');
-      final jsOptions = js.JsObject.jsify(options);
+      final jsOptions = PaymentServiceWeb.jsify(options);
       debugPrint(
           '[PaymentService] ✅ Options converted to JS object successfully');
 
       debugPrint('[PaymentService] Step 4: Creating Razorpay instance...');
       debugPrint(
-          '[PaymentService] Checking if Razorpay exists: ${js.context.hasProperty('Razorpay')}');
+          '[PaymentService] Checking if Razorpay exists: ${PaymentServiceWeb.hasProperty('Razorpay')}');
 
-      if (!js.context.hasProperty('Razorpay')) {
+      if (!PaymentServiceWeb.hasProperty('Razorpay')) {
         throw Exception('Razorpay object not available in window context');
       }
 
-      final razorpayConstructor = js.context['Razorpay'];
+      final razorpayConstructor = PaymentServiceWeb.getRazorpayConstructor();
       debugPrint(
           '[PaymentService] Razorpay constructor type: ${razorpayConstructor.runtimeType}');
       debugPrint(
           '[PaymentService] Creating Razorpay instance with jsOptions...');
 
-      final rzp = js.JsObject(razorpayConstructor, [jsOptions]);
+      final rzp = PaymentServiceWeb.createRazorpayInstance(
+          razorpayConstructor, jsOptions);
       debugPrint(
           '[PaymentService] ✅ Razorpay instance created successfully: $rzp');
 
@@ -280,92 +279,7 @@ class PaymentService {
 
   /// Load Razorpay JavaScript SDK for web
   Future<void> _loadRazorpayScript() async {
-    try {
-      debugPrint(
-          '[PaymentService] 🔍 Checking if Razorpay is already loaded...');
-
-      // Check if Razorpay is already loaded
-      if (js.context.hasProperty('Razorpay')) {
-        debugPrint(
-            '[PaymentService] ✅ Razorpay already loaded in window context');
-        final razorpay = js.context['Razorpay'];
-        debugPrint('[PaymentService] Razorpay type: ${razorpay.runtimeType}');
-        return;
-      }
-
-      debugPrint(
-          '[PaymentService] 📥 Razorpay not found - loading script from CDN...');
-      debugPrint(
-          '[PaymentService] Script URL: https://checkout.razorpay.com/v1/checkout.js');
-
-      // Create script element
-      final script = html.ScriptElement();
-      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
-      script.async = true;
-      script.defer = false;
-      script.type = 'text/javascript';
-
-      // Add comprehensive error handling
-      script.onError.listen((event) {
-        debugPrint(
-            '[PaymentService] ❌ SCRIPT ERROR: Failed to load Razorpay script');
-        debugPrint('[PaymentService] Error event: $event');
-        debugPrint('[PaymentService] Event type: ${event.runtimeType}');
-      });
-
-      script.onAbort.listen((event) {
-        debugPrint(
-            '[PaymentService] ❌ SCRIPT ABORTED: Razorpay script loading aborted');
-        debugPrint('[PaymentService] Abort event: $event');
-      });
-
-      // Add to head
-      debugPrint(
-          '[PaymentService] 📎 Adding script element to document head...');
-      html.document.head!.children.add(script);
-      debugPrint('[PaymentService] ✅ Script element added to DOM');
-
-      // Wait for script to load with timeout
-      debugPrint(
-          '[PaymentService] ⏳ Waiting for script to load (10s timeout)...');
-      await script.onLoad.first.timeout(
-        const Duration(seconds: 10),
-        onTimeout: () {
-          debugPrint(
-              '[PaymentService] ⏰ TIMEOUT: Razorpay script load took more than 10 seconds');
-          throw Exception('Razorpay script load timeout after 10 seconds');
-        },
-      );
-
-      debugPrint(
-          '[PaymentService] 🎉 Script onLoad event fired - checking availability...');
-
-      // Add a small delay to ensure script execution
-      await Future.delayed(Duration(milliseconds: 200));
-
-      // Verify Razorpay is actually available
-      final hasRazorpay = js.context.hasProperty('Razorpay');
-      debugPrint('[PaymentService] Window.Razorpay exists: $hasRazorpay');
-
-      if (!hasRazorpay) {
-        debugPrint(
-            '[PaymentService] ❌ CRITICAL: Razorpay object not found after script load');
-        debugPrint('[PaymentService] Checking window object...');
-        throw Exception('Razorpay object not available after script load');
-      }
-
-      final razorpayObj = js.context['Razorpay'];
-      debugPrint('[PaymentService] ✅✅ Razorpay object confirmed available!');
-      debugPrint('[PaymentService] Razorpay type: ${razorpayObj.runtimeType}');
-      debugPrint('[PaymentService] Razorpay toString: $razorpayObj');
-    } catch (e, stackTrace) {
-      debugPrint(
-          '[PaymentService] ❌❌❌ CRITICAL: Razorpay script loading failed ❌❌❌');
-      debugPrint('[PaymentService] Error: $e');
-      debugPrint('[PaymentService] Stack trace: $stackTrace');
-      debugPrint('[PaymentService] ❌❌❌ END SCRIPT LOADING ERROR ❌❌❌');
-      rethrow;
-    }
+    await PaymentServiceWeb.loadRazorpayScript();
   }
 
   // Helper method to format amount for display
