@@ -94,30 +94,32 @@ async function handleRecommendedTopicNotification(
 
     const [result1, result2] = await Promise.all([
       supabase
-        .from('user_notification_preferences')
+        .from('user_notification_tokens')
         .select(`
+          fcm_token,
           user_id,
-          timezone_offset_minutes,
-          user_notification_tokens!inner(
-            fcm_token
+          user_notification_preferences!inner(
+            timezone_offset_minutes,
+            recommended_topic_enabled
           )
         `)
-        .eq('recommended_topic_enabled', true)
-        .gte('timezone_offset_minutes', offsetRangeMin)
-        .lte('timezone_offset_minutes', 840),
+        .eq('user_notification_preferences.recommended_topic_enabled', true)
+        .gte('user_notification_preferences.timezone_offset_minutes', offsetRangeMin)
+        .lte('user_notification_preferences.timezone_offset_minutes', 840),
       
       supabase
-        .from('user_notification_preferences')
+        .from('user_notification_tokens')
         .select(`
+          fcm_token,
           user_id,
-          timezone_offset_minutes,
-          user_notification_tokens!inner(
-            fcm_token
+          user_notification_preferences!inner(
+            timezone_offset_minutes,
+            recommended_topic_enabled
           )
         `)
-        .eq('recommended_topic_enabled', true)
-        .gte('timezone_offset_minutes', -720)
-        .lte('timezone_offset_minutes', offsetRangeMax)
+        .eq('user_notification_preferences.recommended_topic_enabled', true)
+        .gte('user_notification_preferences.timezone_offset_minutes', -720)
+        .lte('user_notification_preferences.timezone_offset_minutes', offsetRangeMax)
     ]);
 
     if (result1.error || result2.error) {
@@ -130,17 +132,18 @@ async function handleRecommendedTopicNotification(
   } else {
     // Normal case: single range query
     const result = await supabase
-      .from('user_notification_preferences')
+      .from('user_notification_tokens')
       .select(`
+        fcm_token,
         user_id,
-        timezone_offset_minutes,
-        user_notification_tokens!inner(
-          fcm_token
+        user_notification_preferences!inner(
+          timezone_offset_minutes,
+          recommended_topic_enabled
         )
       `)
-      .eq('recommended_topic_enabled', true)
-      .gte('timezone_offset_minutes', offsetRangeMin)
-      .lte('timezone_offset_minutes', offsetRangeMax);
+      .eq('user_notification_preferences.recommended_topic_enabled', true)
+      .gte('user_notification_preferences.timezone_offset_minutes', offsetRangeMin)
+      .lte('user_notification_preferences.timezone_offset_minutes', offsetRangeMax);
     
     allUsers = result.data;
     usersError = result.error;
@@ -165,19 +168,20 @@ async function handleRecommendedTopicNotification(
     );
   }
 
-  // Flatten the joined data structure (user can have multiple tokens)
+  // Transform the joined data structure (each row is already a token with user preferences)
   const usersWithTokens: Array<{ user_id: string; fcm_token: string; timezone_offset_minutes: number }> = [];
-  for (const user of allUsers) {
-    if (user.user_notification_tokens && Array.isArray(user.user_notification_tokens)) {
-      for (const tokenData of user.user_notification_tokens) {
-        if (tokenData.fcm_token) {
-          usersWithTokens.push({
-            user_id: user.user_id,
-            fcm_token: tokenData.fcm_token,
-            timezone_offset_minutes: user.timezone_offset_minutes,
-          });
-        }
-      }
+  for (const token of allUsers) {
+    // PostgREST returns joined data as arrays, get first element
+    const prefs = Array.isArray(token.user_notification_preferences) 
+      ? token.user_notification_preferences[0] 
+      : token.user_notification_preferences;
+    
+    if (token.fcm_token && prefs) {
+      usersWithTokens.push({
+        user_id: token.user_id,
+        fcm_token: token.fcm_token,
+        timezone_offset_minutes: prefs.timezone_offset_minutes,
+      });
     }
   }
 
