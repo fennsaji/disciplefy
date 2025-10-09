@@ -92,65 +92,79 @@ async function handleRecommendedTopicNotification(
     // Range 2: -720 (min valid) to offsetRangeMax
     console.log(`Wrap-around detected: querying ranges [${offsetRangeMin}, 840] and [-720, ${offsetRangeMax}]`);
 
+    // Fetch all tokens
+    const { data: tokens, error: tokensError } = await supabase
+      .from('user_notification_tokens')
+      .select('user_id, fcm_token');
+
+    if (tokensError) {
+      throw new AppError('DATABASE_ERROR', `Failed to fetch tokens: ${tokensError.message}`, 500);
+    }
+
+    // Fetch preferences for both ranges
     const [result1, result2] = await Promise.all([
       supabase
-        .from('user_notification_tokens')
-        .select(`
-          fcm_token,
-          user_id,
-          user_notification_preferences!inner(
-            timezone_offset_minutes,
-            recommended_topic_enabled
-          )
-        `)
-        .eq('user_notification_preferences.recommended_topic_enabled', true)
-        .gte('user_notification_preferences.timezone_offset_minutes', offsetRangeMin)
-        .lte('user_notification_preferences.timezone_offset_minutes', 840),
+        .from('user_notification_preferences')
+        .select('user_id, timezone_offset_minutes, recommended_topic_enabled')
+        .eq('recommended_topic_enabled', true)
+        .gte('timezone_offset_minutes', offsetRangeMin)
+        .lte('timezone_offset_minutes', 840),
       
       supabase
-        .from('user_notification_tokens')
-        .select(`
-          fcm_token,
-          user_id,
-          user_notification_preferences!inner(
-            timezone_offset_minutes,
-            recommended_topic_enabled
-          )
-        `)
-        .eq('user_notification_preferences.recommended_topic_enabled', true)
-        .gte('user_notification_preferences.timezone_offset_minutes', -720)
-        .lte('user_notification_preferences.timezone_offset_minutes', offsetRangeMax)
+        .from('user_notification_preferences')
+        .select('user_id, timezone_offset_minutes, recommended_topic_enabled')
+        .eq('recommended_topic_enabled', true)
+        .gte('timezone_offset_minutes', -720)
+        .lte('timezone_offset_minutes', offsetRangeMax)
     ]);
 
     if (result1.error || result2.error) {
-      usersError = result1.error || result2.error;
-      allUsers = null;
+      const error = result1.error || result2.error;
+      throw new AppError('DATABASE_ERROR', `Failed to fetch preferences: ${error!.message}`, 500);
     } else {
-      // Combine results from both ranges
-      allUsers = [...(result1.data || []), ...(result2.data || [])];
+      // Combine preferences from both ranges
+      const preferences = [...(result1.data || []), ...(result2.data || [])];
+      
+      // Manual join: match tokens with preferences
+      const prefsMap = new Map(preferences.map(p => [p.user_id, p]));
+      allUsers = tokens?.filter(t => prefsMap.has(t.user_id))
+        .map(t => ({
+          user_id: t.user_id,
+          fcm_token: t.fcm_token,
+          timezone_offset_minutes: prefsMap.get(t.user_id)!.timezone_offset_minutes
+        })) || [];
+      usersError = null;
     }
   } else {
     // Normal case: single range query
-    const result = await supabase
+    const { data: tokens, error: tokensError } = await supabase
       .from('user_notification_tokens')
-      .select(`
-        fcm_token,
-        user_id,
-        user_notification_preferences!inner(
-          timezone_offset_minutes,
-          recommended_topic_enabled
-        )
-      `)
-      .eq('user_notification_preferences.recommended_topic_enabled', true)
-      .gte('user_notification_preferences.timezone_offset_minutes', offsetRangeMin)
-      .lte('user_notification_preferences.timezone_offset_minutes', offsetRangeMax);
-    
-    allUsers = result.data;
-    usersError = result.error;
-  }
+      .select('user_id, fcm_token');
 
-  if (usersError) {
-    throw new AppError('DATABASE_ERROR', `Failed to fetch users: ${usersError.message}`, 500);
+    if (tokensError) {
+      throw new AppError('DATABASE_ERROR', `Failed to fetch tokens: ${tokensError.message}`, 500);
+    }
+
+    const { data: preferences, error: prefsError } = await supabase
+      .from('user_notification_preferences')
+      .select('user_id, timezone_offset_minutes, recommended_topic_enabled')
+      .eq('recommended_topic_enabled', true)
+      .gte('timezone_offset_minutes', offsetRangeMin)
+      .lte('timezone_offset_minutes', offsetRangeMax);
+
+    if (prefsError) {
+      throw new AppError('DATABASE_ERROR', `Failed to fetch preferences: ${prefsError.message}`, 500);
+    }
+
+    // Manual join: match tokens with preferences
+    const prefsMap = new Map(preferences?.map(p => [p.user_id, p]) || []);
+    allUsers = tokens?.filter(t => prefsMap.has(t.user_id))
+      .map(t => ({
+        user_id: t.user_id,
+        fcm_token: t.fcm_token,
+        timezone_offset_minutes: prefsMap.get(t.user_id)!.timezone_offset_minutes
+      })) || [];
+    usersError = null;
   }
 
   if (!allUsers || allUsers.length === 0) {
@@ -168,22 +182,8 @@ async function handleRecommendedTopicNotification(
     );
   }
 
-  // Transform the joined data structure (each row is already a token with user preferences)
-  const usersWithTokens: Array<{ user_id: string; fcm_token: string; timezone_offset_minutes: number }> = [];
-  for (const token of allUsers) {
-    // PostgREST returns joined data as arrays, get first element
-    const prefs = Array.isArray(token.user_notification_preferences) 
-      ? token.user_notification_preferences[0] 
-      : token.user_notification_preferences;
-    
-    if (token.fcm_token && prefs) {
-      usersWithTokens.push({
-        user_id: token.user_id,
-        fcm_token: token.fcm_token,
-        timezone_offset_minutes: prefs.timezone_offset_minutes,
-      });
-    }
-  }
+  // Data is already in the correct format from manual join
+  const usersWithTokens = allUsers || [];
 
   // Step 4: Filter out anonymous/guest users using batched concurrent getUserById calls
   const CONCURRENCY_LIMIT = 10;
