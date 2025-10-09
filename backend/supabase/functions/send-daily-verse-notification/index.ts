@@ -66,19 +66,20 @@ async function handleDailyVerseNotification(
 
   console.log(`Targeting users with timezone offset: ${targetOffsetMinutes} minutes (±3 hours, clamped to ${offsetRangeMin}-${offsetRangeMax})`);
 
-  // Step 3: Fetch eligible users with valid FCM tokens (join preferences with tokens)
+  // Step 3: Fetch eligible users with valid FCM tokens (join tokens with preferences)
   const { data: allUsers, error: usersError } = await supabase
-    .from('user_notification_preferences')
+    .from('user_notification_tokens')
     .select(`
+      fcm_token,
       user_id,
-      timezone_offset_minutes,
-      user_notification_tokens!inner(
-        fcm_token
+      user_notification_preferences!inner(
+        timezone_offset_minutes,
+        daily_verse_enabled
       )
     `)
-    .eq('daily_verse_enabled', true)
-    .gte('timezone_offset_minutes', offsetRangeMin)
-    .lte('timezone_offset_minutes', offsetRangeMax);
+    .eq('user_notification_preferences.daily_verse_enabled', true)
+    .gte('user_notification_preferences.timezone_offset_minutes', offsetRangeMin)
+    .lte('user_notification_preferences.timezone_offset_minutes', offsetRangeMax);
 
   if (usersError) {
     throw new AppError('DATABASE_ERROR', `Failed to fetch users: ${usersError.message}`, 500);
@@ -99,19 +100,20 @@ async function handleDailyVerseNotification(
     );
   }
 
-  // Flatten the joined data structure (user can have multiple tokens)
+  // Transform the joined data structure (each row is already a token with user preferences)
   const usersWithTokens: Array<{ user_id: string; fcm_token: string; timezone_offset_minutes: number }> = [];
-  for (const user of allUsers) {
-    if (user.user_notification_tokens && Array.isArray(user.user_notification_tokens)) {
-      for (const tokenData of user.user_notification_tokens) {
-        if (tokenData.fcm_token) {
-          usersWithTokens.push({
-            user_id: user.user_id,
-            fcm_token: tokenData.fcm_token,
-            timezone_offset_minutes: user.timezone_offset_minutes,
-          });
-        }
-      }
+  for (const token of allUsers) {
+    // PostgREST returns joined data as arrays, get first element
+    const prefs = Array.isArray(token.user_notification_preferences) 
+      ? token.user_notification_preferences[0] 
+      : token.user_notification_preferences;
+    
+    if (token.fcm_token && prefs) {
+      usersWithTokens.push({
+        user_id: token.user_id,
+        fcm_token: token.fcm_token,
+        timezone_offset_minutes: prefs.timezone_offset_minutes,
+      });
     }
   }
 
