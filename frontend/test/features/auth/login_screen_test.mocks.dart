@@ -5,6 +5,9 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'dart:async' as _i12;
 
+import 'package:disciplefy_bible_study/core/i18n/translation_service.dart'
+    as _i17;
+import 'package:disciplefy_bible_study/core/models/app_language.dart' as _i18;
 import 'package:disciplefy_bible_study/features/auth/presentation/bloc/auth_bloc.dart'
     as _i13;
 import 'package:disciplefy_bible_study/features/auth/presentation/bloc/auth_event.dart'
@@ -637,4 +640,60 @@ class MockUser extends _i1.Mock implements _i16.User {
         ),
         returnValue: <String, dynamic>{},
       ) as Map<String, dynamic>);
+}
+
+/// A class which mocks [TranslationService].
+///
+/// See the documentation for Mockito's code generation for more information.
+class MockTranslationService extends _i1.Mock
+    implements _i17.TranslationService {
+  MockTranslationService() {
+    _i1.throwOnMissingStub(this);
+  }
+
+  @override
+  _i12.Stream<_i18.AppLanguage> get languageChanges => (super.noSuchMethod(
+        Invocation.getter(#languageChanges),
+        returnValue: _i12.Stream<_i18.AppLanguage>.empty(),
+      ) as _i12.Stream<_i18.AppLanguage>);
+
+  @override
+  _i18.AppLanguage get currentLanguage => (super.noSuchMethod(
+        Invocation.getter(#currentLanguage),
+        returnValue: _i18.AppLanguage.english,
+      ) as _i18.AppLanguage);
+
+  @override
+  String getTranslation(
+    String? key, [
+    Map<String, dynamic>? args,
+  ]) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #getTranslation,
+          [
+            key,
+            args,
+          ],
+        ),
+        returnValue: _i10.dummyValue<String>(
+          this,
+          Invocation.method(
+            #getTranslation,
+            [
+              key,
+              args,
+            ],
+          ),
+        ),
+      ) as String);
+
+  @override
+  void dispose() => super.noSuchMethod(
+        Invocation.method(
+          #dispose,
+          [],
+        ),
+        returnValueForMissingStub: null,
+      );
 }

@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -10,10 +11,13 @@ import '../../../../core/services/auth_state_provider.dart';
 import '../../../auth/presentation/bloc/auth_bloc.dart';
 import '../../../auth/presentation/bloc/auth_event.dart';
 import '../../../auth/presentation/bloc/auth_state.dart' as auth_states;
+import '../../../feedback/presentation/widgets/feedback_bottom_sheet.dart';
 import '../../domain/entities/theme_mode_entity.dart';
 import '../bloc/settings_bloc.dart';
 import '../bloc/settings_event.dart';
 import '../bloc/settings_state.dart';
+import '../../../../core/extensions/translation_extension.dart';
+import '../../../../core/i18n/translation_keys.dart';
 
 /// Settings Screen with proper AuthBloc integration
 /// Handles both authenticated and anonymous users
@@ -50,7 +54,7 @@ class _SettingsScreenContent extends StatelessWidget {
             ),
           ),
           title: Text(
-            'Settings',
+            context.tr(TranslationKeys.settingsTitle),
             style: GoogleFonts.playfairDisplay(
               fontSize: 20,
               fontWeight: FontWeight.w600,
@@ -121,7 +125,7 @@ class _SettingsScreenContent extends StatelessWidget {
 
               return Center(
                 child: Text(
-                  'Failed to load settings',
+                  context.tr(TranslationKeys.settingsFailedToLoad),
                   style: GoogleFonts.inter(
                     fontSize: 16,
                     color: Theme.of(context).colorScheme.error,
@@ -143,7 +147,7 @@ class _SettingsScreenContent extends StatelessWidget {
             return Column(
               children: [
                 _buildSection(
-                  title: 'Account',
+                  title: context.tr(TranslationKeys.settingsAccount),
                   children: [
                     _buildUserProfileTile(context, authProvider),
                     if (!authProvider.isAnonymous) ...[
@@ -172,6 +176,65 @@ class _SettingsScreenContent extends StatelessWidget {
         },
       );
 
+  /// Build profile avatar with network image support
+  Widget _buildProfileAvatar(
+      BuildContext context, AuthStateProvider authProvider) {
+    final profilePictureUrl = authProvider.profilePictureUrl;
+
+    // Show network image if available and user is not anonymous
+    if (profilePictureUrl != null && !authProvider.isAnonymous) {
+      return CircleAvatar(
+        radius: 25,
+        backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+        child: ClipOval(
+          child: Image.network(
+            profilePictureUrl,
+            width: 50,
+            height: 50,
+            fit: BoxFit.cover,
+            loadingBuilder: (context, child, loadingProgress) {
+              if (loadingProgress == null) return child;
+              return Center(
+                child: SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                      Theme.of(context).colorScheme.primary,
+                    ),
+                  ),
+                ),
+              );
+            },
+            errorBuilder: (context, error, stackTrace) {
+              if (kDebugMode) {
+                print('🖼️ [SETTINGS] Failed to load profile picture: $error');
+              }
+              // Return icon fallback on error
+              return Icon(
+                Icons.person,
+                size: 25,
+                color: Theme.of(context).colorScheme.primary,
+              );
+            },
+          ),
+        ),
+      );
+    }
+
+    // Fallback to icon (anonymous users or no profile picture)
+    return CircleAvatar(
+      radius: 25,
+      backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+      child: Icon(
+        authProvider.isAnonymous ? Icons.person_outline : Icons.person,
+        size: 25,
+        color: Theme.of(context).colorScheme.primary,
+      ),
+    );
+  }
+
   /// User Profile Tile showing user info
   Widget _buildUserProfileTile(
           BuildContext context, AuthStateProvider authProvider) =>
@@ -179,17 +242,8 @@ class _SettingsScreenContent extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
         child: Row(
           children: [
-            // Profile Picture
-            CircleAvatar(
-              radius: 25,
-              backgroundColor:
-                  Theme.of(context).colorScheme.primary.withOpacity(0.1),
-              child: Icon(
-                authProvider.isAnonymous ? Icons.person_outline : Icons.person,
-                size: 25,
-                color: Theme.of(context).colorScheme.primary,
-              ),
-            ),
+            // Profile Picture with cached data support
+            _buildProfileAvatar(context, authProvider),
 
             const SizedBox(width: 16),
 
@@ -199,7 +253,7 @@ class _SettingsScreenContent extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    authProvider.currentUserName,
+                    authProvider.profileBasedDisplayName,
                     style: GoogleFonts.inter(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
@@ -209,8 +263,9 @@ class _SettingsScreenContent extends StatelessWidget {
                   const SizedBox(height: 2),
                   Text(
                     authProvider.isAnonymous
-                        ? 'Sign in to sync your data'
-                        : authProvider.userEmail ?? 'No email',
+                        ? context.tr(TranslationKeys.settingsSignInToSync)
+                        : authProvider.userEmail ??
+                            context.tr(TranslationKeys.settingsNoEmail),
                     style: GoogleFonts.inter(
                       fontSize: 14,
                       color: Theme.of(context)
@@ -228,7 +283,7 @@ class _SettingsScreenContent extends StatelessWidget {
               TextButton(
                 onPressed: () => context.go('/login'),
                 child: Text(
-                  'Sign In',
+                  context.tr(TranslationKeys.settingsSignIn),
                   style: GoogleFonts.inter(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
@@ -244,12 +299,12 @@ class _SettingsScreenContent extends StatelessWidget {
   Widget _buildThemeLanguageSection(
           BuildContext context, SettingsLoaded state) =>
       _buildSection(
-        title: 'Appearance',
+        title: context.tr(TranslationKeys.settingsAppearance),
         children: [
           _buildSettingsTile(
             context: context,
             icon: Icons.palette_outlined,
-            title: 'Theme',
+            title: context.tr(TranslationKeys.settingsTheme),
             subtitle: _getThemeDisplayName(state.settings.themeMode),
             trailing: Icon(
               Icons.arrow_forward_ios,
@@ -265,7 +320,7 @@ class _SettingsScreenContent extends StatelessWidget {
           _buildSettingsTile(
             context: context,
             icon: Icons.language_outlined,
-            title: 'Content Language',
+            title: context.tr(TranslationKeys.settingsContentLanguage),
             subtitle: _getLanguageDisplayName(state.settings.language),
             trailing: Icon(
               Icons.arrow_forward_ios,
@@ -303,15 +358,15 @@ class _SettingsScreenContent extends StatelessWidget {
 
           if (authProvider.isAuthenticated) {
             return _buildSection(
-              title: 'Account Actions',
+              title: context.tr(TranslationKeys.settingsAccountActions),
               children: [
                 _buildSettingsTile(
                   context: context,
                   icon: Icons.logout_outlined,
-                  title: 'Sign Out',
+                  title: context.tr(TranslationKeys.settingsSignOut),
                   subtitle: authProvider.isAnonymous
-                      ? 'Clear guest session'
-                      : 'Sign out of your account',
+                      ? context.tr(TranslationKeys.settingsClearGuestSession)
+                      : context.tr(TranslationKeys.settingsSignOutOfAccount),
                   trailing: Icon(
                     Icons.arrow_forward_ios,
                     size: 16,
@@ -330,13 +385,13 @@ class _SettingsScreenContent extends StatelessWidget {
 
           // For unauthenticated users, show sign in option
           return _buildSection(
-            title: 'Account',
+            title: context.tr(TranslationKeys.settingsAccount),
             children: [
               _buildSettingsTile(
                 context: context,
                 icon: Icons.login_outlined,
-                title: 'Sign In',
-                subtitle: 'Sign in to sync your data across devices',
+                title: context.tr(TranslationKeys.settingsSignIn),
+                subtitle: context.tr(TranslationKeys.settingsSignInToSync),
                 trailing: Icon(
                   Icons.arrow_forward_ios,
                   size: 16,
@@ -354,12 +409,12 @@ class _SettingsScreenContent extends StatelessWidget {
   /// About Section
   Widget _buildAboutSection(BuildContext context, SettingsLoaded state) =>
       _buildSection(
-        title: 'About',
+        title: context.tr(TranslationKeys.settingsAbout),
         children: [
           _buildSettingsTile(
             context: context,
             icon: Icons.info_outline,
-            title: 'App Version',
+            title: context.tr(TranslationKeys.settingsAppVersion),
             subtitle: state.settings.appVersion,
             trailing: null,
             onTap: null,
@@ -368,8 +423,9 @@ class _SettingsScreenContent extends StatelessWidget {
           _buildSettingsTile(
             context: context,
             icon: Icons.favorite_outline,
-            title: 'Support Developer',
-            subtitle: 'Help us improve the app',
+            title: context.tr(TranslationKeys.settingsSupportDeveloper),
+            subtitle:
+                context.tr(TranslationKeys.settingsSupportDeveloperSubtitle),
             trailing: Icon(
               Icons.arrow_forward_ios,
               size: 16,
@@ -382,8 +438,8 @@ class _SettingsScreenContent extends StatelessWidget {
           _buildSettingsTile(
             context: context,
             icon: Icons.privacy_tip_outlined,
-            title: 'Privacy Policy',
-            subtitle: 'View our privacy policy',
+            title: context.tr(TranslationKeys.settingsPrivacyPolicy),
+            subtitle: context.tr(TranslationKeys.settingsPrivacyPolicySubtitle),
             trailing: Icon(
               Icons.arrow_forward_ios,
               size: 16,
@@ -395,8 +451,8 @@ class _SettingsScreenContent extends StatelessWidget {
           _buildSettingsTile(
             context: context,
             icon: Icons.feedback_outlined,
-            title: 'Feedback',
-            subtitle: 'Send us your feedback',
+            title: context.tr(TranslationKeys.settingsFeedback),
+            subtitle: context.tr(TranslationKeys.settingsFeedbackSubtitle),
             trailing: Icon(
               Icons.arrow_forward_ios,
               size: 16,
@@ -548,7 +604,9 @@ class _SettingsScreenContent extends StatelessWidget {
         elevation: 8,
         shadowColor: Colors.black.withOpacity(0.1),
         title: Text(
-          isAnonymous ? 'Clear Session' : 'Sign Out',
+          isAnonymous
+              ? context.tr(TranslationKeys.settingsClearSession)
+              : context.tr(TranslationKeys.settingsSignOutTitle),
           style: GoogleFonts.playfairDisplay(
             fontSize: 20,
             fontWeight: FontWeight.bold,
@@ -557,8 +615,8 @@ class _SettingsScreenContent extends StatelessWidget {
         ),
         content: Text(
           isAnonymous
-              ? 'Are you sure you want to clear your guest session? Your data will be lost.'
-              : 'Are you sure you want to sign out?',
+              ? context.tr(TranslationKeys.settingsClearSessionMessage)
+              : context.tr(TranslationKeys.settingsSignOutMessage),
           style: GoogleFonts.inter(
             fontSize: 16,
             color: Theme.of(context).colorScheme.onSurface,
@@ -578,7 +636,7 @@ class _SettingsScreenContent extends StatelessWidget {
               ),
             ),
             child: Text(
-              'Cancel',
+              context.tr(TranslationKeys.commonCancel),
               style: GoogleFonts.inter(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
@@ -602,7 +660,9 @@ class _SettingsScreenContent extends StatelessWidget {
               ),
             ),
             child: Text(
-              isAnonymous ? 'Clear' : 'Sign Out',
+              isAnonymous
+                  ? context.tr(TranslationKeys.settingsClear)
+                  : context.tr(TranslationKeys.settingsSignOut),
               style: GoogleFonts.inter(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
@@ -805,7 +865,7 @@ class _SettingsScreenContent extends StatelessWidget {
             ),
             const SizedBox(height: 24),
             Text(
-              'Select Theme',
+              context.tr(TranslationKeys.settingsSelectTheme),
               style: GoogleFonts.playfairDisplay(
                 fontSize: 24,
                 fontWeight: FontWeight.bold,
@@ -819,27 +879,27 @@ class _SettingsScreenContent extends StatelessWidget {
               ThemeModeEntity.system(
                   isDarkMode: currentTheme
                       .isDarkMode), // Match current system state for proper selection
-              'System Default',
+              context.tr(TranslationKeys.settingsSystemDefault),
               Icons.brightness_auto,
-              'Follows your device theme',
+              context.tr(TranslationKeys.settingsSystemDefaultSubtitle),
               currentTheme,
             ),
             _buildThemeOption(
               builderContext,
               settingsBloc,
               ThemeModeEntity.light(),
-              'Light Mode',
+              context.tr(TranslationKeys.settingsLightMode),
               Icons.light_mode,
-              'Always use light theme',
+              context.tr(TranslationKeys.settingsLightModeSubtitle),
               currentTheme,
             ),
             _buildThemeOption(
               builderContext,
               settingsBloc,
               ThemeModeEntity.dark(),
-              'Dark Mode',
+              context.tr(TranslationKeys.settingsDarkMode),
               Icons.dark_mode,
-              'Always use dark theme',
+              context.tr(TranslationKeys.settingsDarkModeSubtitle),
               currentTheme,
             ),
             const SizedBox(height: 24),
@@ -881,7 +941,7 @@ class _SettingsScreenContent extends StatelessWidget {
             ),
             const SizedBox(height: 24),
             Text(
-              'Select Language',
+              context.tr(TranslationKeys.settingsSelectLanguage),
               style: GoogleFonts.playfairDisplay(
                 fontSize: 24,
                 fontWeight: FontWeight.bold,
@@ -1103,7 +1163,7 @@ class _SettingsScreenContent extends StatelessWidget {
             ),
             const SizedBox(height: 24),
             Text(
-              'Support Developer',
+              context.tr(TranslationKeys.settingsSupportTitle),
               style: GoogleFonts.playfairDisplay(
                 fontSize: 24,
                 fontWeight: FontWeight.bold,
@@ -1112,7 +1172,7 @@ class _SettingsScreenContent extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             Text(
-              'Thank you for using Disciplefy! Your support helps us continue improving the app. If this app has blessed you or helped you in any way, and you’d like to encourage the work behind it, you can support it here by buying me a coffee.',
+              context.tr(TranslationKeys.settingsSupportMessage),
               style: GoogleFonts.inter(
                 fontSize: 16,
                 color: Theme.of(context).colorScheme.onBackground,
@@ -1135,7 +1195,7 @@ class _SettingsScreenContent extends StatelessWidget {
                       padding: const EdgeInsets.symmetric(vertical: 16),
                     ),
                     child: Text(
-                      'Close',
+                      context.tr(TranslationKeys.settingsClose),
                       style: GoogleFonts.inter(
                         fontWeight: FontWeight.w600,
                         color: Theme.of(context).colorScheme.primary,
@@ -1159,7 +1219,7 @@ class _SettingsScreenContent extends StatelessWidget {
                       padding: const EdgeInsets.symmetric(vertical: 16),
                     ),
                     child: Text(
-                      'Support',
+                      context.tr(TranslationKeys.settingsSupport),
                       style: GoogleFonts.inter(fontWeight: FontWeight.w600),
                     ),
                   ),
@@ -1174,74 +1234,8 @@ class _SettingsScreenContent extends StatelessWidget {
   }
 
   void _showFeedbackBottomSheet(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      builder: (context) => Container(
-        decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surface,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-        ),
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Center(
-              child: Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color:
-                      Theme.of(context).colorScheme.onSurface.withOpacity(0.3),
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-            ),
-            const SizedBox(height: 24),
-            Text(
-              'Send Feedback',
-              style: GoogleFonts.playfairDisplay(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: Theme.of(context).colorScheme.primary,
-              ),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'Help us improve Disciplefy by sharing your thoughts and suggestions.',
-              style: GoogleFonts.inter(
-                fontSize: 16,
-                color: Theme.of(context).colorScheme.onBackground,
-                height: 1.5,
-              ),
-            ),
-            const SizedBox(height: 24),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                onPressed: () {
-                  Navigator.of(context).pop();
-                  _launchFeedback();
-                },
-                icon: const Icon(Icons.email_outlined),
-                label: const Text('Send Email'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Theme.of(context).colorScheme.primary,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-          ],
-        ),
-      ),
-    );
+    // Use the existing feedback bottom sheet from the feedback feature
+    showFeedbackBottomSheet(context);
   }
 
   void _showSnackBar(

@@ -7,9 +7,12 @@ import 'package:get_it/get_it.dart';
 
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widgets/keyboard_aware_scaffold.dart';
+import '../../../../core/extensions/translation_extension.dart';
+import '../../../../core/i18n/translation_keys.dart';
 import '../../../../core/utils/device_keyboard_handler.dart';
 import '../../../../core/services/language_preference_service.dart';
 import '../../../../core/models/app_language.dart';
+import '../../../../core/error/failures.dart';
 import '../../domain/mappers/app_language_mapper.dart';
 import '../../domain/usecases/get_default_study_language.dart';
 import '../../../../core/navigation/study_navigator.dart';
@@ -18,6 +21,10 @@ import '../bloc/study_bloc.dart';
 import '../bloc/study_event.dart';
 import '../bloc/study_state.dart';
 import '../widgets/recent_guides_section.dart';
+import '../../../tokens/presentation/bloc/token_bloc.dart';
+import '../../../tokens/presentation/bloc/token_event.dart';
+import '../../../tokens/presentation/bloc/token_state.dart';
+import '../../../tokens/domain/entities/token_status.dart';
 
 /// Generate Study Screen allowing users to input scripture reference or topic.
 ///
@@ -30,7 +37,8 @@ class GenerateStudyScreen extends StatefulWidget {
   State<GenerateStudyScreen> createState() => _GenerateStudyScreenState();
 }
 
-class _GenerateStudyScreenState extends State<GenerateStudyScreen> {
+class _GenerateStudyScreenState extends State<GenerateStudyScreen>
+    with WidgetsBindingObserver {
   final TextEditingController _inputController = TextEditingController();
   final FocusNode _inputFocusNode = FocusNode();
 
@@ -39,6 +47,15 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen> {
   bool _isInputValid = false;
   bool _isGeneratingStudyGuide = false;
   String? _validationError;
+
+  // Token status for consumption calculation
+  TokenStatus? _currentTokenStatus;
+
+  // Track whether user has navigated away to prevent excessive token refreshes
+  bool _hasNavigatedAway = false;
+
+  // Track if we've already triggered a token refresh to prevent loops
+  bool _isRefreshingTokens = false;
 
   // Language preference service for database integration
   late final LanguagePreferenceService _languagePreferenceService;
@@ -79,6 +96,25 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen> {
     'Redemption',
   ];
 
+  // Question suggestions
+  final List<String> _questionSuggestions = [
+    'What does the Bible say about anxiety?',
+    'How can I strengthen my faith?',
+    'What is the purpose of prayer?',
+    'Why does God allow suffering?',
+    'How do I know God\'s will for my life?',
+    'What does it mean to have faith?',
+    'How can I overcome fear?',
+    'What is God\'s love like?',
+    'How should I handle difficult relationships?',
+    'What happens after we die?',
+    'How can I find peace in troubled times?',
+    'What does it mean to be saved?',
+    'How do I pray effectively?',
+    'What is the meaning of grace?',
+    'How can I serve God better?',
+  ];
+
   @override
   void initState() {
     super.initState();
@@ -86,6 +122,16 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen> {
     _navigator = GetIt.instance<StudyNavigator>();
     _inputController.addListener(_validateInput);
     _loadDefaultLanguage();
+
+    // Register app lifecycle observer to detect when returning from study guide
+    WidgetsBinding.instance.addObserver(this);
+
+    // Load initial token status
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        context.read<TokenBloc>().add(const GetTokenStatus());
+      }
+    });
   }
 
   /// Load the default language from user preferences
@@ -117,7 +163,54 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen> {
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (kDebugMode) {
+      print(
+          '🔄 [DEBUG] didChangeDependencies called, _hasNavigatedAway: $_hasNavigatedAway, mounted: $mounted');
+    }
+    // Always refresh tokens when dependencies change and we don't have current status
+    // This handles the case where user returns from navigation and token state is stale
+    if (mounted &&
+        (_hasNavigatedAway || _currentTokenStatus == null) &&
+        !_isRefreshingTokens) {
+      _hasNavigatedAway = false; // Reset the flag
+      _isRefreshingTokens = true; // Prevent multiple simultaneous refreshes
+      if (kDebugMode) {
+        print(
+            '✅ [DEBUG] Triggering token refresh from didChangeDependencies (hasNavigatedAway OR null status)');
+      }
+      // Use a short delay to ensure the context is ready
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          if (kDebugMode) {
+            print(
+                '🔄 [DEBUG] Executing GetTokenStatus from didChangeDependencies');
+          }
+          context.read<TokenBloc>().add(const GetTokenStatus());
+        }
+      });
+    } else {
+      if (kDebugMode) {
+        print(
+            '❌ [DEBUG] Not triggering token refresh - conditions not met (isRefreshing: $_isRefreshingTokens)');
+      }
+    }
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    // Refresh token status when app comes back to foreground
+    if (state == AppLifecycleState.resumed && mounted) {
+      context.read<TokenBloc>().add(const GetTokenStatus());
+    }
+  }
+
+  @override
   void dispose() {
+    // Remove app lifecycle observer
+    WidgetsBinding.instance.removeObserver(this);
     _inputController.dispose();
     _inputFocusNode.dispose();
     super.dispose();
@@ -133,11 +226,18 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen> {
         _isInputValid = _validateScriptureReference(text);
         _validationError = _isInputValid
             ? null
-            : 'Please enter a valid scripture reference (e.g., John 3:16)';
+            : context.tr(TranslationKeys.generateStudyScriptureError);
+      } else if (_selectedMode == StudyInputMode.question) {
+        _isInputValid = text.length >= 10;
+        _validationError = _isInputValid
+            ? null
+            : context.tr(TranslationKeys.generateStudyQuestionError);
       } else {
+        // Topic mode
         _isInputValid = text.length >= 2;
-        _validationError =
-            _isInputValid ? null : 'Please enter at least 2 characters';
+        _validationError = _isInputValid
+            ? null
+            : context.tr(TranslationKeys.generateStudyTopicError);
       }
     });
   }
@@ -149,10 +249,34 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen> {
     return scripturePattern.hasMatch(text);
   }
 
+  /// Calculate tokens required for study generation based on language
+  int _getTokenCost() {
+    switch (_selectedLanguage) {
+      case StudyLanguage.english:
+        return 10; // English: 10 tokens
+      case StudyLanguage.hindi:
+      case StudyLanguage.malayalam:
+        return 20; // Hindi/Malayalam: 20 tokens
+    }
+  }
+
+  /// Navigate to token management page
+  void _navigateToTokenManagement() {
+    // Set flag to indicate navigation away (will trigger token refresh on return)
+    _hasNavigatedAway = true;
+    if (kDebugMode) {
+      print(
+          '🚀 [DEBUG] Navigating to token management, _hasNavigatedAway set to true');
+    }
+    context.go('/token-management');
+  }
+
   List<String> _getFilteredSuggestions() {
     final suggestions = _selectedMode == StudyInputMode.scripture
         ? _scriptureeSuggestions
-        : _topicSuggestions;
+        : _selectedMode == StudyInputMode.topic
+            ? _topicSuggestions
+            : _questionSuggestions;
 
     final query = _inputController.text.trim().toLowerCase();
     if (query.isEmpty) return suggestions.take(5).toList();
@@ -170,6 +294,25 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen> {
     final keyboardHeight = MediaQuery.of(context).viewInsets.bottom;
     final isKeyboardVisible = keyboardHeight > 0;
 
+    // Check if we need to refresh tokens on build (fallback for didChangeDependencies)
+    if ((_hasNavigatedAway || _currentTokenStatus == null) &&
+        !_isRefreshingTokens) {
+      _hasNavigatedAway = false; // Reset the navigation flag
+      _isRefreshingTokens = true; // Prevent multiple simultaneous refreshes
+      if (kDebugMode) {
+        print(
+            '✅ [DEBUG] Triggering token refresh from build method (hasNavigatedAway OR null status)');
+      }
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          if (kDebugMode) {
+            print('🔄 [DEBUG] Executing GetTokenStatus from build method');
+          }
+          context.read<TokenBloc>().add(const GetTokenStatus());
+        }
+      });
+    }
+
     // 🔧 Phase 2: Enhanced device-specific keyboard handling
     final useAdvancedKeyboardHandling =
         DeviceKeyboardHandler.needsCustomKeyboardHandling;
@@ -184,7 +327,7 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen> {
       elevation: 0,
       automaticallyImplyLeading: false,
       title: Text(
-        'Generate Study Guide',
+        context.tr(TranslationKeys.generateStudyTitle),
         style: GoogleFonts.playfairDisplay(
           fontSize: 20,
           fontWeight: FontWeight.w600,
@@ -193,52 +336,169 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen> {
       ),
       centerTitle: true,
       actions: [
-        IconButton(
-          onPressed: () => context.push('/saved'),
-          icon: Icon(
-            Icons.bookmark_outline,
-            color: Theme.of(context).colorScheme.primary,
-          ),
-          tooltip: 'View Saved Guides',
+        // Compact token balance display
+        BlocBuilder<TokenBloc, TokenState>(
+          builder: (context, tokenState) {
+            if (tokenState is TokenLoaded) {
+              return GestureDetector(
+                onTap: _navigateToTokenManagement,
+                child: Container(
+                  margin: const EdgeInsets.only(right: 18, top: 8, bottom: 8),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color:
+                        Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: Theme.of(context)
+                          .colorScheme
+                          .primary
+                          .withOpacity(0.3),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.token,
+                        size: 16,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        '${tokenState.tokenStatus.totalTokens}',
+                        style: GoogleFonts.inter(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            } else if (tokenState is TokenError &&
+                tokenState.previousTokenStatus != null) {
+              return GestureDetector(
+                onTap: _navigateToTokenManagement,
+                child: Container(
+                  margin: const EdgeInsets.only(right: 18, top: 8, bottom: 8),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: Colors.orange.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: Colors.orange.withOpacity(0.3),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.warning_amber_rounded,
+                        size: 16,
+                        color: Colors.orange[700],
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        '${tokenState.previousTokenStatus!.totalTokens}',
+                        style: GoogleFonts.inter(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.orange[700],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }
+            return const SizedBox.shrink();
+          },
         ),
       ],
     );
 
-    final body = BlocListener<StudyBloc, StudyState>(
-      listener: (context, state) {
-        if (state is StudyGenerationSuccess) {
-          // Stop loading and navigate to study guide screen with generated content
-          setState(() {
-            _isGeneratingStudyGuide = false;
-          });
-          _navigator.navigateToStudyGuide(
-            context,
-            studyGuide: state.studyGuide,
-            source: StudyNavigationSource.generate,
-          );
-        } else if (state is StudyGenerationFailure) {
-          // Stop loading and show error message with retry option
-          setState(() {
-            _isGeneratingStudyGuide = false;
-          });
+    final body = MultiBlocListener(
+      listeners: [
+        BlocListener<StudyBloc, StudyState>(
+          listener: (context, state) {
+            if (state is StudyGenerationSuccess) {
+              // Stop loading and navigate to study guide screen with generated content
+              setState(() {
+                _isGeneratingStudyGuide = false;
+              });
 
-          final displayMessage = kDebugMode
-              ? state.failure.message
-              : 'Something went wrong. Please try again.';
+              // Refresh token status after successful generation to reflect backend consumption
+              context.read<TokenBloc>().add(const GetTokenStatus());
 
-          _showErrorDialog(context, displayMessage, state.isRetryable);
-        } else if (state is StudyGenerationInProgress) {
-          // Update loading state based on BLoC state
-          setState(() {
-            _isGeneratingStudyGuide = true;
-          });
-        } else if (state is StudyInitial) {
-          // Clear loading state when returning to initial state
-          setState(() {
-            _isGeneratingStudyGuide = false;
-          });
-        }
-      },
+              // Set flag to indicate navigation away (will trigger token refresh on return)
+              _hasNavigatedAway = true;
+
+              _navigator.navigateToStudyGuide(
+                context,
+                studyGuide: state.studyGuide,
+                source: StudyNavigationSource.generate,
+              );
+            } else if (state is StudyGenerationFailure) {
+              // Stop loading and show error message with retry option
+              setState(() {
+                _isGeneratingStudyGuide = false;
+              });
+
+              // Refresh token status after failure to sync with backend consumption
+              context.read<TokenBloc>().add(const GetTokenStatus());
+
+              final displayMessage = kDebugMode
+                  ? state.failure.message
+                  : 'Something went wrong. Please try again.';
+
+              _showErrorDialog(
+                  context, displayMessage, state.isRetryable, state.failure);
+            } else if (state is StudyGenerationInProgress) {
+              // Update loading state based on BLoC state
+              setState(() {
+                _isGeneratingStudyGuide = true;
+              });
+            } else if (state is StudyInitial) {
+              // Clear loading state when returning to initial state
+              setState(() {
+                _isGeneratingStudyGuide = false;
+              });
+            }
+          },
+        ),
+        BlocListener<TokenBloc, TokenState>(
+          listener: (context, state) {
+            if (kDebugMode) {
+              print('🎯 [DEBUG] TokenBloc state changed: ${state.runtimeType}');
+            }
+            if (state is TokenLoaded) {
+              if (kDebugMode) {
+                print(
+                    '💰 [DEBUG] Token loaded - totalTokens: ${state.tokenStatus.totalTokens}, isPremium: ${state.tokenStatus.isPremium}');
+              }
+              setState(() {
+                _currentTokenStatus = state.tokenStatus;
+                _isRefreshingTokens =
+                    false; // Reset refresh flag when tokens load
+              });
+            } else if (state is TokenError &&
+                state.previousTokenStatus != null) {
+              if (kDebugMode) {
+                print(
+                    '❌ [DEBUG] Token error with previous status - totalTokens: ${state.previousTokenStatus!.totalTokens}');
+              }
+              setState(() {
+                _currentTokenStatus = state.previousTokenStatus;
+                _isRefreshingTokens = false; // Reset refresh flag even on error
+              });
+            }
+          },
+        ),
+      ],
       child: SafeArea(
         child: Column(
           children: [
@@ -253,6 +513,7 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    // Top spacing
                     SizedBox(height: isLargeScreen ? 32 : 24),
 
                     // Mode Toggle
@@ -282,6 +543,42 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen> {
 
                     // 🔧 FIX: Only show recent guides when keyboard is hidden
                     if (!isKeyboardVisible) ...[
+                      const SizedBox(height: 32),
+
+                      // View Saved Guides button
+                      Container(
+                        width: double.infinity,
+                        margin: const EdgeInsets.only(bottom: 24),
+                        child: OutlinedButton.icon(
+                          onPressed: () => context.push('/saved'),
+                          icon: Icon(
+                            Icons.bookmark_outline,
+                            size: 18,
+                          ),
+                          label: Text(
+                            context.tr(TranslationKeys.generateStudyViewSaved),
+                            style: GoogleFonts.inter(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor:
+                                Theme.of(context).colorScheme.primary,
+                            side: BorderSide(
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .primary
+                                  .withOpacity(0.3),
+                            ),
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                        ),
+                      ),
+
                       const RecentGuidesSection(),
                       SizedBox(height: isLargeScreen ? 40 : 24),
                     ],
@@ -314,15 +611,6 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen> {
   Widget _buildModeToggle() => Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Text(
-          //   'What would you like to study?',
-          //   style: GoogleFonts.inter(
-          //     fontSize: 18,
-          //     fontWeight: FontWeight.w600,
-          //     color: Theme.of(context).colorScheme.onBackground,
-          //   ),
-          // ),
-          // const SizedBox(height: 16),
           Container(
             decoration: BoxDecoration(
               color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
@@ -332,16 +620,25 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen> {
               children: [
                 Expanded(
                   child: _ModeToggleButton(
-                    label: 'Scripture Reference',
+                    label:
+                        context.tr(TranslationKeys.generateStudyScriptureMode),
                     isSelected: _selectedMode == StudyInputMode.scripture,
                     onTap: () => _switchMode(StudyInputMode.scripture),
                   ),
                 ),
                 Expanded(
                   child: _ModeToggleButton(
-                    label: 'Topic',
+                    label: context.tr(TranslationKeys.generateStudyTopicMode),
                     isSelected: _selectedMode == StudyInputMode.topic,
                     onTap: () => _switchMode(StudyInputMode.topic),
+                  ),
+                ),
+                Expanded(
+                  child: _ModeToggleButton(
+                    label:
+                        context.tr(TranslationKeys.generateStudyQuestionMode),
+                    isSelected: _selectedMode == StudyInputMode.question,
+                    onTap: () => _switchMode(StudyInputMode.question),
                   ),
                 ),
               ],
@@ -354,7 +651,7 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Language',
+            context.tr(TranslationKeys.generateStudyLanguage),
             style: GoogleFonts.inter(
               fontSize: 16,
               fontWeight: FontWeight.w600,
@@ -371,7 +668,7 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen> {
               children: [
                 Expanded(
                   child: _LanguageToggleButton(
-                    label: 'English',
+                    label: context.tr(TranslationKeys.generateStudyEnglish),
                     isSelected: _selectedLanguage == StudyLanguage.english,
                     onTap: () async =>
                         await _switchLanguage(StudyLanguage.english),
@@ -379,7 +676,7 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen> {
                 ),
                 Expanded(
                   child: _LanguageToggleButton(
-                    label: 'हिन्दी',
+                    label: context.tr(TranslationKeys.generateStudyHindi),
                     isSelected: _selectedLanguage == StudyLanguage.hindi,
                     onTap: () async =>
                         await _switchLanguage(StudyLanguage.hindi),
@@ -387,7 +684,7 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen> {
                 ),
                 Expanded(
                   child: _LanguageToggleButton(
-                    label: 'മലയാളം',
+                    label: context.tr(TranslationKeys.generateStudyMalayalam),
                     isSelected: _selectedLanguage == StudyLanguage.malayalam,
                     onTap: () async =>
                         await _switchLanguage(StudyLanguage.malayalam),
@@ -399,13 +696,19 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen> {
         ],
       );
 
+  Color _getTokenCostColor() {
+    return Colors.orange[600]!;
+  }
+
   Widget _buildInputSection() => Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             _selectedMode == StudyInputMode.scripture
-                ? 'Enter Scripture Reference'
-                : 'Enter Topic',
+                ? context.tr(TranslationKeys.generateStudyEnterScripture)
+                : _selectedMode == StudyInputMode.topic
+                    ? context.tr(TranslationKeys.generateStudyEnterTopic)
+                    : context.tr(TranslationKeys.generateStudyAskQuestion),
             style: GoogleFonts.inter(
               fontSize: 16,
               fontWeight: FontWeight.w600,
@@ -416,14 +719,21 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen> {
           TextField(
             controller: _inputController,
             focusNode: _inputFocusNode,
+            maxLines: _selectedMode == StudyInputMode.question ? 4 : 1,
+            minLines: _selectedMode == StudyInputMode.question ? 3 : 1,
+            textInputAction: _selectedMode == StudyInputMode.question
+                ? TextInputAction.newline
+                : TextInputAction.done,
             style: GoogleFonts.inter(
               fontSize: 16,
               color: Theme.of(context).colorScheme.onBackground,
             ),
             decoration: InputDecoration(
               hintText: _selectedMode == StudyInputMode.scripture
-                  ? 'e.g., John 3:16, Matthew 5:1-12'
-                  : 'e.g., Forgiveness, Love, Faith',
+                  ? context.tr(TranslationKeys.generateStudyScriptureHint)
+                  : _selectedMode == StudyInputMode.topic
+                      ? context.tr(TranslationKeys.generateStudyTopicHint)
+                      : context.tr(TranslationKeys.generateStudyQuestionHint),
               hintStyle: GoogleFonts.inter(
                 color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
               ),
@@ -455,9 +765,9 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen> {
                 ),
               ),
               errorText: _validationError,
-              contentPadding: const EdgeInsets.symmetric(
+              contentPadding: EdgeInsets.symmetric(
                 horizontal: 16,
-                vertical: 16,
+                vertical: _selectedMode == StudyInputMode.question ? 20 : 16,
               ),
               suffixIcon: _inputController.text.isNotEmpty
                   ? IconButton(
@@ -488,7 +798,7 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Suggestions',
+          context.tr(TranslationKeys.generateStudySuggestions),
           style: GoogleFonts.inter(
             fontSize: 14,
             fontWeight: FontWeight.w600,
@@ -517,6 +827,8 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen> {
     final isLoading =
         state is StudyGenerationInProgress || _isGeneratingStudyGuide;
 
+    final tokenCost = _getTokenCost();
+
     return Column(
       children: [
         if (isLoading) ...[
@@ -544,7 +856,7 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen> {
                     const SizedBox(width: 16),
                     Expanded(
                       child: Text(
-                        'Generating your study guide...',
+                        context.tr(TranslationKeys.generateStudyGenerating),
                         style: GoogleFonts.inter(
                           fontSize: 14,
                           fontWeight: FontWeight.w500,
@@ -556,7 +868,8 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen> {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'This may take a few moments.',
+                  context.tr(TranslationKeys.generateStudyConsumingTokens,
+                      {'tokens': tokenCost.toString()}),
                   style: GoogleFonts.inter(
                     fontSize: 12,
                     color: Theme.of(context)
@@ -573,9 +886,7 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen> {
         SizedBox(
           width: double.infinity,
           child: ElevatedButton(
-            onPressed: _isInputValid && !isLoading && !_isGeneratingStudyGuide
-                ? _generateStudyGuide
-                : null,
+            onPressed: _isInputValid && !isLoading ? _generateStudyGuide : null,
             style: ElevatedButton.styleFrom(
               backgroundColor: Theme.of(context).colorScheme.primary,
               foregroundColor: Colors.white,
@@ -588,12 +899,44 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen> {
               ),
               elevation: 0,
             ),
-            child: Text(
-              isLoading ? 'Generating...' : 'Generate Study Guide',
-              style: GoogleFonts.inter(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-              ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    isLoading
+                        ? context
+                            .tr(TranslationKeys.generateStudyButtonGenerating)
+                        : context
+                            .tr(TranslationKeys.generateStudyButtonGenerate),
+                    style: GoogleFonts.inter(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+                if (!isLoading) ...[
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.token,
+                        size: 18,
+                        color: _getTokenCostColor(),
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        '$tokenCost',
+                        style: GoogleFonts.inter(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: _getTokenCostColor(),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ],
             ),
           ),
         ),
@@ -613,27 +956,20 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen> {
 
   Future<void> _switchLanguage(StudyLanguage language) async {
     if (kDebugMode) {
-      print('🔄 [GENERATE STUDY] User switching language to: ${language.code}');
+      print(
+          '🔄 [GENERATE STUDY] User switching content language to: ${language.code}');
     }
 
+    // Update local state only - this affects content generation language, not UI language
     setState(() {
       _selectedLanguage = language;
     });
 
-    // Save language preference to database via LanguagePreferenceService
-    try {
-      final appLanguage = language.toAppLanguage();
-      await _languagePreferenceService.saveLanguagePreference(appLanguage);
-
-      if (kDebugMode) {
-        print('✅ [GENERATE STUDY] Language preference saved: ${language.code}');
-      }
-    } catch (e) {
-      if (kDebugMode) {
-        print('❌ [GENERATE STUDY] Failed to save language preference: $e');
-      }
-      // Continue silently - the local state is still updated
-      // and the preference will be saved to database when possible
+    if (kDebugMode) {
+      print(
+          '✅ [GENERATE STUDY] Content generation language updated: ${language.code}');
+      print(
+          'ℹ️  [GENERATE STUDY] Note: This does not change the app UI language');
     }
   }
 
@@ -643,24 +979,39 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen> {
     // Prevent multiple clicks during generation
     if (_isGeneratingStudyGuide) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-              'Study guide generation already in progress. Please wait...'),
-          duration: Duration(seconds: 2),
+        SnackBar(
+          content: Text(context.tr(TranslationKeys.generateStudyInProgress)),
+          duration: const Duration(seconds: 2),
         ),
       );
       return;
     }
 
     final input = _inputController.text.trim();
-    final inputType =
-        _selectedMode == StudyInputMode.scripture ? 'scripture' : 'topic';
+    final inputType = _selectedMode == StudyInputMode.scripture
+        ? 'scripture'
+        : _selectedMode == StudyInputMode.topic
+            ? 'topic'
+            : 'question';
     final languageCode = _selectedLanguage.code;
 
     // Set loading state immediately
     setState(() {
       _isGeneratingStudyGuide = true;
     });
+
+    // Consume tokens immediately for UI feedback
+    if (_currentTokenStatus != null && !_currentTokenStatus!.isPremium) {
+      context.read<TokenBloc>().add(
+            ConsumeTokens(
+              tokensConsumed: _getTokenCost(),
+              operationType: 'study_generation',
+            ),
+          );
+    } else if (_currentTokenStatus == null) {
+      // If token status is null, trigger a refresh to get current status
+      context.read<TokenBloc>().add(const GetTokenStatus());
+    }
 
     // Trigger BLoC event to generate study guide
     context.read<StudyBloc>().add(
@@ -673,31 +1024,32 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen> {
   }
 
   void _showErrorDialog(
-      BuildContext context, String message, bool isRetryable) {
+      BuildContext context, String message, bool isRetryable, Failure failure) {
+    final theme = Theme.of(context);
     showDialog(
       context: context,
       builder: (BuildContext context) => AlertDialog(
-        backgroundColor: const Color(0xFFFAFAFA), // Light background
+        backgroundColor: theme.dialogBackgroundColor,
         surfaceTintColor: Colors.transparent,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
         ),
         elevation: 8,
-        shadowColor: Colors.black.withOpacity(0.1),
+        shadowColor: theme.shadowColor.withOpacity(0.1),
         title: Row(
           children: [
-            const Icon(
+            Icon(
               Icons.error_outline,
-              color: Color(0xFFDC2626), // Red error color
+              color: theme.colorScheme.error,
               size: 24,
             ),
             const SizedBox(width: 12),
             Text(
-              'Generation Failed',
+              context.tr(TranslationKeys.generateStudyGenerationFailed),
               style: GoogleFonts.playfairDisplay(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
-                color: const Color(0xFF333333), // Primary gray text
+                color: theme.colorScheme.onSurface,
               ),
             ),
           ],
@@ -710,7 +1062,7 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen> {
               message,
               style: GoogleFonts.inter(
                 fontSize: 16,
-                color: const Color(0xFF333333), // Primary gray text
+                color: theme.colorScheme.onSurface,
                 height: 1.5,
               ),
             ),
@@ -718,14 +1070,15 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen> {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: const Color(0xFFF5F5F5), // Light gray background
+                color: theme.colorScheme.surfaceContainerHighest,
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Text(
-                'We couldn\'t generate a study guide right now. Please try again later.',
+                context
+                    .tr(TranslationKeys.generateStudyGenerationFailedMessage),
                 style: GoogleFonts.inter(
                   fontSize: 14,
-                  color: const Color(0xFF666666), // Secondary gray text
+                  color: theme.colorScheme.onSurfaceVariant,
                   fontStyle: FontStyle.italic,
                 ),
               ),
@@ -737,7 +1090,7 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen> {
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
             style: TextButton.styleFrom(
-              foregroundColor: const Color(0xFF888888), // Light gray for cancel
+              foregroundColor: theme.colorScheme.onSurfaceVariant,
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(8),
@@ -748,11 +1101,37 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen> {
               style: GoogleFonts.inter(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
-                color: const Color(0xFF888888), // Light gray text
+                color: theme.colorScheme.onSurfaceVariant,
               ),
             ),
           ),
-          if (isRetryable) ...[
+          // Show different buttons based on failure type
+          if (failure is RateLimitFailure) ...[
+            const SizedBox(width: 12),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                _navigateToTokenManagement();
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: theme.colorScheme.primary,
+                foregroundColor: theme.colorScheme.onPrimary,
+                elevation: 0,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              child: Text(
+                context.tr(TranslationKeys.generateStudyManageTokens),
+                style: GoogleFonts.inter(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ] else if (isRetryable) ...[
             const SizedBox(width: 12),
             ElevatedButton(
               onPressed: () {
@@ -760,8 +1139,8 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen> {
                 _generateStudyGuide();
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF7A56DB), // Primary purple
-                foregroundColor: Colors.white,
+                backgroundColor: theme.colorScheme.primary,
+                foregroundColor: theme.colorScheme.onPrimary,
                 elevation: 0,
                 padding:
                     const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
@@ -900,6 +1279,7 @@ class _SuggestionChip extends StatelessWidget {
 enum StudyInputMode {
   scripture,
   topic,
+  question,
 }
 
 /// Enum for study language selection.

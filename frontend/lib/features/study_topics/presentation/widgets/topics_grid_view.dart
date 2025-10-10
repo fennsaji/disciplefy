@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -47,27 +48,46 @@ class TopicsGridView extends StatelessWidget {
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        // Calculate optimal card width (accounting for spacing)
+        // Calculate spacing between cards
         const double spacing = 16.0;
-        final double cardWidth = (constraints.maxWidth - spacing) / 2;
 
         return Column(
           children: [
-            // Topics grid
-            Wrap(
-              spacing: spacing,
-              runSpacing: spacing,
-              children: topics
-                  .map((topic) => SizedBox(
-                        width: cardWidth,
-                        child: RecommendedGuideTopicCard(
-                          topic: topic,
-                          onTap: () => onTopicTap(topic),
-                          isDisabled: isGeneratingStudyGuide,
+            // Topics grid using rows for uniform heights
+            ...List.generate((topics.length / 2).ceil(), (rowIndex) {
+              final startIndex = rowIndex * 2;
+              final endIndex = math.min(startIndex + 2, topics.length);
+              final rowTopics = topics.sublist(startIndex, endIndex);
+
+              return Padding(
+                padding: EdgeInsets.only(
+                    bottom: rowIndex < (topics.length / 2).ceil() - 1
+                        ? spacing
+                        : 0),
+                child: IntrinsicHeight(
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      for (int i = 0; i < rowTopics.length; i++) ...[
+                        Expanded(
+                          child: RecommendedGuideTopicCard(
+                            topic: rowTopics[i],
+                            onTap: () => onTopicTap(rowTopics[i]),
+                            isDisabled: isGeneratingStudyGuide,
+                          ),
                         ),
-                      ))
-                  .toList(),
-            ),
+                        if (i < rowTopics.length - 1) SizedBox(width: spacing),
+                      ],
+                      // Add spacer if only one card in the row
+                      if (rowTopics.length == 1)
+                        SizedBox(
+                            width:
+                                spacing + (constraints.maxWidth - spacing) / 2),
+                    ],
+                  ),
+                ),
+              );
+            }),
 
             // Load more section
             if (hasMore || isLoading) ...[
@@ -144,16 +164,32 @@ class TopicsGridLoadingSkeleton extends StatelessWidget {
         const double spacing = 16.0;
         final double cardWidth = (constraints.maxWidth - spacing) / 2;
 
-        return Wrap(
-          spacing: spacing,
-          runSpacing: spacing,
-          children: List.generate(
-            itemCount,
-            (index) => SizedBox(
-              width: cardWidth,
-              child: _buildLoadingTopicCard(context, cardWidth),
-            ),
-          ),
+        return Column(
+          children: [
+            ...List.generate((itemCount / 2).ceil(), (rowIndex) {
+              final startIndex = rowIndex * 2;
+              final endIndex = (startIndex + 2).clamp(0, itemCount).toInt();
+              final itemsInRow = endIndex - startIndex;
+
+              return Padding(
+                padding: EdgeInsets.only(
+                    bottom:
+                        rowIndex < (itemCount / 2).ceil() - 1 ? spacing : 0),
+                child: Row(
+                  children: [
+                    for (int i = 0; i < itemsInRow; i++) ...[
+                      Expanded(
+                        child: _buildLoadingTopicCard(context, cardWidth),
+                      ),
+                      if (i < itemsInRow - 1) SizedBox(width: spacing),
+                    ],
+                    // Add spacer if only one card in the row
+                    if (itemsInRow == 1) SizedBox(width: spacing + cardWidth),
+                  ],
+                ),
+              );
+            }),
+          ],
         );
       },
     );
@@ -161,7 +197,7 @@ class TopicsGridLoadingSkeleton extends StatelessWidget {
 
   Widget _buildLoadingTopicCard(BuildContext context, double cardWidth) {
     return Container(
-      height: 180,
+      constraints: const BoxConstraints(minHeight: 160),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,

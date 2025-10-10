@@ -9,6 +9,8 @@ import '../../../../core/utils/category_utils.dart';
 import '../../../../core/di/injection_container.dart';
 import '../../../../core/services/auth_state_provider.dart';
 import '../../../../core/widgets/auth_protected_screen.dart';
+import '../../../../core/extensions/translation_extension.dart';
+import '../../../../core/i18n/translation_keys.dart';
 import '../../domain/entities/recommended_guide_topic.dart';
 import '../../../daily_verse/presentation/bloc/daily_verse_bloc.dart';
 import '../../../daily_verse/presentation/bloc/daily_verse_event.dart';
@@ -71,10 +73,9 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
     // Prevent multiple clicks during generation
     if (_isGeneratingStudyGuide) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-              'Study guide generation already in progress. Please wait...'),
-          duration: Duration(seconds: 2),
+        SnackBar(
+          content: Text(context.tr(TranslationKeys.homeGenerationInProgress)),
+          duration: const Duration(seconds: 2),
         ),
       );
       return;
@@ -107,8 +108,8 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
     } else {
       // Show error if verse is not loaded
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Daily verse is not yet loaded. Please try again.'),
+        SnackBar(
+          content: Text(context.tr(TranslationKeys.homeVerseNotLoaded)),
           backgroundColor: Colors.red,
         ),
       );
@@ -140,14 +141,14 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
             _isGeneratingStudyGuide = false;
           });
           ScaffoldMessenger.of(context).hideCurrentSnackBar();
-          context.go('/study-guide?source=home', extra: state.studyGuide);
+          context.push('/study-guide?source=home', extra: state.studyGuide);
         } else if (state is HomeStudyGuideGeneratedCombined) {
           // Stop loading and navigate to study guide screen - this preserves topics in state
           setState(() {
             _isGeneratingStudyGuide = false;
           });
           ScaffoldMessenger.of(context).hideCurrentSnackBar();
-          context.go('/study-guide?source=home', extra: state.studyGuide);
+          context.push('/study-guide?source=home', extra: state.studyGuide);
         } else if (state is HomeCombinedState) {
           // Update loading state based on study guide generation status
           setState(() {
@@ -169,8 +170,8 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
                       ),
                     ),
                     const SizedBox(width: 12),
-                    Text(
-                        'Generating study guide for "${state.generationInput}"...'),
+                    Text(context.tr(TranslationKeys.homeGeneratingStudyGuide,
+                        {'input': state.generationInput})),
                   ],
                 ),
                 duration: const Duration(minutes: 1),
@@ -181,11 +182,11 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
             ScaffoldMessenger.of(context).hideCurrentSnackBar();
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: Text(
-                    'Failed to generate study guide: ${state.generationError}'),
+                content: Text(context.tr(TranslationKeys.homeFailedToGenerate,
+                    {'error': state.generationError})),
                 backgroundColor: Theme.of(context).colorScheme.error,
                 action: SnackBarAction(
-                  label: 'Dismiss',
+                  label: context.tr(TranslationKeys.homeDismiss),
                   onPressed: () =>
                       ScaffoldMessenger.of(context).hideCurrentSnackBar(),
                 ),
@@ -295,6 +296,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
 
           const SizedBox(width: 12),
 
+          // TODO: Use same log as fav icon and Same font for app title
           // App Title
           Text(
             'Disciplefy',
@@ -310,7 +312,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
           // Settings Icon
           IconButton(
             onPressed: () {
-              context.go('/settings');
+              context.push('/settings');
             },
             icon: const Icon(
               Icons.settings_outlined,
@@ -325,7 +327,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Welcome back, $userName',
+            context.tr(TranslationKeys.homeWelcomeBack, {'name': userName}),
             style: GoogleFonts.inter(
               fontSize: 28,
               fontWeight: FontWeight.w600,
@@ -335,7 +337,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
           ),
           const SizedBox(height: 8),
           Text(
-            'Continue your spiritual journey with guided study',
+            context.tr(TranslationKeys.homeContinueJourney),
             style: GoogleFonts.inter(
               fontSize: 16,
               color:
@@ -357,7 +359,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
             size: 24,
           ),
           label: Text(
-            'Generate Study Guide',
+            context.tr(TranslationKeys.homeGenerateStudyGuide),
             style: GoogleFonts.inter(
               fontSize: 18,
               fontWeight: FontWeight.w600,
@@ -397,7 +399,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Resume your last study',
+                    context.tr(TranslationKeys.homeResumeLastStudy),
                     style: GoogleFonts.inter(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
@@ -406,7 +408,8 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    'Continue studying "Faith in Trials"',
+                    context.tr(TranslationKeys.homeContinueStudying,
+                        {'topic': 'Faith in Trials'}),
                     style: GoogleFonts.inter(
                       fontSize: 14,
                       color: AppTheme.onSurfaceVariant,
@@ -436,7 +439,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    'Recommended Study Topics',
+                    context.tr(TranslationKeys.homeRecommendedTopics),
                     style: GoogleFonts.inter(
                       fontSize: 20,
                       fontWeight: FontWeight.w600,
@@ -457,9 +460,9 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
                     TextButton.icon(
                       onPressed: _isGeneratingStudyGuide
                           ? null
-                          : () => context.go('/study-topics'),
+                          : () => context.push('/study-topics'),
                       label: Text(
-                        'View All',
+                        context.tr(TranslationKeys.homeViewAll),
                         style: GoogleFonts.inter(
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
@@ -507,7 +510,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
             ),
             const SizedBox(height: 12),
             Text(
-              'Failed to load topics',
+              context.tr(TranslationKeys.homeFailedToLoadTopics),
               style: GoogleFonts.inter(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
@@ -516,7 +519,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
             ),
             const SizedBox(height: 8),
             Text(
-              error,
+              context.tr(TranslationKeys.homeSomethingWentWrong),
               style: GoogleFonts.inter(
                 fontSize: 14,
                 color:
@@ -525,7 +528,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 16),
-            ElevatedButton(
+            ElevatedButton.icon(
               onPressed: () => context
                   .read<HomeBloc>()
                   .add(const RefreshRecommendedTopics()),
@@ -536,10 +539,8 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
                   borderRadius: BorderRadius.circular(8),
                 ),
               ),
-              child: Text(
-                'Retry',
-                style: GoogleFonts.inter(fontWeight: FontWeight.w600),
-              ),
+              icon: const Icon(Icons.refresh),
+              label: Text(context.tr(TranslationKeys.homeTryAgain)),
             ),
           ],
         ),
@@ -691,7 +692,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
             ),
             const SizedBox(height: 12),
             Text(
-              'No topics available',
+              context.tr(TranslationKeys.homeNoTopicsAvailable),
               style: GoogleFonts.inter(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
@@ -700,7 +701,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
             ),
             const SizedBox(height: 8),
             Text(
-              'Check your connection and try again.',
+              context.tr(TranslationKeys.homeCheckConnection),
               style: GoogleFonts.inter(
                 fontSize: 14,
                 color:
@@ -713,23 +714,54 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
       );
 
   Widget _buildTopicsGrid(List<RecommendedGuideTopic> topics) {
-    // Use a different approach: Wrap or ListView instead of fixed-height GridView
+    // Use column-based layout with IntrinsicHeight for uniform row heights
     return LayoutBuilder(
       builder: (context, constraints) {
         // Calculate optimal card width (accounting for spacing)
         const double spacing = 16.0;
         final double cardWidth = (constraints.maxWidth - spacing) / 2;
 
-        return Wrap(
-          spacing: spacing,
-          runSpacing: spacing,
-          children: topics
-              .map((topic) => SizedBox(
-                    width: cardWidth,
-                    child: _RecommendedGuideTopicCard(
-                      topic: topic,
-                      onTap: () => _navigateToStudyGuide(topic),
-                      isDisabled: _isGeneratingStudyGuide,
+        // Group topics into pairs for rows
+        final List<List<RecommendedGuideTopic>> rows = [];
+        for (int i = 0; i < topics.length; i += 2) {
+          rows.add(topics.skip(i).take(2).toList());
+        }
+
+        return Column(
+          children: rows
+              .map((rowTopics) => Padding(
+                    padding: EdgeInsets.only(
+                      bottom: rowTopics != rows.last ? spacing : 0,
+                    ),
+                    child: IntrinsicHeight(
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          // First topic in the row
+                          Expanded(
+                            child: _RecommendedGuideTopicCard(
+                              topic: rowTopics[0],
+                              onTap: () => _navigateToStudyGuide(rowTopics[0]),
+                              isDisabled: _isGeneratingStudyGuide,
+                            ),
+                          ),
+                          // Second topic if available, otherwise spacer
+                          if (rowTopics.length > 1) ...[
+                            const SizedBox(width: spacing),
+                            Expanded(
+                              child: _RecommendedGuideTopicCard(
+                                topic: rowTopics[1],
+                                onTap: () =>
+                                    _navigateToStudyGuide(rowTopics[1]),
+                                isDisabled: _isGeneratingStudyGuide,
+                              ),
+                            ),
+                          ] else ...[
+                            const SizedBox(width: spacing),
+                            const Expanded(child: SizedBox()), // Empty space
+                          ],
+                        ],
+                      ),
                     ),
                   ))
               .toList(),
@@ -742,10 +774,9 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
     // Prevent multiple clicks during generation
     if (_isGeneratingStudyGuide) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-              'Study guide generation already in progress. Please wait...'),
-          duration: Duration(seconds: 2),
+        SnackBar(
+          content: Text(context.tr(TranslationKeys.homeGenerationInProgress)),
+          duration: const Duration(seconds: 2),
         ),
       );
       return;
@@ -816,8 +847,10 @@ class _RecommendedGuideTopicCard extends StatelessWidget {
               onTap: isDisabled ? null : onTap,
               borderRadius: BorderRadius.circular(12),
               child: Container(
-                height: 180, // Fixed height for uniform cards
                 padding: const EdgeInsets.all(16),
+                constraints: const BoxConstraints(
+                  minHeight: 160, // Minimum height for visual consistency
+                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize:
@@ -853,7 +886,7 @@ class _RecommendedGuideTopicCard extends StatelessWidget {
                             child: Text(
                               topic.category,
                               style: GoogleFonts.inter(
-                                fontSize: 9,
+                                fontSize: 12,
                                 fontWeight: FontWeight.w600,
                                 color: color,
                               ),
@@ -870,7 +903,7 @@ class _RecommendedGuideTopicCard extends StatelessWidget {
                     Text(
                       topic.title,
                       style: GoogleFonts.inter(
-                        fontSize: 14, // Slightly smaller for better fit
+                        fontSize: 16,
                         fontWeight: FontWeight.w600,
                         color: Theme.of(context).colorScheme.onSurface,
                         height: 1.2, // Tighter line height
@@ -881,19 +914,21 @@ class _RecommendedGuideTopicCard extends StatelessWidget {
 
                     const SizedBox(height: 6), // Reduced spacing
 
-                    // Description with flexible height
-                    Flexible(
+                    // Description with expanded height for better readability
+                    Expanded(
                       child: Text(
                         topic.description,
                         style: GoogleFonts.inter(
-                          fontSize: 11, // Smaller font for more content
+                          fontSize: 14,
                           color: Theme.of(context)
                               .colorScheme
                               .onSurface
                               .withOpacity(0.7),
-                          height: 1.3,
+                          height:
+                              1.4, // Slightly more line height for readability
                         ),
-                        maxLines: 3, // Allow up to 3 lines
+                        maxLines:
+                            4, // Allow up to 4 lines for better content display
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),

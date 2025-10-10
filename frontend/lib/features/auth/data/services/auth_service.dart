@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../domain/entities/auth_params.dart';
@@ -19,7 +20,10 @@ class AuthService {
     AuthenticationService? authenticationService,
     AuthStorageService? storageService,
   })  : _authService = authenticationService ?? AuthenticationService(),
-        _storageService = storageService ?? AuthStorageService();
+        _storageService = storageService ?? AuthStorageService() {
+    // Set up profile sync monitoring for OAuth users
+    _monitorForProfileSync();
+  }
 
   /// Get current authenticated user
   User? get currentUser => _authService.currentUser;
@@ -78,8 +82,52 @@ class AuthService {
   Future<void> storeAuthData(AuthDataStorageParams params) async =>
       await _storageService.storeAuthData(params);
 
-  /// Clear all stored auth data
+  /// Clear stored auth data (secure storage only)
+  /// Use ClearUserDataUseCase for comprehensive data cleanup
+  Future<void> clearSecureStorage() async =>
+      await _storageService.clearSecureStorage();
+
+  /// Legacy method for backward compatibility
+  @Deprecated('Use ClearUserDataUseCase for comprehensive data cleanup instead')
   Future<void> clearAllData() async => await _storageService.clearAllData();
+
+  /// Monitor authentication changes for profile sync
+  void _monitorForProfileSync() {
+    // Check if user is already signed in with OAuth (for existing sessions)
+    _checkExistingOAuthUser();
+
+    // Listen to auth state changes and sync profile for new OAuth users
+    authStateChanges.listen((authState) async {
+      if (authState.event == AuthChangeEvent.signedIn) {
+        // Check current user after sign in event
+        final user = currentUser;
+        if (user != null && !user.isAnonymous) {
+          // New OAuth user signed in - trigger profile sync
+          if (kDebugMode) {
+            print(
+                '🔄 [AUTH SERVICE] OAuth user signed in, triggering profile sync');
+          }
+          await _authService.testOAuthProfileSync();
+        }
+      }
+    });
+  }
+
+  /// Check if there's an existing OAuth user and sync profile if needed
+  Future<void> _checkExistingOAuthUser() async {
+    // Small delay to ensure initialization is complete
+    await Future.delayed(const Duration(milliseconds: 500));
+
+    if (currentUser != null && !currentUser!.isAnonymous) {
+      if (kDebugMode) {
+        print(
+            '🔄 [AUTH SERVICE] Found existing OAuth user, triggering profile sync');
+        print(
+            '🔄 [AUTH SERVICE] User: ${currentUser!.email} (${currentUser!.id})');
+      }
+      await _authService.testOAuthProfileSync();
+    }
+  }
 
   /// Dispose resources
   void dispose() => _authService.dispose();

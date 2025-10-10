@@ -83,11 +83,18 @@ class StorageFailure extends Failure {
 
 /// Failure related to rate limiting.
 class RateLimitFailure extends Failure {
+  /// SECURITY FIX: Duration until rate limit expires
+  final Duration? retryAfter;
+
   const RateLimitFailure({
     super.message = 'Too many requests. Please wait before trying again.',
     super.code = 'RATE_LIMIT_ERROR',
+    this.retryAfter,
     super.context,
   });
+
+  @override
+  List<Object?> get props => [...super.props, retryAfter];
 }
 
 /// General client-side failure.
@@ -113,6 +120,33 @@ class NotFoundFailure extends Failure {
   const NotFoundFailure({
     super.message = 'The requested resource was not found.',
     super.code = 'NOT_FOUND_ERROR',
+    super.context,
+  });
+}
+
+/// Failure related to database operations.
+class DatabaseFailure extends Failure {
+  const DatabaseFailure({
+    super.message = 'Database operation failed.',
+    super.code = 'DATABASE_ERROR',
+    super.context,
+  });
+}
+
+/// Failure related to payment processing.
+class PaymentFailure extends Failure {
+  const PaymentFailure({
+    super.message = 'Payment processing failed.',
+    super.code = 'PAYMENT_ERROR',
+    super.context,
+  });
+}
+
+/// Failure related to token operations.
+class TokenFailure extends Failure {
+  const TokenFailure({
+    super.message = 'Token operation failed.',
+    super.code = 'TOKEN_ERROR',
     super.context,
   });
 }

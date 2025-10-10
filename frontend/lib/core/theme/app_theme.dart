@@ -20,6 +20,14 @@ class AppTheme {
   static const Color surfaceColor = Color(0xFFFFFFFF); // White
   static const Color onSurfaceVariant = Color(0xFF6B7280); // Gray text
 
+  // Additional theme properties that widgets expect
+  static const Color highlightColor =
+      secondaryColor; // Golden Glow for highlights
+  static const Color textSecondary =
+      Color(0xFF6B7280); // Secondary text color (light theme)
+  static const Color textSecondaryDark = Color(
+      0xFFB0B0B0); // Secondary text color (dark theme - WCAG AA compliant)
+
   static ThemeData get lightTheme => ThemeData(
         useMaterial3: true,
         colorScheme: ColorScheme.fromSeed(
@@ -77,15 +85,15 @@ class AppTheme {
 
           // Body text uses Inter
           bodyLarge: GoogleFonts.inter(
-            fontSize: 16,
+            fontSize: 18,
             height: 1.5,
           ),
           bodyMedium: GoogleFonts.inter(
-            fontSize: 14,
+            fontSize: 16,
             height: 1.5,
           ),
           bodySmall: GoogleFonts.inter(
-            fontSize: 12,
+            fontSize: 14,
             height: 1.4,
           ),
 
@@ -148,6 +156,8 @@ class AppTheme {
           secondary: const Color(0xFF4A3B7A), // Darker purple for secondary
           surface: const Color(0xFF1A1A1A), // Dark gray instead of brown
           onSurface: const Color(0xFFE0E0E0), // Light gray text
+          onSurfaceVariant:
+              textSecondaryDark, // WCAG AA compliant secondary text
           background: const Color(0xFF121212), // True dark background
           onBackground:
               const Color(0xFFE0E0E0), // Light text on dark background
@@ -200,17 +210,17 @@ class AppTheme {
 
           // Body text uses Inter with proper dark theme colors
           bodyLarge: GoogleFonts.inter(
-            fontSize: 16,
+            fontSize: 18,
             height: 1.5,
             color: const Color(0xFFE0E0E0),
           ),
           bodyMedium: GoogleFonts.inter(
-            fontSize: 14,
+            fontSize: 16,
             height: 1.5,
             color: const Color(0xFFE0E0E0),
           ),
           bodySmall: GoogleFonts.inter(
-            fontSize: 12,
+            fontSize: 14,
             height: 1.4,
             color: const Color(0xFFB0B0B0),
           ),

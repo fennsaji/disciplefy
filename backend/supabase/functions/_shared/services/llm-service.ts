@@ -1,138 +1,19 @@
-// Declare Deno types for Supabase Edge Functions environment
-declare const Deno: {
-  env: {
-    get(key: string): string | undefined
-  }
-}
+// Import type definitions
+import type {
+  LLMServiceConfig,
+  LLMGenerationParams,
+  LLMResponse,
+  DailyVerseResponse,
+  OpenAIRequest,
+  OpenAIResponse,
+  AnthropicRequest,
+  AnthropicResponse,
+  LLMProvider,
+  LanguageConfig
+} from './llm-types.ts'
 
-/**
- * LLM service configuration interface
- */
-export interface LLMServiceConfig {
-  readonly openaiApiKey?: string
-  readonly anthropicApiKey?: string
-  readonly provider?: 'openai' | 'anthropic'
-  readonly useMock: boolean
-}
-
-/**
- * Parameters for LLM study guide generation.
- */
-interface LLMGenerationParams {
-  readonly inputType: 'scripture' | 'topic'
-  readonly inputValue: string
-  readonly language: string
-}
-
-/**
- * LLM response structure (matches expected format).
- */
-interface LLMResponse {
-  readonly summary: string
-  readonly interpretation: string // Optional field for additional context
-  readonly context: string
-  readonly relatedVerses: readonly string[]
-  readonly reflectionQuestions: readonly string[]
-  readonly prayerPoints: readonly string[]
-}
-
-/**
- * Daily verse generation response structure.
- */
-interface DailyVerseResponse {
-  readonly reference: string
-  readonly translations: {
-    readonly esv: string
-    readonly hindi: string
-    readonly malayalam: string
-  }
-}
-
-/**
- * OpenAI ChatCompletion API request structure.
- */
-interface OpenAIRequest {
-  model: string
-  messages: Array<{
-    role: 'system' | 'user' | 'assistant'
-    content: string
-  }>
-  temperature: number
-  max_tokens: number
-  presence_penalty?: number
-  frequency_penalty?: number
-  response_format?: { type: 'json_object' }
-  stream?: boolean
-}
-
-/**
- * OpenAI ChatCompletion API response structure.
- */
-interface OpenAIResponse {
-  choices: Array<{
-    message: {
-      content: string
-      role: string
-    }
-    finish_reason: string
-  }>
-  usage: {
-    prompt_tokens: number
-    completion_tokens: number
-    total_tokens: number
-  }
-}
-
-/**
- * Anthropic Claude API request structure.
- */
-interface AnthropicRequest {
-  model: string
-  max_tokens: number
-  temperature: number
-  top_p?: number
-  top_k?: number
-  messages: Array<{
-    role: 'user' | 'assistant'
-    content: string
-  }>
-  system?: string
-}
-
-/**
- * Anthropic Claude API response structure.
- */
-interface AnthropicResponse {
-  content: Array<{
-    type: 'text'
-    text: string
-  }>
-  usage: {
-    input_tokens: number
-    output_tokens: number
-  }
-  stop_reason: string
-}
-
-/**
- * Supported LLM providers.
- */
-type LLMProvider = 'openai' | 'anthropic'
-
-/**
- * Language-specific configuration for LLM generation.
- */
-interface LanguageConfig {
-  readonly name: string
-  readonly modelPreference: LLMProvider
-  readonly maxTokens: number
-  readonly temperature: number
-  readonly promptModifiers: {
-    readonly languageInstruction: string
-    readonly complexityInstruction: string
-  }
-  readonly culturalContext: string
-}
+// Re-export types for external use
+export type { LLMServiceConfig } from './llm-types.ts'
 
 /**
  * Service for generating Bible study content using Large Language Models.
@@ -181,13 +62,21 @@ export class LLMService {
       anthropicKeyLength: config.anthropicApiKey?.length || 0,
       anthropicKeyPrefix: config.anthropicApiKey?.substring(0, 12) || 'MISSING'
     })
-    
-    if (config.openaiApiKey && config.openaiApiKey.trim().length > 0) {
+
+    // Validate OpenAI API key format and availability
+    if (config.openaiApiKey && config.openaiApiKey.trim().length > 0 && config.openaiApiKey.startsWith('sk-')) {
       this.availableProviders.add('openai')
+      console.log('[LLM] OpenAI provider added to available providers')
+    } else if (config.openaiApiKey) {
+      console.warn('[LLM] OpenAI API key present but invalid format (should start with sk-)')
     }
-    
-    if (config.anthropicApiKey && config.anthropicApiKey.trim().length > 0) {
+
+    // Validate Anthropic API key format and availability
+    if (config.anthropicApiKey && config.anthropicApiKey.trim().length > 0 && config.anthropicApiKey.startsWith('sk-ant-')) {
       this.availableProviders.add('anthropic')
+      console.log('[LLM] Anthropic provider added to available providers')
+    } else if (config.anthropicApiKey) {
+      console.warn('[LLM] Anthropic API key present but invalid format (should start with sk-ant-)')
     }
     
     if (this.availableProviders.size === 0) {
@@ -243,6 +132,7 @@ export class LLMService {
         languageInstruction: 'Output only in simple, everyday Hindi (avoid complex Sanskrit words, use common spoken Hindi)',
         complexityInstruction: 'Use easy level language that common people can easily understand'
       },
+      // TODO: Refine cultural context based with protestant context
       culturalContext: 'Indian Christian context with cultural sensitivity to local traditions and practices'
     })
 
@@ -279,6 +169,48 @@ export class LLMService {
   }
 
   /**
+   * Generates a follow-up response for study guide questions.
+   *
+   * @param prompt - The prompt containing system and user messages
+   * @param language - Target language for the response
+   * @returns Promise resolving to follow-up response text with preserved Markdown structure
+   * @throws {Error} When generation fails
+   */
+  async generateFollowUpResponse(prompt: {systemMessage: string, userMessage: string}, language: string): Promise<string> {
+    console.log(`[LLM] Generating follow-up response for language: ${language}`)
+
+    if (this.useMockData) {
+      console.log('[LLM] Using mock data for follow-up response')
+      return this.getMockFollowUpResponse(prompt.userMessage, language)
+    }
+
+    try {
+      // Select optimal provider for follow-up response
+      const selectedProvider = this.selectOptimalProvider(language)
+      console.log(`[LLM] Selected ${selectedProvider} for follow-up response generation`)
+
+      let rawResponse: string
+
+      // Call the selected provider
+      if (selectedProvider === 'openai') {
+        rawResponse = await this.callOpenAIForFollowUp(prompt.systemMessage, prompt.userMessage, language)
+      } else {
+        rawResponse = await this.callAnthropicForFollowUp(prompt.systemMessage, prompt.userMessage, language)
+      }
+
+      // Use Markdown-safe sanitizer for follow-up responses to preserve formatting
+      const sanitizedResponse = this.sanitizeMarkdownText(rawResponse)
+
+      console.log(`[LLM] Successfully generated follow-up response: ${sanitizedResponse.length} characters`)
+      return sanitizedResponse
+
+    } catch (error) {
+      console.error(`[LLM] Follow-up response generation failed:`, error)
+      throw new Error(`Follow-up response generation failed: ${error instanceof Error ? error.message : String(error)}`)
+    }
+  }
+
+  /**
    * Generates a daily Bible verse with translations using LLM.
    * 
    * @param excludeReferences - Array of recently used verses to avoid
@@ -287,42 +219,86 @@ export class LLMService {
    * @throws {Error} When generation fails
    */
   async generateDailyVerse(
-    excludeReferences: string[] = [], 
+    excludeReferences: string[] = [],
     language: string = 'en'
   ): Promise<DailyVerseResponse> {
     console.log(`[LLM] Generating daily verse, excluding: ${excludeReferences.join(', ')}`)
-    
+
     if (this.useMockData) {
       console.log('[LLM] Using mock data for daily verse')
       return this.getMockDailyVerse()
     }
 
     try {
-      // Create verse-specific prompt
-      const prompt = this.createDailyVersePrompt(excludeReferences, language)
-      
-      // Select optimal provider for verse generation
+      // Import Bible API service
+      const { fetchVerseAllLanguages, getCachedVerses, cacheVerses } = await import('./bible-api-service.ts')
+
+      // Check cache first
+      const today = new Date()
+      const cachedVerses = await getCachedVerses(today)
+
+      if (cachedVerses) {
+        console.log(`[LLM] Using cached verses from ${today.toISOString().split('T')[0]}`)
+        return {
+          reference: cachedVerses.en.reference,
+          referenceTranslations: {
+            en: cachedVerses.en.reference,
+            hi: cachedVerses.hi.reference,
+            ml: cachedVerses.ml.reference,
+          },
+          translations: {
+            esv: cachedVerses.en.text,
+            hindi: cachedVerses.hi.text,
+            malayalam: cachedVerses.ml.text,
+          }
+        }
+      }
+
+      // Create simplified prompt for reference generation only
+      const prompt = this.createVerseReferencePrompt(excludeReferences, language)
+
+      // Select optimal provider for reference generation
       const selectedProvider = this.selectOptimalProvider(language)
-      console.log(`[LLM] Selected ${selectedProvider} for daily verse generation`)
-      
+      console.log(`[LLM] Selected ${selectedProvider} for verse reference generation`)
+
       let rawResponse: string
-      
+
       // Call the selected provider
       if (selectedProvider === 'openai') {
         rawResponse = await this.callOpenAIForVerse(prompt.systemMessage, prompt.userMessage)
       } else {
         rawResponse = await this.callAnthropicForVerse(prompt.systemMessage, prompt.userMessage)
       }
-      
-      // Parse and validate the response
-      const parsedResponse = await this.parseVerseResponse(rawResponse)
-      
-      console.log(`[LLM] Successfully generated daily verse: ${parsedResponse.reference}`)
-      return parsedResponse
-      
+
+      // Parse reference from LLM response
+      const parsedReference = await this.parseVerseReferenceResponse(rawResponse)
+      console.log(`[LLM] LLM selected reference: ${parsedReference.reference}`)
+
+      // Fetch actual verse text from Bible API
+      const allVerses = await fetchVerseAllLanguages(parsedReference.reference)
+
+      // Cache the verses
+      await cacheVerses(allVerses, today)
+
+      const response: DailyVerseResponse = {
+        reference: parsedReference.reference,
+        referenceTranslations: parsedReference.referenceTranslations,
+        translations: {
+          esv: allVerses.en.text,
+          hindi: allVerses.hi.text,
+          malayalam: allVerses.ml.text,
+        }
+      }
+
+      console.log(`[LLM] Successfully generated daily verse from Bible API: ${response.reference}`)
+      return response
+
     } catch (error) {
       console.error(`[LLM] Daily verse generation failed:`, error)
-      throw new Error(`Daily verse generation failed: ${error instanceof Error ? error.message : String(error)}`)
+      console.error(`[LLM] Falling back to LLM-generated verse`)
+
+      // Fallback to LLM-generated verse if Bible API fails
+      return this.generateDailyVerseLLMFallback(excludeReferences, language)
     }
   }
 
@@ -335,6 +311,11 @@ export class LLMService {
     const mockVerses = [
       {
         reference: "John 3:16",
+        referenceTranslations: {
+          en: "John 3:16",
+          hi: "यूहन्ना 3:16",
+          ml: "യോഹന്നാൻ 3:16"
+        },
         translations: {
           esv: "For God so loved the world, that he gave his only Son, that whoever believes in him should not perish but have eternal life.",
           hindi: "क्योंकि परमेश्वर ने जगत से ऐसा प्रेम रखा कि उसने अपना एकलौता पुत्र दे दिया, ताकि जो कोई उस पर विश्वास करे वह नष्ट न हो, परन्तु अनन्त जीवन पाए।",
@@ -343,6 +324,11 @@ export class LLMService {
       },
       {
         reference: "Philippians 4:13",
+        referenceTranslations: {
+          en: "Philippians 4:13",
+          hi: "फिलिप्पियों 4:13",
+          ml: "ഫിലിപ്പിയർ 4:13"
+        },
         translations: {
           esv: "I can do all things through him who strengthens me.",
           hindi: "मैं उसके द्वारा जो मुझे सामर्थ्य देता है, सब कुछ कर सकता हूँ।",
@@ -351,6 +337,11 @@ export class LLMService {
       },
       {
         reference: "Psalm 23:1",
+        referenceTranslations: {
+          en: "Psalm 23:1",
+          hi: "भजन संहिता 23:1",
+          ml: "സങ്കീർത്തനം 23:1"
+        },
         translations: {
           esv: "The Lord is my shepherd; I shall not want.",
           hindi: "यहोवा मेरा चरवाहा है; मुझे कमी न होगी।",
@@ -371,7 +362,7 @@ export class LLMService {
    * @throws {Error} When parameters are invalid
    */
   private validateParams(params: LLMGenerationParams): void {
-    if (!params.inputType || !['scripture', 'topic'].includes(params.inputType)) {
+    if (!params.inputType || !['scripture', 'topic', 'question'].includes(params.inputType)) {
       throw new Error('Invalid input type')
     }
 
@@ -418,27 +409,50 @@ export class LLMService {
           throw new Error(`Unsupported provider: ${selectedProvider}`)
         }
       } catch (primaryError) {
+        const primaryErrorObj = primaryError instanceof Error ? primaryError : new Error(String(primaryError))
+
         console.error(`[LLM] Primary provider ${selectedProvider} failed:`, {
-          error: primaryError instanceof Error ? primaryError.message : String(primaryError),
-          stack: primaryError instanceof Error ? primaryError.stack : undefined,
+          error: primaryErrorObj.message,
+          stack: primaryErrorObj.stack,
           provider: selectedProvider,
           language: params.language,
           timestamp: new Date().toISOString()
         })
         console.warn(`[LLM] Primary provider ${selectedProvider} failed, attempting fallback`)
-        
+
         // Attempt fallback to alternative provider
         const fallbackProvider = this.getFallbackProvider(selectedProvider)
         if (fallbackProvider && fallbackProvider !== selectedProvider) {
           console.log(`[LLM] Using fallback provider: ${fallbackProvider}`)
-          
-          if (fallbackProvider === 'openai') {
-            rawResponse = await this.callOpenAI(prompt.systemMessage, prompt.userMessage, languageConfig, params)
-          } else {
-            rawResponse = await this.callAnthropic(prompt.systemMessage, prompt.userMessage, languageConfig, params)
+
+          try {
+            if (fallbackProvider === 'openai') {
+              rawResponse = await this.callOpenAI(prompt.systemMessage, prompt.userMessage, languageConfig, params)
+            } else {
+              rawResponse = await this.callAnthropic(prompt.systemMessage, prompt.userMessage, languageConfig, params)
+            }
+
+            console.log(`[LLM] ✅ Fallback provider ${fallbackProvider} succeeded after ${selectedProvider} failure`)
+          } catch (fallbackError) {
+            const fallbackErrorObj = fallbackError instanceof Error ? fallbackError : new Error(String(fallbackError))
+
+            console.error(`[LLM] Fallback provider ${fallbackProvider} also failed:`, {
+              error: fallbackErrorObj.message,
+              stack: fallbackErrorObj.stack,
+              provider: fallbackProvider,
+              language: params.language,
+              timestamp: new Date().toISOString()
+            })
+
+            // Throw composite error with both failures
+            throw new Error(
+              `Both LLM providers failed. ` +
+              `Primary (${selectedProvider}): ${primaryErrorObj.message}. ` +
+              `Fallback (${fallbackProvider}): ${fallbackErrorObj.message}`
+            )
           }
         } else {
-          throw primaryError
+          throw primaryErrorObj
         }
       }
       
@@ -764,7 +778,8 @@ export class LLMService {
     switch (language) {
       case 'hi': // Hindi
       case 'ml': // Malayalam
-        return 'claude-3-5-sonnet-20241022' // Better multilingual understanding
+      // return 'claude-3-5-sonnet-20241022' // Better multilingual understanding
+        return 'claude-sonnet-4-20250514' // Fast and cost-effective
       case 'en': // English
       default:
         return 'claude-3-5-haiku-20241022' // Fast and cost-effective
@@ -895,55 +910,61 @@ export class LLMService {
   }
 
   /**
-   * Selects the optimal LLM provider based on language performance characteristics.
-   * 
+   * Selects the optimal LLM provider based on configuration and language characteristics.
+   *
    * @param language - Target language code (en, hi, ml)
    * @returns Optimal LLM provider for the given language
    */
   private selectOptimalProvider(language: string): LLMProvider {
+    // Always prioritize the configured provider if available
+    if (this.isProviderAvailable(this.provider)) {
+      console.log(`[LLM] Using configured provider ${this.provider} for language: ${language}`)
+      return this.provider
+    }
+
+    // Fallback: select based on language preferences only if configured provider unavailable
     const languageConfig = this.languageConfigs.get(language)
-    
-    // Start with language-specific preference from configuration
     let preferredProvider: LLMProvider = languageConfig?.modelPreference || this.provider
-    
-    // Apply language-based optimization rules
+
+    console.warn(`[LLM] Configured provider ${this.provider} not available, using fallback selection`)
+
+    // Apply language-based optimization rules only as fallback
     switch (language) {
       case 'hi': // Hindi
       case 'ml': // Malayalam
         // Anthropic generally performs better with multilingual content
         if (this.isProviderAvailable('anthropic')) {
           preferredProvider = 'anthropic'
-          console.log(`[LLM] Selecting Anthropic for ${language} (better multilingual performance)`)
-        } else {
-          console.log(`[LLM] Anthropic not available for ${language}, using ${preferredProvider}`)
+          console.log(`[LLM] Fallback: Selecting Anthropic for ${language} (better multilingual performance)`)
+        } else if (this.isProviderAvailable('openai')) {
+          preferredProvider = 'openai'
+          console.log(`[LLM] Fallback: Anthropic not available for ${language}, using OpenAI`)
         }
         break
-        
+
       case 'en': // English
-        // Both providers work well for English, use configured preference
-        if (this.isProviderAvailable(preferredProvider)) {
-          console.log(`[LLM] Using configured provider ${preferredProvider} for English`)
-        } else {
-          // Fallback to any available provider
-          preferredProvider = this.getAnyAvailableProvider()
-          console.log(`[LLM] Configured provider not available, using ${preferredProvider} for English`)
+        // Both providers work well for English, try any available
+        if (this.isProviderAvailable('openai')) {
+          preferredProvider = 'openai'
+          console.log(`[LLM] Fallback: Using OpenAI for English`)
+        } else if (this.isProviderAvailable('anthropic')) {
+          preferredProvider = 'anthropic'
+          console.log(`[LLM] Fallback: Using Anthropic for English`)
         }
         break
-        
+
       default:
-        // For any other languages, use configured provider with availability check
-        if (!this.isProviderAvailable(preferredProvider)) {
-          preferredProvider = this.getAnyAvailableProvider()
-          console.log(`[LLM] Configured provider not available for ${language}, using ${preferredProvider}`)
-        }
+        // For any other languages, use any available provider
+        preferredProvider = this.getAnyAvailableProvider()
+        console.log(`[LLM] Fallback: Using ${preferredProvider} for ${language}`)
         break
     }
-    
+
     // Final validation
     if (!this.isProviderAvailable(preferredProvider)) {
       throw new Error(`No available LLM provider for language: ${language}`)
     }
-    
+
     return preferredProvider
   }
 
@@ -1049,17 +1070,42 @@ export class LLMService {
     const { inputType, inputValue } = params
     const languageExamples = this.getLanguageSpecificExamples(params.language)
 
-    return `TASK: Create a Bible study guide for the ${inputType === 'scripture' ? 'scripture reference' : 'topic'}: "${inputValue}"
+    // Create type-specific task description
+    let taskDescription: string
+    if (inputType === 'scripture') {
+      taskDescription = `Create a Bible study guide for the scripture reference: "${inputValue}"`
+    } else if (inputType === 'topic') {
+      taskDescription = `Create a Bible study guide for the topic: "${inputValue}"`
+    } else if (inputType === 'question') {
+      taskDescription = `Answer the biblical/theological question and create a comprehensive study guide: "${inputValue}"`
+    } else {
+      taskDescription = `Create a Bible study guide for: "${inputValue}"`
+    }
+
+    // Create input-specific instructions
+    let specificInstructions = ''
+    if (inputType === 'question') {
+      specificInstructions = `
+      QUESTION-SPECIFIC REQUIREMENTS:
+      - Provide a direct, biblically grounded answer to the question
+      - Support your answer with relevant scripture passages
+      - Address common misconceptions if applicable
+      - Include practical applications of the biblical teaching
+      - Maintain theological accuracy and pastoral sensitivity
+      `
+    }
+
+    return `TASK: ${taskDescription}
 
       REQUIRED JSON OUTPUT FORMAT (follow exactly):
       {
-        "summary": "Brief overview (2-3 sentences) capturing the main message",
-        "interpretation": "Theological interpretation (3-4 paragraphs) explaining meaning and key teachings", 
+        "summary": "Brief overview (2-3 sentences) capturing the main message${inputType === 'question' ? ' and answering the question' : ''}",
+        "interpretation": "Theological interpretation (4-5 paragraphs) explaining meaning and key teachings${inputType === 'question' ? ' with direct answer to the question' : ''}", 
         "context": "Historical and cultural background (1-2 paragraphs) for understanding",
         "relatedVerses": ["3-5 relevant Bible verses with references"],
         "reflectionQuestions": ["4-6 practical application questions"],
         "prayerPoints": ["3-4 prayer suggestions"]
-      }
+      }${specificInstructions}
 
       CRITICAL JSON FORMATTING RULES:
       - Output ONLY valid JSON - no markdown, no extra text before or after
@@ -1290,51 +1336,264 @@ export class LLMService {
    * @returns Prompt object with system and user messages
    */
   private createDailyVersePrompt(excludeReferences: string[], language: string): {systemMessage: string, userMessage: string} {
-    const excludeList = excludeReferences.length > 0 
+    const excludeList = excludeReferences.length > 0
       ? ` Avoid these recently used verses: ${excludeReferences.join(', ')}.`
       : ''
-    
+
     const languageConfig = this.languageConfigs.get(language) || this.languageConfigs.get('en')!
-    
-    const systemMessage = `You are a biblical scholar selecting meaningful Bible verses for daily encouragement.
 
-      Your task is to select ONE inspiring Bible verse and provide it with accurate translations.
+    const systemMessage = `You are an expert biblical translator and theologian with deep knowledge of:
+- English Standard Version (ESV) Bible translation principles
+- Hindi biblical translation conventions (formal equivalence tradition)
+- Malayalam biblical translation conventions (formal equivalence tradition)
+- Original Greek (New Testament) and Hebrew (Old Testament) Scripture
+- Christian theological terminology across all three languages
 
-      OUTPUT REQUIREMENTS:
-      - Return ONLY valid JSON with the exact structure specified
-      - No markdown formatting, no extra text
-      - Use proper JSON string escaping for any quotes
-      - Ensure all translations are accurate and meaningful
+Your task is to select ONE inspiring Bible verse and provide HIGHLY ACCURATE translations that match the style and terminology of established Bible translations.
 
-      LANGUAGE CONTEXT: ${languageConfig.culturalContext}
-      COMPLEXITY: ${languageConfig.promptModifiers.complexityInstruction}`
+CRITICAL TRANSLATION PRINCIPLES:
+1. **Formal Equivalence**: Translate word-for-word while maintaining natural grammar
+2. **Theological Precision**: Use correct theological terms (e.g., "grace" = अनुग्रह/കൃപ, "salvation" = उद्धार/രക്ഷ)
+3. **Consistency**: Use standard biblical terminology, not modern paraphrases
+4. **Reverent Language**: Maintain formal, reverent tone in all languages
+5. **Scripture Integrity**: Preserve the exact meaning and structure of the original text
+
+OUTPUT REQUIREMENTS:
+- Return ONLY valid JSON with the exact structure specified
+- No markdown formatting, no code blocks, no extra text
+- Use proper JSON string escaping for any quotes within verse text
+- ALL translations must be theologically accurate and match established Bible translation styles
+
+LANGUAGE CONTEXT: ${languageConfig.culturalContext}
+COMPLEXITY: ${languageConfig.promptModifiers.complexityInstruction}`
 
     const userMessage = `Select one meaningful Bible verse for daily spiritual encouragement.${excludeList}
 
-      Requirements:
-      - Choose a verse that offers comfort, strength, hope, faith, peace, or guidance
-      - Provide accurate translations in all three languages
-      - Focus on well-known, inspiring verses
-      - Ensure theological accuracy
+VERSE SELECTION CRITERIA:
+- Choose verses that offer comfort, strength, hope, faith, peace, or guidance
+- Focus on well-known, doctrinally sound verses
+- Prefer single verses (not multi-verse passages) for clarity
+- Ensure the verse is self-contained and understandable alone
 
-      Return in this EXACT JSON format (no other text):
-      {
-        "reference": "Book Chapter:Verse",
-        "translations": {
-          "esv": "English verse text (ESV translation)",
-          "hindi": "Hindi translation in Devanagari script",
-          "malayalam": "Malayalam translation in Malayalam script"
+TRANSLATION QUALITY REQUIREMENTS:
+
+**English (ESV Style)**:
+- Use formal English with "his/him" pronouns for God
+- Follow ESV translation conventions (formal equivalence)
+- Examples of ESV style:
+  * "For God so loved the world, that he gave his only Son..." (John 3:16)
+  * "I can do all things through him who strengthens me." (Philippians 4:13)
+  * "The Lord is my shepherd; I shall not want." (Psalm 23:1)
+- Avoid modern paraphrases or casual language
+
+**Hindi (हिन्दी - Formal Bible Translation Style)**:
+- Use traditional biblical Hindi with Devanagari script
+- Follow formal equivalence translation principles
+- Use established theological terms:
+  * परमेश्वर (God), प्रभु (Lord), यीशु/येशु मसीह (Jesus Christ)
+  * उद्धार (salvation), विश्वास (faith), अनुग्रह (grace)
+  * पवित्र आत्मा (Holy Spirit), स्वर्ग (heaven)
+- Maintain reverent, formal tone (आप form, not तुम)
+- Examples of correct style:
+  * "क्योंकि परमेश्वर ने जगत से ऐसा प्रेम रखा..." (John 3:16)
+  * "मैं उसके द्वारा जो मुझे सामर्थ्य देता है..." (Philippians 4:13)
+
+**Malayalam (മലയാളം - Formal Bible Translation Style)**:
+- Use traditional biblical Malayalam script
+- Follow formal equivalence translation principles
+- Use established theological terms:
+  * ദൈവം (God), കർത്താവ് (Lord), യേശുക്രിസ്തു (Jesus Christ)
+  * രക്ഷ (salvation), വിശ്വാസം (faith), കൃപ (grace)
+  * പരിശുദ്ധാത്മാവ് (Holy Spirit), സ്വർഗ്ഗം (heaven)
+- Maintain reverent, formal tone
+- Examples of correct style:
+  * "ദൈവം ലോകത്തെ ഇങ്ങനെ സ്നേഹിച്ചു..." (John 3:16)
+  * "എന്നെ ബലപ്പെടുത്തുന്ന ക്രിസ്തുവിൽ..." (Philippians 4:13)
+
+REFERENCE TRANSLATIONS (Book Names):
+**English**: Use standard English book names (e.g., "Philippians 4:13", "Psalm 23:1", "John 3:16")
+**Hindi**: Use traditional Hindi book names:
+- यूहन्ना (John), फिलिप्पियों (Philippians), भजन संहिता (Psalms)
+- मत्ती (Matthew), रोमियों (Romans), इब्रानियों (Hebrews)
+**Malayalam**: Use traditional Malayalam book names:
+- യോഹന്നാൻ (John), ഫിലിപ്പിയർ (Philippians), സങ്കീർത്തനം (Psalms)
+- മത്തായി (Matthew), റോമർ (Romans), എബ്രായർ (Hebrews)
+
+Return in this EXACT JSON format (no other text, no markdown):
+{
+  "reference": "Book Chapter:Verse (in English, e.g., John 3:16)",
+  "referenceTranslations": {
+    "en": "English book name with reference (e.g., John 3:16)",
+    "hi": "Hindi book name in Devanagari (e.g., यूहन्ना 3:16)",
+    "ml": "Malayalam book name in Malayalam script (e.g., യോഹന്നാൻ 3:16)"
+  },
+  "translations": {
+    "esv": "English verse text in ESV formal style",
+    "hindi": "Hindi translation in Devanagari - formal biblical style matching traditional Hindi Bible translations",
+    "malayalam": "Malayalam translation in Malayalam script - formal biblical style matching traditional Malayalam Bible translations"
+  }
+}
+
+VERSE THEME SUGGESTIONS (choose ONE verse from these categories):
+- **God's Love & Grace**: John 3:16, Romans 8:38-39, Ephesians 2:8-9, 1 John 4:19
+- **Strength & Courage**: Philippians 4:13, Joshua 1:9, Isaiah 41:10, 2 Timothy 1:7
+- **Peace & Comfort**: Psalm 23:1, Matthew 11:28, John 14:27, Philippians 4:6-7
+- **Hope & Faith**: Jeremiah 29:11, Hebrews 11:1, Romans 15:13, Proverbs 3:5-6
+- **Guidance & Wisdom**: Psalm 119:105, Proverbs 3:5-6, James 1:5, Psalm 32:8
+- **Provision & Protection**: Philippians 4:19, Psalm 91:1-2, Matthew 6:33, Psalm 46:1
+
+CRITICAL: Ensure every translation preserves the EXACT theological meaning and formal reverent tone of established Bible translations. Do NOT use modern casual paraphrases.`
+
+    return { systemMessage, userMessage }
+  }
+
+  /**
+   * Creates a simplified prompt for generating only a Bible verse reference
+   * (verse text will be fetched from Bible API)
+   *
+   * @param excludeReferences - List of recently used references to avoid
+   * @param language - Target language for cultural context
+   * @returns System and user messages for reference generation
+   */
+  private createVerseReferencePrompt(excludeReferences: string[], language: string): {systemMessage: string, userMessage: string} {
+    const excludeList = excludeReferences.length > 0
+      ? ` Avoid these recently used verses: ${excludeReferences.join(', ')}.`
+      : ''
+
+    const languageConfig = this.languageConfigs.get(language) || this.languageConfigs.get('en')!
+
+    const systemMessage = `You are a biblical scholar selecting inspiring Bible verses for daily spiritual encouragement.
+
+Your task is to select ONE meaningful Bible verse reference. The actual verse text will be fetched from an authentic Bible API.
+
+OUTPUT REQUIREMENTS:
+- Return ONLY valid JSON with the exact structure specified
+- No markdown formatting, no code blocks, no extra text
+- Use proper JSON string escaping
+
+LANGUAGE CONTEXT: ${languageConfig.culturalContext}`
+
+    const userMessage = `Select one meaningful Bible verse reference for daily spiritual encouragement.${excludeList}
+
+VERSE SELECTION CRITERIA:
+- Choose verses that offer comfort, strength, hope, faith, peace, or guidance
+- Focus on well-known, doctrinally sound verses
+- Prefer single verses (not multi-verse passages) for clarity
+- Ensure the verse is self-contained and understandable alone
+
+VERSE THEME SUGGESTIONS (choose ONE verse from these categories):
+- **God's Love & Grace**: John 3:16, Romans 8:38-39, Ephesians 2:8-9, 1 John 4:19
+- **Strength & Courage**: Philippians 4:13, Joshua 1:9, Isaiah 41:10, 2 Timothy 1:7
+- **Peace & Comfort**: Psalm 23:1, Matthew 11:28, John 14:27, Philippians 4:6-7
+- **Hope & Faith**: Jeremiah 29:11, Hebrews 11:1, Romans 15:13, Proverbs 3:5-6
+- **Guidance & Wisdom**: Psalm 119:105, Proverbs 3:5-6, James 1:5, Psalm 32:8
+- **Provision & Protection**: Philippians 4:19, Psalm 91:1-2, Matthew 6:33, Psalm 46:1
+
+Return in this EXACT JSON format (no other text, no markdown):
+{
+  "reference": "Book Chapter:Verse (in English, e.g., John 3:16)",
+  "referenceTranslations": {
+    "en": "English book name with reference (e.g., John 3:16)",
+    "hi": "Hindi book name in Devanagari (e.g., यूहन्ना 3:16)",
+    "ml": "Malayalam book name in Malayalam script (e.g., യോഹന്നാൻ 3:16)"
+  }
+}`
+
+    return { systemMessage, userMessage }
+  }
+
+  /**
+   * Parses verse reference response from LLM (simplified version)
+   *
+   * @param rawResponse - Raw response from LLM
+   * @returns Parsed reference data
+   */
+  private async parseVerseReferenceResponse(rawResponse: string): Promise<{
+    reference: string;
+    referenceTranslations: { en: string; hi: string; ml: string };
+  }> {
+    try {
+      const cleaned = this.cleanJSONResponse(rawResponse)
+      const parsed = JSON.parse(cleaned)
+
+      if (!parsed.reference || typeof parsed.reference !== 'string') {
+        throw new Error('Missing or invalid reference field')
+      }
+
+      if (!parsed.referenceTranslations || typeof parsed.referenceTranslations !== 'object') {
+        throw new Error('Missing or invalid referenceTranslations field')
+      }
+
+      const { en, hi, ml } = parsed.referenceTranslations
+
+      if (!en || typeof en !== 'string') {
+        throw new Error('Missing or invalid English reference translation')
+      }
+
+      if (!hi || typeof hi !== 'string') {
+        throw new Error('Missing or invalid Hindi reference translation')
+      }
+
+      if (!ml || typeof ml !== 'string') {
+        throw new Error('Missing or invalid Malayalam reference translation')
+      }
+
+      return {
+        reference: this.sanitizeText(parsed.reference),
+        referenceTranslations: {
+          en: this.sanitizeText(en),
+          hi: this.sanitizeText(hi),
+          ml: this.sanitizeText(ml)
         }
       }
 
-      Examples of good verse types:
-      - God's love and grace (John 3:16, Romans 8:38-39)
-      - Strength and courage (Philippians 4:13, Joshua 1:9)
-      - Peace and comfort (Psalm 23:1, Matthew 11:28)
-      - Hope and faith (Jeremiah 29:11, Hebrews 11:1)
-      - Guidance and wisdom (Proverbs 3:5-6, Psalm 119:105)`
+    } catch (error) {
+      console.error('[LLM] Failed to parse verse reference response:', error)
+      console.error('[LLM] Raw response:', rawResponse.substring(0, 500))
+      throw new Error(`Failed to parse verse reference: ${error instanceof Error ? error.message : String(error)}`)
+    }
+  }
 
-    return { systemMessage, userMessage }
+  /**
+   * Fallback method to generate daily verse using LLM when Bible API fails
+   *
+   * @param excludeReferences - List of recently used references to avoid
+   * @param language - Target language
+   * @returns Promise resolving to daily verse response
+   */
+  private async generateDailyVerseLLMFallback(
+    excludeReferences: string[],
+    language: string
+  ): Promise<DailyVerseResponse> {
+    try {
+      // Create verse-specific prompt (full prompt with translations)
+      const prompt = this.createDailyVersePrompt(excludeReferences, language)
+
+      // Select optimal provider for verse generation
+      const selectedProvider = this.selectOptimalProvider(language)
+      console.log(`[LLM] Using ${selectedProvider} for LLM fallback verse generation`)
+
+      let rawResponse: string
+
+      // Call the selected provider
+      if (selectedProvider === 'openai') {
+        rawResponse = await this.callOpenAIForVerse(prompt.systemMessage, prompt.userMessage)
+      } else {
+        rawResponse = await this.callAnthropicForVerse(prompt.systemMessage, prompt.userMessage)
+      }
+
+      // Parse and validate the response
+      const parsedResponse = await this.parseVerseResponse(rawResponse)
+
+      console.log(`[LLM] LLM fallback verse generated: ${parsedResponse.reference}`)
+      return parsedResponse
+
+    } catch (error) {
+      console.error(`[LLM] LLM fallback generation failed:`, error)
+      // Final fallback to mock data
+      console.log('[LLM] Using mock data as final fallback')
+      return this.getMockDailyVerse()
+    }
   }
 
   /**
@@ -1346,7 +1605,7 @@ export class LLMService {
    * @returns Raw response text
    */
   private async callOpenAIForVerse(systemMessage: string, userMessage: string): Promise<string> {
-    const model = 'gpt-4o-mini' // Updated from gpt-3.5-turbo-1106
+    const model = 'gpt-4o-mini-2024-07-18' // Updated from gpt-3.5-turbo-1106
     
     const request: OpenAIRequest = {
       model,
@@ -1397,7 +1656,7 @@ export class LLMService {
    * @returns Raw response text
    */
   private async callAnthropicForVerse(systemMessage: string, userMessage: string): Promise<string> {
-    const model = 'claude-3-5-haiku-20241022'
+    const model = 'claude-sonnet-4-20250514'
     
     const request: AnthropicRequest = {
       model,
@@ -1450,11 +1709,37 @@ export class LLMService {
     try {
       // Clean the response
       const cleaned = this.cleanJSONResponse(rawResponse)
+      console.log('[LLM] Cleaned LLM response:', cleaned.substring(0, 500))
+      
       const parsed = JSON.parse(cleaned)
+      console.log('[LLM] Parsed LLM response structure:', {
+        hasReference: !!parsed.reference,
+        hasReferenceTranslations: !!parsed.referenceTranslations,
+        hasTranslations: !!parsed.translations,
+        translationKeys: parsed.translations ? Object.keys(parsed.translations) : []
+      })
       
       // Validate structure
       if (!parsed.reference || typeof parsed.reference !== 'string') {
         throw new Error('Missing or invalid reference field')
+      }
+      
+      if (!parsed.referenceTranslations || typeof parsed.referenceTranslations !== 'object') {
+        throw new Error('Missing or invalid referenceTranslations field')
+      }
+      
+      const { en, hi, ml } = parsed.referenceTranslations
+      
+      if (!en || typeof en !== 'string') {
+        throw new Error('Missing or invalid English reference translation')
+      }
+      
+      if (!hi || typeof hi !== 'string') {
+        console.warn('[LLM] Missing Hindi reference translation, using fallback')
+      }
+      
+      if (!ml || typeof ml !== 'string') {
+        console.warn('[LLM] Missing Malayalam reference translation, using fallback')
       }
       
       if (!parsed.translations || typeof parsed.translations !== 'object') {
@@ -1468,16 +1753,21 @@ export class LLMService {
       }
       
       if (!hindi || typeof hindi !== 'string') {
-        throw new Error('Missing or invalid Hindi translation')
+        console.warn('[LLM] ⚠️ LLM did not return Hindi translation')
       }
       
       if (!malayalam || typeof malayalam !== 'string') {
-        throw new Error('Missing or invalid Malayalam translation')
+        console.warn('[LLM] ⚠️ LLM did not return Malayalam translation')
       }
       
       // Sanitize and return
       return {
         reference: this.sanitizeText(parsed.reference),
+        referenceTranslations: {
+          en: this.sanitizeText(en),
+          hi: this.sanitizeText(hi),
+          ml: this.sanitizeText(ml)
+        },
         translations: {
           esv: this.sanitizeText(esv),
           hindi: this.sanitizeText(hindi),
@@ -1493,8 +1783,178 @@ export class LLMService {
   }
 
   /**
-   * Sanitizes text content to prevent XSS and ensure data quality.
+   * Calls OpenAI API specifically for follow-up responses.
    * 
+   * @param systemMessage - System prompt
+   * @param userMessage - User prompt
+   * @param language - Target language
+   * @returns Raw response text
+   */
+  private async callOpenAIForFollowUp(systemMessage: string, userMessage: string, language: string): Promise<string> {
+    const model = 'gpt-4o-mini-2024-07-18'
+    
+    const request: OpenAIRequest = {
+      model,
+      messages: [
+        { role: 'system', content: systemMessage },
+        { role: 'user', content: userMessage }
+      ],
+      temperature: 0.4, // Slightly higher for more natural conversation
+      max_tokens: 800,
+      presence_penalty: 0.2,
+      frequency_penalty: 0.1
+    }
+
+    const apiKey = this.getApiKeyForProvider('openai')
+    
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(request)
+    })
+
+    if (!response.ok) {
+      const errorText = await response.text()
+      throw new Error(`OpenAI API error (${response.status}): ${errorText}`)
+    }
+
+    const data: OpenAIResponse = await response.json()
+    
+    if (!data.choices || data.choices.length === 0) {
+      throw new Error('OpenAI API returned no choices')
+    }
+
+    const content = data.choices[0].message.content
+    if (!content) {
+      throw new Error('OpenAI API returned empty content')
+    }
+
+    return content
+  }
+
+  /**
+   * Calls Anthropic API specifically for follow-up responses.
+   * 
+   * @param systemMessage - System prompt
+   * @param userMessage - User prompt
+   * @param language - Target language
+   * @returns Raw response text
+   */
+  private async callAnthropicForFollowUp(systemMessage: string, userMessage: string, language: string): Promise<string> {
+    const model = language === 'en' ? 'claude-3-5-haiku-20241022' : 'claude-sonnet-4-20250514'
+    
+    const request: AnthropicRequest = {
+      model,
+      max_tokens: 800,
+      temperature: 0.4,
+      system: systemMessage,
+      messages: [
+        { role: 'user', content: userMessage }
+      ]
+    }
+
+    const apiKey = this.getApiKeyForProvider('anthropic')
+    
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'x-api-key': apiKey,
+        'Content-Type': 'application/json',
+        'anthropic-version': '2023-06-01'
+      },
+      body: JSON.stringify(request)
+    })
+
+    if (!response.ok) {
+      const errorText = await response.text()
+      throw new Error(`Anthropic API error (${response.status}): ${errorText}`)
+    }
+
+    const data: AnthropicResponse = await response.json()
+    
+    if (!data.content || data.content.length === 0) {
+      throw new Error('Anthropic API returned no content')
+    }
+
+    const textContent = data.content.find(c => c.type === 'text')
+    if (!textContent) {
+      throw new Error('Anthropic API returned no text content')
+    }
+
+    return textContent.text
+  }
+
+  /**
+   * Gets a mock follow-up response for development/testing.
+   * 
+   * @param question - The user's question
+   * @param language - Target language
+   * @returns Mock follow-up response
+   */
+  private getMockFollowUpResponse(question: string, language: string): string {
+    const responses = {
+      en: `Thank you for your thoughtful question about "${question}". Based on the study guide content, this relates to the key themes we've explored. The biblical text provides guidance on this matter, and we can see how it applies to our daily walk with Christ. \n\nI encourage you to reflect on the related verses mentioned in the study guide, as they provide additional insight into this topic. Remember that God's Word is living and active, speaking to our hearts in practical ways.\n\nWould you like to explore any specific aspect of this topic further?`,
+      
+      hi: `"${question}" के बारे में आपका सवाल बहुत अच्छा है। इस अध्ययन गाइड में जो मुख्य बातें हैं, वे इस विषय से जुड़ी हैं। बाइबल इस मामले में हमारा मार्गदर्शन करती है।\n\nमैं आपको सुझाव देता हूं कि आप इस अध्ययन में दी गई संबंधित आयतों पर विचार करें। परमेश्वर का वचन जीवित और प्रभावशाली है।\n\nक्या आप इस विषय के किसी खास हिस्से पर और चर्चा करना चाहेंगे?`,
+      
+      ml: `"${question}" എന്ന നിങ്ങളുടെ ചോദ്യം വളരെ നല്ലതാണ്. ഈ പഠന ഗൈഡിലെ പ്രധാന വിഷയങ്ങൾ ഇതുമായി ബന്ധപ്പെട്ടിരിക്കുന്നു. ബൈബിൾ ഈ കാര്യത്തിൽ നമുക്ക് മാർഗദർശനം നൽകുന്നു।\n\nഈ പഠനത്തിൽ പരാമർശിച്ച സംബന്ധിത വചനങ്ങൾ പരിഗണിക്കാൻ ഞാൻ നിങ്ങളെ പ്രോത്സാഹിപ്പിക്കുന്നു. ദൈവത്തിന്റെ വചനം ജീവനുള്ളതും ശക്തിയുള്ളതുമാണ്।\n\nഈ വിഷയത്തിന്റെ എന്തെങ്കിലും പ്രത്യേക ഭാഗം കൂടുതൽ പര്യവേക്ഷണം ചെയ്യാൻ നിങ്ങൾ ആഗ്രഹിക്കുന്നുണ്ടോ?`
+    }
+    
+    return responses[language as keyof typeof responses] || responses.en
+  }
+
+  /**
+   * Sanitizes Markdown text while preserving formatting structure.
+   *
+   * This sanitizer is designed for follow-up responses and other Markdown content
+   * where preserving blank lines, lists, numbering, and code blocks is essential.
+   *
+   * Security measures:
+   * - Removes dangerous control characters (except newlines and tabs)
+   * - Removes potential HTML tags
+   * - Trims leading/trailing blank lines
+   * - Normalizes trailing spaces on each line
+   *
+   * Preserves:
+   * - Newline characters (\n)
+   * - Blank lines for paragraph separation
+   * - List markers (-, *, numbered lists)
+   * - Code fence markers (```)
+   * - Indentation (tabs and spaces)
+   *
+   * @param text - Markdown text to sanitize
+   * @returns Sanitized Markdown with preserved structure
+   */
+  private sanitizeMarkdownText(text: string): string {
+    if (typeof text !== 'string') {
+      return ''
+    }
+
+    return text
+      // Remove dangerous control characters (keep \n, \t, and printable chars)
+      .replace(/[\x00-\x08\x0B-\x0C\x0E-\x1F\x7F]/g, '')
+      // Remove potential HTML tags
+      .replace(/[<>]/g, '')
+      // Normalize trailing spaces on each line (but keep the newlines)
+      .split('\n')
+      .map(line => line.trimEnd())
+      .join('\n')
+      // Trim leading and trailing blank lines
+      .replace(/^\n+/, '')
+      .replace(/\n+$/, '')
+      // Apply reasonable length limit
+      .substring(0, 10000) // Higher limit for Markdown content
+  }
+
+  /**
+   * Sanitizes text content to prevent XSS and ensure data quality.
+   *
+   * This sanitizer is designed for short text fields like titles, references,
+   * and single-line content where whitespace normalization is desired.
+   *
    * @param text - Text to sanitize
    * @returns Sanitized text
    */
@@ -1510,6 +1970,53 @@ export class LLMService {
       .substring(0, 2000) // Reasonable length limit
   }
 }
+
+/*
+UNIT TEST FOR MARKDOWN SANITIZER:
+
+The sanitizeMarkdownText method must preserve Markdown structure while removing dangerous content.
+Test with the following input:
+
+const testMarkdownInput = `
+This is a paragraph with trailing spaces.
+
+## Heading with blank line above
+
+- List item 1
+- List item 2
+  - Nested item
+
+1. Numbered item 1
+2. Numbered item 2
+
+* Asterisk list
+* Another item
+
+\`\`\`javascript
+const code = "block";
+\`\`\`
+
+Final paragraph.
+
+
+`
+
+Expected output after sanitizeMarkdownText:
+- All blank lines preserved (for paragraph separation)
+- List markers (-, *, 1., 2.) intact
+- Code fence markers (```) intact
+- Indentation preserved
+- Trailing spaces removed from each line
+- Leading/trailing blank lines trimmed
+- No <> characters
+- No dangerous control characters
+
+Assertion: output.split('\n').length should be >= 15 (preserves newlines)
+Assertion: output should include '- List item 1'
+Assertion: output should include '1. Numbered item 1'
+Assertion: output should include '```'
+Assertion: output should not include '<' or '>'
+*/
 
 /*
 EXAMPLE USAGE AND TESTING:

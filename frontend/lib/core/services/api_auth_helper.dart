@@ -3,6 +3,7 @@ import 'package:uuid/uuid.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 
 import '../config/app_config.dart';
+import '../error/exceptions.dart';
 
 /// Unified authentication helper for all API services
 /// Ensures consistent authentication across the application
@@ -13,7 +14,7 @@ class ApiAuthHelper {
 
   /// Get API headers with proper authentication
   /// Uses live Supabase session for authenticated users
-  /// Uses x-session-id header for anonymous users
+  /// Uses anon key authorization for unauthenticated users (required for Edge Functions)
   static Future<Map<String, String>> getAuthHeaders() async {
     try {
       final headers = <String, String>{
@@ -28,10 +29,15 @@ class ApiAuthHelper {
         print(
             '🔐 [API] Using Supabase session token for user: ${session.user.id}');
       } else {
-        // For anonymous users, add x-session-id header (as expected by backend)
+        // For unauthenticated users, use anon key in Authorization header
+        // This is required for Edge Functions to accept the request
+        headers['Authorization'] = 'Bearer ${AppConfig.supabaseAnonKey}';
+
+        // Also add x-session-id header for backend session tracking
         final sessionId = await _getOrCreateAnonymousSessionId();
         headers['x-session-id'] = sessionId;
-        print('🔐 [API] Using anonymous session ID: $sessionId');
+        print(
+            '🔐 [API] Using anon key authorization with session ID: $sessionId');
       }
 
       return headers;
@@ -79,6 +85,73 @@ class ApiAuthHelper {
   static String? get currentUserId {
     final session = Supabase.instance.client.auth.currentSession;
     return session?.user.id;
+  }
+
+  /// Validate if current token is valid and not expired
+  /// Returns true if token exists and is valid, false otherwise
+  static bool validateCurrentToken() {
+    try {
+      final session = Supabase.instance.client.auth.currentSession;
+      if (session == null) {
+        print('🔐 [TOKEN_VALIDATION] No session found - token invalid');
+        return false;
+      }
+
+      if (session.accessToken.isEmpty) {
+        print('🔐 [TOKEN_VALIDATION] Empty access token - token invalid');
+        return false;
+      }
+
+      // Check if token is expired
+      if (session.expiresAt != null) {
+        final expiryDate =
+            DateTime.fromMillisecondsSinceEpoch(session.expiresAt! * 1000);
+        final now = DateTime.now();
+
+        if (now.isAfter(expiryDate)) {
+          print(
+              '🔐 [TOKEN_VALIDATION] Token expired at: $expiryDate - token invalid');
+          return false;
+        }
+      }
+
+      print(
+          '🔐 [TOKEN_VALIDATION] Token is valid for user: ${session.user.id}');
+      return true;
+    } catch (e) {
+      print('🔐 [TOKEN_VALIDATION] Error validating token: $e - token invalid');
+      return false;
+    }
+  }
+
+  /// Check if user requires authentication for API calls
+  /// Anonymous users don't need token validation
+  static bool requiresTokenValidation() {
+    final session = Supabase.instance.client.auth.currentSession;
+    // If there's any session data, we should validate the token
+    return session != null;
+  }
+
+  /// Validate token before making authenticated API requests
+  /// Throws TokenValidationException if token is invalid
+  static Future<void> validateTokenForRequest() async {
+    // Anonymous users don't need token validation
+    if (!requiresTokenValidation()) {
+      print('🔐 [TOKEN_VALIDATION] Anonymous user - skipping token validation');
+      return;
+    }
+
+    if (!validateCurrentToken()) {
+      print(
+          '🔐 [TOKEN_VALIDATION] Token validation failed - throwing exception');
+      throw const TokenValidationException(
+        message: 'Authentication token is invalid or expired',
+        code: 'TOKEN_INVALID',
+      );
+    }
+
+    print(
+        '🔐 [TOKEN_VALIDATION] Token validation passed - proceeding with request');
   }
 
   /// Debug helper to log current authentication state

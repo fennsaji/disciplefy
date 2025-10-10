@@ -1,3 +1,5 @@
+import 'dart:developer';
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/error/exceptions.dart';
 import '../../domain/entities/feedback_entity.dart';
@@ -19,17 +21,22 @@ class FeedbackRemoteDataSourceImpl implements FeedbackRemoteDataSource {
         body: body,
       );
 
-      if (response.status != 200) {
+      // Accept both 200 (OK) and 201 (Created) as success statuses
+      if (response.status != 200 && response.status != 201) {
         throw ServerException(
-          message: response.data['message'] ?? 'Failed to submit feedback',
+          message: response.data?['message'] ?? 'Failed to submit feedback',
           code: 'FEEDBACK_SUBMIT_ERROR',
         );
       }
 
       // Check if response indicates success
-      if (response.data['success'] != true) {
+      final responseData = response.data;
+
+      if (responseData is Map &&
+          responseData.containsKey('success') &&
+          responseData['success'] != true) {
         throw ServerException(
-          message: response.data['message'] ?? 'Feedback submission failed',
+          message: responseData['message'] ?? 'Feedback submission failed',
           code: 'FEEDBACK_SUBMIT_ERROR',
         );
       }

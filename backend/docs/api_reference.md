@@ -817,6 +817,359 @@ Authorization: Bearer YOUR_ACCESS_TOKEN (required)
 
 ---
 
+### 9. FCM Token Registration & Notification Preferences
+
+**Endpoint**: `GET/POST/PUT/DELETE /functions/v1/register-fcm-token`
+
+**Description**: Manages Firebase Cloud Messaging (FCM) tokens and user notification preferences for push notifications.
+
+**Authentication**: Required (Bearer token from Supabase Auth)
+
+#### 9.1 Get Notification Preferences
+
+**Method**: `GET /functions/v1/register-fcm-token`
+
+**Request Headers**:
+```
+Content-Type: application/json
+Authorization: Bearer YOUR_ACCESS_TOKEN
+```
+
+**Response Body**:
+```json
+{
+  "success": true,
+  "data": {
+    "preferences": {
+      "user_id": "string",
+      "daily_verse_enabled": "boolean",
+      "recommended_topic_enabled": "boolean",
+      "created_at": "string (ISO 8601)",
+      "updated_at": "string (ISO 8601)"
+    },
+    "token_registered": "boolean"
+  }
+}
+```
+
+#### 9.2 Register FCM Token
+
+**Method**: `POST /functions/v1/register-fcm-token`
+
+**Request Headers**:
+```
+Content-Type: application/json
+Authorization: Bearer YOUR_ACCESS_TOKEN
+```
+
+**Request Body**:
+```json
+{
+  "fcmToken": "string (required)",
+  "platform": "string (required: 'ios' | 'android' | 'web')",
+  "timezoneOffsetMinutes": "number (required)"
+}
+```
+
+**Field Definitions**:
+- `fcmToken`: Firebase Cloud Messaging token from device
+- `platform`: Device platform (ios, android, or web)
+- `timezoneOffsetMinutes`: User's timezone offset in minutes (e.g., 330 for IST, -300 for EST)
+
+**Response Body**:
+```json
+{
+  "success": true,
+  "message": "FCM token registered successfully",
+  "data": {
+    "token_id": "string",
+    "user_id": "string",
+    "platform": "string",
+    "registered_at": "string (ISO 8601)"
+  }
+}
+```
+
+#### 9.3 Update Notification Preferences
+
+**Method**: `PUT /functions/v1/register-fcm-token`
+
+**Request Headers**:
+```
+Content-Type: application/json
+Authorization: Bearer YOUR_ACCESS_TOKEN
+```
+
+**Request Body**:
+```json
+{
+  "dailyVerseEnabled": "boolean (optional)",
+  "recommendedTopicEnabled": "boolean (optional)"
+}
+```
+
+**Field Definitions**:
+- `dailyVerseEnabled`: Enable/disable daily verse notifications (6 AM local time)
+- `recommendedTopicEnabled`: Enable/disable recommended topic notifications (8 AM local time)
+
+**Response Body**:
+```json
+{
+  "success": true,
+  "message": "Preferences updated successfully",
+  "data": {
+    "preferences": {
+      "user_id": "string",
+      "daily_verse_enabled": "boolean",
+      "recommended_topic_enabled": "boolean",
+      "updated_at": "string (ISO 8601)"
+    }
+  }
+}
+```
+
+#### 9.4 Unregister FCM Token
+
+**Method**: `DELETE /functions/v1/register-fcm-token`
+
+**Request Headers**:
+```
+Content-Type: application/json
+Authorization: Bearer YOUR_ACCESS_TOKEN
+```
+
+**Request Body**:
+```json
+{
+  "fcmToken": "string (optional - if not provided, deletes all user's tokens)"
+}
+```
+
+**Response Body**:
+```json
+{
+  "success": true,
+  "message": "FCM token unregistered successfully",
+  "data": {
+    "deleted_tokens": "number"
+  }
+}
+```
+
+**Error Responses**:
+
+**401 Unauthorized**:
+```json
+{
+  "success": false,
+  "error": "UNAUTHORIZED",
+  "message": "Authentication required"
+}
+```
+
+**400 Bad Request**:
+```json
+{
+  "success": false,
+  "error": "INVALID_REQUEST",
+  "message": "fcmToken, platform, and timezoneOffsetMinutes are required"
+}
+```
+
+**500 Internal Server Error**:
+```json
+{
+  "success": false,
+  "error": "REGISTRATION_FAILED",
+  "message": "Failed to register FCM token"
+}
+```
+
+**Notes**:
+- FCM tokens are automatically refreshed when devices update them
+- Platform detection ensures proper notification delivery
+- Timezone offset enables accurate local time delivery (6 AM, 8 AM)
+- Duplicate tokens are handled gracefully (upsert logic)
+- User can have multiple tokens (different devices)
+- Preferences default to enabled for new users
+- Tokens are automatically cleaned up after 90 days of inactivity
+
+---
+
+### 10. Send Daily Verse Notification (Service Role Only)
+
+**Endpoint**: `POST /functions/v1/send-daily-verse-notification`
+
+**Description**: Triggers batch delivery of daily verse notifications to all eligible users based on their timezone and preferences.
+
+**Authentication**: Required (Service Role Key only)
+
+**Request Headers**:
+```
+Content-Type: application/json
+Authorization: Bearer SUPABASE_SERVICE_ROLE_KEY
+```
+
+**Request Body**: None required
+
+**Response Body**:
+```json
+{
+  "success": true,
+  "message": "Daily verse notifications sent successfully",
+  "data": {
+    "notificationsSent": "number",
+    "totalUsers": "number",
+    "failedTokens": "number",
+    "verse": {
+      "reference": "string (e.g., 'Philippians 4:13')",
+      "text": "string",
+      "translation": "string"
+    },
+    "executionTime": "number (milliseconds)"
+  }
+}
+```
+
+**Error Responses**:
+
+**401 Unauthorized**:
+```json
+{
+  "success": false,
+  "error": "UNAUTHORIZED",
+  "message": "Service role authorization required"
+}
+```
+
+**502 Bad Gateway**:
+```json
+{
+  "success": false,
+  "error": "FIREBASE_ERROR",
+  "message": "Failed to send notifications via Firebase Cloud Messaging"
+}
+```
+
+**500 Internal Server Error**:
+```json
+{
+  "success": false,
+  "error": "INTERNAL_ERROR",
+  "message": "Failed to process notification batch"
+}
+```
+
+**Notes**:
+- **Scheduled Execution**: Automatically triggered via GitHub Actions at 6 AM across 8 timezone windows
+- **User Filtering**: Only sends to users with `daily_verse_enabled = true`
+- **Timezone-Aware**: Queries users by `timezone_offset_minutes` for accurate local delivery
+- **Batch Processing**: Sends up to 500 tokens per FCM batch request
+- **Deep Linking**: Notification includes `type: 'daily_verse'` for proper app navigation
+- **Logging**: Records delivery status in `notification_logs` table
+- **Verse Selection**: Uses daily-verse API with anti-repetition logic
+- **Error Handling**: Invalid tokens are automatically removed from database
+
+**GitHub Actions Trigger**:
+```bash
+# Manual trigger via GitHub Actions
+gh workflow run send-notifications.yml --field notification_type=daily_verse
+
+# Or trigger locally for testing
+curl -X POST "http://127.0.0.1:54321/functions/v1/send-daily-verse-notification" \
+  -H "Authorization: Bearer SERVICE_ROLE_KEY"
+```
+
+---
+
+### 11. Send Recommended Topic Notification (Service Role Only)
+
+**Endpoint**: `POST /functions/v1/send-recommended-topic-notification`
+
+**Description**: Triggers batch delivery of personalized study topic recommendations to all eligible users based on their timezone and preferences.
+
+**Authentication**: Required (Service Role Key only)
+
+**Request Headers**:
+```
+Content-Type: application/json
+Authorization: Bearer SUPABASE_SERVICE_ROLE_KEY
+```
+
+**Request Body**: None required
+
+**Response Body**:
+```json
+{
+  "success": true,
+  "message": "Recommended topic notifications sent successfully",
+  "data": {
+    "notificationsSent": "number",
+    "totalUsers": "number",
+    "failedTokens": "number",
+    "topic": {
+      "id": "string",
+      "title": "string",
+      "description": "string",
+      "category": "string"
+    },
+    "executionTime": "number (milliseconds)"
+  }
+}
+```
+
+**Error Responses**:
+
+**401 Unauthorized**:
+```json
+{
+  "success": false,
+  "error": "UNAUTHORIZED",
+  "message": "Service role authorization required"
+}
+```
+
+**502 Bad Gateway**:
+```json
+{
+  "success": false,
+  "error": "FIREBASE_ERROR",
+  "message": "Failed to send notifications via Firebase Cloud Messaging"
+}
+```
+
+**500 Internal Server Error**:
+```json
+{
+  "success": false,
+  "error": "INTERNAL_ERROR",
+  "message": "Failed to process notification batch"
+}
+```
+
+**Notes**:
+- **Scheduled Execution**: Automatically triggered via GitHub Actions at 8 AM across 8 timezone windows
+- **User Filtering**: Only sends to users with `recommended_topic_enabled = true`
+- **Timezone-Aware**: Queries users by `timezone_offset_minutes` for accurate local delivery
+- **Batch Processing**: Sends up to 500 tokens per FCM batch request
+- **Personalization**: Selects topics based on user's study history and preferences
+- **Deep Linking**: Notification includes `type: 'recommended_topic'` and `topic_id` for navigation
+- **Logging**: Records delivery status in `notification_logs` table
+- **Topic Selection**: Uses topics-recommended API with smart recommendation logic
+- **Error Handling**: Invalid tokens are automatically removed from database
+
+**GitHub Actions Trigger**:
+```bash
+# Manual trigger via GitHub Actions
+gh workflow run send-notifications.yml --field notification_type=recommended_topic
+
+# Or trigger locally for testing
+curl -X POST "http://127.0.0.1:54321/functions/v1/send-recommended-topic-notification" \
+  -H "Authorization: Bearer SERVICE_ROLE_KEY"
+```
+
+---
+
 ## Common Response Patterns
 
 ### Success Response Structure
@@ -941,6 +1294,34 @@ const { data: savedGuide } = await supabase.functions.invoke('study-guides', {
     action: 'save'
   }
 });
+
+// Register FCM token for push notifications
+const { data: tokenData } = await supabase.functions.invoke('register-fcm-token', {
+  body: {
+    fcmToken: 'device-fcm-token-here',
+    platform: 'web',
+    timezoneOffsetMinutes: new Date().getTimezoneOffset() * -1
+  }
+});
+
+// Get notification preferences
+const { data: prefsData } = await supabase.functions.invoke('register-fcm-token', {
+  method: 'GET'
+});
+
+// Update notification preferences
+const { data: updatedPrefs } = await supabase.functions.invoke('register-fcm-token', {
+  body: {
+    dailyVerseEnabled: true,
+    recommendedTopicEnabled: false
+  },
+  method: 'PUT'
+});
+
+// Trigger daily verse notification (service role only)
+const { data: notificationResult } = await supabase.functions.invoke('send-daily-verse-notification', {
+  method: 'POST'
+});
 ```
 
 ### Flutter/Dart
@@ -997,6 +1378,34 @@ final saveResponse = await Supabase.instance.client.functions.invoke(
   body: {
     'guide_id': 'guide-uuid',
     'action': 'save'
+  },
+);
+
+// Register FCM token for push notifications
+final timezoneOffset = DateTime.now().timeZoneOffset.inMinutes;
+final tokenResponse = await Supabase.instance.client.functions.invoke(
+  'register-fcm-token',
+  body: {
+    'fcmToken': fcmToken,
+    'platform': Platform.isIOS ? 'ios' : 'android',
+    'timezoneOffsetMinutes': timezoneOffset,
+  },
+);
+
+// Get notification preferences
+final prefsResponse = await Supabase.instance.client.functions.invoke(
+  'register-fcm-token',
+  method: HttpMethod.get,
+);
+final preferences = prefsResponse.data['preferences'];
+
+// Update notification preferences
+final updateResponse = await Supabase.instance.client.functions.invoke(
+  'register-fcm-token',
+  method: HttpMethod.put,
+  body: {
+    'dailyVerseEnabled': true,
+    'recommendedTopicEnabled': false,
   },
 );
 ```
@@ -1076,6 +1485,9 @@ Required environment variables (centrally managed in `config.ts`):
 - `ANTHROPIC_API_KEY`: Anthropic API key for LLM services
 - `LLM_PROVIDER`: Primary LLM provider ('openai' or 'anthropic')
 - `USE_MOCK`: Enable mock mode for testing ('true' or 'false')
+- `FIREBASE_PROJECT_ID`: Firebase project ID for push notifications
+- `FIREBASE_CLIENT_EMAIL`: Firebase service account email
+- `FIREBASE_PRIVATE_KEY`: Firebase service account private key (PEM format)
 
 ### Monitoring
 All endpoints include comprehensive logging:
@@ -1086,11 +1498,26 @@ All endpoints include comprehensive logging:
 
 ---
 
-**Last Updated**: August 2025  
-**API Version**: 1.4  
-**Support**: support@disciplefy.com
+**Last Updated**: October 2025
+**API Version**: 1.5
+**Support**: support@disciplefy.in
 
 ## Security Changelog
+
+### Version 1.5 (October 2025)
+- **NEW FEATURE**: Added `/register-fcm-token` endpoint for Firebase Cloud Messaging token management
+- **NEW FEATURE**: Added push notification preference management (GET, POST, PUT, DELETE methods)
+- **NEW FEATURE**: Added `/send-daily-verse-notification` service endpoint for automated daily verse delivery
+- **NEW FEATURE**: Added `/send-recommended-topic-notification` service endpoint for personalized topic recommendations
+- **INTEGRATION**: Implemented Firebase Admin SDK integration with secure credential management
+- **AUTOMATION**: Added GitHub Actions workflow for scheduled notification delivery (8 timezone windows)
+- **ENHANCEMENT**: Timezone-aware notification delivery at 6 AM (daily verse) and 8 AM (topics)
+- **ENHANCEMENT**: Batch notification processing with FCM (up to 500 tokens per batch)
+- **SECURITY**: Service-role-only authentication for notification trigger endpoints
+- **DATABASE**: Added notification_logs table for delivery tracking and analytics
+- **DATABASE**: Added user_fcm_tokens table with platform and timezone tracking
+- **DATABASE**: Added notification_preferences table with per-user settings
+- **PRIVACY**: Automatic token cleanup after 90 days of inactivity
 
 ### Version 1.4 (August 2025)
 - **NEW FEATURE**: Added `/topics-categories` endpoint for retrieving all available Bible study topic categories

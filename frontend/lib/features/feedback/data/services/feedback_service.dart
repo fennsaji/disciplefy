@@ -1,5 +1,6 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/services/api_auth_helper.dart';
+import '../../../../core/error/exceptions.dart';
 
 /// Service for submitting user feedback to the backend
 /// References: API Reference v1.2 - Feedback endpoint
@@ -15,6 +16,9 @@ class FeedbackService {
     String? category,
   }) async {
     try {
+      // Validate token before making authenticated request
+      await ApiAuthHelper.validateTokenForRequest();
+
       final user = _supabase.auth.currentUser;
       final headers = await ApiAuthHelper.getAuthHeaders();
 
@@ -51,6 +55,9 @@ class FeedbackService {
         throw Exception(
             response.data['message'] ?? 'Feedback submission failed');
       }
+    } on TokenValidationException catch (e) {
+      // Re-throw token validation errors as authentication exceptions
+      throw Exception('Authentication failed: ${e.message}');
     } catch (e) {
       // Re-throw with more context
       throw Exception('Failed to submit feedback: $e');
@@ -60,8 +67,14 @@ class FeedbackService {
   /// Get session ID for anonymous users
   Future<String?> _getSessionId() async {
     try {
+      // Validate token before getting auth headers
+      await ApiAuthHelper.validateTokenForRequest();
+
       final headers = await ApiAuthHelper.getAuthHeaders();
       return headers['x-session-id'];
+    } on TokenValidationException {
+      // For session ID, return null if token validation fails
+      return null;
     } catch (e) {
       return null;
     }

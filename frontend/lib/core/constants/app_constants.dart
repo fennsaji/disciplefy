@@ -18,6 +18,7 @@ class AppConstants {
   // Study Guide Configuration
   static const int MAX_VERSE_LENGTH = 500;
   static const int MAX_TOPIC_LENGTH = 100;
+  static const int MAX_QUESTION_LENGTH = 500;
   static const int MIN_INPUT_LENGTH = 3;
   static const int MAX_STUDY_GUIDES_CACHE = 10;
 

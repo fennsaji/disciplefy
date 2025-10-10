@@ -9,6 +9,8 @@ part of 'daily_verse_model.dart';
 DailyVerseModel _$DailyVerseModelFromJson(Map<String, dynamic> json) =>
     DailyVerseModel(
       reference: json['reference'] as String,
+      referenceTranslations: ReferenceTranslationsModel.fromJson(
+          json['referenceTranslations'] as Map<String, dynamic>),
       translations: DailyVerseTranslationsModel.fromJson(
           json['translations'] as Map<String, dynamic>),
       date: json['date'] as String,
@@ -17,16 +19,33 @@ DailyVerseModel _$DailyVerseModelFromJson(Map<String, dynamic> json) =>
 Map<String, dynamic> _$DailyVerseModelToJson(DailyVerseModel instance) =>
     <String, dynamic>{
       'reference': instance.reference,
+      'referenceTranslations': instance.referenceTranslations,
       'translations': instance.translations,
       'date': instance.date,
+    };
+
+ReferenceTranslationsModel _$ReferenceTranslationsModelFromJson(
+        Map<String, dynamic> json) =>
+    ReferenceTranslationsModel(
+      en: json['en'] as String,
+      hi: json['hi'] as String,
+      ml: json['ml'] as String,
+    );
+
+Map<String, dynamic> _$ReferenceTranslationsModelToJson(
+        ReferenceTranslationsModel instance) =>
+    <String, dynamic>{
+      'en': instance.en,
+      'hi': instance.hi,
+      'ml': instance.ml,
     };
 
 DailyVerseTranslationsModel _$DailyVerseTranslationsModelFromJson(
         Map<String, dynamic> json) =>
     DailyVerseTranslationsModel(
-      esv: json['esv'] as String,
-      hindi: json['hindi'] as String,
-      malayalam: json['malayalam'] as String,
+      esv: json['esv'] as String?,
+      hindi: json['hindi'] as String?,
+      malayalam: json['malayalam'] as String?,
     );
 
 Map<String, dynamic> _$DailyVerseTranslationsModelToJson(

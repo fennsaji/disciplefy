@@ -391,7 +391,7 @@ export class TopicsRepository {
     // For other languages, count from translations table
     let query = this.supabaseClient
       .from('recommended_topics')
-      .select('id', { count: 'exact' })
+      .select('id, recommended_topics_translations!inner(lang_code)', { count: 'exact', head: true })
       .eq('recommended_topics_translations.lang_code', language)
 
     if (category) {
@@ -441,7 +441,7 @@ export class TopicsRepository {
     // For other languages, count from translations table
     const { count, error } = await this.supabaseClient
       .from('recommended_topics')
-      .select('id, recommended_topics_translations(id)', { count: 'exact', head: true })
+      .select('id, recommended_topics_translations!inner(id)', { count: 'exact', head: true })
       .in('category', categories as string[])
       .eq('recommended_topics_translations.lang_code', language)
 

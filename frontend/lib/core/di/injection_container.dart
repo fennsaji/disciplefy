@@ -4,10 +4,24 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/foundation.dart';
+import 'package:go_router/go_router.dart';
 
 import '../network/network_info.dart';
 import '../../features/auth/data/services/auth_service.dart';
 import '../../features/auth/presentation/bloc/auth_bloc.dart';
+import '../../features/auth/domain/repositories/storage_repository.dart';
+import '../../features/auth/data/repositories/storage_repository_impl.dart';
+import '../../features/auth/domain/repositories/auth_session_repository.dart';
+import '../../features/auth/data/repositories/auth_session_repository_impl.dart';
+import '../../features/auth/domain/repositories/secure_store_repository.dart';
+import '../../features/auth/data/repositories/secure_store_repository_impl.dart';
+import '../../features/auth/domain/repositories/local_store_repository.dart';
+import '../../features/auth/data/repositories/local_store_repository_impl.dart';
+import '../../features/auth/domain/usecases/clear_user_data_usecase.dart';
+import '../../features/auth/data/datasources/phone_auth_remote_datasource.dart';
+import '../../features/auth/domain/repositories/phone_auth_repository.dart';
+import '../../features/auth/data/repositories/phone_auth_repository_impl.dart';
+import '../../features/auth/presentation/bloc/phone_auth_bloc.dart';
 import '../../features/study_generation/domain/repositories/study_repository.dart';
 import '../../features/study_generation/data/repositories/study_repository_impl.dart';
 import '../../features/study_generation/data/datasources/study_remote_data_source.dart';
@@ -77,9 +91,48 @@ import '../services/auth_state_provider.dart';
 import '../services/language_preference_service.dart';
 import '../services/language_cache_coordinator.dart';
 import '../services/http_service.dart';
+import '../services/personal_notes_api_service.dart';
+import '../i18n/translation_service.dart';
+import '../../features/study_generation/domain/repositories/personal_notes_repository.dart';
+import '../../features/study_generation/data/repositories/personal_notes_repository_impl.dart';
+import '../../features/study_generation/domain/usecases/manage_personal_notes.dart';
 import '../../features/user_profile/data/services/user_profile_api_service.dart';
+import '../../features/notifications/data/repositories/notification_repository_impl.dart';
+import '../../features/notifications/domain/repositories/notification_repository.dart';
+import '../../features/notifications/domain/usecases/check_notification_permissions.dart'
+    as check_permissions_usecase;
+import '../../features/notifications/domain/usecases/get_notification_preferences.dart'
+    as get_preferences_usecase;
+import '../../features/notifications/domain/usecases/update_notification_preferences.dart'
+    as update_preferences_usecase;
+import '../../features/notifications/domain/usecases/request_notification_permissions.dart'
+    as request_permissions_usecase;
+import '../../features/notifications/presentation/bloc/notification_bloc.dart';
+import '../services/notification_service.dart';
 import '../navigation/study_navigator.dart';
 import '../navigation/go_router_study_navigator.dart';
+import '../router/app_router.dart';
+import '../../features/tokens/data/datasources/token_remote_data_source.dart';
+import '../../features/tokens/data/repositories/token_repository_impl.dart';
+import '../../features/tokens/data/repositories/payment_method_repository_impl.dart';
+import '../../features/tokens/domain/repositories/token_repository.dart';
+import '../../features/tokens/domain/repositories/payment_method_repository.dart';
+import '../../features/tokens/domain/usecases/get_token_status.dart';
+import '../../features/tokens/domain/usecases/get_payment_methods.dart';
+import '../../features/tokens/domain/usecases/save_payment_method.dart';
+import '../../features/tokens/domain/usecases/set_default_payment_method.dart';
+import '../../features/tokens/domain/usecases/delete_payment_method.dart';
+import '../../features/tokens/domain/usecases/get_payment_preferences.dart';
+import '../../features/tokens/domain/usecases/update_payment_preferences.dart';
+import '../../features/tokens/domain/usecases/confirm_payment.dart';
+import '../../features/tokens/domain/usecases/create_payment_order.dart';
+import '../../features/tokens/domain/usecases/get_purchase_history.dart';
+import '../../features/tokens/domain/usecases/get_purchase_statistics.dart';
+import '../../features/tokens/presentation/bloc/token_bloc.dart';
+import '../../features/tokens/presentation/bloc/payment_method_bloc.dart';
+import '../../features/tokens/di/tokens_injection.dart';
+import '../../features/follow_up_chat/presentation/bloc/follow_up_chat_bloc.dart';
+import '../../features/follow_up_chat/data/services/conversation_service.dart';
 
 /// Service locator instance for dependency injection
 final sl = GetIt.instance;
@@ -110,6 +163,21 @@ Future<void> initializeDependencies() async {
   // Register HttpService
   sl.registerLazySingleton(() => HttpService(httpClient: sl()));
 
+  // Register Personal Notes API Service (Data Layer)
+  sl.registerLazySingleton<PersonalNotesApiService>(
+    () => PersonalNotesApiService(httpClient: sl()),
+  );
+
+  // Register Personal Notes Repository (Domain Layer)
+  sl.registerLazySingleton<PersonalNotesRepository>(
+    () => PersonalNotesRepositoryImpl(apiService: sl()),
+  );
+
+  // Register Personal Notes Use Case (Domain Layer)
+  sl.registerLazySingleton<ManagePersonalNotesUseCase>(
+    () => ManagePersonalNotesUseCase(repository: sl()),
+  );
+
   // Register User Profile API Service
   sl.registerLazySingleton(() => UserProfileApiService(
         httpService: sl<HttpService>(),
@@ -127,12 +195,49 @@ Future<void> initializeDependencies() async {
         cacheCoordinator: sl(),
       ));
 
+  // Register Translation Service
+  sl.registerLazySingleton(() => TranslationService(sl(), sl()));
+
   //! Auth
   sl.registerLazySingleton(() => AuthService());
   sl.registerFactory(() => AuthBloc(authService: sl()));
 
+  // Phone Auth DataSource
+  sl.registerLazySingleton<PhoneAuthRemoteDataSource>(
+    () => PhoneAuthRemoteDataSourceImpl(
+      supabaseClient: sl(),
+    ),
+  );
+
+  // Phone Auth Repository
+  sl.registerLazySingleton<PhoneAuthRepository>(
+    () => PhoneAuthRepositoryImpl(
+      remoteDataSource: sl(),
+    ),
+  );
+
+  // Phone Auth BLoC
+  sl.registerFactory(() => PhoneAuthBloc(
+        phoneAuthRepository: sl(),
+      ));
+
   // Register AuthStateProvider as singleton for consistent state across screens
   sl.registerLazySingleton(() => AuthStateProvider());
+
+  // Storage Repository and Use Cases
+  sl.registerLazySingleton<StorageRepository>(() => StorageRepositoryImpl());
+  sl.registerLazySingleton<AuthSessionRepository>(
+      () => AuthSessionRepositoryImpl());
+  sl.registerLazySingleton<SecureStoreRepository>(
+      () => SecureStoreRepositoryImpl());
+  sl.registerLazySingleton<LocalStoreRepository>(
+      () => LocalStoreRepositoryImpl());
+  sl.registerLazySingleton(() => ClearUserDataUseCase(
+        authSessionRepository: sl(),
+        secureStoreRepository: sl(),
+        localStoreRepository: sl(),
+        storageRepository: sl(), // Legacy - for backward compatibility
+      ));
 
   //! Study Generation Data Sources
   sl.registerLazySingleton<StudyRemoteDataSource>(
@@ -162,6 +267,7 @@ Future<void> initializeDependencies() async {
   sl.registerFactory(() => StudyBloc(
         generateStudyGuide: sl(),
         saveGuideService: sl(),
+        managePersonalNotes: sl<ManagePersonalNotesUseCase>(),
         validationService: sl(),
         authService: sl(),
       ));
@@ -367,5 +473,50 @@ Future<void> initializeDependencies() async {
         updateUserProfile: sl(),
         deleteUserProfile: sl(),
         repository: sl(),
+      ));
+
+  //! Tokens
+  registerTokenDependencies(sl);
+
+  //! Follow Up Chat
+  sl.registerLazySingleton(() => ConversationService(
+        httpService: sl(),
+      ));
+
+  sl.registerFactory(() => FollowUpChatBloc(
+        httpService: sl(),
+        conversationService: sl(),
+      ));
+
+  //! Notifications
+  // Register GoRouter (required by NotificationService)
+  sl.registerLazySingleton<GoRouter>(() => AppRouter.router);
+
+  // Register NotificationService first (required by repository)
+  sl.registerLazySingleton<NotificationService>(() => NotificationService(
+        supabaseClient: sl(),
+        router: sl(),
+      ));
+
+  sl.registerLazySingleton<NotificationRepository>(
+      () => NotificationRepositoryImpl(
+            supabaseClient: sl(),
+            notificationService: sl(),
+          ));
+
+  sl.registerLazySingleton(
+      () => get_preferences_usecase.GetNotificationPreferences(sl()));
+  sl.registerLazySingleton(
+      () => update_preferences_usecase.UpdateNotificationPreferences(sl()));
+  sl.registerLazySingleton(
+      () => request_permissions_usecase.RequestNotificationPermissions(sl()));
+  sl.registerLazySingleton(
+      () => check_permissions_usecase.CheckNotificationPermissions(sl()));
+
+  sl.registerFactory(() => NotificationBloc(
+        getPreferences: sl(),
+        updatePreferences: sl(),
+        requestPermissions: sl(),
+        checkPermissions: sl(),
       ));
 }

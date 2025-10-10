@@ -18,7 +18,7 @@ export interface StudyGuideContent {
  * Study guide input parameters
  */
 export interface StudyGuideInput {
-  readonly type: 'scripture' | 'topic'
+  readonly type: 'scripture' | 'topic' | 'question'
   readonly value: string
   readonly language: string
 }
@@ -42,6 +42,7 @@ export interface StudyGuideResponse {
   readonly isSaved: boolean
   readonly createdAt: string
   readonly updatedAt: string
+  personal_notes?: string | null
 }
 
 /**
@@ -66,7 +67,7 @@ export class StudyGuideRepository {
     userContext: UserContext
   ): Promise<StudyGuideResponse> {
     // 1. Generate consistent hash for content deduplication
-    const inputHash = await this.generateInputHash(input.value)
+    const inputHash = await this.generateInputHash(input)
 
     // 2. Find or create cached content
     const cachedContent = await this.findOrCreateCachedContent(
@@ -101,39 +102,22 @@ export class StudyGuideRepository {
   }
 
   /**
-   * Find existing cached content or create new
+   * Find existing cached content or create new using UPSERT
+   *
+   * Uses UPSERT (INSERT ... ON CONFLICT DO UPDATE) to handle concurrent
+   * creation atomically without SELECT retry pattern. This prevents race
+   * conditions where content is deleted between INSERT failure and SELECT retry.
    */
   private async findOrCreateCachedContent(
     input: StudyGuideInput,
     inputHash: string,
     content: StudyGuideContent
   ): Promise<any> {
-    // Check if content already exists
-    const { data: existingContent, error: selectError } = await this.supabase
+    // CRITICAL: Use UPSERT instead of INSERT + SELECT retry
+    // This handles concurrent creation atomically and prevents race conditions
+    const { data: upsertedContent, error: upsertError } = await this.supabase
       .from('study_guides')
-      .select('*')
-      .eq('input_type', input.type)
-      .eq('input_value_hash', inputHash)
-      .eq('language', input.language)
-      .single()
-
-    if (selectError && selectError.code !== 'PGRST116') {
-      throw new AppError(
-        'DATABASE_ERROR',
-        `Failed to check existing content: ${selectError.message}`,
-        500
-      )
-    }
-
-    // Return existing content if found
-    if (existingContent) {
-      return existingContent
-    }
-
-    // Create new cached content
-    const { data: newContent, error: insertError } = await this.supabase
-      .from('study_guides')
-      .insert({
+      .upsert({
         input_type: input.type,
         input_value: input.value,
         input_value_hash: inputHash,
@@ -143,42 +127,38 @@ export class StudyGuideRepository {
         context: content.context,
         related_verses: content.relatedVerses,
         reflection_questions: content.reflectionQuestions,
-        prayer_points: content.prayerPoints
+        prayer_points: content.prayerPoints,
+        updated_at: new Date().toISOString()
+      }, {
+        // Specify conflict target (unique constraint columns)
+        onConflict: 'input_type,input_value_hash,language',
+        // On conflict: UPDATE the existing row to refresh timestamp
+        // This prevents returning stale data and provides audit trail
+        ignoreDuplicates: false
       })
       .select()
       .single()
 
-    if (insertError) {
-      // Handle race condition - another user might have created the same content
-      if (insertError.code === '23505') { // Unique constraint violation
-        // Retry finding the content
-        const { data: raceContent, error: raceError } = await this.supabase
-          .from('study_guides')
-          .select('*')
-          .eq('input_type', input.type)
-          .eq('input_value_hash', inputHash)
-          .eq('language', input.language)
-          .single()
-
-        if (raceError || !raceContent) {
-          throw new AppError(
-            'DATABASE_ERROR',
-            'Failed to handle concurrent content creation',
-            500
-          )
-        }
-
-        return raceContent
-      }
-
+    if (upsertError) {
+      console.error('[StudyGuideRepository] UPSERT failed:', upsertError)
       throw new AppError(
-        'DATABASE_ERROR',
-        `Failed to create cached content: ${insertError.message}`,
+        'CACHE_CREATION_ERROR',
+        `Failed to create or retrieve cached content: ${upsertError.message}`,
         500
       )
     }
 
-    return newContent
+    if (!upsertedContent) {
+      throw new AppError(
+        'CACHE_CORRUPTION',
+        'UPSERT succeeded but returned no data',
+        500
+      )
+    }
+
+    console.log(`[StudyGuideRepository] Content cached/retrieved: ${upsertedContent.id}`)
+
+    return upsertedContent
   }
 
   /**
@@ -329,6 +309,7 @@ export class StudyGuideRepository {
       .select(`
         id,
         is_saved,
+        personal_notes,
         created_at,
         updated_at,
         study_guides (
@@ -455,6 +436,7 @@ export class StudyGuideRepository {
       .select(`
         id,
         is_saved,
+        personal_notes,
         created_at,
         updated_at,
         study_guides (
@@ -524,7 +506,7 @@ export class StudyGuideRepository {
     input: StudyGuideInput,
     userContext: UserContext
   ): Promise<StudyGuideResponse | null> {
-    const inputHash = await this.generateInputHash(input.value)
+    const inputHash = await this.generateInputHash(input)
 
     // Check if content exists in cache
     const { data: content, error } = await this.supabase
@@ -586,27 +568,7 @@ export class StudyGuideRepository {
     }
   }
 
-  /**
-   * Check if user has content relationship
-   */
-  private async userHasContent(
-    contentId: string,
-    userContext: UserContext
-  ): Promise<boolean> {
-    if (userContext.type === 'authenticated') {
-      const { data, error } = await this.supabase
-        .from('user_study_guides')
-        .select('id')
-        .eq('study_guide_id', contentId)
-        .eq('user_id', userContext.userId!)
-        .single()
-
-      return !error && !!data
-    } else {
-      // Anonymous users can access cached content but don't have saved relationships
-      return false
-    }
-  }
+  // Removed duplicate private userHasContent method - using public version instead
 
   /**
    * Get user's relationship to content
@@ -621,11 +583,13 @@ export class StudyGuideRepository {
         .select(`
           id,
           is_saved,
+          personal_notes,
           created_at,
           updated_at,
           study_guides (
             id,
             input_type,
+            input_value,
             input_value_hash,
             language,
             summary,
@@ -662,10 +626,135 @@ export class StudyGuideRepository {
   }
 
   /**
+   * Updates personal notes for a user's study guide
+   * 
+   * @param studyGuideId - Study guide ID
+   * @param notes - Personal notes content (null to delete)
+   * @param userContext - User context
+   * @returns Updated timestamp
+   */
+  async updatePersonalNotes(
+    studyGuideId: string,
+    notes: string | null,
+    userContext: UserContext
+  ): Promise<string> {
+    if (userContext.type !== 'authenticated' || !userContext.userId) {
+      throw new AppError(
+        'UNAUTHORIZED',
+        'Personal notes are only available for authenticated users',
+        401
+      )
+    }
+
+    const updatedAt = new Date().toISOString()
+
+    const { error } = await this.supabase
+      .from('user_study_guides')
+      .update({
+        personal_notes: notes,
+        updated_at: updatedAt
+      })
+      .eq('user_id', userContext.userId)
+      .eq('study_guide_id', studyGuideId)
+
+    if (error) {
+      throw new AppError(
+        'DATABASE_ERROR',
+        `Failed to update personal notes: ${error.message}`,
+        500
+      )
+    }
+
+    return updatedAt
+  }
+
+  /**
+   * Retrieves personal notes for a user's study guide
+   * 
+   * @param studyGuideId - Study guide ID
+   * @param userContext - User context
+   * @returns Personal notes data or null if not found
+   */
+  async getPersonalNotes(
+    studyGuideId: string,
+    userContext: UserContext
+  ): Promise<{ notes: string | null; updatedAt: string } | null> {
+    if (userContext.type !== 'authenticated' || !userContext.userId) {
+      throw new AppError(
+        'UNAUTHORIZED',
+        'Personal notes are only available for authenticated users',
+        401
+      )
+    }
+
+    const { data, error } = await this.supabase
+      .from('user_study_guides')
+      .select('personal_notes, updated_at')
+      .eq('user_id', userContext.userId)
+      .eq('study_guide_id', studyGuideId)
+      .single()
+
+    if (error) {
+      if (error.code === 'PGRST116') {
+        return null // No relationship exists
+      }
+      throw new AppError(
+        'DATABASE_ERROR',
+        `Failed to retrieve personal notes: ${error.message}`,
+        500
+      )
+    }
+
+    return {
+      notes: data.personal_notes,
+      updatedAt: data.updated_at
+    }
+  }
+
+  /**
+   * Public method to check if user has access to content
+   * Exposes the private userHasContent method for the PersonalNotesService
+   * 
+   * @param contentId - Study guide content ID
+   * @param userContext - User context
+   * @returns Whether user has access to the content
+   */
+  async userHasContent(
+    contentId: string,
+    userContext: UserContext
+  ): Promise<boolean> {
+    if (userContext.type === 'authenticated') {
+      const { data, error } = await this.supabase
+        .from('user_study_guides')
+        .select('id')
+        .eq('study_guide_id', contentId)
+        .eq('user_id', userContext.userId!)
+        .single()
+
+      return !error && !!data
+    } else {
+      // Anonymous users can access cached content but don't have saved relationships
+      return false
+    }
+  }
+
+  /**
    * Generate consistent hash for input value
    */
-  private async generateInputHash(inputValue: string): Promise<string> {
-    return await this.securityValidator.hashSensitiveData(inputValue)
+  /**
+   * Generate hash for study guide input
+   *
+   * Includes type and language to prevent collisions where same value
+   * means different things (e.g., "Faith" as topic vs "Faith" as scripture reference)
+   */
+  private async generateInputHash(input: StudyGuideInput): Promise<string> {
+    // Normalize the value for consistent hashing
+    const normalizedValue = input.value.toLowerCase().trim().replace(/\s+/g, ' ')
+
+    // Include type and language to prevent collisions
+    const hashInput = `${input.type}:${input.language}:${normalizedValue}`
+
+    return await this.securityValidator.hashSensitiveData(hashInput)
   }
 
   /**
@@ -678,7 +767,7 @@ export class StudyGuideRepository {
   ): StudyGuideResponse {
     const studyGuide = data.study_guides
 
-    return {
+    const response: StudyGuideResponse = {
       id: studyGuide.id,
       input: {
         type: studyGuide.input_type as 'scripture' | 'topic',
@@ -697,5 +786,12 @@ export class StudyGuideRepository {
       createdAt: data.created_at,
       updatedAt: data.updated_at
     }
+
+    // Only include personal_notes for authenticated users who have this data
+    if (isAuthenticated && data.personal_notes !== undefined) {
+      response.personal_notes = data.personal_notes
+    }
+
+    return response
   }
 }

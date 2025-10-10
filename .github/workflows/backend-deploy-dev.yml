@@ -197,7 +197,15 @@ jobs:
         OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY_DEV }}
         ANTHROPIC_API_KEY=${{ secrets.ANTHROPIC_API_KEY_DEV }}
         LLM_PROVIDER=${{ secrets.LLM_PROVIDER_DEV || 'openai' }}
-        
+
+        # Bible API Configuration (Development)
+        BIBLE_API=${{ secrets.BIBLE_API }}
+
+        # Firebase/FCM Configuration (Development)
+        FIREBASE_PROJECT_ID=${{ secrets.FIREBASE_PROJECT_ID_DEV }}
+        FIREBASE_PRIVATE_KEY=${{ secrets.FIREBASE_PRIVATE_KEY_DEV }}
+        FIREBASE_CLIENT_EMAIL=${{ secrets.FIREBASE_CLIENT_EMAIL_DEV }}
+
         # Authentication (Development)
         GOOGLE_OAUTH_CLIENT_ID=${{ secrets.GOOGLE_OAUTH_CLIENT_ID_DEV }}
         GOOGLE_OAUTH_CLIENT_SECRET=${{ secrets.GOOGLE_OAUTH_CLIENT_SECRET_DEV }}
@@ -208,14 +216,28 @@ jobs:
 
         # Security (Development)
         JWT_SECRET=${{ secrets.JWT_SECRET_DEV }}
-        
+        CRON_SECRET=${{ secrets.CRON_SECRET_DEV }}
+
         # Development settings
         LOG_LEVEL=debug
-        USE_MOCK=${{ env.DEPLOY_ENV == 'development' && 'true' || 'false' }}
+        USE_MOCK='false'
         NODE_ENV=${{ env.DEPLOY_ENV }}
+
+        # Payment Configuration (Development)
+        RAZORPAY_KEY_ID=${{ secrets.RAZORPAY_KEY_ID_DEV }}
+        RAZORPAY_KEY_SECRET=${{ secrets.RAZORPAY_KEY_SECRET_DEV }}
+        RAZORPAY_WEBHOOK_SECRET=${{ secrets.RAZORPAY_WEBHOOK_SECRET_DEV }}
+
+        # SMS Configuration (Development)
+        TWILIO_ACCOUNT_SID=${{ secrets.TWILIO_ACCOUNT_SID_DEV }}
+        TWILIO_MESSAGE_SERVICE_SID=${{ secrets.TWILIO_MESSAGE_SERVICE_SID_DEV }}
+        TWILIO_AUTH_TOKEN=${{ secrets.TWILIO_AUTH_TOKEN_DEV }}
+
+        # Rate Limiting (Development)
         ANONYMOUS_RATE_LIMIT=10
         AUTHENTICATED_RATE_LIMIT=20
         API_REQUEST_LIMIT=200
+
         EOF
         echo "✅ ${{ env.DEPLOY_ENV }} environment file created"
     
