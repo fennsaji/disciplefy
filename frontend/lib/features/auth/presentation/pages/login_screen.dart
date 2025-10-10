@@ -6,7 +6,10 @@ import '../bloc/auth_bloc.dart';
 import '../bloc/auth_event.dart';
 import '../bloc/auth_state.dart' as auth_states;
 import '../../../../core/services/auth_aware_navigation_service.dart';
+import '../../../../core/router/app_routes.dart';
 import '../../../../core/utils/logger.dart';
+import '../../../../core/extensions/translation_extension.dart';
+import '../../../../core/i18n/translation_keys.dart';
 
 /// Login screen with Google OAuth and anonymous sign-in options
 /// Follows Material Design 3 guidelines and brand theme with dark mode support
@@ -18,6 +21,9 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
+  // Flag to prevent navigation conflicts during phone auth flow
+  final bool _isPhoneAuthInProgress = false;
+
   @override
   void initState() {
     super.initState();
@@ -54,6 +60,25 @@ class _LoginScreenState extends State<LoginScreen> {
       BlocListener<AuthBloc, auth_states.AuthState>(
         listener: (context, state) {
           if (state is auth_states.AuthenticatedState) {
+            // Check if this is a phone auth user by checking if they have a phone number
+            final isPhoneAuthUser =
+                state.user.phone != null && state.user.phone!.isNotEmpty;
+
+            if (isPhoneAuthUser) {
+              Logger.info(
+                'Phone auth user detected - letting router handle navigation',
+                tag: 'LOGIN_SCREEN',
+                context: {
+                  'user_type': 'phone_auth',
+                  'phone': state.user.phone,
+                  'skip_navigation': 'router_will_handle',
+                },
+              );
+              // Don't navigate for phone auth users - let the router handle it
+              // This prevents conflicts with OTP verification screen navigation
+              return;
+            }
+
             Logger.info(
               'Authentication successful - navigating to home',
               tag: 'LOGIN_SCREEN',
@@ -177,7 +202,7 @@ class _LoginScreenState extends State<LoginScreen> {
     return Column(
       children: [
         Text(
-          'Welcome to Disciplefy',
+          context.tr(TranslationKeys.loginWelcome),
           style: GoogleFonts.playfairDisplay(
             fontSize: 28,
             fontWeight: FontWeight.w700,
@@ -187,7 +212,7 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
         const SizedBox(height: 16),
         Text(
-          'Deepen your faith through guided Bible study',
+          context.tr(TranslationKeys.loginSubtitle),
           style: GoogleFonts.inter(
             fontSize: 16,
             fontWeight: FontWeight.normal,
@@ -212,6 +237,11 @@ class _LoginScreenState extends State<LoginScreen> {
               _buildGoogleSignInButton(context, isLoading),
 
               const SizedBox(height: 16),
+
+              // Phone Sign-In Button - COMMENTED OUT FOR NOW
+              // _buildPhoneSignInButton(context, isLoading),
+              //
+              // const SizedBox(height: 16),
 
               // Continue as Guest Button
               _buildGuestSignInButton(context, isLoading),
@@ -267,7 +297,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   const SizedBox(width: 12),
 
                   Text(
-                    'Continue with Google',
+                    context.tr(TranslationKeys.loginContinueWithGoogle),
                     style: GoogleFonts.inter(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
@@ -278,6 +308,49 @@ class _LoginScreenState extends State<LoginScreen> {
       ),
     );
   }
+
+  /// Builds the phone sign-in button - COMMENTED OUT FOR NOW
+  // Widget _buildPhoneSignInButton(BuildContext context, bool isLoading) {
+  //   final theme = Theme.of(context);
+  //
+  //   return SizedBox(
+  //     width: double.infinity,
+  //     height: 56,
+  //     child: OutlinedButton(
+  //       onPressed: isLoading ? null : () => _handlePhoneSignIn(context),
+  //       style: OutlinedButton.styleFrom(
+  //         foregroundColor: theme.colorScheme.primary,
+  //         side: BorderSide(
+  //           color: theme.colorScheme.primary,
+  //           width: 2,
+  //         ),
+  //         shape: RoundedRectangleBorder(
+  //           borderRadius: BorderRadius.circular(12),
+  //         ),
+  //         disabledForegroundColor:
+  //             theme.colorScheme.primary.withValues(alpha: 0.5),
+  //       ),
+  //       child: Row(
+  //         mainAxisAlignment: MainAxisAlignment.center,
+  //         children: [
+  //           Icon(
+  //             Icons.phone,
+  //             size: 20,
+  //             color: theme.colorScheme.primary,
+  //           ),
+  //           const SizedBox(width: 12),
+  //           Text(
+  //             'Continue with Phone',
+  //             style: GoogleFonts.inter(
+  //               fontSize: 16,
+  //               fontWeight: FontWeight.w600,
+  //             ),
+  //           ),
+  //         ],
+  //       ),
+  //     ),
+  //   );
+  // }
 
   /// Builds the guest sign-in button
   Widget _buildGuestSignInButton(BuildContext context, bool isLoading) {
@@ -310,7 +383,7 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
             const SizedBox(width: 12),
             Text(
-              'Continue as Guest',
+              context.tr(TranslationKeys.loginContinueAsGuest),
               style: GoogleFonts.inter(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
@@ -342,7 +415,7 @@ class _LoginScreenState extends State<LoginScreen> {
       child: Column(
         children: [
           Text(
-            'What you\'ll get:',
+            context.tr(TranslationKeys.loginFeaturesTitle),
             style: GoogleFonts.inter(
               fontSize: 16,
               fontWeight: FontWeight.w600,
@@ -350,22 +423,25 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
           ),
           const SizedBox(height: 16),
-          const _FeatureItem(
+          _FeatureItem(
             icon: Icons.auto_awesome,
-            title: 'AI-Powered Study Guides',
-            subtitle: 'Personalized insights for any verse or topic',
+            title: context.tr(TranslationKeys.loginFeatureAiStudyGuides),
+            subtitle:
+                context.tr(TranslationKeys.loginFeatureAiStudyGuidesSubtitle),
           ),
           const SizedBox(height: 12),
-          const _FeatureItem(
+          _FeatureItem(
             icon: Icons.school,
-            title: 'Structured Learning',
-            subtitle: 'Follow proven biblical study methodology',
+            title: context.tr(TranslationKeys.loginFeatureStructuredLearning),
+            subtitle: context
+                .tr(TranslationKeys.loginFeatureStructuredLearningSubtitle),
           ),
           const SizedBox(height: 12),
-          const _FeatureItem(
+          _FeatureItem(
             icon: Icons.language,
-            title: 'Multi-Language Support',
-            subtitle: 'Study in English, Hindi, and Malayalam',
+            title: context.tr(TranslationKeys.loginFeatureMultiLanguage),
+            subtitle:
+                context.tr(TranslationKeys.loginFeatureMultiLanguageSubtitle),
           ),
         ],
       ),
@@ -377,7 +453,7 @@ class _LoginScreenState extends State<LoginScreen> {
     final theme = Theme.of(context);
 
     return Text(
-      'By continuing, you agree to our Terms of Service and Privacy Policy',
+      context.tr(TranslationKeys.loginPrivacyPolicy),
       style: GoogleFonts.inter(
         fontSize: 12,
         color: theme.colorScheme.onSurface.withOpacity(0.6),
@@ -391,6 +467,11 @@ class _LoginScreenState extends State<LoginScreen> {
   void _handleGoogleSignIn(BuildContext context) {
     context.read<AuthBloc>().add(const GoogleSignInRequested());
   }
+
+  /// Handles phone sign-in button tap - COMMENTED OUT FOR NOW
+  // void _handlePhoneSignIn(BuildContext context) {
+  //   context.push(AppRoutes.phoneAuth);
+  // }
 
   /// Handles guest sign-in button tap
   void _handleGuestSignIn(BuildContext context) {

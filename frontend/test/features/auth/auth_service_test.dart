@@ -26,6 +26,12 @@ void main() {
     mockStorageService = MockAuthStorageService();
     mockUser = MockUser();
 
+    // Mock authStateChanges stream for profile sync monitoring
+    when(mockAuthService.authStateChanges).thenAnswer((_) => Stream.empty());
+
+    // Mock currentUser for profile sync check
+    when(mockAuthService.currentUser).thenReturn(null);
+
     // Initialize auth service with mocked dependencies
     authService = AuthService(
       authenticationService: mockAuthService,
@@ -219,6 +225,7 @@ void main() {
       when(mockStorageService.clearAllData()).thenAnswer((_) async {});
 
       // Act
+      // ignore: deprecated_member_use_from_same_package
       await authService.clearAllData();
 
       // Assert

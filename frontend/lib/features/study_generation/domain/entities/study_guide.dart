@@ -1,5 +1,7 @@
 import 'package:equatable/equatable.dart';
 
+import '../../../tokens/domain/entities/token_consumption.dart';
+
 /// Domain entity representing a Bible study guide.
 ///
 /// This entity encapsulates all the information about a generated study guide,
@@ -41,6 +43,18 @@ class StudyGuide extends Equatable {
   /// Optional user ID if the guide was saved by an authenticated user.
   final String? userId;
 
+  /// Optional personal notes associated with this study guide.
+  final String? personalNotes;
+
+  /// Whether this study guide is saved by the current user.
+  final bool? isSaved;
+
+  /// Token consumption information from the generation API.
+  final TokenConsumption? tokenConsumption;
+
+  /// Whether this study guide was returned from cache (no tokens consumed).
+  final bool fromCache;
+
   /// Creates a new StudyGuide instance.
   ///
   /// All fields except [userId] are required to ensure the study guide
@@ -58,6 +72,10 @@ class StudyGuide extends Equatable {
     required this.language,
     required this.createdAt,
     this.userId,
+    this.personalNotes,
+    this.isSaved,
+    this.tokenConsumption,
+    this.fromCache = false,
   });
 
   /// Creates a copy of this study guide with optionally modified fields.
@@ -77,6 +95,10 @@ class StudyGuide extends Equatable {
     String? language,
     DateTime? createdAt,
     String? userId,
+    String? personalNotes,
+    bool? isSaved,
+    TokenConsumption? tokenConsumption,
+    bool? fromCache,
   }) =>
       StudyGuide(
         id: id ?? this.id,
@@ -91,6 +113,10 @@ class StudyGuide extends Equatable {
         language: language ?? this.language,
         createdAt: createdAt ?? this.createdAt,
         userId: userId ?? this.userId,
+        personalNotes: personalNotes ?? this.personalNotes,
+        isSaved: isSaved ?? this.isSaved,
+        tokenConsumption: tokenConsumption ?? this.tokenConsumption,
+        fromCache: fromCache ?? this.fromCache,
       );
 
   /// Gets the title of the study guide based on input type and content.
@@ -134,6 +160,12 @@ class StudyGuide extends Equatable {
   int _countWords(String text) =>
       text.trim().split(RegExp(r'\s+')).where((word) => word.isNotEmpty).length;
 
+  /// Check if tokens were consumed for this study guide generation.
+  bool get tokensConsumed => tokenConsumption != null && !fromCache;
+
+  /// Get the number of tokens consumed (0 if from cache).
+  int get tokensUsed => fromCache ? 0 : (tokenConsumption?.consumed ?? 0);
+
   @override
   List<Object?> get props => [
         id,
@@ -148,6 +180,10 @@ class StudyGuide extends Equatable {
         language,
         createdAt,
         userId,
+        personalNotes,
+        isSaved,
+        tokenConsumption,
+        fromCache,
       ];
 
   @override

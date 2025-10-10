@@ -4,6 +4,8 @@ import 'package:flutter/services.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../../../../core/utils/ui_utils.dart';
+import '../../../../core/extensions/translation_extension.dart';
+import '../../../../core/i18n/translation_keys.dart';
 import '../../domain/entities/daily_verse_entity.dart';
 import '../bloc/daily_verse_bloc.dart';
 import '../bloc/daily_verse_event.dart';
@@ -85,8 +87,8 @@ class DailyVerseCard extends StatelessWidget {
               Expanded(
                 child: Text(
                   isRefreshing
-                      ? 'Refreshing...'
-                      : 'Loading Verse of the Day...',
+                      ? context.tr(TranslationKeys.dailyVerseRefreshing)
+                      : context.tr(TranslationKeys.dailyVerseLoading),
                   style: theme.textTheme.titleMedium?.copyWith(
                     color: theme.colorScheme.onSecondary,
                   ),
@@ -135,7 +137,7 @@ class DailyVerseCard extends StatelessWidget {
               Padding(
                 padding: const EdgeInsets.only(bottom: 16),
                 child: Text(
-                  state.verse.reference,
+                  state.verse.getReferenceText(state.currentLanguage),
                   style: theme.textTheme.titleMedium?.copyWith(
                     color: theme.colorScheme.onSecondary,
                     fontWeight: FontWeight.w700,
@@ -183,7 +185,7 @@ class DailyVerseCard extends StatelessWidget {
                           ),
                           const SizedBox(width: 6),
                           Text(
-                            'Tap to generate study guide',
+                            context.tr(TranslationKeys.dailyVerseTapToGenerate),
                             style: theme.textTheme.bodySmall?.copyWith(
                               color: theme.colorScheme.onSecondary
                                   .withValues(alpha: 0.6),
@@ -224,7 +226,7 @@ class DailyVerseCard extends StatelessWidget {
               ),
               const SizedBox(width: 8),
               Text(
-                'Offline Mode',
+                context.tr(TranslationKeys.dailyVerseOfflineMode),
                 style: theme.textTheme.labelMedium?.copyWith(
                   color: theme.colorScheme.error,
                   fontWeight: FontWeight.w500,
@@ -246,7 +248,7 @@ class DailyVerseCard extends StatelessWidget {
 
           // Verse content
           Text(
-            state.verse.reference,
+            state.verse.getReferenceText(state.currentLanguage),
             style: theme.textTheme.labelLarge?.copyWith(
               color: theme.colorScheme.onSecondary,
               fontWeight: FontWeight.w600,
@@ -296,7 +298,7 @@ class DailyVerseCard extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           Text(
-            'Unable to Load Verse',
+            context.tr(TranslationKeys.dailyVerseUnableToLoad),
             style: theme.textTheme.headlineSmall?.copyWith(
               fontWeight: FontWeight.w600,
               color: theme.colorScheme.onSecondary,
@@ -304,7 +306,7 @@ class DailyVerseCard extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            state.message,
+            context.tr(TranslationKeys.dailyVerseSomethingWentWrong),
             style: theme.textTheme.bodyMedium?.copyWith(
               color: theme.colorScheme.onSecondary.withValues(alpha: 0.8),
             ),
@@ -316,7 +318,7 @@ class DailyVerseCard extends StatelessWidget {
               context.read<DailyVerseBloc>().add(const RefreshVerse());
             },
             icon: const Icon(Icons.refresh),
-            label: const Text('Try Again'),
+            label: Text(context.tr(TranslationKeys.homeTryAgain)),
             style: ElevatedButton.styleFrom(
               backgroundColor: theme.colorScheme.primary,
               foregroundColor: theme.colorScheme.onPrimary,
@@ -353,7 +355,7 @@ class DailyVerseCard extends StatelessWidget {
               Row(
                 children: [
                   Text(
-                    'Verse of the Day',
+                    context.tr(TranslationKeys.dailyVerseOfTheDay),
                     style: theme.textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.w600,
                       color: theme.colorScheme.onSecondary,
@@ -387,7 +389,7 @@ class DailyVerseCard extends StatelessWidget {
               borderRadius: BorderRadius.circular(12),
             ),
             child: Text(
-              'Cached',
+              context.tr(TranslationKeys.dailyVerseCached),
               style: theme.textTheme.labelSmall?.copyWith(
                 fontWeight: FontWeight.w500,
                 color: theme.colorScheme.onSecondary,
@@ -476,7 +478,7 @@ class DailyVerseCard extends StatelessWidget {
             color: theme.colorScheme.onSecondary,
           ),
           label: Text(
-            'Copy',
+            context.tr(TranslationKeys.dailyVerseCopy),
             style: theme.textTheme.labelLarge?.copyWith(
               color: theme.colorScheme.onSecondary,
             ),
@@ -498,7 +500,7 @@ class DailyVerseCard extends StatelessWidget {
             color: theme.colorScheme.onSecondary,
           ),
           label: Text(
-            'Share',
+            context.tr(TranslationKeys.dailyVerseShare),
             style: theme.textTheme.labelLarge?.copyWith(
               color: theme.colorScheme.onSecondary,
             ),
@@ -544,7 +546,8 @@ class DailyVerseCard extends StatelessWidget {
   }
 
   void _copyVerseToClipboard(BuildContext context, DailyVerseLoaded state) {
-    final text = '${state.verse.reference}\n\n${state.currentVerseText}';
+    final text =
+        '${state.verse.getReferenceText(state.currentLanguage)}\n\n${state.currentVerseText}';
     Clipboard.setData(ClipboardData(text: text));
 
     final theme = Theme.of(context);
@@ -552,7 +555,7 @@ class DailyVerseCard extends StatelessWidget {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
-          'Verse copied to clipboard',
+          context.tr(TranslationKeys.dailyVerseCopied),
           style: theme.textTheme.bodyMedium?.copyWith(
             color: theme.colorScheme.onPrimary,
           ),
@@ -566,7 +569,7 @@ class DailyVerseCard extends StatelessWidget {
 
   void _shareVerse(DailyVerseLoaded state) {
     final text =
-        '${state.verse.reference}\n\n${state.currentVerseText}\n\n- Shared from Disciplefy';
+        '${state.verse.getReferenceText(state.currentLanguage)}\n\n${state.currentVerseText}\n\n- Shared from Disciplefy';
     Share.share(text);
   }
 }

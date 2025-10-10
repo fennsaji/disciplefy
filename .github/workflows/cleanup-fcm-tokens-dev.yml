@@ -1,0 +1,176 @@
+# ============================================================================
+# FCM Token Cleanup Workflow (Development)
+# ============================================================================
+# Removes expired FCM tokens (90+ days inactive) from the development database
+# Runs daily at 03:00 UTC to maintain database hygiene and GDPR compliance
+
+name: Cleanup FCM Tokens (Development)
+
+# Trigger Schedule
+on:
+  schedule:
+    # Run daily at 03:00 UTC (low-traffic time, offset from production)
+    - cron: '0 3 * * *'
+
+  # Allow manual triggering for testing and maintenance
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Dry run (count tokens without deleting)'
+        required: false
+        default: 'false'
+        type: choice
+        options:
+          - 'true'
+          - 'false'
+
+# Environment configuration
+env:
+  SUPABASE_PROJECT_ID: ${{ secrets.SUPABASE_DEV_PROJECT_ID }}
+  SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+
+jobs:
+  cleanup-tokens:
+    name: Cleanup Expired FCM Tokens (Dev)
+    runs-on: ubuntu-latest
+
+    steps:
+      # ============================================================================
+      # Setup
+      # ============================================================================
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Supabase CLI
+        run: |
+          curl -fsSL "https://github.com/supabase/cli/releases/latest/download/supabase_linux_amd64.tar.gz" | tar -xz -C /tmp
+          sudo mv /tmp/supabase /usr/local/bin/supabase
+          sudo chmod +x /usr/local/bin/supabase
+          supabase --version
+
+      # ============================================================================
+      # Token Cleanup Execution
+      # ============================================================================
+
+      - name: Run Token Cleanup (Dev)
+        id: cleanup
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET_DEV }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_DEV_URL }}
+          DRY_RUN: ${{ inputs.dry_run }}
+        run: |
+          echo "Starting FCM token cleanup (Development)..."
+          echo "Timestamp: $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+
+          # Set dry_run to false if empty (scheduled runs)
+          dry_run_value="${DRY_RUN:-false}"
+          echo "Dry run mode: $dry_run_value"
+
+          # Call the cleanup Edge Function with dedicated cron secret
+          response=$(curl -s -w "\n%{http_code}" -X POST \
+            "${SUPABASE_URL}/functions/v1/cleanup-fcm-tokens" \
+            -H "X-Cron-Secret: ${CRON_SECRET}" \
+            -H "Content-Type: application/json" \
+            -d "{\"dry_run\": ${dry_run_value}}")
+
+          # Extract HTTP status code (last line)
+          http_code=$(echo "$response" | tail -n1)
+
+          # Extract response body (all lines except last)
+          response_body=$(echo "$response" | sed '$d')
+
+          echo "HTTP Status: $http_code"
+          echo "Response: $response_body"
+
+          # Parse response
+          if [ "$http_code" -eq 200 ]; then
+            removed_count=$(echo "$response_body" | jq -r '.removedCount // 0')
+            expected_count=$(echo "$response_body" | jq -r '.expectedCount // 0')
+            cutoff_date=$(echo "$response_body" | jq -r '.cutoffDate // "N/A"')
+
+            echo "✅ Cleanup successful (Dev)"
+            echo "   Removed: $removed_count tokens"
+            echo "   Expected: $expected_count tokens"
+            echo "   Cutoff Date: $cutoff_date"
+
+            # Set outputs for summary
+            echo "removed_count=$removed_count" >> $GITHUB_OUTPUT
+            echo "expected_count=$expected_count" >> $GITHUB_OUTPUT
+            echo "cutoff_date=$cutoff_date" >> $GITHUB_OUTPUT
+            echo "status=success" >> $GITHUB_OUTPUT
+          else
+            echo "❌ Cleanup failed with HTTP $http_code (Dev)"
+            echo "   Response: $response_body"
+            echo "status=failed" >> $GITHUB_OUTPUT
+            exit 1
+          fi
+
+      # ============================================================================
+      # Reporting & Notifications
+      # ============================================================================
+
+      - name: Generate Summary
+        if: always()
+        run: |
+          echo "## 🧹 FCM Token Cleanup Report (Development)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Timestamp:** $(date -u '+%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_STEP_SUMMARY
+          echo "**Environment:** Development" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if [ "${{ steps.cleanup.outputs.status }}" = "success" ]; then
+            echo "✅ **Status:** Cleanup completed successfully" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "### Results" >> $GITHUB_STEP_SUMMARY
+            echo "- **Tokens Removed:** ${{ steps.cleanup.outputs.removed_count }}" >> $GITHUB_STEP_SUMMARY
+            echo "- **Tokens Expected:** ${{ steps.cleanup.outputs.expected_count }}" >> $GITHUB_STEP_SUMMARY
+            echo "- **Cutoff Date:** ${{ steps.cleanup.outputs.cutoff_date }}" >> $GITHUB_STEP_SUMMARY
+            echo "- **Retention Period:** 90 days" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ **Status:** Cleanup failed" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "Please check the logs for error details." >> $GITHUB_STEP_SUMMARY
+          fi
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Maintenance Notes" >> $GITHUB_STEP_SUMMARY
+          echo "- Tokens inactive for 90+ days are removed automatically" >> $GITHUB_STEP_SUMMARY
+          echo "- This helps maintain database hygiene and GDPR compliance" >> $GITHUB_STEP_SUMMARY
+          echo "- Users will receive new tokens when they next open the app" >> $GITHUB_STEP_SUMMARY
+          echo "- **Development environment:** Testing cleanup functionality" >> $GITHUB_STEP_SUMMARY
+
+      - name: Notify on Failure
+        if: failure()
+        run: |
+          echo "::error::FCM token cleanup failed in Development. Please investigate immediately."
+          echo "::error::Check Supabase logs and Edge Function status."
+          # In production, add Slack/email notification here
+
+# ============================================================================
+# Workflow Configuration Notes
+# ============================================================================
+#
+# Schedule: Runs daily at 03:00 UTC (offset from production at 02:00 UTC)
+# Manual Trigger: Can be triggered manually via GitHub Actions UI
+#
+# Required Secrets:
+# - SUPABASE_DEV_PROJECT_ID: Your Supabase development project ID
+# - SUPABASE_ACCESS_TOKEN: Supabase API access token
+# - CRON_SECRET_DEV: Dedicated secret for development cron job authentication
+# - SUPABASE_DEV_URL: Your Supabase development project URL
+#
+# Token Retention Policy:
+# - Tokens inactive for 90+ days are removed
+# - This complies with GDPR data minimization principles
+# - Users automatically receive new tokens when they next open the app
+#
+# Monitoring:
+# - Check GitHub Actions summary for cleanup reports
+# - Monitor Supabase logs for any errors
+# - Set up alerts for workflow failures (recommended)

@@ -3,11 +3,13 @@ import 'package:equatable/equatable.dart';
 /// Domain entity for daily Bible verse
 class DailyVerseEntity extends Equatable {
   final String reference;
+  final ReferenceTranslations referenceTranslations;
   final DailyVerseTranslations translations;
   final DateTime date;
 
   const DailyVerseEntity({
     required this.reference,
+    required this.referenceTranslations,
     required this.translations,
     required this.date,
   });
@@ -21,6 +23,18 @@ class DailyVerseEntity extends Equatable {
         return translations.hindi;
       case VerseLanguage.malayalam:
         return translations.malayalam;
+    }
+  }
+
+  /// Get the reference for a specific language
+  String getReferenceText(VerseLanguage language) {
+    switch (language) {
+      case VerseLanguage.english:
+        return referenceTranslations.en;
+      case VerseLanguage.hindi:
+        return referenceTranslations.hi;
+      case VerseLanguage.malayalam:
+        return referenceTranslations.ml;
     }
   }
 
@@ -65,7 +79,24 @@ class DailyVerseEntity extends Equatable {
   }
 
   @override
-  List<Object?> get props => [reference, translations, date];
+  List<Object?> get props =>
+      [reference, referenceTranslations, translations, date];
+}
+
+/// Reference translations in different languages
+class ReferenceTranslations extends Equatable {
+  final String en; // English reference
+  final String hi; // Hindi reference
+  final String ml; // Malayalam reference
+
+  const ReferenceTranslations({
+    required this.en,
+    required this.hi,
+    required this.ml,
+  });
+
+  @override
+  List<Object?> get props => [en, hi, ml];
 }
 
 /// Available verse translations

@@ -12,16 +12,8 @@
 
 import { SupabaseClient, createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { AppError } from '../utils/error-handler.ts'
-
-/**
- * User context representing authenticated or anonymous users
- */
-export interface UserContext {
-  readonly type: 'authenticated' | 'anonymous'
-  readonly id: string // User ID for authenticated, Session ID for anonymous
-  readonly userId?: string // Explicit user ID for authenticated users
-  readonly sessionId?: string // Explicit session ID for anonymous users
-}
+import { UserPlan } from '../types/token-types.ts'
+import { UserContext } from '../types/index.ts'
 
 /**
  * Authentication result with additional metadata
@@ -30,6 +22,16 @@ export interface AuthResult {
   readonly userContext: UserContext
   readonly user: any // Raw user object from Supabase
   readonly session: any // Raw session object from Supabase
+}
+
+/**
+ * User profile information from database
+ */
+interface UserProfile {
+  readonly id: string
+  readonly is_admin: boolean
+  readonly language_preference?: string
+  readonly theme_preference?: string
 }
 
 /**
@@ -42,7 +44,8 @@ export interface AuthResult {
 export class AuthService {
   constructor(
     private readonly supabaseUrl: string,
-    private readonly supabaseAnonKey: string
+    private readonly supabaseAnonKey: string,
+    private readonly supabaseServiceClient?: SupabaseClient
   ) {}
   
   /**
@@ -86,12 +89,25 @@ export class AuthService {
         throw new AppError('UNAUTHORIZED', 'Invalid user data in token', 401)
       }
       
+      // For authenticated users, check if they are admin
+      let userType: 'admin' | 'user' | undefined = undefined
+      if (!user.is_anonymous && user.id) {
+        try {
+          const userProfile = await this.getUserProfile(user.id)
+          userType = userProfile?.is_admin ? 'admin' : 'user'
+        } catch (error) {
+          // If profile lookup fails, default to regular user
+          console.warn('[AuthService] Failed to fetch user profile for userType:', error)
+          userType = 'user'
+        }
+      }
+      
       // Create standardized user context
       const userContext: UserContext = {
         type: user.is_anonymous ? 'anonymous' : 'authenticated',
-        id: user.id,
         userId: user.is_anonymous ? undefined : user.id,
-        sessionId: user.is_anonymous ? user.id : undefined
+        sessionId: user.is_anonymous ? user.id : undefined,
+        userType
       }
       
       return userContext
@@ -127,7 +143,6 @@ export class AuthService {
     
     const userContext: UserContext = {
       type: user.is_anonymous ? 'anonymous' : 'authenticated',
-      id: user.id,
       userId: user.is_anonymous ? undefined : user.id,
       sessionId: user.is_anonymous ? user.id : undefined
     }
@@ -156,11 +171,23 @@ export class AuthService {
         500
       )
     }
-    
+
+    // Get authorization token from header or query parameters (for EventSource)
+    let authToken = req.headers.get('Authorization') || ''
+
+    // For EventSource requests, check query parameters as fallback
+    if (!authToken) {
+      const url = new URL(req.url)
+      const queryAuthToken = url.searchParams.get('authorization')
+      if (queryAuthToken) {
+        authToken = `Bearer ${queryAuthToken}`
+      }
+    }
+
     return createClient(this.supabaseUrl, this.supabaseAnonKey, {
       global: {
         headers: {
-          Authorization: req.headers.get('Authorization') ?? ''
+          Authorization: authToken
         }
       }
     })
@@ -213,7 +240,7 @@ export class AuthService {
    */
   async getUserId(req: Request): Promise<string> {
     const userContext = await this.getUserContext(req)
-    return userContext.id
+    return userContext.userId || userContext.sessionId || ''
   }
   
   /**
@@ -244,6 +271,135 @@ export class AuthService {
     } catch {
       return false
     }
+  }
+
+  /**
+   * Determines the user's subscription plan based on context and profile
+   * 
+   * This method implements the user plan logic for the token system:
+   * - Anonymous users → 'free' plan (20 tokens daily)
+   * - Authenticated users → 'standard' plan (100 tokens daily) 
+   * - Admin users (user_profiles.is_admin = true) → 'premium' plan (unlimited)
+   * - Future: Subscription users → 'premium' plan (unlimited)
+   * 
+   * @param req - HTTP request to get user context from
+   * @returns Promise resolving to user's subscription plan
+   */
+  async getUserPlan(req: Request): Promise<UserPlan> {
+    try {
+      const userContext = await this.getUserContext(req)
+      
+      // Anonymous users always get free plan
+      if (userContext.type === 'anonymous') {
+        return 'free'
+      }
+      
+      // For authenticated users, check if they are admin
+      if (userContext.type === 'authenticated' && userContext.userId) {
+        const userProfile = await this.getUserProfile(userContext.userId)
+        
+        // Admin users get premium access (temporary until subscriptions)
+        if (userProfile?.is_admin) {
+          return 'premium'
+        }
+        
+        // TODO: Add subscription check when subscription system is implemented
+        // if (userProfile.subscription && userProfile.subscription.status === 'active') {
+        //   return 'premium'
+        // }
+      }
+      
+      // Default: authenticated users without admin or subscription get standard plan
+      return 'standard'
+      
+    } catch (error) {
+      console.warn('[AuthService] Failed to determine user plan, defaulting to free:', error)
+      // Fail safe: return free plan if determination fails
+      return 'free'
+    }
+  }
+
+  /**
+   * Handles Supabase query errors for user profile lookups
+   *
+   * @param err - Error from Supabase query
+   * @param context - Context string for logging
+   * @returns True if error should be treated as "no rows found" (return null)
+   * @throws Error if the error is not a "no rows found" error
+   */
+  private handleSupabaseError(err: any, context: string): boolean {
+    if (err?.code === 'PGRST116') {
+      // PGRST116 = no rows found - this is expected for new users
+      return true
+    }
+
+    // Log actual errors with higher severity and full details
+    console.error(`[AuthService] CRITICAL ERROR in ${context}:`, {
+      message: err?.message,
+      code: err?.code,
+      details: err?.details,
+      hint: err?.hint,
+      fullError: err
+    })
+
+    // Re-throw the error so callers can handle it appropriately
+    throw new Error(`Database error in ${context}: ${err?.message || 'Unknown error'}`)
+  }
+
+  /**
+   * Gets user profile information from database
+   * 
+   * @param userId - User ID to get profile for
+   * @returns Promise resolving to user profile or null if not found
+   */
+  private async getUserProfile(userId: string): Promise<UserProfile | null> {
+    if (!this.supabaseServiceClient) {
+      console.warn('[AuthService] No service client available for user profile lookup')
+      return null
+    }
+    
+    const { data, error } = await this.supabaseServiceClient
+      .from('user_profiles')
+      .select('id, is_admin, language_preference, theme_preference')
+      .eq('id', userId)
+      .single()
+    
+    if (error && this.handleSupabaseError(error, 'Failed to get user profile')) {
+      return null
+    }
+    
+    return data as UserProfile
+  }
+
+
+  /**
+   * Determines user plan from user context and profile (static version)
+   * 
+   * This is a helper method that can be used when you already have
+   * the user context and profile information.
+   * 
+   * @param userContext - User context from getUserContext()
+   * @param userProfile - Optional user profile from database
+   * @returns User's subscription plan
+   */
+  static determineUserPlan(userContext: UserContext, userProfile?: UserProfile | null): UserPlan {
+    // Anonymous users always get free plan
+    if (userContext.type === 'anonymous') {
+      return 'free'
+    }
+    
+    // Check if user is admin (gets premium access)
+    if (userProfile?.is_admin) {
+      return 'premium'
+    }
+    
+    // TODO: Add subscription logic when implemented
+    // if (userProfile?.subscription?.status === 'active') {
+    //   return 'premium'
+    // }
+    
+    // Default: authenticated users get standard plan
+    return 'standard'
   }
 }
 

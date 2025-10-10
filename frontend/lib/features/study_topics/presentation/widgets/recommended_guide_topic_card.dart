@@ -38,7 +38,7 @@ class RecommendedGuideTopicCard extends StatelessWidget {
         opacity: isDisabled ? 0.5 : 1.0,
         duration: const Duration(milliseconds: 150),
         child: Container(
-          height: 180, // Fixed height for uniform cards
+          constraints: const BoxConstraints(minHeight: 160),
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             color: Theme.of(context).colorScheme.surface,
@@ -88,7 +88,7 @@ class RecommendedGuideTopicCard extends StatelessWidget {
                       child: Text(
                         topic.category,
                         style: GoogleFonts.inter(
-                          fontSize: 9,
+                          fontSize: 12,
                           fontWeight: FontWeight.w600,
                           color: color,
                         ),
@@ -105,7 +105,7 @@ class RecommendedGuideTopicCard extends StatelessWidget {
               Text(
                 topic.title,
                 style: GoogleFonts.inter(
-                  fontSize: 14, // Slightly smaller for better fit
+                  fontSize: 16, // Increased for better readability
                   fontWeight: FontWeight.w600,
                   color: Theme.of(context).colorScheme.onSurface,
                   height: 1.2, // Tighter line height
@@ -121,14 +121,14 @@ class RecommendedGuideTopicCard extends StatelessWidget {
                 child: Text(
                   topic.description,
                   style: GoogleFonts.inter(
-                    fontSize: 11, // Smaller font for more content
+                    fontSize: 14, // Increased for better readability
                     color: Theme.of(context)
                         .colorScheme
                         .onSurface
                         .withOpacity(0.7),
                     height: 1.3,
                   ),
-                  maxLines: 3, // Allow up to 3 lines
+                  maxLines: 4, // Allow up to 4 lines
                   overflow: TextOverflow.ellipsis,
                 ),
               ),

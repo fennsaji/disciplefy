@@ -1,3 +1,5 @@
+import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -7,17 +9,26 @@ import 'package:share_plus/share_plus.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/error/failures.dart';
 import '../../../../core/di/injection_container.dart';
+import '../../../../core/extensions/translation_extension.dart';
+import '../../../../core/i18n/translation_keys.dart';
 import '../../domain/entities/study_guide.dart';
 import '../../../../core/navigation/study_navigator.dart';
 import '../bloc/study_bloc.dart';
 import '../bloc/study_event.dart';
 import '../bloc/study_state.dart';
 import '../../../saved_guides/data/models/saved_guide_model.dart';
+import '../../../follow_up_chat/presentation/widgets/follow_up_chat_widget.dart';
+import '../../../follow_up_chat/presentation/bloc/follow_up_chat_bloc.dart';
 
 /// Study Guide Screen displaying generated content with sections and user interactions.
 ///
 /// Features scrollable content, note-taking, save/share functionality, and error handling
 /// following the UX specifications and brand guidelines.
+///
+/// Enhanced Integration: Utilizes personal notes and save status from StudyGuide entity
+/// when available (from enhanced API response) to eliminate redundant API calls and
+/// provide immediate access to user data. Supports navigation from both generate screen
+/// and saved guides screen with proper state management and auto-save functionality.
 class StudyGuideScreen extends StatelessWidget {
   final StudyGuide? studyGuide;
   final Map<String, dynamic>? routeExtra;
@@ -31,8 +42,15 @@ class StudyGuideScreen extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) => BlocProvider(
-        create: (context) => sl<StudyBloc>(),
+  Widget build(BuildContext context) => MultiBlocProvider(
+        providers: [
+          BlocProvider(
+            create: (context) => sl<StudyBloc>(),
+          ),
+          BlocProvider(
+            create: (context) => sl<FollowUpChatBloc>(),
+          ),
+        ],
         child: _StudyGuideScreenContent(
           studyGuide: studyGuide,
           routeExtra: routeExtra,
@@ -67,6 +85,15 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
   bool _isSaved = false;
   DateTime? _lastSaveAttempt;
 
+  // Personal notes state
+  String? _loadedNotes;
+  bool _notesLoaded = false;
+  Timer? _autoSaveTimer;
+  VoidCallback? _autoSaveListener;
+
+  // Follow-up chat state
+  bool _isChatExpanded = false;
+
   @override
   void initState() {
     super.initState();
@@ -75,68 +102,106 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
 
   @override
   void dispose() {
+    _autoSaveTimer?.cancel();
+    if (_autoSaveListener != null) {
+      _notesController.removeListener(_autoSaveListener!);
+    }
     _notesController.dispose();
     _scrollController.dispose();
     super.dispose();
   }
 
   void _initializeStudyGuide() {
+    _resetNotesState();
+
     if (widget.studyGuide != null) {
-      // This means we came from the generate screen
-      _currentStudyGuide = widget.studyGuide!;
+      _handleGeneratedStudyGuide();
     } else if (widget.routeExtra != null &&
         widget.routeExtra!['study_guide'] != null) {
-      // This means we came from the saved guides screen
-      // Handle study guide data from saved guides navigation
-      try {
-        final guideData =
-            widget.routeExtra!['study_guide'] as Map<String, dynamic>;
+      _handleSavedStudyGuide();
+    } else {
+      _handleMissingStudyGuide();
+    }
+  }
 
-        // Create a SavedGuideModel from the route data to use the new structured approach
-        final savedGuideModel = SavedGuideModel(
-          id: guideData['id'] ?? '',
-          title: guideData['title'] ?? '',
-          content: guideData['content'] ?? '',
-          typeString: guideData['type'] ?? 'topic',
-          createdAt: DateTime.tryParse(guideData['created_at'] ?? '') ??
-              DateTime.now(),
-          lastAccessedAt:
-              DateTime.tryParse(guideData['last_accessed_at'] ?? '') ??
-                  DateTime.now(),
-          isSaved: guideData['is_saved'] as bool? ?? false,
-          verseReference: guideData['verse_reference'],
-          topicName: guideData['topic_name'],
-          // Include structured content fields from navigation data
-          summary: guideData['summary'] as String?,
-          interpretation: guideData['interpretation'] as String?,
-          context: guideData['context'] as String?,
-          relatedVerses:
-              (guideData['related_verses'] as List<dynamic>?)?.cast<String>(),
-          reflectionQuestions:
-              (guideData['reflection_questions'] as List<dynamic>?)
-                  ?.cast<String>(),
-          prayerPoints:
-              (guideData['prayer_points'] as List<dynamic>?)?.cast<String>(),
-        );
+  void _resetNotesState() {
+    _notesLoaded = false;
+    _loadedNotes = null;
+    _notesController.clear();
+  }
 
-        // Use the toStudyGuide method which handles both structured and legacy content
-        _currentStudyGuide = savedGuideModel.toStudyGuide();
+  void _handleGeneratedStudyGuide() {
+    _currentStudyGuide = widget.studyGuide!;
 
-        // Set save status from route data for saved guides
-        _isSaved = guideData['is_saved'] as bool? ?? false;
-      } catch (e) {
-        print('❌ [STUDY_GUIDE] Error parsing route data: $e');
-        _showError('Invalid study guide data. Please try again.');
+    if (_currentStudyGuide.isSaved != null) {
+      _isSaved = _currentStudyGuide.isSaved!;
+    }
+
+    _processGeneratedGuideNotes();
+  }
+
+  void _processGeneratedGuideNotes() {
+    if (_currentStudyGuide.personalNotes != null) {
+      _loadedNotes = _currentStudyGuide.personalNotes;
+      _notesController.text = _currentStudyGuide.personalNotes!;
+      _notesLoaded = true;
+
+      if (_isSaved) {
+        _setupAutoSave();
       }
     } else {
-      // Redirect to saved guides page when no data is provided
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) {
-          sl<StudyNavigator>().navigateToSaved(context);
-        }
-      });
-      _showError('Redirecting to saved guides...');
+      _loadPersonalNotesIfSaved();
     }
+  }
+
+  void _handleSavedStudyGuide() {
+    try {
+      final guideData =
+          widget.routeExtra!['study_guide'] as Map<String, dynamic>;
+
+      final savedGuideModel = _createSavedGuideModel(guideData);
+      _currentStudyGuide = savedGuideModel.toStudyGuide();
+
+      _isSaved = guideData['is_saved'] as bool? ?? true;
+
+      _loadPersonalNotesIfSaved();
+    } catch (e) {
+      _showError('Invalid study guide data. Please try again.');
+    }
+  }
+
+  SavedGuideModel _createSavedGuideModel(Map<String, dynamic> guideData) {
+    return SavedGuideModel(
+      id: guideData['id'] ?? '',
+      title: guideData['title'] ?? '',
+      content: guideData['content'] ?? '',
+      typeString: guideData['type'] ?? 'topic',
+      createdAt:
+          DateTime.tryParse(guideData['created_at'] ?? '') ?? DateTime.now(),
+      lastAccessedAt: DateTime.tryParse(guideData['last_accessed_at'] ?? '') ??
+          DateTime.now(),
+      isSaved: guideData['is_saved'] as bool? ?? false,
+      verseReference: guideData['verse_reference'],
+      topicName: guideData['topic_name'],
+      summary: guideData['summary'] as String?,
+      interpretation: guideData['interpretation'] as String?,
+      context: guideData['context'] as String?,
+      relatedVerses:
+          (guideData['related_verses'] as List<dynamic>?)?.cast<String>(),
+      reflectionQuestions:
+          (guideData['reflection_questions'] as List<dynamic>?)?.cast<String>(),
+      prayerPoints:
+          (guideData['prayer_points'] as List<dynamic>?)?.cast<String>(),
+    );
+  }
+
+  void _handleMissingStudyGuide() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        sl<StudyNavigator>().navigateToSaved(context);
+      }
+    });
+    _showError('Redirecting to saved guides...');
   }
 
   void _showError(String message) {
@@ -144,6 +209,60 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
       _hasError = true;
       _errorMessage = message;
     });
+  }
+
+  /// Load personal notes if the guide is saved and notes not already available
+  void _loadPersonalNotesIfSaved() {
+    if (kDebugMode) {
+      print(
+          '🔍 [STUDY_GUIDE] Loading personal notes: isSaved=$_isSaved, notesLoaded=$_notesLoaded, hasEntityNotes=${_currentStudyGuide.personalNotes != null}');
+    }
+
+    // Load notes if guide is saved and we haven't loaded them yet
+    // Simplified logic: if saved and not loaded, try to load
+    if (_isSaved && !_notesLoaded) {
+      if (kDebugMode) {
+        print(
+            '📝 [STUDY_GUIDE] Requesting personal notes for guide: ${_currentStudyGuide.id}');
+      }
+      context.read<StudyBloc>().add(LoadPersonalNotesRequested(
+            guideId: _currentStudyGuide.id,
+          ));
+    } else {
+      if (kDebugMode) {
+        print(
+            '⏭️ [STUDY_GUIDE] Skipping notes load: isSaved=$_isSaved, notesLoaded=$_notesLoaded');
+      }
+    }
+  }
+
+  /// Setup auto-save for personal notes
+  void _setupAutoSave() {
+    // Remove existing listener to prevent duplicates
+    if (_autoSaveListener != null) {
+      _notesController.removeListener(_autoSaveListener!);
+    }
+
+    // Create new listener callback
+    _autoSaveListener = () {
+      _autoSaveTimer?.cancel();
+      _autoSaveTimer = Timer(const Duration(milliseconds: 2000), () {
+        final currentText = _notesController.text.trim();
+        if (currentText != (_loadedNotes ?? '').trim()) {
+          // Only auto-save if notes have changed and guide is saved
+          if (_isSaved) {
+            context.read<StudyBloc>().add(UpdatePersonalNotesRequested(
+                  guideId: _currentStudyGuide.id,
+                  personalNotes: currentText.isEmpty ? null : currentText,
+                  isAutoSave: true,
+                ));
+          }
+        }
+      });
+    };
+
+    // Add the listener
+    _notesController.addListener(_autoSaveListener!);
   }
 
   @override
@@ -157,6 +276,7 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
 
     return BlocListener<StudyBloc, StudyState>(
       listener: (context, state) {
+        // Handle legacy save operations
         if (state is StudySaveSuccess) {
           setState(() {
             _isSaved = state.saved;
@@ -170,6 +290,69 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
           _handleSaveError(state.failure);
         } else if (state is StudyAuthenticationRequired) {
           _showAuthenticationRequiredDialog();
+        }
+        // Handle enhanced save operations
+        else if (state is StudyEnhancedSaveSuccess) {
+          setState(() {
+            _isSaved = state.guideSaved;
+            if (state.notesSaved && state.savedNotes != null) {
+              _loadedNotes = state.savedNotes;
+            }
+          });
+          _showSnackBar(
+            state.message,
+            Colors.green,
+            icon: Icons.check_circle,
+          );
+          // Setup auto-save if guide was saved
+          if (state.guideSaved) {
+            _setupAutoSave();
+          }
+        } else if (state is StudyEnhancedSaveFailure) {
+          _handleEnhancedSaveError(state);
+        } else if (state is StudyEnhancedAuthenticationRequired) {
+          _showEnhancedAuthenticationRequiredDialog(state);
+        }
+        // Handle personal notes operations
+        else if (state is StudyPersonalNotesLoaded) {
+          if (kDebugMode) {
+            print(
+                '📝 [STUDY_GUIDE] Personal notes loaded: ${state.notes?.length ?? 0} characters');
+          }
+          setState(() {
+            _notesLoaded = true;
+            _loadedNotes = state.notes;
+            if (state.notes != null) {
+              _notesController.text = state.notes!;
+            }
+          });
+          // Setup auto-save for saved guides
+          if (_isSaved) {
+            _setupAutoSave();
+          }
+        } else if (state is StudyPersonalNotesSuccess) {
+          if (!state.isAutoSave) {
+            _showSnackBar(
+              state.message ?? 'Personal notes saved!',
+              Colors.green,
+              icon: Icons.note_add,
+            );
+          }
+          setState(() {
+            _loadedNotes = state.savedNotes;
+          });
+        } else if (state is StudyPersonalNotesFailure) {
+          if (kDebugMode) {
+            print(
+                '❌ [STUDY_GUIDE] Personal notes operation failed: ${state.failure.message}, isAutoSave: ${state.isAutoSave}');
+          }
+          if (!state.isAutoSave) {
+            _showSnackBar(
+              'Failed to save personal notes: ${state.failure.message}',
+              Theme.of(context).colorScheme.error,
+              icon: Icons.error_outline,
+            );
+          }
         }
       },
       child: Scaffold(
@@ -189,11 +372,12 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
               Icons.arrow_back_ios,
               color: Theme.of(context).colorScheme.primary,
             ),
+            tooltip: 'Go back',
           ),
           title: Text(
             _getDisplayTitle(),
             style: GoogleFonts.playfairDisplay(
-              fontSize: 18,
+              fontSize: 20,
               fontWeight: FontWeight.w600,
               color: Theme.of(context).colorScheme.primary,
             ),
@@ -206,6 +390,7 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
                 Icons.share_outlined,
                 color: Theme.of(context).colorScheme.primary,
               ),
+              tooltip: 'Share study guide',
             ),
           ],
         ),
@@ -223,6 +408,20 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
 
                     // Study Guide Content
                     _buildStudyContent(),
+
+                    SizedBox(height: isLargeScreen ? 32 : 24),
+
+                    // Follow-up Chat Section
+                    FollowUpChatWidget(
+                      studyGuideId: _currentStudyGuide.id,
+                      studyGuideTitle: _getDisplayTitle(),
+                      isExpanded: _isChatExpanded,
+                      onToggleExpanded: () {
+                        setState(() {
+                          _isChatExpanded = !_isChatExpanded;
+                        });
+                      },
+                    ),
 
                     SizedBox(height: isLargeScreen ? 32 : 24),
 
@@ -260,11 +459,12 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
               Icons.arrow_back_ios,
               color: Theme.of(context).colorScheme.primary,
             ),
+            tooltip: 'Go back',
           ),
           title: Text(
             'Study Guide',
             style: GoogleFonts.playfairDisplay(
-              fontSize: 18,
+              fontSize: 20,
               fontWeight: FontWeight.w600,
               color: Theme.of(context).colorScheme.primary,
             ),
@@ -286,7 +486,7 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
                 Text(
                   'We couldn\'t generate a study guide',
                   style: GoogleFonts.playfairDisplay(
-                    fontSize: 24,
+                    fontSize: 28,
                     fontWeight: FontWeight.w600,
                     color: Theme.of(context).colorScheme.onBackground,
                   ),
@@ -298,7 +498,7 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
                       ? 'Something went wrong. Please try again later.'
                       : _errorMessage,
                   style: GoogleFonts.inter(
-                    fontSize: 16,
+                    fontSize: 18,
                     color: Theme.of(context)
                         .colorScheme
                         .onSurface
@@ -322,7 +522,7 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
                   child: Text(
                     'View Saved Guides',
                     style: GoogleFonts.inter(
-                      fontSize: 16,
+                      fontSize: 18,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -338,7 +538,7 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
         children: [
           // Summary Section
           _StudySection(
-            title: 'Summary',
+            title: context.tr(TranslationKeys.studyGuideSummary),
             icon: Icons.summarize,
             content: _currentStudyGuide.summary,
           ),
@@ -347,7 +547,7 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
 
           // Interpretation Section
           _StudySection(
-            title: 'Interpretation',
+            title: context.tr(TranslationKeys.studyGuideInterpretation),
             icon: Icons.lightbulb_outline,
             content: _currentStudyGuide.interpretation,
           ),
@@ -356,7 +556,7 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
 
           // Context Section
           _StudySection(
-            title: 'Context',
+            title: context.tr(TranslationKeys.studyGuideContext),
             icon: Icons.history_edu,
             content: _currentStudyGuide.context,
           ),
@@ -365,7 +565,7 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
 
           // Related Verses Section
           _StudySection(
-            title: 'Related Verses',
+            title: context.tr(TranslationKeys.studyGuideRelatedVerses),
             icon: Icons.menu_book,
             content: _currentStudyGuide.relatedVerses.join('\n\n'),
           ),
@@ -374,7 +574,7 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
 
           // Discussion Questions Section
           _StudySection(
-            title: 'Discussion Questions',
+            title: context.tr(TranslationKeys.studyGuideDiscussionQuestions),
             icon: Icons.quiz,
             content: _currentStudyGuide.reflectionQuestions
                 .asMap()
@@ -387,7 +587,7 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
 
           // Prayer Points Section
           _StudySection(
-            title: 'Prayer Points',
+            title: context.tr(TranslationKeys.studyGuidePrayerPoints),
             icon: Icons.favorite,
             content: _currentStudyGuide.prayerPoints
                 .asMap()
@@ -410,9 +610,9 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
               ),
               const SizedBox(width: 8),
               Text(
-                'Personal Notes',
+                context.tr(TranslationKeys.studyGuidePersonalNotes),
                 style: GoogleFonts.inter(
-                  fontSize: 18,
+                  fontSize: 20,
                   fontWeight: FontWeight.w600,
                   color: Theme.of(context).colorScheme.onBackground,
                 ),
@@ -432,13 +632,13 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
               controller: _notesController,
               maxLines: 6,
               style: GoogleFonts.inter(
-                fontSize: 14,
+                fontSize: 16,
                 color: Theme.of(context).colorScheme.onBackground,
                 height: 1.5,
               ),
               decoration: InputDecoration(
-                hintText:
-                    'Write your thoughts, insights, and reflections here...',
+                hintText: context
+                    .tr(TranslationKeys.studyGuidePersonalNotesPlaceholder),
                 hintStyle: GoogleFonts.inter(
                   color:
                       Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
@@ -468,8 +668,16 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
             Expanded(
               child: BlocBuilder<StudyBloc, StudyState>(
                 builder: (context, state) {
-                  final isSaving = state is StudySaveInProgress &&
-                      state.guideId == _currentStudyGuide.id;
+                  final isSaving = (state is StudySaveInProgress &&
+                          state.guideId == _currentStudyGuide.id) ||
+                      (state is StudyEnhancedSaveInProgress &&
+                          state.guideId == _currentStudyGuide.id);
+
+                  // Get current step for enhanced save progress
+                  String? currentStep;
+                  if (state is StudyEnhancedSaveInProgress) {
+                    currentStep = state.currentStep;
+                  }
 
                   return isSaving
                       ? OutlinedButton.icon(
@@ -484,9 +692,9 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
                             ),
                           ),
                           label: Text(
-                            'Saving...',
+                            currentStep ?? 'Saving...',
                             style: GoogleFonts.inter(
-                              fontSize: 16,
+                              fontSize: 18,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
@@ -514,9 +722,12 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
                               ? Icons.bookmark
                               : Icons.bookmark_border),
                           label: Text(
-                            _isSaved ? 'Saved' : 'Save Study',
+                            _isSaved
+                                ? context.tr(TranslationKeys.studyGuideSaved)
+                                : context
+                                    .tr(TranslationKeys.studyGuideSaveStudy),
                             style: GoogleFonts.inter(
-                              fontSize: 16,
+                              fontSize: 18,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
@@ -545,9 +756,9 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
                 onPressed: _shareStudyGuide,
                 icon: Icon(Icons.share),
                 label: Text(
-                  'Share',
+                  context.tr(TranslationKeys.studyGuideShare),
                   style: GoogleFonts.inter(
-                    fontSize: 16,
+                    fontSize: 18,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -575,7 +786,7 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
     }
   }
 
-  /// Toggle save/unsave status of the current study guide via BLoC
+  /// Toggle save/unsave status of the current study guide with personal notes via BLoC
   void _saveStudyGuide() {
     // Debounce rapid taps - prevent multiple requests within 2 seconds
     final now = DateTime.now();
@@ -587,18 +798,14 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
 
     // Determine action based on current save status
     final shouldSave = !_isSaved;
+    final personalNotes = _notesController.text.trim();
 
-    // Dispatch authentication check event to BLoC instead of direct Supabase access
-    context.read<StudyBloc>().add(CheckAuthenticationRequested(
+    // Use enhanced save functionality that combines guide saving with personal notes
+    context.read<StudyBloc>().add(CheckEnhancedAuthenticationRequested(
           guideId: _currentStudyGuide.id,
           save: shouldSave,
+          personalNotes: personalNotes.isEmpty ? null : personalNotes,
         ));
-
-    // TODO: Save notes locally if needed
-    final notes = _notesController.text.trim();
-    if (notes.isNotEmpty) {
-      debugPrint('Notes to save locally: $notes');
-    }
   }
 
   /// Show authentication required dialog
@@ -614,17 +821,17 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
         elevation: 8,
         shadowColor: Colors.black.withOpacity(0.1),
         title: Text(
-          'Authentication Required',
+          context.tr(TranslationKeys.studyGuideAuthRequired),
           style: GoogleFonts.playfairDisplay(
-            fontSize: 20,
+            fontSize: 22,
             fontWeight: FontWeight.bold,
             color: const Color(0xFF333333), // Primary gray text
           ),
         ),
         content: Text(
-          'You need to be signed in to save study guides. Would you like to sign in now?',
+          context.tr(TranslationKeys.studyGuideAuthRequiredMessage),
           style: GoogleFonts.inter(
-            fontSize: 16,
+            fontSize: 18,
             color: const Color(0xFF333333), // Primary gray text
             height: 1.5,
           ),
@@ -641,9 +848,9 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
               ),
             ),
             child: Text(
-              'Cancel',
+              context.tr(TranslationKeys.commonCancel),
               style: GoogleFonts.inter(
-                fontSize: 16,
+                fontSize: 18,
                 fontWeight: FontWeight.w600,
                 color: const Color(0xFF888888), // Light gray text
               ),
@@ -665,9 +872,88 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
               ),
             ),
             child: Text(
-              'Sign In',
+              context.tr(TranslationKeys.studyGuideSignIn),
               style: GoogleFonts.inter(
-                fontSize: 16,
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Show enhanced authentication required dialog with personal notes info
+  void _showEnhancedAuthenticationRequiredDialog(
+      StudyEnhancedAuthenticationRequired state) {
+    final hasNotes = state.personalNotes?.isNotEmpty == true;
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: const Color(0xFFFAFAFA), // Light background
+        surfaceTintColor: Colors.transparent,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        elevation: 8,
+        shadowColor: Colors.black.withOpacity(0.1),
+        title: Text(
+          context.tr(TranslationKeys.studyGuideAuthRequired),
+          style: GoogleFonts.playfairDisplay(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            color: const Color(0xFF333333), // Primary gray text
+          ),
+        ),
+        content: Text(
+          context.tr(TranslationKeys.studyGuideAuthRequiredMessage),
+          style: GoogleFonts.inter(
+            fontSize: 18,
+            color: const Color(0xFF333333), // Primary gray text
+            height: 1.5,
+          ),
+        ),
+        actionsPadding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            style: TextButton.styleFrom(
+              foregroundColor: const Color(0xFF888888), // Light gray for cancel
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            child: Text(
+              context.tr(TranslationKeys.commonCancel),
+              style: GoogleFonts.inter(
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+                color: const Color(0xFF888888), // Light gray text
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              sl<StudyNavigator>().navigateToLogin(context);
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF7A56DB), // Primary purple
+              foregroundColor: Colors.white,
+              elevation: 0,
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            child: Text(
+              context.tr(TranslationKeys.studyGuideSignIn),
+              style: GoogleFonts.inter(
+                fontSize: 18,
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -699,6 +985,44 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
     }
 
     _showSnackBar(message, backgroundColor, icon: Icons.error_outline);
+  }
+
+  /// Handle enhanced save operation errors from BLoC
+  void _handleEnhancedSaveError(StudyEnhancedSaveFailure state) {
+    String message;
+    Color backgroundColor = Theme.of(context).colorScheme.error;
+    IconData icon = Icons.error_outline;
+
+    if (state.guideSaveSuccess && !state.notesSaveSuccess) {
+      // Guide saved but notes failed
+      message = 'Study guide saved, but failed to save personal notes.';
+      setState(() {
+        _isSaved = true;
+      });
+      _setupAutoSave(); // Setup auto-save since guide is now saved
+    } else if (!state.guideSaveSuccess && state.notesSaveSuccess) {
+      // Notes saved but guide failed (shouldn't happen in normal flow)
+      message = 'Failed to save study guide: ${state.primaryFailure.message}';
+    } else {
+      // Both failed or primary failure
+      if (state.primaryFailure.code == 'UNAUTHORIZED') {
+        message = 'Authentication expired. Please sign in again.';
+      } else if (state.primaryFailure.code == 'NETWORK_ERROR') {
+        message = 'Network error. Please check your connection.';
+      } else if (state.primaryFailure.code == 'ALREADY_SAVED') {
+        message = 'This study guide is already saved!';
+        backgroundColor = Theme.of(context).colorScheme.primary;
+        icon = Icons.check_circle;
+        setState(() {
+          _isSaved = true;
+        });
+        _setupAutoSave();
+      } else {
+        message = state.primaryFailure.message;
+      }
+    }
+
+    _showSnackBar(message, backgroundColor, icon: icon);
   }
 
   /// Show snackbar with consistent styling
@@ -737,22 +1061,22 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
     final shareText = '''
 ${_getDisplayTitle()}
 
-Summary:
+${context.tr(TranslationKeys.studyGuideSummary)}:
 ${_currentStudyGuide.summary}
 
-Interpretation:
+${context.tr(TranslationKeys.studyGuideInterpretation)}:
 ${_currentStudyGuide.interpretation}
 
-Context:
+${context.tr(TranslationKeys.studyGuideContext)}:
 ${_currentStudyGuide.context}
 
-Related Verses:
+${context.tr(TranslationKeys.studyGuideRelatedVerses)}:
 ${_currentStudyGuide.relatedVerses.join('\n')}
 
-Discussion Questions:
+${context.tr(TranslationKeys.studyGuideDiscussionQuestions)}:
 ${_currentStudyGuide.reflectionQuestions.asMap().entries.map((e) => '${e.key + 1}. ${e.value}').join('\n')}
 
-Prayer Points:
+${context.tr(TranslationKeys.studyGuidePrayerPoints)}:
 ${_currentStudyGuide.prayerPoints.map((p) => '• $p').join('\n')}
 
 Generated by Disciplefy - Bible Study App
@@ -821,7 +1145,7 @@ class _StudySection extends StatelessWidget {
                   child: Text(
                     title,
                     style: GoogleFonts.inter(
-                      fontSize: 18,
+                      fontSize: 20,
                       fontWeight: FontWeight.w600,
                       color: Theme.of(context).colorScheme.onBackground,
                     ),
@@ -841,6 +1165,7 @@ class _StudySection extends StatelessWidget {
                   ),
                   constraints: const BoxConstraints(),
                   padding: EdgeInsets.zero,
+                  tooltip: 'Copy $title',
                 ),
               ],
             ),
@@ -850,11 +1175,10 @@ class _StudySection extends StatelessWidget {
             // Section Content
             SelectableText(
               content,
-              style: GoogleFonts.inter(
-                fontSize: 14,
-                color: Theme.of(context).colorScheme.onBackground,
-                height: 1.6,
-              ),
+              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                    color: Theme.of(context).colorScheme.onBackground,
+                    height: 1.6,
+                  ),
             ),
           ],
         ),
@@ -865,7 +1189,7 @@ class _StudySection extends StatelessWidget {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
-          'Copied to clipboard',
+          context.tr(TranslationKeys.studyGuideCopiedToClipboard),
           style: GoogleFonts.inter(color: Colors.white),
         ),
         backgroundColor: Theme.of(context).colorScheme.primary,

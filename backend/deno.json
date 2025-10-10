@@ -1,0 +1,15 @@
+{
+  "nodeModulesDir": "auto",
+  "importMap": "./supabase/functions/_shared/import_map.json",
+  "compilerOptions": {
+    "strict": true,
+    "noImplicitAny": true,
+    "noImplicitReturns": true,
+    "noImplicitThis": true,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false
+  },
+  "imports": {
+    "@types/node": "npm:@types/node@^20.0.0"
+  }
+}

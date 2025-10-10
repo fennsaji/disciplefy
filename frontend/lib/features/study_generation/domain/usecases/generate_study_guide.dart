@@ -11,10 +11,10 @@ import '../repositories/study_repository.dart';
 /// This class encapsulates all the information needed to generate
 /// a study guide, including validation rules.
 class StudyGenerationParams extends Equatable {
-  /// The input text (verse reference or topic).
+  /// The input text (verse reference, topic, or question).
   final String input;
 
-  /// The type of input ('scripture' or 'topic').
+  /// The type of input ('scripture', 'topic', or 'question').
   final String inputType;
 
   /// Optional language code for the study guide.
@@ -66,9 +66,21 @@ class StudyGenerationParams extends Equatable {
       );
     }
 
-    if (inputType != 'scripture' && inputType != 'topic') {
+    if (inputType == 'question' &&
+        input.length > AppConstants.MAX_QUESTION_LENGTH) {
       return const ValidationFailure(
-        message: 'Input type must be either "scripture" or "topic"',
+        message:
+            'Question cannot exceed ${AppConstants.MAX_QUESTION_LENGTH} characters',
+        code: 'QUESTION_TOO_LONG',
+      );
+    }
+
+    if (inputType != 'scripture' &&
+        inputType != 'topic' &&
+        inputType != 'question') {
+      return const ValidationFailure(
+        message:
+            'Input type must be either "scripture", "topic", or "question"',
         code: 'INVALID_INPUT_TYPE',
       );
     }
@@ -80,7 +92,7 @@ class StudyGenerationParams extends Equatable {
 /// Use case for generating Bible study guides.
 ///
 /// This use case implements the business logic for generating study guides
-/// from verse references or topics, following Clean Architecture principles.
+/// from verse references, topics, or questions, following Clean Architecture principles.
 class GenerateStudyGuide {
   /// Repository for study guide operations.
   final StudyRepository _repository;

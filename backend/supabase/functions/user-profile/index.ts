@@ -1,316 +1,345 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient, SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { handleCors } from "../_shared/utils/cors.ts";
+/**
+ * User Profile Edge Function
+ * 
+ * Refactored to use clean architecture with function factory:
+ * - No manual CORS handling (factory handles it)
+ * - No manual authentication (factory handles it)
+ * - Clean separation of concerns
+ */
+
+import { createAuthenticatedFunction } from '../_shared/core/function-factory.ts'
+import { ServiceContainer } from '../_shared/core/services.ts'
+import { UserContext } from '../_shared/types/index.ts'
+import { AppError } from '../_shared/utils/error-handler.ts'
+import { extractOAuthProfileData, createProfileUpdateData, logProfileExtraction } from '../_shared/utils/profile-extractor.ts'
 
 interface UserProfile {
-  id: string;
-  language_preference: string;
-  theme_preference: string;
-  is_admin: boolean;
-  created_at: string;
-  updated_at: string;
+  id: string
+  language_preference: string
+  theme_preference: string
+  first_name: string | null
+  last_name: string | null
+  profile_picture: string | null
+  email: string | null
+  phone: string | null
+  is_admin: boolean
+  created_at: string
+  updated_at: string
 }
 
 interface UpdateProfileRequest {
-  language_preference?: string;
-  theme_preference?: string;
+  language_preference?: string
+  theme_preference?: string
+  first_name?: string | null
+  last_name?: string | null
+  profile_picture?: string | null
 }
 
-interface ValidationResult {
-  isValid: boolean;
-  updateData?: UpdateProfileRequest;
-  error?: string;
+// ============================================================================
+// Validation Utilities
+// ============================================================================
+
+function isValidUrl(url: string): boolean {
+  try {
+    const urlObj = new URL(url)
+    return urlObj.protocol === 'http:' || urlObj.protocol === 'https:'
+  } catch {
+    return false
+  }
 }
 
-// Helper Functions
+function isValidName(name: string): boolean {
+  if (typeof name !== 'string') return false
+  const trimmed = name.trim()
+  if (trimmed.length === 0 || trimmed.length > 50) return false
+  const nameRegex = /^[a-zA-Z\u00C0-\u017F\s\-']+$/
+  return nameRegex.test(trimmed)
+}
 
-/**
- * Parses and validates profile update request body
- * @param body - Request body to validate
- * @returns Validation result with parsed data or error
- */
-function parseAndValidateUpdate(body: any): ValidationResult {
-  const updateData: UpdateProfileRequest = {};
+function parseAndValidateUpdate(body: any): UpdateProfileRequest {
+  const updateData: UpdateProfileRequest = {}
 
   if (body.language_preference !== undefined) {
-    const validLanguages = ['en', 'hi', 'ml'];
+    const validLanguages = ['en', 'hi', 'ml']
     if (!validLanguages.includes(body.language_preference)) {
-      return { isValid: false, error: 'Invalid language preference' };
+      throw new AppError('VALIDATION_ERROR', 'Invalid language preference', 400)
     }
-    updateData.language_preference = body.language_preference;
+    updateData.language_preference = body.language_preference
   }
 
   if (body.theme_preference !== undefined) {
-    const validThemes = ['light', 'dark', 'system'];
+    const validThemes = ['light', 'dark', 'system']
     if (!validThemes.includes(body.theme_preference)) {
-      return { isValid: false, error: 'Invalid theme preference' };
+      throw new AppError('VALIDATION_ERROR', 'Invalid theme preference', 400)
     }
-    updateData.theme_preference = body.theme_preference;
+    updateData.theme_preference = body.theme_preference
+  }
+
+  if (body.first_name !== undefined) {
+    if (body.first_name === null || body.first_name === '') {
+      updateData.first_name = null
+    } else if (!isValidName(body.first_name)) {
+      throw new AppError('VALIDATION_ERROR', 'Invalid first name format', 400)
+    } else {
+      updateData.first_name = body.first_name.trim()
+    }
+  }
+
+  if (body.last_name !== undefined) {
+    if (body.last_name === null || body.last_name === '') {
+      updateData.last_name = null
+    } else if (!isValidName(body.last_name)) {
+      throw new AppError('VALIDATION_ERROR', 'Invalid last name format', 400)
+    } else {
+      updateData.last_name = body.last_name.trim()
+    }
+  }
+
+  if (body.profile_picture !== undefined) {
+    if (body.profile_picture === null || body.profile_picture === '') {
+      updateData.profile_picture = null
+    } else if (!isValidUrl(body.profile_picture)) {
+      throw new AppError('VALIDATION_ERROR', 'Invalid profile picture URL format', 400)
+    } else {
+      updateData.profile_picture = body.profile_picture.trim()
+    }
   }
 
   if (Object.keys(updateData).length === 0) {
-    return { isValid: false, error: 'No valid fields to update' };
+    throw new AppError('VALIDATION_ERROR', 'No valid fields to update', 400)
   }
 
-  return { isValid: true, updateData };
+  return updateData
 }
 
-/**
- * Creates a default user profile
- * @param userId - User ID for the profile
- * @param updateData - Optional initial data for the profile
- * @returns Default profile object
- */
-function createDefaultProfile(userId: string, updateData?: UpdateProfileRequest): UserProfile {
+// ============================================================================
+// Profile Management
+// ============================================================================
+
+async function createDefaultProfile(
+  services: ServiceContainer,
+  userId: string,
+  updateData?: UpdateProfileRequest
+): Promise<UserProfile> {
+  let oauthData: any = {}
+  
+  try {
+    const { data: { user }, error: userError } = await services.supabaseServiceClient.auth.admin.getUserById(userId)
+    
+    if (!userError && user) {
+      const extractionResult = extractOAuthProfileData(user)
+      
+      if (extractionResult.success && extractionResult.data) {
+        const profileUpdateData = createProfileUpdateData(extractionResult.data)
+        oauthData = profileUpdateData
+        logProfileExtraction(user, extractionResult)
+        console.log('✅ [USER_PROFILE] OAuth data extracted for new profile')
+      }
+    }
+  } catch (error) {
+    console.warn('⚠️ [USER_PROFILE] Failed to extract OAuth data:', error)
+  }
+
   return {
     id: userId,
     language_preference: updateData?.language_preference || 'en',
     theme_preference: updateData?.theme_preference || 'light',
+    first_name: updateData?.first_name || oauthData.first_name || null,
+    last_name: updateData?.last_name || oauthData.last_name || null,
+    profile_picture: updateData?.profile_picture || oauthData.profile_picture || null,
+    email: null,
+    phone: null,
     is_admin: false,
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
-  };
+  }
 }
 
-/**
- * Upserts a user profile (update if exists, create if not)
- * @param client - Supabase client instance
- * @param userId - User ID
- * @param updateData - Data to update
- * @returns Promise resolving to the upserted profile
- */
 async function upsertProfile(
-  client: SupabaseClient,
+  services: ServiceContainer,
   userId: string,
   updateData: UpdateProfileRequest
-): Promise<{ data: UserProfile | null; error: any }> {
+): Promise<UserProfile> {
   const updateWithTimestamp = {
     ...updateData,
     updated_at: new Date().toISOString(),
-  };
+  }
 
-  // Try to update existing profile
-  const { data: updatedProfile, error: updateError } = await client
+  const { data: updatedProfile, error: updateError } = await services.supabaseServiceClient
     .from('user_profiles')
     .update(updateWithTimestamp)
     .eq('id', userId)
     .select()
-    .single();
+    .single()
 
   if (updateError?.code === 'PGRST116') {
-    // Profile doesn't exist, create it
-    const defaultProfile = createDefaultProfile(userId, updateData);
-    return await client
+    const defaultProfile = await createDefaultProfile(services, userId, updateData)
+    const { data, error } = await services.supabaseServiceClient
       .from('user_profiles')
-      .insert([defaultProfile])
+      .insert({
+        id: userId,
+        language_preference: defaultProfile.language_preference,
+        theme_preference: defaultProfile.theme_preference,
+        first_name: defaultProfile.first_name,
+        last_name: defaultProfile.last_name,
+        profile_picture: defaultProfile.profile_picture,
+        is_admin: defaultProfile.is_admin
+      })
       .select()
-      .single();
+      .single()
+
+    if (error) throw new AppError('DATABASE_ERROR', error.message, 500)
+    return data
   }
 
-  return { data: updatedProfile, error: updateError };
+  if (updateError) throw new AppError('DATABASE_ERROR', updateError.message, 500)
+  return updatedProfile
 }
 
-serve(async (req) => {
-  // Get CORS headers for this request
-  const corsHeaders = handleCors(req);
+// ============================================================================
+// Request Handlers
+// ============================================================================
 
-  // Handle CORS preflight requests
-  if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders });
-  }
-
-  try {
-    // Validate Supabase configuration
-    const supabaseUrl = Deno.env.get('SUPABASE_URL');
-    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY');
-
-    if (!supabaseUrl || supabaseUrl.trim() === '') {
-      console.error('Missing SUPABASE_URL environment variable');
-      return new Response(
-        JSON.stringify({ error: 'Supabase configuration missing: SUPABASE_URL' }),
-        {
-          status: 500,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        }
-      );
-    }
-
-    if (!supabaseAnonKey || supabaseAnonKey.trim() === '') {
-      console.error('Missing SUPABASE_ANON_KEY environment variable');
-      return new Response(
-        JSON.stringify({ error: 'Supabase configuration missing: SUPABASE_ANON_KEY' }),
-        {
-          status: 500,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        }
-      );
-    }
-
-    // Initialize Supabase client
-    const supabaseClient = createClient(
-      supabaseUrl,
-      supabaseAnonKey,
-      {
-        global: {
-          headers: { Authorization: req.headers.get('Authorization')! },
-        },
-      }
-    );
-
-    // Get user from JWT token
-    const {
-      data: { user },
-      error: userError,
-    } = await supabaseClient.auth.getUser();
-
-    if (userError || !user) {
-      return new Response(
-        JSON.stringify({ error: 'Unauthorized' }),
-        {
-          status: 401,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        }
-      );
-    }
-
-    const userId = user.id;
-
-    switch (req.method) {
-      case 'GET':
-        return await handleGetProfile(supabaseClient, userId, corsHeaders);
-      case 'PUT':
-        return await handleUpdateProfile(supabaseClient, userId, req, corsHeaders);
-      default:
-        return new Response(
-          JSON.stringify({ error: 'Method not allowed' }),
-          {
-            status: 405,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          }
-        );
-    }
-  } catch (error) {
-    console.error('Error in user-profile function:', error);
-    return new Response(
-      JSON.stringify({ error: 'Internal server error' }),
-      {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      }
-    );
-  }
-});
-
-/**
- * Handles GET requests to retrieve user profile
- * @param supabaseClient - Authenticated Supabase client
- * @param userId - User ID from JWT token
- * @param corsHeaders - CORS headers for response
- * @returns Promise resolving to HTTP response with user profile data
- */
 async function handleGetProfile(
-  supabaseClient: SupabaseClient,
-  userId: string,
-  corsHeaders: Record<string, string>
+  services: ServiceContainer,
+  userId: string
 ): Promise<Response> {
-  try {
-    const { data: profile, error } = await supabaseClient
+  const { data: profile, error } = await services.supabaseServiceClient
+    .from('user_profiles')
+    .select('*')
+    .eq('id', userId)
+    .single()
+
+  let userProfile: UserProfile
+
+  if (error?.code === 'PGRST116') {
+    const defaultProfile = await createDefaultProfile(services, userId)
+    const { data: newProfile, error: insertError } = await services.supabaseServiceClient
       .from('user_profiles')
-      .select('*')
-      .eq('id', userId)
-      .single();
+      .insert({
+        id: userId,
+        language_preference: defaultProfile.language_preference,
+        theme_preference: defaultProfile.theme_preference,
+        first_name: defaultProfile.first_name,
+        last_name: defaultProfile.last_name,
+        profile_picture: defaultProfile.profile_picture,
+        is_admin: defaultProfile.is_admin
+      })
+      .select()
+      .single()
 
-    if (error?.code === 'PGRST116') {
-      // Profile not found, create default profile
-      const defaultProfile = createDefaultProfile(userId);
-      const { data: newProfile, error: insertError } = await supabaseClient
-        .from('user_profiles')
-        .insert([defaultProfile])
-        .select()
-        .single();
-
-      if (insertError) {
-        console.error('Error creating profile:', insertError);
-        return new Response(
-          JSON.stringify({ error: 'Failed to create user profile' }),
-          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
-      return new Response(
-        JSON.stringify({ data: newProfile }),
-        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    if (error) {
-      console.error('Error fetching profile:', error);
-      return new Response(
-        JSON.stringify({ error: 'Failed to fetch user profile' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    return new Response(
-      JSON.stringify({ data: profile }),
-      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
-  } catch (error) {
-    console.error('Error in handleGetProfile:', error);
-    return new Response(
-      JSON.stringify({ error: 'Internal server error' }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+    if (insertError) throw new AppError('DATABASE_ERROR', 'Failed to create user profile', 500)
+    userProfile = newProfile
+  } else if (error) {
+    throw new AppError('DATABASE_ERROR', 'Failed to fetch user profile', 500)
+  } else {
+    userProfile = profile
   }
+
+  const { data: { user }, error: userError } = await services.supabaseServiceClient.auth.admin.getUserById(userId)
+  
+  if (!userError && user) {
+    userProfile.email = user.email || null
+    userProfile.phone = user.phone || null
+  }
+
+  return new Response(
+    JSON.stringify({ data: userProfile }),
+    { status: 200, headers: { 'Content-Type': 'application/json' } }
+  )
 }
 
-/**
- * Handles PUT requests to update user profile
- * @param supabaseClient - Authenticated Supabase client
- * @param userId - User ID from JWT token
- * @param req - HTTP request object
- * @param corsHeaders - CORS headers for response
- * @returns Promise resolving to HTTP response with updated profile data
- */
 async function handleUpdateProfile(
-  supabaseClient: SupabaseClient,
-  userId: string,
   req: Request,
-  corsHeaders: Record<string, string>
+  services: ServiceContainer,
+  userId: string
 ): Promise<Response> {
-  try {
-    const body = await req.json();
-    const validation = parseAndValidateUpdate(body);
+  const body = await req.json()
+  const updateData = parseAndValidateUpdate(body)
+  const profile = await upsertProfile(services, userId, updateData)
 
-    if (!validation.isValid) {
-      return new Response(
-        JSON.stringify({ error: validation.error }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
+  return new Response(
+    JSON.stringify({ data: profile }),
+    { status: 200, headers: { 'Content-Type': 'application/json' } }
+  )
+}
 
-    const { data: profile, error } = await upsertProfile(
-      supabaseClient,
-      userId,
-      validation.updateData!
-    );
+async function handleSyncProfile(
+  services: ServiceContainer,
+  userId: string
+): Promise<Response> {
+  const { data: { user }, error: userError } = await services.supabaseServiceClient.auth.admin.getUserById(userId)
+  
+  if (userError || !user) {
+    throw new AppError('VALIDATION_ERROR', 'Failed to get user data for sync', 400)
+  }
 
-    if (error) {
-      console.error('Error upserting profile:', error);
-      return new Response(
-        JSON.stringify({ error: 'Failed to update user profile' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
+  const extractionResult = extractOAuthProfileData(user)
+  
+  if (!extractionResult.success || !extractionResult.data) {
+    throw new AppError('VALIDATION_ERROR', 'No OAuth profile data available to sync', 400)
+  }
 
+  const profileUpdateData = createProfileUpdateData(extractionResult.data)
+  
+  if (Object.keys(profileUpdateData).length === 0) {
     return new Response(
-      JSON.stringify({ data: profile }),
-      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
-  } catch (error) {
-    console.error('Error in handleUpdateProfile:', error);
-    return new Response(
-      JSON.stringify({ error: 'Invalid request body' }),
-      { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+      JSON.stringify({ 
+        message: 'No profile data to sync',
+        source: extractionResult.source
+      }),
+      { status: 200, headers: { 'Content-Type': 'application/json' } }
+    )
+  }
+
+  const profile = await upsertProfile(services, userId, profileUpdateData)
+  logProfileExtraction(user, extractionResult)
+  console.log(`✅ [USER_PROFILE] Profile synced successfully for user ${userId}`)
+
+  return new Response(
+    JSON.stringify({ 
+      message: 'Profile synced successfully',
+      data: profile,
+      source: extractionResult.source,
+      synced_fields: Object.keys(profileUpdateData)
+    }),
+    { status: 200, headers: { 'Content-Type': 'application/json' } }
+  )
+}
+
+// ============================================================================
+// Main Handler
+// ============================================================================
+
+async function handleUserProfile(
+  req: Request,
+  services: ServiceContainer,
+  userContext?: UserContext
+): Promise<Response> {
+  if (!userContext || userContext.type !== 'authenticated') {
+    throw new AppError('UNAUTHORIZED', 'Authentication required', 401)
+  }
+
+  const userId = userContext.userId!
+
+  switch (req.method) {
+    case 'GET':
+      return handleGetProfile(services, userId)
+    case 'PUT':
+      return handleUpdateProfile(req, services, userId)
+    case 'POST':
+      return handleSyncProfile(services, userId)
+    default:
+      throw new AppError('METHOD_NOT_ALLOWED', 'Method not allowed', 405)
   }
 }
+
+// ============================================================================
+// Create Function with Factory
+// ============================================================================
+
+createAuthenticatedFunction(handleUserProfile, {
+  allowedMethods: ['GET', 'PUT', 'POST'],
+  enableAnalytics: true,
+  timeout: 15000
+})

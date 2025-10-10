@@ -3,6 +3,8 @@ import 'package:google_fonts/google_fonts.dart';
 
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/utils/category_utils.dart';
+import '../../../../core/extensions/translation_extension.dart';
+import '../../../../core/i18n/translation_keys.dart';
 
 /// Horizontal scrollable chips for category filtering with multi-select capability.
 class CategoryFilterChips extends StatelessWidget {
@@ -165,7 +167,7 @@ class CategoryFilterChips extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Filter by Category',
+            context.tr(TranslationKeys.categoryFilterTitle),
             style: GoogleFonts.inter(
               fontSize: 16,
               fontWeight: FontWeight.w600,
@@ -272,7 +274,7 @@ class _CategoryFilterSection extends StatelessWidget {
                   final isSelected = selectedCategories.isEmpty;
                   return _buildChip(
                     context: context,
-                    label: 'All',
+                    label: context.tr(TranslationKeys.categoryFilterAll),
                     isSelected: isSelected,
                     onTap: onSelectAll,
                     icon: Icons.all_inclusive_rounded,
@@ -422,7 +424,7 @@ class _Header extends StatelessWidget {
     return Row(
       children: [
         Text(
-          'Filter by Category',
+          context.tr(TranslationKeys.categoryFilterTitle),
           style: GoogleFonts.inter(
             fontSize: 16,
             fontWeight: FontWeight.w600,
@@ -438,7 +440,7 @@ class _Header extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 8),
             ),
             child: Text(
-              'Clear All',
+              context.tr(TranslationKeys.categoryFilterClearAll),
               style: GoogleFonts.inter(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,

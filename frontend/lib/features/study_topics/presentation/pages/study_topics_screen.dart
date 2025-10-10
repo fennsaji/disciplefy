@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -7,6 +8,8 @@ import 'package:google_fonts/google_fonts.dart';
 
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/di/injection_container.dart';
+import '../../../../core/extensions/translation_extension.dart';
+import '../../../../core/i18n/translation_keys.dart';
 import '../../../home/domain/entities/recommended_guide_topic.dart';
 import '../../../daily_verse/presentation/bloc/daily_verse_bloc.dart';
 import '../../../daily_verse/presentation/bloc/daily_verse_state.dart';
@@ -22,7 +25,10 @@ import '../widgets/category_filter_chips.dart';
 
 /// Screen for browsing all study topics with filtering and search capabilities.
 class StudyTopicsScreen extends StatelessWidget {
-  const StudyTopicsScreen({super.key});
+  /// Optional topic ID from deep link (e.g., from notification)
+  final String? topicId;
+
+  const StudyTopicsScreen({super.key, this.topicId});
 
   @override
   Widget build(BuildContext context) => MultiBlocProvider(
@@ -35,12 +41,15 @@ class StudyTopicsScreen extends StatelessWidget {
             value: sl<HomeBloc>(),
           ),
         ],
-        child: const _StudyTopicsScreenContent(),
+        child: _StudyTopicsScreenContent(topicId: topicId),
       );
 }
 
 class _StudyTopicsScreenContent extends StatefulWidget {
-  const _StudyTopicsScreenContent();
+  /// Optional topic ID from deep link (e.g., from notification)
+  final String? topicId;
+
+  const _StudyTopicsScreenContent({this.topicId});
 
   @override
   State<_StudyTopicsScreenContent> createState() =>
@@ -58,6 +67,145 @@ class _StudyTopicsScreenContentState extends State<_StudyTopicsScreenContent> {
   void initState() {
     super.initState();
     _searchController.addListener(_onSearchChanged);
+
+    // Handle deep link navigation from notification
+    if (widget.topicId != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _handleTopicDeepLink(widget.topicId!);
+      });
+    }
+  }
+
+  /// Handle deep link to specific topic (e.g., from notification)
+  void _handleTopicDeepLink(String topicId) async {
+    print('[StudyTopics] Deep link detected for topic ID: $topicId');
+
+    // Wait for topics to load first
+    final studyTopicsBloc = context.read<StudyTopicsBloc>();
+    final studyTopicsState = studyTopicsBloc.state;
+
+    // If topics aren't loaded yet, wait for them with retry logic
+    if (studyTopicsState is StudyTopicsLoading ||
+        studyTopicsState is StudyTopicsInitial) {
+      print('[StudyTopics] Waiting for topics to load...');
+
+      // Show loading indicator
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('⏳ Loading study topics...'),
+            duration: Duration(seconds: 3),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+
+      // Wait up to 3 seconds for topics to load
+      int attempts = 0;
+      while (attempts < 6 && mounted) {
+        await Future.delayed(const Duration(milliseconds: 500));
+        final currentState = studyTopicsBloc.state;
+        if (currentState is StudyTopicsLoaded) {
+          break;
+        }
+        attempts++;
+      }
+    }
+
+    // Find the topic with the matching ID
+    final currentState = studyTopicsBloc.state;
+    if (currentState is StudyTopicsLoaded) {
+      final topic =
+          currentState.topics.where((t) => t.id == topicId).firstOrNull;
+
+      if (topic != null) {
+        print('[StudyTopics] Found topic: ${topic.title}');
+
+        if (mounted) {
+          // Hide loading snackbar
+          ScaffoldMessenger.of(context).hideCurrentSnackBar();
+
+          // Show user feedback about what's happening
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('📖 Opening: ${topic.title}'),
+              duration: const Duration(milliseconds: 1500),
+              behavior: SnackBarBehavior.floating,
+              backgroundColor: AppTheme.primaryColor,
+            ),
+          );
+
+          // Small delay to ensure SnackBar is visible before navigation
+          await Future.delayed(const Duration(milliseconds: 300));
+
+          // Automatically generate study guide for this topic
+          print(
+              '[StudyTopics] Auto-generating study guide for deep-linked topic...');
+          _navigateToStudyGuide(topic);
+        }
+
+        // TODO (Follow-up): Implement scroll-to-topic functionality
+        // This would require adding a ScrollController and
+        // calculating the position of the topic in the grid
+        // For now, SnackBar provides immediate user feedback
+      } else {
+        print('[StudyTopics] Topic with ID $topicId not found');
+        if (mounted) {
+          ScaffoldMessenger.of(context).hideCurrentSnackBar();
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('❌ Recommended topic not found'),
+              backgroundColor: Colors.orange,
+              duration: Duration(seconds: 3),
+            ),
+          );
+        }
+      }
+    } else if (currentState is StudyTopicsError) {
+      // Topics failed to load - show error with retry option
+      print('[StudyTopics] Topics failed to load - showing error');
+      if (mounted) {
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('❌ Failed to load study topics'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 5),
+            action: SnackBarAction(
+              label: 'Retry',
+              textColor: Colors.white,
+              onPressed: () {
+                studyTopicsBloc.add(const RefreshStudyTopics());
+                // Retry deep link after refresh
+                Future.delayed(const Duration(milliseconds: 500), () {
+                  _handleTopicDeepLink(topicId);
+                });
+              },
+            ),
+          ),
+        );
+      }
+    } else {
+      // Topics still loading or in unexpected state
+      print('[StudyTopics] Topics not loaded - cannot handle deep link');
+      if (mounted) {
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('⏳ Topics are still loading, please try again'),
+            duration: const Duration(seconds: 3),
+            action: SnackBarAction(
+              label: 'Retry',
+              onPressed: () {
+                Future.delayed(const Duration(milliseconds: 500), () {
+                  _handleTopicDeepLink(topicId);
+                });
+              },
+            ),
+          ),
+        );
+      }
+    }
   }
 
   @override
@@ -138,11 +286,12 @@ class _StudyTopicsScreenContentState extends State<_StudyTopicsScreenContent> {
                   ScaffoldMessenger.of(context).hideCurrentSnackBar();
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: Text(
-                          'Failed to generate study guide: ${state.generationError}'),
+                      content: Text(context.tr(
+                          TranslationKeys.studyTopicsGenerationError,
+                          {'error': state.generationError})),
                       backgroundColor: Colors.red,
                       action: SnackBarAction(
-                        label: 'Dismiss',
+                        label: context.tr(TranslationKeys.commonCancel),
                         onPressed: () =>
                             ScaffoldMessenger.of(context).hideCurrentSnackBar(),
                       ),
@@ -195,7 +344,7 @@ class _StudyTopicsScreenContentState extends State<_StudyTopicsScreenContent> {
           color: Theme.of(context).colorScheme.onBackground,
         ),
         decoration: InputDecoration(
-          hintText: 'Search topics...',
+          hintText: context.tr(TranslationKeys.studyTopicsSearchHint),
           hintStyle: GoogleFonts.inter(
             fontSize: 16,
             color: AppTheme.onSurfaceVariant,
@@ -295,9 +444,9 @@ class _StudyTopicsScreenContentState extends State<_StudyTopicsScreenContent> {
     // Prevent multiple clicks during generation
     if (_isGeneratingStudyGuide) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-              'Study guide generation already in progress. Please wait...'),
+        SnackBar(
+          content:
+              Text(context.tr(TranslationKeys.studyTopicsGenerationInProgress)),
           duration: Duration(seconds: 2),
         ),
       );
@@ -341,7 +490,8 @@ class _StudyTopicsScreenContentState extends State<_StudyTopicsScreenContent> {
               ),
             ),
             const SizedBox(width: 12),
-            Text('Generating study guide for "${topic.title}"...'),
+            Text(context.tr(
+                TranslationKeys.studyTopicsGenerating, {'topic': topic.title})),
           ],
         ),
         duration: const Duration(minutes: 1),
@@ -389,8 +539,8 @@ class ErrorStateView extends StatelessWidget {
             const SizedBox(height: 16),
             Text(
               isInitialLoadError
-                  ? 'Failed to Load Topics'
-                  : 'Something Went Wrong',
+                  ? context.tr(TranslationKeys.studyTopicsFailedToLoad)
+                  : context.tr(TranslationKeys.studyTopicsSomethingWentWrong),
               style: GoogleFonts.inter(
                 fontSize: 20,
                 fontWeight: FontWeight.w600,
@@ -407,7 +557,7 @@ class ErrorStateView extends StatelessWidget {
             ElevatedButton.icon(
               onPressed: onRetry,
               icon: const Icon(Icons.refresh),
-              label: Text('Try Again',
+              label: Text(context.tr(TranslationKeys.studyTopicsTryAgain),
                   style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppTheme.primaryColor,
@@ -446,7 +596,7 @@ class EmptyStateView extends StatelessWidget {
                 size: 64, color: AppTheme.onSurfaceVariant),
             const SizedBox(height: 16),
             Text(
-              'No Topics Found',
+              context.tr(TranslationKeys.studyTopicsNoTopicsFound),
               style: GoogleFonts.inter(
                 fontSize: 20,
                 fontWeight: FontWeight.w600,
@@ -456,26 +606,26 @@ class EmptyStateView extends StatelessWidget {
             const SizedBox(height: 8),
             Text(
               hasFilters
-                  ? 'Try adjusting your filters or search terms'
-                  : 'No study topics are available at the moment',
+                  ? context.tr(TranslationKeys.studyTopicsAdjustFilters)
+                  : context.tr(TranslationKeys.studyTopicsNoTopicsAvailable),
               style: GoogleFonts.inter(
                   fontSize: 16, color: AppTheme.onSurfaceVariant),
               textAlign: TextAlign.center,
             ),
-            if (hasFilters) ..._buildClearFiltersButton(),
+            if (hasFilters) ..._buildClearFiltersButton(context),
           ],
         ),
       ),
     );
   }
 
-  List<Widget> _buildClearFiltersButton() {
+  List<Widget> _buildClearFiltersButton(BuildContext context) {
     return [
       const SizedBox(height: 24),
       ElevatedButton.icon(
         onPressed: onClearFilters,
         icon: const Icon(Icons.clear_all),
-        label: Text('Clear Filters',
+        label: Text(context.tr(TranslationKeys.studyTopicsClearFilters),
             style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
         style: ElevatedButton.styleFrom(
           backgroundColor: AppTheme.primaryColor,
@@ -567,7 +717,8 @@ class TopicsLoadedView extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       children: [
         Text(
-          '${topics.length} topics found',
+          context.tr(TranslationKeys.studyTopicsTopicsFound,
+              {'count': topics.length.toString()}),
           style: GoogleFonts.inter(
             fontSize: 16,
             color: Theme.of(context).colorScheme.onBackground,
@@ -630,7 +781,7 @@ class StudyTopicsAppBar extends StatelessWidget implements PreferredSizeWidget {
         title: isSearchExpanded
             ? onBuildSearchField()
             : Text(
-                'Study Topics',
+                context.tr(TranslationKeys.studyTopicsTitle),
                 style: GoogleFonts.inter(
                   fontSize: 20,
                   fontWeight: FontWeight.w600,

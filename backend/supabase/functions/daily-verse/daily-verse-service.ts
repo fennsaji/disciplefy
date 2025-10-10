@@ -11,6 +11,11 @@ import { LLMService } from '../_shared/services/llm-service.ts'
 
 interface DailyVerseData {
   reference: string
+  referenceTranslations: {
+    en: string
+    hi: string
+    ml: string
+  }
   translations: {
     esv: string
     hi: string
@@ -33,6 +38,11 @@ export class DailyVerseService {
   private readonly EMERGENCY_FALLBACK_VERSES = [
     {
       reference: "John 3:16",
+      referenceTranslations: {
+        en: "John 3:16",
+        hi: "यूहन्ना 3:16",
+        ml: "യോഹന്നാൻ 3:16"
+      },
       translations: {
         esv: "For God so loved the world, that he gave his only Son, that whoever believes in him should not perish but have eternal life.",
         hi: "क्योंकि परमेश्वर ने जगत से ऐसा प्रेम रखा कि उसने अपना एकलौता पुत्र दे दिया, ताकि जो कोई उस पर विश्वास करे वह नष्ट न हो, परन्तु अनन्त जीवन पाए।",
@@ -41,6 +51,11 @@ export class DailyVerseService {
     },
     {
       reference: "Psalm 23:1",
+      referenceTranslations: {
+        en: "Psalm 23:1",
+        hi: "भजन संहिता 23:1",
+        ml: "സങ്കീർത്തനം 23:1"
+      },
       translations: {
         esv: "The Lord is my shepherd; I shall not want.",
         hi: "यहोवा मेरा चरवाहा है; मुझे कमी न होगी।",
@@ -49,6 +64,11 @@ export class DailyVerseService {
     },
     {
       reference: "Philippians 4:13",
+      referenceTranslations: {
+        en: "Philippians 4:13",
+        hi: "फिलिप्पियों 4:13",
+        ml: "ഫിലിപ്പിയർ 4:13"
+      },
       translations: {
         esv: "I can do all things through him who strengthens me.",
         hi: "मैं उसके द्वारा जो मुझे सामर्थ्य देता है, सब कुछ कर सकता हूँ।",
@@ -57,6 +77,11 @@ export class DailyVerseService {
     },
     {
       reference: "Joshua 1:9",
+      referenceTranslations: {
+        en: "Joshua 1:9",
+        hi: "यहोशू 1:9",
+        ml: "യോശുവ 1:9"
+      },
       translations: {
         esv: "Have I not commanded you? Be strong and courageous. Do not be frightened, and do not be dismayed, for the Lord your God is with you wherever you go.",
         hi: "क्या मैं ने तुझे आज्ञा नहीं दी? हियाव बाँधकर दृढ़ हो जा; भयभीत न हो, और तेरा मन कच्चा न हो क्योंकि जहाँ कहीं तू जाएगा वहाँ तेरा परमेश्वर यहोवा तेरे संग रहेगा।",
@@ -65,6 +90,11 @@ export class DailyVerseService {
     },
     {
       reference: "Romans 8:28",
+      referenceTranslations: {
+        en: "Romans 8:28",
+        hi: "रोमियों 8:28",
+        ml: "റോമർ 8:28"
+      },
       translations: {
         esv: "And we know that for those who love God all things work together for good, for those who are called according to his purpose.",
         hi: "और हम जानते हैं कि जो लोग परमेश्वर से प्रेम करते हैं, उनके लिये सब बातें मिलकर भलाई ही को उत्पन्न करती हैं; अर्थात् उन्हीं के लिये जो उसकी इच्छा के अनुसार बुलाए गए हैं।",
@@ -150,6 +180,7 @@ export class DailyVerseService {
       
       return {
         reference: llmResponse.reference,
+        referenceTranslations: llmResponse.referenceTranslations,
         translations: llmResponse.translations,
         date: this.formatDateKey(date)
       }
@@ -202,9 +233,15 @@ export class DailyVerseService {
       const llmResponse = await this.llmService.generateDailyVerse(excludeReferences, language)
       
       console.log(`LLM generated verse: ${llmResponse.reference}`)
+      console.log('LLM referenceTranslations:', JSON.stringify(llmResponse.referenceTranslations))
       
       return {
         reference: llmResponse.reference,
+        referenceTranslations: {
+          en: llmResponse.referenceTranslations.en,
+          hi: llmResponse.referenceTranslations.hi,
+          ml: llmResponse.referenceTranslations.ml
+        },
         translations: {
           esv: llmResponse.translations.esv,
           hi: llmResponse.translations.hindi,
@@ -287,6 +324,7 @@ export class DailyVerseService {
 
     return {
       reference: fallbackVerse.reference,
+      referenceTranslations: fallbackVerse.referenceTranslations,
       translations: fallbackVerse.translations,
       date: this.formatDateKey(date)
     }
@@ -317,7 +355,19 @@ export class DailyVerseService {
       }
 
       console.log(`Found cached verse for date: ${dateKey}`)
-      return data.verse_data as DailyVerseData
+      const cachedData = data.verse_data
+      
+      // Backward compatibility: Add referenceTranslations if missing from old cache
+      if (!cachedData.referenceTranslations) {
+        console.log('Adding missing referenceTranslations to cached verse')
+        cachedData.referenceTranslations = {
+          en: cachedData.reference,
+          hi: cachedData.reference,
+          ml: cachedData.reference
+        }
+      }
+      
+      return cachedData as DailyVerseData
 
     } catch (error) {
       console.error('Error fetching cached verse:', error)
@@ -338,14 +388,21 @@ export class DailyVerseService {
           is_active: true,
           created_at: new Date().toISOString(),
           expires_at: this.getExpirationDate()
+        }, {
+          onConflict: 'date_key',
+          ignoreDuplicates: false  // Update existing record if conflict
         })
 
       if (error) {
-        console.error('Error caching verse:', error)
+        console.error('[Error] Error caching verse:', error)
+        throw error
       }
 
+      console.log(`[Info] Verse cached successfully for date: ${dateKey}`)
+
     } catch (error) {
-      console.error('Error in cacheVerse:', error)
+      console.error('[Error] Error in cacheVerse:', error)
+      throw error
     }
   }
 
@@ -364,11 +421,11 @@ export class DailyVerseService {
   }
 
   /**
-   * Get cache expiration date (7 days from now)
+   * Get cache expiration date (3 months from now)
    */
   private getExpirationDate(): string {
     const expirationDate = new Date()
-    expirationDate.setDate(expirationDate.getDate() + 7)
+    expirationDate.setMonth(expirationDate.getMonth() + 3)
     return expirationDate.toISOString()
   }
 

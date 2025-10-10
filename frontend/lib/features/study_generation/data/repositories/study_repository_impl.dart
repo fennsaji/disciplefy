@@ -2,6 +2,7 @@ import 'package:dartz/dartz.dart';
 
 import '../../../../core/error/failures.dart';
 import '../../../../core/error/exceptions.dart';
+import '../../../../core/error/token_failures.dart';
 import '../../domain/entities/study_guide.dart';
 import '../../domain/repositories/study_repository.dart';
 import '../../../../core/network/network_info.dart';
@@ -42,6 +43,7 @@ class StudyRepositoryImpl implements StudyRepository {
     required String language,
   }) async {
     try {
+      print('🚨 [STUDY_REPO] Starting study generation request');
       // Check network connectivity
       if (!await _networkInfo.isConnected) {
         return const Left(NetworkFailure(
@@ -81,10 +83,20 @@ class StudyRepositoryImpl implements StudyRepository {
         context: e.context,
       ));
     } on RateLimitException catch (e) {
+      // SECURITY FIX: Pass retryAfter duration for proper user feedback
       return Left(RateLimitFailure(
         message: e.message,
         code: e.code,
+        retryAfter: e.retryAfter,
         context: e.context,
+      ));
+    } on InsufficientTokensException catch (e) {
+      print('🚨 [STUDY_REPO] InsufficientTokensException caught: $e');
+      // SECURITY FIX: Convert to proper InsufficientTokensFailure
+      return Left(InsufficientTokensFailure(
+        requiredTokens: e.requiredTokens,
+        availableTokens: e.availableTokens,
+        nextResetTime: e.nextResetTime,
       ));
     } on ClientException catch (e) {
       return Left(ClientFailure(

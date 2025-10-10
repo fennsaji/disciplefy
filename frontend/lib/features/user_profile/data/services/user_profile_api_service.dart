@@ -94,6 +94,17 @@ class UserProfileApiService {
     return _updateProfile(updates);
   }
 
+  /// Sync OAuth profile data to backend
+  Future<Either<Failure, UserProfileEntity>> syncOAuthProfile(
+      Map<String, dynamic> profileData) async {
+    return _sendProfileRequest(
+      method: 'POST',
+      body: profileData,
+      invalidDataLabel: 'Invalid OAuth profile data',
+      failureLabel: 'Failed to sync OAuth profile',
+    );
+  }
+
   /// Internal method to handle profile updates
   Future<Either<Failure, UserProfileEntity>> _updateProfile(
       Map<String, dynamic> updates) async {
@@ -196,5 +207,86 @@ class UserProfileApiService {
         message: 'Failed to parse profile response: ${e.toString()}',
       ));
     }
+  }
+
+  /// Shared request sender that handles POST/PUT requests with consistent error handling
+  Future<Either<Failure, UserProfileEntity>> _sendProfileRequest({
+    required String method,
+    required Map<String, dynamic> body,
+    required String invalidDataLabel,
+    required String failureLabel,
+  }) async {
+    try {
+      final baseHeaders = await _httpService.createHeaders();
+      final headers = Map<String, String>.from(baseHeaders)
+        ..['Content-Type'] = 'application/json';
+      const url = '${AppConfig.supabaseUrl}$_userProfileEndpoint';
+
+      final response = method == 'POST'
+          ? await _httpService.post(
+              url,
+              headers: headers,
+              body: json.encode(body),
+            )
+          : await _httpService.put(
+              url,
+              headers: headers,
+              body: json.encode(body),
+            );
+
+      // Handle response status codes
+      if (response.statusCode == 200) {
+        return _parseProfileResponse(response.body);
+      } else if (response.statusCode == 404) {
+        return const Left(NotFoundFailure(
+          message: 'User profile not found',
+        ));
+      } else if (response.statusCode == 401) {
+        return const Left(AuthenticationFailure(
+          message: 'Authentication required. Please log in again.',
+        ));
+      } else if (response.statusCode == 400) {
+        final errorMessage =
+            _extractErrorMessage(response.body, invalidDataLabel);
+        return Left(ServerFailure(message: errorMessage));
+      } else {
+        final errorMessage = _extractErrorMessage(response.body, failureLabel);
+        return Left(ServerFailure(message: errorMessage));
+      }
+    } on SocketException {
+      return const Left(NetworkFailure());
+    } on TimeoutException {
+      return const Left(NetworkFailure(
+        message: 'Request timeout. Please try again.',
+      ));
+    } on FormatException catch (e) {
+      return Left(ServerFailure(
+        message: 'Invalid response format: ${e.message}',
+      ));
+    } catch (e) {
+      return Left(ServerFailure(
+        message: 'Unexpected error: ${e.toString()}',
+      ));
+    }
+  }
+
+  /// Extract error message from JSON response with fallback to body preview
+  String _extractErrorMessage(String responseBody, String fallbackLabel) {
+    try {
+      final Map<String, dynamic>? errorData =
+          json.decode(responseBody) as Map<String, dynamic>?;
+      return errorData?['error'] ?? fallbackLabel;
+    } catch (e) {
+      final bodyPreview = _previewBody(responseBody);
+      return bodyPreview.isNotEmpty
+          ? '$fallbackLabel: $bodyPreview'
+          : fallbackLabel;
+    }
+  }
+
+  /// Create a preview of response body for error messages
+  String _previewBody(String responseBody) {
+    final trimmed = responseBody.trim();
+    return trimmed.length > 100 ? '${trimmed.substring(0, 100)}...' : trimmed;
   }
 }

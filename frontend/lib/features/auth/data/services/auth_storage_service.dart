@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../domain/entities/auth_params.dart';
 
@@ -15,14 +16,21 @@ class AuthStorageService {
   static const String _userTypeKey = 'user_type';
   static const String _userIdKey = 'user_id';
   static const String _onboardingCompletedKey = 'onboarding_completed';
+  static const String _sessionExpiresAtKey =
+      'session_expires_at'; // SECURITY FIX
+  static const String _deviceIdKey = 'device_id'; // SECURITY FIX
 
   /// Stores authentication data securely with atomic transactions
+  /// SECURITY FIX: Now includes session expiration and device binding
   /// Prevents race conditions by ensuring all-or-nothing storage operations
   Future<void> storeAuthData(AuthDataStorageParams params) async {
     if (kDebugMode) {
       print('🔐 [AUTH STORAGE] Starting atomic auth data storage...');
       print('🔐 [AUTH STORAGE] - userType: ${params.userType}');
       print('🔐 [AUTH STORAGE] - userId: ${params.userId}');
+      print('🔐 [AUTH STORAGE] - expiresAt: ${params.expiresAt}');
+      print(
+          '🔐 [AUTH STORAGE] - deviceId: ${params.deviceId != null ? "SET" : "NULL"}');
     }
 
     // STEP 1: Prepare all data first to minimize time in critical section
@@ -36,6 +44,17 @@ class AuthStorageService {
       secureStorageData[_userIdKey] = params.userId!;
     }
 
+    // SECURITY FIX: Store session expiration
+    if (params.expiresAt != null) {
+      secureStorageData[_sessionExpiresAtKey] =
+          params.expiresAt!.toIso8601String();
+    }
+
+    // SECURITY FIX: Store device ID for session binding
+    if (params.deviceId != null) {
+      secureStorageData[_deviceIdKey] = params.deviceId!;
+    }
+
     final Map<String, dynamic> hiveData = {
       'user_type': params.userType,
       'onboarding_completed': true,
@@ -43,6 +62,15 @@ class AuthStorageService {
 
     if (params.userId != null) {
       hiveData['user_id'] = params.userId;
+    }
+
+    // SECURITY FIX: Also store in Hive for router guard access
+    if (params.expiresAt != null) {
+      hiveData[_sessionExpiresAtKey] = params.expiresAt!.toIso8601String();
+    }
+
+    if (params.deviceId != null) {
+      hiveData[_deviceIdKey] = params.deviceId;
     }
 
     // STEP 2: Store in FlutterSecureStorage atomically
@@ -67,14 +95,65 @@ class AuthStorageService {
     }
 
     // STEP 3: Store in Hive for synchronous router access
+    // SECURITY FIX: Enhanced with transaction verification
     try {
-      final box = Hive.box('app_settings');
+      // Ensure app_settings box is opened before accessing
+      Box box;
+      if (Hive.isBoxOpen('app_settings')) {
+        box = Hive.box('app_settings');
+      } else {
+        box = await Hive.openBox('app_settings');
+      }
 
-      // Use transaction to ensure atomic writes to Hive
+      // SECURITY FIX: Store old values for rollback verification
+      final oldValues = <String, dynamic>{};
+      for (final key in hiveData.keys) {
+        if (box.containsKey(key)) {
+          oldValues[key] = box.get(key);
+        }
+      }
+
+      // Use putAll for atomic batch write
       await box.putAll(hiveData);
 
+      // SECURITY FIX: Verify writes succeeded
+      bool verificationFailed = false;
+      for (final entry in hiveData.entries) {
+        final storedValue = box.get(entry.key);
+        if (storedValue != entry.value) {
+          verificationFailed = true;
+          if (kDebugMode) {
+            print('🔐 [AUTH STORAGE] ⚠️ Verification failed for ${entry.key}');
+            print(
+                '🔐 [AUTH STORAGE] Expected: ${entry.value}, Got: $storedValue');
+          }
+        }
+      }
+
+      if (verificationFailed) {
+        // SECURITY FIX: Rollback Hive changes if verification failed
+        if (kDebugMode) {
+          print(
+              '🔐 [AUTH STORAGE] ⚠️ Rolling back Hive changes due to verification failure');
+        }
+
+        // Restore old values
+        for (final entry in oldValues.entries) {
+          await box.put(entry.key, entry.value);
+        }
+
+        // Delete keys that didn't exist before
+        for (final key in hiveData.keys) {
+          if (!oldValues.containsKey(key)) {
+            await box.delete(key);
+          }
+        }
+
+        throw Exception('Hive write verification failed');
+      }
+
       if (kDebugMode) {
-        print('🔐 [AUTH STORAGE] ✅ Stored in Hive atomically');
+        print('🔐 [AUTH STORAGE] ✅ Stored in Hive atomically and verified');
 
         // Verify what was actually stored
         final storedUserType = box.get('user_type');
@@ -92,6 +171,7 @@ class AuthStorageService {
       // ACCEPTABLE: Don't fail the entire operation if only Hive fails
       // FlutterSecureStorage is the primary source of truth
       // This is intentional graceful degradation, not exception swallowing
+      // Router guards will fall back to checking Supabase session directly
     }
 
     if (kDebugMode) {
@@ -107,6 +187,8 @@ class AuthStorageService {
         _secureStorage.delete(key: _userTypeKey),
         _secureStorage.delete(key: _userIdKey),
         _secureStorage.delete(key: _onboardingCompletedKey),
+        _secureStorage.delete(key: _sessionExpiresAtKey), // SECURITY FIX
+        _secureStorage.delete(key: _deviceIdKey), // SECURITY FIX
       ]);
     } catch (e) {
       if (kDebugMode) {
@@ -129,20 +211,29 @@ class AuthStorageService {
     return completed == 'true';
   }
 
-  /// Signs out the user by clearing all stored data
-  Future<void> clearAllData() async {
-    await _secureStorage.deleteAll();
-
-    // Also clear Hive storage
+  /// Clears only secure storage (auth tokens, user credentials)
+  /// Other storage concerns are handled by their respective repositories
+  Future<void> clearSecureStorage() async {
     try {
-      final box = Hive.box('app_settings');
-      await box.delete('user_type');
-      await box.delete('user_id');
-      await box.delete('onboarding_completed');
+      await _secureStorage.deleteAll();
+      if (kDebugMode) {
+        print('🔐 [AUTH STORAGE] ✅ Secure storage cleared');
+      }
     } catch (e) {
       if (kDebugMode) {
-        print('Warning: Failed to clear auth data from Hive: $e');
+        print('🔐 [AUTH STORAGE] ❌ Failed to clear FlutterSecureStorage: $e');
       }
+      rethrow;
     }
+  }
+
+  /// Legacy method - redirects to ClearUserDataUseCase for proper orchestration
+  @Deprecated('Use ClearUserDataUseCase for comprehensive data cleanup instead')
+  Future<void> clearAllData() async {
+    if (kDebugMode) {
+      print(
+          '🔐 [AUTH STORAGE] ⚠️ clearAllData is deprecated. Use ClearUserDataUseCase instead.');
+    }
+    await clearSecureStorage();
   }
 }

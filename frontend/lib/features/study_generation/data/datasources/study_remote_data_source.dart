@@ -3,7 +3,9 @@ import 'package:uuid/uuid.dart';
 
 import '../../../../core/error/exceptions.dart';
 import '../../../../core/services/api_auth_helper.dart';
+import '../../../../core/utils/rate_limiter.dart';
 import '../../domain/entities/study_guide.dart';
+import '../../../tokens/domain/entities/token_consumption.dart';
 
 /// Abstract contract for remote study guide operations.
 abstract class StudyRemoteDataSource {
@@ -28,6 +30,13 @@ class StudyRemoteDataSourceImpl implements StudyRemoteDataSource {
   /// UUID generator for creating unique IDs.
   final Uuid _uuid = const Uuid();
 
+  /// SECURITY FIX: Client-side rate limiter
+  /// Limits to 5 requests per minute to prevent API abuse
+  final RateLimiter _rateLimiter = RateLimiter(
+    maxRequests: 5,
+    window: const Duration(minutes: 1),
+  );
+
   /// Creates a new StudyRemoteDataSourceImpl instance.
   StudyRemoteDataSourceImpl({
     required SupabaseClient supabaseClient,
@@ -39,11 +48,32 @@ class StudyRemoteDataSourceImpl implements StudyRemoteDataSource {
     required String inputType,
     required String language,
   }) async {
+    print('🚨 [STUDY_API] Starting study generation request');
+
+    // SECURITY FIX: Check client-side rate limit before making request
+    if (!_rateLimiter.canMakeRequest()) {
+      final retryAfter = _rateLimiter.getRetryAfter();
+      final waitSeconds = retryAfter.inSeconds;
+
+      print('🚨 [STUDY_API] Rate limited: wait $waitSeconds seconds');
+
+      throw RateLimitException(
+        message:
+            'Please wait $waitSeconds seconds before generating another study guide.',
+        code: 'CLIENT_RATE_LIMITED',
+        retryAfter: retryAfter,
+      );
+    }
+
     try {
+      // Validate token before making authenticated request
+      await ApiAuthHelper.validateTokenForRequest();
+
       // Use unified authentication helper
       final headers = await ApiAuthHelper.getAuthHeaders();
 
       // Call Supabase Edge Function for study generation
+      print('🚨 [STUDY_API] Making API call to study-generate');
       final response = await _supabaseClient.functions.invoke(
         'study-generate',
         body: {
@@ -54,15 +84,47 @@ class StudyRemoteDataSourceImpl implements StudyRemoteDataSource {
         headers: headers,
       );
 
+      print('🚨 [STUDY_API] Received response status: ${response.status}');
+
       if (response.status == 200 && response.data != null) {
         return _parseStudyGuideFromResponse(
             response.data, input, inputType, language);
       } else if (response.status == 429) {
-        throw const RateLimitException(
-          message:
-              'You have reached your study generation limit. Please try again later.',
-          code: 'RATE_LIMITED',
-        );
+        // Debug logging for 429 response
+        print('🚨 [STUDY_API] 429 Response data: ${response.data}');
+        print(
+            '🚨 [STUDY_API] Response data type: ${response.data.runtimeType}');
+
+        // Handle both old rate limiting and new token exhaustion
+        final errorData = response.data as Map<String, dynamic>?;
+        print('🚨 [STUDY_API] Parsed errorData: $errorData');
+        final error = errorData?['error'] as Map<String, dynamic>?;
+        print('🚨 [STUDY_API] Parsed error: $error');
+
+        if (error?['code'] == 'INSUFFICIENT_TOKENS') {
+          // New token-based error
+          final details = error?['details'] as Map<String, dynamic>?;
+          final required = details?['required'] as int? ?? 0;
+          final available = details?['available'] as int? ?? 0;
+
+          throw InsufficientTokensException(
+            message:
+                'You need $required tokens but only have $available available.',
+            code: 'INSUFFICIENT_TOKENS',
+            requiredTokens: required,
+            availableTokens: available,
+            nextResetTime: details?['next_reset'] != null
+                ? DateTime.tryParse(details!['next_reset'] as String)
+                : null,
+          );
+        } else {
+          // Legacy rate limiting error
+          throw const RateLimitException(
+            message:
+                'You have reached your study generation limit. Please try again later.',
+            code: 'RATE_LIMITED',
+          );
+        }
       } else if (response.status >= 500) {
         throw const ServerException(
           message: 'Server error occurred. Please try again later.',
@@ -79,15 +141,84 @@ class StudyRemoteDataSourceImpl implements StudyRemoteDataSource {
           code: 'GENERATION_FAILED',
         );
       }
-    } on NetworkException {
+    } on NetworkException catch (e) {
+      print('🚨 [STUDY_API] NetworkException caught: $e');
       rethrow;
-    } on ServerException {
+    } on ServerException catch (e) {
+      print('🚨 [STUDY_API] ServerException caught: $e');
       rethrow;
-    } on AuthenticationException {
+    } on AuthenticationException catch (e) {
+      print('🚨 [STUDY_API] AuthenticationException caught: $e');
       rethrow;
-    } on RateLimitException {
+    } on RateLimitException catch (e) {
+      print('🚨 [STUDY_API] RateLimitException caught: $e');
       rethrow;
+    } on InsufficientTokensException catch (e) {
+      print('🚨 [STUDY_API] InsufficientTokensException caught: $e');
+      rethrow;
+    } on TokenValidationException {
+      // Convert to AuthenticationException for consistency
+      throw const AuthenticationException(
+        message: 'Authentication token is invalid. Please sign in again.',
+        code: 'TOKEN_INVALID',
+      );
+    } on FunctionException catch (e) {
+      print(
+          '🚨 [STUDY_API] FunctionException caught: status=${e.status}, details=${e.details}');
+
+      // Handle 429 specifically
+      if (e.status == 429) {
+        final details = e.details as Map<String, dynamic>?;
+        final error = details?['error'] as Map<String, dynamic>?;
+
+        if (error?['code'] == 'INSUFFICIENT_TOKENS') {
+          // Parse token details if available
+          final errorDetails = error?['details'] as Map<String, dynamic>?;
+          final required = errorDetails?['required'] as int? ?? 0;
+          final available = errorDetails?['available'] as int? ?? 0;
+
+          // If backend doesn't provide proper required tokens, calculate frontend
+          final actualRequiredTokens =
+              required > 0 ? required : _calculateTokenCost(language);
+
+          throw InsufficientTokensException(
+            message: error?['message'] as String? ?? 'Insufficient tokens',
+            code: 'INSUFFICIENT_TOKENS',
+            requiredTokens: actualRequiredTokens,
+            availableTokens: available,
+            nextResetTime: errorDetails?['next_reset'] != null
+                ? DateTime.tryParse(errorDetails!['next_reset'] as String)
+                : null,
+          );
+        } else {
+          // Legacy rate limiting
+          throw const RateLimitException(
+            message:
+                'You have reached your study generation limit. Please try again later.',
+            code: 'RATE_LIMITED',
+          );
+        }
+      }
+
+      // Handle other HTTP errors from FunctionException
+      if (e.status >= 500) {
+        throw const ServerException(
+          message: 'Server error occurred. Please try again later.',
+          code: 'SERVER_ERROR',
+        );
+      } else if (e.status == 401) {
+        throw const AuthenticationException(
+          message: 'Authentication required. Please sign in to continue.',
+          code: 'UNAUTHORIZED',
+        );
+      } else {
+        throw ServerException(
+          message: 'Request failed: ${e.reasonPhrase}',
+          code: 'REQUEST_FAILED',
+        );
+      }
     } catch (e) {
+      print('🚨 [STUDY_API] Generic exception caught: $e (${e.runtimeType})');
       throw ClientException(
         message: 'We couldn\'t generate a study guide. Please try again later.',
         code: 'GENERATION_FAILED',
@@ -96,7 +227,30 @@ class StudyRemoteDataSourceImpl implements StudyRemoteDataSource {
     }
   }
 
+  /// Calculates token cost for a given language
+  ///
+  /// This matches the backend logic: English costs 10 tokens,
+  /// Hindi and Malayalam cost 20 tokens each.
+  int _calculateTokenCost(String language) {
+    switch (language.toLowerCase()) {
+      case 'en':
+      case 'english':
+        return 10;
+      case 'hi':
+      case 'hindi':
+      case 'ml':
+      case 'malayalam':
+        return 20;
+      default:
+        return 10; // Default to English cost
+    }
+  }
+
   /// Parses a study guide from the API response.
+  ///
+  /// Handles both enhanced responses (with personal_notes and isSaved)
+  /// and legacy responses for backward compatibility.
+  /// Now also includes token consumption information.
   StudyGuide _parseStudyGuideFromResponse(
     Map<String, dynamic> data,
     String input,
@@ -107,6 +261,30 @@ class StudyRemoteDataSourceImpl implements StudyRemoteDataSource {
     final studyGuide =
         responseData['study_guide'] as Map<String, dynamic>? ?? {};
     final content = studyGuide['content'] as Map<String, dynamic>? ?? {};
+
+    // Extract enhanced fields (personal_notes and isSaved) if available
+    final personalNotes = studyGuide['personal_notes'] as String?;
+    final isSaved = studyGuide['isSaved'] as bool?;
+
+    // Extract token consumption information
+    TokenConsumption? tokenConsumption;
+    final bool fromCache = responseData['from_cache'] as bool? ?? false;
+
+    if (!fromCache && data['tokens'] != null) {
+      try {
+        tokenConsumption =
+            TokenConsumption.fromJson(data['tokens'] as Map<String, dynamic>);
+        print(
+            '🪙 [STUDY_API] Token consumption parsed: ${tokenConsumption.consumed} tokens');
+      } catch (e) {
+        print('⚠️ [STUDY_API] Failed to parse token consumption: $e');
+      }
+    }
+
+    if (fromCache) {
+      print(
+          '🪙 [STUDY_API] Study guide returned from cache - no tokens consumed');
+    }
 
     return StudyGuide(
       id: studyGuide['id'] as String? ?? _uuid.v4(),
@@ -131,6 +309,10 @@ class StudyRemoteDataSourceImpl implements StudyRemoteDataSource {
       language: language, // Always use the original language parameter
       createdAt: DateTime.parse(studyGuide['createdAt'] as String? ??
           DateTime.now().toIso8601String()),
+      personalNotes: personalNotes, // Enhanced field
+      isSaved: isSaved, // Enhanced field
+      tokenConsumption: tokenConsumption, // Token information
+      fromCache: fromCache, // Cache status
     );
   }
 }

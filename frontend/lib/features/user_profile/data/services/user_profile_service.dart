@@ -184,4 +184,19 @@ class UserProfileService {
       (profile) => UserProfileModel.fromEntity(profile).toMap(),
     );
   }
+
+  /// Sync OAuth profile data to backend
+  Future<Either<Failure, UserProfileEntity>> syncOAuthProfile(
+      Map<String, dynamic> profileData) async {
+    final currentUser = _authService.currentUser;
+    if (!_authService.isAuthenticated ||
+        currentUser == null ||
+        currentUser.isAnonymous) {
+      return const Left(AuthenticationFailure(
+        message: 'User must be authenticated to sync OAuth profile',
+      ));
+    }
+
+    return await _apiService.syncOAuthProfile(profileData);
+  }
 }
