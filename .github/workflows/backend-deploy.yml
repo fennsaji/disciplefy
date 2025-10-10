@@ -232,17 +232,12 @@ jobs:
       working-directory: ./backend
       run: |
         echo "🔗 Linking to Supabase production project..."
-        echo "✅ Environment variables are set."
 
         echo "🔐 Authenticating and linking..."
         supabase link --project-ref "$SUPABASE_PROJECT_REF"
 
-        echo "🔌 Setting up remote DB connection..."
-        supabase db remote set \
-          --db-url "postgres://postgres:${SUPABASE_DB_PASSWORD}@db.${SUPABASE_PROJECT_REF}.supabase.co:5432/postgres"
-
-        echo "📦 Running DB migrations..."
-        supabase db push
+        echo "📦 Running DB migrations (including all historical migrations)..."
+        supabase db push --include-all
 
         echo "✅ Migrations applied successfully"
       env:
