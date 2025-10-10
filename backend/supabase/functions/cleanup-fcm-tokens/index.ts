@@ -54,11 +54,11 @@ async function handleTokenCleanup(
 
   console.log(`Removing tokens last updated before: ${cutoffDateStr}`);
 
-  // Count tokens to be removed
+  // Count tokens to be removed (from user_notification_tokens table)
   const { count: totalCount, error: countError } = await supabase
-    .from('user_notification_preferences')
+    .from('user_notification_tokens')
     .select('*', { count: 'exact', head: true })
-    .lt('updated_at', cutoffDateStr);
+    .lt('token_updated_at', cutoffDateStr);
 
   if (countError) {
     throw new AppError('DATABASE_ERROR', `Failed to count expired tokens: ${countError.message}`, 500);
@@ -86,11 +86,11 @@ async function handleTokenCleanup(
   let hasMore = true;
 
   while (hasMore) {
-    // Fetch a batch of expired tokens
+    // Fetch a batch of expired tokens (from user_notification_tokens table)
     const { data: expiredTokens, error: fetchError } = await supabase
-      .from('user_notification_preferences')
-      .select('user_id, fcm_token')
-      .lt('updated_at', cutoffDateStr)
+      .from('user_notification_tokens')
+      .select('id, user_id, fcm_token')
+      .lt('token_updated_at', cutoffDateStr)
       .limit(CLEANUP_CONFIG.BATCH_SIZE);
 
     if (fetchError) {
@@ -109,12 +109,12 @@ async function handleTokenCleanup(
       totalRemoved += expiredTokens.length;
       console.log(`[DRY RUN] Would delete batch of ${expiredTokens.length} tokens (total: ${totalRemoved}/${totalCount})`);
     } else {
-      // Actual deletion
-      const userIds = expiredTokens.map(t => t.user_id);
+      // Actual deletion - delete by token IDs
+      const tokenIds = expiredTokens.map(t => t.id);
       const { error: deleteError } = await supabase
-        .from('user_notification_preferences')
+        .from('user_notification_tokens')
         .delete()
-        .in('user_id', userIds);
+        .in('id', tokenIds);
 
       if (deleteError) {
         console.error(`Error deleting batch: ${deleteError.message}`);
