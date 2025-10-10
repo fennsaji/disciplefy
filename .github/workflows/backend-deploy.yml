@@ -228,29 +228,13 @@ jobs:
         EOF
         echo "✅ ${{ env.DEPLOY_ENV }} environment file created"
 
-    - name: 🔗 Link to Supabase production project
+    - name: 🔗 Link to Supabase production project & Run Migrations
+      working-directory: ./backend
       run: |
         echo "🔗 Linking to Supabase production project..."
-        echo "✅ Environment variables look okay."
-
-        echo "🔐 Authenticating..."
-        supabase link --project-ref "$SUPABASE_PROJECT_REF"
-
-        echo "🔌 Connecting to remote database..."
-        supabase db remote set \
-          --db-url "postgres://postgres:${SUPABASE_DB_PASSWORD}@db.${SUPABASE_PROJECT_REF}.supabase.co:5432/postgres"
-
-      env:
-        SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
-        SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
-        SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
-
-    - name: 🔗 Link Supabase & Run DB Migration
-      run: |
-        echo "🔍 Debugging environment..."
         echo "✅ Environment variables are set."
 
-        echo "🔐 Linking to Supabase project..."
+        echo "🔐 Authenticating and linking..."
         supabase link --project-ref "$SUPABASE_PROJECT_REF"
 
         echo "🔌 Setting up remote DB connection..."
@@ -259,6 +243,8 @@ jobs:
 
         echo "📦 Running DB migrations..."
         supabase db push
+
+        echo "✅ Migrations applied successfully"
       env:
         SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
         SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
