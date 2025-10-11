@@ -36,30 +36,31 @@ class NotificationBloc extends Bloc<NotificationEvent, NotificationState> {
     LoadNotificationPreferences event,
     Emitter<NotificationState> emit,
   ) async {
-    emit(const NotificationLoading());
+    try {
+      emit(const NotificationLoading());
 
-    final preferencesResult = await getPreferences(NoParams());
+      final preferencesResult = await getPreferences(NoParams());
+      final permissionResult = await checkPermissions(NoParams());
 
-    await preferencesResult.fold(
-      (failure) async => emit(NotificationError(message: failure.message)),
-      (preferences) async {
-        // Check actual OS permission status
-        final permissionResult = await checkPermissions(NoParams());
-
-        permissionResult.fold(
-          // If permission check fails, treat as not granted
-          (_) => emit(NotificationPreferencesLoaded(
+      // Use fold to extract values and emit state synchronously
+      preferencesResult.fold(
+        (failure) {
+          emit(NotificationError(message: failure.message));
+        },
+        (preferences) {
+          final permissionsGranted = permissionResult.fold(
+            (_) => false,
+            (granted) => granted,
+          );
+          emit(NotificationPreferencesLoaded(
             preferences: preferences,
-            permissionsGranted: false,
-          )),
-          // Use actual permission status
-          (granted) => emit(NotificationPreferencesLoaded(
-            preferences: preferences,
-            permissionsGranted: granted,
-          )),
-        );
-      },
-    );
+            permissionsGranted: permissionsGranted,
+          ));
+        },
+      );
+    } catch (e) {
+      emit(NotificationError(message: 'Failed to load preferences: $e'));
+    }
   }
 
   Future<void> _onUpdatePreferences(

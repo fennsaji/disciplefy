@@ -192,6 +192,10 @@ class TranslationKeys {
   static const settingsSignInToSync = 'settings.sign_in_to_sync';
   static const settingsSignIn = 'settings.sign_in';
   static const settingsAppearance = 'settings.appearance';
+  static const settingsNotifications = 'settings.notifications';
+  static const settingsNotificationPreferences =
+      'settings.notification_preferences';
+  static const settingsNotificationSubtitle = 'settings.notification_subtitle';
   static const settingsTheme = 'settings.theme';
   static const settingsContentLanguage = 'settings.content_language';
   static const settingsAccountActions = 'settings.account_actions';
@@ -383,4 +387,39 @@ class TranslationKeys {
   static const categoryFilterTitle = 'category_filter.title';
   static const categoryFilterClearAll = 'category_filter.clear_all';
   static const categoryFilterAll = 'category_filter.all';
+
+  // Notification Settings
+  static const notificationSettingsTitle = 'notifications.settings.title';
+  static const notificationSettingsLoading = 'notifications.settings.loading';
+  static const notificationSettingsPreferencesUpdated =
+      'notifications.settings.preferences_updated';
+  static const notificationSettingsPermissionsGranted =
+      'notifications.settings.permissions_granted';
+  static const notificationSettingsPermissionsDenied =
+      'notifications.settings.permissions_denied';
+  static const notificationSettingsPreferencesTitle =
+      'notifications.settings.preferences_title';
+  static const notificationSettingsDailyVerseTitle =
+      'notifications.settings.daily_verse_title';
+  static const notificationSettingsDailyVerseDescription =
+      'notifications.settings.daily_verse_description';
+  static const notificationSettingsRecommendedTopicsTitle =
+      'notifications.settings.recommended_topics_title';
+  static const notificationSettingsRecommendedTopicsDescription =
+      'notifications.settings.recommended_topics_description';
+  static const notificationSettingsPermissionTitle =
+      'notifications.settings.permission_title';
+  static const notificationSettingsPermissionEnabled =
+      'notifications.settings.permission_enabled';
+  static const notificationSettingsPermissionDisabled =
+      'notifications.settings.permission_disabled';
+  static const notificationSettingsEnableButton =
+      'notifications.settings.enable_button';
+  static const notificationSettingsAboutTitle =
+      'notifications.settings.about_title';
+  static const notificationSettingsAboutInfo =
+      'notifications.settings.about_info';
+  static const notificationSettingsErrorTitle =
+      'notifications.settings.error_title';
+  static const notificationSettingsRetry = 'notifications.settings.retry';
 }

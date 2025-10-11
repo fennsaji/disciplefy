@@ -8,6 +8,7 @@ class AppRoutes {
   static const String generateStudy = '/generate-study';
   static const String studyGuide = '/study-guide';
   static const String settings = '/settings';
+  static const String notificationSettings = '/notification-settings';
   static const String saved = '/saved';
   static const String studyTopics = '/study-topics';
   static const String tokenManagement = '/token-management';
