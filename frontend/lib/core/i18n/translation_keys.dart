@@ -388,38 +388,38 @@ class TranslationKeys {
   static const categoryFilterClearAll = 'category_filter.clear_all';
   static const categoryFilterAll = 'category_filter.all';
 
-  // Notification Settings
-  static const notificationSettingsTitle = 'notifications.settings.title';
-  static const notificationSettingsLoading = 'notifications.settings.loading';
-  static const notificationSettingsPreferencesUpdated =
+  // Notifications Settings
+  static const notificationsSettingsTitle = 'notifications.settings.title';
+  static const notificationsSettingsLoading = 'notifications.settings.loading';
+  static const notificationsSettingsPreferencesUpdated =
       'notifications.settings.preferences_updated';
-  static const notificationSettingsPermissionsGranted =
+  static const notificationsSettingsPermissionsGranted =
       'notifications.settings.permissions_granted';
-  static const notificationSettingsPermissionsDenied =
+  static const notificationsSettingsPermissionsDenied =
       'notifications.settings.permissions_denied';
-  static const notificationSettingsPreferencesTitle =
+  static const notificationsSettingsPreferencesTitle =
       'notifications.settings.preferences_title';
-  static const notificationSettingsDailyVerseTitle =
+  static const notificationsSettingsDailyVerseTitle =
       'notifications.settings.daily_verse_title';
-  static const notificationSettingsDailyVerseDescription =
+  static const notificationsSettingsDailyVerseDescription =
       'notifications.settings.daily_verse_description';
-  static const notificationSettingsRecommendedTopicsTitle =
+  static const notificationsSettingsRecommendedTopicsTitle =
       'notifications.settings.recommended_topics_title';
-  static const notificationSettingsRecommendedTopicsDescription =
+  static const notificationsSettingsRecommendedTopicsDescription =
       'notifications.settings.recommended_topics_description';
-  static const notificationSettingsPermissionTitle =
+  static const notificationsSettingsPermissionTitle =
       'notifications.settings.permission_title';
-  static const notificationSettingsPermissionEnabled =
+  static const notificationsSettingsPermissionEnabled =
       'notifications.settings.permission_enabled';
-  static const notificationSettingsPermissionDisabled =
+  static const notificationsSettingsPermissionDisabled =
       'notifications.settings.permission_disabled';
-  static const notificationSettingsEnableButton =
+  static const notificationsSettingsEnableButton =
       'notifications.settings.enable_button';
-  static const notificationSettingsAboutTitle =
+  static const notificationsSettingsAboutTitle =
       'notifications.settings.about_title';
-  static const notificationSettingsAboutInfo =
+  static const notificationsSettingsAboutInfo =
       'notifications.settings.about_info';
-  static const notificationSettingsErrorTitle =
+  static const notificationsSettingsErrorTitle =
       'notifications.settings.error_title';
-  static const notificationSettingsRetry = 'notifications.settings.retry';
+  static const notificationsSettingsRetry = 'notifications.settings.retry';
 }
