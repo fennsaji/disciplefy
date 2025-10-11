@@ -1481,13 +1481,14 @@ VERSE SELECTION CRITERIA:
 - Prefer single verses (not multi-verse passages) for clarity
 - Ensure the verse is self-contained and understandable alone
 
-VERSE THEME SUGGESTIONS (choose ONE verse from these categories):
+VERSE THEME SUGGESTIONS (optional examples for inspiration - you may choose any appropriate verse):
 - **God's Love & Grace**: John 3:16, Romans 8:38-39, Ephesians 2:8-9, 1 John 4:19
 - **Strength & Courage**: Philippians 4:13, Joshua 1:9, Isaiah 41:10, 2 Timothy 1:7
 - **Peace & Comfort**: Psalm 23:1, Matthew 11:28, John 14:27, Philippians 4:6-7
 - **Hope & Faith**: Jeremiah 29:11, Hebrews 11:1, Romans 15:13, Proverbs 3:5-6
 - **Guidance & Wisdom**: Psalm 119:105, Proverbs 3:5-6, James 1:5, Psalm 32:8
 - **Provision & Protection**: Philippians 4:19, Psalm 91:1-2, Matthew 6:33, Psalm 46:1
+- **Or any other doctrinally sound, encouraging verse from Scripture**
 
 Return in this EXACT JSON format (no other text, no markdown):
 {
