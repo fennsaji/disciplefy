@@ -208,6 +208,9 @@ class AppTranslations {
       'sign_in_to_sync': 'Sign in to sync your data',
       'sign_in': 'Sign In',
       'appearance': 'Appearance',
+      'notifications': 'Notifications',
+      'notification_preferences': 'Notification Preferences',
+      'notification_subtitle': 'Manage daily verse and topic reminders',
       'theme': 'Theme',
       'content_language': 'Language',
       'account_actions': 'Account Actions',
@@ -308,6 +311,31 @@ class AppTranslations {
       'title': 'Filter by Category',
       'clear_all': 'Clear All',
       'all': 'All',
+    },
+    'notifications': {
+      'settings': {
+        'title': 'Notification Settings',
+        'loading': 'Loading notification settings...',
+        'preferences_updated': '✓ Preferences updated',
+        'permissions_granted': '✓ Notification permissions granted',
+        'permissions_denied': '❌ Notification permissions denied',
+        'preferences_title': 'Notification Preferences',
+        'daily_verse_title': 'Daily Verse',
+        'daily_verse_description':
+            'Receive inspirational Bible verses every morning at 6 AM',
+        'recommended_topics_title': 'Recommended Topics',
+        'recommended_topics_description':
+            'Get personalized study topic suggestions at 8 AM',
+        'permission_title': 'Notification Permission',
+        'permission_enabled': 'Enabled - You will receive notifications',
+        'permission_disabled': 'Disabled - Enable to receive notifications',
+        'enable_button': 'Enable Notifications',
+        'about_title': 'About Notifications',
+        'about_info':
+            '• Notifications are sent based on your timezone\n• You can customize which notifications you receive\n• Tap on a notification to view the content directly\n• You can disable notifications anytime',
+        'error_title': 'Error Loading Settings',
+        'retry': 'Retry',
+      },
     },
     'tokens': {
       'management': {
@@ -600,6 +628,9 @@ class AppTranslations {
       'sign_in_to_sync': 'अपना डेटा सिंक करने के लिए साइन इन करें',
       'sign_in': 'साइन इन करें',
       'appearance': 'दिखावट',
+      'notifications': 'नोटिफिकेशन',
+      'notification_preferences': 'नोटिफिकेशन प्राथमिकताएं',
+      'notification_subtitle': 'दैनिक वचन और विषय रिमाइंडर प्रबंधित करें',
       'theme': 'थीम',
       'content_language': 'भाषा',
       'account_actions': 'खाता एक्शन',
@@ -701,6 +732,32 @@ class AppTranslations {
       'title': 'श्रेणी के अनुसार फ़िल्टर करें',
       'clear_all': 'सभी साफ़ करें',
       'all': 'सभी',
+    },
+    'notifications': {
+      'settings': {
+        'title': 'नोटिफिकेशन सेटिंग',
+        'loading': 'नोटिफिकेशन सेटिंग लोड हो रही है...',
+        'preferences_updated': '✓ प्राथमिकताएं अपडेट हो गईं',
+        'permissions_granted': '✓ नोटिफिकेशन अनुमति दी गई',
+        'permissions_denied': '❌ नोटिफिकेशन अनुमति अस्वीकार की गई',
+        'preferences_title': 'नोटिफिकेशन प्राथमिकताएं',
+        'daily_verse_title': 'दैनिक वचन',
+        'daily_verse_description':
+            'प्रतिदिन सुबह 6 बजे प्रेरणादायक बाइबल पद प्राप्त करें',
+        'recommended_topics_title': 'अनुशंसित विषय',
+        'recommended_topics_description':
+            'सुबह 8 बजे व्यक्तिगत अध्ययन विषय सुझाव प्राप्त करें',
+        'permission_title': 'नोटिफिकेशन अनुमति',
+        'permission_enabled': 'सक्षम - आपको नोटिफिकेशन प्राप्त होंगे',
+        'permission_disabled':
+            'अक्षम - नोटिफिकेशन प्राप्त करने के लिए सक्षम करें',
+        'enable_button': 'नोटिफिकेशन सक्षम करें',
+        'about_title': 'नोटिफिकेशन के बारे में',
+        'about_info':
+            '• नोटिफिकेशन आपके टाइमज़ोन के आधार पर भेजे जाते हैं\n• आप चुन सकते हैं कि कौन से नोटिफिकेशन प्राप्त करने हैं\n• सामग्री सीधे देखने के लिए नोटिफिकेशन पर टैप करें\n• आप किसी भी समय नोटिफिकेशन अक्षम कर सकते हैं',
+        'error_title': 'सेटिंग लोड करने में त्रुटि',
+        'retry': 'पुनः प्रयास करें',
+      },
     },
     'tokens': {
       'management': {
@@ -1018,6 +1075,10 @@ class AppTranslations {
       'sign_in_to_sync': 'നിങ്ങളുടെ ഡാറ്റ സിങ്ക് ചെയ്യാൻ സൈൻ ഇൻ ചെയ്യുക',
       'sign_in': 'സൈൻ ഇൻ ചെയ്യുക',
       'appearance': 'കാഴ്ച',
+      'notifications': 'അറിയിപ്പുകൾ',
+      'notification_preferences': 'അറിയിപ്പ് പ്രാപ്തരുകൾ',
+      'notification_subtitle':
+          'ദൈനിക വചനവും വിഷയ ഓർമ്മപ്പെടുത്തലുകളും നിയന്ത്രിക്കുക',
       'theme': 'ഥീം',
       'content_language': 'ഭാഷ',
       'account_actions': 'അക്കൗണ്ട് പ്രവർ‍ത്തനങ്ങൾ',
@@ -1123,6 +1184,32 @@ class AppTranslations {
       'title': 'വിഭാഗം അനുസരിച്ച് ഫിൽട്ടർ ചെയ്യുക',
       'clear_all': 'എല്ലാം മായ്ക്കുക',
       'all': 'എല്ലാം',
+    },
+    'notifications': {
+      'settings': {
+        'title': 'അറിയിപ്പ് സെറ്റിങ്സ്',
+        'loading': 'അറിയിപ്പ് സെറ്റിങ്സ് ലോഡു ചെയ്യുന്നു...',
+        'preferences_updated': '✓ പ്രാപ്തരുകൾ അപ്ഡേറ്റ് ചെയ്തു',
+        'permissions_granted': '✓ അറിയിപ്പ് അനുമതി നൽകി',
+        'permissions_denied': '❌ അറിയിപ്പ് അനുമതി നിരസിച്ചു',
+        'preferences_title': 'അറിയിപ്പ് പ്രാപ്തരുകൾ',
+        'daily_verse_title': 'ദൈനിക വചനം',
+        'daily_verse_description':
+            'രാവിലെ ആറു മണിക്ക് പ്രേരണാദായകമായ ബൈബിള്‍ വചനങ്ങൾ സ്വീകരിക്കുക',
+        'recommended_topics_title': 'ശിഫാരസ്സു ചെയ്യുന്ന വിഷയങ്ങൾ',
+        'recommended_topics_description':
+            'രാവിലെ എട്ട് മണിക്ക് വ്യക്തിഗത പഠന വിഷയ സൂചനകൾ സ്വീകരിക്കുക',
+        'permission_title': 'അറിയിപ്പ് അനുമതി',
+        'permission_enabled': 'പ്രവർ‍ത്തിപ്പിച്ചു - അറിയിപ്പുകൾ ലഭിക്കും',
+        'permission_disabled':
+            'പ്രവർ‍ത്തിപ്പിക്കാത്തത് - അറിയിപ്പുകൾ ലഭിക്കാൻ പ്രവർ‍ത്തിപ്പിക്കുക',
+        'enable_button': 'അറിയിപ്പുകൾ പ്രവർ‍ത്തിപ്പിക്കുക',
+        'about_title': 'അറിയിപ്പുകളെ കുറിച്ച്',
+        'about_info':
+            '• അറിയിപ്പുകൾ നിങ്ങളുടെ ടൈംസോൺ അനുസരിച്ച് അയയ്‌ക്കുന്നു\n• ഏതൊക്കെ അറിയിപ്പുകൾ സ്വീകരിക്കണമെന്ന് തിരഞ്ഞെടുക്കാം\n• ഉള്ളടക്കം നേരിട്ട് കാണാൻ അറിയിപ്പിൽ ടാപ്പ് ചെയ്യുക\n• ഏതു സമയവും അറിയിപ്പുകൾ പ്രവർ‍ത്തിപ്പിക്കാത്താക്കാം',
+        'error_title': 'സെറ്റിങ്സ് ലോഡ് ചെയ്യുന്നതിൽ പ്രശ്നം',
+        'retry': 'വീണ്ടും ശ്രമിക്കുക',
+      },
     },
     'tokens': {
       'management': {

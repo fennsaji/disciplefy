@@ -312,7 +312,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
           // Settings Icon
           IconButton(
             onPressed: () {
-              context.push('/settings');
+              context.go('/settings');
             },
             icon: const Icon(
               Icons.settings_outlined,
