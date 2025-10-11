@@ -40,7 +40,7 @@ class _NotificationSettingsView extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(context.tr(TranslationKeys.notificationSettingsTitle)),
+        title: Text(context.tr(TranslationKeys.notificationsSettingsTitle)),
         elevation: 0,
       ),
       body: BlocConsumer<NotificationBloc, NotificationState>(
@@ -57,7 +57,7 @@ class _NotificationSettingsView extends StatelessWidget {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text(context.tr(
-                    TranslationKeys.notificationSettingsPreferencesUpdated)),
+                    TranslationKeys.notificationsSettingsPreferencesUpdated)),
                 backgroundColor: Colors.green,
                 duration: Duration(seconds: 2),
               ),
@@ -71,7 +71,7 @@ class _NotificationSettingsView extends StatelessWidget {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text(context.tr(
-                      TranslationKeys.notificationSettingsPermissionsGranted)),
+                      TranslationKeys.notificationsSettingsPermissionsGranted)),
                   backgroundColor: Colors.green,
                 ),
               );
@@ -79,7 +79,7 @@ class _NotificationSettingsView extends StatelessWidget {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text(context.tr(
-                      TranslationKeys.notificationSettingsPermissionsDenied)),
+                      TranslationKeys.notificationsSettingsPermissionsDenied)),
                   backgroundColor: Colors.orange,
                 ),
               );
@@ -107,7 +107,7 @@ class _NotificationSettingsView extends StatelessWidget {
 
           return Center(
             child:
-                Text(context.tr(TranslationKeys.notificationSettingsLoading)),
+                Text(context.tr(TranslationKeys.notificationsSettingsLoading)),
           );
         },
       ),
@@ -130,7 +130,7 @@ class _NotificationSettingsView extends StatelessWidget {
 
           // Preferences Section
           Text(
-            context.tr(TranslationKeys.notificationSettingsPreferencesTitle),
+            context.tr(TranslationKeys.notificationsSettingsPreferencesTitle),
             style: Theme.of(context).textTheme.titleLarge?.copyWith(
                   fontWeight: FontWeight.bold,
                 ),
@@ -139,10 +139,10 @@ class _NotificationSettingsView extends StatelessWidget {
 
           // Daily Verse Notification
           NotificationPreferenceCard(
-            title:
-                context.tr(TranslationKeys.notificationSettingsDailyVerseTitle),
+            title: context
+                .tr(TranslationKeys.notificationsSettingsDailyVerseTitle),
             description: context
-                .tr(TranslationKeys.notificationSettingsDailyVerseDescription),
+                .tr(TranslationKeys.notificationsSettingsDailyVerseDescription),
             icon: Icons.book_outlined,
             enabled: state.preferences.dailyVerseEnabled,
             onChanged: (value) {
@@ -156,10 +156,10 @@ class _NotificationSettingsView extends StatelessWidget {
 
           // Recommended Topic Notification
           NotificationPreferenceCard(
-            title: context
-                .tr(TranslationKeys.notificationSettingsRecommendedTopicsTitle),
+            title: context.tr(
+                TranslationKeys.notificationsSettingsRecommendedTopicsTitle),
             description: context.tr(TranslationKeys
-                .notificationSettingsRecommendedTopicsDescription),
+                .notificationsSettingsRecommendedTopicsDescription),
             icon: Icons.lightbulb_outline,
             enabled: state.preferences.recommendedTopicEnabled,
             onChanged: (value) {
@@ -202,7 +202,7 @@ class _NotificationSettingsView extends StatelessWidget {
                     children: [
                       Text(
                         context.tr(TranslationKeys
-                            .notificationSettingsPermissionTitle),
+                            .notificationsSettingsPermissionTitle),
                         style:
                             Theme.of(context).textTheme.titleMedium?.copyWith(
                                   fontWeight: FontWeight.bold,
@@ -212,9 +212,9 @@ class _NotificationSettingsView extends StatelessWidget {
                       Text(
                         permissionsGranted
                             ? context.tr(TranslationKeys
-                                .notificationSettingsPermissionEnabled)
+                                .notificationsSettingsPermissionEnabled)
                             : context.tr(TranslationKeys
-                                .notificationSettingsPermissionDisabled),
+                                .notificationsSettingsPermissionDisabled),
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                               color: Colors.grey[600],
                             ),
@@ -236,7 +236,7 @@ class _NotificationSettingsView extends StatelessWidget {
                   },
                   icon: const Icon(Icons.notifications_active),
                   label: Text(context
-                      .tr(TranslationKeys.notificationSettingsEnableButton)),
+                      .tr(TranslationKeys.notificationsSettingsEnableButton)),
                   style: ElevatedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 12),
                   ),
@@ -285,7 +285,7 @@ class _NotificationSettingsView extends StatelessWidget {
               Icon(Icons.info_outline, color: iconColor),
               const SizedBox(width: 8),
               Text(
-                context.tr(TranslationKeys.notificationSettingsAboutTitle),
+                context.tr(TranslationKeys.notificationsSettingsAboutTitle),
                 style: Theme.of(context).textTheme.titleSmall?.copyWith(
                       fontWeight: FontWeight.bold,
                       color: textColor,
@@ -295,7 +295,7 @@ class _NotificationSettingsView extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           Text(
-            context.tr(TranslationKeys.notificationSettingsAboutInfo),
+            context.tr(TranslationKeys.notificationsSettingsAboutInfo),
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   color: textColor,
                   height: 1.6,
@@ -320,7 +320,7 @@ class _NotificationSettingsView extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             Text(
-              context.tr(TranslationKeys.notificationSettingsErrorTitle),
+              context.tr(TranslationKeys.notificationsSettingsErrorTitle),
               style: Theme.of(context).textTheme.titleLarge,
             ),
             const SizedBox(height: 8),
@@ -338,7 +338,7 @@ class _NotificationSettingsView extends StatelessWidget {
               },
               icon: const Icon(Icons.refresh),
               label:
-                  Text(context.tr(TranslationKeys.notificationSettingsRetry)),
+                  Text(context.tr(TranslationKeys.notificationsSettingsRetry)),
             ),
           ],
         ),
