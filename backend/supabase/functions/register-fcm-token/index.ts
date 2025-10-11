@@ -114,17 +114,32 @@ async function handleRegisterToken(
     ? requestData.recommendedTopicEnabled
     : (existingPrefs?.recommended_topic_enabled ?? true)
 
-  // Upsert token and preferences
-  const { data, error } = await services.supabaseServiceClient
-    .from('user_notification_preferences')
+  // Step 1: Upsert FCM token in user_notification_tokens table
+  const { error: tokenError } = await services.supabaseServiceClient
+    .from('user_notification_tokens')
     .upsert({
       user_id: userId,
       fcm_token: requestData.fcmToken,
       platform: requestData.platform,
+      token_updated_at: new Date().toISOString(),
+    }, {
+      onConflict: 'user_id,fcm_token', // unique constraint
+      ignoreDuplicates: false,
+    })
+
+  if (tokenError) {
+    console.error('[Register Token] Token upsert error:', tokenError)
+    throw new AppError('DATABASE_ERROR', tokenError.message, 500)
+  }
+
+  // Step 2: Upsert notification preferences in user_notification_preferences table
+  const { data: prefsData, error: prefsError } = await services.supabaseServiceClient
+    .from('user_notification_preferences')
+    .upsert({
+      user_id: userId,
       timezone_offset_minutes: timezoneOffset,
       daily_verse_enabled: dailyVerseEnabled,
       recommended_topic_enabled: recommendedTopicEnabled,
-      token_updated_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     }, {
       onConflict: 'user_id',
@@ -132,24 +147,24 @@ async function handleRegisterToken(
     .select()
     .single()
 
-  if (error) {
-    console.error('[Register Token] Database error:', error)
-    throw new AppError('DATABASE_ERROR', error.message, 500)
+  if (prefsError) {
+    console.error('[Register Token] Preferences upsert error:', prefsError)
+    throw new AppError('DATABASE_ERROR', prefsError.message, 500)
   }
 
-  console.log('[Register Token] Token registered successfully')
+  console.log('[Register Token] Token and preferences registered successfully')
 
   return new Response(
     JSON.stringify({
       success: true,
       message: 'FCM token registered successfully',
       preferences: {
-        dailyVerseEnabled: data.daily_verse_enabled,
-        recommendedTopicEnabled: data.recommended_topic_enabled,
-        timezoneOffsetMinutes: data.timezone_offset_minutes,
+        dailyVerseEnabled: prefsData.daily_verse_enabled,
+        recommendedTopicEnabled: prefsData.recommended_topic_enabled,
+        timezoneOffsetMinutes: prefsData.timezone_offset_minutes,
       },
     }),
-    { 
+    {
       status: 200,
       headers: { 'Content-Type': 'application/json' }
     }
@@ -235,23 +250,36 @@ async function handleGetPreferences(
 ): Promise<Response> {
   console.log(`[Get Preferences] User: ${userId}`)
 
-  const { data, error } = await services.supabaseServiceClient
+  // Fetch notification preferences
+  const { data: prefsData, error: prefsError } = await services.supabaseServiceClient
     .from('user_notification_preferences')
     .select('*')
     .eq('user_id', userId)
     .single()
 
-  if (error && error.code !== 'PGRST116') { // PGRST116 = not found
-    console.error('[Get Preferences] Database error:', error)
-    throw new AppError('DATABASE_ERROR', error.message, 500)
+  if (prefsError && prefsError.code !== 'PGRST116') { // PGRST116 = not found
+    console.error('[Get Preferences] Database error:', prefsError)
+    throw new AppError('DATABASE_ERROR', prefsError.message, 500)
   }
 
-  if (!data) {
+  // Fetch FCM tokens (user may have multiple devices)
+  const { data: tokensData, error: tokensError } = await services.supabaseServiceClient
+    .from('user_notification_tokens')
+    .select('fcm_token, platform, token_updated_at')
+    .eq('user_id', userId)
+
+  if (tokensError) {
+    console.error('[Get Preferences] Tokens error:', tokensError)
+    throw new AppError('DATABASE_ERROR', tokensError.message, 500)
+  }
+
+  if (!prefsData) {
     return new Response(
       JSON.stringify({
         success: true,
         message: 'No notification preferences found',
         preferences: null,
+        tokens: tokensData || [],
       }),
       {
         status: 200,
@@ -265,13 +293,11 @@ async function handleGetPreferences(
       success: true,
       message: 'Notification preferences retrieved',
       preferences: {
-        fcmToken: data.fcm_token,
-        platform: data.platform,
-        dailyVerseEnabled: data.daily_verse_enabled,
-        recommendedTopicEnabled: data.recommended_topic_enabled,
-        timezoneOffsetMinutes: data.timezone_offset_minutes,
-        tokenUpdatedAt: data.token_updated_at,
+        dailyVerseEnabled: prefsData.daily_verse_enabled,
+        recommendedTopicEnabled: prefsData.recommended_topic_enabled,
+        timezoneOffsetMinutes: prefsData.timezone_offset_minutes,
       },
+      tokens: tokensData || [], // Array of all registered tokens/devices
     }),
     {
       status: 200,
@@ -291,22 +317,48 @@ async function handleUnregisterToken(
 ): Promise<Response> {
   console.log(`[Unregister Token] User: ${userId}`)
 
-  const { error } = await services.supabaseServiceClient
-    .from('user_notification_preferences')
-    .delete()
-    .eq('user_id', userId)
+  // Option 1: Delete specific token (if fcmToken provided in body)
+  // Option 2: Delete all tokens for user (if no token specified)
 
-  if (error) {
-    console.error('[Unregister Token] Database error:', error)
-    throw new AppError('DATABASE_ERROR', error.message, 500)
+  const body = await req.json().catch(() => ({})) as { fcmToken?: string }
+
+  if (body.fcmToken) {
+    // Delete specific token
+    const { error: tokenError } = await services.supabaseServiceClient
+      .from('user_notification_tokens')
+      .delete()
+      .eq('user_id', userId)
+      .eq('fcm_token', body.fcmToken)
+
+    if (tokenError) {
+      console.error('[Unregister Token] Token deletion error:', tokenError)
+      throw new AppError('DATABASE_ERROR', tokenError.message, 500)
+    }
+
+    console.log('[Unregister Token] Specific token unregistered successfully')
+  } else {
+    // Delete all tokens for this user
+    const { error: tokensError } = await services.supabaseServiceClient
+      .from('user_notification_tokens')
+      .delete()
+      .eq('user_id', userId)
+
+    if (tokensError) {
+      console.error('[Unregister Token] All tokens deletion error:', tokensError)
+      throw new AppError('DATABASE_ERROR', tokensError.message, 500)
+    }
+
+    // Optionally delete preferences too (or keep them for when user re-registers)
+    // For now, we'll keep preferences intact
+    console.log('[Unregister Token] All tokens unregistered successfully')
   }
-
-  console.log('[Unregister Token] Token unregistered successfully')
 
   return new Response(
     JSON.stringify({
       success: true,
-      message: 'FCM token unregistered successfully',
+      message: body.fcmToken
+        ? 'FCM token unregistered successfully'
+        : 'All FCM tokens unregistered successfully',
     }),
     {
       status: 200,
