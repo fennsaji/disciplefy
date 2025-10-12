@@ -94,15 +94,15 @@ class _StudyTopicsScreenContentState extends State<_StudyTopicsScreenContent> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('⏳ Loading study topics...'),
-            duration: Duration(seconds: 3),
+            duration: Duration(seconds: 10),
             behavior: SnackBarBehavior.floating,
           ),
         );
       }
 
-      // Wait up to 3 seconds for topics to load
+      // Wait up to 10 seconds for topics to load
       int attempts = 0;
-      while (attempts < 6 && mounted) {
+      while (attempts < 20 && mounted) {
         await Future.delayed(const Duration(milliseconds: 500));
         final currentState = studyTopicsBloc.state;
         if (currentState is StudyTopicsLoaded) {

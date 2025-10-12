@@ -311,7 +311,12 @@ async function handleRecommendedTopicNotification(
       }
 
       // Get localized content
-      const localizedContent = getLocalizedTopicContent(topicResult.topic, language);
+      const localizedContent = await getLocalizedTopicContent(
+        SUPABASE_URL,
+        SUPABASE_SERVICE_ROLE_KEY,
+        topicResult.topic,
+        language
+      );
 
       const title = NOTIFICATION_TITLES[language] || NOTIFICATION_TITLES.en;
       const intro = NOTIFICATION_INTROS[language] || NOTIFICATION_INTROS.en;
