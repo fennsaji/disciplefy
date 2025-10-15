@@ -421,11 +421,11 @@ export class DailyVerseService {
   }
 
   /**
-   * Get cache expiration date (3 months from now)
+   * Get cache expiration date (60 days from now)
    */
   private getExpirationDate(): string {
     const expirationDate = new Date()
-    expirationDate.setMonth(expirationDate.getMonth() + 3)
+    expirationDate.setDate(expirationDate.getDate() + 60)
     return expirationDate.toISOString()
   }
 
