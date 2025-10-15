@@ -186,6 +186,20 @@ class NotificationService {
   Future<bool> areNotificationsEnabled() async {
     try {
       if (kIsWeb) {
+        // For web, try to initialize Firebase Messaging if not already done
+        // This ensures we can check permissions even if initialize() wasn't called
+        if (_firebaseMessaging == null) {
+          try {
+            _firebaseMessaging = FirebaseMessaging.instance;
+          } catch (e) {
+            if (kDebugMode) {
+              print(
+                  '[NotificationService] Could not initialize Firebase Messaging: $e');
+            }
+            return false;
+          }
+        }
+
         final settings = await _firebaseMessaging?.getNotificationSettings();
         return settings?.authorizationStatus == AuthorizationStatus.authorized;
       } else if (Platform.isIOS) {

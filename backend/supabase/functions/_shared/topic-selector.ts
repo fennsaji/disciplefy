@@ -211,16 +211,61 @@ export async function selectTopicForUser(
 
 /**
  * Gets localized content for a topic based on language preference
- * Returns the default English content from the topic itself
- * For other languages, translations should be fetched from recommended_topics_translations
+ * Fetches translations from recommended_topics_translations table
+ * Falls back to English if translation not found
  */
-export function getLocalizedTopicContent(
+export async function getLocalizedTopicContent(
+  supabaseUrl: string,
+  supabaseServiceKey: string,
   topic: Topic,
   language: string
-): LocalizedContent {
-  // Default to the topic's title and description (English)
-  return {
-    title: topic.title,
-    description: topic.description,
-  };
+): Promise<LocalizedContent> {
+  // If language is English, return original content
+  if (language === 'en') {
+    return {
+      title: topic.title,
+      description: topic.description,
+    };
+  }
+
+  // Fetch translation from database
+  const supabase = createClient(supabaseUrl, supabaseServiceKey);
+  
+  try {
+    const { data: translation, error } = await supabase
+      .from('recommended_topics_translations')
+      .select('title, description')
+      .eq('topic_id', topic.id)
+      .eq('lang_code', language)
+      .single();
+
+    if (error) {
+      console.error(`Translation fetch error for topic ${topic.id}, language ${language}:`, error);
+      // Fallback to English
+      return {
+        title: topic.title,
+        description: topic.description,
+      };
+    }
+
+    if (translation) {
+      return {
+        title: translation.title,
+        description: translation.description,
+      };
+    }
+
+    // Fallback to English if no translation found
+    return {
+      title: topic.title,
+      description: topic.description,
+    };
+  } catch (error) {
+    console.error('Error fetching topic translation:', error);
+    // Fallback to English
+    return {
+      title: topic.title,
+      description: topic.description,
+    };
+  }
 }

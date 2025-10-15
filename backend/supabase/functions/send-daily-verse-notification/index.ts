@@ -211,12 +211,11 @@ async function handleDailyVerseNotification(
     const verseData = await services.dailyVerseService.getDailyVerse(today, 'en');
     console.log(`Daily verse obtained: ${verseData.reference}`);
 
-    // Convert service response to expected format
+    // Store complete verse data with all translations and reference translations
     dailyVerse = {
       reference: verseData.reference,
-      verse_text_en: verseData.translations.esv,
-      verse_text_hi: verseData.translations.hi,
-      verse_text_ml: verseData.translations.ml,
+      referenceTranslations: verseData.referenceTranslations,
+      translations: verseData.translations,
       date: today,
     };
   } catch (error) {
@@ -248,17 +247,25 @@ async function handleDailyVerseNotification(
   for (const user of eligibleUsers) {
     try {
       const language = languageMap[user.user_id] || 'en';
-      
+
+      // Select localized verse reference based on language
+      let localizedReference = dailyVerse.referenceTranslations.en;
+      if (language === 'hi' && dailyVerse.referenceTranslations.hi) {
+        localizedReference = dailyVerse.referenceTranslations.hi;
+      } else if (language === 'ml' && dailyVerse.referenceTranslations.ml) {
+        localizedReference = dailyVerse.referenceTranslations.ml;
+      }
+
       // Select verse text based on language
-      let verseText = dailyVerse.verse_text_en;
-      if (language === 'hi' && dailyVerse.verse_text_hi) {
-        verseText = dailyVerse.verse_text_hi;
-      } else if (language === 'ml' && dailyVerse.verse_text_ml) {
-        verseText = dailyVerse.verse_text_ml;
+      let verseText = dailyVerse.translations.esv;
+      if (language === 'hi' && dailyVerse.translations.hi) {
+        verseText = dailyVerse.translations.hi;
+      } else if (language === 'ml' && dailyVerse.translations.ml) {
+        verseText = dailyVerse.translations.ml;
       }
 
       const title = NOTIFICATION_TITLES[language] || NOTIFICATION_TITLES.en;
-      const body = `${dailyVerse.reference}\n\n${verseText.substring(0, 100)}${verseText.length > 100 ? '...' : ''}`;
+      const body = `${localizedReference}\n\n${verseText.substring(0, 100)}${verseText.length > 100 ? '...' : ''}`;
 
       const result = await fcmService.sendNotification({
         token: user.fcm_token,
@@ -283,7 +290,7 @@ async function handleDailyVerseNotification(
           notificationType: 'daily_verse',
           title,
           body,
-          verseReference: dailyVerse.reference,
+          verseReference: localizedReference,
           language,
           deliveryStatus: 'sent',
           fcmMessageId: result.messageId,
@@ -296,7 +303,7 @@ async function handleDailyVerseNotification(
           notificationType: 'daily_verse',
           title,
           body,
-          verseReference: dailyVerse.reference,
+          verseReference: localizedReference,
           language,
           deliveryStatus: 'failed',
           errorMessage: result.error,
