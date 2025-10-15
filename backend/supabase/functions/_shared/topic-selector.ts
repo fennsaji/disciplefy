@@ -50,6 +50,13 @@ interface LocalizedContent {
  * 2. Topics user hasn't studied recently (within 14 days)
  * 3. User's language preference
  * 4. Topic popularity and engagement
+ *
+ * HYBRID EXCLUSION STRATEGY (supports pre-migration and post-migration guides):
+ * - Post-migration guides: Excluded by topic_id (UUID foreign key to recommended_topics)
+ * - Pre-migration guides: Excluded by title/input_value matching (string comparison)
+ *
+ * This dual approach ensures backward compatibility with guides created before
+ * the topic_id migration while maintaining accurate exclusion for new guides.
  */
 export async function selectTopicForUser(
   supabaseUrl: string,
@@ -83,18 +90,18 @@ export async function selectTopicForUser(
     // Fallback: If no recent notifications, check user's study history
     // This prevents first-time users from getting repetitive recommendations
     let excludedFromStudyHistory: string[] = [];
+    let excludedTitlesAndInputs: string[] = [];
 
     if (excludedFromNotifications.size === 0) {
       const fourteenDaysAgo = new Date();
       fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14);
 
-      // Get recently generated study guides with topic_id (via user_study_guides join)
+      // Get recently generated study guides (both with and without topic_id)
       const { data: recentGuides, error: guidesError } = await supabase
         .from('user_study_guides')
-        .select('study_guide_id, study_guides!inner(topic_id, created_at)')
+        .select('study_guide_id, study_guides!inner(topic_id, input_type, input_value, created_at)')
         .eq('user_id', userId)
         .gte('study_guides.created_at', fourteenDaysAgo.toISOString())
-        .not('study_guides.topic_id', 'is', null) // Only get guides created from recommended topics
         .order('study_guides.created_at', { ascending: false })
         .limit(10);
 
@@ -103,12 +110,24 @@ export async function selectTopicForUser(
       }
 
       if (recentGuides && recentGuides.length > 0) {
-        // Extract topic IDs directly (no need for title matching)
-        excludedFromStudyHistory = recentGuides
-          .map((g: any) => g.study_guides?.topic_id)
-          .filter(Boolean);
+        // Separate processing for guides with topic_id vs without
+        for (const guide of recentGuides) {
+          const studyGuide = guide.study_guides as any;
 
-        console.log(`Fallback: Excluding ${excludedFromStudyHistory.length} topics from study history`);
+          if (studyGuide?.topic_id) {
+            // Post-migration guide: exclude by topic_id
+            excludedFromStudyHistory.push(studyGuide.topic_id);
+          } else if (studyGuide?.input_type === 'topic' && studyGuide?.input_value) {
+            // Pre-migration guide: exclude by title/input matching
+            excludedTitlesAndInputs.push(studyGuide.input_value.toLowerCase().trim());
+          }
+        }
+
+        // Deduplicate
+        excludedFromStudyHistory = [...new Set(excludedFromStudyHistory)];
+        excludedTitlesAndInputs = [...new Set(excludedTitlesAndInputs)];
+
+        console.log(`Fallback: Excluding ${excludedFromStudyHistory.length} topics by ID and ${excludedTitlesAndInputs.length} by title/input from study history`);
       }
     }
 
@@ -138,7 +157,18 @@ export async function selectTopicForUser(
       };
     }
 
-    if (!topics || topics.length === 0) {
+    // Further filter topics by title/input matching for pre-migration guides
+    let filteredTopics = topics || [];
+    if (excludedTitlesAndInputs.length > 0 && filteredTopics.length > 0) {
+      filteredTopics = filteredTopics.filter(topic => {
+        const topicTitle = topic.title.toLowerCase().trim();
+        return !excludedTitlesAndInputs.includes(topicTitle);
+      });
+
+      console.log(`After title/input filtering: ${filteredTopics.length} topics remaining`);
+    }
+
+    if (!filteredTopics || filteredTopics.length === 0) {
       // If no topics available after filtering, get the first topic by display order
       const { data: oldestTopic, error: oldestError } = await supabase
         .from('recommended_topics')
@@ -168,7 +198,7 @@ export async function selectTopicForUser(
       .eq('user_id', userId);
 
     if (studyCount !== null && studyCount < 5) {
-      const beginnerTopics = topics.filter(t => t.difficulty_level === 'beginner');
+      const beginnerTopics = filteredTopics.filter(t => t.difficulty_level === 'beginner');
       if (beginnerTopics.length > 0) {
         // Return the first beginner topic by order_index
         return {
@@ -182,7 +212,7 @@ export async function selectTopicForUser(
     // Language selection is handled by getLocalizedTopicContent function
     return {
       success: true,
-      topic: topics[0],
+      topic: filteredTopics[0],
     };
   } catch (error) {
     return {

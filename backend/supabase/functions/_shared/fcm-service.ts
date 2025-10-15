@@ -382,6 +382,8 @@ export async function logNotification(
 
 /**
  * Check if user already received a notification today
+ * Only counts successful notifications (sent, delivered, clicked) - excludes failed attempts
+ * This allows retries for failed notifications
  */
 export async function hasReceivedNotificationToday(
   supabaseUrl: string,
@@ -401,6 +403,7 @@ export async function hasReceivedNotificationToday(
     .select('id')
     .eq('user_id', userId)
     .eq('notification_type', notificationType)
+    .in('delivery_status', ['sent', 'delivered', 'clicked']) // Only count successful notifications
     .gte('sent_at', `${today}T00:00:00`)
     .lt('sent_at', `${tomorrow}T00:00:00`) // Fixed: Use tomorrow 00:00:00 instead of today 23:59:59
     .limit(1);
@@ -416,6 +419,7 @@ export async function hasReceivedNotificationToday(
 /**
  * Batch check if multiple users have already received a notification today
  * Returns a Set of user IDs who have already received the notification
+ * Only counts successful notifications (sent, delivered, clicked) - excludes failed attempts
  * This is much more efficient than checking each user individually (avoids N+1 queries)
  */
 export async function getBatchNotificationStatus(
@@ -435,6 +439,7 @@ export async function getBatchNotificationStatus(
     .from('notification_logs')
     .select('user_id')
     .eq('notification_type', notificationType)
+    .in('delivery_status', ['sent', 'delivered', 'clicked']) // Only count successful notifications
     .gte('sent_at', `${today}T00:00:00`)
     .lt('sent_at', `${tomorrow}T00:00:00`) // Fixed: Use tomorrow 00:00:00 instead of today 23:59:59
     .in('user_id', userIds);
