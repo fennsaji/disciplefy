@@ -19,6 +19,7 @@ import '../navigation/study_navigator.dart';
 import '../di/injection_container.dart';
 import '../../features/saved_guides/presentation/pages/saved_screen.dart';
 import '../../features/settings/presentation/pages/settings_screen.dart';
+import '../../features/notifications/presentation/pages/notification_settings_screen.dart';
 import '../../features/study_topics/presentation/pages/study_topics_screen.dart';
 import '../../features/tokens/presentation/pages/token_management_page.dart';
 import '../../features/tokens/presentation/pages/purchase_history_page.dart';
@@ -114,6 +115,11 @@ class AppRouter {
         path: AppRoutes.settings,
         name: 'settings',
         builder: (context, state) => const SettingsScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.notificationSettings,
+        name: 'notification_settings',
+        builder: (context, state) => const NotificationSettingsScreen(),
       ),
       GoRoute(
         path: AppRoutes.studyTopics,

@@ -103,13 +103,13 @@ class _SettingsScreenContent extends StatelessWidget {
                       // User Profile Section (only for authenticated users)
                       _buildUserProfileSection(context),
 
-                      // Theme & Language Section - ENABLED
+                      // Theme & Language Section
                       _buildThemeLanguageSection(context, state),
                       const SizedBox(height: 24),
 
-                      // Notification Section - DISABLED
-                      // _buildNotificationSection(context, state),
-                      // const SizedBox(height: 24),
+                      // Notification Section
+                      _buildNotificationSection(context, state),
+                      const SizedBox(height: 24),
 
                       // Account Section
                       _buildAccountSection(context),
@@ -337,15 +337,19 @@ class _SettingsScreenContent extends StatelessWidget {
   Widget _buildNotificationSection(
           BuildContext context, SettingsLoaded state) =>
       _buildSection(
-        title: 'Notifications',
+        title: context.tr(TranslationKeys.settingsNotifications),
         children: [
           _buildSettingsTile(
             context: context,
             icon: Icons.notifications_outlined,
-            title: 'Push Notifications',
-            subtitle: 'Receive study reminders and updates',
-            trailing: _buildNotificationSwitch(context, state),
-            onTap: null,
+            title: context.tr(TranslationKeys.settingsNotificationPreferences),
+            subtitle: context.tr(TranslationKeys.settingsNotificationSubtitle),
+            trailing: Icon(
+              Icons.arrow_forward_ios,
+              size: 16,
+              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+            ),
+            onTap: () => context.push('/notification-settings'),
           ),
         ],
       );
