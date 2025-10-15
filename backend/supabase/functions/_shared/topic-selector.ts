@@ -83,19 +83,19 @@ export async function selectTopicForUser(
     // Fallback: If no recent notifications, check user's study history
     // This prevents first-time users from getting repetitive recommendations
     let excludedFromStudyHistory: string[] = [];
-    
+
     if (excludedFromNotifications.size === 0) {
       const fourteenDaysAgo = new Date();
       fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14);
 
-      // Get recently generated study guides with topic input
+      // Get recently generated study guides with topic_id (via user_study_guides join)
       const { data: recentGuides, error: guidesError } = await supabase
-        .from('study_guides')
-        .select('input_value')
+        .from('user_study_guides')
+        .select('study_guide_id, study_guides!inner(topic_id, created_at)')
         .eq('user_id', userId)
-        .eq('input_type', 'topic')
-        .gte('created_at', fourteenDaysAgo.toISOString())
-        .order('created_at', { ascending: false })
+        .gte('study_guides.created_at', fourteenDaysAgo.toISOString())
+        .not('study_guides.topic_id', 'is', null) // Only get guides created from recommended topics
+        .order('study_guides.created_at', { ascending: false })
         .limit(10);
 
       if (guidesError) {
@@ -103,25 +103,12 @@ export async function selectTopicForUser(
       }
 
       if (recentGuides && recentGuides.length > 0) {
-        // Extract topic titles from study guides
-        const recentTopicTitles = recentGuides
-          .map((g: any) => g.input_value)
+        // Extract topic IDs directly (no need for title matching)
+        excludedFromStudyHistory = recentGuides
+          .map((g: any) => g.study_guides?.topic_id)
           .filter(Boolean);
 
-        // Find matching topic IDs from recommended_topics
-        if (recentTopicTitles.length > 0) {
-          const { data: matchedTopics, error: matchError } = await supabase
-            .from('recommended_topics')
-            .select('id')
-            .in('title', recentTopicTitles);
-
-          if (matchError) {
-            console.error('Error matching topic titles:', matchError);
-          }
-
-          excludedFromStudyHistory = matchedTopics?.map((t: any) => t.id) || [];
-          console.log(`Fallback: Excluding ${excludedFromStudyHistory.length} topics from study history`);
-        }
+        console.log(`Fallback: Excluding ${excludedFromStudyHistory.length} topics from study history`);
       }
     }
 

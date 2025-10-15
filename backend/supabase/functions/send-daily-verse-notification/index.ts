@@ -6,7 +6,7 @@
 
 import { createSimpleFunction } from '../_shared/core/function-factory.ts';
 import { ServiceContainer } from '../_shared/core/services.ts';
-import { FCMService, logNotification, hasReceivedNotificationToday } from '../_shared/fcm-service.ts';
+import { FCMService, logNotification, getBatchNotificationStatus } from '../_shared/fcm-service.ts';
 import { AppError } from '../_shared/utils/error-handler.ts';
 import { formatError } from '../_shared/utils/error-formatter.ts';
 
@@ -167,24 +167,18 @@ async function handleDailyVerseNotification(
     );
   }
 
-  // Step 5: Filter out users who already received notification today
-  const eligibleUsers: typeof users = [];
-  for (const user of users) {
-    const alreadySent = await hasReceivedNotificationToday(
-      SUPABASE_URL,
-      SUPABASE_SERVICE_ROLE_KEY,
-      user.user_id,
-      'daily_verse'
-    );
+  // Step 5: Filter out users who already received notification today (batched query)
+  const allUserIds = users.map((u: any) => u.user_id);
+  const alreadySentUserIds = await getBatchNotificationStatus(
+    SUPABASE_URL,
+    SUPABASE_SERVICE_ROLE_KEY,
+    allUserIds,
+    'daily_verse'
+  );
 
-    if (!alreadySent) {
-      eligibleUsers.push(user);
-    } else {
-      console.log(`User ${user.user_id} already received notification today`);
-    }
-  }
+  const eligibleUsers = users.filter((u: any) => !alreadySentUserIds.has(u.user_id));
 
-  console.log(`${eligibleUsers.length} users need notification (${users.length - eligibleUsers.length} already received today)`);
+  console.log(`${eligibleUsers.length} users need notification (${alreadySentUserIds.size} already received today)`);
 
   if (eligibleUsers.length === 0) {
     return new Response(
@@ -240,79 +234,99 @@ async function handleDailyVerseNotification(
     languageMap[profile.id] = profile.language_preference || 'en';
   });
 
-  // Step 7: Send notifications
+  // Step 7: Send notifications (batch processing to avoid timeout)
   let successCount = 0;
   let failureCount = 0;
+  const NOTIFICATION_BATCH_SIZE = 10; // Process 10 notifications concurrently
 
-  for (const user of eligibleUsers) {
-    try {
-      const language = languageMap[user.user_id] || 'en';
+  // Process users in concurrent batches
+  for (let i = 0; i < eligibleUsers.length; i += NOTIFICATION_BATCH_SIZE) {
+    const batch = eligibleUsers.slice(i, i + NOTIFICATION_BATCH_SIZE);
 
-      // Select localized verse reference based on language
-      let localizedReference = dailyVerse.referenceTranslations.en;
-      if (language === 'hi' && dailyVerse.referenceTranslations.hi) {
-        localizedReference = dailyVerse.referenceTranslations.hi;
-      } else if (language === 'ml' && dailyVerse.referenceTranslations.ml) {
-        localizedReference = dailyVerse.referenceTranslations.ml;
-      }
+    // Send notifications concurrently within batch
+    const results = await Promise.allSettled(
+      batch.map(async (user: any) => {
+        try {
+          const language = languageMap[user.user_id] || 'en';
 
-      // Select verse text based on language
-      let verseText = dailyVerse.translations.esv;
-      if (language === 'hi' && dailyVerse.translations.hi) {
-        verseText = dailyVerse.translations.hi;
-      } else if (language === 'ml' && dailyVerse.translations.ml) {
-        verseText = dailyVerse.translations.ml;
-      }
+          // Select localized verse reference based on language
+          let localizedReference = dailyVerse.referenceTranslations.en;
+          if (language === 'hi' && dailyVerse.referenceTranslations.hi) {
+            localizedReference = dailyVerse.referenceTranslations.hi;
+          } else if (language === 'ml' && dailyVerse.referenceTranslations.ml) {
+            localizedReference = dailyVerse.referenceTranslations.ml;
+          }
 
-      const title = NOTIFICATION_TITLES[language] || NOTIFICATION_TITLES.en;
-      const body = `${localizedReference}\n\n${verseText.substring(0, 100)}${verseText.length > 100 ? '...' : ''}`;
+          // Select verse text based on language
+          let verseText = dailyVerse.translations.esv;
+          if (language === 'hi' && dailyVerse.translations.hi) {
+            verseText = dailyVerse.translations.hi;
+          } else if (language === 'ml' && dailyVerse.translations.ml) {
+            verseText = dailyVerse.translations.ml;
+          }
 
-      const result = await fcmService.sendNotification({
-        token: user.fcm_token,
-        notification: { title, body },
-        data: {
-          type: 'daily_verse',
-          reference: dailyVerse.reference,
-          language,
-        },
-        android: { priority: 'high' },
-        apns: {
-          headers: { 'apns-priority': '10' },
-          payload: { aps: { sound: 'default', badge: 1 } },
-        },
-      });
+          const title = NOTIFICATION_TITLES[language] || NOTIFICATION_TITLES.en;
+          const body = `${localizedReference}\n\n${verseText.substring(0, 100)}${verseText.length > 100 ? '...' : ''}`;
 
-      if (result.success) {
+          const result = await fcmService.sendNotification({
+            token: user.fcm_token,
+            notification: { title, body },
+            data: {
+              type: 'daily_verse',
+              reference: dailyVerse.reference,
+              language,
+            },
+            android: { priority: 'high' },
+            apns: {
+              headers: { 'apns-priority': '10' },
+              payload: { aps: { sound: 'default', badge: 1 } },
+            },
+          });
+
+          if (result.success) {
+            // Log successful send
+            await logNotification(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
+              userId: user.user_id,
+              notificationType: 'daily_verse',
+              title,
+              body,
+              verseReference: localizedReference,
+              language,
+              deliveryStatus: 'sent',
+              fcmMessageId: result.messageId,
+            });
+            return { success: true, userId: user.user_id };
+          } else {
+            // Log failure
+            await logNotification(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
+              userId: user.user_id,
+              notificationType: 'daily_verse',
+              title,
+              body,
+              verseReference: localizedReference,
+              language,
+              deliveryStatus: 'failed',
+              errorMessage: result.error,
+            });
+            return { success: false, userId: user.user_id, error: result.error };
+          }
+        } catch (error) {
+          console.error(`Error sending to user ${user.user_id}:`, error);
+          return { success: false, userId: user.user_id, error: String(error) };
+        }
+      })
+    );
+
+    // Count successes and failures for this batch
+    results.forEach((result) => {
+      if (result.status === 'fulfilled' && result.value.success) {
         successCount++;
-        // Log successful send
-        await logNotification(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
-          userId: user.user_id,
-          notificationType: 'daily_verse',
-          title,
-          body,
-          verseReference: localizedReference,
-          language,
-          deliveryStatus: 'sent',
-          fcmMessageId: result.messageId,
-        });
       } else {
         failureCount++;
-        // Log failure
-        await logNotification(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
-          userId: user.user_id,
-          notificationType: 'daily_verse',
-          title,
-          body,
-          verseReference: localizedReference,
-          language,
-          deliveryStatus: 'failed',
-          errorMessage: result.error,
-        });
       }
-    } catch (error) {
-      failureCount++;
-      console.error(`Error sending to user ${user.user_id}:`, error);
-    }
+    });
+
+    console.log(`Batch ${Math.floor(i / NOTIFICATION_BATCH_SIZE) + 1} complete: ${successCount} sent, ${failureCount} failed so far`);
   }
 
   console.log(`Notification process complete: ${successCount} sent, ${failureCount} failed`);

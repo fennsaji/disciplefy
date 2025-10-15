@@ -71,13 +71,13 @@ The `DailyVerseService` class encapsulates the main business logic for the daily
     *   Returns the `verse_data` if found, otherwise `null`.
 -   **`cacheVerse(dateKey: string, verseData: DailyVerseData): Promise<void>`**:
     *   Inserts or updates (upserts) a verse into the `daily_verses_cache` table.
-    *   Sets `date_key`, `verse_data`, `is_active: true`, `created_at`, and `expires_at` (7 days from now).
+    *   Sets `date_key`, `verse_data`, `is_active: true`, `created_at`, and `expires_at` (60 days from now).
 -   **`getFallbackVerse(date: Date): DailyVerseData`**:
     *   Selects a verse from `FALLBACK_VERSES` using the deterministic index based on the provided `date`.
 -   **`formatDateKey(date: Date): string`**:
     *   Formats a `Date` object into a `YYYY-MM-DD` string for consistent caching keys.
 -   **`getExpirationDate(): string`**:
-    *   Calculates a date 7 days from the current date for cache expiration.
+    *   Calculates a date 60 days from the current date for cache expiration.
 
 ## 5. Caching Strategy
 
