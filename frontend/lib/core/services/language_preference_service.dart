@@ -54,8 +54,9 @@ class LanguagePreferenceService {
   }
 
   /// Get the selected language preference with fallback logic
-  /// For authenticated users, checks database first, then local storage
-  /// For anonymous users, checks local storage only
+  /// For authenticated users, checks database first, then local storage, then cache
+  /// For anonymous users, checks local storage, then cache
+  /// Uses in-memory cache to prevent language loss during temporary API failures
   Future<AppLanguage> getSelectedLanguage() async {
     try {
       // For authenticated non-anonymous users, check database first
@@ -65,13 +66,20 @@ class LanguagePreferenceService {
             await _userProfileService.getLanguagePreference();
 
         final dbLanguage = dbLanguageResult.fold(
-          (failure) => null, // Failed to get from DB, fall back to local
+          (failure) {
+            print(
+                '⚠️ [LANGUAGE_SERVICE] Database call failed: ${failure.message}');
+            return null; // Failed to get from DB, fall back to local/cache
+          },
           (language) => language,
         );
 
         if (dbLanguage != null) {
-          // Sync local storage with database value
+          // Sync local storage with database value and cache it
           await _prefs.setString(_languagePreferenceKey, dbLanguage.code);
+          _cachedLanguage = dbLanguage;
+          print(
+              '✅ [LANGUAGE_SERVICE] Retrieved from DB and cached: ${dbLanguage.displayName}');
           return dbLanguage;
         }
       }
@@ -79,13 +87,34 @@ class LanguagePreferenceService {
       // Fallback to local storage (for anonymous users or DB failure)
       final languageCode = _prefs.getString(_languagePreferenceKey);
       if (languageCode != null) {
-        return AppLanguage.fromCode(languageCode);
+        final language = AppLanguage.fromCode(languageCode);
+        _cachedLanguage = language;
+        print(
+            '✅ [LANGUAGE_SERVICE] Retrieved from local storage and cached: ${language.displayName}');
+        return language;
       }
 
-      // Default to English
+      // Fallback to cached language before defaulting to English
+      // This prevents language loss during temporary API/storage failures
+      if (_cachedLanguage != null) {
+        print(
+            '✅ [LANGUAGE_SERVICE] Using cached language (API/storage failed): ${_cachedLanguage!.displayName}');
+        return _cachedLanguage!;
+      }
+
+      // Default to English only if all sources fail
+      print('⚠️ [LANGUAGE_SERVICE] All sources failed, defaulting to English');
       return AppLanguage.english;
     } catch (e) {
       print('Error getting selected language: $e');
+
+      // Even in error cases, try to use cached language before defaulting to English
+      if (_cachedLanguage != null) {
+        print(
+            '✅ [LANGUAGE_SERVICE] Exception occurred, using cached language: ${_cachedLanguage!.displayName}');
+        return _cachedLanguage!;
+      }
+
       return AppLanguage.english;
     }
   }
@@ -100,15 +129,22 @@ class LanguagePreferenceService {
       // Save to local storage first (always)
       await _prefs.setString(_languagePreferenceKey, language.code);
 
+      // Cache the language immediately to prevent loss during API failures
+      _cachedLanguage = language;
+      print('💾 [LANGUAGE_SERVICE] Language cached: ${language.displayName}');
+
       // For authenticated non-anonymous users, also save to database
       if (_authStateProvider.isAuthenticated &&
           !_authStateProvider.isAnonymous) {
-        // Invalidate profile cache, language cache, and coordinate with other caches
+        // Invalidate profile cache and coordinate with other caches
+        // Note: We don't invalidate _cachedLanguage here since we just set it
         _authStateProvider.invalidateProfileCache();
-        _invalidateLanguageCache();
+        _cachedUserId = null;
+        _cachedHasCompletedSelection = null;
+        _cacheTimestamp = null;
         _cacheCoordinator.invalidateLanguageCaches();
         print(
-            '📄 [LANGUAGE_SERVICE] All caches invalidated for language update (including coordinated caches)');
+            '📄 [LANGUAGE_SERVICE] Profile and completion caches invalidated for language update');
 
         final updateResult =
             await _userProfileService.updateLanguagePreference(language);
