@@ -113,10 +113,14 @@ class ApiAuthHelper {
               '🔐 [TOKEN_VALIDATION] Token expired at: $expiryDate - token invalid');
           return false;
         }
+
+        print(
+            '🔐 [TOKEN_VALIDATION] Token is valid for user: ${session.user.id} (expires: $expiryDate)');
+      } else {
+        print(
+            '🔐 [TOKEN_VALIDATION] ℹ️  No expiry timestamp - token assumed valid for user: ${session.user.id}');
       }
 
-      print(
-          '🔐 [TOKEN_VALIDATION] Token is valid for user: ${session.user.id}');
       return true;
     } catch (e) {
       print('🔐 [TOKEN_VALIDATION] Error validating token: $e - token invalid');
@@ -187,42 +191,57 @@ class ApiAuthHelper {
         return false;
       }
 
-      // Check if token is expired or expires soon (within 5 minutes)
-      if (session.expiresAt != null) {
-        final expiryTime =
-            DateTime.fromMillisecondsSinceEpoch(session.expiresAt! * 1000);
-        final now = DateTime.now();
-        final expiresWithin5Min = now.add(const Duration(minutes: 5));
-
-        if (expiryTime.isAfter(expiresWithin5Min)) {
-          print(
-              '🔐 [SESSION_REFRESH] Token is still valid (expires: $expiryTime) - no refresh needed');
-          return true;
-        }
-
+      // Check if token has expiry information
+      if (session.expiresAt == null) {
+        // No expiry timestamp - assume session is valid (persistent/long-lived session)
         print(
-            '🔐 [SESSION_REFRESH] Token expired or expires soon (expires: $expiryTime) - refreshing...');
+            '🔐 [SESSION_REFRESH] ℹ️  No expiry timestamp found - assuming session is valid');
+        print(
+            '🔐 [SESSION_REFRESH] ℹ️  Session may be persistent or long-lived');
+        return true;
       }
+
+      // Check if token is expired or expires soon (within 5 minutes)
+      final expiryTime =
+          DateTime.fromMillisecondsSinceEpoch(session.expiresAt! * 1000);
+      final now = DateTime.now();
+      final expiresWithin5Min = now.add(const Duration(minutes: 5));
+
+      if (expiryTime.isAfter(expiresWithin5Min)) {
+        print(
+            '🔐 [SESSION_REFRESH] Token is still valid (expires: $expiryTime) - no refresh needed');
+        return true;
+      }
+
+      print(
+          '🔐 [SESSION_REFRESH] Token expired or expires soon (expires: $expiryTime) - refreshing...');
 
       // Attempt to refresh the session
       final response = await Supabase.instance.client.auth.refreshSession();
 
       if (response.session != null) {
         // Verify the refreshed token is actually valid and not expired
-        final newExpiry = DateTime.fromMillisecondsSinceEpoch(
-            response.session!.expiresAt! * 1000);
-        final now = DateTime.now();
+        if (response.session!.expiresAt != null) {
+          final newExpiry = DateTime.fromMillisecondsSinceEpoch(
+              response.session!.expiresAt! * 1000);
+          final now = DateTime.now();
 
-        if (now.isAfter(newExpiry)) {
+          if (now.isAfter(newExpiry)) {
+            print(
+                '🔐 [SESSION_REFRESH] ❌ Refreshed token is still expired (expires: $newExpiry)');
+            print(
+                '🔐 [SESSION_REFRESH] This indicates the refresh token itself is expired');
+            return false;
+          }
+
+          print('🔐 [SESSION_REFRESH] ✅ Session refresh successful');
+          print('🔐 [SESSION_REFRESH] New token expires: $newExpiry');
+        } else {
+          print('🔐 [SESSION_REFRESH] ✅ Session refresh successful');
           print(
-              '🔐 [SESSION_REFRESH] ❌ Refreshed token is still expired (expires: $newExpiry)');
-          print(
-              '🔐 [SESSION_REFRESH] This indicates the refresh token itself is expired');
-          return false;
+              '🔐 [SESSION_REFRESH] ℹ️  No expiry timestamp on refreshed session - assumed valid');
         }
 
-        print('🔐 [SESSION_REFRESH] ✅ Session refresh successful');
-        print('🔐 [SESSION_REFRESH] New token expires: $newExpiry');
         return true;
       } else {
         print('🔐 [SESSION_REFRESH] ❌ Session refresh returned null');
