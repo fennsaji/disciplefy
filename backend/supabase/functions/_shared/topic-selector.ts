@@ -16,7 +16,6 @@ interface Topic {
   title: string;
   description: string;
   category: string;
-  difficulty_level: 'beginner' | 'intermediate' | 'advanced';
   display_order: number;
   is_active: boolean;
 }
@@ -48,8 +47,7 @@ interface LocalizedContent {
  * Selects the best topic for a user based on:
  * 1. Topics not recently sent in notifications (within 30 days)
  * 2. Topics user hasn't studied recently (within 14 days)
- * 3. User's language preference
- * 4. Topic popularity and engagement
+ * 3. Topic display order (ascending)
  *
  * HYBRID EXCLUSION STRATEGY (supports pre-migration and post-migration guides):
  * - Post-migration guides: Excluded by topic_id (UUID foreign key to recommended_topics)
@@ -191,24 +189,7 @@ export async function selectTopicForUser(
       };
     }
 
-    // Priority 1: Beginner topics for new users (no study history)
-    const { count: studyCount } = await supabase
-      .from('study_guides')
-      .select('*', { count: 'exact', head: true })
-      .eq('user_id', userId);
-
-    if (studyCount !== null && studyCount < 5) {
-      const beginnerTopics = filteredTopics.filter(t => t.difficulty_level === 'beginner');
-      if (beginnerTopics.length > 0) {
-        // Return the first beginner topic by order_index
-        return {
-          success: true,
-          topic: beginnerTopics[0],
-        };
-      }
-    }
-
-    // Priority 2: Return first available topic (by display_order)
+    // Return first available topic (by display_order)
     // Language selection is handled by getLocalizedTopicContent function
     return {
       success: true,

@@ -70,16 +70,14 @@ messaging.onBackgroundMessage((payload) => {
   // Add action buttons based on notification type
   if (payload.data?.type === 'daily_verse') {
     notificationOptions.actions = [
-      { action: 'open', title: 'Read Verse', icon: '/icons/Icon-192.png' },
-      { action: 'dismiss', title: 'Dismiss' }
+      { action: 'open', title: 'Read Verse', icon: '/icons/Icon-192.png' }
     ];
-    console.log('[FCM SW] ✅ Added daily verse action buttons');
+    console.log('[FCM SW] ✅ Added daily verse action button');
   } else if (payload.data?.type === 'recommended_topic') {
     notificationOptions.actions = [
-      { action: 'open', title: 'View Topic', icon: '/icons/Icon-192.png' },
-      { action: 'dismiss', title: 'Dismiss' }
+      { action: 'open', title: 'View Topic', icon: '/icons/Icon-192.png' }
     ];
-    console.log('[FCM SW] ✅ Added recommended topic action buttons');
+    console.log('[FCM SW] ✅ Added recommended topic action button');
   }
 
   console.log('[FCM SW] 🔔 Showing notification...');
@@ -109,11 +107,6 @@ self.addEventListener('notificationclick', (event) => {
   console.log('='.repeat(80));
 
   event.notification.close();
-
-  // Handle action buttons
-  if (event.action === 'dismiss') {
-    return;
-  }
 
   // Determine the URL to open based on notification data
   let urlToOpen = self.location.origin + '/';
