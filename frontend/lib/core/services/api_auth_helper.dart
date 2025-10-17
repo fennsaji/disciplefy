@@ -142,22 +142,29 @@ class ApiAuthHelper {
       return;
     }
 
+    print(
+        '🔐 [TOKEN_VALIDATION] Starting token validation for authenticated user');
+
     // Proactively refresh session if expired or close to expiry
     // This prevents initial API failures after long inactivity
     final refreshed = await _refreshSessionIfNeeded();
     if (!refreshed) {
       print(
-          '🔐 [TOKEN_VALIDATION] Session refresh failed - throwing exception');
+          '🔐 [TOKEN_VALIDATION] ❌ Session refresh failed - both access and refresh tokens may be expired');
+      print('🔐 [TOKEN_VALIDATION] User will need to re-authenticate');
       throw const TokenValidationException(
         message: 'Authentication session expired and could not be refreshed',
         code: 'SESSION_EXPIRED',
       );
     }
 
+    print(
+        '🔐 [TOKEN_VALIDATION] Session refresh check complete - validating token');
+
     // Validate the (now refreshed) token
     if (!validateCurrentToken()) {
       print(
-          '🔐 [TOKEN_VALIDATION] Token validation failed after refresh - throwing exception');
+          '🔐 [TOKEN_VALIDATION] ❌ Token validation failed after refresh - unexpected error');
       throw const TokenValidationException(
         message: 'Authentication token is invalid or expired',
         code: 'TOKEN_INVALID',
@@ -165,7 +172,7 @@ class ApiAuthHelper {
     }
 
     print(
-        '🔐 [TOKEN_VALIDATION] Token validation passed - proceeding with request');
+        '🔐 [TOKEN_VALIDATION] ✅ Token validation passed - proceeding with request');
   }
 
   /// Refresh session if token is expired or expires within 5 minutes
@@ -201,9 +208,20 @@ class ApiAuthHelper {
       final response = await Supabase.instance.client.auth.refreshSession();
 
       if (response.session != null) {
-        print('🔐 [SESSION_REFRESH] ✅ Session refresh successful');
+        // Verify the refreshed token is actually valid and not expired
         final newExpiry = DateTime.fromMillisecondsSinceEpoch(
             response.session!.expiresAt! * 1000);
+        final now = DateTime.now();
+
+        if (now.isAfter(newExpiry)) {
+          print(
+              '🔐 [SESSION_REFRESH] ❌ Refreshed token is still expired (expires: $newExpiry)');
+          print(
+              '🔐 [SESSION_REFRESH] This indicates the refresh token itself is expired');
+          return false;
+        }
+
+        print('🔐 [SESSION_REFRESH] ✅ Session refresh successful');
         print('🔐 [SESSION_REFRESH] New token expires: $newExpiry');
         return true;
       } else {
