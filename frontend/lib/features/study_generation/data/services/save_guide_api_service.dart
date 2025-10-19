@@ -131,6 +131,114 @@ class SaveGuideApiService {
     return headers;
   }
 
+  /// Mark a study guide as completed
+  ///
+  /// This is called automatically when both completion conditions are met:
+  /// 1. User spent at least 60 seconds on the study guide
+  /// 2. User scrolled to the bottom of the content
+  Future<bool> markStudyGuideComplete({
+    required String guideId,
+    required int timeSpentSeconds,
+    required bool scrolledToBottom,
+  }) async {
+    try {
+      print(
+          '📋 [MARK_COMPLETE] Starting markStudyGuideComplete - guideId: $guideId');
+      print(
+          '📋 [MARK_COMPLETE] Time spent: ${timeSpentSeconds}s, Scrolled: $scrolledToBottom');
+
+      final headers = await _getApiHeaders();
+      print('📋 [MARK_COMPLETE] Got headers: ${headers.keys.join(', ')}');
+
+      final body = json.encode({
+        'study_guide_id': guideId,
+        'time_spent_seconds': timeSpentSeconds,
+        'scrolled_to_bottom': scrolledToBottom,
+      });
+      print('📋 [MARK_COMPLETE] Request body: $body');
+
+      final url = '$_baseUrl/functions/v1/mark-study-guide-complete';
+      print('📋 [MARK_COMPLETE] Making POST request to: $url');
+
+      final response = await _httpClient
+          .post(
+            Uri.parse(url),
+            headers: headers,
+            body: body,
+          )
+          .timeout(const Duration(seconds: 10));
+
+      print('📋 [MARK_COMPLETE] Response status: ${response.statusCode}');
+      print('📋 [MARK_COMPLETE] Response body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> jsonData = json.decode(response.body);
+        print('📋 [MARK_COMPLETE] ✅ Successfully marked as complete');
+        return jsonData['success'] == true;
+      } else if (response.statusCode == 401) {
+        throw const AuthenticationException(
+          message: 'Authentication required to mark guides complete',
+          code: 'UNAUTHORIZED',
+        );
+      } else if (response.statusCode == 404) {
+        throw const ServerException(
+          message: 'Study guide not found or you do not have permission',
+          code: 'NOT_FOUND',
+        );
+      } else if (response.statusCode == 400) {
+        // Handle validation errors (e.g., completion conditions not met)
+        final Map<String, dynamic>? errorData =
+            json.decode(response.body) as Map<String, dynamic>?;
+        String errorMessage = 'Completion conditions not met';
+        String errorCode = 'VALIDATION_ERROR';
+
+        if (errorData != null && errorData['error'] is Map<String, dynamic>) {
+          final errorObj = errorData['error'] as Map<String, dynamic>;
+          errorMessage = errorObj['message'] ?? errorMessage;
+          errorCode = errorObj['code'] ?? errorCode;
+        }
+
+        throw ServerException(
+          message: errorMessage,
+          code: errorCode,
+        );
+      } else {
+        final Map<String, dynamic>? errorData =
+            json.decode(response.body) as Map<String, dynamic>?;
+
+        String errorMessage = 'Failed to mark study guide as complete';
+        String errorCode = 'SERVER_ERROR';
+
+        if (errorData != null) {
+          if (errorData['error'] is Map<String, dynamic>) {
+            final errorObj = errorData['error'] as Map<String, dynamic>;
+            errorMessage = errorObj['message'] ?? errorMessage;
+            errorCode = errorObj['code'] ?? errorCode;
+          } else if (errorData['message'] is String) {
+            errorMessage = errorData['message'];
+          }
+        }
+
+        throw ServerException(
+          message: errorMessage,
+          code: errorCode,
+        );
+      }
+    } catch (e) {
+      print('🚨 [MARK_COMPLETE] Error caught: $e');
+      print('🚨 [MARK_COMPLETE] Error type: ${e.runtimeType}');
+
+      if (e is AuthenticationException || e is ServerException) {
+        rethrow;
+      }
+
+      throw NetworkException(
+        message: 'Failed to connect to completion service: $e',
+        code: 'NETWORK_ERROR',
+      );
+    }
+  }
+
   /// Dispose HTTP client
   void dispose() {
     // Don't close the client if it's shared through DI
