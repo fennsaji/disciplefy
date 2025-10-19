@@ -19,6 +19,7 @@ import '../bloc/study_state.dart';
 import '../../../saved_guides/data/models/saved_guide_model.dart';
 import '../../../follow_up_chat/presentation/widgets/follow_up_chat_widget.dart';
 import '../../../follow_up_chat/presentation/bloc/follow_up_chat_bloc.dart';
+import '../../../follow_up_chat/presentation/bloc/follow_up_chat_event.dart';
 
 /// Study Guide Screen displaying generated content with sections and user interactions.
 ///
@@ -42,15 +43,8 @@ class StudyGuideScreen extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) => MultiBlocProvider(
-        providers: [
-          BlocProvider(
-            create: (context) => sl<StudyBloc>(),
-          ),
-          BlocProvider(
-            create: (context) => sl<FollowUpChatBloc>(),
-          ),
-        ],
+  Widget build(BuildContext context) => BlocProvider(
+        create: (context) => sl<StudyBloc>(),
         child: _StudyGuideScreenContent(
           studyGuide: studyGuide,
           routeExtra: routeExtra,
@@ -513,15 +507,25 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
                     SizedBox(height: isLargeScreen ? 32 : 24),
 
                     // Follow-up Chat Section
-                    FollowUpChatWidget(
-                      studyGuideId: _currentStudyGuide.id,
-                      studyGuideTitle: _getDisplayTitle(),
-                      isExpanded: _isChatExpanded,
-                      onToggleExpanded: () {
-                        setState(() {
-                          _isChatExpanded = !_isChatExpanded;
-                        });
+                    BlocProvider(
+                      create: (context) {
+                        final bloc = sl<FollowUpChatBloc>();
+                        bloc.add(StartConversationEvent(
+                          studyGuideId: _currentStudyGuide.id,
+                          studyGuideTitle: _getDisplayTitle(),
+                        ));
+                        return bloc;
                       },
+                      child: FollowUpChatWidget(
+                        studyGuideId: _currentStudyGuide.id,
+                        studyGuideTitle: _getDisplayTitle(),
+                        isExpanded: _isChatExpanded,
+                        onToggleExpanded: () {
+                          setState(() {
+                            _isChatExpanded = !_isChatExpanded;
+                          });
+                        },
+                      ),
                     ),
 
                     SizedBox(height: isLargeScreen ? 32 : 24),
