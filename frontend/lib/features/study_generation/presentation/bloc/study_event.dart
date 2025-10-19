@@ -181,3 +181,30 @@ class LoadPersonalNotesRequested extends StudyEvent {
   @override
   List<Object?> get props => [guideId];
 }
+
+/// Event to mark a study guide as completed.
+///
+/// This event is triggered automatically when both completion conditions are met:
+/// 1. User spent at least 60 seconds on the study guide page
+/// 2. User scrolled to the bottom of the content
+///
+/// Completed guides are excluded from recommended topic push notifications.
+class MarkStudyGuideCompleteRequested extends StudyEvent {
+  /// The ID of the study guide to mark as complete.
+  final String guideId;
+
+  /// Total time spent reading the study guide in seconds.
+  final int timeSpentSeconds;
+
+  /// Whether the user scrolled to the bottom of the study guide.
+  final bool scrolledToBottom;
+
+  const MarkStudyGuideCompleteRequested({
+    required this.guideId,
+    required this.timeSpentSeconds,
+    required this.scrolledToBottom,
+  });
+
+  @override
+  List<Object?> get props => [guideId, timeSpentSeconds, scrolledToBottom];
+}
