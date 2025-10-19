@@ -123,7 +123,8 @@ async function handleMarkStudyGuideComplete(
 
   const supabase = services.supabaseServiceClient;
 
-  console.log(`📋 [MARK_COMPLETE] User ID: ${userId}`);
+  // Redact PII: Only log last 4 characters of userId for debugging
+  const redactedUserId = userId ? `***${userId.slice(-4)}` : '***';
 
   // Verify user owns this study guide
   const { data: userGuide, error: ownershipError } = await supabase
@@ -144,7 +145,7 @@ async function handleMarkStudyGuideComplete(
 
   if (!userGuide) {
     console.warn(
-      `📋 [MARK_COMPLETE] User ${userId} does not own guide ${study_guide_id}`
+      `📋 [MARK_COMPLETE] User ${redactedUserId} does not own guide ${study_guide_id}`
     );
     throw new AppError(
       'NOT_FOUND',

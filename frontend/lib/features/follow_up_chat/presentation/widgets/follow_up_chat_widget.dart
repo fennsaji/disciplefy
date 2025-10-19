@@ -56,22 +56,22 @@ class _FollowUpChatWidgetState extends State<FollowUpChatWidget>
       _expandController.value = 1.0;
     }
 
-    // Dispatch StartConversationEvent ONCE on initialization
+    _initializeConversation();
+  }
+
+  /// Dispatches StartConversationEvent once on widget initialization.
+  /// Called from initState to avoid infinite loop on widget rebuilds.
+  void _initializeConversation() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!_hasInitialized && mounted) {
         _hasInitialized = true;
-        print(
-            '[FollowUpChatWidget] 🎬 Initializing conversation for study guide: ${widget.studyGuideId}');
         try {
           context.read<FollowUpChatBloc>().add(StartConversationEvent(
                 studyGuideId: widget.studyGuideId,
                 studyGuideTitle: widget.studyGuideTitle,
               ));
-          print(
-              '[FollowUpChatWidget] ✅ Successfully dispatched StartConversationEvent');
         } catch (e) {
-          print(
-              '[FollowUpChatWidget] ❌ Error dispatching StartConversationEvent: $e');
+          // Silently handle BLoC access errors during initialization
         }
       }
     });
@@ -668,9 +668,6 @@ class _FollowUpChatWidgetState extends State<FollowUpChatWidget>
   Widget _buildChatInput(FollowUpChatLoaded state) {
     return ChatInput(
       onSendMessage: (message) {
-        print(
-            '[FollowUpChatWidget] 🎯 onSendMessage callback received: "$message"');
-        print('[FollowUpChatWidget] 📨 Dispatching SendQuestionEvent to BLoC');
         context.read<FollowUpChatBloc>().add(
               SendQuestionEvent(
                 question: message,
