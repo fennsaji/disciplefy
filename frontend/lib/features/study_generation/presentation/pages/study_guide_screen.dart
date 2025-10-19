@@ -94,6 +94,7 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
   Timer? _timeTrackingTimer;
   bool _hasScrolledToBottom = false;
   bool _completionMarked = false;
+  bool _isCompletionTrackingStarted = false;
 
   @override
   void initState() {
@@ -106,6 +107,7 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
   void dispose() {
     _autoSaveTimer?.cancel();
     _timeTrackingTimer?.cancel();
+    _isCompletionTrackingStarted = false;
     if (_autoSaveListener != null) {
       _notesController.removeListener(_autoSaveListener!);
     }
@@ -276,7 +278,23 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
 
   /// Start tracking completion conditions (time spent + scroll to bottom)
   void _startCompletionTracking() {
-    // Start time tracking timer (updates every second)
+    // Early return if already started to prevent duplicate timers/listeners
+    if (_isCompletionTrackingStarted) return;
+
+    _startTimeTrackingTimer();
+    _startScrollListener();
+
+    // Mark as started
+    _isCompletionTrackingStarted = true;
+
+    if (kDebugMode) {
+      print(
+          '📊 [COMPLETION] Started tracking for guide: ${_currentStudyGuide.id}');
+    }
+  }
+
+  /// Setup timer to track time spent on the page
+  void _startTimeTrackingTimer() {
     _timeTrackingTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (mounted && !_completionMarked) {
         setState(() {
@@ -285,21 +303,20 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
         _checkCompletionConditions();
       }
     });
+  }
 
-    // Setup scroll listener to detect when user reaches bottom
+  /// Setup scroll listener to detect when user reaches bottom
+  void _startScrollListener() {
     _scrollController.addListener(() {
-      if (!_hasScrolledToBottom && _isScrolledToBottom()) {
+      if (!_completionMarked &&
+          !_hasScrolledToBottom &&
+          _isScrolledToBottom()) {
         setState(() {
           _hasScrolledToBottom = true;
         });
         _checkCompletionConditions();
       }
     });
-
-    if (kDebugMode) {
-      print(
-          '📊 [COMPLETION] Started tracking for guide: ${_currentStudyGuide.id}');
-    }
   }
 
   /// Check if user has scrolled to the bottom of the page
