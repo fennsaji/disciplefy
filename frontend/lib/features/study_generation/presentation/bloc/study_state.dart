@@ -376,3 +376,58 @@ class StudyEnhancedAuthenticationRequired extends StudyState {
   @override
   List<Object?> get props => [guideId, save, personalNotes, message];
 }
+
+/// State indicating that marking a study guide as complete is in progress.
+class StudyCompletionInProgress extends StudyState {
+  /// The ID of the study guide being marked as complete.
+  final String guideId;
+
+  const StudyCompletionInProgress({
+    required this.guideId,
+  });
+
+  @override
+  List<Object> get props => [guideId];
+}
+
+/// State indicating successful study guide completion marking.
+class StudyCompletionSuccess extends StudyState {
+  /// The ID of the study guide that was marked as complete.
+  final String guideId;
+
+  /// Timestamp when the guide was completed.
+  final DateTime completedAt;
+
+  /// Time spent on the guide in seconds.
+  final int timeSpentSeconds;
+
+  const StudyCompletionSuccess({
+    required this.guideId,
+    required this.completedAt,
+    required this.timeSpentSeconds,
+  });
+
+  @override
+  List<Object> get props => [guideId, completedAt, timeSpentSeconds];
+}
+
+/// State indicating that marking study guide as complete failed.
+class StudyCompletionFailure extends StudyState {
+  /// The ID of the study guide that failed to mark as complete.
+  final String guideId;
+
+  /// The failure that occurred.
+  final Failure failure;
+
+  /// Whether the failure is retryable.
+  final bool isRetryable;
+
+  const StudyCompletionFailure({
+    required this.guideId,
+    required this.failure,
+    this.isRetryable = true,
+  });
+
+  @override
+  List<Object> get props => [guideId, failure, isRetryable];
+}

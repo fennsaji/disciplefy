@@ -575,7 +575,8 @@ class NotificationServiceWeb {
     });
   }
 
-  /// Show browser notification
+  /// Handle foreground message - show notification via service worker
+  /// Service worker shows notifications consistently for both foreground and background
   void _showBrowserNotification(RemoteMessage message) async {
     try {
       final title = message.notification?.title ?? 'Disciplefy';
@@ -583,63 +584,19 @@ class NotificationServiceWeb {
 
       if (kDebugMode) {
         print('=' * 80);
-        print('[FCM Web] 🔔 SHOWING BROWSER NOTIFICATION 🔔');
+        print('[FCM Web] 📨 FOREGROUND MESSAGE RECEIVED 📨');
         print('[FCM Web] Timestamp: ${DateTime.now().toIso8601String()}');
         print('[FCM Web] 📰 Title: $title');
         print('[FCM Web] 📝 Body: $body');
         print('[FCM Web] 📦 Data payload: ${message.data}');
-        print('[FCM Web] 🔍 Checking notification permission status...');
+        print('[FCM Web] 🔔 Showing notification via service worker...');
       }
 
-      // Show browser notification using Notification API
-      // This works even when the app is in the foreground
-      await _firebaseMessaging?.getNotificationSettings().then((settings) {
-        if (kDebugMode) {
-          print(
-              '[FCM Web] 📋 Permission status: ${settings.authorizationStatus}');
-          print('[FCM Web]    - Alert enabled: ${settings.alert}');
-          print('[FCM Web]    - Sound enabled: ${settings.sound}');
-          print('[FCM Web]    - Badge enabled: ${settings.badge}');
-        }
+      // Show notification through service worker for foreground messages
+      // This ensures consistent notification behavior (foreground + background)
+      await _showNotificationViaServiceWorker(title, body, message.data);
 
-        if (settings.authorizationStatus == AuthorizationStatus.authorized) {
-          if (kDebugMode) {
-            print(
-                '[FCM Web] ✅ Permission authorized - proceeding to show notification');
-          }
-
-          // Use web Notification API to show notification
-          if (kIsWeb) {
-            if (kDebugMode) {
-              print(
-                  '[FCM Web] 🌐 Platform is web - using service worker notification');
-            }
-            // For web, we need to use service worker to show notifications
-            // even in foreground for consistent behavior
-            _showNotificationViaServiceWorker(title, body, message.data);
-          } else {
-            if (kDebugMode) {
-              print(
-                  '[FCM Web] ⚠️  Platform is NOT web - notification may not show');
-            }
-          }
-        } else {
-          if (kDebugMode) {
-            print(
-                '[FCM Web] ❌ Permission NOT authorized - notification will NOT show');
-            print('[FCM Web] ⚠️  Status: ${settings.authorizationStatus}');
-            print(
-                '[FCM Web] ℹ️  User needs to enable notifications in browser settings');
-          }
-        }
-      });
-
-      if (kDebugMode) {
-        print(
-            '[FCM Web] 📢 Emitting notification tap event for in-app handling...');
-      }
-
-      // Also emit event for in-app handling if needed
+      // Emit event for in-app handling (e.g., show banner, update badge)
       _notificationTapController.add({
         'title': title,
         'body': body,
@@ -647,13 +604,13 @@ class NotificationServiceWeb {
       });
 
       if (kDebugMode) {
-        print('[FCM Web] ✅ ✅ ✅ BROWSER NOTIFICATION HANDLING COMPLETE ✅ ✅ ✅');
+        print('[FCM Web] ✅ ✅ ✅ FOREGROUND MESSAGE HANDLING COMPLETE ✅ ✅ ✅');
         print('=' * 80);
       }
     } catch (e, stackTrace) {
       if (kDebugMode) {
         print('=' * 80);
-        print('[FCM Web] ❌ ❌ ❌ ERROR SHOWING NOTIFICATION ❌ ❌ ❌');
+        print('[FCM Web] ❌ ❌ ❌ ERROR HANDLING FOREGROUND MESSAGE ❌ ❌ ❌');
         print('[FCM Web] Error: $e');
         print('[FCM Web] Error type: ${e.runtimeType}');
         print('[FCM Web] Stack trace: $stackTrace');
@@ -663,101 +620,52 @@ class NotificationServiceWeb {
   }
 
   /// Show notification via service worker registration
-  void _showNotificationViaServiceWorker(
+  /// Used for foreground messages to maintain consistent notification display
+  Future<void> _showNotificationViaServiceWorker(
     String title,
     String body,
     Map<String, dynamic> data,
   ) async {
     try {
       if (kDebugMode) {
-        print('=' * 80);
-        print(
-            '[FCM Web] 🔧 SHOWING FOREGROUND NOTIFICATION VIA SERVICE WORKER 🔧');
-        print('[FCM Web] Timestamp: ${DateTime.now().toIso8601String()}');
-        print('[FCM Web] 📰 Title: $title');
-        print('[FCM Web] 📝 Body: $body');
-        print('[FCM Web] 📦 Data: ${jsonEncode(data)}');
-        print('[FCM Web] 📦 Data type: ${data['type'] ?? 'none'}');
+        print('[FCM Web] 🔧 Showing notification via service worker...');
+        print('[FCM Web]    Title: $title');
+        print('[FCM Web]    Body: $body');
+        print('[FCM Web]    Type: ${data['type'] ?? 'none'}');
       }
 
-      // Use JavaScript interop to show notification via service worker
-      if (kIsWeb) {
-        if (kDebugMode) {
-          print(
-              '[FCM Web] 🌐 Platform is web - executing JavaScript notification code...');
-        }
+      if (!kIsWeb) return;
 
-        // Show notification through service worker (CSP-safe using dart:html)
-        try {
-          final registration = await html.window.navigator.serviceWorker!.ready;
+      // Get service worker registration
+      final registration = await html.window.navigator.serviceWorker!.ready;
 
-          if (kDebugMode) {
-            print('[FCM Web] 🔍 Service worker ready');
-            print('[FCM Web] 📊 Scope: ${registration.scope}');
-            print('[FCM Web] 🔔 Showing notification...');
-            print('[FCM Web]    Title: $title');
-            print('[FCM Web]    Body: $body');
-          }
+      if (kDebugMode) {
+        print('[FCM Web] ✅ Service worker ready');
+      }
 
-          // Create notification options using js_util for proper interop
-          final options = js_util.jsify({
-            'body': body,
-            'icon': '/icons/Icon-192.png',
-            'badge': '/icons/Icon-192.png',
-            'data': data,
-            'requireInteraction': false,
-            'tag': 'foreground-notification',
-          });
+      // Create notification options matching service worker format
+      final options = js_util.jsify({
+        'body': body,
+        'icon': '/icons/Icon-192.png',
+        'badge': '/icons/Icon-192.png',
+        'data': data,
+        'requireInteraction': false,
+        'tag': data['type'] ?? 'default', // Same tag as service worker
+      });
 
-          // Show notification via service worker registration
-          await js_util.promiseToFuture(js_util
-              .callMethod(registration, 'showNotification', [title, options]));
+      // Show notification via service worker
+      await js_util.promiseToFuture(js_util
+          .callMethod(registration, 'showNotification', [title, options]));
 
-          if (kDebugMode) {
-            print('[FCM Web] ✅ Foreground notification shown successfully');
-          }
-        } catch (error) {
-          if (kDebugMode) {
-            print('[FCM Web] ❌ Failed to show notification: $error');
-          }
-        }
-
-        if (kDebugMode) {
-          print('[FCM Web] ✅ JavaScript notification code executed');
-          print(
-              '[FCM Web] ℹ️  Check browser console for JavaScript logs with [FCM Web JS] prefix');
-          print(
-              '[FCM Web] ✅ ✅ ✅ SERVICE WORKER NOTIFICATION ATTEMPT COMPLETE ✅ ✅ ✅');
-          print('=' * 80);
-        }
-      } else {
-        if (kDebugMode) {
-          print(
-              '[FCM Web] ⚠️  Platform is NOT web - cannot show notification via service worker');
-          print('=' * 80);
-        }
+      if (kDebugMode) {
+        print('[FCM Web] ✅ Notification shown successfully');
       }
     } catch (e, stackTrace) {
       if (kDebugMode) {
-        print('=' * 80);
-        print('[FCM Web] ❌ ❌ ❌ ERROR IN SERVICE WORKER NOTIFICATION ❌ ❌ ❌');
-        print('[FCM Web] Error: $e');
-        print('[FCM Web] Error type: ${e.runtimeType}');
+        print('[FCM Web] ❌ Error showing notification: $e');
         print('[FCM Web] Stack trace: $stackTrace');
-        print('=' * 80);
       }
     }
-  }
-
-  /// Escape string for safe use in JavaScript code
-  String _escapeJsString(String str) {
-    return str
-        .replaceAll('\\', '\\\\') // Escape backslashes first
-        .replaceAll("'", "\\'") // Escape single quotes
-        .replaceAll('"', '\\"') // Escape double quotes
-        .replaceAll('\n', '\\n') // Escape newlines
-        .replaceAll('\r', '\\r') // Escape carriage returns
-        .replaceAll('\t', '\\t'); // Escape tabs
   }
 
   /// Handle navigation based on message data
