@@ -37,6 +37,7 @@ class _FollowUpChatWidgetState extends State<FollowUpChatWidget>
   final ScrollController _scrollController = ScrollController();
   late AnimationController _expandController;
   late Animation<double> _expandAnimation;
+  bool _hasInitialized = false;
 
   @override
   void initState() {
@@ -54,6 +55,26 @@ class _FollowUpChatWidgetState extends State<FollowUpChatWidget>
     if (widget.isExpanded) {
       _expandController.value = 1.0;
     }
+
+    // Dispatch StartConversationEvent ONCE on initialization
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!_hasInitialized && mounted) {
+        _hasInitialized = true;
+        print(
+            '[FollowUpChatWidget] 🎬 Initializing conversation for study guide: ${widget.studyGuideId}');
+        try {
+          context.read<FollowUpChatBloc>().add(StartConversationEvent(
+                studyGuideId: widget.studyGuideId,
+                studyGuideTitle: widget.studyGuideTitle,
+              ));
+          print(
+              '[FollowUpChatWidget] ✅ Successfully dispatched StartConversationEvent');
+        } catch (e) {
+          print(
+              '[FollowUpChatWidget] ❌ Error dispatching StartConversationEvent: $e');
+        }
+      }
+    });
   }
 
   @override
@@ -89,49 +110,20 @@ class _FollowUpChatWidgetState extends State<FollowUpChatWidget>
 
   @override
   Widget build(BuildContext context) {
-    print(
-        '[FollowUpChatWidget] 🏠 Building widget for study guide: ${widget.studyGuideId}');
-    print(
-        '[FollowUpChatWidget] 📝 Study guide title: ${widget.studyGuideTitle}');
+    // NOTE: StartConversationEvent is dispatched in initState() to avoid infinite loop
+    // DO NOT dispatch events in build() - it causes rebuilds on every state change!
 
     // Check if there's already a FollowUpChatBloc in the context
     try {
-      final existingBloc = context.read<FollowUpChatBloc>();
-      print(
-          '[FollowUpChatWidget] 🔍 Found existing FollowUpChatBloc in context');
-      // If there's an existing bloc, dispatch the event to it
-      existingBloc.add(StartConversationEvent(
-        studyGuideId: widget.studyGuideId,
-        studyGuideTitle: widget.studyGuideTitle,
-      ));
+      context.read<FollowUpChatBloc>();
       return _buildChatInterface();
     } catch (e) {
-      print(
-          '[FollowUpChatWidget] 🆕 No existing FollowUpChatBloc found, creating new one');
+      // No existing bloc, create a new one
+      return BlocProvider(
+        create: (context) => sl<FollowUpChatBloc>(),
+        child: _buildChatInterface(),
+      );
     }
-
-    return BlocProvider(
-      create: (context) {
-        try {
-          print('[FollowUpChatWidget] 🎨 Creating FollowUpChatBloc');
-          final bloc = sl<FollowUpChatBloc>();
-          print('[FollowUpChatWidget] ✅ Successfully created FollowUpChatBloc');
-          print('[FollowUpChatWidget] 📨 Dispatching StartConversationEvent');
-          bloc.add(StartConversationEvent(
-            studyGuideId: widget.studyGuideId,
-            studyGuideTitle: widget.studyGuideTitle,
-          ));
-          print(
-              '[FollowUpChatWidget] ✅ Successfully dispatched StartConversationEvent');
-          return bloc;
-        } catch (e, stackTrace) {
-          print('[FollowUpChatWidget] ❌ Error creating FollowUpChatBloc: $e');
-          print('[FollowUpChatWidget] 📝 Stack trace: $stackTrace');
-          rethrow;
-        }
-      },
-      child: _buildChatInterface(),
-    );
   }
 
   Widget _buildChatInterface() {

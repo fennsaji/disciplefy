@@ -66,5 +66,9 @@ class StudyBloc extends Bloc<StudyEvent, StudyState> {
     // Register personal notes event handlers
     on<UpdatePersonalNotesRequested>(_saveHandler.handleUpdatePersonalNotes);
     on<LoadPersonalNotesRequested>(_saveHandler.handleLoadPersonalNotes);
+
+    // Register completion tracking event handler
+    on<MarkStudyGuideCompleteRequested>(
+        _saveHandler.handleMarkStudyGuideComplete);
   }
 }

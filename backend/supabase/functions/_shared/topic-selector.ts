@@ -46,8 +46,14 @@ interface LocalizedContent {
 /**
  * Selects the best topic for a user based on:
  * 1. Topics not recently sent in notifications (within 30 days)
- * 2. Topics user hasn't studied recently (within 14 days)
- * 3. Topic display order (ascending)
+ * 2. Topics from completed guides (excluded forever)
+ * 3. Topics user hasn't studied recently (within 14 days, incomplete only)
+ * 4. Topic display order (ascending)
+ *
+ * COMPLETION TRACKING:
+ * - Completed guides are ALWAYS excluded from recommendations (regardless of date)
+ * - Completion is tracked via completed_at timestamp in user_study_guides table
+ * - Ensures users never receive duplicate recommendations for completed topics
  *
  * HYBRID EXCLUSION STRATEGY (supports pre-migration and post-migration guides):
  * - Post-migration guides: Excluded by topic_id (UUID foreign key to recommended_topics)
@@ -85,7 +91,43 @@ export async function selectTopicForUser(
       recentNotifications?.map((n: any) => n.topic_id).filter(Boolean) || []
     );
 
-    // Fallback: If no recent notifications, check user's study history
+    // ALWAYS exclude completed guides (regardless of notification history)
+    // Completed guides should never be recommended again
+    const { data: completedGuides, error: completedError } = await supabase
+      .from('user_study_guides')
+      .select('study_guide_id, study_guides!inner(topic_id, input_type, input_value)')
+      .eq('user_id', userId)
+      .not('completed_at', 'is', null);
+
+    if (completedError) {
+      console.error('Error fetching completed study guides:', completedError);
+    }
+
+    let excludedFromCompleted: string[] = [];
+    let excludedCompletedTitles: string[] = [];
+
+    if (completedGuides && completedGuides.length > 0) {
+      // Separate processing for guides with topic_id vs without
+      for (const guide of completedGuides) {
+        const studyGuide = guide.study_guides as any;
+
+        if (studyGuide?.topic_id) {
+          // Post-migration guide: exclude by topic_id
+          excludedFromCompleted.push(studyGuide.topic_id);
+        } else if (studyGuide?.input_type === 'topic' && studyGuide?.input_value) {
+          // Pre-migration guide: exclude by title/input matching
+          excludedCompletedTitles.push(studyGuide.input_value.toLowerCase().trim());
+        }
+      }
+
+      // Deduplicate
+      excludedFromCompleted = [...new Set(excludedFromCompleted)];
+      excludedCompletedTitles = [...new Set(excludedCompletedTitles)];
+
+      console.log(`Excluding ${excludedFromCompleted.length} completed topics by ID and ${excludedCompletedTitles.length} by title`);
+    }
+
+    // Fallback: If no recent notifications, check user's study history for recent incomplete guides
     // This prevents first-time users from getting repetitive recommendations
     let excludedFromStudyHistory: string[] = [];
     let excludedTitlesAndInputs: string[] = [];
@@ -94,11 +136,12 @@ export async function selectTopicForUser(
       const fourteenDaysAgo = new Date();
       fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14);
 
-      // Get recently generated study guides (both with and without topic_id)
+      // Get recently created incomplete guides (within 14 days)
       const { data: recentGuides, error: guidesError } = await supabase
         .from('user_study_guides')
         .select('study_guide_id, study_guides!inner(topic_id, input_type, input_value, created_at)')
         .eq('user_id', userId)
+        .is('completed_at', null)
         .gte('study_guides.created_at', fourteenDaysAgo.toISOString())
         .order('study_guides.created_at', { ascending: false })
         .limit(10);
@@ -125,13 +168,14 @@ export async function selectTopicForUser(
         excludedFromStudyHistory = [...new Set(excludedFromStudyHistory)];
         excludedTitlesAndInputs = [...new Set(excludedTitlesAndInputs)];
 
-        console.log(`Fallback: Excluding ${excludedFromStudyHistory.length} topics by ID and ${excludedTitlesAndInputs.length} by title/input from study history`);
+        console.log(`Fallback: Excluding ${excludedFromStudyHistory.length} recent incomplete topics by ID and ${excludedTitlesAndInputs.length} by title/input from study history`);
       }
     }
 
-    // Combine exclusions from both notifications and study history
+    // Combine exclusions from notifications, completed guides, and study history
     const allExcludedIds = [
       ...excludedFromNotifications,
+      ...excludedFromCompleted,
       ...excludedFromStudyHistory,
     ];
 
@@ -143,7 +187,9 @@ export async function selectTopicForUser(
       .order('display_order', { ascending: true });
 
     if (allExcludedIds.length > 0) {
-      query = query.not('id', 'in', allExcludedIds);
+      // Format: .not('id', 'in', '(uuid1,uuid2,uuid3)')
+      // PostgREST expects parentheses around comma-separated values
+      query = query.not('id', 'in', `(${allExcludedIds.join(',')})`);
     }
 
     const { data: topics, error: topicsError } = await query;
@@ -156,14 +202,20 @@ export async function selectTopicForUser(
     }
 
     // Further filter topics by title/input matching for pre-migration guides
+    // Combine completed guide titles with recent incomplete guide titles
+    const allExcludedTitles = [
+      ...excludedCompletedTitles,
+      ...excludedTitlesAndInputs,
+    ];
+
     let filteredTopics = topics || [];
-    if (excludedTitlesAndInputs.length > 0 && filteredTopics.length > 0) {
+    if (allExcludedTitles.length > 0 && filteredTopics.length > 0) {
       filteredTopics = filteredTopics.filter(topic => {
         const topicTitle = topic.title.toLowerCase().trim();
-        return !excludedTitlesAndInputs.includes(topicTitle);
+        return !allExcludedTitles.includes(topicTitle);
       });
 
-      console.log(`After title/input filtering: ${filteredTopics.length} topics remaining`);
+      console.log(`After title/input filtering: ${filteredTopics.length} topics remaining (excluded ${allExcludedTitles.length} titles)`);
     }
 
     if (!filteredTopics || filteredTopics.length === 0) {

@@ -94,15 +94,25 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
   // Follow-up chat state
   bool _isChatExpanded = false;
 
+  // Completion tracking state
+  DateTime? _pageOpenedAt;
+  int _timeSpentSeconds = 0;
+  Timer? _timeTrackingTimer;
+  bool _hasScrolledToBottom = false;
+  bool _completionMarked = false;
+
   @override
   void initState() {
     super.initState();
+    _pageOpenedAt = DateTime.now();
     _initializeStudyGuide();
+    _startCompletionTracking();
   }
 
   @override
   void dispose() {
     _autoSaveTimer?.cancel();
+    _timeTrackingTimer?.cancel();
     if (_autoSaveListener != null) {
       _notesController.removeListener(_autoSaveListener!);
     }
@@ -263,6 +273,96 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
 
     // Add the listener
     _notesController.addListener(_autoSaveListener!);
+  }
+
+  // ============================================================================
+  // Completion Tracking Methods
+  // ============================================================================
+
+  /// Start tracking completion conditions (time spent + scroll to bottom)
+  void _startCompletionTracking() {
+    // Start time tracking timer (updates every second)
+    _timeTrackingTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (mounted && !_completionMarked) {
+        setState(() {
+          _timeSpentSeconds++;
+        });
+        _checkCompletionConditions();
+      }
+    });
+
+    // Setup scroll listener to detect when user reaches bottom
+    _scrollController.addListener(() {
+      if (!_hasScrolledToBottom && _isScrolledToBottom()) {
+        setState(() {
+          _hasScrolledToBottom = true;
+        });
+        _checkCompletionConditions();
+      }
+    });
+
+    if (kDebugMode) {
+      print(
+          '📊 [COMPLETION] Started tracking for guide: ${_currentStudyGuide.id}');
+    }
+  }
+
+  /// Check if user has scrolled to the bottom of the page
+  bool _isScrolledToBottom() {
+    if (!_scrollController.hasClients) return false;
+
+    final maxScroll = _scrollController.position.maxScrollExtent;
+    final currentScroll = _scrollController.position.pixels;
+
+    // Consider "bottom" as within 100px of the actual bottom
+    // This accounts for different screen sizes and scroll behavior
+    return currentScroll >= (maxScroll - 100);
+  }
+
+  /// Check if both completion conditions are met and mark complete if so
+  void _checkCompletionConditions() {
+    if (_completionMarked) return;
+
+    const minTimeSeconds = 60; // 1 minute
+    final timeConditionMet = _timeSpentSeconds >= minTimeSeconds;
+    final scrollConditionMet = _hasScrolledToBottom;
+
+    if (kDebugMode) {
+      print('📊 [COMPLETION] Conditions check:');
+      print(
+          '   Time: $_timeSpentSeconds/${minTimeSeconds}s (${timeConditionMet ? "✓" : "✗"})');
+      print('   Scroll: ${scrollConditionMet ? "✓" : "✗"}');
+    }
+
+    if (timeConditionMet && scrollConditionMet) {
+      _markStudyGuideComplete();
+    }
+  }
+
+  /// Call the API to mark the study guide as completed
+  void _markStudyGuideComplete() {
+    if (_completionMarked) return;
+
+    setState(() {
+      _completionMarked = true;
+    });
+
+    if (kDebugMode) {
+      print('✅ [COMPLETION] Marking guide as complete:');
+      print('   Guide ID: ${_currentStudyGuide.id}');
+      print('   Time spent: $_timeSpentSeconds seconds');
+      print('   Scrolled to bottom: $_hasScrolledToBottom');
+    }
+
+    // Dispatch BLoC event to mark completion
+    context.read<StudyBloc>().add(MarkStudyGuideCompleteRequested(
+          guideId: _currentStudyGuide.id,
+          timeSpentSeconds: _timeSpentSeconds,
+          scrolledToBottom: _hasScrolledToBottom,
+        ));
+
+    // Cancel the tracking timer since completion is marked
+    _timeTrackingTimer?.cancel();
   }
 
   @override
