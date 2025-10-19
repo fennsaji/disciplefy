@@ -106,7 +106,6 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
     super.initState();
     _pageOpenedAt = DateTime.now();
     _initializeStudyGuide();
-    _startCompletionTracking();
   }
 
   @override
@@ -148,6 +147,7 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
     }
 
     _processGeneratedGuideNotes();
+    _startCompletionTracking();
   }
 
   void _processGeneratedGuideNotes() {
@@ -175,6 +175,7 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
       _isSaved = guideData['is_saved'] as bool? ?? true;
 
       _loadPersonalNotesIfSaved();
+      _startCompletionTracking();
     } catch (e) {
       _showError('Invalid study guide data. Please try again.');
     }
