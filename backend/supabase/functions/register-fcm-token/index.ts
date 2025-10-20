@@ -115,6 +115,7 @@ async function handleRegisterToken(
     : (existingPrefs?.recommended_topic_enabled ?? true)
 
   // Step 1: Upsert FCM token in user_notification_tokens table
+  // Note: Users can have multiple tokens (one per device/browser)
   const { error: tokenError } = await services.supabaseServiceClient
     .from('user_notification_tokens')
     .upsert({
@@ -131,6 +132,8 @@ async function handleRegisterToken(
     console.error('[Register Token] Token upsert error:', tokenError)
     throw new AppError('DATABASE_ERROR', tokenError.message, 500)
   }
+
+  console.log('[Register Token] Token registered successfully')
 
   // Step 2: Upsert notification preferences in user_notification_preferences table
   const { data: prefsData, error: prefsError } = await services.supabaseServiceClient
@@ -244,7 +247,7 @@ async function handleUpdatePreferences(
 // ============================================================================
 
 async function handleGetPreferences(
-  req: Request,
+  _req: Request,
   services: ServiceContainer,
   userId: string
 ): Promise<Response> {
