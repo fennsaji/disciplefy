@@ -524,36 +524,25 @@ class NotificationServiceWeb {
         print('=' * 80);
       }
 
-      // ⚠️ IMPORTANT: DO NOT show notification manually here!
-      // The service worker automatically handles displaying notifications
-      // for BOTH foreground and background messages.
-      //
-      // Showing notifications here would cause DUPLICATE notifications:
-      // 1. Service worker shows notification
-      // 2. This handler also shows notification → DUPLICATE!
-      //
-      // Instead, just emit the event for in-app handling (badges, banners, etc.)
+      // ⚠️ IMPORTANT: Service worker onBackgroundMessage ONLY fires when app is BACKGROUND!
+      // For FOREGROUND messages, we MUST show notifications manually using Web Notifications API
+      // Otherwise, users won't see notifications when the app is open
       if (kDebugMode) {
         print('[FCM Web] 📝 Processing foreground message...');
-        print('[FCM Web] ℹ️  Service worker will handle notification display');
-        print('[FCM Web] ℹ️  Emitting event for in-app handling only');
+        print(
+            '[FCM Web] 🔔 Showing browser notification (app is in foreground)');
       }
 
-      // Emit notification event for in-app handling only
+      // Show browser notification for foreground messages
+      _showForegroundNotification(message);
+
+      // Emit notification event for in-app handling
       // (e.g., update badge count, show in-app banner, refresh data)
       _notificationTapController.add({
         'title': message.notification?.title ?? '',
         'body': message.notification?.body ?? '',
         ...message.data,
       });
-
-      // Navigation will be handled by service worker when user clicks notification
-      // Don't automatically navigate when app is in foreground - let user decide
-      if (kDebugMode) {
-        print('[FCM Web] ✅ Event emitted for in-app updates');
-        print('[FCM Web] 🔔 Service worker will show notification');
-        print('[FCM Web] 👆 Navigation occurs when user clicks notification');
-      }
 
       if (kDebugMode) {
         print('[FCM Web] ✅ ✅ ✅ FOREGROUND MESSAGE PROCESSING COMPLETE ✅ ✅ ✅');
@@ -590,6 +579,70 @@ class NotificationServiceWeb {
         _handleMessageNavigation(message.data);
       }
     });
+  }
+
+  /// Show browser notification for foreground messages
+  /// Uses Web Notifications API (html.Notification) directly
+  void _showForegroundNotification(RemoteMessage message) {
+    try {
+      if (!kIsWeb) return;
+
+      // Extract notification data
+      final title = message.notification?.title ?? '📖 Disciplefy';
+      final body = message.notification?.body ?? 'You have a new notification';
+      final icon =
+          message.notification?.android?.smallIcon ?? '/icons/Icon-192.png';
+
+      if (kDebugMode) {
+        print('[FCM Web] 🔔 Creating browser notification...');
+        print('[FCM Web]    Title: $title');
+        print('[FCM Web]    Body: $body');
+        print('[FCM Web]    Icon: $icon');
+      }
+
+      // Create notification using Web Notifications API
+      // This shows a native browser notification
+      final notification = html.Notification(
+        title,
+        body: body,
+        icon: icon,
+        tag: message.data['type'] ??
+            'default', // Replaces notifications with same tag
+      );
+
+      // Handle notification click
+      notification.onClick.listen((_) {
+        if (kDebugMode) {
+          print('[FCM Web] 👆 Foreground notification clicked');
+        }
+
+        // Close the notification
+        notification.close();
+
+        // Navigate based on notification data
+        if (message.data.isNotEmpty) {
+          _handleMessageNavigation(message.data);
+        }
+      });
+
+      // Auto-close after 10 seconds (browser default)
+      Future.delayed(const Duration(seconds: 10), () {
+        try {
+          notification.close();
+        } catch (e) {
+          // Notification might already be closed by user
+        }
+      });
+
+      if (kDebugMode) {
+        print('[FCM Web] ✅ Browser notification created successfully');
+      }
+    } catch (e, stackTrace) {
+      if (kDebugMode) {
+        print('[FCM Web] ❌ Error showing foreground notification: $e');
+        print('[FCM Web] Stack trace: $stackTrace');
+      }
+    }
   }
 
   /// Handle navigation based on message data
