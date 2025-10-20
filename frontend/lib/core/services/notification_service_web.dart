@@ -204,12 +204,14 @@ class NotificationServiceWeb {
           _registerTokenWithBackend();
         }
 
-        // Optionally handle sign out to delete token
-        if (event == AuthChangeEvent.signedOut) {
+        // Delete token when user signs out or session expires
+        if (event == AuthChangeEvent.signedOut ||
+            event == AuthChangeEvent.tokenRefreshed && session == null) {
           if (kDebugMode) {
-            print('[FCM Web] User signed out');
+            print('[FCM Web] User signed out or session expired');
+            print('[FCM Web] Deleting FCM token from backend...');
           }
-          // Token will remain but won't be used as user_id is needed for queries
+          _unregisterTokenFromBackend();
         }
       },
     );
@@ -522,21 +524,25 @@ class NotificationServiceWeb {
         print('=' * 80);
       }
 
-      // Show browser notification for foreground messages
+      // ⚠️ IMPORTANT: Service worker onBackgroundMessage ONLY fires when app is BACKGROUND!
+      // For FOREGROUND messages, we MUST show notifications manually using Web Notifications API
+      // Otherwise, users won't see notifications when the app is open
       if (kDebugMode) {
         print('[FCM Web] 📝 Processing foreground message...');
-        print('[FCM Web] 🔔 Attempting to show browser notification...');
-      }
-
-      _showBrowserNotification(message);
-
-      // Navigation will be handled by service worker when user clicks notification
-      // Don't automatically navigate when app is in foreground - let user decide
-      if (kDebugMode) {
-        print('[FCM Web] 🔔 Notification shown - waiting for user interaction');
         print(
-            '[FCM Web] ℹ️  Navigation will occur only if user clicks the notification');
+            '[FCM Web] 🔔 Showing browser notification (app is in foreground)');
       }
+
+      // Show browser notification for foreground messages
+      _showForegroundNotification(message);
+
+      // Emit notification event for in-app handling
+      // (e.g., update badge count, show in-app banner, refresh data)
+      _notificationTapController.add({
+        'title': message.notification?.title ?? '',
+        'body': message.notification?.body ?? '',
+        ...message.data,
+      });
 
       if (kDebugMode) {
         print('[FCM Web] ✅ ✅ ✅ FOREGROUND MESSAGE PROCESSING COMPLETE ✅ ✅ ✅');
@@ -575,94 +581,65 @@ class NotificationServiceWeb {
     });
   }
 
-  /// Handle foreground message - show notification via service worker
-  /// Service worker shows notifications consistently for both foreground and background
-  void _showBrowserNotification(RemoteMessage message) async {
+  /// Show browser notification for foreground messages
+  /// Uses Web Notifications API (html.Notification) directly
+  void _showForegroundNotification(RemoteMessage message) {
     try {
-      final title = message.notification?.title ?? 'Disciplefy';
-      final body = message.notification?.body ?? '';
-
-      if (kDebugMode) {
-        print('=' * 80);
-        print('[FCM Web] 📨 FOREGROUND MESSAGE RECEIVED 📨');
-        print('[FCM Web] Timestamp: ${DateTime.now().toIso8601String()}');
-        print('[FCM Web] 📰 Title: $title');
-        print('[FCM Web] 📝 Body: $body');
-        print('[FCM Web] 📦 Data payload: ${message.data}');
-        print('[FCM Web] 🔔 Showing notification via service worker...');
-      }
-
-      // Show notification through service worker for foreground messages
-      // This ensures consistent notification behavior (foreground + background)
-      await _showNotificationViaServiceWorker(title, body, message.data);
-
-      // Emit event for in-app handling (e.g., show banner, update badge)
-      _notificationTapController.add({
-        'title': title,
-        'body': body,
-        ...message.data,
-      });
-
-      if (kDebugMode) {
-        print('[FCM Web] ✅ ✅ ✅ FOREGROUND MESSAGE HANDLING COMPLETE ✅ ✅ ✅');
-        print('=' * 80);
-      }
-    } catch (e, stackTrace) {
-      if (kDebugMode) {
-        print('=' * 80);
-        print('[FCM Web] ❌ ❌ ❌ ERROR HANDLING FOREGROUND MESSAGE ❌ ❌ ❌');
-        print('[FCM Web] Error: $e');
-        print('[FCM Web] Error type: ${e.runtimeType}');
-        print('[FCM Web] Stack trace: $stackTrace');
-        print('=' * 80);
-      }
-    }
-  }
-
-  /// Show notification via service worker registration
-  /// Used for foreground messages to maintain consistent notification display
-  Future<void> _showNotificationViaServiceWorker(
-    String title,
-    String body,
-    Map<String, dynamic> data,
-  ) async {
-    try {
-      if (kDebugMode) {
-        print('[FCM Web] 🔧 Showing notification via service worker...');
-        print('[FCM Web]    Title: $title');
-        print('[FCM Web]    Body: $body');
-        print('[FCM Web]    Type: ${data['type'] ?? 'none'}');
-      }
-
       if (!kIsWeb) return;
 
-      // Get service worker registration
-      final registration = await html.window.navigator.serviceWorker!.ready;
+      // Extract notification data
+      final title = message.notification?.title ?? '📖 Disciplefy';
+      final body = message.notification?.body ?? 'You have a new notification';
+      final icon =
+          message.notification?.android?.smallIcon ?? '/icons/Icon-192.png';
 
       if (kDebugMode) {
-        print('[FCM Web] ✅ Service worker ready');
+        print('[FCM Web] 🔔 Creating browser notification...');
+        print('[FCM Web]    Title: $title');
+        print('[FCM Web]    Body: $body');
+        print('[FCM Web]    Icon: $icon');
       }
 
-      // Create notification options matching service worker format
-      final options = js_util.jsify({
-        'body': body,
-        'icon': '/icons/Icon-192.png',
-        'badge': '/icons/Icon-192.png',
-        'data': data,
-        'requireInteraction': false,
-        'tag': data['type'] ?? 'default', // Same tag as service worker
+      // Create notification using Web Notifications API
+      // This shows a native browser notification
+      final notification = html.Notification(
+        title,
+        body: body,
+        icon: icon,
+        tag: message.data['type'] ??
+            'default', // Replaces notifications with same tag
+      );
+
+      // Handle notification click
+      notification.onClick.listen((_) {
+        if (kDebugMode) {
+          print('[FCM Web] 👆 Foreground notification clicked');
+        }
+
+        // Close the notification
+        notification.close();
+
+        // Navigate based on notification data
+        if (message.data.isNotEmpty) {
+          _handleMessageNavigation(message.data);
+        }
       });
 
-      // Show notification via service worker
-      await js_util.promiseToFuture(js_util
-          .callMethod(registration, 'showNotification', [title, options]));
+      // Auto-close after 10 seconds (browser default)
+      Future.delayed(const Duration(seconds: 10), () {
+        try {
+          notification.close();
+        } catch (e) {
+          // Notification might already be closed by user
+        }
+      });
 
       if (kDebugMode) {
-        print('[FCM Web] ✅ Notification shown successfully');
+        print('[FCM Web] ✅ Browser notification created successfully');
       }
     } catch (e, stackTrace) {
       if (kDebugMode) {
-        print('[FCM Web] ❌ Error showing notification: $e');
+        print('[FCM Web] ❌ Error showing foreground notification: $e');
         print('[FCM Web] Stack trace: $stackTrace');
       }
     }
@@ -733,11 +710,56 @@ class NotificationServiceWeb {
   // Token Deletion
   // ============================================================================
 
+  /// Unregister token from backend (called on logout/session expiry)
+  Future<void> _unregisterTokenFromBackend() async {
+    if (_fcmToken == null) {
+      if (kDebugMode) {
+        print('[FCM Web] No token to unregister');
+      }
+      return;
+    }
+
+    try {
+      if (kDebugMode) {
+        print('[FCM Web] 🗑️  Unregistering token from backend...');
+        print('[FCM Web] Token: ${_maskToken(_fcmToken)}');
+      }
+
+      // Call DELETE endpoint to remove token
+      final response = await _supabaseClient.functions.invoke(
+        'register-fcm-token',
+        method: HttpMethod.delete,
+        body: {
+          'fcmToken': _fcmToken,
+        },
+      );
+
+      if (response.status == 200) {
+        if (kDebugMode) {
+          print('[FCM Web] ✅ Token unregistered from backend successfully');
+        }
+      } else {
+        if (kDebugMode) {
+          print('[FCM Web] ⚠️  Token unregistration failed');
+          print('[FCM Web] Status: ${response.status}');
+        }
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('[FCM Web] ❌ Error unregistering token: $e');
+      }
+    }
+  }
+
   /// Delete FCM token (opt-out of notifications)
   Future<void> deleteToken() async {
     try {
       if (kDebugMode) print('[FCM Web] Deleting FCM token...');
 
+      // First unregister from backend
+      await _unregisterTokenFromBackend();
+
+      // Then delete from Firebase
       await _firebaseMessaging?.deleteToken();
       _fcmToken = null;
 
