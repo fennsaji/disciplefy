@@ -29,7 +29,8 @@ import 'core/services/theme_service.dart';
 import 'core/services/auth_state_provider.dart';
 import 'core/services/auth_session_validator.dart';
 import 'core/services/notification_service.dart';
-import 'core/services/notification_service_web.dart';
+import 'core/services/notification_service_web_stub.dart'
+    if (dart.library.html) 'core/services/notification_service_web.dart';
 import 'core/utils/device_keyboard_handler.dart';
 import 'core/utils/keyboard_animation_sync.dart';
 import 'core/utils/custom_viewport_handler.dart';

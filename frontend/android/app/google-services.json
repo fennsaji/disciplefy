@@ -1,33 +1,41 @@
 {
   "project_info": {
-    "project_number": "YOUR_PROJECT_NUMBER",
-    "project_id": "disciplefy-bible-study",
-    "storage_bucket": "disciplefy-bible-study.appspot.com"
+    "project_number": "16888340359",
+    "project_id": "disciplefy---bible-study",
+    "storage_bucket": "disciplefy---bible-study.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:YOUR_PROJECT_NUMBER:android:YOUR_APP_ID",
+        "mobilesdk_app_id": "1:16888340359:android:453ed72e5ff2c55f8e3d22",
         "android_client_info": {
           "package_name": "com.disciplefy.bible_study"
         }
       },
       "oauth_client": [
         {
-          "client_id": "587108000155-af542dhgo9rmp5hvsm1vepgqsgil438d.apps.googleusercontent.com",
+          "client_id": "16888340359-8mistuv30rifc7a23n8ndkhiqotj830n.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.disciplefy.bible_study",
+            "certificate_hash": "7803a0d8eabda76cc44bd30cd6ff36b932b6719b"
+          }
+        },
+        {
+          "client_id": "16888340359-2dhcijda2k4c3m71vtnghnghkbp3jvif.apps.googleusercontent.com",
           "client_type": 3
         }
       ],
       "api_key": [
         {
-          "current_key": "YOUR_API_KEY"
+          "current_key": "AIzaSyAqWReFlaMUVNTHtpzZ6xoCc2eo7wVXQVU"
         }
       ],
       "services": {
         "appinvite_service": {
           "other_platform_oauth_client": [
             {
-              "client_id": "587108000155-af542dhgo9rmp5hvsm1vepgqsgil438d.apps.googleusercontent.com",
+              "client_id": "16888340359-2dhcijda2k4c3m71vtnghnghkbp3jvif.apps.googleusercontent.com",
               "client_type": 3
             }
           ]
