@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../../core/services/http_service.dart';
@@ -19,15 +20,84 @@ class OAuthService {
         // Web-based Google OAuth with custom callback
         return await _signInWithGoogleWeb();
       } else {
-        // Mobile Google Sign-In temporarily disabled - TODO: Fix mobile OAuth
-        throw const auth_exceptions.AuthConfigException(
-            'Mobile Google Sign-In temporarily unavailable');
+        // Mobile Google Sign-In using native SDK
+        return await _signInWithGoogleMobile();
       }
     } catch (e) {
       if (kDebugMode) {
         print('Google Sign-In Error: $e');
       }
       rethrow;
+    }
+  }
+
+  /// Mobile Google Sign-In using native Google Sign-In SDK
+  Future<bool> _signInWithGoogleMobile() async {
+    try {
+      print('🔐 [OAUTH SERVICE] 🚀 Starting Mobile Google Sign-In...');
+
+      // Get GoogleSignIn singleton instance
+      final GoogleSignIn googleSignIn = GoogleSignIn.instance;
+
+      // Initialize the plugin
+      print('🔐 [OAUTH SERVICE] 🔧 Initializing Google Sign-In plugin...');
+      await googleSignIn.initialize();
+
+      // Trigger Google Sign-In flow
+      print('🔐 [OAUTH SERVICE] 📱 Launching Google Sign-In UI...');
+      final GoogleIdentity googleUser = await googleSignIn.authenticate();
+
+      print(
+          '🔐 [OAUTH SERVICE] ✅ Google account selected: ${googleUser.email}');
+
+      // Get authentication tokens
+      print('🔐 [OAUTH SERVICE] 🔑 Retrieving authentication tokens...');
+      final GoogleSignInAuthentication googleAuth =
+          (googleUser as GoogleSignInAccount).authentication;
+
+      final String? idToken = googleAuth.idToken;
+
+      if (idToken == null) {
+        print('🔐 [OAUTH SERVICE] ❌ Failed to get ID token from Google');
+        throw auth_exceptions.AuthenticationFailedException(
+            'Failed to authenticate with Google');
+      }
+
+      print('🔐 [OAUTH SERVICE] ✅ ID token received');
+      print(
+          '🔐 [OAUTH SERVICE] 🔄 Signing in to Supabase with Google credentials...');
+
+      // Sign in to Supabase with Google ID token
+      final AuthResponse response =
+          await Supabase.instance.client.auth.signInWithIdToken(
+        provider: OAuthProvider.google,
+        idToken: idToken,
+      );
+
+      if (response.user == null) {
+        print('🔐 [OAUTH SERVICE] ❌ Supabase sign-in failed');
+        throw auth_exceptions.AuthenticationFailedException(
+            'Failed to create Supabase session');
+      }
+
+      print('🔐 [OAUTH SERVICE] ✅ Supabase session created successfully');
+      print('🔐 [OAUTH SERVICE] - User: ${response.user!.email}');
+      print('🔐 [OAUTH SERVICE] - User ID: ${response.user!.id}');
+
+      return true;
+    } on auth_exceptions.OAuthCancelledException {
+      rethrow;
+    } catch (e) {
+      print('🔐 [OAUTH SERVICE] ❌ Mobile Google Sign-In Error: $e');
+
+      if (e.toString().contains('DEVELOPER_ERROR') ||
+          e.toString().contains('API_NOT_CONNECTED')) {
+        throw auth_exceptions.AuthConfigException(
+            'Google Sign-In configuration error. Please check SHA-1 fingerprints in Firebase Console.');
+      }
+
+      throw auth_exceptions.AuthenticationFailedException(
+          'Google Sign-In failed: ${e.toString()}');
     }
   }
 
@@ -216,9 +286,13 @@ class OAuthService {
 
   /// Sign out from Google if available
   Future<void> signOutFromGoogle() async {
-    // Mobile Google Sign-In temporarily disabled
-    if (kDebugMode) {
-      print('Google Sign-Out: Mobile functionality temporarily disabled');
+    if (!kIsWeb) {
+      try {
+        await GoogleSignIn.instance.signOut();
+        print('🔐 [OAUTH SERVICE] ✅ Signed out from Google');
+      } catch (e) {
+        print('🔐 [OAUTH SERVICE] ⚠️ Error signing out from Google: $e');
+      }
     }
   }
 

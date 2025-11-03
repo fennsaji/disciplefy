@@ -468,3 +468,10 @@ pnpm-lock.yaml
 # ==============================================================================
 # END OF GITIGNORE
 # ==============================================================================
+# CI/CD Sensitive Files
+**/upload-keystore.jks
+**/key.properties
+github-secrets-*.txt
+**/google-services.json
+**/firebase-service-account*.json
+**/.firebase-service-account*.json
