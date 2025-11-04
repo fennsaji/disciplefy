@@ -7,7 +7,7 @@ on:
   workflow_dispatch: # Allow manual triggering
 
 env:
-  FLUTTER_VERSION: '3.35.7'  # Latest stable - includes Dart SDK 3.9.2 (required by flutter_lints ^6.0.0)
+  FLUTTER_VERSION: '3.32.8'  # Dart SDK 3.8.1 - compatible with flutter_lints ^6.0.0 and code generators
   JAVA_VERSION: '17'
 
 jobs:

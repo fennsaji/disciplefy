@@ -39,17 +39,17 @@ jobs:
     steps:
       - name: 🔄 Checkout code
         uses: actions/checkout@v4
-      
+
       - name: 📱 Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.35.7'  # Latest stable - includes Dart SDK 3.9.2 (required by flutter_lints ^6.0.0)
+          flutter-version: '3.32.8'  # Dart SDK 3.8.1 - compatible with flutter_lints ^6.0.0 and code generators
           channel: 'stable'
           cache: true
-      
+
       - name: 📦 Get Flutter dependencies
         run: flutter pub get
-      
+
       - name: 🔍 Analyze code
         run: flutter analyze
       
@@ -107,10 +107,10 @@ jobs:
       - name: 📱 Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.35.7'  # Latest stable - includes Dart SDK 3.9.2 (required by flutter_lints ^6.0.0)
+          flutter-version: '3.32.8'  # Dart SDK 3.8.1 - compatible with flutter_lints ^6.0.0 and code generators
           channel: 'stable'
           cache: true
-      
+
       - name: 📦 Setup Node.js for Vercel CLI
         uses: actions/setup-node@v4
         with:
