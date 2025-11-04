@@ -17,8 +17,8 @@ RED='\033[0;31m'
 YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
-# Default to .env.local if no parameter provided
-ENV_FILE="${1:-.env.local}"
+# Default to .env.android if no parameter provided
+ENV_FILE="${1:-.env.android}"
 EMULATOR_NAME="${2:-Pixel_3a_API_34_GooglePlay}"
 
 echo -e "${BLUE}🚀 Starting Flutter Android Local Development...${NC}"

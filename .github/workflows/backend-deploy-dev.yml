@@ -207,7 +207,13 @@ jobs:
         FIREBASE_CLIENT_EMAIL=${{ secrets.FIREBASE_CLIENT_EMAIL_DEV }}
 
         # Authentication (Development)
-        GOOGLE_OAUTH_CLIENT_ID=${{ secrets.GOOGLE_OAUTH_CLIENT_ID_DEV }}
+        # MULTI-CLIENT OAUTH CONFIGURATION:
+        # Concatenates web and Android client IDs with comma for Supabase multi-client support
+        # - GOOGLE_OAUTH_CLIENT_ID_DEV: Web client (587108000155-...) for PKCE/redirect OAuth flows
+        # - GOOGLE_OAUTH_CLIENT_ID_ANDROID: Android client (16888340359-...) for native signInWithIdToken()
+        # Web client MUST be first to properly handle redirect-based auth flows
+        # This enables both Flutter web and Android app authentication simultaneously
+        GOOGLE_OAUTH_CLIENT_ID=${{ secrets.GOOGLE_OAUTH_CLIENT_ID_DEV }},${{ secrets.GOOGLE_OAUTH_CLIENT_ID_ANDROID }}
         GOOGLE_OAUTH_CLIENT_SECRET=${{ secrets.GOOGLE_OAUTH_CLIENT_SECRET_DEV }}
         
         # Application URLs (Development)
