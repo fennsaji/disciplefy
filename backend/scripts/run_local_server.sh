@@ -191,6 +191,18 @@ sed -i.tmp "s|redirect_uri = \"http://[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.
 
 echo -e "${GREEN}✅ Ensured localhost configuration${NC}"
 
+# Load OAuth credentials from .env file BEFORE starting Supabase
+echo -e "${BLUE}🔐 Loading OAuth credentials from ${ENV_FILE}...${NC}"
+if grep -q "GOOGLE_OAUTH_CLIENT_ID" "$ENV_FILE" 2>/dev/null; then
+    export GOOGLE_OAUTH_CLIENT_ID=$(grep "^GOOGLE_OAUTH_CLIENT_ID=" "$ENV_FILE" | tail -1 | cut -d'=' -f2-)
+    export GOOGLE_OAUTH_CLIENT_SECRET=$(grep "^GOOGLE_OAUTH_CLIENT_SECRET=" "$ENV_FILE" | tail -1 | cut -d'=' -f2-)
+    echo -e "${GREEN}✅ OAuth credentials loaded and exported${NC}"
+    echo -e "  Client ID: ${GOOGLE_OAUTH_CLIENT_ID:0:20}..."
+    echo -e "  Client Secret: ${GOOGLE_OAUTH_CLIENT_SECRET:0:15}..."
+else
+    echo -e "${YELLOW}⚠️  OAuth credentials not found in ${ENV_FILE}${NC}"
+fi
+
 # Start Supabase services
 if [ "$RESET_DB" = true ]; then
     echo -e "${YELLOW}🚀 Starting Supabase services with database reset...${NC}"
