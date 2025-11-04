@@ -104,13 +104,22 @@ class NotificationTokenManagerWeb {
     }
 
     _tokenRefreshSubscription =
-        _firebaseMessaging.onTokenRefresh.listen((newToken) {
+        _firebaseMessaging.onTokenRefresh.listen((newToken) async {
       if (kDebugMode) {
         print('[FCM Token] 🔄 Token refreshed');
         print('[FCM Token] 📋 New token: ${_maskToken(newToken)}');
       }
       _fcmToken = newToken;
-      onTokenRefresh();
+
+      // Await the callback to properly propagate async errors
+      try {
+        await onTokenRefresh();
+      } catch (e, stackTrace) {
+        if (kDebugMode) {
+          print('[FCM Token] ❌ Error during token refresh callback: $e');
+          print('[FCM Token] Stack trace: $stackTrace');
+        }
+      }
     });
   }
 

@@ -42,6 +42,25 @@ fi
 echo -e "${GREEN}✅ Loading environment from: ${ENV_FILE}${NC}"
 source "$ENV_FILE"
 
+# Validate required environment variables
+MISSING_VARS=""
+[ -z "$SUPABASE_URL" ] && MISSING_VARS="${MISSING_VARS}  - SUPABASE_URL\n"
+[ -z "$SUPABASE_ANON_KEY" ] && MISSING_VARS="${MISSING_VARS}  - SUPABASE_ANON_KEY\n"
+[ -z "$GOOGLE_CLIENT_ID" ] && MISSING_VARS="${MISSING_VARS}  - GOOGLE_CLIENT_ID\n"
+[ -z "$APP_URL" ] && MISSING_VARS="${MISSING_VARS}  - APP_URL\n"
+[ -z "$FLUTTER_ENV" ] && MISSING_VARS="${MISSING_VARS}  - FLUTTER_ENV\n"
+
+if [ -n "$MISSING_VARS" ]; then
+    echo -e "${RED}❌ Missing required environment variables in ${ENV_FILE}:${NC}" >&2
+    echo -e "${MISSING_VARS}" | sed 's/\\n$//' >&2
+    echo "" >&2
+    echo -e "${YELLOW}Please ensure the following variables are set in ${ENV_FILE}:${NC}" >&2
+    echo "  SUPABASE_URL, SUPABASE_ANON_KEY, GOOGLE_CLIENT_ID, APP_URL, FLUTTER_ENV" >&2
+    exit 1
+fi
+
+echo -e "${GREEN}✅ All required environment variables loaded${NC}"
+
 # Auto-detect Android SDK if ANDROID_HOME is not set
 if [ -z "$ANDROID_HOME" ]; then
     # Try common locations

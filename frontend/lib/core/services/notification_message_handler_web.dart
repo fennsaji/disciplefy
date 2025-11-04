@@ -21,6 +21,8 @@ class NotificationMessageHandlerWeb {
   // Stream controllers for notification events
   final _notificationTapController =
       StreamController<Map<String, dynamic>>.broadcast();
+
+  /// Broadcast stream that emits notification payloads when the user taps a notification on web.
   Stream<Map<String, dynamic>> get onNotificationTap =>
       _notificationTapController.stream;
 
