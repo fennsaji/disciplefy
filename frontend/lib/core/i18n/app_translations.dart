@@ -96,7 +96,7 @@ class AppTranslations {
       'generate_study_guide': 'Generate Study Guide',
       'resume_last_study': 'Resume your last study',
       'continue_studying': 'Continue studying "{topic}"',
-      'recommended_topics': 'Recommended Study Topics',
+      'recommended_topics': 'Recommended Topics',
       'view_all': 'View All',
       'failed_to_load_topics': 'Failed to load topics',
       'something_went_wrong': 'Something went wrong!',
