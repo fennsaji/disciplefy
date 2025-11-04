@@ -589,9 +589,11 @@ class _FollowUpChatWidgetState extends State<FollowUpChatWidget>
 
   Widget _buildLoadedState(FollowUpChatLoaded state) {
     final screenHeight = MediaQuery.of(context).size.height;
-    final maxHeight = screenHeight * 0.6; // Use 60% of screen height
-    const minHeight = 500.0; // Minimum height for readability
-    final chatHeight = maxHeight.clamp(minHeight, maxHeight);
+    final preferredHeight = screenHeight * 0.6; // Use 60% of screen height
+    const minHeight = 300.0; // Minimum height for readability on small screens
+    const maxHeight =
+        600.0; // Maximum height to prevent excessive space on large screens
+    final chatHeight = preferredHeight.clamp(minHeight, maxHeight);
 
     return SizedBox(
       height: chatHeight,
