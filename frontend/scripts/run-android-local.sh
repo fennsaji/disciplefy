@@ -4,7 +4,7 @@
 # This script loads environment variables from specified env file and runs the Flutter app on Android emulator
 # Flutter provides hot reload out of the box - no additional file watching needed!
 # Usage: ./run-android-local.sh [env-file] [emulator-name]
-# Default: ./run-android-local.sh (uses .env.local and auto-selects emulator)
+# Default: ./run-android-local.sh (uses .env.android and auto-selects emulator)
 # Examples: ./run-android-local.sh .env.dev
 #           ./run-android-local.sh .env.local Pixel_3a_API_34_extension_level_7_arm64-v8a
 
@@ -32,7 +32,7 @@ if [ ! -f "$ENV_FILE" ]; then
     echo ""
     echo "Usage: $0 [env-file] [emulator-name]"
     echo "Examples:"
-    echo "  $0                 # Uses .env.local (default) and auto-selects emulator"
+    echo "  $0                 # Uses .env.android (default) and auto-selects emulator"
     echo "  $0 .env.dev        # Uses .env.dev and auto-selects emulator"
     echo "  $0 .env.local Pixel_3a_API_34_extension_level_7_arm64-v8a"
     exit 1
