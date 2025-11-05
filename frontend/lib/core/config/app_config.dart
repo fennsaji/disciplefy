@@ -78,9 +78,10 @@ class AppConfig {
   static const int authenticatedRateLimit = 10; // guides per hour
   static const int apiRequestLimit = 100; // requests per hour for authenticated
 
-  // Security Configuration
-  static const int sessionTimeoutHours = 24;
-  static const int anonymousSessionTimeoutHours = 24;
+  // Session Configuration - EXTENDED for maximum persistence
+  // Users can stay authenticated for up to 1 year with automatic token refresh
+  static const int sessionTimeoutHours = 8760; // 365 days
+  static const int anonymousSessionTimeoutHours = 8760; // 365 days
   static const int maxInputLength = 500;
 
   // Supported Languages (from PRD)
