@@ -99,13 +99,13 @@ export class TokenService {
 
   /**
    * Consumes tokens for an operation
-   * 
+   *
    * Atomically checks if user has sufficient tokens and consumes them.
-   * Handles purchased token priority (consumed first) and premium user
-   * unlimited access. Logs analytics events for tracking.
-   * 
+   * Handles daily token priority (consumed first, then purchased tokens)
+   * and premium user unlimited access. Logs analytics events for tracking.
+   *
    * @param identifier - User ID or session ID
-   * @param userPlan - User's subscription plan  
+   * @param userPlan - User's subscription plan
    * @param tokenCost - Number of tokens to consume
    * @param context - Operation context for analytics
    * @returns Promise resolving to consumption result
