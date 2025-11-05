@@ -118,7 +118,8 @@ additional_redirect_urls = [
   "com.disciplefy.bible_study_app://auth/callback",  # Mobile deep link
 ]
 # How long tokens are valid for, in seconds. Defaults to 3600 (1 hour), maximum 604,800 (1 week).
-jwt_expiry = 3600
+# EXTENDED: Set to maximum 7 days for longer session persistence
+jwt_expiry = 604800
 # If disabled, the refresh token will never expire.
 enable_refresh_token_rotation = true
 # Allows refresh tokens to be reused after expiry, up to the specified interval in seconds.
@@ -225,11 +226,13 @@ max_frequency = "5s"
 # "+1XXXXXXXXXX" = "000000"
 
 # Configure logged in session timeouts.
-# [auth.sessions]
-# Force log out after the specified duration.
-# timebox = "24h"
-# Force log out if the user has been inactive longer than the specified duration.
-# inactivity_timeout = "8h"
+# EXTENDED SESSION: Configure for maximum session persistence (up to 1 year)
+# Users stay authenticated as long as possible with minimal re-authentication
+[auth.sessions]
+# Force log out after 1 year (maximum session duration)
+timebox = "8760h"  # 365 days = 8760 hours
+# Very long inactivity timeout - users stay logged in even after long breaks
+inactivity_timeout = "720h"  # 30 days inactivity allowed
 
 # This hook runs before a new user is created and allows developers to reject the request based on the incoming user object.
 # [auth.hook.before_user_created]
