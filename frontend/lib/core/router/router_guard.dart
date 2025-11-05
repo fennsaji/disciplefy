@@ -694,11 +694,22 @@ class RouterGuard {
       box.delete(_userIdKey);
       box.delete(_sessionExpiresAtKey);
       box.delete(_deviceIdKey);
-      box.delete(_onboardingCompletedKey);
+      // NOTE: Do NOT clear onboarding_completed flag here!
+      // Onboarding is a one-time per-device experience that should persist
+      // across login/logout cycles. Only clear it on app reset or reinstall.
 
       Logger.info(
         'Expired session data cleared from storage',
         tag: 'AUTH_SECURITY',
+        context: {
+          'cleared_keys': [
+            _userTypeKey,
+            _userIdKey,
+            _sessionExpiresAtKey,
+            _deviceIdKey
+          ],
+          'preserved_keys': [_onboardingCompletedKey],
+        },
       );
     } catch (e) {
       Logger.error(
