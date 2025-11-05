@@ -82,7 +82,20 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     });
   }
 
-  void _navigateToWelcome() async {
+  void _handleContinueButton() {
+    if (_currentPage == _slides.length - 1) {
+      // Last slide - complete onboarding and navigate to login
+      _completeOnboarding();
+    } else {
+      // Not on last slide - go to next slide
+      _pageController.nextPage(
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+      );
+    }
+  }
+
+  void _completeOnboarding() async {
     // Mark onboarding as completed
     final box = Hive.box('app_settings');
     await box.put('onboarding_completed', true);
@@ -193,13 +206,13 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               ),
             ),
 
-            // Get Started button (shows on last slide) or Continue
+            // Continue button (navigates to next slide) or Get Started (last slide)
             Padding(
               padding: EdgeInsets.fromLTRB(24, 0, 24, isLargeScreen ? 40 : 24),
               child: SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: _navigateToWelcome,
+                  onPressed: _handleContinueButton,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: theme.colorScheme.primary,
                     foregroundColor: theme.colorScheme.onPrimary,
