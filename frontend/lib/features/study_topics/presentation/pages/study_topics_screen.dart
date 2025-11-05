@@ -247,75 +247,90 @@ class _StudyTopicsScreenContentState extends State<_StudyTopicsScreenContent> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      appBar: _buildAppBar(context),
-      body: MultiBlocListener(
-        listeners: [
-          BlocListener<StudyTopicsBloc, StudyTopicsState>(
-            listener: (context, state) {
-              // Handle any side effects here if needed
-            },
-          ),
-          BlocListener<HomeBloc, HomeState>(
-            listener: (context, state) {
-              if (state is HomeStudyGuideGenerated) {
-                // Stop loading and navigate directly to study guide screen
-                setState(() {
-                  _isGeneratingStudyGuide = false;
-                });
-                ScaffoldMessenger.of(context).hideCurrentSnackBar();
-                context.go('/study-guide?source=studyTopics',
-                    extra: state.studyGuide);
-              } else if (state is HomeStudyGuideGeneratedCombined) {
-                // Stop loading and navigate directly to study guide screen
-                setState(() {
-                  _isGeneratingStudyGuide = false;
-                });
-                ScaffoldMessenger.of(context).hideCurrentSnackBar();
-                context.go('/study-guide?source=studyTopics',
-                    extra: state.studyGuide);
-              } else if (state is HomeCombinedState) {
-                // Update loading state based on study guide generation status
-                setState(() {
-                  _isGeneratingStudyGuide = state.isGeneratingStudyGuide;
-                });
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
 
-                // Handle generation error
-                if (state.generationError != null) {
+        // Handle Android back button - navigate to home
+        if (Navigator.of(context).canPop()) {
+          Navigator.of(context).pop();
+        } else {
+          context.go('/');
+        }
+      },
+      child: Scaffold(
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        appBar: _buildAppBar(context),
+        body: MultiBlocListener(
+          listeners: [
+            BlocListener<StudyTopicsBloc, StudyTopicsState>(
+              listener: (context, state) {
+                // Handle any side effects here if needed
+              },
+            ),
+            BlocListener<HomeBloc, HomeState>(
+              listener: (context, state) {
+                if (state is HomeStudyGuideGenerated) {
+                  // Stop loading and navigate directly to study guide screen
+                  setState(() {
+                    _isGeneratingStudyGuide = false;
+                  });
                   ScaffoldMessenger.of(context).hideCurrentSnackBar();
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(context.tr(
-                          TranslationKeys.studyTopicsGenerationError,
-                          {'error': state.generationError})),
-                      backgroundColor: Colors.red,
-                      action: SnackBarAction(
-                        label: context.tr(TranslationKeys.commonCancel),
-                        onPressed: () =>
-                            ScaffoldMessenger.of(context).hideCurrentSnackBar(),
+                  context.go('/study-guide?source=studyTopics',
+                      extra: state.studyGuide);
+                } else if (state is HomeStudyGuideGeneratedCombined) {
+                  // Stop loading and navigate directly to study guide screen
+                  setState(() {
+                    _isGeneratingStudyGuide = false;
+                  });
+                  ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                  context.go('/study-guide?source=studyTopics',
+                      extra: state.studyGuide);
+                } else if (state is HomeCombinedState) {
+                  // Update loading state based on study guide generation status
+                  setState(() {
+                    _isGeneratingStudyGuide = state.isGeneratingStudyGuide;
+                  });
+
+                  // Handle generation error
+                  if (state.generationError != null) {
+                    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(context.tr(
+                            TranslationKeys.studyTopicsGenerationError,
+                            {'error': state.generationError})),
+                        backgroundColor: Colors.red,
+                        action: SnackBarAction(
+                          label: context.tr(TranslationKeys.commonCancel),
+                          onPressed: () => ScaffoldMessenger.of(context)
+                              .hideCurrentSnackBar(),
+                        ),
                       ),
-                    ),
-                  );
+                    );
+                  }
                 }
-              }
+              },
+            ),
+          ],
+          child: BlocBuilder<StudyTopicsBloc, StudyTopicsState>(
+            builder: (context, state) {
+              return RefreshIndicator(
+                onRefresh: () async {
+                  context
+                      .read<StudyTopicsBloc>()
+                      .add(const RefreshStudyTopics());
+                  // Wait for the refresh to complete
+                  await Future.delayed(const Duration(milliseconds: 500));
+                },
+                child: _buildBody(context, state),
+              );
             },
           ),
-        ],
-        child: BlocBuilder<StudyTopicsBloc, StudyTopicsState>(
-          builder: (context, state) {
-            return RefreshIndicator(
-              onRefresh: () async {
-                context.read<StudyTopicsBloc>().add(const RefreshStudyTopics());
-                // Wait for the refresh to complete
-                await Future.delayed(const Duration(milliseconds: 500));
-              },
-              child: _buildBody(context, state),
-            );
-          },
         ),
-      ),
-    );
+      ), // Scaffold
+    ); // PopScope
   }
 
   PreferredSizeWidget _buildAppBar(BuildContext context) {

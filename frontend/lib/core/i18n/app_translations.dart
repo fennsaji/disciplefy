@@ -394,11 +394,14 @@ class AppTranslations {
         'standard_subtitle': '100 Daily Tokens + Purchase More',
         'premium_subtitle': 'Unlimited Tokens',
         'free_desc': 'Best for daily Bible study',
-        'free_description': 'Create Bible study guides with 20 daily tokens. Best for regular daily study.',
+        'free_description':
+            'Create Bible study guides with 20 daily tokens. Best for regular daily study.',
         'standard_desc': 'Best for group leaders',
-        'standard_description': '100 daily tokens plus ability to purchase more. Best for group leaders.',
+        'standard_description':
+            '100 daily tokens plus ability to purchase more. Best for group leaders.',
         'premium_desc': 'Best for pastors and teachers',
-        'premium_description': 'Create as many Bible study guides as you want. Best for pastors and teachers.',
+        'premium_description':
+            'Create as many Bible study guides as you want. Best for pastors and teachers.',
         'upgrade': 'Upgrade Plan',
         'upgrade_standard': 'Upgrade to Standard',
         'upgrade_to_standard': 'Upgrade to Standard',

@@ -275,135 +275,150 @@ class _TokenManagementPageState extends State<TokenManagementPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      appBar: AppBar(
-        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-        elevation: 0,
-        title: Text(
-          context.tr('tokens.management.title'),
-          style: GoogleFonts.playfairDisplay(
-            fontSize: 20,
-            fontWeight: FontWeight.w600,
-            color: Theme.of(context).colorScheme.primary,
-          ),
-        ),
-        centerTitle: true,
-        leading: IconButton(
-          onPressed: () {
-            if (Navigator.of(context).canPop()) {
-              Navigator.of(context).pop();
-            } else {
-              context.go('/generate-study');
-            }
-          },
-          icon: Icon(
-            Icons.arrow_back,
-            color: Theme.of(context).colorScheme.primary,
-          ),
-        ),
-        actions: [
-          IconButton(
-            onPressed: () {
-              context.push('/token-management/purchase-history');
-            },
-            icon: Icon(
-              Icons.history,
-              color: Theme.of(context).colorScheme.primary,
-            ),
-            tooltip: context.tr('tokens.management.view_history'),
-          ),
-          IconButton(
-            onPressed: () {
-              context.read<TokenBloc>().add(const RefreshTokenStatus());
-            },
-            icon: Icon(
-              Icons.refresh,
-              color: Theme.of(context).colorScheme.primary,
-            ),
-            tooltip: context.tr('tokens.management.refresh_status'),
-          ),
-        ],
-      ),
-      body: BlocBuilder<TokenBloc, TokenState>(
-        builder: (context, state) {
-          // If state is not token-related, trigger token refresh
-          // but only if this page is currently visible (not in background)
-          if (state is PurchaseHistoryLoaded ||
-              state is PurchaseStatisticsLoaded ||
-              state is PurchaseHistoryError) {
-            // Only trigger refresh if this page is currently visible
-            if (ModalRoute.of(context)?.isCurrent == true) {
-              // Use post-frame callback to avoid calling add during build
-              WidgetsBinding.instance.addPostFrameCallback((_) {
-                context.read<TokenBloc>().add(const GetTokenStatus());
-              });
-            }
-          }
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
 
-          if (state is TokenLoading) {
-            return const Center(
-              child: CircularProgressIndicator(),
-            );
-          } else if (state is TokenError) {
+        // Handle Android back button - navigate back to generate study page
+        if (Navigator.of(context).canPop()) {
+          Navigator.of(context).pop();
+        } else {
+          context.go('/generate-study');
+        }
+      },
+      child: Scaffold(
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        appBar: AppBar(
+          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+          elevation: 0,
+          title: Text(
+            context.tr('tokens.management.title'),
+            style: GoogleFonts.playfairDisplay(
+              fontSize: 20,
+              fontWeight: FontWeight.w600,
+              color: Theme.of(context).colorScheme.primary,
+            ),
+          ),
+          centerTitle: true,
+          leading: IconButton(
+            onPressed: () {
+              if (Navigator.of(context).canPop()) {
+                Navigator.of(context).pop();
+              } else {
+                context.go('/generate-study');
+              }
+            },
+            icon: Icon(
+              Icons.arrow_back,
+              color: Theme.of(context).colorScheme.primary,
+            ),
+          ),
+          actions: [
+            IconButton(
+              onPressed: () {
+                context.push('/token-management/purchase-history');
+              },
+              icon: Icon(
+                Icons.history,
+                color: Theme.of(context).colorScheme.primary,
+              ),
+              tooltip: context.tr('tokens.management.view_history'),
+            ),
+            IconButton(
+              onPressed: () {
+                context.read<TokenBloc>().add(const RefreshTokenStatus());
+              },
+              icon: Icon(
+                Icons.refresh,
+                color: Theme.of(context).colorScheme.primary,
+              ),
+              tooltip: context.tr('tokens.management.refresh_status'),
+            ),
+          ],
+        ),
+        body: BlocBuilder<TokenBloc, TokenState>(
+          builder: (context, state) {
+            // If state is not token-related, trigger token refresh
+            // but only if this page is currently visible (not in background)
+            if (state is PurchaseHistoryLoaded ||
+                state is PurchaseStatisticsLoaded ||
+                state is PurchaseHistoryError) {
+              // Only trigger refresh if this page is currently visible
+              if (ModalRoute.of(context)?.isCurrent == true) {
+                // Use post-frame callback to avoid calling add during build
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  context.read<TokenBloc>().add(const GetTokenStatus());
+                });
+              }
+            }
+
+            if (state is TokenLoading) {
+              return const Center(
+                child: CircularProgressIndicator(),
+              );
+            } else if (state is TokenError) {
+              return Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.error_outline,
+                      size: 64,
+                      color: Theme.of(context).colorScheme.error,
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      context.tr('tokens.management.load_error'),
+                      style: GoogleFonts.inter(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                        color: Theme.of(context).colorScheme.onBackground,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      state.errorMessage,
+                      style: GoogleFonts.inter(
+                        fontSize: 14,
+                        color: Theme.of(context)
+                            .colorScheme
+                            .onSurface
+                            .withOpacity(0.7),
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 24),
+                    ElevatedButton(
+                      onPressed: () {
+                        context
+                            .read<TokenBloc>()
+                            .add(const RefreshTokenStatus());
+                      },
+                      child: Text(context.tr('common.retry')),
+                    ),
+                  ],
+                ),
+              );
+            } else if (state is TokenLoaded) {
+              return _buildTokenManagement(state.tokenStatus);
+            }
+
+            // Handle any other unexpected states
             return Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(
-                    Icons.error_outline,
-                    size: 64,
-                    color: Theme.of(context).colorScheme.error,
-                  ),
+                  const CircularProgressIndicator(),
                   const SizedBox(height: 16),
-                  Text(
-                    context.tr('tokens.management.load_error'),
-                    style: GoogleFonts.inter(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
-                      color: Theme.of(context).colorScheme.onBackground,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    state.errorMessage,
-                    style: GoogleFonts.inter(
-                      fontSize: 14,
-                      color: Theme.of(context)
-                          .colorScheme
-                          .onSurface
-                          .withOpacity(0.7),
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 24),
-                  ElevatedButton(
-                    onPressed: () {
-                      context.read<TokenBloc>().add(const RefreshTokenStatus());
-                    },
-                    child: Text(context.tr('common.retry')),
-                  ),
+                  Text(context.tr('tokens.management.loading')),
                 ],
               ),
             );
-          } else if (state is TokenLoaded) {
-            return _buildTokenManagement(state.tokenStatus);
-          }
-
-          // Handle any other unexpected states
-          return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const CircularProgressIndicator(),
-                const SizedBox(height: 16),
-                Text(context.tr('tokens.management.loading')),
-              ],
-            ),
-          );
-        },
-      ),
-    );
+          },
+        ),
+      ), // PopScope child: Scaffold
+    ); // PopScope
   }
 
   Widget _buildTokenManagement(TokenStatus tokenStatus) {

@@ -34,108 +34,121 @@ class _SettingsScreenContent extends StatelessWidget {
   const _SettingsScreenContent();
 
   @override
-  Widget build(BuildContext context) => Scaffold(
-        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-        appBar: AppBar(
+  Widget build(BuildContext context) => PopScope(
+        canPop: false,
+        onPopInvokedWithResult: (didPop, result) {
+          if (didPop) return;
+
+          // Handle Android back button - navigate to home
+          if (context.canPop()) {
+            context.pop();
+          } else {
+            context.go('/');
+          }
+        },
+        child: Scaffold(
           backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-          elevation: 0,
-          leading: IconButton(
-            onPressed: () {
-              // Check if we can pop, otherwise navigate to home
-              if (context.canPop()) {
-                context.pop();
-              } else {
-                context.go('/');
-              }
-            },
-            icon: Icon(
-              Icons.arrow_back_ios,
-              color: Theme.of(context).colorScheme.primary,
+          appBar: AppBar(
+            backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+            elevation: 0,
+            leading: IconButton(
+              onPressed: () {
+                // Check if we can pop, otherwise navigate to home
+                if (context.canPop()) {
+                  context.pop();
+                } else {
+                  context.go('/');
+                }
+              },
+              icon: Icon(
+                Icons.arrow_back_ios,
+                color: Theme.of(context).colorScheme.primary,
+              ),
             ),
-          ),
-          title: Text(
-            context.tr(TranslationKeys.settingsTitle),
-            style: GoogleFonts.playfairDisplay(
-              fontSize: 20,
-              fontWeight: FontWeight.w600,
-              color: Theme.of(context).colorScheme.primary,
+            title: Text(
+              context.tr(TranslationKeys.settingsTitle),
+              style: GoogleFonts.playfairDisplay(
+                fontSize: 20,
+                fontWeight: FontWeight.w600,
+                color: Theme.of(context).colorScheme.primary,
+              ),
             ),
+            centerTitle: true,
           ),
-          centerTitle: true,
-        ),
-        body: BlocListener<AuthBloc, auth_states.AuthState>(
-          listener: (context, authState) {
-            if (authState is auth_states.UnauthenticatedState) {
-              // Navigate to login screen after successful logout
-              context.go('/login');
-            } else if (authState is auth_states.AuthErrorState) {
-              // Show error message
-              _showSnackBar(context, authState.message,
-                  Theme.of(context).colorScheme.error);
-            }
-          },
-          child: BlocConsumer<SettingsBloc, SettingsState>(
-            listener: (context, state) {
-              if (state is SettingsError) {
-                _showSnackBar(context, state.message,
+          body: BlocListener<AuthBloc, auth_states.AuthState>(
+            listener: (context, authState) {
+              if (authState is auth_states.UnauthenticatedState) {
+                // Navigate to login screen after successful logout
+                context.go('/login');
+              } else if (authState is auth_states.AuthErrorState) {
+                // Show error message
+                _showSnackBar(context, authState.message,
                     Theme.of(context).colorScheme.error);
-              } else if (state is SettingsUpdateSuccess) {
-                _showSnackBar(context, state.message, Colors.green);
               }
             },
-            builder: (context, state) {
-              if (state is SettingsLoading) {
+            child: BlocConsumer<SettingsBloc, SettingsState>(
+              listener: (context, state) {
+                if (state is SettingsError) {
+                  _showSnackBar(context, state.message,
+                      Theme.of(context).colorScheme.error);
+                } else if (state is SettingsUpdateSuccess) {
+                  _showSnackBar(context, state.message, Colors.green);
+                }
+              },
+              builder: (context, state) {
+                if (state is SettingsLoading) {
+                  return Center(
+                    child: CircularProgressIndicator(
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                          Theme.of(context).colorScheme.primary),
+                      strokeWidth: 3,
+                    ),
+                  );
+                }
+
+                if (state is SettingsLoaded) {
+                  return SingleChildScrollView(
+                    padding: const EdgeInsets.all(20),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // User Profile Section (only for authenticated users)
+                        _buildUserProfileSection(context),
+
+                        // Theme & Language Section
+                        _buildThemeLanguageSection(context, state),
+                        const SizedBox(height: 24),
+
+                        // Notification Section
+                        _buildNotificationSection(context, state),
+                        const SizedBox(height: 24),
+
+                        // Account Section
+                        _buildAccountSection(context),
+                        const SizedBox(height: 24),
+
+                        // About Section
+                        _buildAboutSection(context, state),
+                        const SizedBox(height: 40),
+                      ],
+                    ),
+                  );
+                }
+
                 return Center(
-                  child: CircularProgressIndicator(
-                    valueColor: AlwaysStoppedAnimation<Color>(
-                        Theme.of(context).colorScheme.primary),
-                    strokeWidth: 3,
+                  child: Text(
+                    context.tr(TranslationKeys.settingsFailedToLoad),
+                    style: GoogleFonts.inter(
+                      fontSize: 16,
+                      color: Theme.of(context).colorScheme.error,
+                    ),
                   ),
                 );
-              }
-
-              if (state is SettingsLoaded) {
-                return SingleChildScrollView(
-                  padding: const EdgeInsets.all(20),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // User Profile Section (only for authenticated users)
-                      _buildUserProfileSection(context),
-
-                      // Theme & Language Section
-                      _buildThemeLanguageSection(context, state),
-                      const SizedBox(height: 24),
-
-                      // Notification Section
-                      _buildNotificationSection(context, state),
-                      const SizedBox(height: 24),
-
-                      // Account Section
-                      _buildAccountSection(context),
-                      const SizedBox(height: 24),
-
-                      // About Section
-                      _buildAboutSection(context, state),
-                      const SizedBox(height: 40),
-                    ],
-                  ),
-                );
-              }
-
-              return Center(
-                child: Text(
-                  context.tr(TranslationKeys.settingsFailedToLoad),
-                  style: GoogleFonts.inter(
-                    fontSize: 16,
-                    color: Theme.of(context).colorScheme.error,
-                  ),
-                ),
-              );
-            },
+              },
+            ),
           ),
-        ),
-      );
+        ), // Scaffold
+      ); // PopScope
 
   /// User Profile Section - shows different content based on auth state
   Widget _buildUserProfileSection(BuildContext context) => ListenableBuilder(
