@@ -8,7 +8,7 @@
     <!-- Note: RECEIVE_BOOT_COMPLETED removed - FCM handles post-boot notification delivery automatically -->
     
     <application
-        android:label="disciplefy_bible_study"
+        android:label="Disciplefy"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity
