@@ -121,6 +121,9 @@ void main() {
       when(mockAuthBloc.stream).thenAnswer(
           (_) => Stream.value(const auth_states.UnauthenticatedState()));
 
+      // Set a larger test surface to avoid tap-outside-bounds issues
+      await tester.binding.setSurfaceSize(const Size(800, 1200));
+
       // Act
       await tester.pumpWidget(createTestWidget());
       await tester.pumpAndSettle();
