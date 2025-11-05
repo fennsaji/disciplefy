@@ -245,6 +245,16 @@ export interface DatabasePurchaseResult {
 }
 
 /**
+ * Database response for get_token_price function
+ * Matches the return shape from the pricing package lookup
+ */
+export interface DatabasePricingResult {
+  readonly base_price: number
+  readonly discounted_price: number
+  readonly discount_percentage: number
+}
+
+/**
  * Database function parameters
  * 
  * Parameter types for calling the PostgreSQL token functions

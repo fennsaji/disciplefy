@@ -24,7 +24,7 @@ async function handleTokenPurchase(req: Request, services: ServiceContainer): Pr
     const userContext = await authenticateAndAuthorize(req, services.authService, services.rateLimiter, services.tokenService)
     const { tokenAmount, paymentId } = await parseAndValidateRequestBody(req)
     await checkForDuplicatePayment(paymentId, services.supabaseServiceClient)
-    const { costInRupees, costInPaise } = computeCost(tokenAmount, services.tokenService)
+    const { costInRupees, costInPaise } = await computeCost(tokenAmount, services.tokenService)
     const paymentResult = await createOrder({
       amount: costInPaise,
       currency: 'INR',
@@ -166,10 +166,11 @@ async function checkForDuplicatePayment(paymentId: string | undefined, supabaseS
 
 /**
  * Compute cost in rupees and paise
+ * Now async to support pricing package lookup with discounts
  */
-function computeCost(tokenAmount: number, tokenService: any): { costInRupees: number, costInPaise: number } {
-  const costInRupees = tokenService.calculateCostInRupees(tokenAmount)
-  
+async function computeCost(tokenAmount: number, tokenService: any): Promise<{ costInRupees: number, costInPaise: number }> {
+  const costInRupees = await tokenService.calculateCostInRupees(tokenAmount)
+
   if (!Number.isFinite(costInRupees)) {
     throw new AppError(
       'INVALID_COST',
@@ -177,7 +178,7 @@ function computeCost(tokenAmount: number, tokenService: any): { costInRupees: nu
       400
     )
   }
-  
+
   const costInPaise = Math.round(costInRupees * 100)
   return { costInRupees, costInPaise }
 }
