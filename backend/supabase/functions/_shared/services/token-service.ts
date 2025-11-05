@@ -12,11 +12,11 @@
 import { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import type { PostgrestError } from 'https://esm.sh/@supabase/supabase-js@2'
 import { AppError } from '../utils/error-handler.ts'
-import { 
-  UserPlan, 
+import {
+  UserPlan,
   SupportedLanguage,
-  TokenInfo, 
-  TokenConsumptionResult, 
+  TokenInfo,
+  TokenConsumptionResult,
   TokenPurchaseResult,
   TokenServiceConfig,
   TokenCostConfig,
@@ -27,6 +27,7 @@ import {
   DatabaseTokenResult,
   DatabaseUserTokensResult,
   DatabasePurchaseResult,
+  DatabasePricingResult,
   DEFAULT_TOKEN_SERVICE_CONFIG,
   DEFAULT_TOKEN_COSTS
 } from '../types/token-types.ts'
@@ -279,12 +280,32 @@ export class TokenService {
 
   /**
    * Calculates cost in rupees for token amount
-   * 
+   *
+   * Checks predefined pricing packages for discounts first.
+   * If no package match found, falls back to flat rate (10 tokens = ₹1).
+   *
    * @param tokenAmount - Number of tokens
-   * @returns Cost in rupees (10 tokens = ₹1)
+   * @returns Promise resolving to cost in rupees with any applicable discounts
    */
-  calculateCostInRupees(tokenAmount: number): number {
-    return Math.ceil(tokenAmount / this.config.purchaseConfig.tokensPerRupee)
+  async calculateCostInRupees(tokenAmount: number): Promise<number> {
+    try {
+      // Try to get pricing from predefined packages (with discounts)
+      const { data, error } = await this.supabaseClient
+        .rpc('get_token_price', { p_token_amount: tokenAmount })
+        .maybeSingle() as { data: DatabasePricingResult | null, error: PostgrestError | null }
+
+      // If package pricing found, use discounted price
+      if (data && !error) {
+        return Number(data.discounted_price)
+      }
+
+      // Fallback to flat rate calculation if no package match
+      return Math.ceil(tokenAmount / this.config.purchaseConfig.tokensPerRupee)
+    } catch (error) {
+      // On error, fallback to flat rate
+      console.warn('[TokenService] Error fetching pricing package, using flat rate:', error)
+      return Math.ceil(tokenAmount / this.config.purchaseConfig.tokensPerRupee)
+    }
   }
 
   /**
