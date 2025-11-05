@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -47,6 +48,12 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
   final bool _hasResumeableStudy = false;
   bool _isGeneratingStudyGuide = false;
 
+  // Timer to ensure loading state doesn't get stuck
+  Timer? _generationTimeoutTimer;
+
+  // Track if we're currently navigating to prevent multiple navigations
+  bool _isNavigating = false;
+
   @override
   void initState() {
     super.initState();
@@ -59,6 +66,12 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
     }
   }
 
+  @override
+  void dispose() {
+    _generationTimeoutTimer?.cancel();
+    super.dispose();
+  }
+
   /// Load daily verse - called only once during initialization
   void _loadDailyVerse() {
     // Auto-load daily verse on home screen initialization
@@ -66,6 +79,46 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
     final bloc = sl<DailyVerseBloc>();
     // Always trigger load - the BLoC will handle daily caching logic
     bloc.add(const LoadTodaysVerse());
+  }
+
+  /// Start loading state with timeout protection
+  void _startGenerationWithTimeout() {
+    setState(() {
+      _isGeneratingStudyGuide = true;
+      _isNavigating = false;
+    });
+
+    // Cancel any existing timer
+    _generationTimeoutTimer?.cancel();
+
+    // Set timeout to reset loading state after 30 seconds
+    // This ensures the loader doesn't get stuck indefinitely
+    _generationTimeoutTimer = Timer(const Duration(seconds: 30), () {
+      if (mounted && _isGeneratingStudyGuide) {
+        debugPrint(
+            '⏱️ [HOME] Study generation timeout - resetting loading state');
+        _resetLoadingState();
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+                'Study generation is taking longer than expected. Please try again.'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+      }
+    });
+  }
+
+  /// Reset loading state and cancel timer
+  void _resetLoadingState() {
+    if (mounted) {
+      setState(() {
+        _isGeneratingStudyGuide = false;
+        _isNavigating = false;
+      });
+      _generationTimeoutTimer?.cancel();
+    }
   }
 
   /// Handle daily verse card tap to generate study guide
@@ -86,20 +139,18 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
     final currentState = dailyVerseBloc.state;
 
     if (currentState is DailyVerseLoaded) {
-      // Set loading state
-      setState(() {
-        _isGeneratingStudyGuide = true;
-      });
+      // Set loading state with timeout protection
+      _startGenerationWithTimeout();
+
       // Generate study guide with verse reference and selected language
       context.read<HomeBloc>().add(GenerateStudyGuideFromVerse(
             verseReference: currentState.verse.reference,
             language: _getLanguageCode(currentState.currentLanguage),
           ));
     } else if (currentState is DailyVerseOffline) {
-      // Set loading state
-      setState(() {
-        _isGeneratingStudyGuide = true;
-      });
+      // Set loading state with timeout protection
+      _startGenerationWithTimeout();
+
       // Generate study guide with cached verse reference and selected language
       context.read<HomeBloc>().add(GenerateStudyGuideFromVerse(
             verseReference: currentState.verse.reference,
@@ -135,28 +186,41 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
 
     return BlocListener<HomeBloc, HomeState>(
       listener: (context, state) {
-        if (state is HomeStudyGuideGenerated) {
-          // Stop loading and navigate to study guide screen
-          setState(() {
-            _isGeneratingStudyGuide = false;
-          });
-          ScaffoldMessenger.of(context).hideCurrentSnackBar();
-          context.push('/study-guide?source=home', extra: state.studyGuide);
-        } else if (state is HomeStudyGuideGeneratedCombined) {
-          // Stop loading and navigate to study guide screen - this preserves topics in state
-          setState(() {
-            _isGeneratingStudyGuide = false;
-          });
-          ScaffoldMessenger.of(context).hideCurrentSnackBar();
-          context.push('/study-guide?source=home', extra: state.studyGuide);
-        } else if (state is HomeCombinedState) {
-          // Update loading state based on study guide generation status
+        // Handle success states first (most specific types)
+        if (state is HomeStudyGuideGeneratedCombined) {
+          // Study guide generated successfully - navigate and reset state
+          if (!_isNavigating) {
+            debugPrint(
+                '✅ [HOME] Study guide generated - navigating to study guide screen');
+            _isNavigating = true;
+            _resetLoadingState();
+            ScaffoldMessenger.of(context).hideCurrentSnackBar();
+            context.push('/study-guide?source=home', extra: state.studyGuide);
+          }
+          return; // Exit early to prevent HomeCombinedState branch from executing
+        } else if (state is HomeStudyGuideGenerated) {
+          // Handle old state type (for backward compatibility)
+          if (!_isNavigating) {
+            debugPrint(
+                '✅ [HOME] Study guide generated (legacy) - navigating to study guide screen');
+            _isNavigating = true;
+            _resetLoadingState();
+            ScaffoldMessenger.of(context).hideCurrentSnackBar();
+            context.push('/study-guide?source=home', extra: state.studyGuide);
+          }
+          return; // Exit early
+        }
+
+        // Handle combined state updates (less specific type)
+        if (state is HomeCombinedState) {
+          // Update loading state based on BLoC state
           setState(() {
             _isGeneratingStudyGuide = state.isGeneratingStudyGuide;
           });
 
           // Handle study guide generation states
           if (state.isGeneratingStudyGuide && state.generationInput != null) {
+            // Show loading SnackBar (but with shorter duration to prevent persistence)
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Row(
@@ -170,15 +234,25 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
                       ),
                     ),
                     const SizedBox(width: 12),
-                    Text(context.tr(TranslationKeys.homeGeneratingStudyGuide,
-                        {'input': state.generationInput})),
+                    Expanded(
+                      child: Text(
+                        context.tr(TranslationKeys.homeGeneratingStudyGuide,
+                            {'input': state.generationInput}),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
                   ],
                 ),
-                duration: const Duration(minutes: 1),
+                duration: const Duration(seconds: 30), // Reduced from 1 minute
                 backgroundColor: Theme.of(context).colorScheme.primary,
               ),
             );
           } else if (state.generationError != null) {
+            // Generation failed - reset state and show error
+            debugPrint(
+                '❌ [HOME] Study guide generation failed: ${state.generationError}');
+            _resetLoadingState();
             ScaffoldMessenger.of(context).hideCurrentSnackBar();
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
@@ -187,12 +261,16 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
                 backgroundColor: Theme.of(context).colorScheme.error,
                 action: SnackBarAction(
                   label: context.tr(TranslationKeys.homeDismiss),
-                  onPressed: () =>
-                      ScaffoldMessenger.of(context).hideCurrentSnackBar(),
+                  onPressed: () {
+                    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                  },
                 ),
+                duration: const Duration(seconds: 5),
               ),
             );
-          } else if (!state.isGeneratingStudyGuide) {
+          } else if (!state.isGeneratingStudyGuide && !_isNavigating) {
+            // Generation stopped but no success/error - hide loader
+            debugPrint('🔄 [HOME] Generation stopped - hiding loader');
             ScaffoldMessenger.of(context).hideCurrentSnackBar();
           }
         }
@@ -794,10 +872,8 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
       selectedLanguage = currentState.currentLanguage;
     }
 
-    // Set loading state immediately
-    setState(() {
-      _isGeneratingStudyGuide = true;
-    });
+    // Set loading state with timeout protection
+    _startGenerationWithTimeout();
 
     // Generate study guide using HomeBloc
     context.read<HomeBloc>().add(GenerateStudyGuideFromTopic(
