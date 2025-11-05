@@ -38,80 +38,89 @@ class _NotificationSettingsView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(context.tr(TranslationKeys.notificationsSettingsTitle)),
-        elevation: 0,
-      ),
-      body: BlocConsumer<NotificationBloc, NotificationState>(
-        listener: (context, state) {
-          if (state is NotificationError) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content:
-                    Text(state.message), // Error message already from backend
-                backgroundColor: Colors.red,
-              ),
-            );
-          } else if (state is NotificationPreferencesUpdated) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(context.tr(
-                    TranslationKeys.notificationsSettingsPreferencesUpdated)),
-                backgroundColor: Colors.green,
-                duration: Duration(seconds: 2),
-              ),
-            );
-            // Reload preferences after update
-            context
-                .read<NotificationBloc>()
-                .add(const LoadNotificationPreferences());
-          } else if (state is NotificationPermissionResult) {
-            if (state.granted) {
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+
+        // Handle Android back button - pop to previous page
+        Navigator.of(context).pop();
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(context.tr(TranslationKeys.notificationsSettingsTitle)),
+          elevation: 0,
+        ),
+        body: BlocConsumer<NotificationBloc, NotificationState>(
+          listener: (context, state) {
+            if (state is NotificationError) {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
-                  content: Text(context.tr(
-                      TranslationKeys.notificationsSettingsPermissionsGranted)),
-                  backgroundColor: Colors.green,
+                  content:
+                      Text(state.message), // Error message already from backend
+                  backgroundColor: Colors.red,
                 ),
               );
-            } else {
+            } else if (state is NotificationPreferencesUpdated) {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text(context.tr(
-                      TranslationKeys.notificationsSettingsPermissionsDenied)),
-                  backgroundColor: Colors.orange,
+                      TranslationKeys.notificationsSettingsPreferencesUpdated)),
+                  backgroundColor: Colors.green,
+                  duration: Duration(seconds: 2),
                 ),
+              );
+              // Reload preferences after update
+              context
+                  .read<NotificationBloc>()
+                  .add(const LoadNotificationPreferences());
+            } else if (state is NotificationPermissionResult) {
+              if (state.granted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(context.tr(TranslationKeys
+                        .notificationsSettingsPermissionsGranted)),
+                    backgroundColor: Colors.green,
+                  ),
+                );
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(context.tr(TranslationKeys
+                        .notificationsSettingsPermissionsDenied)),
+                    backgroundColor: Colors.orange,
+                  ),
+                );
+              }
+              // Reload preferences to show updated permission status
+              context
+                  .read<NotificationBloc>()
+                  .add(const LoadNotificationPreferences());
+            }
+          },
+          builder: (context, state) {
+            if (state is NotificationLoading) {
+              return const Center(
+                child: CircularProgressIndicator(),
               );
             }
-            // Reload preferences to show updated permission status
-            context
-                .read<NotificationBloc>()
-                .add(const LoadNotificationPreferences());
-          }
-        },
-        builder: (context, state) {
-          if (state is NotificationLoading) {
-            return const Center(
-              child: CircularProgressIndicator(),
+
+            if (state is NotificationPreferencesLoaded) {
+              return _buildPreferencesView(context, state);
+            }
+
+            if (state is NotificationError) {
+              return _buildErrorView(context, state.message);
+            }
+
+            return Center(
+              child: Text(
+                  context.tr(TranslationKeys.notificationsSettingsLoading)),
             );
-          }
-
-          if (state is NotificationPreferencesLoaded) {
-            return _buildPreferencesView(context, state);
-          }
-
-          if (state is NotificationError) {
-            return _buildErrorView(context, state.message);
-          }
-
-          return Center(
-            child:
-                Text(context.tr(TranslationKeys.notificationsSettingsLoading)),
-          );
-        },
-      ),
-    );
+          },
+        ), // BlocConsumer (body)
+      ), // Scaffold
+    ); // PopScope
   }
 
   Widget _buildPreferencesView(
@@ -245,8 +254,8 @@ class _NotificationSettingsView extends StatelessWidget {
             ],
           ],
         ),
-      ),
-    );
+      ), // Scaffold
+    ); // PopScope
   }
 
   Widget _buildInfoSection(BuildContext context) {

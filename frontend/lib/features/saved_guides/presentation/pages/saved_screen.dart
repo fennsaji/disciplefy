@@ -153,145 +153,154 @@ class _SavedScreenContent extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) => Scaffold(
-        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-        appBar: AppBar(
+  Widget build(BuildContext context) => PopScope(
+        canPop: false,
+        onPopInvokedWithResult: (didPop, result) {
+          if (didPop) return;
+
+          // Handle Android back button - use smart back navigation
+          _handleBackNavigation(context);
+        },
+        child: Scaffold(
           backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-          elevation: 0,
-          leading: IconButton(
-            onPressed: () => _handleBackNavigation(context),
-            icon: Icon(
-              Icons.arrow_back_ios,
-              color: Theme.of(context).colorScheme.primary,
+          appBar: AppBar(
+            backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+            elevation: 0,
+            leading: IconButton(
+              onPressed: () => _handleBackNavigation(context),
+              icon: Icon(
+                Icons.arrow_back_ios,
+                color: Theme.of(context).colorScheme.primary,
+              ),
             ),
-          ),
-          title: Text(
-            context.tr(TranslationKeys.savedGuidesTitle),
-            style: GoogleFonts.playfairDisplay(
-              fontSize: 20,
-              fontWeight: FontWeight.w600,
-              color: Theme.of(context).colorScheme.primary,
+            title: Text(
+              context.tr(TranslationKeys.savedGuidesTitle),
+              style: GoogleFonts.playfairDisplay(
+                fontSize: 20,
+                fontWeight: FontWeight.w600,
+                color: Theme.of(context).colorScheme.primary,
+              ),
             ),
+            centerTitle: true,
           ),
-          centerTitle: true,
-        ),
-        body: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Header with tabs
-            Container(
-              padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Custom Tab Bar
-                  Container(
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.surface,
-                      borderRadius: BorderRadius.circular(12),
-                      boxShadow: [
-                        BoxShadow(
+          body: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header with tabs
+              Container(
+                padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Custom Tab Bar
+                    Container(
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).colorScheme.surface,
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Theme.of(context)
+                                .colorScheme
+                                .primary
+                                .withOpacity(0.08),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: TabBar(
+                        controller: tabController,
+                        labelColor: Theme.of(context).colorScheme.primary,
+                        unselectedLabelColor: Theme.of(context)
+                            .colorScheme
+                            .onSurface
+                            .withOpacity(0.6),
+                        indicator: BoxDecoration(
                           color: Theme.of(context)
                               .colorScheme
                               .primary
-                              .withOpacity(0.08),
-                          blurRadius: 8,
-                          offset: const Offset(0, 2),
+                              .withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(12),
                         ),
-                      ],
+                        indicatorSize: TabBarIndicatorSize.tab,
+                        dividerColor: Colors.transparent,
+                        labelStyle: GoogleFonts.inter(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                        unselectedLabelStyle: GoogleFonts.inter(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                        ),
+                        tabs: [
+                          Tab(
+                            icon: Icon(Icons.bookmark, size: 20),
+                            text: context.tr(TranslationKeys.savedGuidesSaved),
+                          ),
+                          Tab(
+                            icon: Icon(Icons.history, size: 20),
+                            text: context.tr(TranslationKeys.savedGuidesRecent),
+                          ),
+                        ],
+                      ),
                     ),
-                    child: TabBar(
-                      controller: tabController,
-                      labelColor: Theme.of(context).colorScheme.primary,
-                      unselectedLabelColor: Theme.of(context)
-                          .colorScheme
-                          .onSurface
-                          .withOpacity(0.6),
-                      indicator: BoxDecoration(
-                        color: Theme.of(context)
-                            .colorScheme
-                            .primary
-                            .withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      indicatorSize: TabBarIndicatorSize.tab,
-                      dividerColor: Colors.transparent,
-                      labelStyle: GoogleFonts.inter(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                      ),
-                      unselectedLabelStyle: GoogleFonts.inter(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w500,
-                      ),
-                      tabs: [
-                        Tab(
-                          icon: Icon(Icons.bookmark, size: 20),
-                          text: context.tr(TranslationKeys.savedGuidesSaved),
-                        ),
-                        Tab(
-                          icon: Icon(Icons.history, size: 20),
-                          text: context.tr(TranslationKeys.savedGuidesRecent),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
 
-            // Tab Content
-            Expanded(
-              child: BlocConsumer<UnifiedSavedGuidesBloc, SavedGuidesState>(
-                listener: (context, state) {
-                  if (state is SavedGuidesError) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(state.message),
-                        backgroundColor: Theme.of(context).colorScheme.error,
-                        behavior: SnackBarBehavior.floating,
-                      ),
-                    );
-                  } else if (state is SavedGuidesActionSuccess) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(state.message),
-                        backgroundColor: Colors.green,
-                        behavior: SnackBarBehavior.floating,
-                      ),
-                    );
-                  }
-                },
-                builder: (context, state) {
-                  if (state is SavedGuidesTabLoading) {
-                    return _buildLoadingIndicator(context, state.isRefresh);
-                  }
+              // Tab Content
+              Expanded(
+                child: BlocConsumer<UnifiedSavedGuidesBloc, SavedGuidesState>(
+                  listener: (context, state) {
+                    if (state is SavedGuidesError) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(state.message),
+                          backgroundColor: Theme.of(context).colorScheme.error,
+                          behavior: SnackBarBehavior.floating,
+                        ),
+                      );
+                    } else if (state is SavedGuidesActionSuccess) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(state.message),
+                          backgroundColor: Colors.green,
+                          behavior: SnackBarBehavior.floating,
+                        ),
+                      );
+                    }
+                  },
+                  builder: (context, state) {
+                    if (state is SavedGuidesTabLoading) {
+                      return _buildLoadingIndicator(context, state.isRefresh);
+                    }
 
-                  if (state is SavedGuidesAuthRequired) {
-                    return _buildAuthRequiredState(context, state);
-                  }
+                    if (state is SavedGuidesAuthRequired) {
+                      return _buildAuthRequiredState(context, state);
+                    }
 
-                  if (state is SavedGuidesApiLoaded) {
-                    return TabBarView(
-                      controller: tabController,
-                      children: [
-                        _buildSavedTab(context, state),
-                        _buildRecentTab(context, state),
-                      ],
-                    );
-                  }
+                    if (state is SavedGuidesApiLoaded) {
+                      return TabBarView(
+                        controller: tabController,
+                        children: [
+                          _buildSavedTab(context, state),
+                          _buildRecentTab(context, state),
+                        ],
+                      );
+                    }
 
-                  if (state is SavedGuidesError) {
-                    return _buildErrorState(context, state.message);
-                  }
+                    if (state is SavedGuidesError) {
+                      return _buildErrorState(context, state.message);
+                    }
 
-                  return _buildLoadingIndicator(context, false);
-                },
+                    return _buildLoadingIndicator(context, false);
+                  },
+                ),
               ),
-            ),
-          ],
-        ),
-      );
+            ],
+          ),
+        ), // Scaffold
+      ); // PopScope
 
   Widget _buildLoadingIndicator(BuildContext context, bool isRefresh) => Center(
         child: Column(
