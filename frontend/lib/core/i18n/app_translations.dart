@@ -187,6 +187,9 @@ class AppTranslations {
       'feature_multi_language': 'Multi-Language Support',
       'feature_multi_language_subtitle':
           'Study in English, Hindi, and Malayalam',
+      'feature_daily_verse': 'Daily Verse & Insights',
+      'feature_daily_verse_subtitle':
+          'Start each day with inspiring scripture and instant study guides',
       'privacy_policy':
           'By continuing, you agree to our Terms of Service and Privacy Policy',
     },
@@ -632,6 +635,9 @@ class AppTranslations {
       'feature_multi_language': 'बहु-भाषा समर्थन',
       'feature_multi_language_subtitle':
           'अंग्रेजी, हिंदी और मलयालम में अध्ययन करें',
+      'feature_daily_verse': 'दैनिक वचन और अंतर्दृष्टि',
+      'feature_daily_verse_subtitle':
+          'प्रेरणादायक शास्त्र और त्वरित अध्ययन गाइड के साथ हर दिन शुरू करें',
       'privacy_policy':
           'जारी रखते हुए, आप हमारी सेवा की शर्तों और गोपनीयता नीति से सहमत हैं',
     },
@@ -1078,6 +1084,9 @@ class AppTranslations {
       'feature_multi_language': 'ബഹു-ഭാഷാ പിന്തുണ',
       'feature_multi_language_subtitle':
           'ഇംഗ്ലീഷ്, ഹിന്ദി, മലയാളം എന്നിവയില്‍ പഠിക്കുക',
+      'feature_daily_verse': 'ദൈനിക വചനവും ഉൾക്കാഴ്ചകളും',
+      'feature_daily_verse_subtitle':
+          'പ്രചോദനാത്മക വചനങ്ങളും പെട്ടെന്നുള്ള പഠന ഗൈഡുകളും ഉപയോഗിച്ച് ഓരോ ദിവസവും ആരംഭിക്കുക',
       'privacy_policy':
           'തുടരുമ്പോൾ, നിങ്ങൾ ഞങ്ങളുടെ സേവന നിബന്ധനകളും സ്വകാര്യതാ നീതിയുമായി സംമതിക്കുന്നു',
     },

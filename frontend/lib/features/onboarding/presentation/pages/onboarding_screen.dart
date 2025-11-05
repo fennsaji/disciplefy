@@ -42,28 +42,36 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   static const List<OnboardingSlide> _slides = [
     OnboardingSlide(
-      title: 'Generate Personalized Bible Study Guides',
-      subtitle: 'AI-powered insights tailored to your spiritual journey',
+      title: 'Daily Inspiration & Study',
+      subtitle: 'Start each day with God\'s Word',
       description:
-          'Simply enter any scripture reference or spiritual topic, and our AI will create a comprehensive study guide with context, interpretation, and life application.',
-      iconData: Icons.auto_awesome,
+          'Receive daily verses with instant study guides. Tap any verse to dive deeper with AI-powered insights, context, and practical applications for your life.',
+      iconData: Icons.wb_sunny,
       verse:
           '"Your word is a lamp for my feet, a light on my path." - Psalm 119:105',
     ),
     OnboardingSlide(
-      title: 'Explore Predefined Topics',
-      subtitle: 'Discover guided studies on faith essentials',
+      title: 'Generate Personalized Study Guides',
+      subtitle: 'AI-powered insights tailored to your journey',
       description:
-          'Choose from carefully curated topics like Gospel, Prayer, Baptism, Grace, and Faith in Trials to deepen your understanding of core biblical principles.',
-      iconData: Icons.menu_book_rounded,
+          'Enter any scripture or spiritual topic to create comprehensive study guides with context, interpretation, reflection questions, and prayer points.',
+      iconData: Icons.auto_awesome,
       verse:
           '"All Scripture is God-breathed and is useful for teaching..." - 2 Timothy 3:16',
     ),
     OnboardingSlide(
-      title: 'Save Notes & Track Progress',
+      title: 'Explore Curated Topics',
+      subtitle: 'Discover guided studies on faith essentials',
+      description:
+          'Choose from carefully curated topics like Gospel, Prayer, Baptism, Grace, and Faith in Trials. Each topic follows a proven 4-step study methodology.',
+      iconData: Icons.menu_book_rounded,
+      verse: '"Study to show yourself approved unto God..." - 2 Timothy 2:15',
+    ),
+    OnboardingSlide(
+      title: 'Save Notes & Track Growth',
       subtitle: 'Build your personal spiritual journal',
       description:
-          'Take notes during your study, save your insights, and track your spiritual growth journey. Resume your studies anytime, anywhere.',
+          'Add personal notes to any study, save your insights, and track your spiritual growth journey. Access your saved guides anytime, anywhere.',
       iconData: Icons.bookmark_added,
       verse:
           '"The grass withers and the flowers fall, but the word of our God endures forever." - Isaiah 40:8',
