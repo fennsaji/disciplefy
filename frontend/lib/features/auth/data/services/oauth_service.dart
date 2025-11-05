@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../../../core/config/app_config.dart';
 import '../../../../core/services/http_service.dart';
 import '../../domain/entities/auth_params.dart';
 import '../../domain/exceptions/auth_exceptions.dart' as auth_exceptions;
@@ -36,12 +37,25 @@ class OAuthService {
     try {
       print('🔐 [OAUTH SERVICE] 🚀 Starting Mobile Google Sign-In...');
 
+      // CRITICAL FIX: Configure GoogleSignIn with serverClientId for Supabase
+      // Supabase requires the Web OAuth Client ID to validate ID tokens
+      // Get from environment variable (configured at build time via --dart-define)
+      const webClientId = AppConfig.googleClientId;
+
+      if (webClientId.isEmpty) {
+        throw auth_exceptions.AuthConfigException(
+            'GOOGLE_CLIENT_ID not configured. Please set via --dart-define at build time.');
+      }
+
       // Get GoogleSignIn singleton instance
       final GoogleSignIn googleSignIn = GoogleSignIn.instance;
 
-      // Initialize the plugin
+      // Initialize with serverClientId for Supabase authentication
       print('🔐 [OAUTH SERVICE] 🔧 Initializing Google Sign-In plugin...');
-      await googleSignIn.initialize();
+      print('🔐 [OAUTH SERVICE] - Using serverClientId: $webClientId');
+      await googleSignIn.initialize(
+        serverClientId: webClientId,
+      );
 
       // Trigger Google Sign-In flow
       print('🔐 [OAUTH SERVICE] 📱 Launching Google Sign-In UI...');
