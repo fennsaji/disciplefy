@@ -63,11 +63,16 @@ class _LanguageSelectionScreenState extends State<LanguageSelectionScreen> {
     });
 
     try {
-      // Save language preference
+      // FIX: Mark language selection as completed BEFORE saving
+      // This ensures the flag is set before any cache invalidation happens
+      await _languageService.markLanguageSelectionCompleted();
+
+      // Save language preference (this will cache completion state before invalidating caches)
       await _languageService.saveLanguagePreference(_selectedLanguage!);
 
-      // Mark language selection as completed
-      await _languageService.markLanguageSelectionCompleted();
+      // FIX: Small delay to ensure all async operations complete before navigation
+      // This prevents race condition with router guard checking language completion
+      await Future.delayed(const Duration(milliseconds: 100));
 
       // Navigate to home screen
       if (mounted) {
