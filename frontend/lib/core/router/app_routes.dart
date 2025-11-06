@@ -13,6 +13,8 @@ class AppRoutes {
   static const String studyTopics = '/study-topics';
   static const String tokenManagement = '/token-management';
   static const String purchaseHistory = '/token-management/purchase-history';
+  static const String premiumUpgrade = '/premium-upgrade';
+  static const String subscriptionManagement = '/subscription-management';
   static const String login = '/login';
   static const String phoneAuth = '/phone-auth';
   static const String phoneAuthVerify = '/phone-auth/verify';

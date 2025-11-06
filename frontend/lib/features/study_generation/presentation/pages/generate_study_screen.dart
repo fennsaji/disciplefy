@@ -414,9 +414,11 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
                       ),
                       const SizedBox(width: 4),
                       Text(
-                        '${tokenState.tokenStatus.totalTokens}',
+                        tokenState.tokenStatus.isPremium
+                            ? '∞'
+                            : '${tokenState.tokenStatus.totalTokens}',
                         style: GoogleFonts.inter(
-                          fontSize: 14,
+                          fontSize: tokenState.tokenStatus.isPremium ? 18 : 14,
                           fontWeight: FontWeight.w600,
                           color: Theme.of(context).colorScheme.primary,
                         ),
@@ -450,9 +452,13 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
                       ),
                       const SizedBox(width: 4),
                       Text(
-                        '${tokenState.previousTokenStatus!.totalTokens}',
+                        tokenState.previousTokenStatus!.isPremium
+                            ? '∞'
+                            : '${tokenState.previousTokenStatus!.totalTokens}',
                         style: GoogleFonts.inter(
-                          fontSize: 14,
+                          fontSize: tokenState.previousTokenStatus!.isPremium
+                              ? 18
+                              : 14,
                           fontWeight: FontWeight.w600,
                           color: Colors.orange[700],
                         ),

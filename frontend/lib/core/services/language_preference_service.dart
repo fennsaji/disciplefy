@@ -136,27 +136,37 @@ class LanguagePreferenceService {
       // For authenticated non-anonymous users, also save to database
       if (_authStateProvider.isAuthenticated &&
           !_authStateProvider.isAnonymous) {
-        // Invalidate profile cache and coordinate with other caches
-        // Note: We don't invalidate _cachedLanguage here since we just set it
-        _authStateProvider.invalidateProfileCache();
-        _cachedUserId = null;
-        _cachedHasCompletedSelection = null;
-        _cacheTimestamp = null;
-        _cacheCoordinator.invalidateLanguageCaches();
-        print(
-            '📄 [LANGUAGE_SERVICE] Profile and completion caches invalidated for language update');
+        final currentUserId = _authStateProvider.userId;
 
+        // FIX: Update database FIRST, then invalidate caches
         final updateResult =
             await _userProfileService.updateLanguagePreference(language);
-        updateResult.fold(
-          (failure) => print(
-              'Failed to update language preference in database: ${failure.message}'),
+
+        final dbUpdateSuccessful = updateResult.fold(
+          (failure) {
+            print(
+                'Failed to update language preference in database: ${failure.message}');
+            return false;
+          },
           (profile) {
             print('Language preference updated in database successfully');
-            print(
-                '📄 [LANGUAGE_SERVICE] Language preference updated, all caches will be refreshed on next access');
+            return true;
           },
         );
+
+        // FIX: Cache the completion state BEFORE invalidating other caches
+        // This prevents race condition where router guard checks before DB update completes
+        if (dbUpdateSuccessful) {
+          _cacheLanguageCompletion(currentUserId, true);
+          print(
+              '✅ [LANGUAGE_SERVICE] Language completion cached BEFORE invalidation');
+
+          // Now invalidate other caches after successful DB update
+          _authStateProvider.invalidateProfileCache();
+          _cacheCoordinator.invalidateLanguageCaches();
+          print(
+              '📄 [LANGUAGE_SERVICE] Profile caches invalidated after language update');
+        }
       }
 
       // Notify listeners of the language change
@@ -267,16 +277,18 @@ class LanguagePreferenceService {
   }
 
   /// Mark that user has completed initial language selection
-  /// For authenticated users, the completion is implicitly tracked by DB presence
-  /// For anonymous users, sets local storage completion flag
+  /// FIX: Now sets local storage flag for ALL users (authenticated and anonymous)
+  /// This ensures the flag is set before any async DB operations complete
   Future<void> markLanguageSelectionCompleted() async {
     try {
-      // For anonymous users, mark completion in local storage
-      // For authenticated users, completion is tracked by DB presence automatically
-      if (_authStateProvider.isAnonymous ||
-          !_authStateProvider.isAuthenticated) {
-        await _prefs.setBool(_hasCompletedLanguageSelectionKey, true);
-      }
+      // FIX: Set local flag for ALL users, not just anonymous
+      // This prevents race condition where router checks before DB update completes
+      await _prefs.setBool(_hasCompletedLanguageSelectionKey, true);
+      print('✅ [LANGUAGE_SERVICE] Marked language selection completed locally');
+
+      // Also cache the completion state for the current user
+      final currentUserId = _authStateProvider.userId;
+      _cacheLanguageCompletion(currentUserId, true);
     } catch (e) {
       print('Error marking language selection completed: $e');
     }
