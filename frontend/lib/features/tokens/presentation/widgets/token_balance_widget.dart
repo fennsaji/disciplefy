@@ -127,10 +127,11 @@ class _TokenDisplay extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              '${tokenStatus.totalTokens}',
+              tokenStatus.isPremium ? '∞' : '${tokenStatus.totalTokens}',
               style: textTheme.headlineMedium?.copyWith(
                 color: _getStatusColor(tokenStatus),
                 fontWeight: FontWeight.bold,
+                fontSize: tokenStatus.isPremium ? 48 : null,
               ),
             ),
             Text(

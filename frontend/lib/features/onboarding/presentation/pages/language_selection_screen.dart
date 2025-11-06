@@ -63,29 +63,39 @@ class _LanguageSelectionScreenState extends State<LanguageSelectionScreen> {
     });
 
     try {
-      // Save language preference
-      await _languageService.saveLanguagePreference(_selectedLanguage!);
-
-      // Mark language selection as completed
+      // FIX: Mark language selection as completed BEFORE saving
+      // This ensures the flag is set before any cache invalidation happens
       await _languageService.markLanguageSelectionCompleted();
 
-      // Navigate to home screen
+      // Save language preference (this will cache completion state before invalidating caches)
+      await _languageService.saveLanguagePreference(_selectedLanguage!);
+
+      // FIX: Replace brittle 100ms delay with explicit synchronization
+      // Verify that persistence and cache invalidation completed successfully
+      final bool persistenceVerified =
+          await _languageService.hasCompletedLanguageSelection();
+
+      if (!persistenceVerified) {
+        throw Exception(
+            'Language preference persistence verification failed. Please try again.');
+      }
+
+      // Navigate to home screen only after successful verification
       if (mounted) {
         context.go('/');
       }
     } catch (e) {
-      // Show error but still navigate to prevent user from being stuck
+      // Show error and do NOT navigate - allow user to retry
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              context.tr(TranslationKeys.onboardingLanguageSavedLocally),
+              'Failed to save language preference: ${e.toString()}',
               style: GoogleFonts.inter(),
             ),
-            backgroundColor: Colors.orange,
+            backgroundColor: Colors.red,
           ),
         );
-        context.go('/');
       }
     } finally {
       if (mounted) {

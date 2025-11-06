@@ -173,6 +173,9 @@ class TranslationKeys {
   static const loginFeatureMultiLanguage = 'login.feature_multi_language';
   static const loginFeatureMultiLanguageSubtitle =
       'login.feature_multi_language_subtitle';
+  static const loginFeatureDailyVerse = 'login.feature_daily_verse';
+  static const loginFeatureDailyVerseSubtitle =
+      'login.feature_daily_verse_subtitle';
   static const loginPrivacyPolicy = 'login.privacy_policy';
 
   // Onboarding

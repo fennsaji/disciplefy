@@ -424,6 +424,13 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
           const SizedBox(height: 16),
           _FeatureItem(
+            icon: Icons.wb_sunny,
+            title: context.tr(TranslationKeys.loginFeatureDailyVerse),
+            subtitle:
+                context.tr(TranslationKeys.loginFeatureDailyVerseSubtitle),
+          ),
+          const SizedBox(height: 12),
+          _FeatureItem(
             icon: Icons.auto_awesome,
             title: context.tr(TranslationKeys.loginFeatureAiStudyGuides),
             subtitle:

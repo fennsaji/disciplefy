@@ -1,3 +1,4 @@
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../features/onboarding/presentation/pages/onboarding_screen.dart';
@@ -23,6 +24,9 @@ import '../../features/notifications/presentation/pages/notification_settings_sc
 import '../../features/study_topics/presentation/pages/study_topics_screen.dart';
 import '../../features/tokens/presentation/pages/token_management_page.dart';
 import '../../features/tokens/presentation/pages/purchase_history_page.dart';
+import '../../features/subscription/presentation/pages/premium_upgrade_page.dart';
+import '../../features/subscription/presentation/pages/subscription_management_page.dart';
+import '../../features/subscription/presentation/bloc/subscription_bloc.dart';
 import 'app_routes.dart';
 import 'router_guard.dart';
 import 'auth_notifier.dart';
@@ -133,12 +137,31 @@ class AppRouter {
       GoRoute(
         path: AppRoutes.tokenManagement,
         name: 'token_management',
-        builder: (context, state) => const TokenManagementPage(),
+        builder: (context, state) => BlocProvider(
+          create: (context) => sl<SubscriptionBloc>(),
+          child: const TokenManagementPage(),
+        ),
       ),
       GoRoute(
         path: AppRoutes.purchaseHistory,
         name: 'purchase_history',
         builder: (context, state) => const PurchaseHistoryPage(),
+      ),
+      GoRoute(
+        path: AppRoutes.premiumUpgrade,
+        name: 'premium_upgrade',
+        builder: (context, state) => BlocProvider(
+          create: (context) => sl<SubscriptionBloc>(),
+          child: const PremiumUpgradePage(),
+        ),
+      ),
+      GoRoute(
+        path: AppRoutes.subscriptionManagement,
+        name: 'subscription_management',
+        builder: (context, state) => BlocProvider(
+          create: (context) => sl<SubscriptionBloc>(),
+          child: const SubscriptionManagementPage(),
+        ),
       ),
 
       // Authentication Routes (outside app shell)

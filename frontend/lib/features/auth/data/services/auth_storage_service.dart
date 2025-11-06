@@ -186,7 +186,9 @@ class AuthStorageService {
         _secureStorage.delete(key: _authTokenKey),
         _secureStorage.delete(key: _userTypeKey),
         _secureStorage.delete(key: _userIdKey),
-        _secureStorage.delete(key: _onboardingCompletedKey),
+        // NOTE: Do NOT clear onboarding_completed key here!
+        // Onboarding is a one-time per-device experience that should persist
+        // across login/logout cycles and error recovery. Only clear on app reset.
         _secureStorage.delete(key: _sessionExpiresAtKey), // SECURITY FIX
         _secureStorage.delete(key: _deviceIdKey), // SECURITY FIX
       ]);
