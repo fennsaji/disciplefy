@@ -160,13 +160,13 @@ class LanguagePreferenceService {
           _cacheLanguageCompletion(currentUserId, true);
           print(
               '✅ [LANGUAGE_SERVICE] Language completion cached BEFORE invalidation');
-        }
 
-        // Now invalidate other caches after successful DB update
-        _authStateProvider.invalidateProfileCache();
-        _cacheCoordinator.invalidateLanguageCaches();
-        print(
-            '📄 [LANGUAGE_SERVICE] Profile caches invalidated after language update');
+          // Now invalidate other caches after successful DB update
+          _authStateProvider.invalidateProfileCache();
+          _cacheCoordinator.invalidateLanguageCaches();
+          print(
+              '📄 [LANGUAGE_SERVICE] Profile caches invalidated after language update');
+        }
       }
 
       // Notify listeners of the language change
