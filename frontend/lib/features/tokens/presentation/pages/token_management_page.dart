@@ -21,6 +21,10 @@ import '../widgets/plan_comparison_section.dart';
 import '../../domain/entities/token_status.dart';
 import '../../../auth/presentation/bloc/auth_bloc.dart';
 import '../../../auth/presentation/bloc/auth_state.dart' as auth_states;
+import '../../../subscription/presentation/bloc/subscription_bloc.dart';
+import '../../../subscription/presentation/bloc/subscription_state.dart';
+import '../../../subscription/presentation/bloc/subscription_event.dart';
+import '../../../subscription/domain/entities/subscription.dart';
 
 /// Token Management Page
 ///
@@ -37,15 +41,52 @@ class TokenManagementPage extends StatefulWidget {
   State<TokenManagementPage> createState() => _TokenManagementPageState();
 }
 
-class _TokenManagementPageState extends State<TokenManagementPage> {
+class _TokenManagementPageState extends State<TokenManagementPage>
+    with WidgetsBindingObserver, RouteAware {
   // Payment confirmation guard to prevent duplicate calls
   final Set<String> _processingPayments = <String>{};
 
   @override
   void initState() {
     super.initState();
+    // Add lifecycle observer to detect when app resumes
+    WidgetsBinding.instance.addObserver(this);
     // Load token status when page opens
     context.read<TokenBloc>().add(const GetTokenStatus());
+    // Load subscription status to check if user has active/cancelled subscription
+    context.read<SubscriptionBloc>().add(const GetActiveSubscription());
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Refresh subscription data when returning to this page
+    // This ensures we always have the latest subscription status
+    if (ModalRoute.of(context)?.isCurrent == true) {
+      debugPrint(
+          '[TokenManagement] Page became visible - refreshing subscription status');
+      context.read<SubscriptionBloc>().add(const RefreshSubscription());
+    }
+  }
+
+  @override
+  void dispose() {
+    // Remove lifecycle observer
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+
+    // When app resumes, refresh token status and subscription status
+    if (state == AppLifecycleState.resumed) {
+      debugPrint(
+          '[TokenManagement] App resumed - refreshing token and subscription status');
+      context.read<TokenBloc>().add(const RefreshTokenStatus());
+      context.read<SubscriptionBloc>().add(const RefreshSubscription());
+    }
   }
 
   /// Get user email from auth state with fallback
@@ -264,13 +305,13 @@ class _TokenManagementPageState extends State<TokenManagementPage> {
   }
 
   void _upgradeToPremium() {
-    // TODO: Implement upgrade to premium plan
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Premium upgrade coming soon!'),
-        duration: Duration(seconds: 2),
-      ),
-    );
+    // Navigate to premium upgrade page
+    context.push(AppRoutes.premiumUpgrade);
+  }
+
+  void _manageSubscription() {
+    // Navigate to subscription management page
+    context.push(AppRoutes.subscriptionManagement);
   }
 
   @override
@@ -424,52 +465,76 @@ class _TokenManagementPageState extends State<TokenManagementPage> {
   Widget _buildTokenManagement(TokenStatus tokenStatus) {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Token Balance Widget
-          TokenBalanceWidget(
-            tokenStatus: tokenStatus,
-            showDetails: true,
-            showRefreshButton: true,
-            onRefresh: () {
-              context.read<TokenBloc>().add(const RefreshTokenStatus());
-            },
-          ),
+      child: BlocBuilder<SubscriptionBloc, SubscriptionState>(
+        builder: (context, subscriptionState) {
+          // Check if subscription has pending cancellation
+          bool isCancelledButActive = false;
+          if (subscriptionState is SubscriptionLoaded &&
+              subscriptionState.activeSubscription != null) {
+            final sub = subscriptionState.activeSubscription!;
+            // Check if subscription is in pending_cancellation status
+            isCancelledButActive =
+                sub.status == SubscriptionStatus.pending_cancellation;
+          }
 
-          const SizedBox(height: 24),
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Token Balance Widget
+              TokenBalanceWidget(
+                tokenStatus: tokenStatus,
+                showDetails: true,
+                showRefreshButton: true,
+                onRefresh: () {
+                  context.read<TokenBloc>().add(const RefreshTokenStatus());
+                },
+              ),
 
-          // Current Plan Section
-          CurrentPlanSection(
-            tokenStatus: tokenStatus,
-            onUpgrade: tokenStatus.userPlan == UserPlan.free
-                ? _upgradeToStandard
-                : _upgradeToPremium,
-          ),
+              const SizedBox(height: 24),
 
-          const SizedBox(height: 24),
+              // Current Plan Section
+              CurrentPlanSection(
+                tokenStatus: tokenStatus,
+                onUpgrade: tokenStatus.userPlan == UserPlan.free
+                    ? _upgradeToStandard
+                    : _upgradeToPremium,
+                onManageSubscription: tokenStatus.userPlan == UserPlan.premium
+                    ? _manageSubscription
+                    : null,
+                isCancelledButActive: isCancelledButActive,
+                onContinueSubscription: isCancelledButActive
+                    ? () {
+                        // TODO: Implement continue subscription logic
+                        _manageSubscription();
+                      }
+                    : null,
+              ),
 
-          // Actions Section
-          TokenActionsSection(
-            tokenStatus: tokenStatus,
-            onPurchase: () => _showPurchaseDialog(tokenStatus),
-            onUpgrade: tokenStatus.userPlan == UserPlan.free
-                ? _upgradeToStandard
-                : _upgradeToPremium,
-            onViewHistory: () =>
-                context.push('/token-management/purchase-history'),
-          ),
+              const SizedBox(height: 24),
 
-          const SizedBox(height: 24),
+              // Actions Section
+              TokenActionsSection(
+                tokenStatus: tokenStatus,
+                onPurchase: () => _showPurchaseDialog(tokenStatus),
+                onUpgrade: tokenStatus.userPlan == UserPlan.free
+                    ? _upgradeToStandard
+                    : _upgradeToPremium,
+                onViewHistory: () =>
+                    context.push('/token-management/purchase-history'),
+              ),
 
-          // Usage Information
-          UsageInfoSection(tokenStatus: tokenStatus),
+              const SizedBox(height: 24),
 
-          const SizedBox(height: 24),
+              // Usage Information
+              UsageInfoSection(tokenStatus: tokenStatus),
 
-          // Plan Comparison
-          PlanComparisonSection(tokenStatus: tokenStatus),
-        ],
+              const SizedBox(height: 24),
+
+              // Plan Comparison
+              PlanComparisonSection(tokenStatus: tokenStatus),
+            ],
+          );
+        },
       ),
     );
   }
