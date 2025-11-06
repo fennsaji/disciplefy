@@ -42,11 +42,21 @@ Deno.serve(async (req) => {
       )
     }
 
+    // Validate required environment variables
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')
+    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')
+
+    if (!supabaseUrl || !supabaseAnonKey) {
+      const missingVars = []
+      if (!supabaseUrl) missingVars.push('SUPABASE_URL')
+      if (!supabaseAnonKey) missingVars.push('SUPABASE_ANON_KEY')
+
+      console.error(`[GetTokenPricing] Missing required environment variables: ${missingVars.join(', ')}`)
+      throw new Error(`Configuration error: Missing required environment variables: ${missingVars.join(', ')}`)
+    }
+
     // Create Supabase client (anonymous access is fine for public pricing)
-    const supabaseClient = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? ''
-    )
+    const supabaseClient = createClient(supabaseUrl, supabaseAnonKey)
 
     // Fetch all active pricing packages
     const { data, error } = await supabaseClient

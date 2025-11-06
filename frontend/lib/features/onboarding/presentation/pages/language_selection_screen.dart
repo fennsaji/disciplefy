@@ -70,27 +70,32 @@ class _LanguageSelectionScreenState extends State<LanguageSelectionScreen> {
       // Save language preference (this will cache completion state before invalidating caches)
       await _languageService.saveLanguagePreference(_selectedLanguage!);
 
-      // FIX: Small delay to ensure all async operations complete before navigation
-      // This prevents race condition with router guard checking language completion
-      await Future.delayed(const Duration(milliseconds: 100));
+      // FIX: Replace brittle 100ms delay with explicit synchronization
+      // Verify that persistence and cache invalidation completed successfully
+      final bool persistenceVerified =
+          await _languageService.hasCompletedLanguageSelection();
 
-      // Navigate to home screen
+      if (!persistenceVerified) {
+        throw Exception(
+            'Language preference persistence verification failed. Please try again.');
+      }
+
+      // Navigate to home screen only after successful verification
       if (mounted) {
         context.go('/');
       }
     } catch (e) {
-      // Show error but still navigate to prevent user from being stuck
+      // Show error and do NOT navigate - allow user to retry
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              context.tr(TranslationKeys.onboardingLanguageSavedLocally),
+              'Failed to save language preference: ${e.toString()}',
               style: GoogleFonts.inter(),
             ),
-            backgroundColor: Colors.orange,
+            backgroundColor: Colors.red,
           ),
         );
-        context.go('/');
       }
     } finally {
       if (mounted) {

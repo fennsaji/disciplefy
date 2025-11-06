@@ -78,10 +78,12 @@ class AppConfig {
   static const int authenticatedRateLimit = 10; // guides per hour
   static const int apiRequestLimit = 100; // requests per hour for authenticated
 
-  // Session Configuration - EXTENDED for maximum persistence
-  // Users can stay authenticated for up to 1 year with automatic token refresh
-  static const int sessionTimeoutHours = 8760; // 365 days
-  static const int anonymousSessionTimeoutHours = 8760; // 365 days
+  // Session Configuration - Aligned with backend JWT expiry
+  // Backend: jwt_expiry = 604800s (7 days) with refresh token rotation
+  // Frontend: Must match backend token expiry for security compliance
+  static const int sessionTimeoutHours = 168; // 7 days (matches backend)
+  static const int anonymousSessionTimeoutHours =
+      168; // 7 days (matches backend)
   static const int maxInputLength = 500;
 
   // Supported Languages (from PRD)
