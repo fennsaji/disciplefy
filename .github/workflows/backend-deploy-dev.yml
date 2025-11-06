@@ -233,6 +233,7 @@ jobs:
         RAZORPAY_KEY_ID=${{ secrets.RAZORPAY_KEY_ID_DEV }}
         RAZORPAY_KEY_SECRET=${{ secrets.RAZORPAY_KEY_SECRET_DEV }}
         RAZORPAY_WEBHOOK_SECRET=${{ secrets.RAZORPAY_WEBHOOK_SECRET_DEV }}
+        RAZORPAY_PREMIUM_PLAN_ID=${{ secrets.RAZORPAY_PLAN_ID_DEV }}
 
         # SMS Configuration (Development)
         TWILIO_ACCOUNT_SID=${{ secrets.TWILIO_ACCOUNT_SID_DEV }}

@@ -133,6 +133,16 @@ import '../../features/tokens/presentation/bloc/payment_method_bloc.dart';
 import '../../features/tokens/di/tokens_injection.dart';
 import '../../features/follow_up_chat/presentation/bloc/follow_up_chat_bloc.dart';
 import '../../features/follow_up_chat/data/services/conversation_service.dart';
+import '../../features/subscription/data/datasources/subscription_remote_data_source.dart';
+import '../../features/subscription/data/repositories/subscription_repository_impl.dart';
+import '../../features/subscription/domain/repositories/subscription_repository.dart';
+import '../../features/subscription/domain/usecases/create_subscription.dart';
+import '../../features/subscription/domain/usecases/cancel_subscription.dart';
+import '../../features/subscription/domain/usecases/resume_subscription.dart';
+import '../../features/subscription/domain/usecases/get_active_subscription.dart';
+import '../../features/subscription/domain/usecases/get_subscription_history.dart';
+import '../../features/subscription/domain/usecases/get_invoices.dart';
+import '../../features/subscription/presentation/bloc/subscription_bloc.dart';
 
 /// Service locator instance for dependency injection
 final sl = GetIt.instance;
@@ -477,6 +487,32 @@ Future<void> initializeDependencies() async {
 
   //! Tokens
   registerTokenDependencies(sl);
+
+  //! Subscription
+  sl.registerLazySingleton<SubscriptionRemoteDataSource>(
+    () => SubscriptionRemoteDataSourceImpl(
+      supabaseClient: sl(),
+    ),
+  );
+
+  sl.registerLazySingleton<SubscriptionRepository>(
+    () => SubscriptionRepositoryImpl(
+      remoteDataSource: sl(),
+      networkInfo: sl(),
+    ),
+  );
+
+  sl.registerLazySingleton(() => CreateSubscription(sl()));
+  sl.registerLazySingleton(() => CancelSubscription(sl()));
+  sl.registerLazySingleton(() => ResumeSubscription(sl()));
+  sl.registerLazySingleton(() => GetActiveSubscription(sl()));
+
+  sl.registerFactory(() => SubscriptionBloc(
+        createSubscription: sl(),
+        cancelSubscription: sl(),
+        resumeSubscription: sl(),
+        getActiveSubscription: sl(),
+      ));
 
   //! Follow Up Chat
   sl.registerLazySingleton(() => ConversationService(
