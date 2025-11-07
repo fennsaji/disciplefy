@@ -11,10 +11,3 @@ COMMENT ON COLUMN public.user_profiles.razorpay_customer_id IS 'Razorpay custome
 
 -- Drop existing non-unique index if it exists (from earlier version of this migration)
 DROP INDEX IF EXISTS idx_user_profiles_razorpay_customer_id;
-
--- Create UNIQUE partial index to enforce one Razorpay customer ID per user
--- Partial index only includes non-null values (null values are allowed for users without Razorpay accounts)
--- Using CONCURRENTLY to avoid blocking reads/writes during index creation
-CREATE UNIQUE INDEX CONCURRENTLY IF NOT EXISTS idx_user_profiles_razorpay_customer_id_unique
-ON public.user_profiles(razorpay_customer_id)
-WHERE razorpay_customer_id IS NOT NULL;
