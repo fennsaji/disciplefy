@@ -132,9 +132,12 @@ void main() async {
     }
 
     // Initialize Supabase
+    // Note: autoRefreshToken is enabled by default
     await Supabase.initialize(
       url: AppConfig.supabaseUrl,
       anonKey: AppConfig.supabaseAnonKey,
+      // Enable debug mode for auth issues in development
+      debug: kDebugMode,
     );
 
     // Initialize dependency injection
