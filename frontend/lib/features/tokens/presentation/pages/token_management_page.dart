@@ -333,6 +333,8 @@ class _TokenManagementPageState extends State<TokenManagementPage>
           );
           // Refresh token status to update UI
           context.read<TokenBloc>().add(const RefreshTokenStatus());
+          // Refresh subscription to clear pending_cancellation flag
+          context.read<SubscriptionBloc>().add(const RefreshSubscription());
         }
         // Handle subscription resume error
         else if (state is SubscriptionError && state.operation == 'resuming') {
