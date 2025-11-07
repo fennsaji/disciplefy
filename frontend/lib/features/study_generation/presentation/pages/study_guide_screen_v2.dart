@@ -22,6 +22,7 @@ import '../bloc/study_state.dart';
 import '../../../follow_up_chat/presentation/widgets/follow_up_chat_widget.dart';
 import '../../../follow_up_chat/presentation/bloc/follow_up_chat_bloc.dart';
 import '../../../follow_up_chat/presentation/bloc/follow_up_chat_event.dart';
+import '../widgets/engaging_loading_screen.dart';
 
 /// Study Guide Screen V2 - Dynamically generates study guides from query parameters
 ///
@@ -562,39 +563,8 @@ class _StudyGuideScreenV2ContentState
     return _buildStudyGuideContent();
   }
 
-  Widget _buildLoadingScreen() => Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            SizedBox(
-              width: 60,
-              height: 60,
-              child: CircularProgressIndicator(
-                strokeWidth: 4,
-                valueColor: AlwaysStoppedAnimation<Color>(
-                  Theme.of(context).colorScheme.primary,
-                ),
-              ),
-            ),
-            const SizedBox(height: 24),
-            Text(
-              'Generating your study guide...',
-              style: GoogleFonts.inter(
-                fontSize: 18,
-                fontWeight: FontWeight.w500,
-                color: Theme.of(context).colorScheme.onSurface,
-              ),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              'This may take a few moments',
-              style: GoogleFonts.inter(
-                fontSize: 14,
-                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-              ),
-            ),
-          ],
-        ),
+  Widget _buildLoadingScreen() => EngagingLoadingScreen(
+        topic: widget.input,
       );
 
   Widget _buildErrorScreen() => Center(
