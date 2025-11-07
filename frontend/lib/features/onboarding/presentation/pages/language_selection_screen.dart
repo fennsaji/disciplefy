@@ -63,14 +63,10 @@ class _LanguageSelectionScreenState extends State<LanguageSelectionScreen> {
     });
 
     try {
-      // FIX: Mark language selection as completed BEFORE saving
-      // This ensures the flag is set before any cache invalidation happens
-      await _languageService.markLanguageSelectionCompleted();
-
-      // Save language preference (this will cache completion state before invalidating caches)
+      // Save language preference - this will update the database AND mark completion
+      // The service handles marking completion internally only after successful DB save
       await _languageService.saveLanguagePreference(_selectedLanguage!);
 
-      // FIX: Replace brittle 100ms delay with explicit synchronization
       // Verify that persistence and cache invalidation completed successfully
       final bool persistenceVerified =
           await _languageService.hasCompletedLanguageSelection();
@@ -114,11 +110,8 @@ class _LanguageSelectionScreenState extends State<LanguageSelectionScreen> {
     });
 
     try {
-      // Save default English preference
+      // Save default English preference - service handles marking completion internally
       await _languageService.saveLanguagePreference(AppLanguage.english);
-
-      // Mark language selection as completed
-      await _languageService.markLanguageSelectionCompleted();
 
       // Navigate to home screen
       if (mounted) {

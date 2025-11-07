@@ -1045,16 +1045,12 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
   void _generateStudyGuide() {
     if (!_isInputValid) return;
 
-    // Prevent multiple clicks during generation
-    if (_isGeneratingStudyGuide) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(context.tr(TranslationKeys.generateStudyInProgress)),
-          duration: const Duration(seconds: 2),
-        ),
-      );
+    // Prevent multiple clicks during navigation
+    if (_isNavigating) {
       return;
     }
+
+    _isNavigating = true;
 
     final input = _inputController.text.trim();
     final inputType = _selectedMode == StudyInputMode.scripture
@@ -1063,11 +1059,6 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
             ? 'topic'
             : 'question';
     final languageCode = _selectedLanguage.code;
-
-    // Set loading state immediately
-    setState(() {
-      _isGeneratingStudyGuide = true;
-    });
 
     // Consume tokens immediately for UI feedback
     if (_currentTokenStatus != null && !_currentTokenStatus!.isPremium) {
@@ -1082,14 +1073,26 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
       context.read<TokenBloc>().add(const GetTokenStatus());
     }
 
-    // Trigger BLoC event to generate study guide
-    context.read<StudyBloc>().add(
-          GenerateStudyGuideRequested(
-            input: input,
-            inputType: inputType,
-            language: languageCode,
-          ),
-        );
+    // Set flag to indicate navigation away (will trigger token refresh on return)
+    _hasNavigatedAway = true;
+
+    final encodedInput = Uri.encodeComponent(input);
+
+    debugPrint(
+        '🔍 [GENERATE_STUDY] Navigating to study guide V2 for $inputType: $input');
+
+    // Navigate directly to study guide V2 - it will handle generation
+    context.go(
+        '/study-guide-v2?input=$encodedInput&type=$inputType&language=$languageCode&source=generate');
+
+    // Reset navigation flag after a short delay
+    Future.delayed(const Duration(milliseconds: 500), () {
+      if (mounted) {
+        setState(() {
+          _isNavigating = false;
+        });
+      }
+    });
   }
 
   void _showErrorDialog(

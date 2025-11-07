@@ -21,13 +21,14 @@ CREATE TABLE subscriptions (
 
   -- Subscription Details
   status TEXT NOT NULL CHECK (status IN (
-    'created',        -- Initial state after Razorpay subscription creation
-    'authenticated',  -- User authorized recurring payments
-    'active',         -- Currently active and billing
-    'paused',         -- Temporarily paused (payment failure or admin action)
-    'cancelled',      -- User cancelled (may still be active until period end)
-    'completed',      -- Reached total_count cycles
-    'expired'         -- Grace period ended after cancellation
+    'created',               -- Initial state after Razorpay subscription creation
+    'authenticated',         -- User authorized recurring payments
+    'active',                -- Currently active and billing
+    'pending_cancellation',  -- Scheduled to cancel at cycle end, still active with premium access
+    'paused',                -- Temporarily paused (payment failure or admin action)
+    'cancelled',             -- Cancelled and ended (no longer active)
+    'completed',             -- Reached total_count cycles
+    'expired'                -- Grace period ended after cancellation
   )),
   plan_type TEXT NOT NULL DEFAULT 'premium_monthly',
 
@@ -57,9 +58,10 @@ CREATE TABLE subscriptions (
 
 -- Partial unique index: Only one active subscription per user
 -- This allows multiple historical subscriptions but prevents duplicate active ones
+-- Includes 'pending_cancellation' to prevent new subscriptions while cancellation is scheduled
 CREATE UNIQUE INDEX unique_active_subscription_per_user
   ON subscriptions(user_id)
-  WHERE (status IN ('active', 'authenticated'));
+  WHERE (status IN ('active', 'authenticated', 'pending_cancellation'));
 
 -- Indexes for subscriptions table
 CREATE INDEX idx_subscriptions_user_id ON subscriptions(user_id);
@@ -238,7 +240,7 @@ BEGIN
     SELECT 1
     FROM subscriptions
     WHERE user_id = p_user_id
-      AND status IN ('active', 'authenticated')
+      AND status IN ('active', 'authenticated', 'pending_cancellation')
       AND (current_period_end IS NULL OR current_period_end > NOW())
   ) INTO v_has_active;
 
@@ -380,7 +382,9 @@ BEGIN
   WHERE id = NEW.user_id;
 
   -- Set subscription_started_at on first activation
-  IF NEW.status = 'active' AND OLD.status != 'active' THEN
+  -- For INSERT: set when status is 'active'
+  -- For UPDATE: set when status transitions to 'active'
+  IF NEW.status = 'active' AND (TG_OP = 'INSERT' OR OLD.status != 'active') THEN
     UPDATE user_profiles
     SET subscription_started_at = NOW()
     WHERE id = NEW.user_id AND subscription_started_at IS NULL;
