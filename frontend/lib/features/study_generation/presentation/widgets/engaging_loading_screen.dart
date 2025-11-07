@@ -3,8 +3,9 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/localization/app_localizations.dart';
 
-/// Engaging loading screen with multi-stage progress, rotating Bible verses,
+/// Engaging loading screen with multi-stage progress, rotating historical facts,
 /// and smooth animations to keep users engaged during 30+ second AI generation.
 class EngagingLoadingScreen extends StatefulWidget {
   /// Optional custom message to display
@@ -13,10 +14,15 @@ class EngagingLoadingScreen extends StatefulWidget {
   /// Optional topic/verse being generated (for context)
   final String? topic;
 
+  /// Language code for localized content (e.g., 'en', 'hi', 'ml')
+  /// If not provided, uses app's current locale
+  final String? language;
+
   const EngagingLoadingScreen({
     super.key,
     this.message,
     this.topic,
+    this.language,
   });
 
   @override
@@ -31,47 +37,52 @@ class _EngagingLoadingScreenState extends State<EngagingLoadingScreen>
   late Animation<double> _rotationAnimation;
 
   int _currentStage = 0;
-  int _currentVerseIndex = 0;
+  int _currentFactIndex = 0;
   Timer? _stageTimer;
-  Timer? _verseTimer;
+  Timer? _factTimer;
 
-  // Multi-stage progress messages
-  final List<String> _stages = [
-    'Preparing your study guide...',
-    'Analyzing scripture context...',
-    'Gathering insights...',
-    'Crafting reflections...',
-    'Finalizing your guide...',
-  ];
+  // Random instance for fact selection
+  final math.Random _random = math.Random();
 
-  // Rotating Bible verses to keep users engaged
-  final List<Map<String, String>> _verses = [
-    {
-      'text': 'Your word is a lamp to my feet and a light to my path.',
-      'reference': 'Psalm 119:105',
-    },
-    {
-      'text': 'All Scripture is God-breathed and is useful for teaching.',
-      'reference': '2 Timothy 3:16',
-    },
-    {
-      'text':
-          'Faith comes from hearing, and hearing through the word of Christ.',
-      'reference': 'Romans 10:17',
-    },
-    {
-      'text': 'The word of God is living and active, sharper than any sword.',
-      'reference': 'Hebrews 4:12',
-    },
-    {
-      'text': 'Be doers of the word, and not hearers only.',
-      'reference': 'James 1:22',
-    },
-    {
-      'text': 'Man shall not live by bread alone, but by every word from God.',
-      'reference': 'Matthew 4:4',
-    },
-  ];
+  // Get localized stages
+  List<String> _getStages(BuildContext context) {
+    // Use the specified language or fall back to app's current locale
+    if (widget.language != null) {
+      final locale = Locale(widget.language!);
+      final l10n = AppLocalizations(locale);
+      return [
+        l10n.loadingStagePreparing,
+        l10n.loadingStageAnalyzing,
+        l10n.loadingStageGathering,
+        l10n.loadingStageCrafting,
+        l10n.loadingStageFinalizing,
+      ];
+    }
+
+    // Fallback to context's current locale
+    final l10n = AppLocalizations.of(context)!;
+    return [
+      l10n.loadingStagePreparing,
+      l10n.loadingStageAnalyzing,
+      l10n.loadingStageGathering,
+      l10n.loadingStageCrafting,
+      l10n.loadingStageFinalizing,
+    ];
+  }
+
+  // Get all 60 localized historical facts
+  List<String> _getFacts(BuildContext context) {
+    // Use the specified language or fall back to app's current locale
+    if (widget.language != null) {
+      final locale = Locale(widget.language!);
+      final l10n = AppLocalizations(locale);
+      return l10n.allLoadingFacts;
+    }
+
+    // Fallback to context's current locale
+    final l10n = AppLocalizations.of(context)!;
+    return l10n.allLoadingFacts;
+  }
 
   @override
   void initState() {
@@ -97,20 +108,20 @@ class _EngagingLoadingScreenState extends State<EngagingLoadingScreen>
       CurvedAnimation(parent: _rotationController, curve: Curves.linear),
     );
 
-    // Stage progression timer (every 6 seconds)
+    // Stage progression timer (every 6 seconds, 5 stages)
     _stageTimer = Timer.periodic(const Duration(seconds: 6), (timer) {
       if (mounted) {
         setState(() {
-          _currentStage = (_currentStage + 1) % _stages.length;
+          _currentStage = (_currentStage + 1) % 5; // 5 stages
         });
       }
     });
 
-    // Verse rotation timer (every 5 seconds)
-    _verseTimer = Timer.periodic(const Duration(seconds: 5), (timer) {
+    // Historical fact rotation timer (every 5 seconds, random from 60 facts)
+    _factTimer = Timer.periodic(const Duration(seconds: 5), (timer) {
       if (mounted) {
         setState(() {
-          _currentVerseIndex = (_currentVerseIndex + 1) % _verses.length;
+          _currentFactIndex = _random.nextInt(60); // Random fact from 0-59
         });
       }
     });
@@ -121,7 +132,7 @@ class _EngagingLoadingScreenState extends State<EngagingLoadingScreen>
     _pulseController.dispose();
     _rotationController.dispose();
     _stageTimer?.cancel();
-    _verseTimer?.cancel();
+    _factTimer?.cancel();
     super.dispose();
   }
 
@@ -176,8 +187,8 @@ class _EngagingLoadingScreenState extends State<EngagingLoadingScreen>
 
                 const SizedBox(height: 48),
 
-                // Rotating Bible verse
-                _buildRotatingVerse(),
+                // Rotating historical fact
+                _buildRotatingFact(),
 
                 const SizedBox(height: 32),
 
@@ -311,13 +322,15 @@ class _EngagingLoadingScreenState extends State<EngagingLoadingScreen>
   }
 
   Widget _buildStageIndicator() {
+    final stages = _getStages(context);
+
     return Column(
       children: [
         // Progress dots
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: List.generate(
-            _stages.length,
+            5, // 5 stages
             (index) => Padding(
               padding: const EdgeInsets.symmetric(horizontal: 4),
               child: AnimatedContainer(
@@ -353,7 +366,7 @@ class _EngagingLoadingScreenState extends State<EngagingLoadingScreen>
             );
           },
           child: Text(
-            _stages[_currentStage],
+            stages[_currentStage],
             key: ValueKey<int>(_currentStage),
             style: GoogleFonts.inter(
               fontSize: 18,
@@ -367,8 +380,9 @@ class _EngagingLoadingScreenState extends State<EngagingLoadingScreen>
     );
   }
 
-  Widget _buildRotatingVerse() {
-    final currentVerse = _verses[_currentVerseIndex];
+  Widget _buildRotatingFact() {
+    final facts = _getFacts(context);
+    final currentFact = facts[_currentFactIndex];
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
 
     return AnimatedSwitcher(
@@ -380,12 +394,11 @@ class _EngagingLoadingScreenState extends State<EngagingLoadingScreen>
         );
       },
       child: Container(
-        key: ValueKey<int>(_currentVerseIndex),
+        key: ValueKey<int>(_currentFactIndex),
         padding: const EdgeInsets.all(24),
         decoration: BoxDecoration(
           color: isDarkMode
-              ? const Color(
-                  0xFF4A4A4A) // Much lighter gray for maximum contrast
+              ? const Color(0xFF4A4A4A) // Lighter gray for dark mode contrast
               : Colors.white,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
@@ -402,51 +415,27 @@ class _EngagingLoadingScreenState extends State<EngagingLoadingScreen>
         ),
         child: Column(
           children: [
-            // Decorative quote icon
+            // Historical fact icon
             Icon(
-              Icons.format_quote,
-              color: AppTheme.primaryColor.withOpacity(isDarkMode ? 0.6 : 0.3),
+              Icons.history_edu_rounded,
+              color: AppTheme.primaryColor.withOpacity(isDarkMode ? 0.7 : 0.4),
               size: 32,
-            ),
-
-            const SizedBox(height: 12),
-
-            // Verse text
-            Text(
-              currentVerse['text']!,
-              style: GoogleFonts.playfairDisplay(
-                fontSize: 17,
-                fontWeight: FontWeight.w400,
-                color: isDarkMode
-                    ? Colors.white
-                        .withOpacity(0.95) // Bright white for dark mode
-                    : Theme.of(context).colorScheme.onSurface,
-                height: 1.6,
-                fontStyle: FontStyle.italic,
-              ),
-              textAlign: TextAlign.center,
             ),
 
             const SizedBox(height: 16),
 
-            // Verse reference
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(
-                color:
-                    AppTheme.primaryColor.withOpacity(isDarkMode ? 0.3 : 0.08),
-                borderRadius: BorderRadius.circular(8),
+            // Historical fact text
+            Text(
+              currentFact,
+              style: GoogleFonts.inter(
+                fontSize: 16,
+                fontWeight: FontWeight.w400,
+                color: isDarkMode
+                    ? Colors.white.withOpacity(0.95)
+                    : Theme.of(context).colorScheme.onSurface,
+                height: 1.6,
               ),
-              child: Text(
-                currentVerse['reference']!,
-                style: GoogleFonts.inter(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: isDarkMode
-                      ? Colors.white // Bright white for dark mode
-                      : AppTheme.primaryColor,
-                ),
-              ),
+              textAlign: TextAlign.center,
             ),
           ],
         ),
@@ -455,6 +444,15 @@ class _EngagingLoadingScreenState extends State<EngagingLoadingScreen>
   }
 
   Widget _buildTimeEstimate() {
+    // Use the specified language or fall back to app's current locale
+    AppLocalizations l10n;
+    if (widget.language != null) {
+      final locale = Locale(widget.language!);
+      l10n = AppLocalizations(locale);
+    } else {
+      l10n = AppLocalizations.of(context)!;
+    }
+
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
@@ -465,7 +463,7 @@ class _EngagingLoadingScreenState extends State<EngagingLoadingScreen>
         ),
         const SizedBox(width: 8),
         Text(
-          'This usually takes 20-30 seconds',
+          l10n.loadingTimeEstimate,
           style: GoogleFonts.inter(
             fontSize: 13,
             color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),

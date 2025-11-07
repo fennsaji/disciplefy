@@ -111,6 +111,9 @@ class _StudyGuideScreenV2ContentState
   bool _isSaved = false;
   DateTime? _lastSaveAttempt;
 
+  // Language state for loading screen localization
+  String _selectedLanguage = 'en';
+
   // Personal notes state
   String? _loadedNotes;
   bool _notesLoaded = false;
@@ -185,6 +188,11 @@ class _StudyGuideScreenV2ContentState
         }
       }
     }
+
+    // Save selected language for loading screen localization
+    setState(() {
+      _selectedLanguage = languageCode;
+    });
 
     // Dispatch study guide generation event
     if (mounted) {
@@ -565,6 +573,7 @@ class _StudyGuideScreenV2ContentState
 
   Widget _buildLoadingScreen() => EngagingLoadingScreen(
         topic: widget.input,
+        language: _selectedLanguage,
       );
 
   Widget _buildErrorScreen() => Center(
