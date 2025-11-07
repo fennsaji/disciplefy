@@ -11,6 +11,7 @@ import { ServiceContainer } from '../_shared/core/services.ts'
 import { AppError } from '../_shared/utils/error-handler.ts'
 import { SubscriptionService } from '../_shared/services/subscription-service.ts'
 import type { Subscription } from '../_shared/types/subscription-types.ts'
+import type { PostgrestError } from 'https://esm.sh/@supabase/supabase-js@2'
 
 interface ResumeSubscriptionResponse {
   success: boolean
@@ -44,14 +45,14 @@ async function handleResumeSubscription(
     // 2. Create subscription service
     const subscriptionService = new SubscriptionService(services.supabaseServiceClient)
 
-    // 3. Get user's cancelled subscription that is still within billing period
+    // 3. Get user's pending_cancellation subscription (scheduled to cancel at period end)
     const { data: cancelledSubscription, error } = await services.supabaseServiceClient
       .from('subscriptions')
       .select('*')
       .eq('user_id', userId)
-      .eq('status', 'cancelled')
+      .eq('status', 'pending_cancellation')
       .eq('cancel_at_cycle_end', true)
-      .maybeSingle() as { data: Subscription | null, error: any }
+      .maybeSingle() as { data: Subscription | null, error: PostgrestError | null }
 
     if (error) {
       console.error('[ResumeSubscription] Database error:', error)
@@ -65,7 +66,7 @@ async function handleResumeSubscription(
     if (!cancelledSubscription) {
       throw new AppError(
         'SUBSCRIPTION_NOT_FOUND',
-        'No cancelled subscription found to resume',
+        'No pending cancellation found to resume',
         404
       )
     }
