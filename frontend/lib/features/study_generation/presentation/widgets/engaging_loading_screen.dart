@@ -44,23 +44,40 @@ class _EngagingLoadingScreenState extends State<EngagingLoadingScreen>
   // Random instance for fact selection
   final math.Random _random = math.Random();
 
-  // Get localized stages
-  List<String> _getStages(BuildContext context) {
-    // Use the specified language or fall back to app's current locale
-    if (widget.language != null) {
-      final locale = Locale(widget.language!);
-      final l10n = AppLocalizations(locale);
-      return [
-        l10n.loadingStagePreparing,
-        l10n.loadingStageAnalyzing,
-        l10n.loadingStageGathering,
-        l10n.loadingStageCrafting,
-        l10n.loadingStageFinalizing,
-      ];
+  /// Resolves a language string to a valid supported Locale.
+  ///
+  /// Validates against supported locales, matches by language code,
+  /// and falls back to context's current locale if not found.
+  ///
+  /// @returns A valid [Locale] that is guaranteed to be supported.
+  Locale _resolveLocale(BuildContext context, String? languageCode) {
+    if (languageCode == null || languageCode.isEmpty) {
+      // No language specified, use context's locale
+      return Localizations.localeOf(context);
     }
 
-    // Fallback to context's current locale
-    final l10n = AppLocalizations.of(context)!;
+    // Parse the language code (e.g., 'en', 'en-US', 'hi-IN')
+    // Extract base language code (first segment before '-')
+    final baseLang = languageCode.split('-').first.toLowerCase();
+
+    // Try to match against supported locales
+    for (final supportedLocale in AppLocalizations.supportedLocales) {
+      // Try exact match first (e.g., 'en' == 'en')
+      if (supportedLocale.languageCode.toLowerCase() == baseLang) {
+        return supportedLocale;
+      }
+    }
+
+    // No match found, fall back to context's current locale
+    return Localizations.localeOf(context);
+  }
+
+  // Get localized stages
+  List<String> _getStages(BuildContext context) {
+    // Resolve the locale safely
+    final locale = _resolveLocale(context, widget.language);
+    final l10n = AppLocalizations(locale);
+
     return [
       l10n.loadingStagePreparing,
       l10n.loadingStageAnalyzing,
@@ -72,15 +89,10 @@ class _EngagingLoadingScreenState extends State<EngagingLoadingScreen>
 
   // Get all 60 localized historical facts
   List<String> _getFacts(BuildContext context) {
-    // Use the specified language or fall back to app's current locale
-    if (widget.language != null) {
-      final locale = Locale(widget.language!);
-      final l10n = AppLocalizations(locale);
-      return l10n.allLoadingFacts;
-    }
+    // Resolve the locale safely
+    final locale = _resolveLocale(context, widget.language);
+    final l10n = AppLocalizations(locale);
 
-    // Fallback to context's current locale
-    final l10n = AppLocalizations.of(context)!;
     return l10n.allLoadingFacts;
   }
 
@@ -444,14 +456,9 @@ class _EngagingLoadingScreenState extends State<EngagingLoadingScreen>
   }
 
   Widget _buildTimeEstimate() {
-    // Use the specified language or fall back to app's current locale
-    AppLocalizations l10n;
-    if (widget.language != null) {
-      final locale = Locale(widget.language!);
-      l10n = AppLocalizations(locale);
-    } else {
-      l10n = AppLocalizations.of(context)!;
-    }
+    // Resolve the locale safely
+    final locale = _resolveLocale(context, widget.language);
+    final l10n = AppLocalizations(locale);
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,

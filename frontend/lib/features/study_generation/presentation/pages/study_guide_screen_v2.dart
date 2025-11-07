@@ -114,6 +114,32 @@ class _StudyGuideScreenV2ContentState
   // Language state for loading screen localization
   String _selectedLanguage = 'en';
 
+  // Supported languages for the app
+  static const Set<String> _supportedLanguages = {'en', 'hi', 'ml'};
+
+  /// Normalizes and validates a language code.
+  ///
+  /// Extracts the base language code (e.g., 'en' from 'en-US'),
+  /// validates it against supported languages, and falls back to 'en'.
+  ///
+  /// @returns A normalized two-letter language code ('en', 'hi', or 'ml').
+  String _normalizeLanguageCode(String? languageCode) {
+    if (languageCode == null || languageCode.isEmpty) {
+      return 'en';
+    }
+
+    // Extract base language code (split on '-' and take first segment)
+    final baseLang = languageCode.split('-').first.toLowerCase();
+
+    // Validate against supported languages
+    if (_supportedLanguages.contains(baseLang)) {
+      return baseLang;
+    }
+
+    // Fall back to default
+    return 'en';
+  }
+
   // Personal notes state
   String? _loadedNotes;
   bool _notesLoaded = false;
@@ -176,12 +202,12 @@ class _StudyGuideScreenV2ContentState
     }
 
     // Get user's language preference if not specified in URL
-    String languageCode = widget.language ?? 'en';
+    String rawLanguageCode = widget.language ?? 'en';
     if (widget.language == null) {
       try {
         final languageService = sl<LanguagePreferenceService>();
         final appLanguage = await languageService.getSelectedLanguage();
-        languageCode = appLanguage.code;
+        rawLanguageCode = appLanguage.code;
       } catch (e) {
         if (kDebugMode) {
           print('⚠️ [STUDY_GUIDE_V2] Failed to get language preference: $e');
@@ -189,22 +215,32 @@ class _StudyGuideScreenV2ContentState
       }
     }
 
+    // Normalize and validate language code
+    final normalizedLanguageCode = _normalizeLanguageCode(rawLanguageCode);
+
+    if (kDebugMode && rawLanguageCode != normalizedLanguageCode) {
+      print(
+          '🌐 [STUDY_GUIDE_V2] Language normalized: $rawLanguageCode → $normalizedLanguageCode');
+    }
+
+    // Guard against disposed widget after async operation
+    if (!mounted) return;
+
     // Save selected language for loading screen localization
     setState(() {
-      _selectedLanguage = languageCode;
+      _selectedLanguage = normalizedLanguageCode;
     });
 
     // Dispatch study guide generation event
-    if (mounted) {
-      context.read<StudyBloc>().add(GenerateStudyGuideRequested(
-            input: widget.input!,
-            inputType: widget.type!,
-            language: languageCode,
-          ));
-    }
+    context.read<StudyBloc>().add(GenerateStudyGuideRequested(
+          input: widget.input!,
+          inputType: widget.type!,
+          language: normalizedLanguageCode,
+        ));
   }
 
   void _showError(String message) {
+    if (!mounted) return;
     setState(() {
       _isLoading = false;
       _hasError = true;
@@ -214,6 +250,7 @@ class _StudyGuideScreenV2ContentState
 
   /// Handle successful study guide generation
   void _handleGenerationSuccess(StudyGuide studyGuide) {
+    if (!mounted) return;
     setState(() {
       _currentStudyGuide = studyGuide;
       _isLoading = false;
@@ -261,6 +298,7 @@ class _StudyGuideScreenV2ContentState
       errorMessage = failure.message;
     }
 
+    if (!mounted) return;
     setState(() {
       _isLoading = false;
       _hasError = true;
@@ -270,6 +308,7 @@ class _StudyGuideScreenV2ContentState
 
   /// Retry study guide generation
   Future<void> _retryGeneration() async {
+    if (!mounted) return;
     setState(() {
       _isLoading = true;
       _hasError = false;
@@ -448,6 +487,7 @@ class _StudyGuideScreenV2ContentState
         listener: (context, state) {
           // Handle study guide generation states
           if (state is StudyGenerationInProgress) {
+            if (!mounted) return;
             setState(() {
               _isLoading = true;
               _hasError = false;
@@ -460,6 +500,7 @@ class _StudyGuideScreenV2ContentState
           }
           // Handle save operations
           else if (state is StudyEnhancedSaveSuccess) {
+            if (!mounted) return;
             setState(() {
               _isSaved = state.guideSaved;
               if (state.notesSaved && state.savedNotes != null) {
@@ -481,6 +522,7 @@ class _StudyGuideScreenV2ContentState
           }
           // Handle personal notes operations
           else if (state is StudyPersonalNotesLoaded) {
+            if (!mounted) return;
             setState(() {
               _notesLoaded = true;
               _loadedNotes = state.notes;
@@ -499,6 +541,7 @@ class _StudyGuideScreenV2ContentState
                 icon: Icons.note_add,
               );
             }
+            if (!mounted) return;
             setState(() {
               _loadedNotes = state.savedNotes;
             });
@@ -1024,9 +1067,11 @@ class _StudyGuideScreenV2ContentState
 
     if (state.guideSaveSuccess && !state.notesSaveSuccess) {
       message = 'Study guide saved, but failed to save personal notes.';
-      setState(() {
-        _isSaved = true;
-      });
+      if (mounted) {
+        setState(() {
+          _isSaved = true;
+        });
+      }
       _setupAutoSave();
     } else {
       if (state.primaryFailure.code == 'UNAUTHORIZED') {
@@ -1037,9 +1082,11 @@ class _StudyGuideScreenV2ContentState
         message = 'This study guide is already saved!';
         backgroundColor = Theme.of(context).colorScheme.primary;
         icon = Icons.check_circle;
-        setState(() {
-          _isSaved = true;
-        });
+        if (mounted) {
+          setState(() {
+            _isSaved = true;
+          });
+        }
         _setupAutoSave();
       } else {
         message = state.primaryFailure.message;
