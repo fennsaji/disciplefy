@@ -322,19 +322,37 @@ class NotificationMessageHandlerWeb {
         break;
 
       case 'recommended_topic':
-        // Validate topic_id if provided
+        // Extract topic information from notification data
+        // Priority: topic_id (for tracking) + topic_title (for generation)
         final topicId = data['topic_id'];
+        final topicTitle = data['topic_title'];
+        final language = data['language'] ?? 'en';
 
-        if (topicId != null && topicId is String && topicId.isNotEmpty) {
-          _router.go('/study-topics?topic_id=$topicId');
+        if (topicTitle != null &&
+            topicTitle is String &&
+            topicTitle.isNotEmpty) {
+          // Navigate to study guide V2 with topic information
+          // This will dynamically generate the study guide content
+          final encodedTitle = Uri.encodeComponent(topicTitle);
+
+          // Include topic_id if available for tracking/future features
+          final topicIdParam =
+              (topicId != null && topicId is String && topicId.isNotEmpty)
+                  ? '&topic_id=$topicId'
+                  : '';
+
+          _router.go(
+              '/study-guide-v2?input=$encodedTitle&type=topic&language=$language&source=notification$topicIdParam');
           if (kDebugMode) {
-            print('[FCM Message] ✅ Navigating to topic: $topicId');
+            print(
+                '[FCM Message] ✅ Navigating to study guide for topic: $topicTitle (ID: ${topicId ?? 'none'})');
           }
         } else {
+          // Fallback to study topics page if no topic title provided
           _router.go('/study-topics');
           if (kDebugMode) {
             print(
-                '[FCM Message] ✅ Navigating to study topics (no specific topic)');
+                '[FCM Message] ⚠️  No topic title provided, navigating to study topics');
           }
         }
         break;

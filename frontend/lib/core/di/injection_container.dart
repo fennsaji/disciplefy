@@ -506,12 +506,16 @@ Future<void> initializeDependencies() async {
   sl.registerLazySingleton(() => CancelSubscription(sl()));
   sl.registerLazySingleton(() => ResumeSubscription(sl()));
   sl.registerLazySingleton(() => GetActiveSubscription(sl()));
+  sl.registerLazySingleton(() => GetSubscriptionHistory(sl()));
+  sl.registerLazySingleton(() => GetInvoices(sl()));
 
   sl.registerFactory(() => SubscriptionBloc(
         createSubscription: sl(),
         cancelSubscription: sl(),
         resumeSubscription: sl(),
         getActiveSubscription: sl(),
+        getSubscriptionHistory: sl(),
+        getSubscriptionInvoices: sl(),
       ));
 
   //! Follow Up Chat

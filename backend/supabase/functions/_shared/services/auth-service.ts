@@ -309,17 +309,23 @@ export class AuthService {
             .from('subscriptions')
             .select('status, current_period_end, cancel_at_cycle_end')
             .eq('user_id', userContext.userId)
-            .in('status', ['active', 'authenticated', 'cancelled'])
+            .in('status', ['active', 'authenticated', 'pending_cancellation', 'cancelled'])
             .order('created_at', { ascending: false })
             .maybeSingle()
 
           if (!subError && subscription) {
-            // Active or authenticated subscriptions always grant premium
-            if (subscription.status === 'active' || subscription.status === 'authenticated') {
+            // Active, authenticated, or pending_cancellation subscriptions grant premium
+            // pending_cancellation means user scheduled cancellation but still has access until period end
+            if (
+              subscription.status === 'active' ||
+              subscription.status === 'authenticated' ||
+              subscription.status === 'pending_cancellation'
+            ) {
               return 'premium'
             }
 
             // Cancelled subscription that's still active until period end
+            // This handles both 'cancelled' status and 'pending_cancellation' that extends to period end
             if (
               subscription.status === 'cancelled' &&
               subscription.cancel_at_cycle_end &&
