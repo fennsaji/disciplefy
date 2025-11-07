@@ -25,78 +25,110 @@ class AuthService {
     _monitorForProfileSync();
   }
 
-  /// Get current authenticated user
+  /// Gets the current authenticated user.
+  ///
+  /// @returns The authenticated [User] or `null` if not authenticated.
   User? get currentUser => _authService.currentUser;
 
-  /// Check if user is authenticated (either via Supabase or anonymous session)
+  /// Checks if user is authenticated (either via Supabase or anonymous session).
+  ///
+  /// @returns `true` if authenticated, `false` otherwise.
   bool get isAuthenticated => _authService.isAuthenticated;
 
-  /// Async method to check authentication status including anonymous sessions
-  /// Returns false only for legitimate unauthenticated state, not for errors
+  /// Asynchronously checks authentication status including anonymous sessions.
+  ///
+  /// @returns `false` only for legitimate unauthenticated state, not for errors.
   Future<bool> isAuthenticatedAsync() async =>
       _authService.isAuthenticatedAsync();
 
-  /// Check if the current token is valid and not expiring soon
-  /// Returns false if token expires within 5 minutes or session is null
+  /// Checks if the current authentication token is valid and not expiring soon.
+  ///
+  /// @returns `false` if token expires within 5 minutes or session is null.
   Future<bool> isTokenValid() async => _authService.isTokenValid();
 
-  /// SECURITY FIX: Ensure token is valid, refreshing if necessary
-  /// Returns true if token is valid or was successfully refreshed
-  /// This is the recommended method for checking auth before API calls
+  /// Ensures the authentication token is valid, refreshing if necessary.
+  ///
+  /// This is the recommended method for checking auth before API calls.
+  ///
+  /// @returns `true` if token is valid or was successfully refreshed.
   Future<bool> ensureTokenValid() async => _authService.ensureTokenValid();
 
-  /// SECURITY FIX: Refresh the current authentication token
-  /// Returns true if refresh succeeded, false otherwise
+  /// Refreshes the current authentication token.
+  ///
+  /// @returns `true` if refresh succeeded, `false` otherwise.
   Future<bool> refreshToken() async => _authService.refreshToken();
 
-  /// Listen to authentication state changes
+  /// Stream of authentication state changes for real-time auth monitoring.
+  ///
+  /// @returns A stream of [AuthState] updates.
   Stream<AuthState> get authStateChanges => _authService.authStateChanges;
 
-  /// Sign in with Google OAuth using custom backend callback
+  /// Signs in with Google OAuth using custom backend callback flow.
+  ///
+  /// @returns `true` if sign-in succeeded, `false` otherwise.
   Future<bool> signInWithGoogle() async => _authService.signInWithGoogle();
 
-  /// Process Google OAuth callback with authorization code
+  /// Processes Google OAuth callback with the provided authorization code.
+  ///
+  /// @returns `true` if callback processing and sign-in succeeded, `false` otherwise.
   Future<bool> processGoogleOAuthCallback(
           GoogleOAuthCallbackParams params) async =>
       _authService.processGoogleOAuthCallback(params);
 
-  /// Sign in with Apple OAuth (iOS/Web only)
+  /// Signs in with Apple OAuth (iOS/Web only).
+  ///
+  /// @returns `true` if sign-in succeeded, `false` otherwise.
   Future<bool> signInWithApple() async => _authService.signInWithApple();
 
-  /// Sign in anonymously using Supabase + custom backend session
+  /// Signs in anonymously using Supabase with custom backend session.
+  ///
+  /// @returns `true` if anonymous sign-in succeeded, `false` otherwise.
   Future<bool> signInAnonymously() async => _authService.signInAnonymously();
 
-  /// Sign out current user
+  /// Signs out the current user and clears all session data.
   Future<void> signOut() async => _authService.signOut();
 
-  /// Delete user account and all associated data
+  /// Deletes the user account and all associated data permanently.
   Future<void> deleteAccount() async => _authService.deleteAccount();
 
-  /// Creates a mock User object for anonymous sessions
+  /// Creates a mock User object for anonymous sessions.
+  ///
+  /// @returns A [User] instance with anonymous user data.
   User createAnonymousUser() => _authService.createAnonymousUser();
 
   // ===== STORAGE FACADE METHODS =====
 
-  /// Get stored user type
+  /// Retrieves the stored user type from secure storage.
+  ///
+  /// @returns The user type string or `null` if not stored.
   Future<String?> getUserType() async => await _storageService.getUserType();
 
-  /// Get stored user ID
+  /// Retrieves the stored user ID from secure storage.
+  ///
+  /// @returns The user ID string or `null` if not stored.
   Future<String?> getUserId() async => await _storageService.getUserId();
 
-  /// Check if onboarding is completed
+  /// Checks if the user has completed the onboarding flow.
+  ///
+  /// @returns `true` if onboarding is completed, `false` otherwise.
   Future<bool> isOnboardingCompleted() async =>
       await _storageService.isOnboardingCompleted();
 
-  /// Store authentication data
+  /// Stores authentication data in secure storage.
+  ///
+  /// [params] Authentication data parameters to store.
   Future<void> storeAuthData(AuthDataStorageParams params) async =>
       await _storageService.storeAuthData(params);
 
-  /// Clear stored auth data (secure storage only)
-  /// Use ClearUserDataUseCase for comprehensive data cleanup
+  /// Clears stored authentication data from secure storage only.
+  ///
+  /// Use [ClearUserDataUseCase] for comprehensive data cleanup instead.
   Future<void> clearSecureStorage() async =>
       await _storageService.clearSecureStorage();
 
-  /// Legacy method for backward compatibility
+  /// Legacy method for clearing all stored data.
+  ///
+  /// @deprecated Use [ClearUserDataUseCase] for comprehensive data cleanup instead.
   @Deprecated('Use ClearUserDataUseCase for comprehensive data cleanup instead')
   Future<void> clearAllData() async => await _storageService.clearAllData();
 
