@@ -231,8 +231,10 @@ max_frequency = "5s"
 [auth.sessions]
 # Force log out after 1 year (maximum session duration)
 timebox = "8760h"  # 365 days = 8760 hours
-# Very long inactivity timeout - users stay logged in even after long breaks
-inactivity_timeout = "720h"  # 30 days inactivity allowed
+# CRITICAL FIX: Extended inactivity timeout to nearly 1 year
+# Users can leave app unused for up to 11 months and still stay logged in
+# This ensures true "1-year session" experience
+inactivity_timeout = "8040h"  # 335 days (11 months) - slightly less than timebox for safety
 
 # This hook runs before a new user is created and allows developers to reject the request based on the incoming user object.
 # [auth.hook.before_user_created]
