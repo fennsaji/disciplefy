@@ -30,10 +30,6 @@ class TopicsGridView extends StatelessWidget {
   /// Controls visibility of "Load More" button when not loading.
   final bool hasMore;
 
-  /// Whether a study guide is currently being generated.
-  /// When true, all topic cards should be disabled.
-  final bool isGeneratingStudyGuide;
-
   const TopicsGridView({
     super.key,
     required this.topics,
@@ -41,7 +37,6 @@ class TopicsGridView extends StatelessWidget {
     this.isLoading = false,
     this.onLoadMore,
     this.hasMore = false,
-    this.isGeneratingStudyGuide = false,
   });
 
   @override
@@ -73,7 +68,6 @@ class TopicsGridView extends StatelessWidget {
                           child: RecommendedGuideTopicCard(
                             topic: rowTopics[i],
                             onTap: () => onTopicTap(rowTopics[i]),
-                            isDisabled: isGeneratingStudyGuide,
                           ),
                         ),
                         if (i < rowTopics.length - 1) SizedBox(width: spacing),

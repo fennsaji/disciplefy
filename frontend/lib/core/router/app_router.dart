@@ -6,6 +6,7 @@ import '../../features/onboarding/presentation/pages/language_selection_screen.d
 import '../../features/onboarding/presentation/pages/onboarding_language_page.dart';
 import '../../features/onboarding/presentation/pages/onboarding_purpose_page.dart';
 import '../../features/study_generation/presentation/pages/study_guide_screen.dart';
+import '../../features/study_generation/presentation/pages/study_guide_screen_v2.dart';
 import '../../features/study_generation/domain/entities/study_guide.dart';
 import '../../features/auth/presentation/pages/login_screen.dart';
 import '../../features/auth/presentation/pages/phone_number_input_screen.dart';
@@ -245,6 +246,32 @@ class AppRouter {
           return StudyGuideScreen(
             studyGuide: studyGuide,
             routeExtra: routeExtra,
+            navigationSource: navigationSource,
+          );
+        },
+      ),
+
+      // Study Guide V2 - Dynamic generation from query parameters
+      GoRoute(
+        path: AppRoutes.studyGuideV2,
+        name: 'study_guide_v2',
+        builder: (context, state) {
+          // Parse query parameters
+          final topicId = state.uri.queryParameters['topic_id'];
+          final input = state.uri.queryParameters['input'];
+          final type = state.uri.queryParameters['type'];
+          final language = state.uri.queryParameters['language'];
+          final sourceString = state.uri.queryParameters['source'];
+
+          // Parse navigation source
+          final navigationSource =
+              sl<StudyNavigator>().parseNavigationSource(sourceString);
+
+          return StudyGuideScreenV2(
+            topicId: topicId,
+            input: input,
+            type: type,
+            language: language,
             navigationSource: navigationSource,
           );
         },
