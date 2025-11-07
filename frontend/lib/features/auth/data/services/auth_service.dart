@@ -40,6 +40,15 @@ class AuthService {
   /// Returns false if token expires within 5 minutes or session is null
   Future<bool> isTokenValid() async => _authService.isTokenValid();
 
+  /// SECURITY FIX: Ensure token is valid, refreshing if necessary
+  /// Returns true if token is valid or was successfully refreshed
+  /// This is the recommended method for checking auth before API calls
+  Future<bool> ensureTokenValid() async => _authService.ensureTokenValid();
+
+  /// SECURITY FIX: Refresh the current authentication token
+  /// Returns true if refresh succeeded, false otherwise
+  Future<bool> refreshToken() async => _authService.refreshToken();
+
   /// Listen to authentication state changes
   Stream<AuthState> get authStateChanges => _authService.authStateChanges;
 

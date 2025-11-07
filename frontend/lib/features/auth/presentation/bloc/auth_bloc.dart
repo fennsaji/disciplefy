@@ -1041,7 +1041,8 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
     return false;
   }
 
-  /// Starts periodic token validation for authenticated non-anonymous users
+  /// Starts periodic token validation and refresh for authenticated non-anonymous users
+  /// CRITICAL FIX: Now proactively refreshes tokens before they expire
   void _startTokenValidationTimer() {
     _tokenValidationTimer?.cancel(); // Cancel existing timer if any
 
@@ -1054,20 +1055,25 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
           // Only validate tokens for non-anonymous users (they have Supabase sessions)
           if (!authState.isAnonymous) {
             if (kDebugMode) {
-              print('🔄 [TOKEN VALIDATION] Periodic validation check...');
+              print(
+                  '🔄 [TOKEN VALIDATION] Periodic validation and refresh check...');
             }
 
-            final isTokenValid = await _authService.isTokenValid();
+            // CRITICAL FIX: Use ensureTokenValid instead of just checking
+            // This will automatically refresh the token if it's expiring soon
+            final isValid = await _authService.ensureTokenValid();
 
-            if (!isTokenValid) {
+            if (!isValid) {
               if (kDebugMode) {
                 print(
-                    '🔄 [TOKEN VALIDATION] ⚠️ Token expired - triggering refresh failure');
+                    '🔄 [TOKEN VALIDATION] ❌ Token refresh failed - forcing logout');
               }
               add(const TokenRefreshFailed(
-                  reason: 'Token expired during periodic validation'));
+                  reason:
+                      'Token expired and refresh failed during periodic validation'));
             } else if (kDebugMode) {
-              print('🔄 [TOKEN VALIDATION] ✅ Token still valid');
+              print(
+                  '🔄 [TOKEN VALIDATION] ✅ Token valid (refreshed if needed)');
             }
           }
         }
@@ -1081,7 +1087,7 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
 
     if (kDebugMode) {
       print(
-          '🔄 [TOKEN VALIDATION] Automatic token validation started (10-minute intervals)');
+          '🔄 [TOKEN VALIDATION] Automatic token validation and refresh started (10-minute intervals)');
     }
   }
 
