@@ -265,7 +265,7 @@ jobs:
         if [ -d "supabase/migrations" ] && [ "$(ls -A supabase/migrations 2>/dev/null)" ]; then
           # Use DB_PASS environment variable for non-interactive authentication
           export DB_PASS="$SUPABASE_DB_PASSWORD"
-          supabase db push --db-url "postgresql://postgres.${PROJECT_REF}:${SUPABASE_DB_PASSWORD}@aws-0-us-east-2.pooler.supabase.com:6543/postgres"
+          supabase db push --include-all --db-url "postgresql://postgres.${PROJECT_REF}:${SUPABASE_DB_PASSWORD}@aws-0-us-east-2.pooler.supabase.com:6543/postgres"
           echo "✅ Database migrations deployed to ${{ env.DEPLOY_ENV }}"
         else
           echo "ℹ️ No migrations to deploy"
