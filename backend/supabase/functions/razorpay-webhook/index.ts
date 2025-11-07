@@ -9,17 +9,44 @@ import { createSimpleFunction } from '../_shared/core/function-factory.ts'
 import { ServiceContainer } from '../_shared/core/services.ts'
 import { AppError } from '../_shared/utils/error-handler.ts'
 import { createHmac } from 'node:crypto'
-import type { RazorpaySubscriptionWebhook, SubscriptionStatus } from '../_shared/types/subscription-types.ts'
+import type { RazorpaySubscriptionWebhook } from '../_shared/types/subscription-types.ts'
+
+/**
+ * Razorpay payment entity (for token purchases)
+ */
+interface RazorpayPaymentEntity {
+  readonly id: string
+  readonly order_id?: string | null
+  readonly amount: number
+  readonly currency: string
+  readonly status?: string
+  readonly method?: string
+  readonly captured?: boolean
+  readonly error_code?: string | null
+  readonly error_description?: string | null
+  readonly created_at?: number
+}
+
+/**
+ * Razorpay order entity (for token purchases)
+ */
+interface RazorpayOrderEntity {
+  readonly id: string
+  readonly amount?: number
+  readonly currency?: string
+  readonly status?: string
+  readonly notes?: Record<string, string>
+}
 
 /**
  * Razorpay Webhook Handler
- * 
+ *
  * Handles payment confirmation webhooks from Razorpay
  * and completes token purchase process
  */
 async function handleRazorpayWebhook(req: Request, services: ServiceContainer): Promise<Response> {
-  const { tokenService, analyticsLogger, supabaseServiceClient } = services
-  
+  const { analyticsLogger } = services
+
   if (req.method !== 'POST') {
     throw new AppError(
       'METHOD_NOT_ALLOWED',
@@ -27,7 +54,7 @@ async function handleRazorpayWebhook(req: Request, services: ServiceContainer): 
       405
     )
   }
-  
+
   // Get webhook signature
   const signature = req.headers.get('x-razorpay-signature')
   if (!signature) {
@@ -37,10 +64,10 @@ async function handleRazorpayWebhook(req: Request, services: ServiceContainer): 
       400
     )
   }
-  
+
   // Get request body
   const body = await req.text()
-  
+
   // Verify webhook signature
   const isValidSignature = verifyWebhookSignature(body, signature)
   if (!isValidSignature) {
@@ -51,17 +78,17 @@ async function handleRazorpayWebhook(req: Request, services: ServiceContainer): 
       401
     )
   }
-  
+
   console.log('[Webhook] Valid signature verified')
-  
+
   // Declare variables outside try block to make them accessible in catch block
   let event: string | undefined
-  let paymentEntity: any = undefined
-  let orderEntity: any = undefined
+  let paymentEntity: RazorpayPaymentEntity | undefined = undefined
+  let orderEntity: RazorpayOrderEntity | undefined = undefined
   
   try {
     // Parse webhook payload with error handling
-    let payload
+    let payload: unknown
     try {
       payload = JSON.parse(body)
     } catch (parseError) {
@@ -72,27 +99,48 @@ async function handleRazorpayWebhook(req: Request, services: ServiceContainer): 
         400
       )
     }
-    
+
     // Validate required payload structure
-    if (!payload.event) {
+    if (typeof payload !== 'object' || payload === null) {
+      throw new AppError(
+        'INVALID_PAYLOAD',
+        'Webhook payload must be an object',
+        400
+      )
+    }
+
+    const payloadObj = payload as Record<string, unknown>
+
+    if (!payloadObj.event || typeof payloadObj.event !== 'string') {
       throw new AppError(
         'INVALID_PAYLOAD',
         'Webhook payload missing required event field',
         400
       )
     }
-    
-    if (!payload.payload) {
+
+    if (!payloadObj.payload) {
       throw new AppError(
         'INVALID_PAYLOAD',
         'Webhook payload missing required payload field',
         400
       )
     }
-    
-    event = payload.event
-    paymentEntity = payload.payload?.payment?.entity
-    orderEntity = payload.payload?.order?.entity
+
+    event = payloadObj.event
+    const payloadData = payloadObj.payload as Record<string, unknown>
+
+    // Extract payment entity if present
+    const paymentData = payloadData?.payment as Record<string, unknown> | undefined
+    if (paymentData?.entity) {
+      paymentEntity = paymentData.entity as RazorpayPaymentEntity
+    }
+
+    // Extract order entity if present
+    const orderData = payloadData?.order as Record<string, unknown> | undefined
+    if (orderData?.entity) {
+      orderEntity = orderData.entity as RazorpayOrderEntity
+    }
     
     console.log(`[Webhook] Processing event: ${event}`)
 
@@ -104,19 +152,19 @@ async function handleRazorpayWebhook(req: Request, services: ServiceContainer): 
     }
     // Handle subscription events
     else if (event === 'subscription.authenticated') {
-      await handleSubscriptionAuthenticated(payload, services)
+      await handleSubscriptionAuthenticated(payload as RazorpaySubscriptionWebhook, services)
     } else if (event === 'subscription.activated') {
-      await handleSubscriptionActivated(payload, services)
+      await handleSubscriptionActivated(payload as RazorpaySubscriptionWebhook, services)
     } else if (event === 'subscription.charged') {
-      await handleSubscriptionCharged(payload, services)
+      await handleSubscriptionCharged(payload as RazorpaySubscriptionWebhook, services)
     } else if (event === 'subscription.cancelled') {
-      await handleSubscriptionCancelled(payload, services)
+      await handleSubscriptionCancelled(payload as RazorpaySubscriptionWebhook, services)
     } else if (event === 'subscription.paused') {
-      await handleSubscriptionPaused(payload, services)
+      await handleSubscriptionPaused(payload as RazorpaySubscriptionWebhook, services)
     } else if (event === 'subscription.resumed') {
-      await handleSubscriptionResumed(payload, services)
+      await handleSubscriptionResumed(payload as RazorpaySubscriptionWebhook, services)
     } else if (event === 'subscription.completed') {
-      await handleSubscriptionCompleted(payload, services)
+      await handleSubscriptionCompleted(payload as RazorpaySubscriptionWebhook, services)
     } else {
       console.log(`[Webhook] Ignoring event: ${event}`)
     }
@@ -191,8 +239,8 @@ function verifyWebhookSignature(body: string, signature: string): boolean {
  * Handle successful payment capture
  */
 async function handlePaymentCaptured(
-  payment: any,
-  order: any,
+  payment: RazorpayPaymentEntity | undefined,
+  order: RazorpayOrderEntity | undefined,
   services: ServiceContainer
 ): Promise<void> {
   const { tokenService, supabaseServiceClient, analyticsLogger } = services
@@ -338,8 +386,8 @@ async function handlePaymentCaptured(
  * Handle failed payment
  */
 async function handlePaymentFailed(
-  payment: any,
-  order: any,
+  payment: RazorpayPaymentEntity | undefined,
+  order: RazorpayOrderEntity | undefined,
   services: ServiceContainer
 ): Promise<void> {
   const { supabaseServiceClient, analyticsLogger } = services
@@ -375,7 +423,7 @@ async function handlePaymentFailed(
  * User has authorized recurring payments
  */
 async function handleSubscriptionAuthenticated(
-  payload: any,
+  payload: RazorpaySubscriptionWebhook,
   services: ServiceContainer
 ): Promise<void> {
   const { supabaseServiceClient, analyticsLogger } = services
@@ -418,7 +466,7 @@ async function handleSubscriptionAuthenticated(
  * Subscription is now active - grant premium access
  */
 async function handleSubscriptionActivated(
-  payload: any,
+  payload: RazorpaySubscriptionWebhook,
   services: ServiceContainer
 ): Promise<void> {
   const { supabaseServiceClient, analyticsLogger } = services
@@ -475,7 +523,7 @@ async function handleSubscriptionActivated(
  * Monthly payment successful - create invoice and extend period
  */
 async function handleSubscriptionCharged(
-  payload: any,
+  payload: RazorpaySubscriptionWebhook,
   services: ServiceContainer
 ): Promise<void> {
   const { supabaseServiceClient, analyticsLogger } = services
@@ -567,7 +615,7 @@ async function handleSubscriptionCharged(
  * - pending_cancellation → cancelled (period ended)
  */
 async function handleSubscriptionCancelled(
-  payload: any,
+  payload: RazorpaySubscriptionWebhook,
   services: ServiceContainer
 ): Promise<void> {
   const { supabaseServiceClient, analyticsLogger } = services
@@ -614,7 +662,7 @@ async function handleSubscriptionCancelled(
  * Subscription paused (payment failure) - restrict premium features
  */
 async function handleSubscriptionPaused(
-  payload: any,
+  payload: RazorpaySubscriptionWebhook,
   services: ServiceContainer
 ): Promise<void> {
   const { supabaseServiceClient, analyticsLogger } = services
@@ -656,7 +704,7 @@ async function handleSubscriptionPaused(
  * Paused subscription resumed - restore premium access
  */
 async function handleSubscriptionResumed(
-  payload: any,
+  payload: RazorpaySubscriptionWebhook,
   services: ServiceContainer
 ): Promise<void> {
   const { supabaseServiceClient, analyticsLogger } = services
@@ -700,7 +748,7 @@ async function handleSubscriptionResumed(
  * Subscription reached total_count - downgrade to standard
  */
 async function handleSubscriptionCompleted(
-  payload: any,
+  payload: RazorpaySubscriptionWebhook,
   services: ServiceContainer
 ): Promise<void> {
   const { supabaseServiceClient, analyticsLogger } = services

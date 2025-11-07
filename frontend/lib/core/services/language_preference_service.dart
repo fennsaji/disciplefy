@@ -161,12 +161,25 @@ class LanguagePreferenceService {
           print(
               '✅ [LANGUAGE_SERVICE] Language completion cached BEFORE invalidation');
 
+          // Mark language selection as completed after successful DB save
+          await _prefs.setBool(_hasCompletedLanguageSelectionKey, true);
+          print(
+              '✅ [LANGUAGE_SERVICE] Marked language selection completed after DB save');
+
           // Now invalidate other caches after successful DB update
           _authStateProvider.invalidateProfileCache();
           _cacheCoordinator.invalidateLanguageCaches();
           print(
               '📄 [LANGUAGE_SERVICE] Profile caches invalidated after language update');
+        } else {
+          print(
+              '⚠️ [LANGUAGE_SERVICE] DB update failed - NOT marking language selection as completed');
         }
+      } else {
+        // For anonymous users, mark completion immediately after local storage save
+        await _prefs.setBool(_hasCompletedLanguageSelectionKey, true);
+        print(
+            '✅ [LANGUAGE_SERVICE] Marked language selection completed for anonymous user');
       }
 
       // Notify listeners of the language change

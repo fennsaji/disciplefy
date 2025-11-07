@@ -8,6 +8,9 @@ import '../../domain/usecases/get_active_subscription.dart'
 import '../../domain/usecases/create_subscription.dart' as create_subscription;
 import '../../domain/usecases/cancel_subscription.dart' as cancel_subscription;
 import '../../domain/usecases/resume_subscription.dart' as resume_subscription;
+import '../../domain/usecases/get_subscription_history.dart'
+    as get_subscription_history;
+import '../../domain/usecases/get_invoices.dart' as get_invoices;
 import '../../../../core/error/failures.dart';
 import '../../../../core/usecases/usecase.dart';
 
@@ -27,6 +30,8 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
   final create_subscription.CreateSubscription _createSubscription;
   final cancel_subscription.CancelSubscription _cancelSubscription;
   final resume_subscription.ResumeSubscription _resumeSubscription;
+  final get_subscription_history.GetSubscriptionHistory _getSubscriptionHistory;
+  final get_invoices.GetInvoices _getSubscriptionInvoices;
 
   // Subscription cache with timestamp
   Subscription? _cachedSubscription;
@@ -42,10 +47,15 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
     required create_subscription.CreateSubscription createSubscription,
     required cancel_subscription.CancelSubscription cancelSubscription,
     required resume_subscription.ResumeSubscription resumeSubscription,
+    required get_subscription_history.GetSubscriptionHistory
+        getSubscriptionHistory,
+    required get_invoices.GetInvoices getSubscriptionInvoices,
   })  : _getActiveSubscription = getActiveSubscription,
         _createSubscription = createSubscription,
         _cancelSubscription = cancelSubscription,
         _resumeSubscription = resumeSubscription,
+        _getSubscriptionHistory = getSubscriptionHistory,
+        _getSubscriptionInvoices = getSubscriptionInvoices,
         super(const SubscriptionInitial()) {
     // Register event handlers
     on<GetActiveSubscription>(_onGetActiveSubscription);
@@ -128,7 +138,9 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
         // Automatically trigger a refresh after a short delay
         // to get the updated subscription status
         Future.delayed(const Duration(seconds: 2), () {
-          add(const RefreshSubscription());
+          if (!isClosed) {
+            add(const RefreshSubscription());
+          }
         });
       },
     );
@@ -165,7 +177,9 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
 
         // Refresh subscription status to get updated data
         Future.delayed(const Duration(seconds: 1), () {
-          add(const RefreshSubscription());
+          if (!isClosed) {
+            add(const RefreshSubscription());
+          }
         });
       },
     );
@@ -197,7 +211,9 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
 
         // Refresh subscription status to get updated data
         Future.delayed(const Duration(seconds: 1), () {
-          add(const RefreshSubscription());
+          if (!isClosed) {
+            add(const RefreshSubscription());
+          }
         });
       },
     );

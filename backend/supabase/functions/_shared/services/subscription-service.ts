@@ -92,11 +92,14 @@ export class SubscriptionService {
     // Check for existing active subscription
     await this.ensureNoActiveSubscription(options.userId)
 
+    // Capture Razorpay subscription in outer scope for cleanup on failure
+    let razorpaySubscription: RazorpaySubscriptionResponse | undefined
+
     try {
       // ✅ FIX: Don't pre-create customer for hosted checkout
       // The hosted checkout page will create the customer during payment authorization
       // We'll receive the customer_id via webhook when subscription is authenticated
-      const razorpaySubscription = await this.createRazorpaySubscription(options)
+      razorpaySubscription = await this.createRazorpaySubscription(options)
 
       // Store subscription in database
       const subscription = await this.storeSubscription(
@@ -122,6 +125,30 @@ export class SubscriptionService {
         shortUrl: razorpaySubscription.short_url
       }
     } catch (error) {
+      // If Razorpay subscription was created but subsequent operations failed,
+      // attempt to cancel it to prevent orphaned subscriptions
+      if (razorpaySubscription) {
+        try {
+          console.warn(
+            '[SubscriptionService] Attempting cleanup: cancelling orphaned Razorpay subscription',
+            razorpaySubscription.id
+          )
+          await this.cancelRazorpaySubscription(razorpaySubscription.id, false)
+          console.log(
+            '[SubscriptionService] Successfully cancelled orphaned subscription:',
+            razorpaySubscription.id
+          )
+        } catch (cleanupError) {
+          // Log cleanup failure but don't mask the original error
+          console.error(
+            '[SubscriptionService] Failed to cancel orphaned Razorpay subscription:',
+            razorpaySubscription.id,
+            cleanupError
+          )
+        }
+      }
+
+      // Re-throw original error
       if (error instanceof AppError) {
         throw error
       }
@@ -391,6 +418,9 @@ export class SubscriptionService {
   /**
    * Gets active subscription for a user
    *
+   * Note: Includes 'pending_cancellation' to prevent duplicate subscriptions.
+   * A user with pending_cancellation still has an active subscription until period end.
+   *
    * @param userId - User UUID
    * @returns Promise resolving to active subscription or null
    */
@@ -399,7 +429,7 @@ export class SubscriptionService {
       .from('subscriptions')
       .select('*')
       .eq('user_id', userId)
-      .in('status', ['active', 'authenticated'])
+      .in('status', ['active', 'authenticated', 'pending_cancellation'])
       .maybeSingle() as { data: Subscription | null, error: PostgrestError | null }
 
     if (error && error.code !== 'PGRST116') {

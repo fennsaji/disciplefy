@@ -171,11 +171,10 @@ export interface RazorpaySubscriptionWebhook {
 
 /**
  * Subscription creation request body
+ * Note: Empty type as no body is needed - user authenticated via JWT
+ * and plan ID comes from environment variable
  */
-export interface CreateSubscriptionRequest {
-  // No body needed - user authenticated via JWT
-  // Plan ID comes from environment variable
-}
+export type CreateSubscriptionRequest = Record<string, never>
 
 /**
  * Subscription creation response
