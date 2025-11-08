@@ -100,6 +100,9 @@ class _EngagingLoadingScreenState extends State<EngagingLoadingScreen>
   void initState() {
     super.initState();
 
+    // Initialize with random fact index so first fact is also random
+    _currentFactIndex = _random.nextInt(60);
+
     // Pulse animation for the main circle
     _pulseController = AnimationController(
       vsync: this,
