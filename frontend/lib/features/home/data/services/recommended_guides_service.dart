@@ -41,14 +41,17 @@ class RecommendedGuidesService {
   final Map<String, _CacheEntry<List<RecommendedGuideTopic>>>
       _filteredTopicsCache = {};
 
+  // Capture initialization Future to prevent race conditions
+  late final Future<void> _initFuture;
+
   RecommendedGuidesService({
     HttpService? httpService,
     RecommendedTopicsLocalDataSource? localDataSource,
   })  : _httpService = httpService ?? HttpServiceProvider.instance,
         _localDataSource =
             localDataSource ?? RecommendedTopicsLocalDataSource() {
-    // Initialize local datasource
-    _localDataSource.initialize();
+    // Initialize local datasource and capture Future
+    _initFuture = _localDataSource.initialize();
   }
 
   /// Fetches all recommended guide topics from the API with intelligent caching.
@@ -62,6 +65,9 @@ class RecommendedGuidesService {
     String? language,
     bool forceRefresh = false,
   }) async {
+    // Wait for local datasource initialization
+    await _initFuture;
+
     // Create language-specific cache key
     final cacheKey = 'all_topics_${language ?? 'en'}';
 
@@ -183,6 +189,9 @@ class RecommendedGuidesService {
     String? language,
     bool forceRefresh = false,
   }) async {
+    // Wait for local datasource initialization
+    await _initFuture;
+
     // Create cache key for filtered queries
     final cacheKey = _generateCacheKey(category, difficulty, limit, language);
 
@@ -336,6 +345,9 @@ class RecommendedGuidesService {
 
   /// Clears all cached data (useful for logout or manual refresh)
   Future<void> clearCache() async {
+    // Wait for local datasource initialization
+    await _initFuture;
+
     _allTopicsCache.clear();
     _filteredTopicsCache.clear();
     await _localDataSource.clearCache();
@@ -345,7 +357,10 @@ class RecommendedGuidesService {
   }
 
   /// Gets cache status for debugging
-  Map<String, dynamic> getCacheStatus() {
+  Future<Map<String, dynamic>> getCacheStatus() async {
+    // Wait for local datasource initialization
+    await _initFuture;
+
     return {
       'in_memory_all_topics_caches_count': _allTopicsCache.length,
       'in_memory_all_topics_cache_keys': _allTopicsCache.keys.toList(),
@@ -358,6 +373,9 @@ class RecommendedGuidesService {
   /// Disposes of the service resources.
   /// Note: HttpService is a shared singleton, so we don't dispose it here.
   Future<void> dispose() async {
+    // Wait for local datasource initialization
+    await _initFuture;
+
     // Clear caches on disposal
     await clearCache();
     // Dispose local datasource

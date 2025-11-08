@@ -50,7 +50,11 @@ class RouterGuard {
 
     // ANDROID FIX: Show loading screen while Supabase is restoring session
     // This prevents the flash of login screen during app startup on Android
-    if (!isAuthInitialized && cleanPath != AppRoutes.appLoading) {
+    if (!isAuthInitialized) {
+      // If already on loading screen, stay there until auth initializes
+      if (cleanPath == AppRoutes.appLoading) return null;
+
+      // Otherwise, redirect to loading screen
       Logger.info(
         'Auth not initialized - showing loading screen',
         tag: 'ROUTER',
