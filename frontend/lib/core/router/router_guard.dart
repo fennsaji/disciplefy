@@ -29,7 +29,11 @@ class RouterGuard {
   static bool _isRegisteredWithCoordinator = false;
 
   /// Main redirect logic for the app router
-  static Future<String?> handleRedirect(String currentPath) async {
+  /// ANDROID FIX: Added isAuthInitialized parameter to prevent login screen flash
+  static Future<String?> handleRedirect(
+    String currentPath, {
+    bool isAuthInitialized = true, // Default to true for backward compatibility
+  }) async {
     // Clean any hash fragments that might interfere with routing
     // This is a safeguard for OAuth callback URLs that might preserve fragments
     final cleanPath = currentPath.split('#').first;
@@ -40,8 +44,22 @@ class RouterGuard {
       context: {
         'original_path': currentPath,
         'clean_path': cleanPath,
+        'is_auth_initialized': isAuthInitialized,
       },
     );
+
+    // ANDROID FIX: Show loading screen while Supabase is restoring session
+    // This prevents the flash of login screen during app startup on Android
+    if (!isAuthInitialized && cleanPath != AppRoutes.appLoading) {
+      Logger.info(
+        'Auth not initialized - showing loading screen',
+        tag: 'ROUTER',
+        context: {
+          'attempted_path': cleanPath,
+        },
+      );
+      return AppRoutes.appLoading;
+    }
 
     final authState = _getAuthenticationState();
     final onboardingState = _getOnboardingState();

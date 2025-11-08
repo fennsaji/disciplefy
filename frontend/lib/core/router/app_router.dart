@@ -31,6 +31,7 @@ import '../../features/subscription/presentation/bloc/subscription_bloc.dart';
 import 'app_routes.dart';
 import 'router_guard.dart';
 import 'auth_notifier.dart';
+import 'app_loading_screen.dart'; // ANDROID FIX: Loading screen during session restoration
 
 class AppRouter {
   static final AuthNotifier _authNotifier = AuthNotifier();
@@ -38,9 +39,19 @@ class AppRouter {
   static final GoRouter router = GoRouter(
     initialLocation: '/', // Let the redirect logic handle the initial route
     refreshListenable: _authNotifier, // Listen to auth state changes
-    redirect: (context, state) async =>
-        await RouterGuard.handleRedirect(state.uri.path),
+    redirect: (context, state) async => await RouterGuard.handleRedirect(
+      state.uri.path,
+      isAuthInitialized:
+          _authNotifier.isInitialized, // ANDROID FIX: Pass initialization state
+    ),
     routes: [
+      // ANDROID FIX: Loading screen shown during session restoration
+      GoRoute(
+        path: AppRoutes.appLoading,
+        name: 'app_loading',
+        builder: (context, state) => const AppLoadingScreen(),
+      ),
+
       // Onboarding Flow (outside app shell)
       GoRoute(
         path: AppRoutes.onboarding,
