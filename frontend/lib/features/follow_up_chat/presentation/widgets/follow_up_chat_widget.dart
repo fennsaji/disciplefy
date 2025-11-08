@@ -157,76 +157,79 @@ class _FollowUpChatWidgetState extends State<FollowUpChatWidget>
   }
 
   Widget _buildHeader(ThemeData theme) {
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppConstants.DEFAULT_PADDING,
-        vertical: AppConstants.SMALL_PADDING,
+    return Material(
+      color: theme.colorScheme.surface,
+      borderRadius: const BorderRadius.vertical(
+        top: Radius.circular(AppConstants.LARGE_BORDER_RADIUS),
       ),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
+      child: InkWell(
+        onTap: widget.onToggleExpanded,
         borderRadius: const BorderRadius.vertical(
           top: Radius.circular(AppConstants.LARGE_BORDER_RADIUS),
         ),
-        border: Border(
-          bottom: BorderSide(
-            color: theme.colorScheme.outline.withOpacity(0.2),
+        child: Container(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppConstants.DEFAULT_PADDING,
+            vertical: AppConstants.SMALL_PADDING,
           ),
-        ),
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(AppConstants.EXTRA_SMALL_PADDING),
-            decoration: BoxDecoration(
-              color: theme.colorScheme.primary.withOpacity(0.1),
-              borderRadius:
-                  BorderRadius.circular(AppConstants.SMALL_BORDER_RADIUS),
-            ),
-            child: Icon(
-              Icons.chat_bubble_outline,
-              size: AppConstants.ICON_SIZE_16,
-              color: theme.colorScheme.primary,
-            ),
-          ),
-          const SizedBox(width: AppConstants.SMALL_PADDING),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  context.tr(TranslationKeys.followUpChatTitle),
-                  style: theme.textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.w600,
-                    color: theme.colorScheme.onSurface,
-                  ),
-                ),
-                Text(
-                  widget.studyGuideTitle,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onSurface.withOpacity(0.7),
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
-            ),
-          ),
-          IconButton(
-            onPressed: widget.onToggleExpanded,
-            icon: AnimatedRotation(
-              turns: widget.isExpanded ? 0.5 : 0,
-              duration: const Duration(
-                  milliseconds: AppConstants.DEFAULT_ANIMATION_DURATION_MS),
-              child: Icon(
-                Icons.expand_more,
-                color: theme.colorScheme.onSurface,
+          decoration: BoxDecoration(
+            border: Border(
+              bottom: BorderSide(
+                color: theme.colorScheme.outline.withOpacity(0.2),
               ),
             ),
-            tooltip: widget.isExpanded
-                ? context.tr(TranslationKeys.followUpChatCollapseTooltip)
-                : context.tr(TranslationKeys.followUpChatExpandTooltip),
           ),
-        ],
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(AppConstants.EXTRA_SMALL_PADDING),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.primary.withOpacity(0.1),
+                  borderRadius:
+                      BorderRadius.circular(AppConstants.SMALL_BORDER_RADIUS),
+                ),
+                child: Icon(
+                  Icons.chat_bubble_outline,
+                  size: AppConstants.ICON_SIZE_16,
+                  color: theme.colorScheme.primary,
+                ),
+              ),
+              const SizedBox(width: AppConstants.SMALL_PADDING),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      context.tr(TranslationKeys.followUpChatTitle),
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w600,
+                        color: theme.colorScheme.onSurface,
+                      ),
+                    ),
+                    Text(
+                      widget.studyGuideTitle,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurface.withOpacity(0.7),
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+              // Animated expand/collapse icon
+              AnimatedRotation(
+                turns: widget.isExpanded ? 0.5 : 0,
+                duration: const Duration(
+                    milliseconds: AppConstants.DEFAULT_ANIMATION_DURATION_MS),
+                child: Icon(
+                  Icons.expand_more,
+                  color: theme.colorScheme.onSurface,
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
