@@ -443,15 +443,17 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
             return;
           }
 
-          // Validate token expiration
-          final isTokenValid = await _authService.isTokenValid();
+          // Validate token expiration and attempt refresh if needed
+          // ANDROID FIX: Use ensureTokenValid() to attempt refresh instead of just checking
+          final isTokenValid = await _authService.ensureTokenValid();
           if (!isTokenValid) {
             if (kDebugMode) {
               print(
-                  '🔍 [SESSION VALIDATION] ❌ Token expired - triggering refresh failure');
+                  '🔍 [SESSION VALIDATION] ❌ Token expired and refresh failed - triggering logout');
             }
             add(const TokenRefreshFailed(
-                reason: 'Token expired during session validation'));
+                reason:
+                    'Token expired and refresh failed during session validation'));
             return;
           }
 

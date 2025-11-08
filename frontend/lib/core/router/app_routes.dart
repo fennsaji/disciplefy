@@ -1,5 +1,8 @@
 /// App route constants for consistent navigation
 class AppRoutes {
+  // ANDROID FIX: Loading screen during session restoration
+  static const String appLoading = '/loading';
+
   static const String onboarding = '/onboarding';
   static const String languageSelection = '/language-selection';
   // static const String onboardingLanguage = '/onboarding/language';
