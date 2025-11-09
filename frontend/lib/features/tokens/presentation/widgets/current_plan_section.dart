@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 
 import '../../domain/entities/token_status.dart';
 import '../../../../core/extensions/translation_extension.dart';
+import '../../../../core/i18n/translation_keys.dart';
 
 /// Widget that displays the current user plan information
 class CurrentPlanSection extends StatelessWidget {
@@ -79,7 +80,8 @@ class CurrentPlanSection extends StatelessWidget {
                   OutlinedButton.icon(
                     onPressed: onContinueSubscription,
                     icon: const Icon(Icons.restart_alt),
-                    label: const Text('Continue Subscription'),
+                    label: Text(
+                        context.tr(TranslationKeys.plansContinueSubscription)),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: Colors.green[700],
                       side: BorderSide(color: Colors.green[700]!),
@@ -90,7 +92,7 @@ class CurrentPlanSection extends StatelessWidget {
                   OutlinedButton.icon(
                     onPressed: onManageSubscription,
                     icon: const Icon(Icons.settings),
-                    label: const Text('Manage'),
+                    label: Text(context.tr(TranslationKeys.plansManage)),
                   )
                 else if (tokenStatus.userPlan != UserPlan.premium)
                   OutlinedButton(
@@ -128,7 +130,7 @@ class CurrentPlanSection extends StatelessWidget {
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        'Subscription cancelled. Premium access continues until the end of current billing cycle.',
+                        context.tr(TranslationKeys.plansCancelledNotice),
                         style: GoogleFonts.inter(
                           fontSize: 12,
                           color: Colors.orange[900],

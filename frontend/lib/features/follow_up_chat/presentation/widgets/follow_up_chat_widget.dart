@@ -165,7 +165,7 @@ class _FollowUpChatWidgetState extends State<FollowUpChatWidget>
       child: Semantics(
         button: true,
         label:
-            '${context.tr(TranslationKeys.followUpChatTitle)}. ${widget.isExpanded ? "Expanded" : "Collapsed"}. Double tap to ${widget.isExpanded ? "collapse" : "expand"}',
+            '${context.tr(TranslationKeys.followUpChatTitle)}. ${widget.isExpanded ? context.tr(TranslationKeys.followUpChatExpanded) : context.tr(TranslationKeys.followUpChatCollapsed)}. ${context.tr(TranslationKeys.followUpChatDoubleTapTo)} ${widget.isExpanded ? context.tr(TranslationKeys.followUpChatCollapse) : context.tr(TranslationKeys.followUpChatExpand)}',
         onTap: widget.onToggleExpanded,
         child: InkWell(
           onTap: widget.onToggleExpanded,

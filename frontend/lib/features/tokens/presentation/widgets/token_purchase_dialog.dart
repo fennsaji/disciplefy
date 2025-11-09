@@ -10,6 +10,8 @@ import '../../../../core/services/payment_service.dart';
 import '../../../../core/constants/payment_constants.dart';
 import '../bloc/token_bloc.dart';
 import '../bloc/token_state.dart';
+import '../../../../core/extensions/translation_extension.dart';
+import '../../../../core/i18n/translation_keys.dart';
 
 /// Token Purchase Dialog Widget
 ///
@@ -916,18 +918,16 @@ class _TokenPurchaseDialogState extends State<TokenPurchaseDialog>
 
     switch (widget.tokenStatus.userPlan) {
       case UserPlan.free:
-        message =
-            'Free users cannot purchase additional tokens. Upgrade to Standard plan to buy extra tokens or Premium for unlimited access.';
+        message = context.tr(TranslationKeys.tokenPurchaseRestrictedFree);
         actionText = 'Upgrade Plan';
         break;
       case UserPlan.premium:
-        message =
-            'Premium users have unlimited tokens! No need to purchase additional tokens.';
+        message = context.tr(TranslationKeys.tokenPurchaseRestrictedPremium);
         actionText = 'Got It';
         break;
       case UserPlan.standard:
       default:
-        message = 'Standard users can purchase additional tokens.';
+        message = context.tr(TranslationKeys.tokenPurchaseRestrictedStandard);
         actionText = 'Continue';
         break;
     }
