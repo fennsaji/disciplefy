@@ -452,4 +452,22 @@ class TranslationKeys {
   static const notificationsSettingsErrorTitle =
       'notifications.settings.error_title';
   static const notificationsSettingsRetry = 'notifications.settings.retry';
+
+  // Streak notification settings
+  static const notificationsSettingsStreakReminderTitle =
+      'notifications.settings.streak_reminder_title';
+  static const notificationsSettingsStreakReminderDescription =
+      'notifications.settings.streak_reminder_description';
+  static const notificationsSettingsStreakMilestoneTitle =
+      'notifications.settings.streak_milestone_title';
+  static const notificationsSettingsStreakMilestoneDescription =
+      'notifications.settings.streak_milestone_description';
+  static const notificationsSettingsStreakLostTitle =
+      'notifications.settings.streak_lost_title';
+  static const notificationsSettingsStreakLostDescription =
+      'notifications.settings.streak_lost_description';
+  static const notificationsSettingsSetReminderTime =
+      'notifications.settings.set_reminder_time';
+  static const notificationsSettingsReminderTimeLabel =
+      'notifications.settings.reminder_time_label';
 }
