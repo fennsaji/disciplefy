@@ -127,7 +127,12 @@ class DailyVerseCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Header with date - improved spacing
-              _buildHeader(context, state.formattedDate, state.isFromCache),
+              _buildHeader(
+                context,
+                state.formattedDate,
+                state.isFromCache,
+                streak: state.streak,
+              ),
 
               const SizedBox(height: 20),
 
@@ -337,7 +342,12 @@ class DailyVerseCard extends StatelessWidget {
     return _buildLoadingState(context, false);
   }
 
-  Widget _buildHeader(BuildContext context, String date, bool isFromCache) {
+  Widget _buildHeader(
+    BuildContext context,
+    String date,
+    bool isFromCache, {
+    dynamic streak,
+  }) {
     final theme = Theme.of(context);
 
     return Row(
@@ -368,6 +378,45 @@ class DailyVerseCard extends StatelessWidget {
                       size: 16,
                       color:
                           theme.colorScheme.onSecondary.withValues(alpha: 0.7),
+                    ),
+                  ],
+                  // Push streak to the right side
+                  const Spacer(),
+                  // Compact streak indicator
+                  if (streak != null && streak.currentStreak > 0) ...[
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color:
+                            theme.colorScheme.primary.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color:
+                              theme.colorScheme.primary.withValues(alpha: 0.3),
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.bolt,
+                            size: 14,
+                            color: theme.colorScheme.primary,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            '${streak.currentStreak}',
+                            style: theme.textTheme.labelSmall?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: theme.colorScheme.primary,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ],
                 ],

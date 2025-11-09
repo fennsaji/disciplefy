@@ -349,7 +349,7 @@ export async function logNotification(
   supabaseKey: string,
   log: {
     userId: string;
-    notificationType: 'daily_verse' | 'recommended_topic';
+    notificationType: 'daily_verse' | 'recommended_topic' | 'streak_reminder' | 'streak_milestone' | 'streak_lost';
     title: string;
     body: string;
     topicId?: string;
@@ -426,7 +426,7 @@ export async function getBatchNotificationStatus(
   supabaseUrl: string,
   supabaseKey: string,
   userIds: string[],
-  notificationType: 'daily_verse' | 'recommended_topic'
+  notificationType: 'daily_verse' | 'recommended_topic' | 'streak_reminder' | 'streak_milestone' | 'streak_lost'
 ): Promise<Set<string>> {
   const supabase = createClient(supabaseUrl, supabaseKey);
 
