@@ -1,8 +1,16 @@
+> **⚠️ FUTURE RESEARCH - NOT CURRENT ROADMAP**
+> This document describes subscription-based premium features that are **NOT part of the current V1.0-V2.3 roadmap**.
+> Current product uses **token-based pricing** (₹5-₹1000 for 50-10,000 tokens).
+> This research is archived for **future consideration** after V2.3 launch.
+> **DO NOT implement these features without explicit product approval.**
+
+---
+
 # Premium Features Research & Market Analysis 2025
 
 **Document Version:** 1.0
 **Date:** January 11, 2025
-**Status:** Research Complete - Ready for Implementation Planning
+**Status:** ⚠️ **FUTURE RESEARCH** - Not Current Roadmap
 **Authors:** Product Research Team
 
 ---
