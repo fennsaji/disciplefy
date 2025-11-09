@@ -7,6 +7,7 @@ import '../../../../core/error/failures.dart';
 import '../../../../core/services/http_service.dart';
 import '../../domain/entities/recommended_guide_topic.dart';
 import '../models/recommended_guide_topic_model.dart';
+import '../datasources/recommended_topics_local_datasource.dart';
 
 /// Cache entry for recommended topics
 class _CacheEntry<T> {
@@ -28,19 +29,30 @@ class RecommendedGuidesService {
   static const String _topicsEndpoint = '/functions/v1/topics-recommended';
 
   final HttpService _httpService;
+  final RecommendedTopicsLocalDataSource _localDataSource;
 
   // Caching configuration
   static const Duration _defaultCacheExpiry = Duration(hours: 24);
   static const Duration _filteredCacheExpiry = Duration(hours: 6);
 
-  // In-memory cache - now language-aware
+  // In-memory cache - now language-aware (for faster access during same session)
   final Map<String, _CacheEntry<List<RecommendedGuideTopic>>> _allTopicsCache =
       {};
   final Map<String, _CacheEntry<List<RecommendedGuideTopic>>>
       _filteredTopicsCache = {};
 
-  RecommendedGuidesService({HttpService? httpService})
-      : _httpService = httpService ?? HttpServiceProvider.instance;
+  // Capture initialization Future to prevent race conditions
+  late final Future<void> _initFuture;
+
+  RecommendedGuidesService({
+    HttpService? httpService,
+    RecommendedTopicsLocalDataSource? localDataSource,
+  })  : _httpService = httpService ?? HttpServiceProvider.instance,
+        _localDataSource =
+            localDataSource ?? RecommendedTopicsLocalDataSource() {
+    // Initialize local datasource and capture Future
+    _initFuture = _localDataSource.initialize();
+  }
 
   /// Fetches all recommended guide topics from the API with intelligent caching.
   ///
@@ -53,22 +65,42 @@ class RecommendedGuidesService {
     String? language,
     bool forceRefresh = false,
   }) async {
+    // Wait for local datasource initialization
+    await _initFuture;
+
     // Create language-specific cache key
     final cacheKey = 'all_topics_${language ?? 'en'}';
 
-    // Check cache first (unless force refresh is requested)
+    // Check in-memory cache first (unless force refresh is requested)
     if (!forceRefresh && _allTopicsCache.containsKey(cacheKey)) {
       final cacheEntry = _allTopicsCache[cacheKey]!;
       if (!cacheEntry.isExpired(_defaultCacheExpiry)) {
         if (kDebugMode) {
           final cacheAge = DateTime.now().difference(cacheEntry.timestamp);
           print(
-              '✅ [TOPICS] Returning cached topics for ${language ?? 'en'} (cached ${cacheAge.inMinutes} minutes ago)');
+              '✅ [TOPICS] Returning in-memory cached topics for ${language ?? 'en'} (cached ${cacheAge.inMinutes} minutes ago)');
         }
         return Right(cacheEntry.data);
       } else {
         // Remove expired cache entry
         _allTopicsCache.remove(cacheKey);
+      }
+    }
+
+    // Check persistent local cache (Hive) if not force refresh
+    if (!forceRefresh) {
+      final cachedTopics =
+          await _localDataSource.getCachedTopics(cacheKey, _defaultCacheExpiry);
+      if (cachedTopics != null && cachedTopics.isNotEmpty) {
+        // Convert models to entities
+        final topics = cachedTopics.map((model) => model.toEntity()).toList();
+        // Also populate in-memory cache for faster access
+        _allTopicsCache[cacheKey] = _CacheEntry(topics, DateTime.now());
+        if (kDebugMode) {
+          print(
+              '✅ [TOPICS] Returning persistent cached topics for ${language ?? 'en'} (${topics.length} topics)');
+        }
+        return Right(topics);
       }
     }
 
@@ -106,11 +138,19 @@ class RecommendedGuidesService {
         // Cache successful responses with language-specific key
         result.fold(
           (failure) => null, // Don't cache failures
-          (topics) {
+          (topics) async {
+            // Cache in-memory
             _allTopicsCache[cacheKey] = _CacheEntry(topics, DateTime.now());
+
+            // Cache persistently to Hive
+            final topicModels = topics
+                .map((topic) => RecommendedGuideTopicModel.fromEntity(topic))
+                .toList();
+            await _localDataSource.cacheTopics(cacheKey, topicModels);
+
             if (kDebugMode) {
               print(
-                  '💾 [TOPICS] Cached ${topics.length} topics for ${language ?? 'en'} for ${_defaultCacheExpiry.inHours} hours');
+                  '💾 [TOPICS] Cached ${topics.length} topics for ${language ?? 'en'} (in-memory + persistent) for ${_defaultCacheExpiry.inHours} hours');
             }
           },
         );
@@ -149,22 +189,42 @@ class RecommendedGuidesService {
     String? language,
     bool forceRefresh = false,
   }) async {
+    // Wait for local datasource initialization
+    await _initFuture;
+
     // Create cache key for filtered queries
     final cacheKey = _generateCacheKey(category, difficulty, limit, language);
 
-    // Check cache first (unless force refresh is requested)
+    // Check in-memory cache first (unless force refresh is requested)
     if (!forceRefresh && _filteredTopicsCache.containsKey(cacheKey)) {
       final cacheEntry = _filteredTopicsCache[cacheKey]!;
       if (!cacheEntry.isExpired(_filteredCacheExpiry)) {
         if (kDebugMode) {
           final cacheAge = DateTime.now().difference(cacheEntry.timestamp);
           print(
-              '✅ [TOPICS] Returning cached filtered topics (cached ${cacheAge.inMinutes} minutes ago)');
+              '✅ [TOPICS] Returning in-memory cached filtered topics (cached ${cacheAge.inMinutes} minutes ago)');
         }
         return Right(cacheEntry.data);
       } else {
         // Remove expired cache entry
         _filteredTopicsCache.remove(cacheKey);
+      }
+    }
+
+    // Check persistent local cache (Hive) if not force refresh
+    if (!forceRefresh) {
+      final cachedTopics = await _localDataSource.getCachedTopics(
+          cacheKey, _filteredCacheExpiry);
+      if (cachedTopics != null && cachedTopics.isNotEmpty) {
+        // Convert models to entities
+        final topics = cachedTopics.map((model) => model.toEntity()).toList();
+        // Also populate in-memory cache for faster access
+        _filteredTopicsCache[cacheKey] = _CacheEntry(topics, DateTime.now());
+        if (kDebugMode) {
+          print(
+              '✅ [TOPICS] Returning persistent cached filtered topics (${topics.length} topics)');
+        }
+        return Right(topics);
       }
     }
     try {
@@ -199,12 +259,20 @@ class RecommendedGuidesService {
         // Cache successful filtered responses
         result.fold(
           (failure) => null, // Don't cache failures
-          (topics) {
+          (topics) async {
+            // Cache in-memory
             _filteredTopicsCache[cacheKey] =
                 _CacheEntry(topics, DateTime.now());
+
+            // Cache persistently to Hive
+            final topicModels = topics
+                .map((topic) => RecommendedGuideTopicModel.fromEntity(topic))
+                .toList();
+            await _localDataSource.cacheTopics(cacheKey, topicModels);
+
             if (kDebugMode) {
               print(
-                  '💾 [TOPICS] Cached ${topics.length} filtered topics for ${_filteredCacheExpiry.inHours} hours');
+                  '💾 [TOPICS] Cached ${topics.length} filtered topics (in-memory + persistent) for ${_filteredCacheExpiry.inHours} hours');
             }
           },
         );
@@ -276,29 +344,42 @@ class RecommendedGuidesService {
   }
 
   /// Clears all cached data (useful for logout or manual refresh)
-  void clearCache() {
+  Future<void> clearCache() async {
+    // Wait for local datasource initialization
+    await _initFuture;
+
     _allTopicsCache.clear();
     _filteredTopicsCache.clear();
+    await _localDataSource.clearCache();
     if (kDebugMode) {
-      print('🗑️ [TOPICS] All caches cleared');
+      print('🗑️ [TOPICS] All caches cleared (in-memory + persistent)');
     }
   }
 
   /// Gets cache status for debugging
-  Map<String, dynamic> getCacheStatus() {
+  Future<Map<String, dynamic>> getCacheStatus() async {
+    // Wait for local datasource initialization
+    await _initFuture;
+
     return {
-      'all_topics_caches_count': _allTopicsCache.length,
-      'all_topics_cache_keys': _allTopicsCache.keys.toList(),
-      'filtered_caches_count': _filteredTopicsCache.length,
+      'in_memory_all_topics_caches_count': _allTopicsCache.length,
+      'in_memory_all_topics_cache_keys': _allTopicsCache.keys.toList(),
+      'in_memory_filtered_caches_count': _filteredTopicsCache.length,
       'cache_expiry_hours': _defaultCacheExpiry.inHours,
+      'persistent_cache_stats': _localDataSource.getCacheStats(),
     };
   }
 
   /// Disposes of the service resources.
   /// Note: HttpService is a shared singleton, so we don't dispose it here.
-  void dispose() {
+  Future<void> dispose() async {
+    // Wait for local datasource initialization
+    await _initFuture;
+
     // Clear caches on disposal
-    clearCache();
+    await clearCache();
+    // Dispose local datasource
+    await _localDataSource.dispose();
     // HttpService is managed by HttpServiceProvider as a singleton
     // Individual services should not dispose shared resources
   }
