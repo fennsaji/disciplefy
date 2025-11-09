@@ -87,3 +87,8 @@ class GetCacheStatsEvent extends DailyVerseEvent {
 class LanguagePreferenceChanged extends DailyVerseEvent {
   const LanguagePreferenceChanged();
 }
+
+/// Mark today's verse as viewed for streak tracking
+class MarkVerseAsViewed extends DailyVerseEvent {
+  const MarkVerseAsViewed();
+}
