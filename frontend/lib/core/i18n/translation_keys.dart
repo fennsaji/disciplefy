@@ -76,6 +76,11 @@ class TranslationKeys {
   static const followUpChatHoursAgo = 'follow_up_chat.hours_ago';
   static const followUpChatDaysAgo = 'follow_up_chat.days_ago';
   static const followUpChatMessageCopied = 'follow_up_chat.message_copied';
+  static const followUpChatExpanded = 'follow_up_chat.expanded';
+  static const followUpChatCollapsed = 'follow_up_chat.collapsed';
+  static const followUpChatDoubleTapTo = 'follow_up_chat.double_tap_to';
+  static const followUpChatCollapse = 'follow_up_chat.collapse';
+  static const followUpChatExpand = 'follow_up_chat.expand';
 
   // Home Screen
   static const homeWelcomeBack = 'home.welcome_back';
@@ -297,17 +302,30 @@ class TranslationKeys {
   static const tokenManagementTitle = 'tokens.management.title';
   static const tokenManagementViewHistory = 'tokens.management.view_history';
   static const tokenManagementRefresh = 'tokens.management.refresh';
+  static const tokenManagementRefreshStatus =
+      'tokens.management.refresh_status';
   static const tokenManagementFailedToLoad = 'tokens.management.failed_to_load';
+  static const tokenManagementLoadError = 'tokens.management.load_error';
   static const tokenManagementLoading = 'tokens.management.loading';
+  static const tokenManagementActions = 'tokens.management.actions';
   static const tokenManagementPurchaseSuccess =
       'tokens.management.purchase_success';
   static const tokenManagementPurchaseFailed =
-      'tokens.management.purchase_failed';
+      'tokens.management.payment_failed';
   static const tokenManagementConfirmationFailed =
       'tokens.management.confirmation_failed';
   static const tokenManagementPaymentError = 'tokens.management.payment_error';
+  static const tokenManagementOpenPaymentError =
+      'tokens.management.open_payment_error';
   static const tokenManagementUpgradeComingSoon =
       'tokens.management.upgrade_coming_soon';
+
+  // Token Management - Time Formatting
+  static const tokenManagementJustNow = 'tokens.management.just_now';
+  static const tokenManagementDayAgo = 'tokens.management.day_ago';
+  static const tokenManagementDaysAgo = 'tokens.management.days_ago';
+  static const tokenManagementHourAgo = 'tokens.management.hour_ago';
+  static const tokenManagementHoursAgo = 'tokens.management.hours_ago';
 
   // Token Balance
   static const tokenBalanceCurrentBalance = 'tokens.balance.current_balance';
@@ -332,18 +350,27 @@ class TranslationKeys {
   static const tokenPurchaseRestrictedFree = 'tokens.purchase.restricted_free';
   static const tokenPurchaseRestrictedPremium =
       'tokens.purchase.restricted_premium';
+  static const tokenPurchaseRestrictedStandard =
+      'tokens.purchase.restricted_standard';
+  static const tokenPurchaseInsufficientTokens =
+      'tokens.purchase.insufficient_tokens';
 
   // Plans
-  static const plansCurrentPlan = 'tokens.plans.current';
+  static const plansCurrentPlan = 'tokens.plans.current_plan';
   static const plansFree = 'tokens.plans.free';
   static const plansStandard = 'tokens.plans.standard';
   static const plansPremium = 'tokens.plans.premium';
-  static const plansFreeDesc = 'tokens.plans.free_desc';
-  static const plansStandardDesc = 'tokens.plans.standard_desc';
-  static const plansPremiumDesc = 'tokens.plans.premium_desc';
+  static const plansFreeDesc = 'tokens.plans.free_description';
+  static const plansStandardDesc = 'tokens.plans.standard_description';
+  static const plansPremiumDesc = 'tokens.plans.premium_description';
   static const plansUpgrade = 'tokens.plans.upgrade';
-  static const plansUpgradeStandard = 'tokens.plans.upgrade_standard';
-  static const plansUpgradePremium = 'tokens.plans.upgrade_premium';
+  static const plansUpgradePlan = 'tokens.plans.upgrade_plan';
+  static const plansUpgradeToStandard = 'tokens.plans.upgrade_to_standard';
+  static const plansUpgradeToPremium = 'tokens.plans.upgrade_to_premium';
+  static const plansGoPremium = 'tokens.plans.go_premium';
+  static const plansManage = 'tokens.plans.manage';
+  static const plansContinueSubscription = 'tokens.plans.continue_subscription';
+  static const plansCancelledNotice = 'tokens.plans.cancelled_notice';
   static const plansComparison = 'tokens.plans.comparison';
 
   // Purchase History
