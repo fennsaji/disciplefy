@@ -8,6 +8,62 @@
 
 This document provides comprehensive documentation of the current token purchase API implementation in the Disciplefy Bible Study app. The system allows Standard plan authenticated users to purchase additional tokens using Razorpay payment integration.
 
+---
+
+## 🚧 **IMPLEMENTATION STATUS** (as of January 11, 2025)
+
+> **CRITICAL**: This documentation describes the complete API design and flow, but **Razorpay integration is currently a PLACEHOLDER implementation**. Core logic, validation, and database structure are complete, but actual payment processing requires production Razorpay SDK integration.
+
+### Component Status Matrix
+
+| Component | Status | Notes |
+|-----------|--------|-------|
+| **Backend Edge Function** | 🏗️ PLACEHOLDER | Core logic complete, Razorpay SDK calls are mocked |
+| **Payment Processing Logic** | 🏗️ PLACEHOLDER | `processRazorpayPayment()` needs real Razorpay SDK integration |
+| **Webhook Endpoint** | ⏳ PLANNED | `/functions/v1/razorpay-webhook` endpoint defined but not implemented |
+| **Signature Verification** | ⏳ PLANNED | Security logic defined but not coded |
+| **Database Schema** | 🚀 PRODUCTION READY | `token_purchases` table deployed and tested |
+| **Frontend Purchase UI** | ⏳ PLANNED | TokenPurchaseDialog UI designed but Razorpay Flutter SDK not integrated |
+| **BLoC State Management** | ✅ FRAMEWORK COMPLETE | TokenBloc events/states defined, repository pattern ready |
+| **Error Handling** | 🚀 PRODUCTION READY | Comprehensive error codes (PM-*) implemented |
+| **Analytics Tracking** | ✅ FRAMEWORK COMPLETE | Event definitions ready, tracking logic in place |
+
+### Required for Production Deployment
+
+**High Priority (Blocking):**
+1. ✅ Obtain Razorpay API credentials (Key ID + Secret Key)
+2. ⏳ Integrate Razorpay Node.js SDK in backend Edge Function
+3. ⏳ Implement webhook signature verification (HMAC SHA256)
+4. ⏳ Integrate Razorpay Flutter SDK in frontend
+5. ⏳ Test end-to-end payment flow in Razorpay test mode
+6. ⏳ Conduct security audit of payment handling
+7. ⏳ Complete PCI DSS compliance checklist
+
+**Medium Priority:**
+- ⏳ Set up production webhook URL with proper SSL
+- ⏳ Configure Razorpay webhook retry logic
+- ⏳ Implement idempotency for purchase API
+- ⏳ Add payment failure recovery mechanisms
+
+**Low Priority (Post-Launch):**
+- ⏳ Add support for payment methods beyond UPI/cards (wallets, net banking)
+- ⏳ Implement partial refund capability
+- ⏳ Build admin dashboard for payment reconciliation
+
+### Development Timeline Estimate
+
+```
+Week 1-2: Razorpay SDK Integration + Core Payment Flow
+Week 3:   Webhook Implementation + Security Hardening
+Week 4:   Frontend Flutter SDK Integration
+Week 5:   End-to-End Testing + Bug Fixes
+Week 6:   Security Audit + Production Deployment
+```
+
+**Estimated Total**: 6 weeks of focused development
+
+---
+
 ## 🏗️ Architecture Overview
 
 ### System Components
