@@ -334,6 +334,17 @@ class AppTranslations {
         'recommended_topics_title': 'Recommended Topics',
         'recommended_topics_description':
             'Get personalized study topic suggestions at 8 AM',
+        'streak_reminder_title': 'Streak Reminder',
+        'streak_reminder_description':
+            'Get reminded to maintain your daily verse reading streak',
+        'streak_milestone_title': 'Milestone Achievements',
+        'streak_milestone_description':
+            'Celebrate when you reach streak milestones (7, 30, 100, 365 days)',
+        'streak_lost_title': 'Streak Reset Motivation',
+        'streak_lost_description':
+            'Receive encouragement to start a new streak after a break',
+        'set_reminder_time': 'Set Reminder Time',
+        'reminder_time_label': 'Reminder Time',
         'permission_title': 'Notification Permission',
         'permission_enabled': 'Enabled - You will receive notifications',
         'permission_disabled': 'Disabled - Enable to receive notifications',
@@ -802,6 +813,17 @@ class AppTranslations {
         'recommended_topics_title': 'अनुशंसित विषय',
         'recommended_topics_description':
             'सुबह 8 बजे व्यक्तिगत अध्ययन विषय सुझाव प्राप्त करें',
+        'streak_reminder_title': 'स्ट्रीक रिमाइंडर',
+        'streak_reminder_description':
+            'अपनी दैनिक पद पढ़ने की स्ट्रीक बनाए रखने के लिए अनुस्मारक प्राप्त करें',
+        'streak_milestone_title': 'माइलस्टोन उपलब्धियाँ',
+        'streak_milestone_description':
+            'स्ट्रीक माइलस्टोन (7, 30, 100, 365 दिन) तक पहुंचने पर जश्न मनाएं',
+        'streak_lost_title': 'स्ट्रीक रीसेट प्रेरणा',
+        'streak_lost_description':
+            'ब्रेक के बाद नई स्ट्रीक शुरू करने के लिए प्रोत्साहन प्राप्त करें',
+        'set_reminder_time': 'रिमाइंडर समय सेट करें',
+        'reminder_time_label': 'रिमाइंडर समय',
         'permission_title': 'नोटिफिकेशन अनुमति',
         'permission_enabled': 'सक्षम - आपको नोटिफिकेशन प्राप्त होंगे',
         'permission_disabled':
@@ -823,7 +845,7 @@ class AppTranslations {
         'loading': 'टोकन लोड हो रहे हैं...',
         'actions': 'एक्शन',
         'purchase_success': 'सफलतापूर्वक {count} टोकन खरीदे गए!',
-        'purchase_failed': 'भुगतान विफल: {message}',
+        'payment_failed': 'भुगतान विफल: {message}',
         'confirmation_failed': 'भुगतान पुष्टि विफल: {message}',
         'payment_error': 'भुगतान खोलने में त्रुटि: {error}',
         'open_payment_error': 'पेमेंट खोलने में गड़बड़ी: {error}',
@@ -1276,6 +1298,17 @@ class AppTranslations {
         'recommended_topics_title': 'ശിഫാരസ്സു ചെയ്യുന്ന വിഷയങ്ങൾ',
         'recommended_topics_description':
             'രാവിലെ എട്ട് മണിക്ക് വ്യക്തിഗത പഠന വിഷയ സൂചനകൾ സ്വീകരിക്കുക',
+        'streak_reminder_title': 'സ്ട്രീക് ഓർമ്മപ്പെടുത്തൽ',
+        'streak_reminder_description':
+            'നിങ്ങളുടെ ദൈനംദിന വചന വായനാ സ്ട്രീക് നിലനിർത്താൻ ഓർമ്മപ്പെടുത്തൽ നേടുക',
+        'streak_milestone_title': 'നാഴികക്കല്ല് നേട്ടങ്ങൾ',
+        'streak_milestone_description':
+            'സ്ട്രീക് നാഴികക്കല്ലുകൾ (7, 30, 100, 365 ദിവസങ്ങൾ) എത്തുമ്പോൾ ആഘോഷിക്കുക',
+        'streak_lost_title': 'സ്ട്രീക് റീസെറ്റ് പ്രചോദനം',
+        'streak_lost_description':
+            'ഇടവേളയ്ക്ക് ശേഷം പുതിയ സ്ട്രീക് ആരംഭിക്കാൻ പ്രോത്സാഹനം നേടുക',
+        'set_reminder_time': 'ഓർമ്മപ്പെടുത്തൽ സമയം സജ്ജമാക്കുക',
+        'reminder_time_label': 'ഓർമ്മപ്പെടുത്തൽ സമയം',
         'permission_title': 'അറിയിപ്പ് അനുമതി',
         'permission_enabled': 'പ്രവർ‍ത്തിപ്പിച്ചു - അറിയിപ്പുകൾ ലഭിക്കും',
         'permission_disabled':
@@ -1297,7 +1330,7 @@ class AppTranslations {
         'loading': 'ടോക്കൻ ലോഡ് ആവുന്നു...',
         'actions': 'ആക്‌ഷൻ',
         'purchase_success': '{count} ടോക്കണുകൾ വിജയകരമായി വാങ്ങി!',
-        'purchase_failed': 'പേയ്മെന്റ് പരാജയപ്പെട്ടു: {message}',
+        'payment_failed': 'പേയ്മെന്റ് പരാജയപ്പെട്ടു: {message}',
         'confirmation_failed': 'പേയ്മെന്റ് സ്ഥിരീകരണം പരാജയപ്പെട്ടു: {message}',
         'payment_error': 'പേയ്മെന്റ് തുറക്കുന്നതിൽ പിശക്: {error}',
         'open_payment_error': 'പേയ്‌മെന്റ് തുറക്കാൻ പ്രശ്നം: {error}',

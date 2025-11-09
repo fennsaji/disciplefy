@@ -180,6 +180,87 @@ class _NotificationSettingsView extends StatelessWidget {
             },
           ),
 
+          const SizedBox(height: 12),
+
+          // Streak Reminder Notification with Time Picker
+          NotificationPreferenceCard(
+            title: context
+                .tr(TranslationKeys.notificationsSettingsStreakReminderTitle),
+            description: context.tr(
+                TranslationKeys.notificationsSettingsStreakReminderDescription),
+            icon: Icons.bolt,
+            enabled: state.preferences.streakReminderEnabled,
+            onChanged: (value) {
+              context.read<NotificationBloc>().add(
+                    UpdateNotificationPreferences(
+                      streakReminderEnabled: value,
+                    ),
+                  );
+            },
+            // Time picker for reminder time
+            trailing: state.preferences.streakReminderEnabled
+                ? TextButton.icon(
+                    onPressed: () async {
+                      final TimeOfDay? picked = await showTimePicker(
+                        context: context,
+                        initialTime: state.preferences.streakReminderTime,
+                      );
+                      if (picked != null &&
+                          picked != state.preferences.streakReminderTime) {
+                        context.read<NotificationBloc>().add(
+                              UpdateNotificationPreferences(
+                                streakReminderTime: picked,
+                              ),
+                            );
+                      }
+                    },
+                    icon: const Icon(Icons.access_time, size: 18),
+                    label: Text(
+                      state.preferences.streakReminderTime.format(context),
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                  )
+                : null,
+          ),
+
+          const SizedBox(height: 12),
+
+          // Streak Milestone Notification
+          NotificationPreferenceCard(
+            title: context
+                .tr(TranslationKeys.notificationsSettingsStreakMilestoneTitle),
+            description: context.tr(TranslationKeys
+                .notificationsSettingsStreakMilestoneDescription),
+            icon: Icons.emoji_events,
+            enabled: state.preferences.streakMilestoneEnabled,
+            onChanged: (value) {
+              context.read<NotificationBloc>().add(
+                    UpdateNotificationPreferences(
+                      streakMilestoneEnabled: value,
+                    ),
+                  );
+            },
+          ),
+
+          const SizedBox(height: 12),
+
+          // Streak Lost Notification
+          NotificationPreferenceCard(
+            title: context
+                .tr(TranslationKeys.notificationsSettingsStreakLostTitle),
+            description: context
+                .tr(TranslationKeys.notificationsSettingsStreakLostDescription),
+            icon: Icons.refresh,
+            enabled: state.preferences.streakLostEnabled,
+            onChanged: (value) {
+              context.read<NotificationBloc>().add(
+                    UpdateNotificationPreferences(
+                      streakLostEnabled: value,
+                    ),
+                  );
+            },
+          ),
+
           const SizedBox(height: 32),
 
           // Info Section

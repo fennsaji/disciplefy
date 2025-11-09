@@ -73,6 +73,10 @@ class NotificationBloc extends Bloc<NotificationEvent, NotificationState> {
       update_usecases.UpdatePreferencesParams(
         dailyVerseEnabled: event.dailyVerseEnabled,
         recommendedTopicEnabled: event.recommendedTopicEnabled,
+        streakReminderEnabled: event.streakReminderEnabled,
+        streakMilestoneEnabled: event.streakMilestoneEnabled,
+        streakLostEnabled: event.streakLostEnabled,
+        streakReminderTime: event.streakReminderTime,
       ),
     );
 
