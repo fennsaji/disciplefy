@@ -89,6 +89,11 @@ class AppTranslations {
       'hours_ago': '{count}h ago',
       'days_ago': '{count}d ago',
       'message_copied': 'Message copied to clipboard',
+      'expanded': 'Expanded',
+      'collapsed': 'Collapsed',
+      'double_tap_to': 'Double tap to',
+      'collapse': 'collapse',
+      'expand': 'expand',
     },
     'home': {
       'welcome_back': 'Welcome back, {name}',
@@ -351,10 +356,16 @@ class AppTranslations {
         'load_error': 'Failed to Load Tokens',
         'loading': 'Loading token information...',
         'purchase_success': 'Successfully purchased {count} tokens!',
-        'purchase_failed': 'Payment failed: {message}',
+        'payment_failed': 'Payment failed: {message}',
         'confirmation_failed': 'Payment confirmation failed: {message}',
         'payment_error': 'Error opening payment: {error}',
+        'open_payment_error': 'Error opening payment: {error}',
         'upgrade_coming_soon': 'Plan upgrade coming soon!',
+        'just_now': 'Just now',
+        'day_ago': 'day ago',
+        'days_ago': 'days ago',
+        'hour_ago': 'hour ago',
+        'hours_ago': 'hours ago',
       },
       'balance': {
         'title': 'Token Balance',
@@ -383,8 +394,13 @@ class AppTranslations {
         'processing': 'Processing Payment...',
         'creating_order': 'Creating order...',
         'restricted': 'Token Purchase Restricted',
-        'restricted_free': 'Free plan users cannot purchase tokens',
-        'restricted_premium': 'Premium plan users have unlimited tokens',
+        'restricted_free':
+            'Free users cannot purchase additional tokens. Upgrade to Standard plan to buy extra tokens or Premium for unlimited access.',
+        'restricted_premium':
+            'Premium users have unlimited tokens! No need to purchase additional tokens.',
+        'restricted_standard': 'Standard users can purchase additional tokens.',
+        'insufficient_tokens':
+            'Insufficient tokens. Need {required} but only have {available}.',
       },
       'plans': {
         'current': 'Current Plan',
@@ -411,6 +427,10 @@ class AppTranslations {
         'upgrade_premium': 'Upgrade to Premium',
         'upgrade_to_premium': 'Upgrade to Premium',
         'go_premium': 'Go Premium',
+        'manage': 'Manage',
+        'continue_subscription': 'Continue Subscription',
+        'cancelled_notice':
+            'Subscription cancelled. Premium access continues until the end of current billing cycle.',
         'comparison': 'Compare Plans',
       },
       'history': {
@@ -543,6 +563,11 @@ class AppTranslations {
       'hours_ago': '{count} घंटे पहले',
       'days_ago': '{count} दिन पहले',
       'message_copied': 'संदेश क्लिपबोर्ड पर कॉपी किया गया',
+      'expanded': 'खुला',
+      'collapsed': 'बंद',
+      'double_tap_to': 'डबल टैप करें',
+      'collapse': 'बंद करने के लिए',
+      'expand': 'खोलने के लिए',
     },
     'home': {
       'welcome_back': 'वापस स्वागत है, {name}',
@@ -801,7 +826,13 @@ class AppTranslations {
         'purchase_failed': 'भुगतान विफल: {message}',
         'confirmation_failed': 'भुगतान पुष्टि विफल: {message}',
         'payment_error': 'भुगतान खोलने में त्रुटि: {error}',
+        'open_payment_error': 'पेमेंट खोलने में गड़बड़ी: {error}',
         'upgrade_coming_soon': 'योजना अपग्रेड जल्द आ रहा है!',
+        'just_now': 'अभी',
+        'day_ago': 'दिन पहले',
+        'days_ago': 'दिन पहले',
+        'hour_ago': 'घंटा पहले',
+        'hours_ago': 'घंटे पहले',
       },
       'balance': {
         'title': 'टोकन',
@@ -830,9 +861,13 @@ class AppTranslations {
         'processing': 'भुगतान प्रक्रिया में...',
         'creating_order': 'ऑर्डर बनाया जा रहा है...',
         'restricted': 'टोकन खरीद प्रतिबंधित',
-        'restricted_free': 'निःशुल्क योजना उपयोगकर्ता टोकन नहीं खरीद सकते',
+        'restricted_free':
+            'फ्री यूज़र्स अतिरिक्त टोकन नहीं खरीद सकते। स्टैंडर्ड प्लान में अपग्रेड करें या प्रीमियम लें असीमित एक्सेस के लिए।',
         'restricted_premium':
-            'प्रीमियम योजना उपयोगकर्ताओं के पास असीमित टोकन हैं',
+            'प्रीमियम यूज़र्स के पास असीमित टोकन हैं! अतिरिक्त टोकन खरीदने की जरूरत नहीं।',
+        'restricted_standard': 'स्टैंडर्ड यूज़र्स अतिरिक्त टोकन खरीद सकते हैं।',
+        'insufficient_tokens':
+            'अपर्याप्त टोकन। {required} चाहिए पर केवल {available} उपलब्ध हैं।',
       },
       'plans': {
         'current': 'करंट',
@@ -859,6 +894,10 @@ class AppTranslations {
         'upgrade_to_premium': 'प्रीमियम में अपग्रेड करें',
         'upgrade_standard': 'स्टैंडर्ड में अपग्रेड करें',
         'upgrade_premium': 'प्रीमियम में अपग्रेड करें',
+        'manage': 'प्रबंधित करें',
+        'continue_subscription': 'सब्सक्रिप्शन जारी रखें',
+        'cancelled_notice':
+            'सब्सक्रिप्शन रद्द कर दी गई। प्रीमियम एक्सेस वर्तमान बिलिंग साइकिल के अंत तक जारी रहेगा।',
         'comparison': 'प्लान की तुलना',
       },
       'history': {
@@ -991,6 +1030,11 @@ class AppTranslations {
       'hours_ago': '{count} മണിക്കൂർ മുമ്പ്',
       'days_ago': '{count} ദിവസം മുമ്പ്',
       'message_copied': 'സന്ദേശം ക്ലിപ്പ്ബോർഡിലേക്ക് പകർത്തി',
+      'expanded': 'തുറന്നു',
+      'collapsed': 'അടച്ചു',
+      'double_tap_to': 'ഡബിൾ ടാപ്പ് ചെയ്യൂ',
+      'collapse': 'അടയ്ക്കാൻ',
+      'expand': 'തുറക്കാൻ',
     },
     'home': {
       'welcome_back': 'സ്വാഗതം, {name}',
@@ -1256,7 +1300,13 @@ class AppTranslations {
         'purchase_failed': 'പേയ്മെന്റ് പരാജയപ്പെട്ടു: {message}',
         'confirmation_failed': 'പേയ്മെന്റ് സ്ഥിരീകരണം പരാജയപ്പെട്ടു: {message}',
         'payment_error': 'പേയ്മെന്റ് തുറക്കുന്നതിൽ പിശക്: {error}',
+        'open_payment_error': 'പേയ്‌മെന്റ് തുറക്കാൻ പ്രശ്നം: {error}',
         'upgrade_coming_soon': 'പ്ലാൻ അപ്ഗ്രേഡ് ഉടൻ വരുന്നു!',
+        'just_now': 'ഇപ്പോൾ',
+        'day_ago': 'ദിവസം മുമ്പ്',
+        'days_ago': 'ദിവസം മുമ്പ്',
+        'hour_ago': 'മണിക്കൂർ മുമ്പ്',
+        'hours_ago': 'മണിക്കൂർ മുമ്പ്',
       },
       'balance': {
         'title': 'ടോക്കൻ',
@@ -1286,9 +1336,13 @@ class AppTranslations {
         'creating_order': 'ഓർഡർ സൃഷ്ടിക്കുന്നു...',
         'restricted': 'ടോക്കൺ വാങ്ങൽ നിയന്ത്രിതം',
         'restricted_free':
-            'സൗജന്യ പ്ലാൻ ഉപയോക്താക്കൾക്ക് ടോക്കണുകൾ വാങ്ങാനാവില്ല',
+            'ഫ്രീ യൂസേഴ്‌സിന് അധിക ടോക്കണുകൾ വാങ്ങാൻ കഴിയില്ല। സ്റ്റാൻഡേർഡ് പ്ലാനിലേക്ക് അപ്ഗ്രേഡ് ചെയ്യുക അല്ലെങ്കിൽ പരിധിയില്ലാത്ത ആക്‌സസിനായി പ്രീമിയം എടുക്കുക.',
         'restricted_premium':
-            'പ്രീമിയം പ്ലാൻ ഉപയോക്താക്കൾക്ക് പരിധിയില്ലാത്ത ടോക്കണുകളുണ്ട്',
+            'പ്രീമിയം ഉപയോക്താക്കൾക്ക് പരിധിയില്ലാത്ത ടോക്കണുകളുണ്ട്! അധിക ടോക്കണുകൾ വാങ്ങേണ്ട ആവശ്യമില്ല.',
+        'restricted_standard':
+            'സ്റ്റാൻഡേർഡ് യൂസർമാർക്ക് അധിക ടോക്കണുകൾ വാങ്ങാം.',
+        'insufficient_tokens':
+            'അപര്യാപ്ത ടോക്കണുകൾ. {required} വേണം പക്ഷേ {available} മാത്രമേ ഉള്ളൂ.',
       },
       'plans': {
         'current': 'കറന്റ്',
@@ -1312,6 +1366,10 @@ class AppTranslations {
         'upgrade_to_premium': 'പ്രീമിയത്തിലേക്ക് അപ്ഗ്രേഡ് ചെയ്യൂ',
         'upgrade_standard': 'സ്റ്റാൻഡേർഡിലേക്ക് അപ്ഗ്രേഡ് ചെയ്യുക',
         'upgrade_premium': 'പ്രീമിയത്തിലേക്ക് അപ്ഗ്രേഡ് ചെയ്യുക',
+        'manage': 'മാനേജ് ചെയ്യൂ',
+        'continue_subscription': 'സബ്‌സ്‌ക്രിപ്‌ഷൻ തുടരൂ',
+        'cancelled_notice':
+            'സബ്‌സ്‌ക്രിപ്‌ഷൻ റദ്ദാക്കി. നിലവിലെ ബില്ലിംഗ് സൈക്കിളിന്റെ അവസാനം വരെ പ്രീമിയം ആക്‌സസ് തുടരും.',
         'comparison': 'പ്ലാന്റെ തുലനം',
       },
       'history': {

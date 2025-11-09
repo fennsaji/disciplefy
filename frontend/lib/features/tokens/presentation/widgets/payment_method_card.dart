@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../domain/entities/saved_payment_method.dart';
+import '../../../../core/extensions/translation_extension.dart';
+import '../../../../core/i18n/translation_keys.dart';
 
 class PaymentMethodCard extends StatelessWidget {
   final SavedPaymentMethod paymentMethod;
@@ -157,7 +159,7 @@ class PaymentMethodCard extends StatelessWidget {
               if (paymentMethod.lastUsedAt != null) ...[
                 const SizedBox(height: 8),
                 Text(
-                  'Last used: ${_formatLastUsed()}',
+                  'Last used: ${_formatLastUsed(context)}',
                   style: AppTextStyles.captionSmall.copyWith(
                     color: AppColors.textTertiary,
                   ),
@@ -237,7 +239,7 @@ class PaymentMethodCard extends StatelessWidget {
     }
   }
 
-  String _formatLastUsed() {
+  String _formatLastUsed(BuildContext context) {
     if (paymentMethod.lastUsedAt == null) return '';
 
     final now = DateTime.now();
@@ -247,11 +249,11 @@ class PaymentMethodCard extends StatelessWidget {
     if (difference.inDays > 30) {
       return '${lastUsed.day}/${lastUsed.month}/${lastUsed.year}';
     } else if (difference.inDays > 0) {
-      return '${difference.inDays} ${difference.inDays == 1 ? 'day' : 'days'} ago';
+      return '${difference.inDays} ${difference.inDays == 1 ? context.tr(TranslationKeys.tokenManagementDayAgo) : context.tr(TranslationKeys.tokenManagementDaysAgo)}';
     } else if (difference.inHours > 0) {
-      return '${difference.inHours} ${difference.inHours == 1 ? 'hour' : 'hours'} ago';
+      return '${difference.inHours} ${difference.inHours == 1 ? context.tr(TranslationKeys.tokenManagementHourAgo) : context.tr(TranslationKeys.tokenManagementHoursAgo)}';
     } else {
-      return 'Just now';
+      return context.tr(TranslationKeys.tokenManagementJustNow);
     }
   }
 }
