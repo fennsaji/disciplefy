@@ -4,9 +4,9 @@
 // Domain layer contract for notification operations
 
 import 'package:dartz/dartz.dart';
-import 'package:flutter/material.dart';
 import '../../../../core/error/failures.dart';
 import '../entities/notification_preferences.dart';
+import '../entities/time_of_day_vo.dart';
 
 abstract class NotificationRepository {
   /// Get user notification preferences
@@ -19,7 +19,7 @@ abstract class NotificationRepository {
     bool? streakReminderEnabled,
     bool? streakMilestoneEnabled,
     bool? streakLostEnabled,
-    TimeOfDay? streakReminderTime,
+    TimeOfDayVO? streakReminderTime,
   });
 
   /// Check if notifications are enabled on device

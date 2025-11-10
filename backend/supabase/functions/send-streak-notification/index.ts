@@ -116,11 +116,15 @@ async function handleStreakNotification(
   req: Request,
   services: ServiceContainer
 ): Promise<Response> {
-  // Verify user authentication
-  const authHeader = req.headers.get('Authorization');
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    throw new AppError('UNAUTHORIZED', 'Authentication required', 401);
+  // SECURITY: Verify and validate JWT token, extract authenticated user
+  const userContext = await services.authService.getUserContext(req);
+
+  // SECURITY: Ensure user is authenticated (not anonymous)
+  if (userContext.type === 'anonymous' || !userContext.userId) {
+    throw new AppError('FORBIDDEN', 'Streak notifications require authentication', 403);
   }
+
+  const authenticatedUserId = userContext.userId;
 
   // Parse request body
   let requestBody: RequestBody;
@@ -141,17 +145,18 @@ async function handleStreakNotification(
     throw new AppError('INVALID_INPUT', 'notificationType must be either "milestone" or "streak_lost"', 400);
   }
 
+  // SECURITY: Verify that the authenticated user matches the requested userId
+  // This prevents users from triggering notifications for other users
+  if (authenticatedUserId !== userId) {
+    console.error(`[SECURITY] Authorization failed: authenticated user ${authenticatedUserId} attempted to trigger notification for user ${userId}`);
+    throw new AppError('FORBIDDEN', 'You can only trigger notifications for your own account', 403);
+  }
+
   console.log(`Processing ${notificationType} notification for user ${userId} (streak: ${streakCount})`);
 
   const supabase = services.supabaseServiceClient;
   const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
   const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-
-  // Verify user exists and is authenticated
-  const { data: authUser, error: authError } = await supabase.auth.admin.getUserById(userId);
-  if (authError || !authUser || authUser.user.is_anonymous) {
-    throw new AppError('FORBIDDEN', 'User not found or is anonymous', 403);
-  }
 
   // Get user's notification preferences
   const { data: preferences, error: prefsError } = await supabase

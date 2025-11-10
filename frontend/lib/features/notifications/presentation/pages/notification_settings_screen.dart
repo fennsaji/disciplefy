@@ -8,6 +8,7 @@ import '../../../../core/di/injection_container.dart';
 import '../bloc/notification_bloc.dart';
 import '../bloc/notification_event.dart';
 import '../bloc/notification_state.dart';
+import '../utils/time_of_day_extensions.dart';
 import '../widgets/notification_preference_card.dart';
 import '../../../../core/extensions/translation_extension.dart';
 import '../../../../core/i18n/translation_keys.dart';
@@ -201,12 +202,15 @@ class _NotificationSettingsView extends StatelessWidget {
             trailing: state.preferences.streakReminderEnabled
                 ? TextButton.icon(
                     onPressed: () async {
+                      // Convert domain TimeOfDayVO to Flutter TimeOfDay for TimePicker
+                      final initialTime = state.preferences.streakReminderTime
+                          .toFlutterTimeOfDay();
+
                       final TimeOfDay? picked = await showTimePicker(
                         context: context,
-                        initialTime: state.preferences.streakReminderTime,
+                        initialTime: initialTime,
                       );
-                      if (picked != null &&
-                          picked != state.preferences.streakReminderTime) {
+                      if (picked != null && picked != initialTime) {
                         context.read<NotificationBloc>().add(
                               UpdateNotificationPreferences(
                                 streakReminderTime: picked,
@@ -216,7 +220,10 @@ class _NotificationSettingsView extends StatelessWidget {
                     },
                     icon: const Icon(Icons.access_time, size: 18),
                     label: Text(
-                      state.preferences.streakReminderTime.format(context),
+                      // Convert domain TimeOfDayVO to Flutter TimeOfDay for display
+                      state.preferences.streakReminderTime
+                          .toFlutterTimeOfDay()
+                          .format(context),
                       style: Theme.of(context).textTheme.bodySmall,
                     ),
                   )

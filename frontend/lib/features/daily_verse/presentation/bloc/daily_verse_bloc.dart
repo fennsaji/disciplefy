@@ -387,8 +387,32 @@ class DailyVerseBloc extends Bloc<DailyVerseEvent, DailyVerseState> {
     required String notificationType,
     required int streakCount,
   }) async {
-    // This will be implemented using Supabase client to call Edge Function
-    // For now, silently fail as notification infrastructure is optional
+    try {
+      // Get current language from state
+      String languageCode = 'en'; // Default to English
+      final currentState = state;
+
+      if (currentState is DailyVerseLoaded) {
+        languageCode = currentState.currentLanguage.code;
+      } else if (currentState is DailyVerseOffline) {
+        languageCode = currentState.currentLanguage.code;
+      }
+
+      // Call repository to send notification via Edge Function
+      final success = await streakRepository.sendStreakNotification(
+        notificationType: notificationType,
+        streakCount: streakCount,
+        language: languageCode,
+      );
+
+      if (success) {
+        print(
+            'Streak notification sent: $notificationType for $streakCount days');
+      }
+    } catch (e) {
+      // Silently fail - notifications are optional
+      print('Failed to send streak notification: $e');
+    }
   }
 
   /// Loads cached verse and emits offline state

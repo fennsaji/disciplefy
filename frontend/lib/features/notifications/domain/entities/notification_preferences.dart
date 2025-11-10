@@ -4,7 +4,7 @@
 // Domain entity representing user notification preferences
 
 import 'package:equatable/equatable.dart';
-import 'package:flutter/material.dart';
+import 'time_of_day_vo.dart';
 
 class NotificationPreferences extends Equatable {
   final String userId;
@@ -15,7 +15,7 @@ class NotificationPreferences extends Equatable {
   final bool streakReminderEnabled;
   final bool streakMilestoneEnabled;
   final bool streakLostEnabled;
-  final TimeOfDay streakReminderTime;
+  final TimeOfDayVO streakReminderTime;
 
   final DateTime createdAt;
   final DateTime updatedAt;
@@ -39,7 +39,7 @@ class NotificationPreferences extends Equatable {
     bool? streakReminderEnabled,
     bool? streakMilestoneEnabled,
     bool? streakLostEnabled,
-    TimeOfDay? streakReminderTime,
+    TimeOfDayVO? streakReminderTime,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {

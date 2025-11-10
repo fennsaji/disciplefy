@@ -4,10 +4,10 @@
 
 import 'package:dartz/dartz.dart';
 import 'package:equatable/equatable.dart';
-import 'package:flutter/material.dart';
 import '../../../../core/error/failures.dart';
 import '../../../../core/usecases/usecase.dart';
 import '../entities/notification_preferences.dart';
+import '../entities/time_of_day_vo.dart';
 import '../repositories/notification_repository.dart';
 
 class UpdateNotificationPreferences
@@ -36,7 +36,7 @@ class UpdatePreferencesParams extends Equatable {
   final bool? streakReminderEnabled;
   final bool? streakMilestoneEnabled;
   final bool? streakLostEnabled;
-  final TimeOfDay? streakReminderTime;
+  final TimeOfDayVO? streakReminderTime;
 
   const UpdatePreferencesParams({
     this.dailyVerseEnabled,
