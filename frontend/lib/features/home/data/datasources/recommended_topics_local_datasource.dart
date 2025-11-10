@@ -105,6 +105,10 @@ class RecommendedTopicsLocalDataSource {
   }
 
   /// Saves topics to cache with current timestamp
+  ///
+  /// **Note**: Empty topic lists are valid and cacheable. An empty list represents
+  /// a valid API response indicating "no topics available" for the given criteria,
+  /// and should be cached to avoid redundant API calls.
   Future<void> cacheTopics(
     String cacheKey,
     List<RecommendedGuideTopicModel> topics,
@@ -113,9 +117,7 @@ class RecommendedTopicsLocalDataSource {
     if (cacheKey.trim().isEmpty) {
       throw ArgumentError('cacheKey cannot be empty');
     }
-    if (topics.isEmpty) {
-      throw ArgumentError('topics list must not be empty');
-    }
+    // Note: Empty lists are allowed - they represent valid "no topics" responses
 
     try {
       final box = _cacheBox;

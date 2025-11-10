@@ -50,6 +50,9 @@ class _EngagingLoadingScreenState extends State<EngagingLoadingScreen>
   // Actual facts count (updated once we have context)
   int _factsCount = _defaultFactsCount;
 
+  // Track whether initial random fact has been set
+  bool _isFactInitialized = false;
+
   /// Resolves a language string to a valid supported Locale.
   ///
   /// Validates against supported locales, matches by language code,
@@ -143,9 +146,16 @@ class _EngagingLoadingScreenState extends State<EngagingLoadingScreen>
     _factTimer = Timer.periodic(const Duration(seconds: 5), (timer) {
       if (mounted) {
         setState(() {
-          // Use actual facts count to ensure we stay in bounds
-          _currentFactIndex =
-              _factsCount > 0 ? _random.nextInt(_factsCount) : 0;
+          // Compute safe count dynamically from actual facts list each tick
+          // to handle race condition where timer fires before didChangeDependencies
+          final actualFacts = _getFacts(context);
+          final safeCount = actualFacts.isNotEmpty ? actualFacts.length : 1;
+
+          // Generate random index only if we have facts, otherwise use 0
+          _currentFactIndex = safeCount > 0 ? _random.nextInt(safeCount) : 0;
+
+          // Update cached count for consistency
+          _factsCount = actualFacts.length;
         });
       }
     });
@@ -160,9 +170,9 @@ class _EngagingLoadingScreenState extends State<EngagingLoadingScreen>
     _factsCount = facts.length;
 
     // Set initial random fact index using actual facts length
-    if (_currentFactIndex == 0 && _factsCount > 0) {
-      // Only set random on first time (when it's still 0 from initState)
+    if (!_isFactInitialized && _factsCount > 0) {
       _currentFactIndex = _random.nextInt(_factsCount);
+      _isFactInitialized = true;
     } else if (_currentFactIndex >= _factsCount) {
       // Clamp if somehow out of bounds
       _currentFactIndex = _factsCount > 0 ? _factsCount - 1 : 0;

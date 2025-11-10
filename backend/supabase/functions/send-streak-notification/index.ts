@@ -155,8 +155,20 @@ async function handleStreakNotification(
   console.log(`Processing ${notificationType} notification for user ${userId} (streak: ${streakCount})`);
 
   const supabase = services.supabaseServiceClient;
-  const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
-  const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+
+  // Validate required environment variables
+  const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
+  const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+
+  if (!SUPABASE_URL || SUPABASE_URL.trim() === '') {
+    console.error('[ENV ERROR] SUPABASE_URL environment variable is missing or empty');
+    throw new AppError('CONFIGURATION_ERROR', 'SUPABASE_URL environment variable is not configured', 500);
+  }
+
+  if (!SUPABASE_SERVICE_ROLE_KEY || SUPABASE_SERVICE_ROLE_KEY.trim() === '') {
+    console.error('[ENV ERROR] SUPABASE_SERVICE_ROLE_KEY environment variable is missing or empty');
+    throw new AppError('CONFIGURATION_ERROR', 'SUPABASE_SERVICE_ROLE_KEY environment variable is not configured', 500);
+  }
 
   // Get user's notification preferences
   const { data: preferences, error: prefsError } = await supabase

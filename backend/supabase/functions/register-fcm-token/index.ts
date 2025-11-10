@@ -28,12 +28,20 @@ interface RegisterTokenRequest {
 interface UpdatePreferencesRequest {
   dailyVerseEnabled?: boolean
   recommendedTopicEnabled?: boolean
+  streakReminderEnabled?: boolean
+  streakMilestoneEnabled?: boolean
+  streakLostEnabled?: boolean
+  streakReminderTime?: string
   timezoneOffsetMinutes?: number
 }
 
 interface PreferencesUpdate {
   daily_verse_enabled?: boolean
   recommended_topic_enabled?: boolean
+  streak_reminder_enabled?: boolean
+  streak_milestone_enabled?: boolean
+  streak_lost_enabled?: boolean
+  streak_reminder_time?: string
   timezone_offset_minutes?: number
   updated_at?: string
 }
@@ -192,6 +200,18 @@ async function handleUpdatePreferences(
   }
   if (requestData.recommendedTopicEnabled !== undefined) {
     updateData.recommended_topic_enabled = requestData.recommendedTopicEnabled
+  }
+  if (requestData.streakReminderEnabled !== undefined) {
+    updateData.streak_reminder_enabled = requestData.streakReminderEnabled
+  }
+  if (requestData.streakMilestoneEnabled !== undefined) {
+    updateData.streak_milestone_enabled = requestData.streakMilestoneEnabled
+  }
+  if (requestData.streakLostEnabled !== undefined) {
+    updateData.streak_lost_enabled = requestData.streakLostEnabled
+  }
+  if (requestData.streakReminderTime !== undefined) {
+    updateData.streak_reminder_time = requestData.streakReminderTime
   }
   if (requestData.timezoneOffsetMinutes !== undefined) {
     updateData.timezone_offset_minutes = requestData.timezoneOffsetMinutes
