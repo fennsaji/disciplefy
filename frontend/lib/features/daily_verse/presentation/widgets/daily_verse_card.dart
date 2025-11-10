@@ -7,6 +7,7 @@ import '../../../../core/utils/ui_utils.dart';
 import '../../../../core/extensions/translation_extension.dart';
 import '../../../../core/i18n/translation_keys.dart';
 import '../../domain/entities/daily_verse_entity.dart';
+import '../../domain/entities/daily_verse_streak.dart';
 import '../bloc/daily_verse_bloc.dart';
 import '../bloc/daily_verse_event.dart';
 import '../bloc/daily_verse_state.dart';
@@ -346,7 +347,7 @@ class DailyVerseCard extends StatelessWidget {
     BuildContext context,
     String date,
     bool isFromCache, {
-    dynamic streak,
+    DailyVerseStreak? streak,
   }) {
     final theme = Theme.of(context);
 

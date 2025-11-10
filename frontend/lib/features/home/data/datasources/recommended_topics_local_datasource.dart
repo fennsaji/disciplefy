@@ -38,6 +38,14 @@ class RecommendedTopicsLocalDataSource {
     String cacheKey,
     Duration cacheExpiry,
   ) async {
+    // Input validation
+    if (cacheKey.trim().isEmpty) {
+      throw ArgumentError('cacheKey cannot be empty');
+    }
+    if (cacheExpiry <= Duration.zero) {
+      throw ArgumentError('cacheExpiry must be a positive Duration');
+    }
+
     try {
       final box = _cacheBox;
       if (box == null) {
@@ -101,6 +109,14 @@ class RecommendedTopicsLocalDataSource {
     String cacheKey,
     List<RecommendedGuideTopicModel> topics,
   ) async {
+    // Input validation
+    if (cacheKey.trim().isEmpty) {
+      throw ArgumentError('cacheKey cannot be empty');
+    }
+    if (topics.isEmpty) {
+      throw ArgumentError('topics list must not be empty');
+    }
+
     try {
       final box = _cacheBox;
       if (box == null) {
@@ -151,6 +167,11 @@ class RecommendedTopicsLocalDataSource {
 
   /// Clears cached topics for a specific key
   Future<void> clearCacheForKey(String cacheKey) async {
+    // Input validation
+    if (cacheKey.trim().isEmpty) {
+      throw ArgumentError('cacheKey cannot be empty');
+    }
+
     try {
       final box = _cacheBox;
       if (box == null) return;

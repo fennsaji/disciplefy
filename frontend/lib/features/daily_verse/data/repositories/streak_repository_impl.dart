@@ -108,6 +108,44 @@ class StreakRepositoryImpl implements StreakRepository {
     }
   }
 
+  @override
+  Future<bool> sendStreakNotification({
+    required String notificationType,
+    required int streakCount,
+    required String language,
+  }) async {
+    try {
+      final userId = _supabaseClient.auth.currentUser?.id;
+      if (userId == null) {
+        throw Exception('User not authenticated');
+      }
+
+      // Call the secured Edge Function
+      final response = await _supabaseClient.functions.invoke(
+        'send-streak-notification',
+        body: {
+          'userId': userId,
+          'notificationType': notificationType,
+          'streakCount': streakCount,
+          'language': language,
+        },
+      );
+
+      // Check for errors in response
+      if (response.status != 200) {
+        throw Exception(
+            'Notification failed with status ${response.status}: ${response.data}');
+      }
+
+      final data = response.data as Map<String, dynamic>?;
+      return data?['sent'] == true;
+    } catch (e) {
+      // Log error but don't throw - notifications are optional
+      print('Failed to send streak notification: $e');
+      return false;
+    }
+  }
+
   /// Create initial streak record for new user
   Future<DailyVerseStreak> _createInitialStreak(String userId) async {
     try {

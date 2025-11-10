@@ -3,13 +3,13 @@
 // ============================================================================
 
 import 'package:dartz/dartz.dart';
-import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/error/exceptions.dart';
 import '../../../../core/error/failures.dart';
 import '../../../../core/services/notification_service.dart';
 import '../../domain/entities/notification_preferences.dart';
+import '../../domain/entities/time_of_day_vo.dart';
 import '../../domain/repositories/notification_repository.dart';
 import '../models/notification_preferences_model.dart';
 
@@ -55,7 +55,7 @@ class NotificationRepositoryImpl implements NotificationRepository {
           streakMilestoneEnabled: streakMilestoneEnabled,
           streakLostEnabled: streakLostEnabled,
           streakReminderTime:
-              TimeOfDay(hour: reminderHour, minute: reminderMinute),
+              TimeOfDayVO(hour: reminderHour, minute: reminderMinute),
           createdAt: DateTime.now(),
           updatedAt: DateTime.now(),
         ));
@@ -104,7 +104,7 @@ class NotificationRepositoryImpl implements NotificationRepository {
           streakReminderEnabled: true,
           streakMilestoneEnabled: true,
           streakLostEnabled: true,
-          streakReminderTime: const TimeOfDay(hour: 20, minute: 0),
+          streakReminderTime: const TimeOfDayVO(hour: 20, minute: 0),
           createdAt: DateTime.now(),
           updatedAt: DateTime.now(),
         ));
@@ -119,7 +119,7 @@ class NotificationRepositoryImpl implements NotificationRepository {
         streakReminderEnabled: true,
         streakMilestoneEnabled: true,
         streakLostEnabled: true,
-        streakReminderTime: const TimeOfDay(hour: 20, minute: 0),
+        streakReminderTime: const TimeOfDayVO(hour: 20, minute: 0),
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
       ));
@@ -132,7 +132,7 @@ class NotificationRepositoryImpl implements NotificationRepository {
         streakReminderEnabled: true,
         streakMilestoneEnabled: true,
         streakLostEnabled: true,
-        streakReminderTime: const TimeOfDay(hour: 20, minute: 0),
+        streakReminderTime: const TimeOfDayVO(hour: 20, minute: 0),
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
       ));
@@ -146,7 +146,7 @@ class NotificationRepositoryImpl implements NotificationRepository {
         streakReminderEnabled: true,
         streakMilestoneEnabled: true,
         streakLostEnabled: true,
-        streakReminderTime: const TimeOfDay(hour: 20, minute: 0),
+        streakReminderTime: const TimeOfDayVO(hour: 20, minute: 0),
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
       ));
@@ -160,7 +160,7 @@ class NotificationRepositoryImpl implements NotificationRepository {
     bool? streakReminderEnabled,
     bool? streakMilestoneEnabled,
     bool? streakLostEnabled,
-    TimeOfDay? streakReminderTime,
+    TimeOfDayVO? streakReminderTime,
   }) async {
     try {
       // Check if user is authenticated
@@ -197,7 +197,8 @@ class NotificationRepositoryImpl implements NotificationRepository {
             streakMilestoneEnabled ?? currentStreakMilestone;
         final newStreakLost = streakLostEnabled ?? currentStreakLost;
         final newReminderTime = streakReminderTime ??
-            TimeOfDay(hour: currentReminderHour, minute: currentReminderMinute);
+            TimeOfDayVO(
+                hour: currentReminderHour, minute: currentReminderMinute);
 
         await prefs.setBool(
             'notification_pref_daily_verse_enabled', newDailyVerse);
@@ -239,7 +240,7 @@ class NotificationRepositoryImpl implements NotificationRepository {
       print('[NotificationRepo] streakLostEnabled: $streakLostEnabled');
       print('[NotificationRepo] streakReminderTime: $streakReminderTime');
 
-      // Format TimeOfDay to TIME format for backend
+      // Format TimeOfDayVO to TIME format for backend
       String? formattedTime;
       if (streakReminderTime != null) {
         formattedTime = '${streakReminderTime.hour.toString().padLeft(2, '0')}:'

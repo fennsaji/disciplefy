@@ -70,9 +70,16 @@ BEGIN
       s.last_viewed_at IS NULL
       OR DATE(s.last_viewed_at AT TIME ZONE 'UTC') < CURRENT_DATE
     )
-    -- Match users whose local time is close to the reminder time
-    AND EXTRACT(HOUR FROM p.streak_reminder_time) = target_hour
-    AND EXTRACT(MINUTE FROM p.streak_reminder_time) = target_minute;
+    -- TIMEZONE-AWARE: Convert UTC target time to user's local time before comparing
+    -- Step 1: Calculate total UTC minutes (target_hour * 60 + target_minute)
+    -- Step 2: Add user's timezone offset to get local minutes
+    -- Step 3: Wrap around 24-hour boundary (modulo 1440 minutes = 24 hours)
+    -- Step 4: Extract local hour and minute
+    -- Step 5: Compare with user's stored reminder time preference
+    AND EXTRACT(HOUR FROM p.streak_reminder_time)::INTEGER =
+        (((target_hour * 60 + target_minute + p.timezone_offset_minutes) % 1440 + 1440) % 1440) / 60
+    AND EXTRACT(MINUTE FROM p.streak_reminder_time)::INTEGER =
+        (((target_hour * 60 + target_minute + p.timezone_offset_minutes) % 1440 + 1440) % 1440) % 60;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 

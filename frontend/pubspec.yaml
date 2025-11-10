@@ -58,6 +58,7 @@ dependencies:
   connectivity_plus: ^6.1.4
   package_info_plus: ^8.3.0
   device_info_plus: ^11.5.0
+  synchronized: ^3.3.0+3
   uuid: ^4.2.1
   crypto: ^3.0.3
   

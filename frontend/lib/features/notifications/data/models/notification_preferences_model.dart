@@ -3,8 +3,8 @@
 // ============================================================================
 // Data layer model for notification preferences
 
-import 'package:flutter/material.dart';
 import '../../domain/entities/notification_preferences.dart';
+import '../../domain/entities/time_of_day_vo.dart';
 
 class NotificationPreferencesModel extends NotificationPreferences {
   const NotificationPreferencesModel({
@@ -21,19 +21,19 @@ class NotificationPreferencesModel extends NotificationPreferences {
 
   factory NotificationPreferencesModel.fromJson(Map<String, dynamic> json) {
     // Parse streak_reminder_time from TIME format (e.g., "20:00:00")
-    TimeOfDay parseTime(String? timeString) {
+    TimeOfDayVO parseTime(String? timeString) {
       if (timeString == null) {
-        return const TimeOfDay(hour: 20, minute: 0); // Default 8 PM
+        return const TimeOfDayVO(hour: 20, minute: 0); // Default 8 PM
       }
 
       final parts = timeString.split(':');
       if (parts.length >= 2) {
-        return TimeOfDay(
+        return TimeOfDayVO(
           hour: int.tryParse(parts[0]) ?? 20,
           minute: int.tryParse(parts[1]) ?? 0,
         );
       }
-      return const TimeOfDay(hour: 20, minute: 0);
+      return const TimeOfDayVO(hour: 20, minute: 0);
     }
 
     return NotificationPreferencesModel(
@@ -71,8 +71,8 @@ class NotificationPreferencesModel extends NotificationPreferences {
   }
 
   Map<String, dynamic> toJson() {
-    // Format TimeOfDay to TIME format (e.g., "20:00:00")
-    String formatTime(TimeOfDay time) {
+    // Format TimeOfDayVO to TIME format (e.g., "20:00:00")
+    String formatTime(TimeOfDayVO time) {
       return '${time.hour.toString().padLeft(2, '0')}:'
           '${time.minute.toString().padLeft(2, '0')}:00';
     }

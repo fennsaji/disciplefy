@@ -73,19 +73,21 @@ RETURNS TABLE (
     updated_at TIMESTAMP WITH TIME ZONE
 ) AS $$
 BEGIN
-    -- Try to get existing streak
+    -- CONCURRENCY-SAFE: Try to insert first with ON CONFLICT DO NOTHING
+    -- This is atomic and prevents race conditions between SELECT and INSERT
     RETURN QUERY
-    SELECT s.id, s.user_id, s.current_streak, s.longest_streak,
-           s.last_viewed_at, s.total_views, s.created_at, s.updated_at
-    FROM daily_verse_streaks s
-    WHERE s.user_id = p_user_id;
+    INSERT INTO daily_verse_streaks (user_id)
+    VALUES (p_user_id)
+    ON CONFLICT (user_id) DO NOTHING
+    RETURNING *;
 
-    -- If no streak exists, create one
+    -- If INSERT was skipped due to conflict (row already exists), fetch it
     IF NOT FOUND THEN
         RETURN QUERY
-        INSERT INTO daily_verse_streaks (user_id)
-        VALUES (p_user_id)
-        RETURNING *;
+        SELECT s.id, s.user_id, s.current_streak, s.longest_streak,
+               s.last_viewed_at, s.total_views, s.created_at, s.updated_at
+        FROM daily_verse_streaks s
+        WHERE s.user_id = p_user_id;
     END IF;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
