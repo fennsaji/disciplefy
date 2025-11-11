@@ -9,6 +9,7 @@ import '../../../../core/error/exceptions.dart';
 import '../../../../core/error/failures.dart';
 import '../../../../core/services/notification_service.dart';
 import '../../domain/entities/notification_preferences.dart';
+import '../../domain/entities/time_of_day_vo.dart';
 import '../../domain/repositories/notification_repository.dart';
 import '../models/notification_preferences_model.dart';
 
@@ -35,11 +36,26 @@ class NotificationRepositoryImpl implements NotificationRepository {
         final recommendedTopicEnabled =
             prefs.getBool('notification_pref_recommended_topic_enabled') ??
                 true;
+        final streakReminderEnabled =
+            prefs.getBool('notification_pref_streak_reminder_enabled') ?? true;
+        final streakMilestoneEnabled =
+            prefs.getBool('notification_pref_streak_milestone_enabled') ?? true;
+        final streakLostEnabled =
+            prefs.getBool('notification_pref_streak_lost_enabled') ?? true;
+        final reminderHour =
+            prefs.getInt('notification_pref_streak_reminder_hour') ?? 20;
+        final reminderMinute =
+            prefs.getInt('notification_pref_streak_reminder_minute') ?? 0;
 
         return Right(NotificationPreferencesModel(
           userId: currentUser?.id ?? '',
           dailyVerseEnabled: dailyVerseEnabled,
           recommendedTopicEnabled: recommendedTopicEnabled,
+          streakReminderEnabled: streakReminderEnabled,
+          streakMilestoneEnabled: streakMilestoneEnabled,
+          streakLostEnabled: streakLostEnabled,
+          streakReminderTime:
+              TimeOfDayVO(hour: reminderHour, minute: reminderMinute),
           createdAt: DateTime.now(),
           updatedAt: DateTime.now(),
         ));
@@ -85,6 +101,10 @@ class NotificationRepositoryImpl implements NotificationRepository {
           userId: currentUser.id,
           dailyVerseEnabled: true,
           recommendedTopicEnabled: true,
+          streakReminderEnabled: true,
+          streakMilestoneEnabled: true,
+          streakLostEnabled: true,
+          streakReminderTime: const TimeOfDayVO(hour: 20, minute: 0),
           createdAt: DateTime.now(),
           updatedAt: DateTime.now(),
         ));
@@ -96,6 +116,10 @@ class NotificationRepositoryImpl implements NotificationRepository {
         userId: currentUser.id,
         dailyVerseEnabled: true,
         recommendedTopicEnabled: true,
+        streakReminderEnabled: true,
+        streakMilestoneEnabled: true,
+        streakLostEnabled: true,
+        streakReminderTime: const TimeOfDayVO(hour: 20, minute: 0),
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
       ));
@@ -105,6 +129,10 @@ class NotificationRepositoryImpl implements NotificationRepository {
         userId: supabaseClient.auth.currentUser?.id ?? '',
         dailyVerseEnabled: true,
         recommendedTopicEnabled: true,
+        streakReminderEnabled: true,
+        streakMilestoneEnabled: true,
+        streakLostEnabled: true,
+        streakReminderTime: const TimeOfDayVO(hour: 20, minute: 0),
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
       ));
@@ -115,6 +143,10 @@ class NotificationRepositoryImpl implements NotificationRepository {
         userId: supabaseClient.auth.currentUser?.id ?? '',
         dailyVerseEnabled: true,
         recommendedTopicEnabled: true,
+        streakReminderEnabled: true,
+        streakMilestoneEnabled: true,
+        streakLostEnabled: true,
+        streakReminderTime: const TimeOfDayVO(hour: 20, minute: 0),
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
       ));
@@ -125,6 +157,10 @@ class NotificationRepositoryImpl implements NotificationRepository {
   Future<Either<Failure, NotificationPreferences>> updatePreferences({
     bool? dailyVerseEnabled,
     bool? recommendedTopicEnabled,
+    bool? streakReminderEnabled,
+    bool? streakMilestoneEnabled,
+    bool? streakLostEnabled,
+    TimeOfDayVO? streakReminderTime,
   }) async {
     try {
       // Check if user is authenticated
@@ -140,22 +176,54 @@ class NotificationRepositoryImpl implements NotificationRepository {
         final currentRecommendedTopic =
             prefs.getBool('notification_pref_recommended_topic_enabled') ??
                 true;
+        final currentStreakReminder =
+            prefs.getBool('notification_pref_streak_reminder_enabled') ?? true;
+        final currentStreakMilestone =
+            prefs.getBool('notification_pref_streak_milestone_enabled') ?? true;
+        final currentStreakLost =
+            prefs.getBool('notification_pref_streak_lost_enabled') ?? true;
+        final currentReminderHour =
+            prefs.getInt('notification_pref_streak_reminder_hour') ?? 20;
+        final currentReminderMinute =
+            prefs.getInt('notification_pref_streak_reminder_minute') ?? 0;
 
         // Update preferences
         final newDailyVerse = dailyVerseEnabled ?? currentDailyVerse;
         final newRecommendedTopic =
             recommendedTopicEnabled ?? currentRecommendedTopic;
+        final newStreakReminder =
+            streakReminderEnabled ?? currentStreakReminder;
+        final newStreakMilestone =
+            streakMilestoneEnabled ?? currentStreakMilestone;
+        final newStreakLost = streakLostEnabled ?? currentStreakLost;
+        final newReminderTime = streakReminderTime ??
+            TimeOfDayVO(
+                hour: currentReminderHour, minute: currentReminderMinute);
 
         await prefs.setBool(
             'notification_pref_daily_verse_enabled', newDailyVerse);
         await prefs.setBool(
             'notification_pref_recommended_topic_enabled', newRecommendedTopic);
+        await prefs.setBool(
+            'notification_pref_streak_reminder_enabled', newStreakReminder);
+        await prefs.setBool(
+            'notification_pref_streak_milestone_enabled', newStreakMilestone);
+        await prefs.setBool(
+            'notification_pref_streak_lost_enabled', newStreakLost);
+        await prefs.setInt(
+            'notification_pref_streak_reminder_hour', newReminderTime.hour);
+        await prefs.setInt(
+            'notification_pref_streak_reminder_minute', newReminderTime.minute);
 
         // Return updated preferences
         return Right(NotificationPreferencesModel(
           userId: currentUser?.id ?? '',
           dailyVerseEnabled: newDailyVerse,
           recommendedTopicEnabled: newRecommendedTopic,
+          streakReminderEnabled: newStreakReminder,
+          streakMilestoneEnabled: newStreakMilestone,
+          streakLostEnabled: newStreakLost,
+          streakReminderTime: newReminderTime,
           createdAt: DateTime.now(),
           updatedAt: DateTime.now(),
         ));
@@ -166,6 +234,18 @@ class NotificationRepositoryImpl implements NotificationRepository {
       print('[NotificationRepo] dailyVerseEnabled: $dailyVerseEnabled');
       print(
           '[NotificationRepo] recommendedTopicEnabled: $recommendedTopicEnabled');
+      print('[NotificationRepo] streakReminderEnabled: $streakReminderEnabled');
+      print(
+          '[NotificationRepo] streakMilestoneEnabled: $streakMilestoneEnabled');
+      print('[NotificationRepo] streakLostEnabled: $streakLostEnabled');
+      print('[NotificationRepo] streakReminderTime: $streakReminderTime');
+
+      // Format TimeOfDayVO to TIME format for backend
+      String? formattedTime;
+      if (streakReminderTime != null) {
+        formattedTime = '${streakReminderTime.hour.toString().padLeft(2, '0')}:'
+            '${streakReminderTime.minute.toString().padLeft(2, '0')}:00';
+      }
 
       final response = await supabaseClient.functions.invoke(
         'register-fcm-token',
@@ -174,6 +254,12 @@ class NotificationRepositoryImpl implements NotificationRepository {
           if (dailyVerseEnabled != null) 'dailyVerseEnabled': dailyVerseEnabled,
           if (recommendedTopicEnabled != null)
             'recommendedTopicEnabled': recommendedTopicEnabled,
+          if (streakReminderEnabled != null)
+            'streakReminderEnabled': streakReminderEnabled,
+          if (streakMilestoneEnabled != null)
+            'streakMilestoneEnabled': streakMilestoneEnabled,
+          if (streakLostEnabled != null) 'streakLostEnabled': streakLostEnabled,
+          if (formattedTime != null) 'streakReminderTime': formattedTime,
         },
       );
 

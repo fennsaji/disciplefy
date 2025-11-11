@@ -87,3 +87,33 @@ class GetCacheStatsEvent extends DailyVerseEvent {
 class LanguagePreferenceChanged extends DailyVerseEvent {
   const LanguagePreferenceChanged();
 }
+
+/// Mark today's daily verse as viewed for streak tracking purposes.
+///
+/// This event is automatically triggered when a user views today's verse,
+/// updating their daily verse viewing streak in the database. The streak
+/// is either incremented (if viewed consecutively) or reset (if a day was skipped).
+///
+/// **Behavior:**
+/// - Only updates streak if today's verse hasn't been viewed yet
+/// - Increments current streak if viewed yesterday
+/// - Resets streak to 1 if a day was missed
+/// - Updates longest streak if current streak exceeds it
+/// - Triggers milestone notifications (7, 30, 100, 365 days)
+/// - Triggers streak lost notification if streak was reset
+///
+/// **Usage:**
+/// This event is typically dispatched automatically by the BLoC when
+/// [LoadTodaysVerse] completes successfully, so manual invocation is rarely needed.
+///
+/// **Side Effects:**
+/// - Database update to `daily_verse_streaks` table
+/// - Push notification sent for milestones or streak loss
+/// - State update with new streak information
+///
+/// **Error Handling:**
+/// Failures are silently handled as streak tracking is an optional feature
+/// and should not disrupt the core verse viewing experience.
+class MarkVerseAsViewed extends DailyVerseEvent {
+  const MarkVerseAsViewed();
+}

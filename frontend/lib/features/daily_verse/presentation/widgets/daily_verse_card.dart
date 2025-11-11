@@ -7,6 +7,7 @@ import '../../../../core/utils/ui_utils.dart';
 import '../../../../core/extensions/translation_extension.dart';
 import '../../../../core/i18n/translation_keys.dart';
 import '../../domain/entities/daily_verse_entity.dart';
+import '../../domain/entities/daily_verse_streak.dart';
 import '../bloc/daily_verse_bloc.dart';
 import '../bloc/daily_verse_event.dart';
 import '../bloc/daily_verse_state.dart';
@@ -127,7 +128,12 @@ class DailyVerseCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Header with date - improved spacing
-              _buildHeader(context, state.formattedDate, state.isFromCache),
+              _buildHeader(
+                context,
+                state.formattedDate,
+                state.isFromCache,
+                streak: state.streak,
+              ),
 
               const SizedBox(height: 20),
 
@@ -337,8 +343,18 @@ class DailyVerseCard extends StatelessWidget {
     return _buildLoadingState(context, false);
   }
 
-  Widget _buildHeader(BuildContext context, String date, bool isFromCache) {
+  Widget _buildHeader(
+    BuildContext context,
+    String date,
+    bool isFromCache, {
+    DailyVerseStreak? streak,
+  }) {
     final theme = Theme.of(context);
+    final isDarkMode = theme.brightness == Brightness.dark;
+
+    // Streak colors: white in dark mode, primary purple in light mode
+    final streakColor =
+        isDarkMode ? const Color(0xFFE0E0E0) : theme.colorScheme.primary;
 
     return Row(
       children: [
@@ -368,6 +384,43 @@ class DailyVerseCard extends StatelessWidget {
                       size: 16,
                       color:
                           theme.colorScheme.onSecondary.withValues(alpha: 0.7),
+                    ),
+                  ],
+                  // Push streak to the right side
+                  const Spacer(),
+                  // Compact streak indicator
+                  if (streak != null && streak.currentStreak > 0) ...[
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: streakColor.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: streakColor.withValues(alpha: 0.3),
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.bolt,
+                            size: 14,
+                            color: streakColor,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            '${streak.currentStreak}',
+                            style: theme.textTheme.labelSmall?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: streakColor,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ],
                 ],

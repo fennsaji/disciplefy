@@ -44,6 +44,15 @@ class _EngagingLoadingScreenState extends State<EngagingLoadingScreen>
   // Random instance for fact selection
   final math.Random _random = math.Random();
 
+  // Expected number of historical facts (used as safe fallback)
+  static const int _defaultFactsCount = 60;
+
+  // Actual facts count (updated once we have context)
+  int _factsCount = _defaultFactsCount;
+
+  // Track whether initial random fact has been set
+  bool _isFactInitialized = false;
+
   /// Resolves a language string to a valid supported Locale.
   ///
   /// Validates against supported locales, matches by language code,
@@ -100,8 +109,9 @@ class _EngagingLoadingScreenState extends State<EngagingLoadingScreen>
   void initState() {
     super.initState();
 
-    // Initialize with random fact index so first fact is also random
-    _currentFactIndex = _random.nextInt(60);
+    // Initialize with safe default (will be properly bounded in didChangeDependencies)
+    // Use 0 as safe default since we don't have context yet to get actual facts
+    _currentFactIndex = 0;
 
     // Pulse animation for the main circle
     _pulseController = AnimationController(
@@ -132,14 +142,41 @@ class _EngagingLoadingScreenState extends State<EngagingLoadingScreen>
       }
     });
 
-    // Historical fact rotation timer (every 5 seconds, random from 60 facts)
+    // Historical fact rotation timer (every 5 seconds, random fact)
     _factTimer = Timer.periodic(const Duration(seconds: 5), (timer) {
       if (mounted) {
         setState(() {
-          _currentFactIndex = _random.nextInt(60); // Random fact from 0-59
+          // Compute safe count dynamically from actual facts list each tick
+          // to handle race condition where timer fires before didChangeDependencies
+          final actualFacts = _getFacts(context);
+          final safeCount = actualFacts.isNotEmpty ? actualFacts.length : 1;
+
+          // Generate random index only if we have facts, otherwise use 0
+          _currentFactIndex = safeCount > 0 ? _random.nextInt(safeCount) : 0;
+
+          // Update cached count for consistency
+          _factsCount = actualFacts.length;
         });
       }
     });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+
+    // Now we have context, get actual facts and initialize properly
+    final facts = _getFacts(context);
+    _factsCount = facts.length;
+
+    // Set initial random fact index using actual facts length
+    if (!_isFactInitialized && _factsCount > 0) {
+      _currentFactIndex = _random.nextInt(_factsCount);
+      _isFactInitialized = true;
+    } else if (_currentFactIndex >= _factsCount) {
+      // Clamp if somehow out of bounds
+      _currentFactIndex = _factsCount > 0 ? _factsCount - 1 : 0;
+    }
   }
 
   @override
@@ -397,6 +434,18 @@ class _EngagingLoadingScreenState extends State<EngagingLoadingScreen>
 
   Widget _buildRotatingFact() {
     final facts = _getFacts(context);
+
+    // Guard against out-of-bounds access: clamp or reset index if needed
+    if (_currentFactIndex >= facts.length) {
+      _currentFactIndex = facts.isNotEmpty ? facts.length - 1 : 0;
+    }
+
+    // Additional safety: ensure facts list is not empty
+    if (facts.isEmpty) {
+      // Return empty container if no facts available
+      return const SizedBox.shrink();
+    }
+
     final currentFact = facts[_currentFactIndex];
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
 

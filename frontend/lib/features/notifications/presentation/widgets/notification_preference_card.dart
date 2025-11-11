@@ -10,6 +10,7 @@ class NotificationPreferenceCard extends StatelessWidget {
   final IconData icon;
   final bool enabled;
   final ValueChanged<bool> onChanged;
+  final Widget? trailing; // Optional trailing widget (e.g., time picker button)
 
   const NotificationPreferenceCard({
     super.key,
@@ -18,6 +19,7 @@ class NotificationPreferenceCard extends StatelessWidget {
     required this.icon,
     required this.enabled,
     required this.onChanged,
+    this.trailing,
   });
 
   @override
@@ -82,6 +84,10 @@ class NotificationPreferenceCard extends StatelessWidget {
                             height: 1.3,
                           ),
                     ),
+                    if (trailing != null) ...[
+                      const SizedBox(height: 12),
+                      trailing!,
+                    ],
                   ],
                 ),
               ),

@@ -38,6 +38,14 @@ class RecommendedTopicsLocalDataSource {
     String cacheKey,
     Duration cacheExpiry,
   ) async {
+    // Input validation
+    if (cacheKey.trim().isEmpty) {
+      throw ArgumentError('cacheKey cannot be empty');
+    }
+    if (cacheExpiry <= Duration.zero) {
+      throw ArgumentError('cacheExpiry must be a positive Duration');
+    }
+
     try {
       final box = _cacheBox;
       if (box == null) {
@@ -97,10 +105,20 @@ class RecommendedTopicsLocalDataSource {
   }
 
   /// Saves topics to cache with current timestamp
+  ///
+  /// **Note**: Empty topic lists are valid and cacheable. An empty list represents
+  /// a valid API response indicating "no topics available" for the given criteria,
+  /// and should be cached to avoid redundant API calls.
   Future<void> cacheTopics(
     String cacheKey,
     List<RecommendedGuideTopicModel> topics,
   ) async {
+    // Input validation
+    if (cacheKey.trim().isEmpty) {
+      throw ArgumentError('cacheKey cannot be empty');
+    }
+    // Note: Empty lists are allowed - they represent valid "no topics" responses
+
     try {
       final box = _cacheBox;
       if (box == null) {
@@ -151,6 +169,11 @@ class RecommendedTopicsLocalDataSource {
 
   /// Clears cached topics for a specific key
   Future<void> clearCacheForKey(String cacheKey) async {
+    // Input validation
+    if (cacheKey.trim().isEmpty) {
+      throw ArgumentError('cacheKey cannot be empty');
+    }
+
     try {
       final box = _cacheBox;
       if (box == null) return;

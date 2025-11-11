@@ -3,10 +3,12 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/usecases/usecase.dart';
 import '../../../../core/services/language_preference_service.dart';
 import '../../domain/entities/daily_verse_entity.dart';
+import '../../domain/entities/daily_verse_streak.dart';
 import '../../domain/usecases/get_daily_verse.dart';
 import '../../domain/usecases/get_cached_verse.dart';
 import '../../domain/usecases/manage_verse_preferences.dart';
 import '../../domain/usecases/get_default_language.dart';
+import '../../domain/repositories/streak_repository.dart';
 import 'daily_verse_event.dart';
 import 'daily_verse_state.dart';
 
@@ -20,6 +22,7 @@ class DailyVerseBloc extends Bloc<DailyVerseEvent, DailyVerseState> {
   final ClearVerseCache clearVerseCache;
   final GetDefaultLanguage getDefaultLanguage;
   final LanguagePreferenceService languagePreferenceService;
+  final StreakRepository streakRepository;
 
   // Language change subscription
   StreamSubscription<dynamic>? _languageChangeSubscription;
@@ -33,6 +36,7 @@ class DailyVerseBloc extends Bloc<DailyVerseEvent, DailyVerseState> {
     required this.clearVerseCache,
     required this.getDefaultLanguage,
     required this.languagePreferenceService,
+    required this.streakRepository,
   }) : super(const DailyVerseInitial()) {
     on<LoadTodaysVerse>(_onLoadTodaysVerse);
     on<LoadVerseForDate>(_onLoadVerseForDate);
@@ -43,6 +47,7 @@ class DailyVerseBloc extends Bloc<DailyVerseEvent, DailyVerseState> {
     on<GetCacheStatsEvent>(_onGetCacheStats);
     on<ClearVerseCacheEvent>(_onClearVerseCache);
     on<LanguagePreferenceChanged>(_onLanguagePreferenceChanged);
+    on<MarkVerseAsViewed>(_onMarkVerseAsViewed);
 
     // Listen for language preference changes
     _setupLanguageChangeListener();
@@ -285,16 +290,129 @@ class DailyVerseBloc extends Bloc<DailyVerseEvent, DailyVerseState> {
   }) async {
     final result = await verseOperation;
 
-    result.fold(
-      (failure) => emit(DailyVerseError(
+    await result.fold(
+      (failure) async => emit(DailyVerseError(
         message: failure.message,
       )),
-      (verse) => emit(DailyVerseLoaded(
-        verse: verse,
-        currentLanguage: preferredLanguage,
-        preferredLanguage: preferredLanguage,
-      )),
+      (verse) async {
+        // Load current streak for authenticated users
+        final streak = await _loadStreak();
+
+        emit(DailyVerseLoaded(
+          verse: verse,
+          currentLanguage: preferredLanguage,
+          preferredLanguage: preferredLanguage,
+          streak: streak,
+        ));
+
+        // Automatically mark verse as viewed for today (update streak)
+        if (verse.isToday) {
+          add(const MarkVerseAsViewed());
+        }
+      },
     );
+  }
+
+  /// Load current user's streak (returns null if not authenticated)
+  Future<dynamic> _loadStreak() async {
+    try {
+      return await streakRepository.getStreak();
+    } catch (e) {
+      // Silently fail - streak is optional feature
+      return null;
+    }
+  }
+
+  /// Mark verse as viewed and update streak
+  Future<void> _onMarkVerseAsViewed(
+    MarkVerseAsViewed event,
+    Emitter<DailyVerseState> emit,
+  ) async {
+    // Only update streak if we have a loaded verse
+    final currentState = state;
+    if (currentState is! DailyVerseLoaded) return;
+
+    try {
+      final previousStreak = currentState.streak;
+      final updatedStreak = await streakRepository.markVerseAsViewed();
+
+      // Emit updated state with new streak
+      emit(currentState.copyWith(streak: updatedStreak));
+
+      // Check for milestone achievement or streak lost
+      await _checkAndSendStreakNotifications(previousStreak, updatedStreak);
+    } catch (e) {
+      // Silently fail - streak is optional feature
+      // Don't emit error state as verse is still valid
+    }
+  }
+
+  /// Check if milestone reached or streak lost, and send notification
+  Future<void> _checkAndSendStreakNotifications(
+    DailyVerseStreak? previousStreak,
+    DailyVerseStreak updatedStreak,
+  ) async {
+    try {
+      final previousCount = previousStreak?.currentStreak ?? 0;
+      final newCount = updatedStreak.currentStreak;
+
+      // Check for milestone achievement (7, 30, 100, 365 days)
+      const milestones = [7, 30, 100, 365];
+      for (final milestone in milestones) {
+        if (newCount == milestone && previousCount < milestone) {
+          // Milestone reached! Send notification
+          await _sendStreakNotification(
+            notificationType: 'milestone',
+            streakCount: milestone,
+          );
+          break; // Only send one milestone notification per update
+        }
+      }
+
+      // Check for streak lost (streak reset from > 0 to 1)
+      if (previousCount > 1 && newCount == 1) {
+        // Streak was lost! Send notification
+        await _sendStreakNotification(
+          notificationType: 'streak_lost',
+          streakCount: previousCount,
+        );
+      }
+    } catch (e) {
+      // Silently fail - notifications are optional
+    }
+  }
+
+  /// Send streak notification via backend Edge Function
+  Future<void> _sendStreakNotification({
+    required String notificationType,
+    required int streakCount,
+  }) async {
+    try {
+      // Get current language from state
+      String languageCode = 'en'; // Default to English
+      final currentState = state;
+
+      if (currentState is DailyVerseLoaded) {
+        languageCode = currentState.currentLanguage.code;
+      } else if (currentState is DailyVerseOffline) {
+        languageCode = currentState.currentLanguage.code;
+      }
+
+      // Call repository to send notification via Edge Function
+      final success = await streakRepository.sendStreakNotification(
+        notificationType: notificationType,
+        streakCount: streakCount,
+        language: languageCode,
+      );
+
+      if (success) {
+        print(
+            'Streak notification sent: $notificationType for $streakCount days');
+      }
+    } catch (e) {
+      // Silently fail - notifications are optional
+      print('Failed to send streak notification: $e');
+    }
   }
 
   /// Loads cached verse and emits offline state

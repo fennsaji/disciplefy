@@ -1,5 +1,6 @@
 import 'package:equatable/equatable.dart';
 import '../../domain/entities/daily_verse_entity.dart';
+import '../../domain/entities/daily_verse_streak.dart';
 
 /// States for Daily Verse BLoC
 abstract class DailyVerseState extends Equatable {
@@ -47,6 +48,7 @@ class DailyVerseLoaded extends DailyVerseState with VerseDataStateMixin {
   final VerseLanguage preferredLanguage;
   final bool isFromCache;
   final bool isServiceAvailable;
+  final DailyVerseStreak? streak;
 
   const DailyVerseLoaded({
     required this.verse,
@@ -54,6 +56,7 @@ class DailyVerseLoaded extends DailyVerseState with VerseDataStateMixin {
     required this.preferredLanguage,
     this.isFromCache = false,
     this.isServiceAvailable = true,
+    this.streak,
   });
 
   /// Check if verse is for today
@@ -66,6 +69,7 @@ class DailyVerseLoaded extends DailyVerseState with VerseDataStateMixin {
     VerseLanguage? preferredLanguage,
     bool? isFromCache,
     bool? isServiceAvailable,
+    DailyVerseStreak? streak,
   }) =>
       DailyVerseLoaded(
         verse: verse ?? this.verse,
@@ -73,6 +77,7 @@ class DailyVerseLoaded extends DailyVerseState with VerseDataStateMixin {
         preferredLanguage: preferredLanguage ?? this.preferredLanguage,
         isFromCache: isFromCache ?? this.isFromCache,
         isServiceAvailable: isServiceAvailable ?? this.isServiceAvailable,
+        streak: streak ?? this.streak,
       );
 
   @override
@@ -82,6 +87,7 @@ class DailyVerseLoaded extends DailyVerseState with VerseDataStateMixin {
         preferredLanguage,
         isFromCache,
         isServiceAvailable,
+        streak,
       ];
 }
 

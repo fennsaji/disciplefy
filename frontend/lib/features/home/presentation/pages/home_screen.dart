@@ -225,58 +225,66 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
     );
   }
 
-  Widget _buildAppHeader() => Row(
-        children: [
-          // App Logo
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  AppTheme.primaryColor,
-                  AppTheme.primaryColor.withOpacity(0.8),
-                ],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: const Icon(
-              Icons.menu_book_rounded,
-              color: Colors.white,
-              size: 24,
-            ),
-          ),
+  Widget _buildAppHeader() {
+    return Row(
+      children: [
+        _buildLogoWidget(),
+        const Spacer(),
+        _buildSettingsButton(),
+      ],
+    );
+  }
 
-          const SizedBox(width: 12),
+  Widget _buildLogoWidget() {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final logoAsset = isDarkMode
+        ? 'assets/images/app_logo_dark.png'
+        : 'assets/images/app_logo.png';
 
-          // TODO: Use same log as fav icon and Same font for app title
-          // App Title
-          Text(
-            'Disciplefy',
-            style: GoogleFonts.playfairDisplay(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-              color: AppTheme.primaryColor,
-            ),
-          ),
+    return Image.asset(
+      logoAsset,
+      width: 180,
+      height: 40,
+      fit: BoxFit.contain,
+      errorBuilder: (context, error, stackTrace) => _buildLogoFallback(),
+    );
+  }
 
-          const Spacer(),
+  Widget _buildLogoFallback() {
+    return Container(
+      width: 40,
+      height: 40,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            AppTheme.primaryColor,
+            AppTheme.primaryColor.withOpacity(0.8),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: const Icon(
+        Icons.menu_book_rounded,
+        color: Colors.white,
+        size: 24,
+      ),
+    );
+  }
 
-          // Settings Icon
-          IconButton(
-            onPressed: () {
-              context.go('/settings');
-            },
-            icon: const Icon(
-              Icons.settings_outlined,
-              color: AppTheme.onSurfaceVariant,
-              size: 24,
-            ),
-          ),
-        ],
-      );
+  Widget _buildSettingsButton() {
+    return IconButton(
+      onPressed: () {
+        context.go('/settings');
+      },
+      icon: const Icon(
+        Icons.settings_outlined,
+        color: AppTheme.onSurfaceVariant,
+        size: 24,
+      ),
+    );
+  }
 
   Widget _buildWelcomeMessage(String userName) => Column(
         crossAxisAlignment: CrossAxisAlignment.start,

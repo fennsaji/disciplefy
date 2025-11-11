@@ -10,6 +10,22 @@ This checklist is tailored for a solo founder in a pre-legal, bootstrapped phase
 
 ---
 
+## 📊 **STATUS LEGEND**
+
+This checklist tracks documentation completion and operational setup, NOT feature implementation status.
+
+| Symbol | Meaning | Description |
+|--------|---------|-------------|
+| ✅ | **Documentation Complete** | Framework/planning documented and reviewed |
+| 🏗️ | **In Development** | Actively being built or implemented |
+| 🚀 | **Production Ready** | Fully implemented, tested, and deployed |
+| ⏳ | **Planned/Future** | Scheduled for future implementation |
+| ⚠️ | **Deferred** | Postponed until incorporation/funding stage |
+
+**Important**: Many items marked ✅ indicate "documentation complete" or "bootstrap framework ready" rather than "production implementation complete". Refer to specific implementation docs for actual feature readiness.
+
+---
+
 ## 📋 **Overview**
 
 This checklist will guide you through completing all the ⚠️ placeholder sections in your documentation and setting up the necessary operational processes.
