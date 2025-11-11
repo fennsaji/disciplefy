@@ -141,31 +141,50 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   // Disciplefy Logo
-                  Row(
-                    children: [
-                      Container(
-                        width: 32,
+                  Builder(
+                    builder: (context) {
+                      final isDarkMode =
+                          Theme.of(context).brightness == Brightness.dark;
+                      final logoAsset = isDarkMode
+                          ? 'assets/images/app_logo_dark.png'
+                          : 'assets/images/app_logo.png';
+
+                      return Image.asset(
+                        logoAsset,
+                        width: 140,
                         height: 32,
-                        decoration: BoxDecoration(
-                          color: theme.colorScheme.primary,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Icon(
-                          Icons.menu_book,
-                          color: theme.colorScheme.onPrimary,
-                          size: 20,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Text(
-                        'Disciplefy',
-                        style: GoogleFonts.playfairDisplay(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: theme.colorScheme.primary,
-                        ),
-                      ),
-                    ],
+                        fit: BoxFit.contain,
+                        errorBuilder: (context, error, stackTrace) {
+                          // Fallback to icon + text if image fails to load
+                          return Row(
+                            children: [
+                              Container(
+                                width: 32,
+                                height: 32,
+                                decoration: BoxDecoration(
+                                  color: theme.colorScheme.primary,
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Icon(
+                                  Icons.menu_book,
+                                  color: theme.colorScheme.onPrimary,
+                                  size: 20,
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Text(
+                                'Disciplefy',
+                                style: GoogleFonts.poppins(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                  color: theme.colorScheme.primary,
+                                ),
+                              ),
+                            ],
+                          );
+                        },
+                      );
+                    },
                   ),
                   // Skip button
                   TextButton(
