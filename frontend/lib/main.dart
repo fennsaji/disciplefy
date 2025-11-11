@@ -35,6 +35,7 @@ import 'core/utils/device_keyboard_handler.dart';
 import 'core/utils/keyboard_animation_sync.dart';
 import 'core/utils/custom_viewport_handler.dart';
 import 'core/utils/keyboard_performance_monitor.dart';
+import 'core/services/android_hybrid_storage.dart';
 
 // ============================================================================
 // Firebase Configuration (Environment Variables)
@@ -131,14 +132,33 @@ void main() async {
       }
     }
 
-    // Initialize Supabase
-    // Note: autoRefreshToken is enabled by default
-    await Supabase.initialize(
-      url: AppConfig.supabaseUrl,
-      anonKey: AppConfig.supabaseAnonKey,
-      // Enable debug mode for auth issues in development
-      debug: kDebugMode,
-    );
+    // Initialize Supabase with platform-aware storage
+    // Web: Uses default localStorage (reliable)
+    // Android/iOS: Uses hybrid storage (SecureStorage + SharedPreferences fallback)
+    if (kIsWeb) {
+      // Web: Use default storage - browser localStorage is already reliable
+      await Supabase.initialize(
+        url: AppConfig.supabaseUrl,
+        anonKey: AppConfig.supabaseAnonKey,
+        debug: kDebugMode,
+      );
+      if (kDebugMode) {
+        print('✅ [MAIN] Supabase initialized with default web storage');
+      }
+    } else {
+      // Android/iOS: Use hybrid storage to protect against Keystore clearing
+      await Supabase.initialize(
+        url: AppConfig.supabaseUrl,
+        anonKey: AppConfig.supabaseAnonKey,
+        debug: kDebugMode,
+        authOptions: FlutterAuthClientOptions(
+          localStorage: await AndroidHybridStorage.create(),
+        ),
+      );
+      if (kDebugMode) {
+        print('✅ [MAIN] Supabase initialized with Android hybrid storage');
+      }
+    }
 
     // Initialize dependency injection
     if (kDebugMode) print('🔧 [MAIN] Initializing dependency injection...');
