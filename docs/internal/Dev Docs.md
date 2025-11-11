@@ -11,8 +11,6 @@
 
   Node.js                \>= 18.x (for tooling/scripts)
 
-  Firebase CLI           npm install -g firebase-tools
-
   Supabase CLI           brew install supabase/tap/supabase
 
   Python (Optional)      \>= 3.8 (for LLM test scripts)
@@ -34,9 +32,9 @@
 
 \$ cp .env.example .env.dev \# fill with your API keys
 
-\# 4. Run Firebase auth/emulator locally (if needed)
+\# 4. Start Supabase local development environment
 
-\$ firebase emulators:start
+\$ supabase start
 
 \# 5. Launch app on device/emulator
 
@@ -75,7 +73,7 @@ flutter analyze
 
 - Android Studio misconfiguring Flutter location (check flutter doctor)
 
-- Permissions issue when accessing Firebase emulators
+- Supabase local services not starting (check `supabase status`)
 
 # **📄 2. Git Workflow Guide**
 
@@ -188,13 +186,13 @@ flutter-version: \'3.13.0\'
 
 \- run: flutter test
 
-## **✅ Deploy Backend (Supabase/Firebase)**
+## **✅ Deploy Backend (Supabase Edge Functions)**
 
-\# Firebase
+\# Deploy all Edge Functions
 
-firebase deploy \--only functions
+supabase functions deploy
 
-\# Supabase Edge
+\# Deploy specific function
 
 supabase functions deploy generateGuide
 
@@ -215,7 +213,7 @@ supabase functions deploy generateGuide
 
   GitHub Actions           GitHub Secrets UI
 
-  Firebase                 Firebase Console \> Config
+  Supabase Dashboard       Supabase Dashboard \> Project Settings
 
   Supabase Edge            supabase secrets set
   -----------------------------------------------------------------------
@@ -227,9 +225,7 @@ supabase functions deploy generateGuide
   ------------------------------- ------------- --------------------------
   OPENAI_API_KEY                  Backend       LLM access
 
-  FIREBASE_PROJECT_ID             Frontend      Auth + Storage
-
-  SUPABASE_URL                    Frontend      Guide Storage/Fetch
+  SUPABASE_URL                    Frontend      Auth + Guide Storage
 
   SUPABASE_ANON_KEY               Frontend      Public API access
 

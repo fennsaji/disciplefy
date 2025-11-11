@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import '../../../../core/constants/app_constants.dart';
 import '../../../../core/localization/app_localizations.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/di/injection_container.dart';
@@ -86,49 +87,27 @@ class _OnboardingWelcomeContent extends StatelessWidget {
                 // App Logo Section
                 Column(
                   children: [
-                    // Logo Container
-                    Container(
-                      width: isLargeScreen ? 120 : 100,
-                      height: isLargeScreen ? 120 : 100,
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [
-                            AppTheme.primaryColor,
-                            AppTheme.primaryColor.withOpacity(0.8),
-                          ],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
-                        borderRadius: BorderRadius.circular(24),
-                        boxShadow: [
-                          BoxShadow(
-                            color: AppTheme.primaryColor.withOpacity(0.3),
-                            blurRadius: 20,
-                            offset: const Offset(0, 8),
-                          ),
-                        ],
-                      ),
-                      child: Icon(
-                        Icons.menu_book_rounded,
-                        size: isLargeScreen ? 64 : 56,
-                        color: Colors.white,
-                      ),
+                    // App Logo with Text (from splash screen)
+                    Builder(
+                      builder: (context) {
+                        final isDarkMode =
+                            Theme.of(context).brightness == Brightness.dark;
+                        final logoAsset = isDarkMode
+                            ? AppAssets.logoDark
+                            : AppAssets.logoLight;
+
+                        return Image.asset(
+                          logoAsset,
+                          width: isLargeScreen ? 280 : 240,
+                          height: isLargeScreen ? 120 : 100,
+                          fit: BoxFit.contain,
+                          errorBuilder: (context, error, stackTrace) =>
+                              _LogoFallbackWidget(isLargeScreen: isLargeScreen),
+                        );
+                      },
                     ),
 
-                    SizedBox(height: isLargeScreen ? 32 : 24),
-
-                    // App Title
-                    Text(
-                      'Disciplefy',
-                      style: GoogleFonts.playfairDisplay(
-                        fontSize: isLargeScreen ? 48 : 42,
-                        fontWeight: FontWeight.bold,
-                        color: AppTheme.primaryColor,
-                        letterSpacing: -0.5,
-                      ),
-                    ),
-
-                    SizedBox(height: isLargeScreen ? 16 : 12),
+                    SizedBox(height: isLargeScreen ? 24 : 20),
 
                     // Tagline
                     Text(
@@ -337,4 +316,56 @@ class _WelcomeFeatureItem extends StatelessWidget {
           ),
         ],
       );
+}
+
+/// Private widget for rendering the logo fallback UI
+class _LogoFallbackWidget extends StatelessWidget {
+  final bool isLargeScreen;
+
+  const _LogoFallbackWidget({required this.isLargeScreen});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Container(
+          width: isLargeScreen ? 120 : 100,
+          height: isLargeScreen ? 120 : 100,
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                AppTheme.primaryColor,
+                AppTheme.primaryColor.withOpacity(0.8),
+              ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(24),
+            boxShadow: [
+              BoxShadow(
+                color: AppTheme.primaryColor.withOpacity(0.3),
+                blurRadius: 20,
+                offset: const Offset(0, 8),
+              ),
+            ],
+          ),
+          child: Icon(
+            Icons.menu_book_rounded,
+            size: isLargeScreen ? 64 : 56,
+            color: Colors.white,
+          ),
+        ),
+        SizedBox(height: isLargeScreen ? 24 : 20),
+        Text(
+          'Disciplefy',
+          style: GoogleFonts.playfairDisplay(
+            fontSize: isLargeScreen ? 48 : 42,
+            fontWeight: FontWeight.bold,
+            color: AppTheme.primaryColor,
+            letterSpacing: -0.5,
+          ),
+        ),
+      ],
+    );
+  }
 }

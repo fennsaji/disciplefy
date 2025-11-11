@@ -43,6 +43,8 @@ import '../../features/daily_verse/data/services/daily_verse_web_cache_service.d
 import '../../features/daily_verse/data/services/daily_verse_cache_interface.dart';
 import '../../features/daily_verse/domain/repositories/daily_verse_repository.dart';
 import '../../features/daily_verse/data/repositories/daily_verse_repository_impl.dart';
+import '../../features/daily_verse/domain/repositories/streak_repository.dart';
+import '../../features/daily_verse/data/repositories/streak_repository_impl.dart';
 import '../../features/daily_verse/domain/usecases/get_daily_verse.dart';
 import '../../features/daily_verse/domain/usecases/get_cached_verse.dart';
 import '../../features/daily_verse/domain/usecases/manage_verse_preferences.dart';
@@ -330,6 +332,11 @@ Future<void> initializeDependencies() async {
     ),
   );
 
+  // Streak repository for daily verse streak tracking
+  sl.registerLazySingleton<StreakRepository>(
+    () => StreakRepositoryImpl(sl<SupabaseClient>()),
+  );
+
   sl.registerLazySingleton(() => GetDailyVerse(sl()));
   sl.registerLazySingleton(() => GetCachedVerse(sl()));
   sl.registerLazySingleton(() => GetPreferredLanguage(sl()));
@@ -347,6 +354,7 @@ Future<void> initializeDependencies() async {
         clearVerseCache: sl(),
         getDefaultLanguage: sl(),
         languagePreferenceService: sl(),
+        streakRepository: sl(),
       ));
 
   //! Saved Guides

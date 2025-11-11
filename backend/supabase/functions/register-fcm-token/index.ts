@@ -28,12 +28,20 @@ interface RegisterTokenRequest {
 interface UpdatePreferencesRequest {
   dailyVerseEnabled?: boolean
   recommendedTopicEnabled?: boolean
+  streakReminderEnabled?: boolean
+  streakMilestoneEnabled?: boolean
+  streakLostEnabled?: boolean
+  streakReminderTime?: string
   timezoneOffsetMinutes?: number
 }
 
 interface PreferencesUpdate {
   daily_verse_enabled?: boolean
   recommended_topic_enabled?: boolean
+  streak_reminder_enabled?: boolean
+  streak_milestone_enabled?: boolean
+  streak_lost_enabled?: boolean
+  streak_reminder_time?: string
   timezone_offset_minutes?: number
   updated_at?: string
 }
@@ -164,6 +172,10 @@ async function handleRegisterToken(
       preferences: {
         dailyVerseEnabled: prefsData.daily_verse_enabled,
         recommendedTopicEnabled: prefsData.recommended_topic_enabled,
+        streakReminderEnabled: prefsData.streak_reminder_enabled,
+        streakMilestoneEnabled: prefsData.streak_milestone_enabled,
+        streakLostEnabled: prefsData.streak_lost_enabled,
+        streakReminderTime: prefsData.streak_reminder_time,
         timezoneOffsetMinutes: prefsData.timezone_offset_minutes,
       },
     }),
@@ -192,6 +204,18 @@ async function handleUpdatePreferences(
   }
   if (requestData.recommendedTopicEnabled !== undefined) {
     updateData.recommended_topic_enabled = requestData.recommendedTopicEnabled
+  }
+  if (requestData.streakReminderEnabled !== undefined) {
+    updateData.streak_reminder_enabled = requestData.streakReminderEnabled
+  }
+  if (requestData.streakMilestoneEnabled !== undefined) {
+    updateData.streak_milestone_enabled = requestData.streakMilestoneEnabled
+  }
+  if (requestData.streakLostEnabled !== undefined) {
+    updateData.streak_lost_enabled = requestData.streakLostEnabled
+  }
+  if (requestData.streakReminderTime !== undefined) {
+    updateData.streak_reminder_time = requestData.streakReminderTime
   }
   if (requestData.timezoneOffsetMinutes !== undefined) {
     updateData.timezone_offset_minutes = requestData.timezoneOffsetMinutes
@@ -232,6 +256,10 @@ async function handleUpdatePreferences(
       preferences: {
         dailyVerseEnabled: data.daily_verse_enabled,
         recommendedTopicEnabled: data.recommended_topic_enabled,
+        streakReminderEnabled: data.streak_reminder_enabled,
+        streakMilestoneEnabled: data.streak_milestone_enabled,
+        streakLostEnabled: data.streak_lost_enabled,
+        streakReminderTime: data.streak_reminder_time,
         timezoneOffsetMinutes: data.timezone_offset_minutes,
       },
     }),
@@ -298,6 +326,10 @@ async function handleGetPreferences(
       preferences: {
         dailyVerseEnabled: prefsData.daily_verse_enabled,
         recommendedTopicEnabled: prefsData.recommended_topic_enabled,
+        streakReminderEnabled: prefsData.streak_reminder_enabled,
+        streakMilestoneEnabled: prefsData.streak_milestone_enabled,
+        streakLostEnabled: prefsData.streak_lost_enabled,
+        streakReminderTime: prefsData.streak_reminder_time,
         timezoneOffsetMinutes: prefsData.timezone_offset_minutes,
       },
       tokens: tokensData || [], // Array of all registered tokens/devices

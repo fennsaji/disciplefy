@@ -11,6 +11,7 @@ import '../../domain/usecases/request_notification_permissions.dart'
     as request_usecases;
 import '../../domain/usecases/update_notification_preferences.dart'
     as update_usecases;
+import '../utils/time_of_day_extensions.dart';
 import 'notification_event.dart';
 import 'notification_state.dart';
 
@@ -69,10 +70,17 @@ class NotificationBloc extends Bloc<NotificationEvent, NotificationState> {
   ) async {
     emit(const NotificationLoading());
 
+    // Convert Flutter TimeOfDay to domain TimeOfDayVO at presentation boundary
+    final domainReminderTime = event.streakReminderTime?.toTimeOfDayVO();
+
     final result = await updatePreferences(
       update_usecases.UpdatePreferencesParams(
         dailyVerseEnabled: event.dailyVerseEnabled,
         recommendedTopicEnabled: event.recommendedTopicEnabled,
+        streakReminderEnabled: event.streakReminderEnabled,
+        streakMilestoneEnabled: event.streakMilestoneEnabled,
+        streakLostEnabled: event.streakLostEnabled,
+        streakReminderTime: domainReminderTime,
       ),
     );
 

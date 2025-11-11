@@ -146,7 +146,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           // App logo/icon
                           _buildAppLogo(context),
 
-                          const SizedBox(height: 48),
+                          const SizedBox(height: 24),
 
                           // Welcome text
                           _buildWelcomeText(context),
@@ -180,17 +180,32 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget _buildAppLogo(BuildContext context) {
     final theme = Theme.of(context);
 
-    return Container(
-      width: 120,
-      height: 120,
-      decoration: BoxDecoration(
-        color: theme.colorScheme.primary.withValues(alpha: 0.1),
-        shape: BoxShape.circle,
+    return ColorFiltered(
+      colorFilter: const ColorFilter.mode(
+        Color(0xFFB8860B), // Darker gold color
+        BlendMode.srcIn,
       ),
-      child: Icon(
-        Icons.auto_stories,
-        size: 60,
-        color: theme.colorScheme.primary,
+      child: Image.asset(
+        'assets/images/logo_transparent.png',
+        width: 120,
+        height: 120,
+        fit: BoxFit.contain,
+        errorBuilder: (context, error, stackTrace) {
+          // Fallback to icon if image fails to load
+          return Container(
+            width: 120,
+            height: 120,
+            decoration: BoxDecoration(
+              color: theme.colorScheme.primary.withValues(alpha: 0.1),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              Icons.auto_stories,
+              size: 60,
+              color: theme.colorScheme.primary,
+            ),
+          );
+        },
       ),
     );
   }

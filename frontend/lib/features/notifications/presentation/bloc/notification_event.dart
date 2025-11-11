@@ -3,6 +3,7 @@
 // ============================================================================
 
 import 'package:equatable/equatable.dart';
+import 'package:flutter/material.dart';
 
 abstract class NotificationEvent extends Equatable {
   const NotificationEvent();
@@ -20,14 +21,29 @@ class LoadNotificationPreferences extends NotificationEvent {
 class UpdateNotificationPreferences extends NotificationEvent {
   final bool? dailyVerseEnabled;
   final bool? recommendedTopicEnabled;
+  final bool? streakReminderEnabled;
+  final bool? streakMilestoneEnabled;
+  final bool? streakLostEnabled;
+  final TimeOfDay? streakReminderTime;
 
   const UpdateNotificationPreferences({
     this.dailyVerseEnabled,
     this.recommendedTopicEnabled,
+    this.streakReminderEnabled,
+    this.streakMilestoneEnabled,
+    this.streakLostEnabled,
+    this.streakReminderTime,
   });
 
   @override
-  List<Object?> get props => [dailyVerseEnabled, recommendedTopicEnabled];
+  List<Object?> get props => [
+        dailyVerseEnabled,
+        recommendedTopicEnabled,
+        streakReminderEnabled,
+        streakMilestoneEnabled,
+        streakLostEnabled,
+        streakReminderTime,
+      ];
 }
 
 /// Request notification permissions from OS

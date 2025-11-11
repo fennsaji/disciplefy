@@ -10,23 +10,33 @@ class AppLoadingScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDarkMode = theme.brightness == Brightness.dark;
+    final screenSize = MediaQuery.of(context).size;
 
     // Use the appropriate splash screen image based on theme
     final splashImage = isDarkMode
         ? 'assets/images/splash_screen_dark.png'
         : 'assets/images/splash_screen.png';
 
+    // Theme-aware background and loader colors
+    final backgroundColor = isDarkMode
+        ? const Color(0xFF0F1012) // Dark mode: #0f1012
+        : const Color(0xFFFBEDD9); // Light mode: #FBEDD9
+
+    final loaderColor = isDarkMode
+        ? Colors.white // White loader for dark mode
+        : const Color(0xFF6A4FB6); // Primary purple for light mode
+
     return Scaffold(
-      backgroundColor: theme.scaffoldBackgroundColor,
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            // Splash screen image (same as web splash screen)
-            Image.asset(
+      backgroundColor: backgroundColor,
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          // Splash screen image (same as web splash screen) - fits to screen
+          Center(
+            child: Image.asset(
               splashImage,
-              width: 200,
-              height: 200,
+              width: screenSize.width,
+              height: screenSize.height,
               fit: BoxFit.contain,
               errorBuilder: (context, error, stackTrace) {
                 // Fallback if image fails to load
@@ -45,15 +55,21 @@ class AppLoadingScreen extends StatelessWidget {
                 );
               },
             ),
-            const SizedBox(height: 48),
+          ),
 
-            // Loading indicator
-            CircularProgressIndicator(
-              color: theme.colorScheme.primary,
-              strokeWidth: 3,
+          // Loading indicator positioned at bottom - with theme-aware color
+          Positioned(
+            bottom: 80,
+            left: 0,
+            right: 0,
+            child: Center(
+              child: CircularProgressIndicator(
+                color: loaderColor,
+                strokeWidth: 3,
+              ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
