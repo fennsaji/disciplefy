@@ -137,15 +137,8 @@ class AndroidHybridStorage extends LocalStorage {
 
   @override
   Future<String?> accessToken() async {
-    final session = await _readSession();
-    if (session == null) return null;
-
-    try {
-      final data = jsonDecode(session) as Map<String, dynamic>;
-      return data['access_token'] as String?;
-    } catch (e) {
-      if (kDebugMode) print('⚠️  [ANDROID STORAGE] Failed to parse token: $e');
-      return null;
-    }
+    // Return the full session JSON string (not just the token)
+    // Supabase expects the complete session to restore authentication
+    return _readSession();
   }
 }

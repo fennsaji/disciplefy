@@ -172,6 +172,10 @@ async function handleRegisterToken(
       preferences: {
         dailyVerseEnabled: prefsData.daily_verse_enabled,
         recommendedTopicEnabled: prefsData.recommended_topic_enabled,
+        streakReminderEnabled: prefsData.streak_reminder_enabled,
+        streakMilestoneEnabled: prefsData.streak_milestone_enabled,
+        streakLostEnabled: prefsData.streak_lost_enabled,
+        streakReminderTime: prefsData.streak_reminder_time,
         timezoneOffsetMinutes: prefsData.timezone_offset_minutes,
       },
     }),
@@ -252,6 +256,10 @@ async function handleUpdatePreferences(
       preferences: {
         dailyVerseEnabled: data.daily_verse_enabled,
         recommendedTopicEnabled: data.recommended_topic_enabled,
+        streakReminderEnabled: data.streak_reminder_enabled,
+        streakMilestoneEnabled: data.streak_milestone_enabled,
+        streakLostEnabled: data.streak_lost_enabled,
+        streakReminderTime: data.streak_reminder_time,
         timezoneOffsetMinutes: data.timezone_offset_minutes,
       },
     }),
@@ -318,6 +326,10 @@ async function handleGetPreferences(
       preferences: {
         dailyVerseEnabled: prefsData.daily_verse_enabled,
         recommendedTopicEnabled: prefsData.recommended_topic_enabled,
+        streakReminderEnabled: prefsData.streak_reminder_enabled,
+        streakMilestoneEnabled: prefsData.streak_milestone_enabled,
+        streakLostEnabled: prefsData.streak_lost_enabled,
+        streakReminderTime: prefsData.streak_reminder_time,
         timezoneOffsetMinutes: prefsData.timezone_offset_minutes,
       },
       tokens: tokensData || [], // Array of all registered tokens/devices
