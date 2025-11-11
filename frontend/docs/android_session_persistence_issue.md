@@ -8,7 +8,7 @@
 ## 🎯 **Key Takeaways (TL;DR)**
 
 ### **What Went Wrong:**
-1. ❌ **Initial approach**: Applied HybridLocalStorage to ALL platforms (web + Android)
+1. ❌ **Initial approach**: Applied AndroidHybridStorage to ALL platforms (web + Android)
 2. ❌ **Web broke**: JSON parsing errors, stuck loading screens
 3. ❌ **Root cause**: Web doesn't need custom storage - browser localStorage already works perfectly
 4. ❌ **Over-engineering**: Added complexity where it wasn't needed
@@ -16,7 +16,7 @@
 ### **The Solution:**
 1. ✅ **Platform-aware approach**: Use `kIsWeb` to detect platform
 2. ✅ **Web**: Keep default Supabase storage (simple, reliable)
-3. ✅ **Android**: Apply HybridLocalStorage (protects against Keystore clearing)
+3. ✅ **Android**: Apply AndroidHybridStorage (protects against Keystore clearing)
 4. ✅ **Simpler**: Each platform gets exactly what it needs
 
 ### **Why This Matters:**
@@ -344,7 +344,7 @@ buildTypes {
 
 ## ✅ Solutions
 
-### ⚠️ **IMPORTANT: Why Our Initial HybridLocalStorage Failed on Web**
+### ⚠️ **IMPORTANT: Why Our Initial AndroidHybridStorage Failed on Web**
 
 **Root Cause Analysis:**
 1. **Web doesn't have Android Keystore issues** - Web uses browser's localStorage which is reliable
@@ -431,322 +431,134 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 /// - Android Keystore cleared during OS update → falls back to SharedPreferences
 /// - Low storage causes Keystore wipe → session still available in SharedPreferences
 /// - Device encryption key rotation → fallback maintains session
-class HybridLocalStorage extends LocalStorage {
-  static const String _secureStorageKey = 'supabase.session';
-  static const String _sharedPrefsKey = 'supabase.session.backup';
-  static const String _storageHealthKey = 'storage.health.test';
+class AndroidHybridStorage extends LocalStorage {
+  static const String _secureKey = 'supabase.session';
+  static const String _prefsKey = 'supabase.session.backup';
 
-  final FlutterSecureStorage _secureStorage;
-  final SharedPreferences _sharedPrefs;
+  final FlutterSecureStorage _secure;
+  final SharedPreferences _prefs;
 
-  /// Track which storage mechanism is currently working
-  bool _secureStorageHealthy = true;
-  bool _sharedPrefsHealthy = true;
+  AndroidHybridStorage._({
+    required FlutterSecureStorage secure,
+    required SharedPreferences prefs,
+  })  : _secure = secure,
+        _prefs = prefs;
 
-  HybridLocalStorage({
-    FlutterSecureStorage? secureStorage,
-    SharedPreferences? sharedPrefs,
-  })  : _secureStorage = secureStorage ??
-            const FlutterSecureStorage(
-              aOptions: AndroidOptions(
-                encryptedSharedPreferences: true,
-              ),
-            ),
-        _sharedPrefs = sharedPrefs ?? _getSharedPrefsSync() {
-    // Run health check on initialization
-    _checkStorageHealth();
-  }
-
-  /// Synchronous getter for SharedPreferences (must be initialized first)
-  static SharedPreferences _getSharedPrefsSync() {
-    throw StateError(
-      'SharedPreferences must be initialized before HybridLocalStorage. '
-      'Call await SharedPreferences.getInstance() in main() first.',
+  /// Create instance - must be called in main() after SharedPreferences.getInstance()
+  static Future<AndroidHybridStorage> create() async {
+    final prefs = await SharedPreferences.getInstance();
+    const secure = FlutterSecureStorage(
+      aOptions: AndroidOptions(encryptedSharedPreferences: true),
     );
-  }
 
-  /// Factory constructor that properly initializes dependencies
-  static Future<HybridLocalStorage> create({
-    FlutterSecureStorage? secureStorage,
-  }) async {
-    final sharedPrefs = await SharedPreferences.getInstance();
-    return HybridLocalStorage(
-      secureStorage: secureStorage,
-      sharedPrefs: sharedPrefs,
-    );
-  }
-
-  /// Check storage health on initialization
-  Future<void> _checkStorageHealth() async {
     if (kDebugMode) {
-      print('🔍 [HYBRID STORAGE] Running storage health check...');
+      print('✅ [ANDROID STORAGE] Hybrid storage initialized');
     }
 
-    // Test SecureStorage
-    try {
-      await _secureStorage.write(
-        key: _storageHealthKey,
-        value: 'test_${DateTime.now().millisecondsSinceEpoch}',
-      );
-      final testRead = await _secureStorage.read(key: _storageHealthKey);
-      _secureStorageHealthy = testRead != null;
-
-      if (kDebugMode) {
-        print(
-          _secureStorageHealthy
-              ? '✅ [HYBRID STORAGE] SecureStorage is healthy'
-              : '⚠️  [HYBRID STORAGE] SecureStorage read/write failed',
-        );
-      }
-
-      await _secureStorage.delete(key: _storageHealthKey);
-    } catch (e) {
-      _secureStorageHealthy = false;
-      if (kDebugMode) {
-        print('🚨 [HYBRID STORAGE] SecureStorage is NOT working: $e');
-      }
-    }
-
-    // Test SharedPreferences
-    try {
-      await _sharedPrefs.setString(
-        _storageHealthKey,
-        'test_${DateTime.now().millisecondsSinceEpoch}',
-      );
-      final testRead = _sharedPrefs.getString(_storageHealthKey);
-      _sharedPrefsHealthy = testRead != null;
-
-      if (kDebugMode) {
-        print(
-          _sharedPrefsHealthy
-              ? '✅ [HYBRID STORAGE] SharedPreferences is healthy'
-              : '⚠️  [HYBRID STORAGE] SharedPreferences read/write failed',
-        );
-      }
-
-      await _sharedPrefs.remove(_storageHealthKey);
-    } catch (e) {
-      _sharedPrefsHealthy = false;
-      if (kDebugMode) {
-        print('🚨 [HYBRID STORAGE] SharedPreferences is NOT working: $e');
-      }
-    }
-
-    // Log overall health status
+    return AndroidHybridStorage._(secure: secure, prefs: prefs);
+  }
+  @override
+  Future<void> initialize() async {
+    // No initialization needed - storage is ready on creation
     if (kDebugMode) {
-      if (!_secureStorageHealthy && !_sharedPrefsHealthy) {
-        print('🚨 [HYBRID STORAGE] CRITICAL: Both storage mechanisms failed!');
-      } else if (!_secureStorageHealthy) {
-        print(
-          '⚠️  [HYBRID STORAGE] SecureStorage unhealthy, using SharedPreferences only',
-        );
-      } else if (!_sharedPrefsHealthy) {
-        print(
-          '⚠️  [HYBRID STORAGE] SharedPreferences unhealthy, using SecureStorage only',
-        );
-      } else {
-        print('✅ [HYBRID STORAGE] All storage mechanisms healthy');
-      }
+      print('✅ [ANDROID STORAGE] Storage ready');
     }
   }
 
   @override
-  Future<void> persistSession(String persistSessionString) async {
-    if (kDebugMode) {
-      print('💾 [HYBRID STORAGE] Persisting session...');
+  Future<void> persistSession(String sessionString) async {
+    // Write to BOTH storages for redundancy
+    try {
+      await _secure.write(key: _secureKey, value: sessionString);
+      if (kDebugMode) print('✅ [ANDROID STORAGE] Saved to SecureStorage');
+    } catch (e) {
+      if (kDebugMode) {
+        print('⚠️  [ANDROID STORAGE] SecureStorage write failed: $e');
+      }
     }
 
-    final futures = <Future<void>>[];
-
-    // Write to SecureStorage (primary)
-    if (_secureStorageHealthy) {
-      futures.add(
-        _secureStorage
-            .write(
-          key: _secureStorageKey,
-          value: persistSessionString,
-        )
-            .catchError((e) {
-          if (kDebugMode) {
-            print('⚠️  [HYBRID STORAGE] SecureStorage write failed: $e');
-          }
-          _secureStorageHealthy = false;
-          return null;
-        }),
-      );
-    }
-
-    // Write to SharedPreferences (backup)
-    if (_sharedPrefsHealthy) {
-      futures.add(
-        _sharedPrefs
-            .setString(_sharedPrefsKey, persistSessionString)
-            .catchError((e) {
-          if (kDebugMode) {
-            print('⚠️  [HYBRID STORAGE] SharedPreferences write failed: $e');
-          }
-          _sharedPrefsHealthy = false;
-          return false;
-        }),
-      );
-    }
-
-    // If both are unhealthy, throw error
-    if (!_secureStorageHealthy && !_sharedPrefsHealthy) {
-      throw Exception(
-        'Cannot persist session: both storage mechanisms failed',
-      );
-    }
-
-    // Wait for all writes to complete
-    await Future.wait(futures);
-
-    if (kDebugMode) {
-      print('✅ [HYBRID STORAGE] Session persisted successfully');
+    try {
+      await _prefs.setString(_prefsKey, sessionString);
+      if (kDebugMode) print('✅ [ANDROID STORAGE] Saved to SharedPreferences');
+    } catch (e) {
+      if (kDebugMode) {
+        print('⚠️  [ANDROID STORAGE] SharedPreferences write failed: $e');
+      }
     }
   }
 
-  @override
-  Future<String?> accessSession() async {
-    if (kDebugMode) {
-      print('🔍 [HYBRID STORAGE] Accessing session...');
-    }
-
-    // Try SecureStorage first (primary)
-    if (_secureStorageHealthy) {
-      try {
-        final session = await _secureStorage.read(key: _secureStorageKey);
-        if (session != null && session.isNotEmpty) {
-          if (kDebugMode) {
-            print('✅ [HYBRID STORAGE] Session found in SecureStorage');
-          }
-
-          // Also backup to SharedPreferences if not already there
-          if (_sharedPrefsHealthy) {
-            final backupExists = _sharedPrefs.containsKey(_sharedPrefsKey);
-            if (!backupExists) {
-              await _sharedPrefs.setString(_sharedPrefsKey, session);
-              if (kDebugMode) {
-                print('💾 [HYBRID STORAGE] Backed up session to SharedPreferences');
-              }
-            }
-          }
-
-          return session;
-        }
-      } catch (e) {
-        if (kDebugMode) {
-          print('⚠️  [HYBRID STORAGE] SecureStorage read failed: $e');
-        }
-        _secureStorageHealthy = false;
+  Future<String?> _readSession() async {
+    // Try SecureStorage first
+    try {
+      final session = await _secure.read(key: _secureKey);
+      if (session != null && session.isNotEmpty) {
+        if (kDebugMode) print('✅ [ANDROID STORAGE] Found in SecureStorage');
+        return session;
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('⚠️  [ANDROID STORAGE] SecureStorage read failed: $e');
       }
     }
 
     // Fallback to SharedPreferences
-    if (_sharedPrefsHealthy) {
-      try {
-        final session = _sharedPrefs.getString(_sharedPrefsKey);
-        if (session != null && session.isNotEmpty) {
-          if (kDebugMode) {
-            print(
-              '✅ [HYBRID STORAGE] Session recovered from SharedPreferences fallback',
-            );
-          }
-
-          // Try to restore to SecureStorage for future reads
-          if (_secureStorageHealthy) {
-            try {
-              await _secureStorage.write(
-                key: _secureStorageKey,
-                value: session,
-              );
-              if (kDebugMode) {
-                print('💾 [HYBRID STORAGE] Restored session to SecureStorage');
-              }
-            } catch (e) {
-              // Ignore restore failure
-            }
-          }
-
-          return session;
-        }
-      } catch (e) {
+    try {
+      final session = _prefs.getString(_prefsKey);
+      if (session != null && session.isNotEmpty) {
         if (kDebugMode) {
-          print('⚠️  [HYBRID STORAGE] SharedPreferences read failed: $e');
+          print('✅ [ANDROID STORAGE] Recovered from SharedPreferences');
         }
-        _sharedPrefsHealthy = false;
+
+        // Try to restore to SecureStorage for next time
+        try {
+          await _secure.write(key: _secureKey, value: session);
+        } catch (_) {}
+
+        return session;
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('⚠️  [ANDROID STORAGE] SharedPreferences read failed: $e');
       }
     }
 
-    if (kDebugMode) {
-      print('❌ [HYBRID STORAGE] No session found in any storage');
-    }
-
+    if (kDebugMode) print('❌ [ANDROID STORAGE] No session found');
     return null;
   }
 
   @override
-  Future<void> removeSession() async {
-    if (kDebugMode) {
-      print('🗑️  [HYBRID STORAGE] Removing session...');
+  Future<void> removePersistedSession() async {
+    // Remove from both storages
+    try {
+      await _secure.delete(key: _secureKey);
+    } catch (e) {
+      if (kDebugMode) {
+        print('⚠️  [ANDROID STORAGE] SecureStorage delete failed: $e');
+      }
     }
 
-    final futures = <Future<void>>[];
-
-    // Remove from SecureStorage
-    if (_secureStorageHealthy) {
-      futures.add(
-        _secureStorage.delete(key: _secureStorageKey).catchError((e) {
-          if (kDebugMode) {
-            print('⚠️  [HYBRID STORAGE] SecureStorage delete failed: $e');
-          }
-          return null;
-        }),
-      );
+    try {
+      await _prefs.remove(_prefsKey);
+    } catch (e) {
+      if (kDebugMode) {
+        print('⚠️  [ANDROID STORAGE] SharedPreferences delete failed: $e');
+      }
     }
 
-    // Remove from SharedPreferences
-    if (_sharedPrefsHealthy) {
-      futures.add(
-        _sharedPrefs.remove(_sharedPrefsKey).catchError((e) {
-          if (kDebugMode) {
-            print('⚠️  [HYBRID STORAGE] SharedPreferences delete failed: $e');
-          }
-          return false;
-        }),
-      );
-    }
-
-    await Future.wait(futures);
-
-    if (kDebugMode) {
-      print('✅ [HYBRID STORAGE] Session removed from all storage');
-    }
+    if (kDebugMode) print('✅ [ANDROID STORAGE] Session removed');
   }
 
   @override
   Future<bool> hasAccessToken() async {
-    final session = await accessSession();
-    if (session == null || session.isEmpty) return false;
-
-    try {
-      final Map<String, dynamic> sessionData = jsonDecode(session);
-      final accessToken = sessionData['access_token'] as String?;
-      return accessToken != null && accessToken.isNotEmpty;
-    } catch (e) {
-      if (kDebugMode) {
-        print('⚠️  [HYBRID STORAGE] Error checking access token: $e');
-      }
-      return false;
-    }
+    final session = await _readSession();
+    return session != null && session.isNotEmpty;
   }
 
-  /// Get storage health status for debugging
-  Map<String, bool> getStorageHealth() {
-    return {
-      'secureStorage': _secureStorageHealthy,
-      'sharedPreferences': _sharedPrefsHealthy,
-    };
+  @override
+  Future<String?> accessToken() async {
+    // Return the full session JSON string (not just the token)
+    // Supabase expects the complete session to restore authentication
+    return _readSession();
   }
 }
 ```
@@ -1134,14 +946,10 @@ Future<void> _onAuthInitialize(
       print('   3. Session expired on backend');
       print('   4. First app launch (no session exists)');
 
-      // ✅ NEW: Check storage health
+      // Check if using AndroidHybridStorage
       if (_authService.localStorage != null &&
-          _authService.localStorage is HybridLocalStorage) {
-        final storage = _authService.localStorage as HybridLocalStorage;
-        final health = storage.getStorageHealth();
-        print('   Storage Health:');
-        print('     SecureStorage: ${health['secureStorage'] ? "✅" : "❌"}');
-        print('     SharedPreferences: ${health['sharedPreferences'] ? "✅" : "❌"}');
+          _authService.localStorage is AndroidHybridStorage) {
+        print('   Using AndroidHybridStorage (dual storage with fallback)');
       }
     }
 
@@ -1442,7 +1250,7 @@ void main() async {
       url: AppConfig.supabaseUrl,
       anonKey: AppConfig.supabaseAnonKey,
       debug: kDebugMode,
-      localStorage: await HybridLocalStorage.create(),
+      localStorage: await AndroidHybridStorage.create(),
     );
 
     // ... rest of initialization ...
@@ -1561,8 +1369,8 @@ void main() async {
 
 | File Path | Purpose | Changes Required |
 |-----------|---------|------------------|
-| `lib/main.dart` | App initialization | Add HybridLocalStorage initialization |
-| `lib/core/services/hybrid_local_storage.dart` | New file | Create hybrid storage adapter |
+| `lib/main.dart` | App initialization | Add AndroidHybridStorage initialization |
+| `lib/core/services/android_hybrid_storage.dart` | New file | Create hybrid storage adapter |
 | `lib/core/services/storage_health_monitor.dart` | New file | Add storage diagnostics |
 | `lib/features/auth/presentation/bloc/auth_bloc.dart` | Auth initialization | Add retry logic and error handling |
 | `android/app/proguard-rules.pro` | New file | Add ProGuard keep rules |
@@ -1607,7 +1415,7 @@ dependencies:
 ## 🚀 Deployment Plan
 
 ### **Phase 1: Alpha Testing (Internal)**
-1. Implement HybridLocalStorage
+1. Implement AndroidHybridStorage
 2. Add ProGuard rules
 3. Test on 5-10 internal devices for 1 week
 4. Monitor storage health logs
@@ -1717,4 +1525,4 @@ dependencies:
 ### **Changelog:**
 - **v3.0** - Added Solution 3 implementation (session retry logic with KISS approach)
 - **v2.0** - Updated with platform-aware approach (Android-only hybrid storage)
-- **v1.0** - Initial HybridLocalStorage implementation (applied to all platforms - caused web issues)
+- **v1.0** - Initial AndroidHybridStorage implementation (Android-only dual storage)

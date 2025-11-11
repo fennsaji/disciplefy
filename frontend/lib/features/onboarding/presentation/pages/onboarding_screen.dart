@@ -141,51 +141,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   // Disciplefy Logo
-                  Builder(
-                    builder: (context) {
-                      final isDarkMode =
-                          Theme.of(context).brightness == Brightness.dark;
-                      final logoAsset = isDarkMode
-                          ? 'assets/images/app_logo_dark.png'
-                          : 'assets/images/app_logo.png';
-
-                      return Image.asset(
-                        logoAsset,
-                        width: 140,
-                        height: 32,
-                        fit: BoxFit.contain,
-                        errorBuilder: (context, error, stackTrace) {
-                          // Fallback to icon + text if image fails to load
-                          return Row(
-                            children: [
-                              Container(
-                                width: 32,
-                                height: 32,
-                                decoration: BoxDecoration(
-                                  color: theme.colorScheme.primary,
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: Icon(
-                                  Icons.menu_book,
-                                  color: theme.colorScheme.onPrimary,
-                                  size: 20,
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              Text(
-                                'Disciplefy',
-                                style: GoogleFonts.poppins(
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.bold,
-                                  color: theme.colorScheme.primary,
-                                ),
-                              ),
-                            ],
-                          );
-                        },
-                      );
-                    },
-                  ),
+                  const _LogoWidget(),
                   // Skip button
                   TextButton(
                     onPressed: _skipOnboarding,
@@ -380,6 +336,59 @@ class _OnboardingSlideWidget extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// Private widget for rendering the theme-aware Disciplefy logo
+class _LogoWidget extends StatelessWidget {
+  const _LogoWidget();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDarkMode = theme.brightness == Brightness.dark;
+    final logoAsset = isDarkMode
+        ? 'assets/images/app_logo_dark.png'
+        : 'assets/images/app_logo.png';
+
+    return Semantics(
+      label: 'Disciplefy app logo',
+      child: Image.asset(
+        logoAsset,
+        width: 140,
+        height: 32,
+        fit: BoxFit.contain,
+        errorBuilder: (context, error, stackTrace) {
+          // Fallback to icon + text if image fails to load
+          return Row(
+            children: [
+              Container(
+                width: 32,
+                height: 32,
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.primary,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(
+                  Icons.menu_book,
+                  color: theme.colorScheme.onPrimary,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Text(
+                'Disciplefy',
+                style: GoogleFonts.poppins(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: theme.colorScheme.primary,
+                ),
+              ),
+            ],
+          );
+        },
       ),
     );
   }
