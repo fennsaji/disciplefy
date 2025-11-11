@@ -86,49 +86,70 @@ class _OnboardingWelcomeContent extends StatelessWidget {
                 // App Logo Section
                 Column(
                   children: [
-                    // Logo Container
-                    Container(
-                      width: isLargeScreen ? 120 : 100,
-                      height: isLargeScreen ? 120 : 100,
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [
-                            AppTheme.primaryColor,
-                            AppTheme.primaryColor.withOpacity(0.8),
-                          ],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
-                        borderRadius: BorderRadius.circular(24),
-                        boxShadow: [
-                          BoxShadow(
-                            color: AppTheme.primaryColor.withOpacity(0.3),
-                            blurRadius: 20,
-                            offset: const Offset(0, 8),
-                          ),
-                        ],
-                      ),
-                      child: Icon(
-                        Icons.menu_book_rounded,
-                        size: isLargeScreen ? 64 : 56,
-                        color: Colors.white,
-                      ),
+                    // App Logo with Text (from splash screen)
+                    Builder(
+                      builder: (context) {
+                        final isDarkMode =
+                            Theme.of(context).brightness == Brightness.dark;
+                        final logoAsset = isDarkMode
+                            ? 'assets/images/app_logo_dark.png'
+                            : 'assets/images/app_logo.png';
+
+                        return Image.asset(
+                          logoAsset,
+                          width: isLargeScreen ? 280 : 240,
+                          height: isLargeScreen ? 120 : 100,
+                          fit: BoxFit.contain,
+                          errorBuilder: (context, error, stackTrace) {
+                            // Fallback to icon + text if image fails to load
+                            return Column(
+                              children: [
+                                Container(
+                                  width: isLargeScreen ? 120 : 100,
+                                  height: isLargeScreen ? 120 : 100,
+                                  decoration: BoxDecoration(
+                                    gradient: LinearGradient(
+                                      colors: [
+                                        AppTheme.primaryColor,
+                                        AppTheme.primaryColor.withOpacity(0.8),
+                                      ],
+                                      begin: Alignment.topLeft,
+                                      end: Alignment.bottomRight,
+                                    ),
+                                    borderRadius: BorderRadius.circular(24),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: AppTheme.primaryColor
+                                            .withOpacity(0.3),
+                                        blurRadius: 20,
+                                        offset: const Offset(0, 8),
+                                      ),
+                                    ],
+                                  ),
+                                  child: Icon(
+                                    Icons.menu_book_rounded,
+                                    size: isLargeScreen ? 64 : 56,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                                SizedBox(height: isLargeScreen ? 24 : 20),
+                                Text(
+                                  'Disciplefy',
+                                  style: GoogleFonts.playfairDisplay(
+                                    fontSize: isLargeScreen ? 48 : 42,
+                                    fontWeight: FontWeight.bold,
+                                    color: AppTheme.primaryColor,
+                                    letterSpacing: -0.5,
+                                  ),
+                                ),
+                              ],
+                            );
+                          },
+                        );
+                      },
                     ),
 
-                    SizedBox(height: isLargeScreen ? 32 : 24),
-
-                    // App Title
-                    Text(
-                      'Disciplefy',
-                      style: GoogleFonts.playfairDisplay(
-                        fontSize: isLargeScreen ? 48 : 42,
-                        fontWeight: FontWeight.bold,
-                        color: AppTheme.primaryColor,
-                        letterSpacing: -0.5,
-                      ),
-                    ),
-
-                    SizedBox(height: isLargeScreen ? 16 : 12),
+                    SizedBox(height: isLargeScreen ? 24 : 20),
 
                     // Tagline
                     Text(

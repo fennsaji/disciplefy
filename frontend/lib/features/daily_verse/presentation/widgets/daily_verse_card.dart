@@ -350,6 +350,11 @@ class DailyVerseCard extends StatelessWidget {
     DailyVerseStreak? streak,
   }) {
     final theme = Theme.of(context);
+    final isDarkMode = theme.brightness == Brightness.dark;
+
+    // Streak colors: white in dark mode, primary purple in light mode
+    final streakColor =
+        isDarkMode ? const Color(0xFFE0E0E0) : theme.colorScheme.primary;
 
     return Row(
       children: [
@@ -391,12 +396,10 @@ class DailyVerseCard extends StatelessWidget {
                         vertical: 4,
                       ),
                       decoration: BoxDecoration(
-                        color:
-                            theme.colorScheme.primary.withValues(alpha: 0.15),
+                        color: streakColor.withValues(alpha: 0.15),
                         borderRadius: BorderRadius.circular(8),
                         border: Border.all(
-                          color:
-                              theme.colorScheme.primary.withValues(alpha: 0.3),
+                          color: streakColor.withValues(alpha: 0.3),
                         ),
                       ),
                       child: Row(
@@ -405,14 +408,14 @@ class DailyVerseCard extends StatelessWidget {
                           Icon(
                             Icons.bolt,
                             size: 14,
-                            color: theme.colorScheme.primary,
+                            color: streakColor,
                           ),
                           const SizedBox(width: 4),
                           Text(
                             '${streak.currentStreak}',
                             style: theme.textTheme.labelSmall?.copyWith(
                               fontWeight: FontWeight.bold,
-                              color: theme.colorScheme.primary,
+                              color: streakColor,
                               fontSize: 12,
                             ),
                           ),
