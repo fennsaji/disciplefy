@@ -33,6 +33,7 @@ class DailyVerseWebCacheService implements DailyVerseCacheInterface {
       final prefs = await SharedPreferences.getInstance();
       final dateKey = _formatDateKey(verse.date);
       final verseData = {
+        'id': verse.id, // UUID from backend
         'reference': verse.reference,
         'referenceEn': verse.referenceTranslations.en,
         'referenceHi': verse.referenceTranslations.hi,
@@ -188,7 +189,12 @@ class DailyVerseWebCacheService implements DailyVerseCacheInterface {
 
   /// Create verse entity from stored map
   DailyVerseEntity _createVerseFromMap(Map<String, dynamic> map) {
+    // Use cached ID or generate a temporary one for legacy cached entries
+    final date = DateTime.parse(map['date'] as String);
+    final id = map['id'] as String? ?? 'temp-${_formatDateKey(date)}';
+
     return DailyVerseEntity(
+      id: id,
       reference: map['reference'] as String,
       referenceTranslations: ReferenceTranslations(
         en: map['referenceEn'] as String? ?? map['reference'] as String,
@@ -200,7 +206,7 @@ class DailyVerseWebCacheService implements DailyVerseCacheInterface {
         hindi: map['hindi'] as String,
         malayalam: map['malayalam'] as String,
       ),
-      date: DateTime.parse(map['date'] as String),
+      date: date,
     );
   }
 

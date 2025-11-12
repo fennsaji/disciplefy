@@ -6,8 +6,12 @@ import 'package:share_plus/share_plus.dart';
 import '../../../../core/utils/ui_utils.dart';
 import '../../../../core/extensions/translation_extension.dart';
 import '../../../../core/i18n/translation_keys.dart';
+import '../../../../core/di/injection_container.dart';
 import '../../domain/entities/daily_verse_entity.dart';
 import '../../domain/entities/daily_verse_streak.dart';
+import '../../../memory_verses/presentation/bloc/memory_verse_bloc.dart';
+import '../../../memory_verses/presentation/bloc/memory_verse_event.dart';
+import '../../../memory_verses/presentation/bloc/memory_verse_state.dart';
 import '../bloc/daily_verse_bloc.dart';
 import '../bloc/daily_verse_event.dart';
 import '../bloc/daily_verse_state.dart';
@@ -566,6 +570,23 @@ class DailyVerseCard extends StatelessWidget {
 
         const SizedBox(width: 12),
 
+        // Add to Memory button
+        IconButton(
+          onPressed: () => _addToMemory(context, state),
+          icon: Icon(
+            Icons.bookmark_add,
+            color: theme.colorScheme.onSecondary,
+            size: 24,
+          ),
+          tooltip: 'Add to Memory Verses',
+          style: IconButton.styleFrom(
+            minimumSize: const Size(44, 44),
+            padding: const EdgeInsets.all(10),
+          ),
+        ),
+
+        const SizedBox(width: 12),
+
         // Refresh button
         IconButton(
           onPressed: () {
@@ -583,6 +604,82 @@ class DailyVerseCard extends StatelessWidget {
         ),
       ],
     );
+  }
+
+  void _addToMemory(BuildContext context, DailyVerseLoaded state) {
+    // Get MemoryVerseBloc from service locator
+    // Using sl<> instead of context.read because MemoryVerseBloc
+    // is not provided in the widget tree at this level
+    final memoryVerseBloc = sl<MemoryVerseBloc>();
+
+    // Use the UUID from DailyVerseEntity
+    final dailyVerseId = state.verse.id;
+
+    // Add verse to memory deck
+    memoryVerseBloc.add(AddVerseFromDaily(dailyVerseId));
+
+    // Listen for result
+    final subscription = memoryVerseBloc.stream.listen((memoryState) {
+      if (memoryState is VerseAdded) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.check_circle, color: Colors.white),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Added to Memory Verses! Start reviewing to memorize this verse.',
+                  ),
+                ),
+              ],
+            ),
+            backgroundColor: Colors.green,
+            duration: const Duration(seconds: 3),
+            action: SnackBarAction(
+              label: 'Review Now',
+              textColor: Colors.white,
+              onPressed: () {
+                Navigator.pushNamed(
+                  context,
+                  '/memory-verses',
+                );
+              },
+            ),
+          ),
+        );
+      } else if (memoryState is MemoryVerseError) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(memoryState.message),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      } else if (memoryState is OperationQueued) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.cloud_off, color: Colors.white),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(memoryState.message),
+                ),
+              ],
+            ),
+            backgroundColor: Colors.orange,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+    });
+
+    // Cancel subscription and close BLoC after 5 seconds
+    Future.delayed(const Duration(seconds: 5), () {
+      subscription.cancel();
+      memoryVerseBloc.close();
+    });
   }
 
   Widget _buildShimmerText(BuildContext context, {double width = 1.0}) {

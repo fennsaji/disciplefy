@@ -6,12 +6,15 @@ part 'daily_verse_model.g.dart';
 /// Data model for daily verse API responses
 @JsonSerializable()
 class DailyVerseModel {
+  final String?
+      id; // UUID from daily_verses_cache table (nullable for newly generated verses)
   final String reference;
   final ReferenceTranslationsModel referenceTranslations;
   final DailyVerseTranslationsModel translations;
   final String date;
 
   const DailyVerseModel({
+    this.id, // Optional - only present for cached verses
     required this.reference,
     required this.referenceTranslations,
     required this.translations,
@@ -25,6 +28,8 @@ class DailyVerseModel {
 
   /// Convert to domain entity
   DailyVerseEntity toEntity() => DailyVerseEntity(
+        id: id ??
+            'temp-$date', // Use date-based temp ID for newly generated verses
         reference: reference,
         referenceTranslations: referenceTranslations.toEntity(),
         translations: translations.toEntity(),

@@ -279,6 +279,19 @@ class RouterGuard {
         path.startsWith('/phone-auth'); // Allow all phone auth related routes
   }
 
+  /// Check if the route requires full authentication (not guest/anonymous)
+  /// Routes like memory verses require a real Supabase session with database access
+  static bool _requiresFullAuthentication(String path) {
+    final fullAuthRoutes = [
+      AppRoutes.memoryVerses,
+      AppRoutes.verseReview,
+    ];
+
+    return fullAuthRoutes.contains(path) ||
+        path.startsWith('/memory-verses') ||
+        path.startsWith('/memory-verse-review');
+  }
+
   /// Log the current navigation state for debugging
   /// Phase 2 Enhancement: More detailed analytics and route classification
   static void _logNavigationState(
@@ -368,6 +381,23 @@ class RouterGuard {
     //       tag: 'ROUTER');
     //   return _handleAuthenticatedUserWithoutOnboarding(routeAnalysis);
     // }
+
+    // Case 2.5: Check if guest/anonymous user is trying to access full-auth route
+    if (authState.isAuthenticated &&
+        (authState.userType == 'guest' || authState.userType == 'anonymous') &&
+        _requiresFullAuthentication(routeAnalysis.currentPath)) {
+      Logger.info(
+        'Decision: Guest/anonymous user blocked from full-auth route',
+        tag: 'ROUTER_SECURITY',
+        context: {
+          'user_type': authState.userType,
+          'attempted_route': routeAnalysis.currentPath,
+          'redirect_target': AppRoutes.login,
+          'reason': 'route_requires_full_authentication',
+        },
+      );
+      return AppRoutes.login;
+    }
 
     // Case 3: Authenticated but language selection not completed
     if (authState.isAuthenticated && !languageSelectionState.isCompleted) {
