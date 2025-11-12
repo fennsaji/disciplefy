@@ -196,7 +196,12 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
                           onTap: _onDailyVerseCardTap,
                         ),
 
-                        SizedBox(height: isLargeScreen ? 40 : 32),
+                        SizedBox(height: isLargeScreen ? 24 : 20),
+
+                        // Memory Verses Button
+                        _buildMemoryVersesButton(),
+
+                        SizedBox(height: isLargeScreen ? 24 : 20),
 
                         // Generate Study Guide Button
                         _buildGenerateStudyButton(),
@@ -309,6 +314,35 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
             ),
           ),
         ],
+      );
+
+  Widget _buildMemoryVersesButton() => SizedBox(
+        width: double.infinity,
+        child: OutlinedButton.icon(
+          onPressed: () => context.go('/memory-verses'),
+          icon: const Icon(
+            Icons.psychology_outlined,
+            size: 24,
+          ),
+          label: Text(
+            'Memory Verses',
+            style: GoogleFonts.inter(
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          style: OutlinedButton.styleFrom(
+            foregroundColor: AppTheme.primaryColor,
+            minimumSize: const Size.fromHeight(56),
+            side: BorderSide(
+              color: AppTheme.primaryColor.withOpacity(0.5),
+              width: 2,
+            ),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+          ),
+        ),
       );
 
   Widget _buildGenerateStudyButton() => SizedBox(

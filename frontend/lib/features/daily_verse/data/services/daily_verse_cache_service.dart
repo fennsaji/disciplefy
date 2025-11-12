@@ -45,6 +45,7 @@ class DailyVerseCacheService implements DailyVerseCacheInterface {
     try {
       final dateKey = _formatDateKey(verse.date);
       final verseData = {
+        'id': verse.id, // UUID from backend
         'reference': verse.reference,
         'referenceEn': verse.referenceTranslations.en,
         'referenceHi': verse.referenceTranslations.hi,
@@ -74,7 +75,11 @@ class DailyVerseCacheService implements DailyVerseCacheInterface {
 
       if (verseData == null) return null;
 
+      // Use cached ID or generate a temporary one for legacy cached entries
+      final id = verseData['id'] as String? ?? 'temp-$dateKey';
+
       return DailyVerseEntity(
+        id: id,
         reference: verseData['reference'] as String,
         referenceTranslations: ReferenceTranslations(
           en: verseData['referenceEn'] as String? ??
