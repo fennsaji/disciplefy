@@ -17,13 +17,14 @@ import { SupportedLanguage } from '../_shared/types/token-types.ts'
 
 /**
  * Request payload for study guide generation
- * 
+ *
  * Note: user_context is removed as per security guide to prevent
  * client-provided user impersonation attacks
  */
 interface StudyGenerationRequest {
   readonly input_type: 'scripture' | 'topic' | 'question'
   readonly input_value: string
+  readonly topic_description?: string  // Optional: provides context for topic-based study guides
   readonly language?: string
 }
 
@@ -38,9 +39,9 @@ interface StudyGenerationRequest {
 async function handleStudyGenerate(req: Request, { authService, llmService, studyGuideRepository, tokenService, analyticsLogger, securityValidator }: ServiceContainer): Promise<Response> {
   // 1. Get user context SECURELY from the new AuthService
   const userContext = await authService.getUserContext(req)
-  
+
   // 2. Validate request body and parse data
-  const { input_type, input_value, language } = await parseAndValidateRequest(req)
+  const { input_type, input_value, topic_description, language } = await parseAndValidateRequest(req)
   
   // 3. Security validation of input
   const securityResult = await securityValidator.validateInput(input_value, input_type)
@@ -131,6 +132,7 @@ async function handleStudyGenerate(req: Request, { authService, llmService, stud
   const generatedContent = await llmService.generateStudyGuide({
     inputType: input_type,
     inputValue: input_value,
+    topicDescription: topic_description,  // Provides additional context for topic-based guides
     language: targetLanguage
   })
 
@@ -207,6 +209,10 @@ async function parseAndValidateRequest(req: Request): Promise<StudyGenerationReq
       minLength: 1,
       maxLength: 500
     },
+    topic_description: {
+      required: false,
+      maxLength: 1000  // Allow longer descriptions for better context
+    },
     language: {
       required: false,
       allowedValues: ['en', 'hi', 'ml']
@@ -218,6 +224,7 @@ async function parseAndValidateRequest(req: Request): Promise<StudyGenerationReq
   return {
     input_type: requestBody.input_type,
     input_value: requestBody.input_value,
+    topic_description: requestBody.topic_description,
     language: requestBody.language
   }
 }

@@ -17,17 +17,22 @@ class StudyGenerationParams extends Equatable {
   /// The type of input ('scripture', 'topic', or 'question').
   final String inputType;
 
+  /// Optional topic description for providing additional context.
+  /// Only used when inputType is 'topic'.
+  final String? topicDescription;
+
   /// Optional language code for the study guide.
   final String? language;
 
   const StudyGenerationParams({
     required this.input,
     required this.inputType,
+    this.topicDescription,
     this.language,
   });
 
   @override
-  List<Object?> get props => [input, inputType, language];
+  List<Object?> get props => [input, inputType, topicDescription, language];
 
   /// Validates the parameters.
   ///
@@ -122,6 +127,7 @@ class GenerateStudyGuide {
       return await _repository.generateStudyGuide(
         input: params.input.trim(),
         inputType: params.inputType,
+        topicDescription: params.topicDescription,
         language: params.language ?? AppConstants.DEFAULT_LANGUAGE,
       );
     } catch (e) {

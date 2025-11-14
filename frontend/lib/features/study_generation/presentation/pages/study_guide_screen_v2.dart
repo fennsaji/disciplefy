@@ -51,6 +51,9 @@ class StudyGuideScreenV2 extends StatelessWidget {
   /// Type of input: 'scripture', 'topic', or 'question'
   final String? type;
 
+  /// Optional topic description for additional context (only for topics)
+  final String? description;
+
   /// Optional language code for the study guide
   final String? language;
 
@@ -62,6 +65,7 @@ class StudyGuideScreenV2 extends StatelessWidget {
     this.topicId,
     this.input,
     this.type,
+    this.description,
     this.language,
     this.navigationSource = StudyNavigationSource.home,
   });
@@ -73,6 +77,7 @@ class StudyGuideScreenV2 extends StatelessWidget {
           topicId: topicId,
           input: input,
           type: type,
+          description: description,
           language: language,
           navigationSource: navigationSource,
         ),
@@ -83,6 +88,7 @@ class _StudyGuideScreenV2Content extends StatefulWidget {
   final String? topicId;
   final String? input;
   final String? type;
+  final String? description;
   final String? language;
   final StudyNavigationSource navigationSource;
 
@@ -90,6 +96,7 @@ class _StudyGuideScreenV2Content extends StatefulWidget {
     this.topicId,
     this.input,
     this.type,
+    this.description,
     this.language,
     required this.navigationSource,
   });
@@ -235,6 +242,8 @@ class _StudyGuideScreenV2ContentState
     context.read<StudyBloc>().add(GenerateStudyGuideRequested(
           input: widget.input!,
           inputType: widget.type!,
+          topicDescription: widget
+              .description, // Include topic description for richer context
           language: normalizedLanguageCode,
         ));
   }

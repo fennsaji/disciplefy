@@ -783,14 +783,17 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
 
     final languageCode = _getLanguageCode(selectedLanguage);
     final encodedTitle = Uri.encodeComponent(topic.title);
+    final encodedDescription = Uri.encodeComponent(topic.description);
     final topicIdParam = topic.id.isNotEmpty ? '&topic_id=${topic.id}' : '';
+    final descriptionParam =
+        topic.description.isNotEmpty ? '&description=$encodedDescription' : '';
 
     debugPrint(
         '🔍 [HOME] Navigating to study guide V2 for topic: ${topic.title} (ID: ${topic.id})');
 
     // Navigate directly to study guide V2 - it will handle generation
     context.go(
-        '/study-guide-v2?input=$encodedTitle&type=topic&language=$languageCode&source=home$topicIdParam');
+        '/study-guide-v2?input=$encodedTitle&type=topic&language=$languageCode&source=home$topicIdParam$descriptionParam');
 
     // Reset navigation flag after a short delay
     Future.delayed(const Duration(milliseconds: 500), () {

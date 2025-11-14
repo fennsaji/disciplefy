@@ -34,6 +34,7 @@ class StudyGenerationHandler {
         StudyGenerationParams(
           input: event.input,
           inputType: event.inputType,
+          topicDescription: event.topicDescription,
           language: event.language,
         ),
       );
