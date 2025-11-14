@@ -308,6 +308,7 @@ class AppRouter {
           final topicId = state.uri.queryParameters['topic_id'];
           final input = state.uri.queryParameters['input'];
           final type = state.uri.queryParameters['type'];
+          final description = state.uri.queryParameters['description'];
           final language = state.uri.queryParameters['language'];
           final sourceString = state.uri.queryParameters['source'];
 
@@ -319,6 +320,7 @@ class AppRouter {
             topicId: topicId,
             input: input,
             type: type,
+            description: description,
             language: language,
             navigationSource: navigationSource,
           );

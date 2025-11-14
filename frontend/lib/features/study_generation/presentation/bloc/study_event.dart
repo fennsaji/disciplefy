@@ -22,17 +22,22 @@ class GenerateStudyGuideRequested extends StudyEvent {
   /// The type of input ('scripture' or 'topic').
   final String inputType;
 
+  /// Optional topic description for providing additional context.
+  final String? topicDescription;
+
   /// Optional language code for the study guide.
   final String? language;
 
   const GenerateStudyGuideRequested({
     required this.input,
     required this.inputType,
+    this.topicDescription,
     this.language,
   });
 
   @override
-  List<Object?> get props => [input, inputType, language ?? ''];
+  List<Object?> get props =>
+      [input, inputType, topicDescription ?? '', language ?? ''];
 }
 
 /// Event to clear the current study guide state.

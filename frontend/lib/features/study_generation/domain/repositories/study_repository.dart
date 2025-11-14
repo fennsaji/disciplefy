@@ -12,12 +12,14 @@ abstract class StudyRepository {
   ///
   /// [input] The verse reference or topic to generate a study guide for.
   /// [inputType] The type of input ('scripture' or 'topic').
+  /// [topicDescription] Optional description providing additional context for topics.
   /// [language] The language code for the study guide (defaults to 'en').
   ///
   /// Returns an [Either] containing either a [Failure] or [StudyGuide].
   Future<Either<Failure, StudyGuide>> generateStudyGuide({
     required String input,
     required String inputType,
+    String? topicDescription,
     required String language,
   });
 

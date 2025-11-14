@@ -506,9 +506,10 @@ class NotificationService {
 
       case 'recommended_topic':
         // Extract topic information from notification data
-        // Priority: topic_id (for tracking) + topic_title (for generation)
+        // Priority: topic_id (for tracking) + topic_title + topic_description (for generation)
         final topicId = data['topic_id'];
         final topicTitle = data['topic_title'];
+        final topicDescription = data['topic_description'];
         final language = data['language'] ?? 'en';
 
         if (topicTitle != null &&
@@ -524,8 +525,15 @@ class NotificationService {
                   ? '&topic_id=$topicId'
                   : '';
 
+          // Include topic_description if available for richer context in study guide generation
+          final descriptionParam = (topicDescription != null &&
+                  topicDescription is String &&
+                  topicDescription.isNotEmpty)
+              ? '&description=${Uri.encodeComponent(topicDescription)}'
+              : '';
+
           _router.go(
-              '/study-guide-v2?input=$encodedTitle&type=topic&language=$language&source=notification$topicIdParam');
+              '/study-guide-v2?input=$encodedTitle&type=topic&language=$language&source=notification$topicIdParam$descriptionParam');
           if (kDebugMode) {
             print(
                 '[NotificationService] ✅ Navigating to study guide for topic: $topicTitle (ID: ${topicId ?? 'none'})');
