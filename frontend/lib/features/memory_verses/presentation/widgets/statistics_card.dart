@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/extensions/translation_extension.dart';
 import '../../domain/entities/review_statistics_entity.dart';
 
 /// Widget displaying memory verse statistics.
@@ -37,7 +38,7 @@ class StatisticsCard extends StatelessWidget {
                   child: _buildStatItem(
                     context: context,
                     icon: Icons.library_books,
-                    label: 'Total Verses',
+                    label: context.tr('memory.totalVerses'),
                     value: statistics.totalVerses.toString(),
                     color: theme.primaryColor,
                   ),
@@ -47,7 +48,7 @@ class StatisticsCard extends StatelessWidget {
                   child: _buildStatItem(
                     context: context,
                     icon: Icons.schedule,
-                    label: 'Due Today',
+                    label: context.tr('memory.dueToday'),
                     value: statistics.dueVerses.toString(),
                     color:
                         statistics.dueVerses > 0 ? Colors.orange : Colors.green,
@@ -64,7 +65,7 @@ class StatisticsCard extends StatelessWidget {
                   child: _buildStatItem(
                     context: context,
                     icon: Icons.check_circle,
-                    label: 'Reviewed Today',
+                    label: context.tr('memory.reviewedToday'),
                     value: statistics.reviewedToday.toString(),
                     color: Colors.blue,
                   ),
@@ -74,7 +75,7 @@ class StatisticsCard extends StatelessWidget {
                   child: _buildStatItem(
                     context: context,
                     icon: Icons.star,
-                    label: 'Mastered',
+                    label: context.tr('memory.mastered'),
                     value: statistics.masteredVerses.toString(),
                     color: Colors.amber,
                   ),
@@ -94,13 +95,16 @@ class StatisticsCard extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        'Mastery Progress',
+                        context.tr('memory.masteryProgress'),
                         style: theme.textTheme.titleSmall?.copyWith(
                           fontWeight: FontWeight.w600,
                         ),
                       ),
                       Text(
-                        '${statistics.masteryPercentage.toStringAsFixed(0)}%',
+                        context.tr('memory.masteryPercentage', {
+                          'percentage':
+                              statistics.masteryPercentage.toStringAsFixed(0),
+                        }),
                         style: theme.textTheme.titleSmall?.copyWith(
                           fontWeight: FontWeight.bold,
                           color: theme.primaryColor,
@@ -123,7 +127,7 @@ class StatisticsCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    _getMasteryMessage(statistics.masteryPercentage),
+                    _getMasteryMessage(context, statistics.masteryPercentage),
                     style: theme.textTheme.bodySmall?.copyWith(
                       color: theme.colorScheme.onSurfaceVariant,
                       fontStyle: FontStyle.italic,
@@ -206,10 +210,10 @@ class StatisticsCard extends StatelessWidget {
     return Colors.red;
   }
 
-  String _getMasteryMessage(double percentage) {
-    if (percentage >= 75) return 'Excellent! Keep up the great work!';
-    if (percentage >= 50) return 'Great progress! You\'re doing well!';
-    if (percentage >= 25) return 'Good start! Keep practicing!';
-    return 'Just getting started. You can do it!';
+  String _getMasteryMessage(BuildContext context, double percentage) {
+    if (percentage >= 75) return context.tr('memory.masteryMessage.excellent');
+    if (percentage >= 50) return context.tr('memory.masteryMessage.great');
+    if (percentage >= 25) return context.tr('memory.masteryMessage.good');
+    return context.tr('memory.masteryMessage.starting');
   }
 }

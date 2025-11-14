@@ -213,6 +213,68 @@ class MemoryVerseRemoteDataSource {
     }
   }
 
+  /// Gets a single verse by ID from remote
+  ///
+  /// Since there's no specific endpoint for fetching a single verse,
+  /// this fetches all due verses and filters by ID.
+  Future<MemoryVerseModel> getVerseById(String id) async {
+    try {
+      if (kDebugMode) {
+        print('🚀 [MEMORY_VERSES] Fetching verse by ID: $id');
+      }
+
+      // Fetch all verses (including non-due ones) and filter
+      final (verses, _) = await getDueVerses(
+        limit: 1000, // High limit to ensure we get all verses
+        // showAll defaults to true, so all verses are fetched
+      );
+
+      // Find the specific verse
+      final verse = verses.firstWhere(
+        (v) => v.id == id,
+        orElse: () => throw const ServerException(
+          message: 'Verse not found on server',
+          code: 'VERSE_NOT_FOUND',
+        ),
+      );
+
+      if (kDebugMode) {
+        print('✅ [MEMORY_VERSES] Found verse: ${verse.verseReference}');
+      }
+
+      return verse;
+    } catch (e) {
+      _handleException(e, 'fetching verse by ID');
+    }
+  }
+
+  /// Deletes a memory verse from the server
+  Future<void> deleteVerse(String memoryVerseId) async {
+    try {
+      if (kDebugMode) {
+        print('🗑️ [MEMORY_VERSES] Deleting verse: $memoryVerseId');
+      }
+
+      const deleteEndpoint = '/functions/v1/delete-memory-verse';
+      // Include verse ID as query parameter
+      final url = '$_baseUrl$deleteEndpoint?memory_verse_id=$memoryVerseId';
+
+      // Create headers with authentication
+      final headers = await _httpService.createHeaders();
+      final response = await _httpService.delete(url, headers: headers);
+
+      if (response.statusCode >= 400) {
+        _handleErrorResponse(response);
+      }
+
+      if (kDebugMode) {
+        print('✅ [MEMORY_VERSES] Verse deleted successfully');
+      }
+    } catch (e) {
+      _handleException(e, 'deleting verse');
+    }
+  }
+
   /// Handles error responses from the API
   Never _handleErrorResponse(dynamic response) {
     final statusCode = response.statusCode;

@@ -85,6 +85,7 @@ class TranslationKeys {
   // Home Screen
   static const homeWelcomeBack = 'home.welcome_back';
   static const homeContinueJourney = 'home.continue_journey';
+  static const homeMemoryVerses = 'home.memory_verses';
   static const homeGenerateStudyGuide = 'home.generate_study_guide';
   static const homeResumeLastStudy = 'home.resume_last_study';
   static const homeContinueStudying = 'home.continue_studying';

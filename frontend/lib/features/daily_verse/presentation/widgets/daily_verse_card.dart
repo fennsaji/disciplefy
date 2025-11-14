@@ -606,80 +606,84 @@ class DailyVerseCard extends StatelessWidget {
     );
   }
 
+  /// Adds the current verse to memory deck
   void _addToMemory(BuildContext context, DailyVerseLoaded state) {
-    // Get MemoryVerseBloc from service locator
-    // Using sl<> instead of context.read because MemoryVerseBloc
-    // is not provided in the widget tree at this level
     final memoryVerseBloc = sl<MemoryVerseBloc>();
-
-    // Use the UUID from DailyVerseEntity
     final dailyVerseId = state.verse.id;
 
-    // Add verse to memory deck
+    // Dispatch add verse event
     memoryVerseBloc.add(AddVerseFromDaily(dailyVerseId));
 
-    // Listen for result
+    // Listen for result and delegate UI to helpers
     final subscription = memoryVerseBloc.stream.listen((memoryState) {
       if (memoryState is VerseAdded) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Row(
-              children: [
-                const Icon(Icons.check_circle, color: Colors.white),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    'Added to Memory Verses! Start reviewing to memorize this verse.',
-                  ),
-                ),
-              ],
-            ),
-            backgroundColor: Colors.green,
-            duration: const Duration(seconds: 3),
-            action: SnackBarAction(
-              label: 'Review Now',
-              textColor: Colors.white,
-              onPressed: () {
-                Navigator.pushNamed(
-                  context,
-                  '/memory-verses',
-                );
-              },
-            ),
-          ),
-        );
+        _showAddedSnackBar(context);
       } else if (memoryState is MemoryVerseError) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(memoryState.message),
-            backgroundColor: Colors.red,
-            duration: const Duration(seconds: 3),
-          ),
-        );
+        _showErrorSnackBar(context, memoryState.message);
       } else if (memoryState is OperationQueued) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Row(
-              children: [
-                const Icon(Icons.cloud_off, color: Colors.white),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(memoryState.message),
-                ),
-              ],
-            ),
-            backgroundColor: Colors.orange,
-            duration: const Duration(seconds: 3),
-          ),
-        );
+        _showQueuedSnackBar(context, memoryState.message);
       }
     });
 
-    // Cancel subscription and close BLoC after 5 seconds
+    // Cancel subscription after 5 seconds
+    // Note: Do NOT close memoryVerseBloc - it's a GetIt-managed shared instance
     Future.delayed(const Duration(seconds: 5), () {
       subscription.cancel();
-      memoryVerseBloc.close();
     });
+  }
+
+  /// Shows success snackbar when verse is added to memory
+  void _showAddedSnackBar(BuildContext context) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            const Icon(Icons.check_circle, color: Colors.white),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                'Added to Memory Verses! Start reviewing to memorize this verse.',
+              ),
+            ),
+          ],
+        ),
+        backgroundColor: Colors.green,
+        duration: const Duration(seconds: 3),
+        action: SnackBarAction(
+          label: 'Review Now',
+          textColor: Colors.white,
+          onPressed: () => Navigator.pushNamed(context, '/memory-verses'),
+        ),
+      ),
+    );
+  }
+
+  /// Shows error snackbar when adding verse fails
+  void _showErrorSnackBar(BuildContext context, String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.red,
+        duration: const Duration(seconds: 3),
+      ),
+    );
+  }
+
+  /// Shows queued snackbar when operation is queued offline
+  void _showQueuedSnackBar(BuildContext context, String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            const Icon(Icons.cloud_off, color: Colors.white),
+            const SizedBox(width: 8),
+            Expanded(child: Text(message)),
+          ],
+        ),
+        backgroundColor: Colors.orange,
+        duration: const Duration(seconds: 3),
+      ),
+    );
   }
 
   Widget _buildShimmerText(BuildContext context, {double width = 1.0}) {

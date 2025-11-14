@@ -77,8 +77,12 @@ class _VerseReviewPageState extends State<VerseReviewPage> {
     final state = context.read<MemoryVerseBloc>().state;
     if (state is DueVersesLoaded) {
       try {
+        // Derive target ID from current index when reviewing multiple verses
+        final targetId = widget.verseIds != null
+            ? widget.verseIds![currentIndex]
+            : widget.verseId;
         final verse = state.verses.firstWhere(
-          (v) => v.id == widget.verseId,
+          (v) => v.id == targetId,
         );
         setState(() {
           currentVerse = verse;
@@ -427,6 +431,7 @@ class _VerseReviewPageState extends State<VerseReviewPage> {
       setState(() {
         currentIndex++;
         isFlipped = false;
+        currentVerse = null; // Clear current verse to show loading state
         _resetTimer();
       });
       _loadVerse();

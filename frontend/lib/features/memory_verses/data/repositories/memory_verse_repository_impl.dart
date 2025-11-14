@@ -305,30 +305,63 @@ class MemoryVerseRepositoryImpl implements MemoryVerseRepository {
   @override
   Future<Either<Failure, MemoryVerseEntity>> getVerseById(String id) async {
     try {
+      if (kDebugMode) {
+        print('🔍 [REPOSITORY] Looking up verse by ID: $id');
+      }
+
       // Try cache first for single verse lookup
       final cachedVerse = await localDataSource.getCachedVerseById(id);
 
       if (cachedVerse != null) {
+        if (kDebugMode) {
+          print('✅ [REPOSITORY] Found verse in cache');
+        }
         return Right(cachedVerse.toEntity());
       }
 
-      // If not in cache, fetch from remote
-      final allVerses = await localDataSource.getAllCachedVerses();
-      final verse = allVerses.firstWhere(
-        (v) => v.id == id,
-        orElse: () => throw const ServerException(
-          message: 'Verse not found',
-          code: 'VERSE_NOT_FOUND',
-        ),
-      );
+      if (kDebugMode) {
+        print('⚠️ [REPOSITORY] Verse not in cache, fetching from remote...');
+      }
 
-      return Right(verse.toEntity());
+      // If not in cache, fetch from remote
+      final verseModel = await remoteDataSource.getVerseById(id);
+
+      if (kDebugMode) {
+        print('📥 [REPOSITORY] Caching verse from remote...');
+      }
+
+      // Cache the fetched verse for future lookups
+      await localDataSource.cacheVerse(verseModel);
+
+      if (kDebugMode) {
+        print('✅ [REPOSITORY] Verse fetched and cached successfully');
+      }
+
+      return Right(verseModel.toEntity());
+    } on ServerException catch (e) {
+      if (kDebugMode) {
+        print('❌ [REPOSITORY] Server error getting verse by ID: ${e.message}');
+      }
+      return Left(ServerFailure(
+        message: e.message,
+        code: e.code,
+      ));
+    } on NetworkException catch (e) {
+      if (kDebugMode) {
+        print('❌ [REPOSITORY] Network error getting verse by ID: ${e.message}');
+      }
+      return Left(NetworkFailure(
+        message: e.message,
+        code: e.code,
+      ));
     } catch (e) {
       if (kDebugMode) {
-        print('❌ [REPOSITORY] Error getting verse by ID: $e');
+        print('❌ [REPOSITORY] Unexpected error getting verse by ID: $e');
       }
-      return const Left(
-          ServerFailure(message: 'Verse not found', code: 'VERSE_NOT_FOUND'));
+      return Left(ServerFailure(
+        message: 'Failed to get verse: ${e.toString()}',
+        code: 'GET_VERSE_FAILED',
+      ));
     }
   }
 
@@ -397,6 +430,8 @@ class MemoryVerseRepositoryImpl implements MemoryVerseRepository {
       }
 
       // Process each queued operation
+      bool hadFailure = false;
+
       for (final operation in syncQueue) {
         try {
           final type = operation['type'] as String;
@@ -424,6 +459,12 @@ class MemoryVerseRepositoryImpl implements MemoryVerseRepository {
               );
               break;
 
+            case 'delete_verse':
+              await remoteDataSource.deleteVerse(
+                operation['verse_id'] as String,
+              );
+              break;
+
             default:
               if (kDebugMode) {
                 print('⚠️ [REPOSITORY] Unknown sync operation: $type');
@@ -432,20 +473,39 @@ class MemoryVerseRepositoryImpl implements MemoryVerseRepository {
         } catch (e) {
           if (kDebugMode) {
             print('❌ [REPOSITORY] Failed to sync operation: $e');
+            print(
+                '⏸️ [REPOSITORY] Stopping sync to preserve failed operations');
           }
-          // Continue with other operations
+          hadFailure = true;
+          break; // Stop processing further operations
         }
       }
 
-      // Clear sync queue after successful sync
-      await localDataSource.clearSyncQueue();
-      await localDataSource.updateLastSyncTime();
+      // Only clear sync queue and update timestamp if all operations succeeded
+      if (!hadFailure) {
+        await localDataSource.clearSyncQueue();
+        await localDataSource.updateLastSyncTime();
 
-      if (kDebugMode) {
-        print('✅ [REPOSITORY] Sync completed');
+        if (kDebugMode) {
+          print(
+              '✅ [REPOSITORY] Sync completed - all operations synced successfully');
+        }
+
+        return const Right(unit);
+      } else {
+        if (kDebugMode) {
+          print(
+              '⚠️ [REPOSITORY] Sync incomplete - failed operations remain queued for retry');
+        }
+
+        // Return failure to indicate sync was not fully successful
+        return const Left(
+          ServerFailure(
+            message: 'Sync failed - some operations could not be completed',
+            code: 'SYNC_INCOMPLETE',
+          ),
+        );
       }
-
-      return const Right(unit);
     } catch (e) {
       if (kDebugMode) {
         print('❌ [REPOSITORY] Sync failed: $e');

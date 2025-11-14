@@ -26,6 +26,9 @@ class MemoryVersesHomePage extends StatefulWidget {
 }
 
 class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
+  // Cache last loaded state to show during refresh
+  DueVersesLoaded? _lastLoadedState;
+
   @override
   void initState() {
     super.initState();
@@ -103,15 +106,38 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
           }
         },
         builder: (context, state) {
+          // Cache loaded state for use during refresh
+          if (state is DueVersesLoaded) {
+            _lastLoadedState = state;
+          }
+
+          // Initial state - show loading
+          if (state is MemoryVerseInitial) {
+            return _buildLoadingState();
+          }
+
+          // Loading without refresh - show loading
           if (state is MemoryVerseLoading && !state.isRefreshing) {
             return _buildLoadingState();
           }
 
+          // Refreshing - show cached content or loading
+          if (state is MemoryVerseLoading && state.isRefreshing) {
+            // If we have cached verses, show them during refresh
+            if (_lastLoadedState != null) {
+              return _buildLoadedState(_lastLoadedState!);
+            }
+            // Otherwise show loading
+            return _buildLoadingState();
+          }
+
+          // Loaded state
           if (state is DueVersesLoaded) {
             return _buildLoadedState(state);
           }
 
-          // Initial or error state (error is handled in listener)
+          // Error or other states - show empty
+          // (Note: errors are already handled in the listener above)
           return _buildEmptyState();
         },
       ),
@@ -309,55 +335,104 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
 
     showDialog(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('Add Custom Verse'),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: referenceController,
-                decoration: const InputDecoration(
-                  labelText: 'Verse Reference',
-                  hintText: 'e.g., John 3:16',
-                  border: OutlineInputBorder(),
+      builder: (dialogContext) {
+        // State variables for validation errors
+        String? referenceError;
+        String? textError;
+
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: const Text('Add Custom Verse'),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TextField(
+                      controller: referenceController,
+                      decoration: InputDecoration(
+                        labelText: 'Verse Reference',
+                        hintText: 'e.g., John 3:16',
+                        border: const OutlineInputBorder(),
+                        errorText: referenceError,
+                      ),
+                      onChanged: (_) {
+                        // Clear error when user starts typing
+                        if (referenceError != null) {
+                          setState(() {
+                            referenceError = null;
+                          });
+                        }
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                    TextField(
+                      controller: textController,
+                      decoration: InputDecoration(
+                        labelText: 'Verse Text',
+                        hintText: 'Enter the full verse...',
+                        border: const OutlineInputBorder(),
+                        errorText: textError,
+                      ),
+                      maxLines: 4,
+                      onChanged: (_) {
+                        // Clear error when user starts typing
+                        if (textError != null) {
+                          setState(() {
+                            textError = null;
+                          });
+                        }
+                      },
+                    ),
+                  ],
                 ),
               ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: textController,
-                decoration: const InputDecoration(
-                  labelText: 'Verse Text',
-                  hintText: 'Enter the full verse...',
-                  border: OutlineInputBorder(),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(dialogContext),
+                  child: const Text('Cancel'),
                 ),
-                maxLines: 4,
-              ),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              if (referenceController.text.isNotEmpty &&
-                  textController.text.isNotEmpty) {
-                memoryVerseBloc.add(
-                  AddVerseManually(
-                    verseReference: referenceController.text,
-                    verseText: textController.text,
-                  ),
-                );
-                Navigator.pop(dialogContext);
-              }
-            },
-            child: const Text('Add'),
-          ),
-        ],
-      ),
+                ElevatedButton(
+                  onPressed: () {
+                    // Trim input values
+                    final trimmedReference = referenceController.text.trim();
+                    final trimmedText = textController.text.trim();
+
+                    // Validate trimmed values
+                    bool hasError = false;
+
+                    if (trimmedReference.isEmpty) {
+                      setState(() {
+                        referenceError = 'Verse reference is required';
+                      });
+                      hasError = true;
+                    }
+
+                    if (trimmedText.isEmpty) {
+                      setState(() {
+                        textError = 'Verse text is required';
+                      });
+                      hasError = true;
+                    }
+
+                    // Only dispatch and close if validation passes
+                    if (!hasError) {
+                      memoryVerseBloc.add(
+                        AddVerseManually(
+                          verseReference: trimmedReference,
+                          verseText: trimmedText,
+                        ),
+                      );
+                      Navigator.pop(dialogContext);
+                    }
+                  },
+                  child: const Text('Add'),
+                ),
+              ],
+            );
+          },
+        );
+      },
     );
   }
 

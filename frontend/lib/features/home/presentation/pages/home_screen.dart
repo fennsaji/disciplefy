@@ -325,7 +325,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
             size: 24,
           ),
           label: Text(
-            'Memory Verses',
+            context.tr(TranslationKeys.homeMemoryVerses),
             style: GoogleFonts.inter(
               fontSize: 18,
               fontWeight: FontWeight.w600,

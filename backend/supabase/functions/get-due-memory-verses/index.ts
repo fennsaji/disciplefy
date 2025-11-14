@@ -12,6 +12,7 @@
  * - Optional language filtering
  */
 
+import { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { createAuthenticatedFunction } from '../_shared/core/function-factory.ts'
 import { AppError } from '../_shared/utils/error-handler.ts'
 import { ApiSuccessResponse, UserContext } from '../_shared/types/index.ts'
@@ -69,7 +70,7 @@ interface DueVersesResponse extends ApiSuccessResponse<DueVersesData> {}
  * Fetches review statistics for the user
  */
 async function getReviewStatistics(
-  supabaseClient: any,
+  supabaseClient: SupabaseClient,
   userId: string
 ): Promise<ReviewStatistics> {
   const now = new Date().toISOString()
@@ -212,9 +213,14 @@ async function handleGetDueMemoryVerses(
     .select('*', { count: 'exact', head: true })
     .eq('user_id', userContext.userId)
 
-  // Apply same filter as main query
+  // Apply same filters as main query
   if (!showAll) {
     countQuery = countQuery.lte('next_review_date', now)
+  }
+
+  // Apply language filter if provided
+  if (languageParam) {
+    countQuery = countQuery.eq('language', languageParam)
   }
 
   const { count: totalCount } = await countQuery

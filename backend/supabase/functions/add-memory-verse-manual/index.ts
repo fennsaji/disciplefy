@@ -193,14 +193,25 @@ async function handleAddMemoryVerseManual(
     throw new AppError('DATABASE_ERROR', 'Failed to add verse to memory deck', 500)
   }
 
-  // Log analytics event
-  await services.analyticsLogger.logEvent('memory_verse_added', {
-    user_id: userContext.userId,
-    verse_reference: verseReference,
-    source_type: 'manual',
-    language: language,
-    verse_length: verseText.length
-  }, req.headers.get('x-forwarded-for'))
+  // Log analytics event (non-fatal - don't fail the request if analytics fails)
+  try {
+    await services.analyticsLogger.logEvent('memory_verse_added', {
+      user_id: userContext.userId,
+      verse_reference: verseReference,
+      source_type: 'manual',
+      language: language,
+      verse_length: verseText.length
+    }, req.headers.get('x-forwarded-for'))
+  } catch (analyticsError) {
+    console.error('[AddManualVerse] Analytics logging failed:', {
+      error: analyticsError,
+      event: 'memory_verse_added',
+      user_id: userContext.userId,
+      verse_reference: verseReference,
+      ip: req.headers.get('x-forwarded-for')
+    })
+    // Don't rethrow - analytics failures should not block verse addition
+  }
 
   // Build response data
   const responseData: MemoryVerseData = {

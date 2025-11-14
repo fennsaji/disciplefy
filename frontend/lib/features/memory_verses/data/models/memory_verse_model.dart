@@ -104,7 +104,12 @@ class MemoryVerseModel extends MemoryVerseEntity {
     );
   }
 
-  /// Creates a copy with updated fields
+  /// Creates a copy with updated fields.
+  ///
+  /// For nullable fields (sourceId, lastReviewed), you can:
+  /// - Omit the parameter to keep the current value
+  /// - Pass null explicitly to clear the field
+  /// - Pass a new value to update the field
   @override
   MemoryVerseModel copyWith({
     String? id,
@@ -112,13 +117,13 @@ class MemoryVerseModel extends MemoryVerseEntity {
     String? verseText,
     String? language,
     String? sourceType,
-    String? sourceId,
+    Object? sourceId = unsetValue,
     double? easeFactor,
     int? intervalDays,
     int? repetitions,
     DateTime? nextReviewDate,
     DateTime? addedDate,
-    DateTime? lastReviewed,
+    Object? lastReviewed = unsetValue,
     int? totalReviews,
     DateTime? createdAt,
   }) {
@@ -128,13 +133,15 @@ class MemoryVerseModel extends MemoryVerseEntity {
       verseText: verseText ?? this.verseText,
       language: language ?? this.language,
       sourceType: sourceType ?? this.sourceType,
-      sourceId: sourceId ?? this.sourceId,
+      sourceId: sourceId == unsetValue ? this.sourceId : sourceId as String?,
       easeFactor: easeFactor ?? this.easeFactor,
       intervalDays: intervalDays ?? this.intervalDays,
       repetitions: repetitions ?? this.repetitions,
       nextReviewDate: nextReviewDate ?? this.nextReviewDate,
       addedDate: addedDate ?? this.addedDate,
-      lastReviewed: lastReviewed ?? this.lastReviewed,
+      lastReviewed: lastReviewed == unsetValue
+          ? this.lastReviewed
+          : lastReviewed as DateTime?,
       totalReviews: totalReviews ?? this.totalReviews,
       createdAt: createdAt ?? this.createdAt,
     );
