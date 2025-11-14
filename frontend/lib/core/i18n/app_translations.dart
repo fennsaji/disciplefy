@@ -98,6 +98,7 @@ class AppTranslations {
     'home': {
       'welcome_back': 'Welcome back, {name}',
       'continue_journey': 'Continue your spiritual journey with guided study',
+      'memory_verses': 'Memory Verses',
       'generate_study_guide': 'Generate Study Guide',
       'resume_last_study': 'Resume your last study',
       'continue_studying': 'Continue studying "{topic}"',
@@ -298,6 +299,20 @@ class AppTranslations {
       'empty_message': 'Please describe the issue',
       'submit_error':
           'Failed to prepare bug report submission. Please try again.',
+    },
+    'memory': {
+      'totalVerses': 'Total Verses',
+      'dueToday': 'Due Today',
+      'reviewedToday': 'Reviewed Today',
+      'mastered': 'Mastered',
+      'masteryProgress': 'Mastery Progress',
+      'masteryPercentage': '{percentage}%',
+      'masteryMessage': {
+        'excellent': 'Excellent! Keep up the great work!',
+        'great': 'Great progress! You\'re doing well!',
+        'good': 'Good start! Keep practicing!',
+        'starting': 'Just getting started. You can do it!',
+      },
     },
     'study_topics': {
       'title': 'Study Topics',
@@ -584,6 +599,7 @@ class AppTranslations {
       'welcome_back': 'वापस स्वागत है, {name}',
       'continue_journey':
           'निर्देशित अध्ययन के साथ अपनी आध्यात्मिक यात्रा जारी रखें',
+      'memory_verses': 'स्मृति आयतें',
       'generate_study_guide': 'अध्ययन गाइड बनाएं',
       'resume_last_study': 'पिछला पढ़ाई फिर शुरू करें',
       'continue_studying': '"{topic}" पढ़ते रहें',
@@ -778,6 +794,20 @@ class AppTranslations {
       'empty_message': 'कृपया समस्या का वर्णन करें',
       'submit_error':
           'बग रिपोर्ट सबमिशन तैयार करने में विफल। कृपया पुनः प्रयास करें।',
+    },
+    'memory': {
+      'totalVerses': 'कुल आयतें',
+      'dueToday': 'आज के लिए',
+      'reviewedToday': 'आज समीक्षा की',
+      'mastered': 'महारत हासिल',
+      'masteryProgress': 'महारत की प्रगति',
+      'masteryPercentage': '{percentage}%',
+      'masteryMessage': {
+        'excellent': 'उत्कृष्ट! बढ़िया काम जारी रखें!',
+        'great': 'बहुत अच्छी प्रगति! आप अच्छा कर रहे हैं!',
+        'good': 'अच्छी शुरुआत! अभ्यास जारी रखें!',
+        'starting': 'अभी शुरुआत की है। आप कर सकते हैं!',
+      },
     },
     'study_topics': {
       'title': 'विषय',
@@ -1061,6 +1091,7 @@ class AppTranslations {
     'home': {
       'welcome_back': 'സ്വാഗതം, {name}',
       'continue_journey': 'ബൈബിൾ വായിച്ച് വിശ്വാസം വളർത്തൂ',
+      'memory_verses': 'സ്മരണ വാക്യങ്ങൾ',
       'generate_study_guide': 'ഗൈഡ് ഉണ്ടാക്കൂ',
       'resume_last_study': 'അവസാന പഠനം തുടരൂ',
       'continue_studying': '"{topic}" പഠനം തുടരൂ',
@@ -1261,6 +1292,20 @@ class AppTranslations {
       'empty_message': 'ദയവായി പ്രശ്നം വിവരിക്കുക',
       'submit_error':
           'ബഗ് റിപ്പോർട്ട് സമർപ്പിക്കൽ തയ്യാറാക്കുന്നതിൽ പരാജയപ്പെട്ടു. ദയവായി വീണ്ടും ശ്രമിക്കുക.',
+    },
+    'memory': {
+      'totalVerses': 'മൊത്തം വാക്യങ്ങൾ',
+      'dueToday': 'ഇന്ന് അവലോകനം',
+      'reviewedToday': 'ഇന്ന് പരിശോധിച്ചത്',
+      'mastered': 'പ്രാവീണ്യം നേടി',
+      'masteryProgress': 'പ്രാവീണ്യ പുരോഗതി',
+      'masteryPercentage': '{percentage}%',
+      'masteryMessage': {
+        'excellent': 'മികച്ചത്! നല്ല ജോലി തുടരുക!',
+        'great': 'മികച്ച പുരോഗതി! നിങ്ങൾ നന്നായി ചെയ്യുന്നു!',
+        'good': 'നല്ല തുടക്കം! പരിശീലനം തുടരുക!',
+        'starting': 'ഇപ്പോൾ ആരംഭിച്ചു. നിങ്ങൾക്ക് ഇത് ചെയ്യാൻ കഴിയും!',
+      },
     },
     'study_topics': {
       'title': 'പഠന വിഷയങ്ങൾ',

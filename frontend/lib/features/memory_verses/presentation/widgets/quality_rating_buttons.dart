@@ -78,6 +78,15 @@ class QualityRatingButtons extends StatelessWidget {
     );
   }
 
+  /// Darkens a color for WCAG AA contrast (4.5:1) on light backgrounds
+  Color _getDarkenedColor(Color color) {
+    // Convert to HSL, reduce lightness to ensure sufficient contrast
+    final hslColor = HSLColor.fromColor(color);
+    // Target lightness of 0.35-0.40 for dark enough contrast on white
+    final darkenedHsl = hslColor.withLightness(0.35);
+    return darkenedHsl.toColor();
+  }
+
   Widget _buildRatingButton({
     required BuildContext context,
     required int rating,
@@ -87,6 +96,8 @@ class QualityRatingButtons extends StatelessWidget {
     required IconData icon,
   }) {
     final theme = Theme.of(context);
+    // Use darkened color for text and icons to meet WCAG AA contrast
+    final foregroundColor = _getDarkenedColor(color);
 
     return Material(
       color: Colors.transparent,
@@ -118,7 +129,7 @@ class QualityRatingButtons extends StatelessWidget {
                 ),
                 child: Icon(
                   icon,
-                  color: color,
+                  color: foregroundColor,
                   size: 24,
                 ),
               ),
@@ -134,7 +145,7 @@ class QualityRatingButtons extends StatelessWidget {
                       label,
                       style: theme.textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.bold,
-                        color: color,
+                        color: foregroundColor,
                       ),
                     ),
                     const SizedBox(height: 2),

@@ -1,5 +1,21 @@
 import 'package:equatable/equatable.dart';
 
+/// Sentinel class for copyWith method to distinguish between null and unset values.
+///
+/// This is used internally by MemoryVerseEntity.copyWith and MemoryVerseModel.copyWith
+/// to allow callers to explicitly pass null to clear nullable fields.
+class CopyWithSentinel {
+  const CopyWithSentinel();
+}
+
+/// Sentinel constant used in copyWith to detect when a parameter is not provided.
+///
+/// Used to distinguish between:
+/// - Parameter not provided (use current value)
+/// - Parameter explicitly set to null (clear the field)
+/// - Parameter set to a new value (update the field)
+const unsetValue = CopyWithSentinel();
+
 /// Domain entity representing a memory verse in the spaced repetition system.
 ///
 /// This is a pure domain model with no knowledge of data sources or UI.
@@ -111,20 +127,37 @@ class MemoryVerseEntity extends Equatable {
     return 'In progress';
   }
 
-  /// Creates a copy of this entity with updated fields
+  /// Creates a copy of this entity with updated fields.
+  ///
+  /// For nullable fields (sourceId, lastReviewed), you can:
+  /// - Omit the parameter to keep the current value
+  /// - Pass null explicitly to clear the field
+  /// - Pass a new value to update the field
+  ///
+  /// Example:
+  /// ```dart
+  /// // Keep current sourceId
+  /// verse.copyWith(verseText: 'New text');
+  ///
+  /// // Clear sourceId
+  /// verse.copyWith(sourceId: null);
+  ///
+  /// // Update sourceId
+  /// verse.copyWith(sourceId: 'new-id');
+  /// ```
   MemoryVerseEntity copyWith({
     String? id,
     String? verseReference,
     String? verseText,
     String? language,
     String? sourceType,
-    String? sourceId,
+    Object? sourceId = unsetValue,
     double? easeFactor,
     int? intervalDays,
     int? repetitions,
     DateTime? nextReviewDate,
     DateTime? addedDate,
-    DateTime? lastReviewed,
+    Object? lastReviewed = unsetValue,
     int? totalReviews,
     DateTime? createdAt,
   }) {
@@ -134,13 +167,15 @@ class MemoryVerseEntity extends Equatable {
       verseText: verseText ?? this.verseText,
       language: language ?? this.language,
       sourceType: sourceType ?? this.sourceType,
-      sourceId: sourceId ?? this.sourceId,
+      sourceId: sourceId == unsetValue ? this.sourceId : sourceId as String?,
       easeFactor: easeFactor ?? this.easeFactor,
       intervalDays: intervalDays ?? this.intervalDays,
       repetitions: repetitions ?? this.repetitions,
       nextReviewDate: nextReviewDate ?? this.nextReviewDate,
       addedDate: addedDate ?? this.addedDate,
-      lastReviewed: lastReviewed ?? this.lastReviewed,
+      lastReviewed: lastReviewed == unsetValue
+          ? this.lastReviewed
+          : lastReviewed as DateTime?,
       totalReviews: totalReviews ?? this.totalReviews,
       createdAt: createdAt ?? this.createdAt,
     );

@@ -310,16 +310,26 @@ async function handleSubmitMemoryVerseReview(
   // Check if streak is maintained (quality >= 3)
   const streakMaintained = body.quality_rating >= 3
 
-  // Log analytics event
-  await services.analyticsLogger.logEvent('memory_verse_reviewed', {
-    user_id: userContext.userId,
-    memory_verse_id: body.memory_verse_id,
-    quality_rating: body.quality_rating,
-    new_interval_days: sm2Result.interval,
-    new_repetitions: sm2Result.repetitions,
-    streak_maintained: streakMaintained,
-    time_spent_seconds: body.time_spent_seconds
-  }, req.headers.get('x-forwarded-for'))
+  // Log analytics event (non-fatal - don't fail the request if analytics fails)
+  try {
+    await services.analyticsLogger.logEvent('memory_verse_reviewed', {
+      user_id: userContext.userId,
+      memory_verse_id: body.memory_verse_id,
+      quality_rating: body.quality_rating,
+      new_interval_days: sm2Result.interval,
+      new_repetitions: sm2Result.repetitions,
+      streak_maintained: streakMaintained,
+      time_spent_seconds: body.time_spent_seconds
+    }, req.headers.get('x-forwarded-for'))
+  } catch (analyticsError) {
+    console.error('[SubmitReview] Analytics logging failed:', {
+      error: analyticsError,
+      user_id: userContext.userId,
+      memory_verse_id: body.memory_verse_id,
+      ip: req.headers.get('x-forwarded-for')
+    })
+    // Don't rethrow - analytics failures should not block the review submission
+  }
 
   // Build response data
   const responseData: SubmitReviewData = {

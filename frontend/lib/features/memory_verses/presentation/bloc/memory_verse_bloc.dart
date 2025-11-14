@@ -2,11 +2,11 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/error/failures.dart';
-import '../../domain/usecases/add_verse_from_daily.dart' as use_cases;
-import '../../domain/usecases/add_verse_manually.dart' as use_cases;
+import '../../domain/usecases/add_verse_from_daily.dart' as add_from_daily_uc;
+import '../../domain/usecases/add_verse_manually.dart' as add_manually_uc;
 import '../../domain/usecases/get_due_verses.dart';
 import '../../domain/usecases/get_statistics.dart';
-import '../../domain/usecases/submit_review.dart' as use_cases;
+import '../../domain/usecases/submit_review.dart' as submit_review_uc;
 import 'memory_verse_event.dart';
 import 'memory_verse_state.dart';
 
@@ -30,9 +30,9 @@ import 'memory_verse_state.dart';
 /// - Pagination support for verse lists
 class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
   final GetDueVerses getDueVerses;
-  final use_cases.AddVerseFromDaily addVerseFromDaily;
-  final use_cases.AddVerseManually addVerseManually;
-  final use_cases.SubmitReview submitReview;
+  final add_from_daily_uc.AddVerseFromDaily addVerseFromDaily;
+  final add_manually_uc.AddVerseManually addVerseManually;
+  final submit_review_uc.SubmitReview submitReview;
   final GetStatistics getStatistics;
 
   MemoryVerseBloc({

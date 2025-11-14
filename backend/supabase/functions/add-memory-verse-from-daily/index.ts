@@ -24,6 +24,26 @@ interface AddFromDailyRequest {
 }
 
 /**
+ * Verse data structure (JSON stored in daily_verses_cache.verse_data)
+ */
+interface VerseData {
+  readonly reference: string
+  readonly translations?: {
+    readonly esv?: string
+    readonly hindi?: string
+    readonly malayalam?: string
+  }
+}
+
+/**
+ * Daily verses cache row structure
+ */
+interface DailyVersesCacheRow {
+  readonly uuid: string
+  readonly verse_data: VerseData
+}
+
+/**
  * Memory verse data structure
  */
 interface MemoryVerseData {
@@ -69,7 +89,7 @@ async function handleAddMemoryVerseFromDaily(
 
   // Check if it's a temporary ID (format: temp-YYYY-MM-DD)
   const isTempId = body.daily_verse_id.startsWith('temp-')
-  let dailyVerse: any = null
+  let dailyVerse: DailyVersesCacheRow
 
   if (isTempId) {
     // Extract date from temp ID and query by date_key
@@ -84,7 +104,7 @@ async function handleAddMemoryVerseFromDaily(
       console.error('[AddMemoryVerse] Daily verse not found for temp ID:', fetchError)
       throw new AppError('NOT_FOUND', `Daily verse not found for date: ${dateKey}. Please refresh the daily verse.`, 404)
     }
-    dailyVerse = data
+    dailyVerse = data as DailyVersesCacheRow
   } else {
     // Validate UUID format
     const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
@@ -103,12 +123,12 @@ async function handleAddMemoryVerseFromDaily(
       console.error('[AddMemoryVerse] Daily verse not found:', fetchError)
       throw new AppError('NOT_FOUND', 'Daily verse not found', 404)
     }
-    dailyVerse = data
+    dailyVerse = data as DailyVersesCacheRow
   }
 
   // Parse verse_data JSON
-  const verseData = dailyVerse.verse_data as any
-  const verseReference = verseData.reference as string
+  const verseData: VerseData = dailyVerse.verse_data
+  const verseReference: string = verseData.reference
 
   // Get verse text from translations (prefer ESV for English)
   let verseText: string
