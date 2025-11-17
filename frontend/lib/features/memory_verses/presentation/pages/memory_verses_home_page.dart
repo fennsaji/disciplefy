@@ -7,17 +7,12 @@ import '../../../../core/widgets/auth_protected_screen.dart';
 import '../bloc/memory_verse_bloc.dart';
 import '../bloc/memory_verse_event.dart';
 import '../bloc/memory_verse_state.dart';
+import '../widgets/add_manual_verse_dialog.dart';
+import '../widgets/add_verse_options_sheet.dart';
 import '../widgets/memory_verse_list_item.dart';
+import '../widgets/options_menu_sheet.dart';
 import '../widgets/statistics_card.dart';
 
-/// Home page for Memory Verses feature.
-///
-/// Displays:
-/// - Statistics cards (total verses, due today, mastered)
-/// - List of verses due for review
-/// - Empty state if no verses
-/// - Pull-to-refresh support
-/// - Navigation to review page
 class MemoryVersesHomePage extends StatefulWidget {
   const MemoryVersesHomePage({super.key});
 
@@ -26,13 +21,11 @@ class MemoryVersesHomePage extends StatefulWidget {
 }
 
 class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
-  // Cache last loaded state to show during refresh
   DueVersesLoaded? _lastLoadedState;
 
   @override
   void initState() {
     super.initState();
-    // Load due verses on page load
     context.read<MemoryVerseBloc>().add(const LoadDueVerses());
   }
 
@@ -43,7 +36,6 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () {
-            // Navigate back to home
             if (context.canPop()) {
               context.pop();
             } else {
@@ -88,7 +80,6 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
                 backgroundColor: Colors.green,
               ),
             );
-            // Reload verses after adding
             context.read<MemoryVerseBloc>().add(const LoadDueVerses());
           } else if (state is OperationQueued) {
             ScaffoldMessenger.of(context).showSnackBar(
@@ -106,38 +97,24 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
           }
         },
         builder: (context, state) {
-          // Cache loaded state for use during refresh
           if (state is DueVersesLoaded) {
             _lastLoadedState = state;
           }
-
-          // Initial state - show loading
           if (state is MemoryVerseInitial) {
             return _buildLoadingState();
           }
-
-          // Loading without refresh - show loading
           if (state is MemoryVerseLoading && !state.isRefreshing) {
             return _buildLoadingState();
           }
-
-          // Refreshing - show cached content or loading
           if (state is MemoryVerseLoading && state.isRefreshing) {
-            // If we have cached verses, show them during refresh
             if (_lastLoadedState != null) {
               return _buildLoadedState(_lastLoadedState!);
             }
-            // Otherwise show loading
             return _buildLoadingState();
           }
-
-          // Loaded state
           if (state is DueVersesLoaded) {
             return _buildLoadedState(state);
           }
-
-          // Error or other states - show empty
-          // (Note: errors are already handled in the listener above)
           return _buildEmptyState();
         },
       ),
@@ -165,12 +142,10 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
     return RefreshIndicator(
       onRefresh: () async {
         context.read<MemoryVerseBloc>().add(const RefreshVerses());
-        // Wait for refresh to complete
         await Future.delayed(const Duration(milliseconds: 500));
       },
       child: CustomScrollView(
         slivers: [
-          // Statistics section
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.all(16.0),
@@ -207,8 +182,6 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
               ),
             ),
           ),
-
-          // Verse list
           SliverPadding(
             padding: const EdgeInsets.symmetric(horizontal: 16.0),
             sliver: SliverList(
@@ -227,11 +200,7 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
               ),
             ),
           ),
-
-          // Bottom spacing
-          const SliverToBoxAdapter(
-            child: SizedBox(height: 16),
-          ),
+          const SliverToBoxAdapter(child: SizedBox(height: 16)),
         ],
       ),
     );
@@ -285,194 +254,48 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
     );
   }
 
-  void _showAddVerseOptions(BuildContext parentContext) {
-    showModalBottomSheet(
-      context: parentContext,
-      builder: (bottomSheetContext) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: const Icon(Icons.today),
-              title: const Text('Add from Daily Verse'),
-              subtitle: const Text("Add today's verse to your memory deck"),
-              onTap: () {
-                Navigator.pop(bottomSheetContext);
-                _showAddFromDailyDialog(parentContext);
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.edit),
-              title: const Text('Add Custom Verse'),
-              subtitle: const Text('Enter any Bible verse manually'),
-              onTap: () {
-                Navigator.pop(bottomSheetContext);
-                _showAddManuallyDialog(parentContext);
-              },
-            ),
-            const SizedBox(height: 8),
-          ],
-        ),
-      ),
+  void _showAddVerseOptions(BuildContext context) {
+    AddVerseOptionsSheet.show(
+      context,
+      onAddFromDaily: () => _showAddFromDailyDialog(context),
+      onAddManually: () => _showAddManuallyDialog(context),
     );
   }
 
   void _showAddFromDailyDialog(BuildContext context) {
-    // TODO: Implement - Get today's daily verse ID and add it
+    // TODO: Get today's daily verse ID and add it
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Add from Daily Verse - Coming soon!'),
-      ),
+      const SnackBar(content: Text('Add from Daily Verse - Coming soon!')),
     );
   }
 
   void _showAddManuallyDialog(BuildContext context) {
-    final referenceController = TextEditingController();
-    final textController = TextEditingController();
-
-    // Capture BLoC before showing dialog
     final memoryVerseBloc = context.read<MemoryVerseBloc>();
-
-    showDialog(
-      context: context,
-      builder: (dialogContext) {
-        // State variables for validation errors
-        String? referenceError;
-        String? textError;
-
-        return StatefulBuilder(
-          builder: (context, setState) {
-            return AlertDialog(
-              title: const Text('Add Custom Verse'),
-              content: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    TextField(
-                      controller: referenceController,
-                      decoration: InputDecoration(
-                        labelText: 'Verse Reference',
-                        hintText: 'e.g., John 3:16',
-                        border: const OutlineInputBorder(),
-                        errorText: referenceError,
-                      ),
-                      onChanged: (_) {
-                        // Clear error when user starts typing
-                        if (referenceError != null) {
-                          setState(() {
-                            referenceError = null;
-                          });
-                        }
-                      },
-                    ),
-                    const SizedBox(height: 16),
-                    TextField(
-                      controller: textController,
-                      decoration: InputDecoration(
-                        labelText: 'Verse Text',
-                        hintText: 'Enter the full verse...',
-                        border: const OutlineInputBorder(),
-                        errorText: textError,
-                      ),
-                      maxLines: 4,
-                      onChanged: (_) {
-                        // Clear error when user starts typing
-                        if (textError != null) {
-                          setState(() {
-                            textError = null;
-                          });
-                        }
-                      },
-                    ),
-                  ],
-                ),
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(dialogContext),
-                  child: const Text('Cancel'),
-                ),
-                ElevatedButton(
-                  onPressed: () {
-                    // Trim input values
-                    final trimmedReference = referenceController.text.trim();
-                    final trimmedText = textController.text.trim();
-
-                    // Validate trimmed values
-                    bool hasError = false;
-
-                    if (trimmedReference.isEmpty) {
-                      setState(() {
-                        referenceError = 'Verse reference is required';
-                      });
-                      hasError = true;
-                    }
-
-                    if (trimmedText.isEmpty) {
-                      setState(() {
-                        textError = 'Verse text is required';
-                      });
-                      hasError = true;
-                    }
-
-                    // Only dispatch and close if validation passes
-                    if (!hasError) {
-                      memoryVerseBloc.add(
-                        AddVerseManually(
-                          verseReference: trimmedReference,
-                          verseText: trimmedText,
-                        ),
-                      );
-                      Navigator.pop(dialogContext);
-                    }
-                  },
-                  child: const Text('Add'),
-                ),
-              ],
-            );
-          },
+    AddManualVerseDialog.show(
+      context,
+      onSubmit: ({required String verseReference, required String verseText}) {
+        memoryVerseBloc.add(
+          AddVerseManually(
+            verseReference: verseReference,
+            verseText: verseText,
+          ),
         );
       },
     );
   }
 
   void _showOptionsMenu(BuildContext context) {
-    // Capture BLoC before showing bottom sheet
     final memoryVerseBloc = context.read<MemoryVerseBloc>();
-
-    showModalBottomSheet(
-      context: context,
-      builder: (bottomSheetContext) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: const Icon(Icons.sync),
-              title: const Text('Sync with Server'),
-              subtitle: const Text('Upload pending offline changes'),
-              onTap: () {
-                Navigator.pop(bottomSheetContext);
-                memoryVerseBloc.add(const SyncWithRemote());
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.bar_chart),
-              title: const Text('View Statistics'),
-              subtitle: const Text('See your progress details'),
-              onTap: () {
-                Navigator.pop(bottomSheetContext);
-                // TODO: Navigate to statistics page
-              },
-            ),
-            const SizedBox(height: 8),
-          ],
-        ),
-      ),
+    OptionsMenuSheet.show(
+      context,
+      onSync: () => memoryVerseBloc.add(const SyncWithRemote()),
+      onViewStatistics: () {
+        // TODO: Navigate to statistics page
+      },
     );
   }
 
   void _navigateToReviewPage(BuildContext context, String verseId) {
-    // Use GoRouter extension for navigation
     GoRouter.of(context).goToVerseReview(verseId: verseId);
   }
 }
