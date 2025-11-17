@@ -9,6 +9,8 @@ import '../../domain/entities/review_statistics_entity.dart';
 import '../../domain/repositories/memory_verse_repository.dart';
 import '../datasources/memory_verse_local_datasource.dart';
 import '../datasources/memory_verse_remote_datasource.dart';
+import '../helpers/memory_verse_repository_helper.dart';
+import '../services/memory_verse_sync_service.dart';
 
 /// Implementation of MemoryVerseRepository with offline-first strategy.
 ///
@@ -19,59 +21,53 @@ import '../datasources/memory_verse_remote_datasource.dart';
 /// 3. Fall back to cache when offline
 /// 4. Queue offline operations for later sync
 class MemoryVerseRepositoryImpl implements MemoryVerseRepository {
-  final MemoryVerseLocalDataSource localDataSource;
-  final MemoryVerseRemoteDataSource remoteDataSource;
+  final MemoryVerseRemoteDataSource _remoteDataSource;
+  final MemoryVerseRepositoryHelper _helper;
+  final MemoryVerseSyncService _syncService;
 
-  MemoryVerseRepositoryImpl({
-    required this.localDataSource,
-    required this.remoteDataSource,
-  });
+  factory MemoryVerseRepositoryImpl({
+    required MemoryVerseLocalDataSource localDataSource,
+    required MemoryVerseRemoteDataSource remoteDataSource,
+    MemoryVerseRepositoryHelper? helper,
+    MemoryVerseSyncService? syncService,
+  }) {
+    final sync = syncService ??
+        MemoryVerseSyncService(
+          localDataSource: localDataSource,
+          remoteDataSource: remoteDataSource,
+        );
+    return MemoryVerseRepositoryImpl._(
+      remoteDataSource: remoteDataSource,
+      syncService: sync,
+      helper: helper ??
+          MemoryVerseRepositoryHelper(
+            localDataSource: localDataSource,
+            syncService: sync,
+          ),
+    );
+  }
+
+  MemoryVerseRepositoryImpl._({
+    required MemoryVerseRemoteDataSource remoteDataSource,
+    required MemoryVerseSyncService syncService,
+    required MemoryVerseRepositoryHelper helper,
+  })  : _remoteDataSource = remoteDataSource,
+        _syncService = syncService,
+        _helper = helper;
 
   @override
   Future<Either<Failure, MemoryVerseEntity>> addVerseFromDaily({
     required String dailyVerseId,
   }) async {
-    try {
-      if (kDebugMode) {
-        print('📖 [REPOSITORY] Adding verse from daily: $dailyVerseId');
-      }
-
-      // Try remote API
-      final verseModel = await remoteDataSource.addVerseFromDaily(dailyVerseId);
-
-      // Cache locally
-      await localDataSource.cacheVerse(verseModel);
-
-      if (kDebugMode) {
-        print('✅ [REPOSITORY] Verse added and cached');
-      }
-
-      return Right(verseModel.toEntity());
-    } on ServerException catch (e) {
-      if (kDebugMode) {
-        print('❌ [REPOSITORY] Server error: ${e.message}');
-      }
-      return Left(ServerFailure(message: e.message, code: e.code));
-    } on NetworkException catch (e) {
-      if (kDebugMode) {
-        print('❌ [REPOSITORY] Network error: ${e.message}');
-      }
-
-      // Queue for sync when online
-      await localDataSource.addToSyncQueue({
+    return _helper.executeWithCaching(
+      operation: () => _remoteDataSource.addVerseFromDaily(dailyVerseId),
+      mapToEntity: (model) => model.toEntity(),
+      queueOnFailure: {
         'type': 'add_from_daily',
         'daily_verse_id': dailyVerseId,
-      });
-
-      return Left(NetworkFailure(message: e.message, code: e.code));
-    } catch (e) {
-      if (kDebugMode) {
-        print('❌ [REPOSITORY] Unexpected error: $e');
-      }
-      return Left(ServerFailure(
-          message: 'Failed to add verse: ${e.toString()}',
-          code: 'UNEXPECTED_ERROR'));
-    }
+      },
+      operationName: 'Adding verse from daily: $dailyVerseId',
+    );
   }
 
   @override
@@ -80,120 +76,59 @@ class MemoryVerseRepositoryImpl implements MemoryVerseRepository {
     required String verseText,
     String? language,
   }) async {
-    try {
-      if (kDebugMode) {
-        print('📖 [REPOSITORY] Adding manual verse: $verseReference');
-      }
-
-      // Try remote API
-      final verseModel = await remoteDataSource.addVerseManually(
+    return _helper.executeWithCaching(
+      operation: () => _remoteDataSource.addVerseManually(
         verseReference: verseReference,
         verseText: verseText,
         language: language,
-      );
-
-      // Cache locally
-      await localDataSource.cacheVerse(verseModel);
-
-      if (kDebugMode) {
-        print('✅ [REPOSITORY] Manual verse added and cached');
-      }
-
-      return Right(verseModel.toEntity());
-    } on ServerException catch (e) {
-      if (kDebugMode) {
-        print('❌ [REPOSITORY] Server error: ${e.message}');
-      }
-      return Left(ServerFailure(message: e.message, code: e.code));
-    } on NetworkException catch (e) {
-      if (kDebugMode) {
-        print('❌ [REPOSITORY] Network error: ${e.message}');
-      }
-
-      // Queue for sync when online
-      await localDataSource.addToSyncQueue({
+      ),
+      mapToEntity: (model) => model.toEntity(),
+      queueOnFailure: {
         'type': 'add_manual',
         'verse_reference': verseReference,
         'verse_text': verseText,
         if (language != null) 'language': language,
-      });
-
-      return Left(NetworkFailure(message: e.message, code: e.code));
-    } catch (e) {
-      if (kDebugMode) {
-        print('❌ [REPOSITORY] Unexpected error: $e');
-      }
-      return Left(ServerFailure(
-          message: 'Failed to add verse: ${e.toString()}',
-          code: 'UNEXPECTED_ERROR'));
-    }
+      },
+      operationName: 'Adding manual verse: $verseReference',
+    );
   }
 
   @override
   Future<Either<Failure, (List<MemoryVerseEntity>, ReviewStatisticsEntity)>>
-      getDueVerses({
-    int limit = 20,
-    int offset = 0,
-    String? language,
-  }) async {
+      getDueVerses({int limit = 20, int offset = 0, String? language}) async {
     try {
-      if (kDebugMode) {
-        print('📖 [REPOSITORY] Fetching due verses');
-      }
-
-      // Try remote first
-      final (versesModels, statsModel) = await remoteDataSource.getDueVerses(
-        limit: limit,
-        offset: offset,
-        language: language,
-      );
-
-      // Cache verses locally
-      await localDataSource.cacheVerses(versesModels);
-
-      if (kDebugMode) {
-        print('✅ [REPOSITORY] Fetched ${versesModels.length} verses');
-      }
-
-      final verses = versesModels.map((m) => m.toEntity()).toList();
-      final stats = statsModel.toEntity();
-
-      return Right((verses, stats));
+      _helper.logDebug('Fetching due verses');
+      final (versesModels, statsModel) = await _remoteDataSource.getDueVerses(
+          limit: limit, offset: offset, language: language);
+      await _helper.cacheVerses(versesModels);
+      _helper.logSuccess('Fetched ${versesModels.length} verses');
+      return Right((
+        versesModels.map((m) => m.toEntity()).toList(),
+        statsModel.toEntity()
+      ));
     } on ServerException catch (e) {
-      if (kDebugMode) {
-        print('❌ [REPOSITORY] Server error: ${e.message}');
-      }
+      _helper.logError('Server error: ${e.message}');
       return Left(ServerFailure(message: e.message, code: e.code));
     } on NetworkException catch (e) {
-      if (kDebugMode) {
-        print('⚠️ [REPOSITORY] Network error, using cache: ${e.message}');
-      }
-
-      // Fall back to local cache
-      final cachedVerses = await localDataSource.getDueCachedVerses();
-
+      _helper.logWarning('Network error, using cache: ${e.message}');
+      final cachedVerses = await _helper.getDueCachedVerses();
       if (cachedVerses.isEmpty) {
         return Left(NetworkFailure(
             message: 'No cached verses available offline',
             code: 'CACHE_EMPTY'));
       }
-
-      final verses = cachedVerses.map((m) => m.toEntity()).toList();
-
-      // Create basic statistics from cache
-      final stats = ReviewStatisticsEntity(
-        totalVerses: cachedVerses.length,
-        dueVerses: cachedVerses.length,
-        reviewedToday: 0,
-        upcomingReviews: 0,
-        masteredVerses: cachedVerses.where((v) => v.repetitions >= 5).length,
-      );
-
-      return Right((verses, stats));
+      return Right((
+        cachedVerses.map((m) => m.toEntity()).toList(),
+        ReviewStatisticsEntity(
+          totalVerses: cachedVerses.length,
+          dueVerses: cachedVerses.length,
+          reviewedToday: 0,
+          upcomingReviews: 0,
+          masteredVerses: cachedVerses.where((v) => v.repetitions >= 5).length,
+        )
+      ));
     } catch (e) {
-      if (kDebugMode) {
-        print('❌ [REPOSITORY] Unexpected error: $e');
-      }
+      _helper.logError('Unexpected error: $e');
       return Left(ServerFailure(
           message: 'Failed to fetch verses: ${e.toString()}',
           code: 'UNEXPECTED_ERROR'));
@@ -201,74 +136,41 @@ class MemoryVerseRepositoryImpl implements MemoryVerseRepository {
   }
 
   @override
-  Future<Either<Failure, MemoryVerseEntity>> submitReview({
-    required String memoryVerseId,
-    required int qualityRating,
-    int? timeSpentSeconds,
-  }) async {
+  Future<Either<Failure, MemoryVerseEntity>> submitReview(
+      {required String memoryVerseId,
+      required int qualityRating,
+      int? timeSpentSeconds}) async {
     try {
-      if (kDebugMode) {
-        print('📖 [REPOSITORY] Submitting review for: $memoryVerseId');
-      }
-
-      // Try remote API
-      final reviewData = await remoteDataSource.submitReview(
-        memoryVerseId: memoryVerseId,
-        qualityRating: qualityRating,
-        timeSpentSeconds: timeSpentSeconds,
-      );
-
-      // Update local cache with new SM-2 state
-      final cachedVerse =
-          await localDataSource.getCachedVerseById(memoryVerseId);
-      if (cachedVerse != null) {
-        final updatedVerse = cachedVerse.copyWith(
-          easeFactor: reviewData['ease_factor'] as double,
-          intervalDays: reviewData['interval_days'] as int,
-          repetitions: reviewData['repetitions'] as int,
-          nextReviewDate:
-              DateTime.parse(reviewData['next_review_date'] as String),
-          lastReviewed: DateTime.now(),
-          totalReviews: reviewData['total_reviews'] as int,
-        );
-
-        await localDataSource.cacheVerse(updatedVerse);
-
-        if (kDebugMode) {
-          print('✅ [REPOSITORY] Review submitted and cached');
-        }
-
+      _helper.logDebug('Submitting review for: $memoryVerseId');
+      final reviewData = await _remoteDataSource.submitReview(
+          memoryVerseId: memoryVerseId,
+          qualityRating: qualityRating,
+          timeSpentSeconds: timeSpentSeconds);
+      final updatedVerse = await _helper.updateVerseAfterReview(
+          memoryVerseId: memoryVerseId, reviewData: reviewData);
+      if (updatedVerse != null) {
+        _helper.logSuccess('Review submitted and cached');
         return Right(updatedVerse.toEntity());
       }
-
       return const Left(ServerFailure(
           message: 'Failed to update local cache',
           code: 'CACHE_UPDATE_FAILED'));
     } on ServerException catch (e) {
-      if (kDebugMode) {
-        print('❌ [REPOSITORY] Server error: ${e.message}');
-      }
+      _helper.logError('Server error: ${e.message}');
       return Left(ServerFailure(message: e.message, code: e.code));
     } on NetworkException catch (e) {
-      if (kDebugMode) {
-        print('❌ [REPOSITORY] Network error: ${e.message}');
-      }
-
-      // Queue review for sync when online
-      await localDataSource.addToSyncQueue({
+      _helper.logError('Network error: ${e.message}');
+      await _syncService.queueOperation({
         'type': 'submit_review',
         'memory_verse_id': memoryVerseId,
         'quality_rating': qualityRating,
         if (timeSpentSeconds != null) 'time_spent_seconds': timeSpentSeconds,
       });
-
       return const Left(NetworkFailure(
           message: 'Review queued for sync when online',
           code: 'OFFLINE_QUEUED'));
     } catch (e) {
-      if (kDebugMode) {
-        print('❌ [REPOSITORY] Unexpected error: $e');
-      }
+      _helper.logError('Unexpected error: $e');
       return Left(ServerFailure(
           message: 'Failed to submit review: ${e.toString()}',
           code: 'UNEXPECTED_ERROR'));
@@ -278,24 +180,11 @@ class MemoryVerseRepositoryImpl implements MemoryVerseRepository {
   @override
   Future<Either<Failure, ReviewStatisticsEntity>> getStatistics() async {
     try {
-      if (kDebugMode) {
-        print('📖 [REPOSITORY] Fetching statistics');
-      }
-
-      // Fetch due verses which includes statistics
+      _helper.logDebug('Fetching statistics');
       final result = await getDueVerses(limit: 1);
-
-      return result.fold(
-        (failure) => Left(failure),
-        (data) {
-          final (_, stats) = data;
-          return Right(stats);
-        },
-      );
+      return result.fold((failure) => Left(failure), (data) => Right(data.$2));
     } catch (e) {
-      if (kDebugMode) {
-        print('❌ [REPOSITORY] Error fetching statistics: $e');
-      }
+      _helper.logError('Error fetching statistics: $e');
       return Left(ServerFailure(
           message: 'Failed to fetch statistics: ${e.toString()}',
           code: 'STATS_FETCH_FAILED'));
@@ -305,76 +194,40 @@ class MemoryVerseRepositoryImpl implements MemoryVerseRepository {
   @override
   Future<Either<Failure, MemoryVerseEntity>> getVerseById(String id) async {
     try {
-      if (kDebugMode) {
-        print('🔍 [REPOSITORY] Looking up verse by ID: $id');
-      }
-
-      // Try cache first for single verse lookup
-      final cachedVerse = await localDataSource.getCachedVerseById(id);
-
+      _helper.logInfo('Looking up verse by ID: $id');
+      final cachedVerse = await _helper.getCachedVerseById(id);
       if (cachedVerse != null) {
-        if (kDebugMode) {
-          print('✅ [REPOSITORY] Found verse in cache');
-        }
+        _helper.logSuccess('Found verse in cache');
         return Right(cachedVerse.toEntity());
       }
-
-      if (kDebugMode) {
-        print('⚠️ [REPOSITORY] Verse not in cache, fetching from remote...');
-      }
-
-      // If not in cache, fetch from remote
-      final verseModel = await remoteDataSource.getVerseById(id);
-
-      if (kDebugMode) {
-        print('📥 [REPOSITORY] Caching verse from remote...');
-      }
-
-      // Cache the fetched verse for future lookups
-      await localDataSource.cacheVerse(verseModel);
-
-      if (kDebugMode) {
-        print('✅ [REPOSITORY] Verse fetched and cached successfully');
-      }
-
-      return Right(verseModel.toEntity());
+      _helper.logWarning('Verse not in cache, fetching from remote...');
+      return _helper.executeWithCaching(
+        operation: () => _remoteDataSource.getVerseById(id),
+        mapToEntity: (model) => model.toEntity(),
+        operationName: 'Fetching verse by ID from remote',
+      );
     } on ServerException catch (e) {
-      if (kDebugMode) {
-        print('❌ [REPOSITORY] Server error getting verse by ID: ${e.message}');
-      }
-      return Left(ServerFailure(
-        message: e.message,
-        code: e.code,
-      ));
+      _helper.logError('Server error: ${e.message}');
+      return Left(ServerFailure(message: e.message, code: e.code));
     } on NetworkException catch (e) {
-      if (kDebugMode) {
-        print('❌ [REPOSITORY] Network error getting verse by ID: ${e.message}');
-      }
-      return Left(NetworkFailure(
-        message: e.message,
-        code: e.code,
-      ));
+      _helper.logError('Network error: ${e.message}');
+      return Left(NetworkFailure(message: e.message, code: e.code));
     } catch (e) {
-      if (kDebugMode) {
-        print('❌ [REPOSITORY] Unexpected error getting verse by ID: $e');
-      }
+      _helper.logError('Unexpected error: $e');
       return Left(ServerFailure(
-        message: 'Failed to get verse: ${e.toString()}',
-        code: 'GET_VERSE_FAILED',
-      ));
+          message: 'Failed to get verse: ${e.toString()}',
+          code: 'GET_VERSE_FAILED'));
     }
   }
 
   @override
   Future<Either<Failure, List<MemoryVerseEntity>>> getAllVerses() async {
     try {
-      final cachedVerses = await localDataSource.getAllCachedVerses();
+      final cachedVerses = await _helper.getAllCachedVerses();
       final verses = cachedVerses.map((m) => m.toEntity()).toList();
       return Right(verses);
     } catch (e) {
-      if (kDebugMode) {
-        print('❌ [REPOSITORY] Error getting all verses: $e');
-      }
+      _helper.logError('Error getting all verses: $e');
       return Left(ServerFailure(
           message: 'Failed to get verses: ${e.toString()}',
           code: 'GET_VERSES_FAILED'));
@@ -384,19 +237,17 @@ class MemoryVerseRepositoryImpl implements MemoryVerseRepository {
   @override
   Future<Either<Failure, Unit>> deleteVerse(String id) async {
     try {
-      await localDataSource.removeVerse(id);
+      await _helper.removeVerseFromCache(id);
 
       // Queue for remote deletion
-      await localDataSource.addToSyncQueue({
+      await _syncService.queueOperation({
         'type': 'delete_verse',
         'verse_id': id,
       });
 
       return const Right(unit);
     } catch (e) {
-      if (kDebugMode) {
-        print('❌ [REPOSITORY] Error deleting verse: $e');
-      }
+      _helper.logError('Error deleting verse: $e');
       return Left(ServerFailure(
           message: 'Failed to delete verse: ${e.toString()}',
           code: 'DELETE_FAILED'));
@@ -415,115 +266,16 @@ class MemoryVerseRepositoryImpl implements MemoryVerseRepository {
 
   @override
   Future<Either<Failure, Unit>> syncWithRemote() async {
-    try {
-      if (kDebugMode) {
-        print('🔄 [REPOSITORY] Starting sync...');
-      }
-
-      final syncQueue = await localDataSource.getSyncQueue();
-
-      if (syncQueue.isEmpty) {
-        if (kDebugMode) {
-          print('✅ [REPOSITORY] Nothing to sync');
-        }
-        return const Right(unit);
-      }
-
-      // Process each queued operation
-      bool hadFailure = false;
-
-      for (final operation in syncQueue) {
-        try {
-          final type = operation['type'] as String;
-
-          switch (type) {
-            case 'add_from_daily':
-              await remoteDataSource.addVerseFromDaily(
-                operation['daily_verse_id'] as String,
-              );
-              break;
-
-            case 'add_manual':
-              await remoteDataSource.addVerseManually(
-                verseReference: operation['verse_reference'] as String,
-                verseText: operation['verse_text'] as String,
-                language: operation['language'] as String?,
-              );
-              break;
-
-            case 'submit_review':
-              await remoteDataSource.submitReview(
-                memoryVerseId: operation['memory_verse_id'] as String,
-                qualityRating: operation['quality_rating'] as int,
-                timeSpentSeconds: operation['time_spent_seconds'] as int?,
-              );
-              break;
-
-            case 'delete_verse':
-              await remoteDataSource.deleteVerse(
-                operation['verse_id'] as String,
-              );
-              break;
-
-            default:
-              if (kDebugMode) {
-                print('⚠️ [REPOSITORY] Unknown sync operation: $type');
-              }
-          }
-        } catch (e) {
-          if (kDebugMode) {
-            print('❌ [REPOSITORY] Failed to sync operation: $e');
-            print(
-                '⏸️ [REPOSITORY] Stopping sync to preserve failed operations');
-          }
-          hadFailure = true;
-          break; // Stop processing further operations
-        }
-      }
-
-      // Only clear sync queue and update timestamp if all operations succeeded
-      if (!hadFailure) {
-        await localDataSource.clearSyncQueue();
-        await localDataSource.updateLastSyncTime();
-
-        if (kDebugMode) {
-          print(
-              '✅ [REPOSITORY] Sync completed - all operations synced successfully');
-        }
-
-        return const Right(unit);
-      } else {
-        if (kDebugMode) {
-          print(
-              '⚠️ [REPOSITORY] Sync incomplete - failed operations remain queued for retry');
-        }
-
-        // Return failure to indicate sync was not fully successful
-        return const Left(
-          ServerFailure(
-            message: 'Sync failed - some operations could not be completed',
-            code: 'SYNC_INCOMPLETE',
-          ),
-        );
-      }
-    } catch (e) {
-      if (kDebugMode) {
-        print('❌ [REPOSITORY] Sync failed: $e');
-      }
-      return Left(ServerFailure(
-          message: 'Sync failed: ${e.toString()}', code: 'SYNC_FAILED'));
-    }
+    return _syncService.syncWithRemote();
   }
 
   @override
   Future<Either<Failure, Unit>> clearLocalCache() async {
     try {
-      await localDataSource.clearCache();
+      await _helper.clearCache();
       return const Right(unit);
     } catch (e) {
-      if (kDebugMode) {
-        print('❌ [REPOSITORY] Failed to clear cache: $e');
-      }
+      _helper.logError('Failed to clear cache: $e');
       return Left(ServerFailure(
           message: 'Failed to clear cache: ${e.toString()}',
           code: 'CACHE_CLEAR_FAILED'));

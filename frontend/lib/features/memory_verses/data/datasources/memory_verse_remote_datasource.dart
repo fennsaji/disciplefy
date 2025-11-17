@@ -1,7 +1,7 @@
 import 'dart:convert';
-import 'package:flutter/foundation.dart';
 
 import '../../../../core/config/app_config.dart';
+import '../../../../core/error/api_error_handler.dart';
 import '../../../../core/error/exceptions.dart';
 import '../../../../core/services/http_service.dart';
 import '../models/memory_verse_model.dart';
@@ -22,16 +22,16 @@ class MemoryVerseRemoteDataSource {
       '/functions/v1/submit-memory-verse-review';
 
   final HttpService _httpService;
+  final ApiErrorHandler _errorHandler;
 
   MemoryVerseRemoteDataSource({HttpService? httpService})
-      : _httpService = httpService ?? HttpServiceProvider.instance;
+      : _httpService = httpService ?? HttpServiceProvider.instance,
+        _errorHandler = const ApiErrorHandler(feature: 'MEMORY_VERSES');
 
   /// Adds a verse from Daily Verse to memory deck
   Future<MemoryVerseModel> addVerseFromDaily(String dailyVerseId) async {
     try {
-      if (kDebugMode) {
-        print('🚀 [MEMORY_VERSES] Adding verse from daily: $dailyVerseId');
-      }
+      _errorHandler.logDebug('Adding verse from daily: $dailyVerseId');
 
       final url = '$_baseUrl$_addFromDailyEndpoint';
       final body = jsonEncode({'daily_verse_id': dailyVerseId});
@@ -45,9 +45,7 @@ class MemoryVerseRemoteDataSource {
         final jsonData = jsonDecode(response.body);
         final verseData = jsonData['data'] as Map<String, dynamic>;
 
-        if (kDebugMode) {
-          print('✅ [MEMORY_VERSES] Verse added successfully');
-        }
+        _errorHandler.logSuccess('Verse added successfully');
 
         return MemoryVerseModel.fromJson(verseData);
       } else if (response.statusCode == 409) {
@@ -61,10 +59,10 @@ class MemoryVerseRemoteDataSource {
           code: 'DAILY_VERSE_NOT_FOUND',
         );
       } else {
-        _handleErrorResponse(response);
+        _errorHandler.handleErrorResponse(response);
       }
     } catch (e) {
-      _handleException(e, 'adding verse from daily');
+      _errorHandler.handleException(e, 'adding verse from daily');
     }
   }
 
@@ -75,9 +73,7 @@ class MemoryVerseRemoteDataSource {
     String? language,
   }) async {
     try {
-      if (kDebugMode) {
-        print('🚀 [MEMORY_VERSES] Adding manual verse: $verseReference');
-      }
+      _errorHandler.logDebug('Adding manual verse: $verseReference');
 
       final url = '$_baseUrl$_addManualEndpoint';
       final body = jsonEncode({
@@ -95,9 +91,7 @@ class MemoryVerseRemoteDataSource {
         final jsonData = jsonDecode(response.body);
         final verseData = jsonData['data'] as Map<String, dynamic>;
 
-        if (kDebugMode) {
-          print('✅ [MEMORY_VERSES] Manual verse added successfully');
-        }
+        _errorHandler.logSuccess('Manual verse added successfully');
 
         return MemoryVerseModel.fromJson(verseData);
       } else if (response.statusCode == 409) {
@@ -106,10 +100,10 @@ class MemoryVerseRemoteDataSource {
           code: 'VERSE_ALREADY_EXISTS',
         );
       } else {
-        _handleErrorResponse(response);
+        _errorHandler.handleErrorResponse(response);
       }
     } catch (e) {
-      _handleException(e, 'adding manual verse');
+      _errorHandler.handleException(e, 'adding manual verse');
     }
   }
 
@@ -121,10 +115,8 @@ class MemoryVerseRemoteDataSource {
     bool showAll = true,
   }) async {
     try {
-      if (kDebugMode) {
-        print(
-            '🚀 [MEMORY_VERSES] Fetching due verses (limit: $limit, offset: $offset, showAll: $showAll)');
-      }
+      _errorHandler.logDebug(
+          'Fetching due verses (limit: $limit, offset: $offset, showAll: $showAll)');
 
       final queryParams = <String, String>{
         'limit': limit.toString(),
@@ -155,16 +147,14 @@ class MemoryVerseRemoteDataSource {
         final statsData = data['statistics'] as Map<String, dynamic>;
         final statistics = ReviewStatisticsModel.fromJson(statsData);
 
-        if (kDebugMode) {
-          print('✅ [MEMORY_VERSES] Fetched ${verses.length} due verses');
-        }
+        _errorHandler.logSuccess('Fetched ${verses.length} due verses');
 
         return (verses, statistics);
       } else {
-        _handleErrorResponse(response);
+        _errorHandler.handleErrorResponse(response);
       }
     } catch (e) {
-      _handleException(e, 'fetching due verses');
+      _errorHandler.handleException(e, 'fetching due verses');
     }
   }
 
@@ -175,9 +165,7 @@ class MemoryVerseRemoteDataSource {
     int? timeSpentSeconds,
   }) async {
     try {
-      if (kDebugMode) {
-        print('🚀 [MEMORY_VERSES] Submitting review (quality: $qualityRating)');
-      }
+      _errorHandler.logDebug('Submitting review (quality: $qualityRating)');
 
       final url = '$_baseUrl$_submitReviewEndpoint';
       final body = jsonEncode({
@@ -195,9 +183,7 @@ class MemoryVerseRemoteDataSource {
         final jsonData = jsonDecode(response.body);
         final data = jsonData['data'] as Map<String, dynamic>;
 
-        if (kDebugMode) {
-          print('✅ [MEMORY_VERSES] Review submitted successfully');
-        }
+        _errorHandler.logSuccess('Review submitted successfully');
 
         return data;
       } else if (response.statusCode == 404) {
@@ -206,30 +192,39 @@ class MemoryVerseRemoteDataSource {
           code: 'VERSE_NOT_FOUND',
         );
       } else {
-        _handleErrorResponse(response);
+        _errorHandler.handleErrorResponse(response);
       }
     } catch (e) {
-      _handleException(e, 'submitting review');
+      _errorHandler.handleException(e, 'submitting review');
     }
   }
 
-  /// Gets a single verse by ID from remote
-  ///
-  /// Since there's no specific endpoint for fetching a single verse,
-  /// this fetches all due verses and filters by ID.
+  // TODO: PERFORMANCE OPTIMIZATION REQUIRED
+  // This method is INEFFICIENT and should be replaced with a dedicated backend endpoint.
+  // Current implementation fetches up to 1000 verses and filters client-side, which:
+  // - Wastes bandwidth by transferring unnecessary data
+  // - Increases API response time (scales with total verse count)
+  // - Consumes excessive memory on the client
+  // - May fail to find verses if user has > 1000 memory verses
+  //
+  // PLANNED FIX: Add a dedicated backend endpoint:
+  // GET /functions/v1/get-memory-verse?memory_verse_id={id}
+  // This should return a single MemoryVerseModel or 404 if not found.
+  //
+  // Until the backend endpoint is implemented, this temporary solution remains.
+  /// Gets a single verse by ID from remote (TEMPORARY INEFFICIENT IMPLEMENTATION)
   Future<MemoryVerseModel> getVerseById(String id) async {
     try {
-      if (kDebugMode) {
-        print('🚀 [MEMORY_VERSES] Fetching verse by ID: $id');
-      }
+      _errorHandler.logDebug(
+          'Fetching verse by ID: $id (using inefficient getDueVerses filter)');
+      _errorHandler.logWarning(
+          'Performance risk: Fetching up to 1000 verses to find one');
 
-      // Fetch all verses (including non-due ones) and filter
+      // Fetches all verses (showAll defaults to true), not just due ones
       final (verses, _) = await getDueVerses(
-        limit: 1000, // High limit to ensure we get all verses
-        // showAll defaults to true, so all verses are fetched
+        limit: 1000, // WARNING: Hard limit - fails if user has > 1000 verses
       );
 
-      // Find the specific verse
       final verse = verses.firstWhere(
         (v) => v.id == id,
         orElse: () => throw const ServerException(
@@ -238,22 +233,17 @@ class MemoryVerseRemoteDataSource {
         ),
       );
 
-      if (kDebugMode) {
-        print('✅ [MEMORY_VERSES] Found verse: ${verse.verseReference}');
-      }
-
+      _errorHandler.logSuccess('Found verse: ${verse.verseReference}');
       return verse;
     } catch (e) {
-      _handleException(e, 'fetching verse by ID');
+      _errorHandler.handleException(e, 'fetching verse by ID');
     }
   }
 
   /// Deletes a memory verse from the server
   Future<void> deleteVerse(String memoryVerseId) async {
     try {
-      if (kDebugMode) {
-        print('🗑️ [MEMORY_VERSES] Deleting verse: $memoryVerseId');
-      }
+      _errorHandler.logDebug('Deleting verse: $memoryVerseId');
 
       const deleteEndpoint = '/functions/v1/delete-memory-verse';
       // Include verse ID as query parameter
@@ -264,62 +254,12 @@ class MemoryVerseRemoteDataSource {
       final response = await _httpService.delete(url, headers: headers);
 
       if (response.statusCode >= 400) {
-        _handleErrorResponse(response);
+        _errorHandler.handleErrorResponse(response);
       }
 
-      if (kDebugMode) {
-        print('✅ [MEMORY_VERSES] Verse deleted successfully');
-      }
+      _errorHandler.logSuccess('Verse deleted successfully');
     } catch (e) {
-      _handleException(e, 'deleting verse');
+      _errorHandler.handleException(e, 'deleting verse');
     }
-  }
-
-  /// Handles error responses from the API
-  Never _handleErrorResponse(dynamic response) {
-    final statusCode = response.statusCode;
-    String errorMessage = 'Unknown error occurred';
-    String errorCode = 'UNKNOWN_ERROR';
-
-    try {
-      final jsonData = jsonDecode(response.body);
-      if (jsonData['error'] != null && jsonData['error']['message'] != null) {
-        errorMessage = jsonData['error']['message'] as String;
-      }
-      if (jsonData['error'] != null && jsonData['error']['code'] != null) {
-        errorCode = jsonData['error']['code'] as String;
-      }
-    } catch (e) {
-      errorMessage = 'Server error: ${response.body}';
-    }
-
-    if (kDebugMode) {
-      print('❌ [MEMORY_VERSES] Error ($statusCode): $errorMessage');
-    }
-
-    throw ServerException(
-      message: errorMessage,
-      code: errorCode,
-    );
-  }
-
-  /// Handles exceptions during API calls
-  Never _handleException(dynamic error, String operation) {
-    if (kDebugMode) {
-      print('❌ [MEMORY_VERSES] Exception while $operation: $error');
-    }
-
-    if (error is ServerException) {
-      throw error;
-    }
-
-    if (error is NetworkException) {
-      throw error;
-    }
-
-    throw ServerException(
-      message: 'Failed to complete $operation: ${error.toString()}',
-      code: 'OPERATION_FAILED',
-    );
   }
 }
