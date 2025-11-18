@@ -90,7 +90,26 @@ class MemoryVerseSyncService {
 
   /// Processes a single sync operation based on its type.
   Future<void> _processSyncOperation(Map<String, dynamic> operation) async {
-    final type = operation['type'] as String;
+    // Validate that operation contains a valid 'type' field
+    final typeValue = operation['type'];
+    if (typeValue == null) {
+      throw ArgumentError(
+        'Sync operation missing required "type" field. Operation data: $operation',
+      );
+    }
+    if (typeValue is! String) {
+      throw ArgumentError(
+        'Sync operation "type" must be a String, got ${typeValue.runtimeType}. '
+        'Operation data: $operation',
+      );
+    }
+    if (typeValue.isEmpty) {
+      throw ArgumentError(
+        'Sync operation "type" cannot be empty. Operation data: $operation',
+      );
+    }
+
+    final type = typeValue;
 
     switch (type) {
       case 'add_from_daily':
@@ -122,9 +141,12 @@ class MemoryVerseSyncService {
         break;
 
       default:
-        if (kDebugMode) {
-          print('⚠️ [SYNC] Unknown sync operation: $type');
-        }
+        // Throw exception for unknown operation types to prevent silent failures
+        throw UnsupportedError(
+          'Unknown sync operation type: "$type". '
+          'Supported types: add_from_daily, add_manual, submit_review, delete_verse. '
+          'Operation data: $operation',
+        );
     }
   }
 
