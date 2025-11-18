@@ -9,6 +9,7 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'core/config/app_config.dart';
 import 'core/di/injection_container.dart';
 import 'features/daily_verse/data/services/daily_verse_cache_interface.dart';
+import 'features/memory_verses/data/datasources/memory_verse_local_datasource.dart';
 import 'core/router/app_router.dart';
 import 'core/theme/app_theme.dart';
 import 'core/localization/app_localizations.dart';
@@ -171,6 +172,13 @@ void main() async {
     }
     await sl<DailyVerseCacheInterface>().initialize();
     if (kDebugMode) print('✅ [MAIN] Daily verse cache service completed');
+
+    // Initialize memory verse local datasource
+    if (kDebugMode) {
+      print('🔧 [MAIN] Initializing memory verse local datasource...');
+    }
+    await sl<MemoryVerseLocalDataSource>().initialize();
+    if (kDebugMode) print('✅ [MAIN] Memory verse local datasource completed');
 
     // Initialize theme service
     if (kDebugMode) print('🔧 [MAIN] Initializing theme service...');

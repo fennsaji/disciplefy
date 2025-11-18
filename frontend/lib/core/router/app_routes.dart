@@ -25,4 +25,8 @@ class AppRoutes {
   static const String profileSetup = '/profile-setup';
   static const String authCallback = '/auth/callback';
   static const String error = '/error';
+
+  // Memory Verses
+  static const String memoryVerses = '/memory-verses';
+  static const String verseReview = '/memory-verse-review';
 }

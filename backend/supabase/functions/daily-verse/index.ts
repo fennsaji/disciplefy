@@ -16,6 +16,7 @@ import { ServiceContainer } from '../_shared/core/services.ts'
  * Daily verse data structure
  */
 interface DailyVerseData {
+  readonly id?: string // UUID from daily_verses_cache table
   readonly reference: string
   readonly referenceTranslations: {
     readonly en: string
@@ -66,6 +67,7 @@ async function handleDailyVerse(req: Request, services: ServiceContainer): Promi
 
   // Create response data with additional fields
   const responseData: DailyVerseData = {
+    id: verseData.id, // UUID from daily_verses_cache table
     reference: verseData.reference,
     referenceTranslations: {
       en: verseData.referenceTranslations.en,

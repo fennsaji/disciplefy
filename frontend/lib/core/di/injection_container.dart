@@ -145,6 +145,16 @@ import '../../features/subscription/domain/usecases/get_active_subscription.dart
 import '../../features/subscription/domain/usecases/get_subscription_history.dart';
 import '../../features/subscription/domain/usecases/get_invoices.dart';
 import '../../features/subscription/presentation/bloc/subscription_bloc.dart';
+import '../../features/memory_verses/data/datasources/memory_verse_local_datasource.dart';
+import '../../features/memory_verses/data/datasources/memory_verse_remote_datasource.dart';
+import '../../features/memory_verses/data/repositories/memory_verse_repository_impl.dart';
+import '../../features/memory_verses/domain/repositories/memory_verse_repository.dart';
+import '../../features/memory_verses/domain/usecases/get_due_verses.dart';
+import '../../features/memory_verses/domain/usecases/add_verse_from_daily.dart';
+import '../../features/memory_verses/domain/usecases/add_verse_manually.dart';
+import '../../features/memory_verses/domain/usecases/submit_review.dart';
+import '../../features/memory_verses/domain/usecases/get_statistics.dart';
+import '../../features/memory_verses/presentation/bloc/memory_verse_bloc.dart';
 
 /// Service locator instance for dependency injection
 final sl = GetIt.instance;
@@ -355,6 +365,42 @@ Future<void> initializeDependencies() async {
         getDefaultLanguage: sl(),
         languagePreferenceService: sl(),
         streakRepository: sl(),
+      ));
+
+  //! Memory Verses
+  // Data Sources
+  sl.registerLazySingleton<MemoryVerseLocalDataSource>(
+    () => MemoryVerseLocalDataSource(),
+  );
+
+  sl.registerLazySingleton<MemoryVerseRemoteDataSource>(
+    () => MemoryVerseRemoteDataSource(
+      httpService: sl(),
+    ),
+  );
+
+  // Repository
+  sl.registerLazySingleton<MemoryVerseRepository>(
+    () => MemoryVerseRepositoryImpl(
+      localDataSource: sl(),
+      remoteDataSource: sl(),
+    ),
+  );
+
+  // Use Cases
+  sl.registerLazySingleton(() => GetDueVerses(sl()));
+  sl.registerLazySingleton(() => AddVerseFromDaily(sl()));
+  sl.registerLazySingleton(() => AddVerseManually(sl()));
+  sl.registerLazySingleton(() => SubmitReview(sl()));
+  sl.registerLazySingleton(() => GetStatistics(sl()));
+
+  // BLoC
+  sl.registerFactory(() => MemoryVerseBloc(
+        getDueVerses: sl(),
+        addVerseFromDaily: sl(),
+        addVerseManually: sl(),
+        submitReview: sl(),
+        getStatistics: sl(),
       ));
 
   //! Saved Guides
