@@ -62,7 +62,18 @@ class MemoryVerseRepositoryHelper {
 
       // Queue for sync if specified
       if (queueOnFailure != null) {
-        await _syncService.queueOperation(queueOnFailure);
+        try {
+          await _syncService.queueOperation(queueOnFailure);
+        } catch (queueError, stackTrace) {
+          logError(
+            'Failed to queue operation after network error in $operationName: $queueError',
+          );
+          // Log stack trace in debug mode for troubleshooting
+          if (kDebugMode) {
+            print('Stack trace: $stackTrace');
+          }
+          // Continue to return NetworkFailure despite queueing error
+        }
       }
 
       return Left(NetworkFailure(message: e.message, code: e.code));
