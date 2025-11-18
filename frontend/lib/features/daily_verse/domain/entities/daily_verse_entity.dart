@@ -2,12 +2,14 @@ import 'package:equatable/equatable.dart';
 
 /// Domain entity for daily Bible verse
 class DailyVerseEntity extends Equatable {
+  final String id; // UUID for stable foreign key references
   final String reference;
   final ReferenceTranslations referenceTranslations;
   final DailyVerseTranslations translations;
   final DateTime date;
 
   const DailyVerseEntity({
+    required this.id,
     required this.reference,
     required this.referenceTranslations,
     required this.translations,
@@ -80,7 +82,7 @@ class DailyVerseEntity extends Equatable {
 
   @override
   List<Object?> get props =>
-      [reference, referenceTranslations, translations, date];
+      [id, reference, referenceTranslations, translations, date];
 }
 
 /// Reference translations in different languages

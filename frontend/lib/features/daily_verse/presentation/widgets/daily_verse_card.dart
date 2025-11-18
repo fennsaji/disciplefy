@@ -6,8 +6,12 @@ import 'package:share_plus/share_plus.dart';
 import '../../../../core/utils/ui_utils.dart';
 import '../../../../core/extensions/translation_extension.dart';
 import '../../../../core/i18n/translation_keys.dart';
+import '../../../../core/di/injection_container.dart';
 import '../../domain/entities/daily_verse_entity.dart';
 import '../../domain/entities/daily_verse_streak.dart';
+import '../../../memory_verses/presentation/bloc/memory_verse_bloc.dart';
+import '../../../memory_verses/presentation/bloc/memory_verse_event.dart';
+import '../../../memory_verses/presentation/bloc/memory_verse_state.dart';
 import '../bloc/daily_verse_bloc.dart';
 import '../bloc/daily_verse_event.dart';
 import '../bloc/daily_verse_state.dart';
@@ -566,6 +570,23 @@ class DailyVerseCard extends StatelessWidget {
 
         const SizedBox(width: 12),
 
+        // Add to Memory button
+        IconButton(
+          onPressed: () => _addToMemory(context, state),
+          icon: Icon(
+            Icons.bookmark_add,
+            color: theme.colorScheme.onSecondary,
+            size: 24,
+          ),
+          tooltip: 'Add to Memory Verses',
+          style: IconButton.styleFrom(
+            minimumSize: const Size(44, 44),
+            padding: const EdgeInsets.all(10),
+          ),
+        ),
+
+        const SizedBox(width: 12),
+
         // Refresh button
         IconButton(
           onPressed: () {
@@ -582,6 +603,86 @@ class DailyVerseCard extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+
+  /// Adds the current verse to memory deck
+  void _addToMemory(BuildContext context, DailyVerseLoaded state) {
+    final memoryVerseBloc = sl<MemoryVerseBloc>();
+    final dailyVerseId = state.verse.id;
+
+    // Dispatch add verse event
+    memoryVerseBloc.add(AddVerseFromDaily(dailyVerseId));
+
+    // Listen for result and delegate UI to helpers
+    final subscription = memoryVerseBloc.stream.listen((memoryState) {
+      if (memoryState is VerseAdded) {
+        _showAddedSnackBar(context);
+      } else if (memoryState is MemoryVerseError) {
+        _showErrorSnackBar(context, memoryState.message);
+      } else if (memoryState is OperationQueued) {
+        _showQueuedSnackBar(context, memoryState.message);
+      }
+    });
+
+    // Cancel subscription after 5 seconds
+    // Note: Do NOT close memoryVerseBloc - it's a GetIt-managed shared instance
+    Future.delayed(const Duration(seconds: 5), () {
+      subscription.cancel();
+    });
+  }
+
+  /// Shows success snackbar when verse is added to memory
+  void _showAddedSnackBar(BuildContext context) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            const Icon(Icons.check_circle, color: Colors.white),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                'Added to Memory Verses! Start reviewing to memorize this verse.',
+              ),
+            ),
+          ],
+        ),
+        backgroundColor: Colors.green,
+        duration: const Duration(seconds: 3),
+        action: SnackBarAction(
+          label: 'Review Now',
+          textColor: Colors.white,
+          onPressed: () => Navigator.pushNamed(context, '/memory-verses'),
+        ),
+      ),
+    );
+  }
+
+  /// Shows error snackbar when adding verse fails
+  void _showErrorSnackBar(BuildContext context, String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.red,
+        duration: const Duration(seconds: 3),
+      ),
+    );
+  }
+
+  /// Shows queued snackbar when operation is queued offline
+  void _showQueuedSnackBar(BuildContext context, String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            const Icon(Icons.cloud_off, color: Colors.white),
+            const SizedBox(width: 8),
+            Expanded(child: Text(message)),
+          ],
+        ),
+        backgroundColor: Colors.orange,
+        duration: const Duration(seconds: 3),
+      ),
     );
   }
 

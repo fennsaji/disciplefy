@@ -28,6 +28,7 @@ export interface LLMServiceConfig {
 export interface LLMGenerationParams {
   readonly inputType: 'scripture' | 'topic' | 'question'
   readonly inputValue: string
+  readonly topicDescription?: string  // Optional: provides additional context for topic-based guides
   readonly language: string
 }
 

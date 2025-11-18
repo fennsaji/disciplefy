@@ -196,7 +196,12 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
                           onTap: _onDailyVerseCardTap,
                         ),
 
-                        SizedBox(height: isLargeScreen ? 40 : 32),
+                        SizedBox(height: isLargeScreen ? 24 : 20),
+
+                        // Memory Verses Button
+                        _buildMemoryVersesButton(),
+
+                        SizedBox(height: isLargeScreen ? 24 : 20),
 
                         // Generate Study Guide Button
                         _buildGenerateStudyButton(),
@@ -309,6 +314,35 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
             ),
           ),
         ],
+      );
+
+  Widget _buildMemoryVersesButton() => SizedBox(
+        width: double.infinity,
+        child: OutlinedButton.icon(
+          onPressed: () => context.go('/memory-verses'),
+          icon: const Icon(
+            Icons.psychology_outlined,
+            size: 24,
+          ),
+          label: Text(
+            context.tr(TranslationKeys.homeMemoryVerses),
+            style: GoogleFonts.inter(
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          style: OutlinedButton.styleFrom(
+            foregroundColor: AppTheme.primaryColor,
+            minimumSize: const Size.fromHeight(56),
+            side: BorderSide(
+              color: AppTheme.primaryColor.withOpacity(0.5),
+              width: 2,
+            ),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+          ),
+        ),
       );
 
   Widget _buildGenerateStudyButton() => SizedBox(
@@ -749,14 +783,17 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
 
     final languageCode = _getLanguageCode(selectedLanguage);
     final encodedTitle = Uri.encodeComponent(topic.title);
+    final encodedDescription = Uri.encodeComponent(topic.description);
     final topicIdParam = topic.id.isNotEmpty ? '&topic_id=${topic.id}' : '';
+    final descriptionParam =
+        topic.description.isNotEmpty ? '&description=$encodedDescription' : '';
 
     debugPrint(
         '🔍 [HOME] Navigating to study guide V2 for topic: ${topic.title} (ID: ${topic.id})');
 
     // Navigate directly to study guide V2 - it will handle generation
     context.go(
-        '/study-guide-v2?input=$encodedTitle&type=topic&language=$languageCode&source=home$topicIdParam');
+        '/study-guide-v2?input=$encodedTitle&type=topic&language=$languageCode&source=home$topicIdParam$descriptionParam');
 
     // Reset navigation flag after a short delay
     Future.delayed(const Duration(milliseconds: 500), () {

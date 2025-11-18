@@ -28,6 +28,9 @@ import '../../features/tokens/presentation/pages/purchase_history_page.dart';
 import '../../features/subscription/presentation/pages/premium_upgrade_page.dart';
 import '../../features/subscription/presentation/pages/subscription_management_page.dart';
 import '../../features/subscription/presentation/bloc/subscription_bloc.dart';
+import '../../features/memory_verses/presentation/pages/memory_verses_home_page.dart';
+import '../../features/memory_verses/presentation/pages/verse_review_page.dart';
+import '../../features/memory_verses/presentation/bloc/memory_verse_bloc.dart';
 import 'app_routes.dart';
 import 'router_guard.dart';
 import 'auth_notifier.dart';
@@ -176,6 +179,40 @@ class AppRouter {
         ),
       ),
 
+      // Memory Verses Routes (outside app shell)
+      GoRoute(
+        path: AppRoutes.memoryVerses,
+        name: 'memory_verses',
+        builder: (context, state) => BlocProvider(
+          create: (context) => sl<MemoryVerseBloc>(),
+          child: const MemoryVersesHomePage(),
+        ),
+      ),
+      GoRoute(
+        path: AppRoutes.verseReview,
+        name: 'verse_review',
+        builder: (context, state) {
+          // Extract verse ID and optional verse list from extra data
+          final Map<String, dynamic> extra;
+          if (state.extra is Map<String, dynamic>) {
+            extra = state.extra as Map<String, dynamic>;
+          } else {
+            extra = {};
+          }
+
+          final verseId = extra['verseId'] as String? ?? '';
+          final verseIds = extra['verseIds'] as List<String>?;
+
+          return BlocProvider(
+            create: (context) => sl<MemoryVerseBloc>(),
+            child: VerseReviewPage(
+              verseId: verseId,
+              verseIds: verseIds,
+            ),
+          );
+        },
+      ),
+
       // Authentication Routes (outside app shell)
       GoRoute(
         path: AppRoutes.login,
@@ -271,6 +308,7 @@ class AppRouter {
           final topicId = state.uri.queryParameters['topic_id'];
           final input = state.uri.queryParameters['input'];
           final type = state.uri.queryParameters['type'];
+          final description = state.uri.queryParameters['description'];
           final language = state.uri.queryParameters['language'];
           final sourceString = state.uri.queryParameters['source'];
 
@@ -282,6 +320,7 @@ class AppRouter {
             topicId: topicId,
             input: input,
             type: type,
+            description: description,
             language: language,
             navigationSource: navigationSource,
           );
@@ -340,4 +379,20 @@ extension AppRouterExtension on GoRouter {
       });
   void goToAuthCallback() => go(AppRoutes.authCallback);
   void goToError(String error) => go(AppRoutes.error, extra: error);
+
+  /// Navigates to the memory verses home page where users can view and manage their memorization deck.
+  void goToMemoryVerses() => go(AppRoutes.memoryVerses);
+
+  /// Navigates to the verse review page for spaced repetition review.
+  ///
+  /// [verseId] - Required ID of the verse to review
+  /// [verseIds] - Optional list of verse IDs for sequential review
+  void goToVerseReview({
+    required String verseId,
+    List<String>? verseIds,
+  }) =>
+      go(AppRoutes.verseReview, extra: {
+        'verseId': verseId,
+        'verseIds': verseIds,
+      });
 }

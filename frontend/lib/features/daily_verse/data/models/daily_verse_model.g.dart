@@ -8,6 +8,7 @@ part of 'daily_verse_model.dart';
 
 DailyVerseModel _$DailyVerseModelFromJson(Map<String, dynamic> json) =>
     DailyVerseModel(
+      id: json['id'] as String?,
       reference: json['reference'] as String,
       referenceTranslations: ReferenceTranslationsModel.fromJson(
           json['referenceTranslations'] as Map<String, dynamic>),
@@ -18,6 +19,7 @@ DailyVerseModel _$DailyVerseModelFromJson(Map<String, dynamic> json) =>
 
 Map<String, dynamic> _$DailyVerseModelToJson(DailyVerseModel instance) =>
     <String, dynamic>{
+      'id': instance.id,
       'reference': instance.reference,
       'referenceTranslations': instance.referenceTranslations,
       'translations': instance.translations,

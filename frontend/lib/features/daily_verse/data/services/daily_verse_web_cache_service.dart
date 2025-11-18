@@ -33,6 +33,7 @@ class DailyVerseWebCacheService implements DailyVerseCacheInterface {
       final prefs = await SharedPreferences.getInstance();
       final dateKey = _formatDateKey(verse.date);
       final verseData = {
+        'id': verse.id, // UUID from backend
         'reference': verse.reference,
         'referenceEn': verse.referenceTranslations.en,
         'referenceHi': verse.referenceTranslations.hi,
@@ -85,20 +86,71 @@ class DailyVerseWebCacheService implements DailyVerseCacheInterface {
     return getCachedVerse(DateTime.now());
   }
 
-  /// Check if we need to fetch a new verse (always true for web to ensure fresh content)
+  /// Check if we need to fetch a new verse
+  /// Uses same midnight boundary logic as shouldRefresh() for consistency
   @override
   Future<bool> shouldFetchTodaysVerse() async {
-    // For web, we'll be more conservative and fetch fresh content more often
-    // to avoid stale data since SharedPreferences is less reliable than Hive
-    return true;
+    try {
+      // Check if we have today's verse cached
+      final todaysVerse = await getTodaysCachedVerse();
+      if (todaysVerse == null) return true;
+
+      // Check if the cached verse is actually for today
+      if (!todaysVerse.isToday) return true;
+
+      // Check if last fetch was before today's midnight (same as shouldRefresh)
+      final prefs = await SharedPreferences.getInstance();
+      final lastFetchString = prefs.getString(_lastFetchKey);
+      if (lastFetchString == null) return true;
+
+      final lastFetch = DateTime.parse(lastFetchString);
+      final now = DateTime.now();
+      final todayMidnight = DateTime(now.year, now.month, now.day);
+
+      // Refresh if last fetch was before today's midnight
+      return lastFetch.isBefore(todayMidnight);
+    } catch (e) {
+      if (kDebugMode) {
+        print('🌐 [DAILY VERSE WEB CACHE] Should fetch check error: $e');
+      }
+      return true; // On error, fetch to be safe
+    }
   }
 
-  /// Check if cache should be refreshed (used by repository)
+  /// Check if cache should be refreshed (daily, at midnight)
+  /// Returns true if we need to fetch a new verse because:
+  /// - No verse has been cached yet
+  /// - The last fetch was before today (midnight has passed)
+  /// - Today's verse is not cached
   @override
   Future<bool> shouldRefresh() async {
-    // For web, always refresh to ensure fresh content
-    // SharedPreferences is less reliable than Hive for caching
-    return true;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final lastFetchString = prefs.getString(_lastFetchKey);
+
+      if (lastFetchString == null) return true;
+
+      final lastFetch = DateTime.parse(lastFetchString);
+
+      // Check if last fetch was before today's midnight (start of day)
+      final now = DateTime.now();
+      final todayMidnight = DateTime(now.year, now.month, now.day);
+
+      // If last fetch was before today's midnight, we need to refresh
+      if (lastFetch.isBefore(todayMidnight)) {
+        return true;
+      }
+
+      // Also check if today's verse is actually cached
+      final todaysVerse = await getTodaysCachedVerse();
+      return todaysVerse == null || !todaysVerse.isToday;
+    } catch (e) {
+      // On error, refresh to be safe
+      if (kDebugMode) {
+        print('🌐 [DAILY VERSE WEB CACHE] Should refresh check error: $e');
+      }
+      return true;
+    }
   }
 
   /// Set preferred language
@@ -188,7 +240,12 @@ class DailyVerseWebCacheService implements DailyVerseCacheInterface {
 
   /// Create verse entity from stored map
   DailyVerseEntity _createVerseFromMap(Map<String, dynamic> map) {
+    // Use cached ID or generate a temporary one for legacy cached entries
+    final date = DateTime.parse(map['date'] as String);
+    final id = map['id'] as String? ?? 'temp-${_formatDateKey(date)}';
+
     return DailyVerseEntity(
+      id: id,
       reference: map['reference'] as String,
       referenceTranslations: ReferenceTranslations(
         en: map['referenceEn'] as String? ?? map['reference'] as String,
@@ -200,7 +257,7 @@ class DailyVerseWebCacheService implements DailyVerseCacheInterface {
         hindi: map['hindi'] as String,
         malayalam: map['malayalam'] as String,
       ),
-      date: DateTime.parse(map['date'] as String),
+      date: date,
     );
   }
 

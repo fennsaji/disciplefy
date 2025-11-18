@@ -25,6 +25,12 @@ CREATE INDEX IF NOT EXISTS idx_daily_verse_streaks_current_streak
 -- Add RLS (Row Level Security) policies
 ALTER TABLE daily_verse_streaks ENABLE ROW LEVEL SECURITY;
 
+-- Drop existing policies if they exist to allow idempotent migration
+DROP POLICY IF EXISTS "Users can read own streak data" ON daily_verse_streaks;
+DROP POLICY IF EXISTS "Users can insert own streak data" ON daily_verse_streaks;
+DROP POLICY IF EXISTS "Users can update own streak data" ON daily_verse_streaks;
+DROP POLICY IF EXISTS "Service role has full access to streaks" ON daily_verse_streaks;
+
 -- Allow users to read their own streak data
 CREATE POLICY "Users can read own streak data"
     ON daily_verse_streaks FOR SELECT
@@ -55,6 +61,7 @@ BEGIN
 END;
 $$ language 'plpgsql';
 
+DROP TRIGGER IF EXISTS update_daily_verse_streak_updated_at_trigger ON daily_verse_streaks;
 CREATE TRIGGER update_daily_verse_streak_updated_at_trigger
     BEFORE UPDATE ON daily_verse_streaks
     FOR EACH ROW

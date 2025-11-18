@@ -329,6 +329,7 @@ async function handleRecommendedTopicNotification(
               type: 'recommended_topic',
               topic_id: topicResult.topic.id,
               topic_title: localizedContent.title,
+              topic_description: localizedContent.description, // Include description for richer study guide context
               language,
             },
             android: { priority: 'high' },

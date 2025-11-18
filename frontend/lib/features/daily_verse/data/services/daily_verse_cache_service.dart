@@ -45,6 +45,7 @@ class DailyVerseCacheService implements DailyVerseCacheInterface {
     try {
       final dateKey = _formatDateKey(verse.date);
       final verseData = {
+        'id': verse.id, // UUID from backend
         'reference': verse.reference,
         'referenceEn': verse.referenceTranslations.en,
         'referenceHi': verse.referenceTranslations.hi,
@@ -74,7 +75,11 @@ class DailyVerseCacheService implements DailyVerseCacheInterface {
 
       if (verseData == null) return null;
 
+      // Use cached ID or generate a temporary one for legacy cached entries
+      final id = verseData['id'] as String? ?? 'temp-$dateKey';
+
       return DailyVerseEntity(
+        id: id,
         reference: verseData['reference'] as String,
         referenceTranslations: ReferenceTranslations(
           en: verseData['referenceEn'] as String? ??
@@ -103,6 +108,7 @@ class DailyVerseCacheService implements DailyVerseCacheInterface {
       getCachedVerse(DateTime.now());
 
   /// Check if we need to fetch a new verse
+  /// Uses same midnight boundary logic as shouldRefresh() for consistency
   @override
   Future<bool> shouldFetchTodaysVerse() async {
     await _ensureInitialized();
@@ -114,22 +120,15 @@ class DailyVerseCacheService implements DailyVerseCacheInterface {
     // Check if the cached verse is actually for today
     if (!todaysVerse.isToday) return true;
 
-    // Check if we've exceeded the refresh threshold (e.g., 4 hours)
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final lastFetchInt = prefs.getInt(_lastFetchKey);
-      if (lastFetchInt == null) return true;
+    // Check if last fetch was before today's midnight (same as shouldRefresh)
+    final lastFetch = await getLastFetchTime();
+    if (lastFetch == null) return true;
 
-      final lastFetch = DateTime.fromMillisecondsSinceEpoch(lastFetchInt);
-      final now = DateTime.now();
-      final hoursSinceLastFetch = now.difference(lastFetch).inHours;
+    final now = DateTime.now();
+    final todayMidnight = DateTime(now.year, now.month, now.day);
 
-      // Refresh if it's been more than 4 hours
-      return hoursSinceLastFetch >= 4;
-    } catch (e) {
-      // If we can't determine last fetch time, err on the side of fetching
-      return true;
-    }
+    // Refresh if last fetch was before today's midnight
+    return lastFetch.isBefore(todayMidnight);
   }
 
   /// Check if verse is cached for a specific date
@@ -183,14 +182,28 @@ class DailyVerseCacheService implements DailyVerseCacheInterface {
     }
   }
 
-  /// Check if cache should be refreshed based on configured duration
+  /// Check if cache should be refreshed (daily, at midnight)
+  /// Returns true if we need to fetch a new verse because:
+  /// - No verse has been cached yet
+  /// - The last fetch was before today (midnight has passed)
+  /// - Today's verse is not cached
   @override
   Future<bool> shouldRefresh() async {
     final lastFetch = await getLastFetchTime();
     if (lastFetch == null) return true;
 
-    final hoursSinceLastFetch = DateTime.now().difference(lastFetch).inHours;
-    return hoursSinceLastFetch >= AppConfig.dailyVerseCacheRefreshHours;
+    // Check if last fetch was before today's midnight (start of day)
+    final now = DateTime.now();
+    final todayMidnight = DateTime(now.year, now.month, now.day);
+
+    // If last fetch was before today's midnight, we need to refresh
+    if (lastFetch.isBefore(todayMidnight)) {
+      return true;
+    }
+
+    // Also check if today's verse is actually cached
+    final todaysVerse = await getTodaysCachedVerse();
+    return todaysVerse == null || !todaysVerse.isToday;
   }
 
   /// Get cache statistics

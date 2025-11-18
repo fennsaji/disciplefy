@@ -425,13 +425,16 @@ class _StudyTopicsScreenContentState extends State<_StudyTopicsScreenContent> {
 
     // Navigate directly to study guide V2 - it will handle generation
     final encodedTitle = Uri.encodeComponent(topic.title);
+    final encodedDescription = Uri.encodeComponent(topic.description);
     final topicIdParam = topic.id.isNotEmpty ? '&topic_id=${topic.id}' : '';
+    final descriptionParam =
+        topic.description.isNotEmpty ? '&description=$encodedDescription' : '';
 
     debugPrint(
         '🔍 [STUDY_TOPICS] Navigating to study guide V2 for topic: ${topic.title} (ID: ${topic.id})');
 
     context.go(
-        '/study-guide-v2?input=$encodedTitle&type=topic&language=$languageCode&source=studyTopics$topicIdParam');
+        '/study-guide-v2?input=$encodedTitle&type=topic&language=$languageCode&source=studyTopics$topicIdParam$descriptionParam');
 
     // Reset navigation flag after a short delay
     Future.delayed(const Duration(milliseconds: 500), () {
