@@ -13,9 +13,13 @@ import '../entities/review_statistics_entity.dart';
 abstract class MemoryVerseRepository {
   /// Adds a verse from Daily Verse to the memory deck
   ///
+  /// [dailyVerseId] - UUID of the Daily Verse to add
+  /// [language] - Optional language code ('en', 'hi', 'ml') - if not provided, auto-detects
+  ///
   /// Returns the created MemoryVerseEntity on success, or Failure on error.
   Future<Either<Failure, MemoryVerseEntity>> addVerseFromDaily({
     required String dailyVerseId,
+    String? language,
   });
 
   /// Adds a custom verse manually to the memory deck

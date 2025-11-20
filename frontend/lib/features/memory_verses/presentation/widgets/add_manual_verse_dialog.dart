@@ -1,21 +1,29 @@
 import 'package:flutter/material.dart';
 
+import '../../../daily_verse/domain/entities/daily_verse_entity.dart';
+
 /// Dialog for manually adding a custom Bible verse to memory deck.
 ///
 /// Allows user to input:
 /// - Verse reference (e.g., John 3:16)
 /// - Verse text
+/// - Language selection (English, Hindi, Malayalam)
 ///
 /// Validates inputs and triggers the provided callback on submit.
 class AddManualVerseDialog extends StatefulWidget {
   final Function({
     required String verseReference,
     required String verseText,
+    required String language,
   }) onSubmit;
+
+  /// Optional default language to pre-select
+  final VerseLanguage defaultLanguage;
 
   const AddManualVerseDialog({
     super.key,
     required this.onSubmit,
+    this.defaultLanguage = VerseLanguage.english,
   });
 
   /// Shows the add manual verse dialog.
@@ -24,11 +32,16 @@ class AddManualVerseDialog extends StatefulWidget {
     required Function({
       required String verseReference,
       required String verseText,
+      required String language,
     }) onSubmit,
+    VerseLanguage defaultLanguage = VerseLanguage.english,
   }) {
     showDialog(
       context: context,
-      builder: (dialogContext) => AddManualVerseDialog(onSubmit: onSubmit),
+      builder: (dialogContext) => AddManualVerseDialog(
+        onSubmit: onSubmit,
+        defaultLanguage: defaultLanguage,
+      ),
     );
   }
 
@@ -41,6 +54,13 @@ class _AddManualVerseDialogState extends State<AddManualVerseDialog> {
   final _textController = TextEditingController();
   String? _referenceError;
   String? _textError;
+  late VerseLanguage _selectedLanguage;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedLanguage = widget.defaultLanguage;
+  }
 
   @override
   void dispose() {
@@ -69,6 +89,7 @@ class _AddManualVerseDialogState extends State<AddManualVerseDialog> {
       widget.onSubmit(
         verseReference: trimmedReference,
         verseText: trimmedText,
+        language: _selectedLanguage.code,
       );
       Navigator.pop(context);
     }
@@ -109,6 +130,25 @@ class _AddManualVerseDialogState extends State<AddManualVerseDialog> {
               onChanged: (_) {
                 if (_textError != null) {
                   setState(() => _textError = null);
+                }
+              },
+            ),
+            const SizedBox(height: 16),
+            DropdownButtonFormField<VerseLanguage>(
+              value: _selectedLanguage,
+              decoration: const InputDecoration(
+                labelText: 'Language',
+                border: OutlineInputBorder(),
+              ),
+              items: VerseLanguage.values.map((language) {
+                return DropdownMenuItem(
+                  value: language,
+                  child: Text(language.displayName),
+                );
+              }).toList(),
+              onChanged: (value) {
+                if (value != null) {
+                  setState(() => _selectedLanguage = value);
                 }
               },
             ),

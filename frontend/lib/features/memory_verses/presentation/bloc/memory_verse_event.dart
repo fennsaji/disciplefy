@@ -46,13 +46,15 @@ class LoadDueVerses extends MemoryVerseEvent {
 ///
 /// **Parameters:**
 /// - [dailyVerseId] - UUID of the Daily Verse to add
+/// - [language] - Optional language code ('en', 'hi', 'ml') - if not provided, auto-detects
 class AddVerseFromDaily extends MemoryVerseEvent {
   final String dailyVerseId;
+  final String? language;
 
-  const AddVerseFromDaily(this.dailyVerseId);
+  const AddVerseFromDaily(this.dailyVerseId, {this.language});
 
   @override
-  List<Object?> get props => [dailyVerseId];
+  List<Object?> get props => [dailyVerseId, language];
 }
 
 /// Event to manually add a custom verse to the memory deck.

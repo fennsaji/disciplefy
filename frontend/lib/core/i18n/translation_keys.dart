@@ -471,4 +471,18 @@ class TranslationKeys {
       'notifications.settings.set_reminder_time';
   static const notificationsSettingsReminderTimeLabel =
       'notifications.settings.reminder_time_label';
+
+  // Memory Verses
+  static const memoryFilterByLanguage = 'memory.filterByLanguage';
+  static const memoryAll = 'memory.all';
+  static const memoryTitle = 'memory.title';
+  static const memoryYourProgress = 'memory.yourProgress';
+  static const memoryDueForReview = 'memory.dueForReview';
+  static const memoryReview = 'memory.review';
+  static const memoryHard = 'memory.hard';
+  static const memoryGood = 'memory.good';
+  static const memoryEasy = 'memory.easy';
+  static const memoryDaysOverdue = 'memory.daysOverdue';
+  static const memoryVersesToReviewSingular = 'memory.versesToReviewSingular';
+  static const memoryVersesToReviewPlural = 'memory.versesToReviewPlural';
 }

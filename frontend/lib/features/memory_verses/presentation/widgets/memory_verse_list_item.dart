@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
+import '../../../../core/extensions/translation_extension.dart';
+import '../../../../core/i18n/translation_keys.dart';
 import '../../domain/entities/memory_verse_entity.dart';
 
 /// List item widget for displaying a memory verse card.
@@ -40,17 +42,26 @@ class MemoryVerseListItem extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Header: Reference and Status Badge
+              // Header: Reference, Language Badge, and Status Badge
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Expanded(
-                    child: Text(
-                      verse.verseReference,
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: theme.colorScheme.primary,
-                      ),
+                    child: Row(
+                      children: [
+                        Flexible(
+                          child: Text(
+                            verse.verseReference,
+                            style: theme.textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: theme.colorScheme.primary,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        _buildLanguageBadge(context),
+                      ],
                     ),
                   ),
                   _buildStatusBadge(context),
@@ -119,7 +130,7 @@ class MemoryVerseListItem extends StatelessWidget {
                           ),
                           const SizedBox(width: 4),
                           Text(
-                            '${verse.daysOverdue}d overdue',
+                            '${verse.daysOverdue}${context.tr(TranslationKeys.memoryDaysOverdue)}',
                             style: theme.textTheme.bodySmall?.copyWith(
                               color: Colors.red[700],
                               fontWeight: FontWeight.w600,
@@ -220,7 +231,7 @@ class MemoryVerseListItem extends StatelessWidget {
             ),
             const SizedBox(width: 4),
             Text(
-              'Review',
+              context.tr(TranslationKeys.memoryReview),
               style: theme.textTheme.bodySmall?.copyWith(
                 color: Colors.green[700],
                 fontWeight: FontWeight.bold,
@@ -244,18 +255,18 @@ class MemoryVerseListItem extends StatelessWidget {
       case 'hard':
         chipColor = Colors.red;
         chipIcon = Icons.trending_up;
-        label = 'Hard';
+        label = context.tr(TranslationKeys.memoryHard);
         break;
       case 'medium':
         chipColor = Colors.orange;
         chipIcon = Icons.trending_flat;
-        label = 'Medium';
+        label = context.tr(TranslationKeys.memoryGood);
         break;
       case 'easy':
       default:
         chipColor = Colors.green;
         chipIcon = Icons.trending_down;
-        label = 'Easy';
+        label = context.tr(TranslationKeys.memoryEasy);
     }
 
     return Tooltip(
@@ -326,6 +337,55 @@ class MemoryVerseListItem extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  Widget _buildLanguageBadge(BuildContext context) {
+    final theme = Theme.of(context);
+
+    String label;
+
+    switch (verse.language) {
+      case 'hi':
+        label = 'HI';
+        break;
+      case 'ml':
+        label = 'ML';
+        break;
+      case 'en':
+      default:
+        label = 'EN';
+    }
+
+    return Tooltip(
+      message: _getLanguageDisplayName(verse.language),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+        decoration: BoxDecoration(
+          color: theme.colorScheme.secondaryContainer,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Text(
+          label,
+          style: theme.textTheme.bodySmall?.copyWith(
+            fontSize: 10,
+            fontWeight: FontWeight.w600,
+            color: theme.colorScheme.onSecondaryContainer,
+          ),
+        ),
+      ),
+    );
+  }
+
+  String _getLanguageDisplayName(String code) {
+    switch (code) {
+      case 'hi':
+        return 'Hindi';
+      case 'ml':
+        return 'Malayalam';
+      case 'en':
+      default:
+        return 'English';
+    }
   }
 
   String _formatDate(DateTime date) {

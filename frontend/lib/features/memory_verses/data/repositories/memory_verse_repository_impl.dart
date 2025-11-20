@@ -58,13 +58,18 @@ class MemoryVerseRepositoryImpl implements MemoryVerseRepository {
   @override
   Future<Either<Failure, MemoryVerseEntity>> addVerseFromDaily({
     required String dailyVerseId,
+    String? language,
   }) async {
     return _helper.executeWithCaching(
-      operation: () => _remoteDataSource.addVerseFromDaily(dailyVerseId),
+      operation: () => _remoteDataSource.addVerseFromDaily(
+        dailyVerseId,
+        language: language,
+      ),
       mapToEntity: (model) => model.toEntity(),
       queueOnFailure: {
         'type': 'add_from_daily',
         'daily_verse_id': dailyVerseId,
+        if (language != null) 'language': language,
       },
       operationName: 'Adding verse from daily: $dailyVerseId',
     );

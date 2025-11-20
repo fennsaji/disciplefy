@@ -29,12 +29,22 @@ class MemoryVerseRemoteDataSource {
         _errorHandler = const ApiErrorHandler(feature: 'MEMORY_VERSES');
 
   /// Adds a verse from Daily Verse to memory deck
-  Future<MemoryVerseModel> addVerseFromDaily(String dailyVerseId) async {
+  ///
+  /// [dailyVerseId] - UUID of the Daily Verse to add
+  /// [language] - Optional language code ('en', 'hi', 'ml') - if not provided, auto-detects
+  Future<MemoryVerseModel> addVerseFromDaily(
+    String dailyVerseId, {
+    String? language,
+  }) async {
     try {
-      _errorHandler.logDebug('Adding verse from daily: $dailyVerseId');
+      _errorHandler.logDebug(
+          'Adding verse from daily: $dailyVerseId (language: ${language ?? 'auto'})');
 
       final url = '$_baseUrl$_addFromDailyEndpoint';
-      final body = jsonEncode({'daily_verse_id': dailyVerseId});
+      final body = jsonEncode({
+        'daily_verse_id': dailyVerseId,
+        if (language != null) 'language': language,
+      });
 
       // Create headers with authentication
       final headers = await _httpService.createHeaders();
