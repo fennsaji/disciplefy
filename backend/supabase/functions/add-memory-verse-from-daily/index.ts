@@ -21,6 +21,7 @@ import { ServiceContainer } from '../_shared/core/services.ts'
  */
 interface AddFromDailyRequest {
   readonly daily_verse_id: string
+  readonly language?: string // Optional: 'en', 'hi', 'ml' - if not provided, auto-detects
 }
 
 /**
@@ -130,23 +131,46 @@ async function handleAddMemoryVerseFromDaily(
   const verseData: VerseData = dailyVerse.verse_data
   const verseReference: string = verseData.reference
 
-  // Get verse text from translations (prefer ESV for English)
+  // Get verse text from translations
   let verseText: string
   let language: string
 
-  // Determine language and get appropriate translation
-  // Default to English (ESV) if available
-  if (verseData.translations?.esv) {
-    verseText = verseData.translations.esv
-    language = 'en'
-  } else if (verseData.translations?.hindi) {
-    verseText = verseData.translations.hindi
-    language = 'hi'
-  } else if (verseData.translations?.malayalam) {
-    verseText = verseData.translations.malayalam
-    language = 'ml'
+  // Check if a specific language was requested
+  const requestedLanguage = body.language
+  
+  if (requestedLanguage) {
+    // Validate requested language
+    if (!['en', 'hi', 'ml'].includes(requestedLanguage)) {
+      throw new AppError('VALIDATION_ERROR', 'Invalid language. Must be en, hi, or ml', 400)
+    }
+    
+    // Get the requested language translation
+    if (requestedLanguage === 'en' && verseData.translations?.esv) {
+      verseText = verseData.translations.esv
+      language = 'en'
+    } else if (requestedLanguage === 'hi' && verseData.translations?.hindi) {
+      verseText = verseData.translations.hindi
+      language = 'hi'
+    } else if (requestedLanguage === 'ml' && verseData.translations?.malayalam) {
+      verseText = verseData.translations.malayalam
+      language = 'ml'
+    } else {
+      throw new AppError('NOT_FOUND', `Translation not available in ${requestedLanguage} for this verse`, 404)
+    }
   } else {
-    throw new AppError('INTERNAL_ERROR', 'No valid translation found for this verse', 500)
+    // Auto-detect: Default to English (ESV) if available
+    if (verseData.translations?.esv) {
+      verseText = verseData.translations.esv
+      language = 'en'
+    } else if (verseData.translations?.hindi) {
+      verseText = verseData.translations.hindi
+      language = 'hi'
+    } else if (verseData.translations?.malayalam) {
+      verseText = verseData.translations.malayalam
+      language = 'ml'
+    } else {
+      throw new AppError('INTERNAL_ERROR', 'No valid translation found for this verse', 500)
+    }
   }
 
   // Validate verse content

@@ -132,6 +132,8 @@ class _VerseFlipCardState extends State<VerseFlipCard>
                 fontWeight: FontWeight.bold,
               ),
             ),
+            const SizedBox(height: 12),
+            _buildLanguageBadge(context, isLight: true),
             const SizedBox(height: 24),
             Container(
               padding: const EdgeInsets.symmetric(
@@ -280,10 +282,50 @@ class _VerseFlipCardState extends State<VerseFlipCard>
                     backgroundColor: theme.colorScheme.surfaceContainerHighest,
                     textColor: theme.colorScheme.onSurfaceVariant,
                   ),
+                  _buildLanguageBadge(context, isLight: false),
                 ],
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLanguageBadge(BuildContext context, {required bool isLight}) {
+    final theme = Theme.of(context);
+
+    String label;
+
+    switch (widget.verse.language) {
+      case 'hi':
+        label = 'हिन्दी';
+        break;
+      case 'ml':
+        label = 'മലയാളം';
+        break;
+      case 'en':
+      default:
+        label = 'English';
+    }
+
+    final backgroundColor = isLight
+        ? Colors.white.withOpacity(0.2)
+        : theme.colorScheme.surfaceContainerHighest;
+    final textColor =
+        isLight ? Colors.white : theme.colorScheme.onSurfaceVariant;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: backgroundColor,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Text(
+        label,
+        style: theme.textTheme.bodySmall?.copyWith(
+          color: textColor,
+          fontWeight: FontWeight.w600,
         ),
       ),
     );

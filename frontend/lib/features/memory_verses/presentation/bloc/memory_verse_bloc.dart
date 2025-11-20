@@ -132,7 +132,10 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
 
       emit(const MemoryVerseLoading(message: 'Adding verse...'));
 
-      final result = await addVerseFromDaily(event.dailyVerseId);
+      final result = await addVerseFromDaily(
+        event.dailyVerseId,
+        language: event.language,
+      );
 
       result.fold(
         (failure) {
