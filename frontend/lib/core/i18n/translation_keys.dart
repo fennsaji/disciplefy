@@ -115,6 +115,8 @@ class TranslationKeys {
   static const dailyVerseCopy = 'daily_verse.copy';
   static const dailyVerseShare = 'daily_verse.share';
   static const dailyVerseCopied = 'daily_verse.copied';
+  static const dailyVerseAddToMemory = 'daily_verse.add_to_memory';
+  static const dailyVerseAlreadyInMemory = 'daily_verse.already_in_memory';
 
   // Generate Study Screen
   static const generateStudyTitle = 'generate_study.title';

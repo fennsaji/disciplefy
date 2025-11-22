@@ -154,6 +154,7 @@ import '../../features/memory_verses/domain/usecases/add_verse_from_daily.dart';
 import '../../features/memory_verses/domain/usecases/add_verse_manually.dart';
 import '../../features/memory_verses/domain/usecases/submit_review.dart';
 import '../../features/memory_verses/domain/usecases/get_statistics.dart';
+import '../../features/memory_verses/domain/usecases/fetch_verse_text.dart';
 import '../../features/memory_verses/presentation/bloc/memory_verse_bloc.dart';
 
 /// Service locator instance for dependency injection
@@ -393,6 +394,7 @@ Future<void> initializeDependencies() async {
   sl.registerLazySingleton(() => AddVerseManually(sl()));
   sl.registerLazySingleton(() => SubmitReview(sl()));
   sl.registerLazySingleton(() => GetStatistics(sl()));
+  sl.registerLazySingleton(() => FetchVerseText(sl()));
 
   // BLoC
   sl.registerFactory(() => MemoryVerseBloc(
@@ -401,6 +403,7 @@ Future<void> initializeDependencies() async {
         addVerseManually: sl(),
         submitReview: sl(),
         getStatistics: sl(),
+        fetchVerseText: sl(),
       ));
 
   //! Saved Guides

@@ -608,8 +608,8 @@ class DailyVerseCard extends StatelessWidget {
             size: 24,
           ),
           tooltip: isAlreadyInMemory
-              ? 'Already in Memory Verses'
-              : 'Add to Memory Verses',
+              ? context.tr(TranslationKeys.dailyVerseAlreadyInMemory)
+              : context.tr(TranslationKeys.dailyVerseAddToMemory),
           style: IconButton.styleFrom(
             minimumSize: const Size(44, 44),
             padding: const EdgeInsets.all(10),

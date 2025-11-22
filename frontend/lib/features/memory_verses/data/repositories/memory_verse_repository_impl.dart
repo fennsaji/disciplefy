@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 
 import '../../../../core/error/exceptions.dart';
 import '../../../../core/error/failures.dart';
+import '../../domain/entities/fetched_verse_entity.dart';
 import '../../domain/entities/memory_verse_entity.dart';
 import '../../domain/entities/review_session_entity.dart';
 import '../../domain/entities/review_statistics_entity.dart';
@@ -284,6 +285,46 @@ class MemoryVerseRepositoryImpl implements MemoryVerseRepository {
       return Left(ServerFailure(
           message: 'Failed to clear cache: ${e.toString()}',
           code: 'CACHE_CLEAR_FAILED'));
+    }
+  }
+
+  @override
+  Future<Either<Failure, FetchedVerseEntity>> fetchVerseText({
+    required String book,
+    required int chapter,
+    required int verseStart,
+    int? verseEnd,
+    required String language,
+  }) async {
+    try {
+      _helper.logDebug(
+          'Fetching verse text: $book $chapter:$verseStart${verseEnd != null ? '-$verseEnd' : ''}');
+
+      final result = await _remoteDataSource.fetchVerseText(
+        book: book,
+        chapter: chapter,
+        verseStart: verseStart,
+        verseEnd: verseEnd,
+        language: language,
+      );
+
+      _helper.logSuccess('Verse text fetched successfully');
+
+      return Right(FetchedVerseEntity(
+        text: result['text']!,
+        localizedReference: result['localizedReference']!,
+      ));
+    } on ServerException catch (e) {
+      _helper.logError('Server error: ${e.message}');
+      return Left(ServerFailure(message: e.message, code: e.code));
+    } on NetworkException catch (e) {
+      _helper.logError('Network error: ${e.message}');
+      return Left(NetworkFailure(message: e.message, code: e.code));
+    } catch (e) {
+      _helper.logError('Unexpected error: $e');
+      return Left(ServerFailure(
+          message: 'Failed to fetch verse text: ${e.toString()}',
+          code: 'FETCH_VERSE_TEXT_FAILED'));
     }
   }
 }

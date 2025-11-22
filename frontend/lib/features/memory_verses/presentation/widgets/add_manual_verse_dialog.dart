@@ -1,19 +1,20 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/constants/bible_data.dart';
-import '../../../../core/config/app_config.dart';
 import '../../../../core/i18n/translation_keys.dart';
 import '../../../../core/extensions/translation_extension.dart';
 import '../../../daily_verse/domain/entities/daily_verse_entity.dart';
+import '../bloc/memory_verse_bloc.dart';
+import '../bloc/memory_verse_event.dart';
+import '../bloc/memory_verse_state.dart';
 
 /// Dialog for adding a Bible verse to memory deck using structured selection.
 ///
 /// Features:
 /// - Cascading dropdowns for Book, Chapter, Verse selection
 /// - Support for verse ranges (e.g., John 3:16-17)
-/// - Auto-fetches verse text from API
+/// - Auto-fetches verse text from API via BLoC
 /// - Allows user to edit fetched text
 /// - Language selection
 class AddManualVerseDialog extends StatefulWidget {
@@ -67,7 +68,6 @@ class _AddManualVerseDialogState extends State<AddManualVerseDialog> {
   bool _selectWholeChapter = false;
 
   // UI state
-  final bool _isLoading = false;
   bool _isFetchingVerse = false;
   String? _errorMessage;
   String? _fetchedReference;
@@ -107,8 +107,8 @@ class _AddManualVerseDialogState extends State<AddManualVerseDialog> {
     return _availableVerses.where((v) => v > _selectedVerseStart!).toList();
   }
 
-  /// Fetch verse text from backend
-  Future<void> _fetchVerseText() async {
+  /// Fetch verse text via BLoC
+  void _fetchVerseText() {
     if (_selectedBook == null ||
         _selectedChapter == null ||
         _selectedVerseStart == null) {
@@ -120,45 +120,13 @@ class _AddManualVerseDialogState extends State<AddManualVerseDialog> {
       _errorMessage = null;
     });
 
-    try {
-      const baseUrl = AppConfig.supabaseUrl;
-      final response = await http.post(
-        Uri.parse('$baseUrl/functions/v1/fetch-verse'),
-        headers: {
-          'Content-Type': 'application/json',
-          'apikey': AppConfig.supabaseAnonKey,
-          'Authorization': 'Bearer ${AppConfig.supabaseAnonKey}',
-        },
-        body: jsonEncode({
-          'book': _selectedBook,
-          'chapter': _selectedChapter,
-          'verse_start': _selectedVerseStart,
-          if (_selectedVerseEnd != null) 'verse_end': _selectedVerseEnd,
-          'language': _selectedLanguage.code,
-        }),
-      );
-
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        setState(() {
-          _textController.text = data['data']['text'];
-          _fetchedReference = data['data']['localizedReference'];
-        });
-      } else {
-        final error = jsonDecode(response.body);
-        setState(() {
-          _errorMessage = error['error']?['message'] ?? 'Failed to fetch verse';
-        });
-      }
-    } catch (e) {
-      setState(() {
-        _errorMessage = 'Network error: ${e.toString()}';
-      });
-    } finally {
-      setState(() {
-        _isFetchingVerse = false;
-      });
-    }
+    context.read<MemoryVerseBloc>().add(FetchVerseTextRequested(
+          book: _selectedBook!,
+          chapter: _selectedChapter!,
+          verseStart: _selectedVerseStart!,
+          verseEnd: _selectedVerseEnd,
+          language: _selectedLanguage.code,
+        ));
   }
 
   void _handleSubmit() {
@@ -203,285 +171,312 @@ class _AddManualVerseDialogState extends State<AddManualVerseDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final screenWidth = MediaQuery.of(context).size.width;
 
-    return AlertDialog(
-      title: Text(context.tr(TranslationKeys.addVerseTitle)),
-      insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
-      content: SizedBox(
-        width: screenWidth > 400 ? 400 : screenWidth * 0.9,
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // Book Dropdown
-              DropdownButtonFormField<String>(
-                value: _selectedBook,
-                decoration: InputDecoration(
-                  labelText: context.tr(TranslationKeys.addVerseBook),
-                  border: const OutlineInputBorder(),
-                  contentPadding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                ),
-                isExpanded: true,
-                menuMaxHeight: 300,
-                items: BibleData.bookNames.map((name) {
-                  return DropdownMenuItem(
-                    value: name,
-                    child: Text(name, overflow: TextOverflow.ellipsis),
-                  );
-                }).toList(),
-                onChanged: (value) {
-                  setState(() {
-                    _selectedBook = value;
-                    _selectedChapter = null;
-                    _selectedVerseStart = null;
-                    _selectedVerseEnd = null;
-                    _textController.clear();
-                    _fetchedReference = null;
-                  });
-                },
-              ),
-              const SizedBox(height: 12),
-
-              // Chapter and Verse Row
-              Row(
-                children: [
-                  // Chapter Dropdown
-                  Expanded(
-                    child: DropdownButtonFormField<int>(
-                      value: _selectedChapter,
-                      decoration: InputDecoration(
-                        labelText: context.tr(TranslationKeys.addVerseChapter),
-                        border: const OutlineInputBorder(),
-                        contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 12, vertical: 8),
-                      ),
-                      menuMaxHeight: 300,
-                      items: _availableChapters.map((ch) {
-                        return DropdownMenuItem(
-                          value: ch,
-                          child: Text('$ch'),
-                        );
-                      }).toList(),
-                      onChanged: _selectedBook == null
-                          ? null
-                          : (value) {
-                              setState(() {
-                                _selectedChapter = value;
-                                _selectedVerseStart = null;
-                                _selectedVerseEnd = null;
-                                _textController.clear();
-                                _fetchedReference = null;
-                              });
-                            },
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-
-                  // Verse Start Dropdown (with "All" option)
-                  Expanded(
-                    child: DropdownButtonFormField<int?>(
-                      value: _selectWholeChapter ? -1 : _selectedVerseStart,
-                      decoration: InputDecoration(
-                        labelText: context.tr(TranslationKeys.addVerseVerse),
-                        border: const OutlineInputBorder(),
-                        contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 12, vertical: 8),
-                      ),
-                      menuMaxHeight: 300,
-                      items: [
-                        // "All" option for whole chapter
-                        DropdownMenuItem<int?>(
-                          value: -1,
-                          child: Text(context.tr(TranslationKeys.addVerseAll)),
-                        ),
-                        ..._availableVerses.map((v) {
-                          return DropdownMenuItem<int?>(
-                            value: v,
-                            child: Text('$v'),
-                          );
-                        }),
-                      ],
-                      onChanged: _selectedChapter == null
-                          ? null
-                          : (value) {
-                              setState(() {
-                                if (value == -1) {
-                                  _selectWholeChapter = true;
-                                  _selectedVerseStart = 1;
-                                  // Set end to last verse of chapter
-                                  final book =
-                                      BibleData.findBook(_selectedBook!);
-                                  if (book != null) {
-                                    _selectedVerseEnd =
-                                        book.getVerseCount(_selectedChapter!);
-                                  }
-                                } else {
-                                  _selectWholeChapter = false;
-                                  _selectedVerseStart = value;
-                                  _selectedVerseEnd = null;
-                                }
-                                _textController.clear();
-                                _fetchedReference = null;
-                              });
-                            },
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-
-              // End Verse (for range) and Language Row
-              Row(
-                children: [
-                  // End Verse Dropdown (optional) - hidden when "All" is selected
-                  if (!_selectWholeChapter) ...[
-                    Expanded(
-                      child: DropdownButtonFormField<int?>(
-                        value: _selectedVerseEnd,
-                        decoration: InputDecoration(
-                          labelText: context.tr(TranslationKeys.addVerseTo),
-                          border: const OutlineInputBorder(),
-                          contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 12, vertical: 8),
-                        ),
-                        menuMaxHeight: 300,
-                        items: [
-                          const DropdownMenuItem<int?>(
-                            child: Text('-'),
-                          ),
-                          ..._availableEndVerses.map((v) {
-                            return DropdownMenuItem<int?>(
-                              value: v,
-                              child: Text('$v'),
-                            );
-                          }),
-                        ],
-                        onChanged: _selectedVerseStart == null
-                            ? null
-                            : (value) {
-                                setState(() {
-                                  _selectedVerseEnd = value;
-                                  _textController.clear();
-                                  _fetchedReference = null;
-                                });
-                              },
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                  ],
-
-                  // Language Dropdown
-                  Expanded(
-                    flex: _selectWholeChapter ? 1 : 1,
-                    child: DropdownButtonFormField<VerseLanguage>(
-                      value: _selectedLanguage,
-                      decoration: InputDecoration(
-                        labelText: context.tr(TranslationKeys.addVerseLanguage),
-                        border: const OutlineInputBorder(),
-                        contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 12, vertical: 8),
-                      ),
-                      items: VerseLanguage.values.map((language) {
-                        return DropdownMenuItem(
-                          value: language,
-                          child: Text(
-                            language.code.toUpperCase(),
-                            style: const TextStyle(fontSize: 14),
-                          ),
-                        );
-                      }).toList(),
-                      onChanged: (value) {
-                        if (value != null) {
-                          setState(() {
-                            _selectedLanguage = value;
-                            _textController.clear();
-                            _fetchedReference = null;
-                          });
-                        }
-                      },
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-
-              // Fetch Button
-              SizedBox(
-                width: double.infinity,
-                child: OutlinedButton.icon(
-                  onPressed: (_selectedBook != null &&
-                          _selectedChapter != null &&
-                          _selectedVerseStart != null &&
-                          !_isFetchingVerse)
-                      ? _fetchVerseText
-                      : null,
-                  icon: _isFetchingVerse
-                      ? const SizedBox(
-                          width: 16,
-                          height: 16,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Icon(Icons.download, size: 18),
-                  label: Text(_isFetchingVerse
-                      ? context.tr(TranslationKeys.addVerseFetching)
-                      : context.tr(TranslationKeys.addVerseFetch)),
-                ),
-              ),
-              const SizedBox(height: 12),
-
-              // Reference Display
-              if (_fetchedReference != null)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 8),
-                  child: Text(
-                    _fetchedReference!,
-                    style: theme.textTheme.titleSmall?.copyWith(
-                      color: theme.colorScheme.primary,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-
-              // Verse Text Field
-              TextField(
-                controller: _textController,
-                decoration: InputDecoration(
-                  labelText: context.tr(TranslationKeys.addVerseText),
-                  hintText: context.tr(TranslationKeys.addVerseTextHint),
-                  border: const OutlineInputBorder(),
-                  errorText: _errorMessage,
-                ),
-                maxLines: 5,
-                onChanged: (_) {
-                  if (_errorMessage != null) {
-                    setState(() => _errorMessage = null);
-                  }
-                },
-              ),
-            ],
+    return BlocListener<MemoryVerseBloc, MemoryVerseState>(
+      listener: (context, state) {
+        if (state is VerseTextFetched) {
+          setState(() {
+            _textController.text = state.fetchedVerse.text;
+            _fetchedReference = state.fetchedVerse.localizedReference;
+            _isFetchingVerse = false;
+          });
+        } else if (state is FetchVerseTextError) {
+          setState(() {
+            _errorMessage = state.message;
+            _isFetchingVerse = false;
+          });
+        }
+      },
+      child: AlertDialog(
+        title: Text(context.tr(TranslationKeys.addVerseTitle)),
+        insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+        content: SizedBox(
+          width: screenWidth > 400 ? 400 : screenWidth * 0.9,
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                _buildBookDropdown(),
+                const SizedBox(height: 12),
+                _buildChapterVerseRow(),
+                const SizedBox(height: 12),
+                _buildEndVerseLanguageRow(),
+                const SizedBox(height: 12),
+                _buildFetchButton(),
+                const SizedBox(height: 12),
+                _buildReferenceDisplay(),
+                _buildVerseTextField(),
+              ],
+            ),
           ),
         ),
+        actions: _buildDialogActions(),
       ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: Text(context.tr(TranslationKeys.addVerseCancel)),
+    );
+  }
+
+  Widget _buildBookDropdown() {
+    return DropdownButtonFormField<String>(
+      value: _selectedBook,
+      decoration: InputDecoration(
+        labelText: context.tr(TranslationKeys.addVerseBook),
+        border: const OutlineInputBorder(),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      ),
+      isExpanded: true,
+      menuMaxHeight: 300,
+      items: BibleData.bookNames.map((name) {
+        return DropdownMenuItem(
+          value: name,
+          child: Text(name, overflow: TextOverflow.ellipsis),
+        );
+      }).toList(),
+      onChanged: (value) {
+        setState(() {
+          _selectedBook = value;
+          _selectedChapter = null;
+          _selectedVerseStart = null;
+          _selectedVerseEnd = null;
+          _textController.clear();
+          _fetchedReference = null;
+        });
+      },
+    );
+  }
+
+  Widget _buildChapterVerseRow() {
+    return Row(
+      children: [
+        Expanded(child: _buildChapterDropdown()),
+        const SizedBox(width: 8),
+        Expanded(child: _buildVerseStartDropdown()),
+      ],
+    );
+  }
+
+  Widget _buildChapterDropdown() {
+    return DropdownButtonFormField<int>(
+      value: _selectedChapter,
+      decoration: InputDecoration(
+        labelText: context.tr(TranslationKeys.addVerseChapter),
+        border: const OutlineInputBorder(),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      ),
+      menuMaxHeight: 300,
+      items: _availableChapters.map((ch) {
+        return DropdownMenuItem(
+          value: ch,
+          child: Text('$ch'),
+        );
+      }).toList(),
+      onChanged: _selectedBook == null
+          ? null
+          : (value) {
+              setState(() {
+                _selectedChapter = value;
+                _selectedVerseStart = null;
+                _selectedVerseEnd = null;
+                _textController.clear();
+                _fetchedReference = null;
+              });
+            },
+    );
+  }
+
+  Widget _buildVerseStartDropdown() {
+    return DropdownButtonFormField<int?>(
+      value: _selectWholeChapter ? -1 : _selectedVerseStart,
+      decoration: InputDecoration(
+        labelText: context.tr(TranslationKeys.addVerseVerse),
+        border: const OutlineInputBorder(),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      ),
+      menuMaxHeight: 300,
+      items: [
+        // "All" option for whole chapter
+        DropdownMenuItem<int?>(
+          value: -1,
+          child: Text(context.tr(TranslationKeys.addVerseAll)),
         ),
-        ElevatedButton(
-          onPressed: _isLoading ? null : _handleSubmit,
-          child: _isLoading
-              ? const SizedBox(
-                  width: 16,
-                  height: 16,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
-              : Text(context.tr(TranslationKeys.addVerseAdd)),
+        ..._availableVerses.map((v) {
+          return DropdownMenuItem<int?>(
+            value: v,
+            child: Text('$v'),
+          );
+        }),
+      ],
+      onChanged: _selectedChapter == null
+          ? null
+          : (value) {
+              setState(() {
+                if (value == -1) {
+                  _selectWholeChapter = true;
+                  _selectedVerseStart = 1;
+                  // Set end to last verse of chapter
+                  final book = BibleData.findBook(_selectedBook!);
+                  if (book != null) {
+                    _selectedVerseEnd = book.getVerseCount(_selectedChapter!);
+                  }
+                } else {
+                  _selectWholeChapter = false;
+                  _selectedVerseStart = value;
+                  _selectedVerseEnd = null;
+                }
+                _textController.clear();
+                _fetchedReference = null;
+              });
+            },
+    );
+  }
+
+  Widget _buildEndVerseLanguageRow() {
+    return Row(
+      children: [
+        // End Verse Dropdown (optional) - hidden when "All" is selected
+        if (!_selectWholeChapter) ...[
+          Expanded(child: _buildEndVerseDropdown()),
+          const SizedBox(width: 8),
+        ],
+        // Language Dropdown
+        Expanded(
+          flex: _selectWholeChapter ? 1 : 1,
+          child: _buildLanguageDropdown(),
         ),
       ],
     );
+  }
+
+  Widget _buildEndVerseDropdown() {
+    return DropdownButtonFormField<int?>(
+      value: _selectedVerseEnd,
+      decoration: InputDecoration(
+        labelText: context.tr(TranslationKeys.addVerseTo),
+        border: const OutlineInputBorder(),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      ),
+      menuMaxHeight: 300,
+      items: [
+        const DropdownMenuItem<int?>(
+          child: Text('-'),
+        ),
+        ..._availableEndVerses.map((v) {
+          return DropdownMenuItem<int?>(
+            value: v,
+            child: Text('$v'),
+          );
+        }),
+      ],
+      onChanged: _selectedVerseStart == null
+          ? null
+          : (value) {
+              setState(() {
+                _selectedVerseEnd = value;
+                _textController.clear();
+                _fetchedReference = null;
+              });
+            },
+    );
+  }
+
+  Widget _buildLanguageDropdown() {
+    return DropdownButtonFormField<VerseLanguage>(
+      value: _selectedLanguage,
+      decoration: InputDecoration(
+        labelText: context.tr(TranslationKeys.addVerseLanguage),
+        border: const OutlineInputBorder(),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      ),
+      items: VerseLanguage.values.map((language) {
+        return DropdownMenuItem(
+          value: language,
+          child: Text(
+            language.code.toUpperCase(),
+            style: const TextStyle(fontSize: 14),
+          ),
+        );
+      }).toList(),
+      onChanged: (value) {
+        if (value != null) {
+          setState(() {
+            _selectedLanguage = value;
+            _textController.clear();
+            _fetchedReference = null;
+          });
+        }
+      },
+    );
+  }
+
+  Widget _buildFetchButton() {
+    return SizedBox(
+      width: double.infinity,
+      child: OutlinedButton.icon(
+        onPressed: (_selectedBook != null &&
+                _selectedChapter != null &&
+                _selectedVerseStart != null &&
+                !_isFetchingVerse)
+            ? _fetchVerseText
+            : null,
+        icon: _isFetchingVerse
+            ? const SizedBox(
+                width: 16,
+                height: 16,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              )
+            : const Icon(Icons.download, size: 18),
+        label: Text(_isFetchingVerse
+            ? context.tr(TranslationKeys.addVerseFetching)
+            : context.tr(TranslationKeys.addVerseFetch)),
+      ),
+    );
+  }
+
+  Widget _buildReferenceDisplay() {
+    final theme = Theme.of(context);
+    if (_fetchedReference == null) return const SizedBox.shrink();
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Text(
+        _fetchedReference!,
+        style: theme.textTheme.titleSmall?.copyWith(
+          color: theme.colorScheme.primary,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildVerseTextField() {
+    return TextField(
+      controller: _textController,
+      decoration: InputDecoration(
+        labelText: context.tr(TranslationKeys.addVerseText),
+        hintText: context.tr(TranslationKeys.addVerseTextHint),
+        border: const OutlineInputBorder(),
+        errorText: _errorMessage,
+      ),
+      maxLines: 5,
+      onChanged: (_) {
+        if (_errorMessage != null) {
+          setState(() => _errorMessage = null);
+        }
+      },
+    );
+  }
+
+  List<Widget> _buildDialogActions() {
+    return [
+      TextButton(
+        onPressed: () => Navigator.pop(context),
+        child: Text(context.tr(TranslationKeys.addVerseCancel)),
+      ),
+      ElevatedButton(
+        onPressed: _handleSubmit,
+        child: Text(context.tr(TranslationKeys.addVerseAdd)),
+      ),
+    ];
   }
 }

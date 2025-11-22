@@ -1,5 +1,6 @@
 import 'package:equatable/equatable.dart';
 
+import '../../domain/entities/fetched_verse_entity.dart';
 import '../../domain/entities/memory_verse_entity.dart';
 import '../../domain/entities/review_statistics_entity.dart';
 
@@ -291,4 +292,50 @@ class OperationQueued extends MemoryVerseState {
 
   @override
   List<Object?> get props => [message, operationType];
+}
+
+/// Loading state while fetching verse text from API.
+///
+/// UI should display loading indicator in the verse text field.
+class FetchingVerseText extends MemoryVerseState {
+  const FetchingVerseText();
+}
+
+/// State after successfully fetching verse text.
+///
+/// **Parameters:**
+/// - [fetchedVerse] - The fetched verse entity with text and localized reference
+///
+/// UI should:
+/// - Populate verse text field
+/// - Update reference with localized version
+class VerseTextFetched extends MemoryVerseState {
+  final FetchedVerseEntity fetchedVerse;
+
+  const VerseTextFetched(this.fetchedVerse);
+
+  @override
+  List<Object?> get props => [fetchedVerse];
+}
+
+/// Error state when fetching verse text fails.
+///
+/// **Parameters:**
+/// - [message] - User-friendly error message
+/// - [code] - Technical error code for debugging
+///
+/// UI should:
+/// - Show error message near the verse text field
+/// - Allow user to retry
+class FetchVerseTextError extends MemoryVerseState {
+  final String message;
+  final String code;
+
+  const FetchVerseTextError({
+    required this.message,
+    required this.code,
+  });
+
+  @override
+  List<Object?> get props => [message, code];
 }

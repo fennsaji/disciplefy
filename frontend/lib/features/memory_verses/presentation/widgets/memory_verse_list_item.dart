@@ -341,23 +341,10 @@ class MemoryVerseListItem extends StatelessWidget {
 
   Widget _buildLanguageBadge(BuildContext context) {
     final theme = Theme.of(context);
-
-    String label;
-
-    switch (verse.language) {
-      case 'hi':
-        label = 'HI';
-        break;
-      case 'ml':
-        label = 'ML';
-        break;
-      case 'en':
-      default:
-        label = 'EN';
-    }
+    final label = verse.language.toUpperCase();
 
     return Tooltip(
-      message: _getLanguageDisplayName(verse.language),
+      message: _getLocalizedLanguageName(context, verse.language),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
         decoration: BoxDecoration(
@@ -376,15 +363,15 @@ class MemoryVerseListItem extends StatelessWidget {
     );
   }
 
-  String _getLanguageDisplayName(String code) {
+  String _getLocalizedLanguageName(BuildContext context, String code) {
     switch (code) {
       case 'hi':
-        return 'Hindi';
+        return context.tr(TranslationKeys.generateStudyHindi);
       case 'ml':
-        return 'Malayalam';
+        return context.tr(TranslationKeys.generateStudyMalayalam);
       case 'en':
       default:
-        return 'English';
+        return context.tr(TranslationKeys.generateStudyEnglish);
     }
   }
 
