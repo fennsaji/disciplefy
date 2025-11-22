@@ -18,11 +18,13 @@ import '../../domain/entities/memory_verse_entity.dart';
 class MemoryVerseListItem extends StatelessWidget {
   final MemoryVerseEntity verse;
   final VoidCallback onTap;
+  final VoidCallback? onDelete;
 
   const MemoryVerseListItem({
     super.key,
     required this.verse,
     required this.onTap,
+    this.onDelete,
   });
 
   @override
@@ -36,6 +38,7 @@ class MemoryVerseListItem extends StatelessWidget {
       ),
       child: InkWell(
         onTap: onTap,
+        onLongPress: onDelete != null ? () => _showDeleteMenu(context) : null,
         borderRadius: BorderRadius.circular(12),
         child: Padding(
           padding: const EdgeInsets.all(16.0),
@@ -150,6 +153,35 @@ class MemoryVerseListItem extends StatelessWidget {
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  void _showDeleteMenu(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      builder: (sheetContext) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.delete_outline, color: Colors.red),
+              title: Text(
+                context.tr(TranslationKeys.memoryDeleteTitle),
+                style: const TextStyle(color: Colors.red),
+              ),
+              onTap: () {
+                Navigator.pop(sheetContext);
+                onDelete?.call();
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.close),
+              title: Text(context.tr(TranslationKeys.memoryDeleteCancel)),
+              onTap: () => Navigator.pop(sheetContext),
+            ),
+          ],
         ),
       ),
     );

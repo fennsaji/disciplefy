@@ -487,6 +487,20 @@ class TranslationKeys {
   static const memoryDaysOverdue = 'memory.daysOverdue';
   static const memoryVersesToReviewSingular = 'memory.versesToReviewSingular';
   static const memoryVersesToReviewPlural = 'memory.versesToReviewPlural';
+  static const memoryNoVersesInLanguage = 'memory.noVersesInLanguage';
+  static const memoryTryDifferentFilter = 'memory.tryDifferentFilter';
+  static const memoryDailyVerseNotLoaded = 'memory.dailyVerseNotLoaded';
+
+  // Delete Verse
+  static const memoryDeleteTitle = 'memory.delete.title';
+  static const memoryDeleteConfirmation = 'memory.delete.confirmation';
+  static const memoryDeleteCancel = 'memory.delete.cancel';
+  static const memoryDeleteConfirm = 'memory.delete.confirm';
+  static const memoryDeleteSuccess = 'memory.delete.success';
+
+  // Review All
+  static const memoryReviewAll = 'memory.reviewAll';
+  static const memoryNoVersesToReview = 'memory.noVersesToReview';
 
   // Add Verse Dialog
   static const addVerseTitle = 'memory.addVerse.title';
