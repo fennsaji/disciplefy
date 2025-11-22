@@ -15,6 +15,9 @@ class NotificationPreferencesModel extends NotificationPreferences {
     required super.streakMilestoneEnabled,
     required super.streakLostEnabled,
     required super.streakReminderTime,
+    required super.memoryVerseReminderEnabled,
+    required super.memoryVerseReminderTime,
+    required super.memoryVerseOverdueEnabled,
     required super.createdAt,
     required super.updatedAt,
   });
@@ -34,6 +37,22 @@ class NotificationPreferencesModel extends NotificationPreferences {
         );
       }
       return const TimeOfDayVO(hour: 20, minute: 0);
+    }
+
+    // Parse memory_verse_reminder_time with 9 AM default
+    TimeOfDayVO parseMemoryVerseTime(String? timeString) {
+      if (timeString == null) {
+        return const TimeOfDayVO(hour: 9, minute: 0); // Default 9 AM
+      }
+
+      final parts = timeString.split(':');
+      if (parts.length >= 2) {
+        return TimeOfDayVO(
+          hour: int.tryParse(parts[0]) ?? 9,
+          minute: int.tryParse(parts[1]) ?? 0,
+        );
+      }
+      return const TimeOfDayVO(hour: 9, minute: 0);
     }
 
     return NotificationPreferencesModel(
@@ -57,6 +76,18 @@ class NotificationPreferencesModel extends NotificationPreferences {
         json['streak_reminder_time'] as String? ??
             json['streakReminderTime'] as String?,
       ),
+      memoryVerseReminderEnabled:
+          json['memory_verse_reminder_enabled'] as bool? ??
+              json['memoryVerseReminderEnabled'] as bool? ??
+              true,
+      memoryVerseReminderTime: parseMemoryVerseTime(
+        json['memory_verse_reminder_time'] as String? ??
+            json['memoryVerseReminderTime'] as String?,
+      ),
+      memoryVerseOverdueEnabled:
+          json['memory_verse_overdue_enabled'] as bool? ??
+              json['memoryVerseOverdueEnabled'] as bool? ??
+              true,
       createdAt: json['created_at'] != null
           ? DateTime.parse(json['created_at'] as String)
           : json['createdAt'] != null
@@ -85,6 +116,9 @@ class NotificationPreferencesModel extends NotificationPreferences {
       'streak_milestone_enabled': streakMilestoneEnabled,
       'streak_lost_enabled': streakLostEnabled,
       'streak_reminder_time': formatTime(streakReminderTime),
+      'memory_verse_reminder_enabled': memoryVerseReminderEnabled,
+      'memory_verse_reminder_time': formatTime(memoryVerseReminderTime),
+      'memory_verse_overdue_enabled': memoryVerseOverdueEnabled,
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt.toIso8601String(),
     };
@@ -100,6 +134,9 @@ class NotificationPreferencesModel extends NotificationPreferences {
       streakMilestoneEnabled: entity.streakMilestoneEnabled,
       streakLostEnabled: entity.streakLostEnabled,
       streakReminderTime: entity.streakReminderTime,
+      memoryVerseReminderEnabled: entity.memoryVerseReminderEnabled,
+      memoryVerseReminderTime: entity.memoryVerseReminderTime,
+      memoryVerseOverdueEnabled: entity.memoryVerseOverdueEnabled,
       createdAt: entity.createdAt,
       updatedAt: entity.updatedAt,
     );
