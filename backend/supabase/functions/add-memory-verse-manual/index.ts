@@ -41,6 +41,7 @@ interface MemoryVerseData {
   readonly next_review_date: string
   readonly added_date: string
   readonly created_at: string
+  readonly total_reviews: number
 }
 
 /**
@@ -88,8 +89,8 @@ function validateVerseText(text: string): string {
     throw new AppError('VALIDATION_ERROR', 'verse_text too short (min 10 characters)', 400)
   }
 
-  if (trimmed.length > 500) {
-    throw new AppError('VALIDATION_ERROR', 'verse_text too long (max 500 characters)', 400)
+  if (trimmed.length > 5000) {
+    throw new AppError('VALIDATION_ERROR', 'verse_text too long (max 5000 characters)', 400)
   }
 
   // Basic sanitization - remove excessive whitespace but preserve line breaks
@@ -225,7 +226,8 @@ async function handleAddMemoryVerseManual(
     repetitions: memoryVerse.repetitions,
     next_review_date: memoryVerse.next_review_date,
     added_date: memoryVerse.added_date,
-    created_at: memoryVerse.created_at
+    created_at: memoryVerse.created_at,
+    total_reviews: 0
   }
 
   const response: AddMemoryVerseResponse = {

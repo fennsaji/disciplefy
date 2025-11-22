@@ -139,28 +139,23 @@ class DailyVerseCard extends StatelessWidget {
                 streak: state.streak,
               ),
 
-              const SizedBox(height: 20),
-
-              // Language tabs removed - language preference handled in settings
+              const SizedBox(height: 12),
 
               // Verse reference with highlight color and better spacing
-              Padding(
-                padding: const EdgeInsets.only(bottom: 16),
-                child: Text(
-                  state.verse.getReferenceText(state.currentLanguage),
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    color: theme.colorScheme.onSecondary,
-                    fontWeight: FontWeight.w700,
-                    fontSize: 16,
-                    letterSpacing: 0.5,
-                  ),
+              Text(
+                state.verse.getReferenceText(state.currentLanguage),
+                style: theme.textTheme.titleMedium?.copyWith(
+                  color: theme.colorScheme.onSecondary,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 16,
+                  letterSpacing: 0.5,
                 ),
               ),
 
               // Verse text with improved background and spacing
               Container(
                 width: double.infinity,
-                padding: const EdgeInsets.all(20),
+                padding: const EdgeInsets.symmetric(vertical: 12),
                 margin: const EdgeInsets.only(bottom: 20),
                 decoration: BoxDecoration(
                   color: theme.colorScheme.secondary.withValues(alpha: 0.3),
@@ -252,9 +247,7 @@ class DailyVerseCard extends StatelessWidget {
             ],
           ),
 
-          const SizedBox(height: 16),
-
-          // Language tabs removed - language preference handled in settings
+          const SizedBox(height: 12),
 
           // Verse content
           Text(
@@ -266,12 +259,12 @@ class DailyVerseCard extends StatelessWidget {
             ),
           ),
 
-          const SizedBox(height: 12),
+          const SizedBox(height: 4),
 
           // Verse text with background for better readability
           Container(
             width: double.infinity,
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
             decoration: BoxDecoration(
               color: theme.colorScheme.secondary.withValues(alpha: 0.3),
               borderRadius: BorderRadius.circular(12),

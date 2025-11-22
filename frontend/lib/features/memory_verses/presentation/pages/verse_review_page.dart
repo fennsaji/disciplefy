@@ -6,6 +6,8 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/router/app_router.dart';
 import '../../../../core/widgets/auth_protected_screen.dart';
+import '../../../../core/i18n/translation_keys.dart';
+import '../../../../core/extensions/translation_extension.dart';
 import '../../domain/entities/memory_verse_entity.dart';
 import '../bloc/memory_verse_bloc.dart';
 import '../bloc/memory_verse_event.dart';
@@ -72,8 +74,8 @@ class _VerseReviewPageState extends State<VerseReviewPage> {
       } catch (e) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Verse not found. Please go back and try again.'),
+            SnackBar(
+              content: Text(context.tr(TranslationKeys.reviewVerseNotFound)),
               backgroundColor: Colors.red,
             ),
           );
@@ -109,7 +111,7 @@ class _VerseReviewPageState extends State<VerseReviewPage> {
             }
           },
         ),
-        title: const Text('Review Verse'),
+        title: Text(context.tr(TranslationKeys.reviewVerseTitle)),
         actions: [
           if (widget.verseIds != null)
             Padding(
@@ -177,7 +179,7 @@ class _VerseReviewPageState extends State<VerseReviewPage> {
                       Padding(
                         padding: const EdgeInsets.symmetric(vertical: 16.0),
                         child: Text(
-                          'Tap card to reveal verse',
+                          context.tr(TranslationKeys.reviewTapToReveal),
                           style: theme.textTheme.bodyMedium?.copyWith(
                             color: theme.colorScheme.onSurfaceVariant,
                             fontStyle: FontStyle.italic,
@@ -190,7 +192,8 @@ class _VerseReviewPageState extends State<VerseReviewPage> {
                         child: TextButton.icon(
                           onPressed: _skipVerse,
                           icon: const Icon(Icons.skip_next),
-                          label: const Text('Skip for now'),
+                          label: Text(
+                              context.tr(TranslationKeys.reviewSkipForNow)),
                           style: TextButton.styleFrom(
                             foregroundColor: theme.colorScheme.onSurfaceVariant,
                           ),
@@ -207,7 +210,7 @@ class _VerseReviewPageState extends State<VerseReviewPage> {
                     child: ElevatedButton.icon(
                       onPressed: () => _showRatingBottomSheet(context),
                       icon: const Icon(Icons.rate_review),
-                      label: const Text('Rate Review'),
+                      label: Text(context.tr(TranslationKeys.reviewRateReview)),
                       style: ElevatedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         backgroundColor: theme.colorScheme.primaryContainer,
@@ -276,22 +279,19 @@ class _VerseReviewPageState extends State<VerseReviewPage> {
     showDialog(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Skip Verse?'),
-        content: const Text(
-          'This verse will remain in your due list. '
-          'It\'s better to review it to maintain your progress.',
-        ),
+        title: Text(context.tr(TranslationKeys.reviewSkipTitle)),
+        content: Text(context.tr(TranslationKeys.reviewSkipContent)),
         actions: [
           TextButton(
             onPressed: () => dialogContext.pop(),
-            child: const Text('Cancel'),
+            child: Text(context.tr(TranslationKeys.reviewCancel)),
           ),
           ElevatedButton(
             onPressed: () {
               dialogContext.pop();
               _moveToNextVerse();
             },
-            child: const Text('Skip'),
+            child: Text(context.tr(TranslationKeys.reviewSkip)),
           ),
         ],
       ),
