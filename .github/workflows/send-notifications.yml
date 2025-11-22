@@ -3,58 +3,33 @@ name: Send Push Notifications (Production)
 on:
   schedule:
     # ============================================================================
-    # Daily Verse Notifications (6 AM across timezones)
+    # Unified Schedule - Each cron appears exactly once
+    # Job-level if-conditions determine which notifications run at each hour
     # ============================================================================
-    - cron: '0 18 * * *'  # UTC 18:00 → 6 AM UTC+12 (Oceania: Fiji, New Zealand)
-    - cron: '0 21 * * *'  # UTC 21:00 → 6 AM UTC+9 (East Asia: Japan, Korea)
-    - cron: '0 0 * * *'   # UTC 00:00 → 6 AM UTC+6 (South Asia: India, Sri Lanka)
-    - cron: '0 3 * * *'   # UTC 03:00 → 6 AM UTC+3 (East Africa, Middle East)
-    - cron: '0 6 * * *'   # UTC 06:00 → 6 AM UTC+0 (UK, West Africa)
-    - cron: '0 9 * * *'   # UTC 09:00 → 6 AM UTC-3 (Brazil, Argentina)
-    - cron: '0 12 * * *'  # UTC 12:00 → 6 AM UTC-6 (Central US, Mexico)
-    - cron: '0 15 * * *'  # UTC 15:00 → 6 AM UTC-9 (Alaska, Hawaii)
-    
+    #
+    # Hour mapping (all notifications that run at each UTC hour):
+    # UTC 0:  Daily Verse (6 AM UTC+6), Memory Verse Reminder (9 AM UTC+9), Memory Verse Overdue (6 PM UTC-6)
+    # UTC 2:  Recommended Topic (8 AM UTC+6)
+    # UTC 3:  Daily Verse (6 AM UTC+3), Memory Verse Reminder (9 AM UTC+6), Memory Verse Overdue (6 PM UTC-9)
+    # UTC 5:  Recommended Topic (8 AM UTC+3)
+    # UTC 6:  Daily Verse (6 AM UTC+0), Memory Verse Reminder (9 AM UTC+3), Memory Verse Overdue (6 PM UTC+12)
+    # UTC 8:  Recommended Topic (8 AM UTC+0)
+    # UTC 9:  Daily Verse (6 AM UTC-3), Memory Verse Reminder (9 AM UTC+0), Memory Verse Overdue (6 PM UTC+9)
+    # UTC 11: Recommended Topic (8 AM UTC-3)
+    # UTC 12: Daily Verse (6 AM UTC-6), Memory Verse Reminder (9 AM UTC-3), Memory Verse Overdue (6 PM UTC+6)
+    # UTC 14: Recommended Topic (8 AM UTC-6)
+    # UTC 15: Daily Verse (6 AM UTC-9), Memory Verse Reminder (9 AM UTC-6), Memory Verse Overdue (6 PM UTC+3)
+    # UTC 17: Recommended Topic (8 AM UTC-9)
+    # UTC 18: Daily Verse (6 AM UTC+12), Memory Verse Reminder (9 AM UTC-9), Memory Verse Overdue (6 PM UTC+0)
+    # UTC 20: Recommended Topic (8 AM UTC+12)
+    # UTC 21: Daily Verse (6 AM UTC+9), Memory Verse Reminder (9 AM UTC+12), Memory Verse Overdue (6 PM UTC-3)
+    # UTC 23: Recommended Topic (8 AM UTC+9)
+    #
     # ============================================================================
-    # Recommended Topic Notifications (8 AM across timezones)
-    # ============================================================================
-    - cron: '0 20 * * *'  # UTC 20:00 → 8 AM UTC+12 (Oceania)
-    - cron: '0 23 * * *'  # UTC 23:00 → 8 AM UTC+9 (East Asia)
-    - cron: '0 2 * * *'   # UTC 02:00 → 8 AM UTC+6 (South Asia)
-    - cron: '0 5 * * *'   # UTC 05:00 → 8 AM UTC+3 (East Africa)
-    - cron: '0 8 * * *'   # UTC 08:00 → 8 AM UTC+0 (UK)
-    - cron: '0 11 * * *'  # UTC 11:00 → 8 AM UTC-3 (Brazil)
-    - cron: '0 14 * * *'  # UTC 14:00 → 8 AM UTC-6 (Central US)
-    - cron: '0 17 * * *'  # UTC 17:00 → 8 AM UTC-9 (Alaska)
 
-    # ============================================================================
-    # Streak Reminder Notifications (user's preferred time, default 8 PM)
-    # ============================================================================
-    # Run every hour to cover all timezones (users set their own reminder time)
+    # Hourly trigger for Streak Reminders (user's preferred time)
+    # Also covers all notification hours - job if-conditions filter appropriately
     - cron: '0 * * * *'   # Every hour at :00 minutes
-
-    # ============================================================================
-    # Memory Verse Reminder Notifications (9 AM across timezones)
-    # ============================================================================
-    - cron: '0 21 * * *'  # UTC 21:00 → 9 AM UTC+12 (Oceania: Fiji, New Zealand)
-    - cron: '0 0 * * *'   # UTC 00:00 → 9 AM UTC+9 (East Asia: Japan, Korea)
-    - cron: '0 3 * * *'   # UTC 03:00 → 9 AM UTC+6 (South Asia: India, Sri Lanka)
-    - cron: '0 6 * * *'   # UTC 06:00 → 9 AM UTC+3 (East Africa, Middle East)
-    - cron: '0 9 * * *'   # UTC 09:00 → 9 AM UTC+0 (UK, West Africa)
-    - cron: '0 12 * * *'  # UTC 12:00 → 9 AM UTC-3 (Brazil, Argentina)
-    - cron: '0 15 * * *'  # UTC 15:00 → 9 AM UTC-6 (Central US, Mexico)
-    - cron: '0 18 * * *'  # UTC 18:00 → 9 AM UTC-9 (Alaska, Hawaii)
-
-    # ============================================================================
-    # Memory Verse Overdue Notifications (run at 6 PM across timezones)
-    # ============================================================================
-    - cron: '0 6 * * *'   # UTC 06:00 → 6 PM UTC+12 (Oceania)
-    - cron: '0 9 * * *'   # UTC 09:00 → 6 PM UTC+9 (East Asia)
-    - cron: '0 12 * * *'  # UTC 12:00 → 6 PM UTC+6 (South Asia)
-    - cron: '0 15 * * *'  # UTC 15:00 → 6 PM UTC+3 (East Africa)
-    - cron: '0 18 * * *'  # UTC 18:00 → 6 PM UTC+0 (UK)
-    - cron: '0 21 * * *'  # UTC 21:00 → 6 PM UTC-3 (Brazil)
-    - cron: '0 0 * * *'   # UTC 00:00 → 6 PM UTC-6 (Central US)
-    - cron: '0 3 * * *'   # UTC 03:00 → 6 PM UTC-9 (Alaska)
 
   # Allow manual triggering for testing
   workflow_dispatch:
@@ -78,18 +53,10 @@ jobs:
   send-daily-verse:
     runs-on: ubuntu-latest
     name: Send Daily Verse Notifications (Prod)
-    
-    # Only run on scheduled events during verse hours OR manual dispatch
+
+    # Run on schedule (job checks hour internally) OR manual dispatch
     if: |
-      (github.event_name == 'schedule' && 
-       (github.event.schedule == '0 18 * * *' ||
-        github.event.schedule == '0 21 * * *' ||
-        github.event.schedule == '0 0 * * *' ||
-        github.event.schedule == '0 3 * * *' ||
-        github.event.schedule == '0 6 * * *' ||
-        github.event.schedule == '0 9 * * *' ||
-        github.event.schedule == '0 12 * * *' ||
-        github.event.schedule == '0 15 * * *')) ||
+      github.event_name == 'schedule' ||
       (github.event_name == 'workflow_dispatch' &&
        (github.event.inputs.notification_type == 'daily_verse' ||
         github.event.inputs.notification_type == 'all'))
@@ -134,18 +101,10 @@ jobs:
   send-recommended-topic:
     runs-on: ubuntu-latest
     name: Send Recommended Topic Notifications (Prod)
-    
-    # Only run on scheduled events during topic hours OR manual dispatch
+
+    # Run on schedule (Edge Function filters by user timezone) OR manual dispatch
     if: |
-      (github.event_name == 'schedule' && 
-       (github.event.schedule == '0 20 * * *' ||
-        github.event.schedule == '0 23 * * *' ||
-        github.event.schedule == '0 2 * * *' ||
-        github.event.schedule == '0 5 * * *' ||
-        github.event.schedule == '0 8 * * *' ||
-        github.event.schedule == '0 11 * * *' ||
-        github.event.schedule == '0 14 * * *' ||
-        github.event.schedule == '0 17 * * *')) ||
+      github.event_name == 'schedule' ||
       (github.event_name == 'workflow_dispatch' &&
        (github.event.inputs.notification_type == 'recommended_topic' ||
         github.event.inputs.notification_type == 'all'))
@@ -191,10 +150,9 @@ jobs:
     runs-on: ubuntu-latest
     name: Send Streak Reminder Notifications (Prod)
 
-    # Only run on hourly schedule OR manual dispatch
+    # Run on schedule (Edge Function filters by user timezone) OR manual dispatch
     if: |
-      (github.event_name == 'schedule' &&
-       github.event.schedule == '0 * * * *') ||
+      github.event_name == 'schedule' ||
       (github.event_name == 'workflow_dispatch' &&
        (github.event.inputs.notification_type == 'streak_reminder' ||
         github.event.inputs.notification_type == 'all'))
@@ -240,17 +198,9 @@ jobs:
     runs-on: ubuntu-latest
     name: Send Memory Verse Reminder Notifications (Prod)
 
-    # Only run on scheduled events during 9 AM hours OR manual dispatch
+    # Run on schedule (Edge Function filters by user timezone) OR manual dispatch
     if: |
-      (github.event_name == 'schedule' &&
-       (github.event.schedule == '0 21 * * *' ||
-        github.event.schedule == '0 0 * * *' ||
-        github.event.schedule == '0 3 * * *' ||
-        github.event.schedule == '0 6 * * *' ||
-        github.event.schedule == '0 9 * * *' ||
-        github.event.schedule == '0 12 * * *' ||
-        github.event.schedule == '0 15 * * *' ||
-        github.event.schedule == '0 18 * * *')) ||
+      github.event_name == 'schedule' ||
       (github.event_name == 'workflow_dispatch' &&
        (github.event.inputs.notification_type == 'memory_verse_reminder' ||
         github.event.inputs.notification_type == 'all'))
@@ -296,17 +246,9 @@ jobs:
     runs-on: ubuntu-latest
     name: Send Memory Verse Overdue Notifications (Prod)
 
-    # Only run on scheduled events during 6 PM hours OR manual dispatch
+    # Run on schedule (Edge Function filters by user timezone) OR manual dispatch
     if: |
-      (github.event_name == 'schedule' &&
-       (github.event.schedule == '0 6 * * *' ||
-        github.event.schedule == '0 9 * * *' ||
-        github.event.schedule == '0 12 * * *' ||
-        github.event.schedule == '0 15 * * *' ||
-        github.event.schedule == '0 18 * * *' ||
-        github.event.schedule == '0 21 * * *' ||
-        github.event.schedule == '0 0 * * *' ||
-        github.event.schedule == '0 3 * * *')) ||
+      github.event_name == 'schedule' ||
       (github.event_name == 'workflow_dispatch' &&
        (github.event.inputs.notification_type == 'memory_verse_overdue' ||
         github.event.inputs.notification_type == 'all'))

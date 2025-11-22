@@ -75,9 +75,23 @@ async function handleMemoryVerseNotification(
     throw new AppError('UNAUTHORIZED', 'Cron secret authentication required', 401);
   }
 
-  // Get notification type from query params (reminder or overdue)
+  // Get and validate notification type from query params
   const url = new URL(req.url);
-  const notificationType = url.searchParams.get('type') || 'reminder';
+  const rawType = url.searchParams.get('type');
+
+  // Whitelist only valid notification types
+  const validTypes = ['reminder', 'overdue'] as const;
+  type NotificationType = typeof validTypes[number];
+
+  // Default to 'reminder' if not specified, validate if specified
+  let notificationType: NotificationType;
+  if (!rawType) {
+    notificationType = 'reminder';
+  } else if (validTypes.includes(rawType as NotificationType)) {
+    notificationType = rawType as NotificationType;
+  } else {
+    throw new AppError('VALIDATION_ERROR', `Invalid notification type: ${rawType}. Must be 'reminder' or 'overdue'.`, 400);
+  }
 
   console.log(`Starting memory verse ${notificationType} notification process...`);
 
@@ -254,12 +268,18 @@ async function handleMemoryVerseNotification(
             body = bodyFn(user.overdue_verse_count, user.max_days_overdue);
           }
 
+          // Compute dueCount explicitly based on notification type
+          // Use the correct field and safely handle null/undefined/zero values
+          const dueCount = notificationType === 'reminder'
+            ? user.due_verse_count
+            : user.overdue_verse_count;
+
           const result = await fcmService.sendNotification({
             token: user.fcm_token,
             notification: { title, body },
             data: {
               type: notificationKey,
-              dueCount: String(user.due_verse_count || user.overdue_verse_count),
+              dueCount: String(dueCount ?? 0),
               language,
             },
             android: { priority: 'high' },
