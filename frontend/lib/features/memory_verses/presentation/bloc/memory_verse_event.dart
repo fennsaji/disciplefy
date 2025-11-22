@@ -46,13 +46,15 @@ class LoadDueVerses extends MemoryVerseEvent {
 ///
 /// **Parameters:**
 /// - [dailyVerseId] - UUID of the Daily Verse to add
+/// - [language] - Optional language code ('en', 'hi', 'ml') - if not provided, auto-detects
 class AddVerseFromDaily extends MemoryVerseEvent {
   final String dailyVerseId;
+  final String? language;
 
-  const AddVerseFromDaily(this.dailyVerseId);
+  const AddVerseFromDaily(this.dailyVerseId, {this.language});
 
   @override
-  List<Object?> get props => [dailyVerseId];
+  List<Object?> get props => [dailyVerseId, language];
 }
 
 /// Event to manually add a custom verse to the memory deck.
@@ -138,8 +140,16 @@ class DeleteVerse extends MemoryVerseEvent {
 /// Triggers processing of the sync queue, uploading all pending
 /// operations (add verse, submit review, delete verse) that were
 /// performed while offline.
+///
+/// **Parameters:**
+/// - [language] - Optional language filter to maintain current selection after sync
 class SyncWithRemote extends MemoryVerseEvent {
-  const SyncWithRemote();
+  final String? language;
+
+  const SyncWithRemote({this.language});
+
+  @override
+  List<Object?> get props => [language];
 }
 
 /// Event to clear local cache.
@@ -154,8 +164,16 @@ class ClearCache extends MemoryVerseEvent {
 ///
 /// Convenience event that triggers a force refresh of due verses
 /// with current pagination settings. Used for pull-to-refresh.
+///
+/// **Parameters:**
+/// - [language] - Optional language filter to maintain current selection
 class RefreshVerses extends MemoryVerseEvent {
-  const RefreshVerses();
+  final String? language;
+
+  const RefreshVerses({this.language});
+
+  @override
+  List<Object?> get props => [language];
 }
 
 /// Event to load a specific verse by ID.
@@ -171,4 +189,34 @@ class LoadVerseById extends MemoryVerseEvent {
 
   @override
   List<Object?> get props => [verseId];
+}
+
+/// Event to fetch verse text from Bible API.
+///
+/// Triggers fetching of verse text and localized reference from the
+/// Bible API for use in manual verse addition.
+///
+/// **Parameters:**
+/// - [book] - Book name (e.g., "John", "Genesis")
+/// - [chapter] - Chapter number
+/// - [verseStart] - Starting verse number
+/// - [verseEnd] - Optional ending verse for ranges
+/// - [language] - Language code ('en', 'hi', 'ml')
+class FetchVerseTextRequested extends MemoryVerseEvent {
+  final String book;
+  final int chapter;
+  final int verseStart;
+  final int? verseEnd;
+  final String language;
+
+  const FetchVerseTextRequested({
+    required this.book,
+    required this.chapter,
+    required this.verseStart,
+    this.verseEnd,
+    required this.language,
+  });
+
+  @override
+  List<Object?> get props => [book, chapter, verseStart, verseEnd, language];
 }

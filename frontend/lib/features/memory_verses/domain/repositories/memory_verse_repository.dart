@@ -1,6 +1,7 @@
 import 'package:dartz/dartz.dart';
 
 import '../../../../core/error/failures.dart';
+import '../entities/fetched_verse_entity.dart';
 import '../entities/memory_verse_entity.dart';
 import '../entities/review_session_entity.dart';
 import '../entities/review_statistics_entity.dart';
@@ -13,9 +14,13 @@ import '../entities/review_statistics_entity.dart';
 abstract class MemoryVerseRepository {
   /// Adds a verse from Daily Verse to the memory deck
   ///
+  /// [dailyVerseId] - UUID of the Daily Verse to add
+  /// [language] - Optional language code ('en', 'hi', 'ml') - if not provided, auto-detects
+  ///
   /// Returns the created MemoryVerseEntity on success, or Failure on error.
   Future<Either<Failure, MemoryVerseEntity>> addVerseFromDaily({
     required String dailyVerseId,
+    String? language,
   });
 
   /// Adds a custom verse manually to the memory deck
@@ -95,4 +100,21 @@ abstract class MemoryVerseRepository {
   ///
   /// Returns Unit (success) or Failure on error.
   Future<Either<Failure, Unit>> clearLocalCache();
+
+  /// Fetches verse text from Bible API
+  ///
+  /// [book] - Book name (e.g., "John", "Genesis")
+  /// [chapter] - Chapter number
+  /// [verseStart] - Starting verse number
+  /// [verseEnd] - Optional ending verse for ranges
+  /// [language] - Language code ('en', 'hi', 'ml')
+  ///
+  /// Returns FetchedVerseEntity with text and localized reference on success.
+  Future<Either<Failure, FetchedVerseEntity>> fetchVerseText({
+    required String book,
+    required int chapter,
+    required int verseStart,
+    int? verseEnd,
+    required String language,
+  });
 }

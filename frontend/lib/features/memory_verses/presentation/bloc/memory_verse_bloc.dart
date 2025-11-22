@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/error/failures.dart';
 import '../../domain/usecases/add_verse_from_daily.dart' as add_from_daily_uc;
 import '../../domain/usecases/add_verse_manually.dart' as add_manually_uc;
+import '../../domain/usecases/fetch_verse_text.dart';
 import '../../domain/usecases/get_due_verses.dart';
 import '../../domain/usecases/get_statistics.dart';
 import '../../domain/usecases/submit_review.dart' as submit_review_uc;
@@ -34,6 +35,7 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
   final add_manually_uc.AddVerseManually addVerseManually;
   final submit_review_uc.SubmitReview submitReview;
   final GetStatistics getStatistics;
+  final FetchVerseText fetchVerseText;
 
   MemoryVerseBloc({
     required this.getDueVerses,
@@ -41,6 +43,7 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
     required this.addVerseManually,
     required this.submitReview,
     required this.getStatistics,
+    required this.fetchVerseText,
   }) : super(const MemoryVerseInitial()) {
     on<LoadDueVerses>(_onLoadDueVerses);
     on<AddVerseFromDaily>(_onAddVerseFromDaily);
@@ -48,6 +51,8 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
     on<SubmitReview>(_onSubmitReview);
     on<LoadStatistics>(_onLoadStatistics);
     on<RefreshVerses>(_onRefreshVerses);
+    on<SyncWithRemote>(_onSyncWithRemote);
+    on<FetchVerseTextRequested>(_onFetchVerseTextRequested);
   }
 
   /// Handles LoadDueVerses event.
@@ -132,7 +137,10 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
 
       emit(const MemoryVerseLoading(message: 'Adding verse...'));
 
-      final result = await addVerseFromDaily(event.dailyVerseId);
+      final result = await addVerseFromDaily(
+        event.dailyVerseId,
+        language: event.language,
+      );
 
       result.fold(
         (failure) {
@@ -358,8 +366,68 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
     RefreshVerses event,
     Emitter<MemoryVerseState> emit,
   ) async {
-    // Trigger LoadDueVerses with forceRefresh flag
-    add(const LoadDueVerses(forceRefresh: true));
+    // Trigger LoadDueVerses with forceRefresh flag and preserve language filter
+    add(LoadDueVerses(forceRefresh: true, language: event.language));
+  }
+
+  /// Handles SyncWithRemote event.
+  ///
+  /// Syncs local changes with remote server.
+  /// Currently triggers a refresh to ensure data is up-to-date.
+  Future<void> _onSyncWithRemote(
+    SyncWithRemote event,
+    Emitter<MemoryVerseState> emit,
+  ) async {
+    try {
+      if (kDebugMode) {
+        print('🔄 [BLOC] Syncing with remote server');
+      }
+
+      emit(const MemoryVerseLoading(message: 'Syncing with server...'));
+
+      // For now, sync is handled by refreshing verses
+      // This will fetch latest data from server
+      final result = await getDueVerses(
+        limit: 50,
+        language: event.language,
+      );
+
+      result.fold(
+        (failure) {
+          if (kDebugMode) {
+            print('❌ [BLOC] Sync failed: ${failure.message}');
+          }
+          emit(MemoryVerseError(
+            message: failure.message,
+            code: failure.code,
+            isNetworkError: failure is NetworkFailure,
+          ));
+        },
+        (data) {
+          final (verses, statistics) = data;
+
+          if (kDebugMode) {
+            print('✅ [BLOC] Sync completed. Loaded ${verses.length} verses');
+          }
+
+          emit(SyncCompleted(
+            message: 'Sync completed successfully',
+            syncedOperations: verses.length,
+          ));
+
+          // Reload the verses to show updated data with language filter preserved
+          add(LoadDueVerses(forceRefresh: true, language: event.language));
+        },
+      );
+    } catch (e) {
+      if (kDebugMode) {
+        print('❌ [BLOC] Unexpected error during sync: $e');
+      }
+      emit(MemoryVerseError(
+        message: 'Failed to sync with server',
+        code: 'SYNC_ERROR',
+      ));
+    }
   }
 
   /// Returns user-friendly message based on quality rating.
@@ -379,6 +447,58 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
         return 'Perfect! Excellent memory work!';
       default:
         return 'Review submitted successfully.';
+    }
+  }
+
+  /// Handles FetchVerseTextRequested event.
+  ///
+  /// Fetches verse text from Bible API for manual verse addition.
+  Future<void> _onFetchVerseTextRequested(
+    FetchVerseTextRequested event,
+    Emitter<MemoryVerseState> emit,
+  ) async {
+    try {
+      if (kDebugMode) {
+        print(
+            '📖 [BLOC] Fetching verse text: ${event.book} ${event.chapter}:${event.verseStart}${event.verseEnd != null ? '-${event.verseEnd}' : ''}');
+      }
+
+      emit(const FetchingVerseText());
+
+      final result = await fetchVerseText(
+        book: event.book,
+        chapter: event.chapter,
+        verseStart: event.verseStart,
+        verseEnd: event.verseEnd,
+        language: event.language,
+      );
+
+      result.fold(
+        (failure) {
+          if (kDebugMode) {
+            print('❌ [BLOC] Fetch verse text failed: ${failure.message}');
+          }
+          emit(FetchVerseTextError(
+            message: failure.message,
+            code: failure.code,
+          ));
+        },
+        (fetchedVerse) {
+          if (kDebugMode) {
+            print(
+                '✅ [BLOC] Verse text fetched: ${fetchedVerse.localizedReference}');
+          }
+          emit(VerseTextFetched(fetchedVerse));
+        },
+      );
+    } catch (e) {
+      if (kDebugMode) {
+        print('❌ [BLOC] Unexpected error fetching verse text: $e');
+      }
+      emit(const FetchVerseTextError(
+        message: 'Failed to fetch verse text',
+        code: 'UNEXPECTED_ERROR',
+      ));
     }
   }
 }

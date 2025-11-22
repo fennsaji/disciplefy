@@ -226,7 +226,15 @@ export async function fetchBibleVerse(
   const bibleId = BIBLE_VERSIONS[language];
   const verseId = parseReference(reference);
 
-  const url = `https://api.scripture.api.bible/v1/bibles/${bibleId}/verses/${verseId}`;
+  const params = new URLSearchParams({
+    'content-type': 'text',           // Plain text format
+    'include-notes': 'false',         // No footnotes
+    'include-titles': 'false',        // No section titles/headings
+    'include-chapter-numbers': 'false', // No chapter numbers
+    'include-verse-numbers': 'false', // No verse numbers
+  });
+
+  const url = `https://api.scripture.api.bible/v1/bibles/${bibleId}/verses/${verseId}?${params.toString()}`;
 
   // Wrap the fetch operation with retry logic
   return withRetry(async () => {

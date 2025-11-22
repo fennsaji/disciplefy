@@ -2,6 +2,8 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
+import '../../../../core/i18n/translation_keys.dart';
+import '../../../../core/extensions/translation_extension.dart';
 import '../../domain/entities/memory_verse_entity.dart';
 
 /// Animated flip card widget for memory verse review.
@@ -132,6 +134,8 @@ class _VerseFlipCardState extends State<VerseFlipCard>
                 fontWeight: FontWeight.bold,
               ),
             ),
+            const SizedBox(height: 12),
+            _buildLanguageBadge(context, isLight: true),
             const SizedBox(height: 24),
             Container(
               padding: const EdgeInsets.symmetric(
@@ -152,7 +156,7 @@ class _VerseFlipCardState extends State<VerseFlipCard>
                   ),
                   const SizedBox(width: 8),
                   Text(
-                    'Tap to reveal',
+                    context.tr(TranslationKeys.flipCardTapToReveal),
                     style: theme.textTheme.bodyLarge?.copyWith(
                       color: Colors.white.withOpacity(0.9),
                       fontWeight: FontWeight.w500,
@@ -167,7 +171,9 @@ class _VerseFlipCardState extends State<VerseFlipCard>
               child: _buildStatChip(
                 context: context,
                 icon: Icons.repeat,
-                label: 'Review ${widget.verse.repetitions + 1}',
+                label: context
+                    .tr(TranslationKeys.flipCardReviewNumber)
+                    .replaceAll('{count}', '${widget.verse.repetitions + 1}'),
                 backgroundColor: Colors.white.withOpacity(0.2),
                 textColor: Colors.white,
               ),
@@ -269,21 +275,65 @@ class _VerseFlipCardState extends State<VerseFlipCard>
                   _buildStatChip(
                     context: context,
                     icon: Icons.schedule,
-                    label: '${widget.verse.intervalDays} days',
+                    label: context
+                        .tr(TranslationKeys.flipCardDays)
+                        .replaceAll('{count}', '${widget.verse.intervalDays}'),
                     backgroundColor: theme.colorScheme.surfaceContainerHighest,
                     textColor: theme.colorScheme.onSurfaceVariant,
                   ),
                   _buildStatChip(
                     context: context,
                     icon: Icons.repeat,
-                    label: '${widget.verse.repetitions} reviews',
+                    label: context
+                        .tr(TranslationKeys.flipCardReviews)
+                        .replaceAll('{count}', '${widget.verse.repetitions}'),
                     backgroundColor: theme.colorScheme.surfaceContainerHighest,
                     textColor: theme.colorScheme.onSurfaceVariant,
                   ),
+                  _buildLanguageBadge(context, isLight: false),
                 ],
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLanguageBadge(BuildContext context, {required bool isLight}) {
+    final theme = Theme.of(context);
+
+    String label;
+
+    switch (widget.verse.language) {
+      case 'hi':
+        label = 'हिन्दी';
+        break;
+      case 'ml':
+        label = 'മലയാളം';
+        break;
+      case 'en':
+      default:
+        label = 'English';
+    }
+
+    final backgroundColor = isLight
+        ? Colors.white.withOpacity(0.2)
+        : theme.colorScheme.surfaceContainerHighest;
+    final textColor =
+        isLight ? Colors.white : theme.colorScheme.onSurfaceVariant;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: backgroundColor,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Text(
+        label,
+        style: theme.textTheme.bodySmall?.copyWith(
+          color: textColor,
+          fontWeight: FontWeight.w600,
         ),
       ),
     );

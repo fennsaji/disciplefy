@@ -2,8 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/extensions/translation_extension.dart';
+import '../../../../core/i18n/translation_keys.dart';
 import '../../../../core/router/app_router.dart';
 import '../../../../core/widgets/auth_protected_screen.dart';
+import '../../../daily_verse/domain/entities/daily_verse_entity.dart';
 import '../bloc/memory_verse_bloc.dart';
 import '../bloc/memory_verse_event.dart';
 import '../bloc/memory_verse_state.dart';
@@ -12,6 +15,7 @@ import '../widgets/add_verse_options_sheet.dart';
 import '../widgets/memory_verse_list_item.dart';
 import '../widgets/options_menu_sheet.dart';
 import '../widgets/statistics_card.dart';
+import '../widgets/statistics_dialog.dart';
 
 class MemoryVersesHomePage extends StatefulWidget {
   const MemoryVersesHomePage({super.key});
@@ -22,11 +26,19 @@ class MemoryVersesHomePage extends StatefulWidget {
 
 class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
   DueVersesLoaded? _lastLoadedState;
+  VerseLanguage? _selectedLanguageFilter;
 
   @override
   void initState() {
     super.initState();
-    context.read<MemoryVerseBloc>().add(const LoadDueVerses());
+    _loadVerses();
+  }
+
+  void _loadVerses({bool forceRefresh = false}) {
+    context.read<MemoryVerseBloc>().add(LoadDueVerses(
+          language: _selectedLanguageFilter?.code,
+          forceRefresh: forceRefresh,
+        ));
   }
 
   @override
@@ -43,7 +55,7 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
             }
           },
         ),
-        title: const Text('Memory Verses'),
+        title: Text(context.tr(TranslationKeys.memoryTitle)),
         actions: [
           IconButton(
             icon: const Icon(Icons.add),
@@ -67,9 +79,7 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
                 action: SnackBarAction(
                   label: 'Retry',
                   textColor: Colors.white,
-                  onPressed: () {
-                    context.read<MemoryVerseBloc>().add(const LoadDueVerses());
-                  },
+                  onPressed: _loadVerses,
                 ),
               ),
             );
@@ -80,7 +90,7 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
                 backgroundColor: Colors.green,
               ),
             );
-            context.read<MemoryVerseBloc>().add(const LoadDueVerses());
+            _loadVerses();
           } else if (state is OperationQueued) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
@@ -141,7 +151,7 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
 
     return RefreshIndicator(
       onRefresh: () async {
-        context.read<MemoryVerseBloc>().add(const RefreshVerses());
+        _loadVerses(forceRefresh: true);
         await Future.delayed(const Duration(milliseconds: 500));
       },
       child: CustomScrollView(
@@ -153,7 +163,7 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Your Progress',
+                    context.tr(TranslationKeys.memoryYourProgress),
                     style: Theme.of(context).textTheme.titleLarge?.copyWith(
                           fontWeight: FontWeight.bold,
                         ),
@@ -161,16 +171,19 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
                   const SizedBox(height: 16),
                   StatisticsCard(statistics: state.statistics),
                   const SizedBox(height: 24),
+                  _buildLanguageFilter(context),
+                  const SizedBox(height: 16),
                   Text(
-                    'Due for Review (${state.verses.length})',
+                    '${context.tr(TranslationKeys.memoryDueForReview)} (${state.verses.length})',
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
                           fontWeight: FontWeight.w600,
                         ),
                   ),
-                  if (state.statistics.motivationalMessage.isNotEmpty) ...[
+                  if (state.statistics.dueVerses > 0) ...[
                     const SizedBox(height: 8),
                     Text(
-                      state.statistics.motivationalMessage,
+                      _getVersesToReviewMessage(
+                          context, state.statistics.dueVerses),
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                             color:
                                 Theme.of(context).colorScheme.onSurfaceVariant,
@@ -273,14 +286,104 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
     final memoryVerseBloc = context.read<MemoryVerseBloc>();
     AddManualVerseDialog.show(
       context,
-      onSubmit: ({required String verseReference, required String verseText}) {
+      defaultLanguage: _selectedLanguageFilter ?? VerseLanguage.english,
+      onSubmit: ({
+        required String verseReference,
+        required String verseText,
+        required String language,
+      }) {
         memoryVerseBloc.add(
           AddVerseManually(
             verseReference: verseReference,
             verseText: verseText,
+            language: language,
           ),
         );
       },
+    );
+  }
+
+  Widget _buildLanguageFilter(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          context.tr(TranslationKeys.memoryFilterByLanguage),
+          style: theme.textTheme.titleSmall?.copyWith(
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        const SizedBox(height: 8),
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            children: [
+              _buildLanguageChip(
+                context,
+                label: context.tr(TranslationKeys.memoryAll),
+                isSelected: _selectedLanguageFilter == null,
+                onTap: () {
+                  setState(() => _selectedLanguageFilter = null);
+                  _loadVerses();
+                },
+              ),
+              const SizedBox(width: 8),
+              ...VerseLanguage.values.map((language) {
+                return Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: _buildLanguageChip(
+                    context,
+                    label: language.displayName,
+                    isSelected: _selectedLanguageFilter == language,
+                    onTap: () {
+                      setState(() => _selectedLanguageFilter = language);
+                      _loadVerses();
+                    },
+                  ),
+                );
+              }),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildLanguageChip(
+    BuildContext context, {
+    required String label,
+    required bool isSelected,
+    required VoidCallback onTap,
+  }) {
+    final theme = Theme.of(context);
+
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? theme.colorScheme.primary
+              : theme.colorScheme.surfaceContainerHighest,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: isSelected
+                ? theme.colorScheme.primary
+                : theme.colorScheme.outline.withOpacity(0.3),
+          ),
+        ),
+        child: Text(
+          label,
+          style: theme.textTheme.bodyMedium?.copyWith(
+            color: isSelected
+                ? theme.colorScheme.onPrimary
+                : theme.colorScheme.onSurface,
+            fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+          ),
+        ),
+      ),
     );
   }
 
@@ -288,14 +391,31 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
     final memoryVerseBloc = context.read<MemoryVerseBloc>();
     OptionsMenuSheet.show(
       context,
-      onSync: () => memoryVerseBloc.add(const SyncWithRemote()),
+      onSync: () => memoryVerseBloc
+          .add(SyncWithRemote(language: _selectedLanguageFilter?.code)),
       onViewStatistics: () {
-        // TODO: Navigate to statistics page
+        if (_lastLoadedState != null) {
+          StatisticsDialog.show(context, _lastLoadedState!.statistics);
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                  'Statistics not available. Please wait for verses to load.'),
+            ),
+          );
+        }
       },
     );
   }
 
   void _navigateToReviewPage(BuildContext context, String verseId) {
     GoRouter.of(context).goToVerseReview(verseId: verseId);
+  }
+
+  String _getVersesToReviewMessage(BuildContext context, int count) {
+    final key = count == 1
+        ? TranslationKeys.memoryVersesToReviewSingular
+        : TranslationKeys.memoryVersesToReviewPlural;
+    return context.tr(key, {'count': count.toString()});
   }
 }
