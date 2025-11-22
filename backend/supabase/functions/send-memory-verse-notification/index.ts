@@ -66,10 +66,28 @@ async function handleMemoryVerseNotification(
   req: Request,
   services: ServiceContainer
 ): Promise<Response> {
+  // Validate required environment variables (fail fast)
+  const supabaseUrl = Deno.env.get('SUPABASE_URL');
+  const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+  const cronSecret = Deno.env.get('CRON_SECRET');
+
+  if (!supabaseUrl) {
+    console.error('[Config Error] Missing SUPABASE_URL environment variable');
+    throw new AppError('CONFIGURATION_ERROR', 'Missing required environment variable: SUPABASE_URL', 500);
+  }
+
+  if (!serviceRoleKey) {
+    console.error('[Config Error] Missing SUPABASE_SERVICE_ROLE_KEY environment variable');
+    throw new AppError('CONFIGURATION_ERROR', 'Missing required environment variable: SUPABASE_SERVICE_ROLE_KEY', 500);
+  }
+
+  if (!cronSecret) {
+    console.error('[Config Error] Missing CRON_SECRET environment variable');
+    throw new AppError('CONFIGURATION_ERROR', 'Missing required environment variable: CRON_SECRET', 500);
+  }
+
   // Verify cron authentication using dedicated secret
   const cronHeader = req.headers.get('X-Cron-Secret');
-  const cronSecret = Deno.env.get('CRON_SECRET');
-  const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
 
   if (!cronHeader || cronHeader !== cronSecret) {
     throw new AppError('UNAUTHORIZED', 'Cron secret authentication required', 401);
@@ -255,31 +273,35 @@ async function handleMemoryVerseNotification(
         try {
           const language = languageMap[user.user_id] || 'en';
 
+          // Normalize all user values immediately to prevent null/undefined in strings
+          const dueVerseCount = Number(user.due_verse_count ?? 0);
+          const overdueVerseCount = Number(user.overdue_verse_count ?? 0);
+          const maxDaysOverdue = Number(user.max_days_overdue ?? 0);
+
           let title: string;
           let body: string;
 
           if (notificationType === 'reminder') {
             title = REMINDER_TITLES[language] || REMINDER_TITLES.en;
             const bodyFn = REMINDER_BODIES[language] || REMINDER_BODIES.en;
-            body = bodyFn(user.due_verse_count);
+            body = bodyFn(dueVerseCount);
           } else {
             title = OVERDUE_TITLES[language] || OVERDUE_TITLES.en;
             const bodyFn = OVERDUE_BODIES[language] || OVERDUE_BODIES.en;
-            body = bodyFn(user.overdue_verse_count, user.max_days_overdue);
+            body = bodyFn(overdueVerseCount, maxDaysOverdue);
           }
 
-          // Compute dueCount explicitly based on notification type
-          // Use the correct field and safely handle null/undefined/zero values
+          // Use normalized values for FCM data payload
           const dueCount = notificationType === 'reminder'
-            ? user.due_verse_count
-            : user.overdue_verse_count;
+            ? dueVerseCount
+            : overdueVerseCount;
 
           const result = await fcmService.sendNotification({
             token: user.fcm_token,
             notification: { title, body },
             data: {
               type: notificationKey,
-              dueCount: String(dueCount ?? 0),
+              dueCount: String(dueCount),
               language,
             },
             android: { priority: 'high' },
