@@ -17,6 +17,11 @@ class NotificationPreferences extends Equatable {
   final bool streakLostEnabled;
   final TimeOfDayVO streakReminderTime;
 
+  // Memory verse notification preferences
+  final bool memoryVerseReminderEnabled;
+  final TimeOfDayVO memoryVerseReminderTime;
+  final bool memoryVerseOverdueEnabled;
+
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -28,6 +33,9 @@ class NotificationPreferences extends Equatable {
     required this.streakMilestoneEnabled,
     required this.streakLostEnabled,
     required this.streakReminderTime,
+    required this.memoryVerseReminderEnabled,
+    required this.memoryVerseReminderTime,
+    required this.memoryVerseOverdueEnabled,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -40,6 +48,9 @@ class NotificationPreferences extends Equatable {
     bool? streakMilestoneEnabled,
     bool? streakLostEnabled,
     TimeOfDayVO? streakReminderTime,
+    bool? memoryVerseReminderEnabled,
+    TimeOfDayVO? memoryVerseReminderTime,
+    bool? memoryVerseOverdueEnabled,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -54,6 +65,12 @@ class NotificationPreferences extends Equatable {
           streakMilestoneEnabled ?? this.streakMilestoneEnabled,
       streakLostEnabled: streakLostEnabled ?? this.streakLostEnabled,
       streakReminderTime: streakReminderTime ?? this.streakReminderTime,
+      memoryVerseReminderEnabled:
+          memoryVerseReminderEnabled ?? this.memoryVerseReminderEnabled,
+      memoryVerseReminderTime:
+          memoryVerseReminderTime ?? this.memoryVerseReminderTime,
+      memoryVerseOverdueEnabled:
+          memoryVerseOverdueEnabled ?? this.memoryVerseOverdueEnabled,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
@@ -68,6 +85,9 @@ class NotificationPreferences extends Equatable {
         streakMilestoneEnabled,
         streakLostEnabled,
         streakReminderTime,
+        memoryVerseReminderEnabled,
+        memoryVerseReminderTime,
+        memoryVerseOverdueEnabled,
         createdAt,
         updatedAt,
       ];

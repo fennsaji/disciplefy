@@ -32,6 +32,9 @@ interface UpdatePreferencesRequest {
   streakMilestoneEnabled?: boolean
   streakLostEnabled?: boolean
   streakReminderTime?: string
+  memoryVerseReminderEnabled?: boolean
+  memoryVerseReminderTime?: string
+  memoryVerseOverdueEnabled?: boolean
   timezoneOffsetMinutes?: number
 }
 
@@ -42,6 +45,9 @@ interface PreferencesUpdate {
   streak_milestone_enabled?: boolean
   streak_lost_enabled?: boolean
   streak_reminder_time?: string
+  memory_verse_reminder_enabled?: boolean
+  memory_verse_reminder_time?: string
+  memory_verse_overdue_enabled?: boolean
   timezone_offset_minutes?: number
   updated_at?: string
 }
@@ -176,6 +182,9 @@ async function handleRegisterToken(
         streakMilestoneEnabled: prefsData.streak_milestone_enabled,
         streakLostEnabled: prefsData.streak_lost_enabled,
         streakReminderTime: prefsData.streak_reminder_time,
+        memoryVerseReminderEnabled: prefsData.memory_verse_reminder_enabled,
+        memoryVerseReminderTime: prefsData.memory_verse_reminder_time,
+        memoryVerseOverdueEnabled: prefsData.memory_verse_overdue_enabled,
         timezoneOffsetMinutes: prefsData.timezone_offset_minutes,
       },
     }),
@@ -216,6 +225,15 @@ async function handleUpdatePreferences(
   }
   if (requestData.streakReminderTime !== undefined) {
     updateData.streak_reminder_time = requestData.streakReminderTime
+  }
+  if (requestData.memoryVerseReminderEnabled !== undefined) {
+    updateData.memory_verse_reminder_enabled = requestData.memoryVerseReminderEnabled
+  }
+  if (requestData.memoryVerseReminderTime !== undefined) {
+    updateData.memory_verse_reminder_time = requestData.memoryVerseReminderTime
+  }
+  if (requestData.memoryVerseOverdueEnabled !== undefined) {
+    updateData.memory_verse_overdue_enabled = requestData.memoryVerseOverdueEnabled
   }
   if (requestData.timezoneOffsetMinutes !== undefined) {
     updateData.timezone_offset_minutes = requestData.timezoneOffsetMinutes
@@ -260,6 +278,9 @@ async function handleUpdatePreferences(
         streakMilestoneEnabled: data.streak_milestone_enabled,
         streakLostEnabled: data.streak_lost_enabled,
         streakReminderTime: data.streak_reminder_time,
+        memoryVerseReminderEnabled: data.memory_verse_reminder_enabled,
+        memoryVerseReminderTime: data.memory_verse_reminder_time,
+        memoryVerseOverdueEnabled: data.memory_verse_overdue_enabled,
         timezoneOffsetMinutes: data.timezone_offset_minutes,
       },
     }),
@@ -330,6 +351,9 @@ async function handleGetPreferences(
         streakMilestoneEnabled: prefsData.streak_milestone_enabled,
         streakLostEnabled: prefsData.streak_lost_enabled,
         streakReminderTime: prefsData.streak_reminder_time,
+        memoryVerseReminderEnabled: prefsData.memory_verse_reminder_enabled,
+        memoryVerseReminderTime: prefsData.memory_verse_reminder_time,
+        memoryVerseOverdueEnabled: prefsData.memory_verse_overdue_enabled,
         timezoneOffsetMinutes: prefsData.timezone_offset_minutes,
       },
       tokens: tokensData || [], // Array of all registered tokens/devices

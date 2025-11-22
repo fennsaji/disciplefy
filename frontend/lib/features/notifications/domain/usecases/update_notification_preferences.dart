@@ -26,6 +26,9 @@ class UpdateNotificationPreferences
       streakMilestoneEnabled: params.streakMilestoneEnabled,
       streakLostEnabled: params.streakLostEnabled,
       streakReminderTime: params.streakReminderTime,
+      memoryVerseReminderEnabled: params.memoryVerseReminderEnabled,
+      memoryVerseReminderTime: params.memoryVerseReminderTime,
+      memoryVerseOverdueEnabled: params.memoryVerseOverdueEnabled,
     );
   }
 }
@@ -37,6 +40,9 @@ class UpdatePreferencesParams extends Equatable {
   final bool? streakMilestoneEnabled;
   final bool? streakLostEnabled;
   final TimeOfDayVO? streakReminderTime;
+  final bool? memoryVerseReminderEnabled;
+  final TimeOfDayVO? memoryVerseReminderTime;
+  final bool? memoryVerseOverdueEnabled;
 
   const UpdatePreferencesParams({
     this.dailyVerseEnabled,
@@ -45,6 +51,9 @@ class UpdatePreferencesParams extends Equatable {
     this.streakMilestoneEnabled,
     this.streakLostEnabled,
     this.streakReminderTime,
+    this.memoryVerseReminderEnabled,
+    this.memoryVerseReminderTime,
+    this.memoryVerseOverdueEnabled,
   });
 
   @override
@@ -55,5 +64,8 @@ class UpdatePreferencesParams extends Equatable {
         streakMilestoneEnabled,
         streakLostEnabled,
         streakReminderTime,
+        memoryVerseReminderEnabled,
+        memoryVerseReminderTime,
+        memoryVerseOverdueEnabled,
       ];
 }

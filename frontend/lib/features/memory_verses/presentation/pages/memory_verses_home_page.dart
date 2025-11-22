@@ -7,6 +7,9 @@ import '../../../../core/i18n/translation_keys.dart';
 import '../../../../core/router/app_router.dart';
 import '../../../../core/widgets/auth_protected_screen.dart';
 import '../../../daily_verse/domain/entities/daily_verse_entity.dart';
+import '../../../daily_verse/presentation/bloc/daily_verse_bloc.dart';
+import '../../../daily_verse/presentation/bloc/daily_verse_state.dart';
+import '../../domain/entities/memory_verse_entity.dart';
 import '../bloc/memory_verse_bloc.dart';
 import '../bloc/memory_verse_event.dart';
 import '../bloc/memory_verse_state.dart';
@@ -104,6 +107,14 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
                 backgroundColor: Colors.orange,
               ),
             );
+          } else if (state is VerseDeleted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(context.tr(TranslationKeys.memoryDeleteSuccess)),
+                backgroundColor: Colors.green,
+              ),
+            );
+            _loadVerses();
           }
         },
         builder: (context, state) {
@@ -145,7 +156,8 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
   }
 
   Widget _buildLoadedState(DueVersesLoaded state) {
-    if (state.verses.isEmpty) {
+    // Show full empty state only when user has no verses at all
+    if (state.statistics.totalVerses == 0) {
       return _buildEmptyState();
     }
 
@@ -170,6 +182,26 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
                   ),
                   const SizedBox(height: 16),
                   StatisticsCard(statistics: state.statistics),
+                  const SizedBox(height: 16),
+                  // Review All button - only show when there are due verses
+                  if (state.verses.isNotEmpty)
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton.icon(
+                        onPressed: () => _startReviewAll(context, state.verses),
+                        icon: const Icon(Icons.play_arrow_rounded),
+                        label: Text(
+                          '${context.tr(TranslationKeys.memoryReviewAll)} (${state.verses.length})',
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          backgroundColor:
+                              Theme.of(context).colorScheme.primary,
+                          foregroundColor:
+                              Theme.of(context).colorScheme.onPrimary,
+                        ),
+                      ),
+                    ),
                   const SizedBox(height: 24),
                   _buildLanguageFilter(context),
                   const SizedBox(height: 16),
@@ -195,26 +227,73 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
               ),
             ),
           ),
-          SliverPadding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0),
-            sliver: SliverList(
-              delegate: SliverChildBuilderDelegate(
-                (context, index) {
-                  final verse = state.verses[index];
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 12.0),
-                    child: MemoryVerseListItem(
-                      verse: verse,
-                      onTap: () => _navigateToReviewPage(context, verse.id),
-                    ),
-                  );
-                },
-                childCount: state.verses.length,
+          // Show verses list or empty filter message
+          if (state.verses.isNotEmpty)
+            SliverPadding(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+              sliver: SliverList(
+                delegate: SliverChildBuilderDelegate(
+                  (context, index) {
+                    final verse = state.verses[index];
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 12.0),
+                      child: MemoryVerseListItem(
+                        verse: verse,
+                        onTap: () => _navigateToReviewPage(context, verse.id),
+                        onDelete: () => _showDeleteConfirmation(context, verse),
+                      ),
+                    );
+                  },
+                  childCount: state.verses.length,
+                ),
               ),
+            )
+          else
+            SliverToBoxAdapter(
+              child: _buildFilteredEmptyMessage(),
             ),
-          ),
           const SliverToBoxAdapter(child: SizedBox(height: 16)),
         ],
+      ),
+    );
+  }
+
+  /// Build message when filter returns no results but user has verses
+  Widget _buildFilteredEmptyMessage() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 32.0),
+      child: Center(
+        child: Column(
+          children: [
+            Icon(
+              Icons.search_off_rounded,
+              size: 48,
+              color: Theme.of(context)
+                  .colorScheme
+                  .onSurfaceVariant
+                  .withOpacity(0.5),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              context.tr(TranslationKeys.memoryNoVersesInLanguage),
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              context.tr(TranslationKeys.memoryTryDifferentFilter),
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: Theme.of(context)
+                        .colorScheme
+                        .onSurfaceVariant
+                        .withOpacity(0.7),
+                  ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -276,17 +355,59 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
   }
 
   void _showAddFromDailyDialog(BuildContext context) {
-    // TODO: Get today's daily verse ID and add it
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Add from Daily Verse - Coming soon!')),
-    );
+    // Get the current daily verse from DailyVerseBloc
+    final dailyVerseState = context.read<DailyVerseBloc>().state;
+
+    // Check if daily verse is loaded
+    if (dailyVerseState is DailyVerseLoaded) {
+      final verse = dailyVerseState.verse;
+      final currentLanguage = dailyVerseState.currentLanguage;
+
+      // Add the daily verse to memory deck
+      context.read<MemoryVerseBloc>().add(
+            AddVerseFromDaily(
+              verse.id,
+              language: currentLanguage.code,
+            ),
+          );
+    } else if (dailyVerseState is DailyVerseOffline) {
+      final verse = dailyVerseState.verse;
+      final currentLanguage = dailyVerseState.currentLanguage;
+
+      // Add the daily verse to memory deck even in offline mode
+      context.read<MemoryVerseBloc>().add(
+            AddVerseFromDaily(
+              verse.id,
+              language: currentLanguage.code,
+            ),
+          );
+    } else {
+      // Daily verse not loaded yet
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(context.tr(TranslationKeys.memoryDailyVerseNotLoaded)),
+          backgroundColor: Colors.orange,
+        ),
+      );
+    }
   }
 
   void _showAddManuallyDialog(BuildContext context) {
     final memoryVerseBloc = context.read<MemoryVerseBloc>();
+
+    // Get default language: use filter if selected, otherwise use user's preferred language
+    VerseLanguage defaultLanguage;
+    if (_selectedLanguageFilter != null) {
+      defaultLanguage = _selectedLanguageFilter!;
+    } else {
+      // Get user's preferred language from TranslationService
+      final userLanguageCode = context.translationService.currentLanguage.code;
+      defaultLanguage = _getVerseLanguageFromCode(userLanguageCode);
+    }
+
     AddManualVerseDialog.show(
       context,
-      defaultLanguage: _selectedLanguageFilter ?? VerseLanguage.english,
+      defaultLanguage: defaultLanguage,
       onSubmit: ({
         required String verseReference,
         required String verseText,
@@ -301,6 +422,19 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
         );
       },
     );
+  }
+
+  /// Convert language code to VerseLanguage enum
+  VerseLanguage _getVerseLanguageFromCode(String code) {
+    switch (code) {
+      case 'hi':
+        return VerseLanguage.hindi;
+      case 'ml':
+        return VerseLanguage.malayalam;
+      case 'en':
+      default:
+        return VerseLanguage.english;
+    }
   }
 
   Widget _buildLanguageFilter(BuildContext context) {
@@ -410,6 +544,68 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
 
   void _navigateToReviewPage(BuildContext context, String verseId) {
     GoRouter.of(context).goToVerseReview(verseId: verseId);
+  }
+
+  void _startReviewAll(BuildContext context, List<MemoryVerseEntity> verses) {
+    if (verses.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(context.tr(TranslationKeys.memoryNoVersesToReview)),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
+    // Get all verse IDs for sequential review
+    final verseIds = verses.map((v) => v.id).toList();
+
+    // Navigate to review page with batch mode
+    GoRouter.of(context).goToVerseReview(
+      verseId: verseIds.first,
+      verseIds: verseIds,
+    );
+  }
+
+  void _showDeleteConfirmation(BuildContext context, MemoryVerseEntity verse) {
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(context.tr(TranslationKeys.memoryDeleteTitle)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              verse.verseReference,
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+            ),
+            const SizedBox(height: 12),
+            Text(context.tr(TranslationKeys.memoryDeleteConfirmation)),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: Text(context.tr(TranslationKeys.memoryDeleteCancel)),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(dialogContext);
+              context.read<MemoryVerseBloc>().add(DeleteVerse(verse.id));
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+            ),
+            child: Text(context.tr(TranslationKeys.memoryDeleteConfirm)),
+          ),
+        ],
+      ),
+    );
   }
 
   String _getVersesToReviewMessage(BuildContext context, int count) {

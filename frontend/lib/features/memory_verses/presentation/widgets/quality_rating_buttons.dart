@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../../../../core/extensions/translation_extension.dart';
+import '../../../../core/i18n/translation_keys.dart';
 
 /// Quality rating buttons for SM-2 algorithm (0-5 scale).
 ///
@@ -24,8 +26,8 @@ class QualityRatingButtons extends StatelessWidget {
         _buildRatingButton(
           context: context,
           rating: 5,
-          label: 'Perfect!',
-          description: 'Perfect recall, no hesitation',
+          label: context.tr(TranslationKeys.ratingPerfectLabel),
+          description: context.tr(TranslationKeys.ratingPerfectDescription),
           color: Colors.green,
           icon: Icons.check_circle,
         ),
@@ -33,8 +35,8 @@ class QualityRatingButtons extends StatelessWidget {
         _buildRatingButton(
           context: context,
           rating: 4,
-          label: 'Good',
-          description: 'Correct with slight hesitation',
+          label: context.tr(TranslationKeys.ratingGoodLabel),
+          description: context.tr(TranslationKeys.ratingGoodDescription),
           color: Colors.lightGreen,
           icon: Icons.thumb_up,
         ),
@@ -42,8 +44,8 @@ class QualityRatingButtons extends StatelessWidget {
         _buildRatingButton(
           context: context,
           rating: 3,
-          label: 'Hard',
-          description: 'Correct with significant difficulty',
+          label: context.tr(TranslationKeys.ratingHardLabel),
+          description: context.tr(TranslationKeys.ratingHardDescription),
           color: Colors.blue,
           icon: Icons.pending,
         ),
@@ -51,8 +53,8 @@ class QualityRatingButtons extends StatelessWidget {
         _buildRatingButton(
           context: context,
           rating: 2,
-          label: 'Wrong',
-          description: 'Incorrect, but remembered parts',
+          label: context.tr(TranslationKeys.ratingWrongLabel),
+          description: context.tr(TranslationKeys.ratingWrongDescription),
           color: Colors.orange,
           icon: Icons.restart_alt,
         ),
@@ -60,8 +62,8 @@ class QualityRatingButtons extends StatelessWidget {
         _buildRatingButton(
           context: context,
           rating: 1,
-          label: 'Barely',
-          description: 'Incorrect, but recognized when shown',
+          label: context.tr(TranslationKeys.ratingBarelyLabel),
+          description: context.tr(TranslationKeys.ratingBarelyDescription),
           color: Colors.deepOrange,
           icon: Icons.error_outline,
         ),
@@ -69,8 +71,8 @@ class QualityRatingButtons extends StatelessWidget {
         _buildRatingButton(
           context: context,
           rating: 0,
-          label: 'Forgot',
-          description: 'Complete blackout, no memory',
+          label: context.tr(TranslationKeys.ratingForgotLabel),
+          description: context.tr(TranslationKeys.ratingForgotDescription),
           color: Colors.red,
           icon: Icons.close,
         ),
