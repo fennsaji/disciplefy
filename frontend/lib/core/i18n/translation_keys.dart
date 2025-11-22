@@ -485,4 +485,54 @@ class TranslationKeys {
   static const memoryDaysOverdue = 'memory.daysOverdue';
   static const memoryVersesToReviewSingular = 'memory.versesToReviewSingular';
   static const memoryVersesToReviewPlural = 'memory.versesToReviewPlural';
+
+  // Add Verse Dialog
+  static const addVerseTitle = 'memory.addVerse.title';
+  static const addVerseBook = 'memory.addVerse.book';
+  static const addVerseChapter = 'memory.addVerse.chapter';
+  static const addVerseVerse = 'memory.addVerse.verse';
+  static const addVerseAll = 'memory.addVerse.all';
+  static const addVerseTo = 'memory.addVerse.to';
+  static const addVerseLanguage = 'memory.addVerse.language';
+  static const addVerseFetch = 'memory.addVerse.fetch';
+  static const addVerseFetching = 'memory.addVerse.fetching';
+  static const addVerseText = 'memory.addVerse.verseText';
+  static const addVerseTextHint = 'memory.addVerse.verseTextHint';
+  static const addVerseCancel = 'memory.addVerse.cancel';
+  static const addVerseAdd = 'memory.addVerse.add';
+  static const addVerseSelectRequired = 'memory.addVerse.selectRequired';
+  static const addVerseTextRequired = 'memory.addVerse.textRequired';
+
+  // Verse Review Page
+  static const reviewVerseTitle = 'memory.reviewPage.title';
+  static const reviewVerseNotFound = 'memory.reviewPage.verseNotFound';
+  static const reviewTapToReveal = 'memory.reviewPage.tapToReveal';
+  static const reviewSkipForNow = 'memory.reviewPage.skipForNow';
+  static const reviewRateReview = 'memory.reviewPage.rateReview';
+  static const reviewSkipTitle = 'memory.reviewPage.skipTitle';
+  static const reviewSkipContent = 'memory.reviewPage.skipContent';
+  static const reviewCancel = 'memory.reviewPage.cancel';
+  static const reviewSkip = 'memory.reviewPage.skip';
+
+  // Flip Card
+  static const flipCardTapToReveal = 'memory.flipCard.tapToReveal';
+  static const flipCardReviewNumber = 'memory.flipCard.reviewNumber';
+  static const flipCardDays = 'memory.flipCard.days';
+  static const flipCardReviews = 'memory.flipCard.reviews';
+
+  // Options Menu
+  static const optionsMenuSyncTitle = 'memory.optionsMenu.syncTitle';
+  static const optionsMenuSyncSubtitle = 'memory.optionsMenu.syncSubtitle';
+  static const optionsMenuStatsTitle = 'memory.optionsMenu.statsTitle';
+  static const optionsMenuStatsSubtitle = 'memory.optionsMenu.statsSubtitle';
+
+  // Statistics Dialog
+  static const statsDialogTitle = 'memory.statsDialog.title';
+  static const statsDialogTotalVerses = 'memory.statsDialog.totalVerses';
+  static const statsDialogDueVerses = 'memory.statsDialog.dueVerses';
+  static const statsDialogReviewedToday = 'memory.statsDialog.reviewedToday';
+  static const statsDialogUpcoming = 'memory.statsDialog.upcoming';
+  static const statsDialogMastered = 'memory.statsDialog.mastered';
+  static const statsDialogMasteryRate = 'memory.statsDialog.masteryRate';
+  static const statsDialogClose = 'memory.statsDialog.close';
 }

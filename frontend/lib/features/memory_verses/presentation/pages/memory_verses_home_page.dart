@@ -15,6 +15,7 @@ import '../widgets/add_verse_options_sheet.dart';
 import '../widgets/memory_verse_list_item.dart';
 import '../widgets/options_menu_sheet.dart';
 import '../widgets/statistics_card.dart';
+import '../widgets/statistics_dialog.dart';
 
 class MemoryVersesHomePage extends StatefulWidget {
   const MemoryVersesHomePage({super.key});
@@ -393,7 +394,16 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
       context,
       onSync: () => memoryVerseBloc.add(const SyncWithRemote()),
       onViewStatistics: () {
-        // TODO: Navigate to statistics page
+        if (_lastLoadedState != null) {
+          StatisticsDialog.show(context, _lastLoadedState!.statistics);
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                  'Statistics not available. Please wait for verses to load.'),
+            ),
+          );
+        }
       },
     );
   }

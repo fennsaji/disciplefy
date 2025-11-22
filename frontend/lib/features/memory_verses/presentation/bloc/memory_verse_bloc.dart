@@ -48,6 +48,7 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
     on<SubmitReview>(_onSubmitReview);
     on<LoadStatistics>(_onLoadStatistics);
     on<RefreshVerses>(_onRefreshVerses);
+    on<SyncWithRemote>(_onSyncWithRemote);
   }
 
   /// Handles LoadDueVerses event.
@@ -363,6 +364,65 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
   ) async {
     // Trigger LoadDueVerses with forceRefresh flag
     add(const LoadDueVerses(forceRefresh: true));
+  }
+
+  /// Handles SyncWithRemote event.
+  ///
+  /// Syncs local changes with remote server.
+  /// Currently triggers a refresh to ensure data is up-to-date.
+  Future<void> _onSyncWithRemote(
+    SyncWithRemote event,
+    Emitter<MemoryVerseState> emit,
+  ) async {
+    try {
+      if (kDebugMode) {
+        print('🔄 [BLOC] Syncing with remote server');
+      }
+
+      emit(const MemoryVerseLoading(message: 'Syncing with server...'));
+
+      // For now, sync is handled by refreshing verses
+      // This will fetch latest data from server
+      final result = await getDueVerses(
+        limit: 50,
+      );
+
+      result.fold(
+        (failure) {
+          if (kDebugMode) {
+            print('❌ [BLOC] Sync failed: ${failure.message}');
+          }
+          emit(MemoryVerseError(
+            message: failure.message,
+            code: failure.code,
+            isNetworkError: failure is NetworkFailure,
+          ));
+        },
+        (data) {
+          final (verses, statistics) = data;
+
+          if (kDebugMode) {
+            print('✅ [BLOC] Sync completed. Loaded ${verses.length} verses');
+          }
+
+          emit(SyncCompleted(
+            message: 'Sync completed successfully',
+            syncedOperations: verses.length,
+          ));
+
+          // Reload the verses to show updated data
+          add(const LoadDueVerses(forceRefresh: true));
+        },
+      );
+    } catch (e) {
+      if (kDebugMode) {
+        print('❌ [BLOC] Unexpected error during sync: $e');
+      }
+      emit(MemoryVerseError(
+        message: 'Failed to sync with server',
+        code: 'SYNC_ERROR',
+      ));
+    }
   }
 
   /// Returns user-friendly message based on quality rating.
