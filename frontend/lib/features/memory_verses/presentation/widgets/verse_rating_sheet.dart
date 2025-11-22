@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/extensions/translation_extension.dart';
+import '../../../../core/i18n/translation_keys.dart';
 import 'quality_rating_buttons.dart';
 
 /// A bottom sheet widget for selecting verse review quality rating.
@@ -55,7 +57,7 @@ class VerseRatingSheet extends StatelessWidget {
 
                 // Title
                 Text(
-                  'How well did you remember?',
+                  context.tr(TranslationKeys.ratingSheetTitle),
                   style: theme.textTheme.titleLarge?.copyWith(
                     fontWeight: FontWeight.w600,
                   ),

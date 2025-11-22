@@ -25,6 +25,9 @@ class UpdateNotificationPreferences extends NotificationEvent {
   final bool? streakMilestoneEnabled;
   final bool? streakLostEnabled;
   final TimeOfDay? streakReminderTime;
+  final bool? memoryVerseReminderEnabled;
+  final TimeOfDay? memoryVerseReminderTime;
+  final bool? memoryVerseOverdueEnabled;
 
   const UpdateNotificationPreferences({
     this.dailyVerseEnabled,
@@ -33,6 +36,9 @@ class UpdateNotificationPreferences extends NotificationEvent {
     this.streakMilestoneEnabled,
     this.streakLostEnabled,
     this.streakReminderTime,
+    this.memoryVerseReminderEnabled,
+    this.memoryVerseReminderTime,
+    this.memoryVerseOverdueEnabled,
   });
 
   @override
@@ -43,6 +49,9 @@ class UpdateNotificationPreferences extends NotificationEvent {
         streakMilestoneEnabled,
         streakLostEnabled,
         streakReminderTime,
+        memoryVerseReminderEnabled,
+        memoryVerseReminderTime,
+        memoryVerseOverdueEnabled,
       ];
 }
 

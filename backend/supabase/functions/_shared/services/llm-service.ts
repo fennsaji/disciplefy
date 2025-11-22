@@ -277,6 +277,19 @@ export class LLMService {
       // Fetch actual verse text from Bible API
       const allVerses = await fetchVerseAllLanguages(parsedReference.reference)
 
+      // Check if all translations were successfully fetched
+      const hasAllTranslations = allVerses.en.text && allVerses.hi.text && allVerses.ml.text
+
+      if (!hasAllTranslations) {
+        console.warn(`[LLM] Bible API returned incomplete translations for ${parsedReference.reference}:`, {
+          en: !!allVerses.en.text,
+          hi: !!allVerses.hi.text,
+          ml: !!allVerses.ml.text
+        })
+        console.log('[LLM] Falling back to LLM-generated verse for complete translations')
+        return this.generateDailyVerseLLMFallback(excludeReferences, language)
+      }
+
       // Cache the verses
       await cacheVerses(allVerses, today)
 

@@ -20,6 +20,9 @@ abstract class NotificationRepository {
     bool? streakMilestoneEnabled,
     bool? streakLostEnabled,
     TimeOfDayVO? streakReminderTime,
+    bool? memoryVerseReminderEnabled,
+    TimeOfDayVO? memoryVerseReminderTime,
+    bool? memoryVerseOverdueEnabled,
   });
 
   /// Check if notifications are enabled on device
