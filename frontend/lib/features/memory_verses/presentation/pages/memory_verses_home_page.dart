@@ -34,9 +34,10 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
     _loadVerses();
   }
 
-  void _loadVerses() {
+  void _loadVerses({bool forceRefresh = false}) {
     context.read<MemoryVerseBloc>().add(LoadDueVerses(
           language: _selectedLanguageFilter?.code,
+          forceRefresh: forceRefresh,
         ));
   }
 
@@ -78,9 +79,7 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
                 action: SnackBarAction(
                   label: 'Retry',
                   textColor: Colors.white,
-                  onPressed: () {
-                    context.read<MemoryVerseBloc>().add(const LoadDueVerses());
-                  },
+                  onPressed: _loadVerses,
                 ),
               ),
             );
@@ -91,7 +90,7 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
                 backgroundColor: Colors.green,
               ),
             );
-            context.read<MemoryVerseBloc>().add(const LoadDueVerses());
+            _loadVerses();
           } else if (state is OperationQueued) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
@@ -152,7 +151,7 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
 
     return RefreshIndicator(
       onRefresh: () async {
-        context.read<MemoryVerseBloc>().add(const RefreshVerses());
+        _loadVerses(forceRefresh: true);
         await Future.delayed(const Duration(milliseconds: 500));
       },
       child: CustomScrollView(
@@ -392,7 +391,8 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
     final memoryVerseBloc = context.read<MemoryVerseBloc>();
     OptionsMenuSheet.show(
       context,
-      onSync: () => memoryVerseBloc.add(const SyncWithRemote()),
+      onSync: () => memoryVerseBloc
+          .add(SyncWithRemote(language: _selectedLanguageFilter?.code)),
       onViewStatistics: () {
         if (_lastLoadedState != null) {
           StatisticsDialog.show(context, _lastLoadedState!.statistics);

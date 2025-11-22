@@ -128,6 +128,8 @@ class AppTranslations {
       'copy': 'Copy',
       'share': 'Share',
       'copied': 'Verse copied to clipboard',
+      'add_to_memory': 'Add to Memory Verses',
+      'already_in_memory': 'Already in Memory Verses',
     },
     'generate_study': {
       'title': 'Generate Study Guide',
@@ -691,6 +693,8 @@ class AppTranslations {
       'copy': 'कॉपी करें',
       'share': 'साझा करें',
       'copied': 'आयत क्लिपबोर्ड पर कॉपी की गई',
+      'add_to_memory': 'याद वर्सेज में जोड़ें',
+      'already_in_memory': 'पहले से याद वर्सेज में है',
     },
     'generate_study': {
       'title': 'गाइड बनाएं',
@@ -1247,6 +1251,8 @@ class AppTranslations {
       'copy': 'പകർത്തുക',
       'share': 'പങ്കിടുക',
       'copied': 'വചനം ക്ലിപ്പ്ബോർഡിലേക്ക് പകർത്തി',
+      'add_to_memory': 'മെമ്മറി വെർസസിലേക്ക് ചേർക്കുക',
+      'already_in_memory': 'ഇതിനകം മെമ്മറി വെർസസിലുണ്ട്',
     },
     'generate_study': {
       'title': 'പഠന ഗൈഡ് സൃഷ്ടിക്കുക',

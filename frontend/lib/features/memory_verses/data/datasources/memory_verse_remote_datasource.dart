@@ -20,6 +20,7 @@ class MemoryVerseRemoteDataSource {
       '/functions/v1/get-due-memory-verses';
   static const String _submitReviewEndpoint =
       '/functions/v1/submit-memory-verse-review';
+  static const String _fetchVerseEndpoint = '/functions/v1/fetch-verse';
 
   final HttpService _httpService;
   final ApiErrorHandler _errorHandler;
@@ -270,6 +271,62 @@ class MemoryVerseRemoteDataSource {
       _errorHandler.logSuccess('Verse deleted successfully');
     } catch (e) {
       _errorHandler.handleException(e, 'deleting verse');
+    }
+  }
+
+  /// Fetches verse text from Bible API
+  ///
+  /// [book] - Book name (e.g., "John", "Genesis")
+  /// [chapter] - Chapter number
+  /// [verseStart] - Starting verse number
+  /// [verseEnd] - Optional ending verse for ranges
+  /// [language] - Language code ('en', 'hi', 'ml')
+  ///
+  /// Returns map with 'text' and 'localizedReference' keys
+  Future<Map<String, String>> fetchVerseText({
+    required String book,
+    required int chapter,
+    required int verseStart,
+    int? verseEnd,
+    required String language,
+  }) async {
+    try {
+      _errorHandler.logDebug(
+          'Fetching verse: $book $chapter:$verseStart${verseEnd != null ? '-$verseEnd' : ''} ($language)');
+
+      final url = '$_baseUrl$_fetchVerseEndpoint';
+      final body = jsonEncode({
+        'book': book,
+        'chapter': chapter,
+        'verse_start': verseStart,
+        if (verseEnd != null) 'verse_end': verseEnd,
+        'language': language,
+      });
+
+      final headers = await _httpService.createHeaders();
+      final response =
+          await _httpService.post(url, headers: headers, body: body);
+
+      if (response.statusCode == 200) {
+        final jsonData = jsonDecode(response.body);
+        final data = jsonData['data'] as Map<String, dynamic>;
+
+        _errorHandler.logSuccess('Verse text fetched successfully');
+
+        return {
+          'text': data['text'] as String,
+          'localizedReference': data['localizedReference'] as String,
+        };
+      } else if (response.statusCode == 404) {
+        throw const ServerException(
+          message: 'Verse not found',
+          code: 'VERSE_NOT_FOUND',
+        );
+      } else {
+        _errorHandler.handleErrorResponse(response);
+      }
+    } catch (e) {
+      _errorHandler.handleException(e, 'fetching verse text');
     }
   }
 }
