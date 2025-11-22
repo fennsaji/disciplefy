@@ -43,11 +43,15 @@ class AddManualVerseDialog extends StatefulWidget {
     }) onSubmit,
     VerseLanguage defaultLanguage = VerseLanguage.english,
   }) {
+    final memoryVerseBloc = context.read<MemoryVerseBloc>();
     showDialog(
       context: context,
-      builder: (dialogContext) => AddManualVerseDialog(
-        onSubmit: onSubmit,
-        defaultLanguage: defaultLanguage,
+      builder: (dialogContext) => BlocProvider.value(
+        value: memoryVerseBloc,
+        child: AddManualVerseDialog(
+          onSubmit: onSubmit,
+          defaultLanguage: defaultLanguage,
+        ),
       ),
     );
   }
@@ -230,7 +234,10 @@ class _AddManualVerseDialogState extends State<AddManualVerseDialog> {
       items: BibleData.bookNames.map((name) {
         return DropdownMenuItem(
           value: name,
-          child: Text(name, overflow: TextOverflow.ellipsis),
+          child: Text(
+            _getLocalizedBookName(name),
+            overflow: TextOverflow.ellipsis,
+          ),
         );
       }).toList(),
       onChanged: (value) {
@@ -244,6 +251,24 @@ class _AddManualVerseDialogState extends State<AddManualVerseDialog> {
         });
       },
     );
+  }
+
+  /// Get localized book name from translations
+  String _getLocalizedBookName(String englishName) {
+    return context.tr('bible_books.$englishName');
+  }
+
+  /// Get localized language name
+  String _getLocalizedLanguageName(String code) {
+    switch (code) {
+      case 'hi':
+        return context.tr(TranslationKeys.generateStudyHindi);
+      case 'ml':
+        return context.tr(TranslationKeys.generateStudyMalayalam);
+      case 'en':
+      default:
+        return context.tr(TranslationKeys.generateStudyEnglish);
+    }
   }
 
   Widget _buildChapterVerseRow() {
@@ -392,7 +417,7 @@ class _AddManualVerseDialogState extends State<AddManualVerseDialog> {
         return DropdownMenuItem(
           value: language,
           child: Text(
-            language.code.toUpperCase(),
+            _getLocalizedLanguageName(language.code),
             style: const TextStyle(fontSize: 14),
           ),
         );

@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/error/failures.dart';
 import '../../domain/usecases/add_verse_from_daily.dart' as add_from_daily_uc;
 import '../../domain/usecases/add_verse_manually.dart' as add_manually_uc;
+import '../../domain/usecases/delete_verse.dart' as delete_verse_uc;
 import '../../domain/usecases/fetch_verse_text.dart';
 import '../../domain/usecases/get_due_verses.dart';
 import '../../domain/usecases/get_statistics.dart';
@@ -36,6 +37,7 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
   final submit_review_uc.SubmitReview submitReview;
   final GetStatistics getStatistics;
   final FetchVerseText fetchVerseText;
+  final delete_verse_uc.DeleteVerse deleteVerse;
 
   MemoryVerseBloc({
     required this.getDueVerses,
@@ -44,6 +46,7 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
     required this.submitReview,
     required this.getStatistics,
     required this.fetchVerseText,
+    required this.deleteVerse,
   }) : super(const MemoryVerseInitial()) {
     on<LoadDueVerses>(_onLoadDueVerses);
     on<AddVerseFromDaily>(_onAddVerseFromDaily);
@@ -53,6 +56,7 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
     on<RefreshVerses>(_onRefreshVerses);
     on<SyncWithRemote>(_onSyncWithRemote);
     on<FetchVerseTextRequested>(_onFetchVerseTextRequested);
+    on<DeleteVerse>(_onDeleteVerse);
   }
 
   /// Handles LoadDueVerses event.
@@ -497,6 +501,61 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
       }
       emit(const FetchVerseTextError(
         message: 'Failed to fetch verse text',
+        code: 'UNEXPECTED_ERROR',
+      ));
+    }
+  }
+
+  /// Handles DeleteVerse event.
+  ///
+  /// Deletes a memory verse from the user's deck.
+  Future<void> _onDeleteVerse(
+    DeleteVerse event,
+    Emitter<MemoryVerseState> emit,
+  ) async {
+    try {
+      if (kDebugMode) {
+        print('🗑️ [BLOC] Deleting verse: ${event.verseId}');
+      }
+
+      emit(const MemoryVerseLoading(message: 'Deleting verse...'));
+
+      final result = await deleteVerse(event.verseId);
+
+      result.fold(
+        (failure) {
+          if (kDebugMode) {
+            print('❌ [BLOC] Delete verse failed: ${failure.message}');
+          }
+
+          // Check if operation was queued for offline sync
+          if (failure is NetworkFailure && failure.code == 'OFFLINE_QUEUED') {
+            emit(OperationQueued(
+              message: 'Verse will be deleted when online',
+              operationType: 'delete',
+            ));
+          } else {
+            emit(MemoryVerseError(
+              message: failure.message,
+              code: failure.code,
+              isNetworkError: failure is NetworkFailure,
+            ));
+          }
+        },
+        (_) {
+          if (kDebugMode) {
+            print('✅ [BLOC] Verse deleted successfully');
+          }
+
+          emit(const VerseDeleted('Verse removed from memory deck'));
+        },
+      );
+    } catch (e) {
+      if (kDebugMode) {
+        print('❌ [BLOC] Unexpected error deleting verse: $e');
+      }
+      emit(MemoryVerseError(
+        message: 'Failed to delete verse',
         code: 'UNEXPECTED_ERROR',
       ));
     }
