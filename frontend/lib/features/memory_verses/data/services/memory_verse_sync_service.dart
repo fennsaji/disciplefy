@@ -110,34 +110,94 @@ class MemoryVerseSyncService {
     }
 
     final type = typeValue;
+    final operationId = operation['id']?.toString() ?? 'unknown';
 
     switch (type) {
       case 'add_from_daily':
-        await _remoteDataSource.addVerseFromDaily(
-          operation['daily_verse_id'] as String,
-        );
+        try {
+          final dailyVerseId = _getRequiredString(
+            operation,
+            'daily_verse_id',
+            operationId,
+            type,
+          );
+          await _remoteDataSource.addVerseFromDaily(dailyVerseId);
+        } catch (e, stackTrace) {
+          _logOperationError(operationId, type, e, stackTrace);
+          rethrow;
+        }
         break;
 
       case 'add_manual':
-        await _remoteDataSource.addVerseManually(
-          verseReference: operation['verse_reference'] as String,
-          verseText: operation['verse_text'] as String,
-          language: operation['language'] as String?,
-        );
+        try {
+          final verseReference = _getRequiredString(
+            operation,
+            'verse_reference',
+            operationId,
+            type,
+          );
+          final verseText = _getRequiredString(
+            operation,
+            'verse_text',
+            operationId,
+            type,
+          );
+          final language = _getOptionalString(operation, 'language');
+
+          await _remoteDataSource.addVerseManually(
+            verseReference: verseReference,
+            verseText: verseText,
+            language: language,
+          );
+        } catch (e, stackTrace) {
+          _logOperationError(operationId, type, e, stackTrace);
+          rethrow;
+        }
         break;
 
       case 'submit_review':
-        await _remoteDataSource.submitReview(
-          memoryVerseId: operation['memory_verse_id'] as String,
-          qualityRating: operation['quality_rating'] as int,
-          timeSpentSeconds: operation['time_spent_seconds'] as int?,
-        );
+        try {
+          final memoryVerseId = _getRequiredString(
+            operation,
+            'memory_verse_id',
+            operationId,
+            type,
+          );
+          final qualityRating = _getRequiredInt(
+            operation,
+            'quality_rating',
+            operationId,
+            type,
+          );
+          final timeSpentSeconds = _getOptionalInt(
+            operation,
+            'time_spent_seconds',
+          );
+
+          await _remoteDataSource.submitReview(
+            memoryVerseId: memoryVerseId,
+            qualityRating: qualityRating,
+            timeSpentSeconds: timeSpentSeconds,
+          );
+        } catch (e, stackTrace) {
+          _logOperationError(operationId, type, e, stackTrace);
+          rethrow;
+        }
         break;
 
       case 'delete_verse':
-        await _remoteDataSource.deleteVerse(
-          operation['verse_id'] as String,
-        );
+        try {
+          final verseId = _getRequiredString(
+            operation,
+            'verse_id',
+            operationId,
+            type,
+          );
+          await _remoteDataSource.deleteVerse(verseId);
+        } catch (e, stackTrace) {
+          _logOperationError(operationId, type, e, stackTrace);
+          rethrow;
+        }
         break;
 
       default:
@@ -147,6 +207,129 @@ class MemoryVerseSyncService {
           'Supported types: add_from_daily, add_manual, submit_review, delete_verse. '
           'Operation data: $operation',
         );
+    }
+  }
+
+  /// Safely extracts a required String field from operation data.
+  String _getRequiredString(
+    Map<String, dynamic> operation,
+    String fieldName,
+    String operationId,
+    String operationType,
+  ) {
+    final value = operation[fieldName];
+
+    if (value == null) {
+      throw ArgumentError(
+        'Missing required field "$fieldName" in sync operation. '
+        'Operation ID: $operationId, Type: $operationType, Data: $operation',
+      );
+    }
+
+    if (value is! String) {
+      throw ArgumentError(
+        'Field "$fieldName" must be a String, got ${value.runtimeType}. '
+        'Operation ID: $operationId, Type: $operationType, Value: $value',
+      );
+    }
+
+    if (value.isEmpty) {
+      throw ArgumentError(
+        'Field "$fieldName" cannot be empty. '
+        'Operation ID: $operationId, Type: $operationType',
+      );
+    }
+
+    return value;
+  }
+
+  /// Safely extracts a required int field from operation data.
+  int _getRequiredInt(
+    Map<String, dynamic> operation,
+    String fieldName,
+    String operationId,
+    String operationType,
+  ) {
+    final value = operation[fieldName];
+
+    if (value == null) {
+      throw ArgumentError(
+        'Missing required field "$fieldName" in sync operation. '
+        'Operation ID: $operationId, Type: $operationType, Data: $operation',
+      );
+    }
+
+    if (value is! int) {
+      throw ArgumentError(
+        'Field "$fieldName" must be an int, got ${value.runtimeType}. '
+        'Operation ID: $operationId, Type: $operationType, Value: $value',
+      );
+    }
+
+    return value;
+  }
+
+  /// Safely extracts an optional String field from operation data.
+  String? _getOptionalString(
+    Map<String, dynamic> operation,
+    String fieldName,
+  ) {
+    final value = operation[fieldName];
+
+    if (value == null) {
+      return null;
+    }
+
+    if (value is! String) {
+      if (kDebugMode) {
+        print(
+          '⚠️ [SYNC] Optional field "$fieldName" has wrong type '
+          '(expected String, got ${value.runtimeType}). Using null.',
+        );
+      }
+      return null;
+    }
+
+    return value.isEmpty ? null : value;
+  }
+
+  /// Safely extracts an optional int field from operation data.
+  int? _getOptionalInt(
+    Map<String, dynamic> operation,
+    String fieldName,
+  ) {
+    final value = operation[fieldName];
+
+    if (value == null) {
+      return null;
+    }
+
+    if (value is! int) {
+      if (kDebugMode) {
+        print(
+          '⚠️ [SYNC] Optional field "$fieldName" has wrong type '
+          '(expected int, got ${value.runtimeType}). Using null.',
+        );
+      }
+      return null;
+    }
+
+    return value;
+  }
+
+  /// Logs detailed error information for failed sync operations.
+  void _logOperationError(
+    String operationId,
+    String operationType,
+    Object error,
+    StackTrace stackTrace,
+  ) {
+    if (kDebugMode) {
+      print('❌ [SYNC] Operation failed:');
+      print('   Operation ID: $operationId');
+      print('   Operation Type: $operationType');
+      print('   Error: $error');
+      print('   Stack trace: $stackTrace');
     }
   }
 

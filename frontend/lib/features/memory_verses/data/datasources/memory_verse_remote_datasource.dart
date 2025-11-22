@@ -20,6 +20,7 @@ class MemoryVerseRemoteDataSource {
       '/functions/v1/get-due-memory-verses';
   static const String _submitReviewEndpoint =
       '/functions/v1/submit-memory-verse-review';
+  static const String _fetchVerseEndpoint = '/functions/v1/fetch-verse';
 
   final HttpService _httpService;
   final ApiErrorHandler _errorHandler;
@@ -29,12 +30,22 @@ class MemoryVerseRemoteDataSource {
         _errorHandler = const ApiErrorHandler(feature: 'MEMORY_VERSES');
 
   /// Adds a verse from Daily Verse to memory deck
-  Future<MemoryVerseModel> addVerseFromDaily(String dailyVerseId) async {
+  ///
+  /// [dailyVerseId] - UUID of the Daily Verse to add
+  /// [language] - Optional language code ('en', 'hi', 'ml') - if not provided, auto-detects
+  Future<MemoryVerseModel> addVerseFromDaily(
+    String dailyVerseId, {
+    String? language,
+  }) async {
     try {
-      _errorHandler.logDebug('Adding verse from daily: $dailyVerseId');
+      _errorHandler.logDebug(
+          'Adding verse from daily: $dailyVerseId (language: ${language ?? 'auto'})');
 
       final url = '$_baseUrl$_addFromDailyEndpoint';
-      final body = jsonEncode({'daily_verse_id': dailyVerseId});
+      final body = jsonEncode({
+        'daily_verse_id': dailyVerseId,
+        if (language != null) 'language': language,
+      });
 
       // Create headers with authentication
       final headers = await _httpService.createHeaders();
@@ -260,6 +271,62 @@ class MemoryVerseRemoteDataSource {
       _errorHandler.logSuccess('Verse deleted successfully');
     } catch (e) {
       _errorHandler.handleException(e, 'deleting verse');
+    }
+  }
+
+  /// Fetches verse text from Bible API
+  ///
+  /// [book] - Book name (e.g., "John", "Genesis")
+  /// [chapter] - Chapter number
+  /// [verseStart] - Starting verse number
+  /// [verseEnd] - Optional ending verse for ranges
+  /// [language] - Language code ('en', 'hi', 'ml')
+  ///
+  /// Returns map with 'text' and 'localizedReference' keys
+  Future<Map<String, String>> fetchVerseText({
+    required String book,
+    required int chapter,
+    required int verseStart,
+    int? verseEnd,
+    required String language,
+  }) async {
+    try {
+      _errorHandler.logDebug(
+          'Fetching verse: $book $chapter:$verseStart${verseEnd != null ? '-$verseEnd' : ''} ($language)');
+
+      final url = '$_baseUrl$_fetchVerseEndpoint';
+      final body = jsonEncode({
+        'book': book,
+        'chapter': chapter,
+        'verse_start': verseStart,
+        if (verseEnd != null) 'verse_end': verseEnd,
+        'language': language,
+      });
+
+      final headers = await _httpService.createHeaders();
+      final response =
+          await _httpService.post(url, headers: headers, body: body);
+
+      if (response.statusCode == 200) {
+        final jsonData = jsonDecode(response.body);
+        final data = jsonData['data'] as Map<String, dynamic>;
+
+        _errorHandler.logSuccess('Verse text fetched successfully');
+
+        return {
+          'text': data['text'] as String,
+          'localizedReference': data['localizedReference'] as String,
+        };
+      } else if (response.statusCode == 404) {
+        throw const ServerException(
+          message: 'Verse not found',
+          code: 'VERSE_NOT_FOUND',
+        );
+      } else {
+        _errorHandler.handleErrorResponse(response);
+      }
+    } catch (e) {
+      _errorHandler.handleException(e, 'fetching verse text');
     }
   }
 }
