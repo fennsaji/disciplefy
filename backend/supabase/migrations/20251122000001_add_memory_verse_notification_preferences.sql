@@ -140,9 +140,11 @@ CREATE INDEX IF NOT EXISTS idx_notification_prefs_memory_verse_overdue
   WHERE memory_verse_overdue_enabled = true;
 
 -- Index for efficient due verse counting
+-- Note: Cannot use CURRENT_DATE in partial index (not immutable)
+-- Index on user_id and next_review_date for efficient filtering in queries
 CREATE INDEX IF NOT EXISTS idx_memory_verses_next_review_date
   ON memory_verses(user_id, next_review_date)
-  WHERE next_review_date <= CURRENT_DATE;
+  WHERE next_review_date IS NOT NULL;
 
 -- ============================================================================
 -- 7. VALIDATION
