@@ -71,7 +71,9 @@ class NotificationBloc extends Bloc<NotificationEvent, NotificationState> {
     emit(const NotificationLoading());
 
     // Convert Flutter TimeOfDay to domain TimeOfDayVO at presentation boundary
-    final domainReminderTime = event.streakReminderTime?.toTimeOfDayVO();
+    final domainStreakReminderTime = event.streakReminderTime?.toTimeOfDayVO();
+    final domainMemoryVerseReminderTime =
+        event.memoryVerseReminderTime?.toTimeOfDayVO();
 
     final result = await updatePreferences(
       update_usecases.UpdatePreferencesParams(
@@ -80,7 +82,10 @@ class NotificationBloc extends Bloc<NotificationEvent, NotificationState> {
         streakReminderEnabled: event.streakReminderEnabled,
         streakMilestoneEnabled: event.streakMilestoneEnabled,
         streakLostEnabled: event.streakLostEnabled,
-        streakReminderTime: domainReminderTime,
+        streakReminderTime: domainStreakReminderTime,
+        memoryVerseReminderEnabled: event.memoryVerseReminderEnabled,
+        memoryVerseReminderTime: domainMemoryVerseReminderTime,
+        memoryVerseOverdueEnabled: event.memoryVerseOverdueEnabled,
       ),
     );
 

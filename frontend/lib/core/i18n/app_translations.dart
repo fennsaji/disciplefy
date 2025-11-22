@@ -393,6 +393,33 @@ class AppTranslations {
         'masteryRate': 'Mastery Rate',
         'close': 'Close',
       },
+      'ratingSheet': {
+        'title': 'How well did you remember?',
+        'perfect': {
+          'label': 'Perfect!',
+          'description': 'Perfect recall, no hesitation',
+        },
+        'good': {
+          'label': 'Good',
+          'description': 'Correct with slight hesitation',
+        },
+        'hard': {
+          'label': 'Hard',
+          'description': 'Correct with significant difficulty',
+        },
+        'wrong': {
+          'label': 'Wrong',
+          'description': 'Incorrect, but remembered parts',
+        },
+        'barely': {
+          'label': 'Barely',
+          'description': 'Incorrect, but recognized when shown',
+        },
+        'forgot': {
+          'label': 'Forgot',
+          'description': 'Complete blackout, no memory',
+        },
+      },
     },
     'bible_books': {
       'Genesis': 'Genesis',
@@ -508,6 +535,14 @@ class AppTranslations {
             'Receive encouragement to start a new streak after a break',
         'set_reminder_time': 'Set Reminder Time',
         'reminder_time_label': 'Reminder Time',
+        'memory_verse_section_title': 'Memory Verse',
+        'memory_verse_reminder_title': 'Daily Review Reminder',
+        'memory_verse_reminder_description':
+            'Get reminded daily when you have verses due for review',
+        'memory_verse_overdue_title': 'Overdue Verses Alert',
+        'memory_verse_overdue_description':
+            'Receive motivational alerts when verses are past their review date',
+        'memory_verse_reminder_time_label': 'Reminder Time',
         'permission_title': 'Notification Permission',
         'permission_enabled': 'Enabled - You will receive notifications',
         'permission_disabled': 'Disabled - Enable to receive notifications',
@@ -1037,6 +1072,33 @@ class AppTranslations {
         'masteryRate': 'याद दर',
         'close': 'बंद करें',
       },
+      'ratingSheet': {
+        'title': 'आपने कितना याद किया?',
+        'perfect': {
+          'label': 'परफेक्ट!',
+          'description': 'बिना किसी हिचकिचाहट के पूर्ण याद',
+        },
+        'good': {
+          'label': 'अच्छा',
+          'description': 'थोड़ी हिचकिचाहट के साथ सही',
+        },
+        'hard': {
+          'label': 'कठिन',
+          'description': 'काफी कठिनाई के साथ सही',
+        },
+        'wrong': {
+          'label': 'गलत',
+          'description': 'गलत, लेकिन कुछ हिस्से याद थे',
+        },
+        'barely': {
+          'label': 'मुश्किल से',
+          'description': 'गलत, लेकिन देखने पर पहचाना',
+        },
+        'forgot': {
+          'label': 'भूल गया',
+          'description': 'पूरी तरह भूल गया, कोई याद नहीं',
+        },
+      },
     },
     'bible_books': {
       'Genesis': 'उत्पत्ति',
@@ -1151,6 +1213,14 @@ class AppTranslations {
             'ब्रेक के बाद नई स्ट्रीक शुरू करने के लिए प्रोत्साहन प्राप्त करें',
         'set_reminder_time': 'रिमाइंडर समय सेट करें',
         'reminder_time_label': 'रिमाइंडर समय',
+        'memory_verse_section_title': 'स्मृति वचन',
+        'memory_verse_reminder_title': 'दैनिक समीक्षा रिमाइंडर',
+        'memory_verse_reminder_description':
+            'जब आपके पास समीक्षा के लिए वचन हों तो दैनिक अनुस्मारक प्राप्त करें',
+        'memory_verse_overdue_title': 'अतिदेय वचन अलर्ट',
+        'memory_verse_overdue_description':
+            'जब वचन अपनी समीक्षा तारीख से आगे हों तो प्रेरणादायक अलर्ट प्राप्त करें',
+        'memory_verse_reminder_time_label': 'रिमाइंडर समय',
         'permission_title': 'नोटिफिकेशन अनुमति',
         'permission_enabled': 'सक्षम - आपको नोटिफिकेशन प्राप्त होंगे',
         'permission_disabled':
@@ -1684,6 +1754,33 @@ class AppTranslations {
         'masteryRate': 'പഠന നിരക്ക്',
         'close': 'അടയ്ക്കുക',
       },
+      'ratingSheet': {
+        'title': 'നിങ്ങൾ എത്ര നന്നായി ഓർത്തു?',
+        'perfect': {
+          'label': 'പെർഫെക്ട്!',
+          'description': 'ഒരു മടിയുമില്ലാതെ പൂർണ്ണ ഓർമ്മ',
+        },
+        'good': {
+          'label': 'നല്ലത്',
+          'description': 'ചെറിയ മടിയോടെ ശരി',
+        },
+        'hard': {
+          'label': 'ബുദ്ധിമുട്ട്',
+          'description': 'വളരെ ബുദ്ധിമുട്ടോടെ ശരി',
+        },
+        'wrong': {
+          'label': 'തെറ്റ്',
+          'description': 'തെറ്റ്, പക്ഷേ ചില ഭാഗങ്ങൾ ഓർത്തു',
+        },
+        'barely': {
+          'label': 'കഷ്ടിച്ച്',
+          'description': 'തെറ്റ്, പക്ഷേ കാണിച്ചപ്പോൾ തിരിച്ചറിഞ്ഞു',
+        },
+        'forgot': {
+          'label': 'മറന്നു',
+          'description': 'പൂർണ്ണമായി മറന്നു, ഓർമ്മയില്ല',
+        },
+      },
     },
     'bible_books': {
       'Genesis': 'ഉൽപത്തി',
@@ -1800,6 +1897,14 @@ class AppTranslations {
             'ഇടവേളയ്ക്ക് ശേഷം പുതിയ സ്ട്രീക് ആരംഭിക്കാൻ പ്രോത്സാഹനം നേടുക',
         'set_reminder_time': 'ഓർമ്മപ്പെടുത്തൽ സമയം സജ്ജമാക്കുക',
         'reminder_time_label': 'ഓർമ്മപ്പെടുത്തൽ സമയം',
+        'memory_verse_section_title': 'സ്മൃതി വചനം',
+        'memory_verse_reminder_title': 'ദൈനിക അവലോകന ഓർമ്മപ്പെടുത്തൽ',
+        'memory_verse_reminder_description':
+            'അവലോകനത്തിന് വചനങ്ങൾ ഉള്ളപ്പോൾ ദിവസേന ഓർമ്മപ്പെടുത്തൽ നേടുക',
+        'memory_verse_overdue_title': 'കാലഹരണപ്പെട്ട വചന അറിയിപ്പ്',
+        'memory_verse_overdue_description':
+            'വചനങ്ങൾ അവലോകന തീയതി കഴിഞ്ഞാൽ പ്രചോദനാത്മക അറിയിപ്പുകൾ നേടുക',
+        'memory_verse_reminder_time_label': 'ഓർമ്മപ്പെടുത്തൽ സമയം',
         'permission_title': 'അറിയിപ്പ് അനുമതി',
         'permission_enabled': 'പ്രവർ‍ത്തിപ്പിച്ചു - അറിയിപ്പുകൾ ലഭിക്കും',
         'permission_disabled':

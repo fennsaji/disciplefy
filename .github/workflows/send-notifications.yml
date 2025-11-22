@@ -32,6 +32,30 @@ on:
     # Run every hour to cover all timezones (users set their own reminder time)
     - cron: '0 * * * *'   # Every hour at :00 minutes
 
+    # ============================================================================
+    # Memory Verse Reminder Notifications (9 AM across timezones)
+    # ============================================================================
+    - cron: '0 21 * * *'  # UTC 21:00 → 9 AM UTC+12 (Oceania: Fiji, New Zealand)
+    - cron: '0 0 * * *'   # UTC 00:00 → 9 AM UTC+9 (East Asia: Japan, Korea)
+    - cron: '0 3 * * *'   # UTC 03:00 → 9 AM UTC+6 (South Asia: India, Sri Lanka)
+    - cron: '0 6 * * *'   # UTC 06:00 → 9 AM UTC+3 (East Africa, Middle East)
+    - cron: '0 9 * * *'   # UTC 09:00 → 9 AM UTC+0 (UK, West Africa)
+    - cron: '0 12 * * *'  # UTC 12:00 → 9 AM UTC-3 (Brazil, Argentina)
+    - cron: '0 15 * * *'  # UTC 15:00 → 9 AM UTC-6 (Central US, Mexico)
+    - cron: '0 18 * * *'  # UTC 18:00 → 9 AM UTC-9 (Alaska, Hawaii)
+
+    # ============================================================================
+    # Memory Verse Overdue Notifications (run at 6 PM across timezones)
+    # ============================================================================
+    - cron: '0 6 * * *'   # UTC 06:00 → 6 PM UTC+12 (Oceania)
+    - cron: '0 9 * * *'   # UTC 09:00 → 6 PM UTC+9 (East Asia)
+    - cron: '0 12 * * *'  # UTC 12:00 → 6 PM UTC+6 (South Asia)
+    - cron: '0 15 * * *'  # UTC 15:00 → 6 PM UTC+3 (East Africa)
+    - cron: '0 18 * * *'  # UTC 18:00 → 6 PM UTC+0 (UK)
+    - cron: '0 21 * * *'  # UTC 21:00 → 6 PM UTC-3 (Brazil)
+    - cron: '0 0 * * *'   # UTC 00:00 → 6 PM UTC-6 (Central US)
+    - cron: '0 3 * * *'   # UTC 03:00 → 6 PM UTC-9 (Alaska)
+
   # Allow manual triggering for testing
   workflow_dispatch:
     inputs:
@@ -43,6 +67,8 @@ on:
           - daily_verse
           - recommended_topic
           - streak_reminder
+          - memory_verse_reminder
+          - memory_verse_overdue
           - all
 
 jobs:
@@ -208,12 +234,124 @@ jobs:
           echo "Notification Type: Streak Reminder (Hourly)"
 
   # ==========================================================================
-  # Job 4: Monitor Notification Health
+  # Job 4: Send Memory Verse Reminder Notifications
+  # ==========================================================================
+  send-memory-verse-reminder:
+    runs-on: ubuntu-latest
+    name: Send Memory Verse Reminder Notifications (Prod)
+
+    # Only run on scheduled events during 9 AM hours OR manual dispatch
+    if: |
+      (github.event_name == 'schedule' &&
+       (github.event.schedule == '0 21 * * *' ||
+        github.event.schedule == '0 0 * * *' ||
+        github.event.schedule == '0 3 * * *' ||
+        github.event.schedule == '0 6 * * *' ||
+        github.event.schedule == '0 9 * * *' ||
+        github.event.schedule == '0 12 * * *' ||
+        github.event.schedule == '0 15 * * *' ||
+        github.event.schedule == '0 18 * * *')) ||
+      (github.event_name == 'workflow_dispatch' &&
+       (github.event.inputs.notification_type == 'memory_verse_reminder' ||
+        github.event.inputs.notification_type == 'all'))
+
+    steps:
+      - name: Send Memory Verse Reminder Push Notifications (Prod)
+        run: |
+          echo "Triggering Memory Verse Reminder notification Edge Function (Production)..."
+
+          response=$(curl -X POST \
+            "https://${{ secrets.SUPABASE_PROJECT_REF }}.supabase.co/functions/v1/send-memory-verse-notification?type=reminder" \
+            -H "X-Cron-Secret: ${{ secrets.CRON_SECRET }}" \
+            -H "Content-Type: application/json" \
+            -w "\n%{http_code}" \
+            -s)
+
+          http_code=$(echo "$response" | tail -n1)
+          body=$(echo "$response" | sed '$d')
+
+          echo "Response Code: $http_code"
+          echo "Response Body: $body"
+
+          if [ "$http_code" -ge 200 ] && [ "$http_code" -lt 300 ]; then
+            echo "✅ Memory Verse Reminder notifications sent successfully (Production)"
+            exit 0
+          else
+            echo "❌ Failed to send Memory Verse Reminder notifications (Production)"
+            exit 1
+          fi
+
+      - name: Log Execution
+        if: always()
+        run: |
+          echo "Job Status: ${{ job.status }}"
+          echo "Triggered at: $(date -u)"
+          echo "Environment: Production"
+          echo "Notification Type: Memory Verse Reminder (9 AM)"
+
+  # ==========================================================================
+  # Job 5: Send Memory Verse Overdue Notifications
+  # ==========================================================================
+  send-memory-verse-overdue:
+    runs-on: ubuntu-latest
+    name: Send Memory Verse Overdue Notifications (Prod)
+
+    # Only run on scheduled events during 6 PM hours OR manual dispatch
+    if: |
+      (github.event_name == 'schedule' &&
+       (github.event.schedule == '0 6 * * *' ||
+        github.event.schedule == '0 9 * * *' ||
+        github.event.schedule == '0 12 * * *' ||
+        github.event.schedule == '0 15 * * *' ||
+        github.event.schedule == '0 18 * * *' ||
+        github.event.schedule == '0 21 * * *' ||
+        github.event.schedule == '0 0 * * *' ||
+        github.event.schedule == '0 3 * * *')) ||
+      (github.event_name == 'workflow_dispatch' &&
+       (github.event.inputs.notification_type == 'memory_verse_overdue' ||
+        github.event.inputs.notification_type == 'all'))
+
+    steps:
+      - name: Send Memory Verse Overdue Push Notifications (Prod)
+        run: |
+          echo "Triggering Memory Verse Overdue notification Edge Function (Production)..."
+
+          response=$(curl -X POST \
+            "https://${{ secrets.SUPABASE_PROJECT_REF }}.supabase.co/functions/v1/send-memory-verse-notification?type=overdue" \
+            -H "X-Cron-Secret: ${{ secrets.CRON_SECRET }}" \
+            -H "Content-Type: application/json" \
+            -w "\n%{http_code}" \
+            -s)
+
+          http_code=$(echo "$response" | tail -n1)
+          body=$(echo "$response" | sed '$d')
+
+          echo "Response Code: $http_code"
+          echo "Response Body: $body"
+
+          if [ "$http_code" -ge 200 ] && [ "$http_code" -lt 300 ]; then
+            echo "✅ Memory Verse Overdue notifications sent successfully (Production)"
+            exit 0
+          else
+            echo "❌ Failed to send Memory Verse Overdue notifications (Production)"
+            exit 1
+          fi
+
+      - name: Log Execution
+        if: always()
+        run: |
+          echo "Job Status: ${{ job.status }}"
+          echo "Triggered at: $(date -u)"
+          echo "Environment: Production"
+          echo "Notification Type: Memory Verse Overdue (6 PM)"
+
+  # ==========================================================================
+  # Job 6: Monitor Notification Health
   # ==========================================================================
   monitor-health:
     runs-on: ubuntu-latest
     name: Monitor Notification System Health (Prod)
-    needs: [send-daily-verse, send-recommended-topic, send-streak-reminder]
+    needs: [send-daily-verse, send-recommended-topic, send-streak-reminder, send-memory-verse-reminder, send-memory-verse-overdue]
     if: always()
 
     steps:
@@ -222,8 +360,14 @@ jobs:
           echo "Daily Verse Job Status: ${{ needs.send-daily-verse.result }}"
           echo "Recommended Topic Job Status: ${{ needs.send-recommended-topic.result }}"
           echo "Streak Reminder Job Status: ${{ needs.send-streak-reminder.result }}"
+          echo "Memory Verse Reminder Job Status: ${{ needs.send-memory-verse-reminder.result }}"
+          echo "Memory Verse Overdue Job Status: ${{ needs.send-memory-verse-overdue.result }}"
 
-          if [ "${{ needs.send-daily-verse.result }}" == "failure" ] || [ "${{ needs.send-recommended-topic.result }}" == "failure" ] || [ "${{ needs.send-streak-reminder.result }}" == "failure" ]; then
+          if [ "${{ needs.send-daily-verse.result }}" == "failure" ] || \
+             [ "${{ needs.send-recommended-topic.result }}" == "failure" ] || \
+             [ "${{ needs.send-streak-reminder.result }}" == "failure" ] || \
+             [ "${{ needs.send-memory-verse-reminder.result }}" == "failure" ] || \
+             [ "${{ needs.send-memory-verse-overdue.result }}" == "failure" ]; then
             echo "⚠️ One or more notification jobs failed in Production"
             echo "Please check Supabase Edge Function logs for details"
             exit 1

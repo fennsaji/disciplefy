@@ -268,6 +268,85 @@ class _NotificationSettingsView extends StatelessWidget {
             },
           ),
 
+          const SizedBox(height: 24),
+
+          // Memory Verse Section Title
+          Text(
+            context.tr(
+                TranslationKeys.notificationsSettingsMemoryVerseSectionTitle),
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+          ),
+          const SizedBox(height: 16),
+
+          // Memory Verse Daily Reminder with Time Picker
+          NotificationPreferenceCard(
+            title: context.tr(
+                TranslationKeys.notificationsSettingsMemoryVerseReminderTitle),
+            description: context.tr(TranslationKeys
+                .notificationsSettingsMemoryVerseReminderDescription),
+            icon: Icons.psychology_outlined,
+            enabled: state.preferences.memoryVerseReminderEnabled,
+            onChanged: (value) {
+              context.read<NotificationBloc>().add(
+                    UpdateNotificationPreferences(
+                      memoryVerseReminderEnabled: value,
+                    ),
+                  );
+            },
+            // Time picker for memory verse reminder time
+            trailing: state.preferences.memoryVerseReminderEnabled
+                ? TextButton.icon(
+                    onPressed: () async {
+                      // Convert domain TimeOfDayVO to Flutter TimeOfDay for TimePicker
+                      final initialTime = state
+                          .preferences.memoryVerseReminderTime
+                          .toFlutterTimeOfDay();
+
+                      final TimeOfDay? picked = await showTimePicker(
+                        context: context,
+                        initialTime: initialTime,
+                      );
+                      if (picked != null && picked != initialTime) {
+                        context.read<NotificationBloc>().add(
+                              UpdateNotificationPreferences(
+                                memoryVerseReminderTime: picked,
+                              ),
+                            );
+                      }
+                    },
+                    icon: const Icon(Icons.access_time, size: 18),
+                    label: Text(
+                      // Convert domain TimeOfDayVO to Flutter TimeOfDay for display
+                      state.preferences.memoryVerseReminderTime
+                          .toFlutterTimeOfDay()
+                          .format(context),
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                  )
+                : null,
+          ),
+
+          const SizedBox(height: 12),
+
+          // Memory Verse Overdue Alert
+          NotificationPreferenceCard(
+            title: context.tr(
+                TranslationKeys.notificationsSettingsMemoryVerseOverdueTitle),
+            description: context.tr(TranslationKeys
+                .notificationsSettingsMemoryVerseOverdueDescription),
+            icon: Icons.timer_off_outlined,
+            enabled: state.preferences.memoryVerseOverdueEnabled,
+            onChanged: (value) {
+              context.read<NotificationBloc>().add(
+                    UpdateNotificationPreferences(
+                      memoryVerseOverdueEnabled: value,
+                    ),
+                  );
+            },
+          ),
+
           const SizedBox(height: 32),
 
           // Info Section

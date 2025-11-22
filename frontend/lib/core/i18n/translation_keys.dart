@@ -474,6 +474,20 @@ class TranslationKeys {
   static const notificationsSettingsReminderTimeLabel =
       'notifications.settings.reminder_time_label';
 
+  // Memory verse notification settings
+  static const notificationsSettingsMemoryVerseSectionTitle =
+      'notifications.settings.memory_verse_section_title';
+  static const notificationsSettingsMemoryVerseReminderTitle =
+      'notifications.settings.memory_verse_reminder_title';
+  static const notificationsSettingsMemoryVerseReminderDescription =
+      'notifications.settings.memory_verse_reminder_description';
+  static const notificationsSettingsMemoryVerseOverdueTitle =
+      'notifications.settings.memory_verse_overdue_title';
+  static const notificationsSettingsMemoryVerseOverdueDescription =
+      'notifications.settings.memory_verse_overdue_description';
+  static const notificationsSettingsMemoryVerseReminderTimeLabel =
+      'notifications.settings.memory_verse_reminder_time_label';
+
   // Memory Verses
   static const memoryFilterByLanguage = 'memory.filterByLanguage';
   static const memoryAll = 'memory.all';
@@ -551,4 +565,22 @@ class TranslationKeys {
   static const statsDialogMastered = 'memory.statsDialog.mastered';
   static const statsDialogMasteryRate = 'memory.statsDialog.masteryRate';
   static const statsDialogClose = 'memory.statsDialog.close';
+
+  // Verse Rating Sheet
+  static const ratingSheetTitle = 'memory.ratingSheet.title';
+  static const ratingPerfectLabel = 'memory.ratingSheet.perfect.label';
+  static const ratingPerfectDescription =
+      'memory.ratingSheet.perfect.description';
+  static const ratingGoodLabel = 'memory.ratingSheet.good.label';
+  static const ratingGoodDescription = 'memory.ratingSheet.good.description';
+  static const ratingHardLabel = 'memory.ratingSheet.hard.label';
+  static const ratingHardDescription = 'memory.ratingSheet.hard.description';
+  static const ratingWrongLabel = 'memory.ratingSheet.wrong.label';
+  static const ratingWrongDescription = 'memory.ratingSheet.wrong.description';
+  static const ratingBarelyLabel = 'memory.ratingSheet.barely.label';
+  static const ratingBarelyDescription =
+      'memory.ratingSheet.barely.description';
+  static const ratingForgotLabel = 'memory.ratingSheet.forgot.label';
+  static const ratingForgotDescription =
+      'memory.ratingSheet.forgot.description';
 }

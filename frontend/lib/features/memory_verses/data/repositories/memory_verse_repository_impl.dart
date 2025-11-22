@@ -243,15 +243,34 @@ class MemoryVerseRepositoryImpl implements MemoryVerseRepository {
   @override
   Future<Either<Failure, Unit>> deleteVerse(String id) async {
     try {
+      _helper.logDebug('Deleting verse: $id');
+
+      // Try to delete from remote first
+      await _remoteDataSource.deleteVerse(id);
+
+      // Remove from local cache after successful remote deletion
       await _helper.removeVerseFromCache(id);
 
-      // Queue for remote deletion
+      _helper.logSuccess('Verse deleted successfully');
+      return const Right(unit);
+    } on ServerException catch (e) {
+      _helper.logError('Server error: ${e.message}');
+      return Left(ServerFailure(message: e.message, code: e.code));
+    } on NetworkException catch (e) {
+      _helper.logError('Network error: ${e.message}');
+
+      // Remove from cache immediately for better UX
+      await _helper.removeVerseFromCache(id);
+
+      // Queue for remote deletion when back online
       await _syncService.queueOperation({
         'type': 'delete_verse',
         'verse_id': id,
       });
 
-      return const Right(unit);
+      return const Left(NetworkFailure(
+          message: 'Verse removed locally, will sync when online',
+          code: 'OFFLINE_QUEUED'));
     } catch (e) {
       _helper.logError('Error deleting verse: $e');
       return Left(ServerFailure(
