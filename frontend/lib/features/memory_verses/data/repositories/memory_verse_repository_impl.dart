@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 
 import '../../../../core/error/exceptions.dart';
 import '../../../../core/error/failures.dart';
+import '../../domain/entities/fetched_verse_entity.dart';
 import '../../domain/entities/memory_verse_entity.dart';
 import '../../domain/entities/review_session_entity.dart';
 import '../../domain/entities/review_statistics_entity.dart';
@@ -58,13 +59,18 @@ class MemoryVerseRepositoryImpl implements MemoryVerseRepository {
   @override
   Future<Either<Failure, MemoryVerseEntity>> addVerseFromDaily({
     required String dailyVerseId,
+    String? language,
   }) async {
     return _helper.executeWithCaching(
-      operation: () => _remoteDataSource.addVerseFromDaily(dailyVerseId),
+      operation: () => _remoteDataSource.addVerseFromDaily(
+        dailyVerseId,
+        language: language,
+      ),
       mapToEntity: (model) => model.toEntity(),
       queueOnFailure: {
         'type': 'add_from_daily',
         'daily_verse_id': dailyVerseId,
+        if (language != null) 'language': language,
       },
       operationName: 'Adding verse from daily: $dailyVerseId',
     );
@@ -237,15 +243,34 @@ class MemoryVerseRepositoryImpl implements MemoryVerseRepository {
   @override
   Future<Either<Failure, Unit>> deleteVerse(String id) async {
     try {
+      _helper.logDebug('Deleting verse: $id');
+
+      // Try to delete from remote first
+      await _remoteDataSource.deleteVerse(id);
+
+      // Remove from local cache after successful remote deletion
       await _helper.removeVerseFromCache(id);
 
-      // Queue for remote deletion
+      _helper.logSuccess('Verse deleted successfully');
+      return const Right(unit);
+    } on ServerException catch (e) {
+      _helper.logError('Server error: ${e.message}');
+      return Left(ServerFailure(message: e.message, code: e.code));
+    } on NetworkException catch (e) {
+      _helper.logError('Network error: ${e.message}');
+
+      // Remove from cache immediately for better UX
+      await _helper.removeVerseFromCache(id);
+
+      // Queue for remote deletion when back online
       await _syncService.queueOperation({
         'type': 'delete_verse',
         'verse_id': id,
       });
 
-      return const Right(unit);
+      return const Left(NetworkFailure(
+          message: 'Verse removed locally, will sync when online',
+          code: 'OFFLINE_QUEUED'));
     } catch (e) {
       _helper.logError('Error deleting verse: $e');
       return Left(ServerFailure(
@@ -279,6 +304,46 @@ class MemoryVerseRepositoryImpl implements MemoryVerseRepository {
       return Left(ServerFailure(
           message: 'Failed to clear cache: ${e.toString()}',
           code: 'CACHE_CLEAR_FAILED'));
+    }
+  }
+
+  @override
+  Future<Either<Failure, FetchedVerseEntity>> fetchVerseText({
+    required String book,
+    required int chapter,
+    required int verseStart,
+    int? verseEnd,
+    required String language,
+  }) async {
+    try {
+      _helper.logDebug(
+          'Fetching verse text: $book $chapter:$verseStart${verseEnd != null ? '-$verseEnd' : ''}');
+
+      final result = await _remoteDataSource.fetchVerseText(
+        book: book,
+        chapter: chapter,
+        verseStart: verseStart,
+        verseEnd: verseEnd,
+        language: language,
+      );
+
+      _helper.logSuccess('Verse text fetched successfully');
+
+      return Right(FetchedVerseEntity(
+        text: result['text']!,
+        localizedReference: result['localizedReference']!,
+      ));
+    } on ServerException catch (e) {
+      _helper.logError('Server error: ${e.message}');
+      return Left(ServerFailure(message: e.message, code: e.code));
+    } on NetworkException catch (e) {
+      _helper.logError('Network error: ${e.message}');
+      return Left(NetworkFailure(message: e.message, code: e.code));
+    } catch (e) {
+      _helper.logError('Unexpected error: $e');
+      return Left(ServerFailure(
+          message: 'Failed to fetch verse text: ${e.toString()}',
+          code: 'FETCH_VERSE_TEXT_FAILED'));
     }
   }
 }

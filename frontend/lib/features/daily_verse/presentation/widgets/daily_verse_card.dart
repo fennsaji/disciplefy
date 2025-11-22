@@ -139,28 +139,23 @@ class DailyVerseCard extends StatelessWidget {
                 streak: state.streak,
               ),
 
-              const SizedBox(height: 20),
-
-              // Language tabs removed - language preference handled in settings
+              const SizedBox(height: 16),
 
               // Verse reference with highlight color and better spacing
-              Padding(
-                padding: const EdgeInsets.only(bottom: 16),
-                child: Text(
-                  state.verse.getReferenceText(state.currentLanguage),
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    color: theme.colorScheme.onSecondary,
-                    fontWeight: FontWeight.w700,
-                    fontSize: 16,
-                    letterSpacing: 0.5,
-                  ),
+              Text(
+                state.verse.getReferenceText(state.currentLanguage),
+                style: theme.textTheme.titleMedium?.copyWith(
+                  color: theme.colorScheme.onSecondary,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 16,
+                  letterSpacing: 0.5,
                 ),
               ),
 
               // Verse text with improved background and spacing
               Container(
                 width: double.infinity,
-                padding: const EdgeInsets.all(20),
+                padding: const EdgeInsets.only(top: 12),
                 margin: const EdgeInsets.only(bottom: 20),
                 decoration: BoxDecoration(
                   color: theme.colorScheme.secondary.withValues(alpha: 0.3),
@@ -252,9 +247,7 @@ class DailyVerseCard extends StatelessWidget {
             ],
           ),
 
-          const SizedBox(height: 16),
-
-          // Language tabs removed - language preference handled in settings
+          const SizedBox(height: 12),
 
           // Verse content
           Text(
@@ -266,12 +259,12 @@ class DailyVerseCard extends StatelessWidget {
             ),
           ),
 
-          const SizedBox(height: 12),
+          const SizedBox(height: 4),
 
           // Verse text with background for better readability
           Container(
             width: double.infinity,
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
             decoration: BoxDecoration(
               color: theme.colorScheme.secondary.withValues(alpha: 0.3),
               borderRadius: BorderRadius.circular(12),
@@ -527,63 +520,41 @@ class DailyVerseCard extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         // Copy button
-        TextButton.icon(
+        IconButton(
           onPressed: () => _copyVerseToClipboard(context, state),
           icon: Icon(
             Icons.copy,
-            size: 20,
             color: theme.colorScheme.onSecondary,
+            size: 24,
           ),
-          label: Text(
-            context.tr(TranslationKeys.dailyVerseCopy),
-            style: theme.textTheme.labelLarge?.copyWith(
-              color: theme.colorScheme.onSecondary,
-            ),
-          ),
-          style: TextButton.styleFrom(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            minimumSize: const Size(0, 44),
+          tooltip: context.tr(TranslationKeys.dailyVerseCopy),
+          style: IconButton.styleFrom(
+            minimumSize: const Size(44, 44),
+            padding: const EdgeInsets.all(10),
           ),
         ),
 
         const SizedBox(width: 12),
 
         // Share button
-        TextButton.icon(
+        IconButton(
           onPressed: () => _shareVerse(state),
           icon: Icon(
             Icons.share,
-            size: 20,
             color: theme.colorScheme.onSecondary,
+            size: 24,
           ),
-          label: Text(
-            context.tr(TranslationKeys.dailyVerseShare),
-            style: theme.textTheme.labelLarge?.copyWith(
-              color: theme.colorScheme.onSecondary,
-            ),
-          ),
-          style: TextButton.styleFrom(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            minimumSize: const Size(0, 44),
+          tooltip: context.tr(TranslationKeys.dailyVerseShare),
+          style: IconButton.styleFrom(
+            minimumSize: const Size(44, 44),
+            padding: const EdgeInsets.all(10),
           ),
         ),
 
         const SizedBox(width: 12),
 
         // Add to Memory button
-        IconButton(
-          onPressed: () => _addToMemory(context, state),
-          icon: Icon(
-            Icons.bookmark_add,
-            color: theme.colorScheme.onSecondary,
-            size: 24,
-          ),
-          tooltip: 'Add to Memory Verses',
-          style: IconButton.styleFrom(
-            minimumSize: const Size(44, 44),
-            padding: const EdgeInsets.all(10),
-          ),
-        ),
+        _buildAddToMemoryButton(context, state, theme),
 
         const SizedBox(width: 12),
 
@@ -606,13 +577,60 @@ class DailyVerseCard extends StatelessWidget {
     );
   }
 
+  /// Builds the Add to Memory button with state awareness
+  Widget _buildAddToMemoryButton(
+    BuildContext context,
+    DailyVerseLoaded state,
+    ThemeData theme,
+  ) {
+    return BlocBuilder<MemoryVerseBloc, MemoryVerseState>(
+      bloc: sl<MemoryVerseBloc>(),
+      builder: (context, memoryState) {
+        // Check if this verse is already in memory (with same language)
+        bool isAlreadyInMemory = false;
+
+        if (memoryState is DueVersesLoaded) {
+          isAlreadyInMemory = memoryState.verses.any(
+            (verse) =>
+                verse.sourceId == state.verse.id &&
+                verse.language == state.currentLanguage.code,
+          );
+        }
+
+        return IconButton(
+          onPressed:
+              isAlreadyInMemory ? null : () => _addToMemory(context, state),
+          icon: Icon(
+            isAlreadyInMemory ? Icons.bookmark : Icons.bookmark_add,
+            color: isAlreadyInMemory
+                ? theme.colorScheme.onSecondary.withValues(alpha: 0.5)
+                : theme.colorScheme.onSecondary,
+            size: 24,
+          ),
+          tooltip: isAlreadyInMemory
+              ? context.tr(TranslationKeys.dailyVerseAlreadyInMemory)
+              : context.tr(TranslationKeys.dailyVerseAddToMemory),
+          style: IconButton.styleFrom(
+            minimumSize: const Size(44, 44),
+            padding: const EdgeInsets.all(10),
+          ),
+        );
+      },
+    );
+  }
+
   /// Adds the current verse to memory deck
   void _addToMemory(BuildContext context, DailyVerseLoaded state) {
     final memoryVerseBloc = sl<MemoryVerseBloc>();
     final dailyVerseId = state.verse.id;
+    final languageCode =
+        state.currentLanguage.code; // Get the currently selected language
 
-    // Dispatch add verse event
-    memoryVerseBloc.add(AddVerseFromDaily(dailyVerseId));
+    // Dispatch add verse event with the selected language
+    memoryVerseBloc.add(AddVerseFromDaily(
+      dailyVerseId,
+      language: languageCode,
+    ));
 
     // Listen for result and delegate UI to helpers
     final subscription = memoryVerseBloc.stream.listen((memoryState) {

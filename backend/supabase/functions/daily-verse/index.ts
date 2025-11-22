@@ -65,7 +65,15 @@ async function handleDailyVerse(req: Request, services: ServiceContainer): Promi
     throw new AppError('INTERNAL_ERROR', 'Verse data is incomplete', 500)
   }
 
+  // Log translation data for debugging
+  console.log('[API] Verse translations received:', {
+    esv: !!verseData.translations.esv,
+    hi: !!verseData.translations.hi,
+    ml: !!verseData.translations.ml
+  })
+
   // Create response data with additional fields
+  // Only include translations that have content (non-empty strings)
   const responseData: DailyVerseData = {
     id: verseData.id, // UUID from daily_verses_cache table
     reference: verseData.reference,
@@ -76,9 +84,9 @@ async function handleDailyVerse(req: Request, services: ServiceContainer): Promi
     },
     date: verseData.date,
     translations: {
-      esv: verseData.translations.esv,
-      hindi: verseData.translations.hi,
-      malayalam: verseData.translations.ml
+      ...(verseData.translations.esv ? { esv: verseData.translations.esv } : {}),
+      ...(verseData.translations.hi ? { hindi: verseData.translations.hi } : {}),
+      ...(verseData.translations.ml ? { malayalam: verseData.translations.ml } : {})
     },
     fromCache: false, // TODO: Implement cache tracking
     timestamp: new Date().toISOString()

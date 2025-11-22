@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
+import '../../../../core/extensions/translation_extension.dart';
+import '../../../../core/i18n/translation_keys.dart';
 import '../../domain/entities/memory_verse_entity.dart';
 
 /// List item widget for displaying a memory verse card.
@@ -16,11 +18,13 @@ import '../../domain/entities/memory_verse_entity.dart';
 class MemoryVerseListItem extends StatelessWidget {
   final MemoryVerseEntity verse;
   final VoidCallback onTap;
+  final VoidCallback? onDelete;
 
   const MemoryVerseListItem({
     super.key,
     required this.verse,
     required this.onTap,
+    this.onDelete,
   });
 
   @override
@@ -34,23 +38,33 @@ class MemoryVerseListItem extends StatelessWidget {
       ),
       child: InkWell(
         onTap: onTap,
+        onLongPress: onDelete != null ? () => _showDeleteMenu(context) : null,
         borderRadius: BorderRadius.circular(12),
         child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Header: Reference and Status Badge
+              // Header: Reference, Language Badge, and Status Badge
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Expanded(
-                    child: Text(
-                      verse.verseReference,
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: theme.colorScheme.primary,
-                      ),
+                    child: Row(
+                      children: [
+                        Flexible(
+                          child: Text(
+                            verse.verseReference,
+                            style: theme.textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: theme.colorScheme.primary,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        _buildLanguageBadge(context),
+                      ],
                     ),
                   ),
                   _buildStatusBadge(context),
@@ -119,7 +133,7 @@ class MemoryVerseListItem extends StatelessWidget {
                           ),
                           const SizedBox(width: 4),
                           Text(
-                            '${verse.daysOverdue}d overdue',
+                            '${verse.daysOverdue}${context.tr(TranslationKeys.memoryDaysOverdue)}',
                             style: theme.textTheme.bodySmall?.copyWith(
                               color: Colors.red[700],
                               fontWeight: FontWeight.w600,
@@ -139,6 +153,35 @@ class MemoryVerseListItem extends StatelessWidget {
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  void _showDeleteMenu(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      builder: (sheetContext) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.delete_outline, color: Colors.red),
+              title: Text(
+                context.tr(TranslationKeys.memoryDeleteTitle),
+                style: const TextStyle(color: Colors.red),
+              ),
+              onTap: () {
+                Navigator.pop(sheetContext);
+                onDelete?.call();
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.close),
+              title: Text(context.tr(TranslationKeys.memoryDeleteCancel)),
+              onTap: () => Navigator.pop(sheetContext),
+            ),
+          ],
         ),
       ),
     );
@@ -220,7 +263,7 @@ class MemoryVerseListItem extends StatelessWidget {
             ),
             const SizedBox(width: 4),
             Text(
-              'Review',
+              context.tr(TranslationKeys.memoryReview),
               style: theme.textTheme.bodySmall?.copyWith(
                 color: Colors.green[700],
                 fontWeight: FontWeight.bold,
@@ -244,18 +287,18 @@ class MemoryVerseListItem extends StatelessWidget {
       case 'hard':
         chipColor = Colors.red;
         chipIcon = Icons.trending_up;
-        label = 'Hard';
+        label = context.tr(TranslationKeys.memoryHard);
         break;
       case 'medium':
         chipColor = Colors.orange;
         chipIcon = Icons.trending_flat;
-        label = 'Medium';
+        label = context.tr(TranslationKeys.memoryGood);
         break;
       case 'easy':
       default:
         chipColor = Colors.green;
         chipIcon = Icons.trending_down;
-        label = 'Easy';
+        label = context.tr(TranslationKeys.memoryEasy);
     }
 
     return Tooltip(
@@ -326,6 +369,42 @@ class MemoryVerseListItem extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  Widget _buildLanguageBadge(BuildContext context) {
+    final theme = Theme.of(context);
+    final label = verse.language.toUpperCase();
+
+    return Tooltip(
+      message: _getLocalizedLanguageName(context, verse.language),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+        decoration: BoxDecoration(
+          color: theme.colorScheme.secondaryContainer,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Text(
+          label,
+          style: theme.textTheme.bodySmall?.copyWith(
+            fontSize: 10,
+            fontWeight: FontWeight.w600,
+            color: theme.colorScheme.onSecondaryContainer,
+          ),
+        ),
+      ),
+    );
+  }
+
+  String _getLocalizedLanguageName(BuildContext context, String code) {
+    switch (code) {
+      case 'hi':
+        return context.tr(TranslationKeys.generateStudyHindi);
+      case 'ml':
+        return context.tr(TranslationKeys.generateStudyMalayalam);
+      case 'en':
+      default:
+        return context.tr(TranslationKeys.generateStudyEnglish);
+    }
   }
 
   String _formatDate(DateTime date) {

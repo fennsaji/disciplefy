@@ -21,6 +21,7 @@ import { ServiceContainer } from '../_shared/core/services.ts'
  */
 interface AddFromDailyRequest {
   readonly daily_verse_id: string
+  readonly language?: string // Optional: 'en', 'hi', 'ml' - if not provided, auto-detects
 }
 
 /**
@@ -30,8 +31,13 @@ interface VerseData {
   readonly reference: string
   readonly translations?: {
     readonly esv?: string
-    readonly hindi?: string
-    readonly malayalam?: string
+    readonly hi?: string
+    readonly ml?: string
+  }
+  readonly referenceTranslations?: {
+    readonly en?: string
+    readonly hi?: string
+    readonly ml?: string
   }
 }
 
@@ -59,6 +65,7 @@ interface MemoryVerseData {
   readonly next_review_date: string
   readonly added_date: string
   readonly created_at: string
+  readonly total_reviews: number
 }
 
 /**
@@ -120,33 +127,63 @@ async function handleAddMemoryVerseFromDaily(
       .single()
 
     if (fetchError || !data) {
-      console.error('[AddMemoryVerse] Daily verse not found:', fetchError)
-      throw new AppError('NOT_FOUND', 'Daily verse not found', 404)
+      console.error('[AddMemoryVerse] Daily verse not found. Error:', JSON.stringify(fetchError))
+      console.error('[AddMemoryVerse] Data:', data)
+      throw new AppError('NOT_FOUND', `Daily verse not found: ${fetchError?.message || 'No data returned'}`, 404)
     }
     dailyVerse = data as DailyVersesCacheRow
   }
 
   // Parse verse_data JSON
   const verseData: VerseData = dailyVerse.verse_data
-  const verseReference: string = verseData.reference
 
-  // Get verse text from translations (prefer ESV for English)
+  // Get verse text from translations
   let verseText: string
+  let verseReference: string
   let language: string
 
-  // Determine language and get appropriate translation
-  // Default to English (ESV) if available
-  if (verseData.translations?.esv) {
-    verseText = verseData.translations.esv
-    language = 'en'
-  } else if (verseData.translations?.hindi) {
-    verseText = verseData.translations.hindi
-    language = 'hi'
-  } else if (verseData.translations?.malayalam) {
-    verseText = verseData.translations.malayalam
-    language = 'ml'
+  // Check if a specific language was requested
+  const requestedLanguage = body.language
+  
+  if (requestedLanguage) {
+    // Validate requested language
+    if (!['en', 'hi', 'ml'].includes(requestedLanguage)) {
+      throw new AppError('VALIDATION_ERROR', 'Invalid language. Must be en, hi, or ml', 400)
+    }
+    
+    // Get the requested language translation and reference
+    if (requestedLanguage === 'en' && verseData.translations?.esv) {
+      verseText = verseData.translations.esv
+      verseReference = verseData.referenceTranslations?.en || verseData.reference
+      language = 'en'
+    } else if (requestedLanguage === 'hi' && verseData.translations?.hi) {
+      verseText = verseData.translations.hi
+      verseReference = verseData.referenceTranslations?.hi || verseData.reference
+      language = 'hi'
+    } else if (requestedLanguage === 'ml' && verseData.translations?.ml) {
+      verseText = verseData.translations.ml
+      verseReference = verseData.referenceTranslations?.ml || verseData.reference
+      language = 'ml'
+    } else {
+      throw new AppError('NOT_FOUND', `Translation not available in ${requestedLanguage} for this verse`, 404)
+    }
   } else {
-    throw new AppError('INTERNAL_ERROR', 'No valid translation found for this verse', 500)
+    // Auto-detect: Default to English (ESV) if available
+    if (verseData.translations?.esv) {
+      verseText = verseData.translations.esv
+      verseReference = verseData.referenceTranslations?.en || verseData.reference
+      language = 'en'
+    } else if (verseData.translations?.hi) {
+      verseText = verseData.translations.hi
+      verseReference = verseData.referenceTranslations?.hi || verseData.reference
+      language = 'hi'
+    } else if (verseData.translations?.ml) {
+      verseText = verseData.translations.ml
+      verseReference = verseData.referenceTranslations?.ml || verseData.reference
+      language = 'ml'
+    } else {
+      throw new AppError('INTERNAL_ERROR', 'No valid translation found for this verse', 500)
+    }
   }
 
   // Validate verse content
@@ -155,9 +192,9 @@ async function handleAddMemoryVerseFromDaily(
     throw new AppError('INTERNAL_ERROR', 'Daily verse data is incomplete', 500)
   }
 
-  // Validate verse text length (max 500 characters as per schema)
-  if (verseText.length > 500) {
-    throw new AppError('VALIDATION_ERROR', 'Verse text too long for memorization (max 500 characters)', 400)
+  // Validate verse text length (max 5000 characters to support full chapters)
+  if (verseText.length > 5000) {
+    throw new AppError('VALIDATION_ERROR', 'Verse text too long for memorization (max 5000 characters)', 400)
   }
 
   // Check if verse already exists in user's memory deck
@@ -224,7 +261,8 @@ async function handleAddMemoryVerseFromDaily(
     repetitions: memoryVerse.repetitions,
     next_review_date: memoryVerse.next_review_date,
     added_date: memoryVerse.added_date,
-    created_at: memoryVerse.created_at
+    created_at: memoryVerse.created_at,
+    total_reviews: 0
   }
 
   const response: AddMemoryVerseResponse = {

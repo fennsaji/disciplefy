@@ -34,6 +34,7 @@ class AddVerseFromDaily {
   ///
   /// **Parameters:**
   /// - [dailyVerseId] - UUID of the Daily Verse to add
+  /// - [language] - Optional language code ('en', 'hi', 'ml') - if not provided, auto-detects
   ///
   /// **Returns:**
   /// - `Right(MemoryVerseEntity)` on success with the newly created memory verse
@@ -50,7 +51,13 @@ class AddVerseFromDaily {
   /// - Duplicate verse → ServerFailure with code 'VERSE_ALREADY_EXISTS'
   /// - Daily verse not found → ServerFailure with code 'DAILY_VERSE_NOT_FOUND'
   /// - Network error → NetworkFailure with operation queued for sync
-  Future<Either<Failure, MemoryVerseEntity>> call(String dailyVerseId) {
-    return repository.addVerseFromDaily(dailyVerseId: dailyVerseId);
+  Future<Either<Failure, MemoryVerseEntity>> call(
+    String dailyVerseId, {
+    String? language,
+  }) {
+    return repository.addVerseFromDaily(
+      dailyVerseId: dailyVerseId,
+      language: language,
+    );
   }
 }
