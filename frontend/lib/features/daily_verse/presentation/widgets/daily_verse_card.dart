@@ -139,7 +139,7 @@ class DailyVerseCard extends StatelessWidget {
                 streak: state.streak,
               ),
 
-              const SizedBox(height: 12),
+              const SizedBox(height: 16),
 
               // Verse reference with highlight color and better spacing
               Text(
@@ -155,7 +155,7 @@ class DailyVerseCard extends StatelessWidget {
               // Verse text with improved background and spacing
               Container(
                 width: double.infinity,
-                padding: const EdgeInsets.symmetric(vertical: 12),
+                padding: const EdgeInsets.only(top: 12),
                 margin: const EdgeInsets.only(bottom: 20),
                 decoration: BoxDecoration(
                   color: theme.colorScheme.secondary.withValues(alpha: 0.3),
