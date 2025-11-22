@@ -140,82 +140,181 @@ class _PurchaseHistoryPageState extends State<PurchaseHistoryPage> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return Scaffold(
-      backgroundColor: theme.scaffoldBackgroundColor,
-      appBar: AppBar(
-        title: Text(context.tr('tokens.history.title')),
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+
+        // Handle Android back button - pop to previous page
+        Navigator.of(context).pop();
+      },
+      child: Scaffold(
         backgroundColor: theme.scaffoldBackgroundColor,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: _onRefresh,
-            tooltip: context.tr('tokens.balance.refresh'),
+        appBar: AppBar(
+          title: Text(context.tr('tokens.history.title')),
+          backgroundColor: theme.scaffoldBackgroundColor,
+          elevation: 0,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back),
+            onPressed: () => Navigator.of(context).pop(),
           ),
-        ],
-      ),
-      body: RefreshIndicator(
-        onRefresh: () async {
-          _onRefresh();
-          // Wait for BLoC to complete refresh operations
-          await _waitForRefreshCompletion();
-        },
-        child: CustomScrollView(
-          controller: _scrollController,
-          slivers: [
-            // Statistics Section
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: BlocBuilder<TokenBloc, TokenState>(
-                  buildWhen: (previous, current) =>
-                      current is PurchaseStatisticsLoading ||
-                      current is PurchaseStatisticsLoaded ||
-                      current is PurchaseHistoryLoaded ||
-                      current is PurchaseHistoryError,
-                  builder: (context, state) {
-                    if (state is PurchaseStatisticsLoaded) {
-                      return PurchaseStatisticsCard(
-                        statistics: state.statistics,
-                      );
-                    } else if (state is PurchaseHistoryLoaded &&
-                        state.statistics != null) {
-                      return PurchaseStatisticsCard(
-                        statistics: state.statistics!,
-                      );
-                    } else if (state is PurchaseStatisticsLoading) {
-                      return const Card(
-                        child: Padding(
-                          padding: EdgeInsets.all(16.0),
-                          child: Center(
-                            child: CircularProgressIndicator(),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.refresh),
+              onPressed: _onRefresh,
+              tooltip: context.tr('tokens.balance.refresh'),
+            ),
+          ],
+        ),
+        body: RefreshIndicator(
+          onRefresh: () async {
+            _onRefresh();
+            // Wait for BLoC to complete refresh operations
+            await _waitForRefreshCompletion();
+          },
+          child: CustomScrollView(
+            controller: _scrollController,
+            slivers: [
+              // Statistics Section
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: BlocBuilder<TokenBloc, TokenState>(
+                    buildWhen: (previous, current) =>
+                        current is PurchaseStatisticsLoading ||
+                        current is PurchaseStatisticsLoaded ||
+                        current is PurchaseHistoryLoaded ||
+                        current is PurchaseHistoryError,
+                    builder: (context, state) {
+                      if (state is PurchaseStatisticsLoaded) {
+                        return PurchaseStatisticsCard(
+                          statistics: state.statistics,
+                        );
+                      } else if (state is PurchaseHistoryLoaded &&
+                          state.statistics != null) {
+                        return PurchaseStatisticsCard(
+                          statistics: state.statistics!,
+                        );
+                      } else if (state is PurchaseStatisticsLoading) {
+                        return const Card(
+                          child: Padding(
+                            padding: EdgeInsets.all(16.0),
+                            child: Center(
+                              child: CircularProgressIndicator(),
+                            ),
                           ),
-                        ),
+                        );
+                      } else if (state is PurchaseHistoryError) {
+                        return Card(
+                          child: Padding(
+                            padding: const EdgeInsets.all(16.0),
+                            child: Column(
+                              children: [
+                                Icon(
+                                  Icons.error_outline,
+                                  color: theme.colorScheme.error,
+                                  size: 32,
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  context.tr('tokens.stats.failed_to_load'),
+                                  style: theme.textTheme.titleMedium,
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  state.errorMessage,
+                                  style: theme.textTheme.bodySmall,
+                                  textAlign: TextAlign.center,
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      }
+                      return const SizedBox.shrink();
+                    },
+                  ),
+                ),
+              ),
+
+              // Section Header
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                  child: Text(
+                    context.tr('tokens.history.transaction_details'),
+                    style: theme.textTheme.headlineSmall?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: theme.colorScheme.onBackground,
+                    ),
+                  ),
+                ),
+              ),
+
+              const SliverToBoxAdapter(
+                child: SizedBox(height: 16),
+              ),
+
+              // Purchase History List
+              BlocConsumer<TokenBloc, TokenState>(
+                listenWhen: (previous, current) =>
+                    (current is PurchaseHistoryLoaded ||
+                        current is PurchaseHistoryError) &&
+                    _isLoadingMore,
+                listener: (context, state) {
+                  // Reset loading flag on both success and error
+                  if (state is PurchaseHistoryLoaded ||
+                      state is PurchaseHistoryError) {
+                    setState(() {
+                      _isLoadingMore = false;
+                    });
+                  }
+
+                  // If this was a refresh (offset was reset), reload from beginning
+                  if (state is PurchaseHistoryLoaded && _currentOffset == 0) {
+                    // Reset scroll position to top after refresh
+                    if (_scrollController.hasClients) {
+                      _scrollController.animateTo(
+                        0,
+                        duration: const Duration(milliseconds: 300),
+                        curve: Curves.easeOut,
                       );
-                    } else if (state is PurchaseHistoryError) {
-                      return Card(
-                        child: Padding(
-                          padding: const EdgeInsets.all(16.0),
+                    }
+                  }
+                },
+                buildWhen: (previous, current) =>
+                    current is PurchaseHistoryLoading ||
+                    current is PurchaseHistoryLoaded ||
+                    current is PurchaseHistoryError,
+                builder: (context, state) {
+                  if (state is PurchaseHistoryLoaded) {
+                    if (state.isEmpty) {
+                      return SliverFillRemaining(
+                        child: Center(
                           child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               Icon(
-                                Icons.error_outline,
-                                color: theme.colorScheme.error,
-                                size: 32,
+                                Icons.receipt_long_outlined,
+                                size: 64,
+                                color: theme.colorScheme.onSurface
+                                    .withOpacity(0.3),
+                              ),
+                              const SizedBox(height: 16),
+                              Text(
+                                context.tr('tokens.history.empty'),
+                                style: theme.textTheme.headlineSmall?.copyWith(
+                                  color: theme.colorScheme.onSurface
+                                      .withOpacity(0.6),
+                                ),
                               ),
                               const SizedBox(height: 8),
                               Text(
-                                context.tr('tokens.stats.failed_to_load'),
-                                style: theme.textTheme.titleMedium,
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                state.errorMessage,
-                                style: theme.textTheme.bodySmall,
+                                context.tr('tokens.history.empty_message'),
+                                style: theme.textTheme.bodyMedium?.copyWith(
+                                  color: theme.colorScheme.onSurface
+                                      .withOpacity(0.5),
+                                ),
                                 textAlign: TextAlign.center,
                               ),
                             ],
@@ -223,183 +322,93 @@ class _PurchaseHistoryPageState extends State<PurchaseHistoryPage> {
                         ),
                       );
                     }
-                    return const SizedBox.shrink();
-                  },
-                ),
-              ),
-            ),
 
-            // Section Header
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                child: Text(
-                  context.tr('tokens.history.transaction_details'),
-                  style: theme.textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: theme.colorScheme.onBackground,
-                  ),
-                ),
-              ),
-            ),
-
-            const SliverToBoxAdapter(
-              child: SizedBox(height: 16),
-            ),
-
-            // Purchase History List
-            BlocConsumer<TokenBloc, TokenState>(
-              listenWhen: (previous, current) =>
-                  (current is PurchaseHistoryLoaded ||
-                      current is PurchaseHistoryError) &&
-                  _isLoadingMore,
-              listener: (context, state) {
-                // Reset loading flag on both success and error
-                if (state is PurchaseHistoryLoaded ||
-                    state is PurchaseHistoryError) {
-                  setState(() {
-                    _isLoadingMore = false;
-                  });
-                }
-
-                // If this was a refresh (offset was reset), reload from beginning
-                if (state is PurchaseHistoryLoaded && _currentOffset == 0) {
-                  // Reset scroll position to top after refresh
-                  if (_scrollController.hasClients) {
-                    _scrollController.animateTo(
-                      0,
-                      duration: const Duration(milliseconds: 300),
-                      curve: Curves.easeOut,
+                    return SliverList(
+                      delegate: SliverChildBuilderDelegate(
+                        (context, index) {
+                          if (index < state.purchases.length) {
+                            final purchase = state.purchases[index];
+                            return Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16.0,
+                                vertical: 4.0,
+                              ),
+                              child: PurchaseHistoryCard(
+                                purchase: purchase,
+                              ),
+                            );
+                          } else if (_isLoadingMore) {
+                            return const Padding(
+                              padding: EdgeInsets.all(16.0),
+                              child: Center(
+                                child: CircularProgressIndicator(),
+                              ),
+                            );
+                          }
+                          return null;
+                        },
+                        childCount:
+                            state.purchases.length + (_isLoadingMore ? 1 : 0),
+                      ),
                     );
-                  }
-                }
-              },
-              buildWhen: (previous, current) =>
-                  current is PurchaseHistoryLoading ||
-                  current is PurchaseHistoryLoaded ||
-                  current is PurchaseHistoryError,
-              builder: (context, state) {
-                if (state is PurchaseHistoryLoaded) {
-                  if (state.isEmpty) {
+                  } else if (state is PurchaseHistoryLoading) {
+                    return const SliverFillRemaining(
+                      child: Center(
+                        child: CircularProgressIndicator(),
+                      ),
+                    );
+                  } else if (state is PurchaseHistoryError) {
                     return SliverFillRemaining(
                       child: Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.receipt_long_outlined,
-                              size: 64,
-                              color:
-                                  theme.colorScheme.onSurface.withOpacity(0.3),
-                            ),
-                            const SizedBox(height: 16),
-                            Text(
-                              context.tr('tokens.history.empty'),
-                              style: theme.textTheme.headlineSmall?.copyWith(
-                                color: theme.colorScheme.onSurface
-                                    .withOpacity(0.6),
+                        child: Padding(
+                          padding: const EdgeInsets.all(16.0),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.error_outline,
+                                size: 64,
+                                color: theme.colorScheme.error,
                               ),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              context.tr('tokens.history.empty_message'),
-                              style: theme.textTheme.bodyMedium?.copyWith(
-                                color: theme.colorScheme.onSurface
-                                    .withOpacity(0.5),
+                              const SizedBox(height: 16),
+                              Text(
+                                context.tr('tokens.history.failed'),
+                                style: theme.textTheme.headlineSmall?.copyWith(
+                                  color: theme.colorScheme.error,
+                                ),
                               ),
-                              textAlign: TextAlign.center,
-                            ),
-                          ],
+                              const SizedBox(height: 8),
+                              Text(
+                                state.errorMessage,
+                                style: theme.textTheme.bodyMedium,
+                                textAlign: TextAlign.center,
+                              ),
+                              const SizedBox(height: 16),
+                              ElevatedButton(
+                                onPressed: _onRefresh,
+                                child: Text(context.tr('tokens.history.retry')),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     );
                   }
 
-                  return SliverList(
-                    delegate: SliverChildBuilderDelegate(
-                      (context, index) {
-                        if (index < state.purchases.length) {
-                          final purchase = state.purchases[index];
-                          return Padding(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 16.0,
-                              vertical: 4.0,
-                            ),
-                            child: PurchaseHistoryCard(
-                              purchase: purchase,
-                            ),
-                          );
-                        } else if (_isLoadingMore) {
-                          return const Padding(
-                            padding: EdgeInsets.all(16.0),
-                            child: Center(
-                              child: CircularProgressIndicator(),
-                            ),
-                          );
-                        }
-                        return null;
-                      },
-                      childCount:
-                          state.purchases.length + (_isLoadingMore ? 1 : 0),
-                    ),
+                  return const SliverToBoxAdapter(
+                    child: SizedBox.shrink(),
                   );
-                } else if (state is PurchaseHistoryLoading) {
-                  return const SliverFillRemaining(
-                    child: Center(
-                      child: CircularProgressIndicator(),
-                    ),
-                  );
-                } else if (state is PurchaseHistoryError) {
-                  return SliverFillRemaining(
-                    child: Center(
-                      child: Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.error_outline,
-                              size: 64,
-                              color: theme.colorScheme.error,
-                            ),
-                            const SizedBox(height: 16),
-                            Text(
-                              context.tr('tokens.history.failed'),
-                              style: theme.textTheme.headlineSmall?.copyWith(
-                                color: theme.colorScheme.error,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              state.errorMessage,
-                              style: theme.textTheme.bodyMedium,
-                              textAlign: TextAlign.center,
-                            ),
-                            const SizedBox(height: 16),
-                            ElevatedButton(
-                              onPressed: _onRefresh,
-                              child: Text(context.tr('tokens.history.retry')),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  );
-                }
+                },
+              ),
 
-                return const SliverToBoxAdapter(
-                  child: SizedBox.shrink(),
-                );
-              },
-            ),
-
-            // Bottom padding
-            const SliverToBoxAdapter(
-              child: SizedBox(height: 16),
-            ),
-          ],
+              // Bottom padding
+              const SliverToBoxAdapter(
+                child: SizedBox(height: 16),
+              ),
+            ],
+          ),
         ),
-      ),
-    );
+      ), // PopScope child: Scaffold
+    ); // PopScope
   }
 }

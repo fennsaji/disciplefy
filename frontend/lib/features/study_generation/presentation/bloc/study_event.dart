@@ -22,17 +22,22 @@ class GenerateStudyGuideRequested extends StudyEvent {
   /// The type of input ('scripture' or 'topic').
   final String inputType;
 
+  /// Optional topic description for providing additional context.
+  final String? topicDescription;
+
   /// Optional language code for the study guide.
   final String? language;
 
   const GenerateStudyGuideRequested({
     required this.input,
     required this.inputType,
+    this.topicDescription,
     this.language,
   });
 
   @override
-  List<Object?> get props => [input, inputType, language ?? ''];
+  List<Object?> get props =>
+      [input, inputType, topicDescription ?? '', language ?? ''];
 }
 
 /// Event to clear the current study guide state.
@@ -180,4 +185,31 @@ class LoadPersonalNotesRequested extends StudyEvent {
 
   @override
   List<Object?> get props => [guideId];
+}
+
+/// Event to mark a study guide as completed.
+///
+/// This event is triggered automatically when both completion conditions are met:
+/// 1. User spent at least 60 seconds on the study guide page
+/// 2. User scrolled to the bottom of the content
+///
+/// Completed guides are excluded from recommended topic push notifications.
+class MarkStudyGuideCompleteRequested extends StudyEvent {
+  /// The ID of the study guide to mark as complete.
+  final String guideId;
+
+  /// Total time spent reading the study guide in seconds.
+  final int timeSpentSeconds;
+
+  /// Whether the user scrolled to the bottom of the study guide.
+  final bool scrolledToBottom;
+
+  const MarkStudyGuideCompleteRequested({
+    required this.guideId,
+    required this.timeSpentSeconds,
+    required this.scrolledToBottom,
+  });
+
+  @override
+  List<Object?> get props => [guideId, timeSpentSeconds, scrolledToBottom];
 }

@@ -101,6 +101,7 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
   }
 
   /// Initializes authentication state by checking current session
+  /// Solution 3: Includes retry logic for transient storage failures
   Future<void> _onAuthInitialize(
     AuthInitializeRequested event,
     Emitter<auth_states.AuthState> emit,
@@ -108,9 +109,59 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
     try {
       emit(const auth_states.AuthLoadingState());
 
-      // Check if user is already authenticated (Supabase)
-      final supabaseUser = _authService.currentUser;
+      // Retry session read attempts (Solution 3: handles transient storage failures)
+      User? supabaseUser;
+      int retryCount = 0;
+      const maxRetries = 3;
+
+      while (retryCount < maxRetries) {
+        if (kDebugMode) {
+          print(
+              '🔐 [AUTH INIT] Attempt ${retryCount + 1}/$maxRetries to read session');
+        }
+
+        try {
+          // Check if user is already authenticated (Supabase)
+          supabaseUser = _authService.currentUser;
+
+          if (supabaseUser != null) {
+            if (kDebugMode) {
+              print('✅ [AUTH INIT] Session found on attempt ${retryCount + 1}');
+            }
+            break;
+          }
+
+          retryCount++;
+
+          // Wait before retry with exponential backoff
+          if (retryCount < maxRetries) {
+            final delayMs = 500 * retryCount; // 500ms, 1000ms, 1500ms
+            if (kDebugMode) {
+              print(
+                  '⏳ [AUTH INIT] No session found, retry $retryCount/$maxRetries in ${delayMs}ms...');
+            }
+            await Future.delayed(Duration(milliseconds: delayMs));
+          }
+        } catch (e) {
+          if (kDebugMode) {
+            print(
+                '⚠️  [AUTH INIT] Session read attempt $retryCount failed: $e');
+          }
+          retryCount++;
+
+          if (retryCount < maxRetries) {
+            final delayMs = 500 * retryCount;
+            await Future.delayed(Duration(milliseconds: delayMs));
+          }
+        }
+      }
+
+      // If session found after retries, proceed with authentication
       if (supabaseUser != null) {
+        if (kDebugMode) {
+          print('✅ [AUTH INIT] User authenticated: ${supabaseUser.id}');
+        }
+
         // Load user profile data for Supabase users with caching
         final profile = await _getProfileWithCache(supabaseUser.id);
 
@@ -122,8 +173,21 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
         return;
       }
 
-      // Check for anonymous session using async method
-      final isStorageAuthenticated = await _authService.isAuthenticatedAsync();
+      // Log detailed failure information after all retries
+      if (kDebugMode) {
+        print(
+            '🔐 [AUTH INIT] ⚠️  Session recovery failed after $maxRetries attempts');
+        print('   Possible causes:');
+        print('   1. Android Keystore was cleared by OS');
+        print('   2. Storage corruption or read failure');
+        print('   3. Session expired on backend');
+        print('   4. First app launch (no session exists)');
+      }
+
+      // Check for anonymous session using async method with retry
+      final isStorageAuthenticated =
+          await _retryOperation(() => _authService.isAuthenticatedAsync());
+
       if (isStorageAuthenticated) {
         if (kDebugMode) {
           print(
@@ -136,7 +200,7 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
         if (!isTokenValid) {
           if (kDebugMode) {
             print(
-                '🔐 [AUTH INIT] ⚠️ Token invalid or expired - clearing stale data');
+                '🔐 [AUTH INIT] ⚠️  Token invalid or expired - clearing stale data');
           }
 
           // Clear stale data and force re-authentication
@@ -158,17 +222,18 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
         ));
       } else {
         if (kDebugMode) {
-          print(
-              '🔐 [AUTH INIT] No authentication found - emitting unauthenticated state');
+          print('🔐 [AUTH INIT] No valid session - user is unauthenticated');
         }
         emit(const auth_states.UnauthenticatedState());
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
       if (kDebugMode) {
-        print('Auth initialization error: $e');
+        print('🔐 [AUTH INIT] ❌ Critical error during initialization: $e');
+        print('🔐 [AUTH INIT] Stack trace: $stackTrace');
       }
       emit(const auth_states.AuthErrorState(
-          message: 'Failed to initialize authentication'));
+        message: 'Failed to initialize authentication',
+      ));
     }
   }
 
@@ -443,15 +508,17 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
             return;
           }
 
-          // Validate token expiration
-          final isTokenValid = await _authService.isTokenValid();
+          // Validate token expiration and attempt refresh if needed
+          // ANDROID FIX: Use ensureTokenValid() to attempt refresh instead of just checking
+          final isTokenValid = await _authService.ensureTokenValid();
           if (!isTokenValid) {
             if (kDebugMode) {
               print(
-                  '🔍 [SESSION VALIDATION] ❌ Token expired - triggering refresh failure');
+                  '🔍 [SESSION VALIDATION] ❌ Token expired and refresh failed - triggering logout');
             }
             add(const TokenRefreshFailed(
-                reason: 'Token expired during session validation'));
+                reason:
+                    'Token expired and refresh failed during session validation'));
             return;
           }
 
@@ -1041,7 +1108,8 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
     return false;
   }
 
-  /// Starts periodic token validation for authenticated non-anonymous users
+  /// Starts periodic token validation and refresh for authenticated non-anonymous users
+  /// CRITICAL FIX: Now proactively refreshes tokens before they expire
   void _startTokenValidationTimer() {
     _tokenValidationTimer?.cancel(); // Cancel existing timer if any
 
@@ -1054,20 +1122,25 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
           // Only validate tokens for non-anonymous users (they have Supabase sessions)
           if (!authState.isAnonymous) {
             if (kDebugMode) {
-              print('🔄 [TOKEN VALIDATION] Periodic validation check...');
+              print(
+                  '🔄 [TOKEN VALIDATION] Periodic validation and refresh check...');
             }
 
-            final isTokenValid = await _authService.isTokenValid();
+            // CRITICAL FIX: Use ensureTokenValid instead of just checking
+            // This will automatically refresh the token if it's expiring soon
+            final isValid = await _authService.ensureTokenValid();
 
-            if (!isTokenValid) {
+            if (!isValid) {
               if (kDebugMode) {
                 print(
-                    '🔄 [TOKEN VALIDATION] ⚠️ Token expired - triggering refresh failure');
+                    '🔄 [TOKEN VALIDATION] ❌ Token refresh failed - forcing logout');
               }
               add(const TokenRefreshFailed(
-                  reason: 'Token expired during periodic validation'));
+                  reason:
+                      'Token expired and refresh failed during periodic validation'));
             } else if (kDebugMode) {
-              print('🔄 [TOKEN VALIDATION] ✅ Token still valid');
+              print(
+                  '🔄 [TOKEN VALIDATION] ✅ Token valid (refreshed if needed)');
             }
           }
         }
@@ -1081,7 +1154,7 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
 
     if (kDebugMode) {
       print(
-          '🔄 [TOKEN VALIDATION] Automatic token validation started (10-minute intervals)');
+          '🔄 [TOKEN VALIDATION] Automatic token validation and refresh started (10-minute intervals)');
     }
   }
 

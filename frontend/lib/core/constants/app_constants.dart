@@ -136,3 +136,16 @@ class AppConstants {
 
   static const int STUDY_GUIDE_TOTAL_SECTIONS = 5;
 }
+
+/// Centralized asset paths for the application
+class AppAssets {
+  AppAssets._();
+
+  // Logo Assets
+  static const String logoLight = 'assets/images/app_logo.png';
+  static const String logoDark = 'assets/images/app_logo_dark.png';
+  static const String logoTransparent = 'assets/images/logo_transparent.png';
+
+  // Google Logo
+  static const String googleLogo = 'assets/images/google_logo.png';
+}

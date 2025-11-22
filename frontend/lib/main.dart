@@ -9,6 +9,7 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'core/config/app_config.dart';
 import 'core/di/injection_container.dart';
 import 'features/daily_verse/data/services/daily_verse_cache_interface.dart';
+import 'features/memory_verses/data/datasources/memory_verse_local_datasource.dart';
 import 'core/router/app_router.dart';
 import 'core/theme/app_theme.dart';
 import 'core/localization/app_localizations.dart';
@@ -29,11 +30,13 @@ import 'core/services/theme_service.dart';
 import 'core/services/auth_state_provider.dart';
 import 'core/services/auth_session_validator.dart';
 import 'core/services/notification_service.dart';
-import 'core/services/notification_service_web.dart';
+import 'core/services/notification_service_web_stub.dart'
+    if (dart.library.html) 'core/services/notification_service_web.dart';
 import 'core/utils/device_keyboard_handler.dart';
 import 'core/utils/keyboard_animation_sync.dart';
 import 'core/utils/custom_viewport_handler.dart';
 import 'core/utils/keyboard_performance_monitor.dart';
+import 'core/services/android_hybrid_storage.dart';
 
 // ============================================================================
 // Firebase Configuration (Environment Variables)
@@ -130,11 +133,33 @@ void main() async {
       }
     }
 
-    // Initialize Supabase
-    await Supabase.initialize(
-      url: AppConfig.supabaseUrl,
-      anonKey: AppConfig.supabaseAnonKey,
-    );
+    // Initialize Supabase with platform-aware storage
+    // Web: Uses default localStorage (reliable)
+    // Android/iOS: Uses hybrid storage (SecureStorage + SharedPreferences fallback)
+    if (kIsWeb) {
+      // Web: Use default storage - browser localStorage is already reliable
+      await Supabase.initialize(
+        url: AppConfig.supabaseUrl,
+        anonKey: AppConfig.supabaseAnonKey,
+        debug: kDebugMode,
+      );
+      if (kDebugMode) {
+        print('✅ [MAIN] Supabase initialized with default web storage');
+      }
+    } else {
+      // Android/iOS: Use hybrid storage to protect against Keystore clearing
+      await Supabase.initialize(
+        url: AppConfig.supabaseUrl,
+        anonKey: AppConfig.supabaseAnonKey,
+        debug: kDebugMode,
+        authOptions: FlutterAuthClientOptions(
+          localStorage: await AndroidHybridStorage.create(),
+        ),
+      );
+      if (kDebugMode) {
+        print('✅ [MAIN] Supabase initialized with Android hybrid storage');
+      }
+    }
 
     // Initialize dependency injection
     if (kDebugMode) print('🔧 [MAIN] Initializing dependency injection...');
@@ -147,6 +172,13 @@ void main() async {
     }
     await sl<DailyVerseCacheInterface>().initialize();
     if (kDebugMode) print('✅ [MAIN] Daily verse cache service completed');
+
+    // Initialize memory verse local datasource
+    if (kDebugMode) {
+      print('🔧 [MAIN] Initializing memory verse local datasource...');
+    }
+    await sl<MemoryVerseLocalDataSource>().initialize();
+    if (kDebugMode) print('✅ [MAIN] Memory verse local datasource completed');
 
     // Initialize theme service
     if (kDebugMode) print('🔧 [MAIN] Initializing theme service...');

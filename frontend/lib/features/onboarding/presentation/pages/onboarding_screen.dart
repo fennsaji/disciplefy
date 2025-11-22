@@ -42,28 +42,36 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   static const List<OnboardingSlide> _slides = [
     OnboardingSlide(
-      title: 'Generate Personalized Bible Study Guides',
-      subtitle: 'AI-powered insights tailored to your spiritual journey',
+      title: 'Daily Inspiration & Study',
+      subtitle: 'Start each day with God\'s Word',
       description:
-          'Simply enter any scripture reference or spiritual topic, and our AI will create a comprehensive study guide with context, interpretation, and life application.',
-      iconData: Icons.auto_awesome,
+          'Receive daily verses with instant study guides. Tap any verse to dive deeper with AI-powered insights, context, and practical applications for your life.',
+      iconData: Icons.wb_sunny,
       verse:
           '"Your word is a lamp for my feet, a light on my path." - Psalm 119:105',
     ),
     OnboardingSlide(
-      title: 'Explore Predefined Topics',
-      subtitle: 'Discover guided studies on faith essentials',
+      title: 'Generate Personalized Study Guides',
+      subtitle: 'AI-powered insights tailored to your journey',
       description:
-          'Choose from carefully curated topics like Gospel, Prayer, Baptism, Grace, and Faith in Trials to deepen your understanding of core biblical principles.',
-      iconData: Icons.menu_book_rounded,
+          'Enter any scripture or spiritual topic to create comprehensive study guides with context, interpretation, reflection questions, and prayer points.',
+      iconData: Icons.auto_awesome,
       verse:
           '"All Scripture is God-breathed and is useful for teaching..." - 2 Timothy 3:16',
     ),
     OnboardingSlide(
-      title: 'Save Notes & Track Progress',
+      title: 'Explore Curated Topics',
+      subtitle: 'Discover guided studies on faith essentials',
+      description:
+          'Choose from carefully curated topics like Gospel, Prayer, Baptism, Grace, and Faith in Trials. Each topic follows a proven 4-step study methodology.',
+      iconData: Icons.menu_book_rounded,
+      verse: '"Study to show yourself approved unto God..." - 2 Timothy 2:15',
+    ),
+    OnboardingSlide(
+      title: 'Save Notes & Track Growth',
       subtitle: 'Build your personal spiritual journal',
       description:
-          'Take notes during your study, save your insights, and track your spiritual growth journey. Resume your studies anytime, anywhere.',
+          'Add personal notes to any study, save your insights, and track your spiritual growth journey. Access your saved guides anytime, anywhere.',
       iconData: Icons.bookmark_added,
       verse:
           '"The grass withers and the flowers fall, but the word of our God endures forever." - Isaiah 40:8',
@@ -82,7 +90,20 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     });
   }
 
-  void _navigateToWelcome() async {
+  void _handleContinueButton() {
+    if (_currentPage == _slides.length - 1) {
+      // Last slide - complete onboarding and navigate to login
+      _completeOnboarding();
+    } else {
+      // Not on last slide - go to next slide
+      _pageController.nextPage(
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+      );
+    }
+  }
+
+  void _completeOnboarding() async {
     // Mark onboarding as completed
     final box = Hive.box('app_settings');
     await box.put('onboarding_completed', true);
@@ -120,32 +141,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   // Disciplefy Logo
-                  Row(
-                    children: [
-                      Container(
-                        width: 32,
-                        height: 32,
-                        decoration: BoxDecoration(
-                          color: theme.colorScheme.primary,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Icon(
-                          Icons.menu_book,
-                          color: theme.colorScheme.onPrimary,
-                          size: 20,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Text(
-                        'Disciplefy',
-                        style: GoogleFonts.playfairDisplay(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: theme.colorScheme.primary,
-                        ),
-                      ),
-                    ],
-                  ),
+                  const _LogoWidget(),
                   // Skip button
                   TextButton(
                     onPressed: _skipOnboarding,
@@ -193,13 +189,13 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               ),
             ),
 
-            // Get Started button (shows on last slide) or Continue
+            // Continue button (navigates to next slide) or Get Started (last slide)
             Padding(
               padding: EdgeInsets.fromLTRB(24, 0, 24, isLargeScreen ? 40 : 24),
               child: SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: _navigateToWelcome,
+                  onPressed: _handleContinueButton,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: theme.colorScheme.primary,
                     foregroundColor: theme.colorScheme.onPrimary,
@@ -340,6 +336,59 @@ class _OnboardingSlideWidget extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// Private widget for rendering the theme-aware Disciplefy logo
+class _LogoWidget extends StatelessWidget {
+  const _LogoWidget();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDarkMode = theme.brightness == Brightness.dark;
+    final logoAsset = isDarkMode
+        ? 'assets/images/app_logo_dark.png'
+        : 'assets/images/app_logo.png';
+
+    return Semantics(
+      label: 'Disciplefy app logo',
+      child: Image.asset(
+        logoAsset,
+        width: 140,
+        height: 32,
+        fit: BoxFit.contain,
+        errorBuilder: (context, error, stackTrace) {
+          // Fallback to icon + text if image fails to load
+          return Row(
+            children: [
+              Container(
+                width: 32,
+                height: 32,
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.primary,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(
+                  Icons.menu_book,
+                  color: theme.colorScheme.onPrimary,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Text(
+                'Disciplefy',
+                style: GoogleFonts.poppins(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: theme.colorScheme.primary,
+                ),
+              ),
+            ],
+          );
+        },
       ),
     );
   }

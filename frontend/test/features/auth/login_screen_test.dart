@@ -121,6 +121,9 @@ void main() {
       when(mockAuthBloc.stream).thenAnswer(
           (_) => Stream.value(const auth_states.UnauthenticatedState()));
 
+      // Set a larger test surface to avoid tap-outside-bounds issues
+      await tester.binding.setSurfaceSize(const Size(800, 1200));
+
       // Act
       await tester.pumpWidget(createTestWidget());
       await tester.pumpAndSettle();
@@ -297,8 +300,22 @@ void main() {
       await tester.pumpWidget(createTestWidget());
       await tester.pumpAndSettle();
 
-      // Assert
-      expect(find.byIcon(Icons.auto_stories), findsOneWidget);
+      // Assert - Check for logo image or fallback icon
+      final logoFinder = find.byWidgetPredicate(
+        (widget) =>
+            widget is Image &&
+            widget.image is AssetImage &&
+            (widget.image as AssetImage).assetName ==
+                'assets/images/logo_transparent.png',
+      );
+      final fallbackIconFinder = find.byIcon(Icons.auto_stories);
+
+      // Expect either the logo image or the fallback icon to be present
+      expect(
+        logoFinder.evaluate().isNotEmpty ||
+            fallbackIconFinder.evaluate().isNotEmpty,
+        isTrue,
+      );
     });
   });
 

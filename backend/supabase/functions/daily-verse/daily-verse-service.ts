@@ -10,6 +10,7 @@ import { LLMService } from '../_shared/services/llm-service.ts'
  */
 
 interface DailyVerseData {
+  id?: string // UUID from daily_verses_cache table (optional for generated verses)
   reference: string
   referenceTranslations: {
     en: string
@@ -135,18 +136,20 @@ export class DailyVerseService {
       }
 
       console.log(`No cached verse found, generating new verse for date: ${dateKey}`)
-      
+
       // Generate new verse for the date with language preference
       const newVerse = await this.generateDailyVerse(targetDate, language)
-      
-      // Try to cache the new verse (non-blocking)
+
+      // Try to cache the new verse and get the UUID
       try {
-        await this.cacheVerse(dateKey, newVerse)
-        console.log(`Daily verse cached successfully for date: ${dateKey}`)
+        const uuid = await this.cacheVerse(dateKey, newVerse)
+        // Add the UUID to the verse data
+        newVerse.id = uuid
+        console.log(`Daily verse cached successfully for date: ${dateKey}, UUID: ${uuid}`)
       } catch (cacheError) {
         console.warn('Failed to cache verse (continuing anyway):', cacheError)
       }
-      
+
       console.log(`Daily verse generated for date: ${dateKey}, reference: ${newVerse.reference}`)
       return newVerse
 
@@ -339,7 +342,7 @@ export class DailyVerseService {
       
       const { data, error } = await this.supabase
         .from(this.CACHE_TABLE)
-        .select('verse_data')
+        .select('uuid, verse_data')
         .eq('date_key', dateKey)
         .eq('is_active', true)
         .single()
@@ -356,6 +359,9 @@ export class DailyVerseService {
 
       console.log(`Found cached verse for date: ${dateKey}`)
       const cachedData = data.verse_data
+      
+      // Add UUID to the cached data
+      cachedData.id = data.uuid
       
       // Backward compatibility: Add referenceTranslations if missing from old cache
       if (!cachedData.referenceTranslations) {
@@ -376,11 +382,11 @@ export class DailyVerseService {
   }
 
   /**
-   * Cache verse in database
+   * Cache verse in database and return the UUID
    */
-  private async cacheVerse(dateKey: string, verseData: DailyVerseData): Promise<void> {
+  private async cacheVerse(dateKey: string, verseData: DailyVerseData): Promise<string> {
     try {
-      const { error } = await this.supabase
+      const { data, error } = await this.supabase
         .from(this.CACHE_TABLE)
         .upsert({
           date_key: dateKey,
@@ -392,13 +398,21 @@ export class DailyVerseService {
           onConflict: 'date_key',
           ignoreDuplicates: false  // Update existing record if conflict
         })
+        .select('uuid')
+        .single()
 
       if (error) {
         console.error('[Error] Error caching verse:', error)
         throw error
       }
 
-      console.log(`[Info] Verse cached successfully for date: ${dateKey}`)
+      const uuid = data?.uuid
+      if (!uuid) {
+        throw new Error('Failed to get UUID from cached verse')
+      }
+
+      console.log(`[Info] Verse cached successfully for date: ${dateKey}, UUID: ${uuid}`)
+      return uuid
 
     } catch (error) {
       console.error('[Error] Error in cacheVerse:', error)
@@ -421,11 +435,11 @@ export class DailyVerseService {
   }
 
   /**
-   * Get cache expiration date (3 months from now)
+   * Get cache expiration date (60 days from now)
    */
   private getExpirationDate(): string {
     const expirationDate = new Date()
-    expirationDate.setMonth(expirationDate.getMonth() + 3)
+    expirationDate.setDate(expirationDate.getDate() + 60)
     return expirationDate.toISOString()
   }
 

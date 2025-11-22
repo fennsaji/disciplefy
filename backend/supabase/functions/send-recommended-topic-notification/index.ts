@@ -6,7 +6,7 @@
 
 import { createSimpleFunction } from '../_shared/core/function-factory.ts';
 import { ServiceContainer } from '../_shared/core/services.ts';
-import { FCMService, logNotification, hasReceivedNotificationToday } from '../_shared/fcm-service.ts';
+import { FCMService, logNotification, getBatchNotificationStatus } from '../_shared/fcm-service.ts';
 import { selectTopicForUser, getLocalizedTopicContent } from '../_shared/topic-selector.ts';
 import { AppError } from '../_shared/utils/error-handler.ts';
 
@@ -236,24 +236,18 @@ async function handleRecommendedTopicNotification(
     );
   }
 
-  // Step 5: Filter out users who already received notification today
-  const eligibleUsers: typeof users = [];
-  for (const user of users) {
-    const alreadySent = await hasReceivedNotificationToday(
-      SUPABASE_URL,
-      SUPABASE_SERVICE_ROLE_KEY,
-      user.user_id,
-      'recommended_topic'
-    );
+  // Step 5: Filter out users who already received notification today (batched query)
+  const allUserIds = users.map((u: any) => u.user_id);
+  const alreadySentUserIds = await getBatchNotificationStatus(
+    SUPABASE_URL,
+    SUPABASE_SERVICE_ROLE_KEY,
+    allUserIds,
+    'recommended_topic'
+  );
 
-    if (!alreadySent) {
-      eligibleUsers.push(user);
-    } else {
-      console.log(`User ${user.user_id} already received notification today`);
-    }
-  }
+  const eligibleUsers = users.filter((u: any) => !alreadySentUserIds.has(u.user_id));
 
-  console.log(`${eligibleUsers.length} users need notification (${users.length - eligibleUsers.length} already received today)`);
+  console.log(`${eligibleUsers.length} users need notification (${alreadySentUserIds.size} already received today)`);
 
   if (eligibleUsers.length === 0) {
     return new Response(
@@ -286,87 +280,120 @@ async function handleRecommendedTopicNotification(
     languageMap[profile.id] = profile.language_preference || 'en';
   });
 
-  // Step 6: Select personalized topics for each user
+  // Step 6: Select personalized topics and send notifications (batch processing to avoid timeout)
   let successCount = 0;
   let failureCount = 0;
   let topicSelectionFailures = 0;
   const uniqueTopicIds = new Set<string>();
+  const NOTIFICATION_BATCH_SIZE = 10; // Process 10 notifications concurrently
 
-  for (const user of eligibleUsers) {
-    try {
-      const language = languageMap[user.user_id] || 'en';
-      
-      // Select best topic for this user (avoiding recently sent topics)
-      const topicResult = await selectTopicForUser(
-        SUPABASE_URL,
-        SUPABASE_SERVICE_ROLE_KEY,
-        user.user_id,
-        language
-      );
+  // Process users in concurrent batches
+  for (let i = 0; i < eligibleUsers.length; i += NOTIFICATION_BATCH_SIZE) {
+    const batch = eligibleUsers.slice(i, i + NOTIFICATION_BATCH_SIZE);
 
-      if (!topicResult.success || !topicResult.topic) {
-        topicSelectionFailures++;
-        console.error(`Failed to select topic for user ${user.user_id}:`, topicResult.error);
-        continue;
-      }
+    // Send notifications concurrently within batch
+    const results = await Promise.allSettled(
+      batch.map(async (user: any) => {
+        try {
+          const language = languageMap[user.user_id] || 'en';
 
-      // Get localized content
-      const localizedContent = getLocalizedTopicContent(topicResult.topic, language);
+          // Select best topic for this user (avoiding recently sent topics)
+          const topicResult = await selectTopicForUser(
+            SUPABASE_URL,
+            SUPABASE_SERVICE_ROLE_KEY,
+            user.user_id,
+            language
+          );
 
-      const title = NOTIFICATION_TITLES[language] || NOTIFICATION_TITLES.en;
-      const intro = NOTIFICATION_INTROS[language] || NOTIFICATION_INTROS.en;
-      const body = `${intro} ${localizedContent.title}`;
+          if (!topicResult.success || !topicResult.topic) {
+            console.error(`Failed to select topic for user ${user.user_id}:`, topicResult.error);
+            return { success: false, userId: user.user_id, topicSelectionFailed: true };
+          }
 
-      // Track unique topics
-      uniqueTopicIds.add(topicResult.topic.id);
+          // Get localized content
+          const localizedContent = await getLocalizedTopicContent(
+            SUPABASE_URL,
+            SUPABASE_SERVICE_ROLE_KEY,
+            topicResult.topic,
+            language
+          );
 
-      const result = await fcmService.sendNotification({
-        token: user.fcm_token,
-        notification: { title, body },
-        data: {
-          type: 'recommended_topic',
-          topic_id: topicResult.topic.id,
-          topic_title: localizedContent.title,
-          language,
-        },
-        android: { priority: 'high' },
-        apns: {
-          headers: { 'apns-priority': '10' },
-          payload: { aps: { sound: 'default', badge: 1 } },
-        },
-      });
+          const title = NOTIFICATION_TITLES[language] || NOTIFICATION_TITLES.en;
+          const intro = NOTIFICATION_INTROS[language] || NOTIFICATION_INTROS.en;
+          const body = `${intro} ${localizedContent.title}`;
 
-      if (result.success) {
-        successCount++;
-        // Log successful send
-        await logNotification(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
-          userId: user.user_id,
-          notificationType: 'recommended_topic',
-          title,
-          body,
-          topicId: topicResult.topic.id,
-          language,
-          deliveryStatus: 'sent',
-          fcmMessageId: result.messageId,
-        });
+          const result = await fcmService.sendNotification({
+            token: user.fcm_token,
+            notification: { title, body },
+            data: {
+              type: 'recommended_topic',
+              topic_id: topicResult.topic.id,
+              topic_title: localizedContent.title,
+              topic_description: localizedContent.description, // Include description for richer study guide context
+              language,
+            },
+            android: { priority: 'high' },
+            apns: {
+              headers: { 'apns-priority': '10' },
+              payload: { aps: { sound: 'default', badge: 1 } },
+            },
+          });
+
+          if (result.success) {
+            // Log successful send
+            await logNotification(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
+              userId: user.user_id,
+              notificationType: 'recommended_topic',
+              title,
+              body,
+              topicId: topicResult.topic.id,
+              language,
+              deliveryStatus: 'sent',
+              fcmMessageId: result.messageId,
+            });
+            return { success: true, userId: user.user_id, topicId: topicResult.topic.id };
+          } else {
+            // Log failure
+            await logNotification(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
+              userId: user.user_id,
+              notificationType: 'recommended_topic',
+              title,
+              body,
+              topicId: topicResult.topic.id,
+              language,
+              deliveryStatus: 'failed',
+              errorMessage: result.error,
+            });
+            return { success: false, userId: user.user_id, error: result.error };
+          }
+        } catch (error) {
+          console.error(`Error sending to user ${user.user_id}:`, error);
+          return { success: false, userId: user.user_id, error: String(error) };
+        }
+      })
+    );
+
+    // Count successes, failures, and topic selection failures for this batch
+    results.forEach((result: any) => {
+      if (result.status === 'fulfilled') {
+        if (result.value.topicSelectionFailed) {
+          topicSelectionFailures++;
+          failureCount++;
+        } else if (result.value.success) {
+          successCount++;
+          // Track unique topic IDs
+          if (result.value.topicId) {
+            uniqueTopicIds.add(result.value.topicId);
+          }
+        } else {
+          failureCount++;
+        }
       } else {
         failureCount++;
-        // Log failure
-        await logNotification(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
-          userId: user.user_id,
-          notificationType: 'recommended_topic',
-          title,
-          body,
-          topicId: topicResult.topic.id,
-          language,
-          deliveryStatus: 'failed',
-          errorMessage: result.error,
-        });
       }
-    } catch (error) {
-      failureCount++;
-      console.error(`Error sending to user ${user.user_id}:`, error);
-    }
+    });
+
+    console.log(`Batch ${Math.floor(i / NOTIFICATION_BATCH_SIZE) + 1} complete: ${successCount} sent, ${failureCount} failed so far`);
   }
 
   console.log(`Notification process complete: ${successCount} sent, ${failureCount} failed`);

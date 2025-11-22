@@ -10,6 +10,7 @@ class NotificationPreferenceCard extends StatelessWidget {
   final IconData icon;
   final bool enabled;
   final ValueChanged<bool> onChanged;
+  final Widget? trailing; // Optional trailing widget (e.g., time picker button)
 
   const NotificationPreferenceCard({
     super.key,
@@ -18,12 +19,27 @@ class NotificationPreferenceCard extends StatelessWidget {
     required this.icon,
     required this.enabled,
     required this.onChanged,
+    this.trailing,
   });
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    // Use explicit colors for better visibility in dark mode
+    final iconBackgroundColor = isDark
+        ? const Color(0xFF6A4FB6).withOpacity(0.3) // Purple with 30% opacity
+        : const Color(0xFF6A4FB6).withOpacity(0.1); // Purple with 10% opacity
+
+    final iconColor = isDark
+        ? const Color(0xFFB39DDB) // Lighter purple for dark mode
+        : const Color(0xFF6A4FB6); // Primary purple for light mode
+
     return Card(
       elevation: 1,
+      color: isDark
+          ? const Color(0xFF2C2C2C)
+          : null, // Explicit card color in dark mode
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
       ),
@@ -37,13 +53,13 @@ class NotificationPreferenceCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Theme.of(context).primaryColor.withOpacity(0.1),
+                  color: iconBackgroundColor,
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(
                   icon,
                   size: 28,
-                  color: Theme.of(context).primaryColor,
+                  color: iconColor,
                 ),
               ),
               const SizedBox(width: 16),
@@ -55,16 +71,23 @@ class NotificationPreferenceCard extends StatelessWidget {
                       title,
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
                             fontWeight: FontWeight.w600,
+                            color: isDark ? Colors.white : null,
                           ),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       description,
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: Colors.grey[600],
+                            color: isDark
+                                ? const Color(0xFFB0B0B0) // Explicit light gray
+                                : Colors.grey[600],
                             height: 1.3,
                           ),
                     ),
+                    if (trailing != null) ...[
+                      const SizedBox(height: 12),
+                      trailing!,
+                    ],
                   ],
                 ),
               ),
@@ -72,7 +95,18 @@ class NotificationPreferenceCard extends StatelessWidget {
               Switch(
                 value: enabled,
                 onChanged: onChanged,
-                activeColor: Theme.of(context).primaryColor,
+                activeColor: isDark
+                    ? const Color(0xFFB39DDB) // Lighter purple thumb
+                    : const Color(0xFF6A4FB6), // Primary purple thumb
+                activeTrackColor: isDark
+                    ? const Color(0xFF6A4FB6).withOpacity(0.5)
+                    : const Color(0xFF6A4FB6).withOpacity(0.5),
+                inactiveThumbColor: isDark
+                    ? const Color(0xFF9E9E9E) // Light gray thumb
+                    : const Color(0xFFBDBDBD),
+                inactiveTrackColor: isDark
+                    ? const Color(0xFF424242) // Dark gray track
+                    : const Color(0xFFE0E0E0),
               ),
             ],
           ),

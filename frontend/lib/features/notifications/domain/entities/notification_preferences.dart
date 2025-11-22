@@ -4,11 +4,19 @@
 // Domain entity representing user notification preferences
 
 import 'package:equatable/equatable.dart';
+import 'time_of_day_vo.dart';
 
 class NotificationPreferences extends Equatable {
   final String userId;
   final bool dailyVerseEnabled;
   final bool recommendedTopicEnabled;
+
+  // Streak notification preferences
+  final bool streakReminderEnabled;
+  final bool streakMilestoneEnabled;
+  final bool streakLostEnabled;
+  final TimeOfDayVO streakReminderTime;
+
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -16,6 +24,10 @@ class NotificationPreferences extends Equatable {
     required this.userId,
     required this.dailyVerseEnabled,
     required this.recommendedTopicEnabled,
+    required this.streakReminderEnabled,
+    required this.streakMilestoneEnabled,
+    required this.streakLostEnabled,
+    required this.streakReminderTime,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -24,6 +36,10 @@ class NotificationPreferences extends Equatable {
     String? userId,
     bool? dailyVerseEnabled,
     bool? recommendedTopicEnabled,
+    bool? streakReminderEnabled,
+    bool? streakMilestoneEnabled,
+    bool? streakLostEnabled,
+    TimeOfDayVO? streakReminderTime,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -32,6 +48,12 @@ class NotificationPreferences extends Equatable {
       dailyVerseEnabled: dailyVerseEnabled ?? this.dailyVerseEnabled,
       recommendedTopicEnabled:
           recommendedTopicEnabled ?? this.recommendedTopicEnabled,
+      streakReminderEnabled:
+          streakReminderEnabled ?? this.streakReminderEnabled,
+      streakMilestoneEnabled:
+          streakMilestoneEnabled ?? this.streakMilestoneEnabled,
+      streakLostEnabled: streakLostEnabled ?? this.streakLostEnabled,
+      streakReminderTime: streakReminderTime ?? this.streakReminderTime,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
@@ -42,6 +64,10 @@ class NotificationPreferences extends Equatable {
         userId,
         dailyVerseEnabled,
         recommendedTopicEnabled,
+        streakReminderEnabled,
+        streakMilestoneEnabled,
+        streakLostEnabled,
+        streakReminderTime,
         createdAt,
         updatedAt,
       ];

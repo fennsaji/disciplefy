@@ -15,6 +15,12 @@ on:
     - cron: '0 2 * * *'   # UTC 02:00 → 8 AM UTC+6 (South Asia)
     - cron: '0 14 * * *'  # UTC 14:00 → 8 AM UTC-6 (Central US)
 
+    # ============================================================================
+    # Streak Reminder Notifications (user's preferred time, default 8 PM) - Development
+    # ============================================================================
+    # Run every hour to cover all timezones (users set their own reminder time)
+    - cron: '0 * * * *'   # Every hour at :00 minutes
+
   # Allow manual triggering for testing
   workflow_dispatch:
     inputs:
@@ -25,7 +31,8 @@ on:
         options:
           - daily_verse
           - recommended_topic
-          - both
+          - streak_reminder
+          - all
 
 jobs:
   # ==========================================================================
@@ -42,7 +49,7 @@ jobs:
         github.event.schedule == '0 12 * * *')) ||
       (github.event_name == 'workflow_dispatch' &&
        (github.event.inputs.notification_type == 'daily_verse' ||
-        github.event.inputs.notification_type == 'both'))
+        github.event.inputs.notification_type == 'all'))
 
     steps:
       - name: Send Daily Verse Push Notifications (Dev)
@@ -92,7 +99,7 @@ jobs:
         github.event.schedule == '0 14 * * *')) ||
       (github.event_name == 'workflow_dispatch' &&
        (github.event.inputs.notification_type == 'recommended_topic' ||
-        github.event.inputs.notification_type == 'both'))
+        github.event.inputs.notification_type == 'all'))
 
     steps:
       - name: Send Recommended Topic Push Notifications (Dev)
@@ -129,12 +136,61 @@ jobs:
           echo "Notification Type: Recommended Topic (8 AM)"
 
   # ==========================================================================
-  # Job 3: Monitor Notification Health (Development)
+  # Job 3: Send Streak Reminder Notifications (Development)
+  # ==========================================================================
+  send-streak-reminder:
+    runs-on: ubuntu-latest
+    name: Send Streak Reminder Notifications (Dev)
+
+    # Only run on hourly schedule OR manual dispatch
+    if: |
+      (github.event_name == 'schedule' &&
+       github.event.schedule == '0 * * * *') ||
+      (github.event_name == 'workflow_dispatch' &&
+       (github.event.inputs.notification_type == 'streak_reminder' ||
+        github.event.inputs.notification_type == 'all'))
+
+    steps:
+      - name: Send Streak Reminder Push Notifications (Dev)
+        run: |
+          echo "Triggering Streak Reminder notification Edge Function (Development)..."
+
+          response=$(curl -X POST \
+            "https://${{ secrets.SUPABASE_DEV_PROJECT_REF }}.supabase.co/functions/v1/send-streak-reminder-notification" \
+            -H "X-Cron-Secret: ${{ secrets.CRON_SECRET_DEV }}" \
+            -H "Content-Type: application/json" \
+            -w "\n%{http_code}" \
+            -s)
+
+          http_code=$(echo "$response" | tail -n1)
+          body=$(echo "$response" | sed '$d')
+
+          echo "Response Code: $http_code"
+          echo "Response Body: $body"
+
+          if [ "$http_code" -ge 200 ] && [ "$http_code" -lt 300 ]; then
+            echo "✅ Streak Reminder notifications sent successfully (Dev)"
+            exit 0
+          else
+            echo "❌ Failed to send Streak Reminder notifications (Dev)"
+            exit 1
+          fi
+
+      - name: Log Execution
+        if: always()
+        run: |
+          echo "Job Status: ${{ job.status }}"
+          echo "Triggered at: $(date -u)"
+          echo "Environment: Development"
+          echo "Notification Type: Streak Reminder (Hourly)"
+
+  # ==========================================================================
+  # Job 4: Monitor Notification Health (Development)
   # ==========================================================================
   monitor-health:
     runs-on: ubuntu-latest
     name: Monitor Notification System Health (Dev)
-    needs: [send-daily-verse, send-recommended-topic]
+    needs: [send-daily-verse, send-recommended-topic, send-streak-reminder]
     if: always()
 
     steps:
@@ -142,8 +198,9 @@ jobs:
         run: |
           echo "Daily Verse Job Status: ${{ needs.send-daily-verse.result }}"
           echo "Recommended Topic Job Status: ${{ needs.send-recommended-topic.result }}"
+          echo "Streak Reminder Job Status: ${{ needs.send-streak-reminder.result }}"
 
-          if [ "${{ needs.send-daily-verse.result }}" == "failure" ] || [ "${{ needs.send-recommended-topic.result }}" == "failure" ]; then
+          if [ "${{ needs.send-daily-verse.result }}" == "failure" ] || [ "${{ needs.send-recommended-topic.result }}" == "failure" ] || [ "${{ needs.send-streak-reminder.result }}" == "failure" ]; then
             echo "⚠️ One or more notification jobs failed in Development"
             echo "Please check Supabase Edge Function logs for details"
             exit 1

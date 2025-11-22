@@ -11,6 +11,7 @@ import '../../domain/usecases/request_notification_permissions.dart'
     as request_usecases;
 import '../../domain/usecases/update_notification_preferences.dart'
     as update_usecases;
+import '../utils/time_of_day_extensions.dart';
 import 'notification_event.dart';
 import 'notification_state.dart';
 
@@ -36,30 +37,31 @@ class NotificationBloc extends Bloc<NotificationEvent, NotificationState> {
     LoadNotificationPreferences event,
     Emitter<NotificationState> emit,
   ) async {
-    emit(const NotificationLoading());
+    try {
+      emit(const NotificationLoading());
 
-    final preferencesResult = await getPreferences(NoParams());
+      final preferencesResult = await getPreferences(NoParams());
+      final permissionResult = await checkPermissions(NoParams());
 
-    await preferencesResult.fold(
-      (failure) async => emit(NotificationError(message: failure.message)),
-      (preferences) async {
-        // Check actual OS permission status
-        final permissionResult = await checkPermissions(NoParams());
-
-        permissionResult.fold(
-          // If permission check fails, treat as not granted
-          (_) => emit(NotificationPreferencesLoaded(
+      // Use fold to extract values and emit state synchronously
+      preferencesResult.fold(
+        (failure) {
+          emit(NotificationError(message: failure.message));
+        },
+        (preferences) {
+          final permissionsGranted = permissionResult.fold(
+            (_) => false,
+            (granted) => granted,
+          );
+          emit(NotificationPreferencesLoaded(
             preferences: preferences,
-            permissionsGranted: false,
-          )),
-          // Use actual permission status
-          (granted) => emit(NotificationPreferencesLoaded(
-            preferences: preferences,
-            permissionsGranted: granted,
-          )),
-        );
-      },
-    );
+            permissionsGranted: permissionsGranted,
+          ));
+        },
+      );
+    } catch (e) {
+      emit(NotificationError(message: 'Failed to load preferences: $e'));
+    }
   }
 
   Future<void> _onUpdatePreferences(
@@ -68,10 +70,17 @@ class NotificationBloc extends Bloc<NotificationEvent, NotificationState> {
   ) async {
     emit(const NotificationLoading());
 
+    // Convert Flutter TimeOfDay to domain TimeOfDayVO at presentation boundary
+    final domainReminderTime = event.streakReminderTime?.toTimeOfDayVO();
+
     final result = await updatePreferences(
       update_usecases.UpdatePreferencesParams(
         dailyVerseEnabled: event.dailyVerseEnabled,
         recommendedTopicEnabled: event.recommendedTopicEnabled,
+        streakReminderEnabled: event.streakReminderEnabled,
+        streakMilestoneEnabled: event.streakMilestoneEnabled,
+        streakLostEnabled: event.streakLostEnabled,
+        streakReminderTime: domainReminderTime,
       ),
     );
 

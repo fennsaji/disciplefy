@@ -3,16 +3,23 @@ import 'package:google_fonts/google_fonts.dart';
 
 import '../../domain/entities/token_status.dart';
 import '../../../../core/extensions/translation_extension.dart';
+import '../../../../core/i18n/translation_keys.dart';
 
 /// Widget that displays the current user plan information
 class CurrentPlanSection extends StatelessWidget {
   final TokenStatus tokenStatus;
   final VoidCallback onUpgrade;
+  final VoidCallback? onManageSubscription;
+  final bool isCancelledButActive;
+  final VoidCallback? onContinueSubscription;
 
   const CurrentPlanSection({
     super.key,
     required this.tokenStatus,
     required this.onUpgrade,
+    this.onManageSubscription,
+    this.isCancelledButActive = false,
+    this.onContinueSubscription,
   });
 
   @override
@@ -66,7 +73,28 @@ class CurrentPlanSection extends StatelessWidget {
                   ),
                 ),
                 const Spacer(),
-                if (tokenStatus.userPlan != UserPlan.premium)
+                if (tokenStatus.userPlan == UserPlan.premium &&
+                    isCancelledButActive &&
+                    onContinueSubscription != null)
+                  // Show "Continue Subscription" for cancelled but active subscriptions
+                  OutlinedButton.icon(
+                    onPressed: onContinueSubscription,
+                    icon: const Icon(Icons.restart_alt),
+                    label: Text(
+                        context.tr(TranslationKeys.plansContinueSubscription)),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Colors.green[700],
+                      side: BorderSide(color: Colors.green[700]!),
+                    ),
+                  )
+                else if (tokenStatus.userPlan == UserPlan.premium &&
+                    onManageSubscription != null)
+                  OutlinedButton.icon(
+                    onPressed: onManageSubscription,
+                    icon: const Icon(Icons.settings),
+                    label: Text(context.tr(TranslationKeys.plansManage)),
+                  )
+                else if (tokenStatus.userPlan != UserPlan.premium)
                   OutlinedButton(
                     onPressed: onUpgrade,
                     child: Text(
@@ -85,6 +113,34 @@ class CurrentPlanSection extends StatelessWidget {
                 color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
               ),
             ),
+            if (isCancelledButActive) ...[
+              const SizedBox(height: 8),
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: Colors.orange[50],
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.orange[300]!),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.info_outline,
+                        size: 16, color: Colors.orange[700]),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        context.tr(TranslationKeys.plansCancelledNotice),
+                        style: GoogleFonts.inter(
+                          fontSize: 12,
+                          color: Colors.orange[900],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ],
         ),
       ),

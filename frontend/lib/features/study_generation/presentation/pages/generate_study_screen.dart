@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -56,6 +57,12 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
 
   // Track if we've already triggered a token refresh to prevent loops
   bool _isRefreshingTokens = false;
+
+  // Timer to ensure loading state doesn't get stuck
+  Timer? _generationTimeoutTimer;
+
+  // Track if we're currently navigating to prevent multiple navigations
+  bool _isNavigating = false;
 
   // Language preference service for database integration
   late final LanguagePreferenceService _languagePreferenceService;
@@ -211,9 +218,49 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
   void dispose() {
     // Remove app lifecycle observer
     WidgetsBinding.instance.removeObserver(this);
+    _generationTimeoutTimer?.cancel();
     _inputController.dispose();
     _inputFocusNode.dispose();
     super.dispose();
+  }
+
+  /// Start loading state with timeout protection
+  void _startGenerationWithTimeout() {
+    setState(() {
+      _isGeneratingStudyGuide = true;
+      _isNavigating = false;
+    });
+
+    // Cancel any existing timer
+    _generationTimeoutTimer?.cancel();
+
+    // Set timeout to reset loading state after 30 seconds
+    _generationTimeoutTimer = Timer(const Duration(seconds: 30), () {
+      if (mounted && _isGeneratingStudyGuide) {
+        debugPrint(
+            '⏱️ [GENERATE_STUDY] Study generation timeout - resetting loading state');
+        _resetLoadingState();
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+                'Study generation is taking longer than expected. Please try again.'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+      }
+    });
+  }
+
+  /// Reset loading state and cancel timer
+  void _resetLoadingState() {
+    if (mounted) {
+      setState(() {
+        _isGeneratingStudyGuide = false;
+        _isNavigating = false;
+      });
+      _generationTimeoutTimer?.cancel();
+    }
   }
 
   void _validateInput() {
@@ -367,9 +414,11 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
                       ),
                       const SizedBox(width: 4),
                       Text(
-                        '${tokenState.tokenStatus.totalTokens}',
+                        tokenState.tokenStatus.isPremium
+                            ? '∞'
+                            : '${tokenState.tokenStatus.totalTokens}',
                         style: GoogleFonts.inter(
-                          fontSize: 14,
+                          fontSize: tokenState.tokenStatus.isPremium ? 18 : 14,
                           fontWeight: FontWeight.w600,
                           color: Theme.of(context).colorScheme.primary,
                         ),
@@ -403,9 +452,13 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
                       ),
                       const SizedBox(width: 4),
                       Text(
-                        '${tokenState.previousTokenStatus!.totalTokens}',
+                        tokenState.previousTokenStatus!.isPremium
+                            ? '∞'
+                            : '${tokenState.previousTokenStatus!.totalTokens}',
                         style: GoogleFonts.inter(
-                          fontSize: 14,
+                          fontSize: tokenState.previousTokenStatus!.isPremium
+                              ? 18
+                              : 14,
                           fontWeight: FontWeight.w600,
                           color: Colors.orange[700],
                         ),
@@ -425,30 +478,38 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
       listeners: [
         BlocListener<StudyBloc, StudyState>(
           listener: (context, state) {
+            // Handle success state first
             if (state is StudyGenerationSuccess) {
-              // Stop loading and navigate to study guide screen with generated content
-              setState(() {
-                _isGeneratingStudyGuide = false;
-              });
+              // Study guide generated successfully - navigate and reset state
+              if (!_isNavigating) {
+                debugPrint(
+                    '✅ [GENERATE_STUDY] Study guide generated - navigating to study guide screen');
+                _isNavigating = true;
+                _resetLoadingState();
 
-              // Refresh token status after successful generation to reflect backend consumption
-              context.read<TokenBloc>().add(const GetTokenStatus());
+                // Refresh token status after successful generation
+                context.read<TokenBloc>().add(const GetTokenStatus());
 
-              // Set flag to indicate navigation away (will trigger token refresh on return)
-              _hasNavigatedAway = true;
+                // Set flag to indicate navigation away
+                _hasNavigatedAway = true;
 
-              _navigator.navigateToStudyGuide(
-                context,
-                studyGuide: state.studyGuide,
-                source: StudyNavigationSource.generate,
-              );
-            } else if (state is StudyGenerationFailure) {
-              // Stop loading and show error message with retry option
-              setState(() {
-                _isGeneratingStudyGuide = false;
-              });
+                _navigator.navigateToStudyGuide(
+                  context,
+                  studyGuide: state.studyGuide,
+                  source: StudyNavigationSource.generate,
+                );
+              }
+              return; // Exit early
+            }
 
-              // Refresh token status after failure to sync with backend consumption
+            // Handle failure state
+            if (state is StudyGenerationFailure) {
+              // Generation failed - reset state and show error
+              debugPrint(
+                  '❌ [GENERATE_STUDY] Study guide generation failed: ${state.failure.message}');
+              _resetLoadingState();
+
+              // Refresh token status after failure
               context.read<TokenBloc>().add(const GetTokenStatus());
 
               final displayMessage = kDebugMode
@@ -457,16 +518,24 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
 
               _showErrorDialog(
                   context, displayMessage, state.isRetryable, state.failure);
-            } else if (state is StudyGenerationInProgress) {
-              // Update loading state based on BLoC state
-              setState(() {
-                _isGeneratingStudyGuide = true;
-              });
-            } else if (state is StudyInitial) {
+              return; // Exit early
+            }
+
+            // Handle in-progress state
+            if (state is StudyGenerationInProgress) {
+              // Start generation with timeout protection
+              _startGenerationWithTimeout();
+              return; // Exit early
+            }
+
+            // Handle initial/reset state
+            if (state is StudyInitial) {
               // Clear loading state when returning to initial state
-              setState(() {
-                _isGeneratingStudyGuide = false;
-              });
+              if (!_isNavigating) {
+                debugPrint(
+                    '🔄 [GENERATE_STUDY] Returned to initial state - clearing loader');
+                _resetLoadingState();
+              }
             }
           },
         ),
@@ -976,16 +1045,12 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
   void _generateStudyGuide() {
     if (!_isInputValid) return;
 
-    // Prevent multiple clicks during generation
-    if (_isGeneratingStudyGuide) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(context.tr(TranslationKeys.generateStudyInProgress)),
-          duration: const Duration(seconds: 2),
-        ),
-      );
+    // Prevent multiple clicks during navigation
+    if (_isNavigating) {
       return;
     }
+
+    _isNavigating = true;
 
     final input = _inputController.text.trim();
     final inputType = _selectedMode == StudyInputMode.scripture
@@ -994,11 +1059,6 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
             ? 'topic'
             : 'question';
     final languageCode = _selectedLanguage.code;
-
-    // Set loading state immediately
-    setState(() {
-      _isGeneratingStudyGuide = true;
-    });
 
     // Consume tokens immediately for UI feedback
     if (_currentTokenStatus != null && !_currentTokenStatus!.isPremium) {
@@ -1013,14 +1073,26 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
       context.read<TokenBloc>().add(const GetTokenStatus());
     }
 
-    // Trigger BLoC event to generate study guide
-    context.read<StudyBloc>().add(
-          GenerateStudyGuideRequested(
-            input: input,
-            inputType: inputType,
-            language: languageCode,
-          ),
-        );
+    // Set flag to indicate navigation away (will trigger token refresh on return)
+    _hasNavigatedAway = true;
+
+    final encodedInput = Uri.encodeComponent(input);
+
+    debugPrint(
+        '🔍 [GENERATE_STUDY] Navigating to study guide V2 for $inputType: $input');
+
+    // Navigate directly to study guide V2 - it will handle generation
+    context.go(
+        '/study-guide-v2?input=$encodedInput&type=$inputType&language=$languageCode&source=generate');
+
+    // Reset navigation flag after a short delay
+    Future.delayed(const Duration(milliseconds: 500), () {
+      if (mounted) {
+        setState(() {
+          _isNavigating = false;
+        });
+      }
+    });
   }
 
   void _showErrorDialog(

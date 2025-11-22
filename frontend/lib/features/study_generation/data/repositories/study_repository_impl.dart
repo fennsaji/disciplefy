@@ -40,6 +40,7 @@ class StudyRepositoryImpl implements StudyRepository {
   Future<Either<Failure, StudyGuide>> generateStudyGuide({
     required String input,
     required String inputType,
+    String? topicDescription,
     required String language,
   }) async {
     try {
@@ -57,6 +58,7 @@ class StudyRepositoryImpl implements StudyRepository {
       final studyGuide = await _remoteDataSource.generateStudyGuide(
         input: input,
         inputType: inputType,
+        topicDescription: topicDescription,
         language: language,
       );
 

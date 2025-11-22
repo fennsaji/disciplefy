@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 import 'package:hive_flutter/hive_flutter.dart';
@@ -11,6 +13,10 @@ class ApiAuthHelper {
   static const String _anonymousSessionBoxName = 'app_settings';
   static const String _sessionIdKey = 'anonymous_session_id';
   static const Uuid _uuid = Uuid();
+
+  /// Completer to synchronize concurrent token refresh attempts
+  /// Prevents race condition where multiple API calls trigger simultaneous refreshes
+  static Completer<bool>? _refreshCompleter;
 
   /// Get API headers with proper authentication
   /// Uses live Supabase session for authenticated users
@@ -113,10 +119,14 @@ class ApiAuthHelper {
               '🔐 [TOKEN_VALIDATION] Token expired at: $expiryDate - token invalid');
           return false;
         }
+
+        print(
+            '🔐 [TOKEN_VALIDATION] Token is valid for user: ${session.user.id} (expires: $expiryDate)');
+      } else {
+        print(
+            '🔐 [TOKEN_VALIDATION] ℹ️  No expiry timestamp - token assumed valid for user: ${session.user.id}');
       }
 
-      print(
-          '🔐 [TOKEN_VALIDATION] Token is valid for user: ${session.user.id}');
       return true;
     } catch (e) {
       print('🔐 [TOKEN_VALIDATION] Error validating token: $e - token invalid');
@@ -134,6 +144,7 @@ class ApiAuthHelper {
 
   /// Validate token before making authenticated API requests
   /// Throws TokenValidationException if token is invalid
+  /// Automatically refreshes session if token is expired or close to expiry
   static Future<void> validateTokenForRequest() async {
     // Anonymous users don't need token validation
     if (!requiresTokenValidation()) {
@@ -141,9 +152,29 @@ class ApiAuthHelper {
       return;
     }
 
+    print(
+        '🔐 [TOKEN_VALIDATION] Starting token validation for authenticated user');
+
+    // Proactively refresh session if expired or close to expiry
+    // This prevents initial API failures after long inactivity
+    final refreshed = await _refreshSessionIfNeeded();
+    if (!refreshed) {
+      print(
+          '🔐 [TOKEN_VALIDATION] ❌ Session refresh failed - both access and refresh tokens may be expired');
+      print('🔐 [TOKEN_VALIDATION] User will need to re-authenticate');
+      throw const TokenValidationException(
+        message: 'Authentication session expired and could not be refreshed',
+        code: 'SESSION_EXPIRED',
+      );
+    }
+
+    print(
+        '🔐 [TOKEN_VALIDATION] Session refresh check complete - validating token');
+
+    // Validate the (now refreshed) token
     if (!validateCurrentToken()) {
       print(
-          '🔐 [TOKEN_VALIDATION] Token validation failed - throwing exception');
+          '🔐 [TOKEN_VALIDATION] ❌ Token validation failed after refresh - unexpected error');
       throw const TokenValidationException(
         message: 'Authentication token is invalid or expired',
         code: 'TOKEN_INVALID',
@@ -151,7 +182,104 @@ class ApiAuthHelper {
     }
 
     print(
-        '🔐 [TOKEN_VALIDATION] Token validation passed - proceeding with request');
+        '🔐 [TOKEN_VALIDATION] ✅ Token validation passed - proceeding with request');
+  }
+
+  /// Refresh session if token is expired or expires within 5 minutes
+  /// Returns true if session is valid (either already valid or successfully refreshed)
+  /// Returns false if refresh failed
+  ///
+  /// RACE CONDITION FIX: Uses Completer to ensure only one refresh happens at a time
+  /// If multiple API calls trigger refresh simultaneously, they all wait for the same refresh
+  static Future<bool> _refreshSessionIfNeeded() async {
+    // If refresh already in progress, wait for it to complete
+    if (_refreshCompleter != null) {
+      print(
+          '🔐 [SESSION_REFRESH] ⏳ Refresh already in progress, waiting for completion...');
+      return await _refreshCompleter!.future;
+    }
+
+    // Start new refresh operation
+    _refreshCompleter = Completer<bool>();
+
+    try {
+      final session = Supabase.instance.client.auth.currentSession;
+
+      if (session == null) {
+        print('🔐 [SESSION_REFRESH] No session to refresh');
+        _refreshCompleter!.complete(false);
+        return false;
+      }
+
+      // Check if token has expiry information
+      if (session.expiresAt == null) {
+        // No expiry timestamp - assume session is valid (persistent/long-lived session)
+        print(
+            '🔐 [SESSION_REFRESH] ℹ️  No expiry timestamp found - assuming session is valid');
+        print(
+            '🔐 [SESSION_REFRESH] ℹ️  Session may be persistent or long-lived');
+        _refreshCompleter!.complete(true);
+        return true;
+      }
+
+      // Check if token is expired or expires soon (within 5 minutes)
+      final expiryTime =
+          DateTime.fromMillisecondsSinceEpoch(session.expiresAt! * 1000);
+      final now = DateTime.now();
+      final expiresWithin5Min = now.add(const Duration(minutes: 5));
+
+      if (expiryTime.isAfter(expiresWithin5Min)) {
+        print(
+            '🔐 [SESSION_REFRESH] Token is still valid (expires: $expiryTime) - no refresh needed');
+        _refreshCompleter!.complete(true);
+        return true;
+      }
+
+      print(
+          '🔐 [SESSION_REFRESH] Token expired or expires soon (expires: $expiryTime) - refreshing...');
+
+      // Attempt to refresh the session
+      final response = await Supabase.instance.client.auth.refreshSession();
+
+      if (response.session != null) {
+        // Verify the refreshed token is actually valid and not expired
+        if (response.session!.expiresAt != null) {
+          final newExpiry = DateTime.fromMillisecondsSinceEpoch(
+              response.session!.expiresAt! * 1000);
+          final now = DateTime.now();
+
+          if (now.isAfter(newExpiry)) {
+            print(
+                '🔐 [SESSION_REFRESH] ❌ Refreshed token is still expired (expires: $newExpiry)');
+            print(
+                '🔐 [SESSION_REFRESH] This indicates the refresh token itself is expired');
+            _refreshCompleter!.complete(false);
+            return false;
+          }
+
+          print('🔐 [SESSION_REFRESH] ✅ Session refresh successful');
+          print('🔐 [SESSION_REFRESH] New token expires: $newExpiry');
+        } else {
+          print('🔐 [SESSION_REFRESH] ✅ Session refresh successful');
+          print(
+              '🔐 [SESSION_REFRESH] ℹ️  No expiry timestamp on refreshed session - assumed valid');
+        }
+
+        _refreshCompleter!.complete(true);
+        return true;
+      } else {
+        print('🔐 [SESSION_REFRESH] ❌ Session refresh returned null');
+        _refreshCompleter!.complete(false);
+        return false;
+      }
+    } catch (e) {
+      print('🔐 [SESSION_REFRESH] ❌ Session refresh error: $e');
+      _refreshCompleter!.complete(false);
+      return false;
+    } finally {
+      // Reset completer for next refresh cycle
+      _refreshCompleter = null;
+    }
   }
 
   /// Debug helper to log current authentication state

@@ -89,14 +89,20 @@ class AppTranslations {
       'hours_ago': '{count}h ago',
       'days_ago': '{count}d ago',
       'message_copied': 'Message copied to clipboard',
+      'expanded': 'Expanded',
+      'collapsed': 'Collapsed',
+      'double_tap_to': 'Double tap to',
+      'collapse': 'collapse',
+      'expand': 'expand',
     },
     'home': {
       'welcome_back': 'Welcome back, {name}',
       'continue_journey': 'Continue your spiritual journey with guided study',
+      'memory_verses': 'Memory Verses',
       'generate_study_guide': 'Generate Study Guide',
       'resume_last_study': 'Resume your last study',
       'continue_studying': 'Continue studying "{topic}"',
-      'recommended_topics': 'Recommended Study Topics',
+      'recommended_topics': 'Recommended Topics',
       'view_all': 'View All',
       'failed_to_load_topics': 'Failed to load topics',
       'something_went_wrong': 'Something went wrong!',
@@ -187,6 +193,9 @@ class AppTranslations {
       'feature_multi_language': 'Multi-Language Support',
       'feature_multi_language_subtitle':
           'Study in English, Hindi, and Malayalam',
+      'feature_daily_verse': 'Daily Verse & Insights',
+      'feature_daily_verse_subtitle':
+          'Start each day with inspiring scripture and instant study guides',
       'privacy_policy':
           'By continuing, you agree to our Terms of Service and Privacy Policy',
     },
@@ -208,6 +217,9 @@ class AppTranslations {
       'sign_in_to_sync': 'Sign in to sync your data',
       'sign_in': 'Sign In',
       'appearance': 'Appearance',
+      'notifications': 'Notifications',
+      'notification_preferences': 'Notification Preferences',
+      'notification_subtitle': 'Manage daily verse and topic reminders',
       'theme': 'Theme',
       'content_language': 'Language',
       'account_actions': 'Account Actions',
@@ -288,6 +300,20 @@ class AppTranslations {
       'submit_error':
           'Failed to prepare bug report submission. Please try again.',
     },
+    'memory': {
+      'totalVerses': 'Total Verses',
+      'dueToday': 'Due Today',
+      'reviewedToday': 'Reviewed Today',
+      'mastered': 'Mastered',
+      'masteryProgress': 'Mastery Progress',
+      'masteryPercentage': '{percentage}%',
+      'masteryMessage': {
+        'excellent': 'Excellent! Keep up the great work!',
+        'great': 'Great progress! You\'re doing well!',
+        'good': 'Good start! Keep practicing!',
+        'starting': 'Just getting started. You can do it!',
+      },
+    },
     'study_topics': {
       'title': 'Study Topics',
       'search_hint': 'Search topics...',
@@ -309,27 +335,79 @@ class AppTranslations {
       'clear_all': 'Clear All',
       'all': 'All',
     },
+    'notifications': {
+      'settings': {
+        'title': 'Notification Settings',
+        'loading': 'Loading notification settings...',
+        'preferences_updated': '✓ Preferences updated',
+        'permissions_granted': '✓ Notification permissions granted',
+        'permissions_denied': '❌ Notification permissions denied',
+        'preferences_title': 'Notification Preferences',
+        'daily_verse_title': 'Daily Verse',
+        'daily_verse_description':
+            'Receive inspirational Bible verses every morning at 6 AM',
+        'recommended_topics_title': 'Recommended Topics',
+        'recommended_topics_description':
+            'Get personalized study topic suggestions at 8 AM',
+        'streak_reminder_title': 'Streak Reminder',
+        'streak_reminder_description':
+            'Get reminded to maintain your daily verse reading streak',
+        'streak_milestone_title': 'Milestone Achievements',
+        'streak_milestone_description':
+            'Celebrate when you reach streak milestones (7, 30, 100, 365 days)',
+        'streak_lost_title': 'Streak Reset Motivation',
+        'streak_lost_description':
+            'Receive encouragement to start a new streak after a break',
+        'set_reminder_time': 'Set Reminder Time',
+        'reminder_time_label': 'Reminder Time',
+        'permission_title': 'Notification Permission',
+        'permission_enabled': 'Enabled - You will receive notifications',
+        'permission_disabled': 'Disabled - Enable to receive notifications',
+        'enable_button': 'Enable Notifications',
+        'about_title': 'About Notifications',
+        'about_info':
+            '• Notifications are sent based on your timezone\n• You can customize which notifications you receive\n• Tap on a notification to view the content directly\n• You can disable notifications anytime',
+        'error_title': 'Error Loading Settings',
+        'retry': 'Retry',
+      },
+    },
     'tokens': {
       'management': {
         'title': 'Token Management',
+        'actions': 'Token Actions',
         'view_history': 'View Purchase History',
         'refresh': 'Refresh token status',
+        'refresh_status': 'Refresh',
         'failed_to_load': 'Failed to load token information',
+        'load_error': 'Failed to Load Tokens',
         'loading': 'Loading token information...',
         'purchase_success': 'Successfully purchased {count} tokens!',
-        'purchase_failed': 'Payment failed: {message}',
+        'payment_failed': 'Payment failed: {message}',
         'confirmation_failed': 'Payment confirmation failed: {message}',
         'payment_error': 'Error opening payment: {error}',
+        'open_payment_error': 'Error opening payment: {error}',
         'upgrade_coming_soon': 'Plan upgrade coming soon!',
+        'just_now': 'Just now',
+        'day_ago': 'day ago',
+        'days_ago': 'days ago',
+        'hour_ago': 'hour ago',
+        'hours_ago': 'hours ago',
       },
       'balance': {
+        'title': 'Token Balance',
         'current_balance': 'Current Balance',
+        'daily': 'Daily',
+        'limit': 'Limit',
         'daily_limit': 'Daily Limit',
         'available': 'Available',
         'used_today': 'Used Today',
+        'resets': 'Resets',
         'time_until_reset': 'Time until reset',
         'purchased': 'Purchased',
         'unlimited': 'Unlimited',
+        'unlimited_tokens': 'Unlimited Tokens',
+        'running_low': 'Running Low',
+        'getting_low': 'Getting Low',
         'refresh': 'Refresh',
       },
       'purchase': {
@@ -342,20 +420,43 @@ class AppTranslations {
         'processing': 'Processing Payment...',
         'creating_order': 'Creating order...',
         'restricted': 'Token Purchase Restricted',
-        'restricted_free': 'Free plan users cannot purchase tokens',
-        'restricted_premium': 'Premium plan users have unlimited tokens',
+        'restricted_free':
+            'Free users cannot purchase additional tokens. Upgrade to Standard plan to buy extra tokens or Premium for unlimited access.',
+        'restricted_premium':
+            'Premium users have unlimited tokens! No need to purchase additional tokens.',
+        'restricted_standard': 'Standard users can purchase additional tokens.',
+        'insufficient_tokens':
+            'Insufficient tokens. Need {required} but only have {available}.',
       },
       'plans': {
         'current': 'Current Plan',
+        'current_plan': 'Current Plan',
+        'upgrade_plan': 'Upgrade Plan',
         'free': 'Free',
         'standard': 'Standard',
         'premium': 'Premium',
-        'free_desc': '10 daily study guides',
-        'standard_desc': 'Purchase tokens as needed',
-        'premium_desc': 'Unlimited study guides',
+        'free_subtitle': '20 Daily Tokens',
+        'standard_subtitle': '100 Daily Tokens + Purchase More',
+        'premium_subtitle': 'Unlimited Tokens',
+        'free_desc': 'Best for daily Bible study',
+        'free_description':
+            'Create Bible study guides with 20 daily tokens. Best for regular daily study.',
+        'standard_desc': 'Best for group leaders',
+        'standard_description':
+            '100 daily tokens plus ability to purchase more. Best for group leaders.',
+        'premium_desc': 'Best for pastors and teachers',
+        'premium_description':
+            'Create as many Bible study guides as you want. Best for pastors and teachers.',
         'upgrade': 'Upgrade Plan',
         'upgrade_standard': 'Upgrade to Standard',
+        'upgrade_to_standard': 'Upgrade to Standard',
         'upgrade_premium': 'Upgrade to Premium',
+        'upgrade_to_premium': 'Upgrade to Premium',
+        'go_premium': 'Go Premium',
+        'manage': 'Manage',
+        'continue_subscription': 'Continue Subscription',
+        'cancelled_notice':
+            'Subscription cancelled. Premium access continues until the end of current billing cycle.',
         'comparison': 'Compare Plans',
       },
       'history': {
@@ -488,15 +589,21 @@ class AppTranslations {
       'hours_ago': '{count} घंटे पहले',
       'days_ago': '{count} दिन पहले',
       'message_copied': 'संदेश क्लिपबोर्ड पर कॉपी किया गया',
+      'expanded': 'खुला',
+      'collapsed': 'बंद',
+      'double_tap_to': 'डबल टैप करें',
+      'collapse': 'बंद करने के लिए',
+      'expand': 'खोलने के लिए',
     },
     'home': {
       'welcome_back': 'वापस स्वागत है, {name}',
       'continue_journey':
           'निर्देशित अध्ययन के साथ अपनी आध्यात्मिक यात्रा जारी रखें',
+      'memory_verses': 'स्मृति आयतें',
       'generate_study_guide': 'अध्ययन गाइड बनाएं',
       'resume_last_study': 'पिछला पढ़ाई फिर शुरू करें',
       'continue_studying': '"{topic}" पढ़ते रहें',
-      'recommended_topics': 'सुझाए गए अध्ययन विषय',
+      'recommended_topics': 'अनुशंसित विषय',
       'view_all': 'सब देखें',
       'failed_to_load_topics': 'विषय नहीं खुले',
       'something_went_wrong': 'कुछ गड़बड़ हुई!',
@@ -580,6 +687,9 @@ class AppTranslations {
       'feature_multi_language': 'बहु-भाषा समर्थन',
       'feature_multi_language_subtitle':
           'अंग्रेजी, हिंदी और मलयालम में अध्ययन करें',
+      'feature_daily_verse': 'दैनिक वचन और अंतर्दृष्टि',
+      'feature_daily_verse_subtitle':
+          'प्रेरणादायक शास्त्र और त्वरित अध्ययन गाइड के साथ हर दिन शुरू करें',
       'privacy_policy':
           'जारी रखते हुए, आप हमारी सेवा की शर्तों और गोपनीयता नीति से सहमत हैं',
     },
@@ -600,6 +710,9 @@ class AppTranslations {
       'sign_in_to_sync': 'अपना डेटा सिंक करने के लिए साइन इन करें',
       'sign_in': 'साइन इन करें',
       'appearance': 'दिखावट',
+      'notifications': 'नोटिफिकेशन',
+      'notification_preferences': 'नोटिफिकेशन प्राथमिकताएं',
+      'notification_subtitle': 'दैनिक वचन और विषय रिमाइंडर प्रबंधित करें',
       'theme': 'थीम',
       'content_language': 'भाषा',
       'account_actions': 'खाता एक्शन',
@@ -682,6 +795,20 @@ class AppTranslations {
       'submit_error':
           'बग रिपोर्ट सबमिशन तैयार करने में विफल। कृपया पुनः प्रयास करें।',
     },
+    'memory': {
+      'totalVerses': 'कुल आयतें',
+      'dueToday': 'आज के लिए',
+      'reviewedToday': 'आज समीक्षा की',
+      'mastered': 'महारत हासिल',
+      'masteryProgress': 'महारत की प्रगति',
+      'masteryPercentage': '{percentage}%',
+      'masteryMessage': {
+        'excellent': 'उत्कृष्ट! बढ़िया काम जारी रखें!',
+        'great': 'बहुत अच्छी प्रगति! आप अच्छा कर रहे हैं!',
+        'good': 'अच्छी शुरुआत! अभ्यास जारी रखें!',
+        'starting': 'अभी शुरुआत की है। आप कर सकते हैं!',
+      },
+    },
     'study_topics': {
       'title': 'विषय',
       'search_hint': 'विषय ढूंढें...',
@@ -702,6 +829,43 @@ class AppTranslations {
       'clear_all': 'सभी साफ़ करें',
       'all': 'सभी',
     },
+    'notifications': {
+      'settings': {
+        'title': 'नोटिफिकेशन सेटिंग',
+        'loading': 'नोटिफिकेशन सेटिंग लोड हो रही है...',
+        'preferences_updated': '✓ प्राथमिकताएं अपडेट हो गईं',
+        'permissions_granted': '✓ नोटिफिकेशन अनुमति दी गई',
+        'permissions_denied': '❌ नोटिफिकेशन अनुमति अस्वीकार की गई',
+        'preferences_title': 'नोटिफिकेशन प्राथमिकताएं',
+        'daily_verse_title': 'दैनिक वचन',
+        'daily_verse_description':
+            'प्रतिदिन सुबह 6 बजे प्रेरणादायक बाइबल पद प्राप्त करें',
+        'recommended_topics_title': 'अनुशंसित विषय',
+        'recommended_topics_description':
+            'सुबह 8 बजे व्यक्तिगत अध्ययन विषय सुझाव प्राप्त करें',
+        'streak_reminder_title': 'स्ट्रीक रिमाइंडर',
+        'streak_reminder_description':
+            'अपनी दैनिक पद पढ़ने की स्ट्रीक बनाए रखने के लिए अनुस्मारक प्राप्त करें',
+        'streak_milestone_title': 'माइलस्टोन उपलब्धियाँ',
+        'streak_milestone_description':
+            'स्ट्रीक माइलस्टोन (7, 30, 100, 365 दिन) तक पहुंचने पर जश्न मनाएं',
+        'streak_lost_title': 'स्ट्रीक रीसेट प्रेरणा',
+        'streak_lost_description':
+            'ब्रेक के बाद नई स्ट्रीक शुरू करने के लिए प्रोत्साहन प्राप्त करें',
+        'set_reminder_time': 'रिमाइंडर समय सेट करें',
+        'reminder_time_label': 'रिमाइंडर समय',
+        'permission_title': 'नोटिफिकेशन अनुमति',
+        'permission_enabled': 'सक्षम - आपको नोटिफिकेशन प्राप्त होंगे',
+        'permission_disabled':
+            'अक्षम - नोटिफिकेशन प्राप्त करने के लिए सक्षम करें',
+        'enable_button': 'नोटिफिकेशन सक्षम करें',
+        'about_title': 'नोटिफिकेशन के बारे में',
+        'about_info':
+            '• नोटिफिकेशन आपके टाइमज़ोन के आधार पर भेजे जाते हैं\n• आप चुन सकते हैं कि कौन से नोटिफिकेशन प्राप्त करने हैं\n• सामग्री सीधे देखने के लिए नोटिफिकेशन पर टैप करें\n• आप किसी भी समय नोटिफिकेशन अक्षम कर सकते हैं',
+        'error_title': 'सेटिंग लोड करने में त्रुटि',
+        'retry': 'पुनः प्रयास करें',
+      },
+    },
     'tokens': {
       'management': {
         'title': 'टोकन मैनेज करें',
@@ -711,10 +875,16 @@ class AppTranslations {
         'loading': 'टोकन लोड हो रहे हैं...',
         'actions': 'एक्शन',
         'purchase_success': 'सफलतापूर्वक {count} टोकन खरीदे गए!',
-        'purchase_failed': 'भुगतान विफल: {message}',
+        'payment_failed': 'भुगतान विफल: {message}',
         'confirmation_failed': 'भुगतान पुष्टि विफल: {message}',
         'payment_error': 'भुगतान खोलने में त्रुटि: {error}',
+        'open_payment_error': 'पेमेंट खोलने में गड़बड़ी: {error}',
         'upgrade_coming_soon': 'योजना अपग्रेड जल्द आ रहा है!',
+        'just_now': 'अभी',
+        'day_ago': 'दिन पहले',
+        'days_ago': 'दिन पहले',
+        'hour_ago': 'घंटा पहले',
+        'hours_ago': 'घंटे पहले',
       },
       'balance': {
         'title': 'टोकन',
@@ -743,9 +913,13 @@ class AppTranslations {
         'processing': 'भुगतान प्रक्रिया में...',
         'creating_order': 'ऑर्डर बनाया जा रहा है...',
         'restricted': 'टोकन खरीद प्रतिबंधित',
-        'restricted_free': 'निःशुल्क योजना उपयोगकर्ता टोकन नहीं खरीद सकते',
+        'restricted_free':
+            'फ्री यूज़र्स अतिरिक्त टोकन नहीं खरीद सकते। स्टैंडर्ड प्लान में अपग्रेड करें या प्रीमियम लें असीमित एक्सेस के लिए।',
         'restricted_premium':
-            'प्रीमियम योजना उपयोगकर्ताओं के पास असीमित टोकन हैं',
+            'प्रीमियम यूज़र्स के पास असीमित टोकन हैं! अतिरिक्त टोकन खरीदने की जरूरत नहीं।',
+        'restricted_standard': 'स्टैंडर्ड यूज़र्स अतिरिक्त टोकन खरीद सकते हैं।',
+        'insufficient_tokens':
+            'अपर्याप्त टोकन। {required} चाहिए पर केवल {available} उपलब्ध हैं।',
       },
       'plans': {
         'current': 'करंट',
@@ -772,6 +946,10 @@ class AppTranslations {
         'upgrade_to_premium': 'प्रीमियम में अपग्रेड करें',
         'upgrade_standard': 'स्टैंडर्ड में अपग्रेड करें',
         'upgrade_premium': 'प्रीमियम में अपग्रेड करें',
+        'manage': 'प्रबंधित करें',
+        'continue_subscription': 'सब्सक्रिप्शन जारी रखें',
+        'cancelled_notice':
+            'सब्सक्रिप्शन रद्द कर दी गई। प्रीमियम एक्सेस वर्तमान बिलिंग साइकिल के अंत तक जारी रहेगा।',
         'comparison': 'प्लान की तुलना',
       },
       'history': {
@@ -904,14 +1082,20 @@ class AppTranslations {
       'hours_ago': '{count} മണിക്കൂർ മുമ്പ്',
       'days_ago': '{count} ദിവസം മുമ്പ്',
       'message_copied': 'സന്ദേശം ക്ലിപ്പ്ബോർഡിലേക്ക് പകർത്തി',
+      'expanded': 'തുറന്നു',
+      'collapsed': 'അടച്ചു',
+      'double_tap_to': 'ഡബിൾ ടാപ്പ് ചെയ്യൂ',
+      'collapse': 'അടയ്ക്കാൻ',
+      'expand': 'തുറക്കാൻ',
     },
     'home': {
       'welcome_back': 'സ്വാഗതം, {name}',
       'continue_journey': 'ബൈബിൾ വായിച്ച് വിശ്വാസം വളർത്തൂ',
+      'memory_verses': 'സ്മരണ വാക്യങ്ങൾ',
       'generate_study_guide': 'ഗൈഡ് ഉണ്ടാക്കൂ',
       'resume_last_study': 'അവസാന പഠനം തുടരൂ',
       'continue_studying': '"{topic}" പഠനം തുടരൂ',
-      'recommended_topics': 'ശല്യമായ പഠന വിഷയങ്ങൾ',
+      'recommended_topics': 'ശുപാര്‍ശ ചെയ്യപ്പെട്ട വിഷയങ്ങള്‍',
       'view_all': 'എല്ലാം കാണൂ',
       'failed_to_load_topics': 'വിഷയങ്ങൾ തുറന്നില്ല',
       'something_went_wrong': 'എന്തോ തെറ്റി!',
@@ -997,6 +1181,9 @@ class AppTranslations {
       'feature_multi_language': 'ബഹു-ഭാഷാ പിന്തുണ',
       'feature_multi_language_subtitle':
           'ഇംഗ്ലീഷ്, ഹിന്ദി, മലയാളം എന്നിവയില്‍ പഠിക്കുക',
+      'feature_daily_verse': 'ദൈനിക വചനവും ഉൾക്കാഴ്ചകളും',
+      'feature_daily_verse_subtitle':
+          'പ്രചോദനാത്മക വചനങ്ങളും പെട്ടെന്നുള്ള പഠന ഗൈഡുകളും ഉപയോഗിച്ച് ഓരോ ദിവസവും ആരംഭിക്കുക',
       'privacy_policy':
           'തുടരുമ്പോൾ, നിങ്ങൾ ഞങ്ങളുടെ സേവന നിബന്ധനകളും സ്വകാര്യതാ നീതിയുമായി സംമതിക്കുന്നു',
     },
@@ -1018,6 +1205,10 @@ class AppTranslations {
       'sign_in_to_sync': 'നിങ്ങളുടെ ഡാറ്റ സിങ്ക് ചെയ്യാൻ സൈൻ ഇൻ ചെയ്യുക',
       'sign_in': 'സൈൻ ഇൻ ചെയ്യുക',
       'appearance': 'കാഴ്ച',
+      'notifications': 'അറിയിപ്പുകൾ',
+      'notification_preferences': 'അറിയിപ്പ് പ്രാപ്തരുകൾ',
+      'notification_subtitle':
+          'ദൈനിക വചനവും വിഷയ ഓർമ്മപ്പെടുത്തലുകളും നിയന്ത്രിക്കുക',
       'theme': 'ഥീം',
       'content_language': 'ഭാഷ',
       'account_actions': 'അക്കൗണ്ട് പ്രവർ‍ത്തനങ്ങൾ',
@@ -1102,6 +1293,20 @@ class AppTranslations {
       'submit_error':
           'ബഗ് റിപ്പോർട്ട് സമർപ്പിക്കൽ തയ്യാറാക്കുന്നതിൽ പരാജയപ്പെട്ടു. ദയവായി വീണ്ടും ശ്രമിക്കുക.',
     },
+    'memory': {
+      'totalVerses': 'മൊത്തം വാക്യങ്ങൾ',
+      'dueToday': 'ഇന്ന് അവലോകനം',
+      'reviewedToday': 'ഇന്ന് പരിശോധിച്ചത്',
+      'mastered': 'പ്രാവീണ്യം നേടി',
+      'masteryProgress': 'പ്രാവീണ്യ പുരോഗതി',
+      'masteryPercentage': '{percentage}%',
+      'masteryMessage': {
+        'excellent': 'മികച്ചത്! നല്ല ജോലി തുടരുക!',
+        'great': 'മികച്ച പുരോഗതി! നിങ്ങൾ നന്നായി ചെയ്യുന്നു!',
+        'good': 'നല്ല തുടക്കം! പരിശീലനം തുടരുക!',
+        'starting': 'ഇപ്പോൾ ആരംഭിച്ചു. നിങ്ങൾക്ക് ഇത് ചെയ്യാൻ കഴിയും!',
+      },
+    },
     'study_topics': {
       'title': 'പഠന വിഷയങ്ങൾ',
       'search_hint': 'വിഷയങ്ങൾ തിരയുക...',
@@ -1124,6 +1329,43 @@ class AppTranslations {
       'clear_all': 'എല്ലാം മായ്ക്കുക',
       'all': 'എല്ലാം',
     },
+    'notifications': {
+      'settings': {
+        'title': 'അറിയിപ്പ് സെറ്റിങ്സ്',
+        'loading': 'അറിയിപ്പ് സെറ്റിങ്സ് ലോഡു ചെയ്യുന്നു...',
+        'preferences_updated': '✓ പ്രാപ്തരുകൾ അപ്ഡേറ്റ് ചെയ്തു',
+        'permissions_granted': '✓ അറിയിപ്പ് അനുമതി നൽകി',
+        'permissions_denied': '❌ അറിയിപ്പ് അനുമതി നിരസിച്ചു',
+        'preferences_title': 'അറിയിപ്പ് പ്രാപ്തരുകൾ',
+        'daily_verse_title': 'ദൈനിക വചനം',
+        'daily_verse_description':
+            'രാവിലെ ആറു മണിക്ക് പ്രേരണാദായകമായ ബൈബിള്‍ വചനങ്ങൾ സ്വീകരിക്കുക',
+        'recommended_topics_title': 'ശിഫാരസ്സു ചെയ്യുന്ന വിഷയങ്ങൾ',
+        'recommended_topics_description':
+            'രാവിലെ എട്ട് മണിക്ക് വ്യക്തിഗത പഠന വിഷയ സൂചനകൾ സ്വീകരിക്കുക',
+        'streak_reminder_title': 'സ്ട്രീക് ഓർമ്മപ്പെടുത്തൽ',
+        'streak_reminder_description':
+            'നിങ്ങളുടെ ദൈനംദിന വചന വായനാ സ്ട്രീക് നിലനിർത്താൻ ഓർമ്മപ്പെടുത്തൽ നേടുക',
+        'streak_milestone_title': 'നാഴികക്കല്ല് നേട്ടങ്ങൾ',
+        'streak_milestone_description':
+            'സ്ട്രീക് നാഴികക്കല്ലുകൾ (7, 30, 100, 365 ദിവസങ്ങൾ) എത്തുമ്പോൾ ആഘോഷിക്കുക',
+        'streak_lost_title': 'സ്ട്രീക് റീസെറ്റ് പ്രചോദനം',
+        'streak_lost_description':
+            'ഇടവേളയ്ക്ക് ശേഷം പുതിയ സ്ട്രീക് ആരംഭിക്കാൻ പ്രോത്സാഹനം നേടുക',
+        'set_reminder_time': 'ഓർമ്മപ്പെടുത്തൽ സമയം സജ്ജമാക്കുക',
+        'reminder_time_label': 'ഓർമ്മപ്പെടുത്തൽ സമയം',
+        'permission_title': 'അറിയിപ്പ് അനുമതി',
+        'permission_enabled': 'പ്രവർ‍ത്തിപ്പിച്ചു - അറിയിപ്പുകൾ ലഭിക്കും',
+        'permission_disabled':
+            'പ്രവർ‍ത്തിപ്പിക്കാത്തത് - അറിയിപ്പുകൾ ലഭിക്കാൻ പ്രവർ‍ത്തിപ്പിക്കുക',
+        'enable_button': 'അറിയിപ്പുകൾ പ്രവർ‍ത്തിപ്പിക്കുക',
+        'about_title': 'അറിയിപ്പുകളെ കുറിച്ച്',
+        'about_info':
+            '• അറിയിപ്പുകൾ നിങ്ങളുടെ ടൈംസോൺ അനുസരിച്ച് അയയ്‌ക്കുന്നു\n• ഏതൊക്കെ അറിയിപ്പുകൾ സ്വീകരിക്കണമെന്ന് തിരഞ്ഞെടുക്കാം\n• ഉള്ളടക്കം നേരിട്ട് കാണാൻ അറിയിപ്പിൽ ടാപ്പ് ചെയ്യുക\n• ഏതു സമയവും അറിയിപ്പുകൾ പ്രവർ‍ത്തിപ്പിക്കാത്താക്കാം',
+        'error_title': 'സെറ്റിങ്സ് ലോഡ് ചെയ്യുന്നതിൽ പ്രശ്നം',
+        'retry': 'വീണ്ടും ശ്രമിക്കുക',
+      },
+    },
     'tokens': {
       'management': {
         'title': 'ടോക്കൻ മാനേജ് ചെയ്യൂ',
@@ -1133,10 +1375,16 @@ class AppTranslations {
         'loading': 'ടോക്കൻ ലോഡ് ആവുന്നു...',
         'actions': 'ആക്‌ഷൻ',
         'purchase_success': '{count} ടോക്കണുകൾ വിജയകരമായി വാങ്ങി!',
-        'purchase_failed': 'പേയ്മെന്റ് പരാജയപ്പെട്ടു: {message}',
+        'payment_failed': 'പേയ്മെന്റ് പരാജയപ്പെട്ടു: {message}',
         'confirmation_failed': 'പേയ്മെന്റ് സ്ഥിരീകരണം പരാജയപ്പെട്ടു: {message}',
         'payment_error': 'പേയ്മെന്റ് തുറക്കുന്നതിൽ പിശക്: {error}',
+        'open_payment_error': 'പേയ്‌മെന്റ് തുറക്കാൻ പ്രശ്നം: {error}',
         'upgrade_coming_soon': 'പ്ലാൻ അപ്ഗ്രേഡ് ഉടൻ വരുന്നു!',
+        'just_now': 'ഇപ്പോൾ',
+        'day_ago': 'ദിവസം മുമ്പ്',
+        'days_ago': 'ദിവസം മുമ്പ്',
+        'hour_ago': 'മണിക്കൂർ മുമ്പ്',
+        'hours_ago': 'മണിക്കൂർ മുമ്പ്',
       },
       'balance': {
         'title': 'ടോക്കൻ',
@@ -1166,9 +1414,13 @@ class AppTranslations {
         'creating_order': 'ഓർഡർ സൃഷ്ടിക്കുന്നു...',
         'restricted': 'ടോക്കൺ വാങ്ങൽ നിയന്ത്രിതം',
         'restricted_free':
-            'സൗജന്യ പ്ലാൻ ഉപയോക്താക്കൾക്ക് ടോക്കണുകൾ വാങ്ങാനാവില്ല',
+            'ഫ്രീ യൂസേഴ്‌സിന് അധിക ടോക്കണുകൾ വാങ്ങാൻ കഴിയില്ല। സ്റ്റാൻഡേർഡ് പ്ലാനിലേക്ക് അപ്ഗ്രേഡ് ചെയ്യുക അല്ലെങ്കിൽ പരിധിയില്ലാത്ത ആക്‌സസിനായി പ്രീമിയം എടുക്കുക.',
         'restricted_premium':
-            'പ്രീമിയം പ്ലാൻ ഉപയോക്താക്കൾക്ക് പരിധിയില്ലാത്ത ടോക്കണുകളുണ്ട്',
+            'പ്രീമിയം ഉപയോക്താക്കൾക്ക് പരിധിയില്ലാത്ത ടോക്കണുകളുണ്ട്! അധിക ടോക്കണുകൾ വാങ്ങേണ്ട ആവശ്യമില്ല.',
+        'restricted_standard':
+            'സ്റ്റാൻഡേർഡ് യൂസർമാർക്ക് അധിക ടോക്കണുകൾ വാങ്ങാം.',
+        'insufficient_tokens':
+            'അപര്യാപ്ത ടോക്കണുകൾ. {required} വേണം പക്ഷേ {available} മാത്രമേ ഉള്ളൂ.',
       },
       'plans': {
         'current': 'കറന്റ്',
@@ -1192,6 +1444,10 @@ class AppTranslations {
         'upgrade_to_premium': 'പ്രീമിയത്തിലേക്ക് അപ്ഗ്രേഡ് ചെയ്യൂ',
         'upgrade_standard': 'സ്റ്റാൻഡേർഡിലേക്ക് അപ്ഗ്രേഡ് ചെയ്യുക',
         'upgrade_premium': 'പ്രീമിയത്തിലേക്ക് അപ്ഗ്രേഡ് ചെയ്യുക',
+        'manage': 'മാനേജ് ചെയ്യൂ',
+        'continue_subscription': 'സബ്‌സ്‌ക്രിപ്‌ഷൻ തുടരൂ',
+        'cancelled_notice':
+            'സബ്‌സ്‌ക്രിപ്‌ഷൻ റദ്ദാക്കി. നിലവിലെ ബില്ലിംഗ് സൈക്കിളിന്റെ അവസാനം വരെ പ്രീമിയം ആക്‌സസ് തുടരും.',
         'comparison': 'പ്ലാന്റെ തുലനം',
       },
       'history': {

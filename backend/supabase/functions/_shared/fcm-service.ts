@@ -349,7 +349,7 @@ export async function logNotification(
   supabaseKey: string,
   log: {
     userId: string;
-    notificationType: 'daily_verse' | 'recommended_topic';
+    notificationType: 'daily_verse' | 'recommended_topic' | 'streak_reminder' | 'streak_milestone' | 'streak_lost';
     title: string;
     body: string;
     topicId?: string;
@@ -382,6 +382,8 @@ export async function logNotification(
 
 /**
  * Check if user already received a notification today
+ * Only counts successful notifications (sent, delivered, clicked) - excludes failed attempts
+ * This allows retries for failed notifications
  */
 export async function hasReceivedNotificationToday(
   supabaseUrl: string,
@@ -391,15 +393,19 @@ export async function hasReceivedNotificationToday(
 ): Promise<boolean> {
   const supabase = createClient(supabaseUrl, supabaseKey);
 
-  const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+  // Calculate today and tomorrow in UTC
+  const now = new Date();
+  const today = now.toISOString().split('T')[0]; // YYYY-MM-DD
+  const tomorrow = new Date(now.getTime() + 24 * 60 * 60 * 1000).toISOString().split('T')[0]; // YYYY-MM-DD
 
   const { data, error } = await supabase
     .from('notification_logs')
     .select('id')
     .eq('user_id', userId)
     .eq('notification_type', notificationType)
+    .in('delivery_status', ['sent', 'delivered', 'clicked']) // Only count successful notifications
     .gte('sent_at', `${today}T00:00:00`)
-    .lt('sent_at', `${today}T23:59:59`)
+    .lt('sent_at', `${tomorrow}T00:00:00`) // Fixed: Use tomorrow 00:00:00 instead of today 23:59:59
     .limit(1);
 
   if (error) {
@@ -408,4 +414,41 @@ export async function hasReceivedNotificationToday(
   }
 
   return (data?.length || 0) > 0;
+}
+
+/**
+ * Batch check if multiple users have already received a notification today
+ * Returns a Set of user IDs who have already received the notification
+ * Only counts successful notifications (sent, delivered, clicked) - excludes failed attempts
+ * This is much more efficient than checking each user individually (avoids N+1 queries)
+ */
+export async function getBatchNotificationStatus(
+  supabaseUrl: string,
+  supabaseKey: string,
+  userIds: string[],
+  notificationType: 'daily_verse' | 'recommended_topic' | 'streak_reminder' | 'streak_milestone' | 'streak_lost'
+): Promise<Set<string>> {
+  const supabase = createClient(supabaseUrl, supabaseKey);
+
+  // Calculate today and tomorrow in UTC
+  const now = new Date();
+  const today = now.toISOString().split('T')[0]; // YYYY-MM-DD
+  const tomorrow = new Date(now.getTime() + 24 * 60 * 60 * 1000).toISOString().split('T')[0]; // YYYY-MM-DD
+
+  const { data, error } = await supabase
+    .from('notification_logs')
+    .select('user_id')
+    .eq('notification_type', notificationType)
+    .in('delivery_status', ['sent', 'delivered', 'clicked']) // Only count successful notifications
+    .gte('sent_at', `${today}T00:00:00`)
+    .lt('sent_at', `${tomorrow}T00:00:00`) // Fixed: Use tomorrow 00:00:00 instead of today 23:59:59
+    .in('user_id', userIds);
+
+  if (error) {
+    console.error('Error checking batch notification logs:', error);
+    return new Set(); // Return empty set if error (assume no one received)
+  }
+
+  // Return Set of user IDs who already received notification today
+  return new Set(data?.map(row => row.user_id) || []);
 }

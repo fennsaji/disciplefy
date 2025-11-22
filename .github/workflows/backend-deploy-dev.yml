@@ -207,7 +207,13 @@ jobs:
         FIREBASE_CLIENT_EMAIL=${{ secrets.FIREBASE_CLIENT_EMAIL_DEV }}
 
         # Authentication (Development)
-        GOOGLE_OAUTH_CLIENT_ID=${{ secrets.GOOGLE_OAUTH_CLIENT_ID_DEV }}
+        # MULTI-CLIENT OAUTH CONFIGURATION:
+        # Concatenates web and Android client IDs with comma for Supabase multi-client support
+        # - GOOGLE_OAUTH_CLIENT_ID_DEV: Web client (587108000155-...) for PKCE/redirect OAuth flows
+        # - GOOGLE_OAUTH_CLIENT_ID_ANDROID: Android client (16888340359-...) for native signInWithIdToken()
+        # Web client MUST be first to properly handle redirect-based auth flows
+        # This enables both Flutter web and Android app authentication simultaneously
+        GOOGLE_OAUTH_CLIENT_ID=${{ secrets.GOOGLE_OAUTH_CLIENT_ID_DEV }},${{ secrets.GOOGLE_OAUTH_CLIENT_ID_ANDROID }}
         GOOGLE_OAUTH_CLIENT_SECRET=${{ secrets.GOOGLE_OAUTH_CLIENT_SECRET_DEV }}
         
         # Application URLs (Development)
@@ -227,6 +233,7 @@ jobs:
         RAZORPAY_KEY_ID=${{ secrets.RAZORPAY_KEY_ID_DEV }}
         RAZORPAY_KEY_SECRET=${{ secrets.RAZORPAY_KEY_SECRET_DEV }}
         RAZORPAY_WEBHOOK_SECRET=${{ secrets.RAZORPAY_WEBHOOK_SECRET_DEV }}
+        RAZORPAY_PREMIUM_PLAN_ID=${{ secrets.RAZORPAY_PLAN_ID_DEV }}
 
         # SMS Configuration (Development)
         TWILIO_ACCOUNT_SID=${{ secrets.TWILIO_ACCOUNT_SID_DEV }}
@@ -258,7 +265,7 @@ jobs:
         if [ -d "supabase/migrations" ] && [ "$(ls -A supabase/migrations 2>/dev/null)" ]; then
           # Use DB_PASS environment variable for non-interactive authentication
           export DB_PASS="$SUPABASE_DB_PASSWORD"
-          supabase db push --db-url "postgresql://postgres.${PROJECT_REF}:${SUPABASE_DB_PASSWORD}@aws-0-us-east-2.pooler.supabase.com:6543/postgres"
+          supabase db push --include-all --db-url "postgresql://postgres.${PROJECT_REF}:${SUPABASE_DB_PASSWORD}@aws-0-us-east-2.pooler.supabase.com:6543/postgres"
           echo "✅ Database migrations deployed to ${{ env.DEPLOY_ENV }}"
         else
           echo "ℹ️ No migrations to deploy"

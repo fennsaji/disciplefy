@@ -18,6 +18,7 @@ abstract class StudyRemoteDataSource {
   Future<StudyGuide> generateStudyGuide({
     required String input,
     required String inputType,
+    String? topicDescription,
     required String language,
   });
 }
@@ -46,6 +47,7 @@ class StudyRemoteDataSourceImpl implements StudyRemoteDataSource {
   Future<StudyGuide> generateStudyGuide({
     required String input,
     required String inputType,
+    String? topicDescription,
     required String language,
   }) async {
     print('🚨 [STUDY_API] Starting study generation request');
@@ -79,6 +81,7 @@ class StudyRemoteDataSourceImpl implements StudyRemoteDataSource {
         body: {
           'input_type': inputType,
           'input_value': input,
+          if (topicDescription != null) 'topic_description': topicDescription,
           'language': language,
         },
         headers: headers,

@@ -19,6 +19,7 @@ import '../bloc/study_state.dart';
 import '../../../saved_guides/data/models/saved_guide_model.dart';
 import '../../../follow_up_chat/presentation/widgets/follow_up_chat_widget.dart';
 import '../../../follow_up_chat/presentation/bloc/follow_up_chat_bloc.dart';
+import '../../../follow_up_chat/presentation/bloc/follow_up_chat_event.dart';
 
 /// Study Guide Screen displaying generated content with sections and user interactions.
 ///
@@ -42,15 +43,8 @@ class StudyGuideScreen extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) => MultiBlocProvider(
-        providers: [
-          BlocProvider(
-            create: (context) => sl<StudyBloc>(),
-          ),
-          BlocProvider(
-            create: (context) => sl<FollowUpChatBloc>(),
-          ),
-        ],
+  Widget build(BuildContext context) => BlocProvider(
+        create: (context) => sl<StudyBloc>(),
         child: _StudyGuideScreenContent(
           studyGuide: studyGuide,
           routeExtra: routeExtra,
@@ -94,15 +88,26 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
   // Follow-up chat state
   bool _isChatExpanded = false;
 
+  // Completion tracking state
+  DateTime? _pageOpenedAt;
+  int _timeSpentSeconds = 0;
+  Timer? _timeTrackingTimer;
+  bool _hasScrolledToBottom = false;
+  bool _completionMarked = false;
+  bool _isCompletionTrackingStarted = false;
+
   @override
   void initState() {
     super.initState();
+    _pageOpenedAt = DateTime.now();
     _initializeStudyGuide();
   }
 
   @override
   void dispose() {
     _autoSaveTimer?.cancel();
+    _timeTrackingTimer?.cancel();
+    _isCompletionTrackingStarted = false;
     if (_autoSaveListener != null) {
       _notesController.removeListener(_autoSaveListener!);
     }
@@ -138,6 +143,7 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
     }
 
     _processGeneratedGuideNotes();
+    _startCompletionTracking();
   }
 
   void _processGeneratedGuideNotes() {
@@ -165,6 +171,7 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
       _isSaved = guideData['is_saved'] as bool? ?? true;
 
       _loadPersonalNotesIfSaved();
+      _startCompletionTracking();
     } catch (e) {
       _showError('Invalid study guide data. Please try again.');
     }
@@ -265,6 +272,111 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
     _notesController.addListener(_autoSaveListener!);
   }
 
+  // ============================================================================
+  // Completion Tracking Methods
+  // ============================================================================
+
+  /// Start tracking completion conditions (time spent + scroll to bottom)
+  void _startCompletionTracking() {
+    // Early return if already started to prevent duplicate timers/listeners
+    if (_isCompletionTrackingStarted) return;
+
+    _startTimeTrackingTimer();
+    _startScrollListener();
+
+    // Mark as started
+    _isCompletionTrackingStarted = true;
+
+    if (kDebugMode) {
+      print(
+          '📊 [COMPLETION] Started tracking for guide: ${_currentStudyGuide.id}');
+    }
+  }
+
+  /// Setup timer to track time spent on the page
+  void _startTimeTrackingTimer() {
+    _timeTrackingTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (mounted && !_completionMarked) {
+        setState(() {
+          _timeSpentSeconds++;
+        });
+        _checkCompletionConditions();
+      }
+    });
+  }
+
+  /// Setup scroll listener to detect when user reaches bottom
+  void _startScrollListener() {
+    _scrollController.addListener(() {
+      if (!_completionMarked &&
+          !_hasScrolledToBottom &&
+          _isScrolledToBottom()) {
+        setState(() {
+          _hasScrolledToBottom = true;
+        });
+        _checkCompletionConditions();
+      }
+    });
+  }
+
+  /// Check if user has scrolled to the bottom of the page
+  bool _isScrolledToBottom() {
+    if (!_scrollController.hasClients) return false;
+
+    final maxScroll = _scrollController.position.maxScrollExtent;
+    final currentScroll = _scrollController.position.pixels;
+
+    // Consider "bottom" as within 100px of the actual bottom
+    // This accounts for different screen sizes and scroll behavior
+    return currentScroll >= (maxScroll - 100);
+  }
+
+  /// Check if both completion conditions are met and mark complete if so
+  void _checkCompletionConditions() {
+    if (_completionMarked) return;
+
+    const minTimeSeconds = 60; // 1 minute
+    final timeConditionMet = _timeSpentSeconds >= minTimeSeconds;
+    final scrollConditionMet = _hasScrolledToBottom;
+
+    if (kDebugMode) {
+      print('📊 [COMPLETION] Conditions check:');
+      print(
+          '   Time: $_timeSpentSeconds/${minTimeSeconds}s (${timeConditionMet ? "✓" : "✗"})');
+      print('   Scroll: ${scrollConditionMet ? "✓" : "✗"}');
+    }
+
+    if (timeConditionMet && scrollConditionMet) {
+      _markStudyGuideComplete();
+    }
+  }
+
+  /// Call the API to mark the study guide as completed
+  void _markStudyGuideComplete() {
+    if (_completionMarked) return;
+
+    setState(() {
+      _completionMarked = true;
+    });
+
+    if (kDebugMode) {
+      print('✅ [COMPLETION] Marking guide as complete:');
+      print('   Guide ID: ${_currentStudyGuide.id}');
+      print('   Time spent: $_timeSpentSeconds seconds');
+      print('   Scrolled to bottom: $_hasScrolledToBottom');
+    }
+
+    // Dispatch BLoC event to mark completion
+    context.read<StudyBloc>().add(MarkStudyGuideCompleteRequested(
+          guideId: _currentStudyGuide.id,
+          timeSpentSeconds: _timeSpentSeconds,
+          scrolledToBottom: _hasScrolledToBottom,
+        ));
+
+    // Cancel the tracking timer since completion is marked
+    _timeTrackingTimer?.cancel();
+  }
+
   @override
   Widget build(BuildContext context) {
     final screenHeight = MediaQuery.of(context).size.height;
@@ -274,264 +386,300 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
       return _buildErrorScreen();
     }
 
-    return BlocListener<StudyBloc, StudyState>(
-      listener: (context, state) {
-        // Handle legacy save operations
-        if (state is StudySaveSuccess) {
-          setState(() {
-            _isSaved = state.saved;
-          });
-          _showSnackBar(
-            state.message,
-            state.saved ? Colors.green : Theme.of(context).colorScheme.primary,
-            icon: state.saved ? Icons.check_circle : Icons.bookmark_remove,
-          );
-        } else if (state is StudySaveFailure) {
-          _handleSaveError(state.failure);
-        } else if (state is StudyAuthenticationRequired) {
-          _showAuthenticationRequiredDialog();
-        }
-        // Handle enhanced save operations
-        else if (state is StudyEnhancedSaveSuccess) {
-          setState(() {
-            _isSaved = state.guideSaved;
-            if (state.notesSaved && state.savedNotes != null) {
-              _loadedNotes = state.savedNotes;
-            }
-          });
-          _showSnackBar(
-            state.message,
-            Colors.green,
-            icon: Icons.check_circle,
-          );
-          // Setup auto-save if guide was saved
-          if (state.guideSaved) {
-            _setupAutoSave();
-          }
-        } else if (state is StudyEnhancedSaveFailure) {
-          _handleEnhancedSaveError(state);
-        } else if (state is StudyEnhancedAuthenticationRequired) {
-          _showEnhancedAuthenticationRequiredDialog(state);
-        }
-        // Handle personal notes operations
-        else if (state is StudyPersonalNotesLoaded) {
-          if (kDebugMode) {
-            print(
-                '📝 [STUDY_GUIDE] Personal notes loaded: ${state.notes?.length ?? 0} characters');
-          }
-          setState(() {
-            _notesLoaded = true;
-            _loadedNotes = state.notes;
-            if (state.notes != null) {
-              _notesController.text = state.notes!;
-            }
-          });
-          // Setup auto-save for saved guides
-          if (_isSaved) {
-            _setupAutoSave();
-          }
-        } else if (state is StudyPersonalNotesSuccess) {
-          if (!state.isAutoSave) {
-            _showSnackBar(
-              state.message ?? 'Personal notes saved!',
-              Colors.green,
-              icon: Icons.note_add,
-            );
-          }
-          setState(() {
-            _loadedNotes = state.savedNotes;
-          });
-        } else if (state is StudyPersonalNotesFailure) {
-          if (kDebugMode) {
-            print(
-                '❌ [STUDY_GUIDE] Personal notes operation failed: ${state.failure.message}, isAutoSave: ${state.isAutoSave}');
-          }
-          if (!state.isAutoSave) {
-            _showSnackBar(
-              'Failed to save personal notes: ${state.failure.message}',
-              Theme.of(context).colorScheme.error,
-              icon: Icons.error_outline,
-            );
-          }
-        }
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+
+        // Handle Android back button - use StudyNavigator for proper back navigation
+        sl<StudyNavigator>().navigateBack(
+          context,
+          source: widget.navigationSource,
+        );
       },
-      child: Scaffold(
-        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-        appBar: AppBar(
-          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-          elevation: 0,
-          leading: IconButton(
-            onPressed: () {
-              // Navigate back using the navigation service
-              sl<StudyNavigator>().navigateBack(
-                context,
-                source: widget.navigationSource,
+      child: BlocListener<StudyBloc, StudyState>(
+        listener: (context, state) {
+          // Handle legacy save operations
+          if (state is StudySaveSuccess) {
+            setState(() {
+              _isSaved = state.saved;
+            });
+            _showSnackBar(
+              state.message,
+              state.saved
+                  ? Colors.green
+                  : Theme.of(context).colorScheme.primary,
+              icon: state.saved ? Icons.check_circle : Icons.bookmark_remove,
+            );
+          } else if (state is StudySaveFailure) {
+            _handleSaveError(state.failure);
+          } else if (state is StudyAuthenticationRequired) {
+            _showAuthenticationRequiredDialog();
+          }
+          // Handle enhanced save operations
+          else if (state is StudyEnhancedSaveSuccess) {
+            setState(() {
+              _isSaved = state.guideSaved;
+              if (state.notesSaved && state.savedNotes != null) {
+                _loadedNotes = state.savedNotes;
+              }
+            });
+            _showSnackBar(
+              state.message,
+              Colors.green,
+              icon: Icons.check_circle,
+            );
+            // Setup auto-save if guide was saved
+            if (state.guideSaved) {
+              _setupAutoSave();
+            }
+          } else if (state is StudyEnhancedSaveFailure) {
+            _handleEnhancedSaveError(state);
+          } else if (state is StudyEnhancedAuthenticationRequired) {
+            _showEnhancedAuthenticationRequiredDialog(state);
+          }
+          // Handle personal notes operations
+          else if (state is StudyPersonalNotesLoaded) {
+            if (kDebugMode) {
+              print(
+                  '📝 [STUDY_GUIDE] Personal notes loaded: ${state.notes?.length ?? 0} characters');
+            }
+            setState(() {
+              _notesLoaded = true;
+              _loadedNotes = state.notes;
+              if (state.notes != null) {
+                _notesController.text = state.notes!;
+              }
+            });
+            // Setup auto-save for saved guides
+            if (_isSaved) {
+              _setupAutoSave();
+            }
+          } else if (state is StudyPersonalNotesSuccess) {
+            if (!state.isAutoSave) {
+              _showSnackBar(
+                state.message ?? 'Personal notes saved!',
+                Colors.green,
+                icon: Icons.note_add,
               );
-            },
-            icon: Icon(
-              Icons.arrow_back_ios,
-              color: Theme.of(context).colorScheme.primary,
-            ),
-            tooltip: 'Go back',
-          ),
-          title: Text(
-            _getDisplayTitle(),
-            style: GoogleFonts.playfairDisplay(
-              fontSize: 20,
-              fontWeight: FontWeight.w600,
-              color: Theme.of(context).colorScheme.primary,
-            ),
-          ),
-          centerTitle: true,
-          actions: [
-            IconButton(
-              onPressed: _shareStudyGuide,
+            }
+            setState(() {
+              _loadedNotes = state.savedNotes;
+            });
+          } else if (state is StudyPersonalNotesFailure) {
+            if (kDebugMode) {
+              print(
+                  '❌ [STUDY_GUIDE] Personal notes operation failed: ${state.failure.message}, isAutoSave: ${state.isAutoSave}');
+            }
+            if (!state.isAutoSave) {
+              _showSnackBar(
+                'Failed to save personal notes: ${state.failure.message}',
+                Theme.of(context).colorScheme.error,
+                icon: Icons.error_outline,
+              );
+            }
+          }
+        },
+        child: Scaffold(
+          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+          appBar: AppBar(
+            backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+            elevation: 0,
+            leading: IconButton(
+              onPressed: () {
+                // Navigate back using the navigation service
+                sl<StudyNavigator>().navigateBack(
+                  context,
+                  source: widget.navigationSource,
+                );
+              },
               icon: Icon(
-                Icons.share_outlined,
+                Icons.arrow_back_ios,
                 color: Theme.of(context).colorScheme.primary,
               ),
-              tooltip: 'Share study guide',
+              tooltip: 'Go back',
             ),
-          ],
-        ),
-        body: Column(
-          children: [
-            // Main content
-            Expanded(
-              child: SingleChildScrollView(
-                controller: _scrollController,
-                padding: const EdgeInsets.symmetric(horizontal: 24),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    SizedBox(height: isLargeScreen ? 24 : 16),
-
-                    // Study Guide Content
-                    _buildStudyContent(),
-
-                    SizedBox(height: isLargeScreen ? 32 : 24),
-
-                    // Follow-up Chat Section
-                    FollowUpChatWidget(
-                      studyGuideId: _currentStudyGuide.id,
-                      studyGuideTitle: _getDisplayTitle(),
-                      isExpanded: _isChatExpanded,
-                      onToggleExpanded: () {
-                        setState(() {
-                          _isChatExpanded = !_isChatExpanded;
-                        });
-                      },
-                    ),
-
-                    SizedBox(height: isLargeScreen ? 32 : 24),
-
-                    // Notes Section
-                    _buildNotesSection(),
-
-                    SizedBox(height: isLargeScreen ? 32 : 24),
-                  ],
-                ),
+            title: Text(
+              _getDisplayTitle(),
+              style: GoogleFonts.playfairDisplay(
+                fontSize: 20,
+                fontWeight: FontWeight.w600,
+                color: Theme.of(context).colorScheme.primary,
               ),
             ),
+            centerTitle: true,
+            actions: [
+              IconButton(
+                onPressed: _shareStudyGuide,
+                icon: Icon(
+                  Icons.share_outlined,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+                tooltip: 'Share study guide',
+              ),
+            ],
+          ),
+          body: Column(
+            children: [
+              // Main content
+              Expanded(
+                child: SingleChildScrollView(
+                  controller: _scrollController,
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      SizedBox(height: isLargeScreen ? 24 : 16),
 
-            // Bottom Action Buttons
-            _buildBottomActions(),
-          ],
-        ),
-      ),
-    );
+                      // Study Guide Content
+                      _buildStudyContent(),
+
+                      SizedBox(height: isLargeScreen ? 32 : 24),
+
+                      // Follow-up Chat Section
+                      BlocProvider(
+                        create: (context) {
+                          final bloc = sl<FollowUpChatBloc>();
+                          bloc.add(StartConversationEvent(
+                            studyGuideId: _currentStudyGuide.id,
+                            studyGuideTitle: _getDisplayTitle(),
+                          ));
+                          return bloc;
+                        },
+                        child: FollowUpChatWidget(
+                          studyGuideId: _currentStudyGuide.id,
+                          studyGuideTitle: _getDisplayTitle(),
+                          isExpanded: _isChatExpanded,
+                          onToggleExpanded: () {
+                            setState(() {
+                              _isChatExpanded = !_isChatExpanded;
+                            });
+                          },
+                        ),
+                      ),
+
+                      SizedBox(height: isLargeScreen ? 32 : 24),
+
+                      // Notes Section
+                      _buildNotesSection(),
+
+                      SizedBox(height: isLargeScreen ? 32 : 24),
+                    ],
+                  ),
+                ),
+              ),
+
+              // Bottom Action Buttons
+              _buildBottomActions(),
+            ],
+          ),
+        ), // Scaffold
+      ), // BlocListener
+    ); // PopScope
   }
 
-  Widget _buildErrorScreen() => Scaffold(
-        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-        appBar: AppBar(
+  Widget _buildErrorScreen() => PopScope(
+        canPop: false,
+        onPopInvokedWithResult: (didPop, result) {
+          if (didPop) return;
+
+          // Handle Android back button - use StudyNavigator for proper back navigation
+          sl<StudyNavigator>().navigateBack(
+            context,
+            source: widget.navigationSource,
+          );
+        },
+        child: Scaffold(
           backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-          elevation: 0,
-          leading: IconButton(
-            onPressed: () {
-              // Navigate back using the navigation service
-              sl<StudyNavigator>().navigateBack(
-                context,
-                source: widget.navigationSource,
-              );
-            },
-            icon: Icon(
-              Icons.arrow_back_ios,
-              color: Theme.of(context).colorScheme.primary,
+          appBar: AppBar(
+            backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+            elevation: 0,
+            leading: IconButton(
+              onPressed: () {
+                // Navigate back using the navigation service
+                sl<StudyNavigator>().navigateBack(
+                  context,
+                  source: widget.navigationSource,
+                );
+              },
+              icon: Icon(
+                Icons.arrow_back_ios,
+                color: Theme.of(context).colorScheme.primary,
+              ),
+              tooltip: 'Go back',
             ),
-            tooltip: 'Go back',
-          ),
-          title: Text(
-            'Study Guide',
-            style: GoogleFonts.playfairDisplay(
-              fontSize: 20,
-              fontWeight: FontWeight.w600,
-              color: Theme.of(context).colorScheme.primary,
+            title: Text(
+              'Study Guide',
+              style: GoogleFonts.playfairDisplay(
+                fontSize: 20,
+                fontWeight: FontWeight.w600,
+                color: Theme.of(context).colorScheme.primary,
+              ),
             ),
+            centerTitle: true,
           ),
-          centerTitle: true,
-        ),
-        body: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  Icons.error_outline,
-                  size: 64,
-                  color: Theme.of(context).colorScheme.secondary,
-                ),
-                const SizedBox(height: 24),
-                Text(
-                  'We couldn\'t generate a study guide',
-                  style: GoogleFonts.playfairDisplay(
-                    fontSize: 28,
-                    fontWeight: FontWeight.w600,
-                    color: Theme.of(context).colorScheme.onBackground,
+          body: Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.error_outline,
+                    size: 64,
+                    color: Theme.of(context).colorScheme.secondary,
                   ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  _errorMessage.isEmpty
-                      ? 'Something went wrong. Please try again later.'
-                      : _errorMessage,
-                  style: GoogleFonts.inter(
-                    fontSize: 18,
-                    color: Theme.of(context)
-                        .colorScheme
-                        .onSurface
-                        .withOpacity(0.6),
-                    height: 1.5,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 32),
-                ElevatedButton(
-                  onPressed: () =>
-                      sl<StudyNavigator>().navigateToSaved(context),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Theme.of(context).colorScheme.primary,
-                    foregroundColor: Colors.white,
-                    minimumSize: const Size(200, 48),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                  const SizedBox(height: 24),
+                  Text(
+                    'We couldn\'t generate a study guide',
+                    style: GoogleFonts.playfairDisplay(
+                      fontSize: 28,
+                      fontWeight: FontWeight.w600,
+                      color: Theme.of(context).colorScheme.onBackground,
                     ),
+                    textAlign: TextAlign.center,
                   ),
-                  child: Text(
-                    'View Saved Guides',
+                  const SizedBox(height: 16),
+                  Text(
+                    _errorMessage.isEmpty
+                        ? 'Something went wrong. Please try again later.'
+                        : _errorMessage,
                     style: GoogleFonts.inter(
                       fontSize: 18,
-                      fontWeight: FontWeight.w600,
+                      color: Theme.of(context)
+                          .colorScheme
+                          .onSurface
+                          .withOpacity(0.6),
+                      height: 1.5,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 32),
+                  ElevatedButton(
+                    onPressed: () =>
+                        sl<StudyNavigator>().navigateToSaved(context),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Theme.of(context).colorScheme.primary,
+                      foregroundColor: Colors.white,
+                      minimumSize: const Size(200, 48),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: Text(
+                      'View Saved Guides',
+                      style: GoogleFonts.inter(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-        ),
-      );
+          ), // body: Center
+        ), // Scaffold
+      ); // PopScope
 
   Widget _buildStudyContent() => Column(
         crossAxisAlignment: CrossAxisAlignment.start,

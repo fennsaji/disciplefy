@@ -1067,7 +1067,7 @@ export class LLMService {
    * @returns User message string
    */
   private createUserMessage(params: LLMGenerationParams, languageConfig: LanguageConfig): string {
-    const { inputType, inputValue } = params
+    const { inputType, inputValue, topicDescription } = params
     const languageExamples = this.getLanguageSpecificExamples(params.language)
 
     // Create type-specific task description
@@ -1075,7 +1075,12 @@ export class LLMService {
     if (inputType === 'scripture') {
       taskDescription = `Create a Bible study guide for the scripture reference: "${inputValue}"`
     } else if (inputType === 'topic') {
-      taskDescription = `Create a Bible study guide for the topic: "${inputValue}"`
+      // Include topic description if provided for better context
+      if (topicDescription) {
+        taskDescription = `Create a Bible study guide for the topic: "${inputValue}"\n\nTopic Context: ${topicDescription}`
+      } else {
+        taskDescription = `Create a Bible study guide for the topic: "${inputValue}"`
+      }
     } else if (inputType === 'question') {
       taskDescription = `Answer the biblical/theological question and create a comprehensive study guide: "${inputValue}"`
     } else {

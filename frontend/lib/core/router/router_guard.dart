@@ -29,7 +29,11 @@ class RouterGuard {
   static bool _isRegisteredWithCoordinator = false;
 
   /// Main redirect logic for the app router
-  static Future<String?> handleRedirect(String currentPath) async {
+  /// ANDROID FIX: Added isAuthInitialized parameter to prevent login screen flash
+  static Future<String?> handleRedirect(
+    String currentPath, {
+    bool isAuthInitialized = true, // Default to true for backward compatibility
+  }) async {
     // Clean any hash fragments that might interfere with routing
     // This is a safeguard for OAuth callback URLs that might preserve fragments
     final cleanPath = currentPath.split('#').first;
@@ -40,8 +44,26 @@ class RouterGuard {
       context: {
         'original_path': currentPath,
         'clean_path': cleanPath,
+        'is_auth_initialized': isAuthInitialized,
       },
     );
+
+    // ANDROID FIX: Show loading screen while Supabase is restoring session
+    // This prevents the flash of login screen during app startup on Android
+    if (!isAuthInitialized) {
+      // If already on loading screen, stay there until auth initializes
+      if (cleanPath == AppRoutes.appLoading) return null;
+
+      // Otherwise, redirect to loading screen
+      Logger.info(
+        'Auth not initialized - showing loading screen',
+        tag: 'ROUTER',
+        context: {
+          'attempted_path': cleanPath,
+        },
+      );
+      return AppRoutes.appLoading;
+    }
 
     final authState = _getAuthenticationState();
     final onboardingState = _getOnboardingState();
@@ -257,6 +279,19 @@ class RouterGuard {
         path.startsWith('/phone-auth'); // Allow all phone auth related routes
   }
 
+  /// Check if the route requires full authentication (not guest/anonymous)
+  /// Routes like memory verses require a real Supabase session with database access
+  static bool _requiresFullAuthentication(String path) {
+    final fullAuthRoutes = [
+      AppRoutes.memoryVerses,
+      AppRoutes.verseReview,
+    ];
+
+    return fullAuthRoutes.contains(path) ||
+        path.startsWith('/memory-verses') ||
+        path.startsWith('/memory-verse-review');
+  }
+
   /// Log the current navigation state for debugging
   /// Phase 2 Enhancement: More detailed analytics and route classification
   static void _logNavigationState(
@@ -346,6 +381,23 @@ class RouterGuard {
     //       tag: 'ROUTER');
     //   return _handleAuthenticatedUserWithoutOnboarding(routeAnalysis);
     // }
+
+    // Case 2.5: Check if guest/anonymous user is trying to access full-auth route
+    if (authState.isAuthenticated &&
+        (authState.userType == 'guest' || authState.userType == 'anonymous') &&
+        _requiresFullAuthentication(routeAnalysis.currentPath)) {
+      Logger.info(
+        'Decision: Guest/anonymous user blocked from full-auth route',
+        tag: 'ROUTER_SECURITY',
+        context: {
+          'user_type': authState.userType,
+          'attempted_route': routeAnalysis.currentPath,
+          'redirect_target': AppRoutes.login,
+          'reason': 'route_requires_full_authentication',
+        },
+      );
+      return AppRoutes.login;
+    }
 
     // Case 3: Authenticated but language selection not completed
     if (authState.isAuthenticated && !languageSelectionState.isCompleted) {
@@ -694,11 +746,22 @@ class RouterGuard {
       box.delete(_userIdKey);
       box.delete(_sessionExpiresAtKey);
       box.delete(_deviceIdKey);
-      box.delete(_onboardingCompletedKey);
+      // NOTE: Do NOT clear onboarding_completed flag here!
+      // Onboarding is a one-time per-device experience that should persist
+      // across login/logout cycles. Only clear it on app reset or reinstall.
 
       Logger.info(
         'Expired session data cleared from storage',
         tag: 'AUTH_SECURITY',
+        context: {
+          'cleared_keys': [
+            _userTypeKey,
+            _userIdKey,
+            _sessionExpiresAtKey,
+            _deviceIdKey
+          ],
+          'preserved_keys': [_onboardingCompletedKey],
+        },
       );
     } catch (e) {
       Logger.error(

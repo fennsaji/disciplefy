@@ -63,29 +63,35 @@ class _LanguageSelectionScreenState extends State<LanguageSelectionScreen> {
     });
 
     try {
-      // Save language preference
+      // Save language preference - this will update the database AND mark completion
+      // The service handles marking completion internally only after successful DB save
       await _languageService.saveLanguagePreference(_selectedLanguage!);
 
-      // Mark language selection as completed
-      await _languageService.markLanguageSelectionCompleted();
+      // Verify that persistence and cache invalidation completed successfully
+      final bool persistenceVerified =
+          await _languageService.hasCompletedLanguageSelection();
 
-      // Navigate to home screen
+      if (!persistenceVerified) {
+        throw Exception(
+            'Language preference persistence verification failed. Please try again.');
+      }
+
+      // Navigate to home screen only after successful verification
       if (mounted) {
         context.go('/');
       }
     } catch (e) {
-      // Show error but still navigate to prevent user from being stuck
+      // Show error and do NOT navigate - allow user to retry
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              context.tr(TranslationKeys.onboardingLanguageSavedLocally),
+              'Failed to save language preference: ${e.toString()}',
               style: GoogleFonts.inter(),
             ),
-            backgroundColor: Colors.orange,
+            backgroundColor: Colors.red,
           ),
         );
-        context.go('/');
       }
     } finally {
       if (mounted) {
@@ -104,11 +110,8 @@ class _LanguageSelectionScreenState extends State<LanguageSelectionScreen> {
     });
 
     try {
-      // Save default English preference
+      // Save default English preference - service handles marking completion internally
       await _languageService.saveLanguagePreference(AppLanguage.english);
-
-      // Mark language selection as completed
-      await _languageService.markLanguageSelectionCompleted();
 
       // Navigate to home screen
       if (mounted) {

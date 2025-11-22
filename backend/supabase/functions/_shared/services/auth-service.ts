@@ -278,9 +278,9 @@ export class AuthService {
    * 
    * This method implements the user plan logic for the token system:
    * - Anonymous users → 'free' plan (20 tokens daily)
-   * - Authenticated users → 'standard' plan (100 tokens daily) 
+   * - Authenticated users → 'standard' plan (100 tokens daily)
    * - Admin users (user_profiles.is_admin = true) → 'premium' plan (unlimited)
-   * - Future: Subscription users → 'premium' plan (unlimited)
+   * - Subscription users (active subscription) → 'premium' plan (unlimited)
    * 
    * @param req - HTTP request to get user context from
    * @returns Promise resolving to user's subscription plan
@@ -298,15 +298,49 @@ export class AuthService {
       if (userContext.type === 'authenticated' && userContext.userId) {
         const userProfile = await this.getUserProfile(userContext.userId)
         
-        // Admin users get premium access (temporary until subscriptions)
+        // Admin users get premium access
         if (userProfile?.is_admin) {
           return 'premium'
         }
-        
-        // TODO: Add subscription check when subscription system is implemented
-        // if (userProfile.subscription && userProfile.subscription.status === 'active') {
-        //   return 'premium'
-        // }
+
+        // Check for active subscription
+        if (this.supabaseServiceClient) {
+          const { data: subscription, error: subError } = await this.supabaseServiceClient
+            .from('subscriptions')
+            .select('status, current_period_end, cancel_at_cycle_end')
+            .eq('user_id', userContext.userId)
+            .in('status', ['active', 'authenticated', 'pending_cancellation', 'cancelled'])
+            .order('created_at', { ascending: false })
+            .maybeSingle()
+
+          if (!subError && subscription) {
+            // Active, authenticated, or pending_cancellation subscriptions grant premium
+            // pending_cancellation means user scheduled cancellation but still has access until period end
+            if (
+              subscription.status === 'active' ||
+              subscription.status === 'authenticated' ||
+              subscription.status === 'pending_cancellation'
+            ) {
+              return 'premium'
+            }
+
+            // Cancelled subscription that's still active until period end
+            // This handles both 'cancelled' status and 'pending_cancellation' that extends to period end
+            if (
+              subscription.status === 'cancelled' &&
+              subscription.cancel_at_cycle_end &&
+              subscription.current_period_end
+            ) {
+              const periodEnd = new Date(subscription.current_period_end)
+              const now = new Date()
+
+              // If still within the active period, user still has premium access
+              if (periodEnd > now) {
+                return 'premium'
+              }
+            }
+          }
+        }
       }
       
       // Default: authenticated users without admin or subscription get standard plan

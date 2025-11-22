@@ -3,11 +3,13 @@
 // ============================================================================
 
 import 'package:dartz/dartz.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/error/exceptions.dart';
 import '../../../../core/error/failures.dart';
 import '../../../../core/services/notification_service.dart';
 import '../../domain/entities/notification_preferences.dart';
+import '../../domain/entities/time_of_day_vo.dart';
 import '../../domain/repositories/notification_repository.dart';
 import '../models/notification_preferences_model.dart';
 
@@ -23,41 +25,131 @@ class NotificationRepositoryImpl implements NotificationRepository {
   @override
   Future<Either<Failure, NotificationPreferences>> getPreferences() async {
     try {
+      // Check if user is authenticated
+      final currentUser = supabaseClient.auth.currentUser;
+
+      // For anonymous users, load preferences from SharedPreferences
+      if (currentUser == null || currentUser.isAnonymous) {
+        final prefs = await SharedPreferences.getInstance();
+        final dailyVerseEnabled =
+            prefs.getBool('notification_pref_daily_verse_enabled') ?? true;
+        final recommendedTopicEnabled =
+            prefs.getBool('notification_pref_recommended_topic_enabled') ??
+                true;
+        final streakReminderEnabled =
+            prefs.getBool('notification_pref_streak_reminder_enabled') ?? true;
+        final streakMilestoneEnabled =
+            prefs.getBool('notification_pref_streak_milestone_enabled') ?? true;
+        final streakLostEnabled =
+            prefs.getBool('notification_pref_streak_lost_enabled') ?? true;
+        final reminderHour =
+            prefs.getInt('notification_pref_streak_reminder_hour') ?? 20;
+        final reminderMinute =
+            prefs.getInt('notification_pref_streak_reminder_minute') ?? 0;
+
+        return Right(NotificationPreferencesModel(
+          userId: currentUser?.id ?? '',
+          dailyVerseEnabled: dailyVerseEnabled,
+          recommendedTopicEnabled: recommendedTopicEnabled,
+          streakReminderEnabled: streakReminderEnabled,
+          streakMilestoneEnabled: streakMilestoneEnabled,
+          streakLostEnabled: streakLostEnabled,
+          streakReminderTime:
+              TimeOfDayVO(hour: reminderHour, minute: reminderMinute),
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+        ));
+      }
+
       final response = await supabaseClient.functions.invoke(
         'register-fcm-token',
         method: HttpMethod.get,
       );
 
       if (response.status == 200 && response.data != null) {
-        // Safely access nested data structure: response.data['data']['preferences']
-        final dataWrapper = response.data['data'] as Map<String, dynamic>?;
+        // Check if backend returns preferences directly (not wrapped in 'data')
+        final preferencesData =
+            response.data['preferences'] as Map<String, dynamic>?;
 
+        if (preferencesData != null) {
+          // Add userId to preferences data for model
+          final preferencesWithUser = {
+            ...preferencesData,
+            'userId': currentUser.id,
+            'createdAt': DateTime.now().toIso8601String(),
+            'updatedAt': DateTime.now().toIso8601String(),
+          };
+
+          final model =
+              NotificationPreferencesModel.fromJson(preferencesWithUser);
+          return Right(model);
+        }
+
+        // Fallback: Try old structure with 'data' wrapper
+        final dataWrapper = response.data['data'] as Map<String, dynamic>?;
         if (dataWrapper != null) {
           final preferences =
               dataWrapper['preferences'] as Map<String, dynamic>?;
-
           if (preferences != null) {
             final model = NotificationPreferencesModel.fromJson(preferences);
             return Right(model);
           }
         }
 
-        // Return default preferences if none exist
+        // Return default preferences if data structure is unexpected
         return Right(NotificationPreferencesModel(
-          userId: supabaseClient.auth.currentUser?.id ?? '',
+          userId: currentUser.id,
           dailyVerseEnabled: true,
           recommendedTopicEnabled: true,
+          streakReminderEnabled: true,
+          streakMilestoneEnabled: true,
+          streakLostEnabled: true,
+          streakReminderTime: const TimeOfDayVO(hour: 20, minute: 0),
           createdAt: DateTime.now(),
           updatedAt: DateTime.now(),
         ));
       }
 
-      return Left(
-          ServerFailure(message: 'Failed to fetch notification preferences'));
-    } on AuthException catch (e) {
-      return Left(AuthenticationFailure(message: e.message));
+      // For any other status code, return default preferences instead of failure
+      // This ensures the UI doesn't get stuck loading
+      return Right(NotificationPreferencesModel(
+        userId: currentUser.id,
+        dailyVerseEnabled: true,
+        recommendedTopicEnabled: true,
+        streakReminderEnabled: true,
+        streakMilestoneEnabled: true,
+        streakLostEnabled: true,
+        streakReminderTime: const TimeOfDayVO(hour: 20, minute: 0),
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+      ));
+    } on AuthException {
+      // Even on auth errors, return default preferences to prevent UI blocking
+      return Right(NotificationPreferencesModel(
+        userId: supabaseClient.auth.currentUser?.id ?? '',
+        dailyVerseEnabled: true,
+        recommendedTopicEnabled: true,
+        streakReminderEnabled: true,
+        streakMilestoneEnabled: true,
+        streakLostEnabled: true,
+        streakReminderTime: const TimeOfDayVO(hour: 20, minute: 0),
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+      ));
     } catch (e) {
-      return Left(ServerFailure(message: e.toString()));
+      // On any error, return default preferences instead of failure
+      // This ensures the notification settings screen always loads
+      return Right(NotificationPreferencesModel(
+        userId: supabaseClient.auth.currentUser?.id ?? '',
+        dailyVerseEnabled: true,
+        recommendedTopicEnabled: true,
+        streakReminderEnabled: true,
+        streakMilestoneEnabled: true,
+        streakLostEnabled: true,
+        streakReminderTime: const TimeOfDayVO(hour: 20, minute: 0),
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+      ));
     }
   }
 
@@ -65,8 +157,96 @@ class NotificationRepositoryImpl implements NotificationRepository {
   Future<Either<Failure, NotificationPreferences>> updatePreferences({
     bool? dailyVerseEnabled,
     bool? recommendedTopicEnabled,
+    bool? streakReminderEnabled,
+    bool? streakMilestoneEnabled,
+    bool? streakLostEnabled,
+    TimeOfDayVO? streakReminderTime,
   }) async {
     try {
+      // Check if user is authenticated
+      final currentUser = supabaseClient.auth.currentUser;
+
+      // For anonymous users, save preferences to SharedPreferences
+      if (currentUser == null || currentUser.isAnonymous) {
+        final prefs = await SharedPreferences.getInstance();
+
+        // Load current preferences
+        final currentDailyVerse =
+            prefs.getBool('notification_pref_daily_verse_enabled') ?? true;
+        final currentRecommendedTopic =
+            prefs.getBool('notification_pref_recommended_topic_enabled') ??
+                true;
+        final currentStreakReminder =
+            prefs.getBool('notification_pref_streak_reminder_enabled') ?? true;
+        final currentStreakMilestone =
+            prefs.getBool('notification_pref_streak_milestone_enabled') ?? true;
+        final currentStreakLost =
+            prefs.getBool('notification_pref_streak_lost_enabled') ?? true;
+        final currentReminderHour =
+            prefs.getInt('notification_pref_streak_reminder_hour') ?? 20;
+        final currentReminderMinute =
+            prefs.getInt('notification_pref_streak_reminder_minute') ?? 0;
+
+        // Update preferences
+        final newDailyVerse = dailyVerseEnabled ?? currentDailyVerse;
+        final newRecommendedTopic =
+            recommendedTopicEnabled ?? currentRecommendedTopic;
+        final newStreakReminder =
+            streakReminderEnabled ?? currentStreakReminder;
+        final newStreakMilestone =
+            streakMilestoneEnabled ?? currentStreakMilestone;
+        final newStreakLost = streakLostEnabled ?? currentStreakLost;
+        final newReminderTime = streakReminderTime ??
+            TimeOfDayVO(
+                hour: currentReminderHour, minute: currentReminderMinute);
+
+        await prefs.setBool(
+            'notification_pref_daily_verse_enabled', newDailyVerse);
+        await prefs.setBool(
+            'notification_pref_recommended_topic_enabled', newRecommendedTopic);
+        await prefs.setBool(
+            'notification_pref_streak_reminder_enabled', newStreakReminder);
+        await prefs.setBool(
+            'notification_pref_streak_milestone_enabled', newStreakMilestone);
+        await prefs.setBool(
+            'notification_pref_streak_lost_enabled', newStreakLost);
+        await prefs.setInt(
+            'notification_pref_streak_reminder_hour', newReminderTime.hour);
+        await prefs.setInt(
+            'notification_pref_streak_reminder_minute', newReminderTime.minute);
+
+        // Return updated preferences
+        return Right(NotificationPreferencesModel(
+          userId: currentUser?.id ?? '',
+          dailyVerseEnabled: newDailyVerse,
+          recommendedTopicEnabled: newRecommendedTopic,
+          streakReminderEnabled: newStreakReminder,
+          streakMilestoneEnabled: newStreakMilestone,
+          streakLostEnabled: newStreakLost,
+          streakReminderTime: newReminderTime,
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+        ));
+      }
+
+      // For authenticated users, call backend API
+      print('[NotificationRepo] Calling backend to update preferences...');
+      print('[NotificationRepo] dailyVerseEnabled: $dailyVerseEnabled');
+      print(
+          '[NotificationRepo] recommendedTopicEnabled: $recommendedTopicEnabled');
+      print('[NotificationRepo] streakReminderEnabled: $streakReminderEnabled');
+      print(
+          '[NotificationRepo] streakMilestoneEnabled: $streakMilestoneEnabled');
+      print('[NotificationRepo] streakLostEnabled: $streakLostEnabled');
+      print('[NotificationRepo] streakReminderTime: $streakReminderTime');
+
+      // Format TimeOfDayVO to TIME format for backend
+      String? formattedTime;
+      if (streakReminderTime != null) {
+        formattedTime = '${streakReminderTime.hour.toString().padLeft(2, '0')}:'
+            '${streakReminderTime.minute.toString().padLeft(2, '0')}:00';
+      }
+
       final response = await supabaseClient.functions.invoke(
         'register-fcm-token',
         method: HttpMethod.put,
@@ -74,29 +254,62 @@ class NotificationRepositoryImpl implements NotificationRepository {
           if (dailyVerseEnabled != null) 'dailyVerseEnabled': dailyVerseEnabled,
           if (recommendedTopicEnabled != null)
             'recommendedTopicEnabled': recommendedTopicEnabled,
+          if (streakReminderEnabled != null)
+            'streakReminderEnabled': streakReminderEnabled,
+          if (streakMilestoneEnabled != null)
+            'streakMilestoneEnabled': streakMilestoneEnabled,
+          if (streakLostEnabled != null) 'streakLostEnabled': streakLostEnabled,
+          if (formattedTime != null) 'streakReminderTime': formattedTime,
         },
       );
 
-      if (response.status == 200 && response.data != null) {
-        // Safely access nested data structure: response.data['data']['preferences']
-        final dataWrapper = response.data['data'] as Map<String, dynamic>?;
+      print('[NotificationRepo] Response status: ${response.status}');
+      print('[NotificationRepo] Response data: ${response.data}');
 
+      if (response.status == 200 && response.data != null) {
+        // Check if backend returns preferences directly (not wrapped in 'data')
+        final preferencesData =
+            response.data['preferences'] as Map<String, dynamic>?;
+
+        if (preferencesData != null) {
+          // Add userId to preferences data for model
+          final currentUser = supabaseClient.auth.currentUser;
+          final preferencesWithUser = {
+            ...preferencesData,
+            'userId': currentUser?.id ?? '',
+            'createdAt': DateTime.now().toIso8601String(),
+            'updatedAt': DateTime.now().toIso8601String(),
+          };
+
+          final model =
+              NotificationPreferencesModel.fromJson(preferencesWithUser);
+          print('[NotificationRepo] Successfully updated preferences');
+          return Right(model);
+        }
+
+        // Fallback: Try old structure with 'data' wrapper
+        final dataWrapper = response.data['data'] as Map<String, dynamic>?;
         if (dataWrapper != null) {
           final preferences =
               dataWrapper['preferences'] as Map<String, dynamic>?;
-
           if (preferences != null) {
             final model = NotificationPreferencesModel.fromJson(preferences);
+            print(
+                '[NotificationRepo] Successfully updated preferences (legacy structure)');
             return Right(model);
           }
         }
       }
 
+      print(
+          '[NotificationRepo] Failed to update - unexpected response structure');
       return Left(
           ServerFailure(message: 'Failed to update notification preferences'));
     } on AuthException catch (e) {
+      print('[NotificationRepo] Auth error: ${e.message}');
       return Left(AuthenticationFailure(message: e.message));
     } catch (e) {
+      print('[NotificationRepo] Error updating preferences: $e');
       return Left(ServerFailure(message: e.toString()));
     }
   }

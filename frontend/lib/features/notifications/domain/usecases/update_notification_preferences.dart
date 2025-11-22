@@ -7,6 +7,7 @@ import 'package:equatable/equatable.dart';
 import '../../../../core/error/failures.dart';
 import '../../../../core/usecases/usecase.dart';
 import '../entities/notification_preferences.dart';
+import '../entities/time_of_day_vo.dart';
 import '../repositories/notification_repository.dart';
 
 class UpdateNotificationPreferences
@@ -21,6 +22,10 @@ class UpdateNotificationPreferences
     return await repository.updatePreferences(
       dailyVerseEnabled: params.dailyVerseEnabled,
       recommendedTopicEnabled: params.recommendedTopicEnabled,
+      streakReminderEnabled: params.streakReminderEnabled,
+      streakMilestoneEnabled: params.streakMilestoneEnabled,
+      streakLostEnabled: params.streakLostEnabled,
+      streakReminderTime: params.streakReminderTime,
     );
   }
 }
@@ -28,12 +33,27 @@ class UpdateNotificationPreferences
 class UpdatePreferencesParams extends Equatable {
   final bool? dailyVerseEnabled;
   final bool? recommendedTopicEnabled;
+  final bool? streakReminderEnabled;
+  final bool? streakMilestoneEnabled;
+  final bool? streakLostEnabled;
+  final TimeOfDayVO? streakReminderTime;
 
   const UpdatePreferencesParams({
     this.dailyVerseEnabled,
     this.recommendedTopicEnabled,
+    this.streakReminderEnabled,
+    this.streakMilestoneEnabled,
+    this.streakLostEnabled,
+    this.streakReminderTime,
   });
 
   @override
-  List<Object?> get props => [dailyVerseEnabled, recommendedTopicEnabled];
+  List<Object?> get props => [
+        dailyVerseEnabled,
+        recommendedTopicEnabled,
+        streakReminderEnabled,
+        streakMilestoneEnabled,
+        streakLostEnabled,
+        streakReminderTime,
+      ];
 }

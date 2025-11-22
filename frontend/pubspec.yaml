@@ -58,6 +58,7 @@ dependencies:
   connectivity_plus: ^6.1.4
   package_info_plus: ^8.3.0
   device_info_plus: ^11.5.0
+  synchronized: ^3.3.0+3
   uuid: ^4.2.1
   crypto: ^3.0.3
   
@@ -77,31 +78,69 @@ dependencies:
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  
+
   # Code Generation
   build_runner: ^2.4.14
   retrofit_generator: ^9.2.0
   json_serializable: ^6.9.0
   hive_generator: ^2.0.1
-  
+
   # Testing
   mockito: ^5.4.5
   bloc_test: ^10.0.0
   integration_test:
     sdk: flutter
 
+  # App Icon Generation
+  flutter_launcher_icons: ^0.14.3
+
+  # Splash Screen Generation
+  flutter_native_splash: ^2.4.3
+
 flutter:
   uses-material-design: true
-  
+
   # Multi-language support
   generate: true
-  
+
   assets:
     - assets/images/
     - assets/fonts/
-  
+
   # fonts:
   #   - family: Inter
   #     fonts:
   #       - asset: assets/fonts/Inter-Regular.ttf
   #         weight: 400
+
+# Flutter Launcher Icons Configuration
+flutter_launcher_icons:
+  android: true
+  ios: false
+  image_path: "web/icons/icon-512.png"
+  adaptive_icon_background: "#6A4FB6"  # Primary purple color
+  adaptive_icon_foreground: "web/icons/icon-512.png"
+
+# Flutter Native Splash Configuration
+flutter_native_splash:
+  # Splash screen background color
+  color: "#FFFFFF"
+
+  # Splash screen image (centered)
+  image: "web/splash_screen.png"
+
+  # Branding image at bottom of screen (optional)
+  # branding: assets/images/branding.png
+
+  # Android-specific configuration
+  android: true
+  android_12:
+    # Android 12+ uses a different splash screen system
+    image: "web/splash_screen.png"
+    color: "#FFFFFF"
+
+  # iOS configuration (disabled for now)
+  ios: false
+
+  # Web configuration (disabled - we use custom web splash)
+  web: false

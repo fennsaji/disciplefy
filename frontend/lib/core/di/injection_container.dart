@@ -43,6 +43,8 @@ import '../../features/daily_verse/data/services/daily_verse_web_cache_service.d
 import '../../features/daily_verse/data/services/daily_verse_cache_interface.dart';
 import '../../features/daily_verse/domain/repositories/daily_verse_repository.dart';
 import '../../features/daily_verse/data/repositories/daily_verse_repository_impl.dart';
+import '../../features/daily_verse/domain/repositories/streak_repository.dart';
+import '../../features/daily_verse/data/repositories/streak_repository_impl.dart';
 import '../../features/daily_verse/domain/usecases/get_daily_verse.dart';
 import '../../features/daily_verse/domain/usecases/get_cached_verse.dart';
 import '../../features/daily_verse/domain/usecases/manage_verse_preferences.dart';
@@ -133,6 +135,26 @@ import '../../features/tokens/presentation/bloc/payment_method_bloc.dart';
 import '../../features/tokens/di/tokens_injection.dart';
 import '../../features/follow_up_chat/presentation/bloc/follow_up_chat_bloc.dart';
 import '../../features/follow_up_chat/data/services/conversation_service.dart';
+import '../../features/subscription/data/datasources/subscription_remote_data_source.dart';
+import '../../features/subscription/data/repositories/subscription_repository_impl.dart';
+import '../../features/subscription/domain/repositories/subscription_repository.dart';
+import '../../features/subscription/domain/usecases/create_subscription.dart';
+import '../../features/subscription/domain/usecases/cancel_subscription.dart';
+import '../../features/subscription/domain/usecases/resume_subscription.dart';
+import '../../features/subscription/domain/usecases/get_active_subscription.dart';
+import '../../features/subscription/domain/usecases/get_subscription_history.dart';
+import '../../features/subscription/domain/usecases/get_invoices.dart';
+import '../../features/subscription/presentation/bloc/subscription_bloc.dart';
+import '../../features/memory_verses/data/datasources/memory_verse_local_datasource.dart';
+import '../../features/memory_verses/data/datasources/memory_verse_remote_datasource.dart';
+import '../../features/memory_verses/data/repositories/memory_verse_repository_impl.dart';
+import '../../features/memory_verses/domain/repositories/memory_verse_repository.dart';
+import '../../features/memory_verses/domain/usecases/get_due_verses.dart';
+import '../../features/memory_verses/domain/usecases/add_verse_from_daily.dart';
+import '../../features/memory_verses/domain/usecases/add_verse_manually.dart';
+import '../../features/memory_verses/domain/usecases/submit_review.dart';
+import '../../features/memory_verses/domain/usecases/get_statistics.dart';
+import '../../features/memory_verses/presentation/bloc/memory_verse_bloc.dart';
 
 /// Service locator instance for dependency injection
 final sl = GetIt.instance;
@@ -320,6 +342,11 @@ Future<void> initializeDependencies() async {
     ),
   );
 
+  // Streak repository for daily verse streak tracking
+  sl.registerLazySingleton<StreakRepository>(
+    () => StreakRepositoryImpl(sl<SupabaseClient>()),
+  );
+
   sl.registerLazySingleton(() => GetDailyVerse(sl()));
   sl.registerLazySingleton(() => GetCachedVerse(sl()));
   sl.registerLazySingleton(() => GetPreferredLanguage(sl()));
@@ -337,6 +364,43 @@ Future<void> initializeDependencies() async {
         clearVerseCache: sl(),
         getDefaultLanguage: sl(),
         languagePreferenceService: sl(),
+        streakRepository: sl(),
+      ));
+
+  //! Memory Verses
+  // Data Sources
+  sl.registerLazySingleton<MemoryVerseLocalDataSource>(
+    () => MemoryVerseLocalDataSource(),
+  );
+
+  sl.registerLazySingleton<MemoryVerseRemoteDataSource>(
+    () => MemoryVerseRemoteDataSource(
+      httpService: sl(),
+    ),
+  );
+
+  // Repository
+  sl.registerLazySingleton<MemoryVerseRepository>(
+    () => MemoryVerseRepositoryImpl(
+      localDataSource: sl(),
+      remoteDataSource: sl(),
+    ),
+  );
+
+  // Use Cases
+  sl.registerLazySingleton(() => GetDueVerses(sl()));
+  sl.registerLazySingleton(() => AddVerseFromDaily(sl()));
+  sl.registerLazySingleton(() => AddVerseManually(sl()));
+  sl.registerLazySingleton(() => SubmitReview(sl()));
+  sl.registerLazySingleton(() => GetStatistics(sl()));
+
+  // BLoC
+  sl.registerFactory(() => MemoryVerseBloc(
+        getDueVerses: sl(),
+        addVerseFromDaily: sl(),
+        addVerseManually: sl(),
+        submitReview: sl(),
+        getStatistics: sl(),
       ));
 
   //! Saved Guides
@@ -477,6 +541,36 @@ Future<void> initializeDependencies() async {
 
   //! Tokens
   registerTokenDependencies(sl);
+
+  //! Subscription
+  sl.registerLazySingleton<SubscriptionRemoteDataSource>(
+    () => SubscriptionRemoteDataSourceImpl(
+      supabaseClient: sl(),
+    ),
+  );
+
+  sl.registerLazySingleton<SubscriptionRepository>(
+    () => SubscriptionRepositoryImpl(
+      remoteDataSource: sl(),
+      networkInfo: sl(),
+    ),
+  );
+
+  sl.registerLazySingleton(() => CreateSubscription(sl()));
+  sl.registerLazySingleton(() => CancelSubscription(sl()));
+  sl.registerLazySingleton(() => ResumeSubscription(sl()));
+  sl.registerLazySingleton(() => GetActiveSubscription(sl()));
+  sl.registerLazySingleton(() => GetSubscriptionHistory(sl()));
+  sl.registerLazySingleton(() => GetInvoices(sl()));
+
+  sl.registerFactory(() => SubscriptionBloc(
+        createSubscription: sl(),
+        cancelSubscription: sl(),
+        resumeSubscription: sl(),
+        getActiveSubscription: sl(),
+        getSubscriptionHistory: sl(),
+        getSubscriptionInvoices: sl(),
+      ));
 
   //! Follow Up Chat
   sl.registerLazySingleton(() => ConversationService(

@@ -54,8 +54,9 @@ class LanguagePreferenceService {
   }
 
   /// Get the selected language preference with fallback logic
-  /// For authenticated users, checks database first, then local storage
-  /// For anonymous users, checks local storage only
+  /// For authenticated users, checks database first, then local storage, then cache
+  /// For anonymous users, checks local storage, then cache
+  /// Uses in-memory cache to prevent language loss during temporary API failures
   Future<AppLanguage> getSelectedLanguage() async {
     try {
       // For authenticated non-anonymous users, check database first
@@ -65,13 +66,20 @@ class LanguagePreferenceService {
             await _userProfileService.getLanguagePreference();
 
         final dbLanguage = dbLanguageResult.fold(
-          (failure) => null, // Failed to get from DB, fall back to local
+          (failure) {
+            print(
+                '⚠️ [LANGUAGE_SERVICE] Database call failed: ${failure.message}');
+            return null; // Failed to get from DB, fall back to local/cache
+          },
           (language) => language,
         );
 
         if (dbLanguage != null) {
-          // Sync local storage with database value
+          // Sync local storage with database value and cache it
           await _prefs.setString(_languagePreferenceKey, dbLanguage.code);
+          _cachedLanguage = dbLanguage;
+          print(
+              '✅ [LANGUAGE_SERVICE] Retrieved from DB and cached: ${dbLanguage.displayName}');
           return dbLanguage;
         }
       }
@@ -79,13 +87,34 @@ class LanguagePreferenceService {
       // Fallback to local storage (for anonymous users or DB failure)
       final languageCode = _prefs.getString(_languagePreferenceKey);
       if (languageCode != null) {
-        return AppLanguage.fromCode(languageCode);
+        final language = AppLanguage.fromCode(languageCode);
+        _cachedLanguage = language;
+        print(
+            '✅ [LANGUAGE_SERVICE] Retrieved from local storage and cached: ${language.displayName}');
+        return language;
       }
 
-      // Default to English
+      // Fallback to cached language before defaulting to English
+      // This prevents language loss during temporary API/storage failures
+      if (_cachedLanguage != null) {
+        print(
+            '✅ [LANGUAGE_SERVICE] Using cached language (API/storage failed): ${_cachedLanguage!.displayName}');
+        return _cachedLanguage!;
+      }
+
+      // Default to English only if all sources fail
+      print('⚠️ [LANGUAGE_SERVICE] All sources failed, defaulting to English');
       return AppLanguage.english;
     } catch (e) {
       print('Error getting selected language: $e');
+
+      // Even in error cases, try to use cached language before defaulting to English
+      if (_cachedLanguage != null) {
+        print(
+            '✅ [LANGUAGE_SERVICE] Exception occurred, using cached language: ${_cachedLanguage!.displayName}');
+        return _cachedLanguage!;
+      }
+
       return AppLanguage.english;
     }
   }
@@ -100,27 +129,57 @@ class LanguagePreferenceService {
       // Save to local storage first (always)
       await _prefs.setString(_languagePreferenceKey, language.code);
 
+      // Cache the language immediately to prevent loss during API failures
+      _cachedLanguage = language;
+      print('💾 [LANGUAGE_SERVICE] Language cached: ${language.displayName}');
+
       // For authenticated non-anonymous users, also save to database
       if (_authStateProvider.isAuthenticated &&
           !_authStateProvider.isAnonymous) {
-        // Invalidate profile cache, language cache, and coordinate with other caches
-        _authStateProvider.invalidateProfileCache();
-        _invalidateLanguageCache();
-        _cacheCoordinator.invalidateLanguageCaches();
-        print(
-            '📄 [LANGUAGE_SERVICE] All caches invalidated for language update (including coordinated caches)');
+        final currentUserId = _authStateProvider.userId;
 
+        // FIX: Update database FIRST, then invalidate caches
         final updateResult =
             await _userProfileService.updateLanguagePreference(language);
-        updateResult.fold(
-          (failure) => print(
-              'Failed to update language preference in database: ${failure.message}'),
+
+        final dbUpdateSuccessful = updateResult.fold(
+          (failure) {
+            print(
+                'Failed to update language preference in database: ${failure.message}');
+            return false;
+          },
           (profile) {
             print('Language preference updated in database successfully');
-            print(
-                '📄 [LANGUAGE_SERVICE] Language preference updated, all caches will be refreshed on next access');
+            return true;
           },
         );
+
+        // FIX: Cache the completion state BEFORE invalidating other caches
+        // This prevents race condition where router guard checks before DB update completes
+        if (dbUpdateSuccessful) {
+          _cacheLanguageCompletion(currentUserId, true);
+          print(
+              '✅ [LANGUAGE_SERVICE] Language completion cached BEFORE invalidation');
+
+          // Mark language selection as completed after successful DB save
+          await _prefs.setBool(_hasCompletedLanguageSelectionKey, true);
+          print(
+              '✅ [LANGUAGE_SERVICE] Marked language selection completed after DB save');
+
+          // Now invalidate other caches after successful DB update
+          _authStateProvider.invalidateProfileCache();
+          _cacheCoordinator.invalidateLanguageCaches();
+          print(
+              '📄 [LANGUAGE_SERVICE] Profile caches invalidated after language update');
+        } else {
+          print(
+              '⚠️ [LANGUAGE_SERVICE] DB update failed - NOT marking language selection as completed');
+        }
+      } else {
+        // For anonymous users, mark completion immediately after local storage save
+        await _prefs.setBool(_hasCompletedLanguageSelectionKey, true);
+        print(
+            '✅ [LANGUAGE_SERVICE] Marked language selection completed for anonymous user');
       }
 
       // Notify listeners of the language change
@@ -231,16 +290,18 @@ class LanguagePreferenceService {
   }
 
   /// Mark that user has completed initial language selection
-  /// For authenticated users, the completion is implicitly tracked by DB presence
-  /// For anonymous users, sets local storage completion flag
+  /// FIX: Now sets local storage flag for ALL users (authenticated and anonymous)
+  /// This ensures the flag is set before any async DB operations complete
   Future<void> markLanguageSelectionCompleted() async {
     try {
-      // For anonymous users, mark completion in local storage
-      // For authenticated users, completion is tracked by DB presence automatically
-      if (_authStateProvider.isAnonymous ||
-          !_authStateProvider.isAuthenticated) {
-        await _prefs.setBool(_hasCompletedLanguageSelectionKey, true);
-      }
+      // FIX: Set local flag for ALL users, not just anonymous
+      // This prevents race condition where router checks before DB update completes
+      await _prefs.setBool(_hasCompletedLanguageSelectionKey, true);
+      print('✅ [LANGUAGE_SERVICE] Marked language selection completed locally');
+
+      // Also cache the completion state for the current user
+      final currentUserId = _authStateProvider.userId;
+      _cacheLanguageCompletion(currentUserId, true);
     } catch (e) {
       print('Error marking language selection completed: $e');
     }

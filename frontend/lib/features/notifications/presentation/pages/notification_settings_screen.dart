@@ -8,7 +8,10 @@ import '../../../../core/di/injection_container.dart';
 import '../bloc/notification_bloc.dart';
 import '../bloc/notification_event.dart';
 import '../bloc/notification_state.dart';
+import '../utils/time_of_day_extensions.dart';
 import '../widgets/notification_preference_card.dart';
+import '../../../../core/extensions/translation_extension.dart';
+import '../../../../core/i18n/translation_keys.dart';
 
 /// Screen that displays and manages user notification preferences.
 ///
@@ -36,71 +39,89 @@ class _NotificationSettingsView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Notification Settings'),
-        elevation: 0,
-      ),
-      body: BlocConsumer<NotificationBloc, NotificationState>(
-        listener: (context, state) {
-          if (state is NotificationError) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(state.message),
-                backgroundColor: Colors.red,
-              ),
-            );
-          } else if (state is NotificationPreferencesUpdated) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('✓ Preferences updated'),
-                backgroundColor: Colors.green,
-                duration: Duration(seconds: 2),
-              ),
-            );
-            // Reload preferences after update
-            context
-                .read<NotificationBloc>()
-                .add(const LoadNotificationPreferences());
-          } else if (state is NotificationPermissionResult) {
-            if (state.granted) {
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+
+        // Handle Android back button - pop to previous page
+        Navigator.of(context).pop();
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(context.tr(TranslationKeys.notificationsSettingsTitle)),
+          elevation: 0,
+        ),
+        body: BlocConsumer<NotificationBloc, NotificationState>(
+          listener: (context, state) {
+            if (state is NotificationError) {
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('✓ Notification permissions granted'),
-                  backgroundColor: Colors.green,
+                SnackBar(
+                  content:
+                      Text(state.message), // Error message already from backend
+                  backgroundColor: Colors.red,
                 ),
               );
-            } else {
+            } else if (state is NotificationPreferencesUpdated) {
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('❌ Notification permissions denied'),
-                  backgroundColor: Colors.orange,
+                SnackBar(
+                  content: Text(context.tr(
+                      TranslationKeys.notificationsSettingsPreferencesUpdated)),
+                  backgroundColor: Colors.green,
+                  duration: Duration(seconds: 2),
                 ),
+              );
+              // Reload preferences after update
+              context
+                  .read<NotificationBloc>()
+                  .add(const LoadNotificationPreferences());
+            } else if (state is NotificationPermissionResult) {
+              if (state.granted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(context.tr(TranslationKeys
+                        .notificationsSettingsPermissionsGranted)),
+                    backgroundColor: Colors.green,
+                  ),
+                );
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(context.tr(TranslationKeys
+                        .notificationsSettingsPermissionsDenied)),
+                    backgroundColor: Colors.orange,
+                  ),
+                );
+              }
+              // Reload preferences to show updated permission status
+              context
+                  .read<NotificationBloc>()
+                  .add(const LoadNotificationPreferences());
+            }
+          },
+          builder: (context, state) {
+            if (state is NotificationLoading) {
+              return const Center(
+                child: CircularProgressIndicator(),
               );
             }
-          }
-        },
-        builder: (context, state) {
-          if (state is NotificationLoading) {
-            return const Center(
-              child: CircularProgressIndicator(),
+
+            if (state is NotificationPreferencesLoaded) {
+              return _buildPreferencesView(context, state);
+            }
+
+            if (state is NotificationError) {
+              return _buildErrorView(context, state.message);
+            }
+
+            return Center(
+              child: Text(
+                  context.tr(TranslationKeys.notificationsSettingsLoading)),
             );
-          }
-
-          if (state is NotificationPreferencesLoaded) {
-            return _buildPreferencesView(context, state);
-          }
-
-          if (state is NotificationError) {
-            return _buildErrorView(context, state.message);
-          }
-
-          return const Center(
-            child: Text('Loading notification settings...'),
-          );
-        },
-      ),
-    );
+          },
+        ), // BlocConsumer (body)
+      ), // Scaffold
+    ); // PopScope
   }
 
   Widget _buildPreferencesView(
@@ -119,7 +140,7 @@ class _NotificationSettingsView extends StatelessWidget {
 
           // Preferences Section
           Text(
-            'Notification Preferences',
+            context.tr(TranslationKeys.notificationsSettingsPreferencesTitle),
             style: Theme.of(context).textTheme.titleLarge?.copyWith(
                   fontWeight: FontWeight.bold,
                 ),
@@ -128,9 +149,10 @@ class _NotificationSettingsView extends StatelessWidget {
 
           // Daily Verse Notification
           NotificationPreferenceCard(
-            title: 'Daily Verse',
-            description:
-                'Receive inspirational Bible verses every morning at 6 AM',
+            title: context
+                .tr(TranslationKeys.notificationsSettingsDailyVerseTitle),
+            description: context
+                .tr(TranslationKeys.notificationsSettingsDailyVerseDescription),
             icon: Icons.book_outlined,
             enabled: state.preferences.dailyVerseEnabled,
             onChanged: (value) {
@@ -144,14 +166,103 @@ class _NotificationSettingsView extends StatelessWidget {
 
           // Recommended Topic Notification
           NotificationPreferenceCard(
-            title: 'Recommended Topics',
-            description: 'Get personalized study topic suggestions at 8 AM',
+            title: context.tr(
+                TranslationKeys.notificationsSettingsRecommendedTopicsTitle),
+            description: context.tr(TranslationKeys
+                .notificationsSettingsRecommendedTopicsDescription),
             icon: Icons.lightbulb_outline,
             enabled: state.preferences.recommendedTopicEnabled,
             onChanged: (value) {
               context.read<NotificationBloc>().add(
                     UpdateNotificationPreferences(
                       recommendedTopicEnabled: value,
+                    ),
+                  );
+            },
+          ),
+
+          const SizedBox(height: 12),
+
+          // Streak Reminder Notification with Time Picker
+          NotificationPreferenceCard(
+            title: context
+                .tr(TranslationKeys.notificationsSettingsStreakReminderTitle),
+            description: context.tr(
+                TranslationKeys.notificationsSettingsStreakReminderDescription),
+            icon: Icons.bolt,
+            enabled: state.preferences.streakReminderEnabled,
+            onChanged: (value) {
+              context.read<NotificationBloc>().add(
+                    UpdateNotificationPreferences(
+                      streakReminderEnabled: value,
+                    ),
+                  );
+            },
+            // Time picker for reminder time
+            trailing: state.preferences.streakReminderEnabled
+                ? TextButton.icon(
+                    onPressed: () async {
+                      // Convert domain TimeOfDayVO to Flutter TimeOfDay for TimePicker
+                      final initialTime = state.preferences.streakReminderTime
+                          .toFlutterTimeOfDay();
+
+                      final TimeOfDay? picked = await showTimePicker(
+                        context: context,
+                        initialTime: initialTime,
+                      );
+                      if (picked != null && picked != initialTime) {
+                        context.read<NotificationBloc>().add(
+                              UpdateNotificationPreferences(
+                                streakReminderTime: picked,
+                              ),
+                            );
+                      }
+                    },
+                    icon: const Icon(Icons.access_time, size: 18),
+                    label: Text(
+                      // Convert domain TimeOfDayVO to Flutter TimeOfDay for display
+                      state.preferences.streakReminderTime
+                          .toFlutterTimeOfDay()
+                          .format(context),
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                  )
+                : null,
+          ),
+
+          const SizedBox(height: 12),
+
+          // Streak Milestone Notification
+          NotificationPreferenceCard(
+            title: context
+                .tr(TranslationKeys.notificationsSettingsStreakMilestoneTitle),
+            description: context.tr(TranslationKeys
+                .notificationsSettingsStreakMilestoneDescription),
+            icon: Icons.emoji_events,
+            enabled: state.preferences.streakMilestoneEnabled,
+            onChanged: (value) {
+              context.read<NotificationBloc>().add(
+                    UpdateNotificationPreferences(
+                      streakMilestoneEnabled: value,
+                    ),
+                  );
+            },
+          ),
+
+          const SizedBox(height: 12),
+
+          // Streak Lost Notification
+          NotificationPreferenceCard(
+            title: context
+                .tr(TranslationKeys.notificationsSettingsStreakLostTitle),
+            description: context
+                .tr(TranslationKeys.notificationsSettingsStreakLostDescription),
+            icon: Icons.refresh,
+            enabled: state.preferences.streakLostEnabled,
+            onChanged: (value) {
+              context.read<NotificationBloc>().add(
+                    UpdateNotificationPreferences(
+                      streakLostEnabled: value,
                     ),
                   );
             },
@@ -187,7 +298,8 @@ class _NotificationSettingsView extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Notification Permission',
+                        context.tr(TranslationKeys
+                            .notificationsSettingsPermissionTitle),
                         style:
                             Theme.of(context).textTheme.titleMedium?.copyWith(
                                   fontWeight: FontWeight.bold,
@@ -196,8 +308,10 @@ class _NotificationSettingsView extends StatelessWidget {
                       const SizedBox(height: 4),
                       Text(
                         permissionsGranted
-                            ? 'Enabled - You will receive notifications'
-                            : 'Disabled - Enable to receive notifications',
+                            ? context.tr(TranslationKeys
+                                .notificationsSettingsPermissionEnabled)
+                            : context.tr(TranslationKeys
+                                .notificationsSettingsPermissionDisabled),
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                               color: Colors.grey[600],
                             ),
@@ -218,7 +332,8 @@ class _NotificationSettingsView extends StatelessWidget {
                         );
                   },
                   icon: const Icon(Icons.notifications_active),
-                  label: const Text('Enable Notifications'),
+                  label: Text(context
+                      .tr(TranslationKeys.notificationsSettingsEnableButton)),
                   style: ElevatedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 12),
                   ),
@@ -227,42 +342,59 @@ class _NotificationSettingsView extends StatelessWidget {
             ],
           ],
         ),
-      ),
-    );
+      ), // Scaffold
+    ); // PopScope
   }
 
   Widget _buildInfoSection(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    // Use explicit colors for better visibility in dark mode
+    final backgroundColor = isDark
+        ? const Color(0xFF2196F3)
+            .withOpacity(0.15) // Brighter blue with 15% opacity
+        : Colors.blue.withOpacity(0.1);
+
+    final borderColor = isDark
+        ? const Color(0xFF64B5F6).withOpacity(0.4) // Light blue border
+        : Colors.blue.withOpacity(0.3);
+
+    final iconColor = isDark
+        ? const Color(0xFF90CAF9) // Light blue for dark mode
+        : Colors.blue;
+
+    final textColor = isDark
+        ? const Color(0xFFE3F2FD) // Very light blue for dark mode
+        : Colors.blue[900];
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.blue.withOpacity(0.1),
+        color: backgroundColor,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.blue.withOpacity(0.3)),
+        border: Border.all(color: borderColor),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              const Icon(Icons.info_outline, color: Colors.blue),
+              Icon(Icons.info_outline, color: iconColor),
               const SizedBox(width: 8),
               Text(
-                'About Notifications',
+                context.tr(TranslationKeys.notificationsSettingsAboutTitle),
                 style: Theme.of(context).textTheme.titleSmall?.copyWith(
                       fontWeight: FontWeight.bold,
-                      color: Colors.blue[900],
+                      color: textColor,
                     ),
               ),
             ],
           ),
           const SizedBox(height: 12),
           Text(
-            '• Notifications are sent based on your timezone\n'
-            '• You can customize which notifications you receive\n'
-            '• Tap on a notification to view the content directly\n'
-            '• You can disable notifications anytime',
+            context.tr(TranslationKeys.notificationsSettingsAboutInfo),
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Colors.blue[900],
+                  color: textColor,
                   height: 1.6,
                 ),
           ),
@@ -285,7 +417,7 @@ class _NotificationSettingsView extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             Text(
-              'Error Loading Settings',
+              context.tr(TranslationKeys.notificationsSettingsErrorTitle),
               style: Theme.of(context).textTheme.titleLarge,
             ),
             const SizedBox(height: 8),
@@ -302,7 +434,8 @@ class _NotificationSettingsView extends StatelessWidget {
                     );
               },
               icon: const Icon(Icons.refresh),
-              label: const Text('Retry'),
+              label:
+                  Text(context.tr(TranslationKeys.notificationsSettingsRetry)),
             ),
           ],
         ),

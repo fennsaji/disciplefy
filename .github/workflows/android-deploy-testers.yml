@@ -1,0 +1,105 @@
+name: Deploy Android to Testers
+
+on:
+  push:
+    branches:
+      - dev
+  workflow_dispatch: # Allow manual triggering
+
+env:
+  FLUTTER_VERSION: '3.32.8'  # Dart SDK 3.8.1 - compatible with flutter_lints ^6.0.0 and code generators
+  JAVA_VERSION: '17'
+
+jobs:
+  build-and-deploy:
+    name: Build and Deploy to Firebase App Distribution
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: ${{ env.JAVA_VERSION }}
+          cache: 'gradle'
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: 'stable'
+          cache: true
+
+      - name: Get Flutter dependencies
+        run: |
+          cd frontend
+          flutter pub get
+
+      - name: Run Flutter tests
+        run: |
+          cd frontend
+          flutter test
+        continue-on-error: true # Don't fail deployment if tests fail
+
+      - name: Decode Android keystore
+        run: |
+          echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 --decode > frontend/android/app/upload-keystore.jks
+
+      - name: Create key.properties
+        run: |
+          cd frontend/android
+          cat > key.properties << EOF
+          storePassword=${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          keyPassword=${{ secrets.ANDROID_KEY_PASSWORD }}
+          keyAlias=${{ secrets.ANDROID_KEY_ALIAS }}
+          storeFile=upload-keystore.jks
+          EOF
+
+      - name: Create google-services.json
+        run: |
+          echo '${{ secrets.GOOGLE_SERVICES_JSON }}' > frontend/android/app/google-services.json
+
+      - name: Build Android APK (Development)
+        run: |
+          cd frontend
+          flutter build apk --release \
+            --dart-define=SUPABASE_URL=${{ secrets.SUPABASE_DEV_URL }} \
+            --dart-define=SUPABASE_ANON_KEY=${{ secrets.SUPABASE_DEV_ANON_KEY }} \
+            --dart-define=GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_OAUTH_CLIENT_ID_ANDROID }} \
+            --dart-define=APP_URL=${{ secrets.DEV_APP_URL }} \
+            --dart-define=FLUTTER_ENV=development \
+            --build-name=1.0.${{ github.run_number }} \
+            --build-number=${{ github.run_number }}
+
+      - name: Upload to Firebase App Distribution
+        uses: wzieba/Firebase-Distribution-Github-Action@v1
+        with:
+          appId: ${{ secrets.FIREBASE_ANDROID_APP_ID }}
+          serviceCredentialsFileContent: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}
+          groups: testers
+          file: frontend/build/app/outputs/flutter-apk/app-release.apk
+          releaseNotes: |
+            🚀 Development Build #${{ github.run_number }}
+
+            📝 Latest Changes:
+            ${{ github.event.head_commit.message }}
+
+            👤 Author: ${{ github.event.head_commit.author.name }}
+            🔗 Commit: ${{ github.sha }}
+
+            📱 Download and test the latest features!
+
+      - name: Cleanup sensitive files
+        if: always()
+        run: rm -f frontend/android/app/upload-keystore.jks frontend/android/key.properties frontend/android/app/google-services.json
+
+      - name: Upload build artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-apk-${{ github.run_number }}
+          path: frontend/build/app/outputs/flutter-apk/app-release.apk
+          retention-days: 30

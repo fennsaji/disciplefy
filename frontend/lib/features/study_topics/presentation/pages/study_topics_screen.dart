@@ -60,8 +60,10 @@ class _StudyTopicsScreenContentState extends State<_StudyTopicsScreenContent> {
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _searchFocusNode = FocusNode();
   bool _isSearchExpanded = false;
-  bool _isGeneratingStudyGuide = false;
   Timer? _debounce;
+
+  // Track if we're currently navigating to prevent multiple navigations
+  bool _isNavigating = false;
 
   @override
   void initState() {
@@ -94,15 +96,15 @@ class _StudyTopicsScreenContentState extends State<_StudyTopicsScreenContent> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('⏳ Loading study topics...'),
-            duration: Duration(seconds: 3),
+            duration: Duration(seconds: 10),
             behavior: SnackBarBehavior.floating,
           ),
         );
       }
 
-      // Wait up to 3 seconds for topics to load
+      // Wait up to 10 seconds for topics to load
       int attempts = 0;
-      while (attempts < 6 && mounted) {
+      while (attempts < 20 && mounted) {
         await Future.delayed(const Duration(milliseconds: 500));
         final currentState = studyTopicsBloc.state;
         if (currentState is StudyTopicsLoaded) {
@@ -247,62 +249,22 @@ class _StudyTopicsScreenContentState extends State<_StudyTopicsScreenContent> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      appBar: _buildAppBar(context),
-      body: MultiBlocListener(
-        listeners: [
-          BlocListener<StudyTopicsBloc, StudyTopicsState>(
-            listener: (context, state) {
-              // Handle any side effects here if needed
-            },
-          ),
-          BlocListener<HomeBloc, HomeState>(
-            listener: (context, state) {
-              if (state is HomeStudyGuideGenerated) {
-                // Stop loading and navigate directly to study guide screen
-                setState(() {
-                  _isGeneratingStudyGuide = false;
-                });
-                ScaffoldMessenger.of(context).hideCurrentSnackBar();
-                context.go('/study-guide?source=studyTopics',
-                    extra: state.studyGuide);
-              } else if (state is HomeStudyGuideGeneratedCombined) {
-                // Stop loading and navigate directly to study guide screen
-                setState(() {
-                  _isGeneratingStudyGuide = false;
-                });
-                ScaffoldMessenger.of(context).hideCurrentSnackBar();
-                context.go('/study-guide?source=studyTopics',
-                    extra: state.studyGuide);
-              } else if (state is HomeCombinedState) {
-                // Update loading state based on study guide generation status
-                setState(() {
-                  _isGeneratingStudyGuide = state.isGeneratingStudyGuide;
-                });
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
 
-                // Handle generation error
-                if (state.generationError != null) {
-                  ScaffoldMessenger.of(context).hideCurrentSnackBar();
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(context.tr(
-                          TranslationKeys.studyTopicsGenerationError,
-                          {'error': state.generationError})),
-                      backgroundColor: Colors.red,
-                      action: SnackBarAction(
-                        label: context.tr(TranslationKeys.commonCancel),
-                        onPressed: () =>
-                            ScaffoldMessenger.of(context).hideCurrentSnackBar(),
-                      ),
-                    ),
-                  );
-                }
-              }
-            },
-          ),
-        ],
-        child: BlocBuilder<StudyTopicsBloc, StudyTopicsState>(
+        // Handle Android back button - navigate to home
+        if (Navigator.of(context).canPop()) {
+          Navigator.of(context).pop();
+        } else {
+          context.go('/');
+        }
+      },
+      child: Scaffold(
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        appBar: _buildAppBar(context),
+        body: BlocBuilder<StudyTopicsBloc, StudyTopicsState>(
           builder: (context, state) {
             return RefreshIndicator(
               onRefresh: () async {
@@ -314,8 +276,8 @@ class _StudyTopicsScreenContentState extends State<_StudyTopicsScreenContent> {
             );
           },
         ),
-      ),
-    );
+      ), // Scaffold
+    ); // PopScope
   }
 
   PreferredSizeWidget _buildAppBar(BuildContext context) {
@@ -430,7 +392,6 @@ class _StudyTopicsScreenContentState extends State<_StudyTopicsScreenContent> {
       isFiltering: isFiltering,
       isLoadingMore: isLoadingMore,
       hasMore: hasMore,
-      isGeneratingStudyGuide: _isGeneratingStudyGuide,
       onTopicTap: _navigateToStudyGuide,
       onFilterCategories: (selectedCategories) => context
           .read<StudyTopicsBloc>()
@@ -441,17 +402,12 @@ class _StudyTopicsScreenContentState extends State<_StudyTopicsScreenContent> {
   }
 
   void _navigateToStudyGuide(RecommendedGuideTopic topic) {
-    // Prevent multiple clicks during generation
-    if (_isGeneratingStudyGuide) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content:
-              Text(context.tr(TranslationKeys.studyTopicsGenerationInProgress)),
-          duration: Duration(seconds: 2),
-        ),
-      );
+    // Prevent multiple clicks during navigation
+    if (_isNavigating) {
       return;
     }
+
+    _isNavigating = true;
 
     // Get the current language from Daily Verse state
     final dailyVerseBloc = context.read<DailyVerseBloc>();
@@ -465,39 +421,29 @@ class _StudyTopicsScreenContentState extends State<_StudyTopicsScreenContent> {
       selectedLanguage = currentState.currentLanguage;
     }
 
-    // Set loading state immediately
-    setState(() {
-      _isGeneratingStudyGuide = true;
+    final languageCode = _getLanguageCode(selectedLanguage);
+
+    // Navigate directly to study guide V2 - it will handle generation
+    final encodedTitle = Uri.encodeComponent(topic.title);
+    final encodedDescription = Uri.encodeComponent(topic.description);
+    final topicIdParam = topic.id.isNotEmpty ? '&topic_id=${topic.id}' : '';
+    final descriptionParam =
+        topic.description.isNotEmpty ? '&description=$encodedDescription' : '';
+
+    debugPrint(
+        '🔍 [STUDY_TOPICS] Navigating to study guide V2 for topic: ${topic.title} (ID: ${topic.id})');
+
+    context.go(
+        '/study-guide-v2?input=$encodedTitle&type=topic&language=$languageCode&source=studyTopics$topicIdParam$descriptionParam');
+
+    // Reset navigation flag after a short delay
+    Future.delayed(const Duration(milliseconds: 500), () {
+      if (mounted) {
+        setState(() {
+          _isNavigating = false;
+        });
+      }
     });
-
-    // Generate study guide using HomeBloc - navigation handled by BlocListener
-    context.read<HomeBloc>().add(GenerateStudyGuideFromTopic(
-          topicName: topic.title,
-          language: _getLanguageCode(selectedLanguage),
-        ));
-
-    // Show generation progress immediately
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            const SizedBox(
-              width: 20,
-              height: 20,
-              child: CircularProgressIndicator(
-                strokeWidth: 2,
-                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-              ),
-            ),
-            const SizedBox(width: 12),
-            Text(context.tr(
-                TranslationKeys.studyTopicsGenerating, {'topic': topic.title})),
-          ],
-        ),
-        duration: const Duration(minutes: 1),
-        backgroundColor: Theme.of(context).colorScheme.primary,
-      ),
-    );
   }
 
   /// Convert VerseLanguage enum to language code string
@@ -645,7 +591,6 @@ class TopicsLoadedView extends StatelessWidget {
   final bool isFiltering;
   final bool isLoadingMore;
   final bool hasMore;
-  final bool isGeneratingStudyGuide;
   final Function(RecommendedGuideTopic) onTopicTap;
   final Function(List<String>) onFilterCategories;
   final VoidCallback onLoadMore;
@@ -657,7 +602,6 @@ class TopicsLoadedView extends StatelessWidget {
     required this.isFiltering,
     required this.isLoadingMore,
     required this.hasMore,
-    required this.isGeneratingStudyGuide,
     required this.onTopicTap,
     required this.onFilterCategories,
     required this.onLoadMore,
@@ -730,7 +674,6 @@ class TopicsLoadedView extends StatelessWidget {
           onTopicTap: onTopicTap,
           isLoading: isLoadingMore,
           hasMore: hasMore,
-          isGeneratingStudyGuide: isGeneratingStudyGuide,
           onLoadMore: hasMore ? onLoadMore : null,
         ),
         const SizedBox(height: 24),

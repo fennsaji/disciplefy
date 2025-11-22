@@ -37,6 +37,7 @@ class _FollowUpChatWidgetState extends State<FollowUpChatWidget>
   final ScrollController _scrollController = ScrollController();
   late AnimationController _expandController;
   late Animation<double> _expandAnimation;
+  bool _hasInitialized = false;
 
   @override
   void initState() {
@@ -54,6 +55,26 @@ class _FollowUpChatWidgetState extends State<FollowUpChatWidget>
     if (widget.isExpanded) {
       _expandController.value = 1.0;
     }
+
+    _initializeConversation();
+  }
+
+  /// Dispatches StartConversationEvent once on widget initialization.
+  /// Called from initState to avoid infinite loop on widget rebuilds.
+  void _initializeConversation() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!_hasInitialized && mounted) {
+        _hasInitialized = true;
+        try {
+          context.read<FollowUpChatBloc>().add(StartConversationEvent(
+                studyGuideId: widget.studyGuideId,
+                studyGuideTitle: widget.studyGuideTitle,
+              ));
+        } catch (e) {
+          // Silently handle BLoC access errors during initialization
+        }
+      }
+    });
   }
 
   @override
@@ -89,49 +110,20 @@ class _FollowUpChatWidgetState extends State<FollowUpChatWidget>
 
   @override
   Widget build(BuildContext context) {
-    print(
-        '[FollowUpChatWidget] 🏠 Building widget for study guide: ${widget.studyGuideId}');
-    print(
-        '[FollowUpChatWidget] 📝 Study guide title: ${widget.studyGuideTitle}');
+    // NOTE: StartConversationEvent is dispatched in initState() to avoid infinite loop
+    // DO NOT dispatch events in build() - it causes rebuilds on every state change!
 
     // Check if there's already a FollowUpChatBloc in the context
     try {
-      final existingBloc = context.read<FollowUpChatBloc>();
-      print(
-          '[FollowUpChatWidget] 🔍 Found existing FollowUpChatBloc in context');
-      // If there's an existing bloc, dispatch the event to it
-      existingBloc.add(StartConversationEvent(
-        studyGuideId: widget.studyGuideId,
-        studyGuideTitle: widget.studyGuideTitle,
-      ));
+      context.read<FollowUpChatBloc>();
       return _buildChatInterface();
     } catch (e) {
-      print(
-          '[FollowUpChatWidget] 🆕 No existing FollowUpChatBloc found, creating new one');
+      // No existing bloc, create a new one
+      return BlocProvider(
+        create: (context) => sl<FollowUpChatBloc>(),
+        child: _buildChatInterface(),
+      );
     }
-
-    return BlocProvider(
-      create: (context) {
-        try {
-          print('[FollowUpChatWidget] 🎨 Creating FollowUpChatBloc');
-          final bloc = sl<FollowUpChatBloc>();
-          print('[FollowUpChatWidget] ✅ Successfully created FollowUpChatBloc');
-          print('[FollowUpChatWidget] 📨 Dispatching StartConversationEvent');
-          bloc.add(StartConversationEvent(
-            studyGuideId: widget.studyGuideId,
-            studyGuideTitle: widget.studyGuideTitle,
-          ));
-          print(
-              '[FollowUpChatWidget] ✅ Successfully dispatched StartConversationEvent');
-          return bloc;
-        } catch (e, stackTrace) {
-          print('[FollowUpChatWidget] ❌ Error creating FollowUpChatBloc: $e');
-          print('[FollowUpChatWidget] 📝 Stack trace: $stackTrace');
-          rethrow;
-        }
-      },
-      child: _buildChatInterface(),
-    );
   }
 
   Widget _buildChatInterface() {
@@ -165,76 +157,93 @@ class _FollowUpChatWidgetState extends State<FollowUpChatWidget>
   }
 
   Widget _buildHeader(ThemeData theme) {
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppConstants.DEFAULT_PADDING,
-        vertical: AppConstants.SMALL_PADDING,
+    return Material(
+      color: theme.colorScheme.surface,
+      borderRadius: const BorderRadius.vertical(
+        top: Radius.circular(AppConstants.LARGE_BORDER_RADIUS),
       ),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
-        borderRadius: const BorderRadius.vertical(
-          top: Radius.circular(AppConstants.LARGE_BORDER_RADIUS),
-        ),
-        border: Border(
-          bottom: BorderSide(
-            color: theme.colorScheme.outline.withOpacity(0.2),
+      child: Semantics(
+        button: true,
+        label:
+            '${context.tr(TranslationKeys.followUpChatTitle)}. ${widget.isExpanded ? context.tr(TranslationKeys.followUpChatExpanded) : context.tr(TranslationKeys.followUpChatCollapsed)}. ${context.tr(TranslationKeys.followUpChatDoubleTapTo)} ${widget.isExpanded ? context.tr(TranslationKeys.followUpChatCollapse) : context.tr(TranslationKeys.followUpChatExpand)}',
+        onTap: widget.onToggleExpanded,
+        child: InkWell(
+          onTap: widget.onToggleExpanded,
+          borderRadius: const BorderRadius.vertical(
+            top: Radius.circular(AppConstants.LARGE_BORDER_RADIUS),
           ),
-        ),
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(AppConstants.EXTRA_SMALL_PADDING),
+          child: Container(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppConstants.DEFAULT_PADDING,
+              vertical: AppConstants.SMALL_PADDING,
+            ),
             decoration: BoxDecoration(
-              color: theme.colorScheme.primary.withOpacity(0.1),
-              borderRadius:
-                  BorderRadius.circular(AppConstants.SMALL_BORDER_RADIUS),
+              border: Border(
+                bottom: BorderSide(
+                  color: theme.colorScheme.outline.withOpacity(0.2),
+                ),
+              ),
             ),
-            child: Icon(
-              Icons.chat_bubble_outline,
-              size: AppConstants.ICON_SIZE_16,
-              color: theme.colorScheme.primary,
-            ),
-          ),
-          const SizedBox(width: AppConstants.SMALL_PADDING),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            child: Row(
               children: [
-                Text(
-                  context.tr(TranslationKeys.followUpChatTitle),
-                  style: theme.textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.w600,
-                    color: theme.colorScheme.onSurface,
-                  ),
-                ),
-                Text(
-                  widget.studyGuideTitle,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onSurface.withOpacity(0.7),
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
+                _buildHeaderIcon(theme),
+                const SizedBox(width: AppConstants.SMALL_PADDING),
+                Expanded(child: _buildHeaderTexts(theme)),
+                _buildHeaderIndicator(theme),
               ],
             ),
           ),
-          IconButton(
-            onPressed: widget.onToggleExpanded,
-            icon: AnimatedRotation(
-              turns: widget.isExpanded ? 0.5 : 0,
-              duration: const Duration(
-                  milliseconds: AppConstants.DEFAULT_ANIMATION_DURATION_MS),
-              child: Icon(
-                Icons.expand_more,
-                color: theme.colorScheme.onSurface,
-              ),
-            ),
-            tooltip: widget.isExpanded
-                ? context.tr(TranslationKeys.followUpChatCollapseTooltip)
-                : context.tr(TranslationKeys.followUpChatExpandTooltip),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHeaderIcon(ThemeData theme) {
+    return Container(
+      padding: const EdgeInsets.all(AppConstants.EXTRA_SMALL_PADDING),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.primary.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(AppConstants.SMALL_BORDER_RADIUS),
+      ),
+      child: Icon(
+        Icons.chat_bubble_outline,
+        size: AppConstants.ICON_SIZE_16,
+        color: theme.colorScheme.primary,
+      ),
+    );
+  }
+
+  Widget _buildHeaderTexts(ThemeData theme) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          context.tr(TranslationKeys.followUpChatTitle),
+          style: theme.textTheme.titleSmall?.copyWith(
+            fontWeight: FontWeight.w600,
+            color: theme.colorScheme.onSurface,
           ),
-        ],
+        ),
+        Text(
+          widget.studyGuideTitle,
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: theme.colorScheme.onSurface.withOpacity(0.7),
+          ),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildHeaderIndicator(ThemeData theme) {
+    return AnimatedRotation(
+      turns: widget.isExpanded ? 0.5 : 0,
+      duration: const Duration(
+          milliseconds: AppConstants.DEFAULT_ANIMATION_DURATION_MS),
+      child: Icon(
+        Icons.expand_more,
+        color: theme.colorScheme.onSurface,
       ),
     );
   }
@@ -597,9 +606,11 @@ class _FollowUpChatWidgetState extends State<FollowUpChatWidget>
 
   Widget _buildLoadedState(FollowUpChatLoaded state) {
     final screenHeight = MediaQuery.of(context).size.height;
-    final maxHeight = screenHeight * 0.6; // Use 60% of screen height
-    const minHeight = 500.0; // Minimum height for readability
-    final chatHeight = maxHeight.clamp(minHeight, maxHeight);
+    final preferredHeight = screenHeight * 0.6; // Use 60% of screen height
+    const minHeight = 300.0; // Minimum height for readability on small screens
+    const maxHeight =
+        600.0; // Maximum height to prevent excessive space on large screens
+    final chatHeight = preferredHeight.clamp(minHeight, maxHeight);
 
     return SizedBox(
       height: chatHeight,
@@ -676,9 +687,6 @@ class _FollowUpChatWidgetState extends State<FollowUpChatWidget>
   Widget _buildChatInput(FollowUpChatLoaded state) {
     return ChatInput(
       onSendMessage: (message) {
-        print(
-            '[FollowUpChatWidget] 🎯 onSendMessage callback received: "$message"');
-        print('[FollowUpChatWidget] 📨 Dispatching SendQuestionEvent to BLoC');
         context.read<FollowUpChatBloc>().add(
               SendQuestionEvent(
                 question: message,

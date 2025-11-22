@@ -1,3 +1,4 @@
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../features/onboarding/presentation/pages/onboarding_screen.dart';
@@ -5,6 +6,7 @@ import '../../features/onboarding/presentation/pages/language_selection_screen.d
 import '../../features/onboarding/presentation/pages/onboarding_language_page.dart';
 import '../../features/onboarding/presentation/pages/onboarding_purpose_page.dart';
 import '../../features/study_generation/presentation/pages/study_guide_screen.dart';
+import '../../features/study_generation/presentation/pages/study_guide_screen_v2.dart';
 import '../../features/study_generation/domain/entities/study_guide.dart';
 import '../../features/auth/presentation/pages/login_screen.dart';
 import '../../features/auth/presentation/pages/phone_number_input_screen.dart';
@@ -19,12 +21,20 @@ import '../navigation/study_navigator.dart';
 import '../di/injection_container.dart';
 import '../../features/saved_guides/presentation/pages/saved_screen.dart';
 import '../../features/settings/presentation/pages/settings_screen.dart';
+import '../../features/notifications/presentation/pages/notification_settings_screen.dart';
 import '../../features/study_topics/presentation/pages/study_topics_screen.dart';
 import '../../features/tokens/presentation/pages/token_management_page.dart';
 import '../../features/tokens/presentation/pages/purchase_history_page.dart';
+import '../../features/subscription/presentation/pages/premium_upgrade_page.dart';
+import '../../features/subscription/presentation/pages/subscription_management_page.dart';
+import '../../features/subscription/presentation/bloc/subscription_bloc.dart';
+import '../../features/memory_verses/presentation/pages/memory_verses_home_page.dart';
+import '../../features/memory_verses/presentation/pages/verse_review_page.dart';
+import '../../features/memory_verses/presentation/bloc/memory_verse_bloc.dart';
 import 'app_routes.dart';
 import 'router_guard.dart';
 import 'auth_notifier.dart';
+import 'app_loading_screen.dart'; // ANDROID FIX: Loading screen during session restoration
 
 class AppRouter {
   static final AuthNotifier _authNotifier = AuthNotifier();
@@ -32,9 +42,19 @@ class AppRouter {
   static final GoRouter router = GoRouter(
     initialLocation: '/', // Let the redirect logic handle the initial route
     refreshListenable: _authNotifier, // Listen to auth state changes
-    redirect: (context, state) async =>
-        await RouterGuard.handleRedirect(state.uri.path),
+    redirect: (context, state) async => await RouterGuard.handleRedirect(
+      state.uri.path,
+      isAuthInitialized:
+          _authNotifier.isInitialized, // ANDROID FIX: Pass initialization state
+    ),
     routes: [
+      // ANDROID FIX: Loading screen shown during session restoration
+      GoRoute(
+        path: AppRoutes.appLoading,
+        name: 'app_loading',
+        builder: (context, state) => const AppLoadingScreen(),
+      ),
+
       // Onboarding Flow (outside app shell)
       GoRoute(
         path: AppRoutes.onboarding,
@@ -116,6 +136,11 @@ class AppRouter {
         builder: (context, state) => const SettingsScreen(),
       ),
       GoRoute(
+        path: AppRoutes.notificationSettings,
+        name: 'notification_settings',
+        builder: (context, state) => const NotificationSettingsScreen(),
+      ),
+      GoRoute(
         path: AppRoutes.studyTopics,
         name: 'study_topics',
         builder: (context, state) {
@@ -127,12 +152,65 @@ class AppRouter {
       GoRoute(
         path: AppRoutes.tokenManagement,
         name: 'token_management',
-        builder: (context, state) => const TokenManagementPage(),
+        builder: (context, state) => BlocProvider(
+          create: (context) => sl<SubscriptionBloc>(),
+          child: const TokenManagementPage(),
+        ),
       ),
       GoRoute(
         path: AppRoutes.purchaseHistory,
         name: 'purchase_history',
         builder: (context, state) => const PurchaseHistoryPage(),
+      ),
+      GoRoute(
+        path: AppRoutes.premiumUpgrade,
+        name: 'premium_upgrade',
+        builder: (context, state) => BlocProvider(
+          create: (context) => sl<SubscriptionBloc>(),
+          child: const PremiumUpgradePage(),
+        ),
+      ),
+      GoRoute(
+        path: AppRoutes.subscriptionManagement,
+        name: 'subscription_management',
+        builder: (context, state) => BlocProvider(
+          create: (context) => sl<SubscriptionBloc>(),
+          child: const SubscriptionManagementPage(),
+        ),
+      ),
+
+      // Memory Verses Routes (outside app shell)
+      GoRoute(
+        path: AppRoutes.memoryVerses,
+        name: 'memory_verses',
+        builder: (context, state) => BlocProvider(
+          create: (context) => sl<MemoryVerseBloc>(),
+          child: const MemoryVersesHomePage(),
+        ),
+      ),
+      GoRoute(
+        path: AppRoutes.verseReview,
+        name: 'verse_review',
+        builder: (context, state) {
+          // Extract verse ID and optional verse list from extra data
+          final Map<String, dynamic> extra;
+          if (state.extra is Map<String, dynamic>) {
+            extra = state.extra as Map<String, dynamic>;
+          } else {
+            extra = {};
+          }
+
+          final verseId = extra['verseId'] as String? ?? '';
+          final verseIds = extra['verseIds'] as List<String>?;
+
+          return BlocProvider(
+            create: (context) => sl<MemoryVerseBloc>(),
+            child: VerseReviewPage(
+              verseId: verseId,
+              verseIds: verseIds,
+            ),
+          );
+        },
       ),
 
       // Authentication Routes (outside app shell)
@@ -221,6 +299,34 @@ class AppRouter {
         },
       ),
 
+      // Study Guide V2 - Dynamic generation from query parameters
+      GoRoute(
+        path: AppRoutes.studyGuideV2,
+        name: 'study_guide_v2',
+        builder: (context, state) {
+          // Parse query parameters
+          final topicId = state.uri.queryParameters['topic_id'];
+          final input = state.uri.queryParameters['input'];
+          final type = state.uri.queryParameters['type'];
+          final description = state.uri.queryParameters['description'];
+          final language = state.uri.queryParameters['language'];
+          final sourceString = state.uri.queryParameters['source'];
+
+          // Parse navigation source
+          final navigationSource =
+              sl<StudyNavigator>().parseNavigationSource(sourceString);
+
+          return StudyGuideScreenV2(
+            topicId: topicId,
+            input: input,
+            type: type,
+            description: description,
+            language: language,
+            navigationSource: navigationSource,
+          );
+        },
+      ),
+
       // Error Page
       GoRoute(
         path: AppRoutes.error,
@@ -273,4 +379,20 @@ extension AppRouterExtension on GoRouter {
       });
   void goToAuthCallback() => go(AppRoutes.authCallback);
   void goToError(String error) => go(AppRoutes.error, extra: error);
+
+  /// Navigates to the memory verses home page where users can view and manage their memorization deck.
+  void goToMemoryVerses() => go(AppRoutes.memoryVerses);
+
+  /// Navigates to the verse review page for spaced repetition review.
+  ///
+  /// [verseId] - Required ID of the verse to review
+  /// [verseIds] - Optional list of verse IDs for sequential review
+  void goToVerseReview({
+    required String verseId,
+    List<String>? verseIds,
+  }) =>
+      go(AppRoutes.verseReview, extra: {
+        'verseId': verseId,
+        'verseIds': verseIds,
+      });
 }

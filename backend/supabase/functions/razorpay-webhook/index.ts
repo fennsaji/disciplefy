@@ -9,16 +9,44 @@ import { createSimpleFunction } from '../_shared/core/function-factory.ts'
 import { ServiceContainer } from '../_shared/core/services.ts'
 import { AppError } from '../_shared/utils/error-handler.ts'
 import { createHmac } from 'node:crypto'
+import type { RazorpaySubscriptionWebhook } from '../_shared/types/subscription-types.ts'
+
+/**
+ * Razorpay payment entity (for token purchases)
+ */
+interface RazorpayPaymentEntity {
+  readonly id: string
+  readonly order_id?: string | null
+  readonly amount: number
+  readonly currency: string
+  readonly status?: string
+  readonly method?: string
+  readonly captured?: boolean
+  readonly error_code?: string | null
+  readonly error_description?: string | null
+  readonly created_at?: number
+}
+
+/**
+ * Razorpay order entity (for token purchases)
+ */
+interface RazorpayOrderEntity {
+  readonly id: string
+  readonly amount?: number
+  readonly currency?: string
+  readonly status?: string
+  readonly notes?: Record<string, string>
+}
 
 /**
  * Razorpay Webhook Handler
- * 
+ *
  * Handles payment confirmation webhooks from Razorpay
  * and completes token purchase process
  */
 async function handleRazorpayWebhook(req: Request, services: ServiceContainer): Promise<Response> {
-  const { tokenService, analyticsLogger, supabaseServiceClient } = services
-  
+  const { analyticsLogger } = services
+
   if (req.method !== 'POST') {
     throw new AppError(
       'METHOD_NOT_ALLOWED',
@@ -26,7 +54,7 @@ async function handleRazorpayWebhook(req: Request, services: ServiceContainer): 
       405
     )
   }
-  
+
   // Get webhook signature
   const signature = req.headers.get('x-razorpay-signature')
   if (!signature) {
@@ -36,10 +64,10 @@ async function handleRazorpayWebhook(req: Request, services: ServiceContainer): 
       400
     )
   }
-  
+
   // Get request body
   const body = await req.text()
-  
+
   // Verify webhook signature
   const isValidSignature = verifyWebhookSignature(body, signature)
   if (!isValidSignature) {
@@ -50,17 +78,17 @@ async function handleRazorpayWebhook(req: Request, services: ServiceContainer): 
       401
     )
   }
-  
+
   console.log('[Webhook] Valid signature verified')
-  
+
   // Declare variables outside try block to make them accessible in catch block
   let event: string | undefined
-  let paymentEntity: any = undefined
-  let orderEntity: any = undefined
+  let paymentEntity: RazorpayPaymentEntity | undefined = undefined
+  let orderEntity: RazorpayOrderEntity | undefined = undefined
   
   try {
     // Parse webhook payload with error handling
-    let payload
+    let payload: unknown
     try {
       payload = JSON.parse(body)
     } catch (parseError) {
@@ -71,34 +99,72 @@ async function handleRazorpayWebhook(req: Request, services: ServiceContainer): 
         400
       )
     }
-    
+
     // Validate required payload structure
-    if (!payload.event) {
+    if (typeof payload !== 'object' || payload === null) {
+      throw new AppError(
+        'INVALID_PAYLOAD',
+        'Webhook payload must be an object',
+        400
+      )
+    }
+
+    const payloadObj = payload as Record<string, unknown>
+
+    if (!payloadObj.event || typeof payloadObj.event !== 'string') {
       throw new AppError(
         'INVALID_PAYLOAD',
         'Webhook payload missing required event field',
         400
       )
     }
-    
-    if (!payload.payload) {
+
+    if (!payloadObj.payload) {
       throw new AppError(
         'INVALID_PAYLOAD',
         'Webhook payload missing required payload field',
         400
       )
     }
-    
-    event = payload.event
-    paymentEntity = payload.payload?.payment?.entity
-    orderEntity = payload.payload?.order?.entity
+
+    event = payloadObj.event
+    const payloadData = payloadObj.payload as Record<string, unknown>
+
+    // Extract payment entity if present
+    const paymentData = payloadData?.payment as Record<string, unknown> | undefined
+    if (paymentData?.entity) {
+      paymentEntity = paymentData.entity as RazorpayPaymentEntity
+    }
+
+    // Extract order entity if present
+    const orderData = payloadData?.order as Record<string, unknown> | undefined
+    if (orderData?.entity) {
+      orderEntity = orderData.entity as RazorpayOrderEntity
+    }
     
     console.log(`[Webhook] Processing event: ${event}`)
-    
+
+    // Handle payment events (token purchases)
     if (event === 'payment.captured') {
       await handlePaymentCaptured(paymentEntity, orderEntity, services)
     } else if (event === 'payment.failed') {
       await handlePaymentFailed(paymentEntity, orderEntity, services)
+    }
+    // Handle subscription events
+    else if (event === 'subscription.authenticated') {
+      await handleSubscriptionAuthenticated(payload as RazorpaySubscriptionWebhook, services)
+    } else if (event === 'subscription.activated') {
+      await handleSubscriptionActivated(payload as RazorpaySubscriptionWebhook, services)
+    } else if (event === 'subscription.charged') {
+      await handleSubscriptionCharged(payload as RazorpaySubscriptionWebhook, services)
+    } else if (event === 'subscription.cancelled') {
+      await handleSubscriptionCancelled(payload as RazorpaySubscriptionWebhook, services)
+    } else if (event === 'subscription.paused') {
+      await handleSubscriptionPaused(payload as RazorpaySubscriptionWebhook, services)
+    } else if (event === 'subscription.resumed') {
+      await handleSubscriptionResumed(payload as RazorpaySubscriptionWebhook, services)
+    } else if (event === 'subscription.completed') {
+      await handleSubscriptionCompleted(payload as RazorpaySubscriptionWebhook, services)
     } else {
       console.log(`[Webhook] Ignoring event: ${event}`)
     }
@@ -173,8 +239,8 @@ function verifyWebhookSignature(body: string, signature: string): boolean {
  * Handle successful payment capture
  */
 async function handlePaymentCaptured(
-  payment: any,
-  order: any,
+  payment: RazorpayPaymentEntity | undefined,
+  order: RazorpayOrderEntity | undefined,
   services: ServiceContainer
 ): Promise<void> {
   const { tokenService, supabaseServiceClient, analyticsLogger } = services
@@ -320,8 +386,8 @@ async function handlePaymentCaptured(
  * Handle failed payment
  */
 async function handlePaymentFailed(
-  payment: any,
-  order: any,
+  payment: RazorpayPaymentEntity | undefined,
+  order: RazorpayOrderEntity | undefined,
   services: ServiceContainer
 ): Promise<void> {
   const { supabaseServiceClient, analyticsLogger } = services
@@ -349,6 +415,375 @@ async function handlePaymentFailed(
     order_id: orderId,
     payment_id: paymentId,
     error_description: errorDescription
+  })
+}
+
+/**
+ * Handle subscription.authenticated event
+ * User has authorized recurring payments
+ */
+async function handleSubscriptionAuthenticated(
+  payload: RazorpaySubscriptionWebhook,
+  services: ServiceContainer
+): Promise<void> {
+  const { supabaseServiceClient, analyticsLogger } = services
+  const subscriptionEntity = payload.payload?.subscription?.entity
+
+  if (!subscriptionEntity) {
+    console.error('[Webhook] Missing subscription entity')
+    return
+  }
+
+  const razorpaySubId = subscriptionEntity.id
+  const userId = subscriptionEntity.notes?.user_id
+
+  console.log(`[Webhook] Subscription authenticated: ${razorpaySubId}`)
+
+  // Update subscription status
+  const { error } = await supabaseServiceClient
+    .from('subscriptions')
+    .update({
+      status: 'authenticated',
+      razorpay_customer_id: subscriptionEntity.customer_id,
+      updated_at: new Date().toISOString()
+    })
+    .eq('razorpay_subscription_id', razorpaySubId)
+
+  if (error) {
+    console.error('[Webhook] Failed to update subscription:', error)
+    return
+  }
+
+  // Log event
+  await analyticsLogger.logEvent('webhook_subscription_authenticated', {
+    user_id: userId,
+    subscription_id: razorpaySubId
+  })
+}
+
+/**
+ * Handle subscription.activated event
+ * Subscription is now active - grant premium access
+ */
+async function handleSubscriptionActivated(
+  payload: RazorpaySubscriptionWebhook,
+  services: ServiceContainer
+): Promise<void> {
+  const { supabaseServiceClient, analyticsLogger } = services
+  const subscriptionEntity = payload.payload?.subscription?.entity
+
+  if (!subscriptionEntity) {
+    console.error('[Webhook] Missing subscription entity')
+    return
+  }
+
+  const razorpaySubId = subscriptionEntity.id
+  const userId = subscriptionEntity.notes?.user_id
+
+  console.log(`[Webhook] Subscription activated: ${razorpaySubId} for user: ${userId}`)
+
+  // Update subscription status and billing info
+  const { error } = await supabaseServiceClient
+    .from('subscriptions')
+    .update({
+      status: 'active',
+      current_period_start: subscriptionEntity.current_start
+        ? new Date(subscriptionEntity.current_start * 1000).toISOString()
+        : null,
+      current_period_end: subscriptionEntity.current_end
+        ? new Date(subscriptionEntity.current_end * 1000).toISOString()
+        : null,
+      next_billing_at: subscriptionEntity.charge_at
+        ? new Date(subscriptionEntity.charge_at * 1000).toISOString()
+        : null,
+      paid_count: subscriptionEntity.paid_count,
+      remaining_count: subscriptionEntity.remaining_count,
+      updated_at: new Date().toISOString()
+    })
+    .eq('razorpay_subscription_id', razorpaySubId)
+
+  if (error) {
+    console.error('[Webhook] Failed to activate subscription:', error)
+    return
+  }
+
+  console.log(`[Webhook] ✅ Premium access granted to user: ${userId}`)
+
+  // Log event
+  await analyticsLogger.logEvent('webhook_subscription_activated', {
+    user_id: userId,
+    subscription_id: razorpaySubId,
+    period_start: subscriptionEntity.current_start,
+    period_end: subscriptionEntity.current_end
+  })
+}
+
+/**
+ * Handle subscription.charged event
+ * Monthly payment successful - create invoice and extend period
+ */
+async function handleSubscriptionCharged(
+  payload: RazorpaySubscriptionWebhook,
+  services: ServiceContainer
+): Promise<void> {
+  const { supabaseServiceClient, analyticsLogger } = services
+  const subscriptionEntity = payload.payload?.subscription?.entity
+  const paymentEntity = payload.payload?.payment?.entity
+
+  if (!subscriptionEntity || !paymentEntity) {
+    console.error('[Webhook] Missing subscription or payment entity')
+    return
+  }
+
+  const razorpaySubId = subscriptionEntity.id
+  const paymentId = paymentEntity.id
+  const userId = subscriptionEntity.notes?.user_id
+
+  console.log(`[Webhook] Subscription charged: ${razorpaySubId}, Payment: ${paymentId}`)
+
+  // Get subscription from database
+  const { data: subscription } = await supabaseServiceClient
+    .from('subscriptions')
+    .select('id, user_id')
+    .eq('razorpay_subscription_id', razorpaySubId)
+    .single()
+
+  if (!subscription) {
+    console.error('[Webhook] Subscription not found in database')
+    return
+  }
+
+  // Update subscription billing info
+  await supabaseServiceClient
+    .from('subscriptions')
+    .update({
+      current_period_start: subscriptionEntity.current_start
+        ? new Date(subscriptionEntity.current_start * 1000).toISOString()
+        : null,
+      current_period_end: subscriptionEntity.current_end
+        ? new Date(subscriptionEntity.current_end * 1000).toISOString()
+        : null,
+      next_billing_at: subscriptionEntity.charge_at
+        ? new Date(subscriptionEntity.charge_at * 1000).toISOString()
+        : null,
+      paid_count: subscriptionEntity.paid_count,
+      remaining_count: subscriptionEntity.remaining_count,
+      updated_at: new Date().toISOString()
+    })
+    .eq('id', subscription.id)
+
+  // Create invoice record
+  await supabaseServiceClient
+    .from('subscription_invoices')
+    .insert({
+      subscription_id: subscription.id,
+      user_id: subscription.user_id,
+      razorpay_payment_id: paymentId,
+      razorpay_invoice_id: paymentEntity.invoice_id || null,
+      amount_paise: paymentEntity.amount,
+      currency: paymentEntity.currency,
+      billing_period_start: subscriptionEntity.current_start
+        ? new Date(subscriptionEntity.current_start * 1000).toISOString()
+        : new Date().toISOString(),
+      billing_period_end: subscriptionEntity.current_end
+        ? new Date(subscriptionEntity.current_end * 1000).toISOString()
+        : new Date().toISOString(),
+      status: 'paid',
+      payment_method: paymentEntity.method,
+      paid_at: new Date(paymentEntity.created_at * 1000).toISOString()
+    })
+
+  console.log(`[Webhook] ✅ Invoice created for payment: ${paymentId}`)
+
+  // Log event
+  await analyticsLogger.logEvent('webhook_subscription_charged', {
+    user_id: userId,
+    subscription_id: razorpaySubId,
+    payment_id: paymentId,
+    amount_rupees: paymentEntity.amount / 100
+  })
+}
+
+/**
+ * Handle subscription.cancelled event
+ * Razorpay sends this when:
+ * 1. User cancelled immediately (cancel_at_cycle_end=false)
+ * 2. Billing period ended for pending_cancellation subscriptions
+ *
+ * Transitions:
+ * - active → cancelled (immediate cancellation)
+ * - pending_cancellation → cancelled (period ended)
+ */
+async function handleSubscriptionCancelled(
+  payload: RazorpaySubscriptionWebhook,
+  services: ServiceContainer
+): Promise<void> {
+  const { supabaseServiceClient, analyticsLogger } = services
+  const subscriptionEntity = payload.payload?.subscription?.entity
+
+  if (!subscriptionEntity) {
+    console.error('[Webhook] Missing subscription entity')
+    return
+  }
+
+  const razorpaySubId = subscriptionEntity.id
+  const userId = subscriptionEntity.notes?.user_id
+
+  console.log(`[Webhook] Subscription cancelled: ${razorpaySubId}`)
+
+  // Update subscription status to cancelled (final state)
+  // Clear cancel_at_cycle_end flag as it's now actually cancelled
+  const { error } = await supabaseServiceClient
+    .from('subscriptions')
+    .update({
+      status: 'cancelled',
+      cancelled_at: new Date().toISOString(),
+      cancel_at_cycle_end: false,  // Clear flag as it's now actually cancelled
+      updated_at: new Date().toISOString()
+    })
+    .eq('razorpay_subscription_id', razorpaySubId)
+
+  if (error) {
+    console.error('[Webhook] Failed to cancel subscription:', error)
+    return
+  }
+
+  console.log(`[Webhook] ✅ Subscription marked as cancelled: ${razorpaySubId}`)
+
+  // Log event
+  await analyticsLogger.logEvent('webhook_subscription_cancelled', {
+    user_id: userId,
+    subscription_id: razorpaySubId
+  })
+}
+
+/**
+ * Handle subscription.paused event
+ * Subscription paused (payment failure) - restrict premium features
+ */
+async function handleSubscriptionPaused(
+  payload: RazorpaySubscriptionWebhook,
+  services: ServiceContainer
+): Promise<void> {
+  const { supabaseServiceClient, analyticsLogger } = services
+  const subscriptionEntity = payload.payload?.subscription?.entity
+
+  if (!subscriptionEntity) {
+    console.error('[Webhook] Missing subscription entity')
+    return
+  }
+
+  const razorpaySubId = subscriptionEntity.id
+  const userId = subscriptionEntity.notes?.user_id
+
+  console.log(`[Webhook] Subscription paused: ${razorpaySubId}`)
+
+  // Update subscription status
+  const { error } = await supabaseServiceClient
+    .from('subscriptions')
+    .update({
+      status: 'paused',
+      updated_at: new Date().toISOString()
+    })
+    .eq('razorpay_subscription_id', razorpaySubId)
+
+  if (error) {
+    console.error('[Webhook] Failed to pause subscription:', error)
+    return
+  }
+
+  // Log event
+  await analyticsLogger.logEvent('webhook_subscription_paused', {
+    user_id: userId,
+    subscription_id: razorpaySubId
+  })
+}
+
+/**
+ * Handle subscription.resumed event
+ * Paused subscription resumed - restore premium access
+ */
+async function handleSubscriptionResumed(
+  payload: RazorpaySubscriptionWebhook,
+  services: ServiceContainer
+): Promise<void> {
+  const { supabaseServiceClient, analyticsLogger } = services
+  const subscriptionEntity = payload.payload?.subscription?.entity
+
+  if (!subscriptionEntity) {
+    console.error('[Webhook] Missing subscription entity')
+    return
+  }
+
+  const razorpaySubId = subscriptionEntity.id
+  const userId = subscriptionEntity.notes?.user_id
+
+  console.log(`[Webhook] Subscription resumed: ${razorpaySubId}`)
+
+  // Update subscription status back to active
+  const { error } = await supabaseServiceClient
+    .from('subscriptions')
+    .update({
+      status: 'active',
+      updated_at: new Date().toISOString()
+    })
+    .eq('razorpay_subscription_id', razorpaySubId)
+
+  if (error) {
+    console.error('[Webhook] Failed to resume subscription:', error)
+    return
+  }
+
+  console.log(`[Webhook] ✅ Subscription resumed: ${razorpaySubId}`)
+
+  // Log event
+  await analyticsLogger.logEvent('webhook_subscription_resumed', {
+    user_id: userId,
+    subscription_id: razorpaySubId
+  })
+}
+
+/**
+ * Handle subscription.completed event
+ * Subscription reached total_count - downgrade to standard
+ */
+async function handleSubscriptionCompleted(
+  payload: RazorpaySubscriptionWebhook,
+  services: ServiceContainer
+): Promise<void> {
+  const { supabaseServiceClient, analyticsLogger } = services
+  const subscriptionEntity = payload.payload?.subscription?.entity
+
+  if (!subscriptionEntity) {
+    console.error('[Webhook] Missing subscription entity')
+    return
+  }
+
+  const razorpaySubId = subscriptionEntity.id
+  const userId = subscriptionEntity.notes?.user_id
+
+  console.log(`[Webhook] Subscription completed: ${razorpaySubId}`)
+
+  // Update subscription status
+  const { error } = await supabaseServiceClient
+    .from('subscriptions')
+    .update({
+      status: 'completed',
+      updated_at: new Date().toISOString()
+    })
+    .eq('razorpay_subscription_id', razorpaySubId)
+
+  if (error) {
+    console.error('[Webhook] Failed to complete subscription:', error)
+    return
+  }
+
+  console.log(`[Webhook] ✅ Subscription completed: ${razorpaySubId}`)
+
+  // Log event
+  await analyticsLogger.logEvent('webhook_subscription_completed', {
+    user_id: userId,
+    subscription_id: razorpaySubId
   })
 }
 

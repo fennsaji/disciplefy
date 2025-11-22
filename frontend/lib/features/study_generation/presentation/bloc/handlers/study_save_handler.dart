@@ -466,4 +466,75 @@ class StudySaveHandler {
       return 'Study guide removed from saved!';
     }
   }
+
+  /// Handles marking a study guide as completed.
+  ///
+  /// This method is called automatically when both completion conditions are met:
+  /// 1. User spent at least 60 seconds on the study guide
+  /// 2. User scrolled to the bottom of the content
+  Future<void> handleMarkStudyGuideComplete(
+    MarkStudyGuideCompleteRequested event,
+    Emitter<StudyState> emit,
+  ) async {
+    emit(StudyCompletionInProgress(guideId: event.guideId));
+
+    try {
+      // Call API service to mark study guide as complete
+      final success = await _saveGuideService.markStudyGuideComplete(
+        guideId: event.guideId,
+        timeSpentSeconds: event.timeSpentSeconds,
+        scrolledToBottom: event.scrolledToBottom,
+      );
+
+      if (success) {
+        emit(StudyCompletionSuccess(
+          guideId: event.guideId,
+          completedAt: DateTime.now(),
+          timeSpentSeconds: event.timeSpentSeconds,
+        ));
+      } else {
+        emit(StudyCompletionFailure(
+          guideId: event.guideId,
+          failure: const ServerFailure(
+            message: 'Failed to mark study guide as complete',
+            code: 'COMPLETION_OPERATION_FAILED',
+          ),
+        ));
+      }
+    } on AuthenticationException catch (e) {
+      emit(StudyCompletionFailure(
+        guideId: event.guideId,
+        failure: AuthenticationFailure(
+          message: e.message,
+          code: e.code,
+        ),
+        isRetryable: false,
+      ));
+    } on ServerException catch (e) {
+      emit(StudyCompletionFailure(
+        guideId: event.guideId,
+        failure: ServerFailure(
+          message: e.message,
+          code: e.code,
+        ),
+        isRetryable:
+            e.code != 'NOT_FOUND' && e.code != 'COMPLETION_CONDITIONS_NOT_MET',
+      ));
+    } on NetworkException catch (e) {
+      emit(StudyCompletionFailure(
+        guideId: event.guideId,
+        failure: NetworkFailure(
+          message: e.message,
+          code: e.code,
+        ),
+      ));
+    } catch (e) {
+      final failure = _mapExceptionToFailure(e, 'study guide completion');
+      emit(StudyCompletionFailure(
+        guideId: event.guideId,
+        failure: failure,
+        isRetryable: failure is! AuthenticationFailure,
+      ));
+    }
+  }
 }
