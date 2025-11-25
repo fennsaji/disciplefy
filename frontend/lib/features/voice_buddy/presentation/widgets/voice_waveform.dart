@@ -107,7 +107,6 @@ class _VoiceWaveformState extends State<VoiceWaveform>
       height: widget.height,
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
-        crossAxisAlignment: CrossAxisAlignment.center,
         children: _heights.asMap().entries.map((entry) {
           return AnimatedContainer(
             duration: const Duration(milliseconds: 100),

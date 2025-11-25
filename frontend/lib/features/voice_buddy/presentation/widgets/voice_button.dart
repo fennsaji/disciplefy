@@ -36,8 +36,12 @@ class VoiceButton extends StatelessWidget {
       // In continuous mode: tap to toggle listening
       // In normal mode: hold to speak (tap down to start, tap up to stop)
       onTap: isContinuousMode ? onTap : null,
-      onTapDown: !isContinuousMode && state == VoiceButtonState.idle ? (_) => onTapDown?.call() : null,
-      onTapUp: !isContinuousMode && state == VoiceButtonState.listening ? (_) => onTapUp?.call() : null,
+      onTapDown: !isContinuousMode && state == VoiceButtonState.idle
+          ? (_) => onTapDown?.call()
+          : null,
+      onTapUp: !isContinuousMode && state == VoiceButtonState.listening
+          ? (_) => onTapUp?.call()
+          : null,
       onTapCancel: !isContinuousMode ? onTapCancel : null,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
@@ -70,7 +74,10 @@ class VoiceButton extends StatelessWidget {
       case VoiceButtonState.listening:
         return [primary, primary.withAlpha((0.7 * 255).round())];
       case VoiceButtonState.processing:
-        return [primary.withAlpha((0.5 * 255).round()), secondary.withAlpha((0.5 * 255).round())];
+        return [
+          primary.withAlpha((0.5 * 255).round()),
+          secondary.withAlpha((0.5 * 255).round())
+        ];
       case VoiceButtonState.idle:
       default:
         return [primary, secondary];

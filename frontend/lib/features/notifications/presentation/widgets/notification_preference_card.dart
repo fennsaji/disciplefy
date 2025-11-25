@@ -3,6 +3,7 @@
 // ============================================================================
 
 import 'package:flutter/material.dart';
+import '../../../../core/theme/app_theme.dart';
 
 class NotificationPreferenceCard extends StatelessWidget {
   final String title;
@@ -28,12 +29,14 @@ class NotificationPreferenceCard extends StatelessWidget {
 
     // Use explicit colors for better visibility in dark mode
     final iconBackgroundColor = isDark
-        ? const Color(0xFF6A4FB6).withOpacity(0.3) // Purple with 30% opacity
-        : const Color(0xFF6A4FB6).withOpacity(0.1); // Purple with 10% opacity
+        ? AppTheme.primaryColor
+            .withOpacity(0.3) // Vibrant purple with 30% opacity
+        : AppTheme.primaryColor
+            .withOpacity(0.1); // Vibrant purple with 10% opacity
 
     final iconColor = isDark
-        ? const Color(0xFFB39DDB) // Lighter purple for dark mode
-        : const Color(0xFF6A4FB6); // Primary purple for light mode
+        ? const Color(0xFFA78BFA) // Lighter vibrant purple for dark mode
+        : AppTheme.primaryColor; // Vibrant purple for light mode
 
     return Card(
       elevation: 1,
@@ -96,11 +99,11 @@ class NotificationPreferenceCard extends StatelessWidget {
                 value: enabled,
                 onChanged: onChanged,
                 activeColor: isDark
-                    ? const Color(0xFFB39DDB) // Lighter purple thumb
-                    : const Color(0xFF6A4FB6), // Primary purple thumb
+                    ? const Color(0xFFA78BFA) // Lighter vibrant purple thumb
+                    : AppTheme.primaryColor, // Vibrant purple thumb
                 activeTrackColor: isDark
-                    ? const Color(0xFF6A4FB6).withOpacity(0.5)
-                    : const Color(0xFF6A4FB6).withOpacity(0.5),
+                    ? AppTheme.primaryColor.withOpacity(0.5)
+                    : AppTheme.primaryColor.withOpacity(0.5),
                 inactiveThumbColor: isDark
                     ? const Color(0xFF9E9E9E) // Light gray thumb
                     : const Color(0xFFBDBDBD),

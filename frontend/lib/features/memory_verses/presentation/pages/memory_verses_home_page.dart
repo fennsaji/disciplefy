@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_fonts/google_fonts.dart';
 
+import '../../../../core/theme/app_theme.dart';
 import '../../../../core/extensions/translation_extension.dart';
 import '../../../../core/i18n/translation_keys.dart';
 import '../../../../core/router/app_router.dart';
@@ -47,9 +49,11 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
           onPressed: () {
             if (context.canPop()) {
               context.pop();
@@ -57,16 +61,58 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
               GoRouter.of(context).goToHome();
             }
           },
+          icon: Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: AppTheme.primaryColor.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: const Icon(
+              Icons.arrow_back_ios_new,
+              color: AppTheme.primaryColor,
+              size: 18,
+            ),
+          ),
         ),
-        title: Text(context.tr(TranslationKeys.memoryTitle)),
+        title: Text(
+          context.tr(TranslationKeys.memoryTitle),
+          style: GoogleFonts.inter(
+            fontSize: 20,
+            fontWeight: FontWeight.w700,
+            color: Theme.of(context).colorScheme.onBackground,
+          ),
+        ),
+        centerTitle: true,
         actions: [
-          IconButton(
-            icon: const Icon(Icons.add),
-            onPressed: () => _showAddVerseOptions(context),
-            tooltip: 'Add verse',
+          Container(
+            margin: const EdgeInsets.only(right: 4),
+            child: IconButton(
+              icon: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [AppTheme.primaryColor, AppTheme.secondaryPurple],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(
+                  Icons.add,
+                  color: Colors.white,
+                  size: 18,
+                ),
+              ),
+              onPressed: () => _showAddVerseOptions(context),
+              tooltip: 'Add verse',
+            ),
           ),
           IconButton(
-            icon: const Icon(Icons.more_vert),
+            icon: Icon(
+              Icons.more_vert,
+              color:
+                  Theme.of(context).colorScheme.onBackground.withOpacity(0.7),
+            ),
             onPressed: () => _showOptionsMenu(context),
             tooltip: 'Options',
           ),
@@ -162,6 +208,7 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
     }
 
     return RefreshIndicator(
+      color: AppTheme.primaryColor,
       onRefresh: () async {
         _loadVerses(forceRefresh: true);
         await Future.delayed(const Duration(milliseconds: 500));
@@ -176,29 +223,63 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
                 children: [
                   Text(
                     context.tr(TranslationKeys.memoryYourProgress),
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
+                    style: GoogleFonts.inter(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: AppTheme.primaryColor,
+                      letterSpacing: 0.5,
+                    ),
                   ),
                   const SizedBox(height: 16),
                   StatisticsCard(statistics: state.statistics),
                   const SizedBox(height: 16),
                   // Review All button - only show when there are due verses
                   if (state.verses.isNotEmpty)
-                    SizedBox(
+                    Container(
                       width: double.infinity,
-                      child: ElevatedButton.icon(
-                        onPressed: () => _startReviewAll(context, state.verses),
-                        icon: const Icon(Icons.play_arrow_rounded),
-                        label: Text(
-                          '${context.tr(TranslationKeys.memoryReviewAll)} (${state.verses.length})',
+                      height: 56,
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [
+                            AppTheme.primaryColor,
+                            AppTheme.secondaryPurple
+                          ],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
                         ),
-                        style: ElevatedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 14),
-                          backgroundColor:
-                              Theme.of(context).colorScheme.primary,
-                          foregroundColor:
-                              Theme.of(context).colorScheme.onPrimary,
+                        borderRadius: BorderRadius.circular(14),
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppTheme.primaryColor.withOpacity(0.35),
+                            blurRadius: 16,
+                            offset: const Offset(0, 6),
+                          ),
+                        ],
+                      ),
+                      child: Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          onTap: () => _startReviewAll(context, state.verses),
+                          borderRadius: BorderRadius.circular(14),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Icon(
+                                Icons.play_arrow_rounded,
+                                color: Colors.white,
+                                size: 24,
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                '${context.tr(TranslationKeys.memoryReviewAll)} (${state.verses.length})',
+                                style: GoogleFonts.inter(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ),
@@ -207,20 +288,22 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
                   const SizedBox(height: 16),
                   Text(
                     '${context.tr(TranslationKeys.memoryDueForReview)} (${state.verses.length})',
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.w600,
-                        ),
+                    style: GoogleFonts.inter(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: Theme.of(context).colorScheme.onBackground,
+                    ),
                   ),
                   if (state.statistics.dueVerses > 0) ...[
                     const SizedBox(height: 8),
                     Text(
                       _getVersesToReviewMessage(
                           context, state.statistics.dueVerses),
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color:
-                                Theme.of(context).colorScheme.onSurfaceVariant,
-                            fontStyle: FontStyle.italic,
-                          ),
+                      style: GoogleFonts.inter(
+                        fontSize: 14,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        fontStyle: FontStyle.italic,
+                      ),
                     ),
                   ],
                 ],
@@ -305,38 +388,92 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.auto_stories_outlined,
-              size: 80,
-              color: Theme.of(context)
-                  .colorScheme
-                  .onSurfaceVariant
-                  .withOpacity(0.5),
+            Container(
+              width: 100,
+              height: 100,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    AppTheme.primaryColor.withOpacity(0.15),
+                    AppTheme.secondaryPurple.withOpacity(0.1),
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(24),
+              ),
+              child: const Icon(
+                Icons.auto_stories_outlined,
+                size: 50,
+                color: AppTheme.primaryColor,
+              ),
             ),
             const SizedBox(height: 24),
             Text(
               'No Verses Yet',
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+              style: GoogleFonts.inter(
+                fontSize: 22,
+                fontWeight: FontWeight.w700,
+                color: Theme.of(context).colorScheme.onBackground,
+              ),
             ),
             const SizedBox(height: 12),
             Text(
               'Start building your memory verse collection.\nAdd verses to review them with spaced repetition.',
               textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
+              style: GoogleFonts.inter(
+                fontSize: 15,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                height: 1.5,
+              ),
             ),
             const SizedBox(height: 32),
-            ElevatedButton.icon(
-              onPressed: () => _showAddVerseOptions(context),
-              icon: const Icon(Icons.add),
-              label: const Text('Add Your First Verse'),
-              style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 24,
-                  vertical: 16,
+            Container(
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [AppTheme.primaryColor, AppTheme.secondaryPurple],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(14),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppTheme.primaryColor.withOpacity(0.35),
+                    blurRadius: 16,
+                    offset: const Offset(0, 6),
+                  ),
+                ],
+              ),
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: () => _showAddVerseOptions(context),
+                  borderRadius: BorderRadius.circular(14),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 24,
+                      vertical: 16,
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(
+                          Icons.add,
+                          color: Colors.white,
+                          size: 22,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Add Your First Verse',
+                          style: GoogleFonts.inter(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
               ),
             ),
@@ -438,18 +575,19 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
   }
 
   Widget _buildLanguageFilter(BuildContext context) {
-    final theme = Theme.of(context);
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           context.tr(TranslationKeys.memoryFilterByLanguage),
-          style: theme.textTheme.titleSmall?.copyWith(
+          style: GoogleFonts.inter(
+            fontSize: 14,
             fontWeight: FontWeight.w600,
+            color: AppTheme.primaryColor,
+            letterSpacing: 0.5,
           ),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 12),
         SingleChildScrollView(
           scrollDirection: Axis.horizontal,
           child: Row(
@@ -491,30 +629,45 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
     required bool isSelected,
     required VoidCallback onTap,
   }) {
-    final theme = Theme.of(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         decoration: BoxDecoration(
+          gradient: isSelected ? AppTheme.primaryGradient : null,
           color: isSelected
-              ? theme.colorScheme.primary
-              : theme.colorScheme.surfaceContainerHighest,
-          borderRadius: BorderRadius.circular(20),
+              ? null
+              : isDark
+                  ? Colors.white.withOpacity(0.05)
+                  : Colors.white,
+          borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: isSelected
-                ? theme.colorScheme.primary
-                : theme.colorScheme.outline.withOpacity(0.3),
+                ? Colors.transparent
+                : isDark
+                    ? Colors.white.withOpacity(0.1)
+                    : AppTheme.primaryColor.withOpacity(0.2),
           ),
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: AppTheme.primaryColor.withOpacity(0.3),
+                    blurRadius: 8,
+                    offset: const Offset(0, 3),
+                  ),
+                ]
+              : null,
         ),
         child: Text(
           label,
-          style: theme.textTheme.bodyMedium?.copyWith(
+          style: GoogleFonts.inter(
+            fontSize: 14,
             color: isSelected
-                ? theme.colorScheme.onPrimary
-                : theme.colorScheme.onSurface,
-            fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                ? Colors.white
+                : Theme.of(context).colorScheme.onSurface,
+            fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
           ),
         ),
       ),

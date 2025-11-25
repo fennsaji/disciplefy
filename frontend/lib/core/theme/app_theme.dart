@@ -6,8 +6,18 @@ import 'package:google_fonts/google_fonts.dart';
 /// Based on Figma design specifications with colors, typography,
 /// and component styling that reflects the spiritual nature of the app.
 class AppTheme {
-  // Disciplefy Brand Colors (Exact from Figma)
-  static const Color primaryColor = Color(0xFF6A4FB6); // Spiritual Lavender
+  // Disciplefy Brand Colors (Updated vibrant purple)
+  static const Color primaryColor = Color(0xFF6366F1); // Indigo
+  static const Color secondaryPurple =
+      Color(0xFF8B5CF6); // Vibrant Purple (for gradients)
+
+  /// Primary gradient for UI elements (Purple → Indigo)
+  /// Use this for consistent gradient styling across the app
+  static const LinearGradient primaryGradient = LinearGradient(
+    colors: [primaryColor, secondaryPurple],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  );
   static const Color secondaryColor = Color(0xFFFFEFC0); // Golden Glow
   static const Color accentColor = Color(0xFFFF6B6B); // Action/Alert
   static const Color backgroundColor = Color(0xFFFFFFFF); // Background
@@ -32,10 +42,14 @@ class AppTheme {
         useMaterial3: true,
         colorScheme: ColorScheme.fromSeed(
           seedColor: primaryColor,
+          primary: primaryColor, // Force exact vibrant purple (#7C3AED)
+          onPrimary: Colors.white,
           error: errorColor,
           // Override specific colors to ensure proper contrast
           secondary: secondaryColor,
           onSecondary: textPrimary,
+          tertiary: secondaryPurple, // Indigo for gradients (#6366F1)
+          onTertiary: Colors.white, // White text on indigo tertiary
           surface: surfaceColor,
           onSurface: textPrimary,
           background: backgroundColor,
@@ -46,25 +60,25 @@ class AppTheme {
         // Typography following Disciplefy brand guidelines
         textTheme: TextTheme(
           // Headings use Playfair Display
-          displayLarge: GoogleFonts.playfairDisplay(
+          displayLarge: GoogleFonts.poppins(
             fontSize: 32,
             fontWeight: FontWeight.bold,
             height: 1.2,
             color: primaryColor,
           ),
-          displayMedium: GoogleFonts.playfairDisplay(
+          displayMedium: GoogleFonts.poppins(
             fontSize: 28,
             fontWeight: FontWeight.bold,
             height: 1.2,
             color: primaryColor,
           ),
-          headlineLarge: GoogleFonts.playfairDisplay(
+          headlineLarge: GoogleFonts.poppins(
             fontSize: 24,
             fontWeight: FontWeight.w600,
             height: 1.3,
             color: primaryColor,
           ),
-          headlineMedium: GoogleFonts.playfairDisplay(
+          headlineMedium: GoogleFonts.poppins(
             fontSize: 20,
             fontWeight: FontWeight.w600,
             height: 1.3,
@@ -151,9 +165,12 @@ class AppTheme {
         colorScheme: ColorScheme.fromSeed(
           seedColor: primaryColor,
           brightness: Brightness.dark,
-          // Improved dark theme colors for better UX
-          primary: const Color(0xFF8B7AC7), // Lighter lavender for dark
-          secondary: const Color(0xFF4A3B7A), // Darker purple for secondary
+          // Improved dark theme colors with vibrant purple
+          primary: primaryColor, // Vibrant Purple (#7C3AED)
+          onPrimary: Colors.white,
+          secondary:
+              secondaryColor, // Golden Glow (consistent with light theme)
+          tertiary: secondaryPurple, // Indigo for gradients (#6366F1)
           surface: const Color(0xFF1A1A1A), // Dark gray instead of brown
           onSurface: const Color(0xFFE0E0E0), // Light gray text
           onSurfaceVariant:
@@ -161,37 +178,38 @@ class AppTheme {
           background: const Color(0xFF121212), // True dark background
           onBackground:
               const Color(0xFFE0E0E0), // Light text on dark background
-          onSecondary: const Color(0xFFE0E0E0), // Light text on secondary
+          onSecondary: textPrimary, // Dark text on golden secondary
+          onTertiary: Colors.white, // White text on indigo tertiary
           error: errorColor,
         ),
         scaffoldBackgroundColor: const Color(0xFF121212),
 
         // Typography with improved dark theme colors
         textTheme: TextTheme(
-          // Headings use Playfair Display with light colors for dark theme
-          displayLarge: GoogleFonts.playfairDisplay(
+          // Headings use Inter with vibrant purple for dark theme
+          displayLarge: GoogleFonts.inter(
             fontSize: 32,
             fontWeight: FontWeight.bold,
             height: 1.2,
-            color: const Color(0xFF8B7AC7), // Lighter primary for dark theme
+            color: primaryColor, // Vibrant Purple (#7C3AED)
           ),
-          displayMedium: GoogleFonts.playfairDisplay(
+          displayMedium: GoogleFonts.inter(
             fontSize: 28,
             fontWeight: FontWeight.bold,
             height: 1.2,
-            color: const Color(0xFF8B7AC7),
+            color: primaryColor,
           ),
-          headlineLarge: GoogleFonts.playfairDisplay(
+          headlineLarge: GoogleFonts.inter(
             fontSize: 24,
             fontWeight: FontWeight.w600,
             height: 1.3,
-            color: const Color(0xFF8B7AC7),
+            color: primaryColor,
           ),
-          headlineMedium: GoogleFonts.playfairDisplay(
+          headlineMedium: GoogleFonts.inter(
             fontSize: 20,
             fontWeight: FontWeight.w600,
             height: 1.3,
-            color: const Color(0xFF8B7AC7),
+            color: primaryColor,
           ),
 
           // Titles use Inter for better readability in dark theme
@@ -254,8 +272,7 @@ class AppTheme {
               borderRadius: BorderRadius.circular(8),
             ),
             minimumSize: const Size(120, 48),
-            backgroundColor:
-                const Color(0xFF8B7AC7), // Primary color for dark theme
+            backgroundColor: primaryColor, // Vibrant Purple (#7C3AED)
             foregroundColor: Colors.white,
           ),
         ),
@@ -271,7 +288,7 @@ class AppTheme {
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(8),
-            borderSide: const BorderSide(color: Color(0xFF8B7AC7)),
+            borderSide: const BorderSide(color: primaryColor),
           ),
           contentPadding:
               const EdgeInsets.symmetric(horizontal: 16, vertical: 12),

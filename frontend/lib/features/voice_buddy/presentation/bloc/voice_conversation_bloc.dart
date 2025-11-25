@@ -164,7 +164,6 @@ class VoiceConversationBloc
       status: VoiceConversationStatus.listening,
       isListening: true,
       isPlaying: false,
-      currentTranscription: null,
     ));
 
     // Initialize speech service if needed
@@ -183,7 +182,7 @@ class VoiceConversationBloc
 
     // Capture continuous mode state for the callback
     final isContinuousMode = state.isContinuousMode;
-    
+
     try {
       await _speechService.startListening(
         languageCode: state.languageCode,
@@ -215,7 +214,7 @@ class VoiceConversationBloc
   ) async {
     _silenceTimer?.cancel();
     _silenceTimer = null;
-    
+
     await _speechService.stopListening();
     _speechSubscription?.cancel();
 
@@ -232,16 +231,16 @@ class VoiceConversationBloc
     Emitter<VoiceConversationState> emit,
   ) {
     emit(state.copyWith(currentTranscription: event.text));
-    
+
     // In continuous mode, start/reset silence timer to auto-send when user stops speaking
     if (state.isContinuousMode && event.text.isNotEmpty) {
       _startSilenceTimer(event.text);
     }
   }
-  
+
   void _startSilenceTimer(String currentText) {
     _silenceTimer?.cancel();
-    
+
     // Wait 1.5 seconds of silence before auto-sending
     _silenceTimer = Timer(const Duration(milliseconds: 1500), () {
       if (state.isListening && currentText.isNotEmpty) {
@@ -366,15 +365,18 @@ class VoiceConversationBloc
                 break;
               case 'stream_end':
                 scriptureRefs = (jsonData['scripture_references'] as List?)
-                    ?.map((e) => e.toString())
-                    .toList() ?? [];
+                        ?.map((e) => e.toString())
+                        .toList() ??
+                    [];
                 break;
               case 'error':
-                final errorMsg = jsonData['message'] as String? ?? 'Unknown error';
+                final errorMsg =
+                    jsonData['message'] as String? ?? 'Unknown error';
                 add(StreamError(errorMsg));
                 return;
               case 'quota_exceeded':
-                final errorMsg = jsonData['message'] as String? ?? 'Quota exceeded';
+                final errorMsg =
+                    jsonData['message'] as String? ?? 'Quota exceeded';
                 add(StreamError(errorMsg));
                 return;
             }
@@ -466,7 +468,7 @@ class VoiceConversationBloc
       }
       // Basic Latin letters: A-Z, a-z
       else if ((char >= 0x0041 && char <= 0x005A) ||
-               (char >= 0x0061 && char <= 0x007A)) {
+          (char >= 0x0061 && char <= 0x007A)) {
         latinCount++;
         totalLetters++;
       }
@@ -479,7 +481,8 @@ class VoiceConversationBloc
     final devanagariPercent = devanagariCount / totalLetters;
     final malayalamPercent = malayalamCount / totalLetters;
 
-    if (malayalamPercent > devanagariPercent && malayalamPercent > latinPercent) {
+    if (malayalamPercent > devanagariPercent &&
+        malayalamPercent > latinPercent) {
       return 'ml-IN';
     } else if (devanagariPercent > latinPercent) {
       return 'hi-IN';
@@ -504,7 +507,8 @@ class VoiceConversationBloc
     final detectedLanguage = _detectTextLanguage(lastMessage.contentText);
 
     // Check if detected language is available for TTS
-    final isDetectedLangAvailable = await _isLanguageAvailableForTTS(detectedLanguage);
+    final isDetectedLangAvailable =
+        await _isLanguageAvailableForTTS(detectedLanguage);
 
     print('🎙️ [VOICE] Playing response:');
     print('  - User language: ${state.languageCode}');
@@ -515,7 +519,8 @@ class VoiceConversationBloc
     // If detected language TTS is not available, skip TTS entirely
     // Just show text response on screen
     if (!isDetectedLangAvailable) {
-      print('🎙️ [VOICE] ⚠️ TTS not available for $detectedLanguage - skipping voice playback');
+      print(
+          '🎙️ [VOICE] ⚠️ TTS not available for $detectedLanguage - skipping voice playback');
       print('🎙️ [VOICE] Text response will be shown on screen only');
 
       // Update language state if needed (for speech recognition)
@@ -536,13 +541,15 @@ class VoiceConversationBloc
     // TTS is available - proceed with voice playback
     final shouldUpdateLanguage = detectedLanguage != state.languageCode;
     if (shouldUpdateLanguage) {
-      print('🎙️ [VOICE] Switching language from ${state.languageCode} to $detectedLanguage');
+      print(
+          '🎙️ [VOICE] Switching language from ${state.languageCode} to $detectedLanguage');
     }
 
     emit(state.copyWith(
       status: VoiceConversationStatus.playing,
       isPlaying: true,
-      languageCode: shouldUpdateLanguage ? detectedLanguage : state.languageCode,
+      languageCode:
+          shouldUpdateLanguage ? detectedLanguage : state.languageCode,
     ));
 
     // Use speakWithSettings with detected language
@@ -550,14 +557,17 @@ class VoiceConversationBloc
       text: lastMessage.contentText,
       languageCode: detectedLanguage,
       onComplete: () {
-        print('🎙️ [VOICE] TTS completed, shouldContinueListening: $shouldContinueListening');
-        add(PlaybackCompleted(shouldContinueListening: shouldContinueListening));
+        print(
+            '🎙️ [VOICE] TTS completed, shouldContinueListening: $shouldContinueListening');
+        add(PlaybackCompleted(
+            shouldContinueListening: shouldContinueListening));
       },
     );
 
     // For web platform, TTS completion might not fire reliably
     // Add a fallback timer based on text length
-    _startPlaybackFallbackTimer(lastMessage.contentText, shouldContinueListening);
+    _startPlaybackFallbackTimer(
+        lastMessage.contentText, shouldContinueListening);
   }
 
   /// Check if a language is available for TTS on this platform.
@@ -582,22 +592,26 @@ class VoiceConversationBloc
       return false;
     }
   }
-  
+
   Timer? _playbackFallbackTimer;
-  
+
   void _startPlaybackFallbackTimer(String text, bool shouldContinueListening) {
     _playbackFallbackTimer?.cancel();
-    
+
     // Estimate playback duration: ~150 words per minute, average 5 chars per word
     // So roughly 750 chars per minute, or 12.5 chars per second
-    final estimatedDuration = Duration(milliseconds: (text.length / 10 * 1000).toInt() + 2000);
-    
-    print('🎙️ [VOICE] Setting fallback timer for ${estimatedDuration.inSeconds}s');
-    
+    final estimatedDuration =
+        Duration(milliseconds: (text.length / 10 * 1000).toInt() + 2000);
+
+    print(
+        '🎙️ [VOICE] Setting fallback timer for ${estimatedDuration.inSeconds}s');
+
     _playbackFallbackTimer = Timer(estimatedDuration, () {
       if (state.isPlaying) {
-        print('🎙️ [VOICE] Fallback timer fired - TTS completion may have failed');
-        add(PlaybackCompleted(shouldContinueListening: shouldContinueListening));
+        print(
+            '🎙️ [VOICE] Fallback timer fired - TTS completion may have failed');
+        add(PlaybackCompleted(
+            shouldContinueListening: shouldContinueListening));
       }
     });
   }
@@ -609,25 +623,26 @@ class VoiceConversationBloc
     // Cancel fallback timer
     _playbackFallbackTimer?.cancel();
     _playbackFallbackTimer = null;
-    
+
     // Don't process if not playing (already handled)
     if (!state.isPlaying) {
       print('🎙️ [VOICE] PlaybackCompleted ignored - not playing');
       return;
     }
-    
-    print('🎙️ [VOICE] Playback completed, shouldContinueListening: ${event.shouldContinueListening}');
-    
+
+    print(
+        '🎙️ [VOICE] Playback completed, shouldContinueListening: ${event.shouldContinueListening}');
+
     // Stop playback state
     await _ttsService.stop();
-    
+
     emit(state.copyWith(
       isPlaying: false,
       status: state.hasActiveConversation
           ? VoiceConversationStatus.ready
           : state.status,
     ));
-    
+
     // Start listening again if continuous mode was enabled
     if (event.shouldContinueListening && state.hasActiveConversation) {
       print('🎙️ [VOICE] Continuous mode - starting listening again');
@@ -644,7 +659,7 @@ class VoiceConversationBloc
     // Cancel fallback timer
     _playbackFallbackTimer?.cancel();
     _playbackFallbackTimer = null;
-    
+
     await _ttsService.stop();
 
     emit(state.copyWith(

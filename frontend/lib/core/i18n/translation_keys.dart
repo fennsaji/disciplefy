@@ -144,7 +144,8 @@ class TranslationKeys {
   static const generateStudyButtonGenerate = 'generate_study.button_generate';
   static const generateStudyViewSaved = 'generate_study.view_saved';
   static const generateStudyTalkToAiBuddy = 'generate_study.talk_to_ai_buddy';
-  static const generateStudyTalkToAiBuddySubtitle = 'generate_study.talk_to_ai_buddy_subtitle';
+  static const generateStudyTalkToAiBuddySubtitle =
+      'generate_study.talk_to_ai_buddy_subtitle';
   static const generateStudyInProgress = 'generate_study.in_progress';
   static const generateStudyGenerationFailed =
       'generate_study.generation_failed';

@@ -90,7 +90,8 @@ class _VoicePreferencesPageState extends State<VoicePreferencesPage> {
           _buildSliderTile(
             title: 'Pitch',
             subtitle: _getPitchLabel(_preferences.pitch),
-            value: (_preferences.pitch + 20) / 40, // Normalize -20 to 20 -> 0 to 1
+            value:
+                (_preferences.pitch + 20) / 40, // Normalize -20 to 20 -> 0 to 1
             min: 0.0,
             max: 1.0,
             onChanged: (value) => _updatePreference(
@@ -220,7 +221,8 @@ class _VoicePreferencesPageState extends State<VoicePreferencesPage> {
               ),
             ),
             ...VoiceLanguage.values.map((language) {
-              final isSelected = language.code == _preferences.preferredLanguage;
+              final isSelected =
+                  language.code == _preferences.preferredLanguage;
               return ListTile(
                 title: Text(language.displayName),
                 trailing: isSelected
@@ -228,7 +230,8 @@ class _VoicePreferencesPageState extends State<VoicePreferencesPage> {
                     : null,
                 onTap: () {
                   _updatePreference(
-                    () => _preferences.copyWith(preferredLanguage: language.code),
+                    () =>
+                        _preferences.copyWith(preferredLanguage: language.code),
                   );
                   Navigator.pop(context);
                 },

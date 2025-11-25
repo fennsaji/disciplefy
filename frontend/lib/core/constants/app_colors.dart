@@ -3,7 +3,9 @@ import 'package:flutter/material.dart';
 /// Application colors based on Disciplefy brand guidelines
 class AppColors {
   // Primary brand colors
-  static const Color primary = Color(0xFF6A4FB6); // Spiritual Lavender
+  static const Color primary = Color(0xFF6366F1); // Indigo
+  static const Color secondaryPurple =
+      Color(0xFF6366F1); // Indigo (for gradients)
   static const Color secondary = Color(0xFFFFEFC0); // Golden Glow
   static const Color accent = Color(0xFFFF6B6B); // Action/Alert
 

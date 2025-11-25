@@ -159,7 +159,8 @@ class AppTranslations {
       'button_generate': 'Generate Study Guide',
       'view_saved': 'View Saved Guides',
       'talk_to_ai_buddy': 'Talk to AI Study Buddy',
-      'talk_to_ai_buddy_subtitle': 'Voice conversation with your personal Bible guide',
+      'talk_to_ai_buddy_subtitle':
+          'Voice conversation with your personal Bible guide',
       'in_progress':
           'Study guide generation already in progress. Please wait...',
       'generation_failed': 'Generation Failed',
@@ -1520,7 +1521,8 @@ class AppTranslations {
       'button_generate': 'ഗൈഡ് ഉണ്ടാക്കൂ',
       'view_saved': 'സേവ് ചെയ്ത ഗൈഡ് കാണൂ',
       'talk_to_ai_buddy': 'AI സ്റ്റഡി ബഡ്ഡിയോട് സംസാരിക്കൂ',
-      'talk_to_ai_buddy_subtitle': 'നിങ്ങളുടെ ബൈബിൾ ഗൈഡുമായി വോയ്സിൽ സംസാരിക്കൂ',
+      'talk_to_ai_buddy_subtitle':
+          'നിങ്ങളുടെ ബൈബിൾ ഗൈഡുമായി വോയ്സിൽ സംസാരിക്കൂ',
       'in_progress': 'ഗൈഡ് ഉണ്ടാക്കുന്നുണ്ട്. കുറച്ച് കാത്തിരിക്കൂ...',
       'generation_failed': 'ഉണ്ടായില്ല',
       'generation_failed_message': 'ഇപ്പോൾ ഗൈഡ് ഉണ്ടായില്ല. പിന്നെ ശ്രമിക്കൂ.',

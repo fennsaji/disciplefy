@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../../../../core/theme/app_theme.dart';
 import '../bloc/auth_bloc.dart';
 import '../bloc/auth_event.dart';
 import '../bloc/auth_state.dart' as auth_states;
@@ -218,7 +219,7 @@ class _LoginScreenState extends State<LoginScreen> {
       children: [
         Text(
           context.tr(TranslationKeys.loginWelcome),
-          style: GoogleFonts.playfairDisplay(
+          style: GoogleFonts.poppins(
             fontSize: 28,
             fontWeight: FontWeight.w700,
             color: theme.colorScheme.onBackground,
@@ -267,59 +268,67 @@ class _LoginScreenState extends State<LoginScreen> {
 
   /// Builds the Google sign-in button with proper branding
   Widget _buildGoogleSignInButton(BuildContext context, bool isLoading) {
-    final theme = Theme.of(context);
-
-    return SizedBox(
+    return Container(
       width: double.infinity,
       height: 56,
-      child: ElevatedButton(
-        onPressed: isLoading ? null : () => _handleGoogleSignIn(context),
-        style: ElevatedButton.styleFrom(
-          backgroundColor: theme.colorScheme.primary,
-          foregroundColor: theme.colorScheme.onPrimary,
-          elevation: 0,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          disabledBackgroundColor:
-              theme.colorScheme.primary.withValues(alpha: 0.5),
-        ),
-        child: isLoading
-            ? SizedBox(
-                width: 20,
-                height: 20,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  valueColor: AlwaysStoppedAnimation<Color>(
-                      theme.colorScheme.onPrimary),
+      decoration: BoxDecoration(
+        gradient: isLoading ? null : AppTheme.primaryGradient,
+        color: isLoading ? AppTheme.primaryColor.withOpacity(0.5) : null,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: isLoading
+            ? null
+            : [
+                BoxShadow(
+                  color: AppTheme.primaryColor.withOpacity(0.4),
+                  blurRadius: 16,
+                  offset: const Offset(0, 6),
                 ),
-              )
-            : Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  // Google logo
-                  Container(
+              ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: isLoading ? null : () => _handleGoogleSignIn(context),
+          borderRadius: BorderRadius.circular(12),
+          child: Center(
+            child: isLoading
+                ? const SizedBox(
                     width: 20,
                     height: 20,
-                    decoration: const BoxDecoration(
-                      image: DecorationImage(
-                        image: AssetImage('assets/images/google_logo.png'),
-                        fit: BoxFit.contain,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                    ),
+                  )
+                : Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      // Google logo
+                      Container(
+                        width: 20,
+                        height: 20,
+                        decoration: const BoxDecoration(
+                          image: DecorationImage(
+                            image: AssetImage('assets/images/google_logo.png'),
+                            fit: BoxFit.contain,
+                          ),
+                        ),
                       ),
-                    ),
-                  ),
 
-                  const SizedBox(width: 12),
+                      const SizedBox(width: 12),
 
-                  Text(
-                    context.tr(TranslationKeys.loginContinueWithGoogle),
-                    style: GoogleFonts.inter(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                    ),
+                      Text(
+                        context.tr(TranslationKeys.loginContinueWithGoogle),
+                        style: GoogleFonts.inter(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ],
                   ),
-                ],
-              ),
+          ),
+        ),
       ),
     );
   }

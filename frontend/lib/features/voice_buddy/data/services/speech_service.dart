@@ -83,7 +83,6 @@ class SpeechService {
     await _speechToText.listen(
       onResult: onResult,
       localeId: languageCode,
-      listenMode: ListenMode.confirmation,
       pauseFor: pauseFor,
       listenFor: listenFor,
       partialResults: partialResults,

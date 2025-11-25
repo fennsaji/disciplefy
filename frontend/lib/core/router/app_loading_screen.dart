@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../theme/app_theme.dart';
 
 /// Loading screen shown during app initialization while Supabase restores session
 /// ANDROID FIX: Prevents flash of login screen during session restoration
@@ -24,7 +25,7 @@ class AppLoadingScreen extends StatelessWidget {
 
     final loaderColor = isDarkMode
         ? Colors.white // White loader for dark mode
-        : const Color(0xFF6A4FB6); // Primary purple for light mode
+        : AppTheme.primaryColor; // Vibrant purple for light mode
 
     return Scaffold(
       backgroundColor: backgroundColor,
