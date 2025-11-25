@@ -29,4 +29,8 @@ class AppRoutes {
   // Memory Verses
   static const String memoryVerses = '/memory-verses';
   static const String verseReview = '/memory-verse-review';
+
+  // Voice Buddy
+  static const String voiceConversation = '/voice-conversation';
+  static const String voicePreferences = '/voice-preferences';
 }

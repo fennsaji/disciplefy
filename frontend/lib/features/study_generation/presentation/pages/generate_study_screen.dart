@@ -26,6 +26,7 @@ import '../../../tokens/presentation/bloc/token_bloc.dart';
 import '../../../tokens/presentation/bloc/token_event.dart';
 import '../../../tokens/presentation/bloc/token_state.dart';
 import '../../../tokens/domain/entities/token_status.dart';
+import '../../../../core/router/app_router.dart';
 
 /// Generate Study Screen allowing users to input scripture reference or topic.
 ///
@@ -610,6 +611,11 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
                       builder: (context, state) => _buildGenerateButton(state),
                     ),
 
+                    const SizedBox(height: 20),
+
+                    // AI Study Buddy button - Premium Feature Highlight
+                    _buildAiStudyBuddyButton(context),
+
                     // 🔧 FIX: Only show recent guides when keyboard is hidden
                     if (!isKeyboardVisible) ...[
                       const SizedBox(height: 32),
@@ -889,6 +895,106 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
               .toList(),
         ),
       ],
+    );
+  }
+
+  /// Builds the AI Study Buddy button - a premium feature highlight
+  Widget _buildAiStudyBuddyButton(BuildContext context) {
+    final primaryColor = Theme.of(context).colorScheme.primary;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: isDark
+              ? [
+                  primaryColor.withOpacity(0.3),
+                  primaryColor.withOpacity(0.15),
+                ]
+              : [
+                  primaryColor.withOpacity(0.12),
+                  primaryColor.withOpacity(0.05),
+                ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: primaryColor.withOpacity(isDark ? 0.4 : 0.25),
+          width: 1.5,
+        ),
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () => GoRouter.of(context).goToVoiceConversation(),
+          borderRadius: BorderRadius.circular(16),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+            child: Row(
+              children: [
+                // Microphone icon with background
+                Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: primaryColor,
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: [
+                      BoxShadow(
+                        color: primaryColor.withOpacity(0.3),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: const Icon(
+                    Icons.mic_rounded,
+                    color: Colors.white,
+                    size: 26,
+                  ),
+                ),
+                const SizedBox(width: 16),
+                // Text content
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        context.tr(TranslationKeys.generateStudyTalkToAiBuddy),
+                        style: GoogleFonts.inter(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: Theme.of(context).colorScheme.onSurface,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        context.tr(TranslationKeys.generateStudyTalkToAiBuddySubtitle),
+                        style: GoogleFonts.inter(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w400,
+                          color: Theme.of(context)
+                              .colorScheme
+                              .onSurface
+                              .withOpacity(0.6),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                // Arrow icon
+                Icon(
+                  Icons.arrow_forward_ios_rounded,
+                  size: 16,
+                  color: primaryColor,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 
