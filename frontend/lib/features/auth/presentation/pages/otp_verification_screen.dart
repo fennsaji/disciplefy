@@ -291,7 +291,7 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
       children: [
         Text(
           'Enter verification code',
-          style: GoogleFonts.playfairDisplay(
+          style: GoogleFonts.poppins(
             fontSize: 24,
             fontWeight: FontWeight.w700,
             color: theme.colorScheme.onBackground,

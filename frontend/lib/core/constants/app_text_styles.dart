@@ -5,14 +5,14 @@ import 'app_colors.dart';
 /// Application text styles following Disciplefy brand guidelines
 class AppTextStyles {
   // Display styles (Playfair Display for headings)
-  static TextStyle displayLarge = GoogleFonts.playfairDisplay(
+  static TextStyle displayLarge = GoogleFonts.poppins(
     fontSize: 32,
     fontWeight: FontWeight.bold,
     height: 1.2,
     color: AppColors.primary,
   );
 
-  static TextStyle displayMedium = GoogleFonts.playfairDisplay(
+  static TextStyle displayMedium = GoogleFonts.poppins(
     fontSize: 28,
     fontWeight: FontWeight.bold,
     height: 1.2,
@@ -20,14 +20,14 @@ class AppTextStyles {
   );
 
   // Headline styles
-  static TextStyle headlineLarge = GoogleFonts.playfairDisplay(
+  static TextStyle headlineLarge = GoogleFonts.poppins(
     fontSize: 24,
     fontWeight: FontWeight.w600,
     height: 1.3,
     color: AppColors.primary,
   );
 
-  static TextStyle headlineMedium = GoogleFonts.playfairDisplay(
+  static TextStyle headlineMedium = GoogleFonts.poppins(
     fontSize: 20,
     fontWeight: FontWeight.w600,
     height: 1.3,

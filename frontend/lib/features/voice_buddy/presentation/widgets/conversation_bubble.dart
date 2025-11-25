@@ -78,7 +78,6 @@ class ConversationBubble extends StatelessWidget {
                   border: isUser
                       ? Border.all(
                           color: theme.colorScheme.primary,
-                          width: 1,
                         )
                       : null,
                 ),
@@ -135,7 +134,8 @@ class ConversationBubble extends StatelessWidget {
                       Text(
                         _formatTime(timestamp!),
                         style: theme.textTheme.labelSmall?.copyWith(
-                          color: theme.colorScheme.onSurface.withAlpha((0.5 * 255).round()),
+                          color: theme.colorScheme.onSurface
+                              .withAlpha((0.5 * 255).round()),
                         ),
                       ),
                     ],
@@ -252,7 +252,8 @@ class _ThinkingDotsState extends State<_ThinkingDots>
           children: List.generate(3, (index) {
             final delay = index * 0.2;
             final value = (_controller.value + delay) % 1.0;
-            final opacity = 0.3 + 0.7 * (value < 0.5 ? value * 2 : (1 - value) * 2);
+            final opacity =
+                0.3 + 0.7 * (value < 0.5 ? value * 2 : (1 - value) * 2);
 
             return Container(
               margin: const EdgeInsets.symmetric(horizontal: 2),
@@ -260,7 +261,8 @@ class _ThinkingDotsState extends State<_ThinkingDots>
               height: 8,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: theme.colorScheme.primary.withAlpha((opacity * 255).round()),
+                color: theme.colorScheme.primary
+                    .withAlpha((opacity * 255).round()),
               ),
             );
           }),

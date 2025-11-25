@@ -179,53 +179,70 @@ class _OnboardingWelcomeContent extends StatelessWidget {
                   builder: (context, state) {
                     final isLoading = state is OnboardingLoading;
 
-                    return SizedBox(
+                    return Container(
                       width: double.infinity,
-                      child: ElevatedButton(
-                        onPressed: isLoading
+                      height: 56,
+                      decoration: BoxDecoration(
+                        gradient: isLoading ? null : AppTheme.primaryGradient,
+                        color: isLoading
+                            ? AppTheme.primaryColor.withOpacity(0.5)
+                            : null,
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: isLoading
                             ? null
-                            : () => context
-                                .read<OnboardingBloc>()
-                                .add(const NextStep()),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppTheme.primaryColor,
-                          foregroundColor: Colors.white,
-                          minimumSize: const Size.fromHeight(56),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          elevation: 0,
-                        ),
-                        child: isLoading
-                            ? Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  const SizedBox(
-                                    width: 20,
-                                    height: 20,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      valueColor: AlwaysStoppedAnimation<Color>(
-                                          Colors.white),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 12),
-                                  Text(
-                                    'Loading...',
+                            : [
+                                BoxShadow(
+                                  color: AppTheme.primaryColor.withOpacity(0.4),
+                                  blurRadius: 16,
+                                  offset: const Offset(0, 6),
+                                ),
+                              ],
+                      ),
+                      child: Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          onTap: isLoading
+                              ? null
+                              : () => context
+                                  .read<OnboardingBloc>()
+                                  .add(const NextStep()),
+                          borderRadius: BorderRadius.circular(12),
+                          child: Center(
+                            child: isLoading
+                                ? Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      const SizedBox(
+                                        width: 20,
+                                        height: 20,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          valueColor:
+                                              AlwaysStoppedAnimation<Color>(
+                                                  Colors.white),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 12),
+                                      Text(
+                                        'Loading...',
+                                        style: GoogleFonts.inter(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w600,
+                                          color: Colors.white,
+                                        ),
+                                      ),
+                                    ],
+                                  )
+                                : Text(
+                                    'Continue',
                                     style: GoogleFonts.inter(
                                       fontSize: 16,
                                       fontWeight: FontWeight.w600,
+                                      color: Colors.white,
                                     ),
                                   ),
-                                ],
-                              )
-                            : Text(
-                                'Continue',
-                                style: GoogleFonts.inter(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
+                          ),
+                        ),
                       ),
                     );
                   },
@@ -358,7 +375,7 @@ class _LogoFallbackWidget extends StatelessWidget {
         SizedBox(height: isLargeScreen ? 24 : 20),
         Text(
           'Disciplefy',
-          style: GoogleFonts.playfairDisplay(
+          style: GoogleFonts.poppins(
             fontSize: isLargeScreen ? 48 : 42,
             fontWeight: FontWeight.bold,
             color: AppTheme.primaryColor,

@@ -33,7 +33,8 @@ class TTSService {
       // Safe to use Platform on non-web
       final isAndroid = Platform.isAndroid;
       final isIOS = Platform.isIOS;
-      print('🔊 [TTS] Platform: ${isAndroid ? "Android" : (isIOS ? "iOS" : "Unknown")}');
+      print(
+          '🔊 [TTS] Platform: ${isAndroid ? "Android" : (isIOS ? "iOS" : "Unknown")}');
 
       if (isIOS) {
         print('🔊 [TTS] Applying iOS-specific configuration...');
@@ -83,7 +84,8 @@ class TTSService {
 
     _flutterTts.setErrorHandler((message) {
       // Ignore "interrupted" errors when we intentionally stopped
-      if (_isIntentionallyStopping && message.toString().contains('interrupted')) {
+      if (_isIntentionallyStopping &&
+          message.toString().contains('interrupted')) {
         print('🔊 [TTS] Ignoring interrupted error (intentional stop)');
         _isIntentionallyStopping = false;
         return;
@@ -196,13 +198,16 @@ class TTSService {
       final voice = await _findVoiceForLanguage(languageCode);
       if (voice != null) {
         print('🔊 [TTS] ✅ Found voice for $languageCode: ${voice['name']}');
-        await _flutterTts.setVoice({'name': voice['name'], 'locale': voice['locale']});
+        await _flutterTts
+            .setVoice({'name': voice['name'], 'locale': voice['locale']});
         return;
       } else {
-        print('🔊 [TTS] ⚠️ No voice found for $languageCode, trying fallback to en-US');
+        print(
+            '🔊 [TTS] ⚠️ No voice found for $languageCode, trying fallback to en-US');
         final enVoice = await _findVoiceForLanguage('en-US');
         if (enVoice != null) {
-          await _flutterTts.setVoice({'name': enVoice['name'], 'locale': enVoice['locale']});
+          await _flutterTts
+              .setVoice({'name': enVoice['name'], 'locale': enVoice['locale']});
         }
         return;
       }
@@ -213,7 +218,8 @@ class TTSService {
     print('🔊 [TTS] Language $languageCode available: $isAvailable');
 
     if (!isAvailable) {
-      print('🔊 [TTS] ⚠️ Language $languageCode not available, falling back to en-US');
+      print(
+          '🔊 [TTS] ⚠️ Language $languageCode not available, falling back to en-US');
       await _flutterTts.setLanguage('en-US');
       return;
     }
@@ -222,7 +228,8 @@ class TTSService {
   }
 
   /// Find a voice for the specified language code.
-  Future<Map<String, dynamic>?> _findVoiceForLanguage(String languageCode) async {
+  Future<Map<String, dynamic>?> _findVoiceForLanguage(
+      String languageCode) async {
     final voices = await getAvailableVoices();
     final shortLang = languageCode.split('-').first;
 
@@ -343,10 +350,12 @@ class TTSService {
       print('🔊 [TTS] FlutterTts.speak() returned: $result');
 
       if (result == null && kIsWeb) {
-        print('🔊 [TTS] ⚠️ speak() returned null on web - TTS might have failed');
+        print(
+            '🔊 [TTS] ⚠️ speak() returned null on web - TTS might have failed');
         print('🔊 [TTS] This usually means:');
         print('🔊 [TTS]   1. The language is not supported by the browser');
-        print('🔊 [TTS]   2. User interaction is required before first TTS call');
+        print(
+            '🔊 [TTS]   2. User interaction is required before first TTS call');
         print('🔊 [TTS]   3. Browser TTS is disabled or not available');
       }
     } catch (e) {
@@ -400,14 +409,14 @@ class TTSService {
       });
     }
 
-    print('🔊 [TTS] Calling speak() with text: "${text.substring(0, text.length > 50 ? 50 : text.length)}..."');
+    print(
+        '🔊 [TTS] Calling speak() with text: "${text.substring(0, text.length > 50 ? 50 : text.length)}..."');
     await speak(text);
     print('🔊 [TTS] speak() call completed');
   }
 
   /// Select a voice based on language and gender preference.
-  Future<void> _selectVoiceByGender(
-      String languageCode, String gender) async {
+  Future<void> _selectVoiceByGender(String languageCode, String gender) async {
     final voices = await getAvailableVoices();
 
     // Find voices matching language and gender
@@ -480,22 +489,18 @@ class VoiceConfig {
       languageCode: 'en-US',
       voiceName: 'en-us-x-sfg#female_1-local',
       gender: 'female',
-      speakingRate: 0.95,
-      pitch: 1.0,
     ),
     'hi-IN': VoiceConfig(
       languageCode: 'hi-IN',
       voiceName: 'hi-in-x-hid#female_1-local',
       gender: 'female',
       speakingRate: 0.9,
-      pitch: 1.0,
     ),
     'ml-IN': VoiceConfig(
       languageCode: 'ml-IN',
       voiceName: 'ml-in-x-mlm#female_1-local',
       gender: 'female',
       speakingRate: 0.9,
-      pitch: 1.0,
     ),
   };
 

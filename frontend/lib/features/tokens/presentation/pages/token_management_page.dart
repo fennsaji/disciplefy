@@ -365,7 +365,7 @@ class _TokenManagementPageState extends State<TokenManagementPage>
             elevation: 0,
             title: Text(
               context.tr('tokens.management.title'),
-              style: GoogleFonts.playfairDisplay(
+              style: GoogleFonts.poppins(
                 fontSize: 20,
                 fontWeight: FontWeight.w600,
                 color: Theme.of(context).colorScheme.primary,

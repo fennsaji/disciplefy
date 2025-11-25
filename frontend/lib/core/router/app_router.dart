@@ -237,7 +237,9 @@ class AppRouter {
 
           final studyGuideId = extra['studyGuideId'] as String?;
           final relatedScripture = extra['relatedScripture'] as String?;
-          final conversationType = extra['conversationType'] as ConversationType? ?? ConversationType.general;
+          final conversationType =
+              extra['conversationType'] as ConversationType? ??
+                  ConversationType.general;
 
           return VoiceConversationPage(
             studyGuideId: studyGuideId,

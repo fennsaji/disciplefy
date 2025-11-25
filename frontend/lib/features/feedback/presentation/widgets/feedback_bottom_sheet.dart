@@ -115,7 +115,7 @@ class _FeedbackBottomSheetState extends State<FeedbackBottomSheet> {
         children: [
           Text(
             context.tr(TranslationKeys.feedbackSendFeedback),
-            style: GoogleFonts.playfairDisplay(
+            style: GoogleFonts.poppins(
               fontSize: 24,
               fontWeight: FontWeight.bold,
               color: colorScheme.primary,

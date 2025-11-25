@@ -278,8 +278,7 @@ class VoiceBuddyRemoteDataSourceImpl implements VoiceBuddyRemoteDataSource {
       await _supabaseClient.rpc('increment_voice_usage');
 
       // Create conversation
-      final sessionId =
-          '${user.id}_${DateTime.now().millisecondsSinceEpoch}';
+      final sessionId = '${user.id}_${DateTime.now().millisecondsSinceEpoch}';
       final now = DateTime.now().toIso8601String();
 
       final response = await _supabaseClient

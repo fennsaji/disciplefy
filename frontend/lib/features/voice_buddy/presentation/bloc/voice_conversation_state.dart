@@ -81,12 +81,10 @@ class VoiceConversationState extends Equatable {
 
   /// Whether the conversation is active.
   bool get hasActiveConversation =>
-      conversation != null &&
-      conversation!.status == ConversationStatus.active;
+      conversation != null && conversation!.status == ConversationStatus.active;
 
   /// Whether the user can start a new conversation (has quota).
-  bool get canStartConversation =>
-      quota == null || quota!.canStart;
+  bool get canStartConversation => quota == null || quota!.canStart;
 
   /// Get remaining quota as a string.
   String get quotaDisplay {

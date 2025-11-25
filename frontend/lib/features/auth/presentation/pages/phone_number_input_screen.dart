@@ -155,7 +155,7 @@ class _PhoneNumberInputScreenState extends State<PhoneNumberInputScreen> {
       children: [
         Text(
           'Enter your phone number',
-          style: GoogleFonts.playfairDisplay(
+          style: GoogleFonts.poppins(
             fontSize: 24,
             fontWeight: FontWeight.w700,
             color: theme.colorScheme.onBackground,

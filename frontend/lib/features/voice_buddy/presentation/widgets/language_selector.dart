@@ -4,7 +4,8 @@ import 'package:flutter/material.dart';
 enum VoiceLanguage {
   english('en-US', 'English', '\u{1F1FA}\u{1F1F8}'),
   hindi('hi-IN', '\u0939\u093F\u0928\u094D\u0926\u0940', '\u{1F1EE}\u{1F1F3}'),
-  malayalam('ml-IN', '\u0D2E\u0D32\u0D2F\u0D3E\u0D33\u0D02', '\u{1F1EE}\u{1F1F3}');
+  malayalam(
+      'ml-IN', '\u0D2E\u0D32\u0D2F\u0D3E\u0D33\u0D02', '\u{1F1EE}\u{1F1F3}');
 
   final String code;
   final String displayName;
@@ -214,7 +215,8 @@ class LanguageChipSelector extends StatelessWidget {
                   onLanguageChanged(language);
                 }
               },
-              selectedColor: theme.colorScheme.secondary.withAlpha((0.3 * 255).round()),
+              selectedColor:
+                  theme.colorScheme.secondary.withAlpha((0.3 * 255).round()),
               checkmarkColor: theme.colorScheme.primary,
               labelStyle: TextStyle(
                 color: isSelected

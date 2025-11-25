@@ -27,7 +27,8 @@ abstract class VoiceBuddyRepository {
   });
 
   /// Get conversation history for the current user.
-  Future<Either<Failure, List<VoiceConversationEntity>>> getConversationHistory({
+  Future<Either<Failure, List<VoiceConversationEntity>>>
+      getConversationHistory({
     int limit = 20,
     int offset = 0,
   });

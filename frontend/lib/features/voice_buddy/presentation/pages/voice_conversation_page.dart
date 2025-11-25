@@ -133,9 +133,7 @@ class _VoiceConversationViewState extends State<_VoiceConversationView> {
   }
 
   void _onLanguageChanged(VoiceLanguage language) {
-    context
-        .read<VoiceConversationBloc>()
-        .add(ChangeLanguage(language.code));
+    context.read<VoiceConversationBloc>().add(ChangeLanguage(language.code));
   }
 
   @override
@@ -321,7 +319,9 @@ class _VoiceConversationViewState extends State<_VoiceConversationView> {
 
           // Start button
           FilledButton.icon(
-            onPressed: state.canStartConversation ? () => _startConversationWithState(state) : null,
+            onPressed: state.canStartConversation
+                ? () => _startConversationWithState(state)
+                : null,
             icon: const Icon(Icons.play_arrow),
             label: const Text('Start Conversation'),
             style: FilledButton.styleFrom(
@@ -398,8 +398,7 @@ class _VoiceConversationViewState extends State<_VoiceConversationView> {
                   padding: const EdgeInsets.all(16),
                   itemCount: state.messages.length +
                       (state.status == VoiceConversationStatus.streaming ||
-                              state.status ==
-                                  VoiceConversationStatus.processing
+                              state.status == VoiceConversationStatus.processing
                           ? 1
                           : 0),
                   itemBuilder: (context, index) {
@@ -456,7 +455,8 @@ class _VoiceConversationViewState extends State<_VoiceConversationView> {
             Text(
               'Start speaking or type a message',
               style: theme.textTheme.bodyLarge?.copyWith(
-                color: theme.colorScheme.onSurface.withAlpha((0.5 * 255).round()),
+                color:
+                    theme.colorScheme.onSurface.withAlpha((0.5 * 255).round()),
               ),
             ),
           ],
@@ -653,15 +653,13 @@ class _VoiceConversationViewState extends State<_VoiceConversationView> {
   String _getVoiceHint(VoiceButtonState buttonState, bool isContinuousMode) {
     switch (buttonState) {
       case VoiceButtonState.listening:
-        return isContinuousMode 
+        return isContinuousMode
             ? 'Listening... (auto-sends when you stop)'
             : 'Listening... Release to send';
       case VoiceButtonState.processing:
         return 'Processing...';
       case VoiceButtonState.idle:
-        return isContinuousMode 
-            ? 'Tap to start speaking'
-            : 'Hold to speak';
+        return isContinuousMode ? 'Tap to start speaking' : 'Hold to speak';
     }
   }
 }
@@ -712,9 +710,7 @@ class _EndConversationDialogState extends State<_EndConversationDialog> {
                     });
                   },
                   icon: Icon(
-                    index < (_rating ?? 0)
-                        ? Icons.star
-                        : Icons.star_border,
+                    index < (_rating ?? 0) ? Icons.star : Icons.star_border,
                     color: theme.colorScheme.secondary,
                   ),
                 );

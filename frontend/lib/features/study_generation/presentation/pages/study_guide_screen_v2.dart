@@ -588,7 +588,7 @@ class _StudyGuideScreenV2ContentState
         ),
         title: Text(
           _getDisplayTitle(),
-          style: GoogleFonts.playfairDisplay(
+          style: GoogleFonts.poppins(
             fontSize: 20,
             fontWeight: FontWeight.w600,
             color: Theme.of(context).colorScheme.primary,
@@ -601,9 +601,10 @@ class _StudyGuideScreenV2ContentState
                   onPressed: () {
                     GoRouter.of(context).goToVoiceConversation(
                       studyGuideId: _currentStudyGuide!.id,
-                      relatedScripture: _currentStudyGuide!.inputType == 'scripture'
-                          ? _currentStudyGuide!.input
-                          : null,
+                      relatedScripture:
+                          _currentStudyGuide!.inputType == 'scripture'
+                              ? _currentStudyGuide!.input
+                              : null,
                       conversationType: ConversationType.studyEnhancement,
                     );
                   },
@@ -660,7 +661,7 @@ class _StudyGuideScreenV2ContentState
               const SizedBox(height: 24),
               Text(
                 'Oops! Something went wrong',
-                style: GoogleFonts.playfairDisplay(
+                style: GoogleFonts.poppins(
                   fontSize: 28,
                   fontWeight: FontWeight.w600,
                   color: Theme.of(context).colorScheme.onBackground,
@@ -1019,24 +1020,40 @@ class _StudyGuideScreenV2ContentState
             ),
             const SizedBox(width: 16),
             Expanded(
-              child: ElevatedButton.icon(
-                onPressed: _shareStudyGuide,
-                icon: const Icon(Icons.share),
-                label: Text(
-                  context.tr(TranslationKeys.studyGuideShare),
-                  style: GoogleFonts.inter(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
-                  ),
+              child: Container(
+                height: 56,
+                decoration: BoxDecoration(
+                  gradient: AppTheme.primaryGradient,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppTheme.primaryColor.withOpacity(0.3),
+                      blurRadius: 12,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
                 ),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Theme.of(context).colorScheme.primary,
-                  foregroundColor: Colors.white,
-                  minimumSize: const Size.fromHeight(56),
-                  shape: RoundedRectangleBorder(
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    onTap: _shareStudyGuide,
                     borderRadius: BorderRadius.circular(12),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(Icons.share, color: Colors.white, size: 20),
+                        const SizedBox(width: 8),
+                        Text(
+                          context.tr(TranslationKeys.studyGuideShare),
+                          style: GoogleFonts.inter(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                  elevation: 0,
                 ),
               ),
             ),
@@ -1138,7 +1155,7 @@ class _StudyGuideScreenV2ContentState
         shadowColor: Colors.black.withOpacity(0.1),
         title: Text(
           context.tr(TranslationKeys.studyGuideAuthRequired),
-          style: GoogleFonts.playfairDisplay(
+          style: GoogleFonts.poppins(
             fontSize: 20,
             fontWeight: FontWeight.bold,
             color: const Color(0xFF333333),
@@ -1179,7 +1196,7 @@ class _StudyGuideScreenV2ContentState
               sl<StudyNavigator>().navigateToLogin(context);
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF7A56DB),
+              backgroundColor: AppTheme.primaryColor,
               foregroundColor: Colors.white,
               elevation: 0,
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),

@@ -129,8 +129,8 @@ class VoicePreferencesBloc
               preferences.copyWith(useStudyContext: event.value as bool);
           break;
         case 'citeScriptureReferences':
-          updatedPreferences =
-              preferences.copyWith(citeScriptureReferences: event.value as bool);
+          updatedPreferences = preferences.copyWith(
+              citeScriptureReferences: event.value as bool);
           break;
         case 'notifyDailyQuotaReached':
           updatedPreferences = preferences.copyWith(
