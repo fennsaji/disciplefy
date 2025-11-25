@@ -72,6 +72,13 @@ dependencies:
   permission_handler: ^11.3.1
   timezone: ^0.9.4
 
+  # Voice & Audio (AI Study Buddy Voice)
+  speech_to_text: ^7.0.0
+  flutter_tts: ^4.2.0
+  record: ^5.1.2
+  audioplayers: ^6.1.0
+  web_socket_channel: ^3.0.1
+
   # Development
   flutter_lints: ^6.0.0
 
