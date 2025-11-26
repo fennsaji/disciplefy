@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 
 import 'package:hive_flutter/hive_flutter.dart';
+import '../../../../core/theme/app_theme.dart';
 import '../../../auth/presentation/bloc/auth_bloc.dart';
 import '../../../auth/presentation/bloc/auth_state.dart' as auth_states;
 
@@ -192,26 +193,37 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             // Continue button (navigates to next slide) or Get Started (last slide)
             Padding(
               padding: EdgeInsets.fromLTRB(24, 0, 24, isLargeScreen ? 40 : 24),
-              child: SizedBox(
+              child: Container(
                 width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: _handleContinueButton,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: theme.colorScheme.primary,
-                    foregroundColor: theme.colorScheme.onPrimary,
-                    minimumSize: const Size.fromHeight(56),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                height: 56,
+                decoration: BoxDecoration(
+                  gradient: AppTheme.primaryGradient,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppTheme.primaryColor.withOpacity(0.4),
+                      blurRadius: 16,
+                      offset: const Offset(0, 6),
                     ),
-                    elevation: 0,
-                  ),
-                  child: Text(
-                    _currentPage == _slides.length - 1
-                        ? 'Get Started'
-                        : 'Continue',
-                    style: GoogleFonts.inter(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
+                  ],
+                ),
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    onTap: _handleContinueButton,
+                    borderRadius: BorderRadius.circular(12),
+                    child: Center(
+                      child: Text(
+                        _currentPage == _slides.length - 1
+                            ? 'Get Started'
+                            : 'Continue',
+                        style: GoogleFonts.inter(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: const Color(0xFFFFFFFF),
+                          letterSpacing: 0.5,
+                        ),
+                      ),
                     ),
                   ),
                 ),
@@ -274,7 +286,7 @@ class _OnboardingSlideWidget extends StatelessWidget {
           // Title
           Text(
             slide.title,
-            style: GoogleFonts.playfairDisplay(
+            style: GoogleFonts.poppins(
               fontSize: isLargeScreen ? 32 : 28,
               fontWeight: FontWeight.bold,
               color: theme.colorScheme.onBackground,

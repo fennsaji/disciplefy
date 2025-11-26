@@ -39,7 +39,7 @@ class _SubscriptionManagementPageState
       appBar: AppBar(
         title: Text(
           'My Subscription',
-          style: GoogleFonts.playfairDisplay(
+          style: GoogleFonts.poppins(
             fontWeight: FontWeight.w600,
             color: AppTheme.primaryColor,
           ),
@@ -123,7 +123,7 @@ class _SubscriptionManagementPageState
             const SizedBox(height: 24),
             Text(
               'No Active Subscription',
-              style: GoogleFonts.playfairDisplay(
+              style: GoogleFonts.poppins(
                 fontSize: 24,
                 fontWeight: FontWeight.bold,
                 color: Theme.of(context).colorScheme.onBackground,
@@ -249,7 +249,7 @@ class _SubscriptionManagementPageState
                     children: [
                       Text(
                         subscription.status.displayName,
-                        style: GoogleFonts.playfairDisplay(
+                        style: GoogleFonts.poppins(
                           fontSize: 22,
                           fontWeight: FontWeight.bold,
                           color: Theme.of(context).colorScheme.onBackground,
@@ -324,7 +324,7 @@ class _SubscriptionManagementPageState
           children: [
             Text(
               'Billing Information',
-              style: GoogleFonts.playfairDisplay(
+              style: GoogleFonts.poppins(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
                 color: AppTheme.primaryColor,
@@ -377,7 +377,7 @@ class _SubscriptionManagementPageState
           children: [
             Text(
               'Plan Details',
-              style: GoogleFonts.playfairDisplay(
+              style: GoogleFonts.poppins(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
                 color: AppTheme.primaryColor,
@@ -551,7 +551,7 @@ class _SubscriptionManagementPageState
       builder: (dialogContext) => AlertDialog(
         title: Text(
           immediate ? 'Cancel Immediately?' : 'Cancel at End of Cycle?',
-          style: GoogleFonts.playfairDisplay(
+          style: GoogleFonts.poppins(
             fontWeight: FontWeight.w600,
             color: AppTheme.primaryColor,
           ),

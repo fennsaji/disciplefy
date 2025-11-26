@@ -324,32 +324,49 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
         ],
       );
 
-  Widget _buildGenerateStudyButton() => SizedBox(
-        width: double.infinity,
-        child: ElevatedButton.icon(
-          onPressed: () => context.go('/generate-study'),
-          icon: const Icon(
-            Icons.auto_awesome,
-            size: 24,
+  Widget _buildGenerateStudyButton() {
+    return Container(
+      width: double.infinity,
+      height: 64,
+      decoration: BoxDecoration(
+        gradient: AppTheme.primaryGradient,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: AppTheme.primaryColor.withOpacity(0.35),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
           ),
-          label: Text(
-            context.tr(TranslationKeys.homeGenerateStudyGuide),
-            style: GoogleFonts.inter(
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: AppTheme.primaryColor,
-            foregroundColor: Colors.white,
-            minimumSize: const Size.fromHeight(64),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-            ),
-            elevation: 0,
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () => context.go('/generate-study'),
+          borderRadius: BorderRadius.circular(16),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(
+                Icons.auto_awesome,
+                size: 24,
+                color: Colors.white,
+              ),
+              const SizedBox(width: 12),
+              Text(
+                context.tr(TranslationKeys.homeGenerateStudyGuide),
+                style: GoogleFonts.inter(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.white,
+                ),
+              ),
+            ],
           ),
         ),
-      );
+      ),
+    );
+  }
 
   Widget _buildResumeStudyBanner() => Container(
         padding: const EdgeInsets.all(20),
@@ -401,68 +418,80 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
         ),
       );
 
-  Widget _buildRecommendedTopics() => BlocBuilder<HomeBloc, HomeState>(
-        builder: (context, state) {
-          final homeState =
-              state is HomeCombinedState ? state : const HomeCombinedState();
+  Widget _buildRecommendedTopics() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    context.tr(TranslationKeys.homeRecommendedTopics),
-                    style: GoogleFonts.inter(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w600,
-                      color: Theme.of(context).colorScheme.onBackground,
+    return BlocBuilder<HomeBloc, HomeState>(
+      builder: (context, state) {
+        final homeState =
+            state is HomeCombinedState ? state : const HomeCombinedState();
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  context.tr(TranslationKeys.homeRecommendedTopics),
+                  style: GoogleFonts.inter(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w600,
+                    color: isDark
+                        ? Colors.white.withOpacity(0.9)
+                        : const Color(0xFF1F2937),
+                  ),
+                ),
+                if (homeState.isLoadingTopics)
+                  const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor:
+                          AlwaysStoppedAnimation<Color>(AppTheme.primaryColor),
+                    ),
+                  )
+                else if (homeState.topics.isNotEmpty)
+                  TextButton(
+                    onPressed: () => context.push('/study-topics'),
+                    style: TextButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 6),
+                      minimumSize: Size.zero,
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      backgroundColor: isDark
+                          ? AppTheme.primaryColor.withOpacity(0.15)
+                          : const Color(0xFFF3F0FF),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    child: Text(
+                      context.tr(TranslationKeys.homeViewAll),
+                      style: GoogleFonts.inter(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: AppTheme.primaryColor,
+                      ),
                     ),
                   ),
-                  if (homeState.isLoadingTopics)
-                    const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation<Color>(
-                            AppTheme.primaryColor),
-                      ),
-                    )
-                  else if (homeState.topics.isNotEmpty)
-                    TextButton.icon(
-                      onPressed: () => context.push('/study-topics'),
-                      label: Text(
-                        context.tr(TranslationKeys.homeViewAll),
-                        style: GoogleFonts.inter(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          color: AppTheme.primaryColor,
-                        ),
-                      ),
-                      style: TextButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 8, vertical: 4),
-                        minimumSize: Size.zero,
-                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      ),
-                    ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              if (homeState.topicsError != null)
-                _buildTopicsErrorWidget(homeState.topicsError!)
-              else if (homeState.isLoadingTopics)
-                _buildTopicsLoadingWidget()
-              else if (homeState.topics.isEmpty)
-                _buildNoTopicsWidget()
-              else
-                _buildTopicsGrid(homeState.topics),
-            ],
-          );
-        },
-      );
+              ],
+            ),
+            const SizedBox(height: 16),
+            if (homeState.topicsError != null)
+              _buildTopicsErrorWidget(homeState.topicsError!)
+            else if (homeState.isLoadingTopics)
+              _buildTopicsLoadingWidget()
+            else if (homeState.topics.isEmpty)
+              _buildNoTopicsWidget()
+            else
+              _buildTopicsGrid(homeState.topics),
+          ],
+        );
+      },
+    );
+  }
 
   Widget _buildTopicsErrorWidget(String error) => Container(
         padding: const EdgeInsets.all(24),
@@ -798,70 +827,78 @@ class _RecommendedGuideTopicCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final iconData = CategoryUtils.getIconForTopic(topic);
-    final color = CategoryUtils.getColorForTopic(context, topic);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Semantics(
       button: true,
       enabled: true,
       label: topic.title,
-      child: Material(
-        color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(12),
-        elevation: 2,
-        clipBehavior: Clip.hardEdge,
-        child: DecoratedBox(
-          decoration: BoxDecoration(
-            border: Border.all(
-              color: color.withOpacity(0.2),
-            ),
-            borderRadius: BorderRadius.circular(12),
+      child: Container(
+        decoration: BoxDecoration(
+          color:
+              isDark ? Colors.white.withOpacity(0.05) : const Color(0xFFF9FAFB),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: isDark
+                ? Colors.white.withOpacity(0.1)
+                : const Color(0xFFE5E7EB),
           ),
+        ),
+        child: Material(
+          color: Colors.transparent,
+          borderRadius: BorderRadius.circular(16),
+          clipBehavior: Clip.hardEdge,
           child: InkWell(
             onTap: onTap,
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(16),
             child: Container(
               padding: const EdgeInsets.all(16),
               constraints: const BoxConstraints(
-                minHeight: 160, // Minimum height for visual consistency
+                minHeight: 160,
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize:
-                    MainAxisSize.min, // Important: Don't expand unnecessarily
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   // Header row with icon
                   Row(
                     children: [
                       Container(
-                        width: 36, // Slightly smaller for better proportions
+                        width: 36,
                         height: 36,
                         decoration: BoxDecoration(
-                          color: color.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(8),
+                          color: isDark
+                              ? Colors.white.withOpacity(0.08)
+                              : const Color(0xFFF3F4F6),
+                          borderRadius: BorderRadius.circular(10),
                         ),
                         child: Icon(
                           iconData,
-                          color: color,
+                          color: isDark
+                              ? Colors.white.withOpacity(0.7)
+                              : const Color(0xFF6B7280),
                           size: 18,
                         ),
                       ),
-                      const SizedBox(
-                          width: 8), // Fixed spacing instead of Spacer
+                      const SizedBox(width: 8),
                       Flexible(
-                        // Use Flexible instead of Spacer
                         child: Container(
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 6, vertical: 3),
+                              horizontal: 8, vertical: 4),
                           decoration: BoxDecoration(
-                            color: color.withOpacity(0.1),
+                            color: isDark
+                                ? Colors.white.withOpacity(0.08)
+                                : const Color(0xFFF3F4F6),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Text(
                             topic.category,
                             style: GoogleFonts.inter(
-                              fontSize: 12,
+                              fontSize: 11,
                               fontWeight: FontWeight.w600,
-                              color: color,
+                              color: isDark
+                                  ? Colors.white.withOpacity(0.7)
+                                  : const Color(0xFF6B7280),
                             ),
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -870,88 +907,40 @@ class _RecommendedGuideTopicCard extends StatelessWidget {
                     ],
                   ),
 
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 14),
 
-                  // Title with proper constraints
+                  // Title
                   Text(
                     topic.title,
                     style: GoogleFonts.inter(
-                      fontSize: 16,
+                      fontSize: 15,
                       fontWeight: FontWeight.w600,
-                      color: Theme.of(context).colorScheme.onSurface,
-                      height: 1.2, // Tighter line height
+                      color: isDark
+                          ? Colors.white.withOpacity(0.9)
+                          : const Color(0xFF1F2937),
+                      height: 1.3,
                     ),
-                    maxLines: 2, // Allow 2 lines for longer titles
+                    maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
 
-                  const SizedBox(height: 6), // Reduced spacing
+                  const SizedBox(height: 8),
 
-                  // Description with expanded height for better readability
+                  // Description
                   Expanded(
                     child: Text(
                       topic.description,
                       style: GoogleFonts.inter(
-                        fontSize: 14,
-                        color: Theme.of(context)
-                            .colorScheme
-                            .onSurface
-                            .withOpacity(0.7),
-                        height:
-                            1.4, // Slightly more line height for readability
+                        fontSize: 13,
+                        color: isDark
+                            ? Colors.white.withOpacity(0.6)
+                            : const Color(0xFF6B7280),
+                        height: 1.5,
                       ),
-                      maxLines:
-                          4, // Allow up to 4 lines for better content display
+                      maxLines: 4,
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
-
-                  const SizedBox(height: 12), // Fixed spacing instead of Spacer
-
-                  // Footer with metadata - use Wrap for overflow protection
-                  // Wrap(
-                  //   spacing: 8,
-                  //   runSpacing: 4,
-                  //   crossAxisAlignment: WrapCrossAlignment.center,
-                  //   children: [
-                  //     Row(
-                  //       mainAxisSize: MainAxisSize.min,
-                  //       children: [
-                  //         const Icon(
-                  //           Icons.schedule,
-                  //           size: 12,
-                  //           color: AppTheme.onSurfaceVariant,
-                  //         ),
-                  //         const SizedBox(width: 3),
-                  //         Text(
-                  //           '${topic.estimatedMinutes}min',
-                  //           style: GoogleFonts.inter(
-                  //             fontSize: 10,
-                  //             color: AppTheme.onSurfaceVariant,
-                  //           ),
-                  //         ),
-                  //       ],
-                  //     ),
-                  //     Row(
-                  //       mainAxisSize: MainAxisSize.min,
-                  //       children: [
-                  //         const Icon(
-                  //           Icons.book_outlined,
-                  //           size: 12,
-                  //           color: AppTheme.onSurfaceVariant,
-                  //         ),
-                  //         const SizedBox(width: 3),
-                  //         Text(
-                  //           '${topic.scriptureCount}',
-                  //           style: GoogleFonts.inter(
-                  //             fontSize: 10,
-                  //             color: AppTheme.onSurfaceVariant,
-                  //           ),
-                  //         ),
-                  //       ],
-                  //     ),
-                  //   ],
-                  // ),
                 ],
               ),
             ),

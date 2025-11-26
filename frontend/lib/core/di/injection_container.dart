@@ -157,6 +157,13 @@ import '../../features/memory_verses/domain/usecases/get_statistics.dart';
 import '../../features/memory_verses/domain/usecases/fetch_verse_text.dart';
 import '../../features/memory_verses/domain/usecases/delete_verse.dart';
 import '../../features/memory_verses/presentation/bloc/memory_verse_bloc.dart';
+import '../../features/voice_buddy/data/datasources/voice_buddy_remote_data_source.dart';
+import '../../features/voice_buddy/data/repositories/voice_buddy_repository_impl.dart';
+import '../../features/voice_buddy/data/services/speech_service.dart';
+import '../../features/voice_buddy/data/services/tts_service.dart';
+import '../../features/voice_buddy/domain/repositories/voice_buddy_repository.dart';
+import '../../features/voice_buddy/presentation/bloc/voice_conversation_bloc.dart';
+import '../../features/voice_buddy/presentation/bloc/voice_preferences_bloc.dart';
 
 /// Service locator instance for dependency injection
 final sl = GetIt.instance;
@@ -618,5 +625,36 @@ Future<void> initializeDependencies() async {
         updatePreferences: sl(),
         requestPermissions: sl(),
         checkPermissions: sl(),
+      ));
+
+  //! Voice Buddy
+  // Services
+  sl.registerLazySingleton(() => SpeechService());
+  sl.registerLazySingleton(() => TTSService());
+
+  // Data Source
+  sl.registerLazySingleton<VoiceBuddyRemoteDataSource>(
+    () => VoiceBuddyRemoteDataSourceImpl(
+      supabaseClient: sl(),
+    ),
+  );
+
+  // Repository
+  sl.registerLazySingleton<VoiceBuddyRepository>(
+    () => VoiceBuddyRepositoryImpl(
+      remoteDataSource: sl(),
+    ),
+  );
+
+  // BLoC
+  sl.registerFactory(() => VoicePreferencesBloc(
+        repository: sl(),
+      ));
+
+  sl.registerFactory(() => VoiceConversationBloc(
+        repository: sl(),
+        speechService: sl(),
+        ttsService: sl(),
+        supabaseClient: sl(),
       ));
 }

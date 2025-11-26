@@ -71,7 +71,7 @@ class _PremiumUpgradePageState extends State<PremiumUpgradePage>
       appBar: AppBar(
         title: Text(
           'Upgrade to Premium',
-          style: GoogleFonts.playfairDisplay(
+          style: GoogleFonts.poppins(
             fontWeight: FontWeight.w600,
             color: AppTheme.primaryColor,
           ),
@@ -215,7 +215,7 @@ class _PremiumUpgradePageState extends State<PremiumUpgradePage>
           const SizedBox(height: 12),
           Text(
             'Disciplefy Premium',
-            style: GoogleFonts.playfairDisplay(
+            style: GoogleFonts.poppins(
               fontSize: 28,
               fontWeight: FontWeight.bold,
               color: AppTheme.primaryColor,
@@ -344,7 +344,7 @@ class _PremiumUpgradePageState extends State<PremiumUpgradePage>
       children: [
         Text(
           'What you get with Premium',
-          style: GoogleFonts.playfairDisplay(
+          style: GoogleFonts.poppins(
             fontSize: 20,
             fontWeight: FontWeight.w600,
             color: AppTheme.primaryColor,
@@ -424,7 +424,7 @@ class _PremiumUpgradePageState extends State<PremiumUpgradePage>
           children: [
             Text(
               'Plan Comparison',
-              style: GoogleFonts.playfairDisplay(
+              style: GoogleFonts.poppins(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
                 color: AppTheme.primaryColor,
