@@ -71,57 +71,8 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
   // Navigation service
   late final StudyNavigator _navigator;
 
-  // Scripture reference suggestions
-  final List<String> _scriptureeSuggestions = [
-    'John 3:16',
-    'Psalm 23:1',
-    'Romans 8:28',
-    'Matthew 5:16',
-    'Philippians 4:13',
-    '1 Corinthians 13:4-7',
-    'Isaiah 40:31',
-    'Jeremiah 29:11',
-    'Proverbs 3:5-6',
-    'Ephesians 2:8-9',
-  ];
-
-  // Topic suggestions
-  final List<String> _topicSuggestions = [
-    'Forgiveness',
-    'Love',
-    'Faith',
-    'Hope',
-    'Prayer',
-    'Salvation',
-    'Grace',
-    'Peace',
-    'Wisdom',
-    'Trust',
-    'Courage',
-    'Patience',
-    'Joy',
-    'Mercy',
-    'Redemption',
-  ];
-
-  // Question suggestions
-  final List<String> _questionSuggestions = [
-    'What does the Bible say about anxiety?',
-    'How can I strengthen my faith?',
-    'What is the purpose of prayer?',
-    'Why does God allow suffering?',
-    'How do I know God\'s will for my life?',
-    'What does it mean to have faith?',
-    'How can I overcome fear?',
-    'What is God\'s love like?',
-    'How should I handle difficult relationships?',
-    'What happens after we die?',
-    'How can I find peace in troubled times?',
-    'What does it mean to be saved?',
-    'How do I pray effectively?',
-    'What is the meaning of grace?',
-    'How can I serve God better?',
-  ];
+  // Suggestions are now loaded from translations to support multiple languages
+  // See _getFilteredSuggestions() method for implementation
 
   @override
   void initState() {
@@ -320,11 +271,39 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
   }
 
   List<String> _getFilteredSuggestions() {
-    final suggestions = _selectedMode == StudyInputMode.scripture
-        ? _scriptureeSuggestions
-        : _selectedMode == StudyInputMode.topic
-            ? _topicSuggestions
-            : _questionSuggestions;
+    // Get suggestions from translations based on selected mode
+    final List<String> suggestions;
+    if (_selectedMode == StudyInputMode.scripture) {
+      final translatedList =
+          context.trList(TranslationKeys.generateStudyScriptureSuggestions);
+      suggestions = translatedList.isNotEmpty
+          ? translatedList
+          : [
+              'John 3:16',
+              'Psalm 23:1',
+              'Romans 8:28',
+              'Matthew 5:16',
+              'Philippians 4:13'
+            ];
+    } else if (_selectedMode == StudyInputMode.topic) {
+      final translatedList =
+          context.trList(TranslationKeys.generateStudyTopicSuggestions);
+      suggestions = translatedList.isNotEmpty
+          ? translatedList
+          : ['Forgiveness', 'Love', 'Faith', 'Hope', 'Prayer'];
+    } else {
+      final translatedList =
+          context.trList(TranslationKeys.generateStudyQuestionSuggestions);
+      suggestions = translatedList.isNotEmpty
+          ? translatedList
+          : [
+              'What does the Bible say about anxiety?',
+              'How can I strengthen my faith?',
+              'What is the purpose of prayer?',
+              'Why does God allow suffering?',
+              'How do I know God\'s will for my life?',
+            ];
+    }
 
     final query = _inputController.text.trim().toLowerCase();
     if (query.isEmpty) return suggestions.take(5).toList();
@@ -609,7 +588,7 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
 
                     const SizedBox(height: 20),
 
-                    // AI Study Buddy button - Premium Feature Highlight
+                    // AI Discipler button - Premium Feature Highlight
                     _buildAiStudyBuddyButton(context),
 
                     // 🔧 FIX: Only show recent guides when keyboard is hidden
@@ -919,7 +898,7 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
     );
   }
 
-  /// Builds the AI Study Buddy button - a premium feature highlight
+  /// Builds the AI Discipler button - a premium feature highlight
   Widget _buildAiStudyBuddyButton(BuildContext context) {
     return Container(
       width: double.infinity,

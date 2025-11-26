@@ -91,6 +91,65 @@ class TranslationService {
     return key;
   }
 
+  /// Get translation list for a key
+  ///
+  /// Example:
+  /// ```dart
+  /// translationService.getTranslationList('generate_study.scripture_suggestions')
+  /// ```
+  List<String> getTranslationList(String key) {
+    final languageTranslations = AppTranslations.translations[_currentLanguage];
+
+    if (languageTranslations == null) {
+      return _getEnglishFallbackList(key);
+    }
+
+    final keys = key.split('.');
+    dynamic value = languageTranslations;
+
+    // Navigate through nested map
+    for (final k in keys) {
+      if (value is Map<String, dynamic> && value.containsKey(k)) {
+        value = value[k];
+      } else {
+        // Key not found, use English fallback
+        return _getEnglishFallbackList(key);
+      }
+    }
+
+    if (value is List) {
+      return value.cast<String>();
+    }
+
+    // If final value is not a list, return empty list
+    return [];
+  }
+
+  /// Get English translation list as fallback
+  List<String> _getEnglishFallbackList(String key) {
+    final englishTranslations =
+        AppTranslations.translations[AppLanguage.english];
+
+    if (englishTranslations == null) return [];
+
+    final keys = key.split('.');
+    dynamic value = englishTranslations;
+
+    for (final k in keys) {
+      if (value is Map<String, dynamic> && value.containsKey(k)) {
+        value = value[k];
+      } else {
+        return []; // Return empty list if not found even in English
+      }
+    }
+
+    if (value is List) {
+      return value.cast<String>();
+    }
+
+    return [];
+  }
+
   /// Get English translation as fallback
   String _getEnglishFallback(String key, [Map<String, dynamic>? args]) {
     final englishTranslations =
