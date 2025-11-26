@@ -161,13 +161,34 @@ class AppTranslations {
           'Please enter a complete question (at least 10 characters)',
       'topic_error': 'Please enter at least 2 characters',
       'suggestions': 'Suggestions',
+      'scripture_suggestions': [
+        'John 3:16',
+        'Psalm 23:1',
+        'Romans 8:28',
+        'Matthew 5:16',
+        'Philippians 4:13',
+      ],
+      'topic_suggestions': [
+        'Forgiveness',
+        'Love',
+        'Faith',
+        'Hope',
+        'Prayer',
+      ],
+      'question_suggestions': [
+        'What does the Bible say about anxiety?',
+        'How can I strengthen my faith?',
+        'What is the purpose of prayer?',
+        'Why does God allow suffering?',
+        'How do I know God\'s will for my life?',
+      ],
       'generating': 'Generating your study guide...',
       'consuming_tokens':
           'Consuming {tokens} tokens • This may take a few moments.',
       'button_generating': 'Generating...',
       'button_generate': 'Generate Study Guide',
       'view_saved': 'View Saved Guides',
-      'talk_to_ai_buddy': 'Talk to AI Study Buddy',
+      'talk_to_ai_buddy': 'Talk to AI Discipler',
       'talk_to_ai_buddy_subtitle':
           'Voice conversation with your personal Bible guide',
       'in_progress':
@@ -706,7 +727,7 @@ class AppTranslations {
       },
     },
     'voice_buddy': {
-      'title': 'AI Study Buddy',
+      'title': 'AI Discipler',
       'description':
           'Your personal Bible study companion. Ask questions, explore scripture, and deepen your understanding.',
       'language_label': 'Language',
@@ -940,13 +961,34 @@ class AppTranslations {
       'question_error': 'पूरा सवाल लिखें (कम से कम 10 अक्षर)',
       'topic_error': 'कम से कम 2 अक्षर लिखें',
       'suggestions': 'सुझाव',
+      'scripture_suggestions': [
+        'यूहन्ना 3:16',
+        'भजन संहिता 23:1',
+        'रोमियों 8:28',
+        'मत्ती 5:16',
+        'फिलिप्पियों 4:13',
+      ],
+      'topic_suggestions': [
+        'क्षमा',
+        'प्रेम',
+        'विश्वास',
+        'आशा',
+        'प्रार्थना',
+      ],
+      'question_suggestions': [
+        'बाइबल चिंता के बारे में क्या कहती है?',
+        'मैं अपने विश्वास को कैसे मजबूत करूं?',
+        'प्रार्थना का उद्देश्य क्या है?',
+        'परमेश्वर दुख क्यों होने देता है?',
+        'मैं अपने जीवन के लिए परमेश्वर की इच्छा कैसे जानूं?',
+      ],
       'generating': 'आपकी गाइड बन रही है...',
       'consuming_tokens':
           '{tokens} क्रेडिट इस्तेमाल हो रहे हैं • थोड़ा समय लगेगा।',
       'button_generating': 'बन रहा है...',
       'button_generate': 'अध्ययन गाइड बनाएं',
       'view_saved': 'सेव की गई गाइड देखें',
-      'talk_to_ai_buddy': 'AI स्टडी बडी से बात करें',
+      'talk_to_ai_buddy': 'AI शिष्यकर्ता से बात करें',
       'talk_to_ai_buddy_subtitle': 'अपने बाइबल गाइड से वॉइस में बात करें',
       'in_progress': 'गाइड पहले से बन रही है। थोड़ा इंतज़ार करें...',
       'generation_failed': 'नहीं बन सकी',
@@ -1479,7 +1521,7 @@ class AppTranslations {
       },
     },
     'voice_buddy': {
-      'title': 'AI स्टडी बडी',
+      'title': 'AI शिष्यकर्ता',
       'description':
           'आपका निजी बाइबल अध्ययन साथी। सवाल पूछें, पवित्रशास्त्र को समझें, और अपनी समझ को गहरा करें।',
       'language_label': 'भाषा',
@@ -1713,13 +1755,34 @@ class AppTranslations {
       'question_error': 'മുഴുവൻ ചോദ്യം എഴുതൂ (കുറഞ്ഞത് 10 അക്ഷരം)',
       'topic_error': 'കുറഞ്ഞത് 2 അക്ഷരം എഴുതൂ',
       'suggestions': 'നിർദ്ദേശങ്ങൾ',
+      'scripture_suggestions': [
+        'യോഹന്നാൻ 3:16',
+        'സങ്കീർത്തനം 23:1',
+        'റോമർ 8:28',
+        'മത്തായി 5:16',
+        'ഫിലിപ്പിയർ 4:13',
+      ],
+      'topic_suggestions': [
+        'ക്ഷമ',
+        'സ്നേഹം',
+        'വിശ്വാസം',
+        'പ്രത്യാശ',
+        'പ്രാർത്ഥന',
+      ],
+      'question_suggestions': [
+        'ഉത്കണ്ഠയെക്കുറിച്ച് ബൈബിൾ എന്താണ് പറയുന്നത്?',
+        'എന്റെ വിശ്വാസം എങ്ങനെ ശക്തിപ്പെടുത്താം?',
+        'പ്രാർത്ഥനയുടെ ഉദ്ദേശ്യം എന്താണ്?',
+        'ദൈവം എന്തുകൊണ്ട് കഷ്ടപ്പാട് അനുവദിക്കുന്നു?',
+        'എന്റെ ജീവിതത്തിനായുള്ള ദൈവഹിതം എങ്ങനെ അറിയാം?',
+      ],
       'generating': 'നിങ്ങളുടെ ഗൈഡ് ഉണ്ടാക്കുന്നു...',
       'consuming_tokens':
           '{tokens} ക്രെഡിറ്റ് ഉപയോഗിക്കുന്നു • കുറച്ച് സമയം എടുക്കും.',
       'button_generating': 'ഉണ്ടാക്കുന്നു...',
       'button_generate': 'ഗൈഡ് ഉണ്ടാക്കൂ',
       'view_saved': 'സേവ് ചെയ്ത ഗൈഡ് കാണൂ',
-      'talk_to_ai_buddy': 'AI സ്റ്റഡി ബഡ്ഡിയോട് സംസാരിക്കൂ',
+      'talk_to_ai_buddy': 'AI ശിഷ്യനാക്കുന്നവനോട് സംസാരിക്കൂ',
       'talk_to_ai_buddy_subtitle':
           'നിങ്ങളുടെ ബൈബിൾ ഗൈഡുമായി വോയ്സിൽ സംസാരിക്കൂ',
       'in_progress': 'ഗൈഡ് ഉണ്ടാക്കുന്നുണ്ട്. കുറച്ച് കാത്തിരിക്കൂ...',
@@ -2259,7 +2322,7 @@ class AppTranslations {
       },
     },
     'voice_buddy': {
-      'title': 'AI സ്റ്റഡി ബഡ്ഡി',
+      'title': 'AI ശിഷ്യനാക്കുന്നവൻ',
       'description':
           'നിങ്ങളുടെ സ്വന്തം ബൈബിൾ പഠന സഹായി. ചോദ്യങ്ങൾ ചോദിക്കൂ, തിരുവെഴുത്തുകൾ പരിശോധിക്കൂ, നിങ്ങളുടെ ധാരണ ആഴമുള്ളതാക്കൂ.',
       'language_label': 'ഭാഷ',

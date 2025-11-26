@@ -442,7 +442,7 @@ extension AppRouterExtension on GoRouter {
         'verseIds': verseIds,
       });
 
-  /// Navigates to the voice conversation page for AI Study Buddy.
+  /// Navigates to the voice conversation page for AI Discipler.
   ///
   /// [studyGuideId] - Optional study guide ID for contextual conversations
   /// [relatedScripture] - Optional scripture reference for focused discussions

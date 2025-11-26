@@ -147,6 +147,12 @@ class TranslationKeys {
   static const generateStudyQuestionError = 'generate_study.question_error';
   static const generateStudyTopicError = 'generate_study.topic_error';
   static const generateStudySuggestions = 'generate_study.suggestions';
+  static const generateStudyScriptureSuggestions =
+      'generate_study.scripture_suggestions';
+  static const generateStudyTopicSuggestions =
+      'generate_study.topic_suggestions';
+  static const generateStudyQuestionSuggestions =
+      'generate_study.question_suggestions';
   static const generateStudyGenerating = 'generate_study.generating';
   static const generateStudyConsumingTokens = 'generate_study.consuming_tokens';
   static const generateStudyButtonGenerating =

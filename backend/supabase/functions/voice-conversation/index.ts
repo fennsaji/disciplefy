@@ -1,7 +1,7 @@
 /**
  * Voice Conversation Edge Function
  *
- * Handles AI Study Buddy voice conversations with streaming responses.
+ * Handles AI Discipler voice conversations with streaming responses.
  * Features:
  * - Server-Sent Events (SSE) for real-time streaming
  * - Multi-language support (English, Hindi, Malayalam)

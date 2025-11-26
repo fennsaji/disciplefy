@@ -13,7 +13,7 @@ import '../widgets/conversation_bubble.dart';
 import '../widgets/language_selector.dart' show VoiceLanguage;
 import '../widgets/voice_button.dart';
 
-/// Main page for voice conversations with the AI Study Buddy.
+/// Main page for voice conversations with the AI Discipler.
 class VoiceConversationPage extends StatelessWidget {
   /// Optional study guide ID for contextual conversations.
   final String? studyGuideId;
