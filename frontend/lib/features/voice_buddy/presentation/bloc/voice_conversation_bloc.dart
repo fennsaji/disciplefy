@@ -67,6 +67,11 @@ class VoiceConversationBloc
       (preferences) {
         emit(state.copyWith(
           languageCode: preferences.preferredLanguage,
+          isContinuousMode: preferences.continuousMode,
+          showTranscription: preferences.showTranscription,
+          autoPlayResponse: preferences.autoPlayResponse,
+          autoDetectLanguage: preferences.autoDetectLanguage,
+          notifyDailyQuotaReached: preferences.notifyDailyQuotaReached,
         ));
       },
     );
@@ -430,8 +435,10 @@ class VoiceConversationBloc
       streamingResponse: '',
     ));
 
-    // Auto-play response if enabled
-    add(const PlayResponse());
+    // Auto-play response only if preference is enabled
+    if (state.autoPlayResponse) {
+      add(const PlayResponse());
+    }
   }
 
   void _onStreamError(
@@ -503,8 +510,10 @@ class VoiceConversationBloc
     // Capture continuous mode state BEFORE starting playback
     final shouldContinueListening = state.isContinuousMode;
 
-    // Detect language from response text for TTS
-    final detectedLanguage = _detectTextLanguage(lastMessage.contentText);
+    // Detect language from response text for TTS (only if auto-detect is enabled)
+    final detectedLanguage = state.autoDetectLanguage
+        ? _detectTextLanguage(lastMessage.contentText)
+        : state.languageCode;
 
     // Check if detected language is available for TTS
     final isDetectedLangAvailable =

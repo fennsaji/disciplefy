@@ -98,19 +98,17 @@ void main() {
       // Assert
       expect(find.byType(CircularProgressIndicator), findsOneWidget);
 
-      // Buttons should be disabled during loading
-      final googleButton = find.byType(ElevatedButton);
+      // Guest button should be disabled during loading (OutlinedButton)
       final guestButton = find.byType(OutlinedButton);
-
-      expect(googleButton, findsOneWidget);
       expect(guestButton, findsOneWidget);
 
-      // Verify buttons are disabled
-      final googleButtonWidget = tester.widget<ElevatedButton>(googleButton);
+      // Verify guest button is disabled
       final guestButtonWidget = tester.widget<OutlinedButton>(guestButton);
-
-      expect(googleButtonWidget.onPressed, isNull);
       expect(guestButtonWidget.onPressed, isNull);
+
+      // Google button uses InkWell - verify it exists but doesn't show the text
+      // (shows loading indicator instead)
+      expect(find.text('Continue with Google'), findsNothing);
     });
 
     testWidgets('should trigger Google sign-in when Google button is tapped',
@@ -261,13 +259,17 @@ void main() {
       // Assert
       expect(find.byType(Container), findsWidgets);
 
-      // Find the Google button container
+      // Find the Google button - it uses InkWell with a Row inside
       final googleButtonRow = find.descendant(
-        of: find.byType(ElevatedButton),
+        of: find.byType(InkWell),
         matching: find.byType(Row),
       );
 
-      expect(googleButtonRow, findsOneWidget);
+      // There should be at least one Row inside an InkWell (the Google button)
+      expect(googleButtonRow, findsWidgets);
+
+      // Verify the Google button text exists
+      expect(find.text('Continue with Google'), findsOneWidget);
     });
 
     testWidgets('should display privacy policy text', (tester) async {

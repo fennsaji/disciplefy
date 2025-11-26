@@ -124,14 +124,17 @@ class VoiceBuddyRemoteDataSourceImpl implements VoiceBuddyRemoteDataSource {
         );
       }
 
-      // Upsert preferences
+      // Upsert preferences - use user_id as conflict target
       final response = await _supabaseClient
           .from('voice_preferences')
-          .upsert({
-            ...preferences.toJson(),
-            'user_id': user.id,
-            'updated_at': DateTime.now().toIso8601String(),
-          })
+          .upsert(
+            {
+              ...preferences.toJson(),
+              'user_id': user.id,
+              'updated_at': DateTime.now().toIso8601String(),
+            },
+            onConflict: 'user_id',
+          )
           .select()
           .single();
 
