@@ -26,6 +26,7 @@ import '../../../tokens/presentation/bloc/token_bloc.dart';
 import '../../../tokens/presentation/bloc/token_event.dart';
 import '../../../tokens/presentation/bloc/token_state.dart';
 import '../../../tokens/domain/entities/token_status.dart';
+import '../../../../core/router/app_router.dart';
 
 /// Generate Study Screen allowing users to input scripture reference or topic.
 ///
@@ -70,57 +71,8 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
   // Navigation service
   late final StudyNavigator _navigator;
 
-  // Scripture reference suggestions
-  final List<String> _scriptureeSuggestions = [
-    'John 3:16',
-    'Psalm 23:1',
-    'Romans 8:28',
-    'Matthew 5:16',
-    'Philippians 4:13',
-    '1 Corinthians 13:4-7',
-    'Isaiah 40:31',
-    'Jeremiah 29:11',
-    'Proverbs 3:5-6',
-    'Ephesians 2:8-9',
-  ];
-
-  // Topic suggestions
-  final List<String> _topicSuggestions = [
-    'Forgiveness',
-    'Love',
-    'Faith',
-    'Hope',
-    'Prayer',
-    'Salvation',
-    'Grace',
-    'Peace',
-    'Wisdom',
-    'Trust',
-    'Courage',
-    'Patience',
-    'Joy',
-    'Mercy',
-    'Redemption',
-  ];
-
-  // Question suggestions
-  final List<String> _questionSuggestions = [
-    'What does the Bible say about anxiety?',
-    'How can I strengthen my faith?',
-    'What is the purpose of prayer?',
-    'Why does God allow suffering?',
-    'How do I know God\'s will for my life?',
-    'What does it mean to have faith?',
-    'How can I overcome fear?',
-    'What is God\'s love like?',
-    'How should I handle difficult relationships?',
-    'What happens after we die?',
-    'How can I find peace in troubled times?',
-    'What does it mean to be saved?',
-    'How do I pray effectively?',
-    'What is the meaning of grace?',
-    'How can I serve God better?',
-  ];
+  // Suggestions are now loaded from translations to support multiple languages
+  // See _getFilteredSuggestions() method for implementation
 
   @override
   void initState() {
@@ -319,11 +271,39 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
   }
 
   List<String> _getFilteredSuggestions() {
-    final suggestions = _selectedMode == StudyInputMode.scripture
-        ? _scriptureeSuggestions
-        : _selectedMode == StudyInputMode.topic
-            ? _topicSuggestions
-            : _questionSuggestions;
+    // Get suggestions from translations based on selected mode
+    final List<String> suggestions;
+    if (_selectedMode == StudyInputMode.scripture) {
+      final translatedList =
+          context.trList(TranslationKeys.generateStudyScriptureSuggestions);
+      suggestions = translatedList.isNotEmpty
+          ? translatedList
+          : [
+              'John 3:16',
+              'Psalm 23:1',
+              'Romans 8:28',
+              'Matthew 5:16',
+              'Philippians 4:13'
+            ];
+    } else if (_selectedMode == StudyInputMode.topic) {
+      final translatedList =
+          context.trList(TranslationKeys.generateStudyTopicSuggestions);
+      suggestions = translatedList.isNotEmpty
+          ? translatedList
+          : ['Forgiveness', 'Love', 'Faith', 'Hope', 'Prayer'];
+    } else {
+      final translatedList =
+          context.trList(TranslationKeys.generateStudyQuestionSuggestions);
+      suggestions = translatedList.isNotEmpty
+          ? translatedList
+          : [
+              'What does the Bible say about anxiety?',
+              'How can I strengthen my faith?',
+              'What is the purpose of prayer?',
+              'Why does God allow suffering?',
+              'How do I know God\'s will for my life?',
+            ];
+    }
 
     final query = _inputController.text.trim().toLowerCase();
     if (query.isEmpty) return suggestions.take(5).toList();
@@ -375,10 +355,10 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
       automaticallyImplyLeading: false,
       title: Text(
         context.tr(TranslationKeys.generateStudyTitle),
-        style: GoogleFonts.playfairDisplay(
+        style: GoogleFonts.inter(
           fontSize: 20,
-          fontWeight: FontWeight.w600,
-          color: Theme.of(context).colorScheme.primary,
+          fontWeight: FontWeight.w700,
+          color: Theme.of(context).colorScheme.onBackground,
         ),
       ),
       centerTitle: true,
@@ -394,23 +374,19 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
                   padding:
                       const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
-                    color:
-                        Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                    color: AppTheme.primaryColor.withOpacity(0.15),
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(
-                      color: Theme.of(context)
-                          .colorScheme
-                          .primary
-                          .withOpacity(0.3),
+                      color: AppTheme.primaryColor.withOpacity(0.4),
                     ),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(
+                      const Icon(
                         Icons.token,
                         size: 16,
-                        color: Theme.of(context).colorScheme.primary,
+                        color: AppTheme.primaryColor,
                       ),
                       const SizedBox(width: 4),
                       Text(
@@ -420,7 +396,7 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
                         style: GoogleFonts.inter(
                           fontSize: tokenState.tokenStatus.isPremium ? 18 : 14,
                           fontWeight: FontWeight.w600,
-                          color: Theme.of(context).colorScheme.primary,
+                          color: AppTheme.primaryColor,
                         ),
                       ),
                     ],
@@ -610,43 +586,17 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
                       builder: (context, state) => _buildGenerateButton(state),
                     ),
 
+                    const SizedBox(height: 20),
+
+                    // AI Discipler button - Premium Feature Highlight
+                    _buildAiStudyBuddyButton(context),
+
                     // 🔧 FIX: Only show recent guides when keyboard is hidden
                     if (!isKeyboardVisible) ...[
                       const SizedBox(height: 32),
 
-                      // View Saved Guides button
-                      Container(
-                        width: double.infinity,
-                        margin: const EdgeInsets.only(bottom: 24),
-                        child: OutlinedButton.icon(
-                          onPressed: () => context.push('/saved'),
-                          icon: Icon(
-                            Icons.bookmark_outline,
-                            size: 18,
-                          ),
-                          label: Text(
-                            context.tr(TranslationKeys.generateStudyViewSaved),
-                            style: GoogleFonts.inter(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor:
-                                Theme.of(context).colorScheme.primary,
-                            side: BorderSide(
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .primary
-                                  .withOpacity(0.3),
-                            ),
-                            padding: const EdgeInsets.symmetric(vertical: 12),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                          ),
-                        ),
-                      ),
+                      // View Saved Guides button - modern styling
+                      _buildViewSavedGuidesButton(context),
 
                       const RecentGuidesSection(),
                       SizedBox(height: isLargeScreen ? 40 : 24),
@@ -677,115 +627,151 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
     }
   }
 
-  Widget _buildModeToggle() => Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: _ModeToggleButton(
-                    label:
-                        context.tr(TranslationKeys.generateStudyScriptureMode),
-                    isSelected: _selectedMode == StudyInputMode.scripture,
-                    onTap: () => _switchMode(StudyInputMode.scripture),
-                  ),
-                ),
-                Expanded(
-                  child: _ModeToggleButton(
-                    label: context.tr(TranslationKeys.generateStudyTopicMode),
-                    isSelected: _selectedMode == StudyInputMode.topic,
-                    onTap: () => _switchMode(StudyInputMode.topic),
-                  ),
-                ),
-                Expanded(
-                  child: _ModeToggleButton(
-                    label:
-                        context.tr(TranslationKeys.generateStudyQuestionMode),
-                    isSelected: _selectedMode == StudyInputMode.question,
-                    onTap: () => _switchMode(StudyInputMode.question),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      );
+  Widget _buildModeToggle() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
-  Widget _buildLanguageSelection() => Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            context.tr(TranslationKeys.generateStudyLanguage),
-            style: GoogleFonts.inter(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-              color: Theme.of(context).colorScheme.onBackground,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          padding: const EdgeInsets.all(4),
+          decoration: BoxDecoration(
+            color: isDark
+                ? Colors.white.withOpacity(0.05)
+                : const Color(0xFFF3F0FF),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: isDark
+                  ? Colors.white.withOpacity(0.1)
+                  : AppTheme.primaryColor.withOpacity(0.15),
             ),
           ),
-          const SizedBox(height: 12),
-          Container(
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: _LanguageToggleButton(
-                    label: context.tr(TranslationKeys.generateStudyEnglish),
-                    isSelected: _selectedLanguage == StudyLanguage.english,
-                    onTap: () async =>
-                        await _switchLanguage(StudyLanguage.english),
-                  ),
+          child: Row(
+            children: [
+              Expanded(
+                child: _ModeToggleButton(
+                  label: context.tr(TranslationKeys.generateStudyScriptureMode),
+                  isSelected: _selectedMode == StudyInputMode.scripture,
+                  onTap: () => _switchMode(StudyInputMode.scripture),
                 ),
-                Expanded(
-                  child: _LanguageToggleButton(
-                    label: context.tr(TranslationKeys.generateStudyHindi),
-                    isSelected: _selectedLanguage == StudyLanguage.hindi,
-                    onTap: () async =>
-                        await _switchLanguage(StudyLanguage.hindi),
-                  ),
+              ),
+              Expanded(
+                child: _ModeToggleButton(
+                  label: context.tr(TranslationKeys.generateStudyTopicMode),
+                  isSelected: _selectedMode == StudyInputMode.topic,
+                  onTap: () => _switchMode(StudyInputMode.topic),
                 ),
-                Expanded(
-                  child: _LanguageToggleButton(
-                    label: context.tr(TranslationKeys.generateStudyMalayalam),
-                    isSelected: _selectedLanguage == StudyLanguage.malayalam,
-                    onTap: () async =>
-                        await _switchLanguage(StudyLanguage.malayalam),
-                  ),
+              ),
+              Expanded(
+                child: _ModeToggleButton(
+                  label: context.tr(TranslationKeys.generateStudyQuestionMode),
+                  isSelected: _selectedMode == StudyInputMode.question,
+                  onTap: () => _switchMode(StudyInputMode.question),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
-        ],
-      );
-
-  Color _getTokenCostColor() {
-    return Colors.orange[600]!;
+        ),
+      ],
+    );
   }
 
-  Widget _buildInputSection() => Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            _selectedMode == StudyInputMode.scripture
-                ? context.tr(TranslationKeys.generateStudyEnterScripture)
-                : _selectedMode == StudyInputMode.topic
-                    ? context.tr(TranslationKeys.generateStudyEnterTopic)
-                    : context.tr(TranslationKeys.generateStudyAskQuestion),
-            style: GoogleFonts.inter(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-              color: Theme.of(context).colorScheme.onBackground,
+  Widget _buildLanguageSelection() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          context.tr(TranslationKeys.generateStudyLanguage),
+          style: GoogleFonts.inter(
+            fontSize: 15,
+            fontWeight: FontWeight.w600,
+            color: isDark
+                ? Colors.white.withOpacity(0.9)
+                : const Color(0xFF374151),
+          ),
+        ),
+        const SizedBox(height: 12),
+        Container(
+          padding: const EdgeInsets.all(4),
+          decoration: BoxDecoration(
+            color: isDark
+                ? Colors.white.withOpacity(0.05)
+                : const Color(0xFFF3F0FF),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: isDark
+                  ? Colors.white.withOpacity(0.1)
+                  : AppTheme.primaryColor.withOpacity(0.15),
             ),
           ),
-          const SizedBox(height: 12),
-          TextField(
+          child: Row(
+            children: [
+              Expanded(
+                child: _LanguageToggleButton(
+                  label: context.tr(TranslationKeys.generateStudyEnglish),
+                  isSelected: _selectedLanguage == StudyLanguage.english,
+                  onTap: () async =>
+                      await _switchLanguage(StudyLanguage.english),
+                ),
+              ),
+              Expanded(
+                child: _LanguageToggleButton(
+                  label: context.tr(TranslationKeys.generateStudyHindi),
+                  isSelected: _selectedLanguage == StudyLanguage.hindi,
+                  onTap: () async => await _switchLanguage(StudyLanguage.hindi),
+                ),
+              ),
+              Expanded(
+                child: _LanguageToggleButton(
+                  label: context.tr(TranslationKeys.generateStudyMalayalam),
+                  isSelected: _selectedLanguage == StudyLanguage.malayalam,
+                  onTap: () async =>
+                      await _switchLanguage(StudyLanguage.malayalam),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildInputSection() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          _selectedMode == StudyInputMode.scripture
+              ? context.tr(TranslationKeys.generateStudyEnterScripture)
+              : _selectedMode == StudyInputMode.topic
+                  ? context.tr(TranslationKeys.generateStudyEnterTopic)
+                  : context.tr(TranslationKeys.generateStudyAskQuestion),
+          style: GoogleFonts.inter(
+            fontSize: 15,
+            fontWeight: FontWeight.w600,
+            color: isDark
+                ? Colors.white.withOpacity(0.9)
+                : const Color(0xFF374151),
+          ),
+        ),
+        const SizedBox(height: 12),
+        Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              if (_inputFocusNode.hasFocus)
+                BoxShadow(
+                  color: AppTheme.primaryColor.withOpacity(0.15),
+                  blurRadius: 12,
+                  spreadRadius: 1,
+                ),
+            ],
+          ),
+          child: TextField(
             controller: _inputController,
             focusNode: _inputFocusNode,
             maxLines: _selectedMode == StudyInputMode.question ? 4 : 1,
@@ -795,7 +781,7 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
                 : TextInputAction.done,
             style: GoogleFonts.inter(
               fontSize: 16,
-              color: Theme.of(context).colorScheme.onBackground,
+              color: isDark ? Colors.white : const Color(0xFF1F2937),
             ),
             decoration: InputDecoration(
               hintText: _selectedMode == StudyInputMode.scripture
@@ -804,30 +790,46 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
                       ? context.tr(TranslationKeys.generateStudyTopicHint)
                       : context.tr(TranslationKeys.generateStudyQuestionHint),
               hintStyle: GoogleFonts.inter(
-                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                color: isDark
+                    ? Colors.white.withOpacity(0.4)
+                    : const Color(0xFF9CA3AF),
               ),
+              filled: true,
+              fillColor: isDark
+                  ? Colors.white.withOpacity(0.05)
+                  : const Color(0xFFF9FAFB),
               border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(16),
                 borderSide: BorderSide(
-                  color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
+                  color: isDark
+                      ? Colors.white.withOpacity(0.1)
+                      : AppTheme.primaryColor.withOpacity(0.2),
+                ),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(16),
+                borderSide: BorderSide(
+                  color: isDark
+                      ? Colors.white.withOpacity(0.1)
+                      : AppTheme.primaryColor.withOpacity(0.2),
                 ),
               ),
               focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(
-                  color: Theme.of(context).colorScheme.primary,
+                borderRadius: BorderRadius.circular(16),
+                borderSide: const BorderSide(
+                  color: AppTheme.primaryColor,
                   width: 2,
                 ),
               ),
               errorBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(16),
                 borderSide: const BorderSide(
                   color: AppTheme.accentColor,
                   width: 2,
                 ),
               ),
               focusedErrorBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(16),
                 borderSide: const BorderSide(
                   color: AppTheme.accentColor,
                   width: 2,
@@ -835,8 +837,8 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
               ),
               errorText: _validationError,
               contentPadding: EdgeInsets.symmetric(
-                horizontal: 16,
-                vertical: _selectedMode == StudyInputMode.question ? 20 : 16,
+                horizontal: 20,
+                vertical: _selectedMode == StudyInputMode.question ? 20 : 18,
               ),
               suffixIcon: _inputController.text.isNotEmpty
                   ? IconButton(
@@ -845,21 +847,23 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
                         _inputFocusNode.requestFocus();
                       },
                       icon: Icon(
-                        Icons.clear,
-                        color: Theme.of(context)
-                            .colorScheme
-                            .onSurface
-                            .withOpacity(0.6),
+                        Icons.clear_rounded,
+                        color: isDark
+                            ? Colors.white.withOpacity(0.5)
+                            : const Color(0xFF9CA3AF),
                       ),
                     )
                   : null,
             ),
           ),
-        ],
-      );
+        ),
+      ],
+    );
+  }
 
   Widget _buildSuggestions() {
     final suggestions = _getFilteredSuggestions();
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     if (suggestions.isEmpty) return const SizedBox.shrink();
 
@@ -869,15 +873,17 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
         Text(
           context.tr(TranslationKeys.generateStudySuggestions),
           style: GoogleFonts.inter(
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+            fontSize: 13,
+            fontWeight: FontWeight.w500,
+            color: isDark
+                ? Colors.white.withOpacity(0.5)
+                : const Color(0xFF6B7280),
           ),
         ),
         const SizedBox(height: 12),
         Wrap(
-          spacing: 8,
-          runSpacing: 8,
+          spacing: 10,
+          runSpacing: 10,
           children: suggestions
               .map((suggestion) => _SuggestionChip(
                     label: suggestion,
@@ -892,11 +898,193 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
     );
   }
 
+  /// Builds the AI Discipler button - a premium feature highlight
+  Widget _buildAiStudyBuddyButton(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        gradient: AppTheme.primaryGradient,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: AppTheme.primaryColor.withOpacity(0.4),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
+            spreadRadius: -4,
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () => GoRouter.of(context).goToVoiceConversation(),
+          borderRadius: BorderRadius.circular(20),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                // Animated microphone icon with glow
+                Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: Colors.white.withOpacity(0.3),
+                      width: 1.5,
+                    ),
+                  ),
+                  child: const Icon(
+                    Icons.mic_rounded,
+                    color: Colors.white,
+                    size: 22,
+                  ),
+                ),
+                const SizedBox(width: 14),
+                // Text content
+                Flexible(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Flexible(
+                            child: Text(
+                              context.tr(
+                                  TranslationKeys.generateStudyTalkToAiBuddy),
+                              style: GoogleFonts.inter(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w700,
+                                color: Colors.white,
+                                letterSpacing: -0.3,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          // "NEW" badge
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 3,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.25),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Text(
+                              'NEW',
+                              style: GoogleFonts.inter(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w700,
+                                color: Colors.white,
+                                letterSpacing: 0.5,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        context.tr(
+                            TranslationKeys.generateStudyTalkToAiBuddySubtitle),
+                        style: GoogleFonts.inter(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w400,
+                          color: Colors.white.withOpacity(0.85),
+                          height: 1.3,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 14),
+                // Arrow with circle background
+                Container(
+                  width: 32,
+                  height: 32,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.2),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.arrow_forward_rounded,
+                    size: 18,
+                    color: Colors.white,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Builds the View Saved Guides button with modern styling
+  Widget _buildViewSavedGuidesButton(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(bottom: 24),
+      child: Container(
+        decoration: BoxDecoration(
+          color:
+              isDark ? Colors.white.withOpacity(0.05) : const Color(0xFFF3F0FF),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: isDark
+                ? Colors.white.withOpacity(0.1)
+                : AppTheme.primaryColor.withOpacity(0.2),
+          ),
+        ),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: () => context.push('/saved'),
+            borderRadius: BorderRadius.circular(16),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 20),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.bookmark_outline_rounded,
+                    size: 20,
+                    color: isDark
+                        ? Colors.white.withOpacity(0.7)
+                        : AppTheme.primaryColor,
+                  ),
+                  const SizedBox(width: 10),
+                  Text(
+                    context.tr(TranslationKeys.generateStudyViewSaved),
+                    style: GoogleFonts.inter(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: isDark
+                          ? Colors.white.withOpacity(0.8)
+                          : AppTheme.primaryColor,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildGenerateButton(StudyState state) {
     final isLoading =
         state is StudyGenerationInProgress || _isGeneratingStudyGuide;
-
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final tokenCost = _getTokenCost();
+    final isEnabled = _isInputValid && !isLoading;
 
     return Column(
       children: [
@@ -904,8 +1092,18 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(12),
+              gradient: LinearGradient(
+                colors: [
+                  AppTheme.primaryColor.withOpacity(0.1),
+                  AppTheme.secondaryPurple.withOpacity(0.1),
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: AppTheme.primaryColor.withOpacity(0.2),
+              ),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -918,7 +1116,7 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
                         valueColor: AlwaysStoppedAnimation<Color>(
-                          Theme.of(context).colorScheme.primary,
+                          AppTheme.primaryColor,
                         ),
                       ),
                     ),
@@ -929,7 +1127,7 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
                         style: GoogleFonts.inter(
                           fontSize: 14,
                           fontWeight: FontWeight.w500,
-                          color: Theme.of(context).colorScheme.primary,
+                          color: AppTheme.primaryColor,
                         ),
                       ),
                     ),
@@ -941,10 +1139,9 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
                       {'tokens': tokenCost.toString()}),
                   style: GoogleFonts.inter(
                     fontSize: 12,
-                    color: Theme.of(context)
-                        .colorScheme
-                        .onSurface
-                        .withOpacity(0.6),
+                    color: isDark
+                        ? Colors.white.withOpacity(0.5)
+                        : const Color(0xFF6B7280),
                   ),
                 ),
               ],
@@ -952,60 +1149,115 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
           ),
           const SizedBox(height: 16),
         ],
-        SizedBox(
+        Container(
           width: double.infinity,
-          child: ElevatedButton(
-            onPressed: _isInputValid && !isLoading ? _generateStudyGuide : null,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Theme.of(context).colorScheme.primary,
-              foregroundColor: Colors.white,
-              disabledBackgroundColor:
-                  Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-              disabledForegroundColor: Colors.white,
-              minimumSize: const Size.fromHeight(56),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              elevation: 0,
-            ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    isLoading
-                        ? context
-                            .tr(TranslationKeys.generateStudyButtonGenerating)
-                        : context
-                            .tr(TranslationKeys.generateStudyButtonGenerate),
-                    style: GoogleFonts.inter(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
+          height: 56,
+          decoration: BoxDecoration(
+            gradient: isEnabled ? AppTheme.primaryGradient : null,
+            color: isEnabled
+                ? null
+                : isDark
+                    ? Colors.white.withOpacity(0.1)
+                    : const Color(0xFFE5E7EB),
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: isEnabled
+                ? [
+                    BoxShadow(
+                      color: AppTheme.primaryColor.withOpacity(0.3),
+                      blurRadius: 12,
+                      offset: const Offset(0, 4),
                     ),
-                    textAlign: TextAlign.center,
-                  ),
-                ),
-                if (!isLoading) ...[
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.token,
-                        size: 18,
-                        color: _getTokenCostColor(),
+                  ]
+                : null,
+          ),
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: isEnabled ? _generateStudyGuide : null,
+              borderRadius: BorderRadius.circular(16),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    if (isLoading) ...[
+                      const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor:
+                              AlwaysStoppedAnimation<Color>(Colors.white),
+                        ),
                       ),
-                      const SizedBox(width: 4),
-                      Text(
-                        '$tokenCost',
+                      const SizedBox(width: 12),
+                    ],
+                    Flexible(
+                      child: Text(
+                        isLoading
+                            ? context.tr(
+                                TranslationKeys.generateStudyButtonGenerating)
+                            : context.tr(
+                                TranslationKeys.generateStudyButtonGenerate),
                         style: GoogleFonts.inter(
-                          fontSize: 14,
+                          fontSize: 16,
                           fontWeight: FontWeight.w600,
-                          color: _getTokenCostColor(),
+                          color: isEnabled
+                              ? Colors.white
+                              : isDark
+                                  ? Colors.white.withOpacity(0.4)
+                                  : const Color(0xFF9CA3AF),
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                    if (!isLoading) ...[
+                      const SizedBox(width: 12),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: isEnabled
+                              ? Colors.white.withOpacity(0.2)
+                              : isDark
+                                  ? Colors.white.withOpacity(0.05)
+                                  : Colors.black.withOpacity(0.05),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.token,
+                              size: 16,
+                              color: isEnabled
+                                  ? Colors.white.withOpacity(0.9)
+                                  : isDark
+                                      ? Colors.white.withOpacity(0.4)
+                                      : const Color(0xFF9CA3AF),
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              '$tokenCost',
+                              style: GoogleFonts.inter(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                color: isEnabled
+                                    ? Colors.white.withOpacity(0.9)
+                                    : isDark
+                                        ? Colors.white.withOpacity(0.4)
+                                        : const Color(0xFF9CA3AF),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ],
-                  ),
-                ],
-              ],
+                  ],
+                ),
+              ),
             ),
           ),
         ),
@@ -1118,7 +1370,7 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
             const SizedBox(width: 12),
             Text(
               context.tr(TranslationKeys.generateStudyGenerationFailed),
-              style: GoogleFonts.playfairDisplay(
+              style: GoogleFonts.poppins(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
                 color: theme.colorScheme.onSurface,
@@ -1235,7 +1487,7 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
   }
 }
 
-/// Mode toggle button widget.
+/// Mode toggle button widget with gradient styling.
 class _ModeToggleButton extends StatelessWidget {
   final String label;
   final bool isSelected;
@@ -1248,32 +1500,47 @@ class _ModeToggleButton extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) => GestureDetector(
-        onTap: onTap,
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 12),
-          decoration: BoxDecoration(
-            color: isSelected
-                ? Theme.of(context).colorScheme.primary
-                : Colors.transparent,
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Text(
-            label,
-            style: GoogleFonts.inter(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: isSelected
-                  ? Colors.white
-                  : Theme.of(context).colorScheme.primary,
-            ),
-            textAlign: TextAlign.center,
-          ),
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 4),
+        decoration: BoxDecoration(
+          gradient: isSelected ? AppTheme.primaryGradient : null,
+          color: isSelected ? null : Colors.transparent,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: AppTheme.primaryColor.withOpacity(0.3),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ]
+              : null,
         ),
-      );
+        child: Text(
+          label,
+          style: GoogleFonts.inter(
+            fontSize: 13,
+            fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+            color: isSelected
+                ? Colors.white
+                : isDark
+                    ? Colors.white.withOpacity(0.7)
+                    : AppTheme.primaryColor,
+          ),
+          textAlign: TextAlign.center,
+        ),
+      ),
+    );
+  }
 }
 
-/// Language toggle button widget.
+/// Language toggle button widget with gradient styling.
 class _LanguageToggleButton extends StatelessWidget {
   final String label;
   final bool isSelected;
@@ -1286,34 +1553,49 @@ class _LanguageToggleButton extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) => GestureDetector(
-        onTap: onTap,
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 10),
-          decoration: BoxDecoration(
-            color: isSelected
-                ? Theme.of(context).colorScheme.primary
-                : Colors.transparent,
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Text(
-            label,
-            style: GoogleFonts.inter(
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              color: isSelected
-                  ? Colors.white
-                  : Theme.of(context).colorScheme.primary,
-            ),
-            textAlign: TextAlign.center,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
+        decoration: BoxDecoration(
+          gradient: isSelected ? AppTheme.primaryGradient : null,
+          color: isSelected ? null : Colors.transparent,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: AppTheme.primaryColor.withOpacity(0.3),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ]
+              : null,
         ),
-      );
+        child: Text(
+          label,
+          style: GoogleFonts.inter(
+            fontSize: 12,
+            fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+            color: isSelected
+                ? Colors.white
+                : isDark
+                    ? Colors.white.withOpacity(0.7)
+                    : AppTheme.primaryColor,
+          ),
+          textAlign: TextAlign.center,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+      ),
+    );
+  }
 }
 
-/// Suggestion chip widget.
+/// Suggestion chip widget with modern styling.
 class _SuggestionChip extends StatelessWidget {
   final String label;
   final VoidCallback onTap;
@@ -1324,27 +1606,35 @@ class _SuggestionChip extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) => GestureDetector(
-        onTap: onTap,
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surface,
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(
-              color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
-            ),
-          ),
-          child: Text(
-            label,
-            style: GoogleFonts.inter(
-              fontSize: 12,
-              fontWeight: FontWeight.w500,
-              color: Theme.of(context).colorScheme.primary,
-            ),
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        decoration: BoxDecoration(
+          color:
+              isDark ? Colors.white.withOpacity(0.05) : const Color(0xFFF3F0FF),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isDark
+                ? Colors.white.withOpacity(0.1)
+                : AppTheme.primaryColor.withOpacity(0.2),
           ),
         ),
-      );
+        child: Text(
+          label,
+          style: GoogleFonts.inter(
+            fontSize: 13,
+            fontWeight: FontWeight.w500,
+            color:
+                isDark ? Colors.white.withOpacity(0.8) : AppTheme.primaryColor,
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 /// Enum for study input mode.

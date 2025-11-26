@@ -31,6 +31,15 @@ import '../../features/subscription/presentation/bloc/subscription_bloc.dart';
 import '../../features/memory_verses/presentation/pages/memory_verses_home_page.dart';
 import '../../features/memory_verses/presentation/pages/verse_review_page.dart';
 import '../../features/memory_verses/presentation/bloc/memory_verse_bloc.dart';
+import '../../features/voice_buddy/presentation/pages/voice_conversation_page.dart';
+import '../../features/voice_buddy/presentation/pages/voice_preferences_page.dart';
+import '../../features/voice_buddy/presentation/pages/voice_preferences_page_wrapper.dart';
+import '../../features/voice_buddy/presentation/bloc/voice_preferences_bloc.dart';
+import '../../features/voice_buddy/presentation/bloc/voice_preferences_event.dart';
+import '../../features/voice_buddy/presentation/bloc/voice_preferences_state.dart';
+import '../../features/voice_buddy/domain/entities/voice_conversation_entity.dart';
+import '../../features/voice_buddy/domain/entities/voice_preferences_entity.dart';
+import '../../features/voice_buddy/domain/repositories/voice_buddy_repository.dart';
 import 'app_routes.dart';
 import 'router_guard.dart';
 import 'auth_notifier.dart';
@@ -211,6 +220,43 @@ class AppRouter {
             ),
           );
         },
+      ),
+
+      // Voice Buddy Routes
+      GoRoute(
+        path: AppRoutes.voiceConversation,
+        name: 'voice_conversation',
+        builder: (context, state) {
+          // Extract optional parameters from extra data
+          final Map<String, dynamic> extra;
+          if (state.extra is Map<String, dynamic>) {
+            extra = state.extra as Map<String, dynamic>;
+          } else {
+            extra = {};
+          }
+
+          final studyGuideId = extra['studyGuideId'] as String?;
+          final relatedScripture = extra['relatedScripture'] as String?;
+          final conversationType =
+              extra['conversationType'] as ConversationType? ??
+                  ConversationType.general;
+
+          return VoiceConversationPage(
+            studyGuideId: studyGuideId,
+            relatedScripture: relatedScripture,
+            conversationType: conversationType,
+          );
+        },
+      ),
+      GoRoute(
+        path: AppRoutes.voicePreferences,
+        name: 'voice_preferences',
+        builder: (context, state) => BlocProvider(
+          create: (_) => VoicePreferencesBloc(
+            repository: sl<VoiceBuddyRepository>(),
+          )..add(const LoadVoicePreferences()),
+          child: const VoicePreferencesPageWrapper(),
+        ),
       ),
 
       // Authentication Routes (outside app shell)
@@ -394,5 +440,21 @@ extension AppRouterExtension on GoRouter {
       go(AppRoutes.verseReview, extra: {
         'verseId': verseId,
         'verseIds': verseIds,
+      });
+
+  /// Navigates to the voice conversation page for AI Discipler.
+  ///
+  /// [studyGuideId] - Optional study guide ID for contextual conversations
+  /// [relatedScripture] - Optional scripture reference for focused discussions
+  /// [conversationType] - Type of conversation (general, study_guide, scripture_exploration, etc.)
+  void goToVoiceConversation({
+    String? studyGuideId,
+    String? relatedScripture,
+    ConversationType conversationType = ConversationType.general,
+  }) =>
+      go(AppRoutes.voiceConversation, extra: {
+        'studyGuideId': studyGuideId,
+        'relatedScripture': relatedScripture,
+        'conversationType': conversationType,
       });
 }

@@ -159,7 +159,7 @@ class _LanguageSelectionScreenState extends State<LanguageSelectionScreen> {
               // Welcome text
               Text(
                 context.tr(TranslationKeys.onboardingWelcome),
-                style: GoogleFonts.playfairDisplay(
+                style: GoogleFonts.poppins(
                   fontSize: isLargeScreen ? 32 : 28,
                   fontWeight: FontWeight.bold,
                   color: theme.colorScheme.primary,

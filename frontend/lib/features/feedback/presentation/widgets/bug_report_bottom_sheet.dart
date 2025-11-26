@@ -77,7 +77,7 @@ class _BugReportBottomSheetState extends State<BugReportBottomSheet> {
               const SizedBox(width: 12),
               Text(
                 context.tr(TranslationKeys.bugReportTitle),
-                style: GoogleFonts.playfairDisplay(
+                style: GoogleFonts.poppins(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
                   color: AppTheme.errorColor,

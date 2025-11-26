@@ -130,7 +130,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
       children: [
         Text(
           'Tell us about yourself',
-          style: GoogleFonts.playfairDisplay(
+          style: GoogleFonts.poppins(
             fontSize: 28,
             fontWeight: FontWeight.w700,
             color: theme.colorScheme.onBackground,

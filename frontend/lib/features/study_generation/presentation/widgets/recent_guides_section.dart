@@ -55,21 +55,6 @@ class _RecentGuidesSectionState extends State<RecentGuidesSection> {
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Divider
-              Container(
-                height: 1,
-                margin: const EdgeInsets.symmetric(vertical: 24),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      Colors.transparent,
-                      Theme.of(context).colorScheme.primary.withOpacity(0.2),
-                      Colors.transparent,
-                    ],
-                  ),
-                ),
-              ),
-
               // Recent Studies section
               if (state is SavedGuidesApiLoaded) ...[
                 _buildRecentStudiesSection(state),

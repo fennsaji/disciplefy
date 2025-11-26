@@ -39,7 +39,7 @@ class EmptyStateWidget extends StatelessWidget {
               const SizedBox(height: 24),
               Text(
                 title,
-                style: GoogleFonts.playfairDisplay(
+                style: GoogleFonts.poppins(
                   fontSize: 24,
                   fontWeight: FontWeight.w600,
                   color: Theme.of(context).colorScheme.onBackground,
