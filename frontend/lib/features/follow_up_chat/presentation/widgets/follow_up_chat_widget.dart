@@ -19,6 +19,7 @@ class FollowUpChatWidget extends StatefulWidget {
   final String studyGuideTitle;
   final bool isExpanded;
   final VoidCallback? onToggleExpanded;
+  final bool enableVoiceInput;
 
   const FollowUpChatWidget({
     super.key,
@@ -26,6 +27,7 @@ class FollowUpChatWidget extends StatefulWidget {
     required this.studyGuideTitle,
     this.isExpanded = false,
     this.onToggleExpanded,
+    this.enableVoiceInput = true,
   });
 
   @override
@@ -700,6 +702,7 @@ class _FollowUpChatWidgetState extends State<FollowUpChatWidget>
           ? () =>
               context.read<FollowUpChatBloc>().add(const CancelRequestEvent())
           : null,
+      enableVoiceInput: widget.enableVoiceInput,
     );
   }
 }
