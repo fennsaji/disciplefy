@@ -559,7 +559,8 @@ class _FollowUpChatWidgetState extends State<FollowUpChatWidget>
                     // Navigate to generate study guide page
                     context.go(AppRoutes.generateStudy);
                   },
-                  child: const Text('Generate New Study'),
+                  child: Text(
+                      context.tr(TranslationKeys.followUpChatGenerateNewStudy)),
                 ),
               ],
             ),
@@ -667,14 +668,14 @@ class _FollowUpChatWidgetState extends State<FollowUpChatWidget>
             ),
             const SizedBox(height: AppConstants.DEFAULT_PADDING),
             Text(
-              'No messages yet',
+              context.tr(TranslationKeys.followUpChatNoMessagesYet),
               style: theme.textTheme.titleMedium?.copyWith(
                 color: theme.colorScheme.onSurface.withOpacity(0.6),
               ),
             ),
             const SizedBox(height: AppConstants.SMALL_PADDING),
             Text(
-              'Start by asking a question about this study guide.',
+              context.tr(TranslationKeys.followUpChatStartByAsking),
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: theme.colorScheme.onSurface.withOpacity(0.5),
               ),

@@ -6,7 +6,7 @@
  * - Server-Sent Events (SSE) for real-time streaming
  * - Multi-language support (English, Hindi, Malayalam)
  * - Conversation context management
- * - Quota enforcement (Free: 3, Standard: 10, Premium: unlimited)
+ * - Quota enforcement (Free: not available, Standard: 3/day, Premium: unlimited)
  * - Scripture reference integration
  */
 
@@ -23,12 +23,18 @@ const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY')!
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY')!
 
-// Quota limits by tier
+// Monthly quota limits by tier
+// Free users cannot access voice conversations
+// Standard users get 10 per month
+// Premium users have unlimited access
 const QUOTA_LIMITS: Record<string, number> = {
-  free: 3,
-  standard: 10,
+  free: 0, // Not available for free users
+  standard: 10, // 10 per month
   premium: -1, // Unlimited
 }
+
+// Maximum messages per conversation to prevent abuse
+const MAX_MESSAGES_PER_CONVERSATION = 50
 
 interface VoiceConversationRequest {
   conversation_id: string
@@ -92,7 +98,7 @@ async function getUserTier(supabase: any, userId: string): Promise<string> {
 }
 
 /**
- * Check and update user's voice quota
+ * Check and update user's voice quota (monthly)
  */
 async function checkAndUpdateQuota(
   supabase: any,
@@ -106,17 +112,25 @@ async function checkAndUpdateQuota(
     return { canProceed: true, remaining: -1, limit: -1 }
   }
 
-  // Check today's usage
-  const today = new Date().toISOString().split('T')[0]
+  // Free users cannot access
+  if (limit === 0) {
+    return { canProceed: false, remaining: 0, limit: 0 }
+  }
+
+  // Check this month's usage
+  const now = new Date()
+  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0]
+  const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0]
 
   const { data: usage } = await supabase
     .from('voice_usage_tracking')
     .select('daily_quota_used')
     .eq('user_id', userId)
-    .eq('usage_date', today)
-    .single()
+    .gte('usage_date', monthStart)
+    .lte('usage_date', monthEnd)
 
-  const currentUsage = usage?.daily_quota_used || 0
+  // Sum up all daily usage for the month
+  const currentUsage = usage?.reduce((sum: number, row: any) => sum + (row.daily_quota_used || 0), 0) || 0
   const remaining = limit - currentUsage
 
   if (remaining <= 0) {
@@ -124,6 +138,27 @@ async function checkAndUpdateQuota(
   }
 
   return { canProceed: true, remaining, limit }
+}
+
+/**
+ * Check if conversation has exceeded message limit
+ */
+async function checkConversationMessageLimit(
+  supabase: any,
+  conversationId: string
+): Promise<{ canProceed: boolean; messageCount: number }> {
+  const { count } = await supabase
+    .from('voice_conversation_messages')
+    .select('*', { count: 'exact', head: true })
+    .eq('conversation_id', conversationId)
+
+  const messageCount = count || 0
+
+  if (messageCount >= MAX_MESSAGES_PER_CONVERSATION) {
+    return { canProceed: false, messageCount }
+  }
+
+  return { canProceed: true, messageCount }
 }
 
 /**
@@ -191,6 +226,8 @@ async function getUserContext(
     recentTopics: profile?.favorite_topics || []
   }
 }
+
+
 
 /**
  * Stream LLM response using OpenAI
@@ -406,11 +443,28 @@ Deno.serve(async (req) => {
         tier
       })
 
+      // Check conversation message limit (skip for premium users)
+      if (tier !== 'premium') {
+        const messageLimit = await checkConversationMessageLimit(supabaseAdmin, conversation_id)
+
+        if (!messageLimit.canProceed) {
+          await sendEvent('conversation_limit_exceeded', {
+            message: 'This conversation has reached the maximum message limit. Please start a new conversation.',
+            messageCount: messageLimit.messageCount,
+            limit: MAX_MESSAGES_PER_CONVERSATION
+          })
+          await writer.close()
+          return
+        }
+      }
+
       // Get user context
       const userContext = await getUserContext(supabaseAdmin, user.id)
 
-      // Get study context if applicable
-      const studyContext = await getStudyContext(supabaseAdmin, related_study_guide_id || null)
+      // Get study context if a study guide ID was provided
+      const studyContext = related_study_guide_id
+        ? await getStudyContext(supabaseAdmin, related_study_guide_id)
+        : null
 
       // Build system prompt
       const systemPrompt = getVoiceSystemPrompt(language_code, {

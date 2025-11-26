@@ -18,6 +18,12 @@ class VoiceConversationState extends Equatable {
   final String? errorMessage;
   final List<VoiceConversationEntity> conversationHistory;
 
+  // User preferences
+  final bool showTranscription;
+  final bool autoPlayResponse;
+  final bool autoDetectLanguage;
+  final bool notifyDailyQuotaReached;
+
   const VoiceConversationState({
     this.status = VoiceConversationStatus.initial,
     this.conversation,
@@ -31,6 +37,11 @@ class VoiceConversationState extends Equatable {
     this.quota,
     this.errorMessage,
     this.conversationHistory = const [],
+    // Preference defaults
+    this.showTranscription = true,
+    this.autoPlayResponse = true,
+    this.autoDetectLanguage = true,
+    this.notifyDailyQuotaReached = true,
   });
 
   @override
@@ -47,6 +58,10 @@ class VoiceConversationState extends Equatable {
         quota,
         errorMessage,
         conversationHistory,
+        showTranscription,
+        autoPlayResponse,
+        autoDetectLanguage,
+        notifyDailyQuotaReached,
       ];
 
   VoiceConversationState copyWith({
@@ -62,6 +77,10 @@ class VoiceConversationState extends Equatable {
     VoiceQuotaEntity? quota,
     String? errorMessage,
     List<VoiceConversationEntity>? conversationHistory,
+    bool? showTranscription,
+    bool? autoPlayResponse,
+    bool? autoDetectLanguage,
+    bool? notifyDailyQuotaReached,
   }) {
     return VoiceConversationState(
       status: status ?? this.status,
@@ -76,6 +95,11 @@ class VoiceConversationState extends Equatable {
       quota: quota ?? this.quota,
       errorMessage: errorMessage,
       conversationHistory: conversationHistory ?? this.conversationHistory,
+      showTranscription: showTranscription ?? this.showTranscription,
+      autoPlayResponse: autoPlayResponse ?? this.autoPlayResponse,
+      autoDetectLanguage: autoDetectLanguage ?? this.autoDetectLanguage,
+      notifyDailyQuotaReached:
+          notifyDailyQuotaReached ?? this.notifyDailyQuotaReached,
     );
   }
 

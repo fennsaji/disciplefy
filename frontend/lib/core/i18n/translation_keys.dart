@@ -81,6 +81,16 @@ class TranslationKeys {
   static const followUpChatDoubleTapTo = 'follow_up_chat.double_tap_to';
   static const followUpChatCollapse = 'follow_up_chat.collapse';
   static const followUpChatExpand = 'follow_up_chat.expand';
+  static const followUpChatGenerateNewStudy =
+      'follow_up_chat.generate_new_study';
+  static const followUpChatNoMessagesYet = 'follow_up_chat.no_messages_yet';
+  static const followUpChatStartByAsking = 'follow_up_chat.start_by_asking';
+  static const followUpChatListening = 'follow_up_chat.listening';
+  static const followUpChatStop = 'follow_up_chat.stop';
+  static const followUpChatStopListening = 'follow_up_chat.stop_listening';
+  static const followUpChatTapToSpeak = 'follow_up_chat.tap_to_speak';
+  static const followUpChatSpeechNotAvailable =
+      'follow_up_chat.speech_not_available';
 
   // Home Screen
   static const homeWelcomeBack = 'home.welcome_back';

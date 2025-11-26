@@ -9,8 +9,17 @@ import '../bloc/voice_preferences_state.dart';
 import 'voice_preferences_page.dart';
 
 /// Wrapper widget that provides VoicePreferencesBloc to VoicePreferencesPage
-class VoicePreferencesPageWrapper extends StatelessWidget {
+class VoicePreferencesPageWrapper extends StatefulWidget {
   const VoicePreferencesPageWrapper({super.key});
+
+  @override
+  State<VoicePreferencesPageWrapper> createState() =>
+      _VoicePreferencesPageWrapperState();
+}
+
+class _VoicePreferencesPageWrapperState
+    extends State<VoicePreferencesPageWrapper> {
+  bool _isSaving = false;
 
   @override
   Widget build(BuildContext context) {
@@ -18,14 +27,26 @@ class VoicePreferencesPageWrapper extends StatelessWidget {
       create: (_) => VoicePreferencesBloc(
         repository: sl<VoiceBuddyRepository>(),
       )..add(const LoadVoicePreferences()),
-      child: BlocBuilder<VoicePreferencesBloc, VoicePreferencesState>(
+      child: BlocConsumer<VoicePreferencesBloc, VoicePreferencesState>(
+        listener: (context, state) {
+          // When save completes successfully, pop the page
+          if (state is VoicePreferencesSaved && _isSaving) {
+            _isSaving = false;
+            Navigator.pop(context, state.preferences);
+          }
+        },
         builder: (context, state) {
-          if (state is VoicePreferencesLoaded) {
+          if (state is VoicePreferencesLoaded ||
+              state is VoicePreferencesSaving) {
+            final preferences = state is VoicePreferencesLoaded
+                ? state.preferences
+                : (state as VoicePreferencesSaving).preferences;
             return VoicePreferencesPage(
-              initialPreferences: state.preferences,
-              onSave: (preferences) {
+              initialPreferences: preferences,
+              onSave: (prefs) {
+                setState(() => _isSaving = true);
                 context.read<VoicePreferencesBloc>().add(
-                      UpdateVoicePreferences(preferences),
+                      UpdateVoicePreferences(prefs),
                     );
               },
             );

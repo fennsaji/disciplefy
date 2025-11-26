@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/di/injection_container.dart';
+import '../../../../core/extensions/translation_extension.dart';
 import '../../../../core/router/app_routes.dart';
 import '../../domain/entities/voice_conversation_entity.dart';
 import '../bloc/voice_conversation_bloc.dart';
@@ -190,13 +191,19 @@ class _VoiceConversationViewState extends State<_VoiceConversationView> {
           }
         },
       ),
-      title: const Text('AI Study Buddy'),
+      title: Text(context.tr('voice_buddy.title')),
       actions: [
         // Settings/preferences
         IconButton(
           icon: const Icon(Icons.settings),
-          onPressed: () {
-            context.push(AppRoutes.voicePreferences);
+          onPressed: () async {
+            await context.push(AppRoutes.voicePreferences);
+            // Reload preferences when returning from settings
+            if (mounted) {
+              context
+                  .read<VoiceConversationBloc>()
+                  .add(const LoadPreferences());
+            }
           },
         ),
       ],
@@ -207,9 +214,14 @@ class _VoiceConversationViewState extends State<_VoiceConversationView> {
     final theme = Theme.of(context);
     final quota = state.quota!;
 
-    if (quota.quotaRemaining < 0) return const SizedBox.shrink();
+    // Check if premium user (unlimited quota)
+    final isPremium = quota.tier == 'premium' || quota.quotaRemaining < 0;
+    final isLow = !isPremium && quota.quotaRemaining <= 1;
 
-    final isLow = quota.quotaRemaining <= 1;
+    // If notifications are disabled and quota is not critically low, don't show
+    if (!state.notifyDailyQuotaReached && !isLow) {
+      return const SizedBox.shrink();
+    }
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -226,13 +238,28 @@ class _VoiceConversationViewState extends State<_VoiceConversationView> {
           ),
           const SizedBox(width: 8),
           Text(
-            'Conversations remaining: ${state.quotaDisplay}',
+            '${context.tr('voice_buddy.conversations_remaining')}: ',
             style: theme.textTheme.bodySmall?.copyWith(
               color:
                   isLow ? theme.colorScheme.error : theme.colorScheme.primary,
               fontWeight: FontWeight.w500,
             ),
           ),
+          if (isPremium)
+            Icon(
+              Icons.all_inclusive,
+              size: 16,
+              color: theme.colorScheme.primary,
+            )
+          else
+            Text(
+              '${quota.quotaRemaining}/${quota.quotaLimit}',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color:
+                    isLow ? theme.colorScheme.error : theme.colorScheme.primary,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
         ],
       ),
     );
@@ -290,7 +317,7 @@ class _VoiceConversationViewState extends State<_VoiceConversationView> {
 
           // Title
           Text(
-            'AI Study Buddy',
+            context.tr('voice_buddy.title'),
             style: theme.textTheme.headlineMedium?.copyWith(
               fontWeight: FontWeight.bold,
             ),
@@ -299,8 +326,7 @@ class _VoiceConversationViewState extends State<_VoiceConversationView> {
 
           // Description
           Text(
-            'Your personal Bible study companion. Ask questions, '
-            'explore scripture, and deepen your understanding.',
+            context.tr('voice_buddy.description'),
             textAlign: TextAlign.center,
             style: theme.textTheme.bodyLarge?.copyWith(
               color: theme.colorScheme.onSurface.withAlpha((0.7 * 255).round()),
@@ -310,7 +336,7 @@ class _VoiceConversationViewState extends State<_VoiceConversationView> {
 
           // Current language indicator
           Text(
-            'Language: ${currentLanguage.displayName}',
+            '${context.tr('voice_buddy.language_label')}: ${currentLanguage.displayName}',
             style: theme.textTheme.bodyMedium?.copyWith(
               color: theme.colorScheme.onSurface.withAlpha((0.6 * 255).round()),
             ),
@@ -323,7 +349,7 @@ class _VoiceConversationViewState extends State<_VoiceConversationView> {
                 ? () => _startConversationWithState(state)
                 : null,
             icon: const Icon(Icons.play_arrow),
-            label: const Text('Start Conversation'),
+            label: Text(context.tr('voice_buddy.start_conversation')),
             style: FilledButton.styleFrom(
               padding: const EdgeInsets.symmetric(
                 horizontal: 32,
@@ -360,15 +386,14 @@ class _VoiceConversationViewState extends State<_VoiceConversationView> {
           ),
           const SizedBox(height: 24),
           Text(
-            'Daily Limit Reached',
+            context.tr('voice_buddy.quota_exceeded.title'),
             style: theme.textTheme.headlineSmall?.copyWith(
               fontWeight: FontWeight.bold,
             ),
           ),
           const SizedBox(height: 12),
           Text(
-            'You\'ve used all your voice conversations for today. '
-            'Upgrade to Premium for unlimited conversations.',
+            context.tr('voice_buddy.quota_exceeded.message'),
             textAlign: TextAlign.center,
             style: theme.textTheme.bodyLarge?.copyWith(
               color: theme.colorScheme.onSurface.withAlpha((0.7 * 255).round()),
@@ -379,7 +404,8 @@ class _VoiceConversationViewState extends State<_VoiceConversationView> {
             onPressed: () {
               Navigator.pushNamed(context, '/subscription');
             },
-            child: const Text('Upgrade to Premium'),
+            child:
+                Text(context.tr('voice_buddy.quota_exceeded.upgrade_button')),
           ),
         ],
       ),
@@ -430,8 +456,10 @@ class _VoiceConversationViewState extends State<_VoiceConversationView> {
                 ),
         ),
 
-        // Current transcription display
-        if (state.isListening && state.currentTranscription != null)
+        // Current transcription display (only if showTranscription is enabled)
+        if (state.showTranscription &&
+            state.isListening &&
+            state.currentTranscription != null)
           _buildTranscriptionDisplay(state.currentTranscription!),
       ],
     );
@@ -453,7 +481,7 @@ class _VoiceConversationViewState extends State<_VoiceConversationView> {
             ),
             const SizedBox(height: 16),
             Text(
-              'Start speaking or type a message',
+              context.tr('voice_buddy.conversation.empty_hint'),
               style: theme.textTheme.bodyLarge?.copyWith(
                 color:
                     theme.colorScheme.onSurface.withAlpha((0.5 * 255).round()),
@@ -538,7 +566,8 @@ class _VoiceConversationViewState extends State<_VoiceConversationView> {
                       focusNode: _textFocusNode,
                       enabled: !isProcessing,
                       decoration: InputDecoration(
-                        hintText: 'Type your message...',
+                        hintText:
+                            context.tr('voice_buddy.conversation.type_hint'),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(24),
                         ),
@@ -566,7 +595,7 @@ class _VoiceConversationViewState extends State<_VoiceConversationView> {
                   onPressed: _endConversation,
                   icon: const Icon(Icons.stop_circle_outlined),
                   color: theme.colorScheme.error,
-                  tooltip: 'End conversation',
+                  tooltip: context.tr('voice_buddy.voice_controls.end_tooltip'),
                 ),
               ],
             ),
@@ -579,7 +608,7 @@ class _VoiceConversationViewState extends State<_VoiceConversationView> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text(
-                      'Continuous mode',
+                      context.tr('voice_buddy.voice_controls.continuous_mode'),
                       style: theme.textTheme.bodySmall,
                     ),
                     Switch(
@@ -654,12 +683,14 @@ class _VoiceConversationViewState extends State<_VoiceConversationView> {
     switch (buttonState) {
       case VoiceButtonState.listening:
         return isContinuousMode
-            ? 'Listening... (auto-sends when you stop)'
-            : 'Listening... Release to send';
+            ? context.tr('voice_buddy.voice_controls.listening_continuous')
+            : context.tr('voice_buddy.voice_controls.listening_hold');
       case VoiceButtonState.processing:
-        return 'Processing...';
+        return context.tr('voice_buddy.voice_controls.processing');
       case VoiceButtonState.idle:
-        return isContinuousMode ? 'Tap to start speaking' : 'Hold to speak';
+        return isContinuousMode
+            ? context.tr('voice_buddy.voice_controls.tap_to_speak')
+            : context.tr('voice_buddy.voice_controls.hold_to_speak');
     }
   }
 }
@@ -690,13 +721,13 @@ class _EndConversationDialogState extends State<_EndConversationDialog> {
     final theme = Theme.of(context);
 
     return AlertDialog(
-      title: const Text('End Conversation'),
+      title: Text(context.tr('voice_buddy.conversation.end_title')),
       content: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('How was your experience?'),
+            Text(context.tr('voice_buddy.conversation.end_experience')),
             const SizedBox(height: 12),
 
             // Star rating
@@ -719,12 +750,12 @@ class _EndConversationDialogState extends State<_EndConversationDialog> {
             const SizedBox(height: 16),
 
             // Was it helpful?
-            const Text('Was this conversation helpful?'),
+            Text(context.tr('voice_buddy.conversation.end_helpful')),
             const SizedBox(height: 8),
             Row(
               children: [
                 ChoiceChip(
-                  label: const Text('Yes'),
+                  label: Text(context.tr('voice_buddy.conversation.yes')),
                   selected: _wasHelpful == true,
                   onSelected: (selected) {
                     setState(() {
@@ -734,7 +765,7 @@ class _EndConversationDialogState extends State<_EndConversationDialog> {
                 ),
                 const SizedBox(width: 8),
                 ChoiceChip(
-                  label: const Text('No'),
+                  label: Text(context.tr('voice_buddy.conversation.no')),
                   selected: _wasHelpful == false,
                   onSelected: (selected) {
                     setState(() {
@@ -749,9 +780,9 @@ class _EndConversationDialogState extends State<_EndConversationDialog> {
             // Feedback text
             TextField(
               controller: _feedbackController,
-              decoration: const InputDecoration(
-                labelText: 'Additional feedback (optional)',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: context.tr('voice_buddy.conversation.end_feedback'),
+                border: const OutlineInputBorder(),
               ),
               maxLines: 3,
             ),
@@ -761,7 +792,7 @@ class _EndConversationDialogState extends State<_EndConversationDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('Cancel'),
+          child: Text(context.tr('voice_buddy.conversation.cancel')),
         ),
         FilledButton(
           onPressed: () {
@@ -773,7 +804,7 @@ class _EndConversationDialogState extends State<_EndConversationDialog> {
               _wasHelpful,
             );
           },
-          child: const Text('End'),
+          child: Text(context.tr('voice_buddy.conversation.end_button')),
         ),
       ],
     );

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/extensions/translation_extension.dart';
 import '../../domain/entities/voice_preferences_entity.dart';
 import '../widgets/language_selector.dart';
 
@@ -35,145 +36,183 @@ class _VoicePreferencesPageState extends State<VoicePreferencesPage> {
     });
   }
 
+  Future<bool> _onWillPop() async {
+    if (!_hasChanges) {
+      return true;
+    }
+
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(context.tr('voice_buddy.settings.unsaved_title')),
+        content: Text(context.tr('voice_buddy.settings.unsaved_message')),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, true), // Discard
+            child: Text(context.tr('voice_buddy.settings.discard')),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false), // Cancel
+            child: Text(context.tr('voice_buddy.conversation.cancel')),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(
+                  dialogContext, false); // Close dialog, don't pop page yet
+              // onSave triggers bloc save, wrapper will pop when complete
+              widget.onSave?.call(_preferences);
+            },
+            child: Text(
+              context.tr('voice_buddy.settings.save'),
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.primary,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    return result ?? false;
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Voice Settings'),
-        actions: [
-          if (_hasChanges)
-            TextButton(
-              onPressed: () {
-                widget.onSave?.call(_preferences);
-                Navigator.pop(context, _preferences);
-              },
-              child: Text(
-                'Save',
-                style: TextStyle(
-                  color: theme.colorScheme.primary,
-                  fontWeight: FontWeight.w600,
+    return PopScope(
+      canPop: !_hasChanges,
+      onPopInvokedWithResult: (didPop, result) async {
+        if (didPop) return;
+        final shouldPop = await _onWillPop();
+        if (shouldPop && context.mounted) {
+          Navigator.pop(context);
+        }
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(context.tr('voice_buddy.settings.title')),
+          actions: [
+            if (_hasChanges)
+              TextButton(
+                onPressed: () {
+                  // onSave triggers the bloc to save, and the wrapper
+                  // will pop the page when save completes
+                  widget.onSave?.call(_preferences);
+                },
+                child: Text(
+                  context.tr('voice_buddy.settings.save'),
+                  style: TextStyle(
+                    color: theme.colorScheme.primary,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
-            ),
-        ],
-      ),
-      body: ListView(
-        children: [
-          // Language Section
-          _buildSectionHeader('Language'),
-          _buildLanguagePreference(theme),
-          _buildSwitchTile(
-            title: 'Auto-detect language',
-            subtitle: 'Automatically detect the language you speak',
-            value: _preferences.autoDetectLanguage,
-            onChanged: (value) => _updatePreference(
-              () => _preferences.copyWith(autoDetectLanguage: value),
-            ),
-          ),
-          const Divider(),
-
-          // Voice Section
-          _buildSectionHeader('Voice Output'),
-          _buildVoiceGenderPreference(theme),
-          _buildSliderTile(
-            title: 'Speaking Rate',
-            subtitle: _getSpeakingRateLabel(_preferences.speakingRate),
-            value: _preferences.speakingRate,
-            min: 0.5,
-            max: 2.0,
-            onChanged: (value) => _updatePreference(
-              () => _preferences.copyWith(speakingRate: value),
-            ),
-          ),
-          _buildSliderTile(
-            title: 'Pitch',
-            subtitle: _getPitchLabel(_preferences.pitch),
-            value:
-                (_preferences.pitch + 20) / 40, // Normalize -20 to 20 -> 0 to 1
-            min: 0.0,
-            max: 1.0,
-            onChanged: (value) => _updatePreference(
-              () => _preferences.copyWith(pitch: (value * 40) - 20),
-            ),
-          ),
-          const Divider(),
-
-          // Interaction Section
-          _buildSectionHeader('Interaction'),
-          _buildSwitchTile(
-            title: 'Auto-play responses',
-            subtitle: 'Automatically speak AI responses',
-            value: _preferences.autoPlayResponse,
-            onChanged: (value) => _updatePreference(
-              () => _preferences.copyWith(autoPlayResponse: value),
-            ),
-          ),
-          _buildSwitchTile(
-            title: 'Show transcription',
-            subtitle: 'Display text while speaking',
-            value: _preferences.showTranscription,
-            onChanged: (value) => _updatePreference(
-              () => _preferences.copyWith(showTranscription: value),
-            ),
-          ),
-          _buildSwitchTile(
-            title: 'Continuous mode',
-            subtitle: 'Keep listening after response',
-            value: _preferences.continuousMode,
-            onChanged: (value) => _updatePreference(
-              () => _preferences.copyWith(continuousMode: value),
-            ),
-          ),
-          const Divider(),
-
-          // Context Section
-          _buildSectionHeader('AI Context'),
-          _buildSwitchTile(
-            title: 'Use study context',
-            subtitle: 'Include your current study for relevant answers',
-            value: _preferences.useStudyContext,
-            onChanged: (value) => _updatePreference(
-              () => _preferences.copyWith(useStudyContext: value),
-            ),
-          ),
-          _buildSwitchTile(
-            title: 'Cite Scripture references',
-            subtitle: 'Include Bible verse citations in responses',
-            value: _preferences.citeScriptureReferences,
-            onChanged: (value) => _updatePreference(
-              () => _preferences.copyWith(citeScriptureReferences: value),
-            ),
-          ),
-          const Divider(),
-
-          // Notifications Section
-          _buildSectionHeader('Notifications'),
-          _buildSwitchTile(
-            title: 'Quota alerts',
-            subtitle: 'Notify when daily conversation limit is reached',
-            value: _preferences.notifyDailyQuotaReached,
-            onChanged: (value) => _updatePreference(
-              () => _preferences.copyWith(notifyDailyQuotaReached: value),
-            ),
-          ),
-          const SizedBox(height: 32),
-
-          // Reset Button
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: OutlinedButton(
-              onPressed: _showResetConfirmation,
-              style: OutlinedButton.styleFrom(
-                foregroundColor: theme.colorScheme.error,
-                side: BorderSide(color: theme.colorScheme.error),
+          ],
+        ),
+        body: ListView(
+          children: [
+            // Language Section
+            _buildSectionHeader(
+                context.tr('voice_buddy.settings.language_section')),
+            _buildLanguagePreference(theme),
+            _buildSwitchTile(
+              title: context.tr('voice_buddy.settings.auto_detect'),
+              subtitle: context.tr('voice_buddy.settings.auto_detect_subtitle'),
+              value: _preferences.autoDetectLanguage,
+              onChanged: (value) => _updatePreference(
+                () => _preferences.copyWith(autoDetectLanguage: value),
               ),
-              child: const Text('Reset to Defaults'),
             ),
-          ),
-          const SizedBox(height: 32),
-        ],
+            const Divider(),
+
+            // Voice Section
+            _buildSectionHeader(
+                context.tr('voice_buddy.settings.voice_output')),
+            _buildVoiceGenderPreference(theme),
+            _buildSliderTile(
+              title: context.tr('voice_buddy.settings.speaking_rate'),
+              subtitle: _getSpeakingRateLabel(_preferences.speakingRate),
+              value: _preferences.speakingRate,
+              min: 0.5,
+              max: 2.0,
+              onChanged: (value) => _updatePreference(
+                () => _preferences.copyWith(speakingRate: value),
+              ),
+            ),
+            _buildSliderTile(
+              title: context.tr('voice_buddy.settings.pitch'),
+              subtitle: _getPitchLabel(_preferences.pitch),
+              value: (_preferences.pitch + 20) /
+                  40, // Normalize -20 to 20 -> 0 to 1
+              min: 0.0,
+              max: 1.0,
+              onChanged: (value) => _updatePreference(
+                () => _preferences.copyWith(pitch: (value * 40) - 20),
+              ),
+            ),
+            const Divider(),
+
+            // Interaction Section
+            _buildSectionHeader(context.tr('voice_buddy.settings.interaction')),
+            _buildSwitchTile(
+              title: context.tr('voice_buddy.settings.auto_play'),
+              subtitle: context.tr('voice_buddy.settings.auto_play_subtitle'),
+              value: _preferences.autoPlayResponse,
+              onChanged: (value) => _updatePreference(
+                () => _preferences.copyWith(autoPlayResponse: value),
+              ),
+            ),
+            _buildSwitchTile(
+              title: context.tr('voice_buddy.settings.show_transcription'),
+              subtitle: context
+                  .tr('voice_buddy.settings.show_transcription_subtitle'),
+              value: _preferences.showTranscription,
+              onChanged: (value) => _updatePreference(
+                () => _preferences.copyWith(showTranscription: value),
+              ),
+            ),
+            _buildSwitchTile(
+              title: context.tr('voice_buddy.settings.continuous_mode'),
+              subtitle:
+                  context.tr('voice_buddy.settings.continuous_mode_subtitle'),
+              value: _preferences.continuousMode,
+              onChanged: (value) => _updatePreference(
+                () => _preferences.copyWith(continuousMode: value),
+              ),
+            ),
+            const Divider(),
+
+            // Notifications Section
+            _buildSectionHeader(
+                context.tr('voice_buddy.settings.notifications')),
+            _buildSwitchTile(
+              title: context.tr('voice_buddy.settings.quota_alerts'),
+              subtitle:
+                  context.tr('voice_buddy.settings.quota_alerts_subtitle'),
+              value: _preferences.notifyDailyQuotaReached,
+              onChanged: (value) => _updatePreference(
+                () => _preferences.copyWith(notifyDailyQuotaReached: value),
+              ),
+            ),
+            const SizedBox(height: 32),
+
+            // Reset Button
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: OutlinedButton(
+                onPressed: _showResetConfirmation,
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: theme.colorScheme.error,
+                  side: BorderSide(color: theme.colorScheme.error),
+                ),
+                child: Text(context.tr('voice_buddy.settings.reset_defaults')),
+              ),
+            ),
+            const SizedBox(height: 32),
+          ],
+        ),
       ),
     );
   }
@@ -199,7 +238,7 @@ class _VoicePreferencesPageState extends State<VoicePreferencesPage> {
     );
 
     return ListTile(
-      title: const Text('Preferred language'),
+      title: Text(context.tr('voice_buddy.settings.preferred_language')),
       subtitle: Text(currentLanguage.displayName),
       trailing: const Icon(Icons.chevron_right),
       onTap: () => _showLanguageSelector(theme),
@@ -209,14 +248,14 @@ class _VoicePreferencesPageState extends State<VoicePreferencesPage> {
   void _showLanguageSelector(ThemeData theme) {
     showModalBottomSheet(
       context: context,
-      builder: (context) => SafeArea(
+      builder: (sheetContext) => SafeArea(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Padding(
               padding: const EdgeInsets.all(16),
               child: Text(
-                'Select Language',
+                context.tr('voice_buddy.settings.select_language'),
                 style: theme.textTheme.titleMedium,
               ),
             ),
@@ -233,7 +272,7 @@ class _VoicePreferencesPageState extends State<VoicePreferencesPage> {
                     () =>
                         _preferences.copyWith(preferredLanguage: language.code),
                   );
-                  Navigator.pop(context);
+                  Navigator.pop(sheetContext);
                 },
               );
             }),
@@ -246,10 +285,10 @@ class _VoicePreferencesPageState extends State<VoicePreferencesPage> {
 
   Widget _buildVoiceGenderPreference(ThemeData theme) {
     return ListTile(
-      title: const Text('Voice gender'),
+      title: Text(context.tr('voice_buddy.settings.voice_gender')),
       subtitle: Text(_preferences.ttsVoiceGender == VoiceGender.female
-          ? 'Female'
-          : 'Male'),
+          ? context.tr('voice_buddy.settings.female')
+          : context.tr('voice_buddy.settings.male')),
       trailing: SegmentedButton<VoiceGender>(
         segments: const [
           ButtonSegment(
@@ -315,37 +354,43 @@ class _VoicePreferencesPageState extends State<VoicePreferencesPage> {
   }
 
   String _getSpeakingRateLabel(double rate) {
-    if (rate < 0.75) return 'Very Slow';
-    if (rate < 1.0) return 'Slow';
-    if (rate < 1.25) return 'Normal';
-    if (rate < 1.5) return 'Fast';
-    return 'Very Fast';
+    if (rate < 0.75) {
+      return context.tr('voice_buddy.settings.speaking_rate_very_slow');
+    }
+    if (rate < 1.0) {
+      return context.tr('voice_buddy.settings.speaking_rate_slow');
+    }
+    if (rate < 1.25) {
+      return context.tr('voice_buddy.settings.speaking_rate_normal');
+    }
+    if (rate < 1.5) {
+      return context.tr('voice_buddy.settings.speaking_rate_fast');
+    }
+    return context.tr('voice_buddy.settings.speaking_rate_very_fast');
   }
 
   String _getPitchLabel(double pitch) {
-    if (pitch < -10) return 'Very Low';
-    if (pitch < -5) return 'Low';
-    if (pitch < 5) return 'Normal';
-    if (pitch < 10) return 'High';
-    return 'Very High';
+    if (pitch < -10) return context.tr('voice_buddy.settings.pitch_very_low');
+    if (pitch < -5) return context.tr('voice_buddy.settings.pitch_low');
+    if (pitch < 5) return context.tr('voice_buddy.settings.pitch_normal');
+    if (pitch < 10) return context.tr('voice_buddy.settings.pitch_high');
+    return context.tr('voice_buddy.settings.pitch_very_high');
   }
 
   void _showResetConfirmation() {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Reset Settings?'),
-        content: const Text(
-          'This will reset all voice settings to their default values. This action cannot be undone.',
-        ),
+      builder: (dialogContext) => AlertDialog(
+        title: Text(context.tr('voice_buddy.settings.reset_title')),
+        content: Text(context.tr('voice_buddy.settings.reset_message')),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+            onPressed: () => Navigator.pop(dialogContext),
+            child: Text(context.tr('voice_buddy.conversation.cancel')),
           ),
           TextButton(
             onPressed: () {
-              Navigator.pop(context);
+              Navigator.pop(dialogContext);
               setState(() {
                 _preferences = VoicePreferencesEntity.defaults(
                   _preferences.userId,
@@ -354,7 +399,7 @@ class _VoicePreferencesPageState extends State<VoicePreferencesPage> {
               });
             },
             child: Text(
-              'Reset',
+              context.tr('voice_buddy.settings.reset_button'),
               style: TextStyle(color: Theme.of(context).colorScheme.error),
             ),
           ),

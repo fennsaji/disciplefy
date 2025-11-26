@@ -207,7 +207,7 @@ class _ChatInputState extends State<ChatInput>
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content:
-            const Text('Speech recognition is not available on this device'),
+            Text(context.tr(TranslationKeys.followUpChatSpeechNotAvailable)),
         behavior: SnackBarBehavior.floating,
         backgroundColor: Theme.of(context).colorScheme.error,
       ),
@@ -358,7 +358,7 @@ class _ChatInputState extends State<ChatInput>
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Listening...',
+                  context.tr(TranslationKeys.followUpChatListening),
                   style: theme.textTheme.bodyMedium?.copyWith(
                     color: theme.colorScheme.primary,
                     fontWeight: FontWeight.w600,
@@ -384,7 +384,7 @@ class _ChatInputState extends State<ChatInput>
           TextButton(
             onPressed: _stopListening,
             child: Text(
-              'Stop',
+              context.tr(TranslationKeys.followUpChatStop),
               style: theme.textTheme.bodySmall?.copyWith(
                 color: theme.colorScheme.error,
                 fontWeight: FontWeight.w600,
@@ -482,7 +482,9 @@ class _ChatInputState extends State<ChatInput>
             onTap: isEnabled ? _toggleListening : null,
             borderRadius: BorderRadius.circular(24),
             child: Tooltip(
-              message: isActive ? 'Stop listening' : 'Tap to speak',
+              message: isActive
+                  ? context.tr(TranslationKeys.followUpChatStopListening)
+                  : context.tr(TranslationKeys.followUpChatTapToSpeak),
               child: Icon(
                 isActive ? Icons.stop_rounded : Icons.mic_rounded,
                 color: isEnabled
@@ -524,7 +526,7 @@ class _ChatInputState extends State<ChatInput>
         onSubmitted: (_) => _sendMessage(),
         decoration: InputDecoration(
           hintText: _isListening
-              ? 'Listening...'
+              ? context.tr(TranslationKeys.followUpChatListening)
               : context.tr(TranslationKeys.followUpChatInputHint),
           hintStyle: theme.textTheme.bodyMedium?.copyWith(
             color: theme.colorScheme.onSurface.withOpacity(0.6),
