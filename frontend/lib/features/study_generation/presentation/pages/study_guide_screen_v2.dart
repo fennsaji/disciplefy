@@ -22,8 +22,6 @@ import '../bloc/study_state.dart';
 import '../../../follow_up_chat/presentation/widgets/follow_up_chat_widget.dart';
 import '../../../follow_up_chat/presentation/bloc/follow_up_chat_bloc.dart';
 import '../../../follow_up_chat/presentation/bloc/follow_up_chat_event.dart';
-import '../../../voice_buddy/domain/entities/voice_conversation_entity.dart';
-import '../../../../core/router/app_router.dart';
 import '../widgets/engaging_loading_screen.dart';
 
 /// Study Guide Screen V2 - Dynamically generates study guides from query parameters
@@ -597,23 +595,6 @@ class _StudyGuideScreenV2ContentState
         centerTitle: true,
         actions: _currentStudyGuide != null
             ? [
-                IconButton(
-                  onPressed: () {
-                    GoRouter.of(context).goToVoiceConversation(
-                      studyGuideId: _currentStudyGuide!.id,
-                      relatedScripture:
-                          _currentStudyGuide!.inputType == 'scripture'
-                              ? _currentStudyGuide!.input
-                              : null,
-                      conversationType: ConversationType.studyEnhancement,
-                    );
-                  },
-                  icon: Icon(
-                    Icons.mic,
-                    color: Theme.of(context).colorScheme.primary,
-                  ),
-                  tooltip: 'Discuss with AI Study Buddy',
-                ),
                 IconButton(
                   onPressed: _shareStudyGuide,
                   icon: Icon(
