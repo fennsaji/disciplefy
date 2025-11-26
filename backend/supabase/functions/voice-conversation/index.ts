@@ -524,11 +524,31 @@ Deno.serve(async (req) => {
         }
       )
 
-      // Send completion event
+      // Increment voice usage quota (skip for premium users with unlimited quota)
+      let updatedRemaining = quota.remaining
+      if (tier !== 'premium') {
+        const { error: usageError } = await supabaseAdmin.rpc('increment_voice_usage', {
+          p_user_id: user.id,
+          p_tier: tier,
+          p_language: language_code,
+        })
+
+        if (usageError) {
+          console.error('❌ [VOICE] Failed to increment voice usage:', usageError)
+          // Log but don't fail the request - the response was already sent successfully
+        } else {
+          // Update in-memory remaining counter
+          updatedRemaining = quota.remaining > 0 ? quota.remaining - 1 : 0
+          console.log(`📊 [VOICE] Incremented usage for user ${user.id}, tier: ${tier}, remaining: ${updatedRemaining}`)
+        }
+      }
+
+      // Send completion event with updated quota info
       await sendEvent('stream_end', {
         timestamp: Date.now(),
         scripture_references: scriptureRefs,
         translation: getPrimaryTranslation(language_code),
+        quota_remaining: tier === 'premium' ? -1 : updatedRemaining,
       })
 
       console.log(`✅ [VOICE] Completed response for conversation: ${conversation_id}`)

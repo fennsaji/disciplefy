@@ -282,7 +282,7 @@ BEGIN
               'created_at', cm.created_at
             ) ORDER BY cm.message_order
           )
-          FROM conversation_messages cm
+          FROM voice_conversation_messages cm
           WHERE cm.conversation_id = vc.id
           ), '[]'::jsonb
         )

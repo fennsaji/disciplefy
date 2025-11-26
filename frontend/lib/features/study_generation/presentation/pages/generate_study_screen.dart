@@ -922,6 +922,7 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 // Animated microphone icon with glow
                 Container(
@@ -943,11 +944,13 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
                 ),
                 const SizedBox(width: 14),
                 // Text content
-                Expanded(
+                Flexible(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
                     children: [
                       Row(
+                        mainAxisSize: MainAxisSize.min,
                         children: [
                           Flexible(
                             child: Text(
@@ -998,7 +1001,7 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
                     ],
                   ),
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: 14),
                 // Arrow with circle background
                 Container(
                   width: 32,

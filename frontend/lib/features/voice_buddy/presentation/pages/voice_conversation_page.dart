@@ -109,16 +109,20 @@ class _VoiceConversationViewState extends State<_VoiceConversationView> {
   }
 
   void _endConversation() {
+    // Capture the bloc from the widget context before showing the dialog
+    // The dialog's context doesn't have access to the BlocProvider
+    final bloc = context.read<VoiceConversationBloc>();
+
     showDialog(
       context: context,
-      builder: (context) => _EndConversationDialog(
+      builder: (dialogContext) => _EndConversationDialog(
         onEnd: (rating, feedback, helpful) {
-          context.read<VoiceConversationBloc>().add(EndConversation(
-                rating: rating,
-                feedbackText: feedback,
-                wasHelpful: helpful,
-              ));
-          Navigator.of(context).pop();
+          bloc.add(EndConversation(
+            rating: rating,
+            feedbackText: feedback,
+            wasHelpful: helpful,
+          ));
+          Navigator.of(dialogContext).pop();
         },
       ),
     );
