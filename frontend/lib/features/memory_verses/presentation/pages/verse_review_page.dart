@@ -8,6 +8,7 @@ import '../../../../core/router/app_router.dart';
 import '../../../../core/widgets/auth_protected_screen.dart';
 import '../../../../core/i18n/translation_keys.dart';
 import '../../../../core/extensions/translation_extension.dart';
+import '../../../notifications/presentation/widgets/notification_enable_prompt.dart';
 import '../../domain/entities/memory_verse_entity.dart';
 import '../bloc/memory_verse_bloc.dart';
 import '../bloc/memory_verse_event.dart';
@@ -38,6 +39,7 @@ class _VerseReviewPageState extends State<VerseReviewPage> {
   Timer? reviewTimer;
   int elapsedSeconds = 0;
   int currentIndex = 0;
+  bool _hasTriggeredNotificationPrompt = false;
 
   @override
   void initState() {
@@ -60,6 +62,24 @@ class _VerseReviewPageState extends State<VerseReviewPage> {
 
   void _resetTimer() {
     setState(() => elapsedSeconds = 0);
+  }
+
+  /// Shows memory verse overdue notification prompt after first review
+  Future<void> _showMemoryVerseOverduePrompt() async {
+    if (_hasTriggeredNotificationPrompt) return;
+    _hasTriggeredNotificationPrompt = true;
+
+    // Delay to show after the review feedback
+    await Future.delayed(const Duration(milliseconds: 2000));
+
+    if (!mounted) return;
+
+    final languageCode = context.translationService.currentLanguage.code;
+    await showNotificationEnablePrompt(
+      context: context,
+      type: NotificationPromptType.memoryVerseOverdue,
+      languageCode: languageCode,
+    );
   }
 
   void _loadVerse() {
@@ -131,6 +151,7 @@ class _VerseReviewPageState extends State<VerseReviewPage> {
         listener: (context, state) {
           if (state is ReviewSubmitted) {
             _showReviewFeedback(context, state);
+            _showMemoryVerseOverduePrompt();
             _moveToNextVerse();
           } else if (state is MemoryVerseError) {
             ScaffoldMessenger.of(context).showSnackBar(
