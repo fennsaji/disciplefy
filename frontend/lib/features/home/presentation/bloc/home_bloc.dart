@@ -44,6 +44,8 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
     // Register event handlers
     on<LoadRecommendedTopics>(_onLoadRecommendedTopics);
     on<RefreshRecommendedTopics>(_onRefreshRecommendedTopics);
+    on<LoadForYouTopics>(_onLoadForYouTopics);
+    on<DismissPersonalizationPrompt>(_onDismissPersonalizationPrompt);
     on<GenerateStudyGuideFromVerse>(_onGenerateStudyGuideFromVerse);
     on<GenerateStudyGuideFromTopic>(_onGenerateStudyGuideFromTopic);
     on<ClearHomeError>(_onClearHomeError);
@@ -76,6 +78,8 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
           emit(currentState.copyWith(
             isLoadingTopics: false,
             topics: loaded.topics,
+            showPersonalizationPrompt: loaded.showPersonalizationPrompt,
+            isPersonalized: loaded.isPersonalized,
             clearTopicsError: true,
           ));
           break;
@@ -122,6 +126,8 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
             topicsError: currentState.topicsError,
             generationInput: currentState.generationInput,
             generationInputType: currentState.generationInputType,
+            showPersonalizationPrompt: currentState.showPersonalizationPrompt,
+            isPersonalized: currentState.isPersonalized,
           ));
           break;
         case final generation_states.HomeStudyGenerationError error:
@@ -167,6 +173,37 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
     Emitter<HomeState> emit,
   ) {
     _topicsBloc.add(const topics_events.RefreshRecommendedTopics());
+  }
+
+  /// Handle loading personalized "For You" topics by delegating to topics BLoC
+  Future<void> _onLoadForYouTopics(
+    LoadForYouTopics event,
+    Emitter<HomeState> emit,
+  ) async {
+    // Get the user's preferred language
+    String? languageCode;
+    try {
+      final appLanguage =
+          await _languagePreferenceService.getSelectedLanguage();
+      languageCode = appLanguage.code;
+    } catch (e) {
+      // Fall back to default language if getting language preference fails
+      languageCode = 'en';
+    }
+
+    _topicsBloc.add(topics_events.LoadForYouTopics(
+      limit: event.limit,
+      language: languageCode,
+      forceRefresh: event.forceRefresh,
+    ));
+  }
+
+  /// Handle dismissing the personalization prompt
+  void _onDismissPersonalizationPrompt(
+    DismissPersonalizationPrompt event,
+    Emitter<HomeState> emit,
+  ) {
+    _topicsBloc.add(const topics_events.DismissPersonalizationPrompt());
   }
 
   /// Handle generating study guide from verse by delegating to generation BLoC

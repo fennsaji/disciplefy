@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
+import '../../../../core/constants/app_fonts.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../bloc/phone_auth_bloc.dart';
 import '../bloc/phone_auth_event.dart';
@@ -237,7 +237,7 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
           ),
           title: Text(
             'Verify Phone',
-            style: GoogleFonts.inter(
+            style: AppFonts.inter(
               fontSize: 18,
               fontWeight: FontWeight.w600,
               color: Theme.of(context).colorScheme.onBackground,
@@ -291,7 +291,7 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
       children: [
         Text(
           'Enter verification code',
-          style: GoogleFonts.poppins(
+          style: AppFonts.poppins(
             fontSize: 24,
             fontWeight: FontWeight.w700,
             color: theme.colorScheme.onBackground,
@@ -300,7 +300,7 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
         const SizedBox(height: 8),
         RichText(
           text: TextSpan(
-            style: GoogleFonts.inter(
+            style: AppFonts.inter(
               fontSize: 16,
               color: theme.colorScheme.onSurface.withOpacity(0.7),
               height: 1.5,
@@ -309,7 +309,7 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
               const TextSpan(text: 'We sent a code to '),
               TextSpan(
                 text: formattedPhone,
-                style: GoogleFonts.inter(
+                style: AppFonts.inter(
                   fontWeight: FontWeight.w600,
                   color: theme.colorScheme.primary,
                 ),
@@ -330,7 +330,7 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
       children: [
         Text(
           'Verification Code',
-          style: GoogleFonts.inter(
+          style: AppFonts.inter(
             fontSize: 14,
             fontWeight: FontWeight.w600,
             color: theme.colorScheme.onSurface,
@@ -388,7 +388,7 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
                   ),
                   contentPadding: const EdgeInsets.all(16),
                 ),
-                style: GoogleFonts.inter(
+                style: AppFonts.inter(
                   fontSize: 18,
                   fontWeight: FontWeight.w600,
                 ),
@@ -431,7 +431,7 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
           if (!_canResend) ...[
             Text(
               'Code expires in ${_formatTime(_remainingSeconds)}',
-              style: GoogleFonts.inter(
+              style: AppFonts.inter(
                 fontSize: 14,
                 color: theme.colorScheme.onSurface.withOpacity(0.7),
               ),
@@ -444,7 +444,7 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
               _canResend
                   ? 'Resend Code'
                   : 'Resend in ${_formatTime(_remainingSeconds)}',
-              style: GoogleFonts.inter(
+              style: AppFonts.inter(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
                 color: _canResend
@@ -482,7 +482,7 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
           Expanded(
             child: Text(
               'Didn\'t receive the code? Check your spam folder or try resending.',
-              style: GoogleFonts.inter(
+              style: AppFonts.inter(
                 fontSize: 12,
                 color: theme.colorScheme.onSurface.withOpacity(0.7),
                 height: 1.4,
@@ -530,7 +530,7 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
                   )
                 : Text(
                     'Verify Code',
-                    style: GoogleFonts.inter(
+                    style: AppFonts.inter(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
                     ),

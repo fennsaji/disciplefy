@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import '../../../../core/constants/app_fonts.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../domain/entities/saved_guide_entity.dart';
@@ -55,7 +55,7 @@ class GuideListItem extends StatelessWidget {
                             children: [
                               Text(
                                 guide.displayTitle,
-                                style: GoogleFonts.inter(
+                                style: AppFonts.inter(
                                   fontSize: 16,
                                   fontWeight: FontWeight.w600,
                                   color: isLoading
@@ -72,7 +72,7 @@ class GuideListItem extends StatelessWidget {
                               const SizedBox(height: 4),
                               Text(
                                 guide.subtitle,
-                                style: GoogleFonts.inter(
+                                style: AppFonts.inter(
                                   fontSize: 12,
                                   color: Theme.of(context)
                                       .colorScheme
@@ -207,7 +207,7 @@ class GuideListItem extends StatelessWidget {
 
   Widget _buildContentPreview(BuildContext context) => Text(
         guide.contentPreview,
-        style: GoogleFonts.inter(
+        style: AppFonts.inter(
           fontSize: 14,
           color: isLoading
               ? Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6)
@@ -232,7 +232,7 @@ class GuideListItem extends StatelessWidget {
         const SizedBox(width: 4),
         Text(
           timeText,
-          style: GoogleFonts.inter(
+          style: AppFonts.inter(
             fontSize: 12,
             color: Theme.of(context).colorScheme.onSurfaceVariant,
           ),
@@ -249,7 +249,7 @@ class GuideListItem extends StatelessWidget {
                 ),
                 child: Text(
                   'Scripture',
-                  style: GoogleFonts.inter(
+                  style: AppFonts.inter(
                     fontSize: 10,
                     fontWeight: FontWeight.w600,
                     color: Theme.of(context).colorScheme.primary,
@@ -266,7 +266,7 @@ class GuideListItem extends StatelessWidget {
                 ),
                 child: Text(
                   'Topic',
-                  style: GoogleFonts.inter(
+                  style: AppFonts.inter(
                     fontSize: 10,
                     fontWeight: FontWeight.w600,
                     color: Theme.of(context).colorScheme.secondary,

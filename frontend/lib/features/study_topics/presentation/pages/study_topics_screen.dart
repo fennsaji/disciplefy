@@ -4,7 +4,7 @@ import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
+import '../../../../core/constants/app_fonts.dart';
 
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/di/injection_container.dart';
@@ -301,13 +301,13 @@ class _StudyTopicsScreenContentState extends State<_StudyTopicsScreenContent> {
       child: TextField(
         controller: _searchController,
         focusNode: _searchFocusNode,
-        style: GoogleFonts.inter(
+        style: AppFonts.inter(
           fontSize: 16,
           color: Theme.of(context).colorScheme.onBackground,
         ),
         decoration: InputDecoration(
           hintText: context.tr(TranslationKeys.studyTopicsSearchHint),
-          hintStyle: GoogleFonts.inter(
+          hintStyle: AppFonts.inter(
             fontSize: 16,
             color: AppTheme.onSurfaceVariant,
           ),
@@ -487,7 +487,7 @@ class ErrorStateView extends StatelessWidget {
               isInitialLoadError
                   ? context.tr(TranslationKeys.studyTopicsFailedToLoad)
                   : context.tr(TranslationKeys.studyTopicsSomethingWentWrong),
-              style: GoogleFonts.inter(
+              style: AppFonts.inter(
                 fontSize: 20,
                 fontWeight: FontWeight.w600,
                 color: Theme.of(context).colorScheme.onBackground,
@@ -496,7 +496,7 @@ class ErrorStateView extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(message,
-                style: GoogleFonts.inter(
+                style: AppFonts.inter(
                     fontSize: 16, color: AppTheme.onSurfaceVariant),
                 textAlign: TextAlign.center),
             const SizedBox(height: 24),
@@ -504,7 +504,7 @@ class ErrorStateView extends StatelessWidget {
               onPressed: onRetry,
               icon: const Icon(Icons.refresh),
               label: Text(context.tr(TranslationKeys.studyTopicsTryAgain),
-                  style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
+                  style: AppFonts.inter(fontWeight: FontWeight.w600)),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppTheme.primaryColor,
                 foregroundColor: Colors.white,
@@ -543,7 +543,7 @@ class EmptyStateView extends StatelessWidget {
             const SizedBox(height: 16),
             Text(
               context.tr(TranslationKeys.studyTopicsNoTopicsFound),
-              style: GoogleFonts.inter(
+              style: AppFonts.inter(
                 fontSize: 20,
                 fontWeight: FontWeight.w600,
                 color: Theme.of(context).colorScheme.onBackground,
@@ -554,7 +554,7 @@ class EmptyStateView extends StatelessWidget {
               hasFilters
                   ? context.tr(TranslationKeys.studyTopicsAdjustFilters)
                   : context.tr(TranslationKeys.studyTopicsNoTopicsAvailable),
-              style: GoogleFonts.inter(
+              style: AppFonts.inter(
                   fontSize: 16, color: AppTheme.onSurfaceVariant),
               textAlign: TextAlign.center,
             ),
@@ -572,7 +572,7 @@ class EmptyStateView extends StatelessWidget {
         onPressed: onClearFilters,
         icon: const Icon(Icons.clear_all),
         label: Text(context.tr(TranslationKeys.studyTopicsClearFilters),
-            style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
+            style: AppFonts.inter(fontWeight: FontWeight.w600)),
         style: ElevatedButton.styleFrom(
           backgroundColor: AppTheme.primaryColor,
           foregroundColor: Colors.white,
@@ -663,7 +663,7 @@ class TopicsLoadedView extends StatelessWidget {
         Text(
           context.tr(TranslationKeys.studyTopicsTopicsFound,
               {'count': topics.length.toString()}),
-          style: GoogleFonts.inter(
+          style: AppFonts.inter(
             fontSize: 16,
             color: Theme.of(context).colorScheme.onBackground,
           ),
@@ -725,7 +725,7 @@ class StudyTopicsAppBar extends StatelessWidget implements PreferredSizeWidget {
             ? onBuildSearchField()
             : Text(
                 context.tr(TranslationKeys.studyTopicsTitle),
-                style: GoogleFonts.inter(
+                style: AppFonts.inter(
                   fontSize: 20,
                   fontWeight: FontWeight.w600,
                   color: Theme.of(context).colorScheme.onBackground,

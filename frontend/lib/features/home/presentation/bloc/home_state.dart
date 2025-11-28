@@ -96,6 +96,17 @@ class HomeCombinedState extends HomeState {
   final String? generationInputType;
   final String? generationError;
 
+  /// Whether to show the personalization questionnaire prompt.
+  ///
+  /// This is true when the user is authenticated but hasn't completed
+  /// or skipped the personalization questionnaire yet.
+  final bool showPersonalizationPrompt;
+
+  /// Whether the topics are personalized based on questionnaire responses.
+  ///
+  /// If false, topics are based on study history or default recommendations.
+  final bool isPersonalized;
+
   const HomeCombinedState({
     this.topics = const [],
     this.isLoadingTopics = false,
@@ -104,6 +115,8 @@ class HomeCombinedState extends HomeState {
     this.generationInput,
     this.generationInputType,
     this.generationError,
+    this.showPersonalizationPrompt = false,
+    this.isPersonalized = false,
   });
 
   @override
@@ -115,6 +128,8 @@ class HomeCombinedState extends HomeState {
         generationInput,
         generationInputType,
         generationError,
+        showPersonalizationPrompt,
+        isPersonalized,
       ];
 
   /// Create a copy with updated values
@@ -126,6 +141,8 @@ class HomeCombinedState extends HomeState {
     String? generationInput,
     String? generationInputType,
     String? generationError,
+    bool? showPersonalizationPrompt,
+    bool? isPersonalized,
     bool clearTopicsError = false,
     bool clearGenerationError = false,
   }) =>
@@ -141,6 +158,9 @@ class HomeCombinedState extends HomeState {
         generationError: clearGenerationError
             ? null
             : (generationError ?? this.generationError),
+        showPersonalizationPrompt:
+            showPersonalizationPrompt ?? this.showPersonalizationPrompt,
+        isPersonalized: isPersonalized ?? this.isPersonalized,
       );
 }
 
@@ -155,6 +175,8 @@ class HomeStudyGuideGeneratedCombined extends HomeCombinedState {
     super.topicsError,
     super.generationInput,
     super.generationInputType,
+    super.showPersonalizationPrompt,
+    super.isPersonalized,
   }) : super(
           isGeneratingStudyGuide: false,
           generationError: null,

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
+import '../../../../core/constants/app_fonts.dart';
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 
 import 'package:hive_flutter/hive_flutter.dart';
@@ -148,7 +148,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     onPressed: _skipOnboarding,
                     child: Text(
                       'Skip',
-                      style: GoogleFonts.inter(
+                      style: AppFonts.inter(
                         fontSize: 14,
                         fontWeight: FontWeight.w500,
                         color: theme.colorScheme.onSurface.withOpacity(0.6),
@@ -217,7 +217,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                         _currentPage == _slides.length - 1
                             ? 'Get Started'
                             : 'Continue',
-                        style: GoogleFonts.inter(
+                        style: AppFonts.inter(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
                           color: const Color(0xFFFFFFFF),
@@ -286,7 +286,7 @@ class _OnboardingSlideWidget extends StatelessWidget {
           // Title
           Text(
             slide.title,
-            style: GoogleFonts.poppins(
+            style: AppFonts.poppins(
               fontSize: isLargeScreen ? 32 : 28,
               fontWeight: FontWeight.bold,
               color: theme.colorScheme.onBackground,
@@ -300,7 +300,7 @@ class _OnboardingSlideWidget extends StatelessWidget {
           // Subtitle
           Text(
             slide.subtitle,
-            style: GoogleFonts.inter(
+            style: AppFonts.inter(
               fontSize: isLargeScreen ? 20 : 18,
               fontWeight: FontWeight.w500,
               color: theme.colorScheme.primary,
@@ -314,7 +314,7 @@ class _OnboardingSlideWidget extends StatelessWidget {
           // Description
           Text(
             slide.description,
-            style: GoogleFonts.inter(
+            style: AppFonts.inter(
               fontSize: 16,
               color: theme.colorScheme.onSurface.withOpacity(0.7),
               height: 1.6,
@@ -338,7 +338,7 @@ class _OnboardingSlideWidget extends StatelessWidget {
             ),
             child: Text(
               slide.verse,
-              style: GoogleFonts.inter(
+              style: AppFonts.inter(
                 fontSize: 14,
                 fontStyle: FontStyle.italic,
                 color: theme.colorScheme.onBackground.withOpacity(0.8),
@@ -392,7 +392,7 @@ class _LogoWidget extends StatelessWidget {
               const SizedBox(width: 12),
               Text(
                 'Disciplefy',
-                style: GoogleFonts.poppins(
+                style: AppFonts.poppins(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
                   color: theme.colorScheme.primary,

@@ -3,8 +3,9 @@
 // ============================================================================
 // Intelligent topic selection for personalized recommendations
 // Avoids recently sent topics and considers user study history
+// Supports questionnaire-based personalization scoring
 
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
+import { createClient, SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
 import { formatError } from './utils/error-formatter.ts';
 
 // ============================================================================
@@ -34,10 +35,49 @@ interface TopicSelectionResult {
   error?: string;
 }
 
+interface TopicsForYouResult {
+  success: boolean;
+  topics?: Topic[];
+  error?: string;
+  hasCompletedQuestionnaire?: boolean;
+}
+
 interface LocalizedContent {
   title: string;
   description: string;
 }
+
+interface UserPersonalization {
+  faith_journey: 'new' | 'growing' | 'mature' | null;
+  seeking: Array<'peace' | 'guidance' | 'knowledge' | 'relationships' | 'challenges'>;
+  time_commitment: '5min' | '15min' | '30min' | null;
+  questionnaire_completed: boolean;
+  questionnaire_skipped: boolean;
+}
+
+interface ScoredTopic extends Topic {
+  score: number;
+}
+
+// ============================================================================
+// Category Scoring Maps
+// ============================================================================
+
+// Maps faith journey stage to preferred categories
+const FAITH_JOURNEY_CATEGORIES: Record<string, string[]> = {
+  new: ['Foundations of Faith', 'Spiritual Disciplines'],
+  growing: ['Christian Life', 'Discipleship & Growth', 'Church & Community'],
+  mature: ['Apologetics & Defense of Faith', 'Mission & Service', 'Discipleship & Growth'],
+};
+
+// Maps "seeking" values to preferred categories
+const SEEKING_CATEGORIES: Record<string, string[]> = {
+  peace: ['Spiritual Disciplines', 'Foundations of Faith'],
+  guidance: ['Christian Life', 'Discipleship & Growth'],
+  knowledge: ['Foundations of Faith', 'Apologetics & Defense of Faith'],
+  relationships: ['Family & Relationships', 'Church & Community'],
+  challenges: ['Christian Life', 'Apologetics & Defense of Faith', 'Mission & Service'],
+};
 
 // ============================================================================
 // Topic Selection Logic
@@ -210,12 +250,39 @@ export async function selectTopicForUser(
 
     let filteredTopics = topics || [];
     if (allExcludedTitles.length > 0 && filteredTopics.length > 0) {
-      filteredTopics = filteredTopics.filter(topic => {
-        const topicTitle = topic.title.toLowerCase().trim();
-        return !allExcludedTitles.includes(topicTitle);
+      // Fetch all translations for the topics we're considering
+      // This handles cases where input_value is in a non-English language
+      const topicIds = filteredTopics.map((t: any) => t.id);
+      const { data: translations, error: transError } = await supabase
+        .from('recommended_topics_translations')
+        .select('topic_id, title')
+        .in('topic_id', topicIds);
+
+      if (transError) {
+        console.error('Error fetching translations for filtering:', transError);
+      }
+
+      // Build a map of topic_id -> all titles (English + translations)
+      const topicTitlesMap: Record<string, string[]> = {};
+      for (const topic of filteredTopics) {
+        topicTitlesMap[topic.id] = [topic.title.toLowerCase().trim()];
+      }
+      if (translations) {
+        for (const trans of translations as any[]) {
+          if (topicTitlesMap[trans.topic_id]) {
+            topicTitlesMap[trans.topic_id].push(trans.title.toLowerCase().trim());
+          }
+        }
+      }
+
+      // Filter out topics where ANY title (English or translation) matches excluded titles
+      filteredTopics = filteredTopics.filter((topic: any) => {
+        const allTitles = topicTitlesMap[topic.id] || [topic.title.toLowerCase().trim()];
+        // Keep topic only if NONE of its titles are in excludedTitles
+        return !allTitles.some((title: string) => allExcludedTitles.includes(title));
       });
 
-      console.log(`After title/input filtering: ${filteredTopics.length} topics remaining (excluded ${allExcludedTitles.length} titles)`);
+      console.log(`After title/input filtering (including translations): ${filteredTopics.length} topics remaining (excluded ${allExcludedTitles.length} titles)`);
     }
 
     if (!filteredTopics || filteredTopics.length === 0) {
@@ -316,6 +383,230 @@ export async function getLocalizedTopicContent(
     return {
       title: topic.title,
       description: topic.description,
+    };
+  }
+}
+
+// ============================================================================
+// Personalization Scoring Logic
+// ============================================================================
+
+/**
+ * Calculates a personalization score for a topic based on user questionnaire answers
+ * Higher scores = better match for user
+ */
+function calculateTopicScore(topic: Topic, personalization: UserPersonalization): number {
+  let score = 0;
+
+  // Score based on faith journey (0-30 points)
+  if (personalization.faith_journey) {
+    const preferredCategories = FAITH_JOURNEY_CATEGORIES[personalization.faith_journey] || [];
+    if (preferredCategories.includes(topic.category)) {
+      score += 30;
+    }
+  }
+
+  // Score based on seeking (0-50 points total, 10 per match)
+  if (personalization.seeking && personalization.seeking.length > 0) {
+    for (const seeking of personalization.seeking) {
+      const preferredCategories = SEEKING_CATEGORIES[seeking] || [];
+      if (preferredCategories.includes(topic.category)) {
+        score += 10;
+      }
+    }
+  }
+
+  // Use display_order as tiebreaker (lower display_order = slightly higher score)
+  // Normalize: assume max display_order is ~50, so this adds 0-10 points
+  const orderBonus = Math.max(0, 10 - (topic.display_order / 5));
+  score += orderBonus;
+
+  return score;
+}
+
+/**
+ * Scores and sorts topics based on user personalization
+ */
+function scoreAndSortTopics(topics: Topic[], personalization: UserPersonalization | null): Topic[] {
+  if (!personalization || !personalization.questionnaire_completed) {
+    // No personalization: sort by display_order only
+    return topics.sort((a, b) => a.display_order - b.display_order);
+  }
+
+  // Calculate scores and sort
+  const scoredTopics: ScoredTopic[] = topics.map((topic) => ({
+    ...topic,
+    score: calculateTopicScore(topic, personalization),
+  }));
+
+  // Sort by score descending, then by display_order ascending
+  scoredTopics.sort((a, b) => {
+    if (b.score !== a.score) {
+      return b.score - a.score;
+    }
+    return a.display_order - b.display_order;
+  });
+
+  // Return topics without the score property
+  return scoredTopics.map(({ score, ...topic }) => topic);
+}
+
+// ============================================================================
+// Topics For You Selection
+// ============================================================================
+
+/**
+ * Selects personalized topics for a user's "For You" section
+ * Returns multiple topics (default 4) ranked by personalization score
+ *
+ * Logic:
+ * 1. Exclude completed topics
+ * 2. Exclude topics studied in last 14 days
+ * 3. If questionnaire completed: Score by questionnaire answers
+ * 4. If questionnaire skipped: Return by display_order
+ */
+export async function selectTopicsForYou(
+  supabaseUrl: string,
+  supabaseServiceKey: string,
+  userId: string,
+  limit: number = 4
+): Promise<TopicsForYouResult> {
+  const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+  try {
+    // Get user's personalization data
+    const { data: personalization, error: persError } = await supabase
+      .from('user_personalization')
+      .select('*')
+      .eq('user_id', userId)
+      .single();
+
+    if (persError && persError.code !== 'PGRST116') {
+      console.error('Error fetching personalization:', persError);
+    }
+
+    // Get completed topics to exclude
+    const { data: completedGuides, error: completedError } = await supabase
+      .from('user_study_guides')
+      .select('study_guide_id, study_guides!inner(topic_id, input_type, input_value)')
+      .eq('user_id', userId)
+      .not('completed_at', 'is', null);
+
+    if (completedError) {
+      console.error('Error fetching completed guides:', completedError);
+    }
+
+    let excludedTopicIds: string[] = [];
+    let excludedTitles: string[] = [];
+
+    if (completedGuides && completedGuides.length > 0) {
+      for (const guide of completedGuides) {
+        const studyGuide = guide.study_guides as any;
+        if (studyGuide?.topic_id) {
+          excludedTopicIds.push(studyGuide.topic_id);
+        } else if (studyGuide?.input_type === 'topic' && studyGuide?.input_value) {
+          excludedTitles.push(studyGuide.input_value.toLowerCase().trim());
+        }
+      }
+      excludedTopicIds = [...new Set(excludedTopicIds)];
+      excludedTitles = [...new Set(excludedTitles)];
+    }
+
+    // Get recently studied incomplete topics (14 days) to exclude
+    const fourteenDaysAgo = new Date();
+    fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14);
+
+    const { data: recentGuides, error: recentError } = await supabase
+      .from('user_study_guides')
+      .select('study_guide_id, study_guides!inner(topic_id, input_type, input_value, created_at)')
+      .eq('user_id', userId)
+      .is('completed_at', null)
+      .gte('study_guides.created_at', fourteenDaysAgo.toISOString());
+
+    if (recentError) {
+      console.error('Error fetching recent guides:', recentError);
+    }
+
+    if (recentGuides && recentGuides.length > 0) {
+      for (const guide of recentGuides) {
+        const studyGuide = guide.study_guides as any;
+        if (studyGuide?.topic_id) {
+          excludedTopicIds.push(studyGuide.topic_id);
+        } else if (studyGuide?.input_type === 'topic' && studyGuide?.input_value) {
+          excludedTitles.push(studyGuide.input_value.toLowerCase().trim());
+        }
+      }
+      excludedTopicIds = [...new Set(excludedTopicIds)];
+      excludedTitles = [...new Set(excludedTitles)];
+    }
+
+    // Fetch all active topics
+    let query = supabase.from('recommended_topics').select('*').eq('is_active', true);
+
+    if (excludedTopicIds.length > 0) {
+      query = query.not('id', 'in', `(${excludedTopicIds.join(',')})`);
+    }
+
+    const { data: topics, error: topicsError } = await query;
+
+    if (topicsError) {
+      return {
+        success: false,
+        error: `Failed to fetch topics: ${topicsError.message}`,
+      };
+    }
+
+    // Filter by title for pre-migration guides
+    // Need to also check translations since input_value may be in non-English language
+    let filteredTopics = topics || [];
+    if (excludedTitles.length > 0 && filteredTopics.length > 0) {
+      // Fetch all translations for the topics we're considering
+      const topicIds = filteredTopics.map((t) => t.id);
+      const { data: translations, error: transError } = await supabase
+        .from('recommended_topics_translations')
+        .select('topic_id, title')
+        .in('topic_id', topicIds);
+
+      if (transError) {
+        console.error('Error fetching translations for filtering:', transError);
+      }
+
+      // Build a map of topic_id -> all titles (English + translations)
+      const topicTitlesMap: Record<string, string[]> = {};
+      for (const topic of filteredTopics) {
+        topicTitlesMap[topic.id] = [topic.title.toLowerCase().trim()];
+      }
+      if (translations) {
+        for (const trans of translations) {
+          if (topicTitlesMap[trans.topic_id]) {
+            topicTitlesMap[trans.topic_id].push(trans.title.toLowerCase().trim());
+          }
+        }
+      }
+
+      // Filter out topics where ANY title (English or translation) matches excluded titles
+      filteredTopics = filteredTopics.filter((topic) => {
+        const allTitles = topicTitlesMap[topic.id] || [topic.title.toLowerCase().trim()];
+        // Keep topic only if NONE of its titles are in excludedTitles
+        return !allTitles.some((title) => excludedTitles.includes(title));
+      });
+
+      console.log(`After title filtering (including translations): ${filteredTopics.length} topics remaining`);
+    }
+
+    // Score and sort topics based on personalization
+    const sortedTopics = scoreAndSortTopics(filteredTopics, personalization);
+
+    // Return top N topics
+    return {
+      success: true,
+      topics: sortedTopics.slice(0, limit),
+      hasCompletedQuestionnaire: personalization?.questionnaire_completed || false,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: formatError(error, 'Topics for you selection error'),
     };
   }
 }

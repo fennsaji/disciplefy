@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
+import '../../../../core/constants/app_fonts.dart';
 
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/extensions/translation_extension.dart';
@@ -96,7 +96,7 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
         ),
         title: Text(
           context.tr(TranslationKeys.memoryTitle),
-          style: GoogleFonts.inter(
+          style: AppFonts.inter(
             fontSize: 20,
             fontWeight: FontWeight.w700,
             color: Theme.of(context).colorScheme.onBackground,
@@ -245,7 +245,7 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
                 children: [
                   Text(
                     context.tr(TranslationKeys.memoryYourProgress),
-                    style: GoogleFonts.inter(
+                    style: AppFonts.inter(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
                       color: AppTheme.primaryColor,
@@ -294,7 +294,7 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
                               const SizedBox(width: 8),
                               Text(
                                 '${context.tr(TranslationKeys.memoryReviewAll)} (${state.verses.length})',
-                                style: GoogleFonts.inter(
+                                style: AppFonts.inter(
                                   fontSize: 16,
                                   fontWeight: FontWeight.w600,
                                   color: Colors.white,
@@ -310,7 +310,7 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
                   const SizedBox(height: 16),
                   Text(
                     '${context.tr(TranslationKeys.memoryDueForReview)} (${state.verses.length})',
-                    style: GoogleFonts.inter(
+                    style: AppFonts.inter(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
                       color: Theme.of(context).colorScheme.onBackground,
@@ -321,7 +321,7 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
                     Text(
                       _getVersesToReviewMessage(
                           context, state.statistics.dueVerses),
-                      style: GoogleFonts.inter(
+                      style: AppFonts.inter(
                         fontSize: 14,
                         color: Theme.of(context).colorScheme.onSurfaceVariant,
                         fontStyle: FontStyle.italic,
@@ -433,7 +433,7 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
             const SizedBox(height: 24),
             Text(
               'No Verses Yet',
-              style: GoogleFonts.inter(
+              style: AppFonts.inter(
                 fontSize: 22,
                 fontWeight: FontWeight.w700,
                 color: Theme.of(context).colorScheme.onBackground,
@@ -443,7 +443,7 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
             Text(
               'Start building your memory verse collection.\nAdd verses to review them with spaced repetition.',
               textAlign: TextAlign.center,
-              style: GoogleFonts.inter(
+              style: AppFonts.inter(
                 fontSize: 15,
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
                 height: 1.5,
@@ -487,7 +487,7 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
                         const SizedBox(width: 8),
                         Text(
                           'Add Your First Verse',
-                          style: GoogleFonts.inter(
+                          style: AppFonts.inter(
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
                             color: Colors.white,
@@ -602,7 +602,7 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
       children: [
         Text(
           context.tr(TranslationKeys.memoryFilterByLanguage),
-          style: GoogleFonts.inter(
+          style: AppFonts.inter(
             fontSize: 14,
             fontWeight: FontWeight.w600,
             color: AppTheme.primaryColor,
@@ -684,7 +684,7 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
         ),
         child: Text(
           label,
-          style: GoogleFonts.inter(
+          style: AppFonts.inter(
             fontSize: 14,
             color: isSelected
                 ? Colors.white

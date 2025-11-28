@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:google_fonts/google_fonts.dart';
+import '../../../../core/constants/app_fonts.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/extensions/translation_extension.dart';
 import '../../../../core/i18n/translation_keys.dart';
@@ -77,7 +77,7 @@ class _BugReportBottomSheetState extends State<BugReportBottomSheet> {
               const SizedBox(width: 12),
               Text(
                 context.tr(TranslationKeys.bugReportTitle),
-                style: GoogleFonts.poppins(
+                style: AppFonts.poppins(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
                   color: AppTheme.errorColor,
@@ -88,7 +88,7 @@ class _BugReportBottomSheetState extends State<BugReportBottomSheet> {
           const SizedBox(height: 8),
           Text(
             context.tr(TranslationKeys.bugReportSubtitle),
-            style: GoogleFonts.inter(
+            style: AppFonts.inter(
               fontSize: 14,
               color: AppTheme.onSurfaceVariant,
             ),
@@ -140,7 +140,7 @@ class _BugReportBottomSheetState extends State<BugReportBottomSheet> {
                     )
                   : Text(
                       context.tr(TranslationKeys.bugReportButtonReport),
-                      style: GoogleFonts.inter(
+                      style: AppFonts.inter(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
                       ),

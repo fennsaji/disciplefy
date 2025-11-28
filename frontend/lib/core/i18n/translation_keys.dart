@@ -111,6 +111,16 @@ class TranslationKeys {
   static const homeFailedToGenerate = 'home.failed_to_generate';
   static const homeDismiss = 'home.dismiss';
   static const homeVerseNotLoaded = 'home.verse_not_loaded';
+  static const homeForYou = 'home.for_you';
+  static const homeForYouSubtitle = 'home.for_you_subtitle';
+  static const homeExploreTopics = 'home.explore_topics';
+  static const homePersonalizePromptTitle = 'home.personalize_prompt_title';
+  static const homePersonalizePromptSubtitle =
+      'home.personalize_prompt_subtitle';
+  static const homePersonalizePromptDescription =
+      'home.personalize_prompt_description';
+  static const homePersonalizeGetStarted = 'home.personalize_get_started';
+  static const homePersonalizeMaybeLater = 'home.personalize_maybe_later';
 
   // Daily Verse
   static const dailyVerseRefreshing = 'daily_verse.refreshing';
@@ -262,6 +272,54 @@ class TranslationKeys {
   static const settingsClose = 'settings.close';
   static const settingsSupport = 'settings.support';
   static const settingsNoEmail = 'settings.no_email';
+
+  // Settings - Personalization
+  static const settingsPersonalization = 'settings.personalization';
+  static const settingsRetakeQuestionnaire = 'settings.retake_questionnaire';
+  static const settingsRetakeQuestionnaireSubtitle =
+      'settings.retake_questionnaire_subtitle';
+  static const settingsTakeQuestionnaire = 'settings.take_questionnaire';
+  static const settingsTakeQuestionnaireSubtitle =
+      'settings.take_questionnaire_subtitle';
+
+  // Personalization Questionnaire
+  static const questionnaireYourJourney = 'questionnaire.your_journey';
+  static const questionnaireWhatYouSeek = 'questionnaire.what_you_seek';
+  static const questionnaireYourTime = 'questionnaire.your_time';
+  static const questionnairePersonalize = 'questionnaire.personalize';
+  static const questionnaireSkip = 'questionnaire.skip';
+  static const questionnaireContinue = 'questionnaire.continue';
+  static const questionnaireBack = 'questionnaire.back';
+  static const questionnaireDone = 'questionnaire.done';
+  static const questionnaireSkipTitle = 'questionnaire.skip_title';
+  static const questionnaireSkipMessage = 'questionnaire.skip_message';
+  static const questionnaireCancel = 'questionnaire.cancel';
+
+  // Question 1: Faith Journey
+  static const questionnaireFaithTitle = 'questionnaire.faith.title';
+  static const questionnaireFaithSubtitle = 'questionnaire.faith.subtitle';
+  static const questionnaireFaithNew = 'questionnaire.faith.new';
+  static const questionnaireFaithGrowing = 'questionnaire.faith.growing';
+  static const questionnaireFaithMature = 'questionnaire.faith.mature';
+
+  // Question 2: What You Seek
+  static const questionnaireSeekingTitle = 'questionnaire.seeking.title';
+  static const questionnaireSeekingSubtitle = 'questionnaire.seeking.subtitle';
+  static const questionnaireSeekingPeace = 'questionnaire.seeking.peace';
+  static const questionnaireSeekingGuidance = 'questionnaire.seeking.guidance';
+  static const questionnaireSeekingKnowledge =
+      'questionnaire.seeking.knowledge';
+  static const questionnaireSeekingRelationships =
+      'questionnaire.seeking.relationships';
+  static const questionnaireSeekingChallenges =
+      'questionnaire.seeking.challenges';
+
+  // Question 3: Time Commitment
+  static const questionnaireTimeTitle = 'questionnaire.time.title';
+  static const questionnaireTimeSubtitle = 'questionnaire.time.subtitle';
+  static const questionnaireTime5Min = 'questionnaire.time.5min';
+  static const questionnaireTime15Min = 'questionnaire.time.15min';
+  static const questionnaireTime30Min = 'questionnaire.time.30min';
 
   // Saved Guides Screen
   static const savedGuidesTitle = 'saved_guides.title';

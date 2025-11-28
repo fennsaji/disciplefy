@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
+import '../../../../core/constants/app_fonts.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../../../../core/theme/app_theme.dart';
@@ -16,6 +16,7 @@ import '../../../../core/i18n/translation_keys.dart';
 import '../../../../core/services/language_preference_service.dart';
 import '../../domain/entities/study_guide.dart';
 import '../../../../core/navigation/study_navigator.dart';
+import '../../../home/data/services/recommended_guides_service.dart';
 import '../bloc/study_bloc.dart';
 import '../bloc/study_event.dart';
 import '../bloc/study_state.dart';
@@ -567,8 +568,10 @@ class _StudyGuideScreenV2ContentState
               );
             }
           }
-          // Handle study completion - show notification prompt
+          // Handle study completion - show notification prompt and invalidate cache
           else if (state is StudyCompletionSuccess) {
+            // Invalidate the "For You" cache so completed topics don't show again
+            sl<RecommendedGuidesService>().clearForYouCache();
             _showRecommendedTopicNotificationPrompt();
           }
         },
@@ -594,7 +597,7 @@ class _StudyGuideScreenV2ContentState
         ),
         title: Text(
           _getDisplayTitle(),
-          style: GoogleFonts.poppins(
+          style: AppFonts.poppins(
             fontSize: 20,
             fontWeight: FontWeight.w600,
             color: Theme.of(context).colorScheme.primary,
@@ -650,7 +653,7 @@ class _StudyGuideScreenV2ContentState
               const SizedBox(height: 24),
               Text(
                 'Oops! Something went wrong',
-                style: GoogleFonts.poppins(
+                style: AppFonts.poppins(
                   fontSize: 28,
                   fontWeight: FontWeight.w600,
                   color: Theme.of(context).colorScheme.onBackground,
@@ -662,7 +665,7 @@ class _StudyGuideScreenV2ContentState
                 _errorMessage.isEmpty
                     ? 'We couldn\'t generate your study guide. Please try again.'
                     : _errorMessage,
-                style: GoogleFonts.inter(
+                style: AppFonts.inter(
                   fontSize: 16,
                   color:
                       Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
@@ -679,7 +682,7 @@ class _StudyGuideScreenV2ContentState
                     icon: const Icon(Icons.arrow_back),
                     label: Text(
                       'Go Back',
-                      style: GoogleFonts.inter(
+                      style: AppFonts.inter(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
                       ),
@@ -705,7 +708,7 @@ class _StudyGuideScreenV2ContentState
                     icon: const Icon(Icons.refresh),
                     label: Text(
                       'Try Again',
-                      style: GoogleFonts.inter(
+                      style: AppFonts.inter(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
                       ),
@@ -870,7 +873,7 @@ class _StudyGuideScreenV2ContentState
               const SizedBox(width: 8),
               Text(
                 context.tr(TranslationKeys.studyGuidePersonalNotes),
-                style: GoogleFonts.inter(
+                style: AppFonts.inter(
                   fontSize: 20,
                   fontWeight: FontWeight.w600,
                   color: Theme.of(context).colorScheme.onBackground,
@@ -890,7 +893,7 @@ class _StudyGuideScreenV2ContentState
             child: TextField(
               controller: _notesController,
               maxLines: 6,
-              style: GoogleFonts.inter(
+              style: AppFonts.inter(
                 fontSize: 16,
                 color: Theme.of(context).colorScheme.onBackground,
                 height: 1.5,
@@ -898,7 +901,7 @@ class _StudyGuideScreenV2ContentState
               decoration: InputDecoration(
                 hintText: context
                     .tr(TranslationKeys.studyGuidePersonalNotesPlaceholder),
-                hintStyle: GoogleFonts.inter(
+                hintStyle: AppFonts.inter(
                   color:
                       Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
                 ),
@@ -950,7 +953,7 @@ class _StudyGuideScreenV2ContentState
                           ),
                           label: Text(
                             currentStep ?? 'Saving...',
-                            style: GoogleFonts.inter(
+                            style: AppFonts.inter(
                               fontSize: 18,
                               fontWeight: FontWeight.w600,
                             ),
@@ -983,7 +986,7 @@ class _StudyGuideScreenV2ContentState
                                 ? context.tr(TranslationKeys.studyGuideSaved)
                                 : context
                                     .tr(TranslationKeys.studyGuideSaveStudy),
-                            style: GoogleFonts.inter(
+                            style: AppFonts.inter(
                               fontSize: 18,
                               fontWeight: FontWeight.w600,
                             ),
@@ -1034,7 +1037,7 @@ class _StudyGuideScreenV2ContentState
                         const SizedBox(width: 8),
                         Text(
                           context.tr(TranslationKeys.studyGuideShare),
-                          style: GoogleFonts.inter(
+                          style: AppFonts.inter(
                             fontSize: 18,
                             fontWeight: FontWeight.w600,
                             color: Colors.white,
@@ -1144,7 +1147,7 @@ class _StudyGuideScreenV2ContentState
         shadowColor: Colors.black.withOpacity(0.1),
         title: Text(
           context.tr(TranslationKeys.studyGuideAuthRequired),
-          style: GoogleFonts.poppins(
+          style: AppFonts.poppins(
             fontSize: 20,
             fontWeight: FontWeight.bold,
             color: const Color(0xFF333333),
@@ -1152,7 +1155,7 @@ class _StudyGuideScreenV2ContentState
         ),
         content: Text(
           context.tr(TranslationKeys.studyGuideAuthRequiredMessage),
-          style: GoogleFonts.inter(
+          style: AppFonts.inter(
             fontSize: 18,
             color: const Color(0xFF333333),
             height: 1.5,
@@ -1171,7 +1174,7 @@ class _StudyGuideScreenV2ContentState
             ),
             child: Text(
               context.tr(TranslationKeys.commonCancel),
-              style: GoogleFonts.inter(
+              style: AppFonts.inter(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
                 color: const Color(0xFF888888),
@@ -1195,7 +1198,7 @@ class _StudyGuideScreenV2ContentState
             ),
             child: Text(
               context.tr(TranslationKeys.studyGuideSignIn),
-              style: GoogleFonts.inter(
+              style: AppFonts.inter(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
               ),
@@ -1219,7 +1222,7 @@ class _StudyGuideScreenV2ContentState
             Expanded(
               child: Text(
                 message,
-                style: GoogleFonts.inter(
+                style: AppFonts.inter(
                   color: Colors.white,
                   fontWeight: FontWeight.w500,
                 ),
@@ -1342,7 +1345,7 @@ class _StudySection extends StatelessWidget {
                 Expanded(
                   child: Text(
                     title,
-                    style: GoogleFonts.inter(
+                    style: AppFonts.inter(
                       fontSize: 20,
                       fontWeight: FontWeight.w600,
                       color: Theme.of(context).colorScheme.onBackground,
@@ -1385,7 +1388,7 @@ class _StudySection extends StatelessWidget {
       SnackBar(
         content: Text(
           context.tr(TranslationKeys.studyGuideCopiedToClipboard),
-          style: GoogleFonts.inter(color: Colors.white),
+          style: AppFonts.inter(color: Colors.white),
         ),
         backgroundColor: Theme.of(context).colorScheme.primary,
         behavior: SnackBarBehavior.floating,

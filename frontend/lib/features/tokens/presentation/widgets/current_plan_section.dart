@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import '../../../../core/constants/app_fonts.dart';
 
 import '../../domain/entities/token_status.dart';
 import '../../../../core/extensions/translation_extension.dart';
@@ -41,7 +41,7 @@ class CurrentPlanSection extends StatelessWidget {
                 const SizedBox(width: 12),
                 Text(
                   context.tr('tokens.plans.current_plan'),
-                  style: GoogleFonts.inter(
+                  style: AppFonts.inter(
                     fontSize: 18,
                     fontWeight: FontWeight.w600,
                     color: Theme.of(context).colorScheme.onSurface,
@@ -65,7 +65,7 @@ class CurrentPlanSection extends StatelessWidget {
                   ),
                   child: Text(
                     tokenStatus.userPlan.displayName,
-                    style: GoogleFonts.inter(
+                    style: AppFonts.inter(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
                       color: _getPlanColor(tokenStatus.userPlan),
@@ -108,7 +108,7 @@ class CurrentPlanSection extends StatelessWidget {
             const SizedBox(height: 12),
             Text(
               _getPlanDescription(tokenStatus.userPlan, context),
-              style: GoogleFonts.inter(
+              style: AppFonts.inter(
                 fontSize: 14,
                 color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
               ),
@@ -131,7 +131,7 @@ class CurrentPlanSection extends StatelessWidget {
                     Expanded(
                       child: Text(
                         context.tr(TranslationKeys.plansCancelledNotice),
-                        style: GoogleFonts.inter(
+                        style: AppFonts.inter(
                           fontSize: 12,
                           color: Colors.orange[900],
                         ),

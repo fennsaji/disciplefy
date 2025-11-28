@@ -3,7 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
+import '../../../../core/constants/app_fonts.dart';
 
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/utils/category_utils.dart';
@@ -23,6 +23,7 @@ import '../../../notifications/presentation/widgets/notification_enable_prompt.d
 import '../bloc/home_bloc.dart';
 import '../bloc/home_event.dart';
 import '../bloc/home_state.dart';
+import '../../../personalization/presentation/widgets/personalization_prompt_card.dart';
 
 /// Home screen displaying daily verse, navigation options, and study recommendations.
 ///
@@ -63,7 +64,8 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
     final homeBloc = sl<HomeBloc>();
     final current = homeBloc.state;
     if (current is! HomeCombinedState || current.topics.isEmpty) {
-      homeBloc.add(const LoadRecommendedTopics(limit: 6));
+      // Use LoadForYouTopics for authenticated users (bloc handles fallback)
+      homeBloc.add(const LoadForYouTopics());
     }
   }
 
@@ -372,7 +374,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
         children: [
           Text(
             context.tr(TranslationKeys.homeWelcomeBack, {'name': userName}),
-            style: GoogleFonts.inter(
+            style: AppFonts.inter(
               fontSize: 28,
               fontWeight: FontWeight.w600,
               color: Theme.of(context).colorScheme.onBackground,
@@ -382,7 +384,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
           const SizedBox(height: 8),
           Text(
             context.tr(TranslationKeys.homeContinueJourney),
-            style: GoogleFonts.inter(
+            style: AppFonts.inter(
               fontSize: 16,
               color:
                   Theme.of(context).colorScheme.onBackground.withOpacity(0.7),
@@ -423,7 +425,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
               const SizedBox(width: 12),
               Text(
                 context.tr(TranslationKeys.homeGenerateStudyGuide),
-                style: GoogleFonts.inter(
+                style: AppFonts.inter(
                   fontSize: 18,
                   fontWeight: FontWeight.w600,
                   color: Colors.white,
@@ -459,7 +461,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
                 children: [
                   Text(
                     context.tr(TranslationKeys.homeResumeLastStudy),
-                    style: GoogleFonts.inter(
+                    style: AppFonts.inter(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
                       color: AppTheme.textPrimary,
@@ -469,7 +471,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
                   Text(
                     context.tr(TranslationKeys.homeContinueStudying,
                         {'topic': 'Faith in Trials'}),
-                    style: GoogleFonts.inter(
+                    style: AppFonts.inter(
                       fontSize: 14,
                       color: AppTheme.onSurfaceVariant,
                     ),
@@ -494,20 +496,56 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
         final homeState =
             state is HomeCombinedState ? state : const HomeCombinedState();
 
+        // Determine section title based on personalization state
+        final sectionTitle = homeState.isPersonalized
+            ? context.tr(TranslationKeys.homeForYou)
+            : context.tr(TranslationKeys.homeExploreTopics);
+
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Personalization prompt card (shown when needed)
+            if (homeState.showPersonalizationPrompt) ...[
+              PersonalizationPromptCard(
+                onGetStarted: () => _navigateToQuestionnaire(),
+                onSkip: () => context
+                    .read<HomeBloc>()
+                    .add(const DismissPersonalizationPrompt()),
+              ),
+              const SizedBox(height: 24),
+            ],
+
+            // Section header
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  context.tr(TranslationKeys.homeRecommendedTopics),
-                  style: GoogleFonts.inter(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w600,
-                    color: isDark
-                        ? Colors.white.withOpacity(0.9)
-                        : const Color(0xFF1F2937),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        sectionTitle,
+                        style: AppFonts.inter(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w600,
+                          color: isDark
+                              ? Colors.white.withOpacity(0.9)
+                              : const Color(0xFF1F2937),
+                        ),
+                      ),
+                      if (homeState.isPersonalized) ...[
+                        const SizedBox(height: 4),
+                        Text(
+                          context.tr(TranslationKeys.homeForYouSubtitle),
+                          style: AppFonts.inter(
+                            fontSize: 13,
+                            color: isDark
+                                ? Colors.white.withOpacity(0.6)
+                                : const Color(0xFF6B7280),
+                          ),
+                        ),
+                      ],
+                    ],
                   ),
                 ),
                 if (homeState.isLoadingTopics)
@@ -537,7 +575,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
                     ),
                     child: Text(
                       context.tr(TranslationKeys.homeViewAll),
-                      style: GoogleFonts.inter(
+                      style: AppFonts.inter(
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
                         color: AppTheme.primaryColor,
@@ -561,6 +599,14 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
     );
   }
 
+  /// Navigate to the personalization questionnaire
+  void _navigateToQuestionnaire() {
+    context.push('/personalization-questionnaire').then((_) {
+      // Refresh topics after questionnaire completion
+      sl<HomeBloc>().add(const LoadForYouTopics(forceRefresh: true));
+    });
+  }
+
   Widget _buildTopicsErrorWidget(String error) => Container(
         padding: const EdgeInsets.all(24),
         decoration: BoxDecoration(
@@ -580,7 +626,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
             const SizedBox(height: 12),
             Text(
               context.tr(TranslationKeys.homeFailedToLoadTopics),
-              style: GoogleFonts.inter(
+              style: AppFonts.inter(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
                 color: Theme.of(context).colorScheme.onBackground,
@@ -589,7 +635,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
             const SizedBox(height: 8),
             Text(
               context.tr(TranslationKeys.homeSomethingWentWrong),
-              style: GoogleFonts.inter(
+              style: AppFonts.inter(
                 fontSize: 14,
                 color:
                     Theme.of(context).colorScheme.onBackground.withOpacity(0.7),
@@ -762,7 +808,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
             const SizedBox(height: 12),
             Text(
               context.tr(TranslationKeys.homeNoTopicsAvailable),
-              style: GoogleFonts.inter(
+              style: AppFonts.inter(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
                 color: Theme.of(context).colorScheme.onBackground,
@@ -771,7 +817,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
             const SizedBox(height: 8),
             Text(
               context.tr(TranslationKeys.homeCheckConnection),
-              style: GoogleFonts.inter(
+              style: AppFonts.inter(
                 fontSize: 14,
                 color:
                     Theme.of(context).colorScheme.onBackground.withOpacity(0.7),
@@ -961,7 +1007,7 @@ class _RecommendedGuideTopicCard extends StatelessWidget {
                           ),
                           child: Text(
                             topic.category,
-                            style: GoogleFonts.inter(
+                            style: AppFonts.inter(
                               fontSize: 11,
                               fontWeight: FontWeight.w600,
                               color: isDark
@@ -980,7 +1026,7 @@ class _RecommendedGuideTopicCard extends StatelessWidget {
                   // Title
                   Text(
                     topic.title,
-                    style: GoogleFonts.inter(
+                    style: AppFonts.inter(
                       fontSize: 15,
                       fontWeight: FontWeight.w600,
                       color: isDark
@@ -998,7 +1044,7 @@ class _RecommendedGuideTopicCard extends StatelessWidget {
                   Expanded(
                     child: Text(
                       topic.description,
-                      style: GoogleFonts.inter(
+                      style: AppFonts.inter(
                         fontSize: 13,
                         color: isDark
                             ? Colors.white.withOpacity(0.6)

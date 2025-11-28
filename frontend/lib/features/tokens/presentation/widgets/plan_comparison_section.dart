@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import '../../../../core/constants/app_fonts.dart';
 
 import '../../domain/entities/token_status.dart';
 import '../../../../core/extensions/translation_extension.dart';
@@ -24,7 +24,7 @@ class PlanComparisonSection extends StatelessWidget {
           children: [
             Text(
               context.tr('tokens.plans.comparison'),
-              style: GoogleFonts.inter(
+              style: AppFonts.inter(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
                 color: Theme.of(context).colorScheme.onSurface,
@@ -110,7 +110,7 @@ class PlanCard extends StatelessWidget {
                   children: [
                     Text(
                       title,
-                      style: GoogleFonts.inter(
+                      style: AppFonts.inter(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
                         color: Theme.of(context).colorScheme.onSurface,
@@ -127,7 +127,7 @@ class PlanCard extends StatelessWidget {
                         ),
                         child: Text(
                           context.tr('tokens.plans.current'),
-                          style: GoogleFonts.inter(
+                          style: AppFonts.inter(
                             fontSize: 10,
                             fontWeight: FontWeight.w600,
                             color: Colors.white,
@@ -139,7 +139,7 @@ class PlanCard extends StatelessWidget {
                 ),
                 Text(
                   subtitle,
-                  style: GoogleFonts.inter(
+                  style: AppFonts.inter(
                     fontSize: 14,
                     fontWeight: FontWeight.w500,
                     color: _getPlanColor(plan),
@@ -147,7 +147,7 @@ class PlanCard extends StatelessWidget {
                 ),
                 Text(
                   description,
-                  style: GoogleFonts.inter(
+                  style: AppFonts.inter(
                     fontSize: 12,
                     color: Theme.of(context)
                         .colorScheme

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+// Note: Using bundled fonts directly from pubspec.yaml instead of GoogleFonts
+// to avoid AssetManifest.json issues when allowRuntimeFetching = false
 
 /// Application theme following Disciplefy brand guidelines.
 ///
@@ -58,27 +59,32 @@ class AppTheme {
         scaffoldBackgroundColor: backgroundColor,
 
         // Typography following Disciplefy brand guidelines
-        textTheme: TextTheme(
-          // Headings use Playfair Display
-          displayLarge: GoogleFonts.poppins(
+        // Using bundled fonts from pubspec.yaml (Inter, Poppins)
+        textTheme: const TextTheme(
+          // Headings use Poppins
+          displayLarge: TextStyle(
+            fontFamily: 'Poppins',
             fontSize: 32,
             fontWeight: FontWeight.bold,
             height: 1.2,
             color: primaryColor,
           ),
-          displayMedium: GoogleFonts.poppins(
+          displayMedium: TextStyle(
+            fontFamily: 'Poppins',
             fontSize: 28,
             fontWeight: FontWeight.bold,
             height: 1.2,
             color: primaryColor,
           ),
-          headlineLarge: GoogleFonts.poppins(
+          headlineLarge: TextStyle(
+            fontFamily: 'Poppins',
             fontSize: 24,
             fontWeight: FontWeight.w600,
             height: 1.3,
             color: primaryColor,
           ),
-          headlineMedium: GoogleFonts.poppins(
+          headlineMedium: TextStyle(
+            fontFamily: 'Poppins',
             fontSize: 20,
             fontWeight: FontWeight.w600,
             height: 1.3,
@@ -86,43 +92,51 @@ class AppTheme {
           ),
 
           // Titles use Inter for better readability
-          titleLarge: GoogleFonts.inter(
+          titleLarge: TextStyle(
+            fontFamily: 'Inter',
             fontSize: 18,
             fontWeight: FontWeight.w600,
             height: 1.4,
           ),
-          titleMedium: GoogleFonts.inter(
+          titleMedium: TextStyle(
+            fontFamily: 'Inter',
             fontSize: 16,
             fontWeight: FontWeight.w500,
             height: 1.4,
           ),
 
           // Body text uses Inter
-          bodyLarge: GoogleFonts.inter(
+          bodyLarge: TextStyle(
+            fontFamily: 'Inter',
             fontSize: 18,
             height: 1.5,
           ),
-          bodyMedium: GoogleFonts.inter(
+          bodyMedium: TextStyle(
+            fontFamily: 'Inter',
             fontSize: 16,
             height: 1.5,
           ),
-          bodySmall: GoogleFonts.inter(
+          bodySmall: TextStyle(
+            fontFamily: 'Inter',
             fontSize: 14,
             height: 1.4,
           ),
 
           // Labels and buttons use Inter
-          labelLarge: GoogleFonts.inter(
+          labelLarge: TextStyle(
+            fontFamily: 'Inter',
             fontSize: 14,
             fontWeight: FontWeight.w500,
             letterSpacing: 0.1,
           ),
-          labelMedium: GoogleFonts.inter(
+          labelMedium: TextStyle(
+            fontFamily: 'Inter',
             fontSize: 12,
             fontWeight: FontWeight.w500,
             letterSpacing: 0.5,
           ),
-          labelSmall: GoogleFonts.inter(
+          labelSmall: TextStyle(
+            fontFamily: 'Inter',
             fontSize: 11,
             fontWeight: FontWeight.w500,
             letterSpacing: 0.5,
@@ -185,27 +199,32 @@ class AppTheme {
         scaffoldBackgroundColor: const Color(0xFF121212),
 
         // Typography with improved dark theme colors
-        textTheme: TextTheme(
+        // Using bundled fonts from pubspec.yaml (Inter, Poppins)
+        textTheme: const TextTheme(
           // Headings use Inter with vibrant purple for dark theme
-          displayLarge: GoogleFonts.inter(
+          displayLarge: TextStyle(
+            fontFamily: 'Inter',
             fontSize: 32,
             fontWeight: FontWeight.bold,
             height: 1.2,
             color: primaryColor, // Vibrant Purple (#7C3AED)
           ),
-          displayMedium: GoogleFonts.inter(
+          displayMedium: TextStyle(
+            fontFamily: 'Inter',
             fontSize: 28,
             fontWeight: FontWeight.bold,
             height: 1.2,
             color: primaryColor,
           ),
-          headlineLarge: GoogleFonts.inter(
+          headlineLarge: TextStyle(
+            fontFamily: 'Inter',
             fontSize: 24,
             fontWeight: FontWeight.w600,
             height: 1.3,
             color: primaryColor,
           ),
-          headlineMedium: GoogleFonts.inter(
+          headlineMedium: TextStyle(
+            fontFamily: 'Inter',
             fontSize: 20,
             fontWeight: FontWeight.w600,
             height: 1.3,
@@ -213,54 +232,62 @@ class AppTheme {
           ),
 
           // Titles use Inter for better readability in dark theme
-          titleLarge: GoogleFonts.inter(
+          titleLarge: TextStyle(
+            fontFamily: 'Inter',
             fontSize: 18,
             fontWeight: FontWeight.w600,
             height: 1.4,
-            color: const Color(0xFFE0E0E0),
+            color: Color(0xFFE0E0E0),
           ),
-          titleMedium: GoogleFonts.inter(
+          titleMedium: TextStyle(
+            fontFamily: 'Inter',
             fontSize: 16,
             fontWeight: FontWeight.w500,
             height: 1.4,
-            color: const Color(0xFFE0E0E0),
+            color: Color(0xFFE0E0E0),
           ),
 
           // Body text uses Inter with proper dark theme colors
-          bodyLarge: GoogleFonts.inter(
+          bodyLarge: TextStyle(
+            fontFamily: 'Inter',
             fontSize: 18,
             height: 1.5,
-            color: const Color(0xFFE0E0E0),
+            color: Color(0xFFE0E0E0),
           ),
-          bodyMedium: GoogleFonts.inter(
+          bodyMedium: TextStyle(
+            fontFamily: 'Inter',
             fontSize: 16,
             height: 1.5,
-            color: const Color(0xFFE0E0E0),
+            color: Color(0xFFE0E0E0),
           ),
-          bodySmall: GoogleFonts.inter(
+          bodySmall: TextStyle(
+            fontFamily: 'Inter',
             fontSize: 14,
             height: 1.4,
-            color: const Color(0xFFB0B0B0),
+            color: Color(0xFFB0B0B0),
           ),
 
           // Labels and buttons use Inter with appropriate contrast
-          labelLarge: GoogleFonts.inter(
+          labelLarge: TextStyle(
+            fontFamily: 'Inter',
             fontSize: 14,
             fontWeight: FontWeight.w500,
             letterSpacing: 0.1,
-            color: const Color(0xFFE0E0E0),
+            color: Color(0xFFE0E0E0),
           ),
-          labelMedium: GoogleFonts.inter(
+          labelMedium: TextStyle(
+            fontFamily: 'Inter',
             fontSize: 12,
             fontWeight: FontWeight.w500,
             letterSpacing: 0.5,
-            color: const Color(0xFFB0B0B0),
+            color: Color(0xFFB0B0B0),
           ),
-          labelSmall: GoogleFonts.inter(
+          labelSmall: TextStyle(
+            fontFamily: 'Inter',
             fontSize: 11,
             fontWeight: FontWeight.w500,
             letterSpacing: 0.5,
-            color: const Color(0xFFB0B0B0),
+            color: Color(0xFFB0B0B0),
           ),
         ),
 

@@ -72,6 +72,30 @@ class LanguagePreferenceChanged extends HomeEvent {
   const LanguagePreferenceChanged();
 }
 
+/// Event to load personalized "For You" topics for authenticated users.
+///
+/// This uses the personalized topics endpoint that considers the user's
+/// questionnaire responses and study history for recommendations.
+class LoadForYouTopics extends HomeEvent {
+  final int limit;
+  final bool forceRefresh;
+
+  const LoadForYouTopics({
+    this.limit = 4,
+    this.forceRefresh = false,
+  });
+
+  @override
+  List<Object?> get props => [limit, forceRefresh];
+}
+
+/// Event to dismiss the personalization prompt card.
+///
+/// This hides the prompt without skipping the questionnaire permanently.
+class DismissPersonalizationPrompt extends HomeEvent {
+  const DismissPersonalizationPrompt();
+}
+
 // Internal coordination events (for BLoC implementation)
 
 /// Internal event triggered when topics BLoC state changes
