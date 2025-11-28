@@ -307,36 +307,33 @@ export class AuthService {
         if (this.supabaseServiceClient) {
           const { data: subscription, error: subError } = await this.supabaseServiceClient
             .from('subscriptions')
-            .select('status, current_period_end, cancel_at_cycle_end')
+            .select('status, plan_type, current_period_end, cancel_at_cycle_end')
             .eq('user_id', userContext.userId)
             .in('status', ['active', 'authenticated', 'pending_cancellation', 'cancelled'])
             .order('created_at', { ascending: false })
             .maybeSingle()
 
           if (!subError && subscription) {
-            // Active, authenticated, or pending_cancellation subscriptions grant premium
-            // pending_cancellation means user scheduled cancellation but still has access until period end
-            if (
+            // Check if subscription is currently valid
+            const isActiveSubscription = 
               subscription.status === 'active' ||
               subscription.status === 'authenticated' ||
-              subscription.status === 'pending_cancellation'
-            ) {
-              return 'premium'
-            }
+              subscription.status === 'pending_cancellation' ||
+              // Cancelled but still within period
+              (subscription.status === 'cancelled' &&
+               subscription.cancel_at_cycle_end &&
+               subscription.current_period_end &&
+               new Date(subscription.current_period_end) > new Date())
 
-            // Cancelled subscription that's still active until period end
-            // This handles both 'cancelled' status and 'pending_cancellation' that extends to period end
-            if (
-              subscription.status === 'cancelled' &&
-              subscription.cancel_at_cycle_end &&
-              subscription.current_period_end
-            ) {
-              const periodEnd = new Date(subscription.current_period_end)
-              const now = new Date()
-
-              // If still within the active period, user still has premium access
-              if (periodEnd > now) {
+            if (isActiveSubscription) {
+              // Return the actual plan_type from subscription
+              // - 'premium' subscription → 'premium' tier (unlimited)
+              // - 'standard' subscription → 'standard' tier (limited quota)
+              if (subscription.plan_type === 'premium') {
                 return 'premium'
+              }
+              if (subscription.plan_type === 'standard') {
+                return 'standard'
               }
             }
           }
