@@ -23,13 +23,35 @@ SECURITY DEFINER
 AS $$
 DECLARE
   v_user_id UUID;
+  v_caller_id UUID;
   v_started_at TIMESTAMPTZ;
   v_duration_seconds INTEGER;
 BEGIN
+  -- Get caller's user ID from auth context
+  v_caller_id := auth.uid();
+  
+  IF v_caller_id IS NULL THEN
+    RAISE EXCEPTION 'Not authenticated';
+  END IF;
+
   -- Get user_id and started_at from conversation
   SELECT user_id, started_at INTO v_user_id, v_started_at
   FROM voice_conversations
   WHERE id = p_conversation_id;
+  
+  -- Verify conversation exists and has required data
+  IF v_user_id IS NULL THEN
+    RAISE EXCEPTION 'Conversation not found: %', p_conversation_id;
+  END IF;
+  
+  IF v_started_at IS NULL THEN
+    RAISE EXCEPTION 'Conversation % has no started_at timestamp', p_conversation_id;
+  END IF;
+  
+  -- Verify caller owns this conversation
+  IF v_user_id != v_caller_id THEN
+    RAISE EXCEPTION 'Not authorized to complete this conversation';
+  END IF;
 
   -- Calculate duration from started_at to now
   v_duration_seconds := EXTRACT(EPOCH FROM (NOW() - v_started_at))::INTEGER;
@@ -46,14 +68,24 @@ BEGIN
     updated_at = NOW()
   WHERE id = p_conversation_id;
 
-  -- Update daily usage tracking
-  UPDATE voice_usage_tracking
-  SET
-    conversations_completed = conversations_completed + 1,
-    total_conversation_seconds = total_conversation_seconds + v_duration_seconds,
-    updated_at = NOW()
-  WHERE user_id = v_user_id
-    AND usage_date = CURRENT_DATE;
+  -- Upsert daily usage tracking (insert if missing, update if exists)
+  INSERT INTO voice_usage_tracking (
+    user_id,
+    usage_date,
+    conversations_completed,
+    total_conversation_seconds,
+    updated_at
+  ) VALUES (
+    v_user_id,
+    CURRENT_DATE,
+    1,
+    v_duration_seconds,
+    NOW()
+  )
+  ON CONFLICT (user_id, usage_date) DO UPDATE SET
+    conversations_completed = voice_usage_tracking.conversations_completed + 1,
+    total_conversation_seconds = voice_usage_tracking.total_conversation_seconds + EXCLUDED.total_conversation_seconds,
+    updated_at = NOW();
 END;
 $$;
 

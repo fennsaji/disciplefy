@@ -33,6 +33,7 @@ class MemoryVersesHomePage extends StatefulWidget {
 class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
   DueVersesLoaded? _lastLoadedState;
   VerseLanguage? _selectedLanguageFilter;
+  bool _hasTriggeredMemoryVersePrompt = false;
 
   @override
   void initState() {
@@ -47,8 +48,11 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
         ));
   }
 
-  /// Shows the memory verse reminder notification prompt
+  /// Shows the memory verse reminder notification prompt (once per session)
   Future<void> _showMemoryVerseReminderPrompt() async {
+    if (_hasTriggeredMemoryVersePrompt) return;
+    _hasTriggeredMemoryVersePrompt = true;
+
     // Small delay to let the snackbar show first
     await Future.delayed(const Duration(milliseconds: 500));
 

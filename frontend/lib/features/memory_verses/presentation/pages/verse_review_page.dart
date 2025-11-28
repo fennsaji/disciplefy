@@ -151,7 +151,13 @@ class _VerseReviewPageState extends State<VerseReviewPage> {
         listener: (context, state) {
           if (state is ReviewSubmitted) {
             _showReviewFeedback(context, state);
-            _showMemoryVerseOverduePrompt();
+            // Only show notification prompt if there are more verses to review
+            // This prevents race condition where navigation occurs while prompt is showing
+            final hasMoreVerses = widget.verseIds != null &&
+                currentIndex < widget.verseIds!.length - 1;
+            if (hasMoreVerses) {
+              _showMemoryVerseOverduePrompt();
+            }
             _moveToNextVerse();
           } else if (state is MemoryVerseError) {
             ScaffoldMessenger.of(context).showSnackBar(
