@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
+import '../../../../core/constants/app_fonts.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../bloc/auth_bloc.dart';
 import '../bloc/auth_event.dart';
@@ -219,7 +219,7 @@ class _LoginScreenState extends State<LoginScreen> {
       children: [
         Text(
           context.tr(TranslationKeys.loginWelcome),
-          style: GoogleFonts.poppins(
+          style: AppFonts.poppins(
             fontSize: 28,
             fontWeight: FontWeight.w700,
             color: theme.colorScheme.onBackground,
@@ -229,7 +229,7 @@ class _LoginScreenState extends State<LoginScreen> {
         const SizedBox(height: 16),
         Text(
           context.tr(TranslationKeys.loginSubtitle),
-          style: GoogleFonts.inter(
+          style: AppFonts.inter(
             fontSize: 16,
             fontWeight: FontWeight.normal,
             color: theme.colorScheme.onSurface.withOpacity(0.7),
@@ -319,7 +319,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
                       Text(
                         context.tr(TranslationKeys.loginContinueWithGoogle),
-                        style: GoogleFonts.inter(
+                        style: AppFonts.inter(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
                           color: Colors.white,
@@ -365,7 +365,7 @@ class _LoginScreenState extends State<LoginScreen> {
   //           const SizedBox(width: 12),
   //           Text(
   //             'Continue with Phone',
-  //             style: GoogleFonts.inter(
+  //             style: AppFonts.inter(
   //               fontSize: 16,
   //               fontWeight: FontWeight.w600,
   //             ),
@@ -408,7 +408,7 @@ class _LoginScreenState extends State<LoginScreen> {
             const SizedBox(width: 12),
             Text(
               context.tr(TranslationKeys.loginContinueAsGuest),
-              style: GoogleFonts.inter(
+              style: AppFonts.inter(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
               ),
@@ -440,7 +440,7 @@ class _LoginScreenState extends State<LoginScreen> {
         children: [
           Text(
             context.tr(TranslationKeys.loginFeaturesTitle),
-            style: GoogleFonts.inter(
+            style: AppFonts.inter(
               fontSize: 16,
               fontWeight: FontWeight.w600,
               color: theme.colorScheme.onSurface,
@@ -485,7 +485,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
     return Text(
       context.tr(TranslationKeys.loginPrivacyPolicy),
-      style: GoogleFonts.inter(
+      style: AppFonts.inter(
         fontSize: 12,
         color: theme.colorScheme.onSurface.withOpacity(0.6),
         height: 1.4,
@@ -555,7 +555,7 @@ class _FeatureItem extends StatelessWidget {
             children: [
               Text(
                 title,
-                style: GoogleFonts.inter(
+                style: AppFonts.inter(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
                   color: theme.colorScheme.onSurface,
@@ -564,7 +564,7 @@ class _FeatureItem extends StatelessWidget {
               const SizedBox(height: 2),
               Text(
                 subtitle,
-                style: GoogleFonts.inter(
+                style: AppFonts.inter(
                   fontSize: 12,
                   color: theme.colorScheme.onSurface.withOpacity(0.7),
                   height: 1.3,

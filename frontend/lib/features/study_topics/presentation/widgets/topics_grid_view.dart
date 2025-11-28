@@ -1,6 +1,6 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import '../../../../core/constants/app_fonts.dart';
 
 import '../../../../core/theme/app_theme.dart';
 import '../../../home/domain/entities/recommended_guide_topic.dart';
@@ -122,7 +122,7 @@ class TopicsGridView extends StatelessWidget {
           icon: const Icon(Icons.expand_more),
           label: Text(
             'Load More Topics',
-            style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+            style: AppFonts.inter(fontWeight: FontWeight.w600),
           ),
           style: ElevatedButton.styleFrom(
             backgroundColor: AppTheme.primaryColor,

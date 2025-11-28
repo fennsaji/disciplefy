@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
+import '../../../../core/constants/app_fonts.dart';
 
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/localization/app_localizations.dart';
@@ -112,7 +112,7 @@ class _OnboardingWelcomeContent extends StatelessWidget {
                     // Tagline
                     Text(
                       'Deepen your faith with guided studies',
-                      style: GoogleFonts.inter(
+                      style: AppFonts.inter(
                         fontSize: isLargeScreen ? 20 : 18,
                         fontWeight: FontWeight.w500,
                         color: AppTheme.onSurfaceVariant,
@@ -143,7 +143,7 @@ class _OnboardingWelcomeContent extends StatelessWidget {
                     children: [
                       Text(
                         'What you\'ll get:',
-                        style: GoogleFonts.inter(
+                        style: AppFonts.inter(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
                           color: AppTheme.textPrimary,
@@ -225,7 +225,7 @@ class _OnboardingWelcomeContent extends StatelessWidget {
                                       const SizedBox(width: 12),
                                       Text(
                                         'Loading...',
-                                        style: GoogleFonts.inter(
+                                        style: AppFonts.inter(
                                           fontSize: 16,
                                           fontWeight: FontWeight.w600,
                                           color: Colors.white,
@@ -235,7 +235,7 @@ class _OnboardingWelcomeContent extends StatelessWidget {
                                   )
                                 : Text(
                                     'Continue',
-                                    style: GoogleFonts.inter(
+                                    style: AppFonts.inter(
                                       fontSize: 16,
                                       fontWeight: FontWeight.w600,
                                       color: Colors.white,
@@ -253,7 +253,7 @@ class _OnboardingWelcomeContent extends StatelessWidget {
                 // Privacy/Terms Notice
                 Text(
                   'Let\'s set up your personalized Bible study experience',
-                  style: GoogleFonts.inter(
+                  style: AppFonts.inter(
                     fontSize: 12,
                     color: AppTheme.onSurfaceVariant,
                     height: 1.4,
@@ -313,7 +313,7 @@ class _WelcomeFeatureItem extends StatelessWidget {
               children: [
                 Text(
                   title,
-                  style: GoogleFonts.inter(
+                  style: AppFonts.inter(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
                     color: AppTheme.textPrimary,
@@ -322,7 +322,7 @@ class _WelcomeFeatureItem extends StatelessWidget {
                 const SizedBox(height: 2),
                 Text(
                   subtitle,
-                  style: GoogleFonts.inter(
+                  style: AppFonts.inter(
                     fontSize: 12,
                     color: AppTheme.onSurfaceVariant,
                     height: 1.3,
@@ -375,7 +375,7 @@ class _LogoFallbackWidget extends StatelessWidget {
         SizedBox(height: isLargeScreen ? 24 : 20),
         Text(
           'Disciplefy',
-          style: GoogleFonts.poppins(
+          style: AppFonts.poppins(
             fontSize: isLargeScreen ? 48 : 42,
             fontWeight: FontWeight.bold,
             color: AppTheme.primaryColor,

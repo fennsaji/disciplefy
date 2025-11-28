@@ -194,6 +194,43 @@ class RecommendedTopicsLocalDataSource {
     }
   }
 
+  /// Clears all cached topics matching a given prefix
+  ///
+  /// This is useful for clearing category-specific caches like "for_you_*"
+  /// without affecting other cached topics.
+  Future<void> clearCacheByPrefix(String prefix) async {
+    // Input validation
+    if (prefix.trim().isEmpty) {
+      throw ArgumentError('prefix cannot be empty');
+    }
+
+    try {
+      final box = _cacheBox;
+      if (box == null) return;
+
+      final fullPrefix = '$_cacheKeyPrefix$prefix';
+
+      // Find all keys that match the prefix
+      final keysToDelete = box.keys
+          .where((key) => key.toString().startsWith(fullPrefix))
+          .toList();
+
+      // Delete all matching keys
+      for (final key in keysToDelete) {
+        await box.delete(key);
+      }
+
+      if (kDebugMode) {
+        print(
+            '🗑️ [TOPICS CACHE] Cleared ${keysToDelete.length} entries with prefix: $prefix');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('❌ [TOPICS CACHE] Error clearing cache by prefix: $e');
+      }
+    }
+  }
+
   /// Gets cache statistics for debugging
   Map<String, dynamic> getCacheStats() {
     final box = _cacheBox;

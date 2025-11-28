@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
@@ -40,6 +41,7 @@ import '../../features/voice_buddy/presentation/bloc/voice_preferences_state.dar
 import '../../features/voice_buddy/domain/entities/voice_conversation_entity.dart';
 import '../../features/voice_buddy/domain/entities/voice_preferences_entity.dart';
 import '../../features/voice_buddy/domain/repositories/voice_buddy_repository.dart';
+import '../../features/personalization/presentation/pages/personalization_questionnaire_page.dart';
 import 'app_routes.dart';
 import 'router_guard.dart';
 import 'auth_notifier.dart';
@@ -259,6 +261,21 @@ class AppRouter {
         ),
       ),
 
+      // Personalization Routes
+      GoRoute(
+        path: AppRoutes.personalizationQuestionnaire,
+        name: 'personalization_questionnaire',
+        builder: (context, state) {
+          // Extract onComplete callback from extra if provided
+          VoidCallback? onComplete;
+          if (state.extra is Map<String, dynamic>) {
+            final extra = state.extra as Map<String, dynamic>;
+            onComplete = extra['onComplete'] as VoidCallback?;
+          }
+          return PersonalizationQuestionnairePage(onComplete: onComplete);
+        },
+      ),
+
       // Authentication Routes (outside app shell)
       GoRoute(
         path: AppRoutes.login,
@@ -456,5 +473,13 @@ extension AppRouterExtension on GoRouter {
         'studyGuideId': studyGuideId,
         'relatedScripture': relatedScripture,
         'conversationType': conversationType,
+      });
+
+  /// Navigates to the personalization questionnaire page.
+  ///
+  /// [onComplete] - Optional callback to execute when questionnaire is completed
+  void goToPersonalizationQuestionnaire({VoidCallback? onComplete}) =>
+      go(AppRoutes.personalizationQuestionnaire, extra: {
+        'onComplete': onComplete,
       });
 }

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import '../../../../core/constants/app_fonts.dart';
 
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/utils/category_utils.dart';
@@ -70,7 +70,7 @@ class CategoryFilterChips extends StatelessWidget {
             Flexible(
               child: Text(
                 label,
-                style: GoogleFonts.inter(
+                style: AppFonts.inter(
                   fontSize: 14,
                   fontWeight: isSelected
                       ? FontWeight.w700
@@ -101,7 +101,7 @@ class CategoryFilterChips extends StatelessWidget {
                 ),
                 child: Text(
                   count.toString(),
-                  style: GoogleFonts.inter(
+                  style: AppFonts.inter(
                     fontSize: 11,
                     fontWeight: FontWeight.w600,
                     color: isSelected
@@ -168,7 +168,7 @@ class CategoryFilterChips extends StatelessWidget {
         children: [
           Text(
             context.tr(TranslationKeys.categoryFilterTitle),
-            style: GoogleFonts.inter(
+            style: AppFonts.inter(
               fontSize: 16,
               fontWeight: FontWeight.w600,
               color: Theme.of(context).colorScheme.onBackground,
@@ -328,7 +328,7 @@ class _CategoryFilterSection extends StatelessWidget {
             Flexible(
               child: Text(
                 label,
-                style: GoogleFonts.inter(
+                style: AppFonts.inter(
                   fontSize: 14,
                   fontWeight: isSelected
                       ? FontWeight.w700
@@ -359,7 +359,7 @@ class _CategoryFilterSection extends StatelessWidget {
                 ),
                 child: Text(
                   count.toString(),
-                  style: GoogleFonts.inter(
+                  style: AppFonts.inter(
                     fontSize: 11,
                     fontWeight: FontWeight.w600,
                     color: isSelected
@@ -425,7 +425,7 @@ class _Header extends StatelessWidget {
       children: [
         Text(
           context.tr(TranslationKeys.categoryFilterTitle),
-          style: GoogleFonts.inter(
+          style: AppFonts.inter(
             fontSize: 16,
             fontWeight: FontWeight.w600,
             color: Theme.of(context).colorScheme.onBackground,
@@ -441,7 +441,7 @@ class _Header extends StatelessWidget {
             ),
             child: Text(
               context.tr(TranslationKeys.categoryFilterClearAll),
-              style: GoogleFonts.inter(
+              style: AppFonts.inter(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
               ),

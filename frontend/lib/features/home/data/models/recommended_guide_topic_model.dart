@@ -10,7 +10,7 @@ part 'recommended_guide_topic_model.g.dart';
 /// content with English fallback data for search functionality.
 @JsonSerializable(fieldRename: FieldRename.snake)
 class RecommendedGuideTopicModel extends RecommendedGuideTopic {
-  @JsonKey(name: 'key_verses')
+  @JsonKey(name: 'key_verses', defaultValue: <String>[])
   final List<String> keyVerses;
 
   /// English fallback fields for search functionality (null for English language responses)
@@ -29,8 +29,8 @@ class RecommendedGuideTopicModel extends RecommendedGuideTopic {
     required super.title,
     required super.description,
     required super.category,
-    required this.keyVerses,
-    required super.tags,
+    this.keyVerses = const <String>[],
+    super.tags = const <String>[],
     this.englishTitle,
     this.englishDescription,
     this.englishCategory,
@@ -113,7 +113,13 @@ class RecommendedGuideTopicsResponse {
   final List<RecommendedGuideTopicModel> topics;
 
   /// Total number of topics available (for pagination)
+  /// Supports both 'total' and 'totalAvailable' from API
+  @JsonKey(name: 'total', defaultValue: 0)
   final int total;
+
+  /// Alternative total field name used by topics-for-you endpoint
+  @JsonKey(name: 'totalAvailable')
+  final int? totalAvailable;
 
   /// Current page number (if paginated)
   final int? page;
@@ -123,10 +129,14 @@ class RecommendedGuideTopicsResponse {
 
   const RecommendedGuideTopicsResponse({
     required this.topics,
-    required this.total,
+    this.total = 0,
+    this.totalAvailable,
     this.page,
     this.totalPages,
   });
+
+  /// Gets the actual total count from either field
+  int get actualTotal => totalAvailable ?? total;
 
   /// Creates a [RecommendedGuideTopicsResponse] from JSON.
   factory RecommendedGuideTopicsResponse.fromJson(Map<String, dynamic> json) =>

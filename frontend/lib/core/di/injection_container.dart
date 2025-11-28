@@ -476,6 +476,7 @@ Future<void> initializeDependencies() async {
     () => RecommendedTopicsBloc(
       topicsService: sl(),
       languagePreferenceService: sl(),
+      prefs: sl(),
     ),
     dispose: (bloc) => bloc.close(),
   );

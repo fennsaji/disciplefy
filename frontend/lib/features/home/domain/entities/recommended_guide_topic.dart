@@ -35,9 +35,9 @@ class RecommendedGuideTopic extends Equatable {
     required this.description,
     required this.category,
     this.englishCategory,
-    required this.scriptureCount,
-    required this.tags,
-    required this.isFeatured,
+    this.scriptureCount = 0,
+    this.tags = const <String>[],
+    this.isFeatured = false,
     required this.createdAt,
   });
 

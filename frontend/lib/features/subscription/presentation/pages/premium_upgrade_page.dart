@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:google_fonts/google_fonts.dart';
+import '../../../../core/constants/app_fonts.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../core/theme/app_theme.dart';
@@ -71,7 +71,7 @@ class _PremiumUpgradePageState extends State<PremiumUpgradePage>
       appBar: AppBar(
         title: Text(
           'Upgrade to Premium',
-          style: GoogleFonts.poppins(
+          style: AppFonts.poppins(
             fontWeight: FontWeight.w600,
             color: AppTheme.primaryColor,
           ),
@@ -215,7 +215,7 @@ class _PremiumUpgradePageState extends State<PremiumUpgradePage>
           const SizedBox(height: 12),
           Text(
             'Disciplefy Premium',
-            style: GoogleFonts.poppins(
+            style: AppFonts.poppins(
               fontSize: 28,
               fontWeight: FontWeight.bold,
               color: AppTheme.primaryColor,
@@ -224,7 +224,7 @@ class _PremiumUpgradePageState extends State<PremiumUpgradePage>
           const SizedBox(height: 8),
           Text(
             'Unlock unlimited access to all features',
-            style: GoogleFonts.inter(
+            style: AppFonts.inter(
               fontSize: 14,
               color:
                   Theme.of(context).colorScheme.onBackground.withOpacity(0.7),
@@ -263,7 +263,7 @@ class _PremiumUpgradePageState extends State<PremiumUpgradePage>
               children: [
                 Text(
                   '₹',
-                  style: GoogleFonts.inter(
+                  style: AppFonts.inter(
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
                     color: Colors.white,
@@ -271,7 +271,7 @@ class _PremiumUpgradePageState extends State<PremiumUpgradePage>
                 ),
                 Text(
                   '100',
-                  style: GoogleFonts.inter(
+                  style: AppFonts.inter(
                     fontSize: 48,
                     fontWeight: FontWeight.bold,
                     color: Colors.white,
@@ -281,7 +281,7 @@ class _PremiumUpgradePageState extends State<PremiumUpgradePage>
                   padding: const EdgeInsets.only(top: 8.0),
                   child: Text(
                     '/month',
-                    style: GoogleFonts.inter(
+                    style: AppFonts.inter(
                       fontSize: 16,
                       color: Colors.white.withOpacity(0.9),
                     ),
@@ -298,7 +298,7 @@ class _PremiumUpgradePageState extends State<PremiumUpgradePage>
               ),
               child: Text(
                 'Cancel anytime • Billed monthly',
-                style: GoogleFonts.inter(
+                style: AppFonts.inter(
                   fontSize: 12,
                   color: Colors.white.withOpacity(0.95),
                 ),
@@ -344,7 +344,7 @@ class _PremiumUpgradePageState extends State<PremiumUpgradePage>
       children: [
         Text(
           'What you get with Premium',
-          style: GoogleFonts.poppins(
+          style: AppFonts.poppins(
             fontSize: 20,
             fontWeight: FontWeight.w600,
             color: AppTheme.primaryColor,
@@ -382,7 +382,7 @@ class _PremiumUpgradePageState extends State<PremiumUpgradePage>
             children: [
               Text(
                 benefit.title,
-                style: GoogleFonts.inter(
+                style: AppFonts.inter(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
                   color: Theme.of(context).colorScheme.onBackground,
@@ -391,7 +391,7 @@ class _PremiumUpgradePageState extends State<PremiumUpgradePage>
               const SizedBox(height: 4),
               Text(
                 benefit.description,
-                style: GoogleFonts.inter(
+                style: AppFonts.inter(
                   fontSize: 14,
                   color: Theme.of(context)
                       .colorScheme
@@ -424,7 +424,7 @@ class _PremiumUpgradePageState extends State<PremiumUpgradePage>
           children: [
             Text(
               'Plan Comparison',
-              style: GoogleFonts.poppins(
+              style: AppFonts.poppins(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
                 color: AppTheme.primaryColor,
@@ -450,7 +450,7 @@ class _PremiumUpgradePageState extends State<PremiumUpgradePage>
             flex: 2,
             child: Text(
               feature,
-              style: GoogleFonts.inter(
+              style: AppFonts.inter(
                 fontSize: 14,
                 color: Theme.of(context).colorScheme.onBackground,
               ),
@@ -459,7 +459,7 @@ class _PremiumUpgradePageState extends State<PremiumUpgradePage>
           Expanded(
             child: Text(
               standard,
-              style: GoogleFonts.inter(
+              style: AppFonts.inter(
                 fontSize: 13,
                 color:
                     Theme.of(context).colorScheme.onBackground.withOpacity(0.6),
@@ -470,7 +470,7 @@ class _PremiumUpgradePageState extends State<PremiumUpgradePage>
           Expanded(
             child: Text(
               premium,
-              style: GoogleFonts.inter(
+              style: AppFonts.inter(
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
                 color: AppTheme.primaryColor,
@@ -503,7 +503,7 @@ class _PremiumUpgradePageState extends State<PremiumUpgradePage>
                 Expanded(
                   child: Text(
                     state.eligibilityMessage,
-                    style: GoogleFonts.inter(
+                    style: AppFonts.inter(
                       fontSize: 14,
                       color: Theme.of(context).colorScheme.onBackground,
                     ),
@@ -550,7 +550,7 @@ class _PremiumUpgradePageState extends State<PremiumUpgradePage>
                 const SizedBox(width: 8),
                 Text(
                   'Upgrade to Premium',
-                  style: GoogleFonts.inter(
+                  style: AppFonts.inter(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
                   ),
@@ -586,7 +586,7 @@ class _PremiumUpgradePageState extends State<PremiumUpgradePage>
                 Expanded(
                   child: Text(
                     'Completed payment? Tap the refresh button ↑ to check your subscription status',
-                    style: GoogleFonts.inter(
+                    style: AppFonts.inter(
                       fontSize: 12,
                       color: Theme.of(context).colorScheme.onBackground,
                     ),
@@ -598,7 +598,7 @@ class _PremiumUpgradePageState extends State<PremiumUpgradePage>
         ],
         Text(
           'By subscribing, you agree to our Terms of Service and Privacy Policy',
-          style: GoogleFonts.inter(
+          style: AppFonts.inter(
             fontSize: 12,
             color: Theme.of(context).colorScheme.onBackground.withOpacity(0.6),
           ),
@@ -617,7 +617,7 @@ class _PremiumUpgradePageState extends State<PremiumUpgradePage>
             const SizedBox(width: 6),
             Text(
               'Secure payment via Razorpay',
-              style: GoogleFonts.inter(
+              style: AppFonts.inter(
                 fontSize: 12,
                 color:
                     Theme.of(context).colorScheme.onBackground.withOpacity(0.6),

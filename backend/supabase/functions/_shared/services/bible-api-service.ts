@@ -427,8 +427,8 @@ export async function cacheVerses(
     reference: verses.en.reference,
     translations: {
       esv: verses.en.text,
-      hindi: verses.hi.text,
-      malayalam: verses.ml.text,
+      hi: verses.hi.text,
+      ml: verses.ml.text,
     },
     referenceTranslations: {
       en: verses.en.reference,
@@ -487,10 +487,11 @@ export async function getCachedVerses(
 
   const verseData = data.verse_data as {
     reference: string;
-    translations: { esv: string; hindi: string; malayalam: string };
+    translations: { esv: string; hi?: string; ml?: string; hindi?: string; malayalam?: string };
     referenceTranslations: { en: string; hi: string; ml: string };
   };
 
+  // Handle both old ('hindi'/'malayalam') and new ('hi'/'ml') key formats for backward compatibility
   return {
     en: {
       reference: verseData.referenceTranslations.en,
@@ -500,13 +501,13 @@ export async function getCachedVerses(
     },
     hi: {
       reference: verseData.referenceTranslations.hi,
-      text: verseData.translations.hindi,
+      text: verseData.translations.hi || verseData.translations.hindi || '',
       translation: 'Indian Revised Version Hindi 2019',
       language: 'hi',
     },
     ml: {
       reference: verseData.referenceTranslations.ml,
-      text: verseData.translations.malayalam,
+      text: verseData.translations.ml || verseData.translations.malayalam || '',
       translation: 'Indian Revised Version Malayalam 2025',
       language: 'ml',
     }

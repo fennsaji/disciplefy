@@ -3,7 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
+import '../../../../core/constants/app_fonts.dart';
 import 'package:get_it/get_it.dart';
 
 import '../../../../core/theme/app_theme.dart';
@@ -355,7 +355,7 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
       automaticallyImplyLeading: false,
       title: Text(
         context.tr(TranslationKeys.generateStudyTitle),
-        style: GoogleFonts.inter(
+        style: AppFonts.inter(
           fontSize: 20,
           fontWeight: FontWeight.w700,
           color: Theme.of(context).colorScheme.onBackground,
@@ -393,7 +393,7 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
                         tokenState.tokenStatus.isPremium
                             ? '∞'
                             : '${tokenState.tokenStatus.totalTokens}',
-                        style: GoogleFonts.inter(
+                        style: AppFonts.inter(
                           fontSize: tokenState.tokenStatus.isPremium ? 18 : 14,
                           fontWeight: FontWeight.w600,
                           color: AppTheme.primaryColor,
@@ -431,7 +431,7 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
                         tokenState.previousTokenStatus!.isPremium
                             ? '∞'
                             : '${tokenState.previousTokenStatus!.totalTokens}',
-                        style: GoogleFonts.inter(
+                        style: AppFonts.inter(
                           fontSize: tokenState.previousTokenStatus!.isPremium
                               ? 18
                               : 14,
@@ -684,7 +684,7 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
       children: [
         Text(
           context.tr(TranslationKeys.generateStudyLanguage),
-          style: GoogleFonts.inter(
+          style: AppFonts.inter(
             fontSize: 15,
             fontWeight: FontWeight.w600,
             color: isDark
@@ -750,7 +750,7 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
               : _selectedMode == StudyInputMode.topic
                   ? context.tr(TranslationKeys.generateStudyEnterTopic)
                   : context.tr(TranslationKeys.generateStudyAskQuestion),
-          style: GoogleFonts.inter(
+          style: AppFonts.inter(
             fontSize: 15,
             fontWeight: FontWeight.w600,
             color: isDark
@@ -779,7 +779,7 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
             textInputAction: _selectedMode == StudyInputMode.question
                 ? TextInputAction.newline
                 : TextInputAction.done,
-            style: GoogleFonts.inter(
+            style: AppFonts.inter(
               fontSize: 16,
               color: isDark ? Colors.white : const Color(0xFF1F2937),
             ),
@@ -789,7 +789,7 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
                   : _selectedMode == StudyInputMode.topic
                       ? context.tr(TranslationKeys.generateStudyTopicHint)
                       : context.tr(TranslationKeys.generateStudyQuestionHint),
-              hintStyle: GoogleFonts.inter(
+              hintStyle: AppFonts.inter(
                 color: isDark
                     ? Colors.white.withOpacity(0.4)
                     : const Color(0xFF9CA3AF),
@@ -872,7 +872,7 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
       children: [
         Text(
           context.tr(TranslationKeys.generateStudySuggestions),
-          style: GoogleFonts.inter(
+          style: AppFonts.inter(
             fontSize: 13,
             fontWeight: FontWeight.w500,
             color: isDark
@@ -956,7 +956,7 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
                             child: Text(
                               context.tr(
                                   TranslationKeys.generateStudyTalkToAiBuddy),
-                              style: GoogleFonts.inter(
+                              style: AppFonts.inter(
                                 fontSize: 15,
                                 fontWeight: FontWeight.w700,
                                 color: Colors.white,
@@ -977,7 +977,7 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
                             ),
                             child: Text(
                               'NEW',
-                              style: GoogleFonts.inter(
+                              style: AppFonts.inter(
                                 fontSize: 10,
                                 fontWeight: FontWeight.w700,
                                 color: Colors.white,
@@ -991,7 +991,7 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
                       Text(
                         context.tr(
                             TranslationKeys.generateStudyTalkToAiBuddySubtitle),
-                        style: GoogleFonts.inter(
+                        style: AppFonts.inter(
                           fontSize: 12,
                           fontWeight: FontWeight.w400,
                           color: Colors.white.withOpacity(0.85),
@@ -1062,7 +1062,7 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
                   const SizedBox(width: 10),
                   Text(
                     context.tr(TranslationKeys.generateStudyViewSaved),
-                    style: GoogleFonts.inter(
+                    style: AppFonts.inter(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
                       color: isDark
@@ -1124,7 +1124,7 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
                     Expanded(
                       child: Text(
                         context.tr(TranslationKeys.generateStudyGenerating),
-                        style: GoogleFonts.inter(
+                        style: AppFonts.inter(
                           fontSize: 14,
                           fontWeight: FontWeight.w500,
                           color: AppTheme.primaryColor,
@@ -1137,7 +1137,7 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
                 Text(
                   context.tr(TranslationKeys.generateStudyConsumingTokens,
                       {'tokens': tokenCost.toString()}),
-                  style: GoogleFonts.inter(
+                  style: AppFonts.inter(
                     fontSize: 12,
                     color: isDark
                         ? Colors.white.withOpacity(0.5)
@@ -1199,7 +1199,7 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
                                 TranslationKeys.generateStudyButtonGenerating)
                             : context.tr(
                                 TranslationKeys.generateStudyButtonGenerate),
-                        style: GoogleFonts.inter(
+                        style: AppFonts.inter(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
                           color: isEnabled
@@ -1241,7 +1241,7 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
                             const SizedBox(width: 4),
                             Text(
                               '$tokenCost',
-                              style: GoogleFonts.inter(
+                              style: AppFonts.inter(
                                 fontSize: 13,
                                 fontWeight: FontWeight.w600,
                                 color: isEnabled
@@ -1370,7 +1370,7 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
             const SizedBox(width: 12),
             Text(
               context.tr(TranslationKeys.generateStudyGenerationFailed),
-              style: GoogleFonts.poppins(
+              style: AppFonts.poppins(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
                 color: theme.colorScheme.onSurface,
@@ -1384,7 +1384,7 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
           children: [
             Text(
               message,
-              style: GoogleFonts.inter(
+              style: AppFonts.inter(
                 fontSize: 16,
                 color: theme.colorScheme.onSurface,
                 height: 1.5,
@@ -1400,7 +1400,7 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
               child: Text(
                 context
                     .tr(TranslationKeys.generateStudyGenerationFailedMessage),
-                style: GoogleFonts.inter(
+                style: AppFonts.inter(
                   fontSize: 14,
                   color: theme.colorScheme.onSurfaceVariant,
                   fontStyle: FontStyle.italic,
@@ -1422,7 +1422,7 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
             ),
             child: Text(
               'OK',
-              style: GoogleFonts.inter(
+              style: AppFonts.inter(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
                 color: theme.colorScheme.onSurfaceVariant,
@@ -1449,7 +1449,7 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
               ),
               child: Text(
                 context.tr(TranslationKeys.generateStudyManageTokens),
-                style: GoogleFonts.inter(
+                style: AppFonts.inter(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
                 ),
@@ -1474,7 +1474,7 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
               ),
               child: Text(
                 'Try Again',
-                style: GoogleFonts.inter(
+                style: AppFonts.inter(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
                 ),
@@ -1524,7 +1524,7 @@ class _ModeToggleButton extends StatelessWidget {
         ),
         child: Text(
           label,
-          style: GoogleFonts.inter(
+          style: AppFonts.inter(
             fontSize: 13,
             fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
             color: isSelected
@@ -1577,7 +1577,7 @@ class _LanguageToggleButton extends StatelessWidget {
         ),
         child: Text(
           label,
-          style: GoogleFonts.inter(
+          style: AppFonts.inter(
             fontSize: 12,
             fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
             color: isSelected
@@ -1625,7 +1625,7 @@ class _SuggestionChip extends StatelessWidget {
         ),
         child: Text(
           label,
-          style: GoogleFonts.inter(
+          style: AppFonts.inter(
             fontSize: 13,
             fontWeight: FontWeight.w500,
             color:

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
+import '../../../../core/constants/app_fonts.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/di/injection_container.dart';
 import '../../../../core/router/app_routes.dart';
@@ -183,7 +183,7 @@ class _SavedScreenContent extends StatelessWidget {
             ),
             title: Text(
               context.tr(TranslationKeys.savedGuidesTitle),
-              style: GoogleFonts.inter(
+              style: AppFonts.inter(
                 fontSize: 20,
                 fontWeight: FontWeight.w700,
                 color: Theme.of(context).colorScheme.onBackground,
@@ -240,11 +240,11 @@ class _SavedScreenContent extends StatelessWidget {
                         ),
                         indicatorSize: TabBarIndicatorSize.tab,
                         dividerColor: Colors.transparent,
-                        labelStyle: GoogleFonts.inter(
+                        labelStyle: AppFonts.inter(
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
                         ),
-                        unselectedLabelStyle: GoogleFonts.inter(
+                        unselectedLabelStyle: AppFonts.inter(
                           fontSize: 14,
                           fontWeight: FontWeight.w500,
                         ),
@@ -329,7 +329,7 @@ class _SavedScreenContent extends StatelessWidget {
             const SizedBox(height: 16),
             Text(
               isRefresh ? 'Refreshing guides...' : 'Loading guides...',
-              style: GoogleFonts.inter(
+              style: AppFonts.inter(
                 fontSize: 15,
                 color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
               ),
@@ -360,7 +360,7 @@ class _SavedScreenContent extends StatelessWidget {
               const SizedBox(height: 20),
               Text(
                 context.tr(TranslationKeys.savedGuidesErrorTitle),
-                style: GoogleFonts.inter(
+                style: AppFonts.inter(
                   fontSize: 20,
                   fontWeight: FontWeight.w700,
                   color: Theme.of(context).colorScheme.onBackground,
@@ -369,7 +369,7 @@ class _SavedScreenContent extends StatelessWidget {
               const SizedBox(height: 8),
               Text(
                 message,
-                style: GoogleFonts.inter(
+                style: AppFonts.inter(
                   fontSize: 14,
                   color:
                       Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
@@ -414,7 +414,7 @@ class _SavedScreenContent extends StatelessWidget {
                           const SizedBox(width: 8),
                           Text(
                             context.tr(TranslationKeys.savedGuidesRetry),
-                            style: GoogleFonts.inter(
+                            style: AppFonts.inter(
                               fontSize: 15,
                               fontWeight: FontWeight.w600,
                               color: Colors.white,
@@ -464,7 +464,7 @@ class _SavedScreenContent extends StatelessWidget {
               const SizedBox(height: 20),
               Text(
                 context.tr(TranslationKeys.savedGuidesAuthRequired),
-                style: GoogleFonts.inter(
+                style: AppFonts.inter(
                   fontSize: 20,
                   fontWeight: FontWeight.w700,
                   color: Theme.of(context).colorScheme.onBackground,
@@ -473,7 +473,7 @@ class _SavedScreenContent extends StatelessWidget {
               const SizedBox(height: 8),
               Text(
                 state.message,
-                style: GoogleFonts.inter(
+                style: AppFonts.inter(
                   fontSize: 14,
                   color:
                       Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
@@ -505,7 +505,7 @@ class _SavedScreenContent extends StatelessWidget {
                       ),
                       child: Text(
                         context.tr(TranslationKeys.recentGuidesSignIn),
-                        style: GoogleFonts.inter(
+                        style: AppFonts.inter(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
                           color: Colors.white,
