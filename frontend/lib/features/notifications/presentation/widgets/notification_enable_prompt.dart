@@ -193,10 +193,12 @@ Future<bool?> showNotificationEnablePrompt({
     return null; // Already shown before
   }
 
-  // Mark as shown
-  await prefs.setBool(config.sharedPrefsKey, true);
-
   if (!context.mounted) return null;
+
+  // Mark as shown only after user interacts with the prompt
+  void markAsShown() {
+    prefs.setBool(config.sharedPrefsKey, true);
+  }
 
   return showModalBottomSheet<bool>(
     context: context,
@@ -206,6 +208,7 @@ Future<bool?> showNotificationEnablePrompt({
       type: type,
       config: config,
       languageCode: languageCode,
+      onInteraction: markAsShown,
     ),
   );
 }
@@ -214,11 +217,13 @@ class _NotificationEnableSheet extends StatelessWidget {
   final NotificationPromptType type;
   final NotificationPromptConfig config;
   final String languageCode;
+  final VoidCallback onInteraction;
 
   const _NotificationEnableSheet({
     required this.type,
     required this.config,
     required this.languageCode,
+    required this.onInteraction,
   });
 
   @override
@@ -291,7 +296,10 @@ class _NotificationEnableSheet extends StatelessWidget {
                   // Not Now button
                   Expanded(
                     child: OutlinedButton(
-                      onPressed: () => Navigator.pop(context, false),
+                      onPressed: () {
+                        onInteraction();
+                        Navigator.pop(context, false);
+                      },
                       style: OutlinedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 14),
                         side: BorderSide(
@@ -318,6 +326,18 @@ class _NotificationEnableSheet extends StatelessWidget {
                       listener: (context, state) {
                         if (state is NotificationPreferencesUpdated) {
                           Navigator.pop(context, true);
+                        } else if (state is NotificationError) {
+                          // Show error feedback and close with false
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                _getErrorText(languageCode, state.message),
+                              ),
+                              backgroundColor: Colors.red.shade700,
+                              behavior: SnackBarBehavior.floating,
+                            ),
+                          );
+                          Navigator.pop(context, false);
                         }
                       },
                       builder: (context, state) {
@@ -365,6 +385,7 @@ class _NotificationEnableSheet extends StatelessWidget {
   }
 
   void _enableNotification(BuildContext context) {
+    onInteraction();
     final bloc = context.read<NotificationBloc>();
 
     switch (type) {
@@ -415,6 +436,17 @@ class _NotificationEnableSheet extends StatelessWidget {
         return 'പ്രവർത്തനക്ഷമമാക്കുക';
       default:
         return 'Enable';
+    }
+  }
+
+  String _getErrorText(String languageCode, String errorMessage) {
+    switch (languageCode) {
+      case 'hi':
+        return 'सूचनाएं सक्षम करने में विफल: $errorMessage';
+      case 'ml':
+        return 'അറിയിപ്പുകൾ പ്രവർത്തനക്ഷമമാക്കുന്നതിൽ പരാജയപ്പെട്ടു: $errorMessage';
+      default:
+        return 'Failed to enable notifications: $errorMessage';
     }
   }
 }

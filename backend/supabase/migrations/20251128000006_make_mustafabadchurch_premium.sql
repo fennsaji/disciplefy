@@ -26,7 +26,7 @@ INSERT INTO subscriptions (
 )
 SELECT 
   id,
-  'sub_granted_premium_001',
+  'sub_granted_' || gen_random_uuid()::TEXT,
   'plan_premium_granted',
   'active',
   'premium',

@@ -2,6 +2,16 @@
 -- Migration: Fix Subscription Plan Type Logic
 -- Version: 1.0
 -- Date: 2025-11-28
+--
+-- SUPERSEDES: 20251128000003_unify_user_plan_logic.sql (deleted)
+-- REASON: The previous migration incorrectly treated ALL active subscriptions
+--         as 'premium' tier, ignoring the actual plan_type. This caused users
+--         with 'standard' subscriptions to receive unlimited (premium) access.
+--         This migration fixes that bug by returning the actual plan_type.
+--
+-- NOTE: Consider squashing migrations during a future cleanup pass if
+--       migration sequence clarity is desired.
+--
 -- Description: Updates get_user_subscription_tier() to respect the actual
 --              plan_type from subscriptions table instead of treating all
 --              active subscriptions as 'premium'.
