@@ -11,6 +11,7 @@ import '../../../../core/widgets/auth_protected_screen.dart';
 import '../../../daily_verse/domain/entities/daily_verse_entity.dart';
 import '../../../daily_verse/presentation/bloc/daily_verse_bloc.dart';
 import '../../../daily_verse/presentation/bloc/daily_verse_state.dart';
+import '../../../notifications/presentation/widgets/notification_enable_prompt.dart';
 import '../../domain/entities/memory_verse_entity.dart';
 import '../bloc/memory_verse_bloc.dart';
 import '../bloc/memory_verse_event.dart';
@@ -32,6 +33,7 @@ class MemoryVersesHomePage extends StatefulWidget {
 class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
   DueVersesLoaded? _lastLoadedState;
   VerseLanguage? _selectedLanguageFilter;
+  bool _hasTriggeredMemoryVersePrompt = false;
 
   @override
   void initState() {
@@ -44,6 +46,24 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
           language: _selectedLanguageFilter?.code,
           forceRefresh: forceRefresh,
         ));
+  }
+
+  /// Shows the memory verse reminder notification prompt (once per session)
+  Future<void> _showMemoryVerseReminderPrompt() async {
+    if (_hasTriggeredMemoryVersePrompt) return;
+    _hasTriggeredMemoryVersePrompt = true;
+
+    // Small delay to let the snackbar show first
+    await Future.delayed(const Duration(milliseconds: 500));
+
+    if (!mounted) return;
+
+    final languageCode = context.translationService.currentLanguage.code;
+    await showNotificationEnablePrompt(
+      context: context,
+      type: NotificationPromptType.memoryVerseReminder,
+      languageCode: languageCode,
+    );
   }
 
   @override
@@ -140,6 +160,8 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
               ),
             );
             _loadVerses();
+            // Show notification prompt for memory verse reminder after adding first verse
+            _showMemoryVerseReminderPrompt();
           } else if (state is OperationQueued) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(

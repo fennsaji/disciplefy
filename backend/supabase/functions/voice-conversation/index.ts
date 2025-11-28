@@ -10,13 +10,14 @@
  * - Scripture reference integration
  */
 
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3'
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { getCorsHeaders } from '../_shared/utils/cors.ts'
 import {
   getVoiceSystemPrompt,
   getVoiceExamples,
   getPrimaryTranslation
 } from '../_shared/prompts/voice-conversation-prompts.ts'
+import { AuthService } from '../_shared/services/auth-service.ts'
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
 const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY')!
@@ -77,25 +78,7 @@ function extractAuth(req: Request): { authToken: string | null; apiKey: string |
   return { authToken, apiKey }
 }
 
-/**
- * Get user's subscription tier
- */
-async function getUserTier(supabase: any, userId: string): Promise<string> {
-  const { data: subscription } = await supabase
-    .from('subscriptions')
-    .select('plan_type')
-    .eq('user_id', userId)
-    .eq('status', 'active')
-    .single()
 
-  if (!subscription) return 'free'
-
-  // Return plan_type directly
-  const planType = subscription.plan_type
-  if (planType === 'premium') return 'premium'
-  if (planType === 'standard') return 'standard'
-  return 'free'
-}
 
 /**
  * Check and update user's voice quota (monthly)
@@ -422,8 +405,10 @@ Deno.serve(async (req) => {
 
       console.log(`🎙️ [VOICE] Processing message for conversation: ${conversation_id}`)
 
-      // Check quota
-      const tier = await getUserTier(supabaseAdmin, user.id)
+      // Check quota using centralized authService for consistent plan logic
+      // Create AuthService instance with the same service client for consistent plan determination
+      const authService = new AuthService(SUPABASE_URL, SUPABASE_ANON_KEY, supabaseAdmin)
+      const tier = await authService.getUserPlan(req)
       const quota = await checkAndUpdateQuota(supabaseAdmin, user.id, tier)
 
       if (!quota.canProceed) {

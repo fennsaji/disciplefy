@@ -22,6 +22,7 @@ import '../bloc/study_state.dart';
 import '../../../follow_up_chat/presentation/widgets/follow_up_chat_widget.dart';
 import '../../../follow_up_chat/presentation/bloc/follow_up_chat_bloc.dart';
 import '../../../follow_up_chat/presentation/bloc/follow_up_chat_event.dart';
+import '../../../notifications/presentation/widgets/notification_enable_prompt.dart';
 import '../widgets/engaging_loading_screen.dart';
 
 /// Study Guide Screen V2 - Dynamically generates study guides from query parameters
@@ -162,6 +163,9 @@ class _StudyGuideScreenV2ContentState
   Timer? _timeTrackingTimer;
   bool _hasScrolledToBottom = false;
   bool _completionMarked = false;
+
+  // Notification prompt state
+  bool _hasTriggeredNotificationPrompt = false;
   bool _isCompletionTrackingStarted = false;
 
   @override
@@ -562,6 +566,10 @@ class _StudyGuideScreenV2ContentState
                 icon: Icons.error_outline,
               );
             }
+          }
+          // Handle study completion - show notification prompt
+          else if (state is StudyCompletionSuccess) {
+            _showRecommendedTopicNotificationPrompt();
           }
         },
         child: Scaffold(
@@ -1227,6 +1235,23 @@ class _StudyGuideScreenV2ContentState
           borderRadius: BorderRadius.circular(8),
         ),
       ),
+    );
+  }
+
+  /// Shows recommended topic notification prompt after completing a study guide
+  Future<void> _showRecommendedTopicNotificationPrompt() async {
+    if (_hasTriggeredNotificationPrompt) return;
+    _hasTriggeredNotificationPrompt = true;
+
+    // Delay to show after the completion is processed
+    await Future.delayed(const Duration(milliseconds: 1500));
+
+    if (!mounted) return;
+
+    await showNotificationEnablePrompt(
+      context: context,
+      type: NotificationPromptType.recommendedTopic,
+      languageCode: _selectedLanguage,
     );
   }
 

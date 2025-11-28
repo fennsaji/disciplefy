@@ -18,6 +18,7 @@ import '../../../daily_verse/presentation/bloc/daily_verse_event.dart';
 import '../../../daily_verse/presentation/bloc/daily_verse_state.dart';
 import '../../../daily_verse/presentation/widgets/daily_verse_card.dart';
 import '../../../daily_verse/domain/entities/daily_verse_entity.dart';
+import '../../../notifications/presentation/widgets/notification_enable_prompt.dart';
 
 import '../bloc/home_bloc.dart';
 import '../bloc/home_event.dart';
@@ -50,6 +51,10 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
   // Track if we're currently navigating to prevent multiple navigations
   bool _isNavigating = false;
 
+  // Track if we've already triggered the notification prompts this session
+  bool _hasTriggeredDailyVersePrompt = false;
+  bool _hasTriggeredStreakPrompt = false;
+
   @override
   void initState() {
     super.initState();
@@ -60,6 +65,53 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
     if (current is! HomeCombinedState || current.topics.isEmpty) {
       homeBloc.add(const LoadRecommendedTopics(limit: 6));
     }
+  }
+
+  /// Shows the Daily Verse notification prompt if not already shown
+  Future<void> _showDailyVerseNotificationPrompt(String languageCode) async {
+    if (_hasTriggeredDailyVersePrompt) return;
+    _hasTriggeredDailyVersePrompt = true;
+
+    // Small delay to let the UI settle after verse loads
+    await Future.delayed(const Duration(milliseconds: 800));
+
+    if (!mounted) return;
+
+    await showNotificationEnablePrompt(
+      context: context,
+      type: NotificationPromptType.dailyVerse,
+      languageCode: languageCode,
+    );
+  }
+
+  /// Shows streak notification prompts based on streak milestone
+  /// - After 3+ day streak: Show streak reminder prompt
+  /// - After 7+ day streak: Show streak milestone prompt
+  Future<void> _showStreakNotificationPrompt(
+      String languageCode, int currentStreak) async {
+    if (_hasTriggeredStreakPrompt) return;
+
+    // Only show streak prompts for meaningful streaks
+    if (currentStreak < 3) return;
+
+    _hasTriggeredStreakPrompt = true;
+
+    // Delay to show after daily verse prompt (if shown)
+    await Future.delayed(const Duration(milliseconds: 1500));
+
+    if (!mounted) return;
+
+    // Show streak reminder prompt at 3+ days
+    // Show milestone prompt at 7+ days (includes streak lost notifications)
+    final promptType = currentStreak >= 7
+        ? NotificationPromptType.streakMilestone
+        : NotificationPromptType.streakReminder;
+
+    await showNotificationEnablePrompt(
+      context: context,
+      type: promptType,
+      languageCode: languageCode,
+    );
   }
 
   /// Load daily verse - called only once during initialization
@@ -154,74 +206,90 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
     final screenHeight = MediaQuery.of(context).size.height;
     final isLargeScreen = screenHeight > 700;
 
-    return ListenableBuilder(
-      listenable: sl<AuthStateProvider>(),
-      builder: (context, _) {
-        final authProvider = sl<AuthStateProvider>();
-        final currentUserName = authProvider.currentUserName;
+    return BlocListener<DailyVerseBloc, DailyVerseState>(
+      bloc: sl<DailyVerseBloc>(),
+      listener: (context, state) {
+        // Trigger notification prompts when daily verse loads successfully
+        if (state is DailyVerseLoaded) {
+          final languageCode = _getLanguageCode(state.currentLanguage);
+          _showDailyVerseNotificationPrompt(languageCode);
 
-        if (kDebugMode) {
-          print(
-              '👤 [HOME] User loaded via AuthStateProvider: $currentUserName');
-          print('👤 [HOME] Auth state: ${authProvider.debugInfo}');
+          // Also check for streak and show streak notification prompt
+          final streak = state.streak;
+          if (streak != null && streak.currentStreak > 0) {
+            _showStreakNotificationPrompt(languageCode, streak.currentStreak);
+          }
         }
+      },
+      child: ListenableBuilder(
+        listenable: sl<AuthStateProvider>(),
+        builder: (context, _) {
+          final authProvider = sl<AuthStateProvider>();
+          final currentUserName = authProvider.currentUserName;
 
-        return Scaffold(
-          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-          body: SafeArea(
-            child: Column(
-              children: [
-                // Main content
-                Expanded(
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.symmetric(horizontal: 24),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        SizedBox(height: isLargeScreen ? 32 : 24),
+          if (kDebugMode) {
+            print(
+                '👤 [HOME] User loaded via AuthStateProvider: $currentUserName');
+            print('👤 [HOME] Auth state: ${authProvider.debugInfo}');
+          }
 
-                        // App Header with Logo
-                        _buildAppHeader(),
+          return Scaffold(
+            backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+            body: SafeArea(
+              child: Column(
+                children: [
+                  // Main content
+                  Expanded(
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.symmetric(horizontal: 24),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          SizedBox(height: isLargeScreen ? 32 : 24),
 
-                        SizedBox(height: isLargeScreen ? 32 : 24),
+                          // App Header with Logo
+                          _buildAppHeader(),
 
-                        // Welcome Message
-                        _buildWelcomeMessage(currentUserName),
+                          SizedBox(height: isLargeScreen ? 32 : 24),
 
-                        SizedBox(height: isLargeScreen ? 32 : 24),
+                          // Welcome Message
+                          _buildWelcomeMessage(currentUserName),
 
-                        // Daily Verse Card with click functionality
-                        DailyVerseCard(
-                          margin: EdgeInsets.zero,
-                          onTap: _onDailyVerseCardTap,
-                        ),
+                          SizedBox(height: isLargeScreen ? 32 : 24),
 
-                        SizedBox(height: isLargeScreen ? 24 : 20),
+                          // Daily Verse Card with click functionality
+                          DailyVerseCard(
+                            margin: EdgeInsets.zero,
+                            onTap: _onDailyVerseCardTap,
+                          ),
 
-                        // Generate Study Guide Button
-                        _buildGenerateStudyButton(),
+                          SizedBox(height: isLargeScreen ? 24 : 20),
 
-                        SizedBox(height: isLargeScreen ? 32 : 24),
+                          // Generate Study Guide Button
+                          _buildGenerateStudyButton(),
 
-                        // Resume Last Study (conditional)
-                        if (_hasResumeableStudy) ...[
-                          _buildResumeStudyBanner(),
+                          SizedBox(height: isLargeScreen ? 32 : 24),
+
+                          // Resume Last Study (conditional)
+                          if (_hasResumeableStudy) ...[
+                            _buildResumeStudyBanner(),
+                            SizedBox(height: isLargeScreen ? 32 : 24),
+                          ],
+
+                          // Recommended Study Topics
+                          _buildRecommendedTopics(),
+
                           SizedBox(height: isLargeScreen ? 32 : 24),
                         ],
-
-                        // Recommended Study Topics
-                        _buildRecommendedTopics(),
-
-                        SizedBox(height: isLargeScreen ? 32 : 24),
-                      ],
+                      ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-        ).withHomeProtection();
-      },
+          ).withHomeProtection();
+        },
+      ),
     );
   }
 
