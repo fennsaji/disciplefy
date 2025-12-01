@@ -4,6 +4,8 @@ import '../../../../core/constants/app_fonts.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/extensions/translation_extension.dart';
+import '../../../../core/i18n/translation_keys.dart';
 import '../bloc/subscription_bloc.dart';
 import '../bloc/subscription_event.dart';
 import '../bloc/subscription_state.dart';
@@ -38,7 +40,7 @@ class _SubscriptionManagementPageState
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          'My Subscription',
+          context.tr(TranslationKeys.subscriptionTitle),
           style: AppFonts.poppins(
             fontWeight: FontWeight.w600,
             color: AppTheme.primaryColor,
@@ -53,7 +55,7 @@ class _SubscriptionManagementPageState
             onPressed: () {
               context.read<SubscriptionBloc>().add(const RefreshSubscription());
             },
-            tooltip: 'Refresh',
+            tooltip: context.tr(TranslationKeys.subscriptionRefresh),
           ),
         ],
       ),
@@ -122,7 +124,7 @@ class _SubscriptionManagementPageState
             ),
             const SizedBox(height: 24),
             Text(
-              'No Active Subscription',
+              context.tr(TranslationKeys.subscriptionNoActive),
               style: AppFonts.poppins(
                 fontSize: 24,
                 fontWeight: FontWeight.bold,
@@ -131,7 +133,7 @@ class _SubscriptionManagementPageState
             ),
             const SizedBox(height: 12),
             Text(
-              'Upgrade to Premium for unlimited access',
+              context.tr(TranslationKeys.subscriptionUpgradePrompt),
               style: AppFonts.inter(
                 fontSize: 14,
                 color:
@@ -154,7 +156,7 @@ class _SubscriptionManagementPageState
                 ),
               ),
               child: Text(
-                'Upgrade to Premium',
+                context.tr(TranslationKeys.subscriptionUpgradeButton),
                 style: AppFonts.inter(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
@@ -292,7 +294,10 @@ class _SubscriptionManagementPageState
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        'Your subscription ends in ${subscription.daysRemainingInPeriod} days',
+                        context
+                            .tr(TranslationKeys.subscriptionEndsIn)
+                            .replaceAll('{days}',
+                                subscription.daysRemainingInPeriod.toString()),
                         style: AppFonts.inter(
                           fontSize: 13,
                           color: Theme.of(context).colorScheme.onBackground,
@@ -323,7 +328,7 @@ class _SubscriptionManagementPageState
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Billing Information',
+              context.tr(TranslationKeys.subscriptionBillingInfo),
               style: AppFonts.poppins(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
@@ -332,28 +337,28 @@ class _SubscriptionManagementPageState
             ),
             const SizedBox(height: 16),
             _buildInfoRow(
-              'Amount',
-              '₹${subscription.amountRupees.toStringAsFixed(0)}/month',
+              context.tr(TranslationKeys.subscriptionAmount),
+              '₹${subscription.amountRupees.toStringAsFixed(0)}${context.tr(TranslationKeys.subscriptionPerMonth)}',
               Icons.currency_rupee_rounded,
             ),
             if (subscription.nextBillingAt != null) ...[
               const Divider(height: 24),
               _buildInfoRow(
-                'Next billing',
+                context.tr(TranslationKeys.subscriptionNextBilling),
                 dateFormat.format(subscription.nextBillingAt!),
                 Icons.calendar_today_rounded,
               ),
               const SizedBox(height: 8),
               _buildInfoRow(
-                'Days until billing',
-                '${subscription.daysUntilNextBilling} days',
+                context.tr(TranslationKeys.subscriptionDaysUntilBilling),
+                '${subscription.daysUntilNextBilling} ${context.tr(TranslationKeys.subscriptionDays)}',
                 Icons.access_time_rounded,
               ),
             ],
             if (subscription.currentPeriodEnd != null) ...[
               const Divider(height: 24),
               _buildInfoRow(
-                'Current period ends',
+                context.tr(TranslationKeys.subscriptionCurrentPeriodEnds),
                 dateFormat.format(subscription.currentPeriodEnd!),
                 Icons.event_rounded,
               ),
@@ -376,7 +381,7 @@ class _SubscriptionManagementPageState
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Plan Details',
+              context.tr(TranslationKeys.subscriptionPlanDetails),
               style: AppFonts.poppins(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
@@ -385,35 +390,36 @@ class _SubscriptionManagementPageState
             ),
             const SizedBox(height: 16),
             _buildInfoRow(
-              'Plan type',
+              context.tr(TranslationKeys.subscriptionPlanType),
               subscription.planType,
               Icons.workspace_premium_rounded,
             ),
             const Divider(height: 24),
             _buildInfoRow(
-              'Subscription type',
+              context.tr(TranslationKeys.subscriptionSubscriptionType),
               subscription.totalCount == null
-                  ? 'Unlimited'
-                  : '${subscription.totalCount} months',
+                  ? context.tr(TranslationKeys.subscriptionUnlimited)
+                  : context.tr(TranslationKeys.subscriptionMonths).replaceAll(
+                      '{count}', subscription.totalCount.toString()),
               Icons.repeat_rounded,
             ),
             if (subscription.totalCount != null) ...[
               const SizedBox(height: 8),
               _buildInfoRow(
-                'Completed cycles',
+                context.tr(TranslationKeys.subscriptionCompletedCycles),
                 '${subscription.paidCount}',
                 Icons.check_circle_outline_rounded,
               ),
               const SizedBox(height: 8),
               _buildInfoRow(
-                'Remaining cycles',
+                context.tr(TranslationKeys.subscriptionRemainingCycles),
                 '${subscription.remainingCount}',
                 Icons.pending_outlined,
               ),
             ] else ...[
               const SizedBox(height: 8),
               _buildInfoRow(
-                'Billing cycles completed',
+                context.tr(TranslationKeys.subscriptionBillingCyclesCompleted),
                 '${subscription.paidCount}',
                 Icons.check_circle_outline_rounded,
               ),
@@ -480,7 +486,7 @@ class _SubscriptionManagementPageState
                   },
             icon: const Icon(Icons.restart_alt_rounded),
             label: Text(
-              'Continue Subscription',
+              context.tr(TranslationKeys.subscriptionContinueButton),
               style: AppFonts.inter(
                 fontSize: 15,
                 fontWeight: FontWeight.w600,
@@ -518,7 +524,7 @@ class _SubscriptionManagementPageState
             ),
           ),
           child: Text(
-            'Cancel at End of Cycle',
+            context.tr(TranslationKeys.subscriptionCancelAtEnd),
             style: AppFonts.inter(
               fontSize: 15,
               fontWeight: FontWeight.w600,
@@ -534,7 +540,7 @@ class _SubscriptionManagementPageState
             padding: const EdgeInsets.symmetric(vertical: 12),
           ),
           child: Text(
-            'Cancel Immediately',
+            context.tr(TranslationKeys.subscriptionCancelImmediately),
             style: AppFonts.inter(
               fontSize: 14,
               fontWeight: FontWeight.w500,
@@ -550,7 +556,9 @@ class _SubscriptionManagementPageState
       context: context,
       builder: (dialogContext) => AlertDialog(
         title: Text(
-          immediate ? 'Cancel Immediately?' : 'Cancel at End of Cycle?',
+          immediate
+              ? context.tr(TranslationKeys.subscriptionCancelImmediateTitle)
+              : context.tr(TranslationKeys.subscriptionCancelEndTitle),
           style: AppFonts.poppins(
             fontWeight: FontWeight.w600,
             color: AppTheme.primaryColor,
@@ -558,14 +566,22 @@ class _SubscriptionManagementPageState
         ),
         content: Text(
           immediate
-              ? 'Your premium access will end immediately. You will not be refunded for the remaining days.'
-              : 'Your subscription will remain active until ${subscription.currentPeriodEnd != null ? DateFormat('MMM dd, yyyy').format(subscription.currentPeriodEnd!) : 'the end of the current period'}.',
+              ? context.tr(TranslationKeys.subscriptionCancelImmediateMessage)
+              : context
+                  .tr(TranslationKeys.subscriptionCancelEndMessage)
+                  .replaceAll(
+                    '{date}',
+                    subscription.currentPeriodEnd != null
+                        ? DateFormat('MMM dd, yyyy')
+                            .format(subscription.currentPeriodEnd!)
+                        : '',
+                  ),
           style: AppFonts.inter(fontSize: 14),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(),
-            child: Text('Keep Subscription'),
+            child: Text(context.tr(TranslationKeys.subscriptionKeep)),
           ),
           ElevatedButton(
             onPressed: () {
@@ -576,7 +592,7 @@ class _SubscriptionManagementPageState
               backgroundColor: AppTheme.errorColor,
               foregroundColor: Colors.white,
             ),
-            child: Text('Confirm Cancel'),
+            child: Text(context.tr(TranslationKeys.subscriptionConfirmCancel)),
           ),
         ],
       ),

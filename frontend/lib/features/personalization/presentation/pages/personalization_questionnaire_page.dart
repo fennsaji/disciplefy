@@ -37,107 +37,116 @@ class _QuestionnaireContent extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return BlocConsumer<PersonalizationBloc, PersonalizationState>(
-      listener: (context, state) {
-        if (state is QuestionnaireSubmitted ||
-            state is PersonalizationComplete) {
-          onComplete?.call();
-          if (context.canPop()) {
-            context.pop();
-          }
-        }
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        // Show skip dialog when Android back button is pressed
+        _showSkipDialog(context);
       },
-      builder: (context, state) {
-        if (state is QuestionnaireSubmitting) {
-          return const Scaffold(
-            body: Center(child: CircularProgressIndicator()),
-          );
-        }
+      child: BlocConsumer<PersonalizationBloc, PersonalizationState>(
+        listener: (context, state) {
+          if (state is QuestionnaireSubmitted ||
+              state is PersonalizationComplete) {
+            onComplete?.call();
+            if (context.canPop()) {
+              context.pop();
+            }
+          }
+        },
+        builder: (context, state) {
+          if (state is QuestionnaireSubmitting) {
+            return const Scaffold(
+              body: Center(child: CircularProgressIndicator()),
+            );
+          }
 
-        if (state is! QuestionnaireInProgress) {
-          return const Scaffold(
-            body: Center(child: CircularProgressIndicator()),
-          );
-        }
+          if (state is! QuestionnaireInProgress) {
+            return const Scaffold(
+              body: Center(child: CircularProgressIndicator()),
+            );
+          }
 
-        return Scaffold(
-          appBar: AppBar(
-            leading: IconButton(
-              icon: const Icon(Icons.close),
-              onPressed: () {
-                _showSkipDialog(context);
-              },
-            ),
-            title: Text(_getTitle(context, state.currentQuestion)),
-            actions: [
-              TextButton(
-                onPressed: () => _showSkipDialog(context),
-                child: Text(context.tr(TranslationKeys.questionnaireSkip)),
+          return Scaffold(
+            appBar: AppBar(
+              leading: IconButton(
+                icon: const Icon(Icons.close),
+                onPressed: () {
+                  _showSkipDialog(context);
+                },
               ),
-            ],
-          ),
-          body: SafeArea(
-            child: Column(
-              children: [
-                // Progress indicator
-                LinearProgressIndicator(
-                  value: (state.currentQuestion + 1) / 3,
-                  backgroundColor: theme.colorScheme.surfaceContainerHighest,
-                ),
-                Expanded(
-                  child: AnimatedSwitcher(
-                    duration: const Duration(milliseconds: 300),
-                    child: _buildQuestion(context, state),
-                  ),
-                ),
-                // Navigation buttons
-                Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Row(
-                    children: [
-                      if (state.currentQuestion > 0)
-                        Expanded(
-                          child: OutlinedButton(
-                            onPressed: () {
-                              context.read<PersonalizationBloc>().add(
-                                    const PreviousQuestion(),
-                                  );
-                            },
-                            child: Text(
-                                context.tr(TranslationKeys.questionnaireBack)),
-                          ),
-                        ),
-                      if (state.currentQuestion > 0) const SizedBox(width: 12),
-                      Expanded(
-                        flex: state.currentQuestion > 0 ? 1 : 1,
-                        child: FilledButton(
-                          onPressed: state.canProceed
-                              ? () {
-                                  if (state.isLastQuestion) {
-                                    context.read<PersonalizationBloc>().add(
-                                          const SubmitQuestionnaire(),
-                                        );
-                                  } else {
-                                    context.read<PersonalizationBloc>().add(
-                                          const NextQuestion(),
-                                        );
-                                  }
-                                }
-                              : null,
-                          child: Text(state.isLastQuestion
-                              ? context.tr(TranslationKeys.questionnaireDone)
-                              : context
-                                  .tr(TranslationKeys.questionnaireContinue)),
-                        ),
-                      ),
-                    ],
-                  ),
+              title: Text(_getTitle(context, state.currentQuestion)),
+              actions: [
+                TextButton(
+                  onPressed: () => _showSkipDialog(context),
+                  child: Text(context.tr(TranslationKeys.questionnaireSkip)),
                 ),
               ],
             ),
-          ),
-        );
-      },
+            body: SafeArea(
+              child: Column(
+                children: [
+                  // Progress indicator
+                  LinearProgressIndicator(
+                    value: (state.currentQuestion + 1) / 3,
+                    backgroundColor: theme.colorScheme.surfaceContainerHighest,
+                  ),
+                  Expanded(
+                    child: AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 300),
+                      child: _buildQuestion(context, state),
+                    ),
+                  ),
+                  // Navigation buttons
+                  Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Row(
+                      children: [
+                        if (state.currentQuestion > 0)
+                          Expanded(
+                            child: OutlinedButton(
+                              onPressed: () {
+                                context.read<PersonalizationBloc>().add(
+                                      const PreviousQuestion(),
+                                    );
+                              },
+                              child: Text(context
+                                  .tr(TranslationKeys.questionnaireBack)),
+                            ),
+                          ),
+                        if (state.currentQuestion > 0)
+                          const SizedBox(width: 12),
+                        Expanded(
+                          flex: state.currentQuestion > 0 ? 1 : 1,
+                          child: FilledButton(
+                            onPressed: state.canProceed
+                                ? () {
+                                    if (state.isLastQuestion) {
+                                      context.read<PersonalizationBloc>().add(
+                                            const SubmitQuestionnaire(),
+                                          );
+                                    } else {
+                                      context.read<PersonalizationBloc>().add(
+                                            const NextQuestion(),
+                                          );
+                                    }
+                                  }
+                                : null,
+                            child: Text(state.isLastQuestion
+                                ? context.tr(TranslationKeys.questionnaireDone)
+                                : context
+                                    .tr(TranslationKeys.questionnaireContinue)),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
     );
   }
 

@@ -3,6 +3,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/constants/app_fonts.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../../../core/extensions/translation_extension.dart';
+import '../../../../core/i18n/translation_keys.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../bloc/subscription_bloc.dart';
 import '../bloc/subscription_event.dart';
@@ -70,7 +72,7 @@ class _PremiumUpgradePageState extends State<PremiumUpgradePage>
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          'Upgrade to Premium',
+          context.tr(TranslationKeys.premiumUpgradeTitle),
           style: AppFonts.poppins(
             fontWeight: FontWeight.w600,
             color: AppTheme.primaryColor,
@@ -90,7 +92,7 @@ class _PremiumUpgradePageState extends State<PremiumUpgradePage>
                   .read<SubscriptionBloc>()
                   .add(const GetActiveSubscription());
             },
-            tooltip: 'Check subscription status',
+            tooltip: context.tr(TranslationKeys.premiumCheckStatus),
           ),
         ],
       ),
@@ -99,11 +101,11 @@ class _PremiumUpgradePageState extends State<PremiumUpgradePage>
           if (state is SubscriptionCreated) {
             // Show success message and open authorization URL
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
+              SnackBar(
                 content: Text(
-                    'Subscription created! Opening payment authorization...'),
+                    context.tr(TranslationKeys.premiumSubscriptionCreated)),
                 backgroundColor: AppTheme.successColor,
-                duration: Duration(seconds: 2),
+                duration: const Duration(seconds: 2),
               ),
             );
 
@@ -121,11 +123,11 @@ class _PremiumUpgradePageState extends State<PremiumUpgradePage>
 
               // Show success message
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content:
-                      Text('🎉 Premium subscription activated successfully!'),
+                SnackBar(
+                  content: Text(
+                      context.tr(TranslationKeys.premiumSubscriptionActivated)),
                   backgroundColor: AppTheme.successColor,
-                  duration: Duration(seconds: 3),
+                  duration: const Duration(seconds: 3),
                 ),
               );
 
@@ -214,7 +216,7 @@ class _PremiumUpgradePageState extends State<PremiumUpgradePage>
           ),
           const SizedBox(height: 12),
           Text(
-            'Disciplefy Premium',
+            context.tr(TranslationKeys.premiumDisciplefyPremium),
             style: AppFonts.poppins(
               fontSize: 28,
               fontWeight: FontWeight.bold,
@@ -223,7 +225,7 @@ class _PremiumUpgradePageState extends State<PremiumUpgradePage>
           ),
           const SizedBox(height: 8),
           Text(
-            'Unlock unlimited access to all features',
+            context.tr(TranslationKeys.premiumUnlockAccess),
             style: AppFonts.inter(
               fontSize: 14,
               color:
@@ -297,7 +299,7 @@ class _PremiumUpgradePageState extends State<PremiumUpgradePage>
                 borderRadius: BorderRadius.circular(20),
               ),
               child: Text(
-                'Cancel anytime • Billed monthly',
+                context.tr(TranslationKeys.premiumCancelAnytime),
                 style: AppFonts.inter(
                   fontSize: 12,
                   color: Colors.white.withOpacity(0.95),
@@ -314,28 +316,28 @@ class _PremiumUpgradePageState extends State<PremiumUpgradePage>
     final benefits = [
       _BenefitItem(
         icon: Icons.all_inclusive_rounded,
-        title: 'Unlimited Tokens',
-        description: 'Generate study guides without daily limits',
+        title: context.tr(TranslationKeys.premiumUnlimitedTokens),
+        description: context.tr(TranslationKeys.premiumUnlimitedTokensDesc),
       ),
       _BenefitItem(
         icon: Icons.chat_bubble_outline_rounded,
-        title: 'Unlimited Follow-ups',
-        description: 'Ask unlimited follow-up questions',
+        title: context.tr(TranslationKeys.premiumUnlimitedFollowups),
+        description: context.tr(TranslationKeys.premiumUnlimitedFollowupsDesc),
       ),
       _BenefitItem(
         icon: Icons.auto_awesome_rounded,
-        title: 'Premium AI Models',
-        description: 'Access to advanced AI for better insights',
+        title: context.tr(TranslationKeys.premiumAiModels),
+        description: context.tr(TranslationKeys.premiumAiModelsDesc),
       ),
       _BenefitItem(
         icon: Icons.history_rounded,
-        title: 'Complete History',
-        description: 'Access all your past study guides forever',
+        title: context.tr(TranslationKeys.premiumCompleteHistory),
+        description: context.tr(TranslationKeys.premiumCompleteHistoryDesc),
       ),
       _BenefitItem(
         icon: Icons.cloud_sync_rounded,
-        title: 'Priority Support',
-        description: 'Get help faster with premium support',
+        title: context.tr(TranslationKeys.premiumPrioritySupport),
+        description: context.tr(TranslationKeys.premiumPrioritySupportDesc),
       ),
     ];
 
@@ -343,7 +345,7 @@ class _PremiumUpgradePageState extends State<PremiumUpgradePage>
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'What you get with Premium',
+          context.tr(TranslationKeys.premiumWhatYouGet),
           style: AppFonts.poppins(
             fontSize: 20,
             fontWeight: FontWeight.w600,
@@ -423,7 +425,7 @@ class _PremiumUpgradePageState extends State<PremiumUpgradePage>
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Plan Comparison',
+              context.tr(TranslationKeys.premiumPlanComparison),
               style: AppFonts.poppins(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
@@ -431,10 +433,26 @@ class _PremiumUpgradePageState extends State<PremiumUpgradePage>
               ),
             ),
             const SizedBox(height: 16),
-            _buildComparisonRow('Daily tokens', '100', 'Unlimited'),
-            _buildComparisonRow('Follow-up questions', 'Limited', 'Unlimited'),
-            _buildComparisonRow('AI model', 'Basic', 'Premium'),
-            _buildComparisonRow('Support', 'Standard', 'Priority'),
+            _buildComparisonRow(
+              context.tr(TranslationKeys.premiumDailyTokens),
+              '100',
+              context.tr(TranslationKeys.premiumUnlimited),
+            ),
+            _buildComparisonRow(
+              context.tr(TranslationKeys.premiumFollowupQuestions),
+              context.tr(TranslationKeys.premiumLimited),
+              context.tr(TranslationKeys.premiumUnlimited),
+            ),
+            _buildComparisonRow(
+              context.tr(TranslationKeys.premiumAiModel),
+              context.tr(TranslationKeys.premiumBasic),
+              context.tr(TranslationKeys.premiumPremiumModel),
+            ),
+            _buildComparisonRow(
+              context.tr(TranslationKeys.premiumSupport),
+              context.tr(TranslationKeys.premiumStandard),
+              context.tr(TranslationKeys.premiumPriority),
+            ),
           ],
         ),
       ),
@@ -546,10 +564,10 @@ class _PremiumUpgradePageState extends State<PremiumUpgradePage>
           : Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.workspace_premium_rounded),
+                const Icon(Icons.workspace_premium_rounded),
                 const SizedBox(width: 8),
                 Text(
-                  'Upgrade to Premium',
+                  context.tr(TranslationKeys.premiumUpgradeButton),
                   style: AppFonts.inter(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
@@ -585,7 +603,7 @@ class _PremiumUpgradePageState extends State<PremiumUpgradePage>
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
-                    'Completed payment? Tap the refresh button ↑ to check your subscription status',
+                    context.tr(TranslationKeys.premiumPaymentCompletedHint),
                     style: AppFonts.inter(
                       fontSize: 12,
                       color: Theme.of(context).colorScheme.onBackground,
@@ -597,7 +615,7 @@ class _PremiumUpgradePageState extends State<PremiumUpgradePage>
           ),
         ],
         Text(
-          'By subscribing, you agree to our Terms of Service and Privacy Policy',
+          context.tr(TranslationKeys.premiumTermsAgree),
           style: AppFonts.inter(
             fontSize: 12,
             color: Theme.of(context).colorScheme.onBackground.withOpacity(0.6),
@@ -616,7 +634,7 @@ class _PremiumUpgradePageState extends State<PremiumUpgradePage>
             ),
             const SizedBox(width: 6),
             Text(
-              'Secure payment via Razorpay',
+              context.tr(TranslationKeys.premiumSecurePayment),
               style: AppFonts.inter(
                 fontSize: 12,
                 color:

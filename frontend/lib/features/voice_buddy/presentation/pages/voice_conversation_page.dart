@@ -143,42 +143,49 @@ class _VoiceConversationViewState extends State<_VoiceConversationView> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: _buildAppBar(),
-      body: BlocConsumer<VoiceConversationBloc, VoiceConversationState>(
-        listener: (context, state) {
-          // Show error snackbar
-          if (state.status == VoiceConversationStatus.error &&
-              state.errorMessage != null) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(state.errorMessage!),
-                backgroundColor: Colors.red,
-              ),
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        _handleBackNavigation();
+      },
+      child: Scaffold(
+        appBar: _buildAppBar(),
+        body: BlocConsumer<VoiceConversationBloc, VoiceConversationState>(
+          listener: (context, state) {
+            // Show error snackbar
+            if (state.status == VoiceConversationStatus.error &&
+                state.errorMessage != null) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(state.errorMessage!),
+                  backgroundColor: Colors.red,
+                ),
+              );
+            }
+
+            // Scroll to bottom when new messages arrive
+            if (state.messages.isNotEmpty) {
+              _scrollToBottom();
+            }
+          },
+          builder: (context, state) {
+            return Column(
+              children: [
+                // Quota indicator
+                if (state.quota != null) _buildQuotaIndicator(state),
+
+                // Main content
+                Expanded(
+                  child: _buildContent(state),
+                ),
+
+                // Input area
+                if (state.hasActiveConversation) _buildInputArea(state),
+              ],
             );
-          }
-
-          // Scroll to bottom when new messages arrive
-          if (state.messages.isNotEmpty) {
-            _scrollToBottom();
-          }
-        },
-        builder: (context, state) {
-          return Column(
-            children: [
-              // Quota indicator
-              if (state.quota != null) _buildQuotaIndicator(state),
-
-              // Main content
-              Expanded(
-                child: _buildContent(state),
-              ),
-
-              // Input area
-              if (state.hasActiveConversation) _buildInputArea(state),
-            ],
-          );
-        },
+          },
+        ),
       ),
     );
   }
@@ -187,13 +194,7 @@ class _VoiceConversationViewState extends State<_VoiceConversationView> {
     return AppBar(
       leading: IconButton(
         icon: const Icon(Icons.arrow_back),
-        onPressed: () {
-          if (context.canPop()) {
-            context.pop();
-          } else {
-            context.go(AppRoutes.generateStudy);
-          }
-        },
+        onPressed: _handleBackNavigation,
       ),
       title: Text(context.tr('voice_buddy.title')),
       actions: [
@@ -695,6 +696,15 @@ class _VoiceConversationViewState extends State<_VoiceConversationView> {
         return isContinuousMode
             ? context.tr('voice_buddy.voice_controls.tap_to_speak')
             : context.tr('voice_buddy.voice_controls.hold_to_speak');
+    }
+  }
+
+  /// Handle back navigation - go to generate study screen when can't pop
+  void _handleBackNavigation() {
+    if (context.canPop()) {
+      context.pop();
+    } else {
+      context.go(AppRoutes.generateStudy);
     }
   }
 }

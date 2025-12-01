@@ -116,143 +116,157 @@ class _VerseReviewPageState extends State<VerseReviewPage> {
     }
   }
 
+  /// Handle back navigation - go to memory verses when can't pop
+  void _handleBackNavigation() {
+    if (context.canPop()) {
+      context.pop();
+    } else {
+      GoRouter.of(context).goToMemoryVerses();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Scaffold(
-      appBar: AppBar(
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () {
-            if (context.canPop()) {
-              context.pop();
-            } else {
-              GoRouter.of(context).goToMemoryVerses();
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        _handleBackNavigation();
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back),
+            onPressed: _handleBackNavigation,
+          ),
+          title: Text(context.tr(TranslationKeys.reviewVerseTitle)),
+          actions: [
+            if (widget.verseIds != null)
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                child: Center(
+                  child: Text(
+                    '${currentIndex + 1}/${widget.verseIds!.length}',
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ),
+        body: BlocConsumer<MemoryVerseBloc, MemoryVerseState>(
+          listener: (context, state) {
+            if (state is ReviewSubmitted) {
+              _showReviewFeedback(context, state);
+              // Only show notification prompt if there are more verses to review
+              // This prevents race condition where navigation occurs while prompt is showing
+              final hasMoreVerses = widget.verseIds != null &&
+                  currentIndex < widget.verseIds!.length - 1;
+              if (hasMoreVerses) {
+                _showMemoryVerseOverduePrompt();
+              }
+              _moveToNextVerse();
+            } else if (state is MemoryVerseError) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(state.message),
+                  backgroundColor: Colors.red,
+                ),
+              );
+            } else if (state is OperationQueued) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Row(
+                    children: [
+                      const Icon(Icons.cloud_off, color: Colors.white),
+                      const SizedBox(width: 8),
+                      Expanded(child: Text(state.message)),
+                    ],
+                  ),
+                  backgroundColor: Colors.orange,
+                ),
+              );
+              _moveToNextVerse();
             }
           },
-        ),
-        title: Text(context.tr(TranslationKeys.reviewVerseTitle)),
-        actions: [
-          if (widget.verseIds != null)
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
-              child: Center(
-                child: Text(
-                  '${currentIndex + 1}/${widget.verseIds!.length}',
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ),
-        ],
-      ),
-      body: BlocConsumer<MemoryVerseBloc, MemoryVerseState>(
-        listener: (context, state) {
-          if (state is ReviewSubmitted) {
-            _showReviewFeedback(context, state);
-            // Only show notification prompt if there are more verses to review
-            // This prevents race condition where navigation occurs while prompt is showing
-            final hasMoreVerses = widget.verseIds != null &&
-                currentIndex < widget.verseIds!.length - 1;
-            if (hasMoreVerses) {
-              _showMemoryVerseOverduePrompt();
+          builder: (context, state) {
+            if (currentVerse == null) {
+              return const Center(child: CircularProgressIndicator());
             }
-            _moveToNextVerse();
-          } else if (state is MemoryVerseError) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(state.message),
-                backgroundColor: Colors.red,
-              ),
-            );
-          } else if (state is OperationQueued) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Row(
-                  children: [
-                    const Icon(Icons.cloud_off, color: Colors.white),
-                    const SizedBox(width: 8),
-                    Expanded(child: Text(state.message)),
-                  ],
-                ),
-                backgroundColor: Colors.orange,
-              ),
-            );
-            _moveToNextVerse();
-          }
-        },
-        builder: (context, state) {
-          if (currentVerse == null) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          return SafeArea(
-            child: Stack(
-              children: [
-                Column(
-                  children: [
-                    TimerBadge(elapsedSeconds: elapsedSeconds),
-                    Expanded(
-                      child: Padding(
-                        padding: const EdgeInsets.fromLTRB(16.0, 0, 16.0, 16.0),
-                        child: VerseFlipCard(
-                          verse: currentVerse!,
-                          isFlipped: isFlipped,
-                          onFlip: () => setState(() => isFlipped = !isFlipped),
-                        ),
-                      ),
-                    ),
-                    if (!isFlipped)
-                      Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 16.0),
-                        child: Text(
-                          context.tr(TranslationKeys.reviewTapToReveal),
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            color: theme.colorScheme.onSurfaceVariant,
-                            fontStyle: FontStyle.italic,
+            return SafeArea(
+              child: Stack(
+                children: [
+                  Column(
+                    children: [
+                      TimerBadge(elapsedSeconds: elapsedSeconds),
+                      Expanded(
+                        child: Padding(
+                          padding:
+                              const EdgeInsets.fromLTRB(16.0, 0, 16.0, 16.0),
+                          child: VerseFlipCard(
+                            verse: currentVerse!,
+                            isFlipped: isFlipped,
+                            onFlip: () =>
+                                setState(() => isFlipped = !isFlipped),
                           ),
                         ),
                       ),
-                    if (!isFlipped)
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 16.0),
-                        child: TextButton.icon(
-                          onPressed: _skipVerse,
-                          icon: const Icon(Icons.skip_next),
-                          label: Text(
-                              context.tr(TranslationKeys.reviewSkipForNow)),
-                          style: TextButton.styleFrom(
-                            foregroundColor: theme.colorScheme.onSurfaceVariant,
+                      if (!isFlipped)
+                        Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 16.0),
+                          child: Text(
+                            context.tr(TranslationKeys.reviewTapToReveal),
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant,
+                              fontStyle: FontStyle.italic,
+                            ),
                           ),
                         ),
-                      ),
-                    if (isFlipped) const SizedBox(height: 80),
-                  ],
-                ),
-                if (isFlipped)
-                  Positioned(
-                    bottom: 16,
-                    left: 16,
-                    right: 16,
-                    child: ElevatedButton.icon(
-                      onPressed: () => _showRatingBottomSheet(context),
-                      icon: const Icon(Icons.rate_review),
-                      label: Text(context.tr(TranslationKeys.reviewRateReview)),
-                      style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        backgroundColor: theme.colorScheme.primaryContainer,
-                        foregroundColor: theme.colorScheme.onPrimaryContainer,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+                      if (!isFlipped)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 16.0),
+                          child: TextButton.icon(
+                            onPressed: _skipVerse,
+                            icon: const Icon(Icons.skip_next),
+                            label: Text(
+                                context.tr(TranslationKeys.reviewSkipForNow)),
+                            style: TextButton.styleFrom(
+                              foregroundColor:
+                                  theme.colorScheme.onSurfaceVariant,
+                            ),
+                          ),
                         ),
-                        elevation: 4,
-                      ),
-                    ),
+                      if (isFlipped) const SizedBox(height: 80),
+                    ],
                   ),
-              ],
-            ),
-          );
-        },
+                  if (isFlipped)
+                    Positioned(
+                      bottom: 16,
+                      left: 16,
+                      right: 16,
+                      child: ElevatedButton.icon(
+                        onPressed: () => _showRatingBottomSheet(context),
+                        icon: const Icon(Icons.rate_review),
+                        label:
+                            Text(context.tr(TranslationKeys.reviewRateReview)),
+                        style: ElevatedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          backgroundColor: theme.colorScheme.primaryContainer,
+                          foregroundColor: theme.colorScheme.onPrimaryContainer,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          elevation: 4,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            );
+          },
+        ),
       ),
     ).withAuthProtection();
   }
