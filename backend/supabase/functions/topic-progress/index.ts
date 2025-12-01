@@ -117,6 +117,10 @@ async function handleStartProgress(
     throw new AppError('DATABASE_ERROR', `Failed to start topic progress: ${error.message}`, 500);
   }
 
+  if (!data) {
+    throw new AppError('DATABASE_ERROR', 'No data returned from start_topic_progress', 500);
+  }
+
   return {
     id: data.id,
     topic_id: data.topic_id,
@@ -167,81 +171,30 @@ async function handleUpdateTime(
   topicId: string,
   timeSpentSeconds: number
 ): Promise<UpdateTimeResponse> {
-  // Update time spent on the topic
-  const { data, error } = await services.supabaseServiceClient
-    .from('user_topic_progress')
-    .update({
-      time_spent_seconds: services.supabaseServiceClient.rpc('get_incremented_time', {
-        current_seconds: timeSpentSeconds,
-      }),
-      updated_at: new Date().toISOString(),
-    })
-    .eq('user_id', userId)
-    .eq('topic_id', topicId)
-    .select('id, topic_id, time_spent_seconds, updated_at')
-    .single();
-
-  // If no record exists, use upsert approach
-  if (error && error.code === 'PGRST116') {
-    // No rows returned - create new record
-    const { data: insertData, error: insertError } = await services.supabaseServiceClient
-      .from('user_topic_progress')
-      .upsert(
-        {
-          user_id: userId,
-          topic_id: topicId,
-          time_spent_seconds: timeSpentSeconds,
-          started_at: new Date().toISOString(),
-        },
-        { onConflict: 'user_id,topic_id' }
-      )
-      .select('id, topic_id, time_spent_seconds, updated_at')
-      .single();
-
-    if (insertError) {
-      console.error('[topic-progress] Error inserting time update:', insertError);
-      throw new AppError(
-        'DATABASE_ERROR',
-        `Failed to update time spent: ${insertError.message}`,
-        500
-      );
-    }
-
-    return {
-      id: insertData.id,
-      topic_id: insertData.topic_id,
-      time_spent_seconds: insertData.time_spent_seconds,
-      updated_at: insertData.updated_at,
-    };
-  }
+  // Use atomic RPC for race-condition-free time update
+  const { data, error } = await services.supabaseServiceClient.rpc('upsert_topic_time', {
+    p_user_id: userId,
+    p_topic_id: topicId,
+    p_time_spent_seconds: timeSpentSeconds,
+  });
 
   if (error) {
     console.error('[topic-progress] Error updating time:', error);
     throw new AppError('DATABASE_ERROR', `Failed to update time spent: ${error.message}`, 500);
   }
 
-  // For existing record, add time incrementally
-  const { data: updatedData, error: updateError } = await services.supabaseServiceClient
-    .from('user_topic_progress')
-    .update({
-      time_spent_seconds: (data?.time_spent_seconds || 0) + timeSpentSeconds,
-      updated_at: new Date().toISOString(),
-    })
-    .eq('user_id', userId)
-    .eq('topic_id', topicId)
-    .select('id, topic_id, time_spent_seconds, updated_at')
-    .single();
+  // RPC returns an array, get first row
+  const result = Array.isArray(data) ? data[0] : data;
 
-  if (updateError) {
-    console.error('[topic-progress] Error updating time:', updateError);
-    throw new AppError('DATABASE_ERROR', `Failed to update time spent: ${updateError.message}`, 500);
+  if (!result) {
+    throw new AppError('DATABASE_ERROR', 'No data returned from upsert_topic_time', 500);
   }
 
   return {
-    id: updatedData.id,
-    topic_id: updatedData.topic_id,
-    time_spent_seconds: updatedData.time_spent_seconds,
-    updated_at: updatedData.updated_at,
+    id: result.id,
+    topic_id: result.topic_id,
+    time_spent_seconds: result.time_spent_seconds,
+    updated_at: result.updated_at,
   };
 }
 

@@ -137,7 +137,7 @@ class TopicProgressRemoteDataSourceImpl
         final jsonData = json.decode(response.body) as Map<String, dynamic>;
         return TopicProgressActionResponse.fromJson(jsonData);
       } else {
-        _logDebug('Progress action error: ${response.body}');
+        _logDebug('Progress action error: status=${response.statusCode}');
         throw ServerException(
           message: 'Failed to $action topic: ${response.statusCode}',
           code: 'PROGRESS_ACTION_ERROR',
@@ -183,7 +183,7 @@ class TopicProgressRemoteDataSourceImpl
         final jsonData = json.decode(response.body) as Map<String, dynamic>;
         return ContinueLearningResponse.fromJson(jsonData);
       } else {
-        _logDebug('In-progress topics error: ${response.body}');
+        _logDebug('In-progress topics error: status=${response.statusCode}');
         throw ServerException(
           message: 'Failed to fetch in-progress topics: ${response.statusCode}',
           code: 'CONTINUE_LEARNING_ERROR',

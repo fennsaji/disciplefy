@@ -76,13 +76,15 @@ class LearningPathsRemoteDataSourceImpl
           code: 'LEARNING_PATHS_API_ERROR',
         );
       }
+    } on ServerException {
+      rethrow;
+    } on ClientException {
+      rethrow;
     } catch (e) {
       _logDebug('Exception in getLearningPaths: $e');
 
-      if (e is ServerException) rethrow;
-
       throw NetworkException(
-        message: 'Failed to connect to learning paths service: $e',
+        message: 'Failed to connect to learning paths service',
         code: 'LEARNING_PATHS_NETWORK_ERROR',
       );
     }
@@ -121,13 +123,15 @@ class LearningPathsRemoteDataSourceImpl
           code: 'LEARNING_PATH_DETAIL_API_ERROR',
         );
       }
+    } on ServerException {
+      rethrow;
+    } on ClientException {
+      rethrow;
     } catch (e) {
       _logDebug('Exception in getLearningPathDetails: $e');
 
-      if (e is ServerException) rethrow;
-
       throw NetworkException(
-        message: 'Failed to connect to learning paths service: $e',
+        message: 'Failed to connect to learning paths service',
         code: 'LEARNING_PATH_DETAIL_NETWORK_ERROR',
       );
     }
@@ -162,13 +166,15 @@ class LearningPathsRemoteDataSourceImpl
           code: 'ENROLLMENT_API_ERROR',
         );
       }
+    } on ServerException {
+      rethrow;
+    } on ClientException {
+      rethrow;
     } catch (e) {
       _logDebug('Exception in enrollInPath: $e');
 
-      if (e is ServerException) rethrow;
-
       throw NetworkException(
-        message: 'Failed to enroll in learning path: $e',
+        message: 'Failed to enroll in learning path',
         code: 'ENROLLMENT_NETWORK_ERROR',
       );
     }
@@ -274,13 +280,15 @@ class LearningPathsRemoteDataSourceImpl
           code: 'RECOMMENDED_PATH_API_ERROR',
         );
       }
+    } on ServerException {
+      rethrow;
+    } on ClientException {
+      rethrow;
     } catch (e) {
       _logDebug('Exception in getRecommendedPath: $e');
 
-      if (e is ServerException) rethrow;
-
       throw NetworkException(
-        message: 'Failed to connect to learning paths service: $e',
+        message: 'Failed to connect to learning paths service',
         code: 'RECOMMENDED_PATH_NETWORK_ERROR',
       );
     }

@@ -31,6 +31,7 @@ class TranslationKeys {
       'study_guide.placeholders.personal_notes';
 
   // Common Actions
+  static const commonRetry = 'common.retry';
   static const commonCancel = 'common.actions.cancel';
   static const commonShare = 'common.actions.share';
   static const commonCopy = 'common.actions.copy';
@@ -691,6 +692,11 @@ class TranslationKeys {
   static const learningPathsLocked = 'learning_paths.locked';
   static const learningPathsUnlocked = 'learning_paths.unlocked';
   static const learningPathsMilestone = 'learning_paths.milestone';
+  static const learningPathsLoadingDetails = 'learning_paths.loading_details';
+  static const learningPathsEnrolling = 'learning_paths.enrolling';
+  static const learningPathsFailedToLoad = 'learning_paths.failed_to_load';
+  static const learningPathsLoadingTopics = 'learning_paths.loading_topics';
+  static const learningPathsPercentComplete = 'learning_paths.percent_complete';
 
   // Disciple Levels
   static const discipleLevelSeeker = 'disciple_level.seeker';

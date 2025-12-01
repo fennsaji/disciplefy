@@ -131,8 +131,8 @@ class ContinueLearningResponse {
   });
 
   factory ContinueLearningResponse.fromJson(Map<String, dynamic> json) {
-    final data = json['data'] as Map<String, dynamic>;
-    final topicsList = data['topics'] as List<dynamic>;
+    final data = (json['data'] as Map<String, dynamic>?) ?? <String, dynamic>{};
+    final topicsList = (data['topics'] as List<dynamic>?) ?? <dynamic>[];
 
     return ContinueLearningResponse(
       topics: topicsList

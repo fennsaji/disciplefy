@@ -82,6 +82,23 @@ interface RecommendedPathRequest {
   language?: string;
 }
 
+/**
+ * Shape of learning_paths row from joined query
+ */
+interface LearningPathRow {
+  id: string;
+  slug: string;
+  title: string;
+  description: string;
+  icon_name: string;
+  color: string;
+  total_xp: number;
+  estimated_days: number;
+  disciple_level: string;
+  is_featured: boolean;
+  is_active: boolean;
+}
+
 // Maps faith journey stage to recommended learning path slugs
 const FAITH_JOURNEY_LEARNING_PATHS: Record<string, string[]> = {
   new: ['new-believer-essentials', 'rooted-in-christ'],
@@ -91,6 +108,99 @@ const FAITH_JOURNEY_LEARNING_PATHS: Record<string, string[]> = {
 
 // Default learning path slug for anonymous users or users without personalization
 const DEFAULT_FEATURED_PATH_SLUG = 'new-believer-essentials';
+
+// ============================================================================
+// Helper Functions for Learning Path Recommendations
+// ============================================================================
+
+/**
+ * Gets the count of topics in a learning path
+ */
+async function getTopicsCount(
+  supabaseClient: ReturnType<ServiceContainer['supabaseServiceClient']['from']> extends (...args: any[]) => any ? any : any,
+  learningPathId: string
+): Promise<number> {
+  const { data } = await supabaseClient
+    .from('learning_path_topics')
+    .select('id', { count: 'exact' })
+    .eq('learning_path_id', learningPathId);
+  return data?.length || 0;
+}
+
+/**
+ * Gets localized title and description for a learning path
+ */
+async function getLocalizedTitleDescription(
+  supabaseClient: ReturnType<ServiceContainer['supabaseServiceClient']['from']> extends (...args: any[]) => any ? any : any,
+  learningPathId: string,
+  language: string,
+  fallbackTitle: string,
+  fallbackDescription: string
+): Promise<{ title: string; description: string }> {
+  if (language === 'en') {
+    return { title: fallbackTitle, description: fallbackDescription };
+  }
+
+  const { data: translation } = await supabaseClient
+    .from('learning_path_translations')
+    .select('title, description')
+    .eq('learning_path_id', learningPathId)
+    .eq('lang_code', language)
+    .single();
+
+  if (translation) {
+    return {
+      title: translation.title || fallbackTitle,
+      description: translation.description || fallbackDescription,
+    };
+  }
+
+  return { title: fallbackTitle, description: fallbackDescription };
+}
+
+/**
+ * Builds a LearningPath response object from path data
+ */
+function buildLearningPathResponse(
+  pathData: Record<string, any>,
+  topicsCount: number,
+  isEnrolled: boolean,
+  progressPercentage: number,
+  localizedTitle: string,
+  localizedDescription: string
+): LearningPath {
+  return {
+    id: pathData.id,
+    slug: pathData.slug,
+    title: localizedTitle,
+    description: localizedDescription,
+    icon_name: pathData.icon_name,
+    color: pathData.color,
+    total_xp: pathData.total_xp,
+    estimated_days: pathData.estimated_days,
+    disciple_level: pathData.disciple_level,
+    is_featured: pathData.is_featured,
+    topics_count: topicsCount,
+    is_enrolled: isEnrolled,
+    progress_percentage: progressPercentage,
+  };
+}
+
+/**
+ * Creates a JSON response for the recommended path
+ */
+function createRecommendedPathResponse(
+  path: LearningPath | null,
+  reason: 'active' | 'personalized' | 'featured'
+): Response {
+  return new Response(
+    JSON.stringify({
+      success: true,
+      data: { path, reason },
+    }),
+    { status: 200, headers: { 'Content-Type': 'application/json' } }
+  );
+}
 
 // ============================================================================
 // Main Handler
@@ -455,63 +565,34 @@ async function handleGetRecommendedPath(
 
       if (activePathProgress && activePathProgress.length > 0) {
         const activePath = activePathProgress[0];
-        const pathData = activePath.learning_paths as any;
+        // Supabase returns joined relation as object (due to !inner), cast through unknown for type safety
+        const pathData = activePath.learning_paths as unknown as LearningPathRow | null;
 
         if (pathData?.is_active) {
           console.log(`[RECOMMENDED_PATH] Found active path: ${pathData.title}`);
-          
-          // Get topics count and progress
-          const { data: topicsCount } = await supabaseServiceClient
-            .from('learning_path_topics')
-            .select('id', { count: 'exact' })
-            .eq('learning_path_id', activePath.learning_path_id);
 
-          // Get localized title/description if needed
-          let title = pathData.title;
-          let description = pathData.description;
-
-          if (language !== 'en') {
-            const { data: translation } = await supabaseServiceClient
-              .from('learning_path_translations')
-              .select('title, description')
-              .eq('learning_path_id', activePath.learning_path_id)
-              .eq('lang_code', language)
-              .single();
-
-            if (translation) {
-              title = translation.title;
-              description = translation.description;
-            }
-          }
-
-          const topicsCountNum = topicsCount?.length || 0;
-          const progressPercentage = topicsCountNum > 0 
-            ? Math.round((activePath.topics_completed / topicsCountNum) * 100) 
+          const topicsCountNum = await getTopicsCount(supabaseServiceClient, activePath.learning_path_id);
+          const localized = await getLocalizedTitleDescription(
+            supabaseServiceClient,
+            activePath.learning_path_id,
+            language,
+            pathData.title,
+            pathData.description
+          );
+          const progressPercentage = topicsCountNum > 0
+            ? Math.round((activePath.topics_completed / topicsCountNum) * 100)
             : 0;
 
-          const path: LearningPath = {
-            id: pathData.id,
-            slug: pathData.slug,
-            title,
-            description,
-            icon_name: pathData.icon_name,
-            color: pathData.color,
-            total_xp: pathData.total_xp,
-            estimated_days: pathData.estimated_days,
-            disciple_level: pathData.disciple_level,
-            is_featured: pathData.is_featured,
-            topics_count: topicsCountNum,
-            is_enrolled: true,
-            progress_percentage: progressPercentage,
-          };
-
-          return new Response(
-            JSON.stringify({
-              success: true,
-              data: { path, reason: 'active' },
-            }),
-            { status: 200, headers: { 'Content-Type': 'application/json' } }
+          const path = buildLearningPathResponse(
+            pathData,
+            topicsCountNum,
+            true,
+            progressPercentage,
+            localized.title,
+            localized.description
           );
+
+          return createRecommendedPathResponse(path, 'active');
         }
       }
     }
@@ -554,54 +635,26 @@ async function handleGetRecommendedPath(
 
           if (!existingProgress?.completed_at) {
             console.log(`[RECOMMENDED_PATH] Found personalized path: ${pathData.title}`);
-            
-            // Get topics count
-            const { data: topicsCount } = await supabaseServiceClient
-              .from('learning_path_topics')
-              .select('id', { count: 'exact' })
-              .eq('learning_path_id', pathData.id);
 
-            // Get localized title/description if needed
-            let title = pathData.title;
-            let description = pathData.description;
-
-            if (language !== 'en') {
-              const { data: translation } = await supabaseServiceClient
-                .from('learning_path_translations')
-                .select('title, description')
-                .eq('learning_path_id', pathData.id)
-                .eq('lang_code', language)
-                .single();
-
-              if (translation) {
-                title = translation.title;
-                description = translation.description;
-              }
-            }
-
-            const path: LearningPath = {
-              id: pathData.id,
-              slug: pathData.slug,
-              title,
-              description,
-              icon_name: pathData.icon_name,
-              color: pathData.color,
-              total_xp: pathData.total_xp,
-              estimated_days: pathData.estimated_days,
-              disciple_level: pathData.disciple_level,
-              is_featured: pathData.is_featured,
-              topics_count: topicsCount?.length || 0,
-              is_enrolled: !!existingProgress,
-              progress_percentage: 0,
-            };
-
-            return new Response(
-              JSON.stringify({
-                success: true,
-                data: { path, reason: 'personalized' },
-              }),
-              { status: 200, headers: { 'Content-Type': 'application/json' } }
+            const topicsCountNum = await getTopicsCount(supabaseServiceClient, pathData.id);
+            const localized = await getLocalizedTitleDescription(
+              supabaseServiceClient,
+              pathData.id,
+              language,
+              pathData.title,
+              pathData.description
             );
+
+            const path = buildLearningPathResponse(
+              pathData,
+              topicsCountNum,
+              !!existingProgress,
+              0,
+              localized.title,
+              localized.description
+            );
+
+            return createRecommendedPathResponse(path, 'personalized');
           }
         }
       }
@@ -629,87 +682,43 @@ async function handleGetRecommendedPath(
 
       if (!anyFeatured) {
         console.log('[RECOMMENDED_PATH] No featured path found');
-        return new Response(
-          JSON.stringify({
-            success: true,
-            data: { path: null, reason: 'featured' },
-          }),
-          { status: 200, headers: { 'Content-Type': 'application/json' } }
-        );
+        return createRecommendedPathResponse(null, 'featured');
       }
 
       // Use anyFeatured
       const pathData = anyFeatured;
-      const { data: topicsCount } = await supabaseServiceClient
-        .from('learning_path_topics')
-        .select('id', { count: 'exact' })
-        .eq('learning_path_id', pathData.id);
-
-      let title = pathData.title;
-      let description = pathData.description;
-
-      if (language !== 'en') {
-        const { data: translation } = await supabaseServiceClient
-          .from('learning_path_translations')
-          .select('title, description')
-          .eq('learning_path_id', pathData.id)
-          .eq('lang_code', language)
-          .single();
-
-        if (translation) {
-          title = translation.title;
-          description = translation.description;
-        }
-      }
-
-      const path: LearningPath = {
-        id: pathData.id,
-        slug: pathData.slug,
-        title,
-        description,
-        icon_name: pathData.icon_name,
-        color: pathData.color,
-        total_xp: pathData.total_xp,
-        estimated_days: pathData.estimated_days,
-        disciple_level: pathData.disciple_level,
-        is_featured: pathData.is_featured,
-        topics_count: topicsCount?.length || 0,
-        is_enrolled: false,
-        progress_percentage: 0,
-      };
-
-      return new Response(
-        JSON.stringify({
-          success: true,
-          data: { path, reason: 'featured' },
-        }),
-        { status: 200, headers: { 'Content-Type': 'application/json' } }
+      const topicsCountNum = await getTopicsCount(supabaseServiceClient, pathData.id);
+      const localized = await getLocalizedTitleDescription(
+        supabaseServiceClient,
+        pathData.id,
+        language,
+        pathData.title,
+        pathData.description
       );
+
+      const path = buildLearningPathResponse(
+        pathData,
+        topicsCountNum,
+        false,
+        0,
+        localized.title,
+        localized.description
+      );
+
+      return createRecommendedPathResponse(path, 'featured');
     }
 
     // Use the default featured path
     console.log(`[RECOMMENDED_PATH] Using default featured path: ${featuredPath.title}`);
-    const { data: topicsCount } = await supabaseServiceClient
-      .from('learning_path_topics')
-      .select('id', { count: 'exact' })
-      .eq('learning_path_id', featuredPath.id);
 
-    let title = featuredPath.title;
-    let description = featuredPath.description;
-
-    if (language !== 'en') {
-      const { data: translation } = await supabaseServiceClient
-        .from('learning_path_translations')
-        .select('title, description')
-        .eq('learning_path_id', featuredPath.id)
-        .eq('lang_code', language)
-        .single();
-
-      if (translation) {
-        title = translation.title;
-        description = translation.description;
-      }
-    }
+    const topicsCountNum = await getTopicsCount(supabaseServiceClient, featuredPath.id);
+    const localized = await getLocalizedTitleDescription(
+      supabaseServiceClient,
+      featuredPath.id,
+      language,
+      featuredPath.title,
+      featuredPath.description
+    );
 
     // Check if user is enrolled (authenticated users only)
     let isEnrolled = false;
@@ -725,36 +734,22 @@ async function handleGetRecommendedPath(
 
       if (userProgress) {
         isEnrolled = true;
-        const topicsCountNum = topicsCount?.length || 0;
         progressPercentage = topicsCountNum > 0
           ? Math.round((userProgress.topics_completed / topicsCountNum) * 100)
           : 0;
       }
     }
 
-    const path: LearningPath = {
-      id: featuredPath.id,
-      slug: featuredPath.slug,
-      title,
-      description,
-      icon_name: featuredPath.icon_name,
-      color: featuredPath.color,
-      total_xp: featuredPath.total_xp,
-      estimated_days: featuredPath.estimated_days,
-      disciple_level: featuredPath.disciple_level,
-      is_featured: featuredPath.is_featured,
-      topics_count: topicsCount?.length || 0,
-      is_enrolled: isEnrolled,
-      progress_percentage: progressPercentage,
-    };
-
-    return new Response(
-      JSON.stringify({
-        success: true,
-        data: { path, reason: 'featured' },
-      }),
-      { status: 200, headers: { 'Content-Type': 'application/json' } }
+    const path = buildLearningPathResponse(
+      featuredPath,
+      topicsCountNum,
+      isEnrolled,
+      progressPercentage,
+      localized.title,
+      localized.description
     );
+
+    return createRecommendedPathResponse(path, 'featured');
   } catch (error) {
     console.error('[RECOMMENDED_PATH] Error:', error);
     throw new AppError('SERVER_ERROR', 'Failed to get recommended learning path', 500);

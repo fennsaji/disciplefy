@@ -78,12 +78,13 @@ async function getLocalizedContent(
     return { title: fallbackTitle, description: fallbackDescription };
   }
 
-  // Try to get localized content
+  // Try to get localized content from recommended_topics_translations table
+  // using lang_code column (not language_code)
   const { data: translation } = await services.supabaseServiceClient
-    .from('recommended_topic_translations')
+    .from('recommended_topics_translations')
     .select('title, description')
     .eq('topic_id', topicId)
-    .eq('language_code', language)
+    .eq('lang_code', language)
     .single();
 
   if (translation) {
@@ -115,8 +116,9 @@ async function handleContinueLearning(
   // Parse query parameters
   const url = new URL(req.url);
   const language = url.searchParams.get('language') || DEFAULT_LANGUAGE;
-  const limitParam = parseInt(url.searchParams.get('limit') || String(DEFAULT_LIMIT));
-  const limit = Math.min(Math.max(limitParam, 1), MAX_LIMIT);
+  const parsedLimit = parseInt(url.searchParams.get('limit') || '');
+  const limitParam = Number.isNaN(parsedLimit) ? DEFAULT_LIMIT : parsedLimit;
+  const limit = Math.max(1, Math.min(limitParam, MAX_LIMIT));
 
   // Get in-progress topics using the database function
   const { data: inProgressTopics, error } = await services.supabaseServiceClient.rpc(

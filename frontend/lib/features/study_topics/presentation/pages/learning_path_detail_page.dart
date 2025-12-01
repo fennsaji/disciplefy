@@ -161,7 +161,7 @@ class _LearningPathDetailPageState extends State<LearningPathDetailPage> {
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  'Loading path details...',
+                  context.tr(TranslationKeys.learningPathsLoadingDetails),
                   style: AppFonts.inter(
                     fontSize: 14,
                     color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
@@ -191,7 +191,7 @@ class _LearningPathDetailPageState extends State<LearningPathDetailPage> {
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  'Enrolling in path...',
+                  context.tr(TranslationKeys.learningPathsEnrolling),
                   style: AppFonts.inter(
                     fontSize: 14,
                     color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
@@ -223,7 +223,7 @@ class _LearningPathDetailPageState extends State<LearningPathDetailPage> {
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  'Failed to load path details',
+                  context.tr(TranslationKeys.learningPathsFailedToLoad),
                   style: AppFonts.inter(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
@@ -242,7 +242,7 @@ class _LearningPathDetailPageState extends State<LearningPathDetailPage> {
                 const SizedBox(height: 24),
                 ElevatedButton(
                   onPressed: _loadPathDetails,
-                  child: const Text('Retry'),
+                  child: Text(context.tr(TranslationKeys.commonRetry)),
                 ),
               ],
             ),
@@ -268,7 +268,7 @@ class _LearningPathDetailPageState extends State<LearningPathDetailPage> {
                 const CircularProgressIndicator(),
                 const SizedBox(height: 16),
                 Text(
-                  'Loading topics...',
+                  context.tr(TranslationKeys.learningPathsLoadingTopics),
                   style: AppFonts.inter(
                     fontSize: 14,
                     color: Theme.of(context)
@@ -615,7 +615,10 @@ class _LearningPathDetailPageState extends State<LearningPathDetailPage> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  '${path.progressPercentage}% complete',
+                  context.tr(
+                    TranslationKeys.learningPathsPercentComplete,
+                    {'percent': path.progressPercentage.toString()},
+                  ),
                   style: AppFonts.inter(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,

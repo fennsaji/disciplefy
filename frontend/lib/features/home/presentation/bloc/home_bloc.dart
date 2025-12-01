@@ -12,7 +12,6 @@ import 'home_study_generation_state.dart' as generation_states;
 import '../../../../core/services/language_preference_service.dart';
 import '../../../../core/models/app_language.dart';
 import '../../../../core/utils/logger.dart';
-import '../../../auth/data/services/auth_service.dart';
 import '../../../study_topics/domain/repositories/learning_paths_repository.dart';
 
 /// Refactored BLoC for coordinating Home screen concerns.
@@ -24,7 +23,6 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
   final HomeStudyGenerationBloc _studyGenerationBloc;
   final LanguagePreferenceService _languagePreferenceService;
   final LearningPathsRepository _learningPathsRepository;
-  final AuthService _authService;
 
   late final StreamSubscription _topicsSubscription;
   late final StreamSubscription _studyGenerationSubscription;
@@ -35,12 +33,10 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
     required HomeStudyGenerationBloc studyGenerationBloc,
     required LanguagePreferenceService languagePreferenceService,
     required LearningPathsRepository learningPathsRepository,
-    AuthService? authService,
   })  : _topicsBloc = topicsBloc,
         _studyGenerationBloc = studyGenerationBloc,
         _languagePreferenceService = languagePreferenceService,
         _learningPathsRepository = learningPathsRepository,
-        _authService = authService ?? AuthService(),
         super(const HomeCombinedState()) {
     // Subscribe to child BLoC states and trigger events instead of direct emit
     _topicsSubscription = _topicsBloc.stream.listen((state) {
