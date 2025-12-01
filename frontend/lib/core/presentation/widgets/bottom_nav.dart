@@ -55,6 +55,13 @@ class DisciplefyBottomNav extends StatelessWidget {
       semanticLabel:
           'Navigate to Study Generation screen. Create new Bible study guides.',
     ),
+    NavTab(
+      icon: Icons.menu_book_outlined,
+      activeIcon: Icons.menu_book,
+      label: 'Topics',
+      semanticLabel:
+          'Navigate to Study Topics screen. Browse learning paths and continue your studies.',
+    ),
   ];
 
   @override

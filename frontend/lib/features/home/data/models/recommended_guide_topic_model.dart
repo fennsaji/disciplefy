@@ -24,6 +24,23 @@ class RecommendedGuideTopicModel extends RecommendedGuideTopic {
   @JsonKey(name: 'english_category')
   final String? englishCategory;
 
+  // Learning path fields
+  @override
+  @JsonKey(name: 'learning_path_id')
+  final String? learningPathId;
+
+  @override
+  @JsonKey(name: 'learning_path_name')
+  final String? learningPathName;
+
+  @override
+  @JsonKey(name: 'position_in_path')
+  final int? positionInPath;
+
+  @override
+  @JsonKey(name: 'total_topics_in_path')
+  final int? totalTopicsInPath;
+
   RecommendedGuideTopicModel({
     required super.id,
     required super.title,
@@ -34,12 +51,20 @@ class RecommendedGuideTopicModel extends RecommendedGuideTopic {
     this.englishTitle,
     this.englishDescription,
     this.englishCategory,
+    this.learningPathId,
+    this.learningPathName,
+    this.positionInPath,
+    this.totalTopicsInPath,
     super.isFeatured = false, // Default to false if not provided
     DateTime? createdAt, // Allow null parameter
   }) : super(
           englishCategory: englishCategory,
           scriptureCount: keyVerses.length,
           createdAt: createdAt ?? DateTime.now(),
+          learningPathId: learningPathId,
+          learningPathName: learningPathName,
+          positionInPath: positionInPath,
+          totalTopicsInPath: totalTopicsInPath,
         );
 
   /// Creates a [RecommendedGuideTopicModel] from JSON.
@@ -60,6 +85,10 @@ class RecommendedGuideTopicModel extends RecommendedGuideTopic {
         tags: tags,
         isFeatured: isFeatured,
         createdAt: createdAt,
+        learningPathId: learningPathId,
+        learningPathName: learningPathName,
+        positionInPath: positionInPath,
+        totalTopicsInPath: totalTopicsInPath,
       );
 
   /// Creates a model from a domain entity.
@@ -74,6 +103,10 @@ class RecommendedGuideTopicModel extends RecommendedGuideTopic {
         tags: entity.tags,
         isFeatured: entity.isFeatured,
         createdAt: entity.createdAt,
+        learningPathId: entity.learningPathId,
+        learningPathName: entity.learningPathName,
+        positionInPath: entity.positionInPath,
+        totalTopicsInPath: entity.totalTopicsInPath,
       );
 
   /// Gets the English content for searching, falling back to current content

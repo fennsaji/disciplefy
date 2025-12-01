@@ -18,6 +18,9 @@ import '../bloc/settings_event.dart';
 import '../bloc/settings_state.dart';
 import '../../../../core/extensions/translation_extension.dart';
 import '../../../../core/i18n/translation_keys.dart';
+import '../../../home/presentation/bloc/home_bloc.dart';
+import '../../../home/presentation/bloc/home_event.dart';
+import '../../../study_topics/domain/repositories/learning_paths_repository.dart';
 
 /// Settings Screen with proper AuthBloc integration
 /// Handles both authenticated and anonymous users
@@ -422,7 +425,13 @@ class _SettingsScreenContent extends StatelessWidget {
 
   /// Navigate to the personalization questionnaire
   void _navigateToQuestionnaire(BuildContext context) {
-    context.push('/personalization-questionnaire');
+    context.push('/personalization-questionnaire').then((_) {
+      // Clear LearningPaths repository cache so Study Topics screen gets fresh data
+      sl<LearningPathsRepository>().clearCache();
+      // Refresh all personalization-dependent data after questionnaire completion
+      sl<HomeBloc>().add(const LoadForYouTopics(forceRefresh: true));
+      sl<HomeBloc>().add(const LoadActiveLearningPath(forceRefresh: true));
+    });
   }
 
   /// Account Section with AuthStateProvider integration

@@ -8,6 +8,7 @@ import '../../../../core/constants/app_fonts.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/utils/category_utils.dart';
 import '../../../../core/di/injection_container.dart';
+import '../../../../core/router/app_router.dart';
 import '../../../../core/services/auth_state_provider.dart';
 import '../../../../core/widgets/auth_protected_screen.dart';
 import '../../../../core/extensions/translation_extension.dart';
@@ -24,6 +25,8 @@ import '../bloc/home_bloc.dart';
 import '../bloc/home_event.dart';
 import '../bloc/home_state.dart';
 import '../../../personalization/presentation/widgets/personalization_prompt_card.dart';
+import '../../../study_topics/domain/repositories/learning_paths_repository.dart';
+import '../../../study_topics/presentation/widgets/learning_path_card.dart';
 
 /// Home screen displaying daily verse, navigation options, and study recommendations.
 ///
@@ -66,6 +69,10 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
     if (current is! HomeCombinedState || current.topics.isEmpty) {
       // Use LoadForYouTopics for authenticated users (bloc handles fallback)
       homeBloc.add(const LoadForYouTopics());
+    }
+    // Load active learning path for the For You section
+    if (current is! HomeCombinedState || current.activeLearningPath == null) {
+      homeBloc.add(const LoadActiveLearningPath());
     }
   }
 
@@ -548,7 +555,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
                     ],
                   ),
                 ),
-                if (homeState.isLoadingTopics)
+                if (homeState.isLoadingTopics || homeState.isLoadingActivePath)
                   const SizedBox(
                     width: 20,
                     height: 20,
@@ -558,9 +565,10 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
                           AlwaysStoppedAnimation<Color>(AppTheme.primaryColor),
                     ),
                   )
-                else if (homeState.topics.isNotEmpty)
+                else if (homeState.activeLearningPath != null ||
+                    homeState.topics.isNotEmpty)
                   TextButton(
-                    onPressed: () => context.push('/study-topics'),
+                    onPressed: () => context.go('/study-topics'),
                     style: TextButton.styleFrom(
                       padding: const EdgeInsets.symmetric(
                           horizontal: 12, vertical: 6),
@@ -585,9 +593,18 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
               ],
             ),
             const SizedBox(height: 16),
-            if (homeState.topicsError != null)
+            // Show Learning Path card if available (for all user types)
+            if (homeState.activeLearningPath != null)
+              LearningPathCard(
+                path: homeState.activeLearningPath!,
+                compact: false,
+                onTap: () =>
+                    _navigateToLearningPath(homeState.activeLearningPath!.id),
+              )
+            // Fallback to topics grid only if no learning path is available
+            else if (homeState.topicsError != null)
               _buildTopicsErrorWidget(homeState.topicsError!)
-            else if (homeState.isLoadingTopics)
+            else if (homeState.isLoadingTopics || homeState.isLoadingActivePath)
               _buildTopicsLoadingWidget()
             else if (homeState.topics.isEmpty)
               _buildNoTopicsWidget()
@@ -602,8 +619,28 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
   /// Navigate to the personalization questionnaire
   void _navigateToQuestionnaire() {
     context.push('/personalization-questionnaire').then((_) {
-      // Refresh topics after questionnaire completion
+      // Clear LearningPaths repository cache so Study Topics screen gets fresh data
+      sl<LearningPathsRepository>().clearCache();
+      // Refresh all personalization-dependent data after questionnaire completion
       sl<HomeBloc>().add(const LoadForYouTopics(forceRefresh: true));
+      sl<HomeBloc>().add(const LoadActiveLearningPath(forceRefresh: true));
+    });
+  }
+
+  /// Navigate to learning path detail and refresh on return
+  void _navigateToLearningPath(String pathId) {
+    if (_isNavigating) return;
+    _isNavigating = true;
+
+    debugPrint('[HOME] Navigating to learning path: $pathId');
+
+    // Use context.go() to properly update the browser URL
+    // Include source=home so back button returns to home screen
+    context.go('/learning-path/$pathId?source=home');
+
+    // Reset navigation flag after navigation completes
+    Future.delayed(const Duration(milliseconds: 500), () {
+      _isNavigating = false;
     });
   }
 
@@ -661,23 +698,8 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
         ),
       );
 
-  Widget _buildTopicsLoadingWidget() => LayoutBuilder(
-        builder: (context, constraints) {
-          const double spacing = 16.0;
-          final double cardWidth = (constraints.maxWidth - spacing) / 2;
-
-          return Wrap(
-            spacing: spacing,
-            runSpacing: spacing,
-            children: List.generate(
-                6,
-                (index) => SizedBox(
-                      width: cardWidth,
-                      child: _buildLoadingTopicCard(),
-                    )),
-          );
-        },
-      );
+  Widget _buildTopicsLoadingWidget() =>
+      const LearningPathCardSkeleton(compact: false);
 
   Widget _buildLoadingTopicCard() => Container(
         padding: const EdgeInsets.all(16),
@@ -1051,10 +1073,68 @@ class _RecommendedGuideTopicCard extends StatelessWidget {
                             : const Color(0xFF6B7280),
                         height: 1.5,
                       ),
-                      maxLines: 4,
+                      maxLines: topic.isFromLearningPath ? 3 : 4,
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
+
+                  // Learning path badge (if from a learning path)
+                  if (topic.isFromLearningPath) ...[
+                    const SizedBox(height: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: isDark
+                            ? Theme.of(context)
+                                .colorScheme
+                                .primary
+                                .withOpacity(0.15)
+                            : Theme.of(context)
+                                .colorScheme
+                                .primary
+                                .withOpacity(0.08),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.route_outlined,
+                            size: 12,
+                            color: Theme.of(context).colorScheme.primary,
+                          ),
+                          const SizedBox(width: 4),
+                          Flexible(
+                            child: Text(
+                              topic.learningPathName ?? '',
+                              style: AppFonts.inter(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w600,
+                                color: Theme.of(context).colorScheme.primary,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          if (topic.formattedPositionInPath.isNotEmpty) ...[
+                            const SizedBox(width: 6),
+                            Text(
+                              topic.formattedPositionInPath,
+                              style: AppFonts.inter(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w500,
+                                color: isDark
+                                    ? Colors.white.withOpacity(0.5)
+                                    : const Color(0xFF9CA3AF),
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ),

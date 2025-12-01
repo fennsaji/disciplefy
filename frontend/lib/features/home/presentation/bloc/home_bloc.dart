@@ -11,6 +11,9 @@ import 'home_study_generation_event.dart' as generation_events;
 import 'home_study_generation_state.dart' as generation_states;
 import '../../../../core/services/language_preference_service.dart';
 import '../../../../core/models/app_language.dart';
+import '../../../../core/utils/logger.dart';
+import '../../../auth/data/services/auth_service.dart';
+import '../../../study_topics/domain/repositories/learning_paths_repository.dart';
 
 /// Refactored BLoC for coordinating Home screen concerns.
 ///
@@ -20,6 +23,8 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
   final RecommendedTopicsBloc _topicsBloc;
   final HomeStudyGenerationBloc _studyGenerationBloc;
   final LanguagePreferenceService _languagePreferenceService;
+  final LearningPathsRepository _learningPathsRepository;
+  final AuthService _authService;
 
   late final StreamSubscription _topicsSubscription;
   late final StreamSubscription _studyGenerationSubscription;
@@ -29,9 +34,13 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
     required RecommendedTopicsBloc topicsBloc,
     required HomeStudyGenerationBloc studyGenerationBloc,
     required LanguagePreferenceService languagePreferenceService,
+    required LearningPathsRepository learningPathsRepository,
+    AuthService? authService,
   })  : _topicsBloc = topicsBloc,
         _studyGenerationBloc = studyGenerationBloc,
         _languagePreferenceService = languagePreferenceService,
+        _learningPathsRepository = learningPathsRepository,
+        _authService = authService ?? AuthService(),
         super(const HomeCombinedState()) {
     // Subscribe to child BLoC states and trigger events instead of direct emit
     _topicsSubscription = _topicsBloc.stream.listen((state) {
@@ -50,6 +59,7 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
     on<GenerateStudyGuideFromTopic>(_onGenerateStudyGuideFromTopic);
     on<ClearHomeError>(_onClearHomeError);
     on<LanguagePreferenceChanged>(_onLanguagePreferenceChanged);
+    on<LoadActiveLearningPath>(_onLoadActiveLearningPath);
 
     // Register internal coordination events
     on<TopicsStateChangedEvent>(_onTopicsStateChanged);
@@ -128,6 +138,9 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
             generationInputType: currentState.generationInputType,
             showPersonalizationPrompt: currentState.showPersonalizationPrompt,
             isPersonalized: currentState.isPersonalized,
+            activeLearningPath: currentState.activeLearningPath,
+            learningPathReason: currentState.learningPathReason,
+            isLoadingActivePath: currentState.isLoadingActivePath,
           ));
           break;
         case final generation_states.HomeStudyGenerationError error:
@@ -243,11 +256,91 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
     LanguagePreferenceChanged event,
     Emitter<HomeState> emit,
   ) async {
-    // Reload recommended topics with new language preference
-    add(const LoadRecommendedTopics(
-      limit: 6,
+    Logger.info(
+      'Language preference changed, refreshing all home content',
+      tag: 'HOME_BLOC',
+    );
+
+    // Reload all language-dependent content with forceRefresh
+    // 1. Reload personalized "For You" topics
+    add(const LoadForYouTopics(forceRefresh: true));
+
+    // 2. Reload active learning path (translations are language-dependent)
+    add(const LoadActiveLearningPath(
       forceRefresh: true,
     ));
+  }
+
+  /// Handle loading the recommended learning path for the For You section.
+  ///
+  /// This uses the new backend endpoint that returns a learning path based on priority:
+  /// 1. Active (in-progress) path for authenticated users
+  /// 2. Personalized path based on questionnaire
+  /// 3. Featured path for all users (including anonymous)
+  Future<void> _onLoadActiveLearningPath(
+    LoadActiveLearningPath event,
+    Emitter<HomeState> emit,
+  ) async {
+    final currentState = state;
+    if (currentState is HomeCombinedState) {
+      // Set loading state
+      emit(currentState.copyWith(isLoadingActivePath: true));
+
+      // Get the user's preferred language
+      String languageCode = 'en';
+      try {
+        final appLanguage =
+            await _languagePreferenceService.getSelectedLanguage();
+        languageCode = appLanguage.code;
+      } catch (e) {
+        Logger.warning(
+          'Failed to get language preference, using default',
+          tag: 'HOME_BLOC',
+        );
+      }
+
+      // Fetch recommended learning path (works for all users)
+      Logger.info(
+        'Fetching recommended learning path with forceRefresh: ${event.forceRefresh}',
+        tag: 'HOME_BLOC',
+      );
+      final result = await _learningPathsRepository.getRecommendedPath(
+        language: languageCode,
+        forceRefresh: event.forceRefresh,
+      );
+
+      result.fold(
+        (failure) {
+          Logger.error(
+            'Failed to load recommended learning path: ${failure.message}',
+            tag: 'HOME_BLOC',
+          );
+          // Just clear loading state on error, don't show error UI
+          final updatedState = state;
+          if (updatedState is HomeCombinedState) {
+            emit(updatedState.copyWith(
+              isLoadingActivePath: false,
+              clearActiveLearningPath: true,
+            ));
+          }
+        },
+        (recommended) {
+          Logger.info(
+            'Loaded recommended learning path: ${recommended.path.title} (reason: ${recommended.reason.name})',
+            tag: 'HOME_BLOC',
+          );
+
+          final updatedState = state;
+          if (updatedState is HomeCombinedState) {
+            emit(updatedState.copyWith(
+              isLoadingActivePath: false,
+              activeLearningPath: recommended.path,
+              learningPathReason: recommended.reason,
+            ));
+          }
+        },
+      );
+    }
   }
 
   /// Setup listener for language preference changes from settings

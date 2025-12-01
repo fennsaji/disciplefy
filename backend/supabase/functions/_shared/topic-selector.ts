@@ -42,6 +42,25 @@ interface TopicsForYouResult {
   hasCompletedQuestionnaire?: boolean;
 }
 
+interface LearningPathTopic extends Topic {
+  learning_path_id: string;
+  learning_path_name: string;
+  position_in_path: number;
+  total_topics_in_path: number;
+}
+
+interface TopicsForYouWithPathResult {
+  success: boolean;
+  topics?: (Topic | LearningPathTopic)[];
+  error?: string;
+  hasCompletedQuestionnaire?: boolean;
+  suggestedLearningPath?: {
+    id: string;
+    name: string;
+    reason: 'active' | 'personalized' | 'default';
+  };
+}
+
 interface LocalizedContent {
   title: string;
   description: string;
@@ -78,6 +97,17 @@ const SEEKING_CATEGORIES: Record<string, string[]> = {
   relationships: ['Family & Relationships', 'Church & Community'],
   challenges: ['Christian Life', 'Apologetics & Defense of Faith', 'Mission & Service'],
 };
+
+// Maps faith journey stage to recommended learning path slug
+// Priority order: first match wins
+const FAITH_JOURNEY_LEARNING_PATHS: Record<string, string[]> = {
+  new: ['new-believer-essentials', 'rooted-in-christ'],
+  growing: ['growing-in-discipleship', 'deepening-your-walk'],
+  mature: ['serving-and-mission', 'defending-your-faith', 'heart-for-the-world'],
+};
+
+// Default learning path if no personalization (first in display order)
+const DEFAULT_LEARNING_PATH_SLUG = 'new-believer-essentials';
 
 // ============================================================================
 // Topic Selection Logic
@@ -609,4 +639,300 @@ export async function selectTopicsForYou(
       error: formatError(error, 'Topics for you selection error'),
     };
   }
+}
+
+// ============================================================================
+// Topics For You with Learning Path Integration
+// ============================================================================
+
+/**
+ * Selects personalized topics for "For You" section with learning path integration
+ * 
+ * Priority Logic:
+ * 1. If user has an active learning path → show next uncompleted topics from that path
+ * 2. If no active path but has personalization → suggest learning path based on faith_journey
+ * 3. If no personalization → suggest first learning path (New Believer Essentials)
+ * 
+ * Returns topics with learning path metadata when applicable
+ */
+export async function selectTopicsForYouWithLearningPath(
+  supabaseUrl: string,
+  supabaseServiceKey: string,
+  userId: string,
+  limit: number = 4
+): Promise<TopicsForYouWithPathResult> {
+  const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+  console.log(`[TOPICS_FOR_YOU] Starting selectTopicsForYouWithLearningPath for user: ${userId}, limit: ${limit}`);
+
+  try {
+    // Step 1: Check for active learning path (enrolled but not completed)
+    console.log('[TOPICS_FOR_YOU] Step 1: Checking for active learning path...');
+    const { data: activePathProgress, error: progressError } = await supabase
+      .from('user_learning_path_progress')
+      .select(`
+        learning_path_id,
+        current_topic_position,
+        topics_completed,
+        learning_paths!inner(
+          id,
+          title,
+          slug,
+          is_active
+        )
+      `)
+      .eq('user_id', userId)
+      .is('completed_at', null)
+      .not('started_at', 'is', null)
+      .order('last_activity_at', { ascending: false })
+      .limit(1);
+
+    if (progressError) {
+      console.error('[TOPICS_FOR_YOU] Error fetching active learning path:', progressError);
+    }
+    console.log(`[TOPICS_FOR_YOU] Active path progress found: ${activePathProgress?.length || 0}`, activePathProgress);
+
+    // Get user's personalization for fallback logic
+    const { data: personalization, error: persError } = await supabase
+      .from('user_personalization')
+      .select('*')
+      .eq('user_id', userId)
+      .single();
+
+    if (persError && persError.code !== 'PGRST116') {
+      console.error('Error fetching personalization:', persError);
+    }
+
+    let suggestedPath: { id: string; name: string; reason: 'active' | 'personalized' | 'default' } | undefined;
+    let learningPathTopics: LearningPathTopic[] = [];
+
+    // Priority 1: Active learning path
+    if (activePathProgress && activePathProgress.length > 0) {
+      const activePath = activePathProgress[0];
+      const pathData = activePath.learning_paths as any;
+      
+      if (pathData?.is_active) {
+        suggestedPath = {
+          id: activePath.learning_path_id,
+          name: pathData.title,
+          reason: 'active',
+        };
+
+        // Get next uncompleted topics from this path
+        learningPathTopics = await getNextTopicsFromLearningPath(
+          supabase,
+          userId,
+          activePath.learning_path_id,
+          pathData.title,
+          limit
+        );
+      }
+    }
+
+    // Priority 2: Personalization-based path suggestion
+    if (!suggestedPath && personalization?.questionnaire_completed && personalization?.faith_journey) {
+      const recommendedSlugs = FAITH_JOURNEY_LEARNING_PATHS[personalization.faith_journey] || [];
+      
+      for (const slug of recommendedSlugs) {
+        const { data: pathData } = await supabase
+          .from('learning_paths')
+          .select('id, title, slug')
+          .eq('slug', slug)
+          .eq('is_active', true)
+          .single();
+
+        if (pathData) {
+          // Check if user hasn't completed this path
+          const { data: existingProgress } = await supabase
+            .from('user_learning_path_progress')
+            .select('completed_at')
+            .eq('user_id', userId)
+            .eq('learning_path_id', pathData.id)
+            .single();
+
+          // Use this path if not completed
+          if (!existingProgress?.completed_at) {
+            suggestedPath = {
+              id: pathData.id,
+              name: pathData.title,
+              reason: 'personalized',
+            };
+
+            learningPathTopics = await getNextTopicsFromLearningPath(
+              supabase,
+              userId,
+              pathData.id,
+              pathData.title,
+              limit
+            );
+            break;
+          }
+        }
+      }
+    }
+
+    // Priority 3: Default learning path (first one)
+    if (!suggestedPath) {
+      const { data: defaultPath } = await supabase
+        .from('learning_paths')
+        .select('id, title, slug')
+        .eq('slug', DEFAULT_LEARNING_PATH_SLUG)
+        .eq('is_active', true)
+        .single();
+
+      if (defaultPath) {
+        // Check if user hasn't completed this path
+        const { data: existingProgress } = await supabase
+          .from('user_learning_path_progress')
+          .select('completed_at')
+          .eq('user_id', userId)
+          .eq('learning_path_id', defaultPath.id)
+          .single();
+
+        if (!existingProgress?.completed_at) {
+          suggestedPath = {
+            id: defaultPath.id,
+            name: defaultPath.title,
+            reason: 'default',
+          };
+
+          learningPathTopics = await getNextTopicsFromLearningPath(
+            supabase,
+            userId,
+            defaultPath.id,
+            defaultPath.title,
+            limit
+          );
+        }
+      }
+    }
+
+    // If we have learning path topics, return them
+    console.log(`[TOPICS_FOR_YOU] Learning path topics found: ${learningPathTopics.length}`);
+    if (learningPathTopics.length > 0) {
+      console.log('[TOPICS_FOR_YOU] Returning learning path topics:');
+      for (const topic of learningPathTopics) {
+        console.log(`  - ${topic.title} (path: ${topic.learning_path_name}, position: ${topic.position_in_path}/${topic.total_topics_in_path})`);
+      }
+      return {
+        success: true,
+        topics: learningPathTopics,
+        hasCompletedQuestionnaire: personalization?.questionnaire_completed || false,
+        suggestedLearningPath: suggestedPath,
+      };
+    }
+    console.log('[TOPICS_FOR_YOU] No learning path topics, falling back to regular selectTopicsForYou');
+
+    // Fallback: Use the regular selectTopicsForYou logic
+    const fallbackResult = await selectTopicsForYou(
+      supabaseUrl,
+      supabaseServiceKey,
+      userId,
+      limit
+    );
+
+    return {
+      success: fallbackResult.success,
+      topics: fallbackResult.topics,
+      error: fallbackResult.error,
+      hasCompletedQuestionnaire: fallbackResult.hasCompletedQuestionnaire,
+      suggestedLearningPath: suggestedPath,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: formatError(error, 'Topics for you with learning path error'),
+    };
+  }
+}
+
+/**
+ * Helper function to get next uncompleted topics from a learning path
+ */
+async function getNextTopicsFromLearningPath(
+  supabase: SupabaseClient,
+  userId: string,
+  learningPathId: string,
+  learningPathName: string,
+  limit: number
+): Promise<LearningPathTopic[]> {
+  console.log(`[TOPICS_FOR_YOU] getNextTopicsFromLearningPath called:`);
+  console.log(`  - learningPathId: ${learningPathId}`);
+  console.log(`  - learningPathName: ${learningPathName}`);
+  console.log(`  - limit: ${limit}`);
+
+  // Get total topics count in the path
+  const { data: totalCount, error: countError } = await supabase
+    .from('learning_path_topics')
+    .select('id', { count: 'exact' })
+    .eq('learning_path_id', learningPathId);
+
+  if (countError) {
+    console.error('[TOPICS_FOR_YOU] Error counting topics:', countError);
+  }
+
+  const totalTopicsInPath = totalCount?.length || 0;
+  console.log(`[TOPICS_FOR_YOU] Total topics in path: ${totalTopicsInPath}`);
+
+  // Get all topics in the learning path with their positions
+  const { data: pathTopics, error: pathError } = await supabase
+    .from('learning_path_topics')
+    .select(`
+      topic_id,
+      position,
+      recommended_topics!inner(
+        id,
+        title,
+        description,
+        category,
+        display_order,
+        is_active,
+        xp_value
+      )
+    `)
+    .eq('learning_path_id', learningPathId)
+    .order('position', { ascending: true });
+
+  if (pathError || !pathTopics) {
+    console.error('[TOPICS_FOR_YOU] Error fetching learning path topics:', pathError);
+    return [];
+  }
+  console.log(`[TOPICS_FOR_YOU] Path topics fetched: ${pathTopics.length}`);
+
+  // Get user's completed topic IDs
+  const { data: completedTopics } = await supabase
+    .from('user_topic_progress')
+    .select('topic_id')
+    .eq('user_id', userId)
+    .not('completed_at', 'is', null);
+
+  const completedTopicIds = new Set(completedTopics?.map((t) => t.topic_id) || []);
+
+  // Filter to only uncompleted topics and map to LearningPathTopic format
+  const uncompletedTopics: LearningPathTopic[] = [];
+
+  for (const pt of pathTopics) {
+    const topic = pt.recommended_topics as any;
+    
+    if (!topic?.is_active) continue;
+    if (completedTopicIds.has(pt.topic_id)) continue;
+
+    uncompletedTopics.push({
+      id: topic.id,
+      title: topic.title,
+      description: topic.description,
+      category: topic.category,
+      display_order: topic.display_order,
+      is_active: topic.is_active,
+      learning_path_id: learningPathId,
+      learning_path_name: learningPathName,
+      position_in_path: pt.position,
+      total_topics_in_path: totalTopicsInPath,
+    });
+
+    if (uncompletedTopics.length >= limit) break;
+  }
+
+  console.log(`[TOPICS_FOR_YOU] Returning ${uncompletedTopics.length} uncompleted topics from learning path`);
+  return uncompletedTopics;
 }

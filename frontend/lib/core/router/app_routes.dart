@@ -37,4 +37,7 @@ class AppRoutes {
   // Personalization
   static const String personalizationQuestionnaire =
       '/personalization-questionnaire';
+
+  // Learning Paths
+  static const String learningPathDetail = '/learning-path/:pathId';
 }
