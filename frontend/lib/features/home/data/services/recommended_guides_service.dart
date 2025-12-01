@@ -51,6 +51,10 @@ class RecommendedGuidesService {
   static const String _topicsEndpoint = '/functions/v1/topics-recommended';
   static const String _forYouEndpoint = '/functions/v1/topics-for-you';
 
+  // Cache version - increment this when adding new fields to invalidate old cache
+  // v2: Added learning path fields (learning_path_id, learning_path_name, position_in_path, total_topics_in_path)
+  static const String _cacheVersion = 'v2';
+
   final HttpService _httpService;
   final RecommendedTopicsLocalDataSource _localDataSource;
 
@@ -374,7 +378,8 @@ class RecommendedGuidesService {
       await _initFuture;
 
       // Create language-specific cache key for "For You" topics
-      final cacheKey = 'for_you_${language ?? 'en'}_$limit';
+      // Include cache version to invalidate old cache when new fields are added
+      final cacheKey = 'for_you_${_cacheVersion}_${language ?? 'en'}_$limit';
 
       // Check in-memory cache first (unless force refresh is requested)
       if (!forceRefresh && _filteredTopicsCache.containsKey(cacheKey)) {
@@ -514,6 +519,12 @@ class RecommendedGuidesService {
       final hasCompletedQuestionnaire =
           topicsData['hasCompletedQuestionnaire'] as bool? ?? false;
 
+      // Log suggested learning path if present
+      if (kDebugMode && topicsData.containsKey('suggestedLearningPath')) {
+        print(
+            '🎯 [FOR YOU] Suggested Learning Path: ${topicsData['suggestedLearningPath']}');
+      }
+
       // Parse the topics using existing model
       if (topicsData.containsKey('topics')) {
         final response = RecommendedGuideTopicsResponse.fromJson(topicsData);
@@ -522,6 +533,16 @@ class RecommendedGuidesService {
         if (kDebugMode) {
           print(
               '✅ [FOR YOU] Successfully parsed ${topics.length} topics (questionnaire completed: $hasCompletedQuestionnaire)');
+          // Log learning path fields for each topic
+          for (final topic in topics) {
+            if (topic.isFromLearningPath) {
+              print(
+                  '  📍 Topic "${topic.title}" - Path: ${topic.learningPathName}, Position: ${topic.positionInPath}/${topic.totalTopicsInPath}');
+            } else {
+              print(
+                  '  📍 Topic "${topic.title}" - No learning path (learningPathId: ${topic.learningPathId})');
+            }
+          }
         }
         return Right(ForYouTopicsResult(
           topics: topics,

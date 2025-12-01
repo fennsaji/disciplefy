@@ -165,10 +165,18 @@ export function createFunction(
       const services = await getServiceContainer()
       metrics.initTime = performance.now()
 
-      // Parse user context if required
+      // Always try to parse user context (even when auth not required)
+      // This allows handlers to access authenticated user info for optional features
       let userContext: UserContext | undefined
-      if (finalConfig.requireAuth) {
+      try {
         userContext = await parseUserContext(req, services)
+        metrics.authTime = performance.now()
+      } catch (authError) {
+        // If auth is required, rethrow the error
+        if (finalConfig.requireAuth) {
+          throw authError
+        }
+        // Otherwise, continue without user context (anonymous access)
         metrics.authTime = performance.now()
       }
 

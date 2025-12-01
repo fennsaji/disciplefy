@@ -11,6 +11,7 @@ import '../../../../core/theme/app_theme.dart';
 import '../../../../core/error/failures.dart';
 import '../../../../core/error/token_failures.dart';
 import '../../../../core/di/injection_container.dart';
+import '../../../study_topics/domain/repositories/topic_progress_repository.dart';
 import '../../../../core/extensions/translation_extension.dart';
 import '../../../../core/i18n/translation_keys.dart';
 import '../../../../core/services/language_preference_service.dart';
@@ -243,6 +244,9 @@ class _StudyGuideScreenV2ContentState
       _selectedLanguage = normalizedLanguageCode;
     });
 
+    // Track topic progress start if we have a topic ID
+    _startTopicProgress();
+
     // Dispatch study guide generation event
     context.read<StudyBloc>().add(GenerateStudyGuideRequested(
           input: widget.input!,
@@ -251,6 +255,44 @@ class _StudyGuideScreenV2ContentState
               .description, // Include topic description for richer context
           language: normalizedLanguageCode,
         ));
+  }
+
+  /// Start tracking topic progress when user opens a study guide from a topic.
+  ///
+  /// This is called at the beginning of study guide generation when a topicId
+  /// is present (e.g., from recommended topics or notifications).
+  Future<void> _startTopicProgress() async {
+    final topicId = widget.topicId;
+    if (topicId == null || topicId.isEmpty) {
+      return;
+    }
+
+    if (kDebugMode) {
+      print('📊 [TOPIC_PROGRESS] Starting topic progress for: $topicId');
+    }
+
+    try {
+      final repository = sl<TopicProgressRepository>();
+      final result = await repository.startTopic(topicId);
+
+      result.fold(
+        (failure) {
+          if (kDebugMode) {
+            print(
+                '❌ [TOPIC_PROGRESS] Failed to start topic: ${failure.message}');
+          }
+        },
+        (_) {
+          if (kDebugMode) {
+            print('✅ [TOPIC_PROGRESS] Topic progress started successfully');
+          }
+        },
+      );
+    } catch (e) {
+      if (kDebugMode) {
+        print('❌ [TOPIC_PROGRESS] Exception during start tracking: $e');
+      }
+    }
   }
 
   void _showError(String message) {
@@ -489,6 +531,71 @@ class _StudyGuideScreenV2ContentState
     _timeTrackingTimer?.cancel();
   }
 
+  /// Complete topic progress tracking when study guide is finished.
+  ///
+  /// This is called after StudyCompletionSuccess to track the user's
+  /// progress on the topic. Only executes if we have a valid topicId.
+  Future<void> _completeTopicProgress() async {
+    final topicId = widget.topicId;
+    if (topicId == null || topicId.isEmpty) {
+      if (kDebugMode) {
+        print(
+            '📊 [TOPIC_PROGRESS] No topicId provided, skipping progress tracking');
+      }
+      return;
+    }
+
+    if (kDebugMode) {
+      print('📊 [TOPIC_PROGRESS] Completing topic progress:');
+      print('   Topic ID: $topicId');
+      print('   Time spent: $_timeSpentSeconds seconds');
+    }
+
+    try {
+      final repository = sl<TopicProgressRepository>();
+      final result = await repository.completeTopic(
+        topicId,
+        timeSpentSeconds: _timeSpentSeconds,
+      );
+
+      result.fold(
+        (failure) {
+          if (kDebugMode) {
+            print(
+                '❌ [TOPIC_PROGRESS] Failed to complete topic: ${failure.message}');
+          }
+        },
+        (completionResult) {
+          if (kDebugMode) {
+            print('✅ [TOPIC_PROGRESS] Topic completed successfully:');
+            print('   XP earned: ${completionResult.xpEarned}');
+            print('   First completion: ${completionResult.isFirstCompletion}');
+          }
+
+          // Show XP earned feedback if this is the first completion
+          if (completionResult.isFirstCompletion &&
+              completionResult.xpEarned > 0 &&
+              mounted) {
+            _showXpEarnedFeedback(completionResult.xpEarned);
+          }
+        },
+      );
+    } catch (e) {
+      if (kDebugMode) {
+        print('❌ [TOPIC_PROGRESS] Exception during progress tracking: $e');
+      }
+    }
+  }
+
+  /// Show feedback when user earns XP for completing a topic.
+  void _showXpEarnedFeedback(int xpEarned) {
+    _showSnackBar(
+      '+$xpEarned XP earned!',
+      Colors.green,
+      icon: Icons.star,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return PopScope(
@@ -572,6 +679,10 @@ class _StudyGuideScreenV2ContentState
           else if (state is StudyCompletionSuccess) {
             // Invalidate the "For You" cache so completed topics don't show again
             sl<RecommendedGuidesService>().clearForYouCache();
+
+            // Track topic progress completion if we have a topic ID
+            _completeTopicProgress();
+
             _showRecommendedTopicNotificationPrompt();
           }
         },

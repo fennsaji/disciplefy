@@ -23,6 +23,10 @@ RecommendedGuideTopicModel _$RecommendedGuideTopicModelFromJson(
       englishTitle: json['english_title'] as String?,
       englishDescription: json['english_description'] as String?,
       englishCategory: json['english_category'] as String?,
+      learningPathId: json['learning_path_id'] as String?,
+      learningPathName: json['learning_path_name'] as String?,
+      positionInPath: (json['position_in_path'] as num?)?.toInt(),
+      totalTopicsInPath: (json['total_topics_in_path'] as num?)?.toInt(),
       isFeatured: json['is_featured'] as bool? ?? false,
       createdAt: json['created_at'] == null
           ? null
@@ -43,6 +47,10 @@ Map<String, dynamic> _$RecommendedGuideTopicModelToJson(
       'english_title': instance.englishTitle,
       'english_description': instance.englishDescription,
       'english_category': instance.englishCategory,
+      'learning_path_id': instance.learningPathId,
+      'learning_path_name': instance.learningPathName,
+      'position_in_path': instance.positionInPath,
+      'total_topics_in_path': instance.totalTopicsInPath,
     };
 
 RecommendedGuideTopicsResponse _$RecommendedGuideTopicsResponseFromJson(

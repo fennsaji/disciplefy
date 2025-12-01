@@ -85,9 +85,17 @@ import '../../features/user_profile/domain/usecases/update_user_profile.dart';
 import '../../features/user_profile/domain/usecases/delete_user_profile.dart';
 import '../../features/user_profile/presentation/bloc/user_profile_bloc.dart';
 import '../../features/study_topics/data/datasources/study_topics_remote_datasource.dart';
+import '../../features/study_topics/data/datasources/topic_progress_remote_datasource.dart';
 import '../../features/study_topics/data/repositories/study_topics_repository_impl.dart';
+import '../../features/study_topics/data/repositories/topic_progress_repository_impl.dart';
 import '../../features/study_topics/domain/repositories/study_topics_repository.dart';
+import '../../features/study_topics/domain/repositories/topic_progress_repository.dart';
 import '../../features/study_topics/presentation/bloc/study_topics_bloc.dart';
+import '../../features/study_topics/data/datasources/learning_paths_remote_datasource.dart';
+import '../../features/study_topics/data/repositories/learning_paths_repository_impl.dart';
+import '../../features/study_topics/domain/repositories/learning_paths_repository.dart';
+import '../../features/study_topics/presentation/bloc/learning_paths_bloc.dart';
+import '../../features/study_topics/presentation/bloc/continue_learning_bloc.dart';
 import '../services/theme_service.dart';
 import '../services/auth_state_provider.dart';
 import '../services/language_preference_service.dart';
@@ -493,6 +501,7 @@ Future<void> initializeDependencies() async {
       topicsBloc: sl(),
       studyGenerationBloc: sl(),
       languagePreferenceService: sl(),
+      learningPathsRepository: sl(),
     ),
     dispose: (bloc) => bloc.close(),
   );
@@ -509,6 +518,33 @@ Future<void> initializeDependencies() async {
   sl.registerFactory(() => StudyTopicsBloc(
         repository: sl(),
         languagePreferenceService: sl(),
+      ));
+
+  //! Topic Progress Tracking
+  sl.registerLazySingleton<TopicProgressRemoteDataSource>(
+    () => TopicProgressRemoteDataSourceImpl(httpService: sl()),
+  );
+
+  sl.registerLazySingleton<TopicProgressRepository>(
+    () => TopicProgressRepositoryImpl(remoteDataSource: sl()),
+  );
+
+  //! Learning Paths (Curated Learning Journeys)
+  sl.registerLazySingleton<LearningPathsRemoteDataSource>(
+    () => LearningPathsRemoteDataSourceImpl(httpService: sl()),
+  );
+
+  sl.registerLazySingleton<LearningPathsRepository>(
+    () => LearningPathsRepositoryImpl(remoteDataSource: sl()),
+  );
+
+  sl.registerFactory(() => LearningPathsBloc(
+        repository: sl(),
+      ));
+
+  //! Continue Learning (In-Progress Topics)
+  sl.registerFactory(() => ContinueLearningBloc(
+        repository: sl<TopicProgressRepository>(),
       ));
 
   //! Onboarding

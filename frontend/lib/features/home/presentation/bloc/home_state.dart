@@ -1,6 +1,11 @@
 import 'package:equatable/equatable.dart';
 import '../../domain/entities/recommended_guide_topic.dart';
 import '../../../study_generation/domain/entities/study_guide.dart';
+import '../../../study_topics/domain/entities/learning_path.dart';
+
+// Re-export the reason enum for easy access
+export '../../../study_topics/domain/entities/learning_path.dart'
+    show LearningPathRecommendationReason;
 
 /// States for the Home screen
 abstract class HomeState extends Equatable {
@@ -107,6 +112,22 @@ class HomeCombinedState extends HomeState {
   /// If false, topics are based on study history or default recommendations.
   final bool isPersonalized;
 
+  /// The user's recommended learning path to display in For You section.
+  ///
+  /// This can be an active (in-progress) path, a personalized recommendation,
+  /// or a featured path for new/anonymous users.
+  final LearningPath? activeLearningPath;
+
+  /// The reason why this learning path is being shown.
+  ///
+  /// - 'active': User has an in-progress learning path
+  /// - 'personalized': Recommended based on questionnaire answers
+  /// - 'featured': Default featured path (for anonymous/new users)
+  final LearningPathRecommendationReason? learningPathReason;
+
+  /// Whether the active learning path is currently loading.
+  final bool isLoadingActivePath;
+
   const HomeCombinedState({
     this.topics = const [],
     this.isLoadingTopics = false,
@@ -117,6 +138,9 @@ class HomeCombinedState extends HomeState {
     this.generationError,
     this.showPersonalizationPrompt = false,
     this.isPersonalized = false,
+    this.activeLearningPath,
+    this.learningPathReason,
+    this.isLoadingActivePath = false,
   });
 
   @override
@@ -130,6 +154,9 @@ class HomeCombinedState extends HomeState {
         generationError,
         showPersonalizationPrompt,
         isPersonalized,
+        activeLearningPath,
+        learningPathReason,
+        isLoadingActivePath,
       ];
 
   /// Create a copy with updated values
@@ -143,8 +170,12 @@ class HomeCombinedState extends HomeState {
     String? generationError,
     bool? showPersonalizationPrompt,
     bool? isPersonalized,
+    LearningPath? activeLearningPath,
+    LearningPathRecommendationReason? learningPathReason,
+    bool? isLoadingActivePath,
     bool clearTopicsError = false,
     bool clearGenerationError = false,
+    bool clearActiveLearningPath = false,
   }) =>
       HomeCombinedState(
         topics: topics ?? this.topics,
@@ -161,6 +192,13 @@ class HomeCombinedState extends HomeState {
         showPersonalizationPrompt:
             showPersonalizationPrompt ?? this.showPersonalizationPrompt,
         isPersonalized: isPersonalized ?? this.isPersonalized,
+        activeLearningPath: clearActiveLearningPath
+            ? null
+            : (activeLearningPath ?? this.activeLearningPath),
+        learningPathReason: clearActiveLearningPath
+            ? null
+            : (learningPathReason ?? this.learningPathReason),
+        isLoadingActivePath: isLoadingActivePath ?? this.isLoadingActivePath,
       );
 }
 
@@ -177,6 +215,9 @@ class HomeStudyGuideGeneratedCombined extends HomeCombinedState {
     super.generationInputType,
     super.showPersonalizationPrompt,
     super.isPersonalized,
+    super.activeLearningPath,
+    super.learningPathReason,
+    super.isLoadingActivePath,
   }) : super(
           isGeneratingStudyGuide: false,
           generationError: null,

@@ -56,6 +56,9 @@ class GoRouterStudyNavigator implements StudyNavigator {
           context.go(AppRoutes.saved);
           break;
         case StudyNavigationSource.studyTopics:
+        case StudyNavigationSource.continueLearning:
+        case StudyNavigationSource.learningPath:
+          // All these go back to study topics screen
           context.go(AppRoutes.studyTopics);
           break;
       }

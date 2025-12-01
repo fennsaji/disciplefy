@@ -660,4 +660,47 @@ class TranslationKeys {
   static const ratingForgotLabel = 'memory.ratingSheet.forgot.label';
   static const ratingForgotDescription =
       'memory.ratingSheet.forgot.description';
+
+  // Learning Paths
+  static const learningPathsTitle = 'learning_paths.title';
+  static const learningPathsSubtitle = 'learning_paths.subtitle';
+  static const learningPathsViewMore = 'learning_paths.view_more';
+  static const learningPathsViewLess = 'learning_paths.view_less';
+  static const learningPathsEmpty = 'learning_paths.empty';
+  static const learningPathsEmptyMessage = 'learning_paths.empty_message';
+  static const learningPathsError = 'learning_paths.error';
+  static const learningPathsErrorMessage = 'learning_paths.error_message';
+  static const learningPathsCompleted = 'learning_paths.completed';
+  static const learningPathsInProgress = 'learning_paths.in_progress';
+  static const learningPathsFeatured = 'learning_paths.featured';
+  static const learningPathsEnroll = 'learning_paths.enroll';
+  static const learningPathsContinue = 'learning_paths.continue';
+  static const learningPathsReview = 'learning_paths.review';
+  static const learningPathsExplore = 'learning_paths.explore';
+  static const learningPathsTopics = 'learning_paths.topics';
+  static const learningPathsDays = 'learning_paths.days';
+  static const learningPathsXp = 'learning_paths.xp';
+  static const learningPathsProgress = 'learning_paths.progress';
+  static const learningPathsTopicsCompleted = 'learning_paths.topics_completed';
+  static const learningPathsStartPath = 'learning_paths.start_path';
+  static const learningPathsResumePath = 'learning_paths.resume_path';
+  static const learningPathsPathCompleted = 'learning_paths.path_completed';
+  static const learningPathsEnrolledSuccess = 'learning_paths.enrolled_success';
+  static const learningPathsEnrolledError = 'learning_paths.enrolled_error';
+  static const learningPathsNextTopic = 'learning_paths.next_topic';
+  static const learningPathsLocked = 'learning_paths.locked';
+  static const learningPathsUnlocked = 'learning_paths.unlocked';
+  static const learningPathsMilestone = 'learning_paths.milestone';
+
+  // Disciple Levels
+  static const discipleLevelSeeker = 'disciple_level.seeker';
+  static const discipleLevelBeliever = 'disciple_level.believer';
+  static const discipleLevelDisciple = 'disciple_level.disciple';
+  static const discipleLevelLeader = 'disciple_level.leader';
+
+  // Continue Learning
+  static const continueLearningTitle = 'continue_learning.title';
+  static const continueLearningEmpty = 'continue_learning.empty';
+  static const continueLearningEmptyMessage = 'continue_learning.empty_message';
+  static const continueLearningDone = 'continue_learning.done';
 }
