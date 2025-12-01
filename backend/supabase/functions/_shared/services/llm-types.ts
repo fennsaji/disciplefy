@@ -46,6 +46,7 @@ export interface LLMResponse {
 
 /**
  * Daily verse generation response structure.
+ * Uses consistent 'hi'/'ml' keys for Hindi/Malayalam translations.
  */
 export interface DailyVerseResponse {
   readonly reference: string
@@ -56,8 +57,8 @@ export interface DailyVerseResponse {
   }
   readonly translations: {
     readonly esv: string
-    readonly hindi: string
-    readonly malayalam: string
+    readonly hi: string
+    readonly ml: string
   }
 }
 

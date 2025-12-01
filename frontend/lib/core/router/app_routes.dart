@@ -33,4 +33,11 @@ class AppRoutes {
   // Voice Buddy
   static const String voiceConversation = '/voice-conversation';
   static const String voicePreferences = '/voice-preferences';
+
+  // Personalization
+  static const String personalizationQuestionnaire =
+      '/personalization-questionnaire';
+
+  // Learning Paths
+  static const String learningPathDetail = '/learning-path/:pathId';
 }

@@ -31,6 +31,7 @@ class TranslationKeys {
       'study_guide.placeholders.personal_notes';
 
   // Common Actions
+  static const commonRetry = 'common.retry';
   static const commonCancel = 'common.actions.cancel';
   static const commonShare = 'common.actions.share';
   static const commonCopy = 'common.actions.copy';
@@ -111,6 +112,16 @@ class TranslationKeys {
   static const homeFailedToGenerate = 'home.failed_to_generate';
   static const homeDismiss = 'home.dismiss';
   static const homeVerseNotLoaded = 'home.verse_not_loaded';
+  static const homeForYou = 'home.for_you';
+  static const homeForYouSubtitle = 'home.for_you_subtitle';
+  static const homeExploreTopics = 'home.explore_topics';
+  static const homePersonalizePromptTitle = 'home.personalize_prompt_title';
+  static const homePersonalizePromptSubtitle =
+      'home.personalize_prompt_subtitle';
+  static const homePersonalizePromptDescription =
+      'home.personalize_prompt_description';
+  static const homePersonalizeGetStarted = 'home.personalize_get_started';
+  static const homePersonalizeMaybeLater = 'home.personalize_maybe_later';
 
   // Daily Verse
   static const dailyVerseRefreshing = 'daily_verse.refreshing';
@@ -262,6 +273,54 @@ class TranslationKeys {
   static const settingsClose = 'settings.close';
   static const settingsSupport = 'settings.support';
   static const settingsNoEmail = 'settings.no_email';
+
+  // Settings - Personalization
+  static const settingsPersonalization = 'settings.personalization';
+  static const settingsRetakeQuestionnaire = 'settings.retake_questionnaire';
+  static const settingsRetakeQuestionnaireSubtitle =
+      'settings.retake_questionnaire_subtitle';
+  static const settingsTakeQuestionnaire = 'settings.take_questionnaire';
+  static const settingsTakeQuestionnaireSubtitle =
+      'settings.take_questionnaire_subtitle';
+
+  // Personalization Questionnaire
+  static const questionnaireYourJourney = 'questionnaire.your_journey';
+  static const questionnaireWhatYouSeek = 'questionnaire.what_you_seek';
+  static const questionnaireYourTime = 'questionnaire.your_time';
+  static const questionnairePersonalize = 'questionnaire.personalize';
+  static const questionnaireSkip = 'questionnaire.skip';
+  static const questionnaireContinue = 'questionnaire.continue';
+  static const questionnaireBack = 'questionnaire.back';
+  static const questionnaireDone = 'questionnaire.done';
+  static const questionnaireSkipTitle = 'questionnaire.skip_title';
+  static const questionnaireSkipMessage = 'questionnaire.skip_message';
+  static const questionnaireCancel = 'questionnaire.cancel';
+
+  // Question 1: Faith Journey
+  static const questionnaireFaithTitle = 'questionnaire.faith.title';
+  static const questionnaireFaithSubtitle = 'questionnaire.faith.subtitle';
+  static const questionnaireFaithNew = 'questionnaire.faith.new';
+  static const questionnaireFaithGrowing = 'questionnaire.faith.growing';
+  static const questionnaireFaithMature = 'questionnaire.faith.mature';
+
+  // Question 2: What You Seek
+  static const questionnaireSeekingTitle = 'questionnaire.seeking.title';
+  static const questionnaireSeekingSubtitle = 'questionnaire.seeking.subtitle';
+  static const questionnaireSeekingPeace = 'questionnaire.seeking.peace';
+  static const questionnaireSeekingGuidance = 'questionnaire.seeking.guidance';
+  static const questionnaireSeekingKnowledge =
+      'questionnaire.seeking.knowledge';
+  static const questionnaireSeekingRelationships =
+      'questionnaire.seeking.relationships';
+  static const questionnaireSeekingChallenges =
+      'questionnaire.seeking.challenges';
+
+  // Question 3: Time Commitment
+  static const questionnaireTimeTitle = 'questionnaire.time.title';
+  static const questionnaireTimeSubtitle = 'questionnaire.time.subtitle';
+  static const questionnaireTime5Min = 'questionnaire.time.5min';
+  static const questionnaireTime15Min = 'questionnaire.time.15min';
+  static const questionnaireTime30Min = 'questionnaire.time.30min';
 
   // Saved Guides Screen
   static const savedGuidesTitle = 'saved_guides.title';
@@ -602,4 +661,52 @@ class TranslationKeys {
   static const ratingForgotLabel = 'memory.ratingSheet.forgot.label';
   static const ratingForgotDescription =
       'memory.ratingSheet.forgot.description';
+
+  // Learning Paths
+  static const learningPathsTitle = 'learning_paths.title';
+  static const learningPathsSubtitle = 'learning_paths.subtitle';
+  static const learningPathsViewMore = 'learning_paths.view_more';
+  static const learningPathsViewLess = 'learning_paths.view_less';
+  static const learningPathsEmpty = 'learning_paths.empty';
+  static const learningPathsEmptyMessage = 'learning_paths.empty_message';
+  static const learningPathsError = 'learning_paths.error';
+  static const learningPathsErrorMessage = 'learning_paths.error_message';
+  static const learningPathsCompleted = 'learning_paths.completed';
+  static const learningPathsInProgress = 'learning_paths.in_progress';
+  static const learningPathsFeatured = 'learning_paths.featured';
+  static const learningPathsEnroll = 'learning_paths.enroll';
+  static const learningPathsContinue = 'learning_paths.continue';
+  static const learningPathsReview = 'learning_paths.review';
+  static const learningPathsExplore = 'learning_paths.explore';
+  static const learningPathsTopics = 'learning_paths.topics';
+  static const learningPathsDays = 'learning_paths.days';
+  static const learningPathsXp = 'learning_paths.xp';
+  static const learningPathsProgress = 'learning_paths.progress';
+  static const learningPathsTopicsCompleted = 'learning_paths.topics_completed';
+  static const learningPathsStartPath = 'learning_paths.start_path';
+  static const learningPathsResumePath = 'learning_paths.resume_path';
+  static const learningPathsPathCompleted = 'learning_paths.path_completed';
+  static const learningPathsEnrolledSuccess = 'learning_paths.enrolled_success';
+  static const learningPathsEnrolledError = 'learning_paths.enrolled_error';
+  static const learningPathsNextTopic = 'learning_paths.next_topic';
+  static const learningPathsLocked = 'learning_paths.locked';
+  static const learningPathsUnlocked = 'learning_paths.unlocked';
+  static const learningPathsMilestone = 'learning_paths.milestone';
+  static const learningPathsLoadingDetails = 'learning_paths.loading_details';
+  static const learningPathsEnrolling = 'learning_paths.enrolling';
+  static const learningPathsFailedToLoad = 'learning_paths.failed_to_load';
+  static const learningPathsLoadingTopics = 'learning_paths.loading_topics';
+  static const learningPathsPercentComplete = 'learning_paths.percent_complete';
+
+  // Disciple Levels
+  static const discipleLevelSeeker = 'disciple_level.seeker';
+  static const discipleLevelBeliever = 'disciple_level.believer';
+  static const discipleLevelDisciple = 'disciple_level.disciple';
+  static const discipleLevelLeader = 'disciple_level.leader';
+
+  // Continue Learning
+  static const continueLearningTitle = 'continue_learning.title';
+  static const continueLearningEmpty = 'continue_learning.empty';
+  static const continueLearningEmptyMessage = 'continue_learning.empty_message';
+  static const continueLearningDone = 'continue_learning.done';
 }

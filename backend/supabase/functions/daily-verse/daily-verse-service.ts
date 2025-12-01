@@ -247,8 +247,8 @@ export class DailyVerseService {
         },
         translations: {
           esv: llmResponse.translations.esv,
-          hi: llmResponse.translations.hindi,
-          ml: llmResponse.translations.malayalam
+          hi: llmResponse.translations.hi,
+          ml: llmResponse.translations.ml
         },
         date: '' // Will be set by caller
       }
@@ -339,7 +339,7 @@ export class DailyVerseService {
   private async getCachedVerse(dateKey: string): Promise<DailyVerseData | null> {
     try {
       console.log(`Attempting to fetch cached verse for date: ${dateKey}`)
-      
+
       const { data, error } = await this.supabase
         .from(this.CACHE_TABLE)
         .select('uuid, verse_data')
@@ -359,10 +359,10 @@ export class DailyVerseService {
 
       console.log(`Found cached verse for date: ${dateKey}`)
       const cachedData = data.verse_data
-      
+
       // Add UUID to the cached data
       cachedData.id = data.uuid
-      
+
       // Backward compatibility: Add referenceTranslations if missing from old cache
       if (!cachedData.referenceTranslations) {
         console.log('Adding missing referenceTranslations to cached verse')
@@ -372,7 +372,18 @@ export class DailyVerseService {
           ml: cachedData.reference
         }
       }
-      
+
+      // Backward compatibility: Map 'hindi'/'malayalam' keys to 'hi'/'ml' keys
+      // The bible-api-service.ts caches with 'hindi'/'malayalam' but DailyVerseData expects 'hi'/'ml'
+      if (cachedData.translations) {
+        const translations = cachedData.translations as Record<string, string>
+        cachedData.translations = {
+          esv: translations.esv || '',
+          hi: translations.hi || translations.hindi || '',
+          ml: translations.ml || translations.malayalam || ''
+        }
+      }
+
       return cachedData as DailyVerseData
 
     } catch (error) {

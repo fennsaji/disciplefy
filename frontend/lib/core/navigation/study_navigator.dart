@@ -85,6 +85,12 @@ enum StudyNavigationSource {
 
   /// Navigated from study topics screen.
   studyTopics,
+
+  /// Navigated from continue learning section.
+  continueLearning,
+
+  /// Navigated from a learning path detail page.
+  learningPath,
 }
 
 /// Extension on StudyNavigationSource for convenience methods.
@@ -102,6 +108,10 @@ extension StudyNavigationSourceExtension on StudyNavigationSource {
         return 'Recent Guides';
       case StudyNavigationSource.studyTopics:
         return 'Study Topics';
+      case StudyNavigationSource.continueLearning:
+        return 'Continue Learning';
+      case StudyNavigationSource.learningPath:
+        return 'Learning Path';
     }
   }
 }

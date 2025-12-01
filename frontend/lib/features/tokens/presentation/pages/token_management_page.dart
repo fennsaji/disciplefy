@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:google_fonts/google_fonts.dart';
+import '../../../../core/constants/app_fonts.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/router/app_routes.dart';
@@ -365,7 +365,7 @@ class _TokenManagementPageState extends State<TokenManagementPage>
             elevation: 0,
             title: Text(
               context.tr('tokens.management.title'),
-              style: GoogleFonts.poppins(
+              style: AppFonts.poppins(
                 fontSize: 20,
                 fontWeight: FontWeight.w600,
                 color: Theme.of(context).colorScheme.primary,
@@ -441,7 +441,7 @@ class _TokenManagementPageState extends State<TokenManagementPage>
                       const SizedBox(height: 16),
                       Text(
                         context.tr('tokens.management.load_error'),
-                        style: GoogleFonts.inter(
+                        style: AppFonts.inter(
                           fontSize: 18,
                           fontWeight: FontWeight.w600,
                           color: Theme.of(context).colorScheme.onBackground,
@@ -450,7 +450,7 @@ class _TokenManagementPageState extends State<TokenManagementPage>
                       const SizedBox(height: 8),
                       Text(
                         state.errorMessage,
-                        style: GoogleFonts.inter(
+                        style: AppFonts.inter(
                           fontSize: 14,
                           color: Theme.of(context)
                               .colorScheme

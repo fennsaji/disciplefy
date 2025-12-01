@@ -3,11 +3,12 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
+import '../../../../core/constants/app_fonts.dart';
 
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/utils/category_utils.dart';
 import '../../../../core/di/injection_container.dart';
+import '../../../../core/router/app_router.dart';
 import '../../../../core/services/auth_state_provider.dart';
 import '../../../../core/widgets/auth_protected_screen.dart';
 import '../../../../core/extensions/translation_extension.dart';
@@ -23,6 +24,9 @@ import '../../../notifications/presentation/widgets/notification_enable_prompt.d
 import '../bloc/home_bloc.dart';
 import '../bloc/home_event.dart';
 import '../bloc/home_state.dart';
+import '../../../personalization/presentation/widgets/personalization_prompt_card.dart';
+import '../../../study_topics/domain/repositories/learning_paths_repository.dart';
+import '../../../study_topics/presentation/widgets/learning_path_card.dart';
 
 /// Home screen displaying daily verse, navigation options, and study recommendations.
 ///
@@ -63,7 +67,12 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
     final homeBloc = sl<HomeBloc>();
     final current = homeBloc.state;
     if (current is! HomeCombinedState || current.topics.isEmpty) {
-      homeBloc.add(const LoadRecommendedTopics(limit: 6));
+      // Use LoadForYouTopics for authenticated users (bloc handles fallback)
+      homeBloc.add(const LoadForYouTopics());
+    }
+    // Load active learning path for the For You section
+    if (current is! HomeCombinedState || current.activeLearningPath == null) {
+      homeBloc.add(const LoadActiveLearningPath());
     }
   }
 
@@ -372,7 +381,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
         children: [
           Text(
             context.tr(TranslationKeys.homeWelcomeBack, {'name': userName}),
-            style: GoogleFonts.inter(
+            style: AppFonts.inter(
               fontSize: 28,
               fontWeight: FontWeight.w600,
               color: Theme.of(context).colorScheme.onBackground,
@@ -382,7 +391,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
           const SizedBox(height: 8),
           Text(
             context.tr(TranslationKeys.homeContinueJourney),
-            style: GoogleFonts.inter(
+            style: AppFonts.inter(
               fontSize: 16,
               color:
                   Theme.of(context).colorScheme.onBackground.withOpacity(0.7),
@@ -423,7 +432,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
               const SizedBox(width: 12),
               Text(
                 context.tr(TranslationKeys.homeGenerateStudyGuide),
-                style: GoogleFonts.inter(
+                style: AppFonts.inter(
                   fontSize: 18,
                   fontWeight: FontWeight.w600,
                   color: Colors.white,
@@ -459,7 +468,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
                 children: [
                   Text(
                     context.tr(TranslationKeys.homeResumeLastStudy),
-                    style: GoogleFonts.inter(
+                    style: AppFonts.inter(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
                       color: AppTheme.textPrimary,
@@ -469,7 +478,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
                   Text(
                     context.tr(TranslationKeys.homeContinueStudying,
                         {'topic': 'Faith in Trials'}),
-                    style: GoogleFonts.inter(
+                    style: AppFonts.inter(
                       fontSize: 14,
                       color: AppTheme.onSurfaceVariant,
                     ),
@@ -494,23 +503,59 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
         final homeState =
             state is HomeCombinedState ? state : const HomeCombinedState();
 
+        // Determine section title based on personalization state
+        final sectionTitle = homeState.isPersonalized
+            ? context.tr(TranslationKeys.homeForYou)
+            : context.tr(TranslationKeys.homeExploreTopics);
+
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Personalization prompt card (shown when needed)
+            if (homeState.showPersonalizationPrompt) ...[
+              PersonalizationPromptCard(
+                onGetStarted: () => _navigateToQuestionnaire(),
+                onSkip: () => context
+                    .read<HomeBloc>()
+                    .add(const DismissPersonalizationPrompt()),
+              ),
+              const SizedBox(height: 24),
+            ],
+
+            // Section header
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  context.tr(TranslationKeys.homeRecommendedTopics),
-                  style: GoogleFonts.inter(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w600,
-                    color: isDark
-                        ? Colors.white.withOpacity(0.9)
-                        : const Color(0xFF1F2937),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        sectionTitle,
+                        style: AppFonts.inter(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w600,
+                          color: isDark
+                              ? Colors.white.withOpacity(0.9)
+                              : const Color(0xFF1F2937),
+                        ),
+                      ),
+                      if (homeState.isPersonalized) ...[
+                        const SizedBox(height: 4),
+                        Text(
+                          context.tr(TranslationKeys.homeForYouSubtitle),
+                          style: AppFonts.inter(
+                            fontSize: 13,
+                            color: isDark
+                                ? Colors.white.withOpacity(0.6)
+                                : const Color(0xFF6B7280),
+                          ),
+                        ),
+                      ],
+                    ],
                   ),
                 ),
-                if (homeState.isLoadingTopics)
+                if (homeState.isLoadingTopics || homeState.isLoadingActivePath)
                   const SizedBox(
                     width: 20,
                     height: 20,
@@ -520,9 +565,10 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
                           AlwaysStoppedAnimation<Color>(AppTheme.primaryColor),
                     ),
                   )
-                else if (homeState.topics.isNotEmpty)
+                else if (homeState.activeLearningPath != null ||
+                    homeState.topics.isNotEmpty)
                   TextButton(
-                    onPressed: () => context.push('/study-topics'),
+                    onPressed: () => context.go('/study-topics'),
                     style: TextButton.styleFrom(
                       padding: const EdgeInsets.symmetric(
                           horizontal: 12, vertical: 6),
@@ -537,7 +583,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
                     ),
                     child: Text(
                       context.tr(TranslationKeys.homeViewAll),
-                      style: GoogleFonts.inter(
+                      style: AppFonts.inter(
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
                         color: AppTheme.primaryColor,
@@ -547,9 +593,18 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
               ],
             ),
             const SizedBox(height: 16),
-            if (homeState.topicsError != null)
+            // Show Learning Path card if available (for all user types)
+            if (homeState.activeLearningPath != null)
+              LearningPathCard(
+                path: homeState.activeLearningPath!,
+                compact: false,
+                onTap: () =>
+                    _navigateToLearningPath(homeState.activeLearningPath!.id),
+              )
+            // Fallback to topics grid only if no learning path is available
+            else if (homeState.topicsError != null)
               _buildTopicsErrorWidget(homeState.topicsError!)
-            else if (homeState.isLoadingTopics)
+            else if (homeState.isLoadingTopics || homeState.isLoadingActivePath)
               _buildTopicsLoadingWidget()
             else if (homeState.topics.isEmpty)
               _buildNoTopicsWidget()
@@ -559,6 +614,36 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
         );
       },
     );
+  }
+
+  /// Navigate to the personalization questionnaire
+  void _navigateToQuestionnaire() {
+    context.push('/personalization-questionnaire').then((_) {
+      // Ensure widget is still mounted before dispatching events
+      if (!mounted) return;
+      // Clear LearningPaths repository cache so Study Topics screen gets fresh data
+      sl<LearningPathsRepository>().clearCache();
+      // Refresh all personalization-dependent data after questionnaire completion
+      sl<HomeBloc>().add(const LoadForYouTopics(forceRefresh: true));
+      sl<HomeBloc>().add(const LoadActiveLearningPath(forceRefresh: true));
+    });
+  }
+
+  /// Navigate to learning path detail and refresh on return
+  void _navigateToLearningPath(String pathId) {
+    if (_isNavigating) return;
+    _isNavigating = true;
+
+    debugPrint('[HOME] Navigating to learning path: $pathId');
+
+    // Use context.go() to properly update the browser URL
+    // Include source=home so back button returns to home screen
+    context.go('/learning-path/$pathId?source=home');
+
+    // Reset navigation flag after navigation completes
+    Future.delayed(const Duration(milliseconds: 500), () {
+      _isNavigating = false;
+    });
   }
 
   Widget _buildTopicsErrorWidget(String error) => Container(
@@ -580,7 +665,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
             const SizedBox(height: 12),
             Text(
               context.tr(TranslationKeys.homeFailedToLoadTopics),
-              style: GoogleFonts.inter(
+              style: AppFonts.inter(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
                 color: Theme.of(context).colorScheme.onBackground,
@@ -589,7 +674,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
             const SizedBox(height: 8),
             Text(
               context.tr(TranslationKeys.homeSomethingWentWrong),
-              style: GoogleFonts.inter(
+              style: AppFonts.inter(
                 fontSize: 14,
                 color:
                     Theme.of(context).colorScheme.onBackground.withOpacity(0.7),
@@ -615,23 +700,8 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
         ),
       );
 
-  Widget _buildTopicsLoadingWidget() => LayoutBuilder(
-        builder: (context, constraints) {
-          const double spacing = 16.0;
-          final double cardWidth = (constraints.maxWidth - spacing) / 2;
-
-          return Wrap(
-            spacing: spacing,
-            runSpacing: spacing,
-            children: List.generate(
-                6,
-                (index) => SizedBox(
-                      width: cardWidth,
-                      child: _buildLoadingTopicCard(),
-                    )),
-          );
-        },
-      );
+  Widget _buildTopicsLoadingWidget() =>
+      const LearningPathCardSkeleton(compact: false);
 
   Widget _buildLoadingTopicCard() => Container(
         padding: const EdgeInsets.all(16),
@@ -762,7 +832,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
             const SizedBox(height: 12),
             Text(
               context.tr(TranslationKeys.homeNoTopicsAvailable),
-              style: GoogleFonts.inter(
+              style: AppFonts.inter(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
                 color: Theme.of(context).colorScheme.onBackground,
@@ -771,7 +841,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
             const SizedBox(height: 8),
             Text(
               context.tr(TranslationKeys.homeCheckConnection),
-              style: GoogleFonts.inter(
+              style: AppFonts.inter(
                 fontSize: 14,
                 color:
                     Theme.of(context).colorScheme.onBackground.withOpacity(0.7),
@@ -961,7 +1031,7 @@ class _RecommendedGuideTopicCard extends StatelessWidget {
                           ),
                           child: Text(
                             topic.category,
-                            style: GoogleFonts.inter(
+                            style: AppFonts.inter(
                               fontSize: 11,
                               fontWeight: FontWeight.w600,
                               color: isDark
@@ -980,7 +1050,7 @@ class _RecommendedGuideTopicCard extends StatelessWidget {
                   // Title
                   Text(
                     topic.title,
-                    style: GoogleFonts.inter(
+                    style: AppFonts.inter(
                       fontSize: 15,
                       fontWeight: FontWeight.w600,
                       color: isDark
@@ -998,17 +1068,75 @@ class _RecommendedGuideTopicCard extends StatelessWidget {
                   Expanded(
                     child: Text(
                       topic.description,
-                      style: GoogleFonts.inter(
+                      style: AppFonts.inter(
                         fontSize: 13,
                         color: isDark
                             ? Colors.white.withOpacity(0.6)
                             : const Color(0xFF6B7280),
                         height: 1.5,
                       ),
-                      maxLines: 4,
+                      maxLines: topic.isFromLearningPath ? 3 : 4,
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
+
+                  // Learning path badge (if from a learning path)
+                  if (topic.isFromLearningPath) ...[
+                    const SizedBox(height: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: isDark
+                            ? Theme.of(context)
+                                .colorScheme
+                                .primary
+                                .withOpacity(0.15)
+                            : Theme.of(context)
+                                .colorScheme
+                                .primary
+                                .withOpacity(0.08),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.route_outlined,
+                            size: 12,
+                            color: Theme.of(context).colorScheme.primary,
+                          ),
+                          const SizedBox(width: 4),
+                          Flexible(
+                            child: Text(
+                              topic.learningPathName ?? '',
+                              style: AppFonts.inter(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w600,
+                                color: Theme.of(context).colorScheme.primary,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          if (topic.formattedPositionInPath.isNotEmpty) ...[
+                            const SizedBox(width: 6),
+                            Text(
+                              topic.formattedPositionInPath,
+                              style: AppFonts.inter(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w500,
+                                color: isDark
+                                    ? Colors.white.withOpacity(0.5)
+                                    : const Color(0xFF9CA3AF),
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ),

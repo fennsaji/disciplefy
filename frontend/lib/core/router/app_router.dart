@@ -1,3 +1,4 @@
+import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
@@ -40,6 +41,9 @@ import '../../features/voice_buddy/presentation/bloc/voice_preferences_state.dar
 import '../../features/voice_buddy/domain/entities/voice_conversation_entity.dart';
 import '../../features/voice_buddy/domain/entities/voice_preferences_entity.dart';
 import '../../features/voice_buddy/domain/repositories/voice_buddy_repository.dart';
+import '../../features/personalization/presentation/pages/personalization_questionnaire_page.dart';
+import '../../features/study_topics/presentation/pages/learning_path_detail_page.dart';
+import '../../features/study_topics/presentation/bloc/learning_paths_bloc.dart';
 import 'app_routes.dart';
 import 'router_guard.dart';
 import 'auth_notifier.dart';
@@ -48,7 +52,12 @@ import 'app_loading_screen.dart'; // ANDROID FIX: Loading screen during session 
 class AppRouter {
   static final AuthNotifier _authNotifier = AuthNotifier();
 
+  /// Root navigator key for routes that should be pushed outside the shell
+  static final GlobalKey<NavigatorState> rootNavigatorKey =
+      GlobalKey<NavigatorState>(debugLabel: 'root');
+
   static final GoRouter router = GoRouter(
+    navigatorKey: rootNavigatorKey,
     initialLocation: '/', // Let the redirect logic handle the initial route
     refreshListenable: _authNotifier, // Listen to auth state changes
     redirect: (context, state) async => await RouterGuard.handleRedirect(
@@ -116,6 +125,20 @@ class AppRouter {
               ),
             ],
           ),
+          // Study Topics Branch
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: AppRoutes.studyTopics,
+                name: 'study_topics_tab',
+                builder: (context, state) {
+                  // Extract topic_id from query parameters for notification deep linking
+                  final topicId = state.uri.queryParameters['topic_id'];
+                  return StudyTopicsScreen(topicId: topicId);
+                },
+              ),
+            ],
+          ),
         ],
       ),
 
@@ -148,15 +171,6 @@ class AppRouter {
         path: AppRoutes.notificationSettings,
         name: 'notification_settings',
         builder: (context, state) => const NotificationSettingsScreen(),
-      ),
-      GoRoute(
-        path: AppRoutes.studyTopics,
-        name: 'study_topics',
-        builder: (context, state) {
-          // Extract topic_id from query parameters for notification deep linking
-          final topicId = state.uri.queryParameters['topic_id'];
-          return StudyTopicsScreen(topicId: topicId);
-        },
       ),
       GoRoute(
         path: AppRoutes.tokenManagement,
@@ -257,6 +271,36 @@ class AppRouter {
           )..add(const LoadVoicePreferences()),
           child: const VoicePreferencesPageWrapper(),
         ),
+      ),
+
+      // Personalization Routes
+      GoRoute(
+        path: AppRoutes.personalizationQuestionnaire,
+        name: 'personalization_questionnaire',
+        builder: (context, state) {
+          // Extract onComplete callback from extra if provided
+          VoidCallback? onComplete;
+          if (state.extra is Map<String, dynamic>) {
+            final extra = state.extra as Map<String, dynamic>;
+            onComplete = extra['onComplete'] as VoidCallback?;
+          }
+          return PersonalizationQuestionnairePage(onComplete: onComplete);
+        },
+      ),
+
+      // Learning Paths Routes
+      GoRoute(
+        path: '/learning-path/:pathId',
+        name: 'learning_path_detail',
+        parentNavigatorKey: rootNavigatorKey,
+        builder: (context, state) {
+          final pathId = state.pathParameters['pathId'] ?? '';
+          final source = state.uri.queryParameters['source'];
+          return BlocProvider(
+            create: (context) => sl<LearningPathsBloc>(),
+            child: LearningPathDetailPage(pathId: pathId, source: source),
+          );
+        },
       ),
 
       // Authentication Routes (outside app shell)
@@ -456,5 +500,13 @@ extension AppRouterExtension on GoRouter {
         'studyGuideId': studyGuideId,
         'relatedScripture': relatedScripture,
         'conversationType': conversationType,
+      });
+
+  /// Navigates to the personalization questionnaire page.
+  ///
+  /// [onComplete] - Optional callback to execute when questionnaire is completed
+  void goToPersonalizationQuestionnaire({VoidCallback? onComplete}) =>
+      go(AppRoutes.personalizationQuestionnaire, extra: {
+        'onComplete': onComplete,
       });
 }

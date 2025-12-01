@@ -1,47 +1,143 @@
 import 'dart:async';
 
-import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
+import '../../../../core/constants/app_fonts.dart';
 
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/di/injection_container.dart';
+import '../../../../core/router/app_router.dart';
 import '../../../../core/extensions/translation_extension.dart';
 import '../../../../core/i18n/translation_keys.dart';
-import '../../../home/domain/entities/recommended_guide_topic.dart';
+import '../../../../core/models/app_language.dart';
+import '../../../../core/services/language_preference_service.dart';
+import '../../../../core/utils/logger.dart';
 import '../../../daily_verse/presentation/bloc/daily_verse_bloc.dart';
 import '../../../daily_verse/presentation/bloc/daily_verse_state.dart';
 import '../../../daily_verse/domain/entities/daily_verse_entity.dart';
 import '../../../home/presentation/bloc/home_bloc.dart';
-import '../../../home/presentation/bloc/home_event.dart';
-import '../../../home/presentation/bloc/home_state.dart';
-import '../bloc/study_topics_bloc.dart';
-import '../bloc/study_topics_event.dart';
-import '../bloc/study_topics_state.dart';
-import '../widgets/topics_grid_view.dart';
-import '../widgets/category_filter_chips.dart';
+import '../../domain/entities/learning_path.dart';
+import '../../domain/entities/topic_progress.dart';
+import '../bloc/continue_learning_bloc.dart';
+import '../bloc/continue_learning_event.dart';
+import '../bloc/continue_learning_state.dart';
+import '../bloc/learning_paths_bloc.dart';
+import '../bloc/learning_paths_event.dart';
+import '../widgets/continue_learning_section.dart';
+import '../widgets/learning_paths_section.dart';
 
-/// Screen for browsing all study topics with filtering and search capabilities.
-class StudyTopicsScreen extends StatelessWidget {
+/// Screen for browsing study topics with Continue Learning and Learning Paths.
+///
+/// Layout (top to bottom):
+/// 1. Continue Learning - In-progress topics (primary focus)
+/// 2. Learning Paths - Structured learning journeys
+class StudyTopicsScreen extends StatefulWidget {
   /// Optional topic ID from deep link (e.g., from notification)
   final String? topicId;
 
   const StudyTopicsScreen({super.key, this.topicId});
 
   @override
+  State<StudyTopicsScreen> createState() => _StudyTopicsScreenState();
+}
+
+class _StudyTopicsScreenState extends State<StudyTopicsScreen> {
+  String _currentLanguage = 'en';
+  bool _languageLoaded = false;
+  late ContinueLearningBloc _continueLearningBloc;
+  late LearningPathsBloc _learningPathsBloc;
+  late LanguagePreferenceService _languageService;
+  StreamSubscription<AppLanguage>? _languageSubscription;
+
+  @override
+  void initState() {
+    super.initState();
+    // Create BLoCs without dispatching events yet
+    _continueLearningBloc = sl<ContinueLearningBloc>();
+    _learningPathsBloc = sl<LearningPathsBloc>();
+    _languageService = sl<LanguagePreferenceService>();
+    _loadLanguageAndInitialize();
+    _setupLanguageChangeListener();
+  }
+
+  /// Listen for language preference changes from settings
+  void _setupLanguageChangeListener() {
+    debugPrint('[STUDY_TOPICS] Setting up language change listener');
+    _languageSubscription = _languageService.languageChanges.listen(
+      (AppLanguage newLanguage) {
+        debugPrint(
+            '[STUDY_TOPICS] Language change received: ${newLanguage.code}, current: $_currentLanguage');
+        Logger.info(
+          'Study Topics: Language changed to ${newLanguage.code}, refreshing content',
+          tag: 'STUDY_TOPICS',
+        );
+        if (mounted && newLanguage.code != _currentLanguage) {
+          debugPrint(
+              '[STUDY_TOPICS] Refreshing content for language: ${newLanguage.code}');
+          setState(() {
+            _currentLanguage = newLanguage.code;
+          });
+          // Refresh all content with new language
+          _continueLearningBloc
+              .add(RefreshContinueLearning(language: newLanguage.code));
+          _learningPathsBloc
+              .add(RefreshLearningPaths(language: newLanguage.code));
+        } else {
+          debugPrint(
+              '[STUDY_TOPICS] Skipping refresh - mounted: $mounted, same language: ${newLanguage.code == _currentLanguage}');
+        }
+      },
+    );
+  }
+
+  Future<void> _loadLanguageAndInitialize() async {
+    final language = await _languageService.getSelectedLanguage();
+    if (mounted) {
+      setState(() {
+        _currentLanguage = language.code;
+        _languageLoaded = true;
+      });
+      // Always force refresh to ensure correct language content is loaded
+      // This handles cases where the screen is kept alive by IndexedStack
+      // but the language was changed while on another screen
+      _continueLearningBloc.add(LoadContinueLearning(
+        language: _currentLanguage,
+        forceRefresh: true,
+      ));
+      _learningPathsBloc.add(LoadLearningPaths(
+        language: _currentLanguage,
+        forceRefresh: true,
+      ));
+    }
+  }
+
+  @override
+  void dispose() {
+    _languageSubscription?.cancel();
+    _continueLearningBloc.close();
+    _learningPathsBloc.close();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) => MultiBlocProvider(
         providers: [
-          BlocProvider(
-            create: (context) =>
-                sl<StudyTopicsBloc>()..add(const LoadStudyTopics()),
+          BlocProvider.value(
+            value: _continueLearningBloc,
+          ),
+          BlocProvider.value(
+            value: _learningPathsBloc,
           ),
           BlocProvider.value(
             value: sl<HomeBloc>(),
           ),
         ],
-        child: _StudyTopicsScreenContent(topicId: topicId),
+        child: _StudyTopicsScreenContent(
+          topicId: widget.topicId,
+          currentLanguage: _currentLanguage,
+          languageLoaded: _languageLoaded,
+        ),
       );
 }
 
@@ -49,7 +145,17 @@ class _StudyTopicsScreenContent extends StatefulWidget {
   /// Optional topic ID from deep link (e.g., from notification)
   final String? topicId;
 
-  const _StudyTopicsScreenContent({this.topicId});
+  /// Current app language code
+  final String currentLanguage;
+
+  /// Whether the language has been loaded
+  final bool languageLoaded;
+
+  const _StudyTopicsScreenContent({
+    this.topicId,
+    required this.currentLanguage,
+    required this.languageLoaded,
+  });
 
   @override
   State<_StudyTopicsScreenContent> createState() =>
@@ -57,18 +163,12 @@ class _StudyTopicsScreenContent extends StatefulWidget {
 }
 
 class _StudyTopicsScreenContentState extends State<_StudyTopicsScreenContent> {
-  final TextEditingController _searchController = TextEditingController();
-  final FocusNode _searchFocusNode = FocusNode();
-  bool _isSearchExpanded = false;
-  Timer? _debounce;
-
   // Track if we're currently navigating to prevent multiple navigations
   bool _isNavigating = false;
 
   @override
   void initState() {
     super.initState();
-    _searchController.addListener(_onSearchChanged);
 
     // Handle deep link navigation from notification
     if (widget.topicId != null) {
@@ -80,328 +180,94 @@ class _StudyTopicsScreenContentState extends State<_StudyTopicsScreenContent> {
 
   /// Handle deep link to specific topic (e.g., from notification)
   void _handleTopicDeepLink(String topicId) async {
-    print('[StudyTopics] Deep link detected for topic ID: $topicId');
+    debugPrint('[StudyTopics] Deep link detected for topic ID: $topicId');
 
-    // Wait for topics to load first
-    final studyTopicsBloc = context.read<StudyTopicsBloc>();
-    final studyTopicsState = studyTopicsBloc.state;
-
-    // If topics aren't loaded yet, wait for them with retry logic
-    if (studyTopicsState is StudyTopicsLoading ||
-        studyTopicsState is StudyTopicsInitial) {
-      print('[StudyTopics] Waiting for topics to load...');
-
-      // Show loading indicator
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('⏳ Loading study topics...'),
-            duration: Duration(seconds: 10),
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-      }
-
-      // Wait up to 10 seconds for topics to load
-      int attempts = 0;
-      while (attempts < 20 && mounted) {
-        await Future.delayed(const Duration(milliseconds: 500));
-        final currentState = studyTopicsBloc.state;
-        if (currentState is StudyTopicsLoaded) {
-          break;
-        }
-        attempts++;
-      }
+    // Navigate directly to study guide V2 with the topic ID
+    if (mounted) {
+      final encodedTopicId = Uri.encodeComponent(topicId);
+      context.go(
+          '/study-guide-v2?input=&type=topic&language=en&source=deepLink&topic_id=$encodedTopicId');
     }
-
-    // Find the topic with the matching ID
-    final currentState = studyTopicsBloc.state;
-    if (currentState is StudyTopicsLoaded) {
-      final topic =
-          currentState.topics.where((t) => t.id == topicId).firstOrNull;
-
-      if (topic != null) {
-        print('[StudyTopics] Found topic: ${topic.title}');
-
-        if (mounted) {
-          // Hide loading snackbar
-          ScaffoldMessenger.of(context).hideCurrentSnackBar();
-
-          // Show user feedback about what's happening
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('📖 Opening: ${topic.title}'),
-              duration: const Duration(milliseconds: 1500),
-              behavior: SnackBarBehavior.floating,
-              backgroundColor: AppTheme.primaryColor,
-            ),
-          );
-
-          // Small delay to ensure SnackBar is visible before navigation
-          await Future.delayed(const Duration(milliseconds: 300));
-
-          // Automatically generate study guide for this topic
-          print(
-              '[StudyTopics] Auto-generating study guide for deep-linked topic...');
-          _navigateToStudyGuide(topic);
-        }
-
-        // TODO (Follow-up): Implement scroll-to-topic functionality
-        // This would require adding a ScrollController and
-        // calculating the position of the topic in the grid
-        // For now, SnackBar provides immediate user feedback
-      } else {
-        print('[StudyTopics] Topic with ID $topicId not found');
-        if (mounted) {
-          ScaffoldMessenger.of(context).hideCurrentSnackBar();
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('❌ Recommended topic not found'),
-              backgroundColor: Colors.orange,
-              duration: Duration(seconds: 3),
-            ),
-          );
-        }
-      }
-    } else if (currentState is StudyTopicsError) {
-      // Topics failed to load - show error with retry option
-      print('[StudyTopics] Topics failed to load - showing error');
-      if (mounted) {
-        ScaffoldMessenger.of(context).hideCurrentSnackBar();
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('❌ Failed to load study topics'),
-            backgroundColor: Colors.red,
-            duration: const Duration(seconds: 5),
-            action: SnackBarAction(
-              label: 'Retry',
-              textColor: Colors.white,
-              onPressed: () {
-                studyTopicsBloc.add(const RefreshStudyTopics());
-                // Retry deep link after refresh
-                Future.delayed(const Duration(milliseconds: 500), () {
-                  _handleTopicDeepLink(topicId);
-                });
-              },
-            ),
-          ),
-        );
-      }
-    } else {
-      // Topics still loading or in unexpected state
-      print('[StudyTopics] Topics not loaded - cannot handle deep link');
-      if (mounted) {
-        ScaffoldMessenger.of(context).hideCurrentSnackBar();
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('⏳ Topics are still loading, please try again'),
-            duration: const Duration(seconds: 3),
-            action: SnackBarAction(
-              label: 'Retry',
-              onPressed: () {
-                Future.delayed(const Duration(milliseconds: 500), () {
-                  _handleTopicDeepLink(topicId);
-                });
-              },
-            ),
-          ),
-        );
-      }
-    }
-  }
-
-  @override
-  void dispose() {
-    _debounce?.cancel();
-    _searchController.removeListener(_onSearchChanged);
-    _searchController.dispose();
-    _searchFocusNode.dispose();
-    super.dispose();
-  }
-
-  void _onSearchChanged() {
-    _debounce?.cancel();
-    _debounce = Timer(const Duration(milliseconds: 150), () {
-      final searchText = _searchController.text;
-      if (mounted) {
-        context.read<StudyTopicsBloc>().add(SearchTopics(searchText));
-      }
-    });
-  }
-
-  void _toggleSearch() {
-    setState(() {
-      _isSearchExpanded = !_isSearchExpanded;
-      if (_isSearchExpanded) {
-        _searchFocusNode.requestFocus();
-      } else {
-        // Temporarily remove listener to avoid conflict
-        _searchController.removeListener(_onSearchChanged);
-        _searchController.clear();
-        _searchFocusNode.unfocus();
-        // Re-add listener
-        _searchController.addListener(_onSearchChanged);
-        // Reset all filters when closing search
-        context.read<StudyTopicsBloc>().add(const ClearFilters());
-      }
-    });
   }
 
   @override
   Widget build(BuildContext context) {
-    return PopScope(
-      canPop: false,
-      onPopInvokedWithResult: (didPop, result) {
-        if (didPop) return;
-
-        // Handle Android back button - navigate to home
-        if (Navigator.of(context).canPop()) {
-          Navigator.of(context).pop();
-        } else {
-          context.go('/');
-        }
-      },
-      child: Scaffold(
-        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-        appBar: _buildAppBar(context),
-        body: BlocBuilder<StudyTopicsBloc, StudyTopicsState>(
-          builder: (context, state) {
-            return RefreshIndicator(
-              onRefresh: () async {
-                context.read<StudyTopicsBloc>().add(const RefreshStudyTopics());
-                // Wait for the refresh to complete
-                await Future.delayed(const Duration(milliseconds: 500));
-              },
-              child: _buildBody(context, state),
-            );
-          },
-        ),
-      ), // Scaffold
-    ); // PopScope
+    return Scaffold(
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      appBar: _buildAppBar(context),
+      body: RefreshIndicator(
+        onRefresh: () async {
+          context
+              .read<ContinueLearningBloc>()
+              .add(RefreshContinueLearning(language: widget.currentLanguage));
+          context
+              .read<LearningPathsBloc>()
+              .add(RefreshLearningPaths(language: widget.currentLanguage));
+          // Wait for the refresh to complete
+          await Future.delayed(const Duration(milliseconds: 500));
+        },
+        child: _buildBody(context),
+      ),
+    );
   }
 
   PreferredSizeWidget _buildAppBar(BuildContext context) {
-    return StudyTopicsAppBar(
-      isSearchExpanded: _isSearchExpanded,
-      onToggleSearch: _toggleSearch,
-      onBuildSearchField: _buildSearchField,
-      onNavigateBack: () {
-        if (context.canPop()) {
-          context.pop();
-        } else {
-          context.go('/');
-        }
-      },
-    );
+    return const StudyTopicsAppBar();
   }
 
-  Widget _buildSearchField() {
-    return Padding(
-      padding: const EdgeInsets.only(top: 8),
-      child: TextField(
-        controller: _searchController,
-        focusNode: _searchFocusNode,
-        style: GoogleFonts.inter(
-          fontSize: 16,
-          color: Theme.of(context).colorScheme.onBackground,
+  Widget _buildBody(BuildContext context) {
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: [
+        // Section 1: Continue Learning (Primary Focus)
+        BlocBuilder<ContinueLearningBloc, ContinueLearningState>(
+          builder: (context, state) {
+            if (state is ContinueLearningLoading) {
+              return ContinueLearningSection(
+                topics: const [],
+                onTopicTap: _navigateToStudyGuideFromContinueLearning,
+                isLoading: true,
+              );
+            } else if (state is ContinueLearningError) {
+              return ContinueLearningSection(
+                topics: const [],
+                onTopicTap: _navigateToStudyGuideFromContinueLearning,
+                errorMessage: state.message,
+                onRetry: () => context.read<ContinueLearningBloc>().add(
+                    RefreshContinueLearning(language: widget.currentLanguage)),
+              );
+            } else if (state is ContinueLearningLoaded) {
+              return ContinueLearningSection(
+                topics: state.topics,
+                onTopicTap: _navigateToStudyGuideFromContinueLearning,
+              );
+            }
+            // ContinueLearningEmpty or Initial - section hides itself
+            return ContinueLearningSection(
+              topics: const [],
+              onTopicTap: _navigateToStudyGuideFromContinueLearning,
+            );
+          },
         ),
-        decoration: InputDecoration(
-          hintText: context.tr(TranslationKeys.studyTopicsSearchHint),
-          hintStyle: GoogleFonts.inter(
-            fontSize: 16,
-            color: AppTheme.onSurfaceVariant,
-          ),
-          border: InputBorder.none,
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+
+        const SizedBox(height: 24),
+
+        // Section 2: Learning Paths (Curated Learning Journeys)
+        LearningPathsSection(
+          onPathTap: _navigateToLearningPath,
+          onRetry: () => context
+              .read<LearningPathsBloc>()
+              .add(RefreshLearningPaths(language: widget.currentLanguage)),
         ),
-      ),
+
+        const SizedBox(height: 24),
+      ],
     );
   }
 
-  Widget _buildBody(BuildContext context, StudyTopicsState state) {
-    if (state is StudyTopicsLoading) {
-      return _buildLoadingState();
-    } else if (state is StudyTopicsError) {
-      return _buildErrorState(context, state);
-    } else if (state is StudyTopicsEmpty) {
-      return _buildEmptyState(context, state);
-    } else if (state is StudyTopicsLoaded ||
-        state is StudyTopicsFiltering ||
-        state is StudyTopicsLoadingMore) {
-      return _buildLoadedState(context, state);
-    }
-
-    return _buildLoadingState();
-  }
-
-  Widget _buildLoadingState() {
-    return const Padding(
-      padding: EdgeInsets.all(16),
-      child: Column(
-        children: [
-          SizedBox(height: 40),
-          TopicsGridLoadingSkeleton(itemCount: 8),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildErrorState(BuildContext context, StudyTopicsError state) {
-    return ErrorStateView(
-      message: state.message,
-      isInitialLoadError: state.isInitialLoadError,
-      onRetry: () => context
-          .read<StudyTopicsBloc>()
-          .add(const LoadStudyTopics(forceRefresh: true)),
-    );
-  }
-
-  Widget _buildEmptyState(BuildContext context, StudyTopicsEmpty state) {
-    return EmptyStateView(
-      hasFilters: state.currentFilter.hasFilters,
-      onClearFilters: () =>
-          context.read<StudyTopicsBloc>().add(const ClearFilters()),
-    );
-  }
-
-  Widget _buildLoadedState(BuildContext context, StudyTopicsState state) {
-    List<RecommendedGuideTopic> topics = [];
-    List<String> categories = [];
-    bool isFiltering = false;
-    bool isLoadingMore = false;
-    bool hasMore = false;
-
-    if (state is StudyTopicsLoaded) {
-      topics = state.topics;
-      categories = state.categories;
-      hasMore = state.hasMore;
-    } else if (state is StudyTopicsFiltering) {
-      topics = state.currentTopics;
-      categories = state.categories;
-      isFiltering = true;
-    } else if (state is StudyTopicsLoadingMore) {
-      topics = state.currentTopics;
-      categories = state.categories;
-      isLoadingMore = true;
-      hasMore = state.hasMore;
-    }
-
-    return TopicsLoadedView(
-      topics: topics,
-      categories: categories,
-      isFiltering: isFiltering,
-      isLoadingMore: isLoadingMore,
-      hasMore: hasMore,
-      onTopicTap: _navigateToStudyGuide,
-      onFilterCategories: (selectedCategories) => context
-          .read<StudyTopicsBloc>()
-          .add(FilterByCategories(selectedCategories)),
-      onLoadMore: () =>
-          context.read<StudyTopicsBloc>().add(const LoadMoreTopics()),
-    );
-  }
-
-  void _navigateToStudyGuide(RecommendedGuideTopic topic) {
+  /// Navigate to study guide from Continue Learning section
+  Future<void> _navigateToStudyGuideFromContinueLearning(
+      InProgressTopic topic) async {
     // Prevent multiple clicks during navigation
     if (_isNavigating) {
       return;
@@ -413,8 +279,7 @@ class _StudyTopicsScreenContentState extends State<_StudyTopicsScreenContent> {
     final dailyVerseBloc = context.read<DailyVerseBloc>();
     final currentState = dailyVerseBloc.state;
 
-    VerseLanguage selectedLanguage =
-        VerseLanguage.english; // Default to English
+    VerseLanguage selectedLanguage = VerseLanguage.english;
     if (currentState is DailyVerseLoaded) {
       selectedLanguage = currentState.currentLanguage;
     } else if (currentState is DailyVerseOffline) {
@@ -423,27 +288,31 @@ class _StudyTopicsScreenContentState extends State<_StudyTopicsScreenContent> {
 
     final languageCode = _getLanguageCode(selectedLanguage);
 
-    // Navigate directly to study guide V2 - it will handle generation
+    // Navigate directly to study guide V2
     final encodedTitle = Uri.encodeComponent(topic.title);
     final encodedDescription = Uri.encodeComponent(topic.description);
-    final topicIdParam = topic.id.isNotEmpty ? '&topic_id=${topic.id}' : '';
+    final topicIdParam =
+        topic.topicId.isNotEmpty ? '&topic_id=${topic.topicId}' : '';
     final descriptionParam =
         topic.description.isNotEmpty ? '&description=$encodedDescription' : '';
+    final pathIdParam =
+        topic.learningPathId != null ? '&path_id=${topic.learningPathId}' : '';
 
     debugPrint(
-        '🔍 [STUDY_TOPICS] Navigating to study guide V2 for topic: ${topic.title} (ID: ${topic.id})');
+        '[CONTINUE_LEARNING] Navigating to study guide V2 for topic: ${topic.title} (ID: ${topic.topicId})');
 
-    context.go(
-        '/study-guide-v2?input=$encodedTitle&type=topic&language=$languageCode&source=studyTopics$topicIdParam$descriptionParam');
+    // Use push() and await - when user returns, refresh the data
+    await context.push(
+        '/study-guide-v2?input=$encodedTitle&type=topic&language=$languageCode&source=continueLearning$topicIdParam$descriptionParam$pathIdParam');
 
-    // Reset navigation flag after a short delay
-    Future.delayed(const Duration(milliseconds: 500), () {
-      if (mounted) {
-        setState(() {
-          _isNavigating = false;
-        });
-      }
-    });
+    // Refresh data when returning from the study guide
+    if (mounted) {
+      context.read<ContinueLearningBloc>().add(const RefreshContinueLearning());
+      context
+          .read<LearningPathsBloc>()
+          .add(RefreshLearningPaths(language: widget.currentLanguage));
+      _isNavigating = false;
+    }
   }
 
   /// Convert VerseLanguage enum to language code string
@@ -457,256 +326,29 @@ class _StudyTopicsScreenContentState extends State<_StudyTopicsScreenContent> {
         return 'ml';
     }
   }
-}
 
-/// Error state view widget for displaying error messages with retry functionality.
-class ErrorStateView extends StatelessWidget {
-  final String message;
-  final bool isInitialLoadError;
-  final VoidCallback onRetry;
+  /// Navigate to learning path detail page
+  void _navigateToLearningPath(LearningPath path) {
+    if (_isNavigating) return;
+    _isNavigating = true;
 
-  const ErrorStateView({
-    super.key,
-    required this.message,
-    required this.isInitialLoadError,
-    required this.onRetry,
-  });
+    debugPrint(
+        '[STUDY_TOPICS] Navigating to learning path: ${path.title} (ID: ${path.id})');
 
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.error_outline,
-                size: 64, color: AppTheme.accentColor),
-            const SizedBox(height: 16),
-            Text(
-              isInitialLoadError
-                  ? context.tr(TranslationKeys.studyTopicsFailedToLoad)
-                  : context.tr(TranslationKeys.studyTopicsSomethingWentWrong),
-              style: GoogleFonts.inter(
-                fontSize: 20,
-                fontWeight: FontWeight.w600,
-                color: Theme.of(context).colorScheme.onBackground,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 8),
-            Text(message,
-                style: GoogleFonts.inter(
-                    fontSize: 16, color: AppTheme.onSurfaceVariant),
-                textAlign: TextAlign.center),
-            const SizedBox(height: 24),
-            ElevatedButton.icon(
-              onPressed: onRetry,
-              icon: const Icon(Icons.refresh),
-              label: Text(context.tr(TranslationKeys.studyTopicsTryAgain),
-                  style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.primaryColor,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12)),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
+    // Use context.go() to properly update the browser URL
+    // Include source=studyTopics so back button returns to study topics screen
+    context.go('/learning-path/${path.id}?source=studyTopics');
+
+    // Reset navigation flag after navigation completes
+    Future.delayed(const Duration(milliseconds: 500), () {
+      _isNavigating = false;
+    });
   }
 }
 
-/// Empty state view widget for displaying no topics found message.
-class EmptyStateView extends StatelessWidget {
-  final bool hasFilters;
-  final VoidCallback onClearFilters;
-
-  const EmptyStateView({
-    super.key,
-    required this.hasFilters,
-    required this.onClearFilters,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.search_off,
-                size: 64, color: AppTheme.onSurfaceVariant),
-            const SizedBox(height: 16),
-            Text(
-              context.tr(TranslationKeys.studyTopicsNoTopicsFound),
-              style: GoogleFonts.inter(
-                fontSize: 20,
-                fontWeight: FontWeight.w600,
-                color: Theme.of(context).colorScheme.onBackground,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              hasFilters
-                  ? context.tr(TranslationKeys.studyTopicsAdjustFilters)
-                  : context.tr(TranslationKeys.studyTopicsNoTopicsAvailable),
-              style: GoogleFonts.inter(
-                  fontSize: 16, color: AppTheme.onSurfaceVariant),
-              textAlign: TextAlign.center,
-            ),
-            if (hasFilters) ..._buildClearFiltersButton(context),
-          ],
-        ),
-      ),
-    );
-  }
-
-  List<Widget> _buildClearFiltersButton(BuildContext context) {
-    return [
-      const SizedBox(height: 24),
-      ElevatedButton.icon(
-        onPressed: onClearFilters,
-        icon: const Icon(Icons.clear_all),
-        label: Text(context.tr(TranslationKeys.studyTopicsClearFilters),
-            style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
-        style: ElevatedButton.styleFrom(
-          backgroundColor: AppTheme.primaryColor,
-          foregroundColor: Colors.white,
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        ),
-      ),
-    ];
-  }
-}
-
-/// Topics loaded view widget for displaying the main content with filters and topics grid.
-class TopicsLoadedView extends StatelessWidget {
-  final List<RecommendedGuideTopic> topics;
-  final List<String> categories;
-  final bool isFiltering;
-  final bool isLoadingMore;
-  final bool hasMore;
-  final Function(RecommendedGuideTopic) onTopicTap;
-  final Function(List<String>) onFilterCategories;
-  final VoidCallback onLoadMore;
-
-  const TopicsLoadedView({
-    super.key,
-    required this.topics,
-    required this.categories,
-    required this.isFiltering,
-    required this.isLoadingMore,
-    required this.hasMore,
-    required this.onTopicTap,
-    required this.onFilterCategories,
-    required this.onLoadMore,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        BlocBuilder<StudyTopicsBloc, StudyTopicsState>(
-          buildWhen: (previous, current) => _shouldRebuildFilters(current),
-          builder: (context, state) => _buildCategoryFilters(state),
-        ),
-        Expanded(
-          child: Stack(
-            children: [
-              _buildTopicsList(context),
-              if (isFiltering) _buildFilteringOverlay(),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  bool _shouldRebuildFilters(StudyTopicsState current) {
-    return current is StudyTopicsLoaded ||
-        current is StudyTopicsEmpty ||
-        current is StudyTopicsFiltering;
-  }
-
-  Widget _buildCategoryFilters(StudyTopicsState state) {
-    final selectedCategories = _getSelectedCategories(state);
-    return CategoryFilterChips(
-      categories: categories,
-      selectedCategories: selectedCategories,
-      isLoading: state is StudyTopicsLoading,
-      onCategoriesChanged: onFilterCategories,
-    );
-  }
-
-  List<String> _getSelectedCategories(StudyTopicsState state) {
-    if (state is StudyTopicsLoaded) {
-      return state.currentFilter.selectedCategories;
-    }
-    if (state is StudyTopicsEmpty) {
-      return state.currentFilter.selectedCategories;
-    }
-    if (state is StudyTopicsFiltering) {
-      return state.currentFilter.selectedCategories;
-    }
-    return [];
-  }
-
-  Widget _buildTopicsList(BuildContext context) {
-    return ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
-        Text(
-          context.tr(TranslationKeys.studyTopicsTopicsFound,
-              {'count': topics.length.toString()}),
-          style: GoogleFonts.inter(
-            fontSize: 16,
-            color: Theme.of(context).colorScheme.onBackground,
-          ),
-        ),
-        const SizedBox(height: 16),
-        TopicsGridView(
-          topics: topics,
-          onTopicTap: onTopicTap,
-          isLoading: isLoadingMore,
-          hasMore: hasMore,
-          onLoadMore: hasMore ? onLoadMore : null,
-        ),
-        const SizedBox(height: 24),
-      ],
-    );
-  }
-
-  Widget _buildFilteringOverlay() {
-    return Container(
-      color: Colors.black.withOpacity(0.1),
-      child: const Center(
-        child: CircularProgressIndicator(
-          valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primaryColor),
-        ),
-      ),
-    );
-  }
-}
-
-/// App bar widget for the Study Topics screen with search functionality.
+/// App bar widget for the Study Topics screen.
 class StudyTopicsAppBar extends StatelessWidget implements PreferredSizeWidget {
-  final bool isSearchExpanded;
-  final VoidCallback onToggleSearch;
-  final Widget Function() onBuildSearchField;
-  final VoidCallback onNavigateBack;
-
-  const StudyTopicsAppBar({
-    super.key,
-    required this.isSearchExpanded,
-    required this.onToggleSearch,
-    required this.onBuildSearchField,
-    required this.onNavigateBack,
-  });
+  const StudyTopicsAppBar({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -716,29 +358,15 @@ class StudyTopicsAppBar extends StatelessWidget implements PreferredSizeWidget {
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         elevation: 0,
         scrolledUnderElevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios),
-          color: Theme.of(context).colorScheme.onBackground,
-          onPressed: onNavigateBack,
-        ),
-        title: isSearchExpanded
-            ? onBuildSearchField()
-            : Text(
-                context.tr(TranslationKeys.studyTopicsTitle),
-                style: GoogleFonts.inter(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w600,
-                  color: Theme.of(context).colorScheme.onBackground,
-                ),
-              ),
-        actions: [
-          IconButton(
-            icon: Icon(isSearchExpanded ? Icons.close : Icons.search),
-            color: Theme.of(context).colorScheme.onBackground,
-            onPressed: onToggleSearch,
+        automaticallyImplyLeading: false,
+        title: Text(
+          context.tr(TranslationKeys.studyTopicsTitle),
+          style: AppFonts.inter(
+            fontSize: 20,
+            fontWeight: FontWeight.w600,
+            color: Theme.of(context).colorScheme.onSurface,
           ),
-          const SizedBox(width: 8),
-        ],
+        ),
       ),
     );
   }

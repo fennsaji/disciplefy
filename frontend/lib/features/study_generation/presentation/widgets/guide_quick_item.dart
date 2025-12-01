@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import '../../../../core/constants/app_fonts.dart';
 
 import '../../../../core/theme/app_theme.dart';
 import '../../../saved_guides/domain/entities/saved_guide_entity.dart';
@@ -83,7 +83,7 @@ class GuideQuickItem extends StatelessWidget {
                       // Title
                       Text(
                         guide.displayTitle,
-                        style: GoogleFonts.inter(
+                        style: AppFonts.inter(
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
                           color: Theme.of(context).colorScheme.onBackground,
@@ -109,7 +109,7 @@ class GuideQuickItem extends StatelessWidget {
                           Expanded(
                             child: Text(
                               _getTimeAgo(context, guide.lastAccessedAt),
-                              style: GoogleFonts.inter(
+                              style: AppFonts.inter(
                                 fontSize: 12,
                                 color: Theme.of(context)
                                     .colorScheme

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:google_fonts/google_fonts.dart';
+import '../../../../core/constants/app_fonts.dart';
 
 import '../../../../core/theme/app_theme.dart';
 import '../../../auth/presentation/bloc/auth_bloc.dart';
@@ -68,7 +68,7 @@ class _UserProfileTile extends StatelessWidget {
             authState.user.userMetadata?['display_name']?.toString() ??
                 authState.user.email?.split('@')[0] ??
                 'User',
-            style: GoogleFonts.inter(
+            style: AppFonts.inter(
               fontSize: 18,
               fontWeight: FontWeight.w600,
               color: AppTheme.textPrimary,
@@ -77,7 +77,7 @@ class _UserProfileTile extends StatelessWidget {
           const SizedBox(height: 4),
           Text(
             authState.user.email ?? 'No email',
-            style: GoogleFonts.inter(
+            style: AppFonts.inter(
               fontSize: 14,
               color: AppTheme.onSurfaceVariant,
             ),
@@ -127,7 +127,7 @@ class _GuestProfileTile extends StatelessWidget {
         children: [
           Text(
             'Guest User',
-            style: GoogleFonts.inter(
+            style: AppFonts.inter(
               fontSize: 18,
               fontWeight: FontWeight.w600,
               color: AppTheme.textPrimary,
@@ -136,7 +136,7 @@ class _GuestProfileTile extends StatelessWidget {
           const SizedBox(height: 4),
           Text(
             'Sign in to sync your data',
-            style: GoogleFonts.inter(
+            style: AppFonts.inter(
               fontSize: 14,
               color: AppTheme.onSurfaceVariant,
             ),
@@ -174,7 +174,7 @@ class _UserStatusChip extends StatelessWidget {
           const SizedBox(width: 4),
           Text(
             chipData.label,
-            style: GoogleFonts.inter(
+            style: AppFonts.inter(
               fontSize: 12,
               fontWeight: FontWeight.w500,
               color: chipData.textColor,

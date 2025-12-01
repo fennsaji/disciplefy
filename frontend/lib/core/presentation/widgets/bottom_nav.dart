@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' as flutter_services;
-import 'package:google_fonts/google_fonts.dart';
+import '../../constants/app_fonts.dart';
 
 /// Navigation tab data model for bottom navigation
 class NavTab {
@@ -54,6 +54,13 @@ class DisciplefyBottomNav extends StatelessWidget {
       label: 'Generate',
       semanticLabel:
           'Navigate to Study Generation screen. Create new Bible study guides.',
+    ),
+    NavTab(
+      icon: Icons.menu_book_outlined,
+      activeIcon: Icons.menu_book,
+      label: 'Topics',
+      semanticLabel:
+          'Navigate to Study Topics screen. Browse learning paths and continue your studies.',
     ),
   ];
 
@@ -172,7 +179,7 @@ class _BottomNavItem extends StatelessWidget {
                 // Label with custom styling
                 Text(
                   tab.label,
-                  style: GoogleFonts.inter(
+                  style: AppFonts.inter(
                     fontSize: 10,
                     fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
                     color: isSelected ? activeColor : inactiveColor,
