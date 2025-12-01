@@ -35,6 +35,12 @@ class PersonalizationComplete extends PersonalizationState {
   List<Object?> get props => [personalization];
 }
 
+/// Personalization skipped due to error (graceful degradation)
+/// This state allows the app to continue without blocking the user
+class PersonalizationSkipped extends PersonalizationState {
+  const PersonalizationSkipped();
+}
+
 /// User is filling out the questionnaire
 class QuestionnaireInProgress extends PersonalizationState {
   final int currentQuestion; // 0, 1, or 2

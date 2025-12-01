@@ -62,7 +62,11 @@ async function handleTopicsForYou(
     throw new AppError('UNAUTHORIZED', 'Authentication required', 401);
   }
 
-  const userId = userContext.userId!;
+  // Validate userId is present (defensive check)
+  const userId = userContext.userId;
+  if (!userId) {
+    throw new AppError('UNAUTHORIZED', 'User ID not found', 401);
+  }
 
   // Parse request body (can be empty for GET-like behavior)
   let body: TopicsForYouRequest = {};
@@ -79,9 +83,16 @@ async function handleTopicsForYou(
   const limit = Math.min(Math.max(body.limit || 4, 1), 10); // 1-10 topics
   const includeProgress = body.include_progress !== false; // Default to true
 
-  // Get personalized topics with learning path integration
-  const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-  const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+  // Validate required environment variables
+  const supabaseUrl = Deno.env.get('SUPABASE_URL');
+  const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+
+  if (!supabaseUrl) {
+    throw new AppError('CONFIG_ERROR', 'Missing SUPABASE_URL environment variable', 500);
+  }
+  if (!supabaseServiceKey) {
+    throw new AppError('CONFIG_ERROR', 'Missing SUPABASE_SERVICE_ROLE_KEY environment variable', 500);
+  }
 
   const result = await selectTopicsForYouWithLearningPath(supabaseUrl, supabaseServiceKey, userId, limit);
 

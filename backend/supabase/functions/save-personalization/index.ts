@@ -204,8 +204,19 @@ async function handleSavePersonalization(
     throw new AppError('UNAUTHORIZED', 'Authentication required', 401);
   }
 
-  const userId = userContext.userId!;
-  const body: PersonalizationRequest = await req.json();
+  // Validate userId is present (defensive check)
+  const userId = userContext.userId;
+  if (!userId) {
+    throw new AppError('UNAUTHORIZED', 'User ID not found', 401);
+  }
+
+  // Parse request body with error handling for malformed JSON
+  let body: PersonalizationRequest;
+  try {
+    body = await req.json();
+  } catch {
+    throw new AppError('VALIDATION_ERROR', 'Invalid JSON in request body', 400);
+  }
 
   if (!body.action) {
     throw new AppError('VALIDATION_ERROR', 'Action is required', 400);

@@ -390,7 +390,8 @@ class RecommendedGuidesService {
             print(
                 '✅ [FOR YOU] Returning in-memory cached topics for ${language ?? 'en'} (cached ${cacheAge.inMinutes} minutes ago)');
           }
-          // For cached results, we assume questionnaire was completed
+          // INVARIANT: We only cache results when hasCompletedQuestionnaire was true
+          // (see caching logic at lines 464-480), so returning true here is safe.
           return Right(ForYouTopicsResult(
             topics: cacheEntry.data,
             hasCompletedQuestionnaire: true,
@@ -414,6 +415,8 @@ class RecommendedGuidesService {
             print(
                 '✅ [FOR YOU] Returning persistent cached topics for ${language ?? 'en'} (${topics.length} topics)');
           }
+          // INVARIANT: We only cache results when hasCompletedQuestionnaire was true
+          // (see caching logic at lines 464-480), so returning true here is safe.
           return Right(ForYouTopicsResult(
             topics: topics,
             hasCompletedQuestionnaire: true,

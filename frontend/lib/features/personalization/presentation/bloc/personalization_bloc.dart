@@ -43,8 +43,9 @@ class PersonalizationBloc
     } catch (e) {
       Logger.error('Failed to load personalization',
           tag: 'PERSONALIZATION', error: e);
-      // On error, assume questionnaire not needed (graceful degradation)
-      emit(const PersonalizationNeedsQuestionnaire());
+      // On error, skip personalization prompt (graceful degradation)
+      // This allows the app to continue without blocking the user
+      emit(const PersonalizationSkipped());
     }
   }
 
