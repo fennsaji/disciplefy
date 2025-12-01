@@ -619,6 +619,8 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
   /// Navigate to the personalization questionnaire
   void _navigateToQuestionnaire() {
     context.push('/personalization-questionnaire').then((_) {
+      // Ensure widget is still mounted before dispatching events
+      if (!mounted) return;
       // Clear LearningPaths repository cache so Study Topics screen gets fresh data
       sl<LearningPathsRepository>().clearCache();
       // Refresh all personalization-dependent data after questionnaire completion
