@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import '../../../../core/constants/app_fonts.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/localization/app_localizations.dart';
 
@@ -358,7 +358,7 @@ class _EngagingLoadingScreenState extends State<EngagingLoadingScreen>
           Flexible(
             child: Text(
               widget.topic!,
-              style: GoogleFonts.inter(
+              style: AppFonts.inter(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
                 color: isDarkMode ? Colors.white : AppTheme.primaryColor,
@@ -420,7 +420,7 @@ class _EngagingLoadingScreenState extends State<EngagingLoadingScreen>
           child: Text(
             stages[_currentStage],
             key: ValueKey<int>(_currentStage),
-            style: GoogleFonts.inter(
+            style: AppFonts.inter(
               fontSize: 18,
               fontWeight: FontWeight.w500,
               color: Theme.of(context).colorScheme.onSurface,
@@ -491,7 +491,7 @@ class _EngagingLoadingScreenState extends State<EngagingLoadingScreen>
             // Historical fact text
             Text(
               currentFact,
-              style: GoogleFonts.inter(
+              style: AppFonts.inter(
                 fontSize: 16,
                 fontWeight: FontWeight.w400,
                 color: isDarkMode
@@ -523,7 +523,7 @@ class _EngagingLoadingScreenState extends State<EngagingLoadingScreen>
         const SizedBox(width: 8),
         Text(
           l10n.loadingTimeEstimate,
-          style: GoogleFonts.inter(
+          style: AppFonts.inter(
             fontSize: 13,
             color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
           ),

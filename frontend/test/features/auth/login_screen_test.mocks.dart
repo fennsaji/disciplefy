@@ -689,6 +689,15 @@ class MockTranslationService extends _i1.Mock
       ) as String);
 
   @override
+  List<String> getTranslationList(String? key) => (super.noSuchMethod(
+        Invocation.method(
+          #getTranslationList,
+          [key],
+        ),
+        returnValue: <String>[],
+      ) as List<String>);
+
+  @override
   void dispose() => super.noSuchMethod(
         Invocation.method(
           #dispose,

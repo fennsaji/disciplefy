@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:google_fonts/google_fonts.dart';
+import '../../../../core/constants/app_fonts.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/di/injection_container.dart';
 import '../../../../core/services/theme_service.dart';
@@ -18,6 +18,9 @@ import '../bloc/settings_event.dart';
 import '../bloc/settings_state.dart';
 import '../../../../core/extensions/translation_extension.dart';
 import '../../../../core/i18n/translation_keys.dart';
+import '../../../home/presentation/bloc/home_bloc.dart';
+import '../../../home/presentation/bloc/home_event.dart';
+import '../../../study_topics/domain/repositories/learning_paths_repository.dart';
 
 /// Settings Screen with proper AuthBloc integration
 /// Handles both authenticated and anonymous users
@@ -75,7 +78,7 @@ class _SettingsScreenContent extends StatelessWidget {
             ),
             title: Text(
               context.tr(TranslationKeys.settingsTitle),
-              style: GoogleFonts.inter(
+              style: AppFonts.inter(
                 fontSize: 20,
                 fontWeight: FontWeight.w700,
                 color: Theme.of(context).colorScheme.onBackground,
@@ -131,6 +134,9 @@ class _SettingsScreenContent extends StatelessWidget {
                         _buildNotificationSection(context, state),
                         const SizedBox(height: 24),
 
+                        // Personalization Section (only for authenticated non-anonymous users)
+                        _buildPersonalizationSection(context),
+
                         // Account Section
                         _buildAccountSection(context),
                         const SizedBox(height: 24),
@@ -146,7 +152,7 @@ class _SettingsScreenContent extends StatelessWidget {
                 return Center(
                   child: Text(
                     context.tr(TranslationKeys.settingsFailedToLoad),
-                    style: GoogleFonts.inter(
+                    style: AppFonts.inter(
                       fontSize: 16,
                       color: Theme.of(context).colorScheme.error,
                     ),
@@ -275,7 +281,7 @@ class _SettingsScreenContent extends StatelessWidget {
                 children: [
                   Text(
                     authProvider.profileBasedDisplayName,
-                    style: GoogleFonts.inter(
+                    style: AppFonts.inter(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
                       color: Theme.of(context).colorScheme.onBackground,
@@ -287,7 +293,7 @@ class _SettingsScreenContent extends StatelessWidget {
                         ? context.tr(TranslationKeys.settingsSignInToSync)
                         : authProvider.userEmail ??
                             context.tr(TranslationKeys.settingsNoEmail),
-                    style: GoogleFonts.inter(
+                    style: AppFonts.inter(
                       fontSize: 14,
                       color: Theme.of(context)
                           .colorScheme
@@ -305,7 +311,7 @@ class _SettingsScreenContent extends StatelessWidget {
                 onPressed: () => context.go('/login'),
                 child: Text(
                   context.tr(TranslationKeys.settingsSignIn),
-                  style: GoogleFonts.inter(
+                  style: AppFonts.inter(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
                     color: Theme.of(context).colorScheme.primary,
@@ -374,6 +380,59 @@ class _SettingsScreenContent extends StatelessWidget {
           ),
         ],
       );
+
+  /// Personalization Section - allows users to retake the questionnaire
+  Widget _buildPersonalizationSection(BuildContext context) =>
+      ListenableBuilder(
+        listenable: sl<AuthStateProvider>(),
+        builder: (context, _) {
+          final authProvider = sl<AuthStateProvider>();
+
+          // Only show for authenticated non-anonymous users
+          if (!authProvider.isAuthenticated || authProvider.isAnonymous) {
+            return const SizedBox.shrink();
+          }
+
+          return Column(
+            children: [
+              _buildSection(
+                title: context.tr(TranslationKeys.settingsPersonalization),
+                children: [
+                  _buildSettingsTile(
+                    context: context,
+                    icon: Icons.auto_awesome,
+                    title:
+                        context.tr(TranslationKeys.settingsRetakeQuestionnaire),
+                    subtitle: context.tr(
+                        TranslationKeys.settingsRetakeQuestionnaireSubtitle),
+                    trailing: Icon(
+                      Icons.arrow_forward_ios,
+                      size: 16,
+                      color: Theme.of(context)
+                          .colorScheme
+                          .onSurface
+                          .withOpacity(0.6),
+                    ),
+                    onTap: () => _navigateToQuestionnaire(context),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
+            ],
+          );
+        },
+      );
+
+  /// Navigate to the personalization questionnaire
+  void _navigateToQuestionnaire(BuildContext context) {
+    context.push('/personalization-questionnaire').then((_) {
+      // Clear LearningPaths repository cache so Study Topics screen gets fresh data
+      sl<LearningPathsRepository>().clearCache();
+      // Refresh all personalization-dependent data after questionnaire completion
+      sl<HomeBloc>().add(const LoadForYouTopics(forceRefresh: true));
+      sl<HomeBloc>().add(const LoadActiveLearningPath(forceRefresh: true));
+    });
+  }
 
   /// Account Section with AuthStateProvider integration
   Widget _buildAccountSection(BuildContext context) => ListenableBuilder(
@@ -521,7 +580,7 @@ class _SettingsScreenContent extends StatelessWidget {
 
             Text(
               'Account Settings',
-              style: GoogleFonts.poppins(
+              style: AppFonts.poppins(
                 fontSize: 24,
                 fontWeight: FontWeight.bold,
                 color: Theme.of(context).colorScheme.primary,
@@ -591,7 +650,7 @@ class _SettingsScreenContent extends StatelessWidget {
                     children: [
                       Text(
                         title,
-                        style: GoogleFonts.inter(
+                        style: AppFonts.inter(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
                           color: AppTheme.textPrimary,
@@ -599,7 +658,7 @@ class _SettingsScreenContent extends StatelessWidget {
                       ),
                       Text(
                         subtitle,
-                        style: GoogleFonts.inter(
+                        style: AppFonts.inter(
                           fontSize: 14,
                           color: AppTheme.onSurfaceVariant,
                         ),
@@ -632,7 +691,7 @@ class _SettingsScreenContent extends StatelessWidget {
           isAnonymous
               ? context.tr(TranslationKeys.settingsClearSession)
               : context.tr(TranslationKeys.settingsSignOutTitle),
-          style: GoogleFonts.poppins(
+          style: AppFonts.poppins(
             fontSize: 20,
             fontWeight: FontWeight.bold,
             color: Theme.of(context).colorScheme.onSurface,
@@ -642,7 +701,7 @@ class _SettingsScreenContent extends StatelessWidget {
           isAnonymous
               ? context.tr(TranslationKeys.settingsClearSessionMessage)
               : context.tr(TranslationKeys.settingsSignOutMessage),
-          style: GoogleFonts.inter(
+          style: AppFonts.inter(
             fontSize: 16,
             color: Theme.of(context).colorScheme.onSurface,
             height: 1.5,
@@ -662,7 +721,7 @@ class _SettingsScreenContent extends StatelessWidget {
             ),
             child: Text(
               context.tr(TranslationKeys.commonCancel),
-              style: GoogleFonts.inter(
+              style: AppFonts.inter(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
                 color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
@@ -688,7 +747,7 @@ class _SettingsScreenContent extends StatelessWidget {
               isAnonymous
                   ? context.tr(TranslationKeys.settingsClear)
                   : context.tr(TranslationKeys.settingsSignOut),
-              style: GoogleFonts.inter(
+              style: AppFonts.inter(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
               ),
@@ -715,7 +774,7 @@ class _SettingsScreenContent extends StatelessWidget {
                 padding: const EdgeInsets.only(left: 4, bottom: 12),
                 child: Text(
                   title,
-                  style: GoogleFonts.inter(
+                  style: AppFonts.inter(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
                     color: AppTheme.primaryColor,
@@ -805,7 +864,7 @@ class _SettingsScreenContent extends StatelessWidget {
                   children: [
                     Text(
                       title,
-                      style: GoogleFonts.inter(
+                      style: AppFonts.inter(
                         fontSize: 15,
                         fontWeight: FontWeight.w600,
                         color: Theme.of(context).colorScheme.onBackground,
@@ -815,7 +874,7 @@ class _SettingsScreenContent extends StatelessWidget {
                     const SizedBox(height: 2),
                     Text(
                       subtitle,
-                      style: GoogleFonts.inter(
+                      style: AppFonts.inter(
                         fontSize: 13,
                         color: Theme.of(context)
                             .colorScheme
@@ -911,7 +970,7 @@ class _SettingsScreenContent extends StatelessWidget {
             const SizedBox(height: 24),
             Text(
               context.tr(TranslationKeys.settingsSelectTheme),
-              style: GoogleFonts.inter(
+              style: AppFonts.inter(
                 fontSize: 20,
                 fontWeight: FontWeight.w700,
                 color: Theme.of(builderContext).colorScheme.onBackground,
@@ -984,7 +1043,7 @@ class _SettingsScreenContent extends StatelessWidget {
             const SizedBox(height: 24),
             Text(
               context.tr(TranslationKeys.settingsSelectLanguage),
-              style: GoogleFonts.inter(
+              style: AppFonts.inter(
                 fontSize: 20,
                 fontWeight: FontWeight.w700,
                 color: Theme.of(builderContext).colorScheme.onBackground,
@@ -1078,7 +1137,7 @@ class _SettingsScreenContent extends StatelessWidget {
                   children: [
                     Text(
                       title,
-                      style: GoogleFonts.inter(
+                      style: AppFonts.inter(
                         fontSize: 15,
                         fontWeight:
                             isSelected ? FontWeight.w600 : FontWeight.w500,
@@ -1090,7 +1149,7 @@ class _SettingsScreenContent extends StatelessWidget {
                     const SizedBox(height: 2),
                     Text(
                       subtitle,
-                      style: GoogleFonts.inter(
+                      style: AppFonts.inter(
                         fontSize: 13,
                         color: Theme.of(context)
                             .colorScheme
@@ -1182,7 +1241,7 @@ class _SettingsScreenContent extends StatelessWidget {
               Expanded(
                 child: Text(
                   label,
-                  style: GoogleFonts.inter(
+                  style: AppFonts.inter(
                     fontSize: 15,
                     fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
                     color: isSelected
@@ -1250,7 +1309,7 @@ class _SettingsScreenContent extends StatelessWidget {
             const SizedBox(height: 24),
             Text(
               context.tr(TranslationKeys.settingsSupportTitle),
-              style: GoogleFonts.inter(
+              style: AppFonts.inter(
                 fontSize: 20,
                 fontWeight: FontWeight.w700,
                 color: Theme.of(context).colorScheme.onBackground,
@@ -1259,7 +1318,7 @@ class _SettingsScreenContent extends StatelessWidget {
             const SizedBox(height: 16),
             Text(
               context.tr(TranslationKeys.settingsSupportMessage),
-              style: GoogleFonts.inter(
+              style: AppFonts.inter(
                 fontSize: 15,
                 color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
                 height: 1.5,
@@ -1281,7 +1340,7 @@ class _SettingsScreenContent extends StatelessWidget {
                     ),
                     child: Text(
                       context.tr(TranslationKeys.settingsClose),
-                      style: GoogleFonts.inter(
+                      style: AppFonts.inter(
                         fontWeight: FontWeight.w600,
                         color: AppTheme.primaryColor,
                       ),
@@ -1318,7 +1377,7 @@ class _SettingsScreenContent extends StatelessWidget {
                       ),
                       child: Text(
                         context.tr(TranslationKeys.settingsSupport),
-                        style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+                        style: AppFonts.inter(fontWeight: FontWeight.w600),
                       ),
                     ),
                   ),
@@ -1343,7 +1402,7 @@ class _SettingsScreenContent extends StatelessWidget {
       SnackBar(
         content: Text(
           message,
-          style: GoogleFonts.inter(
+          style: AppFonts.inter(
             fontWeight: FontWeight.w500,
             color: Colors.white,
           ),

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import '../../../../core/constants/app_fonts.dart';
 import '../../../../core/theme/app_theme.dart';
 
 class EmptyStateWidget extends StatelessWidget {
@@ -39,7 +39,7 @@ class EmptyStateWidget extends StatelessWidget {
               const SizedBox(height: 24),
               Text(
                 title,
-                style: GoogleFonts.poppins(
+                style: AppFonts.poppins(
                   fontSize: 24,
                   fontWeight: FontWeight.w600,
                   color: Theme.of(context).colorScheme.onBackground,
@@ -49,7 +49,7 @@ class EmptyStateWidget extends StatelessWidget {
               const SizedBox(height: 12),
               Text(
                 subtitle,
-                style: GoogleFonts.inter(
+                style: AppFonts.inter(
                   fontSize: 16,
                   color:
                       Theme.of(context).colorScheme.onSurface.withOpacity(0.6),

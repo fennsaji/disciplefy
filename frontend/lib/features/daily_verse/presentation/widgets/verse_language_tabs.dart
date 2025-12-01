@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import '../../../../core/constants/app_fonts.dart';
 
 import '../../../../core/theme/ui_constants.dart';
 
@@ -98,7 +98,7 @@ class VerseLanguageTabs extends StatelessWidget {
           child: Text(
             label,
             textAlign: TextAlign.center,
-            style: GoogleFonts.inter(
+            style: AppFonts.inter(
               fontSize: UIConstants.fontSizeSm,
               fontWeight: isSelected
                   ? UIConstants.fontWeightSemiBold

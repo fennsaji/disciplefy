@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:google_fonts/google_fonts.dart';
+import '../../../../core/constants/app_fonts.dart';
 
 import '../../../../core/theme/ui_constants.dart';
 import '../../domain/entities/daily_verse_entity.dart';
@@ -82,7 +82,7 @@ class VerseActionButtons extends StatelessWidget {
                 const SizedBox(height: UIConstants.spacingXs),
                 Text(
                   label,
-                  style: GoogleFonts.inter(
+                  style: AppFonts.inter(
                     fontSize: UIConstants.fontSizeSm,
                     fontWeight: UIConstants.fontWeightMedium,
                     color: theme.colorScheme.primary,

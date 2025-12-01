@@ -65,7 +65,7 @@ show_usage() {
     echo ""
     echo "Options:"
     echo "  --reset     Reset database on startup (WARNING: destroys all data)"
-    echo "  --restart   Restart Supabase services (stop and start again)"
+    echo "  --restart   Restart Supabase services and apply pending migrations"
     echo "  --help      Show this usage information"
     echo ""
     echo "Parameters:"
@@ -73,8 +73,8 @@ show_usage() {
     echo ""
     echo "Examples:"
     echo "  $0                    # Start with .env.local, preserve database, skip restart"
-    echo "  $0 .env.dev           # Start with .env.dev, preserve database, skip restart"  
-    echo "  $0 --restart          # Restart services with .env.local, preserve database"
+    echo "  $0 .env.dev           # Start with .env.dev, preserve database, skip restart"
+    echo "  $0 --restart          # Restart services, apply migrations, preserve database"
     echo "  $0 --reset            # Start with .env.local, reset database"
     echo "  $0 --reset .env.dev   # Start with .env.dev, reset database"
     echo "  $0 --restart --reset  # Restart services and reset database"
@@ -82,6 +82,9 @@ show_usage() {
     echo -e "${YELLOW}⚠️  Database Preservation:${NC}"
     echo "  By default, your database is preserved between runs."
     echo "  Only use --reset when you need a clean database state."
+    echo ""
+    echo -e "${BLUE}📦 Migrations:${NC}"
+    echo "  Use --restart to apply any pending migrations without losing data."
 }
 
 # Parse command line arguments
@@ -138,7 +141,7 @@ else
     echo -e "${GREEN}💾 Database mode: PRESERVE (existing data will be kept)${NC}"
 fi
 if [ "$RESTART_SERVICES" = true ]; then
-    echo -e "${BLUE}🔄 Service mode: RESTART (will stop and start services)${NC}"
+    echo -e "${BLUE}🔄 Service mode: RESTART (will stop, start, and apply migrations)${NC}"
 elif [ "$RESET_DB" = true ]; then
     echo -e "${YELLOW}🔄 Service mode: RESTART (required for database reset)${NC}"
 else
@@ -207,14 +210,14 @@ fi
 if [ "$RESET_DB" = true ]; then
     echo -e "${YELLOW}🚀 Starting Supabase services with database reset...${NC}"
     echo -e "${RED}⚠️  WARNING: This will destroy all existing data!${NC}"
-    
+
     # Start services first (required for db reset)
     if ! supabase start; then
         echo -e "${RED}❌ Failed to start Supabase services${NC}"
         echo "Please check the error messages above"
         exit 1
     fi
-    
+
     # Then reset database
     if ! supabase db reset; then
         echo -e "${RED}❌ Failed to reset Supabase database${NC}"
@@ -224,11 +227,21 @@ if [ "$RESET_DB" = true ]; then
 else
     echo -e "${BLUE}🚀 Starting Supabase services (preserving existing database)...${NC}"
     echo -e "${GREEN}✓ Your database data will be preserved${NC}"
-    
+
     if ! supabase start; then
         echo -e "${RED}❌ Failed to start Supabase services${NC}"
         echo "Please check the error messages above"
         exit 1
+    fi
+
+    # Apply pending migrations when restart is requested (without destroying data)
+    if [ "$RESTART_SERVICES" = true ]; then
+        echo -e "${BLUE}📦 Applying pending database migrations...${NC}"
+        if supabase migration up; then
+            echo -e "${GREEN}✅ Migrations applied successfully${NC}"
+        else
+            echo -e "${YELLOW}⚠️  Migration command completed (check output above for details)${NC}"
+        fi
     fi
 fi
 
@@ -272,8 +285,11 @@ else
 fi
 if [ "$RESTART_SERVICES" = true ] || [ "$RESET_DB" = true ]; then
     echo -e "  • ${BLUE}Services were restarted for clean state${NC}"
+    if [ "$RESTART_SERVICES" = true ] && [ "$RESET_DB" != true ]; then
+        echo -e "  • ${GREEN}Pending migrations were applied${NC}"
+    fi
 else
-    echo -e "  • ${GREEN}Services were started quickly (use --restart to force restart)${NC}"
+    echo -e "  • ${GREEN}Services were started quickly (use --restart to apply migrations)${NC}"
 fi
 echo -e ""
 

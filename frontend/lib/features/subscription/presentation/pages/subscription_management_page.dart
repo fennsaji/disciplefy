@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:google_fonts/google_fonts.dart';
+import '../../../../core/constants/app_fonts.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../core/theme/app_theme.dart';
@@ -39,7 +39,7 @@ class _SubscriptionManagementPageState
       appBar: AppBar(
         title: Text(
           'My Subscription',
-          style: GoogleFonts.poppins(
+          style: AppFonts.poppins(
             fontWeight: FontWeight.w600,
             color: AppTheme.primaryColor,
           ),
@@ -123,7 +123,7 @@ class _SubscriptionManagementPageState
             const SizedBox(height: 24),
             Text(
               'No Active Subscription',
-              style: GoogleFonts.poppins(
+              style: AppFonts.poppins(
                 fontSize: 24,
                 fontWeight: FontWeight.bold,
                 color: Theme.of(context).colorScheme.onBackground,
@@ -132,7 +132,7 @@ class _SubscriptionManagementPageState
             const SizedBox(height: 12),
             Text(
               'Upgrade to Premium for unlimited access',
-              style: GoogleFonts.inter(
+              style: AppFonts.inter(
                 fontSize: 14,
                 color:
                     Theme.of(context).colorScheme.onBackground.withOpacity(0.7),
@@ -155,7 +155,7 @@ class _SubscriptionManagementPageState
               ),
               child: Text(
                 'Upgrade to Premium',
-                style: GoogleFonts.inter(
+                style: AppFonts.inter(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
                 ),
@@ -249,7 +249,7 @@ class _SubscriptionManagementPageState
                     children: [
                       Text(
                         subscription.status.displayName,
-                        style: GoogleFonts.poppins(
+                        style: AppFonts.poppins(
                           fontSize: 22,
                           fontWeight: FontWeight.bold,
                           color: Theme.of(context).colorScheme.onBackground,
@@ -258,7 +258,7 @@ class _SubscriptionManagementPageState
                       const SizedBox(height: 4),
                       Text(
                         subscription.status.description,
-                        style: GoogleFonts.inter(
+                        style: AppFonts.inter(
                           fontSize: 13,
                           color: Theme.of(context)
                               .colorScheme
@@ -293,7 +293,7 @@ class _SubscriptionManagementPageState
                     Expanded(
                       child: Text(
                         'Your subscription ends in ${subscription.daysRemainingInPeriod} days',
-                        style: GoogleFonts.inter(
+                        style: AppFonts.inter(
                           fontSize: 13,
                           color: Theme.of(context).colorScheme.onBackground,
                         ),
@@ -324,7 +324,7 @@ class _SubscriptionManagementPageState
           children: [
             Text(
               'Billing Information',
-              style: GoogleFonts.poppins(
+              style: AppFonts.poppins(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
                 color: AppTheme.primaryColor,
@@ -377,7 +377,7 @@ class _SubscriptionManagementPageState
           children: [
             Text(
               'Plan Details',
-              style: GoogleFonts.poppins(
+              style: AppFonts.poppins(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
                 color: AppTheme.primaryColor,
@@ -436,7 +436,7 @@ class _SubscriptionManagementPageState
         Expanded(
           child: Text(
             label,
-            style: GoogleFonts.inter(
+            style: AppFonts.inter(
               fontSize: 14,
               color:
                   Theme.of(context).colorScheme.onBackground.withOpacity(0.7),
@@ -445,7 +445,7 @@ class _SubscriptionManagementPageState
         ),
         Text(
           value,
-          style: GoogleFonts.inter(
+          style: AppFonts.inter(
             fontSize: 14,
             fontWeight: FontWeight.w600,
             color: Theme.of(context).colorScheme.onBackground,
@@ -481,7 +481,7 @@ class _SubscriptionManagementPageState
             icon: const Icon(Icons.restart_alt_rounded),
             label: Text(
               'Continue Subscription',
-              style: GoogleFonts.inter(
+              style: AppFonts.inter(
                 fontSize: 15,
                 fontWeight: FontWeight.w600,
               ),
@@ -519,7 +519,7 @@ class _SubscriptionManagementPageState
           ),
           child: Text(
             'Cancel at End of Cycle',
-            style: GoogleFonts.inter(
+            style: AppFonts.inter(
               fontSize: 15,
               fontWeight: FontWeight.w600,
             ),
@@ -535,7 +535,7 @@ class _SubscriptionManagementPageState
           ),
           child: Text(
             'Cancel Immediately',
-            style: GoogleFonts.inter(
+            style: AppFonts.inter(
               fontSize: 14,
               fontWeight: FontWeight.w500,
             ),
@@ -551,7 +551,7 @@ class _SubscriptionManagementPageState
       builder: (dialogContext) => AlertDialog(
         title: Text(
           immediate ? 'Cancel Immediately?' : 'Cancel at End of Cycle?',
-          style: GoogleFonts.poppins(
+          style: AppFonts.poppins(
             fontWeight: FontWeight.w600,
             color: AppTheme.primaryColor,
           ),
@@ -560,7 +560,7 @@ class _SubscriptionManagementPageState
           immediate
               ? 'Your premium access will end immediately. You will not be refunded for the remaining days.'
               : 'Your subscription will remain active until ${subscription.currentPeriodEnd != null ? DateFormat('MMM dd, yyyy').format(subscription.currentPeriodEnd!) : 'the end of the current period'}.',
-          style: GoogleFonts.inter(fontSize: 14),
+          style: AppFonts.inter(fontSize: 14),
         ),
         actions: [
           TextButton(

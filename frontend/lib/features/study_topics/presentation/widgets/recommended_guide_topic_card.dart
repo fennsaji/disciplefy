@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import '../../../../core/constants/app_fonts.dart';
 
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/utils/category_utils.dart';
@@ -87,7 +87,7 @@ class RecommendedGuideTopicCard extends StatelessWidget {
                       ),
                       child: Text(
                         topic.category,
-                        style: GoogleFonts.inter(
+                        style: AppFonts.inter(
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
                           color: color,
@@ -104,7 +104,7 @@ class RecommendedGuideTopicCard extends StatelessWidget {
               // Title with proper constraints
               Text(
                 topic.title,
-                style: GoogleFonts.inter(
+                style: AppFonts.inter(
                   fontSize: 16, // Increased for better readability
                   fontWeight: FontWeight.w600,
                   color: Theme.of(context).colorScheme.onSurface,
@@ -120,7 +120,7 @@ class RecommendedGuideTopicCard extends StatelessWidget {
               Flexible(
                 child: Text(
                   topic.description,
-                  style: GoogleFonts.inter(
+                  style: AppFonts.inter(
                     fontSize: 14, // Increased for better readability
                     color: Theme.of(context)
                         .colorScheme
@@ -146,7 +146,7 @@ class RecommendedGuideTopicCard extends StatelessWidget {
               //     const SizedBox(width: 3),
               //     Text(
               //       '${topic.estimatedMinutes}min',
-              //       style: GoogleFonts.inter(
+              //       style: AppFonts.inter(
               //         fontSize: 10,
               //         color: AppTheme.onSurfaceVariant,
               //       ),
@@ -160,7 +160,7 @@ class RecommendedGuideTopicCard extends StatelessWidget {
               //     const SizedBox(width: 3),
               //     Text(
               //       '${topic.scriptureCount}',
-              //       style: GoogleFonts.inter(
+              //       style: AppFonts.inter(
               //         fontSize: 10,
               //         color: AppTheme.onSurfaceVariant,
               //       ),

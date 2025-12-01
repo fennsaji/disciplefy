@@ -1,15 +1,16 @@
 /**
  * Recommended Topics Edge Function
- * 
+ *
  * Refactored to use the new clean architecture with:
  * - Function factory for boilerplate elimination
  * - Singleton services for performance
  * - Clean separation of concerns
+ * - Optional progress data for authenticated users (Phase 1 Enhancement)
  */
 
-import { createSimpleFunction } from '../_shared/core/function-factory.ts'
+import { createFunction } from '../_shared/core/function-factory.ts'
 import { AppError } from '../_shared/utils/error-handler.ts'
-import { ApiSuccessResponse } from '../_shared/types/index.ts'
+import { ApiSuccessResponse, UserContext } from '../_shared/types/index.ts'
 import { ServiceContainer } from '../_shared/core/services.ts'
 
 /**
@@ -22,15 +23,36 @@ interface RecommendedGuideTopic {
   readonly key_verses: readonly string[]
   readonly category: string
   readonly tags: readonly string[]
+  readonly xp_value?: number
+}
+
+/**
+ * Progress data for a topic
+ */
+interface TopicProgressData {
+  readonly topic_id: string
+  readonly started_at: string | null
+  readonly completed_at: string | null
+  readonly time_spent_seconds: number
+  readonly xp_earned: number
+  readonly is_completed: boolean
+}
+
+/**
+ * Topic with optional progress data
+ */
+interface TopicWithProgress extends RecommendedGuideTopic {
+  readonly progress?: TopicProgressData
 }
 
 /**
  * API response structure
  */
 interface RecommendedGuideTopicsResponse extends ApiSuccessResponse<{
-  readonly topics: readonly RecommendedGuideTopic[]
+  readonly topics: readonly TopicWithProgress[]
   readonly categories: readonly string[]
   readonly total: number
+  readonly progress_included?: boolean
 }> {}
 
 /**
@@ -42,6 +64,7 @@ interface TopicsQueryParams {
   readonly language: string
   readonly limit: number
   readonly offset: number
+  readonly include_progress?: boolean
 }
 
 // Configuration constants
@@ -52,34 +75,69 @@ const MAX_LIMIT = 100 as const
 
 /**
  * Main handler for recommended topics
+ * Now supports optional progress data when include_progress=true and user is authenticated
  */
-async function handleTopicsRecommended(req: Request, services: ServiceContainer): Promise<Response> {
+async function handleTopicsRecommended(
+  req: Request,
+  services: ServiceContainer,
+  userContext?: UserContext
+): Promise<Response> {
   // Parse and validate query parameters
   const queryParams = parseQueryParameters(req.url)
 
   // Get filtered topics
   const topicsData = await getFilteredTopics(services.topicsRepository, queryParams)
 
+  // If progress is requested and user is authenticated, fetch progress data
+  let topicsWithProgress: TopicWithProgress[] = topicsData.topics.map((t) => ({ ...t }))
+  let progressIncluded = false
+
+  if (
+    queryParams.include_progress &&
+    userContext?.type === 'authenticated' &&
+    userContext.userId
+  ) {
+    const topicIds = topicsData.topics.map((t) => t.id)
+    const progressData = await getUserProgressForTopics(
+      services,
+      userContext.userId,
+      topicIds
+    )
+
+    // Merge progress data into topics
+    topicsWithProgress = topicsData.topics.map((topic) => ({
+      ...topic,
+      progress: progressData.get(topic.id),
+    }))
+    progressIncluded = true
+  }
+
   // Log analytics event
-  await services.analyticsLogger.logEvent('recommended_guide_topics_accessed', {
-    category: queryParams.category,
-    language: queryParams.language,
-    total_results: topicsData.total
-  }, req.headers.get('x-forwarded-for'))
+  await services.analyticsLogger.logEvent(
+    'recommended_guide_topics_accessed',
+    {
+      category: queryParams.category,
+      language: queryParams.language,
+      total_results: topicsData.total,
+      include_progress: progressIncluded,
+    },
+    req.headers.get('x-forwarded-for')
+  )
 
   // Build response
   const response: RecommendedGuideTopicsResponse = {
     success: true,
     data: {
-      topics: topicsData.topics,
+      topics: topicsWithProgress,
       categories: topicsData.categories,
-      total: topicsData.total
-    }
+      total: topicsData.total,
+      progress_included: progressIncluded,
+    },
   }
 
   return new Response(JSON.stringify(response), {
     status: 200,
-    headers: { 'Content-Type': 'application/json' }
+    headers: { 'Content-Type': 'application/json' },
   })
 }
 
@@ -130,12 +188,16 @@ function parseQueryParameters(url: string): TopicsQueryParams {
     )
   }
 
+  // Parse include_progress parameter
+  const includeProgress = searchParams.get('include_progress') === 'true'
+
   return {
     category: searchParams.get('category') || undefined,
     categories,
     language: searchParams.get('language') || DEFAULT_LANGUAGE,
     limit,
-    offset
+    offset,
+    include_progress: includeProgress,
   }
 }
 
@@ -168,13 +230,58 @@ async function getFilteredTopics(
   return {
     topics,
     categories,
-    total
+    total,
   }
 }
 
+/**
+ * Fetches user progress for a list of topic IDs
+ */
+async function getUserProgressForTopics(
+  services: ServiceContainer,
+  userId: string,
+  topicIds: string[]
+): Promise<Map<string, TopicProgressData>> {
+  const progressMap = new Map<string, TopicProgressData>()
+
+  if (topicIds.length === 0) {
+    return progressMap
+  }
+
+  // Use the database function to get progress data
+  const { data, error } = await services.supabaseServiceClient.rpc('get_user_topic_progress', {
+    p_user_id: userId,
+    p_topic_ids: topicIds,
+  })
+
+  if (error) {
+    console.error('[topics-recommended] Error fetching progress:', error)
+    // Don't fail the request, just return empty progress
+    return progressMap
+  }
+
+  // Map progress data by topic_id
+  if (data && Array.isArray(data)) {
+    for (const progress of data) {
+      progressMap.set(progress.topic_id, {
+        topic_id: progress.topic_id,
+        started_at: progress.started_at,
+        completed_at: progress.completed_at,
+        time_spent_seconds: progress.time_spent_seconds,
+        xp_earned: progress.xp_earned,
+        is_completed: progress.is_completed,
+      })
+    }
+  }
+
+  return progressMap
+}
+
 // Create the function with the factory
-createSimpleFunction(handleTopicsRecommended, {
+// Using createFunction to support optional user context for progress data
+createFunction(handleTopicsRecommended, {
   allowedMethods: ['GET'],
   enableAnalytics: true,
-  timeout: 15000 // 15 seconds
+  timeout: 15000, // 15 seconds
+  requireAuth: false, // Don't require auth, but allow it for progress data
 })

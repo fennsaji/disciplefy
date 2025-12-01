@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
+import '../../../../core/constants/app_fonts.dart';
 
 import '../../../../core/services/http_service.dart';
 import '../../../../core/di/injection_container.dart';
@@ -78,7 +78,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
         ),
         title: Text(
           'Setup Profile',
-          style: GoogleFonts.inter(
+          style: AppFonts.inter(
             fontSize: 18,
             fontWeight: FontWeight.w600,
             color: theme.colorScheme.onBackground,
@@ -130,7 +130,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
       children: [
         Text(
           'Tell us about yourself',
-          style: GoogleFonts.poppins(
+          style: AppFonts.poppins(
             fontSize: 28,
             fontWeight: FontWeight.w700,
             color: theme.colorScheme.onBackground,
@@ -139,7 +139,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
         const SizedBox(height: 8),
         Text(
           'Help us personalize your Bible study experience by sharing a bit about yourself.',
-          style: GoogleFonts.inter(
+          style: AppFonts.inter(
             fontSize: 16,
             color: theme.colorScheme.onSurface.withOpacity(0.7),
             height: 1.5,
@@ -219,7 +219,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
           const SizedBox(height: 12),
           Text(
             'Add Profile Photo',
-            style: GoogleFonts.inter(
+            style: AppFonts.inter(
               fontSize: 14,
               fontWeight: FontWeight.w500,
               color: theme.colorScheme.primary,
@@ -236,7 +236,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
       children: [
         Text(
           'Name',
-          style: GoogleFonts.inter(
+          style: AppFonts.inter(
             fontSize: 16,
             fontWeight: FontWeight.w600,
             color: theme.colorScheme.onSurface,
@@ -300,7 +300,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
       children: [
         Text(
           'Age Group',
-          style: GoogleFonts.inter(
+          style: AppFonts.inter(
             fontSize: 16,
             fontWeight: FontWeight.w600,
             color: theme.colorScheme.onSurface,
@@ -336,7 +336,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                 ),
                 child: Text(
                   ageGroup,
-                  style: GoogleFonts.inter(
+                  style: AppFonts.inter(
                     fontSize: 14,
                     fontWeight: FontWeight.w500,
                     color:
@@ -357,7 +357,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
       children: [
         Text(
           'Interests',
-          style: GoogleFonts.inter(
+          style: AppFonts.inter(
             fontSize: 16,
             fontWeight: FontWeight.w600,
             color: theme.colorScheme.onSurface,
@@ -366,7 +366,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
         const SizedBox(height: 8),
         Text(
           'Select topics you\'re interested in learning about (select at least one)',
-          style: GoogleFonts.inter(
+          style: AppFonts.inter(
             fontSize: 14,
             color: theme.colorScheme.onSurface.withOpacity(0.6),
           ),
@@ -405,7 +405,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                 ),
                 child: Text(
                   entry.value,
-                  style: GoogleFonts.inter(
+                  style: AppFonts.inter(
                     fontSize: 14,
                     fontWeight: FontWeight.w500,
                     color: isSelected
@@ -447,7 +447,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
               )
             : Text(
                 'Continue',
-                style: GoogleFonts.inter(
+                style: AppFonts.inter(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
                 ),

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import '../../../../core/constants/app_fonts.dart';
 
 import '../../../../core/models/app_language.dart';
 
@@ -52,7 +52,7 @@ class LanguageSelectionCard extends StatelessWidget {
             Expanded(
               child: Text(
                 language.displayName,
-                style: GoogleFonts.inter(
+                style: AppFonts.inter(
                   fontSize: 18,
                   fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
                   color: isSelected

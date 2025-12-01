@@ -248,8 +248,8 @@ export class LLMService {
           },
           translations: {
             esv: cachedVerses.en.text,
-            hindi: cachedVerses.hi.text,
-            malayalam: cachedVerses.ml.text,
+            hi: cachedVerses.hi.text,
+            ml: cachedVerses.ml.text,
           }
         }
       }
@@ -298,8 +298,8 @@ export class LLMService {
         referenceTranslations: parsedReference.referenceTranslations,
         translations: {
           esv: allVerses.en.text,
-          hindi: allVerses.hi.text,
-          malayalam: allVerses.ml.text,
+          hi: allVerses.hi.text,
+          ml: allVerses.ml.text,
         }
       }
 
@@ -331,8 +331,8 @@ export class LLMService {
         },
         translations: {
           esv: "For God so loved the world, that he gave his only Son, that whoever believes in him should not perish but have eternal life.",
-          hindi: "क्योंकि परमेश्वर ने जगत से ऐसा प्रेम रखा कि उसने अपना एकलौता पुत्र दे दिया, ताकि जो कोई उस पर विश्वास करे वह नष्ट न हो, परन्तु अनन्त जीवन पाए।",
-          malayalam: "കാരണം ദൈവം ലോകത്തെ ഇങ്ങനെ സ്നേഹിച്ചു, തന്റെ ഏകജാതനായ പുത്രനെ നൽകി, അവനിൽ വിശ്വസിക്കുന്നവൻ നശിക്കാതെ നിത്യജീവൻ പ്രാപിക്കേണ്ടതിന്."
+          hi: "क्योंकि परमेश्वर ने जगत से ऐसा प्रेम रखा कि उसने अपना एकलौता पुत्र दे दिया, ताकि जो कोई उस पर विश्वास करे वह नष्ट न हो, परन्तु अनन्त जीवन पाए।",
+          ml: "കാരണം ദൈവം ലോകത്തെ ഇങ്ങനെ സ്നേഹിച്ചു, തന്റെ ഏകജാതനായ പുത്രനെ നൽകി, അവനിൽ വിശ്വസിക്കുന്നവൻ നശിക്കാതെ നിത്യജീവൻ പ്രാപിക്കേണ്ടതിന്."
         }
       },
       {
@@ -344,8 +344,8 @@ export class LLMService {
         },
         translations: {
           esv: "I can do all things through him who strengthens me.",
-          hindi: "मैं उसके द्वारा जो मुझे सामर्थ्य देता है, सब कुछ कर सकता हूँ।",
-          malayalam: "എന്നെ ബലപ്പെടുത്തുന്ന ക്രിസ്തുവിൽ എനിക്കു സകലവും ചെയ്വാൻ കഴിയും."
+          hi: "मैं उसके द्वारा जो मुझे सामर्थ्य देता है, सब कुछ कर सकता हूँ।",
+          ml: "എന്നെ ബലപ്പെടുത്തുന്ന ക്രിസ്തുവിൽ എനിക്കു സകലവും ചെയ്വാൻ കഴിയും."
         }
       },
       {
@@ -357,8 +357,8 @@ export class LLMService {
         },
         translations: {
           esv: "The Lord is my shepherd; I shall not want.",
-          hindi: "यहोवा मेरा चरवाहा है; मुझे कमी न होगी।",
-          malayalam: "യഹോവ എന്റെ ഇടയൻ ആകുന്നു; എനിക്കു മുട്ടു വരികയില്ല."
+          hi: "यहोवा मेरा चरवाहा है; मुझे कमी न होगी।",
+          ml: "യഹോവ എന്റെ ഇടയൻ ആകുന്നു; എനിക്കു മുട്ടു വരികയില്ല."
         }
       }
     ]
@@ -1765,21 +1765,24 @@ Return in this EXACT JSON format (no other text, no markdown):
         throw new Error('Missing or invalid translations field')
       }
       
-      const { esv, hindi, malayalam } = parsed.translations
-      
+      // Support both 'hindi'/'malayalam' (LLM output) and 'hi'/'ml' (standard) keys
+      const esv = parsed.translations.esv
+      const hindiTranslation = parsed.translations.hi || parsed.translations.hindi
+      const malayalamTranslation = parsed.translations.ml || parsed.translations.malayalam
+
       if (!esv || typeof esv !== 'string') {
         throw new Error('Missing or invalid ESV translation')
       }
-      
-      if (!hindi || typeof hindi !== 'string') {
+
+      if (!hindiTranslation || typeof hindiTranslation !== 'string') {
         console.warn('[LLM] ⚠️ LLM did not return Hindi translation')
       }
-      
-      if (!malayalam || typeof malayalam !== 'string') {
+
+      if (!malayalamTranslation || typeof malayalamTranslation !== 'string') {
         console.warn('[LLM] ⚠️ LLM did not return Malayalam translation')
       }
-      
-      // Sanitize and return
+
+      // Sanitize and return with standardized 'hi'/'ml' keys
       return {
         reference: this.sanitizeText(parsed.reference),
         referenceTranslations: {
@@ -1789,8 +1792,8 @@ Return in this EXACT JSON format (no other text, no markdown):
         },
         translations: {
           esv: this.sanitizeText(esv),
-          hindi: this.sanitizeText(hindi),
-          malayalam: this.sanitizeText(malayalam)
+          hi: this.sanitizeText(hindiTranslation),
+          ml: this.sanitizeText(malayalamTranslation)
         }
       }
       

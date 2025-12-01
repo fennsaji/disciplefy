@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import '../../../../core/constants/app_fonts.dart';
 
 import '../../domain/entities/token_status.dart';
 import '../extensions/duration_extensions.dart';
@@ -25,7 +25,7 @@ class UsageInfoSection extends StatelessWidget {
           children: [
             Text(
               context.tr('tokens.stats.usage_info'),
-              style: GoogleFonts.inter(
+              style: AppFonts.inter(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
                 color: Theme.of(context).colorScheme.onSurface,
@@ -56,7 +56,7 @@ class UsageInfoSection extends StatelessWidget {
                   const SizedBox(width: 8),
                   Text(
                     context.tr('tokens.stats.unlimited_available'),
-                    style: GoogleFonts.inter(
+                    style: AppFonts.inter(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
                       color: Colors.amber[700],
@@ -67,7 +67,7 @@ class UsageInfoSection extends StatelessWidget {
               const SizedBox(height: 8),
               Text(
                 context.tr('tokens.stats.unlimited_description'),
-                style: GoogleFonts.inter(
+                style: AppFonts.inter(
                   fontSize: 14,
                   color:
                       Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
@@ -87,7 +87,7 @@ class UsageInfoSection extends StatelessWidget {
         children: [
           Text(
             label,
-            style: GoogleFonts.inter(
+            style: AppFonts.inter(
               fontSize: 14,
               color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
             ),
@@ -95,7 +95,7 @@ class UsageInfoSection extends StatelessWidget {
           const Spacer(),
           Text(
             value,
-            style: GoogleFonts.inter(
+            style: AppFonts.inter(
               fontSize: 14,
               fontWeight: FontWeight.w600,
               color: Theme.of(context).colorScheme.onSurface,
