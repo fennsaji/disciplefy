@@ -27,7 +27,8 @@ RETURNS TABLE(
   learning_path_id UUID,
   learning_path_name TEXT,
   position_in_path INTEGER,
-  total_topics_in_path INTEGER
+  total_topics_in_path INTEGER,
+  topics_completed_in_path INTEGER
 ) AS $$
 BEGIN
   RETURN QUERY
@@ -63,7 +64,8 @@ BEGIN
       lp.id AS learning_path_id,
       lp.title AS learning_path_name,
       lpt.position + 1 AS position_in_path,
-      (SELECT COUNT(*)::INTEGER FROM learning_path_topics lpt2 WHERE lpt2.learning_path_id = lp.id) AS total_topics_in_path
+      (SELECT COUNT(*)::INTEGER FROM learning_path_topics lpt2 WHERE lpt2.learning_path_id = lp.id) AS total_topics_in_path,
+      COALESCE(ulpp.topics_completed, 0)::INTEGER AS topics_completed_in_path
     FROM user_learning_path_progress ulpp
     JOIN learning_paths lp ON lp.id = ulpp.learning_path_id
     JOIN learning_path_topics lpt ON lpt.learning_path_id = lp.id
@@ -96,7 +98,8 @@ BEGIN
       lp.id AS learning_path_id,
       lp.title AS learning_path_name,
       lpt.position + 1 AS position_in_path,  -- 1-based for display
-      (SELECT COUNT(*)::INTEGER FROM learning_path_topics lpt2 WHERE lpt2.learning_path_id = lp.id) AS total_topics_in_path
+      (SELECT COUNT(*)::INTEGER FROM learning_path_topics lpt2 WHERE lpt2.learning_path_id = lp.id) AS total_topics_in_path,
+      COALESCE(ulpp.topics_completed, 0)::INTEGER AS topics_completed_in_path
     FROM in_progress ip
     LEFT JOIN learning_path_topics lpt ON lpt.topic_id = ip.topic_id
     LEFT JOIN learning_paths lp ON lp.id = lpt.learning_path_id AND lp.is_active = true
@@ -119,6 +122,7 @@ BEGIN
       ipwp.learning_path_name,
       ipwp.position_in_path,
       ipwp.total_topics_in_path,
+      ipwp.topics_completed_in_path,
       1 AS priority  -- In-progress topics have higher priority
     FROM in_progress_with_path ipwp
 
@@ -137,6 +141,7 @@ BEGIN
       nip.learning_path_name,
       nip.position_in_path,
       nip.total_topics_in_path,
+      nip.topics_completed_in_path,
       2 AS priority  -- Next topics have lower priority
     FROM next_in_path nip
     WHERE NOT EXISTS (
@@ -155,7 +160,8 @@ BEGIN
     c.learning_path_id,
     c.learning_path_name,
     c.position_in_path,
-    c.total_topics_in_path
+    c.total_topics_in_path,
+    c.topics_completed_in_path
   FROM combined c
   ORDER BY c.topic_id, c.priority, c.updated_at DESC
   LIMIT p_limit;
