@@ -66,146 +66,157 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
     );
   }
 
+  /// Handle back navigation - go to home when can't pop
+  void _handleBackNavigation() {
+    if (context.canPop()) {
+      context.pop();
+    } else {
+      GoRouter.of(context).goToHome();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      appBar: AppBar(
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        _handleBackNavigation();
+      },
+      child: Scaffold(
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-        elevation: 0,
-        leading: IconButton(
-          onPressed: () {
-            if (context.canPop()) {
-              context.pop();
-            } else {
-              GoRouter.of(context).goToHome();
+        appBar: AppBar(
+          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+          elevation: 0,
+          leading: IconButton(
+            onPressed: _handleBackNavigation,
+            icon: Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: AppTheme.primaryColor.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Icon(
+                Icons.arrow_back_ios_new,
+                color: AppTheme.primaryColor,
+                size: 18,
+              ),
+            ),
+          ),
+          title: Text(
+            context.tr(TranslationKeys.memoryTitle),
+            style: AppFonts.inter(
+              fontSize: 20,
+              fontWeight: FontWeight.w700,
+              color: Theme.of(context).colorScheme.onBackground,
+            ),
+          ),
+          centerTitle: true,
+          actions: [
+            Container(
+              margin: const EdgeInsets.only(right: 4),
+              child: IconButton(
+                icon: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [AppTheme.primaryColor, AppTheme.secondaryPurple],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(
+                    Icons.add,
+                    color: Colors.white,
+                    size: 18,
+                  ),
+                ),
+                onPressed: () => _showAddVerseOptions(context),
+                tooltip: 'Add verse',
+              ),
+            ),
+            IconButton(
+              icon: Icon(
+                Icons.more_vert,
+                color:
+                    Theme.of(context).colorScheme.onBackground.withOpacity(0.7),
+              ),
+              onPressed: () => _showOptionsMenu(context),
+              tooltip: 'Options',
+            ),
+          ],
+        ),
+        body: BlocConsumer<MemoryVerseBloc, MemoryVerseState>(
+          listener: (context, state) {
+            if (state is MemoryVerseError) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(state.message),
+                  backgroundColor: Colors.red,
+                  action: SnackBarAction(
+                    label: 'Retry',
+                    textColor: Colors.white,
+                    onPressed: _loadVerses,
+                  ),
+                ),
+              );
+            } else if (state is VerseAdded) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(state.message),
+                  backgroundColor: Colors.green,
+                ),
+              );
+              _loadVerses();
+              // Show notification prompt for memory verse reminder after adding first verse
+              _showMemoryVerseReminderPrompt();
+            } else if (state is OperationQueued) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Row(
+                    children: [
+                      const Icon(Icons.cloud_off, color: Colors.white),
+                      const SizedBox(width: 8),
+                      Expanded(child: Text(state.message)),
+                    ],
+                  ),
+                  backgroundColor: Colors.orange,
+                ),
+              );
+            } else if (state is VerseDeleted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content:
+                      Text(context.tr(TranslationKeys.memoryDeleteSuccess)),
+                  backgroundColor: Colors.green,
+                ),
+              );
+              _loadVerses();
             }
           },
-          icon: Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: AppTheme.primaryColor.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: const Icon(
-              Icons.arrow_back_ios_new,
-              color: AppTheme.primaryColor,
-              size: 18,
-            ),
-          ),
-        ),
-        title: Text(
-          context.tr(TranslationKeys.memoryTitle),
-          style: AppFonts.inter(
-            fontSize: 20,
-            fontWeight: FontWeight.w700,
-            color: Theme.of(context).colorScheme.onBackground,
-          ),
-        ),
-        centerTitle: true,
-        actions: [
-          Container(
-            margin: const EdgeInsets.only(right: 4),
-            child: IconButton(
-              icon: Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [AppTheme.primaryColor, AppTheme.secondaryPurple],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: const Icon(
-                  Icons.add,
-                  color: Colors.white,
-                  size: 18,
-                ),
-              ),
-              onPressed: () => _showAddVerseOptions(context),
-              tooltip: 'Add verse',
-            ),
-          ),
-          IconButton(
-            icon: Icon(
-              Icons.more_vert,
-              color:
-                  Theme.of(context).colorScheme.onBackground.withOpacity(0.7),
-            ),
-            onPressed: () => _showOptionsMenu(context),
-            tooltip: 'Options',
-          ),
-        ],
-      ),
-      body: BlocConsumer<MemoryVerseBloc, MemoryVerseState>(
-        listener: (context, state) {
-          if (state is MemoryVerseError) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(state.message),
-                backgroundColor: Colors.red,
-                action: SnackBarAction(
-                  label: 'Retry',
-                  textColor: Colors.white,
-                  onPressed: _loadVerses,
-                ),
-              ),
-            );
-          } else if (state is VerseAdded) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(state.message),
-                backgroundColor: Colors.green,
-              ),
-            );
-            _loadVerses();
-            // Show notification prompt for memory verse reminder after adding first verse
-            _showMemoryVerseReminderPrompt();
-          } else if (state is OperationQueued) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Row(
-                  children: [
-                    const Icon(Icons.cloud_off, color: Colors.white),
-                    const SizedBox(width: 8),
-                    Expanded(child: Text(state.message)),
-                  ],
-                ),
-                backgroundColor: Colors.orange,
-              ),
-            );
-          } else if (state is VerseDeleted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(context.tr(TranslationKeys.memoryDeleteSuccess)),
-                backgroundColor: Colors.green,
-              ),
-            );
-            _loadVerses();
-          }
-        },
-        builder: (context, state) {
-          if (state is DueVersesLoaded) {
-            _lastLoadedState = state;
-          }
-          if (state is MemoryVerseInitial) {
-            return _buildLoadingState();
-          }
-          if (state is MemoryVerseLoading && !state.isRefreshing) {
-            return _buildLoadingState();
-          }
-          if (state is MemoryVerseLoading && state.isRefreshing) {
-            if (_lastLoadedState != null) {
-              return _buildLoadedState(_lastLoadedState!);
+          builder: (context, state) {
+            if (state is DueVersesLoaded) {
+              _lastLoadedState = state;
             }
-            return _buildLoadingState();
-          }
-          if (state is DueVersesLoaded) {
-            return _buildLoadedState(state);
-          }
-          return _buildEmptyState();
-        },
+            if (state is MemoryVerseInitial) {
+              return _buildLoadingState();
+            }
+            if (state is MemoryVerseLoading && !state.isRefreshing) {
+              return _buildLoadingState();
+            }
+            if (state is MemoryVerseLoading && state.isRefreshing) {
+              if (_lastLoadedState != null) {
+                return _buildLoadedState(_lastLoadedState!);
+              }
+              return _buildLoadingState();
+            }
+            if (state is DueVersesLoaded) {
+              return _buildLoadedState(state);
+            }
+            return _buildEmptyState();
+          },
+        ),
       ),
     ).withAuthProtection();
   }

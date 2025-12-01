@@ -100,47 +100,68 @@ class _LearningPathDetailPageState extends State<LearningPathDetailPage> {
     }
   }
 
+  /// Handle back navigation - go to appropriate screen when can't pop
+  void _handleBackNavigation() {
+    if (context.canPop()) {
+      context.pop();
+    } else {
+      // Navigate based on source - default to home if source is 'home', otherwise study topics
+      if (widget.source == 'home') {
+        context.go(AppRoutes.home);
+      } else {
+        context.go(AppRoutes.studyTopics);
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: BlocConsumer<LearningPathsBloc, LearningPathsState>(
-        listener: (context, state) {
-          if (state is LearningPathEnrolled) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(
-                    context.tr(TranslationKeys.learningPathsEnrolledSuccess)),
-                backgroundColor: Colors.green,
-              ),
-            );
-            // Reload details to show updated enrollment status
-            _loadPathDetails();
-          }
-        },
-        builder: (context, state) {
-          if (state is LearningPathDetailLoading) {
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        _handleBackNavigation();
+      },
+      child: Scaffold(
+        body: BlocConsumer<LearningPathsBloc, LearningPathsState>(
+          listener: (context, state) {
+            if (state is LearningPathEnrolled) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(
+                      context.tr(TranslationKeys.learningPathsEnrolledSuccess)),
+                  backgroundColor: Colors.green,
+                ),
+              );
+              // Reload details to show updated enrollment status
+              _loadPathDetails();
+            }
+          },
+          builder: (context, state) {
+            if (state is LearningPathDetailLoading) {
+              return _buildLoadingState(context);
+            }
+
+            if (state is LearningPathsError) {
+              return _buildErrorState(context, state);
+            }
+
+            if (state is LearningPathDetailLoaded) {
+              return _buildLoadedState(context, state.pathDetail);
+            }
+
+            if (state is LearningPathEnrolling) {
+              return _buildEnrollingState(context);
+            }
+
+            // Show initial path data while loading
+            if (widget.initialPath != null) {
+              return _buildInitialState(context, widget.initialPath!);
+            }
+
             return _buildLoadingState(context);
-          }
-
-          if (state is LearningPathsError) {
-            return _buildErrorState(context, state);
-          }
-
-          if (state is LearningPathDetailLoaded) {
-            return _buildLoadedState(context, state.pathDetail);
-          }
-
-          if (state is LearningPathEnrolling) {
-            return _buildEnrollingState(context);
-          }
-
-          // Show initial path data while loading
-          if (widget.initialPath != null) {
-            return _buildInitialState(context, widget.initialPath!);
-          }
-
-          return _buildLoadingState(context);
-        },
+          },
+        ),
       ),
     );
   }
@@ -339,19 +360,7 @@ class _LearningPathDetailPageState extends State<LearningPathDetailPage> {
             color: theme.colorScheme.onSurface,
           ),
         ),
-        onPressed: () {
-          // Use canPop to check if there's a route to pop, otherwise navigate based on source
-          if (context.canPop()) {
-            context.pop();
-          } else {
-            // Navigate based on source - default to home if source is 'home', otherwise study topics
-            if (widget.source == 'home') {
-              context.go(AppRoutes.home);
-            } else {
-              context.go(AppRoutes.studyTopics);
-            }
-          }
-        },
+        onPressed: _handleBackNavigation,
       ),
       flexibleSpace: FlexibleSpaceBar(
         background: Container(

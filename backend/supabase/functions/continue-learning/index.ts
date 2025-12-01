@@ -97,6 +97,35 @@ async function getLocalizedContent(
   return { title: fallbackTitle, description: fallbackDescription };
 }
 
+async function getLocalizedLearningPathName(
+  services: ServiceContainer,
+  learningPathId: string | null,
+  language: string,
+  fallbackName: string | null
+): Promise<string | null> {
+  if (!learningPathId || !fallbackName) {
+    return fallbackName;
+  }
+
+  if (language === 'en') {
+    return fallbackName;
+  }
+
+  // Try to get localized learning path name from learning_path_translations table
+  const { data: translation } = await services.supabaseServiceClient
+    .from('learning_path_translations')
+    .select('title')
+    .eq('learning_path_id', learningPathId)
+    .eq('lang_code', language)
+    .single();
+
+  if (translation?.title) {
+    return translation.title;
+  }
+
+  return fallbackName;
+}
+
 // ============================================================================
 // Main Handler
 // ============================================================================
@@ -164,6 +193,14 @@ async function handleContinueLearning(
       topic.topic_description
     );
 
+    // Localize learning path name if present
+    const localizedPathName = await getLocalizedLearningPathName(
+      services,
+      topic.learning_path_id,
+      language,
+      topic.learning_path_name
+    );
+
     localizedTopics.push({
       topic_id: topic.topic_id,
       title: localized.title,
@@ -173,7 +210,7 @@ async function handleContinueLearning(
       time_spent_seconds: topic.time_spent_seconds,
       xp_value: topic.xp_value,
       learning_path_id: topic.learning_path_id,
-      learning_path_name: topic.learning_path_name,
+      learning_path_name: localizedPathName,
       position_in_path: topic.position_in_path,
       total_topics_in_path: topic.total_topics_in_path,
       topics_completed_in_path: topic.topics_completed_in_path,
