@@ -67,6 +67,25 @@ class AuthenticatedState extends AuthState {
         profile: newProfile,
         isAnonymous: isAnonymous,
       );
+
+  /// Checks if user needs to verify their email
+  /// Returns true for email/password users who haven't verified their email yet
+  /// Uses the email_verified field from user_profiles table
+  bool get needsEmailVerification {
+    // Anonymous users don't need verification
+    if (isAnonymous) return false;
+
+    // Check provider - Google and Apple users are pre-verified
+    final provider = user.appMetadata['provider'] as String?;
+    if (provider == 'google' || provider == 'apple') return false;
+
+    // For email/password users, check the email_verified field in profile
+    // This is set by a database trigger and updated when user clicks verification link
+    return profile?['email_verified'] != true;
+  }
+
+  /// Helper to check if email is verified (from profile)
+  bool get isEmailVerified => profile?['email_verified'] == true;
 }
 
 /// State when an authentication error occurs
@@ -98,4 +117,32 @@ class AuthProfileUpdatedState extends AuthState {
 
   @override
   List<Object?> get props => [message];
+}
+
+/// State when password reset email was sent successfully
+class PasswordResetSentState extends AuthState {
+  final String email;
+  final String message;
+
+  const PasswordResetSentState({
+    required this.email,
+    this.message = 'Password reset email sent. Please check your inbox.',
+  });
+
+  @override
+  List<Object?> get props => [email, message];
+}
+
+/// State when verification email was sent successfully
+class VerificationEmailSentState extends AuthState {
+  final String email;
+  final String message;
+
+  const VerificationEmailSentState({
+    required this.email,
+    this.message = 'Verification email sent. Please check your inbox.',
+  });
+
+  @override
+  List<Object?> get props => [email, message];
 }

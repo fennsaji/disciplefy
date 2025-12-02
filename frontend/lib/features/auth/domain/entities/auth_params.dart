@@ -101,4 +101,19 @@ class AuthDataStorageParams {
         expiresAt: expiresAt,
         deviceId: deviceId,
       );
+
+  /// Create params for email/password authentication
+  factory AuthDataStorageParams.email({
+    required String accessToken,
+    String? userId,
+    DateTime? expiresAt,
+    String? deviceId,
+  }) =>
+      AuthDataStorageParams(
+        accessToken: accessToken,
+        userType: 'email',
+        userId: userId,
+        expiresAt: expiresAt,
+        deviceId: deviceId,
+      );
 }

@@ -245,6 +245,10 @@ jobs:
         AUTHENTICATED_RATE_LIMIT=20
         API_REQUEST_LIMIT=200
 
+        # Email Configuration (Development)
+        RESEND_API_KEY=${{ secrets.RESEND_API_KEY_DEV }}
+        APP_URL=https://dev.disciplefy.in
+
         EOF
         echo "✅ ${{ env.DEPLOY_ENV }} environment file created"
     

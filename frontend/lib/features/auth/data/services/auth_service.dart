@@ -85,6 +85,63 @@ class AuthService {
   /// @returns `true` if anonymous sign-in succeeded, `false` otherwise.
   Future<bool> signInAnonymously() async => _authService.signInAnonymously();
 
+  /// Signs up with email, password, and full name.
+  ///
+  /// Creates a new user account with email/password authentication.
+  /// The user's full name is stored in user metadata.
+  ///
+  /// @returns `true` if sign-up succeeded, `false` otherwise.
+  Future<bool> signUpWithEmail({
+    required String email,
+    required String password,
+    required String fullName,
+  }) async =>
+      _authService.signUpWithEmail(
+        email: email,
+        password: password,
+        fullName: fullName,
+      );
+
+  /// Signs in with email and password.
+  ///
+  /// Authenticates an existing user with their email and password.
+  ///
+  /// @returns `true` if sign-in succeeded, `false` otherwise.
+  Future<bool> signInWithEmail({
+    required String email,
+    required String password,
+  }) async =>
+      _authService.signInWithEmail(
+        email: email,
+        password: password,
+      );
+
+  /// Sends a password reset email to the specified email address.
+  ///
+  /// @param email The email address to send the reset link to.
+  Future<void> sendPasswordResetEmail(String email) async =>
+      _authService.sendPasswordResetEmail(email);
+
+  /// Check if current user's email is verified.
+  ///
+  /// Returns true if the user has verified their email address.
+  /// For non-email auth users (Google, anonymous), returns true.
+  bool get isEmailVerified => _authService.isEmailVerified;
+
+  /// Resend email verification link.
+  ///
+  /// Sends a new verification email to the current user.
+  /// Only works for email auth users who haven't verified yet.
+  Future<void> resendVerificationEmail() async =>
+      _authService.resendVerificationEmail();
+
+  /// Sync email verification status from Supabase to user profile.
+  ///
+  /// Call this when user returns to app after clicking verification link.
+  /// If Supabase shows email as confirmed, updates the profile accordingly.
+  Future<bool> syncEmailVerificationStatus() async =>
+      _authService.syncEmailVerificationStatus();
+
   /// Signs out the current user and clears all session data.
   Future<void> signOut() async => _authService.signOut();
 

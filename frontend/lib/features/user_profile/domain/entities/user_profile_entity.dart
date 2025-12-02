@@ -21,6 +21,9 @@ class UserProfileEntity extends Equatable {
   /// User's phone number, null if not provided
   final String? phone;
 
+  /// Whether user's email is verified (for email/password auth users)
+  final bool emailVerified;
+
   final bool isAdmin;
   final DateTime createdAt;
   final DateTime updatedAt;
@@ -44,6 +47,9 @@ class UserProfileEntity extends Equatable {
 
     /// User's phone number, null if not provided
     this.phone,
+
+    /// Whether user's email is verified (for email/password auth users)
+    this.emailVerified = false,
     required this.isAdmin,
     required this.createdAt,
     required this.updatedAt,
@@ -59,6 +65,7 @@ class UserProfileEntity extends Equatable {
     String? profilePicture,
     String? email,
     String? phone,
+    bool? emailVerified,
     bool? isAdmin,
     DateTime? createdAt,
     DateTime? updatedAt,
@@ -72,6 +79,7 @@ class UserProfileEntity extends Equatable {
       profilePicture: profilePicture ?? this.profilePicture,
       email: email ?? this.email,
       phone: phone ?? this.phone,
+      emailVerified: emailVerified ?? this.emailVerified,
       isAdmin: isAdmin ?? this.isAdmin,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
@@ -121,6 +129,7 @@ class UserProfileEntity extends Equatable {
         profilePicture,
         email,
         phone,
+        emailVerified,
         isAdmin,
         createdAt,
         updatedAt,
