@@ -13,9 +13,6 @@ import '../../../../core/i18n/translation_keys.dart';
 import '../../../../core/models/app_language.dart';
 import '../../../../core/services/language_preference_service.dart';
 import '../../../../core/utils/logger.dart';
-import '../../../daily_verse/presentation/bloc/daily_verse_bloc.dart';
-import '../../../daily_verse/presentation/bloc/daily_verse_state.dart';
-import '../../../daily_verse/domain/entities/daily_verse_entity.dart';
 import '../../../home/presentation/bloc/home_bloc.dart';
 import '../../domain/entities/learning_path.dart';
 import '../../domain/entities/topic_progress.dart';
@@ -275,18 +272,8 @@ class _StudyTopicsScreenContentState extends State<_StudyTopicsScreenContent> {
 
     _isNavigating = true;
 
-    // Get the current language from Daily Verse state
-    final dailyVerseBloc = context.read<DailyVerseBloc>();
-    final currentState = dailyVerseBloc.state;
-
-    VerseLanguage selectedLanguage = VerseLanguage.english;
-    if (currentState is DailyVerseLoaded) {
-      selectedLanguage = currentState.currentLanguage;
-    } else if (currentState is DailyVerseOffline) {
-      selectedLanguage = currentState.currentLanguage;
-    }
-
-    final languageCode = _getLanguageCode(selectedLanguage);
+    // Use the current language from the screen's state (already loaded from LanguagePreferenceService)
+    final languageCode = widget.currentLanguage;
 
     // Navigate directly to study guide V2
     final encodedTitle = Uri.encodeComponent(topic.title);
@@ -307,23 +294,13 @@ class _StudyTopicsScreenContentState extends State<_StudyTopicsScreenContent> {
 
     // Refresh data when returning from the study guide
     if (mounted) {
-      context.read<ContinueLearningBloc>().add(const RefreshContinueLearning());
+      context
+          .read<ContinueLearningBloc>()
+          .add(RefreshContinueLearning(language: widget.currentLanguage));
       context
           .read<LearningPathsBloc>()
           .add(RefreshLearningPaths(language: widget.currentLanguage));
       _isNavigating = false;
-    }
-  }
-
-  /// Convert VerseLanguage enum to language code string
-  String _getLanguageCode(VerseLanguage language) {
-    switch (language) {
-      case VerseLanguage.english:
-        return 'en';
-      case VerseLanguage.hindi:
-        return 'hi';
-      case VerseLanguage.malayalam:
-        return 'ml';
     }
   }
 
@@ -367,6 +344,15 @@ class StudyTopicsAppBar extends StatelessWidget implements PreferredSizeWidget {
             color: Theme.of(context).colorScheme.onSurface,
           ),
         ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.emoji_events_outlined),
+            tooltip: context.tr(TranslationKeys.leaderboardTooltip),
+            onPressed: () => AppRouter.router.goToLeaderboard(),
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
+          const SizedBox(width: 8),
+        ],
       ),
     );
   }

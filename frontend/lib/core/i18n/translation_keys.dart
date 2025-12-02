@@ -863,4 +863,28 @@ class TranslationKeys {
   static const continueLearningContinueAction =
       'continue_learning.continue_action';
   static const continueLearningOfDone = 'continue_learning.of_done';
+
+  // Leaderboard
+  static const leaderboardTitle = 'leaderboard.title';
+  static const leaderboardTooltip = 'leaderboard.tooltip';
+  static const leaderboardYourRank = 'leaderboard.your_rank';
+  static const leaderboardXpPoints = 'leaderboard.xp_points';
+  static const leaderboardClose = 'leaderboard.close';
+  static const leaderboardError = 'leaderboard.error';
+
+  // Study Guide Error Screen
+  static const studyGuideErrorTitle = 'study_guide.error.title';
+  static const studyGuideErrorTitleAlt = 'study_guide.error.title_alt';
+  static const studyGuideErrorDefaultMessage =
+      'study_guide.error.default_message';
+  static const studyGuideErrorDefaultMessageAlt =
+      'study_guide.error.default_message_alt';
+  static const studyGuideErrorNetwork = 'study_guide.error.network';
+  static const studyGuideErrorServer = 'study_guide.error.server';
+  static const studyGuideErrorAuth = 'study_guide.error.auth';
+  static const studyGuideErrorInsufficientTokens =
+      'study_guide.error.insufficient_tokens';
+  static const studyGuideErrorGoBack = 'study_guide.error.go_back';
+  static const studyGuideErrorTryAgain = 'study_guide.error.try_again';
+  static const studyGuideErrorViewSaved = 'study_guide.error.view_saved';
 }

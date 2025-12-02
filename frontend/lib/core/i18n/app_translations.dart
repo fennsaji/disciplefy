@@ -38,6 +38,21 @@ class AppTranslations {
         'personal_notes':
             'Write your thoughts, insights, and reflections here...',
       },
+      'error': {
+        'title': 'Oops! Something went wrong',
+        'title_alt': 'We couldn\'t generate a study guide',
+        'default_message':
+            'We couldn\'t generate your study guide. Please try again.',
+        'default_message_alt': 'Something went wrong. Please try again later.',
+        'network': 'Network error. Please check your connection and try again.',
+        'server': 'Server error. Please try again later.',
+        'auth': 'Authentication error. Please sign in and try again.',
+        'insufficient_tokens':
+            'You have run out of AI tokens. Please purchase more tokens or upgrade to premium.',
+        'go_back': 'Go Back',
+        'try_again': 'Try Again',
+        'view_saved': 'View Saved Guides',
+      },
     },
     'common': {
       'retry': 'Retry',
@@ -952,6 +967,14 @@ class AppTranslations {
       'continue_action': 'Continue',
       'of_done': '{completed} of {total} done',
     },
+    'leaderboard': {
+      'title': 'Leaderboard',
+      'tooltip': 'View leaderboard',
+      'your_rank': 'Your Rank',
+      'xp_points': '{xp} XP',
+      'close': 'Close',
+      'error': 'Failed to load leaderboard',
+    },
     'voice_buddy': {
       'title': 'AI Discipler',
       'description':
@@ -1068,6 +1091,23 @@ class AppTranslations {
       },
       'placeholders': {
         'personal_notes': 'अपने विचार यहां लिखें...',
+      },
+      'error': {
+        'title': 'उफ़! कुछ गड़बड़ हो गई',
+        'title_alt': 'स्टडी गाइड नहीं बना सके',
+        'default_message':
+            'हम आपकी स्टडी गाइड नहीं बना सके। कृपया फिर से कोशिश करें।',
+        'default_message_alt':
+            'कुछ गड़बड़ हो गई। कृपया बाद में फिर से कोशिश करें।',
+        'network':
+            'नेटवर्क में समस्या। कृपया अपना कनेक्शन जांचें और फिर से कोशिश करें।',
+        'server': 'सर्वर में समस्या। कृपया बाद में फिर से कोशिश करें।',
+        'auth': 'साइन इन में समस्या। कृपया साइन इन करें और फिर से कोशिश करें।',
+        'insufficient_tokens':
+            'आपके AI टोकन खत्म हो गए हैं। कृपया और टोकन खरीदें या प्रीमियम में अपग्रेड करें।',
+        'go_back': 'वापस जाएं',
+        'try_again': 'फिर कोशिश करें',
+        'view_saved': 'सेव की गई गाइड देखें',
       },
     },
     'common': {
@@ -1970,6 +2010,14 @@ class AppTranslations {
       'continue_action': 'जारी रखें',
       'of_done': '{total} में से {completed} पूर्ण',
     },
+    'leaderboard': {
+      'title': 'लीडरबोर्ड',
+      'tooltip': 'लीडरबोर्ड देखें',
+      'your_rank': 'आपकी रैंक',
+      'xp_points': '{xp} XP',
+      'close': 'बंद करें',
+      'error': 'लीडरबोर्ड लोड करने में विफल',
+    },
     'voice_buddy': {
       'title': 'AI शिष्यकर्ता',
       'description':
@@ -2086,6 +2134,22 @@ class AppTranslations {
       },
       'placeholders': {
         'personal_notes': 'നിങ്ങളുടെ ചിന്തകൾ ഇവിടെ എഴുതൂ...',
+      },
+      'error': {
+        'title': 'ക്ഷമിക്കണം! എന്തോ തെറ്റായി',
+        'title_alt': 'സ്റ്റഡി ഗൈഡ് ഉണ്ടാക്കാൻ കഴിഞ്ഞില്ല',
+        'default_message':
+            'സ്റ്റഡി ഗൈഡ് ഉണ്ടാക്കാൻ കഴിഞ്ഞില്ല. വീണ്ടും ശ്രമിക്കൂ.',
+        'default_message_alt': 'എന്തോ തെറ്റി. പിന്നീട് വീണ്ടും ശ്രമിക്കൂ.',
+        'network':
+            'നെറ്റ്‌വർക്ക് പിശക്. നിങ്ങളുടെ കണക്ഷൻ പരിശോധിച്ച് വീണ്ടും ശ്രമിക്കൂ.',
+        'server': 'സെർവർ പിശക്. പിന്നീട് വീണ്ടും ശ്രമിക്കൂ.',
+        'auth': 'സൈൻ ഇൻ പിശക്. സൈൻ ഇൻ ചെയ്ത് വീണ്ടും ശ്രമിക്കൂ.',
+        'insufficient_tokens':
+            'AI ടോക്കണുകൾ തീർന്നു. കൂടുതൽ ടോക്കണുകൾ വാങ്ങുക അല്ലെങ്കിൽ പ്രീമിയത്തിലേക്ക് അപ്‌ഗ്രേഡ് ചെയ്യുക.',
+        'go_back': 'തിരികെ പോകൂ',
+        'try_again': 'വീണ്ടും ശ്രമിക്കൂ',
+        'view_saved': 'സേവ് ചെയ്ത ഗൈഡുകൾ കാണുക',
       },
     },
     'common': {
@@ -3051,6 +3115,14 @@ class AppTranslations {
       'start': 'ആരംഭിക്കുക',
       'continue_action': 'തുടരുക',
       'of_done': '{total}-ൽ {completed} പൂർത്തിയായി',
+    },
+    'leaderboard': {
+      'title': 'ലീഡർബോർഡ്',
+      'tooltip': 'ലീഡർബോർഡ് കാണുക',
+      'your_rank': 'നിങ്ങളുടെ റാങ്ക്',
+      'xp_points': '{xp} XP',
+      'close': 'അടയ്ക്കുക',
+      'error': 'ലീഡർബോർഡ് ലോഡ് ചെയ്യാനായില്ല',
     },
     'voice_buddy': {
       'title': 'AI ശിഷ്യനാക്കുന്നവൻ',

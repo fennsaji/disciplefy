@@ -40,4 +40,7 @@ class AppRoutes {
 
   // Learning Paths
   static const String learningPathDetail = '/learning-path/:pathId';
+
+  // Leaderboard
+  static const String leaderboard = '/leaderboard';
 }
