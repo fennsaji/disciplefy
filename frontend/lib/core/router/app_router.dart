@@ -43,6 +43,7 @@ import '../../features/voice_buddy/domain/entities/voice_preferences_entity.dart
 import '../../features/voice_buddy/domain/repositories/voice_buddy_repository.dart';
 import '../../features/personalization/presentation/pages/personalization_questionnaire_page.dart';
 import '../../features/study_topics/presentation/pages/learning_path_detail_page.dart';
+import '../../features/study_topics/presentation/pages/leaderboard_page.dart';
 import '../../features/study_topics/presentation/bloc/learning_paths_bloc.dart';
 import 'app_routes.dart';
 import 'router_guard.dart';
@@ -303,6 +304,14 @@ class AppRouter {
         },
       ),
 
+      // Leaderboard Route
+      GoRoute(
+        path: AppRoutes.leaderboard,
+        name: 'leaderboard',
+        parentNavigatorKey: rootNavigatorKey,
+        builder: (context, state) => const LeaderboardPage(),
+      ),
+
       // Authentication Routes (outside app shell)
       GoRoute(
         path: AppRoutes.login,
@@ -509,4 +518,7 @@ extension AppRouterExtension on GoRouter {
       go(AppRoutes.personalizationQuestionnaire, extra: {
         'onComplete': onComplete,
       });
+
+  /// Navigates to the leaderboard page showing XP rankings.
+  void goToLeaderboard() => go(AppRoutes.leaderboard);
 }

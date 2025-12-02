@@ -65,44 +65,41 @@ class DisciplefyBottomNav extends StatelessWidget {
   ];
 
   @override
-  Widget build(BuildContext context) => ClipRRect(
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-        child: Container(
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surface,
-            border: Border(
-              top: BorderSide(
-                color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
-              ),
+  Widget build(BuildContext context) => Container(
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surface,
+          border: Border(
+            top: BorderSide(
+              color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
             ),
-            boxShadow: [
-              BoxShadow(
-                color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
-                blurRadius: 8,
-                offset: const Offset(0, -2),
-              ),
-            ],
           ),
-          child: SafeArea(
-            top: false, // Don't apply SafeArea to top
-            child: SizedBox(
-              height: 60, // Fixed height to prevent overflow
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                children: tabs.asMap().entries.map((entry) {
-                  final index = entry.key;
-                  final tab = entry.value;
-                  final isSelected = currentIndex == index;
+          boxShadow: [
+            BoxShadow(
+              color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+              blurRadius: 8,
+              offset: const Offset(0, -2),
+            ),
+          ],
+        ),
+        child: SafeArea(
+          top: false, // Don't apply SafeArea to top
+          child: SizedBox(
+            height: 60, // Fixed height to prevent overflow
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: tabs.asMap().entries.map((entry) {
+                final index = entry.key;
+                final tab = entry.value;
+                final isSelected = currentIndex == index;
 
-                  return Expanded(
-                    child: _BottomNavItem(
-                      tab: tab,
-                      isSelected: isSelected,
-                      onTap: () => _handleTap(context, index),
-                    ),
-                  );
-                }).toList(),
-              ),
+                return Expanded(
+                  child: _BottomNavItem(
+                    tab: tab,
+                    isSelected: isSelected,
+                    onTap: () => _handleTap(context, index),
+                  ),
+                );
+              }).toList(),
             ),
           ),
         ),
