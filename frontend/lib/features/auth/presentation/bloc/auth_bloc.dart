@@ -62,6 +62,11 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
     on<TokenRefreshFailed>(_onTokenRefreshFailed);
     on<ForceLogoutRequested>(_onForceLogout);
     on<UpdateUserProfileRequested>(_onUpdateUserProfile);
+    on<EmailSignUpRequested>(_onEmailSignUp);
+    on<EmailSignInRequested>(_onEmailSignIn);
+    on<PasswordResetRequested>(_onPasswordReset);
+    on<ResendVerificationEmailRequested>(_onResendVerificationEmail);
+    on<RefreshUserProfileRequested>(_onRefreshUserProfile);
 
     // Initialize authentication state
     add(const AuthInitializeRequested());
@@ -162,8 +167,21 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
           print('✅ [AUTH INIT] User authenticated: ${supabaseUser.id}');
         }
 
-        // Load user profile data for Supabase users with caching
-        final profile = await _getProfileWithCache(supabaseUser.id);
+        // For email auth users, always fetch fresh profile to get latest email_verified status
+        // This ensures the verification banner shows/hides correctly after page reload
+        final isEmailUser = supabaseUser.appMetadata['provider'] == 'email';
+
+        Map<String, dynamic>? profile;
+        if (isEmailUser) {
+          if (kDebugMode) {
+            print('📧 [AUTH INIT] Email user - fetching fresh profile');
+          }
+          profile =
+              await _userProfileService.getUserProfileAsMap(supabaseUser.id);
+        } else {
+          // For other providers, use cache
+          profile = await _getProfileWithCache(supabaseUser.id);
+        }
 
         emit(auth_states.AuthenticatedState(
           user: supabaseUser,
@@ -526,6 +544,27 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
             print(
                 '🔍 [SESSION VALIDATION] ✅ Supabase session and token are valid');
           }
+
+          // Check if email verification status changed (in case user verified via link)
+          // Only check for email auth users who haven't verified yet
+          if (currentState.needsEmailVerification) {
+            final isNowVerified =
+                await _authService.syncEmailVerificationStatus();
+            if (isNowVerified) {
+              // Email was just verified - fetch fresh profile (bypass cache)
+              if (kDebugMode) {
+                print(
+                    '🔍 [SESSION VALIDATION] 📧 Email verified! Refreshing profile...');
+              }
+              final profile =
+                  await _userProfileService.getUserProfileAsMap(currentUser.id);
+              emit(auth_states.AuthenticatedState(
+                user: currentUser,
+                profile: profile,
+                isAnonymous: false,
+              ));
+            }
+          }
         } else {
           // For anonymous users, validate storage consistency
           final isStorageAuthenticated =
@@ -699,6 +738,272 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
     }
   }
 
+  /// Handles email sign-up with retry logic and error recovery
+  Future<void> _onEmailSignUp(
+    EmailSignUpRequested event,
+    Emitter<auth_states.AuthState> emit,
+  ) async {
+    await _retryWithExponentialBackoff(
+      operation: () async {
+        emit(const auth_states.AuthLoadingState());
+
+        // Validate inputs before attempting sign-up
+        if (!AuthValidator.isValidEmail(event.email)) {
+          throw const auth_exceptions.InvalidEmailException();
+        }
+        if (!AuthValidator.isValidPassword(event.password)) {
+          throw const auth_exceptions.WeakPasswordException();
+        }
+        if (!AuthValidator.isValidFullName(event.fullName)) {
+          throw const auth_exceptions.InvalidRequestException(
+              'Please enter a valid name (at least 2 characters)');
+        }
+
+        // Attempt email sign-up
+        final success = await _authService.signUpWithEmail(
+          email: event.email,
+          password: event.password,
+          fullName: event.fullName,
+        );
+
+        // Validate authentication success
+        final validationResult = AuthValidator.validateAuthenticationSuccess(
+          success: success,
+          currentUser: _authService.currentUser,
+          operationName: 'Email Sign-Up',
+        );
+
+        if (validationResult.isSuccess) {
+          final user = validationResult.user!;
+
+          // Create or update user profile with retry
+          await _retryOperation(() => _userProfileService.upsertUserProfile(
+                userId: user.id,
+                languagePreference: 'en', // Default language
+              ));
+
+          // Load user profile data with retry and caching
+          final profile =
+              await _retryOperation(() => _getProfileWithCache(user.id));
+
+          // Invalidate router cache since auth status changed
+          RouterGuard.invalidateLanguageSelectionCache();
+
+          emit(auth_states.AuthenticatedState(
+            user: user,
+            profile: profile,
+            isAnonymous: false,
+          ));
+        } else {
+          // Handle validation failure
+          final errorMessage =
+              validationResult.errorMessage ?? 'Email sign-up failed';
+          throw auth_exceptions.AuthenticationFailedException(errorMessage);
+        }
+      },
+      onError: (e) => emit(_mapExceptionToErrorState(e)),
+      operationName: 'Email Sign-Up',
+    );
+  }
+
+  /// Handles email sign-in with retry logic and error recovery
+  Future<void> _onEmailSignIn(
+    EmailSignInRequested event,
+    Emitter<auth_states.AuthState> emit,
+  ) async {
+    await _retryWithExponentialBackoff(
+      operation: () async {
+        emit(const auth_states.AuthLoadingState());
+
+        // Validate inputs before attempting sign-in
+        if (!AuthValidator.isValidEmail(event.email)) {
+          throw const auth_exceptions.InvalidEmailException();
+        }
+        if (event.password.isEmpty) {
+          throw const auth_exceptions.InvalidRequestException(
+              'Please enter your password');
+        }
+
+        // Attempt email sign-in
+        final success = await _authService.signInWithEmail(
+          email: event.email,
+          password: event.password,
+        );
+
+        // Validate authentication success
+        final validationResult = AuthValidator.validateAuthenticationSuccess(
+          success: success,
+          currentUser: _authService.currentUser,
+          operationName: 'Email Sign-In',
+        );
+
+        if (validationResult.isSuccess) {
+          final user = validationResult.user!;
+
+          // Load user profile data with retry and caching
+          final profile =
+              await _retryOperation(() => _getProfileWithCache(user.id));
+
+          // Invalidate router cache since auth status changed
+          RouterGuard.invalidateLanguageSelectionCache();
+
+          emit(auth_states.AuthenticatedState(
+            user: user,
+            profile: profile,
+            isAnonymous: false,
+          ));
+        } else {
+          // Handle validation failure
+          final errorMessage =
+              validationResult.errorMessage ?? 'Email sign-in failed';
+          throw auth_exceptions.AuthenticationFailedException(errorMessage);
+        }
+      },
+      onError: (e) => emit(_mapExceptionToErrorState(e)),
+      operationName: 'Email Sign-In',
+    );
+  }
+
+  /// Handles password reset request
+  Future<void> _onPasswordReset(
+    PasswordResetRequested event,
+    Emitter<auth_states.AuthState> emit,
+  ) async {
+    try {
+      emit(const auth_states.AuthLoadingState());
+
+      // Validate email before attempting reset
+      if (!AuthValidator.isValidEmail(event.email)) {
+        throw const auth_exceptions.InvalidEmailException();
+      }
+
+      // Send password reset email
+      await _authService.sendPasswordResetEmail(event.email);
+
+      // Emit success state
+      emit(auth_states.PasswordResetSentState(email: event.email));
+    } catch (e) {
+      if (kDebugMode) {
+        print('Password reset error: $e');
+      }
+      if (e is auth_exceptions.AuthException) {
+        emit(_mapExceptionToErrorState(e));
+      } else {
+        emit(const auth_states.AuthErrorState(
+          message: 'Failed to send password reset email',
+        ));
+      }
+    }
+  }
+
+  /// Handles resending verification email for unverified email users
+  Future<void> _onResendVerificationEmail(
+    ResendVerificationEmailRequested event,
+    Emitter<auth_states.AuthState> emit,
+  ) async {
+    try {
+      final user = _authService.currentUser;
+      if (user == null) {
+        emit(const auth_states.AuthErrorState(
+          message: 'No user found to verify',
+        ));
+        return;
+      }
+
+      // Check if already verified using profile's email_verified field (not Supabase's auto-set emailConfirmedAt)
+      final currentState = state;
+      if (currentState is auth_states.AuthenticatedState &&
+          !currentState.needsEmailVerification) {
+        if (kDebugMode) {
+          print(
+              '📧 [AUTH BLOC] Email already verified in profile, skipping resend');
+        }
+        return;
+      }
+
+      emit(const auth_states.AuthLoadingState());
+
+      // Resend verification email
+      await _authService.resendVerificationEmail();
+
+      // Emit success state temporarily
+      emit(auth_states.VerificationEmailSentState(
+        email: user.email ?? '',
+      ));
+
+      if (kDebugMode) {
+        print('📧 [AUTH BLOC] Verification email sent to ${user.email}');
+      }
+
+      // Re-emit authenticated state so the banner continues to show
+      // The listener will have shown the snackbar by now
+      await Future.delayed(const Duration(milliseconds: 100));
+      final profile = await _getProfileWithCache(user.id);
+      emit(auth_states.AuthenticatedState(
+        user: user,
+        profile: profile,
+        isAnonymous: false,
+      ));
+    } catch (e) {
+      if (kDebugMode) {
+        print('📧 [AUTH BLOC] Resend verification email error: $e');
+      }
+      if (e is auth_exceptions.AuthException) {
+        emit(_mapExceptionToErrorState(e));
+      } else {
+        emit(const auth_states.AuthErrorState(
+          message: 'Failed to send verification email',
+        ));
+      }
+    }
+  }
+
+  /// Handles refreshing user profile data from database
+  /// Used after email verification to update the local state
+  Future<void> _onRefreshUserProfile(
+    RefreshUserProfileRequested event,
+    Emitter<auth_states.AuthState> emit,
+  ) async {
+    try {
+      final user = _authService.currentUser;
+      if (user == null) {
+        if (kDebugMode) {
+          print('📧 [AUTH BLOC] Cannot refresh profile - no user logged in');
+        }
+        return;
+      }
+
+      if (kDebugMode) {
+        print('📧 [AUTH BLOC] Refreshing user profile for ${user.id}');
+      }
+
+      // Force fetch fresh profile from database (bypass cache)
+      final profile = await _userProfileService.getUserProfileAsMap(user.id);
+
+      if (profile != null) {
+        if (kDebugMode) {
+          print(
+              '📧 [AUTH BLOC] Profile refreshed - email_verified: ${profile['email_verified']}');
+        }
+
+        emit(auth_states.AuthenticatedState(
+          user: user,
+          profile: profile,
+          isAnonymous: user.isAnonymous,
+        ));
+      } else {
+        if (kDebugMode) {
+          print('📧 [AUTH BLOC] Profile not found during refresh');
+        }
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('📧 [AUTH BLOC] Error refreshing profile: $e');
+      }
+      // Don't emit error state - just keep current state
+    }
+  }
+
   /// Checks if current user is admin
   Future<bool> isCurrentUserAdmin() async {
     try {
@@ -842,6 +1147,26 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
         severity: exception.severity,
       );
     } else if (exception is auth_exceptions.AuthConfigException) {
+      return auth_states.AuthErrorState(
+        message: exception.message,
+        severity: exception.severity,
+      );
+    } else if (exception is auth_exceptions.EmailAlreadyExistsException) {
+      return auth_states.AuthErrorState(
+        message: exception.message,
+        severity: exception.severity,
+      );
+    } else if (exception is auth_exceptions.InvalidCredentialsException) {
+      return auth_states.AuthErrorState(
+        message: exception.message,
+        severity: exception.severity,
+      );
+    } else if (exception is auth_exceptions.WeakPasswordException) {
+      return auth_states.AuthErrorState(
+        message: exception.message,
+        severity: exception.severity,
+      );
+    } else if (exception is auth_exceptions.InvalidEmailException) {
       return auth_states.AuthErrorState(
         message: exception.message,
         severity: exception.severity,

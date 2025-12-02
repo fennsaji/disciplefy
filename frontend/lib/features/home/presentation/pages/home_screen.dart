@@ -20,6 +20,8 @@ import '../../../daily_verse/presentation/bloc/daily_verse_state.dart';
 import '../../../daily_verse/presentation/widgets/daily_verse_card.dart';
 import '../../../daily_verse/domain/entities/daily_verse_entity.dart';
 import '../../../notifications/presentation/widgets/notification_enable_prompt.dart';
+import '../../../auth/presentation/bloc/auth_bloc.dart';
+import '../../../auth/presentation/widgets/email_verification_banner.dart';
 
 import '../bloc/home_bloc.dart';
 import '../bloc/home_event.dart';
@@ -264,7 +266,15 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
                           // Welcome Message
                           _buildWelcomeMessage(currentUserName),
 
-                          SizedBox(height: isLargeScreen ? 32 : 24),
+                          SizedBox(height: isLargeScreen ? 16 : 12),
+
+                          // Email Verification Banner (shown for unverified email users)
+                          BlocProvider.value(
+                            value: sl<AuthBloc>(),
+                            child: const EmailVerificationBanner(),
+                          ),
+
+                          SizedBox(height: isLargeScreen ? 16 : 12),
 
                           // Daily Verse Card with click functionality
                           DailyVerseCard(

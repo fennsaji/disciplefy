@@ -72,7 +72,33 @@ class AuthValidator {
   /// Ensures the stored user type is valid
   static bool isValidUserType(String? userType) {
     if (userType == null) return false;
-    return const ['guest', 'google', 'apple'].contains(userType);
+    return const ['guest', 'google', 'apple', 'email'].contains(userType);
+  }
+
+  /// Validates email format
+  ///
+  /// Uses a regex pattern for email validation
+  static bool isValidEmail(String email) {
+    if (email.isEmpty) return false;
+    final emailRegex = RegExp(
+      r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$',
+    );
+    return emailRegex.hasMatch(email);
+  }
+
+  /// Validates password strength
+  ///
+  /// Requires minimum 8 characters
+  static bool isValidPassword(String password) {
+    return password.length >= 8;
+  }
+
+  /// Validates full name
+  ///
+  /// Requires minimum 2 characters and not empty
+  static bool isValidFullName(String name) {
+    final trimmed = name.trim();
+    return trimmed.length >= 2;
   }
 
   /// Creates a standardized authentication error message
@@ -182,4 +208,5 @@ enum AuthType {
   supabase,
   google,
   anonymous,
+  email,
 }

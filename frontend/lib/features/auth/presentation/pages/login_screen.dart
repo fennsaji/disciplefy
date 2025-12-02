@@ -254,6 +254,11 @@ class _LoginScreenState extends State<LoginScreen> {
 
               const SizedBox(height: 16),
 
+              // Email Sign-In Button
+              _buildEmailSignInButton(context, isLoading),
+
+              const SizedBox(height: 16),
+
               // Phone Sign-In Button - COMMENTED OUT FOR NOW
               // _buildPhoneSignInButton(context, isLoading),
               //
@@ -328,6 +333,49 @@ class _LoginScreenState extends State<LoginScreen> {
                     ],
                   ),
           ),
+        ),
+      ),
+    );
+  }
+
+  /// Builds the email sign-in button
+  Widget _buildEmailSignInButton(BuildContext context, bool isLoading) {
+    final theme = Theme.of(context);
+
+    return SizedBox(
+      width: double.infinity,
+      height: 56,
+      child: OutlinedButton(
+        onPressed: isLoading ? null : () => _handleEmailSignIn(context),
+        style: OutlinedButton.styleFrom(
+          foregroundColor: theme.colorScheme.primary,
+          side: BorderSide(
+            color: theme.colorScheme.primary,
+            width: 2,
+          ),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          disabledForegroundColor:
+              theme.colorScheme.primary.withValues(alpha: 0.5),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.email_outlined,
+              size: 20,
+              color: theme.colorScheme.primary,
+            ),
+            const SizedBox(width: 12),
+            Text(
+              context.tr(TranslationKeys.loginContinueWithEmail),
+              style: AppFonts.inter(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -497,6 +545,11 @@ class _LoginScreenState extends State<LoginScreen> {
   /// Handles Google sign-in button tap
   void _handleGoogleSignIn(BuildContext context) {
     context.read<AuthBloc>().add(const GoogleSignInRequested());
+  }
+
+  /// Handles email sign-in button tap
+  void _handleEmailSignIn(BuildContext context) {
+    context.push(AppRoutes.emailAuth);
   }
 
   /// Handles phone sign-in button tap - COMMENTED OUT FOR NOW

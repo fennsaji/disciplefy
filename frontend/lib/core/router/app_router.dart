@@ -12,6 +12,8 @@ import '../../features/study_generation/domain/entities/study_guide.dart';
 import '../../features/auth/presentation/pages/login_screen.dart';
 import '../../features/auth/presentation/pages/phone_number_input_screen.dart';
 import '../../features/auth/presentation/pages/otp_verification_screen.dart';
+import '../../features/auth/presentation/pages/email_auth_screen.dart';
+import '../../features/auth/presentation/pages/password_reset_screen.dart';
 import '../../features/auth/presentation/pages/auth_callback_page.dart';
 import '../../features/profile_setup/presentation/pages/profile_setup_screen.dart';
 import '../presentation/widgets/app_shell.dart';
@@ -351,6 +353,16 @@ class AppRouter {
         },
       ),
       GoRoute(
+        path: AppRoutes.emailAuth,
+        name: 'email_auth',
+        builder: (context, state) => const EmailAuthScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.passwordReset,
+        name: 'password_reset',
+        builder: (context, state) => const PasswordResetScreen(),
+      ),
+      GoRoute(
         path: AppRoutes.authCallback,
         name: 'auth_callback',
         builder: (context, state) {
@@ -464,6 +476,8 @@ extension AppRouterExtension on GoRouter {
   void goToPurchaseHistory() => go(AppRoutes.purchaseHistory);
   void goToLogin() => go(AppRoutes.login);
   void goToPhoneAuth() => go(AppRoutes.phoneAuth);
+  void goToEmailAuth() => go(AppRoutes.emailAuth);
+  void goToPasswordReset() => go(AppRoutes.passwordReset);
   void goToPhoneAuthVerify({
     required String phoneNumber,
     required String countryCode,

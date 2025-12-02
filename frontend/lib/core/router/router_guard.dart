@@ -260,6 +260,8 @@ class RouterGuard {
         isAuthRoute: currentPath == AppRoutes.login ||
             currentPath == AppRoutes.phoneAuth ||
             currentPath == AppRoutes.phoneAuthVerify ||
+            currentPath == AppRoutes.emailAuth ||
+            currentPath == AppRoutes.passwordReset ||
             currentPath.startsWith('/auth/callback'),
       );
 
@@ -271,12 +273,16 @@ class RouterGuard {
       AppRoutes.languageSelection,
       AppRoutes.phoneAuth,
       AppRoutes.phoneAuthVerify, // /phone-auth/verify
+      AppRoutes.emailAuth, // /email-auth
+      AppRoutes.passwordReset, // /password-reset
     ];
 
     return publicRoutes.contains(path) ||
         path.startsWith(AppRoutes.onboarding) ||
         path.startsWith('/auth/callback') ||
-        path.startsWith('/phone-auth'); // Allow all phone auth related routes
+        path.startsWith('/phone-auth') || // Allow all phone auth related routes
+        path.startsWith('/email-auth') || // Allow email auth routes
+        path.startsWith('/password-reset'); // Allow password reset routes
   }
 
   /// Check if the route requires full authentication (not guest/anonymous)

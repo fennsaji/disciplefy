@@ -456,6 +456,327 @@ class AuthenticationService {
     }
   }
 
+  /// Sign up with email, password, and full name
+  ///
+  /// Creates a new user account with email/password authentication.
+  /// The user's full name is stored in user metadata.
+  Future<bool> signUpWithEmail({
+    required String email,
+    required String password,
+    required String fullName,
+  }) async {
+    try {
+      if (kDebugMode) {
+        print('🔐 [EMAIL AUTH] 🚀 Initiating email sign up for: $email');
+      }
+
+      final response = await _supabase.auth.signUp(
+        email: email,
+        password: password,
+        data: {
+          'full_name': fullName,
+          'name': fullName,
+        },
+      );
+
+      final user = response.user;
+      if (user == null) {
+        throw const auth_exceptions.AuthenticationFailedException(
+            'Failed to create account');
+      }
+
+      if (kDebugMode) {
+        print('🔐 [EMAIL AUTH] ✅ User created: ${user.id}');
+        print('🔐 [EMAIL AUTH] Session available: ${response.session != null}');
+      }
+
+      // Since we disabled email confirmation, session should be available immediately
+      final session = response.session;
+      if (session != null) {
+        final expiresAt = _extractSessionExpiration(session);
+        final deviceId = await _generateDeviceFingerprint();
+
+        await _storageService.storeAuthData(
+          AuthDataStorageParams.email(
+            accessToken: session.accessToken,
+            userId: user.id,
+            expiresAt: expiresAt,
+            deviceId: deviceId,
+          ),
+        );
+
+        // Sync profile data to backend
+        await _syncEmailProfileData(fullName);
+
+        if (kDebugMode) {
+          print('🔐 [EMAIL AUTH] ✅ Email sign up completed successfully');
+        }
+      }
+
+      return true;
+    } on AuthException catch (e) {
+      if (kDebugMode) {
+        print('🔐 [EMAIL AUTH] ❌ Supabase AuthException: ${e.message}');
+      }
+      if (e.message.contains('already registered') ||
+          e.message.contains('User already registered')) {
+        throw const auth_exceptions.EmailAlreadyExistsException();
+      }
+      if (e.message.contains('weak') || e.message.contains('password')) {
+        throw const auth_exceptions.WeakPasswordException();
+      }
+      throw auth_exceptions.AuthenticationFailedException(e.message);
+    } catch (e) {
+      if (kDebugMode) {
+        print('🔐 [EMAIL AUTH] ❌ Email Sign-Up Error: $e');
+      }
+      if (e is auth_exceptions.AuthException) rethrow;
+      throw auth_exceptions.AuthenticationFailedException(e.toString());
+    }
+  }
+
+  /// Sign in with email and password
+  ///
+  /// Authenticates an existing user with their email and password.
+  Future<bool> signInWithEmail({
+    required String email,
+    required String password,
+  }) async {
+    try {
+      if (kDebugMode) {
+        print('🔐 [EMAIL AUTH] 🚀 Initiating email sign in for: $email');
+      }
+
+      final response = await _supabase.auth.signInWithPassword(
+        email: email,
+        password: password,
+      );
+
+      final user = response.user;
+      final session = response.session;
+
+      if (user == null || session == null) {
+        throw const auth_exceptions.InvalidCredentialsException();
+      }
+
+      if (kDebugMode) {
+        print('🔐 [EMAIL AUTH] ✅ User signed in: ${user.id}');
+      }
+
+      final expiresAt = _extractSessionExpiration(session);
+      final deviceId = await _generateDeviceFingerprint();
+
+      await _storageService.storeAuthData(
+        AuthDataStorageParams.email(
+          accessToken: session.accessToken,
+          userId: user.id,
+          expiresAt: expiresAt,
+          deviceId: deviceId,
+        ),
+      );
+
+      if (kDebugMode) {
+        print('🔐 [EMAIL AUTH] ✅ Email sign in completed successfully');
+      }
+
+      return true;
+    } on AuthException catch (e) {
+      if (kDebugMode) {
+        print('🔐 [EMAIL AUTH] ❌ Supabase AuthException: ${e.message}');
+      }
+      if (e.message.contains('Invalid login credentials')) {
+        throw const auth_exceptions.InvalidCredentialsException();
+      }
+      if (e.message.contains('Email not confirmed')) {
+        throw const auth_exceptions.AuthenticationFailedException(
+            'Please verify your email before signing in.');
+      }
+      throw auth_exceptions.AuthenticationFailedException(e.message);
+    } catch (e) {
+      if (kDebugMode) {
+        print('🔐 [EMAIL AUTH] ❌ Email Sign-In Error: $e');
+      }
+      if (e is auth_exceptions.AuthException) rethrow;
+      throw auth_exceptions.AuthenticationFailedException(e.toString());
+    }
+  }
+
+  /// Send password reset email
+  ///
+  /// Sends a password reset link to the specified email address.
+  Future<void> sendPasswordResetEmail(String email) async {
+    try {
+      if (kDebugMode) {
+        print('🔐 [EMAIL AUTH] 🚀 Sending password reset email to: $email');
+      }
+
+      await _supabase.auth.resetPasswordForEmail(email);
+
+      if (kDebugMode) {
+        print('🔐 [EMAIL AUTH] ✅ Password reset email sent');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('🔐 [EMAIL AUTH] ❌ Password Reset Error: $e');
+      }
+      throw auth_exceptions.AuthenticationFailedException(
+          'Failed to send password reset email. Please try again.');
+    }
+  }
+
+  /// Check if current user's email is verified
+  ///
+  /// Returns true if the user has verified their email address.
+  /// For non-email auth users (Google, anonymous), returns true.
+  bool get isEmailVerified {
+    final user = currentUser;
+    if (user == null) return false;
+
+    // Google OAuth users are always verified
+    final provider = user.appMetadata['provider'] as String?;
+    if (provider == 'google') return true;
+
+    // Anonymous users don't need email verification
+    if (user.isAnonymous) return true;
+
+    // Check email_confirmed_at for email auth users
+    return user.emailConfirmedAt != null;
+  }
+
+  /// Resend email verification link
+  ///
+  /// Sends a new verification email to the current user via our custom Edge Function.
+  /// Only works for email auth users.
+  /// Note: The check for whether user needs verification is done at the UI/BLoC level
+  /// using the profile's email_verified field.
+  Future<void> resendVerificationEmail() async {
+    try {
+      final user = currentUser;
+      if (user == null || user.email == null) {
+        throw const auth_exceptions.InvalidRequestException(
+            'No user or email found');
+      }
+
+      // Only allow for email provider users
+      final provider = user.appMetadata['provider'] as String?;
+      if (provider != 'email') {
+        if (kDebugMode) {
+          print('🔐 [EMAIL AUTH] ℹ️ Not an email auth user, skipping');
+        }
+        return;
+      }
+
+      if (kDebugMode) {
+        print(
+            '🔐 [EMAIL AUTH] 📧 Resending verification email to: ${user.email}');
+      }
+
+      // Call our custom Edge Function instead of Supabase's resend
+      // This is because Supabase auto-confirms users when enable_confirmations=false
+      final response = await _supabase.functions.invoke(
+        'send-verification-email',
+      );
+
+      if (response.status != 200) {
+        final errorMessage =
+            response.data?['error'] ?? 'Failed to send verification email';
+        throw auth_exceptions.AuthenticationFailedException(errorMessage);
+      }
+
+      // Check if already verified
+      if (response.data?['already_verified'] == true) {
+        if (kDebugMode) {
+          print('🔐 [EMAIL AUTH] ℹ️ Email already verified');
+        }
+        return;
+      }
+
+      if (kDebugMode) {
+        print('🔐 [EMAIL AUTH] ✅ Verification email sent');
+      }
+    } on auth_exceptions.AuthException {
+      rethrow;
+    } catch (e) {
+      if (kDebugMode) {
+        print('🔐 [EMAIL AUTH] ❌ Resend verification error: $e');
+      }
+      throw auth_exceptions.AuthenticationFailedException(
+          'Failed to resend verification email. Please try again.');
+    }
+  }
+
+  /// Check email verification status from user_profiles table
+  ///
+  /// This should be called when:
+  /// 1. User returns to app after clicking verification link
+  /// 2. On app resume to check if email was verified
+  ///
+  /// Returns true if email is verified, false otherwise.
+  /// The caller should refresh the auth state to update the UI.
+  Future<bool> syncEmailVerificationStatus() async {
+    try {
+      final user = currentUser;
+      if (user == null) return false;
+
+      // Only relevant for email auth users
+      final provider = user.appMetadata['provider'] as String?;
+      if (provider != 'email') return true;
+
+      // Check the email_verified status from user_profiles table
+      // This is updated by our custom verify-email Edge Function
+      final response = await _supabase
+          .from('user_profiles')
+          .select('email_verified')
+          .eq('id', user.id)
+          .maybeSingle();
+
+      final isVerified = response?['email_verified'] == true;
+
+      if (kDebugMode) {
+        print('🔐 [EMAIL VERIFY] Profile email_verified status: $isVerified');
+      }
+
+      return isVerified;
+    } catch (e) {
+      if (kDebugMode) {
+        print('🔐 [EMAIL VERIFY] ⚠️ Status check failed: $e');
+      }
+      return false;
+    }
+  }
+
+  /// Sync email user profile data to backend
+  Future<void> _syncEmailProfileData(String fullName) async {
+    if (currentUser == null) return;
+
+    try {
+      final nameParts = fullName.trim().split(' ');
+      final firstName = nameParts.first;
+      final lastName = nameParts.length > 1 ? nameParts.skip(1).join(' ') : '';
+
+      final profileData = <String, dynamic>{
+        'firstName': firstName,
+        if (lastName.isNotEmpty) 'lastName': lastName,
+        if (currentUser!.email != null) 'email': currentUser!.email,
+      };
+
+      if (kDebugMode) {
+        print('🔐 [EMAIL AUTH] 📤 Syncing profile data: $profileData');
+      }
+
+      await _profileApiService.syncOAuthProfile(profileData);
+
+      if (kDebugMode) {
+        print('🔐 [EMAIL AUTH] ✅ Profile data synced');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('🔐 [EMAIL AUTH] ⚠️ Profile sync failed (non-blocking): $e');
+      }
+      // Don't throw - profile sync is best-effort
+    }
+  }
+
   /// Sign out current user
   Future<void> signOut() async {
     try {

@@ -215,6 +215,51 @@ class TranslationKeys {
   static const loginFeatureDailyVerseSubtitle =
       'login.feature_daily_verse_subtitle';
   static const loginPrivacyPolicy = 'login.privacy_policy';
+  static const loginContinueWithEmail = 'login.continue_with_email';
+
+  // Email Auth Screen
+  static const emailAuthTitle = 'email_auth.title';
+  static const emailAuthSignIn = 'email_auth.sign_in';
+  static const emailAuthSignUp = 'email_auth.sign_up';
+  static const emailAuthEmail = 'email_auth.email';
+  static const emailAuthEmailHint = 'email_auth.email_hint';
+  static const emailAuthPassword = 'email_auth.password';
+  static const emailAuthPasswordHint = 'email_auth.password_hint';
+  static const emailAuthFullName = 'email_auth.full_name';
+  static const emailAuthFullNameHint = 'email_auth.full_name_hint';
+  static const emailAuthForgotPassword = 'email_auth.forgot_password';
+  static const emailAuthSignInButton = 'email_auth.sign_in_button';
+  static const emailAuthSignUpButton = 'email_auth.sign_up_button';
+  static const emailAuthNoAccount = 'email_auth.no_account';
+  static const emailAuthHaveAccount = 'email_auth.have_account';
+  static const emailAuthCreateAccount = 'email_auth.create_account';
+  static const emailAuthSignInLink = 'email_auth.sign_in_link';
+  static const emailAuthInvalidEmail = 'email_auth.invalid_email';
+  static const emailAuthInvalidPassword = 'email_auth.invalid_password';
+  static const emailAuthInvalidName = 'email_auth.invalid_name';
+  static const emailAuthEmailExists = 'email_auth.email_exists';
+  static const emailAuthInvalidCredentials = 'email_auth.invalid_credentials';
+  static const emailAuthWeakPassword = 'email_auth.weak_password';
+
+  // Password Reset Screen
+  static const passwordResetTitle = 'password_reset.title';
+  static const passwordResetSubtitle = 'password_reset.subtitle';
+  static const passwordResetEmail = 'password_reset.email';
+  static const passwordResetEmailHint = 'password_reset.email_hint';
+  static const passwordResetSendButton = 'password_reset.send_button';
+  static const passwordResetBackToSignIn = 'password_reset.back_to_sign_in';
+  static const passwordResetSuccess = 'password_reset.success';
+  static const passwordResetSuccessTitle = 'password_reset.success_title';
+  static const passwordResetSuccessMessage = 'password_reset.success_message';
+  static const passwordResetInvalidEmail = 'password_reset.invalid_email';
+  static const passwordResetResend = 'password_reset.resend';
+  static const passwordResetError = 'password_reset.error';
+
+  // Email Verification Banner
+  static const emailVerificationTitle = 'email_verification.title';
+  static const emailVerificationDescription = 'email_verification.description';
+  static const emailVerificationResend = 'email_verification.resend';
+  static const emailVerificationSent = 'email_verification.sent';
 
   // Onboarding
   static const onboardingWelcome = 'onboarding.welcome';
