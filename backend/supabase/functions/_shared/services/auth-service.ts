@@ -327,12 +327,12 @@ export class AuthService {
 
             if (isActiveSubscription) {
               // Return the actual plan_type from subscription
-              // - 'premium' subscription → 'premium' tier (unlimited)
-              // - 'standard' subscription → 'standard' tier (limited quota)
-              if (subscription.plan_type === 'premium') {
+              // - 'premium' or 'premium_monthly' subscription → 'premium' tier (unlimited)
+              // - 'standard' or 'standard_monthly' subscription → 'standard' tier (limited quota)
+              if (subscription.plan_type?.startsWith('premium')) {
                 return 'premium'
               }
-              if (subscription.plan_type === 'standard') {
+              if (subscription.plan_type?.startsWith('standard')) {
                 return 'standard'
               }
             }

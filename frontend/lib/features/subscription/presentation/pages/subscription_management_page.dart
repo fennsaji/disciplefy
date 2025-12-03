@@ -370,6 +370,22 @@ class _SubscriptionManagementPageState
   }
 
   Widget _buildPlanDetails(Subscription subscription) {
+    // Format plan type nicely (premium_monthly -> Premium)
+    final formattedPlanType =
+        subscription.planType.split('_').first.replaceFirst(
+              subscription.planType.split('_').first[0],
+              subscription.planType.split('_').first[0].toUpperCase(),
+            );
+
+    // Premium plan features
+    final premiumFeatures = [
+      context.tr(TranslationKeys.pricingPremiumFeature1),
+      context.tr(TranslationKeys.pricingPremiumFeature2),
+      context.tr(TranslationKeys.pricingPremiumFeature3),
+      context.tr(TranslationKeys.pricingPremiumFeature4),
+      context.tr(TranslationKeys.pricingPremiumFeature5),
+    ];
+
     return Card(
       elevation: 2,
       shape: RoundedRectangleBorder(
@@ -380,52 +396,76 @@ class _SubscriptionManagementPageState
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            Row(
+              children: [
+                Icon(
+                  Icons.workspace_premium_rounded,
+                  color: AppTheme.primaryColor,
+                  size: 24,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  context.tr(TranslationKeys.subscriptionPlanDetails),
+                  style: AppFonts.poppins(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                    color: AppTheme.primaryColor,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
             Text(
-              context.tr(TranslationKeys.subscriptionPlanDetails),
+              formattedPlanType,
               style: AppFonts.poppins(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-                color: AppTheme.primaryColor,
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: Theme.of(context).colorScheme.onBackground,
               ),
             ),
             const SizedBox(height: 16),
-            _buildInfoRow(
-              context.tr(TranslationKeys.subscriptionPlanType),
-              subscription.planType,
-              Icons.workspace_premium_rounded,
+            const Divider(),
+            const SizedBox(height: 12),
+            Text(
+              context.tr(TranslationKeys.subscriptionIncludedFeatures),
+              style: AppFonts.inter(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color:
+                    Theme.of(context).colorScheme.onBackground.withOpacity(0.7),
+              ),
             ),
-            const Divider(height: 24),
-            _buildInfoRow(
-              context.tr(TranslationKeys.subscriptionSubscriptionType),
-              subscription.totalCount == null
-                  ? context.tr(TranslationKeys.subscriptionUnlimited)
-                  : context.tr(TranslationKeys.subscriptionMonths).replaceAll(
-                      '{count}', subscription.totalCount.toString()),
-              Icons.repeat_rounded,
-            ),
-            if (subscription.totalCount != null) ...[
-              const SizedBox(height: 8),
-              _buildInfoRow(
-                context.tr(TranslationKeys.subscriptionCompletedCycles),
-                '${subscription.paidCount}',
-                Icons.check_circle_outline_rounded,
-              ),
-              const SizedBox(height: 8),
-              _buildInfoRow(
-                context.tr(TranslationKeys.subscriptionRemainingCycles),
-                '${subscription.remainingCount}',
-                Icons.pending_outlined,
-              ),
-            ] else ...[
-              const SizedBox(height: 8),
-              _buildInfoRow(
-                context.tr(TranslationKeys.subscriptionBillingCyclesCompleted),
-                '${subscription.paidCount}',
-                Icons.check_circle_outline_rounded,
-              ),
-            ],
+            const SizedBox(height: 12),
+            ...premiumFeatures.map((feature) => _buildFeatureItem(feature)),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildFeatureItem(String feature) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10.0),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(
+            Icons.check_circle_rounded,
+            size: 18,
+            color: AppTheme.successColor,
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              feature,
+              style: AppFonts.inter(
+                fontSize: 14,
+                color:
+                    Theme.of(context).colorScheme.onBackground.withOpacity(0.8),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

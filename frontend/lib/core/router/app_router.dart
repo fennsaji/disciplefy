@@ -30,6 +30,7 @@ import '../../features/tokens/presentation/pages/token_management_page.dart';
 import '../../features/tokens/presentation/pages/purchase_history_page.dart';
 import '../../features/subscription/presentation/pages/premium_upgrade_page.dart';
 import '../../features/subscription/presentation/pages/subscription_management_page.dart';
+import '../../features/subscription/presentation/pages/pricing_page.dart';
 import '../../features/subscription/presentation/bloc/subscription_bloc.dart';
 import '../../features/memory_verses/presentation/pages/memory_verses_home_page.dart';
 import '../../features/memory_verses/presentation/pages/verse_review_page.dart';
@@ -312,6 +313,14 @@ class AppRouter {
         name: 'leaderboard',
         parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) => const LeaderboardPage(),
+      ),
+
+      // Public Pricing Page (accessible without authentication)
+      GoRoute(
+        path: AppRoutes.pricing,
+        name: 'pricing',
+        parentNavigatorKey: rootNavigatorKey,
+        builder: (context, state) => const PricingPage(),
       ),
 
       // Authentication Routes (outside app shell)

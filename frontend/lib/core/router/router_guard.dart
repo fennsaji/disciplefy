@@ -73,7 +73,7 @@ class RouterGuard {
     _logNavigationState(
         authState, onboardingState, routeAnalysis, languageSelectionState);
 
-    return _determineRedirect(
+    return await _determineRedirect(
         authState, onboardingState, languageSelectionState, routeAnalysis);
   }
 
@@ -275,6 +275,7 @@ class RouterGuard {
       AppRoutes.phoneAuthVerify, // /phone-auth/verify
       AppRoutes.emailAuth, // /email-auth
       AppRoutes.passwordReset, // /password-reset
+      AppRoutes.pricing, // /pricing - public pricing page
     ];
 
     return publicRoutes.contains(path) ||
@@ -349,12 +350,12 @@ class RouterGuard {
 
   /// Determine the appropriate redirect based on state
   /// Phase 2 Enhancement: More comprehensive decision logging
-  static String? _determineRedirect(
+  static Future<String?> _determineRedirect(
     AuthenticationState authState,
     OnboardingState onboardingState,
     LanguageSelectionState languageSelectionState,
     RouteAnalysis routeAnalysis,
-  ) {
+  ) async {
     // Phase 2: Enhanced decision matrix logging with more context
     Logger.info(
       'Router decision matrix',
@@ -418,7 +419,7 @@ class RouterGuard {
       Logger.info(
           'Decision: User fully authenticated with language preference set',
           tag: 'ROUTER');
-      return _handleFullyAuthenticatedUser(routeAnalysis, authState);
+      return await _handleFullyAuthenticatedUser(routeAnalysis, authState);
     }
 
     // Fallback - no redirect needed
@@ -549,13 +550,23 @@ class RouterGuard {
 
   /// Handle redirect logic for fully authenticated and onboarded users
   /// Phase 2 Enhancement: More aggressive blocking and better analytics
-  static String? _handleFullyAuthenticatedUser(
+  static Future<String?> _handleFullyAuthenticatedUser(
     RouteAnalysis routeAnalysis,
     AuthenticationState authState,
-  ) {
+  ) async {
     // Phase 2: Enhanced auth route blocking
     if (routeAnalysis.isAuthRoute || routeAnalysis.isOnboardingRoute) {
       return _handleAuthenticatedUserOnAuthRoutes(routeAnalysis, authState);
+    }
+
+    // Check for pending premium upgrade from pricing page
+    // This must be checked here because the router may have redirected the user
+    // through language selection flow before the login screen could handle it
+    if (routeAnalysis.currentPath == AppRoutes.home) {
+      final pendingRedirect = await _checkPendingPremiumUpgradeAsync();
+      if (pendingRedirect != null) {
+        return pendingRedirect;
+      }
     }
 
     // Phase 2: Enhanced logging for successful navigation
@@ -570,6 +581,68 @@ class RouterGuard {
         'navigation_source': 'direct_access',
       },
     );
+    return null;
+  }
+
+  /// Check for pending premium upgrade flag and return redirect if needed
+  /// Also checks if user already has premium - if so, clears flag and skips redirect
+  static Future<String?> _checkPendingPremiumUpgradeAsync() async {
+    try {
+      final box = Hive.box(_hiveBboxName);
+      final pendingPremiumUpgrade =
+          box.get('pending_premium_upgrade', defaultValue: false);
+
+      if (pendingPremiumUpgrade == true) {
+        // Check if user already has an active premium subscription
+        final userId = Supabase.instance.client.auth.currentUser?.id;
+        if (userId != null) {
+          final subscription = await Supabase.instance.client
+              .from('subscriptions')
+              .select('status, plan_type')
+              .eq('user_id', userId)
+              .inFilter('status', [
+            'active',
+            'authenticated',
+            'pending_cancellation'
+          ]).maybeSingle();
+
+          if (subscription != null &&
+              (subscription['plan_type'] as String?)?.startsWith('premium') ==
+                  true) {
+            // User already has premium - clear flag and don't redirect
+            box.delete('pending_premium_upgrade');
+            Logger.info(
+              'User already has premium subscription - skipping upgrade redirect',
+              tag: 'ROUTER',
+              context: {
+                'user_id': userId,
+                'subscription_status': subscription['status'],
+                'plan_type': subscription['plan_type'],
+              },
+            );
+            return null;
+          }
+        }
+
+        // Clear the flag and redirect to premium upgrade
+        box.delete('pending_premium_upgrade');
+        Logger.info(
+          'Pending premium upgrade detected - redirecting to premium page',
+          tag: 'ROUTER',
+          context: {
+            'redirect_target': AppRoutes.premiumUpgrade,
+            'redirect_reason': 'pending_premium_upgrade',
+          },
+        );
+        return AppRoutes.premiumUpgrade;
+      }
+    } catch (e) {
+      Logger.error(
+        'Error checking pending premium upgrade',
+        tag: 'ROUTER',
+        error: e,
+      );
+    }
     return null;
   }
 
