@@ -162,7 +162,7 @@ class _LeaderboardDialogState extends State<LeaderboardDialog> {
           // Rank badge
           SizedBox(
             width: 36,
-            child: _buildRankBadge(entry.rank, isTopThree),
+            child: _buildRankBadge(context, entry.rank, isTopThree),
           ),
           const SizedBox(width: 12),
           // Name
@@ -205,17 +205,18 @@ class _LeaderboardDialogState extends State<LeaderboardDialog> {
     );
   }
 
-  Widget _buildRankBadge(int rank, bool isTopThree) {
+  Widget _buildRankBadge(BuildContext context, int rank, bool isTopThree) {
     if (isTopThree) {
       return _buildMedalIcon(rank);
     }
 
+    final theme = Theme.of(context);
     return Container(
       width: 28,
       height: 28,
       alignment: Alignment.center,
       decoration: BoxDecoration(
-        color: Colors.grey.withOpacity(0.2),
+        color: theme.colorScheme.surfaceContainerHighest,
         shape: BoxShape.circle,
       ),
       child: Text(
@@ -223,7 +224,7 @@ class _LeaderboardDialogState extends State<LeaderboardDialog> {
         style: AppFonts.inter(
           fontSize: 12,
           fontWeight: FontWeight.w600,
-          color: Colors.grey[700],
+          color: theme.colorScheme.onSurfaceVariant,
         ),
       ),
     );

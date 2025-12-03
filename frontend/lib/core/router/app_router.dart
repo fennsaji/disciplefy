@@ -2,6 +2,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
+import '../animations/page_transitions.dart';
 import '../../features/onboarding/presentation/pages/onboarding_screen.dart';
 import '../../features/onboarding/presentation/pages/language_selection_screen.dart';
 import '../../features/onboarding/presentation/pages/onboarding_language_page.dart';
@@ -81,7 +82,10 @@ class AppRouter {
       GoRoute(
         path: AppRoutes.onboarding,
         name: 'onboarding',
-        builder: (context, state) => const OnboardingScreen(),
+        pageBuilder: (context, state) => fadeTransitionPage(
+          child: const OnboardingScreen(),
+          state: state,
+        ),
       ),
       GoRoute(
         path: AppRoutes.languageSelection,
@@ -150,7 +154,7 @@ class AppRouter {
       GoRoute(
         path: AppRoutes.saved,
         name: 'saved',
-        builder: (context, state) {
+        pageBuilder: (context, state) {
           // Parse tab parameter from query string
           final tabParam = state.uri.queryParameters['tab'];
           final sourceParam = state.uri.queryParameters['source'];
@@ -160,16 +164,22 @@ class AppRouter {
           } else if (tabParam == 'saved') {
             initialTabIndex = 0; // Saved tab
           }
-          return SavedScreen(
-            initialTabIndex: initialTabIndex,
-            navigationSource: sourceParam,
+          return slideRightTransitionPage(
+            child: SavedScreen(
+              initialTabIndex: initialTabIndex,
+              navigationSource: sourceParam,
+            ),
+            state: state,
           );
         },
       ),
       GoRoute(
         path: AppRoutes.settings,
         name: 'settings',
-        builder: (context, state) => const SettingsScreen(),
+        pageBuilder: (context, state) => slideUpTransitionPage(
+          child: const SettingsScreen(),
+          state: state,
+        ),
       ),
       GoRoute(
         path: AppRoutes.notificationSettings,
@@ -210,9 +220,12 @@ class AppRouter {
       GoRoute(
         path: AppRoutes.memoryVerses,
         name: 'memory_verses',
-        builder: (context, state) => BlocProvider(
-          create: (context) => sl<MemoryVerseBloc>(),
-          child: const MemoryVersesHomePage(),
+        pageBuilder: (context, state) => slideRightTransitionPage(
+          child: BlocProvider(
+            create: (context) => sl<MemoryVerseBloc>(),
+            child: const MemoryVersesHomePage(),
+          ),
+          state: state,
         ),
       ),
       GoRoute(
@@ -327,7 +340,10 @@ class AppRouter {
       GoRoute(
         path: AppRoutes.login,
         name: 'login',
-        builder: (context, state) => const LoginScreen(),
+        pageBuilder: (context, state) => fadeTransitionPage(
+          child: const LoginScreen(),
+          state: state,
+        ),
       ),
       GoRoute(
         path: AppRoutes.phoneAuth,
@@ -395,7 +411,7 @@ class AppRouter {
       GoRoute(
         path: AppRoutes.studyGuide,
         name: 'study_guide',
-        builder: (context, state) {
+        pageBuilder: (context, state) {
           // Handle different types of navigation data
           StudyGuide? studyGuide;
           Map<String, dynamic>? routeExtra;
@@ -411,10 +427,13 @@ class AppRouter {
             routeExtra = state.extra as Map<String, dynamic>;
           }
 
-          return StudyGuideScreen(
-            studyGuide: studyGuide,
-            routeExtra: routeExtra,
-            navigationSource: navigationSource,
+          return slideRightTransitionPage(
+            child: StudyGuideScreen(
+              studyGuide: studyGuide,
+              routeExtra: routeExtra,
+              navigationSource: navigationSource,
+            ),
+            state: state,
           );
         },
       ),
@@ -423,7 +442,7 @@ class AppRouter {
       GoRoute(
         path: AppRoutes.studyGuideV2,
         name: 'study_guide_v2',
-        builder: (context, state) {
+        pageBuilder: (context, state) {
           // Parse query parameters
           final topicId = state.uri.queryParameters['topic_id'];
           final input = state.uri.queryParameters['input'];
@@ -436,13 +455,16 @@ class AppRouter {
           final navigationSource =
               sl<StudyNavigator>().parseNavigationSource(sourceString);
 
-          return StudyGuideScreenV2(
-            topicId: topicId,
-            input: input,
-            type: type,
-            description: description,
-            language: language,
-            navigationSource: navigationSource,
+          return slideRightTransitionPage(
+            child: StudyGuideScreenV2(
+              topicId: topicId,
+              input: input,
+              type: type,
+              description: description,
+              language: language,
+              navigationSource: navigationSource,
+            ),
+            state: state,
           );
         },
       ),

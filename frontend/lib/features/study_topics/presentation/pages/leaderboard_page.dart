@@ -308,7 +308,7 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
           decoration: BoxDecoration(
-            color: medalColor.withOpacity(0.2),
+            color: medalColor.withOpacity(0.25),
             borderRadius: BorderRadius.circular(12),
           ),
           child: Text(
@@ -316,9 +316,7 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
             style: AppFonts.inter(
               fontSize: 12,
               fontWeight: FontWeight.w600,
-              color: medalColor.computeLuminance() > 0.5
-                  ? Colors.black87
-                  : medalColor,
+              color: theme.colorScheme.onSurface,
             ),
           ),
         ),
@@ -349,7 +347,7 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
             height: 32,
             alignment: Alignment.center,
             decoration: BoxDecoration(
-              color: Colors.grey.withOpacity(0.2),
+              color: theme.colorScheme.surfaceContainerHighest,
               shape: BoxShape.circle,
             ),
             child: Text(
@@ -357,7 +355,7 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
               style: AppFonts.inter(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
-                color: Colors.grey[700],
+                color: theme.colorScheme.onSurface,
               ),
             ),
           ),

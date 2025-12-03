@@ -2,10 +2,11 @@ import 'package:flutter/material.dart';
 import '../../../../core/constants/app_fonts.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/animations/app_animations.dart';
 import '../../domain/entities/saved_guide_entity.dart';
 
-/// Unified Guide List Item with save/unsave functionality
-class GuideListItem extends StatelessWidget {
+/// Unified Guide List Item with save/unsave functionality and tap animation
+class GuideListItem extends StatefulWidget {
   final SavedGuideEntity guide;
   final VoidCallback onTap;
   final VoidCallback? onRemove;
@@ -24,96 +25,154 @@ class GuideListItem extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) => Card(
-        margin: const EdgeInsets.only(bottom: 12),
-        elevation: 2,
-        color: Theme.of(context).colorScheme.surface,
-        shadowColor: Theme.of(context).colorScheme.primary.withOpacity(0.1),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-          side: BorderSide(
-            color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
-          ),
+  State<GuideListItem> createState() => _GuideListItemState();
+}
+
+class _GuideListItemState extends State<GuideListItem>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _scaleAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 100),
+    );
+    _scaleAnimation = Tween<double>(
+      begin: 1.0,
+      end: 0.97,
+    ).animate(CurvedAnimation(
+      parent: _controller,
+      curve: AppAnimations.defaultCurve,
+    ));
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _onTapDown(TapDownDetails details) {
+    if (!widget.isLoading) {
+      _controller.forward();
+    }
+  }
+
+  void _onTapUp(TapUpDetails details) {
+    _controller.reverse();
+    if (!widget.isLoading) {
+      widget.onTap();
+    }
+  }
+
+  void _onTapCancel() {
+    _controller.reverse();
+  }
+
+  @override
+  Widget build(BuildContext context) => AnimatedBuilder(
+        animation: _scaleAnimation,
+        builder: (context, child) => Transform.scale(
+          scale: _scaleAnimation.value,
+          child: child,
         ),
-        child: InkWell(
-          onTap: isLoading ? null : onTap,
-          borderRadius: BorderRadius.circular(12),
-          child: Stack(
-            children: [
-              Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        _buildIcon(context),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                guide.displayTitle,
-                                style: AppFonts.inter(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
-                                  color: isLoading
-                                      ? Theme.of(context)
-                                          .colorScheme
-                                          .onSurface
-                                          .withValues(alpha: 0.6)
-                                      : Theme.of(context).colorScheme.onSurface,
-                                  height: 1.3,
-                                ),
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                guide.subtitle,
-                                style: AppFonts.inter(
-                                  fontSize: 12,
-                                  color: Theme.of(context)
-                                      .colorScheme
-                                      .onSurfaceVariant,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        _buildActionButton(context),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    _buildContentPreview(context),
-                    const SizedBox(height: 12),
-                    _buildFooter(context),
-                  ],
-                ),
+        child: GestureDetector(
+          onTapDown: _onTapDown,
+          onTapUp: _onTapUp,
+          onTapCancel: _onTapCancel,
+          child: Card(
+            margin: const EdgeInsets.only(bottom: 12),
+            elevation: 2,
+            color: Theme.of(context).colorScheme.surface,
+            shadowColor: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+              side: BorderSide(
+                color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
               ),
-              if (isLoading)
-                Positioned.fill(
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.7),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Center(
-                      child: SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation<Color>(
-                              Theme.of(context).colorScheme.primary),
+            ),
+            child: Stack(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          _buildIcon(context),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  widget.guide.displayTitle,
+                                  style: AppFonts.inter(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                    color: widget.isLoading
+                                        ? Theme.of(context)
+                                            .colorScheme
+                                            .onSurface
+                                            .withValues(alpha: 0.6)
+                                        : Theme.of(context)
+                                            .colorScheme
+                                            .onSurface,
+                                    height: 1.3,
+                                  ),
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  widget.guide.subtitle,
+                                  style: AppFonts.inter(
+                                    fontSize: 12,
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onSurfaceVariant,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          _buildActionButton(context),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      _buildContentPreview(context),
+                      const SizedBox(height: 12),
+                      _buildFooter(context),
+                    ],
+                  ),
+                ),
+                if (widget.isLoading)
+                  Positioned.fill(
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.7),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Center(
+                        child: SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                                Theme.of(context).colorScheme.primary),
+                          ),
                         ),
                       ),
                     ),
                   ),
-                ),
-            ],
+              ],
+            ),
           ),
         ),
       );
@@ -122,11 +181,12 @@ class GuideListItem extends StatelessWidget {
     IconData iconData;
     Color iconColor;
 
-    if (guide.isSaved) {
+    if (widget.guide.isSaved) {
       iconData = Icons.bookmark;
       iconColor = Theme.of(context).colorScheme.primary;
     } else {
-      iconData = guide.type == GuideType.verse ? Icons.menu_book : Icons.topic;
+      iconData =
+          widget.guide.type == GuideType.verse ? Icons.menu_book : Icons.topic;
       iconColor = Theme.of(context).colorScheme.onSurface.withOpacity(0.6);
     }
 
@@ -146,13 +206,13 @@ class GuideListItem extends StatelessWidget {
   }
 
   Widget _buildActionButton(BuildContext context) {
-    if (showRemoveOption && onRemove != null) {
+    if (widget.showRemoveOption && widget.onRemove != null) {
       // Show remove options for saved guides
       return PopupMenuButton<String>(
-        enabled: !isLoading,
+        enabled: !widget.isLoading,
         onSelected: (value) {
           if (value == 'remove') {
-            onRemove!();
+            widget.onRemove!();
           }
         },
         itemBuilder: (context) => [
@@ -170,7 +230,7 @@ class GuideListItem extends StatelessWidget {
         ],
         child: Icon(
           Icons.more_vert,
-          color: isLoading
+          color: widget.isLoading
               ? Theme.of(context)
                   .colorScheme
                   .onSurfaceVariant
@@ -179,13 +239,13 @@ class GuideListItem extends StatelessWidget {
           size: 20,
         ),
       );
-    } else if (onSave != null && !guide.isSaved) {
+    } else if (widget.onSave != null && !widget.guide.isSaved) {
       // Show save button for recent guides that aren't saved
       return IconButton(
-        onPressed: isLoading ? null : onSave,
+        onPressed: widget.isLoading ? null : widget.onSave,
         icon: Icon(
           Icons.bookmark_border,
-          color: isLoading
+          color: widget.isLoading
               ? Theme.of(context).colorScheme.primary.withOpacity(0.5)
               : Theme.of(context).colorScheme.primary,
           size: 20,
@@ -193,7 +253,7 @@ class GuideListItem extends StatelessWidget {
         tooltip: 'Save Guide',
         splashRadius: 20,
       );
-    } else if (guide.isSaved) {
+    } else if (widget.guide.isSaved) {
       // Show filled bookmark for already saved guides
       return Icon(
         Icons.bookmark,
@@ -206,10 +266,10 @@ class GuideListItem extends StatelessWidget {
   }
 
   Widget _buildContentPreview(BuildContext context) => Text(
-        guide.contentPreview,
+        widget.guide.contentPreview,
         style: AppFonts.inter(
           fontSize: 14,
-          color: isLoading
+          color: widget.isLoading
               ? Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6)
               : Theme.of(context).colorScheme.onSurface,
           height: 1.4,
@@ -220,7 +280,7 @@ class GuideListItem extends StatelessWidget {
 
   Widget _buildFooter(BuildContext context) {
     final timeFormat = DateFormat('MMM d, yyyy');
-    final timeText = timeFormat.format(guide.lastAccessedAt);
+    final timeText = timeFormat.format(widget.guide.lastAccessedAt);
 
     return Row(
       children: [
@@ -240,7 +300,8 @@ class GuideListItem extends StatelessWidget {
         const Spacer(),
         Row(
           children: [
-            if (guide.type == GuideType.verse && guide.verseReference != null)
+            if (widget.guide.type == GuideType.verse &&
+                widget.guide.verseReference != null)
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                 decoration: BoxDecoration(
@@ -256,7 +317,7 @@ class GuideListItem extends StatelessWidget {
                   ),
                 ),
               )
-            else if (guide.type == GuideType.topic)
+            else if (widget.guide.type == GuideType.topic)
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                 decoration: BoxDecoration(
@@ -274,7 +335,7 @@ class GuideListItem extends StatelessWidget {
                 ),
               ),
             const SizedBox(width: 8),
-            if (guide.isSaved)
+            if (widget.guide.isSaved)
               Icon(
                 Icons.bookmark,
                 size: 16,
