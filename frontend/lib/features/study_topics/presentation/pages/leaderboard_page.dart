@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/constants/app_fonts.dart';
@@ -6,13 +7,17 @@ import '../../../../core/extensions/translation_extension.dart';
 import '../../../../core/i18n/translation_keys.dart';
 import '../../../../core/router/app_routes.dart';
 import '../../../../core/theme/app_theme.dart';
-import '../../data/datasources/leaderboard_remote_datasource.dart';
 import '../../domain/entities/leaderboard_entry.dart';
+import '../bloc/leaderboard_bloc.dart';
+import '../bloc/leaderboard_event.dart';
+import '../bloc/leaderboard_state.dart';
 
 /// Full-screen leaderboard page showing XP rankings.
 ///
 /// Displays top 10 users with 200+ XP, fills remaining spots with placeholder data.
 /// Always shows current user's rank at the bottom.
+///
+/// Uses BLoC pattern for state management following Clean Architecture.
 class LeaderboardPage extends StatefulWidget {
   const LeaderboardPage({super.key});
 
@@ -21,17 +26,11 @@ class LeaderboardPage extends StatefulWidget {
 }
 
 class _LeaderboardPageState extends State<LeaderboardPage> {
-  late Future<({List<LeaderboardEntry> entries, UserXpRank userRank})> _future;
-  final _dataSource = LeaderboardRemoteDataSource();
-
   @override
   void initState() {
     super.initState();
-    _loadData();
-  }
-
-  void _loadData() {
-    _future = _dataSource.getLeaderboardWithUserRank();
+    // Dispatch load event on init
+    context.read<LeaderboardBloc>().add(const LoadLeaderboard());
   }
 
   @override
@@ -68,26 +67,28 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
         elevation: 0,
         scrolledUnderElevation: 0,
       ),
-      body: FutureBuilder<
-          ({List<LeaderboardEntry> entries, UserXpRank userRank})>(
-        future: _future,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
+      body: BlocBuilder<LeaderboardBloc, LeaderboardState>(
+        builder: (context, state) {
+          if (state is LeaderboardInitial || state is LeaderboardLoading) {
             return const Center(child: CircularProgressIndicator());
           }
 
-          if (snapshot.hasError) {
-            return _buildErrorState(context);
+          if (state is LeaderboardError) {
+            return _buildErrorState(context, state.message);
           }
 
-          final data = snapshot.data!;
-          return _buildContent(context, data.entries, data.userRank);
+          if (state is LeaderboardLoaded) {
+            return _buildContent(context, state.entries, state.userRank);
+          }
+
+          // Fallback for unknown states
+          return const Center(child: CircularProgressIndicator());
         },
       ),
     );
   }
 
-  Widget _buildErrorState(BuildContext context) {
+  Widget _buildErrorState(BuildContext context, String message) {
     final theme = Theme.of(context);
 
     return Center(
@@ -113,9 +114,7 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
             const SizedBox(height: 24),
             FilledButton.icon(
               onPressed: () {
-                setState(() {
-                  _loadData();
-                });
+                context.read<LeaderboardBloc>().add(const RefreshLeaderboard());
               },
               icon: const Icon(Icons.refresh),
               label: Text(context.tr(TranslationKeys.commonRetry)),
@@ -164,8 +163,6 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
   Widget _buildPodiumSection(
       BuildContext context, List<LeaderboardEntry> entries) {
     if (entries.isEmpty) return const SizedBox(height: 20);
-
-    final theme = Theme.of(context);
 
     // Get top 3 entries (or fewer if not enough)
     final first = entries.isNotEmpty ? entries[0] : null;

@@ -200,33 +200,56 @@ class _AnimatedIconButtonState extends State<AnimatedIconButton>
         : widget.color ?? theme.colorScheme.primary;
     final bgColor = widget.backgroundColor ?? iconColor.withOpacity(0.1);
 
-    Widget button = GestureDetector(
-      onTapDown: _onTapDown,
-      onTapUp: _onTapUp,
-      onTapCancel: _onTapCancel,
-      child: AnimatedBuilder(
-        animation: _scaleAnimation,
-        builder: (context, child) => Transform.scale(
-          scale: _scaleAnimation.value,
-          child: child,
-        ),
-        child: Container(
-          width: widget.size,
-          height: widget.size,
-          decoration: BoxDecoration(
-            color: bgColor,
-            borderRadius: BorderRadius.circular(widget.size / 4),
-          ),
-          child: Center(
-            child: Icon(
-              widget.icon,
-              color: iconColor,
-              size: widget.iconSize,
-            ),
-          ),
+    // Check for reduced motion preference
+    final reduceMotion = AppAnimations.shouldReduceMotion(context);
+
+    // Static button content (used for both animated and non-animated paths)
+    final buttonContent = Container(
+      width: widget.size,
+      height: widget.size,
+      decoration: BoxDecoration(
+        color: bgColor,
+        borderRadius: BorderRadius.circular(widget.size / 4),
+      ),
+      child: Center(
+        child: Icon(
+          widget.icon,
+          color: iconColor,
+          size: widget.iconSize,
         ),
       ),
     );
+
+    Widget button;
+    if (reduceMotion) {
+      // Reduced motion: static button without scale animation
+      button = GestureDetector(
+        onTap: widget.isDisabled
+            ? null
+            : () {
+                if (widget.onPressed != null) {
+                  HapticFeedback.lightImpact();
+                  widget.onPressed!();
+                }
+              },
+        child: buttonContent,
+      );
+    } else {
+      // Normal: animated button with scale effect
+      button = GestureDetector(
+        onTapDown: _onTapDown,
+        onTapUp: _onTapUp,
+        onTapCancel: _onTapCancel,
+        child: AnimatedBuilder(
+          animation: _scaleAnimation,
+          builder: (context, child) => Transform.scale(
+            scale: _scaleAnimation.value,
+            child: child,
+          ),
+          child: buttonContent,
+        ),
+      );
+    }
 
     if (widget.tooltip != null) {
       button = Tooltip(
@@ -334,6 +357,82 @@ class _AnimatedGradientButtonState extends State<AnimatedGradientButton>
 
     final isEnabled = widget.onPressed != null && !widget.isLoading;
 
+    // Check for reduced motion preference
+    final reduceMotion = AppAnimations.shouldReduceMotion(context);
+
+    // Static button content
+    final buttonContent = AnimatedOpacity(
+      duration: reduceMotion ? Duration.zero : AppAnimations.fast,
+      opacity: isEnabled ? 1.0 : 0.6,
+      child: Container(
+        width: widget.isFullWidth ? double.infinity : null,
+        height: widget.height,
+        decoration: BoxDecoration(
+          gradient: widget.gradient ?? defaultGradient,
+          borderRadius: BorderRadius.circular(widget.borderRadius),
+          boxShadow: isEnabled
+              ? [
+                  BoxShadow(
+                    color: theme.colorScheme.primary.withOpacity(0.3),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
+                  ),
+                ]
+              : null,
+        ),
+        child: Material(
+          color: Colors.transparent,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: Center(
+              child: widget.isLoading
+                  ? SizedBox(
+                      width: 24,
+                      height: 24,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2.5,
+                        valueColor:
+                            const AlwaysStoppedAnimation<Color>(Colors.white),
+                      ),
+                    )
+                  : Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (widget.icon != null) ...[
+                          widget.icon!,
+                          const SizedBox(width: 8),
+                        ],
+                        Text(
+                          widget.text,
+                          style: widget.textStyle ??
+                              TextStyle(
+                                color: Colors.white,
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                              ),
+                        ),
+                      ],
+                    ),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    if (reduceMotion) {
+      // Reduced motion: static button without scale animation
+      return GestureDetector(
+        onTap: isEnabled
+            ? () {
+                HapticFeedback.mediumImpact();
+                widget.onPressed!();
+              }
+            : null,
+        child: buttonContent,
+      );
+    }
+
+    // Normal: animated button with scale effect
     return GestureDetector(
       onTapDown: _onTapDown,
       onTapUp: _onTapUp,
@@ -344,63 +443,7 @@ class _AnimatedGradientButtonState extends State<AnimatedGradientButton>
           scale: _scaleAnimation.value,
           child: child,
         ),
-        child: AnimatedOpacity(
-          duration: AppAnimations.fast,
-          opacity: isEnabled ? 1.0 : 0.6,
-          child: Container(
-            width: widget.isFullWidth ? double.infinity : null,
-            height: widget.height,
-            decoration: BoxDecoration(
-              gradient: widget.gradient ?? defaultGradient,
-              borderRadius: BorderRadius.circular(widget.borderRadius),
-              boxShadow: isEnabled
-                  ? [
-                      BoxShadow(
-                        color: theme.colorScheme.primary.withOpacity(0.3),
-                        blurRadius: 12,
-                        offset: const Offset(0, 4),
-                      ),
-                    ]
-                  : null,
-            ),
-            child: Material(
-              color: Colors.transparent,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24),
-                child: Center(
-                  child: widget.isLoading
-                      ? SizedBox(
-                          width: 24,
-                          height: 24,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2.5,
-                            valueColor: const AlwaysStoppedAnimation<Color>(
-                                Colors.white),
-                          ),
-                        )
-                      : Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            if (widget.icon != null) ...[
-                              widget.icon!,
-                              const SizedBox(width: 8),
-                            ],
-                            Text(
-                              widget.text,
-                              style: widget.textStyle ??
-                                  TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                            ),
-                          ],
-                        ),
-                ),
-              ),
-            ),
-          ),
-        ),
+        child: buttonContent,
       ),
     );
   }

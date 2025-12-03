@@ -930,6 +930,7 @@ class AppTranslations {
       'unlock_access': 'Unlock unlimited access to all features',
       'price_month': '/month',
       'cancel_anytime': 'Cancel anytime • Billed monthly',
+      'promo_discount': '50% OFF',
       'what_you_get': 'What you get with Premium',
       'unlimited_tokens': 'Unlimited Tokens',
       'unlimited_tokens_desc': 'Generate study guides without daily limits',
@@ -1149,6 +1150,8 @@ class AppTranslations {
         'feature5': 'Premium AI models',
         'feature6': 'Cancel anytime',
       },
+      'secure_payments': 'Secure payments powered by Razorpay',
+      'prices_in_inr': 'Prices are in Indian Rupees (INR)',
     },
   };
 
@@ -2060,6 +2063,7 @@ class AppTranslations {
       'unlock_access': 'सभी सुविधाओं तक असीमित पहुंच अनलॉक करें',
       'price_month': '/महीना',
       'cancel_anytime': 'कभी भी रद्द करें • मासिक बिलिंग',
+      'promo_discount': '50% छूट',
       'what_you_get': 'प्रीमियम के साथ आपको क्या मिलता है',
       'unlimited_tokens': 'असीमित टोकन',
       'unlimited_tokens_desc': 'बिना दैनिक सीमा के स्टडी गाइड बनाएं',
@@ -2279,6 +2283,8 @@ class AppTranslations {
         'feature5': 'प्रीमियम AI मॉडल',
         'feature6': 'कभी भी रद्द करें',
       },
+      'secure_payments': 'Razorpay द्वारा सुरक्षित भुगतान',
+      'prices_in_inr': 'कीमतें भारतीय रुपये (INR) में हैं',
     },
   };
 
@@ -3194,6 +3200,7 @@ class AppTranslations {
           'പരിധിയില്ലാത്ത ബൈബിൾ പഠനത്തിനുള്ള പൂർണ്ണ ആക്‌സസ് അൺലോക്ക് ചെയ്യുക',
       'price_month': '₹149/മാസം',
       'cancel_anytime': 'എപ്പോൾ വേണമെങ്കിലും റദ്ദാക്കാം',
+      'promo_discount': '50% കിഴിവ്',
       'what_you_get': 'നിങ്ങൾക്ക് ലഭിക്കുന്നത്',
       'unlimited_tokens': 'പരിധിയില്ലാത്ത ടോക്കണുകൾ',
       'unlimited_tokens_desc': 'ദൈനംദിന പരിധികളില്ലാതെ പഠന ഗൈഡുകൾ സൃഷ്ടിക്കുക',
@@ -3474,6 +3481,8 @@ class AppTranslations {
         'feature5': 'പ്രീമിയം AI മോഡലുകൾ',
         'feature6': 'എപ്പോൾ വേണമെങ്കിലും റദ്ദാക്കുക',
       },
+      'secure_payments': 'Razorpay മുഖേനയുള്ള സുരക്ഷിത പേയ്‌മെന്റുകൾ',
+      'prices_in_inr': 'വിലകൾ ഇന്ത്യൻ രൂപയിൽ (INR) ആണ്',
     },
   };
 }

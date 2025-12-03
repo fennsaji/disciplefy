@@ -322,7 +322,7 @@ class _PremiumUpgradePageState extends State<PremiumUpgradePage>
               ],
             ),
             const SizedBox(height: 8),
-            // 50% off badge
+            // Promo discount badge
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
               decoration: BoxDecoration(
@@ -330,7 +330,7 @@ class _PremiumUpgradePageState extends State<PremiumUpgradePage>
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Text(
-                '50% OFF',
+                context.tr(TranslationKeys.premiumPromoDiscount),
                 style: AppFonts.inter(
                   fontSize: 14,
                   fontWeight: FontWeight.w700,

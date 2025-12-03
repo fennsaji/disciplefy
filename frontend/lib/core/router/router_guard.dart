@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -596,15 +598,42 @@ class RouterGuard {
         // Check if user already has an active premium subscription
         final userId = Supabase.instance.client.auth.currentUser?.id;
         if (userId != null) {
-          final subscription = await Supabase.instance.client
-              .from('subscriptions')
-              .select('status, plan_type')
-              .eq('user_id', userId)
-              .inFilter('status', [
-            'active',
-            'authenticated',
-            'pending_cancellation'
-          ]).maybeSingle();
+          Map<String, dynamic>? subscription;
+          try {
+            subscription = await Supabase.instance.client
+                .from('subscriptions')
+                .select('status, plan_type')
+                .eq('user_id', userId)
+                .inFilter('status',
+                    ['active', 'authenticated', 'pending_cancellation'])
+                .maybeSingle()
+                .timeout(
+                  const Duration(seconds: 10),
+                  onTimeout: () {
+                    Logger.warning(
+                      'Subscription query timed out after 10 seconds',
+                      tag: 'ROUTER',
+                      context: {'user_id': userId},
+                    );
+                    return null;
+                  },
+                );
+          } on TimeoutException catch (e) {
+            Logger.warning(
+              'Subscription query timeout: ${e.message}',
+              tag: 'ROUTER',
+              context: {'user_id': userId},
+            );
+            // Continue without subscription check - allow redirect to upgrade page
+          } catch (e) {
+            Logger.error(
+              'Error checking subscription status',
+              tag: 'ROUTER',
+              error: e,
+              context: {'user_id': userId},
+            );
+            // Continue without subscription check - allow redirect to upgrade page
+          }
 
           if (subscription != null &&
               (subscription['plan_type'] as String?)?.startsWith('premium') ==

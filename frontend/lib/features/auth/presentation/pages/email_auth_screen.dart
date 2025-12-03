@@ -65,7 +65,7 @@ class _EmailAuthScreenState extends State<EmailAuthScreen> {
             leading: IconButton(
               icon: Icon(
                 Icons.arrow_back,
-                color: Theme.of(context).colorScheme.onBackground,
+                color: Theme.of(context).colorScheme.onSurface,
               ),
               onPressed: () => context.pop(),
             ),
@@ -137,7 +137,7 @@ class _EmailAuthScreenState extends State<EmailAuthScreen> {
       style: AppFonts.poppins(
         fontSize: 28,
         fontWeight: FontWeight.w700,
-        color: theme.colorScheme.onBackground,
+        color: theme.colorScheme.onSurface,
       ),
       textAlign: TextAlign.center,
     );

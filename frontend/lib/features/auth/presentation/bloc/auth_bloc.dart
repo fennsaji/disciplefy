@@ -926,20 +926,18 @@ class AuthBloc extends Bloc<AuthEvent, auth_states.AuthState> {
       // Resend verification email
       await _authService.resendVerificationEmail();
 
-      // Emit success state temporarily
-      emit(auth_states.VerificationEmailSentState(
-        email: user.email ?? '',
-      ));
+      // Get cached profile for the state
+      final profile = await _getProfileWithCache(user.id);
 
       if (kDebugMode) {
         print('📧 [AUTH BLOC] Verification email sent to ${user.email}');
       }
 
-      // Re-emit authenticated state so the banner continues to show
-      // The listener will have shown the snackbar by now
-      await Future.delayed(const Duration(milliseconds: 100));
-      final profile = await _getProfileWithCache(user.id);
-      emit(auth_states.AuthenticatedState(
+      // Emit VerificationEmailSentState which extends AuthenticatedState
+      // This maintains the authenticated session while signaling email was sent
+      // The UI listener will show snackbar, and banner continues showing
+      // because VerificationEmailSentState IS an AuthenticatedState
+      emit(auth_states.VerificationEmailSentState(
         user: user,
         profile: profile,
         isAnonymous: false,

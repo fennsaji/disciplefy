@@ -96,6 +96,10 @@ import '../../features/study_topics/data/repositories/learning_paths_repository_
 import '../../features/study_topics/domain/repositories/learning_paths_repository.dart';
 import '../../features/study_topics/presentation/bloc/learning_paths_bloc.dart';
 import '../../features/study_topics/presentation/bloc/continue_learning_bloc.dart';
+import '../../features/study_topics/data/datasources/leaderboard_remote_datasource.dart';
+import '../../features/study_topics/data/repositories/leaderboard_repository_impl.dart';
+import '../../features/study_topics/domain/repositories/leaderboard_repository.dart';
+import '../../features/study_topics/presentation/bloc/leaderboard_bloc.dart';
 import '../services/theme_service.dart';
 import '../services/auth_state_provider.dart';
 import '../services/language_preference_service.dart';
@@ -545,6 +549,19 @@ Future<void> initializeDependencies() async {
   //! Continue Learning (In-Progress Topics)
   sl.registerFactory(() => ContinueLearningBloc(
         repository: sl<TopicProgressRepository>(),
+      ));
+
+  //! Leaderboard (XP Rankings)
+  sl.registerLazySingleton<LeaderboardRemoteDataSource>(
+    () => LeaderboardRemoteDataSource(supabaseClient: sl()),
+  );
+
+  sl.registerLazySingleton<LeaderboardRepository>(
+    () => LeaderboardRepositoryImpl(remoteDataSource: sl()),
+  );
+
+  sl.registerFactory(() => LeaderboardBloc(
+        repository: sl(),
       ));
 
   //! Onboarding

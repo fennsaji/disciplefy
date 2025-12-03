@@ -75,15 +75,27 @@ class AppAnimations {
   // ============================================================
 
   /// Calculate stagger delay for a specific index in a list
-  static Duration getStaggerDelay(int index, {int maxStagger = 10}) {
+  ///
+  /// [index] - The index of the item in the list
+  /// [maxStagger] - Maximum index to apply stagger to (prevents long delays)
+  /// [baseDelay] - Base delay duration between items (defaults to [staggerDelay])
+  static Duration getStaggerDelay(
+    int index, {
+    int maxStagger = 10,
+    Duration? baseDelay,
+  }) {
     // Cap the stagger to prevent long delays for large lists
     final effectiveIndex = index.clamp(0, maxStagger);
-    return Duration(milliseconds: staggerDelay.inMilliseconds * effectiveIndex);
+    final delay = baseDelay ?? staggerDelay;
+    return Duration(milliseconds: delay.inMilliseconds * effectiveIndex);
   }
 
   /// Check if animations should be reduced based on system settings
+  ///
+  /// Uses null-safe accessor to avoid exceptions when no MediaQuery exists
+  /// and only rebuilds when disableAnimations property changes.
   static bool shouldReduceMotion(BuildContext context) {
-    return MediaQuery.of(context).disableAnimations;
+    return MediaQuery.maybeDisableAnimationsOf(context) ?? false;
   }
 
   /// Get appropriate duration considering reduced motion settings
@@ -326,7 +338,7 @@ class StaggeredListBuilder extends StatelessWidget {
       itemBuilder: (context, index) {
         return FadeInWidget(
           duration: itemDuration,
-          delay: AppAnimations.getStaggerDelay(index),
+          delay: AppAnimations.getStaggerDelay(index, baseDelay: staggerDelay),
           slideOffset: slideOffset ?? const Offset(0, 0.1),
           child: itemBuilder(context, index),
         );

@@ -49,6 +49,7 @@ import '../../features/personalization/presentation/pages/personalization_questi
 import '../../features/study_topics/presentation/pages/learning_path_detail_page.dart';
 import '../../features/study_topics/presentation/pages/leaderboard_page.dart';
 import '../../features/study_topics/presentation/bloc/learning_paths_bloc.dart';
+import '../../features/study_topics/presentation/bloc/leaderboard_bloc.dart';
 import 'app_routes.dart';
 import 'router_guard.dart';
 import 'auth_notifier.dart';
@@ -325,7 +326,10 @@ class AppRouter {
         path: AppRoutes.leaderboard,
         name: 'leaderboard',
         parentNavigatorKey: rootNavigatorKey,
-        builder: (context, state) => const LeaderboardPage(),
+        builder: (context, state) => BlocProvider(
+          create: (context) => sl<LeaderboardBloc>(),
+          child: const LeaderboardPage(),
+        ),
       ),
 
       // Public Pricing Page (accessible without authentication)
