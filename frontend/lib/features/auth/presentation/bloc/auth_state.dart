@@ -134,15 +134,17 @@ class PasswordResetSentState extends AuthState {
 }
 
 /// State when verification email was sent successfully
-class VerificationEmailSentState extends AuthState {
-  final String email;
+/// Extends AuthenticatedState to maintain user session while showing success
+class VerificationEmailSentState extends AuthenticatedState {
   final String message;
 
   const VerificationEmailSentState({
-    required this.email,
+    required super.user,
+    super.profile,
+    required super.isAnonymous,
     this.message = 'Verification email sent. Please check your inbox.',
   });
 
   @override
-  List<Object?> get props => [email, message];
+  List<Object?> get props => [user, profile, isAnonymous, message];
 }

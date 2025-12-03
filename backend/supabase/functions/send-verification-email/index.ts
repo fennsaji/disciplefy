@@ -235,13 +235,21 @@ Deno.serve(async (req) => {
       return createErrorResponse('Failed to generate verification token', 500, corsHeaders)
     }
 
+    // Defensive check: ensure user has a valid email
+    if (!user.email || typeof user.email !== 'string' || user.email.trim() === '') {
+      console.error('[VERIFY EMAIL] User has no valid email address, user_id:', user.id)
+      return createErrorResponse('User email not available', 400, corsHeaders)
+    }
+
+    const userEmail = user.email.trim()
+
     // Generate verification URL and email content
-    const verificationUrl = generateVerificationUrl(verificationToken, user.email!)
+    const verificationUrl = generateVerificationUrl(verificationToken, userEmail)
     const emailHtml = generateEmailHtml(verificationUrl, profile?.first_name)
 
     // Send email (or log URL in local dev)
     const emailResult = await sendEmailWithResend(
-      user.email!,
+      userEmail,
       'Verify Your Email - Disciplefy',
       emailHtml,
       verificationUrl
@@ -251,7 +259,7 @@ Deno.serve(async (req) => {
       return createErrorResponse(emailResult.error || 'Failed to send verification email', 500, corsHeaders)
     }
 
-    console.log(`[VERIFY EMAIL] Verification email sent to ${user.email}`)
+    console.log(`[VERIFY EMAIL] Verification email sent successfully for user_id: ${user.id}`)
 
     return createSuccessResponse({
       message: 'Verification email sent',

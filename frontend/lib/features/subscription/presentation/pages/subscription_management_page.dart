@@ -371,11 +371,16 @@ class _SubscriptionManagementPageState
 
   Widget _buildPlanDetails(Subscription subscription) {
     // Format plan type nicely (premium_monthly -> Premium)
-    final formattedPlanType =
-        subscription.planType.split('_').first.replaceFirst(
-              subscription.planType.split('_').first[0],
-              subscription.planType.split('_').first[0].toUpperCase(),
-            );
+    // Defensive validation: handle null, empty, or malformed planType
+    String formattedPlanType = 'Premium';
+    final planType = subscription.planType;
+    if (planType.isNotEmpty) {
+      final parts = planType.split('_');
+      final firstPart = parts.first;
+      if (firstPart.isNotEmpty) {
+        formattedPlanType = firstPart[0].toUpperCase() + firstPart.substring(1);
+      }
+    }
 
     // Premium plan features
     final premiumFeatures = [

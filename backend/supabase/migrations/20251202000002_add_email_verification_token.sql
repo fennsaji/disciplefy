@@ -9,14 +9,18 @@ ADD COLUMN IF NOT EXISTS email_verification_token TEXT;
 ALTER TABLE public.user_profiles
 ADD COLUMN IF NOT EXISTS email_verification_token_expires_at TIMESTAMPTZ;
 
--- Create index for token lookups
-CREATE INDEX IF NOT EXISTS idx_user_profiles_email_verification_token 
+-- Drop existing index if exists (for idempotence)
+DROP INDEX IF EXISTS idx_user_profiles_email_verification_token;
+
+-- Create UNIQUE partial index for token lookups and race condition prevention
+-- This guarantees no two users can have the same active verification token
+CREATE UNIQUE INDEX idx_user_profiles_email_verification_token 
 ON public.user_profiles(email_verification_token) 
 WHERE email_verification_token IS NOT NULL;
 
 -- Add comments for documentation
 COMMENT ON COLUMN public.user_profiles.email_verification_token IS
-'Secure token for email verification. Generated when user requests verification email.';
+'Secure token for email verification. Generated when user requests verification email. Unique constraint prevents token reuse.';
 
 COMMENT ON COLUMN public.user_profiles.email_verification_token_expires_at IS
 'Expiry timestamp for the verification token. Tokens expire after 24 hours.';

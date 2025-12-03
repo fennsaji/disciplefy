@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/constants/app_fonts.dart';
+import '../../../../core/di/injection_container.dart';
 import '../../../../core/extensions/translation_extension.dart';
 import '../../../../core/i18n/translation_keys.dart';
 import '../../../../core/theme/app_theme.dart';
-import '../../data/datasources/leaderboard_remote_datasource.dart';
 import '../../domain/entities/leaderboard_entry.dart';
+import '../bloc/leaderboard_bloc.dart';
+import '../bloc/leaderboard_event.dart';
+import '../bloc/leaderboard_state.dart';
 
 /// Dialog displaying the XP leaderboard with top 10 users.
 ///
@@ -15,10 +19,16 @@ class LeaderboardDialog extends StatefulWidget {
   const LeaderboardDialog({super.key});
 
   /// Shows the leaderboard dialog.
+  ///
+  /// Wraps the dialog with BlocProvider to provide LeaderboardBloc.
+  /// Uses the same singleton repository/datasource as LeaderboardPage.
   static void show(BuildContext context) {
     showDialog(
       context: context,
-      builder: (dialogContext) => const LeaderboardDialog(),
+      builder: (dialogContext) => BlocProvider(
+        create: (_) => sl<LeaderboardBloc>()..add(const LoadLeaderboard()),
+        child: const LeaderboardDialog(),
+      ),
     );
   }
 
@@ -27,15 +37,6 @@ class LeaderboardDialog extends StatefulWidget {
 }
 
 class _LeaderboardDialogState extends State<LeaderboardDialog> {
-  late Future<({List<LeaderboardEntry> entries, UserXpRank userRank})> _future;
-  final _dataSource = LeaderboardRemoteDataSource();
-
-  @override
-  void initState() {
-    super.initState();
-    _future = _dataSource.getLeaderboardWithUserRank();
-  }
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -61,18 +62,16 @@ class _LeaderboardDialogState extends State<LeaderboardDialog> {
       ),
       content: SizedBox(
         width: double.maxFinite,
-        child: FutureBuilder<
-            ({List<LeaderboardEntry> entries, UserXpRank userRank})>(
-          future: _future,
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
+        child: BlocBuilder<LeaderboardBloc, LeaderboardState>(
+          builder: (context, state) {
+            if (state is LeaderboardInitial || state is LeaderboardLoading) {
               return const SizedBox(
                 height: 200,
                 child: Center(child: CircularProgressIndicator()),
               );
             }
 
-            if (snapshot.hasError) {
+            if (state is LeaderboardError) {
               return SizedBox(
                 height: 200,
                 child: Center(
@@ -97,8 +96,15 @@ class _LeaderboardDialogState extends State<LeaderboardDialog> {
               );
             }
 
-            final data = snapshot.data!;
-            return _buildContent(context, data.entries, data.userRank);
+            if (state is LeaderboardLoaded) {
+              return _buildContent(context, state.entries, state.userRank);
+            }
+
+            // Fallback for unknown states
+            return const SizedBox(
+              height: 200,
+              child: Center(child: CircularProgressIndicator()),
+            );
           },
         ),
       ),

@@ -30,6 +30,7 @@ class _AppShellState extends State<AppShell>
   late Animation<double> _scaleAnimation;
   int _previousIndex = 0;
   bool _isAnimating = false;
+  int? _pendingTabIndex;
 
   @override
   void initState() {
@@ -40,7 +41,22 @@ class _AppShellState extends State<AppShell>
       duration: const Duration(milliseconds: 100),
     );
     _setupAnimations();
+    _animController.addStatusListener(_onAnimationStatusChanged);
     _animController.value = 1.0; // Start at end position (visible)
+  }
+
+  void _onAnimationStatusChanged(AnimationStatus status) {
+    if (!mounted) return;
+
+    if (status == AnimationStatus.dismissed && _pendingTabIndex != null) {
+      // Reverse animation completed - switch to new tab
+      widget.navigationShell.goBranch(_pendingTabIndex!);
+      _pendingTabIndex = null;
+      _animController.forward();
+    } else if (status == AnimationStatus.completed && _isAnimating) {
+      // Forward animation completed - finish transition
+      _isAnimating = false;
+    }
   }
 
   void _setupAnimations() {
@@ -65,6 +81,8 @@ class _AppShellState extends State<AppShell>
 
   @override
   void dispose() {
+    _animController.removeStatusListener(_onAnimationStatusChanged);
+    _animController.stop();
     _animController.dispose();
     super.dispose();
   }
@@ -73,17 +91,11 @@ class _AppShellState extends State<AppShell>
     if (index == widget.navigationShell.currentIndex || _isAnimating) return;
 
     _isAnimating = true;
+    _pendingTabIndex = index;
 
     // Fade through: fade out current content
-    _animController.reverse().then((_) {
-      // Switch to new tab
-      widget.navigationShell.goBranch(index);
-
-      // Fade in new content with scale
-      _animController.forward().then((_) {
-        _isAnimating = false;
-      });
-    });
+    // The status listener will handle switching tabs and fading in
+    _animController.reverse();
   }
 
   @override

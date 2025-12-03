@@ -545,6 +545,7 @@ class TranslationKeys {
   static const premiumUnlockAccess = 'premium.unlock_access';
   static const premiumPriceMonth = 'premium.price_month';
   static const premiumCancelAnytime = 'premium.cancel_anytime';
+  static const premiumPromoDiscount = 'premium.promo_discount';
   static const premiumWhatYouGet = 'premium.what_you_get';
   static const premiumUnlimitedTokens = 'premium.unlimited_tokens';
   static const premiumUnlimitedTokensDesc = 'premium.unlimited_tokens_desc';
@@ -952,6 +953,8 @@ class TranslationKeys {
   static const pricingPremiumFeature4 = 'pricing.premium.feature4';
   static const pricingPremiumFeature5 = 'pricing.premium.feature5';
   static const pricingPremiumFeature6 = 'pricing.premium.feature6';
+  static const pricingSecurePayments = 'pricing.secure_payments';
+  static const pricingPricesInInr = 'pricing.prices_in_inr';
 
   // Study Guide Error Screen
   static const studyGuideErrorTitle = 'study_guide.error.title';

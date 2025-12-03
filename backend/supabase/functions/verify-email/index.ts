@@ -56,41 +56,24 @@ Deno.serve(async (req) => {
       }
     )
 
-    // Find user by email
-    const { data: userData, error: userError } = await supabaseAdmin.auth.admin.listUsers()
+    // Find user profile by email directly (efficient single-row lookup)
+    const { data: profile, error: profileError } = await supabaseAdmin
+      .from('user_profiles')
+      .select('id, email_verification_token, email_verification_token_expires_at, email_verified')
+      .eq('email', email)
+      .single()
     
-    if (userError) {
-      console.error('[VERIFY EMAIL] Error listing users:', userError)
-      return new Response(
-        JSON.stringify({ success: false, error: 'Verification failed' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
-    }
-
-    const user = userData.users.find(u => u.email === email)
-    
-    if (!user) {
-      console.error('[VERIFY EMAIL] User not found for email:', email)
+    if (profileError || !profile) {
+      // Log without PII - use generic message
+      console.error('[VERIFY EMAIL] User not found for provided identifier, error:', profileError?.code || 'no_profile')
       return new Response(
         JSON.stringify({ success: false, error: 'Invalid verification link' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
-    // Verify token and check expiry
-    const { data: profile, error: profileError } = await supabaseAdmin
-      .from('user_profiles')
-      .select('email_verification_token, email_verification_token_expires_at, email_verified')
-      .eq('id', user.id)
-      .single()
-
-    if (profileError || !profile) {
-      console.error('[VERIFY EMAIL] Profile fetch error:', profileError)
-      return new Response(
-        JSON.stringify({ success: false, error: 'Verification failed' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
-    }
+    // Use profile.id as the user identifier (non-PII)
+    const userId = profile.id
 
     // Check if already verified
     if (profile.email_verified) {
@@ -136,17 +119,17 @@ Deno.serve(async (req) => {
         email_verification_token: null,
         email_verification_token_expires_at: null
       })
-      .eq('id', user.id)
+      .eq('id', userId)
 
     if (updateError) {
-      console.error('[VERIFY EMAIL] Update error:', updateError)
+      console.error('[VERIFY EMAIL] Update error for user_id:', userId, 'error:', updateError.code)
       return new Response(
         JSON.stringify({ success: false, error: 'Verification failed' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
-    console.log(`[VERIFY EMAIL] Email verified successfully for user ${user.id}`)
+    console.log(`[VERIFY EMAIL] Email verified successfully for user_id: ${userId}`)
 
     // For GET requests (from email link), redirect to success page
     if (req.method === 'GET') {
