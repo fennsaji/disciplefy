@@ -88,31 +88,33 @@ class PricingPage extends StatelessWidget {
   }
 
   Widget _buildWideLayoutCards(BuildContext context) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Expanded(child: _buildFreePlanCard(context)),
-        const SizedBox(width: 16),
-        Expanded(child: _buildStandardPlanCard(context)),
-        const SizedBox(width: 16),
-        Expanded(child: _buildPremiumPlanCard(context)),
-      ],
+    return IntrinsicHeight(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Expanded(child: _buildFreePlanCard(context)),
+          const SizedBox(width: 16),
+          Expanded(child: _buildStandardPlanCard(context)),
+          const SizedBox(width: 16),
+          Expanded(child: _buildPremiumPlanCard(context)),
+        ],
+      ),
     );
   }
 
   Widget _buildMobileLayoutCards(BuildContext context) {
     return Column(
       children: [
-        _buildFreePlanCard(context),
+        _buildFreePlanCard(context, isMobile: true),
         const SizedBox(height: 16),
-        _buildStandardPlanCard(context),
+        _buildStandardPlanCard(context, isMobile: true),
         const SizedBox(height: 16),
-        _buildPremiumPlanCard(context),
+        _buildPremiumPlanCard(context, isMobile: true),
       ],
     );
   }
 
-  Widget _buildFreePlanCard(BuildContext context) {
+  Widget _buildFreePlanCard(BuildContext context, {bool isMobile = false}) {
     return _PricingCard(
       planName: context.tr(TranslationKeys.pricingFreePlan),
       price: '0',
@@ -126,10 +128,11 @@ class PricingPage extends StatelessWidget {
       ],
       buttonText: context.tr(TranslationKeys.pricingGetStarted),
       onPressed: () => context.go(AppRoutes.login),
+      isMobile: isMobile,
     );
   }
 
-  Widget _buildStandardPlanCard(BuildContext context) {
+  Widget _buildStandardPlanCard(BuildContext context, {bool isMobile = false}) {
     return _PricingCard(
       planName: context.tr(TranslationKeys.pricingStandardPlan),
       price: '0',
@@ -143,14 +146,16 @@ class PricingPage extends StatelessWidget {
         context.tr(TranslationKeys.pricingStandardFeature2),
         context.tr(TranslationKeys.pricingStandardFeature3),
         context.tr(TranslationKeys.pricingStandardFeature4),
+        context.tr(TranslationKeys.pricingStandardFeature5),
       ],
       buttonText: context.tr(TranslationKeys.pricingGetStarted),
       onPressed: () => context.go(AppRoutes.login),
       isHighlighted: true,
+      isMobile: isMobile,
     );
   }
 
-  Widget _buildPremiumPlanCard(BuildContext context) {
+  Widget _buildPremiumPlanCard(BuildContext context, {bool isMobile = false}) {
     return _PricingCard(
       planName: context.tr(TranslationKeys.pricingPremiumPlan),
       price: '100',
@@ -166,6 +171,7 @@ class PricingPage extends StatelessWidget {
         context.tr(TranslationKeys.pricingPremiumFeature3),
         context.tr(TranslationKeys.pricingPremiumFeature4),
         context.tr(TranslationKeys.pricingPremiumFeature5),
+        context.tr(TranslationKeys.pricingPremiumFeature6),
       ],
       buttonText: context.tr(TranslationKeys.pricingGetStarted),
       onPressed: () async {
@@ -178,6 +184,7 @@ class PricingPage extends StatelessWidget {
         }
       },
       isPremium: true,
+      isMobile: isMobile,
     );
   }
 
@@ -230,6 +237,7 @@ class _PricingCard extends StatelessWidget {
   final VoidCallback onPressed;
   final bool isHighlighted;
   final bool isPremium;
+  final bool isMobile;
 
   const _PricingCard({
     required this.planName,
@@ -245,6 +253,7 @@ class _PricingCard extends StatelessWidget {
     required this.onPressed,
     this.isHighlighted = false,
     this.isPremium = false,
+    this.isMobile = false,
   });
 
   @override
@@ -277,119 +286,13 @@ class _PricingCard extends StatelessWidget {
           // Badge
           if (badge != null) _buildBadge(context),
 
-          Padding(
-            padding: EdgeInsets.fromLTRB(
-              20,
-              badge != null ? 12 : 24,
-              20,
-              24,
-            ),
-            child: Column(
-              children: [
-                // Plan name
-                Text(
-                  planName,
-                  style: AppFonts.poppins(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w600,
-                    color: isPremium
-                        ? AppTheme.successColor
-                        : isHighlighted
-                            ? AppTheme.primaryColor
-                            : Theme.of(context).colorScheme.onSurface,
-                  ),
-                ),
-                const SizedBox(height: 16),
-
-                // Price
-                _buildPriceSection(context),
-                const SizedBox(height: 8),
-
-                // Token info
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: isPremium
-                        ? AppTheme.successColor.withOpacity(0.1)
-                        : AppTheme.secondaryColor.withOpacity(0.3),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Text(
-                    tokenInfo,
-                    style: AppFonts.inter(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w500,
-                      color: isPremium
-                          ? AppTheme.successColor
-                          : AppTheme.primaryColor,
-                    ),
-                  ),
-                ),
-
-                // Promotional text
-                if (promotionalText != null) ...[
-                  const SizedBox(height: 8),
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: AppTheme.successColor.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Text(
-                      promotionalText!,
-                      style: AppFonts.inter(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: AppTheme.successColor,
-                      ),
-                    ),
-                  ),
-                ],
-
-                const SizedBox(height: 24),
-
-                // Features
-                ...features
-                    .map((feature) => _buildFeatureItem(context, feature)),
-
-                const SizedBox(height: 24),
-
-                // CTA Button
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: onPressed,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: isPremium
-                          ? AppTheme.successColor
-                          : isHighlighted
-                              ? AppTheme.primaryColor
-                              : Theme.of(context)
-                                  .colorScheme
-                                  .surfaceContainerHighest,
-                      foregroundColor: isPremium || isHighlighted
-                          ? Colors.white
-                          : AppTheme.primaryColor,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      elevation: isPremium || isHighlighted ? 2 : 0,
-                    ),
-                    child: Text(
-                      buttonText,
-                      style: AppFonts.inter(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
+          // Use Expanded only for desktop (when in IntrinsicHeight context)
+          if (!isMobile)
+            Expanded(
+              child: _buildCardContent(context),
+            )
+          else
+            _buildCardContent(context),
         ],
       ),
     );
@@ -467,6 +370,103 @@ class _PricingCard extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildCardContent(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(20.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // Plan name
+          Text(
+            planName,
+            style: AppFonts.poppins(
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 12),
+
+          // Price section
+          _buildPriceSection(context),
+          const SizedBox(height: 8),
+
+          // Token info
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: isPremium
+                  ? AppTheme.successColor.withOpacity(0.1)
+                  : AppTheme.primaryColor.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Text(
+              tokenInfo,
+              style: AppFonts.inter(
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
+                color:
+                    isPremium ? AppTheme.successColor : AppTheme.primaryColor,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ),
+
+          // Promotional text
+          if (promotionalText != null) ...[
+            const SizedBox(height: 8),
+            Text(
+              promotionalText!,
+              style: AppFonts.inter(
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+                color: AppTheme.warningColor,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+
+          const SizedBox(height: 20),
+
+          // Features list
+          ...features.map((feature) => _buildFeatureItem(context, feature)),
+
+          // Spacer to push button to bottom (only for desktop)
+          if (!isMobile) const Spacer(),
+
+          // CTA button
+          const SizedBox(height: 8),
+          ElevatedButton(
+            onPressed: onPressed,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: isPremium
+                  ? AppTheme.successColor
+                  : isHighlighted
+                      ? AppTheme.primaryColor
+                      : Theme.of(context).colorScheme.outline.withOpacity(0.2),
+              foregroundColor: isPremium || isHighlighted
+                  ? Colors.white
+                  : Theme.of(context).colorScheme.onSurface,
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+              elevation: 0,
+            ),
+            child: Text(
+              buttonText,
+              style: AppFonts.inter(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 

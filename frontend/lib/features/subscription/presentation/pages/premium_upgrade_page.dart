@@ -259,10 +259,40 @@ class _PremiumUpgradePageState extends State<PremiumUpgradePage>
         ),
         child: Column(
           children: [
+            // Limited Time Offer Badge
+            Container(
+              margin: const EdgeInsets.only(bottom: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: AppTheme.successColor,
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Text(
+                context.tr(TranslationKeys.pricingLimitedTimeOffer),
+                style: AppFonts.inter(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.white,
+                ),
+              ),
+            ),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // Original price with strikethrough
+                Padding(
+                  padding: const EdgeInsets.only(top: 12.0, right: 8),
+                  child: Text(
+                    '₹200',
+                    style: AppFonts.inter(
+                      fontSize: 18,
+                      color: Colors.white.withOpacity(0.7),
+                      decoration: TextDecoration.lineThrough,
+                      decorationColor: Colors.white.withOpacity(0.7),
+                    ),
+                  ),
+                ),
                 Text(
                   '₹',
                   style: AppFonts.inter(
@@ -290,6 +320,23 @@ class _PremiumUpgradePageState extends State<PremiumUpgradePage>
                   ),
                 ),
               ],
+            ),
+            const SizedBox(height: 8),
+            // 50% off badge
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.25),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                '50% OFF',
+                style: AppFonts.inter(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.white,
+                ),
+              ),
             ),
             const SizedBox(height: 12),
             Container(
@@ -320,6 +367,11 @@ class _PremiumUpgradePageState extends State<PremiumUpgradePage>
         description: context.tr(TranslationKeys.premiumUnlimitedTokensDesc),
       ),
       _BenefitItem(
+        icon: Icons.record_voice_over_rounded,
+        title: context.tr(TranslationKeys.premiumAiDiscipler),
+        description: context.tr(TranslationKeys.premiumAiDisciplerDesc),
+      ),
+      _BenefitItem(
         icon: Icons.chat_bubble_outline_rounded,
         title: context.tr(TranslationKeys.premiumUnlimitedFollowups),
         description: context.tr(TranslationKeys.premiumUnlimitedFollowupsDesc),
@@ -335,7 +387,7 @@ class _PremiumUpgradePageState extends State<PremiumUpgradePage>
         description: context.tr(TranslationKeys.premiumCompleteHistoryDesc),
       ),
       _BenefitItem(
-        icon: Icons.cloud_sync_rounded,
+        icon: Icons.event_available_rounded,
         title: context.tr(TranslationKeys.premiumPrioritySupport),
         description: context.tr(TranslationKeys.premiumPrioritySupportDesc),
       ),
@@ -449,9 +501,9 @@ class _PremiumUpgradePageState extends State<PremiumUpgradePage>
               context.tr(TranslationKeys.premiumPremiumModel),
             ),
             _buildComparisonRow(
-              context.tr(TranslationKeys.premiumSupport),
-              context.tr(TranslationKeys.premiumStandard),
-              context.tr(TranslationKeys.premiumPriority),
+              context.tr(TranslationKeys.premiumAiDiscipler),
+              '10/month',
+              context.tr(TranslationKeys.premiumUnlimited),
             ),
           ],
         ),
