@@ -1,6 +1,9 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:hive/hive.dart';
 import 'package:mockito/mockito.dart';
 import 'package:mockito/annotations.dart';
 import 'package:go_router/go_router.dart';
@@ -22,8 +25,14 @@ import '../../../test/helpers/mock_translation_provider.dart';
 void main() {
   late MockAuthBloc mockAuthBloc;
   late MockTranslationService mockTranslationService;
+  late Directory tempDir;
 
-  setUpAll(() {
+  setUpAll(() async {
+    // Initialize Hive with a temp directory for tests
+    tempDir = await Directory.systemTemp.createTemp('hive_test');
+    Hive.init(tempDir.path);
+    await Hive.openBox('app_settings');
+
     // Register mock translation service
     mockTranslationService = MockTranslationService();
     sl.registerLazySingleton<TranslationService>(() => mockTranslationService);
@@ -42,7 +51,9 @@ void main() {
     );
   });
 
-  tearDownAll(() {
+  tearDownAll(() async {
+    await Hive.close();
+    await tempDir.delete(recursive: true);
     sl.reset();
   });
 
