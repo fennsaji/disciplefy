@@ -557,6 +557,8 @@ class TranslationKeys {
   static const premiumCompleteHistoryDesc = 'premium.complete_history_desc';
   static const premiumPrioritySupport = 'premium.priority_support';
   static const premiumPrioritySupportDesc = 'premium.priority_support_desc';
+  static const premiumAiDiscipler = 'premium.ai_discipler';
+  static const premiumAiDisciplerDesc = 'premium.ai_discipler_desc';
   static const premiumPlanComparison = 'premium.plan_comparison';
   static const premiumDailyTokens = 'premium.daily_tokens';
   static const premiumFollowupQuestions = 'premium.followup_questions';
@@ -942,12 +944,14 @@ class TranslationKeys {
   static const pricingStandardFeature2 = 'pricing.standard.feature2';
   static const pricingStandardFeature3 = 'pricing.standard.feature3';
   static const pricingStandardFeature4 = 'pricing.standard.feature4';
+  static const pricingStandardFeature5 = 'pricing.standard.feature5';
   // Premium Plan Features
   static const pricingPremiumFeature1 = 'pricing.premium.feature1';
   static const pricingPremiumFeature2 = 'pricing.premium.feature2';
   static const pricingPremiumFeature3 = 'pricing.premium.feature3';
   static const pricingPremiumFeature4 = 'pricing.premium.feature4';
   static const pricingPremiumFeature5 = 'pricing.premium.feature5';
+  static const pricingPremiumFeature6 = 'pricing.premium.feature6';
 
   // Study Guide Error Screen
   static const studyGuideErrorTitle = 'study_guide.error.title';
