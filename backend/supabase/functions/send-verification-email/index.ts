@@ -28,6 +28,17 @@ function createErrorResponse(message: string, status: number, corsHeaders: Recor
   )
 }
 
+// HTML escape helper to prevent XSS/injection attacks
+function escapeHtml(unsafe: string): string {
+  return unsafe
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;')
+    .replace(/\//g, '&#x2F;')
+}
+
 // Generate a secure random token
 function generateVerificationToken(): string {
   const array = new Uint8Array(32)
@@ -98,7 +109,13 @@ async function sendEmailWithResend(
 
 // Generate email HTML content
 function generateEmailHtml(verificationUrl: string, userName?: string): string {
-  const greeting = userName ? `Hi ${userName}` : 'Hi there'
+  // Sanitize userName: escape HTML entities and truncate to max 50 chars
+  const MAX_NAME_LENGTH = 50
+  let safeName = userName ? userName.trim().slice(0, MAX_NAME_LENGTH) : null
+  if (safeName) {
+    safeName = escapeHtml(safeName)
+  }
+  const greeting = safeName ? `Hi ${safeName}` : 'Hi there'
   
   return `
 <!DOCTYPE html>

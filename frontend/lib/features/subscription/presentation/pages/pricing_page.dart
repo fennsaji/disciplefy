@@ -196,7 +196,7 @@ class PricingPage extends StatelessWidget {
             tag: 'PRICING',
             error: e,
           );
-          // Still navigate to login even if Hive fails
+          // Show error and navigate to login
           if (context.mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
@@ -204,6 +204,7 @@ class PricingPage extends StatelessWidget {
                 duration: Duration(seconds: 2),
               ),
             );
+            context.go(AppRoutes.login);
           }
         } catch (e) {
           Logger.error(
@@ -211,8 +212,14 @@ class PricingPage extends StatelessWidget {
             tag: 'PRICING',
             error: e,
           );
-          // Still navigate to login even if saving fails
+          // Show error and navigate to login
           if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Failed to save preference. Please try again.'),
+                duration: Duration(seconds: 2),
+              ),
+            );
             context.go(AppRoutes.login);
           }
         }
