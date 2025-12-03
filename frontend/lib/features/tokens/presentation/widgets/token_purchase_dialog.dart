@@ -213,7 +213,7 @@ class _TokenPurchaseDialogState extends State<TokenPurchaseDialog>
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Purchase Tokens',
+                      context.tr(TranslationKeys.tokenPurchaseDialogTitle),
                       style: theme.textTheme.headlineSmall?.copyWith(
                         fontWeight: FontWeight.bold,
                         color: theme.colorScheme.onSurface,
@@ -221,7 +221,7 @@ class _TokenPurchaseDialogState extends State<TokenPurchaseDialog>
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      'Add more tokens to continue generating study guides',
+                      context.tr(TranslationKeys.tokenPurchaseDialogSubtitle),
                       style: theme.textTheme.bodyMedium?.copyWith(
                         color: theme.colorScheme.onSurfaceVariant,
                       ),
@@ -260,14 +260,14 @@ class _TokenPurchaseDialogState extends State<TokenPurchaseDialog>
           ),
           const SizedBox(width: 8),
           Text(
-            'Current Balance: ',
+            '${context.tr(TranslationKeys.tokenPurchaseDialogCurrentBalance)}: ',
             style: TextStyle(
               color: theme.colorScheme.onSurfaceVariant,
               fontSize: 14,
             ),
           ),
           Text(
-            '${widget.tokenStatus.totalTokens} tokens',
+            '${widget.tokenStatus.totalTokens} ${context.tr(TranslationKeys.tokenPurchaseDialogTokens)}',
             style: TextStyle(
               color: theme.colorScheme.onSurface,
               fontSize: 14,
@@ -291,17 +291,18 @@ class _TokenPurchaseDialogState extends State<TokenPurchaseDialog>
             indicatorColor: theme.colorScheme.primary,
             tabs: [
               if (widget.savedPaymentMethods.isNotEmpty)
-                const Tab(
-                  icon: Icon(Icons.payment, size: 20),
-                  text: 'Saved Methods',
+                Tab(
+                  icon: const Icon(Icons.payment, size: 20),
+                  text: context
+                      .tr(TranslationKeys.tokenPurchaseDialogSavedMethods),
                 ),
-              const Tab(
-                icon: Icon(Icons.local_offer, size: 20),
-                text: 'Packages',
+              Tab(
+                icon: const Icon(Icons.local_offer, size: 20),
+                text: context.tr(TranslationKeys.tokenPurchaseDialogPackages),
               ),
-              const Tab(
-                icon: Icon(Icons.edit, size: 20),
-                text: 'Custom',
+              Tab(
+                icon: const Icon(Icons.edit, size: 20),
+                text: context.tr(TranslationKeys.tokenPurchaseDialogCustom),
               ),
             ],
           ),
@@ -328,7 +329,7 @@ class _TokenPurchaseDialogState extends State<TokenPurchaseDialog>
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Choose a saved payment method:',
+            context.tr(TranslationKeys.tokenPurchaseDialogChooseSavedMethod),
             style: TextStyle(
               color: theme.colorScheme.onSurfaceVariant,
               fontSize: 16,
@@ -340,7 +341,7 @@ class _TokenPurchaseDialogState extends State<TokenPurchaseDialog>
           const SizedBox(height: 16),
           // Show token amount selection for saved methods
           Text(
-            'Choose token amount:',
+            context.tr(TranslationKeys.tokenPurchaseDialogChooseAmount),
             style: TextStyle(
               color: theme.colorScheme.onSurfaceVariant,
               fontSize: 16,
@@ -426,7 +427,8 @@ class _TokenPurchaseDialogState extends State<TokenPurchaseDialog>
                                 borderRadius: BorderRadius.circular(4),
                               ),
                               child: Text(
-                                'DEFAULT',
+                                context.tr(
+                                    TranslationKeys.tokenPurchaseDialogDefault),
                                 style: TextStyle(
                                   fontSize: 10,
                                   fontWeight: FontWeight.bold,
@@ -448,7 +450,7 @@ class _TokenPurchaseDialogState extends State<TokenPurchaseDialog>
                       if (method.lastUsed != null) ...[
                         const SizedBox(height: 2),
                         Text(
-                          'Last used: ${_formatLastUsed(method.lastUsed!)}',
+                          '${context.tr(TranslationKeys.tokenPurchaseDialogLastUsed)}: ${_formatLastUsed(method.lastUsed!)}',
                           style: TextStyle(
                             color: theme.colorScheme.onSurfaceVariant,
                             fontSize: 12,
@@ -484,7 +486,7 @@ class _TokenPurchaseDialogState extends State<TokenPurchaseDialog>
       child: Column(
         children: [
           Text(
-            'Choose a token package:',
+            context.tr(TranslationKeys.tokenPurchaseDialogChoosePackage),
             style: TextStyle(
               color: theme.colorScheme.onSurfaceVariant,
               fontSize: 16,
@@ -540,7 +542,7 @@ class _TokenPurchaseDialogState extends State<TokenPurchaseDialog>
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Text(
-                        'POPULAR',
+                        context.tr(TranslationKeys.tokenPurchaseDialogPopular),
                         style: TextStyle(
                           fontSize: 10,
                           fontWeight: FontWeight.bold,
@@ -601,7 +603,7 @@ class _TokenPurchaseDialogState extends State<TokenPurchaseDialog>
                                     borderRadius: BorderRadius.circular(4),
                                   ),
                                   child: Text(
-                                    '${package.discount}% OFF',
+                                    '${package.discount}% ${context.tr(TranslationKeys.tokenPurchaseDialogOff)}',
                                     style: TextStyle(
                                       fontSize: 10,
                                       fontWeight: FontWeight.bold,
@@ -614,7 +616,7 @@ class _TokenPurchaseDialogState extends State<TokenPurchaseDialog>
                           ),
                           const SizedBox(height: 2),
                           Text(
-                            '${(package.tokens / package.rupees).toStringAsFixed(1)} tokens/₹',
+                            '${(package.tokens / package.rupees).toStringAsFixed(1)} ${context.tr(TranslationKeys.tokenPurchaseDialogTokensPerRupee)}',
                             style: TextStyle(
                               fontSize: 12,
                               color: theme.colorScheme.onSurfaceVariant,
@@ -652,7 +654,7 @@ class _TokenPurchaseDialogState extends State<TokenPurchaseDialog>
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Enter custom token amount:',
+            context.tr(TranslationKeys.tokenPurchaseDialogEnterCustom),
             style: TextStyle(
               color: theme.colorScheme.onSurfaceVariant,
               fontSize: 16,
@@ -667,8 +669,10 @@ class _TokenPurchaseDialogState extends State<TokenPurchaseDialog>
               LengthLimitingTextInputFormatter(4),
             ],
             decoration: InputDecoration(
-              labelText: 'Token Amount',
-              hintText: 'Enter amount (10-9999)',
+              labelText:
+                  context.tr(TranslationKeys.tokenPurchaseDialogTokenAmount),
+              hintText:
+                  context.tr(TranslationKeys.tokenPurchaseDialogAmountHint),
               prefixIcon: Icon(Icons.token, color: theme.colorScheme.primary),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8),
@@ -711,7 +715,8 @@ class _TokenPurchaseDialogState extends State<TokenPurchaseDialog>
                     ),
                     const SizedBox(width: 8),
                     Text(
-                      'Pricing Information',
+                      context
+                          .tr(TranslationKeys.tokenPurchaseDialogPricingInfo),
                       style: TextStyle(
                         fontWeight: FontWeight.w600,
                         color: theme.colorScheme.onSurface,
@@ -721,21 +726,21 @@ class _TokenPurchaseDialogState extends State<TokenPurchaseDialog>
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  '• Rate: 10 tokens = ₹1',
+                  '• ${context.tr(TranslationKeys.tokenPurchaseDialogRate)}',
                   style: TextStyle(
                     color: theme.colorScheme.onSurfaceVariant,
                     fontSize: 14,
                   ),
                 ),
                 Text(
-                  '• Minimum: 10 tokens (₹1)',
+                  '• ${context.tr(TranslationKeys.tokenPurchaseDialogMinimum)}',
                   style: TextStyle(
                     color: theme.colorScheme.onSurfaceVariant,
                     fontSize: 14,
                   ),
                 ),
                 Text(
-                  '• Maximum: 9999 tokens (₹999.90)',
+                  '• ${context.tr(TranslationKeys.tokenPurchaseDialogMaximum)}',
                   style: TextStyle(
                     color: theme.colorScheme.onSurfaceVariant,
                     fontSize: 14,
@@ -757,7 +762,7 @@ class _TokenPurchaseDialogState extends State<TokenPurchaseDialog>
                       ),
                       const SizedBox(width: 8),
                       Text(
-                        'Cost: ₹${(_customTokens / 10).toStringAsFixed(2)}',
+                        '${context.tr(TranslationKeys.tokenPurchaseDialogCost)}: ₹${(_customTokens / 10).toStringAsFixed(2)}',
                         style: TextStyle(
                           color: theme.colorScheme.primary,
                           fontWeight: FontWeight.w600,
@@ -831,14 +836,14 @@ class _TokenPurchaseDialogState extends State<TokenPurchaseDialog>
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    'Total Cost:',
+                    '${context.tr(TranslationKeys.tokenPurchaseDialogTotalCost)}:',
                     style: TextStyle(
                       fontSize: 16,
                       color: theme.colorScheme.onSurface,
                     ),
                   ),
                   Text(
-                    '₹$cost for $tokenAmount tokens',
+                    '₹$cost ${context.tr(TranslationKeys.tokenPurchaseDialogForTokens).replaceAll('{count}', tokenAmount.toString())}',
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
@@ -862,7 +867,8 @@ class _TokenPurchaseDialogState extends State<TokenPurchaseDialog>
                     foregroundColor:
                         Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
-                  child: const Text('Cancel'),
+                  child: Text(
+                      context.tr(TranslationKeys.tokenPurchaseDialogCancel)),
                 ),
               ),
               const SizedBox(width: 16),
@@ -919,16 +925,16 @@ class _TokenPurchaseDialogState extends State<TokenPurchaseDialog>
     switch (widget.tokenStatus.userPlan) {
       case UserPlan.free:
         message = context.tr(TranslationKeys.tokenPurchaseRestrictedFree);
-        actionText = 'Upgrade Plan';
+        actionText = context.tr(TranslationKeys.tokenPurchaseDialogUpgradePlan);
         break;
       case UserPlan.premium:
         message = context.tr(TranslationKeys.tokenPurchaseRestrictedPremium);
-        actionText = 'Got It';
+        actionText = context.tr(TranslationKeys.tokenPurchaseDialogGotIt);
         break;
       case UserPlan.standard:
       default:
         message = context.tr(TranslationKeys.tokenPurchaseRestrictedStandard);
-        actionText = 'Continue';
+        actionText = context.tr(TranslationKeys.tokenPurchaseDialogContinue);
         break;
     }
 
@@ -948,8 +954,9 @@ class _TokenPurchaseDialogState extends State<TokenPurchaseDialog>
           const SizedBox(width: 8),
           Text(
             widget.tokenStatus.userPlan == UserPlan.premium
-                ? 'Premium Member'
-                : 'Purchase Restricted',
+                ? context.tr(TranslationKeys.tokenPurchaseDialogPremiumMember)
+                : context
+                    .tr(TranslationKeys.tokenPurchaseDialogPurchaseRestricted),
             style: theme.textTheme.titleLarge,
           ),
         ],
@@ -962,7 +969,7 @@ class _TokenPurchaseDialogState extends State<TokenPurchaseDialog>
         TextButton(
           onPressed: widget.onCancel,
           child: Text(
-            'Cancel',
+            context.tr(TranslationKeys.tokenPurchaseDialogCancel),
             style: TextStyle(color: theme.colorScheme.onSurfaceVariant),
           ),
         ),
@@ -979,18 +986,20 @@ class _TokenPurchaseDialogState extends State<TokenPurchaseDialog>
   }
 
   String _getPaymentStatusText(bool canPurchase) {
-    if (!canPurchase) return 'Select Amount';
+    if (!canPurchase) {
+      return context.tr(TranslationKeys.tokenPurchaseDialogSelectAmount);
+    }
 
     switch (_paymentStatus) {
       case 'creating_order':
-        return 'Creating Order...';
+        return context.tr(TranslationKeys.tokenPurchaseDialogCreatingOrder);
       case 'payment_opened':
-        return 'Payment Gateway Opened';
+        return context.tr(TranslationKeys.tokenPurchaseDialogPaymentOpened);
       case 'processing':
-        return 'Processing...';
+        return context.tr(TranslationKeys.tokenPurchaseDialogProcessing);
       case 'ready':
       default:
-        return 'Purchase';
+        return context.tr(TranslationKeys.tokenPurchaseDialogPurchase);
     }
   }
 
@@ -1083,15 +1092,17 @@ class _TokenPurchaseDialogState extends State<TokenPurchaseDialog>
   String _getPaymentMethodName(String methodType) {
     switch (methodType.toLowerCase()) {
       case 'card':
-        return 'Credit/Debit Card';
+        return context.tr(TranslationKeys.tokenPurchaseDialogPaymentMethodCard);
       case 'upi':
-        return 'UPI';
+        return context.tr(TranslationKeys.tokenPurchaseDialogPaymentMethodUpi);
       case 'netbanking':
-        return 'Net Banking';
+        return context
+            .tr(TranslationKeys.tokenPurchaseDialogPaymentMethodNetbanking);
       case 'wallet':
-        return 'Mobile Wallet';
+        return context
+            .tr(TranslationKeys.tokenPurchaseDialogPaymentMethodWallet);
       default:
-        return 'Payment Method';
+        return context.tr(TranslationKeys.tokenPurchaseDialogPaymentMethod);
     }
   }
 
@@ -1115,11 +1126,17 @@ class _TokenPurchaseDialogState extends State<TokenPurchaseDialog>
 
     if (difference.inDays == 0) {
       if (difference.inHours == 0) {
-        return '${difference.inMinutes} minutes ago';
+        return context
+            .tr(TranslationKeys.tokenPurchaseDialogMinutesAgo)
+            .replaceAll('{count}', difference.inMinutes.toString());
       }
-      return '${difference.inHours} hours ago';
+      return context
+          .tr(TranslationKeys.tokenPurchaseDialogHoursAgo)
+          .replaceAll('{count}', difference.inHours.toString());
     } else if (difference.inDays < 30) {
-      return '${difference.inDays} days ago';
+      return context
+          .tr(TranslationKeys.tokenPurchaseDialogDaysAgo)
+          .replaceAll('{count}', difference.inDays.toString());
     } else {
       return '${lastUsed.day}/${lastUsed.month}/${lastUsed.year}';
     }

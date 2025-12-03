@@ -96,6 +96,7 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
   bool _hasScrolledToBottom = false;
   bool _completionMarked = false;
   bool _isCompletionTrackingStarted = false;
+  final GlobalKey _prayerPointsKey = GlobalKey();
 
   @override
   void initState() {
@@ -306,12 +307,12 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
     });
   }
 
-  /// Setup scroll listener to detect when user reaches bottom
+  /// Setup scroll listener to detect when user reaches prayer points section
   void _startScrollListener() {
     _scrollController.addListener(() {
       if (!_completionMarked &&
           !_hasScrolledToBottom &&
-          _isScrolledToBottom()) {
+          _isPrayerPointsSectionVisible()) {
         setState(() {
           _hasScrolledToBottom = true;
         });
@@ -320,16 +321,21 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
     });
   }
 
-  /// Check if user has scrolled to the bottom of the page
-  bool _isScrolledToBottom() {
-    if (!_scrollController.hasClients) return false;
+  /// Check if the prayer points section is visible on screen
+  bool _isPrayerPointsSectionVisible() {
+    final keyContext = _prayerPointsKey.currentContext;
+    if (keyContext == null) return false;
 
-    final maxScroll = _scrollController.position.maxScrollExtent;
-    final currentScroll = _scrollController.position.pixels;
+    final RenderObject? renderObject = keyContext.findRenderObject();
+    if (renderObject == null || renderObject is! RenderBox) return false;
 
-    // Consider "bottom" as within 100px of the actual bottom
-    // This accounts for different screen sizes and scroll behavior
-    return currentScroll >= (maxScroll - 100);
+    final RenderBox box = renderObject;
+    final Offset position = box.localToGlobal(Offset.zero);
+    final Size screenSize = MediaQuery.of(context).size;
+
+    // Check if the top of the prayer points section is visible on screen
+    // Consider visible when the section enters the bottom 80% of the screen
+    return position.dy < screenSize.height * 0.8;
   }
 
   /// Check if both completion conditions are met and mark complete if so
@@ -637,7 +643,7 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
                   ),
                   const SizedBox(height: 24),
                   Text(
-                    'We couldn\'t generate a study guide',
+                    context.tr(TranslationKeys.studyGuideErrorTitleAlt),
                     style: AppFonts.poppins(
                       fontSize: 28,
                       fontWeight: FontWeight.w600,
@@ -648,7 +654,8 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
                   const SizedBox(height: 16),
                   Text(
                     _errorMessage.isEmpty
-                        ? 'Something went wrong. Please try again later.'
+                        ? context.tr(
+                            TranslationKeys.studyGuideErrorDefaultMessageAlt)
                         : _errorMessage,
                     style: AppFonts.inter(
                       fontSize: 18,
@@ -673,7 +680,7 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
                       ),
                     ),
                     child: Text(
-                      'View Saved Guides',
+                      context.tr(TranslationKeys.studyGuideErrorViewSaved),
                       style: AppFonts.inter(
                         fontSize: 18,
                         fontWeight: FontWeight.w600,
@@ -741,6 +748,7 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
 
           // Prayer Points Section
           _StudySection(
+            key: _prayerPointsKey,
             title: context.tr(TranslationKeys.studyGuidePrayerPoints),
             icon: Icons.favorite,
             content: _currentStudyGuide.prayerPoints
@@ -1266,6 +1274,7 @@ class _StudySection extends StatelessWidget {
   final String content;
 
   const _StudySection({
+    super.key,
     required this.title,
     required this.icon,
     required this.content,
