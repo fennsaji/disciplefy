@@ -5,6 +5,7 @@ import '../../../../core/constants/app_fonts.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/di/injection_container.dart';
 import '../../../../core/router/app_routes.dart';
+import '../../../../core/animations/app_animations.dart';
 import '../../domain/entities/saved_guide_entity.dart';
 import '../bloc/unified_saved_guides_bloc.dart';
 import '../bloc/saved_guides_event.dart';
@@ -555,11 +556,15 @@ class _SavedScreenContent extends StatelessWidget {
           }
 
           final guide = state.savedGuides[index];
-          return GuideListItem(
-            guide: guide,
-            onTap: () => _openGuide(context, guide),
-            onRemove: () => _toggleSaveStatus(context, guide, false),
-            showRemoveOption: true,
+          return FadeInWidget(
+            delay: AppAnimations.getStaggerDelay(index),
+            slideOffset: const Offset(0, 0.05),
+            child: GuideListItem(
+              guide: guide,
+              onTap: () => _openGuide(context, guide),
+              onRemove: () => _toggleSaveStatus(context, guide, false),
+              showRemoveOption: true,
+            ),
           );
         },
       ),
@@ -601,12 +606,16 @@ class _SavedScreenContent extends StatelessWidget {
           }
 
           final guide = state.recentGuides[index];
-          return GuideListItem(
-            guide: guide,
-            onTap: () => _openGuide(context, guide),
-            onSave: guide.isSaved
-                ? null
-                : () => _toggleSaveStatus(context, guide, true),
+          return FadeInWidget(
+            delay: AppAnimations.getStaggerDelay(index),
+            slideOffset: const Offset(0, 0.05),
+            child: GuideListItem(
+              guide: guide,
+              onTap: () => _openGuide(context, guide),
+              onSave: guide.isSaved
+                  ? null
+                  : () => _toggleSaveStatus(context, guide, true),
+            ),
           );
         },
       ),
