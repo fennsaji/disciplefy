@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 import '../../../../core/constants/app_fonts.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../bloc/auth_bloc.dart';
@@ -39,16 +40,35 @@ class _LoginScreenState extends State<LoginScreen> {
       if (authState is auth_states.AuthenticatedState) {
         // Only redirect non-anonymous users - let anonymous users upgrade their account
         if (!authState.isAnonymous) {
-          Logger.info(
-            'Authenticated user detected on login screen - redirecting',
-            tag: 'LOGIN_SCREEN',
-            context: {
-              'user_type': 'authenticated',
-              'redirect_reason': 'already_authenticated',
-            },
-          );
-          // Use AuthAwareNavigationService for proper stack management
-          context.navigateAfterAuth();
+          // Check for pending premium upgrade from pricing page
+          final box = Hive.box('app_settings');
+          final pendingPremiumUpgrade =
+              box.get('pending_premium_upgrade', defaultValue: false);
+
+          if (pendingPremiumUpgrade == true) {
+            // Clear the flag and redirect to premium upgrade page
+            box.delete('pending_premium_upgrade');
+            Logger.info(
+              'Authenticated user on login - redirecting to premium upgrade',
+              tag: 'LOGIN_SCREEN',
+              context: {
+                'user_type': 'authenticated',
+                'redirect_reason': 'pending_premium_upgrade',
+              },
+            );
+            context.go(AppRoutes.premiumUpgrade);
+          } else {
+            Logger.info(
+              'Authenticated user detected on login screen - redirecting',
+              tag: 'LOGIN_SCREEN',
+              context: {
+                'user_type': 'authenticated',
+                'redirect_reason': 'already_authenticated',
+              },
+            );
+            // Use AuthAwareNavigationService for proper stack management
+            context.navigateAfterAuth();
+          }
         }
         // Anonymous users can stay on login screen to upgrade to real account
       }
@@ -61,6 +81,28 @@ class _LoginScreenState extends State<LoginScreen> {
       BlocListener<AuthBloc, auth_states.AuthState>(
         listener: (context, state) {
           if (state is auth_states.AuthenticatedState) {
+            // PRIORITY: Check for pending premium upgrade from pricing page FIRST
+            // This must happen before phone auth check to ensure premium redirect works
+            final box = Hive.box('app_settings');
+            final pendingPremiumUpgrade =
+                box.get('pending_premium_upgrade', defaultValue: false);
+
+            if (pendingPremiumUpgrade == true) {
+              // Clear the flag and redirect to premium upgrade page
+              box.delete('pending_premium_upgrade');
+              Logger.info(
+                'Authentication successful - redirecting to premium upgrade',
+                tag: 'LOGIN_SCREEN',
+                context: {
+                  'user_type':
+                      state.isAnonymous ? 'anonymous' : 'authenticated',
+                  'redirect_reason': 'pending_premium_upgrade',
+                },
+              );
+              context.go(AppRoutes.premiumUpgrade);
+              return;
+            }
+
             // Check if this is a phone auth user by checking if they have a phone number
             final isPhoneAuthUser =
                 state.user.phone != null && state.user.phone!.isNotEmpty;

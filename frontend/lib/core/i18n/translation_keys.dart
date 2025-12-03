@@ -666,6 +666,7 @@ class TranslationKeys {
   static const subscriptionCurrentPeriodEnds =
       'subscription.current_period_ends';
   static const subscriptionPlanDetails = 'subscription.plan_details';
+  static const subscriptionIncludedFeatures = 'subscription.included_features';
   static const subscriptionPlanType = 'subscription.plan_type';
   static const subscriptionSubscriptionType = 'subscription.subscription_type';
   static const subscriptionUnlimited = 'subscription.unlimited';
@@ -916,6 +917,37 @@ class TranslationKeys {
   static const leaderboardXpPoints = 'leaderboard.xp_points';
   static const leaderboardClose = 'leaderboard.close';
   static const leaderboardError = 'leaderboard.error';
+
+  // Pricing Page (Public)
+  static const pricingTitle = 'pricing.title';
+  static const pricingSubtitle = 'pricing.subtitle';
+  static const pricingPerMonth = 'pricing.per_month';
+  static const pricingFreeForYear = 'pricing.free_for_year';
+  static const pricingLimitedTimeOffer = 'pricing.limited_time_offer';
+  static const pricingGetStarted = 'pricing.get_started';
+  static const pricingMostPopular = 'pricing.most_popular';
+  static const pricingBestValue = 'pricing.best_value';
+  static const pricingTokensDaily = 'pricing.tokens_daily';
+  static const pricingUnlimitedTokens = 'pricing.unlimited_tokens';
+  static const pricingFreePlan = 'pricing.free_plan';
+  static const pricingStandardPlan = 'pricing.standard_plan';
+  static const pricingPremiumPlan = 'pricing.premium_plan';
+  // Free Plan Features
+  static const pricingFreeFeature1 = 'pricing.free.feature1';
+  static const pricingFreeFeature2 = 'pricing.free.feature2';
+  static const pricingFreeFeature3 = 'pricing.free.feature3';
+  static const pricingFreeFeature4 = 'pricing.free.feature4';
+  // Standard Plan Features
+  static const pricingStandardFeature1 = 'pricing.standard.feature1';
+  static const pricingStandardFeature2 = 'pricing.standard.feature2';
+  static const pricingStandardFeature3 = 'pricing.standard.feature3';
+  static const pricingStandardFeature4 = 'pricing.standard.feature4';
+  // Premium Plan Features
+  static const pricingPremiumFeature1 = 'pricing.premium.feature1';
+  static const pricingPremiumFeature2 = 'pricing.premium.feature2';
+  static const pricingPremiumFeature3 = 'pricing.premium.feature3';
+  static const pricingPremiumFeature4 = 'pricing.premium.feature4';
+  static const pricingPremiumFeature5 = 'pricing.premium.feature5';
 
   // Study Guide Error Screen
   static const studyGuideErrorTitle = 'study_guide.error.title';

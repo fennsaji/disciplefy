@@ -45,4 +45,7 @@ class AppRoutes {
 
   // Leaderboard
   static const String leaderboard = '/leaderboard';
+
+  // Public Pages
+  static const String pricing = '/pricing';
 }
