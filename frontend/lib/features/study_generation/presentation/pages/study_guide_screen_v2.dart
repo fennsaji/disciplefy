@@ -165,6 +165,7 @@ class _StudyGuideScreenV2ContentState
   Timer? _timeTrackingTimer;
   bool _hasScrolledToBottom = false;
   bool _completionMarked = false;
+  final GlobalKey _prayerPointsKey = GlobalKey();
 
   // Notification prompt state
   bool _hasTriggeredNotificationPrompt = false;
@@ -338,27 +339,23 @@ class _StudyGuideScreenV2ContentState
 
   /// Handle study guide generation failure
   void _handleGenerationFailure(Failure failure, {bool isRetryable = true}) {
-    String errorMessage = 'Failed to generate study guide.';
+    String errorKey = TranslationKeys.studyGuideErrorDefaultMessage;
 
     if (failure is NetworkFailure) {
-      errorMessage =
-          'Network error. Please check your connection and try again.';
+      errorKey = TranslationKeys.studyGuideErrorNetwork;
     } else if (failure is ServerFailure) {
-      errorMessage = 'Server error. Please try again later.';
+      errorKey = TranslationKeys.studyGuideErrorServer;
     } else if (failure is AuthenticationFailure) {
-      errorMessage = 'Authentication error. Please sign in and try again.';
+      errorKey = TranslationKeys.studyGuideErrorAuth;
     } else if (failure is InsufficientTokensFailure) {
-      errorMessage =
-          'You have run out of AI tokens. Please purchase more tokens or upgrade to premium.';
-    } else {
-      errorMessage = failure.message;
+      errorKey = TranslationKeys.studyGuideErrorInsufficientTokens;
     }
 
     if (!mounted) return;
     setState(() {
       _isLoading = false;
       _hasError = true;
-      _errorMessage = errorMessage;
+      _errorMessage = context.tr(errorKey);
     });
   }
 
@@ -460,12 +457,12 @@ class _StudyGuideScreenV2ContentState
     });
   }
 
-  /// Setup scroll listener to detect when user reaches bottom
+  /// Setup scroll listener to detect when user reaches prayer points section
   void _startScrollListener() {
     _scrollController.addListener(() {
       if (!_completionMarked &&
           !_hasScrolledToBottom &&
-          _isScrolledToBottom()) {
+          _isPrayerPointsSectionVisible()) {
         setState(() {
           _hasScrolledToBottom = true;
         });
@@ -474,15 +471,21 @@ class _StudyGuideScreenV2ContentState
     });
   }
 
-  /// Check if user has scrolled to the bottom of the page
-  bool _isScrolledToBottom() {
-    if (!_scrollController.hasClients) return false;
+  /// Check if the prayer points section is visible on screen
+  bool _isPrayerPointsSectionVisible() {
+    final keyContext = _prayerPointsKey.currentContext;
+    if (keyContext == null) return false;
 
-    final maxScroll = _scrollController.position.maxScrollExtent;
-    final currentScroll = _scrollController.position.pixels;
+    final RenderObject? renderObject = keyContext.findRenderObject();
+    if (renderObject == null || renderObject is! RenderBox) return false;
 
-    // Consider "bottom" as within 100px of the actual bottom
-    return currentScroll >= (maxScroll - 100);
+    final RenderBox box = renderObject;
+    final Offset position = box.localToGlobal(Offset.zero);
+    final Size screenSize = MediaQuery.of(context).size;
+
+    // Check if the top of the prayer points section is visible on screen
+    // Consider visible when the section enters the bottom 80% of the screen
+    return position.dy < screenSize.height * 0.8;
   }
 
   /// Check if both completion conditions are met and mark complete if so
@@ -763,7 +766,7 @@ class _StudyGuideScreenV2ContentState
               ),
               const SizedBox(height: 24),
               Text(
-                'Oops! Something went wrong',
+                context.tr(TranslationKeys.studyGuideErrorTitle),
                 style: AppFonts.poppins(
                   fontSize: 28,
                   fontWeight: FontWeight.w600,
@@ -774,7 +777,7 @@ class _StudyGuideScreenV2ContentState
               const SizedBox(height: 16),
               Text(
                 _errorMessage.isEmpty
-                    ? 'We couldn\'t generate your study guide. Please try again.'
+                    ? context.tr(TranslationKeys.studyGuideErrorDefaultMessage)
                     : _errorMessage,
                 style: AppFonts.inter(
                   fontSize: 16,
@@ -792,7 +795,7 @@ class _StudyGuideScreenV2ContentState
                     onPressed: _handleBackNavigation,
                     icon: const Icon(Icons.arrow_back),
                     label: Text(
-                      'Go Back',
+                      context.tr(TranslationKeys.studyGuideErrorGoBack),
                       style: AppFonts.inter(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
@@ -818,7 +821,7 @@ class _StudyGuideScreenV2ContentState
                     onPressed: _retryGeneration,
                     icon: const Icon(Icons.refresh),
                     label: Text(
-                      'Try Again',
+                      context.tr(TranslationKeys.studyGuideErrorTryAgain),
                       style: AppFonts.inter(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
@@ -960,6 +963,7 @@ class _StudyGuideScreenV2ContentState
 
           // Prayer Points Section
           _StudySection(
+            key: _prayerPointsKey,
             title: context.tr(TranslationKeys.studyGuidePrayerPoints),
             icon: Icons.favorite,
             content: _currentStudyGuide!.prayerPoints
@@ -1410,6 +1414,7 @@ class _StudySection extends StatelessWidget {
   final String content;
 
   const _StudySection({
+    super.key,
     required this.title,
     required this.icon,
     required this.content,

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 import '../../../../core/constants/app_fonts.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../bloc/auth_bloc.dart';
@@ -39,16 +40,35 @@ class _LoginScreenState extends State<LoginScreen> {
       if (authState is auth_states.AuthenticatedState) {
         // Only redirect non-anonymous users - let anonymous users upgrade their account
         if (!authState.isAnonymous) {
-          Logger.info(
-            'Authenticated user detected on login screen - redirecting',
-            tag: 'LOGIN_SCREEN',
-            context: {
-              'user_type': 'authenticated',
-              'redirect_reason': 'already_authenticated',
-            },
-          );
-          // Use AuthAwareNavigationService for proper stack management
-          context.navigateAfterAuth();
+          // Check for pending premium upgrade from pricing page
+          final box = Hive.box('app_settings');
+          final pendingPremiumUpgrade =
+              box.get('pending_premium_upgrade', defaultValue: false);
+
+          if (pendingPremiumUpgrade == true) {
+            // Clear the flag and redirect to premium upgrade page
+            box.delete('pending_premium_upgrade');
+            Logger.info(
+              'Authenticated user on login - redirecting to premium upgrade',
+              tag: 'LOGIN_SCREEN',
+              context: {
+                'user_type': 'authenticated',
+                'redirect_reason': 'pending_premium_upgrade',
+              },
+            );
+            context.go(AppRoutes.premiumUpgrade);
+          } else {
+            Logger.info(
+              'Authenticated user detected on login screen - redirecting',
+              tag: 'LOGIN_SCREEN',
+              context: {
+                'user_type': 'authenticated',
+                'redirect_reason': 'already_authenticated',
+              },
+            );
+            // Use AuthAwareNavigationService for proper stack management
+            context.navigateAfterAuth();
+          }
         }
         // Anonymous users can stay on login screen to upgrade to real account
       }
@@ -61,6 +81,28 @@ class _LoginScreenState extends State<LoginScreen> {
       BlocListener<AuthBloc, auth_states.AuthState>(
         listener: (context, state) {
           if (state is auth_states.AuthenticatedState) {
+            // PRIORITY: Check for pending premium upgrade from pricing page FIRST
+            // This must happen before phone auth check to ensure premium redirect works
+            final box = Hive.box('app_settings');
+            final pendingPremiumUpgrade =
+                box.get('pending_premium_upgrade', defaultValue: false);
+
+            if (pendingPremiumUpgrade == true) {
+              // Clear the flag and redirect to premium upgrade page
+              box.delete('pending_premium_upgrade');
+              Logger.info(
+                'Authentication successful - redirecting to premium upgrade',
+                tag: 'LOGIN_SCREEN',
+                context: {
+                  'user_type':
+                      state.isAnonymous ? 'anonymous' : 'authenticated',
+                  'redirect_reason': 'pending_premium_upgrade',
+                },
+              );
+              context.go(AppRoutes.premiumUpgrade);
+              return;
+            }
+
             // Check if this is a phone auth user by checking if they have a phone number
             final isPhoneAuthUser =
                 state.user.phone != null && state.user.phone!.isNotEmpty;
@@ -254,6 +296,11 @@ class _LoginScreenState extends State<LoginScreen> {
 
               const SizedBox(height: 16),
 
+              // Email Sign-In Button
+              _buildEmailSignInButton(context, isLoading),
+
+              const SizedBox(height: 16),
+
               // Phone Sign-In Button - COMMENTED OUT FOR NOW
               // _buildPhoneSignInButton(context, isLoading),
               //
@@ -328,6 +375,49 @@ class _LoginScreenState extends State<LoginScreen> {
                     ],
                   ),
           ),
+        ),
+      ),
+    );
+  }
+
+  /// Builds the email sign-in button
+  Widget _buildEmailSignInButton(BuildContext context, bool isLoading) {
+    final theme = Theme.of(context);
+
+    return SizedBox(
+      width: double.infinity,
+      height: 56,
+      child: OutlinedButton(
+        onPressed: isLoading ? null : () => _handleEmailSignIn(context),
+        style: OutlinedButton.styleFrom(
+          foregroundColor: theme.colorScheme.primary,
+          side: BorderSide(
+            color: theme.colorScheme.primary,
+            width: 2,
+          ),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          disabledForegroundColor:
+              theme.colorScheme.primary.withValues(alpha: 0.5),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.email_outlined,
+              size: 20,
+              color: theme.colorScheme.primary,
+            ),
+            const SizedBox(width: 12),
+            Text(
+              context.tr(TranslationKeys.loginContinueWithEmail),
+              style: AppFonts.inter(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -497,6 +587,11 @@ class _LoginScreenState extends State<LoginScreen> {
   /// Handles Google sign-in button tap
   void _handleGoogleSignIn(BuildContext context) {
     context.read<AuthBloc>().add(const GoogleSignInRequested());
+  }
+
+  /// Handles email sign-in button tap
+  void _handleEmailSignIn(BuildContext context) {
+    context.push(AppRoutes.emailAuth);
   }
 
   /// Handles phone sign-in button tap - COMMENTED OUT FOR NOW

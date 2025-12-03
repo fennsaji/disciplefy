@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_fonts.dart';
+import '../../../../core/animations/app_animations.dart';
 
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/utils/category_utils.dart';
@@ -20,6 +21,8 @@ import '../../../daily_verse/presentation/bloc/daily_verse_state.dart';
 import '../../../daily_verse/presentation/widgets/daily_verse_card.dart';
 import '../../../daily_verse/domain/entities/daily_verse_entity.dart';
 import '../../../notifications/presentation/widgets/notification_enable_prompt.dart';
+import '../../../auth/presentation/bloc/auth_bloc.dart';
+import '../../../auth/presentation/widgets/email_verification_banner.dart';
 
 import '../bloc/home_bloc.dart';
 import '../bloc/home_event.dart';
@@ -264,7 +267,15 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
                           // Welcome Message
                           _buildWelcomeMessage(currentUserName),
 
-                          SizedBox(height: isLargeScreen ? 32 : 24),
+                          SizedBox(height: isLargeScreen ? 16 : 12),
+
+                          // Email Verification Banner (shown for unverified email users)
+                          BlocProvider.value(
+                            value: sl<AuthBloc>(),
+                            child: const EmailVerificationBanner(),
+                          ),
+
+                          SizedBox(height: isLargeScreen ? 16 : 12),
 
                           // Daily Verse Card with click functionality
                           DailyVerseCard(
@@ -858,7 +869,6 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
       builder: (context, constraints) {
         // Calculate optimal card width (accounting for spacing)
         const double spacing = 16.0;
-        final double cardWidth = (constraints.maxWidth - spacing) / 2;
 
         // Group topics into pairs for rows
         final List<List<RecommendedGuideTopic>> rows = [];
@@ -867,41 +877,52 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
         }
 
         return Column(
-          children: rows
-              .map((rowTopics) => Padding(
-                    padding: EdgeInsets.only(
-                      bottom: rowTopics != rows.last ? spacing : 0,
-                    ),
-                    child: IntrinsicHeight(
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          // First topic in the row
-                          Expanded(
-                            child: _RecommendedGuideTopicCard(
-                              topic: rowTopics[0],
-                              onTap: () => _navigateToStudyGuide(rowTopics[0]),
-                            ),
-                          ),
-                          // Second topic if available, otherwise spacer
-                          if (rowTopics.length > 1) ...[
-                            const SizedBox(width: spacing),
-                            Expanded(
-                              child: _RecommendedGuideTopicCard(
-                                topic: rowTopics[1],
-                                onTap: () =>
-                                    _navigateToStudyGuide(rowTopics[1]),
-                              ),
-                            ),
-                          ] else ...[
-                            const SizedBox(width: spacing),
-                            const Expanded(child: SizedBox()), // Empty space
-                          ],
-                        ],
+          children: rows.asMap().entries.map((entry) {
+            final rowIndex = entry.key;
+            final rowTopics = entry.value;
+
+            return Padding(
+              padding: EdgeInsets.only(
+                bottom: rowTopics != rows.last ? spacing : 0,
+              ),
+              child: IntrinsicHeight(
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    // First topic in the row with stagger animation
+                    Expanded(
+                      child: FadeInWidget(
+                        delay: AppAnimations.getStaggerDelay(rowIndex * 2),
+                        slideOffset: const Offset(0, 0.1),
+                        child: _RecommendedGuideTopicCard(
+                          topic: rowTopics[0],
+                          onTap: () => _navigateToStudyGuide(rowTopics[0]),
+                        ),
                       ),
                     ),
-                  ))
-              .toList(),
+                    // Second topic if available, otherwise spacer
+                    if (rowTopics.length > 1) ...[
+                      const SizedBox(width: spacing),
+                      Expanded(
+                        child: FadeInWidget(
+                          delay:
+                              AppAnimations.getStaggerDelay(rowIndex * 2 + 1),
+                          slideOffset: const Offset(0, 0.1),
+                          child: _RecommendedGuideTopicCard(
+                            topic: rowTopics[1],
+                            onTap: () => _navigateToStudyGuide(rowTopics[1]),
+                          ),
+                        ),
+                      ),
+                    ] else ...[
+                      const SizedBox(width: spacing),
+                      const Expanded(child: SizedBox()), // Empty space
+                    ],
+                  ],
+                ),
+              ),
+            );
+          }).toList(),
         );
       },
     );
@@ -953,7 +974,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
 }
 
 /// Recommended guide topic card widget for API-based topics.
-class _RecommendedGuideTopicCard extends StatelessWidget {
+class _RecommendedGuideTopicCard extends StatefulWidget {
   final RecommendedGuideTopic topic;
   final VoidCallback onTap;
 
@@ -963,32 +984,81 @@ class _RecommendedGuideTopicCard extends StatelessWidget {
   });
 
   @override
+  State<_RecommendedGuideTopicCard> createState() =>
+      _RecommendedGuideTopicCardState();
+}
+
+class _RecommendedGuideTopicCardState extends State<_RecommendedGuideTopicCard>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _scaleAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 100),
+    );
+    _scaleAnimation = Tween<double>(
+      begin: 1.0,
+      end: 0.97,
+    ).animate(CurvedAnimation(
+      parent: _controller,
+      curve: AppAnimations.defaultCurve,
+    ));
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _onTapDown(TapDownDetails details) {
+    _controller.forward();
+  }
+
+  void _onTapUp(TapUpDetails details) {
+    _controller.reverse();
+    widget.onTap();
+  }
+
+  void _onTapCancel() {
+    _controller.reverse();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final iconData = CategoryUtils.getIconForTopic(topic);
+    final iconData = CategoryUtils.getIconForTopic(widget.topic);
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Semantics(
-      button: true,
-      enabled: true,
-      label: topic.title,
-      child: Container(
-        decoration: BoxDecoration(
-          color:
-              isDark ? Colors.white.withOpacity(0.05) : const Color(0xFFF9FAFB),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: isDark
-                ? Colors.white.withOpacity(0.1)
-                : const Color(0xFFE5E7EB),
-          ),
+    return GestureDetector(
+      onTapDown: _onTapDown,
+      onTapUp: _onTapUp,
+      onTapCancel: _onTapCancel,
+      child: AnimatedBuilder(
+        animation: _scaleAnimation,
+        builder: (context, child) => Transform.scale(
+          scale: _scaleAnimation.value,
+          child: child,
         ),
-        child: Material(
-          color: Colors.transparent,
-          borderRadius: BorderRadius.circular(16),
-          clipBehavior: Clip.hardEdge,
-          child: InkWell(
-            onTap: onTap,
-            borderRadius: BorderRadius.circular(16),
+        child: Semantics(
+          button: true,
+          enabled: true,
+          label: widget.topic.title,
+          child: Container(
+            decoration: BoxDecoration(
+              color: isDark
+                  ? Colors.white.withOpacity(0.05)
+                  : const Color(0xFFF9FAFB),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: isDark
+                    ? Colors.white.withOpacity(0.1)
+                    : const Color(0xFFE5E7EB),
+              ),
+            ),
             child: Container(
               padding: const EdgeInsets.all(16),
               constraints: const BoxConstraints(
@@ -1030,7 +1100,7 @@ class _RecommendedGuideTopicCard extends StatelessWidget {
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Text(
-                            topic.category,
+                            widget.topic.category,
                             style: AppFonts.inter(
                               fontSize: 11,
                               fontWeight: FontWeight.w600,
@@ -1049,7 +1119,7 @@ class _RecommendedGuideTopicCard extends StatelessWidget {
 
                   // Title
                   Text(
-                    topic.title,
+                    widget.topic.title,
                     style: AppFonts.inter(
                       fontSize: 15,
                       fontWeight: FontWeight.w600,
@@ -1067,7 +1137,7 @@ class _RecommendedGuideTopicCard extends StatelessWidget {
                   // Description
                   Expanded(
                     child: Text(
-                      topic.description,
+                      widget.topic.description,
                       style: AppFonts.inter(
                         fontSize: 13,
                         color: isDark
@@ -1075,13 +1145,13 @@ class _RecommendedGuideTopicCard extends StatelessWidget {
                             : const Color(0xFF6B7280),
                         height: 1.5,
                       ),
-                      maxLines: topic.isFromLearningPath ? 3 : 4,
+                      maxLines: widget.topic.isFromLearningPath ? 3 : 4,
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
 
                   // Learning path badge (if from a learning path)
-                  if (topic.isFromLearningPath) ...[
+                  if (widget.topic.isFromLearningPath) ...[
                     const SizedBox(height: 8),
                     Container(
                       padding: const EdgeInsets.symmetric(
@@ -1111,7 +1181,7 @@ class _RecommendedGuideTopicCard extends StatelessWidget {
                           const SizedBox(width: 4),
                           Flexible(
                             child: Text(
-                              topic.learningPathName ?? '',
+                              widget.topic.learningPathName ?? '',
                               style: AppFonts.inter(
                                 fontSize: 10,
                                 fontWeight: FontWeight.w600,
@@ -1120,10 +1190,11 @@ class _RecommendedGuideTopicCard extends StatelessWidget {
                               overflow: TextOverflow.ellipsis,
                             ),
                           ),
-                          if (topic.formattedPositionInPath.isNotEmpty) ...[
+                          if (widget
+                              .topic.formattedPositionInPath.isNotEmpty) ...[
                             const SizedBox(width: 6),
                             Text(
-                              topic.formattedPositionInPath,
+                              widget.topic.formattedPositionInPath,
                               style: AppFonts.inter(
                                 fontSize: 10,
                                 fontWeight: FontWeight.w500,

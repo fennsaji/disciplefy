@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/constants/app_fonts.dart';
+import '../../../../core/extensions/translation_extension.dart';
+import '../../../../core/i18n/translation_keys.dart';
 import '../../../../core/utils/category_utils.dart';
 import '../../domain/entities/topic_progress.dart';
 
@@ -57,7 +59,7 @@ class ContinueLearningSection extends StatelessWidget {
               ),
               const SizedBox(width: 8),
               Text(
-                'Continue Learning',
+                context.tr(TranslationKeys.continueLearningTitle),
                 style: AppFonts.inter(
                   fontSize: 18,
                   fontWeight: FontWeight.w600,
@@ -67,7 +69,10 @@ class ContinueLearningSection extends StatelessWidget {
               const Spacer(),
               if (topics.isNotEmpty)
                 Text(
-                  '${topics.length} in progress',
+                  context.tr(
+                    TranslationKeys.continueLearningInProgress,
+                    {'count': topics.length},
+                  ),
                   style: AppFonts.inter(
                     fontSize: 12,
                     color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
@@ -135,7 +140,7 @@ class ContinueLearningSection extends StatelessWidget {
             TextButton(
               onPressed: onRetry,
               child: Text(
-                'Retry',
+                context.tr(TranslationKeys.commonRetry),
                 style: AppFonts.inter(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
@@ -269,7 +274,10 @@ class _ContinueLearningCard extends StatelessWidget {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(
-                        topic.timeSpentSeconds > 0 ? 'Continue' : 'Start',
+                        topic.timeSpentSeconds > 0
+                            ? context.tr(
+                                TranslationKeys.continueLearningContinueAction)
+                            : context.tr(TranslationKeys.continueLearningStart),
                         style: AppFonts.inter(
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
@@ -348,24 +356,32 @@ class _ContinueLearningCard extends StatelessWidget {
               ),
               if (topic.topicsCompletedInPath != null &&
                   topic.totalTopicsInPath != null)
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 6,
-                    vertical: 2,
-                  ),
-                  decoration: BoxDecoration(
-                    color: theme.colorScheme.primary.withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: Text(
-                    '${topic.topicsCompletedInPath} of ${topic.totalTopicsInPath} done',
-                    style: AppFonts.inter(
-                      fontSize: 10,
-                      fontWeight: FontWeight.w600,
-                      color: theme.colorScheme.primary,
+                Builder(builder: (context) {
+                  return Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 6,
+                      vertical: 2,
                     ),
-                  ),
-                ),
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.primary.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Text(
+                      context.tr(
+                        TranslationKeys.continueLearningOfDone,
+                        {
+                          'completed': topic.topicsCompletedInPath,
+                          'total': topic.totalTopicsInPath,
+                        },
+                      ),
+                      style: AppFonts.inter(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w600,
+                        color: theme.colorScheme.primary,
+                      ),
+                    ),
+                  );
+                }),
             ],
           ),
           const SizedBox(height: 8),
