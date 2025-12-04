@@ -37,7 +37,8 @@ class CloudTTSService {
   bool get isAvailable => AppConfig.googleCloudTtsApiKey.isNotEmpty;
 
   /// Current playback state
-  bool get isPlaying => _audioPlayer.state == PlayerState.playing || _isSpeaking;
+  bool get isPlaying =>
+      _audioPlayer.state == PlayerState.playing || _isSpeaking;
 
   /// Google Cloud TTS API endpoint
   static const String _apiEndpoint =
@@ -239,8 +240,7 @@ class CloudTTSService {
 
       // Set up completion listener BEFORE playing
       if (onComplete != null) {
-        _playerCompleteSubscription =
-            _audioPlayer.onPlayerComplete.listen((_) {
+        _playerCompleteSubscription = _audioPlayer.onPlayerComplete.listen((_) {
           print('🔊 [CLOUD TTS] Playback complete');
           _isSpeaking = false;
           _playerCompleteSubscription?.cancel();
