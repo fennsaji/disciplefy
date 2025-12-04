@@ -46,15 +46,18 @@ function generateVerificationToken(): string {
   return Array.from(array, byte => byte.toString(16).padStart(2, '0')).join('')
 }
 
-// Generate verification URL
+// Generate verification URL - points directly to edge function
 function generateVerificationUrl(token: string, email: string): string {
-  const baseUrl = Deno.env.get('APP_URL') || 'https://www.disciplefy.in'
+  // SUPABASE_URL returns internal Docker URL (kong:8000) in local dev
+  // Use API_EXTERNAL_URL for the actual accessible endpoint
+  const supabaseUrl = Deno.env.get('API_EXTERNAL_URL')
+    || Deno.env.get('SUPABASE_URL')?.replace('kong:8000', '127.0.0.1:54321')
+    || 'https://gafbmyrlfpoiptrdgvik.supabase.co'
   const params = new URLSearchParams({
     token,
     email,
-    type: 'email_verification'
   })
-  return `${baseUrl}/verify-email?${params.toString()}`
+  return `${supabaseUrl}/functions/v1/verify-email?${params.toString()}`
 }
 
 // Send email using Resend API (or log for local development)
