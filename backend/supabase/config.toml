@@ -166,8 +166,9 @@ enable_signup = true
 # addresses. If disabled, only the new email is required to confirm.
 double_confirm_changes = true
 # If enabled, users need to confirm their email address before signing in.
-# Set to true for production to ensure verified email addresses
-enable_confirmations = true
+# DISABLED: We use custom verification flow - users get immediate access,
+# then can verify email later via send-verification-email edge function
+enable_confirmations = false
 # If enabled, users will need to reauthenticate or have logged in recently to change their password.
 secure_password_change = true
 # Controls the minimum amount of time that must pass before sending another signup confirmation or password reset email.
@@ -346,6 +347,11 @@ deno_version = 1
 
 # [edge_runtime.secrets]
 # secret_key = "env(SECRET_VALUE)"
+
+# Function-specific configurations
+[functions.verify-email]
+# Disable JWT verification - users click this link from email without being logged in
+verify_jwt = false
 
 [analytics]
 enabled = true
