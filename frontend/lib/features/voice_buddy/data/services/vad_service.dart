@@ -60,6 +60,9 @@ class VADService {
   /// Current silence duration tracker
   Timer? _silenceTimer;
 
+  /// Calibration timer (to cancel on stop)
+  Timer? _calibrationTimer;
+
   /// Whether VAD is currently active
   bool _isActive = false;
 
@@ -93,12 +96,15 @@ class VADService {
     _lastActiveTime = null;
     _lastTranscription = '';
     _silenceTimer?.cancel();
+    _calibrationTimer?.cancel();
 
     if (calibrate) {
+      // _startCalibration emits calibrating, then _endCalibration emits listening
       _startCalibration();
+    } else {
+      // No calibration - go directly to listening state
+      _emitState(VADState.listening);
     }
-
-    _emitState(VADState.listening);
   }
 
   /// Stop VAD monitoring
@@ -107,6 +113,8 @@ class VADService {
     _isCalibrating = false;
     _silenceTimer?.cancel();
     _silenceTimer = null;
+    _calibrationTimer?.cancel();
+    _calibrationTimer = null;
     _calibrationSamples.clear();
     _emitState(VADState.stopped);
   }
@@ -210,8 +218,13 @@ class VADService {
     _emitState(VADState.calibrating);
 
     // End calibration after specified duration
-    Timer(Duration(milliseconds: calibrationDurationMs), () {
-      _endCalibration();
+    // Store timer handle so it can be cancelled on stop()
+    _calibrationTimer =
+        Timer(Duration(milliseconds: calibrationDurationMs), () {
+      // Guard: only proceed if VAD is still active (not stopped during calibration)
+      if (_isActive) {
+        _endCalibration();
+      }
     });
   }
 
@@ -278,8 +291,10 @@ class VADService {
     if (newLen > oldLen + 2) return true;
 
     // Check if the start differs (indicates correction)
-    if (!newText.startsWith(
-        _lastTranscription.substring(0, math.min(oldLen - 3, newLen)))) {
+    // Guard against negative/zero end index for short transcriptions
+    final substringEnd = math.min(math.max(0, oldLen - 3), newLen);
+    if (substringEnd > 0 &&
+        !newText.startsWith(_lastTranscription.substring(0, substringEnd))) {
       // Allow minor end corrections without resetting
       return newLen > oldLen;
     }
