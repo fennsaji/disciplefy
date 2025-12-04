@@ -35,6 +35,16 @@ interface UserProfile {
 }
 
 /**
+ * Subscription record from database
+ */
+interface Subscription {
+  readonly status: string
+  readonly plan_type: string | null
+  readonly current_period_end: string | null
+  readonly cancel_at_cycle_end: boolean | null
+}
+
+/**
  * Centralized Authentication Service
  * 
  * This service is the single source of truth for user identity validation.
@@ -274,75 +284,117 @@ export class AuthService {
   }
 
   /**
+   * Checks if the user is an admin based on their profile
+   *
+   * @param userId - User ID to check
+   * @returns Promise resolving to true if user is admin
+   */
+  private async isAdminUser(userId: string): Promise<boolean> {
+    const userProfile = await this.getUserProfile(userId)
+    return userProfile?.is_admin === true
+  }
+
+  /**
+   * Fetches the user's active subscription from the database
+   *
+   * Returns a valid subscription if:
+   * - Status is 'active', 'authenticated', or 'pending_cancellation'
+   * - Status is 'cancelled' but still within the billing period
+   *
+   * @param userId - User ID to fetch subscription for
+   * @returns Promise resolving to active subscription or null
+   */
+  private async getActiveSubscription(userId: string): Promise<Subscription | null> {
+    if (!this.supabaseServiceClient) {
+      return null
+    }
+
+    const { data: subscription, error } = await this.supabaseServiceClient
+      .from('subscriptions')
+      .select('status, plan_type, current_period_end, cancel_at_cycle_end')
+      .eq('user_id', userId)
+      .in('status', ['active', 'authenticated', 'pending_cancellation', 'cancelled'])
+      .order('created_at', { ascending: false })
+      .maybeSingle()
+
+    if (error || !subscription) {
+      return null
+    }
+
+    // Validate subscription is currently active
+    const isActive =
+      subscription.status === 'active' ||
+      subscription.status === 'authenticated' ||
+      subscription.status === 'pending_cancellation' ||
+      // Cancelled but still within billing period
+      (subscription.status === 'cancelled' &&
+       subscription.cancel_at_cycle_end &&
+       subscription.current_period_end &&
+       new Date(subscription.current_period_end) > new Date())
+
+    return isActive ? subscription : null
+  }
+
+  /**
+   * Maps a subscription's plan_type to a UserPlan tier
+   *
+   * - 'premium*' → 'premium' (unlimited access)
+   * - 'standard*' → 'standard' (limited quota)
+   * - fallback → 'standard'
+   *
+   * @param subscription - Active subscription to map
+   * @returns UserPlan tier based on subscription plan_type
+   */
+  private mapSubscriptionToPlan(subscription: Subscription): UserPlan {
+    if (subscription.plan_type?.startsWith('premium')) {
+      return 'premium'
+    }
+    if (subscription.plan_type?.startsWith('standard')) {
+      return 'standard'
+    }
+    return 'standard'
+  }
+
+  /**
    * Determines the user's subscription plan based on context and profile
-   * 
+   *
    * This method implements the user plan logic for the token system:
    * - Anonymous users → 'free' plan (20 tokens daily)
-   * - Authenticated users → 'standard' plan (100 tokens daily)
    * - Admin users (user_profiles.is_admin = true) → 'premium' plan (unlimited)
-   * - Subscription users (active subscription) → 'premium' plan (unlimited)
-   * 
+   * - Subscription users (active subscription) → plan based on subscription type
+   * - Default authenticated users → 'standard' plan (100 tokens daily)
+   *
    * @param req - HTTP request to get user context from
    * @returns Promise resolving to user's subscription plan
    */
   async getUserPlan(req: Request): Promise<UserPlan> {
     try {
       const userContext = await this.getUserContext(req)
-      
+
       // Anonymous users always get free plan
       if (userContext.type === 'anonymous') {
         return 'free'
       }
-      
-      // For authenticated users, check if they are admin
-      if (userContext.type === 'authenticated' && userContext.userId) {
-        const userProfile = await this.getUserProfile(userContext.userId)
-        
-        // Admin users get premium access
-        if (userProfile?.is_admin) {
-          return 'premium'
-        }
 
-        // Check for active subscription
-        if (this.supabaseServiceClient) {
-          const { data: subscription, error: subError } = await this.supabaseServiceClient
-            .from('subscriptions')
-            .select('status, plan_type, current_period_end, cancel_at_cycle_end')
-            .eq('user_id', userContext.userId)
-            .in('status', ['active', 'authenticated', 'pending_cancellation', 'cancelled'])
-            .order('created_at', { ascending: false })
-            .maybeSingle()
-
-          if (!subError && subscription) {
-            // Check if subscription is currently valid
-            const isActiveSubscription = 
-              subscription.status === 'active' ||
-              subscription.status === 'authenticated' ||
-              subscription.status === 'pending_cancellation' ||
-              // Cancelled but still within period
-              (subscription.status === 'cancelled' &&
-               subscription.cancel_at_cycle_end &&
-               subscription.current_period_end &&
-               new Date(subscription.current_period_end) > new Date())
-
-            if (isActiveSubscription) {
-              // Return the actual plan_type from subscription
-              // - 'premium' or 'premium_monthly' subscription → 'premium' tier (unlimited)
-              // - 'standard' or 'standard_monthly' subscription → 'standard' tier (limited quota)
-              if (subscription.plan_type?.startsWith('premium')) {
-                return 'premium'
-              }
-              if (subscription.plan_type?.startsWith('standard')) {
-                return 'standard'
-              }
-            }
-          }
-        }
+      // Must be authenticated with valid userId
+      if (userContext.type !== 'authenticated' || !userContext.userId) {
+        return 'standard'
       }
-      
+
+      // Admin users get premium access
+      if (await this.isAdminUser(userContext.userId)) {
+        return 'premium'
+      }
+
+      // Check for active subscription
+      const subscription = await this.getActiveSubscription(userContext.userId)
+      if (subscription) {
+        return this.mapSubscriptionToPlan(subscription)
+      }
+
       // Default: authenticated users without admin or subscription get standard plan
       return 'standard'
-      
+
     } catch (error) {
       console.warn('[AuthService] Failed to determine user plan, defaulting to free:', error)
       // Fail safe: return free plan if determination fails
