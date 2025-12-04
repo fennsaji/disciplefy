@@ -242,6 +242,8 @@ class VoiceConversationBloc
       status: VoiceConversationStatus.listening,
       isListening: true,
       isPlaying: false,
+      clearCurrentTranscription:
+          true, // Clear old transcription when starting fresh
     ));
 
     // Initialize speech service if needed
@@ -395,9 +397,14 @@ class VoiceConversationBloc
       return;
     }
 
+    // Clear transcription and reset internal tracking
+    _currentTranscription = '';
+    _currentConfidence = 0.0;
+
     emit(state.copyWith(
       status: VoiceConversationStatus.processing,
       streamingResponse: '',
+      clearCurrentTranscription: true, // Clear the displayed transcription
     ));
 
     // Add user message to local state
