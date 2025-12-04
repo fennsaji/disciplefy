@@ -18,7 +18,6 @@ import '../domain/usecases/create_payment_order.dart';
 import '../domain/usecases/get_purchase_history.dart';
 import '../domain/usecases/get_purchase_statistics.dart';
 import '../presentation/bloc/token_bloc.dart';
-import '../presentation/bloc/payment_method_bloc.dart';
 
 /// Register all token-related dependencies
 void registerTokenDependencies(GetIt sl) {
@@ -78,14 +77,5 @@ void registerTokenDependencies(GetIt sl) {
         createPaymentOrder: sl<CreatePaymentOrder>(),
         getPurchaseHistory: sl<GetPurchaseHistory>(),
         getPurchaseStatistics: sl<GetPurchaseStatistics>(),
-      ));
-
-  sl.registerFactory(() => PaymentMethodBloc(
-        getPaymentMethods: sl<GetPaymentMethods>(),
-        savePaymentMethod: sl<SavePaymentMethod>(),
-        setDefaultPaymentMethod: sl<SetDefaultPaymentMethod>(),
-        deletePaymentMethod: sl<DeletePaymentMethod>(),
-        getPaymentPreferences: sl<GetPaymentPreferences>(),
-        updatePaymentPreferences: sl<UpdatePaymentPreferences>(),
       ));
 }

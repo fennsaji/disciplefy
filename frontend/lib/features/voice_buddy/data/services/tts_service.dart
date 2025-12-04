@@ -2,20 +2,52 @@ import 'dart:io' show Platform;
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_tts/flutter_tts.dart';
 
+import 'cloud_tts_service.dart';
+
 /// Service for handling text-to-speech functionality.
 ///
 /// Supports multi-language synthesis for English, Hindi, and Malayalam.
+/// Uses Google Cloud TTS for high-quality voices when available,
+/// with fallback to device TTS.
+/// Also supports streaming TTS for playing sentences as they arrive.
 class TTSService {
   final FlutterTts _flutterTts = FlutterTts();
+  final CloudTTSService _cloudTts = CloudTTSService();
+
   bool _isInitialized = false;
+  bool _cloudTtsAvailable = false;
+  bool _useCloudTts = true; // Prefer cloud TTS when available
+
   TtsState _currentState = TtsState.stopped;
   bool _isIntentionallyStopping = false;
+
+  /// Queue of sentences to speak for streaming TTS
+  final List<String> _sentenceQueue = [];
+
+  /// Whether we're currently in streaming mode
+  bool _isStreamingMode = false;
+
+  /// Language code for current streaming session
+  String _streamingLanguageCode = 'en-US';
+
+  /// Callback when all queued sentences are done
+  void Function()? _onStreamingComplete;
 
   /// Current state of TTS playback.
   TtsState get currentState => _currentState;
 
   /// Whether TTS is currently speaking.
-  bool get isSpeaking => _currentState == TtsState.playing;
+  bool get isSpeaking =>
+      _currentState == TtsState.playing || _cloudTts.isPlaying;
+
+  /// Whether cloud TTS is being used.
+  bool get isUsingCloudTts => _cloudTtsAvailable && _useCloudTts;
+
+  /// Enable or disable cloud TTS.
+  void setUseCloudTts(bool enabled) {
+    _useCloudTts = enabled;
+    print('🔊 [TTS] Cloud TTS ${enabled ? "enabled" : "disabled"}');
+  }
 
   /// Initialize the TTS service with default settings.
   Future<void> initialize() async {
@@ -25,6 +57,20 @@ class TTSService {
     }
 
     print('🔊 [TTS] Initializing TTS service...');
+
+    // Try to initialize Cloud TTS first (for high-quality voices)
+    if (_cloudTts.isAvailable) {
+      print('🔊 [TTS] Cloud TTS API key found, initializing...');
+      _cloudTtsAvailable = await _cloudTts.initialize();
+      if (_cloudTtsAvailable) {
+        print('🔊 [TTS] ✅ Cloud TTS initialized - using high-quality voices');
+      } else {
+        print(
+            '🔊 [TTS] ⚠️ Cloud TTS initialization failed, will use device TTS');
+      }
+    } else {
+      print('🔊 [TTS] Cloud TTS API key not configured, using device TTS');
+    }
 
     // Platform-specific configuration
     if (kIsWeb) {
@@ -365,6 +411,9 @@ class TTSService {
   }
 
   /// Speak text with specific language and voice settings.
+  ///
+  /// Uses Google Cloud TTS for high-quality voices when available,
+  /// with automatic fallback to device TTS.
   Future<void> speakWithSettings({
     required String text,
     required String languageCode,
@@ -379,12 +428,40 @@ class TTSService {
     print('  Speaking rate: $speakingRate');
     print('  Pitch: $pitch');
     print('  Voice gender: $voiceGender');
+    print('  Cloud TTS available: $_cloudTtsAvailable');
+    print('  Use Cloud TTS: $_useCloudTts');
 
     if (!_isInitialized) {
       print('🔊 [TTS] Initializing TTS service...');
       await initialize();
     }
 
+    // Try Cloud TTS first for high-quality voices
+    if (_cloudTtsAvailable && _useCloudTts) {
+      print('🔊 [TTS] Using Google Cloud TTS (high-quality)');
+
+      final success = await _cloudTts.speak(
+        text: text,
+        languageCode: languageCode,
+        speakingRate: speakingRate ?? 1.0,
+        pitch: pitch ?? 0.0,
+        onComplete: () {
+          _currentState = TtsState.stopped;
+          onComplete?.call();
+        },
+      );
+
+      if (success) {
+        _currentState = TtsState.playing;
+        print('🔊 [TTS] Cloud TTS playback started');
+        return;
+      }
+
+      print('🔊 [TTS] Cloud TTS failed, falling back to device TTS');
+    }
+
+    // Fallback to device TTS
+    print('🔊 [TTS] Using device TTS (fallback)');
     print('🔊 [TTS] Setting language to $languageCode');
     await setLanguage(languageCode);
 
@@ -444,8 +521,15 @@ class TTSService {
     if (_currentState == TtsState.playing) {
       _isIntentionallyStopping = true;
     }
+
+    // Stop both cloud and device TTS
+    await _cloudTts.stop();
     await _flutterTts.stop();
     _currentState = TtsState.stopped;
+
+    // Also clear streaming queue
+    _sentenceQueue.clear();
+    _isStreamingMode = false;
   }
 
   /// Pause speaking (iOS only).
@@ -454,9 +538,194 @@ class TTSService {
     _currentState = TtsState.paused;
   }
 
+  // ============================================================
+  // STREAMING TTS METHODS
+  // ============================================================
+
+  /// Whether we're in the middle of initializing a streaming session
+  bool _isInitializingStreamingSession = false;
+
+  /// Start a streaming TTS session.
+  ///
+  /// Call this before adding sentences with [addSentenceToQueue].
+  /// When streaming is complete, call [finishStreaming] to play any remaining text.
+  /// Uses Cloud TTS when available for high-quality voices.
+  Future<void> startStreamingSession({
+    required String languageCode,
+    void Function()? onComplete,
+  }) async {
+    print('🔊 [TTS STREAM] Starting streaming session for $languageCode');
+    print(
+        '🔊 [TTS STREAM] Cloud TTS available: $_cloudTtsAvailable, enabled: $_useCloudTts');
+
+    // Set streaming mode IMMEDIATELY so sentences can be queued during init
+    _isStreamingMode = true;
+    _isInitializingStreamingSession = true;
+    _streamingLanguageCode = languageCode;
+    _onStreamingComplete = onComplete;
+
+    // Clear any previous queue
+    _sentenceQueue.clear();
+
+    if (!_isInitialized) {
+      await initialize();
+    }
+
+    // Stop any current playback (both cloud and device TTS)
+    if (_currentState == TtsState.playing || _cloudTts.isPlaying) {
+      _isIntentionallyStopping = true;
+      await _cloudTts.stop();
+      await _flutterTts.stop();
+      _currentState = TtsState.stopped;
+      if (kIsWeb) {
+        await Future.delayed(const Duration(milliseconds: 100));
+      }
+    }
+
+    // Set up completion handler for queued playback (used only for device TTS fallback)
+    _flutterTts.setCompletionHandler(() {
+      _currentState = TtsState.stopped;
+      _playNextInQueue();
+    });
+
+    // Set language for device TTS fallback
+    await setLanguage(languageCode);
+
+    _isInitializingStreamingSession = false;
+    print(
+        '🔊 [TTS STREAM] Session ready, queue has ${_sentenceQueue.length} sentences');
+
+    // If sentences were added during initialization, start playing now
+    if (_sentenceQueue.isNotEmpty && _currentState != TtsState.playing) {
+      _playNextInQueue();
+    }
+  }
+
+  /// Add a complete sentence to the TTS queue.
+  ///
+  /// The sentence will be spoken immediately if nothing is playing,
+  /// otherwise it will be queued.
+  Future<void> addSentenceToQueue(String sentence) async {
+    if (!_isStreamingMode) {
+      print('🔊 [TTS STREAM] ⚠️ Not in streaming mode, ignoring sentence');
+      return;
+    }
+
+    final trimmed = sentence.trim();
+    if (trimmed.isEmpty) return;
+
+    final sanitized = _sanitizeTextForTTS(trimmed);
+    if (sanitized.isEmpty) return;
+
+    print(
+        '🔊 [TTS STREAM] Adding to queue: "${sanitized.length > 40 ? '${sanitized.substring(0, 40)}...' : sanitized}"');
+
+    _sentenceQueue.add(sanitized);
+
+    // Only start playing if not initializing and not currently playing
+    // During initialization, startStreamingSession will trigger playback when ready
+    if (!_isInitializingStreamingSession && _currentState != TtsState.playing) {
+      _playNextInQueue();
+    }
+  }
+
+  /// Play the next sentence in the queue.
+  /// Uses Cloud TTS when available for high-quality voices.
+  void _playNextInQueue() {
+    if (_sentenceQueue.isEmpty) {
+      print('🔊 [TTS STREAM] Queue empty');
+      // Check if streaming is finished
+      if (!_isStreamingMode) {
+        print('🔊 [TTS STREAM] Streaming complete, calling onComplete');
+        _currentState = TtsState.stopped;
+        final callback = _onStreamingComplete;
+        _onStreamingComplete = null;
+        callback?.call();
+      }
+      return;
+    }
+
+    final sentence = _sentenceQueue.removeAt(0);
+    print(
+        '🔊 [TTS STREAM] Playing: "${sentence.length > 40 ? '${sentence.substring(0, 40)}...' : sentence}"');
+    print('🔊 [TTS STREAM] Remaining in queue: ${_sentenceQueue.length}');
+
+    // Try Cloud TTS first for high-quality voices
+    if (_cloudTtsAvailable && _useCloudTts) {
+      print('🔊 [TTS STREAM] Using Cloud TTS');
+      _currentState = TtsState.playing;
+
+      _speakWithCloudTTS(sentence);
+      return;
+    }
+
+    // Fallback to device TTS
+    _flutterTts.speak(sentence);
+    _currentState = TtsState.playing;
+  }
+
+  /// Speak using Cloud TTS with proper error handling.
+  Future<void> _speakWithCloudTTS(String sentence) async {
+    try {
+      final success = await _cloudTts.speak(
+        text: sentence,
+        languageCode: _streamingLanguageCode,
+        onComplete: () {
+          _currentState = TtsState.stopped;
+          // Always call _playNextInQueue - it handles empty queue and completion callback
+          _playNextInQueue();
+        },
+      );
+
+      if (!success) {
+        print('🔊 [TTS STREAM] Cloud TTS failed, falling back to device TTS');
+        // Fallback to device TTS
+        await _flutterTts.speak(sentence);
+      }
+    } catch (e) {
+      print('🔊 [TTS STREAM] Cloud TTS error: $e');
+      _currentState = TtsState.stopped;
+      // Always call _playNextInQueue - it handles empty queue and completion callback
+      _playNextInQueue();
+    }
+  }
+
+  /// Finish the streaming session.
+  ///
+  /// Call this when the stream is complete. Any remaining queued sentences
+  /// will continue playing, and onComplete will be called when done.
+  void finishStreaming() {
+    print('🔊 [TTS STREAM] Finishing streaming session');
+    _isStreamingMode = false;
+
+    // If nothing is playing and queue is empty, call complete now
+    if (_currentState != TtsState.playing && _sentenceQueue.isEmpty) {
+      print('🔊 [TTS STREAM] No more audio, calling onComplete immediately');
+      _onStreamingComplete?.call();
+      _onStreamingComplete = null;
+    }
+    // Otherwise, the completion handler will call onComplete when done
+  }
+
+  /// Cancel streaming and stop all playback.
+  Future<void> cancelStreaming() async {
+    print('🔊 [TTS STREAM] Cancelling streaming session');
+    _sentenceQueue.clear();
+    _isStreamingMode = false;
+    _onStreamingComplete = null;
+    await stop();
+  }
+
+  /// Whether streaming TTS is currently active.
+  bool get isStreaming => _isStreamingMode;
+
+  /// Number of sentences waiting in the queue.
+  int get queueLength => _sentenceQueue.length;
+
   /// Dispose of the service resources.
   void dispose() {
     stop();
+    _cloudTts.dispose();
   }
 }
 

@@ -1061,6 +1061,7 @@ class AppTranslations {
         'processing': 'Processing...',
         'tap_to_speak': 'Tap to start speaking',
         'hold_to_speak': 'Hold to speak',
+        'tap_to_interrupt': 'Tap to interrupt',
         'end_tooltip': 'End conversation',
       },
       'settings': {
@@ -2194,6 +2195,7 @@ class AppTranslations {
         'processing': 'प्रोसेसिंग...',
         'tap_to_speak': 'बोलने के लिए टैप करें',
         'hold_to_speak': 'बोलने के लिए दबाए रखें',
+        'tap_to_interrupt': 'रोकने के लिए टैप करें',
         'end_tooltip': 'बातचीत समाप्त करें',
       },
       'settings': {
@@ -3392,6 +3394,7 @@ class AppTranslations {
         'processing': 'പ്രോസസ്സ് ചെയ്യുന്നു...',
         'tap_to_speak': 'സംസാരിക്കാൻ ടാപ്പ് ചെയ്യുക',
         'hold_to_speak': 'സംസാരിക്കാൻ അമർത്തി പിടിക്കുക',
+        'tap_to_interrupt': 'നിർത്താൻ ടാപ്പ് ചെയ്യുക',
         'end_tooltip': 'സംഭാഷണം അവസാനിപ്പിക്കുക',
       },
       'settings': {
