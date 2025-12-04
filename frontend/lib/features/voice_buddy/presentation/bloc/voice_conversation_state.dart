@@ -32,7 +32,7 @@ class VoiceConversationState extends Equatable {
     this.streamingResponse = '',
     this.isListening = false,
     this.isPlaying = false,
-    this.isContinuousMode = false,
+    this.isContinuousMode = true,
     this.languageCode = 'en-US',
     this.quota,
     this.errorMessage,

@@ -27,9 +27,12 @@ class SpeechService {
       _isInitialized = await _speechToText.initialize(
         onError: (error) {
           // Log error but don't throw - let caller handle via result
+          print('🎙️ [SPEECH] Error: ${error.errorMsg}');
         },
         onStatus: (status) {
           // Status updates: listening, notListening, done
+          print('🎙️ [SPEECH] Status changed: $status');
+          _onStatusChange?.call(status);
         },
       );
 
@@ -54,19 +57,24 @@ class SpeechService {
     return locales.any((locale) => locale.localeId == languageCode);
   }
 
+  /// Callback for status changes (listening, notListening, done)
+  void Function(String status)? _onStatusChange;
+
   /// Start listening for speech input.
   ///
   /// [languageCode] - The language to recognize (e.g., 'en-US', 'hi-IN', 'ml-IN')
   /// [onResult] - Callback for recognition results
   /// [onSoundLevelChange] - Optional callback for sound level (for waveform visualization)
-  /// [pauseFor] - Duration of silence before automatically stopping (default 3 seconds)
-  /// [listenFor] - Maximum duration to listen (default 30 seconds)
+  /// [onStatusChange] - Optional callback for status changes (listening, notListening, done)
+  /// [pauseFor] - Duration of silence before automatically stopping (default 10 seconds)
+  /// [listenFor] - Maximum duration to listen (default 60 seconds)
   Future<void> startListening({
     required String languageCode,
     required void Function(SpeechRecognitionResult result) onResult,
     void Function(double level)? onSoundLevelChange,
-    Duration pauseFor = const Duration(seconds: 3),
-    Duration listenFor = const Duration(seconds: 30),
+    void Function(String status)? onStatusChange,
+    Duration pauseFor = const Duration(seconds: 60),
+    Duration listenFor = const Duration(seconds: 60),
     bool partialResults = true,
   }) async {
     if (!_isInitialized) {
@@ -79,6 +87,9 @@ class SpeechService {
     if (_speechToText.isListening) {
       await stopListening();
     }
+
+    // Store the status callback for use in initialize's onStatus
+    _onStatusChange = onStatusChange;
 
     await _speechToText.listen(
       onResult: onResult,

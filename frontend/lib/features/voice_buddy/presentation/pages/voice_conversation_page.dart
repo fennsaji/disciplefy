@@ -428,8 +428,11 @@ class _VoiceConversationViewState extends State<_VoiceConversationView> {
                   controller: _scrollController,
                   padding: const EdgeInsets.all(16),
                   itemCount: state.messages.length +
-                      (state.status == VoiceConversationStatus.streaming ||
-                              state.status == VoiceConversationStatus.processing
+                      // Show extra item for streaming/processing
+                      // Allow streaming text to be visible even while TTS plays
+                      ((state.status == VoiceConversationStatus.streaming ||
+                              state.status ==
+                                  VoiceConversationStatus.processing)
                           ? 1
                           : 0),
                   itemBuilder: (context, index) {
@@ -604,29 +607,6 @@ class _VoiceConversationViewState extends State<_VoiceConversationView> {
                 ),
               ],
             ),
-
-            // Continuous mode toggle
-            if (!_isTextInputMode)
-              Padding(
-                padding: const EdgeInsets.only(top: 8),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      context.tr('voice_buddy.voice_controls.continuous_mode'),
-                      style: theme.textTheme.bodySmall,
-                    ),
-                    Switch(
-                      value: state.isContinuousMode,
-                      onChanged: (value) {
-                        context
-                            .read<VoiceConversationBloc>()
-                            .add(ToggleContinuousMode(value));
-                      },
-                    ),
-                  ],
-                ),
-              ),
           ],
         ),
       ),
@@ -636,7 +616,13 @@ class _VoiceConversationViewState extends State<_VoiceConversationView> {
   Widget _buildVoiceControls(VoiceConversationState state) {
     VoiceButtonState buttonState;
 
-    if (state.isListening) {
+    // Priority: isPlaying > isListening > processing > idle
+    // isPlaying takes priority because we want to show speaking animation
+    // during TTS playback even if continuous mode has listening enabled
+    if (state.isPlaying) {
+      // TTS is playing - show speaking state (highest priority)
+      buttonState = VoiceButtonState.speaking;
+    } else if (state.isListening) {
       buttonState = VoiceButtonState.listening;
     } else if (state.status == VoiceConversationStatus.processing ||
         state.status == VoiceConversationStatus.streaming) {
@@ -652,8 +638,13 @@ class _VoiceConversationViewState extends State<_VoiceConversationView> {
           state: buttonState,
           isContinuousMode: state.isContinuousMode,
           // Continuous mode: tap to toggle
+          // Speaking state: tap to interrupt and start listening
           onTap: () {
-            if (state.isListening) {
+            if (state.isPlaying) {
+              // Interrupt TTS and start listening
+              context.read<VoiceConversationBloc>().add(const StopPlayback());
+              context.read<VoiceConversationBloc>().add(const StartListening());
+            } else if (state.isListening) {
               context.read<VoiceConversationBloc>().add(const StopListening());
             } else {
               context.read<VoiceConversationBloc>().add(const StartListening());
@@ -692,6 +683,8 @@ class _VoiceConversationViewState extends State<_VoiceConversationView> {
             : context.tr('voice_buddy.voice_controls.listening_hold');
       case VoiceButtonState.processing:
         return context.tr('voice_buddy.voice_controls.processing');
+      case VoiceButtonState.speaking:
+        return context.tr('voice_buddy.voice_controls.tap_to_interrupt');
       case VoiceButtonState.idle:
         return isContinuousMode
             ? context.tr('voice_buddy.voice_controls.tap_to_speak')

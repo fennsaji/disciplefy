@@ -5,11 +5,24 @@ import 'package:flutter_tts/flutter_tts.dart';
 /// Service for handling text-to-speech functionality.
 ///
 /// Supports multi-language synthesis for English, Hindi, and Malayalam.
+/// Also supports streaming TTS for playing sentences as they arrive.
 class TTSService {
   final FlutterTts _flutterTts = FlutterTts();
   bool _isInitialized = false;
   TtsState _currentState = TtsState.stopped;
   bool _isIntentionallyStopping = false;
+
+  /// Queue of sentences to speak for streaming TTS
+  final List<String> _sentenceQueue = [];
+
+  /// Whether we're currently in streaming mode
+  bool _isStreamingMode = false;
+
+  /// Language code for current streaming session
+  String _streamingLanguageCode = 'en-US';
+
+  /// Callback when all queued sentences are done
+  void Function()? _onStreamingComplete;
 
   /// Current state of TTS playback.
   TtsState get currentState => _currentState;
@@ -446,6 +459,10 @@ class TTSService {
     }
     await _flutterTts.stop();
     _currentState = TtsState.stopped;
+
+    // Also clear streaming queue
+    _sentenceQueue.clear();
+    _isStreamingMode = false;
   }
 
   /// Pause speaking (iOS only).
@@ -453,6 +470,147 @@ class TTSService {
     await _flutterTts.pause();
     _currentState = TtsState.paused;
   }
+
+  // ============================================================
+  // STREAMING TTS METHODS
+  // ============================================================
+
+  /// Whether we're in the middle of initializing a streaming session
+  bool _isInitializingStreamingSession = false;
+
+  /// Start a streaming TTS session.
+  ///
+  /// Call this before adding sentences with [addSentenceToQueue].
+  /// When streaming is complete, call [finishStreaming] to play any remaining text.
+  Future<void> startStreamingSession({
+    required String languageCode,
+    void Function()? onComplete,
+  }) async {
+    print('🔊 [TTS STREAM] Starting streaming session for $languageCode');
+
+    // Set streaming mode IMMEDIATELY so sentences can be queued during init
+    _isStreamingMode = true;
+    _isInitializingStreamingSession = true;
+    _streamingLanguageCode = languageCode;
+    _onStreamingComplete = onComplete;
+
+    // Clear any previous queue
+    _sentenceQueue.clear();
+
+    if (!_isInitialized) {
+      await initialize();
+    }
+
+    // Stop any current playback (but don't reset streaming mode)
+    if (_currentState == TtsState.playing) {
+      _isIntentionallyStopping = true;
+      await _flutterTts.stop();
+      _currentState = TtsState.stopped;
+      if (kIsWeb) {
+        await Future.delayed(const Duration(milliseconds: 100));
+      }
+    }
+
+    // Set up completion handler for queued playback
+    _flutterTts.setCompletionHandler(() {
+      _currentState = TtsState.stopped;
+      _playNextInQueue();
+    });
+
+    // Set language
+    await setLanguage(languageCode);
+
+    _isInitializingStreamingSession = false;
+    print(
+        '🔊 [TTS STREAM] Session ready, queue has ${_sentenceQueue.length} sentences');
+
+    // If sentences were added during initialization, start playing now
+    if (_sentenceQueue.isNotEmpty && _currentState != TtsState.playing) {
+      _playNextInQueue();
+    }
+  }
+
+  /// Add a complete sentence to the TTS queue.
+  ///
+  /// The sentence will be spoken immediately if nothing is playing,
+  /// otherwise it will be queued.
+  Future<void> addSentenceToQueue(String sentence) async {
+    if (!_isStreamingMode) {
+      print('🔊 [TTS STREAM] ⚠️ Not in streaming mode, ignoring sentence');
+      return;
+    }
+
+    final trimmed = sentence.trim();
+    if (trimmed.isEmpty) return;
+
+    final sanitized = _sanitizeTextForTTS(trimmed);
+    if (sanitized.isEmpty) return;
+
+    print(
+        '🔊 [TTS STREAM] Adding to queue: "${sanitized.length > 40 ? '${sanitized.substring(0, 40)}...' : sanitized}"');
+
+    _sentenceQueue.add(sanitized);
+
+    // Only start playing if not initializing and not currently playing
+    // During initialization, startStreamingSession will trigger playback when ready
+    if (!_isInitializingStreamingSession && _currentState != TtsState.playing) {
+      _playNextInQueue();
+    }
+  }
+
+  /// Play the next sentence in the queue.
+  void _playNextInQueue() {
+    if (_sentenceQueue.isEmpty) {
+      print('🔊 [TTS STREAM] Queue empty');
+      // Check if streaming is finished
+      if (!_isStreamingMode) {
+        print('🔊 [TTS STREAM] Streaming complete, calling onComplete');
+        _onStreamingComplete?.call();
+        _onStreamingComplete = null;
+      }
+      return;
+    }
+
+    final sentence = _sentenceQueue.removeAt(0);
+    print(
+        '🔊 [TTS STREAM] Playing: "${sentence.length > 40 ? '${sentence.substring(0, 40)}...' : sentence}"');
+    print('🔊 [TTS STREAM] Remaining in queue: ${_sentenceQueue.length}');
+
+    _flutterTts.speak(sentence);
+    _currentState = TtsState.playing;
+  }
+
+  /// Finish the streaming session.
+  ///
+  /// Call this when the stream is complete. Any remaining queued sentences
+  /// will continue playing, and onComplete will be called when done.
+  void finishStreaming() {
+    print('🔊 [TTS STREAM] Finishing streaming session');
+    _isStreamingMode = false;
+
+    // If nothing is playing and queue is empty, call complete now
+    if (_currentState != TtsState.playing && _sentenceQueue.isEmpty) {
+      print('🔊 [TTS STREAM] No more audio, calling onComplete immediately');
+      _onStreamingComplete?.call();
+      _onStreamingComplete = null;
+    }
+    // Otherwise, the completion handler will call onComplete when done
+  }
+
+  /// Cancel streaming and stop all playback.
+  Future<void> cancelStreaming() async {
+    print('🔊 [TTS STREAM] Cancelling streaming session');
+    _sentenceQueue.clear();
+    _isStreamingMode = false;
+    _onStreamingComplete = null;
+    await stop();
+  }
+
+  /// Whether streaming TTS is currently active.
+  bool get isStreaming => _isStreamingMode;
+
+  /// Number of sentences waiting in the queue.
+  int get queueLength => _sentenceQueue.length;
 
   /// Dispose of the service resources.
   void dispose() {
