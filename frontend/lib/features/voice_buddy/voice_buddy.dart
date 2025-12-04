@@ -26,7 +26,6 @@ export 'presentation/bloc/voice_preferences_state.dart';
 
 // Presentation - Widgets
 export 'presentation/widgets/voice_button.dart';
-export 'presentation/widgets/voice_waveform.dart';
 export 'presentation/widgets/conversation_bubble.dart';
 export 'presentation/widgets/language_selector.dart';
 

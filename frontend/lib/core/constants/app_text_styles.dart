@@ -162,9 +162,6 @@ class AppTextStyles {
   );
 
   // Additional getters for compatibility
-  static TextStyle get headingSmall => titleSmall;
   static TextStyle get headingMedium => titleMedium;
-  static TextStyle get headingLarge => titleLarge;
   static TextStyle get captionSmall => caption;
-  static TextStyle get bodyText => bodyMedium;
 }

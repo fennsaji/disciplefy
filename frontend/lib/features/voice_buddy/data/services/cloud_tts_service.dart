@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 
@@ -17,6 +18,15 @@ class CloudTTSService {
   final AudioPlayer _audioPlayer = AudioPlayer();
   late final Dio _dio;
 
+  /// Cancel token for in-flight requests
+  CancelToken? _currentCancelToken;
+
+  /// Stream subscription for audio player completion
+  StreamSubscription? _playerCompleteSubscription;
+
+  /// Flag to track if we're in the middle of speaking
+  bool _isSpeaking = false;
+
   /// Cached voices for each language
   final Map<String, _CloudVoice> _voiceCache = {};
 
@@ -27,7 +37,7 @@ class CloudTTSService {
   bool get isAvailable => AppConfig.googleCloudTtsApiKey.isNotEmpty;
 
   /// Current playback state
-  bool get isPlaying => _audioPlayer.state == PlayerState.playing;
+  bool get isPlaying => _audioPlayer.state == PlayerState.playing || _isSpeaking;
 
   /// Google Cloud TTS API endpoint
   static const String _apiEndpoint =
@@ -168,6 +178,12 @@ class CloudTTSService {
         },
       };
 
+      // Cancel any previous request
+      _currentCancelToken?.cancel('New speak request');
+      _currentCancelToken = CancelToken();
+
+      _isSpeaking = true;
+
       // Make API request
       const apiKey = AppConfig.googleCloudTtsApiKey;
       final response = await _dio.post(
@@ -176,6 +192,7 @@ class CloudTTSService {
         options: Options(
           headers: {'Content-Type': 'application/json'},
         ),
+        cancelToken: _currentCancelToken,
       );
 
       if (response.statusCode != 200) {
@@ -194,12 +211,19 @@ class CloudTTSService {
 
       return true;
     } on DioException catch (e) {
+      _isSpeaking = false;
+      // Don't log cancellation as an error
+      if (e.type == DioExceptionType.cancel) {
+        print('🔊 [CLOUD TTS] Request cancelled');
+        return false;
+      }
       print('🔊 [CLOUD TTS] API error: ${e.message}');
       if (e.response != null) {
         print('🔊 [CLOUD TTS] Response: ${e.response?.data}');
       }
       return false;
     } catch (e) {
+      _isSpeaking = false;
       print('🔊 [CLOUD TTS] Error converting text to speech: $e');
       return false;
     }
@@ -209,10 +233,24 @@ class CloudTTSService {
   Future<void> _playAudio(
       Uint8List audioBytes, void Function()? onComplete) async {
     try {
-      // Set up completion listener
+      // Cancel any existing completion listener
+      await _playerCompleteSubscription?.cancel();
+      _playerCompleteSubscription = null;
+
+      // Set up completion listener BEFORE playing
       if (onComplete != null) {
-        _audioPlayer.onPlayerComplete.first.then((_) {
+        _playerCompleteSubscription =
+            _audioPlayer.onPlayerComplete.listen((_) {
           print('🔊 [CLOUD TTS] Playback complete');
+          _isSpeaking = false;
+          _playerCompleteSubscription?.cancel();
+          _playerCompleteSubscription = null;
+          onComplete();
+        }, onError: (error) {
+          print('🔊 [CLOUD TTS] Audio player error: $error');
+          _isSpeaking = false;
+          _playerCompleteSubscription?.cancel();
+          _playerCompleteSubscription = null;
           onComplete();
         });
       }
@@ -222,6 +260,9 @@ class CloudTTSService {
       print('🔊 [CLOUD TTS] Playback started');
     } catch (e) {
       print('🔊 [CLOUD TTS] Error playing audio: $e');
+      _isSpeaking = false;
+      _playerCompleteSubscription?.cancel();
+      _playerCompleteSubscription = null;
       onComplete?.call();
     }
   }
@@ -252,7 +293,17 @@ class CloudTTSService {
 
   /// Stop current playback.
   Future<void> stop() async {
+    // Cancel any in-flight API request
+    _currentCancelToken?.cancel('Stop requested');
+    _currentCancelToken = null;
+
+    // Cancel completion listener
+    await _playerCompleteSubscription?.cancel();
+    _playerCompleteSubscription = null;
+
+    // Stop audio player
     await _audioPlayer.stop();
+    _isSpeaking = false;
     print('🔊 [CLOUD TTS] Playback stopped');
   }
 
@@ -268,6 +319,8 @@ class CloudTTSService {
 
   /// Dispose of resources.
   void dispose() {
+    _currentCancelToken?.cancel('Dispose');
+    _playerCompleteSubscription?.cancel();
     _audioPlayer.dispose();
   }
 }

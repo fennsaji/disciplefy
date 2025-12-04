@@ -143,7 +143,6 @@ import '../../features/tokens/domain/usecases/create_payment_order.dart';
 import '../../features/tokens/domain/usecases/get_purchase_history.dart';
 import '../../features/tokens/domain/usecases/get_purchase_statistics.dart';
 import '../../features/tokens/presentation/bloc/token_bloc.dart';
-import '../../features/tokens/presentation/bloc/payment_method_bloc.dart';
 import '../../features/tokens/di/tokens_injection.dart';
 import '../../features/follow_up_chat/presentation/bloc/follow_up_chat_bloc.dart';
 import '../../features/follow_up_chat/data/services/conversation_service.dart';

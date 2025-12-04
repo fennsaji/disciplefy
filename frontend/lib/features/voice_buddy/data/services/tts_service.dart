@@ -637,8 +637,10 @@ class TTSService {
       // Check if streaming is finished
       if (!_isStreamingMode) {
         print('🔊 [TTS STREAM] Streaming complete, calling onComplete');
-        _onStreamingComplete?.call();
+        _currentState = TtsState.stopped;
+        final callback = _onStreamingComplete;
         _onStreamingComplete = null;
+        callback?.call();
       }
       return;
     }
@@ -653,27 +655,39 @@ class TTSService {
       print('🔊 [TTS STREAM] Using Cloud TTS');
       _currentState = TtsState.playing;
 
-      _cloudTts
-          .speak(
-        text: sentence,
-        languageCode: _streamingLanguageCode,
-        onComplete: () {
-          _currentState = TtsState.stopped;
-          _playNextInQueue();
-        },
-      )
-          .then((success) {
-        if (!success) {
-          print('🔊 [TTS STREAM] Cloud TTS failed, falling back to device TTS');
-          _flutterTts.speak(sentence);
-        }
-      });
+      _speakWithCloudTTS(sentence);
       return;
     }
 
     // Fallback to device TTS
     _flutterTts.speak(sentence);
     _currentState = TtsState.playing;
+  }
+
+  /// Speak using Cloud TTS with proper error handling.
+  Future<void> _speakWithCloudTTS(String sentence) async {
+    try {
+      final success = await _cloudTts.speak(
+        text: sentence,
+        languageCode: _streamingLanguageCode,
+        onComplete: () {
+          _currentState = TtsState.stopped;
+          // Always call _playNextInQueue - it handles empty queue and completion callback
+          _playNextInQueue();
+        },
+      );
+
+      if (!success) {
+        print('🔊 [TTS STREAM] Cloud TTS failed, falling back to device TTS');
+        // Fallback to device TTS
+        await _flutterTts.speak(sentence);
+      }
+    } catch (e) {
+      print('🔊 [TTS STREAM] Cloud TTS error: $e');
+      _currentState = TtsState.stopped;
+      // Always call _playNextInQueue - it handles empty queue and completion callback
+      _playNextInQueue();
+    }
   }
 
   /// Finish the streaming session.
