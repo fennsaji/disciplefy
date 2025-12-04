@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
+import '../../../../core/constants/app_fonts.dart';
 
 import '../../../../core/models/app_language.dart';
 import '../../../../core/services/language_preference_service.dart';
@@ -87,7 +87,7 @@ class _LanguageSelectionScreenState extends State<LanguageSelectionScreen> {
           SnackBar(
             content: Text(
               'Failed to save language preference: ${e.toString()}',
-              style: GoogleFonts.inter(),
+              style: AppFonts.inter(),
             ),
             backgroundColor: Colors.red,
           ),
@@ -123,7 +123,7 @@ class _LanguageSelectionScreenState extends State<LanguageSelectionScreen> {
           SnackBar(
             content: Text(
               context.tr(TranslationKeys.onboardingDefaultLanguageSet),
-              style: GoogleFonts.inter(),
+              style: AppFonts.inter(),
             ),
             backgroundColor: Colors.orange,
           ),
@@ -159,7 +159,7 @@ class _LanguageSelectionScreenState extends State<LanguageSelectionScreen> {
               // Welcome text
               Text(
                 context.tr(TranslationKeys.onboardingWelcome),
-                style: GoogleFonts.playfairDisplay(
+                style: AppFonts.poppins(
                   fontSize: isLargeScreen ? 32 : 28,
                   fontWeight: FontWeight.bold,
                   color: theme.colorScheme.primary,
@@ -172,7 +172,7 @@ class _LanguageSelectionScreenState extends State<LanguageSelectionScreen> {
               // Subtitle
               Text(
                 context.tr(TranslationKeys.onboardingSelectLanguageSubtitle),
-                style: GoogleFonts.inter(
+                style: AppFonts.inter(
                   fontSize: 16,
                   color: theme.colorScheme.onSurface.withOpacity(0.7),
                   height: 1.5,
@@ -184,7 +184,7 @@ class _LanguageSelectionScreenState extends State<LanguageSelectionScreen> {
               // Language selection header
               Text(
                 context.tr(TranslationKeys.onboardingSelectLanguage),
-                style: GoogleFonts.inter(
+                style: AppFonts.inter(
                   fontSize: 18,
                   fontWeight: FontWeight.w600,
                   color: theme.colorScheme.onSurface,
@@ -242,7 +242,7 @@ class _LanguageSelectionScreenState extends State<LanguageSelectionScreen> {
                         )
                       : Text(
                           context.tr(TranslationKeys.onboardingContinue),
-                          style: GoogleFonts.inter(
+                          style: AppFonts.inter(
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
                           ),
@@ -264,7 +264,7 @@ class _LanguageSelectionScreenState extends State<LanguageSelectionScreen> {
                   ),
                   child: Text(
                     context.tr(TranslationKeys.onboardingSkip),
-                    style: GoogleFonts.inter(
+                    style: AppFonts.inter(
                       fontSize: 14,
                       fontWeight: FontWeight.w500,
                     ),

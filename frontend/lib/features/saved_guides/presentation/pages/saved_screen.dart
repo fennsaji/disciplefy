@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
+import '../../../../core/constants/app_fonts.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/di/injection_container.dart';
 import '../../../../core/router/app_routes.dart';
+import '../../../../core/animations/app_animations.dart';
 import '../../domain/entities/saved_guide_entity.dart';
 import '../bloc/unified_saved_guides_bloc.dart';
 import '../bloc/saved_guides_event.dart';
@@ -168,17 +169,25 @@ class _SavedScreenContent extends StatelessWidget {
             elevation: 0,
             leading: IconButton(
               onPressed: () => _handleBackNavigation(context),
-              icon: Icon(
-                Icons.arrow_back_ios,
-                color: Theme.of(context).colorScheme.primary,
+              icon: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppTheme.primaryColor.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(
+                  Icons.arrow_back_ios_new,
+                  color: AppTheme.primaryColor,
+                  size: 18,
+                ),
               ),
             ),
             title: Text(
               context.tr(TranslationKeys.savedGuidesTitle),
-              style: GoogleFonts.playfairDisplay(
+              style: AppFonts.inter(
                 fontSize: 20,
-                fontWeight: FontWeight.w600,
-                color: Theme.of(context).colorScheme.primary,
+                fontWeight: FontWeight.w700,
+                color: Theme.of(context).colorScheme.onBackground,
               ),
             ),
             centerTitle: true,
@@ -195,50 +204,59 @@ class _SavedScreenContent extends StatelessWidget {
                     // Custom Tab Bar
                     Container(
                       decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.surface,
-                        borderRadius: BorderRadius.circular(12),
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? Colors.white.withOpacity(0.05)
+                            : Colors.white,
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(
+                          color: Theme.of(context).brightness == Brightness.dark
+                              ? Colors.white.withOpacity(0.1)
+                              : AppTheme.primaryColor.withOpacity(0.1),
+                        ),
                         boxShadow: [
                           BoxShadow(
-                            color: Theme.of(context)
-                                .colorScheme
-                                .primary
-                                .withOpacity(0.08),
-                            blurRadius: 8,
-                            offset: const Offset(0, 2),
+                            color: AppTheme.primaryColor.withOpacity(0.08),
+                            blurRadius: 12,
+                            offset: const Offset(0, 4),
                           ),
                         ],
                       ),
                       child: TabBar(
                         controller: tabController,
-                        labelColor: Theme.of(context).colorScheme.primary,
+                        labelColor: Colors.white,
                         unselectedLabelColor: Theme.of(context)
                             .colorScheme
                             .onSurface
                             .withOpacity(0.6),
                         indicator: BoxDecoration(
-                          color: Theme.of(context)
-                              .colorScheme
-                              .primary
-                              .withOpacity(0.1),
+                          gradient: AppTheme.primaryGradient,
                           borderRadius: BorderRadius.circular(12),
+                          boxShadow: [
+                            BoxShadow(
+                              color: AppTheme.primaryColor.withOpacity(0.3),
+                              blurRadius: 8,
+                              offset: const Offset(0, 3),
+                            ),
+                          ],
                         ),
                         indicatorSize: TabBarIndicatorSize.tab,
                         dividerColor: Colors.transparent,
-                        labelStyle: GoogleFonts.inter(
-                          fontSize: 16,
+                        labelStyle: AppFonts.inter(
+                          fontSize: 14,
                           fontWeight: FontWeight.w600,
                         ),
-                        unselectedLabelStyle: GoogleFonts.inter(
-                          fontSize: 16,
+                        unselectedLabelStyle: AppFonts.inter(
+                          fontSize: 14,
                           fontWeight: FontWeight.w500,
                         ),
+                        padding: const EdgeInsets.all(4),
                         tabs: [
                           Tab(
-                            icon: Icon(Icons.bookmark, size: 20),
+                            icon: Icon(Icons.bookmark, size: 18),
                             text: context.tr(TranslationKeys.savedGuidesSaved),
                           ),
                           Tab(
-                            icon: Icon(Icons.history, size: 20),
+                            icon: Icon(Icons.history, size: 18),
                             text: context.tr(TranslationKeys.savedGuidesRecent),
                           ),
                         ],
@@ -306,15 +324,14 @@ class _SavedScreenContent extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            CircularProgressIndicator(
-              valueColor: AlwaysStoppedAnimation<Color>(
-                  Theme.of(context).colorScheme.primary),
+            const CircularProgressIndicator(
+              valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primaryColor),
             ),
             const SizedBox(height: 16),
             Text(
               isRefresh ? 'Refreshing guides...' : 'Loading guides...',
-              style: GoogleFonts.inter(
-                fontSize: 16,
+              style: AppFonts.inter(
+                fontSize: 15,
                 color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
               ),
             ),
@@ -328,24 +345,32 @@ class _SavedScreenContent extends StatelessWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(
-                Icons.error_outline,
-                size: 64,
-                color: Theme.of(context).colorScheme.error,
+              Container(
+                width: 80,
+                height: 80,
+                decoration: BoxDecoration(
+                  color: Colors.red.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: const Icon(
+                  Icons.error_outline,
+                  size: 40,
+                  color: Colors.red,
+                ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 20),
               Text(
                 context.tr(TranslationKeys.savedGuidesErrorTitle),
-                style: GoogleFonts.inter(
+                style: AppFonts.inter(
                   fontSize: 20,
-                  fontWeight: FontWeight.w600,
+                  fontWeight: FontWeight.w700,
                   color: Theme.of(context).colorScheme.onBackground,
                 ),
               ),
               const SizedBox(height: 8),
               Text(
                 message,
-                style: GoogleFonts.inter(
+                style: AppFonts.inter(
                   fontSize: 14,
                   color:
                       Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
@@ -353,18 +378,54 @@ class _SavedScreenContent extends StatelessWidget {
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 24),
-              ElevatedButton.icon(
-                onPressed: () {
-                  context.read<UnifiedSavedGuidesBloc>().add(
-                        const LoadSavedGuidesFromApi(refresh: true),
-                      );
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Theme.of(context).colorScheme.primary,
-                  foregroundColor: Colors.white,
+              Container(
+                decoration: BoxDecoration(
+                  gradient: AppTheme.primaryGradient,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppTheme.primaryColor.withOpacity(0.3),
+                      blurRadius: 12,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
                 ),
-                icon: const Icon(Icons.refresh),
-                label: Text(context.tr(TranslationKeys.savedGuidesRetry)),
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    onTap: () {
+                      context.read<UnifiedSavedGuidesBloc>().add(
+                            const LoadSavedGuidesFromApi(refresh: true),
+                          );
+                    },
+                    borderRadius: BorderRadius.circular(12),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 14,
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(
+                            Icons.refresh,
+                            color: Colors.white,
+                            size: 20,
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            context.tr(TranslationKeys.savedGuidesRetry),
+                            style: AppFonts.inter(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
               ),
             ],
           ),
@@ -379,24 +440,41 @@ class _SavedScreenContent extends StatelessWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(
-                state.isForSavedGuides ? Icons.bookmark_border : Icons.history,
-                size: 64,
-                color: Theme.of(context).colorScheme.primary.withOpacity(0.6),
+              Container(
+                width: 80,
+                height: 80,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      AppTheme.primaryColor.withOpacity(0.15),
+                      const Color(0xFF6366F1).withOpacity(0.1),
+                    ],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Icon(
+                  state.isForSavedGuides
+                      ? Icons.bookmark_border
+                      : Icons.history,
+                  size: 40,
+                  color: AppTheme.primaryColor,
+                ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 20),
               Text(
                 context.tr(TranslationKeys.savedGuidesAuthRequired),
-                style: GoogleFonts.inter(
+                style: AppFonts.inter(
                   fontSize: 20,
-                  fontWeight: FontWeight.w600,
+                  fontWeight: FontWeight.w700,
                   color: Theme.of(context).colorScheme.onBackground,
                 ),
               ),
               const SizedBox(height: 8),
               Text(
                 state.message,
-                style: GoogleFonts.inter(
+                style: AppFonts.inter(
                   fontSize: 14,
                   color:
                       Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
@@ -404,24 +482,37 @@ class _SavedScreenContent extends StatelessWidget {
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 24),
-              ElevatedButton(
-                onPressed: () {
-                  context.go('/auth');
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Theme.of(context).colorScheme.secondary,
-                  foregroundColor: Theme.of(context).colorScheme.onSecondary,
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
+              Container(
+                decoration: BoxDecoration(
+                  gradient: AppTheme.primaryGradient,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppTheme.primaryColor.withOpacity(0.35),
+                      blurRadius: 12,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
                 ),
-                child: Text(
-                  context.tr(TranslationKeys.recentGuidesSignIn),
-                  style: GoogleFonts.inter(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    onTap: () => context.go('/auth'),
+                    borderRadius: BorderRadius.circular(12),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 32,
+                        vertical: 14,
+                      ),
+                      child: Text(
+                        context.tr(TranslationKeys.recentGuidesSignIn),
+                        style: AppFonts.inter(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
                   ),
                 ),
               ),
@@ -440,6 +531,7 @@ class _SavedScreenContent extends StatelessWidget {
     }
 
     return RefreshIndicator(
+      color: AppTheme.primaryColor,
       onRefresh: () async {
         context.read<UnifiedSavedGuidesBloc>().add(
               const LoadSavedGuidesFromApi(refresh: true),
@@ -452,23 +544,27 @@ class _SavedScreenContent extends StatelessWidget {
         itemBuilder: (context, index) {
           if (index == state.savedGuides.length) {
             // Loading indicator at the bottom
-            return Padding(
+            return const Padding(
               padding: EdgeInsets.symmetric(vertical: 16),
               child: Center(
                 child: CircularProgressIndicator(
-                  valueColor: AlwaysStoppedAnimation<Color>(
-                      Theme.of(context).colorScheme.primary),
+                  valueColor:
+                      AlwaysStoppedAnimation<Color>(AppTheme.primaryColor),
                 ),
               ),
             );
           }
 
           final guide = state.savedGuides[index];
-          return GuideListItem(
-            guide: guide,
-            onTap: () => _openGuide(context, guide),
-            onRemove: () => _toggleSaveStatus(context, guide, false),
-            showRemoveOption: true,
+          return FadeInWidget(
+            delay: AppAnimations.getStaggerDelay(index),
+            slideOffset: const Offset(0, 0.05),
+            child: GuideListItem(
+              guide: guide,
+              onTap: () => _openGuide(context, guide),
+              onRemove: () => _toggleSaveStatus(context, guide, false),
+              showRemoveOption: true,
+            ),
           );
         },
       ),
@@ -485,6 +581,7 @@ class _SavedScreenContent extends StatelessWidget {
     }
 
     return RefreshIndicator(
+      color: AppTheme.primaryColor,
       onRefresh: () async {
         context.read<UnifiedSavedGuidesBloc>().add(
               const LoadRecentGuidesFromApi(refresh: true),
@@ -497,24 +594,28 @@ class _SavedScreenContent extends StatelessWidget {
         itemBuilder: (context, index) {
           if (index == state.recentGuides.length) {
             // Loading indicator at the bottom
-            return Padding(
+            return const Padding(
               padding: EdgeInsets.symmetric(vertical: 16),
               child: Center(
                 child: CircularProgressIndicator(
-                  valueColor: AlwaysStoppedAnimation<Color>(
-                      Theme.of(context).colorScheme.primary),
+                  valueColor:
+                      AlwaysStoppedAnimation<Color>(AppTheme.primaryColor),
                 ),
               ),
             );
           }
 
           final guide = state.recentGuides[index];
-          return GuideListItem(
-            guide: guide,
-            onTap: () => _openGuide(context, guide),
-            onSave: guide.isSaved
-                ? null
-                : () => _toggleSaveStatus(context, guide, true),
+          return FadeInWidget(
+            delay: AppAnimations.getStaggerDelay(index),
+            slideOffset: const Offset(0, 0.05),
+            child: GuideListItem(
+              guide: guide,
+              onTap: () => _openGuide(context, guide),
+              onSave: guide.isSaved
+                  ? null
+                  : () => _toggleSaveStatus(context, guide, true),
+            ),
           );
         },
       ),

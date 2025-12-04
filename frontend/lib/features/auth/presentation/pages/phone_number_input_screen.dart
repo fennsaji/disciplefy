@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
+import '../../../../core/constants/app_fonts.dart';
 import '../bloc/phone_auth_bloc.dart';
 import '../bloc/phone_auth_event.dart';
 import '../bloc/phone_auth_state.dart';
@@ -103,7 +103,7 @@ class _PhoneNumberInputScreenState extends State<PhoneNumberInputScreen> {
           ),
           title: Text(
             'Phone Number',
-            style: GoogleFonts.inter(
+            style: AppFonts.inter(
               fontSize: 18,
               fontWeight: FontWeight.w600,
               color: Theme.of(context).colorScheme.onBackground,
@@ -155,7 +155,7 @@ class _PhoneNumberInputScreenState extends State<PhoneNumberInputScreen> {
       children: [
         Text(
           'Enter your phone number',
-          style: GoogleFonts.playfairDisplay(
+          style: AppFonts.poppins(
             fontSize: 24,
             fontWeight: FontWeight.w700,
             color: theme.colorScheme.onBackground,
@@ -164,7 +164,7 @@ class _PhoneNumberInputScreenState extends State<PhoneNumberInputScreen> {
         const SizedBox(height: 8),
         Text(
           'We\'ll send you a verification code to confirm your number',
-          style: GoogleFonts.inter(
+          style: AppFonts.inter(
             fontSize: 16,
             color: theme.colorScheme.onSurface.withOpacity(0.7),
             height: 1.5,
@@ -183,7 +183,7 @@ class _PhoneNumberInputScreenState extends State<PhoneNumberInputScreen> {
       children: [
         Text(
           'Phone Number',
-          style: GoogleFonts.inter(
+          style: AppFonts.inter(
             fontSize: 14,
             fontWeight: FontWeight.w600,
             color: theme.colorScheme.onSurface,
@@ -218,7 +218,7 @@ class _PhoneNumberInputScreenState extends State<PhoneNumberInputScreen> {
                       value: entry.key,
                       child: Text(
                         '${entry.value.split(' ')[0]} ${entry.key}',
-                        style: GoogleFonts.inter(
+                        style: AppFonts.inter(
                           fontSize: 14,
                           fontWeight: FontWeight.w500,
                         ),
@@ -242,7 +242,7 @@ class _PhoneNumberInputScreenState extends State<PhoneNumberInputScreen> {
                 ],
                 decoration: InputDecoration(
                   hintText: 'Enter phone number',
-                  hintStyle: GoogleFonts.inter(
+                  hintStyle: AppFonts.inter(
                     color: theme.colorScheme.onSurface.withOpacity(0.5),
                   ),
                   border: OutlineInputBorder(
@@ -331,7 +331,7 @@ class _PhoneNumberInputScreenState extends State<PhoneNumberInputScreen> {
               const SizedBox(width: 8),
               Text(
                 'Secure Verification',
-                style: GoogleFonts.inter(
+                style: AppFonts.inter(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
                   color: theme.colorScheme.primary,
@@ -342,7 +342,7 @@ class _PhoneNumberInputScreenState extends State<PhoneNumberInputScreen> {
           const SizedBox(height: 8),
           Text(
             'Your phone number will be used only for authentication and will not be shared with third parties.',
-            style: GoogleFonts.inter(
+            style: AppFonts.inter(
               fontSize: 12,
               color: theme.colorScheme.onSurface.withOpacity(0.7),
               height: 1.4,
@@ -387,7 +387,7 @@ class _PhoneNumberInputScreenState extends State<PhoneNumberInputScreen> {
                   )
                 : Text(
                     'Send Verification Code',
-                    style: GoogleFonts.inter(
+                    style: AppFonts.inter(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
                     ),

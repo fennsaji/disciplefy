@@ -10,7 +10,7 @@ part 'recommended_guide_topic_model.g.dart';
 /// content with English fallback data for search functionality.
 @JsonSerializable(fieldRename: FieldRename.snake)
 class RecommendedGuideTopicModel extends RecommendedGuideTopic {
-  @JsonKey(name: 'key_verses')
+  @JsonKey(name: 'key_verses', defaultValue: <String>[])
   final List<String> keyVerses;
 
   /// English fallback fields for search functionality (null for English language responses)
@@ -24,22 +24,47 @@ class RecommendedGuideTopicModel extends RecommendedGuideTopic {
   @JsonKey(name: 'english_category')
   final String? englishCategory;
 
+  // Learning path fields
+  @override
+  @JsonKey(name: 'learning_path_id')
+  final String? learningPathId;
+
+  @override
+  @JsonKey(name: 'learning_path_name')
+  final String? learningPathName;
+
+  @override
+  @JsonKey(name: 'position_in_path')
+  final int? positionInPath;
+
+  @override
+  @JsonKey(name: 'total_topics_in_path')
+  final int? totalTopicsInPath;
+
   RecommendedGuideTopicModel({
     required super.id,
     required super.title,
     required super.description,
     required super.category,
-    required this.keyVerses,
-    required super.tags,
+    this.keyVerses = const <String>[],
+    super.tags = const <String>[],
     this.englishTitle,
     this.englishDescription,
     this.englishCategory,
+    this.learningPathId,
+    this.learningPathName,
+    this.positionInPath,
+    this.totalTopicsInPath,
     super.isFeatured = false, // Default to false if not provided
     DateTime? createdAt, // Allow null parameter
   }) : super(
           englishCategory: englishCategory,
           scriptureCount: keyVerses.length,
           createdAt: createdAt ?? DateTime.now(),
+          learningPathId: learningPathId,
+          learningPathName: learningPathName,
+          positionInPath: positionInPath,
+          totalTopicsInPath: totalTopicsInPath,
         );
 
   /// Creates a [RecommendedGuideTopicModel] from JSON.
@@ -60,6 +85,10 @@ class RecommendedGuideTopicModel extends RecommendedGuideTopic {
         tags: tags,
         isFeatured: isFeatured,
         createdAt: createdAt,
+        learningPathId: learningPathId,
+        learningPathName: learningPathName,
+        positionInPath: positionInPath,
+        totalTopicsInPath: totalTopicsInPath,
       );
 
   /// Creates a model from a domain entity.
@@ -74,6 +103,10 @@ class RecommendedGuideTopicModel extends RecommendedGuideTopic {
         tags: entity.tags,
         isFeatured: entity.isFeatured,
         createdAt: entity.createdAt,
+        learningPathId: entity.learningPathId,
+        learningPathName: entity.learningPathName,
+        positionInPath: entity.positionInPath,
+        totalTopicsInPath: entity.totalTopicsInPath,
       );
 
   /// Gets the English content for searching, falling back to current content
@@ -113,7 +146,13 @@ class RecommendedGuideTopicsResponse {
   final List<RecommendedGuideTopicModel> topics;
 
   /// Total number of topics available (for pagination)
+  /// Supports both 'total' and 'totalAvailable' from API
+  @JsonKey(name: 'total', defaultValue: 0)
   final int total;
+
+  /// Alternative total field name used by topics-for-you endpoint
+  @JsonKey(name: 'totalAvailable')
+  final int? totalAvailable;
 
   /// Current page number (if paginated)
   final int? page;
@@ -123,10 +162,14 @@ class RecommendedGuideTopicsResponse {
 
   const RecommendedGuideTopicsResponse({
     required this.topics,
-    required this.total,
+    this.total = 0,
+    this.totalAvailable,
     this.page,
     this.totalPages,
   });
+
+  /// Gets the actual total count from either field
+  int get actualTotal => totalAvailable ?? total;
 
   /// Creates a [RecommendedGuideTopicsResponse] from JSON.
   factory RecommendedGuideTopicsResponse.fromJson(Map<String, dynamic> json) =>

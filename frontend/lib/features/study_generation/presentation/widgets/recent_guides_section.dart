@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
+import '../../../../core/constants/app_fonts.dart';
 
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/di/injection_container.dart';
@@ -55,21 +55,6 @@ class _RecentGuidesSectionState extends State<RecentGuidesSection> {
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Divider
-              Container(
-                height: 1,
-                margin: const EdgeInsets.symmetric(vertical: 24),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      Colors.transparent,
-                      Theme.of(context).colorScheme.primary.withOpacity(0.2),
-                      Colors.transparent,
-                    ],
-                  ),
-                ),
-              ),
-
               // Recent Studies section
               if (state is SavedGuidesApiLoaded) ...[
                 _buildRecentStudiesSection(state),
@@ -104,7 +89,7 @@ class _RecentGuidesSectionState extends State<RecentGuidesSection> {
           children: [
             Text(
               context.tr(TranslationKeys.recentGuidesTitle),
-              style: GoogleFonts.inter(
+              style: AppFonts.inter(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
                 color: Theme.of(context).colorScheme.onBackground,
@@ -115,7 +100,7 @@ class _RecentGuidesSectionState extends State<RecentGuidesSection> {
                 onTap: () => context.push('/saved?tab=recent&source=generate'),
                 child: Text(
                   context.tr(TranslationKeys.recentGuidesViewAll),
-                  style: GoogleFonts.inter(
+                  style: AppFonts.inter(
                     fontSize: 14,
                     fontWeight: FontWeight.w500,
                     color: Theme.of(context).colorScheme.primary,
@@ -160,7 +145,7 @@ class _RecentGuidesSectionState extends State<RecentGuidesSection> {
           const SizedBox(height: 8),
           Text(
             context.tr(TranslationKeys.recentGuidesEmpty),
-            style: GoogleFonts.inter(
+            style: AppFonts.inter(
               fontSize: 16,
               fontWeight: FontWeight.w600,
               color: Theme.of(context).colorScheme.onSurface,
@@ -169,7 +154,7 @@ class _RecentGuidesSectionState extends State<RecentGuidesSection> {
           const SizedBox(height: 4),
           Text(
             context.tr(TranslationKeys.recentGuidesEmptyMessage),
-            style: GoogleFonts.inter(
+            style: AppFonts.inter(
               fontSize: 12,
               color: Theme.of(context).colorScheme.onSurface.withOpacity(0.8),
             ),
@@ -186,7 +171,7 @@ class _RecentGuidesSectionState extends State<RecentGuidesSection> {
       children: [
         Text(
           context.tr(TranslationKeys.recentGuidesTitle),
-          style: GoogleFonts.inter(
+          style: AppFonts.inter(
             fontSize: 16,
             fontWeight: FontWeight.w600,
             color: Theme.of(context).colorScheme.onBackground,
@@ -230,7 +215,7 @@ class _RecentGuidesSectionState extends State<RecentGuidesSection> {
           const SizedBox(height: 8),
           Text(
             context.tr(TranslationKeys.recentGuidesAuthRequired),
-            style: GoogleFonts.inter(
+            style: AppFonts.inter(
               fontSize: 16,
               fontWeight: FontWeight.w600,
               color: Theme.of(context).colorScheme.onBackground,
@@ -239,7 +224,7 @@ class _RecentGuidesSectionState extends State<RecentGuidesSection> {
           const SizedBox(height: 4),
           Text(
             context.tr(TranslationKeys.recentGuidesAuthMessage),
-            style: GoogleFonts.inter(
+            style: AppFonts.inter(
               fontSize: 12,
               color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
             ),
@@ -258,7 +243,7 @@ class _RecentGuidesSectionState extends State<RecentGuidesSection> {
             ),
             child: Text(
               context.tr(TranslationKeys.recentGuidesSignIn),
-              style: GoogleFonts.inter(
+              style: AppFonts.inter(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
               ),
@@ -290,7 +275,7 @@ class _RecentGuidesSectionState extends State<RecentGuidesSection> {
           const SizedBox(height: 8),
           Text(
             context.tr(TranslationKeys.recentGuidesError),
-            style: GoogleFonts.inter(
+            style: AppFonts.inter(
               fontSize: 16,
               fontWeight: FontWeight.w600,
               color: Theme.of(context).colorScheme.onBackground,
@@ -299,7 +284,7 @@ class _RecentGuidesSectionState extends State<RecentGuidesSection> {
           const SizedBox(height: 4),
           Text(
             context.tr(TranslationKeys.recentGuidesErrorMessage),
-            style: GoogleFonts.inter(
+            style: AppFonts.inter(
               fontSize: 12,
               color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
             ),

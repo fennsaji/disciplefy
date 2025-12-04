@@ -4,24 +4,27 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
+import '../../../../core/constants/app_fonts.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/error/failures.dart';
 import '../../../../core/error/token_failures.dart';
 import '../../../../core/di/injection_container.dart';
+import '../../../study_topics/domain/repositories/topic_progress_repository.dart';
 import '../../../../core/extensions/translation_extension.dart';
 import '../../../../core/i18n/translation_keys.dart';
 import '../../../../core/services/language_preference_service.dart';
 import '../../domain/entities/study_guide.dart';
 import '../../../../core/navigation/study_navigator.dart';
+import '../../../home/data/services/recommended_guides_service.dart';
 import '../bloc/study_bloc.dart';
 import '../bloc/study_event.dart';
 import '../bloc/study_state.dart';
 import '../../../follow_up_chat/presentation/widgets/follow_up_chat_widget.dart';
 import '../../../follow_up_chat/presentation/bloc/follow_up_chat_bloc.dart';
 import '../../../follow_up_chat/presentation/bloc/follow_up_chat_event.dart';
+import '../../../notifications/presentation/widgets/notification_enable_prompt.dart';
 import '../widgets/engaging_loading_screen.dart';
 
 /// Study Guide Screen V2 - Dynamically generates study guides from query parameters
@@ -162,6 +165,10 @@ class _StudyGuideScreenV2ContentState
   Timer? _timeTrackingTimer;
   bool _hasScrolledToBottom = false;
   bool _completionMarked = false;
+  final GlobalKey _prayerPointsKey = GlobalKey();
+
+  // Notification prompt state
+  bool _hasTriggeredNotificationPrompt = false;
   bool _isCompletionTrackingStarted = false;
 
   @override
@@ -238,6 +245,9 @@ class _StudyGuideScreenV2ContentState
       _selectedLanguage = normalizedLanguageCode;
     });
 
+    // Track topic progress start if we have a topic ID
+    _startTopicProgress();
+
     // Dispatch study guide generation event
     context.read<StudyBloc>().add(GenerateStudyGuideRequested(
           input: widget.input!,
@@ -246,6 +256,44 @@ class _StudyGuideScreenV2ContentState
               .description, // Include topic description for richer context
           language: normalizedLanguageCode,
         ));
+  }
+
+  /// Start tracking topic progress when user opens a study guide from a topic.
+  ///
+  /// This is called at the beginning of study guide generation when a topicId
+  /// is present (e.g., from recommended topics or notifications).
+  Future<void> _startTopicProgress() async {
+    final topicId = widget.topicId;
+    if (topicId == null || topicId.isEmpty) {
+      return;
+    }
+
+    if (kDebugMode) {
+      print('📊 [TOPIC_PROGRESS] Starting topic progress for: $topicId');
+    }
+
+    try {
+      final repository = sl<TopicProgressRepository>();
+      final result = await repository.startTopic(topicId);
+
+      result.fold(
+        (failure) {
+          if (kDebugMode) {
+            print(
+                '❌ [TOPIC_PROGRESS] Failed to start topic: ${failure.message}');
+          }
+        },
+        (_) {
+          if (kDebugMode) {
+            print('✅ [TOPIC_PROGRESS] Topic progress started successfully');
+          }
+        },
+      );
+    } catch (e) {
+      if (kDebugMode) {
+        print('❌ [TOPIC_PROGRESS] Exception during start tracking: $e');
+      }
+    }
   }
 
   void _showError(String message) {
@@ -291,27 +339,23 @@ class _StudyGuideScreenV2ContentState
 
   /// Handle study guide generation failure
   void _handleGenerationFailure(Failure failure, {bool isRetryable = true}) {
-    String errorMessage = 'Failed to generate study guide.';
+    String errorKey = TranslationKeys.studyGuideErrorDefaultMessage;
 
     if (failure is NetworkFailure) {
-      errorMessage =
-          'Network error. Please check your connection and try again.';
+      errorKey = TranslationKeys.studyGuideErrorNetwork;
     } else if (failure is ServerFailure) {
-      errorMessage = 'Server error. Please try again later.';
+      errorKey = TranslationKeys.studyGuideErrorServer;
     } else if (failure is AuthenticationFailure) {
-      errorMessage = 'Authentication error. Please sign in and try again.';
+      errorKey = TranslationKeys.studyGuideErrorAuth;
     } else if (failure is InsufficientTokensFailure) {
-      errorMessage =
-          'You have run out of AI tokens. Please purchase more tokens or upgrade to premium.';
-    } else {
-      errorMessage = failure.message;
+      errorKey = TranslationKeys.studyGuideErrorInsufficientTokens;
     }
 
     if (!mounted) return;
     setState(() {
       _isLoading = false;
       _hasError = true;
-      _errorMessage = errorMessage;
+      _errorMessage = context.tr(errorKey);
     });
   }
 
@@ -413,12 +457,12 @@ class _StudyGuideScreenV2ContentState
     });
   }
 
-  /// Setup scroll listener to detect when user reaches bottom
+  /// Setup scroll listener to detect when user reaches prayer points section
   void _startScrollListener() {
     _scrollController.addListener(() {
       if (!_completionMarked &&
           !_hasScrolledToBottom &&
-          _isScrolledToBottom()) {
+          _isPrayerPointsSectionVisible()) {
         setState(() {
           _hasScrolledToBottom = true;
         });
@@ -427,15 +471,21 @@ class _StudyGuideScreenV2ContentState
     });
   }
 
-  /// Check if user has scrolled to the bottom of the page
-  bool _isScrolledToBottom() {
-    if (!_scrollController.hasClients) return false;
+  /// Check if the prayer points section is visible on screen
+  bool _isPrayerPointsSectionVisible() {
+    final keyContext = _prayerPointsKey.currentContext;
+    if (keyContext == null) return false;
 
-    final maxScroll = _scrollController.position.maxScrollExtent;
-    final currentScroll = _scrollController.position.pixels;
+    final RenderObject? renderObject = keyContext.findRenderObject();
+    if (renderObject == null || renderObject is! RenderBox) return false;
 
-    // Consider "bottom" as within 100px of the actual bottom
-    return currentScroll >= (maxScroll - 100);
+    final RenderBox box = renderObject;
+    final Offset position = box.localToGlobal(Offset.zero);
+    final Size screenSize = MediaQuery.of(context).size;
+
+    // Check if the top of the prayer points section is visible on screen
+    // Consider visible when the section enters the bottom 80% of the screen
+    return position.dy < screenSize.height * 0.8;
   }
 
   /// Check if both completion conditions are met and mark complete if so
@@ -482,6 +532,71 @@ class _StudyGuideScreenV2ContentState
 
     // Cancel the tracking timer since completion is marked
     _timeTrackingTimer?.cancel();
+  }
+
+  /// Complete topic progress tracking when study guide is finished.
+  ///
+  /// This is called after StudyCompletionSuccess to track the user's
+  /// progress on the topic. Only executes if we have a valid topicId.
+  Future<void> _completeTopicProgress() async {
+    final topicId = widget.topicId;
+    if (topicId == null || topicId.isEmpty) {
+      if (kDebugMode) {
+        print(
+            '📊 [TOPIC_PROGRESS] No topicId provided, skipping progress tracking');
+      }
+      return;
+    }
+
+    if (kDebugMode) {
+      print('📊 [TOPIC_PROGRESS] Completing topic progress:');
+      print('   Topic ID: $topicId');
+      print('   Time spent: $_timeSpentSeconds seconds');
+    }
+
+    try {
+      final repository = sl<TopicProgressRepository>();
+      final result = await repository.completeTopic(
+        topicId,
+        timeSpentSeconds: _timeSpentSeconds,
+      );
+
+      result.fold(
+        (failure) {
+          if (kDebugMode) {
+            print(
+                '❌ [TOPIC_PROGRESS] Failed to complete topic: ${failure.message}');
+          }
+        },
+        (completionResult) {
+          if (kDebugMode) {
+            print('✅ [TOPIC_PROGRESS] Topic completed successfully:');
+            print('   XP earned: ${completionResult.xpEarned}');
+            print('   First completion: ${completionResult.isFirstCompletion}');
+          }
+
+          // Show XP earned feedback if this is the first completion
+          if (completionResult.isFirstCompletion &&
+              completionResult.xpEarned > 0 &&
+              mounted) {
+            _showXpEarnedFeedback(completionResult.xpEarned);
+          }
+        },
+      );
+    } catch (e) {
+      if (kDebugMode) {
+        print('❌ [TOPIC_PROGRESS] Exception during progress tracking: $e');
+      }
+    }
+  }
+
+  /// Show feedback when user earns XP for completing a topic.
+  void _showXpEarnedFeedback(int xpEarned) {
+    _showSnackBar(
+      '+$xpEarned XP earned!',
+      Colors.green,
+      icon: Icons.star,
+    );
   }
 
   @override
@@ -563,6 +678,16 @@ class _StudyGuideScreenV2ContentState
               );
             }
           }
+          // Handle study completion - show notification prompt and invalidate cache
+          else if (state is StudyCompletionSuccess) {
+            // Invalidate the "For You" cache so completed topics don't show again
+            sl<RecommendedGuidesService>().clearForYouCache();
+
+            // Track topic progress completion if we have a topic ID
+            _completeTopicProgress();
+
+            _showRecommendedTopicNotificationPrompt();
+          }
         },
         child: Scaffold(
           backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -586,7 +711,7 @@ class _StudyGuideScreenV2ContentState
         ),
         title: Text(
           _getDisplayTitle(),
-          style: GoogleFonts.playfairDisplay(
+          style: AppFonts.poppins(
             fontSize: 20,
             fontWeight: FontWeight.w600,
             color: Theme.of(context).colorScheme.primary,
@@ -641,8 +766,8 @@ class _StudyGuideScreenV2ContentState
               ),
               const SizedBox(height: 24),
               Text(
-                'Oops! Something went wrong',
-                style: GoogleFonts.playfairDisplay(
+                context.tr(TranslationKeys.studyGuideErrorTitle),
+                style: AppFonts.poppins(
                   fontSize: 28,
                   fontWeight: FontWeight.w600,
                   color: Theme.of(context).colorScheme.onBackground,
@@ -652,9 +777,9 @@ class _StudyGuideScreenV2ContentState
               const SizedBox(height: 16),
               Text(
                 _errorMessage.isEmpty
-                    ? 'We couldn\'t generate your study guide. Please try again.'
+                    ? context.tr(TranslationKeys.studyGuideErrorDefaultMessage)
                     : _errorMessage,
-                style: GoogleFonts.inter(
+                style: AppFonts.inter(
                   fontSize: 16,
                   color:
                       Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
@@ -670,8 +795,8 @@ class _StudyGuideScreenV2ContentState
                     onPressed: _handleBackNavigation,
                     icon: const Icon(Icons.arrow_back),
                     label: Text(
-                      'Go Back',
-                      style: GoogleFonts.inter(
+                      context.tr(TranslationKeys.studyGuideErrorGoBack),
+                      style: AppFonts.inter(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
                       ),
@@ -696,8 +821,8 @@ class _StudyGuideScreenV2ContentState
                     onPressed: _retryGeneration,
                     icon: const Icon(Icons.refresh),
                     label: Text(
-                      'Try Again',
-                      style: GoogleFonts.inter(
+                      context.tr(TranslationKeys.studyGuideErrorTryAgain),
+                      style: AppFonts.inter(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
                       ),
@@ -838,6 +963,7 @@ class _StudyGuideScreenV2ContentState
 
           // Prayer Points Section
           _StudySection(
+            key: _prayerPointsKey,
             title: context.tr(TranslationKeys.studyGuidePrayerPoints),
             icon: Icons.favorite,
             content: _currentStudyGuide!.prayerPoints
@@ -862,7 +988,7 @@ class _StudyGuideScreenV2ContentState
               const SizedBox(width: 8),
               Text(
                 context.tr(TranslationKeys.studyGuidePersonalNotes),
-                style: GoogleFonts.inter(
+                style: AppFonts.inter(
                   fontSize: 20,
                   fontWeight: FontWeight.w600,
                   color: Theme.of(context).colorScheme.onBackground,
@@ -882,7 +1008,7 @@ class _StudyGuideScreenV2ContentState
             child: TextField(
               controller: _notesController,
               maxLines: 6,
-              style: GoogleFonts.inter(
+              style: AppFonts.inter(
                 fontSize: 16,
                 color: Theme.of(context).colorScheme.onBackground,
                 height: 1.5,
@@ -890,7 +1016,7 @@ class _StudyGuideScreenV2ContentState
               decoration: InputDecoration(
                 hintText: context
                     .tr(TranslationKeys.studyGuidePersonalNotesPlaceholder),
-                hintStyle: GoogleFonts.inter(
+                hintStyle: AppFonts.inter(
                   color:
                       Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
                 ),
@@ -942,7 +1068,7 @@ class _StudyGuideScreenV2ContentState
                           ),
                           label: Text(
                             currentStep ?? 'Saving...',
-                            style: GoogleFonts.inter(
+                            style: AppFonts.inter(
                               fontSize: 18,
                               fontWeight: FontWeight.w600,
                             ),
@@ -975,7 +1101,7 @@ class _StudyGuideScreenV2ContentState
                                 ? context.tr(TranslationKeys.studyGuideSaved)
                                 : context
                                     .tr(TranslationKeys.studyGuideSaveStudy),
-                            style: GoogleFonts.inter(
+                            style: AppFonts.inter(
                               fontSize: 18,
                               fontWeight: FontWeight.w600,
                             ),
@@ -1001,24 +1127,40 @@ class _StudyGuideScreenV2ContentState
             ),
             const SizedBox(width: 16),
             Expanded(
-              child: ElevatedButton.icon(
-                onPressed: _shareStudyGuide,
-                icon: const Icon(Icons.share),
-                label: Text(
-                  context.tr(TranslationKeys.studyGuideShare),
-                  style: GoogleFonts.inter(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
-                  ),
+              child: Container(
+                height: 56,
+                decoration: BoxDecoration(
+                  gradient: AppTheme.primaryGradient,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppTheme.primaryColor.withOpacity(0.3),
+                      blurRadius: 12,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
                 ),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Theme.of(context).colorScheme.primary,
-                  foregroundColor: Colors.white,
-                  minimumSize: const Size.fromHeight(56),
-                  shape: RoundedRectangleBorder(
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    onTap: _shareStudyGuide,
                     borderRadius: BorderRadius.circular(12),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(Icons.share, color: Colors.white, size: 20),
+                        const SizedBox(width: 8),
+                        Text(
+                          context.tr(TranslationKeys.studyGuideShare),
+                          style: AppFonts.inter(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                  elevation: 0,
                 ),
               ),
             ),
@@ -1120,7 +1262,7 @@ class _StudyGuideScreenV2ContentState
         shadowColor: Colors.black.withOpacity(0.1),
         title: Text(
           context.tr(TranslationKeys.studyGuideAuthRequired),
-          style: GoogleFonts.playfairDisplay(
+          style: AppFonts.poppins(
             fontSize: 20,
             fontWeight: FontWeight.bold,
             color: const Color(0xFF333333),
@@ -1128,7 +1270,7 @@ class _StudyGuideScreenV2ContentState
         ),
         content: Text(
           context.tr(TranslationKeys.studyGuideAuthRequiredMessage),
-          style: GoogleFonts.inter(
+          style: AppFonts.inter(
             fontSize: 18,
             color: const Color(0xFF333333),
             height: 1.5,
@@ -1147,7 +1289,7 @@ class _StudyGuideScreenV2ContentState
             ),
             child: Text(
               context.tr(TranslationKeys.commonCancel),
-              style: GoogleFonts.inter(
+              style: AppFonts.inter(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
                 color: const Color(0xFF888888),
@@ -1161,7 +1303,7 @@ class _StudyGuideScreenV2ContentState
               sl<StudyNavigator>().navigateToLogin(context);
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF7A56DB),
+              backgroundColor: AppTheme.primaryColor,
               foregroundColor: Colors.white,
               elevation: 0,
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
@@ -1171,7 +1313,7 @@ class _StudyGuideScreenV2ContentState
             ),
             child: Text(
               context.tr(TranslationKeys.studyGuideSignIn),
-              style: GoogleFonts.inter(
+              style: AppFonts.inter(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
               ),
@@ -1195,7 +1337,7 @@ class _StudyGuideScreenV2ContentState
             Expanded(
               child: Text(
                 message,
-                style: GoogleFonts.inter(
+                style: AppFonts.inter(
                   color: Colors.white,
                   fontWeight: FontWeight.w500,
                 ),
@@ -1211,6 +1353,23 @@ class _StudyGuideScreenV2ContentState
           borderRadius: BorderRadius.circular(8),
         ),
       ),
+    );
+  }
+
+  /// Shows recommended topic notification prompt after completing a study guide
+  Future<void> _showRecommendedTopicNotificationPrompt() async {
+    if (_hasTriggeredNotificationPrompt) return;
+    _hasTriggeredNotificationPrompt = true;
+
+    // Delay to show after the completion is processed
+    await Future.delayed(const Duration(milliseconds: 1500));
+
+    if (!mounted) return;
+
+    await showNotificationEnablePrompt(
+      context: context,
+      type: NotificationPromptType.recommendedTopic,
+      languageCode: _selectedLanguage,
     );
   }
 
@@ -1255,6 +1414,7 @@ class _StudySection extends StatelessWidget {
   final String content;
 
   const _StudySection({
+    super.key,
     required this.title,
     required this.icon,
     required this.content,
@@ -1301,7 +1461,7 @@ class _StudySection extends StatelessWidget {
                 Expanded(
                   child: Text(
                     title,
-                    style: GoogleFonts.inter(
+                    style: AppFonts.inter(
                       fontSize: 20,
                       fontWeight: FontWeight.w600,
                       color: Theme.of(context).colorScheme.onBackground,
@@ -1344,7 +1504,7 @@ class _StudySection extends StatelessWidget {
       SnackBar(
         content: Text(
           context.tr(TranslationKeys.studyGuideCopiedToClipboard),
-          style: GoogleFonts.inter(color: Colors.white),
+          style: AppFonts.inter(color: Colors.white),
         ),
         backgroundColor: Theme.of(context).colorScheme.primary,
         behavior: SnackBarBehavior.floating,

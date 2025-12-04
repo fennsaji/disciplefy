@@ -16,6 +16,16 @@ extension TranslationExtension on BuildContext {
     return sl<TranslationService>().getTranslation(key, args);
   }
 
+  /// Get translation list for a key
+  ///
+  /// Example:
+  /// ```dart
+  /// context.trList('generate_study.scripture_suggestions')
+  /// ```
+  List<String> trList(String key) {
+    return sl<TranslationService>().getTranslationList(key);
+  }
+
   /// Get the current translation service instance
   TranslationService get translationService => sl<TranslationService>();
 }

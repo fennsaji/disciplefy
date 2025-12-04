@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter/services.dart';
 import 'package:share_plus/share_plus.dart';
 
+import '../../../../core/theme/app_theme.dart';
 import '../../../../core/utils/ui_utils.dart';
 import '../../../../core/extensions/translation_extension.dart';
 import '../../../../core/i18n/translation_keys.dart';
@@ -33,29 +34,21 @@ class DailyVerseCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
     return BlocBuilder<DailyVerseBloc, DailyVerseState>(
       builder: (context, state) => Container(
         margin: margin ?? const EdgeInsets.symmetric(horizontal: 20),
-        child: Card(
-          elevation: 2,
-          shadowColor: theme.colorScheme.primary.withValues(alpha: 0.1),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-          child: Container(
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(16),
-              // Use secondary theme color (light gold) for consistent theming
-              color: theme.colorScheme.secondary,
-              border: Border.all(
-                color: theme.colorScheme.primary.withValues(alpha: 0.12),
-              ),
+        decoration: BoxDecoration(
+          gradient: AppTheme.primaryGradient,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: AppTheme.primaryColor.withOpacity(0.3),
+              blurRadius: 20,
+              offset: const Offset(0, 8),
             ),
-            child: _buildCardContent(context, state),
-          ),
+          ],
         ),
+        child: _buildCardContent(context, state),
       ),
     );
   }
@@ -75,8 +68,6 @@ class DailyVerseCard extends StatelessWidget {
   }
 
   Widget _buildLoadingState(BuildContext context, bool isRefreshing) {
-    final theme = Theme.of(context);
-
     return Padding(
       padding: const EdgeInsets.all(20),
       child: Column(
@@ -85,7 +76,7 @@ class DailyVerseCard extends StatelessWidget {
             children: [
               Icon(
                 Icons.menu_book,
-                color: theme.colorScheme.onSecondary,
+                color: Colors.white.withOpacity(0.9),
                 size: 24,
               ),
               const SizedBox(width: 12),
@@ -94,8 +85,10 @@ class DailyVerseCard extends StatelessWidget {
                   isRefreshing
                       ? context.tr(TranslationKeys.dailyVerseRefreshing)
                       : context.tr(TranslationKeys.dailyVerseLoading),
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    color: theme.colorScheme.onSecondary,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
               ),
@@ -104,8 +97,8 @@ class DailyVerseCard extends StatelessWidget {
           const SizedBox(height: 20),
           LinearProgressIndicator(
             valueColor:
-                AlwaysStoppedAnimation<Color>(theme.colorScheme.onSecondary),
-            backgroundColor: theme.colorScheme.surface,
+                AlwaysStoppedAnimation<Color>(Colors.white.withOpacity(0.8)),
+            backgroundColor: Colors.white.withOpacity(0.2),
           ),
           const SizedBox(height: 16),
           _buildShimmerText(context),
@@ -119,8 +112,6 @@ class DailyVerseCard extends StatelessWidget {
   }
 
   Widget _buildLoadedState(BuildContext context, DailyVerseLoaded state) {
-    final theme = Theme.of(context);
-
     return GestureDetector(
       onTap: isDisabled ? null : onTap,
       child: AnimatedOpacity(
@@ -131,7 +122,7 @@ class DailyVerseCard extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Header with date - improved spacing
+              // Header with date
               _buildHeader(
                 context,
                 state.formattedDate,
@@ -141,70 +132,57 @@ class DailyVerseCard extends StatelessWidget {
 
               const SizedBox(height: 16),
 
-              // Verse reference with highlight color and better spacing
+              // Verse reference
               Text(
                 state.verse.getReferenceText(state.currentLanguage),
-                style: theme.textTheme.titleMedium?.copyWith(
-                  color: theme.colorScheme.onSecondary,
+                style: const TextStyle(
+                  color: Colors.white,
                   fontWeight: FontWeight.w700,
                   fontSize: 16,
                   letterSpacing: 0.5,
                 ),
               ),
 
-              // Verse text with improved background and spacing
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.only(top: 12),
-                margin: const EdgeInsets.only(bottom: 20),
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.secondary.withValues(alpha: 0.3),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: theme.colorScheme.secondary.withValues(alpha: 0.6),
-                  ),
+              const SizedBox(height: 12),
+
+              // Verse text
+              Text(
+                state.currentVerseText,
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.white.withOpacity(0.95),
+                  height: 1.7,
+                  letterSpacing: 0.3,
                 ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      state.currentVerseText,
-                      style: theme.textTheme.bodyLarge?.copyWith(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w500,
-                        color: theme.colorScheme.onSecondary,
-                        height: 1.7,
-                        letterSpacing: 0.3,
-                      ),
-                      textAlign: TextAlign.start,
-                    ),
-                    if (onTap != null && !isDisabled) ...[
-                      const SizedBox(height: 12),
-                      Row(
-                        children: [
-                          Icon(
-                            Icons.auto_awesome,
-                            size: 14,
-                            color: theme.colorScheme.onSecondary
-                                .withValues(alpha: 0.6),
-                          ),
-                          const SizedBox(width: 6),
-                          Text(
-                            context.tr(TranslationKeys.dailyVerseTapToGenerate),
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              color: theme.colorScheme.onSecondary
-                                  .withValues(alpha: 0.6),
-                              fontStyle: FontStyle.italic,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ],
-                ),
+                textAlign: TextAlign.start,
               ),
 
-              // Action buttons with improved spacing
+              if (onTap != null && !isDisabled) ...[
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    Icon(
+                      Icons.auto_awesome,
+                      size: 14,
+                      color: Colors.white.withOpacity(0.6),
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      context.tr(TranslationKeys.dailyVerseTapToGenerate),
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.6),
+                        fontStyle: FontStyle.italic,
+                        fontSize: 13,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+
+              const SizedBox(height: 20),
+
+              // Action buttons
               _buildActionButtons(context, state),
             ],
           ),
@@ -214,8 +192,6 @@ class DailyVerseCard extends StatelessWidget {
   }
 
   Widget _buildOfflineState(BuildContext context, DailyVerseOffline state) {
-    final theme = Theme.of(context);
-
     return Padding(
       padding: const EdgeInsets.all(20),
       child: Column(
@@ -226,22 +202,24 @@ class DailyVerseCard extends StatelessWidget {
             children: [
               Icon(
                 Icons.wifi_off,
-                color: theme.colorScheme.error,
+                color: Colors.amber[300],
                 size: 20,
               ),
               const SizedBox(width: 8),
               Text(
                 context.tr(TranslationKeys.dailyVerseOfflineMode),
-                style: theme.textTheme.labelMedium?.copyWith(
-                  color: theme.colorScheme.error,
+                style: TextStyle(
+                  color: Colors.amber[300],
                   fontWeight: FontWeight.w500,
+                  fontSize: 13,
                 ),
               ),
               const Spacer(),
               Text(
                 state.formattedDate,
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.colorScheme.onSecondary.withValues(alpha: 0.8),
+                style: TextStyle(
+                  color: Colors.white.withOpacity(0.7),
+                  fontSize: 12,
                 ),
               ),
             ],
@@ -249,37 +227,27 @@ class DailyVerseCard extends StatelessWidget {
 
           const SizedBox(height: 12),
 
-          // Verse content
+          // Verse reference
           Text(
             state.verse.getReferenceText(state.currentLanguage),
-            style: theme.textTheme.labelLarge?.copyWith(
-              color: theme.colorScheme.onSecondary,
+            style: const TextStyle(
+              color: Colors.white,
               fontWeight: FontWeight.w600,
               letterSpacing: 0.5,
+              fontSize: 15,
             ),
           ),
 
-          const SizedBox(height: 4),
+          const SizedBox(height: 8),
 
-          // Verse text with background for better readability
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-            decoration: BoxDecoration(
-              color: theme.colorScheme.secondary.withValues(alpha: 0.3),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: theme.colorScheme.secondary.withValues(alpha: 0.6),
-              ),
-            ),
-            child: Text(
-              state.currentVerseText,
-              style: theme.textTheme.headlineSmall?.copyWith(
-                fontSize: 18,
-                fontWeight: FontWeight.w500,
-                color: theme.colorScheme.onSecondary,
-                height: 1.6,
-              ),
+          // Verse text
+          Text(
+            state.currentVerseText,
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w500,
+              color: Colors.white.withOpacity(0.9),
+              height: 1.6,
             ),
           ),
         ],
@@ -288,43 +256,65 @@ class DailyVerseCard extends StatelessWidget {
   }
 
   Widget _buildErrorState(BuildContext context, DailyVerseError state) {
-    final theme = Theme.of(context);
-
     return Padding(
       padding: const EdgeInsets.all(20),
       child: Column(
         children: [
           Icon(
             Icons.error_outline,
-            color: theme.colorScheme.error,
+            color: Colors.amber[300],
             size: 48,
           ),
           const SizedBox(height: 16),
           Text(
             context.tr(TranslationKeys.dailyVerseUnableToLoad),
-            style: theme.textTheme.headlineSmall?.copyWith(
+            style: const TextStyle(
               fontWeight: FontWeight.w600,
-              color: theme.colorScheme.onSecondary,
+              color: Colors.white,
+              fontSize: 18,
             ),
           ),
           const SizedBox(height: 8),
           Text(
             context.tr(TranslationKeys.dailyVerseSomethingWentWrong),
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: theme.colorScheme.onSecondary.withValues(alpha: 0.8),
+            style: TextStyle(
+              color: Colors.white.withOpacity(0.8),
+              fontSize: 14,
             ),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 16),
-          ElevatedButton.icon(
-            onPressed: () {
-              context.read<DailyVerseBloc>().add(const RefreshVerse());
-            },
-            icon: const Icon(Icons.refresh),
-            label: Text(context.tr(TranslationKeys.homeTryAgain)),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: theme.colorScheme.primary,
-              foregroundColor: theme.colorScheme.onPrimary,
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: () {
+                  context.read<DailyVerseBloc>().add(const RefreshVerse());
+                },
+                borderRadius: BorderRadius.circular(12),
+                child: Padding(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.refresh, color: Colors.white, size: 20),
+                      const SizedBox(width: 8),
+                      Text(
+                        context.tr(TranslationKeys.homeTryAgain),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
             ),
           ),
         ],
@@ -346,18 +336,15 @@ class DailyVerseCard extends StatelessWidget {
     bool isFromCache, {
     DailyVerseStreak? streak,
   }) {
-    final theme = Theme.of(context);
-    final isDarkMode = theme.brightness == Brightness.dark;
-
-    // Streak colors: white in dark mode, primary purple in light mode
-    final streakColor =
-        isDarkMode ? const Color(0xFFE0E0E0) : theme.colorScheme.primary;
+    // Use white colors on the purple gradient background
+    const textColor = Colors.white;
+    final subtleTextColor = Colors.white.withOpacity(0.8);
 
     return Row(
       children: [
         Icon(
           Icons.menu_book,
-          color: theme.colorScheme.onSecondary,
+          color: textColor.withOpacity(0.9),
           size: 24,
         ),
         const SizedBox(width: 12),
@@ -369,9 +356,10 @@ class DailyVerseCard extends StatelessWidget {
                 children: [
                   Text(
                     context.tr(TranslationKeys.dailyVerseOfTheDay),
-                    style: theme.textTheme.titleMedium?.copyWith(
+                    style: const TextStyle(
                       fontWeight: FontWeight.w600,
-                      color: theme.colorScheme.onSecondary,
+                      color: textColor,
+                      fontSize: 16,
                     ),
                   ),
                   if (onTap != null && !isDisabled) ...[
@@ -379,8 +367,7 @@ class DailyVerseCard extends StatelessWidget {
                     Icon(
                       Icons.touch_app,
                       size: 16,
-                      color:
-                          theme.colorScheme.onSecondary.withValues(alpha: 0.7),
+                      color: subtleTextColor,
                     ),
                   ],
                   // Push streak to the right side
@@ -393,26 +380,26 @@ class DailyVerseCard extends StatelessWidget {
                         vertical: 4,
                       ),
                       decoration: BoxDecoration(
-                        color: streakColor.withValues(alpha: 0.15),
+                        color: Colors.white.withOpacity(0.2),
                         borderRadius: BorderRadius.circular(8),
                         border: Border.all(
-                          color: streakColor.withValues(alpha: 0.3),
+                          color: Colors.white.withOpacity(0.3),
                         ),
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(
+                          const Icon(
                             Icons.bolt,
                             size: 14,
-                            color: streakColor,
+                            color: Colors.amber,
                           ),
                           const SizedBox(width: 4),
                           Text(
                             '${streak.currentStreak}',
-                            style: theme.textTheme.labelSmall?.copyWith(
+                            style: const TextStyle(
                               fontWeight: FontWeight.bold,
-                              color: streakColor,
+                              color: textColor,
                               fontSize: 12,
                             ),
                           ),
@@ -424,8 +411,9 @@ class DailyVerseCard extends StatelessWidget {
               ),
               Text(
                 date,
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.colorScheme.onSecondary.withValues(alpha: 0.8),
+                style: TextStyle(
+                  color: subtleTextColor,
+                  fontSize: 13,
                 ),
               ),
             ],
@@ -435,14 +423,15 @@ class DailyVerseCard extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
             decoration: BoxDecoration(
-              color: theme.colorScheme.onSecondary.withValues(alpha: 0.1),
+              color: Colors.white.withOpacity(0.15),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Text(
               context.tr(TranslationKeys.dailyVerseCached),
-              style: theme.textTheme.labelSmall?.copyWith(
+              style: const TextStyle(
                 fontWeight: FontWeight.w500,
-                color: theme.colorScheme.onSecondary,
+                color: textColor,
+                fontSize: 11,
               ),
             ),
           ),
@@ -514,7 +503,8 @@ class DailyVerseCard extends StatelessWidget {
   }
 
   Widget _buildActionButtons(BuildContext context, DailyVerseLoaded state) {
-    final theme = Theme.of(context);
+    // White icons on purple gradient background
+    const iconColor = Colors.white;
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -522,10 +512,10 @@ class DailyVerseCard extends StatelessWidget {
         // Copy button
         IconButton(
           onPressed: () => _copyVerseToClipboard(context, state),
-          icon: Icon(
-            Icons.copy,
-            color: theme.colorScheme.onSecondary,
-            size: 24,
+          icon: const Icon(
+            Icons.copy_outlined,
+            color: iconColor,
+            size: 22,
           ),
           tooltip: context.tr(TranslationKeys.dailyVerseCopy),
           style: IconButton.styleFrom(
@@ -534,15 +524,15 @@ class DailyVerseCard extends StatelessWidget {
           ),
         ),
 
-        const SizedBox(width: 12),
+        const SizedBox(width: 8),
 
         // Share button
         IconButton(
           onPressed: () => _shareVerse(state),
-          icon: Icon(
-            Icons.share,
-            color: theme.colorScheme.onSecondary,
-            size: 24,
+          icon: const Icon(
+            Icons.share_outlined,
+            color: iconColor,
+            size: 22,
           ),
           tooltip: context.tr(TranslationKeys.dailyVerseShare),
           style: IconButton.styleFrom(
@@ -551,22 +541,22 @@ class DailyVerseCard extends StatelessWidget {
           ),
         ),
 
-        const SizedBox(width: 12),
+        const SizedBox(width: 8),
 
         // Add to Memory button
-        _buildAddToMemoryButton(context, state, theme),
+        _buildAddToMemoryButton(context, state),
 
-        const SizedBox(width: 12),
+        const SizedBox(width: 8),
 
         // Refresh button
         IconButton(
           onPressed: () {
             context.read<DailyVerseBloc>().add(const RefreshVerse());
           },
-          icon: Icon(
+          icon: const Icon(
             Icons.refresh,
-            color: theme.colorScheme.onSecondary,
-            size: 24,
+            color: iconColor,
+            size: 22,
           ),
           style: IconButton.styleFrom(
             minimumSize: const Size(44, 44),
@@ -581,8 +571,10 @@ class DailyVerseCard extends StatelessWidget {
   Widget _buildAddToMemoryButton(
     BuildContext context,
     DailyVerseLoaded state,
-    ThemeData theme,
   ) {
+    // White icons on purple gradient background
+    const iconColor = Colors.white;
+
     return BlocBuilder<MemoryVerseBloc, MemoryVerseState>(
       bloc: sl<MemoryVerseBloc>(),
       builder: (context, memoryState) {
@@ -601,11 +593,9 @@ class DailyVerseCard extends StatelessWidget {
           onPressed:
               isAlreadyInMemory ? null : () => _addToMemory(context, state),
           icon: Icon(
-            isAlreadyInMemory ? Icons.bookmark : Icons.bookmark_add,
-            color: isAlreadyInMemory
-                ? theme.colorScheme.onSecondary.withValues(alpha: 0.5)
-                : theme.colorScheme.onSecondary,
-            size: 24,
+            isAlreadyInMemory ? Icons.bookmark : Icons.bookmark_add_outlined,
+            color: isAlreadyInMemory ? iconColor.withOpacity(0.5) : iconColor,
+            size: 22,
           ),
           tooltip: isAlreadyInMemory
               ? context.tr(TranslationKeys.dailyVerseAlreadyInMemory)
@@ -705,14 +695,15 @@ class DailyVerseCard extends StatelessWidget {
   }
 
   Widget _buildShimmerText(BuildContext context, {double width = 1.0}) {
-    final theme = Theme.of(context);
-
-    return Container(
-      height: 16,
-      width: double.infinity * width,
-      decoration: BoxDecoration(
-        color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.2),
-        borderRadius: BorderRadius.circular(4),
+    // White shimmer placeholders on purple gradient
+    return FractionallySizedBox(
+      widthFactor: width,
+      child: Container(
+        height: 16,
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.2),
+          borderRadius: BorderRadius.circular(4),
+        ),
       ),
     );
   }

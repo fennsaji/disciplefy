@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:google_fonts/google_fonts.dart';
+import '../../../../core/constants/app_fonts.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/di/injection_container.dart';
 import '../../../../core/services/theme_service.dart';
@@ -18,6 +18,9 @@ import '../bloc/settings_event.dart';
 import '../bloc/settings_state.dart';
 import '../../../../core/extensions/translation_extension.dart';
 import '../../../../core/i18n/translation_keys.dart';
+import '../../../home/presentation/bloc/home_bloc.dart';
+import '../../../home/presentation/bloc/home_event.dart';
+import '../../../study_topics/domain/repositories/learning_paths_repository.dart';
 
 /// Settings Screen with proper AuthBloc integration
 /// Handles both authenticated and anonymous users
@@ -60,17 +63,25 @@ class _SettingsScreenContent extends StatelessWidget {
                   context.go('/');
                 }
               },
-              icon: Icon(
-                Icons.arrow_back_ios,
-                color: Theme.of(context).colorScheme.primary,
+              icon: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppTheme.primaryColor.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(
+                  Icons.arrow_back_ios_new,
+                  color: AppTheme.primaryColor,
+                  size: 18,
+                ),
               ),
             ),
             title: Text(
               context.tr(TranslationKeys.settingsTitle),
-              style: GoogleFonts.playfairDisplay(
+              style: AppFonts.inter(
                 fontSize: 20,
-                fontWeight: FontWeight.w600,
-                color: Theme.of(context).colorScheme.primary,
+                fontWeight: FontWeight.w700,
+                color: Theme.of(context).colorScheme.onBackground,
               ),
             ),
             centerTitle: true,
@@ -123,6 +134,9 @@ class _SettingsScreenContent extends StatelessWidget {
                         _buildNotificationSection(context, state),
                         const SizedBox(height: 24),
 
+                        // Personalization Section (only for authenticated non-anonymous users)
+                        _buildPersonalizationSection(context),
+
                         // Account Section
                         _buildAccountSection(context),
                         const SizedBox(height: 24),
@@ -138,7 +152,7 @@ class _SettingsScreenContent extends StatelessWidget {
                 return Center(
                   child: Text(
                     context.tr(TranslationKeys.settingsFailedToLoad),
-                    style: GoogleFonts.inter(
+                    style: AppFonts.inter(
                       fontSize: 16,
                       color: Theme.of(context).colorScheme.error,
                     ),
@@ -267,7 +281,7 @@ class _SettingsScreenContent extends StatelessWidget {
                 children: [
                   Text(
                     authProvider.profileBasedDisplayName,
-                    style: GoogleFonts.inter(
+                    style: AppFonts.inter(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
                       color: Theme.of(context).colorScheme.onBackground,
@@ -279,7 +293,7 @@ class _SettingsScreenContent extends StatelessWidget {
                         ? context.tr(TranslationKeys.settingsSignInToSync)
                         : authProvider.userEmail ??
                             context.tr(TranslationKeys.settingsNoEmail),
-                    style: GoogleFonts.inter(
+                    style: AppFonts.inter(
                       fontSize: 14,
                       color: Theme.of(context)
                           .colorScheme
@@ -297,7 +311,7 @@ class _SettingsScreenContent extends StatelessWidget {
                 onPressed: () => context.go('/login'),
                 child: Text(
                   context.tr(TranslationKeys.settingsSignIn),
-                  style: GoogleFonts.inter(
+                  style: AppFonts.inter(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
                     color: Theme.of(context).colorScheme.primary,
@@ -366,6 +380,59 @@ class _SettingsScreenContent extends StatelessWidget {
           ),
         ],
       );
+
+  /// Personalization Section - allows users to retake the questionnaire
+  Widget _buildPersonalizationSection(BuildContext context) =>
+      ListenableBuilder(
+        listenable: sl<AuthStateProvider>(),
+        builder: (context, _) {
+          final authProvider = sl<AuthStateProvider>();
+
+          // Only show for authenticated non-anonymous users
+          if (!authProvider.isAuthenticated || authProvider.isAnonymous) {
+            return const SizedBox.shrink();
+          }
+
+          return Column(
+            children: [
+              _buildSection(
+                title: context.tr(TranslationKeys.settingsPersonalization),
+                children: [
+                  _buildSettingsTile(
+                    context: context,
+                    icon: Icons.auto_awesome,
+                    title:
+                        context.tr(TranslationKeys.settingsRetakeQuestionnaire),
+                    subtitle: context.tr(
+                        TranslationKeys.settingsRetakeQuestionnaireSubtitle),
+                    trailing: Icon(
+                      Icons.arrow_forward_ios,
+                      size: 16,
+                      color: Theme.of(context)
+                          .colorScheme
+                          .onSurface
+                          .withOpacity(0.6),
+                    ),
+                    onTap: () => _navigateToQuestionnaire(context),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
+            ],
+          );
+        },
+      );
+
+  /// Navigate to the personalization questionnaire
+  void _navigateToQuestionnaire(BuildContext context) {
+    context.push('/personalization-questionnaire').then((_) {
+      // Clear LearningPaths repository cache so Study Topics screen gets fresh data
+      sl<LearningPathsRepository>().clearCache();
+      // Refresh all personalization-dependent data after questionnaire completion
+      sl<HomeBloc>().add(const LoadForYouTopics(forceRefresh: true));
+      sl<HomeBloc>().add(const LoadActiveLearningPath(forceRefresh: true));
+    });
+  }
 
   /// Account Section with AuthStateProvider integration
   Widget _buildAccountSection(BuildContext context) => ListenableBuilder(
@@ -513,7 +580,7 @@ class _SettingsScreenContent extends StatelessWidget {
 
             Text(
               'Account Settings',
-              style: GoogleFonts.playfairDisplay(
+              style: AppFonts.poppins(
                 fontSize: 24,
                 fontWeight: FontWeight.bold,
                 color: Theme.of(context).colorScheme.primary,
@@ -583,7 +650,7 @@ class _SettingsScreenContent extends StatelessWidget {
                     children: [
                       Text(
                         title,
-                        style: GoogleFonts.inter(
+                        style: AppFonts.inter(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
                           color: AppTheme.textPrimary,
@@ -591,7 +658,7 @@ class _SettingsScreenContent extends StatelessWidget {
                       ),
                       Text(
                         subtitle,
-                        style: GoogleFonts.inter(
+                        style: AppFonts.inter(
                           fontSize: 14,
                           color: AppTheme.onSurfaceVariant,
                         ),
@@ -624,7 +691,7 @@ class _SettingsScreenContent extends StatelessWidget {
           isAnonymous
               ? context.tr(TranslationKeys.settingsClearSession)
               : context.tr(TranslationKeys.settingsSignOutTitle),
-          style: GoogleFonts.playfairDisplay(
+          style: AppFonts.poppins(
             fontSize: 20,
             fontWeight: FontWeight.bold,
             color: Theme.of(context).colorScheme.onSurface,
@@ -634,7 +701,7 @@ class _SettingsScreenContent extends StatelessWidget {
           isAnonymous
               ? context.tr(TranslationKeys.settingsClearSessionMessage)
               : context.tr(TranslationKeys.settingsSignOutMessage),
-          style: GoogleFonts.inter(
+          style: AppFonts.inter(
             fontSize: 16,
             color: Theme.of(context).colorScheme.onSurface,
             height: 1.5,
@@ -654,7 +721,7 @@ class _SettingsScreenContent extends StatelessWidget {
             ),
             child: Text(
               context.tr(TranslationKeys.commonCancel),
-              style: GoogleFonts.inter(
+              style: AppFonts.inter(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
                 color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
@@ -680,7 +747,7 @@ class _SettingsScreenContent extends StatelessWidget {
               isAnonymous
                   ? context.tr(TranslationKeys.settingsClear)
                   : context.tr(TranslationKeys.settingsSignOut),
-              style: GoogleFonts.inter(
+              style: AppFonts.inter(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
               ),
@@ -697,38 +764,47 @@ class _SettingsScreenContent extends StatelessWidget {
     required List<Widget> children,
   }) =>
       Builder(
-        builder: (context) => Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Padding(
-              padding: const EdgeInsets.only(left: 4, bottom: 12),
-              child: Text(
-                title,
-                style: GoogleFonts.playfairDisplay(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w600,
-                  color: Theme.of(context).colorScheme.primary,
-                  height: 1.2,
+        builder: (context) {
+          final isDark = Theme.of(context).brightness == Brightness.dark;
+
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: const EdgeInsets.only(left: 4, bottom: 12),
+                child: Text(
+                  title,
+                  style: AppFonts.inter(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: AppTheme.primaryColor,
+                    letterSpacing: 0.5,
+                  ),
                 ),
               ),
-            ),
-            Container(
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.surface,
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(
-                    color:
-                        Theme.of(context).colorScheme.primary.withOpacity(0.08),
-                    blurRadius: 12,
-                    offset: const Offset(0, 4),
+              Container(
+                decoration: BoxDecoration(
+                  color: isDark ? Colors.white.withOpacity(0.05) : Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: isDark
+                        ? Colors.white.withOpacity(0.1)
+                        : AppTheme.primaryColor.withOpacity(0.1),
                   ),
-                ],
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppTheme.primaryColor
+                          .withOpacity(isDark ? 0.1 : 0.08),
+                      blurRadius: 16,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Column(children: children),
               ),
-              child: Column(children: children),
-            ),
-          ],
-        ),
+            ],
+          );
+        },
       );
 
   Widget _buildSettingsTile({
@@ -739,79 +815,93 @@ class _SettingsScreenContent extends StatelessWidget {
     required Widget? trailing,
     required VoidCallback? onTap,
     Color? iconColor,
-  }) =>
-      Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: () {
-            debugPrint('Settings tile tapped: $title');
-            if (onTap != null) {
-              onTap();
-            }
-          },
-          borderRadius: BorderRadius.circular(16),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-            child: Row(
-              children: [
-                Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: (iconColor ?? Theme.of(context).colorScheme.primary)
-                        .withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Icon(
-                    icon,
-                    size: 20,
-                    color: iconColor ?? Theme.of(context).colorScheme.primary,
-                  ),
+  }) {
+    final effectiveColor = iconColor ?? AppTheme.primaryColor;
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () {
+          debugPrint('Settings tile tapped: $title');
+          if (onTap != null) {
+            onTap();
+          }
+        },
+        borderRadius: BorderRadius.circular(16),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+          child: Row(
+            children: [
+              Container(
+                width: 42,
+                height: 42,
+                decoration: BoxDecoration(
+                  gradient: iconColor == null
+                      ? LinearGradient(
+                          colors: [
+                            AppTheme.primaryColor.withOpacity(0.15),
+                            AppTheme.secondaryPurple.withOpacity(0.1),
+                          ],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        )
+                      : null,
+                  color: iconColor != null
+                      ? effectiveColor.withOpacity(0.1)
+                      : null,
+                  borderRadius: BorderRadius.circular(12),
                 ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        title,
-                        style: GoogleFonts.inter(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: Theme.of(context).colorScheme.onBackground,
-                          height: 1.3,
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        subtitle,
-                        style: GoogleFonts.inter(
-                          fontSize: 14,
-                          color: Theme.of(context)
-                              .colorScheme
-                              .onSurface
-                              .withOpacity(0.6),
-                          height: 1.3,
-                        ),
-                      ),
-                    ],
-                  ),
+                child: Icon(
+                  icon,
+                  size: 20,
+                  color: effectiveColor,
                 ),
-                if (trailing != null) ...[
-                  const SizedBox(width: 12),
-                  trailing,
-                ],
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: AppFonts.inter(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                        color: Theme.of(context).colorScheme.onBackground,
+                        height: 1.3,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      subtitle,
+                      style: AppFonts.inter(
+                        fontSize: 13,
+                        color: Theme.of(context)
+                            .colorScheme
+                            .onSurface
+                            .withOpacity(0.6),
+                        height: 1.3,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              if (trailing != null) ...[
+                const SizedBox(width: 12),
+                trailing,
               ],
-            ),
+            ],
           ),
         ),
-      );
+      ),
+    );
+  }
 
   Widget _buildDivider() => Builder(
         builder: (context) => Container(
           margin: const EdgeInsets.symmetric(horizontal: 20),
           height: 1,
-          color: Theme.of(context).colorScheme.primary.withOpacity(0.08),
+          color: AppTheme.primaryColor.withOpacity(0.08),
         ),
       );
 
@@ -872,10 +962,7 @@ class _SettingsScreenContent extends StatelessWidget {
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: Theme.of(builderContext)
-                      .colorScheme
-                      .onSurface
-                      .withOpacity(0.3),
+                  color: AppTheme.primaryColor.withOpacity(0.3),
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -883,10 +970,10 @@ class _SettingsScreenContent extends StatelessWidget {
             const SizedBox(height: 24),
             Text(
               context.tr(TranslationKeys.settingsSelectTheme),
-              style: GoogleFonts.playfairDisplay(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: Theme.of(builderContext).colorScheme.primary,
+              style: AppFonts.inter(
+                fontSize: 20,
+                fontWeight: FontWeight.w700,
+                color: Theme.of(builderContext).colorScheme.onBackground,
               ),
             ),
             const SizedBox(height: 24),
@@ -948,10 +1035,7 @@ class _SettingsScreenContent extends StatelessWidget {
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: Theme.of(builderContext)
-                      .colorScheme
-                      .onSurface
-                      .withOpacity(0.3),
+                  color: AppTheme.primaryColor.withOpacity(0.3),
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -959,10 +1043,10 @@ class _SettingsScreenContent extends StatelessWidget {
             const SizedBox(height: 24),
             Text(
               context.tr(TranslationKeys.settingsSelectLanguage),
-              style: GoogleFonts.playfairDisplay(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: Theme.of(builderContext).colorScheme.primary,
+              style: AppFonts.inter(
+                fontSize: 20,
+                fontWeight: FontWeight.w700,
+                color: Theme.of(builderContext).colorScheme.onBackground,
               ),
             ),
             const SizedBox(height: 24),
@@ -1003,37 +1087,43 @@ class _SettingsScreenContent extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
           margin: const EdgeInsets.only(bottom: 12),
           decoration: BoxDecoration(
-            color: isSelected
-                ? Theme.of(context).colorScheme.primary.withOpacity(0.1)
-                : Colors.transparent,
+            gradient: isSelected
+                ? LinearGradient(
+                    colors: [
+                      AppTheme.primaryColor.withOpacity(0.1),
+                      AppTheme.secondaryPurple.withOpacity(0.05),
+                    ],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  )
+                : null,
+            color: isSelected ? null : Colors.transparent,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: isSelected
-                  ? Theme.of(context).colorScheme.primary
-                  : Colors.transparent,
+              color: isSelected ? AppTheme.primaryColor : Colors.transparent,
               width: 2,
             ),
           ),
           child: Row(
             children: [
               Container(
-                width: 40,
-                height: 40,
+                width: 42,
+                height: 42,
                 decoration: BoxDecoration(
-                  color: (isSelected
-                          ? Theme.of(context).colorScheme.primary
-                          : Theme.of(context)
-                              .colorScheme
-                              .onSurface
-                              .withOpacity(0.6))
-                      .withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(10),
+                  gradient: isSelected ? AppTheme.primaryGradient : null,
+                  color: isSelected
+                      ? null
+                      : Theme.of(context)
+                          .colorScheme
+                          .onSurface
+                          .withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(
                   icon,
                   size: 20,
                   color: isSelected
-                      ? Theme.of(context).colorScheme.primary
+                      ? Colors.white
                       : Theme.of(context)
                           .colorScheme
                           .onSurface
@@ -1047,20 +1137,20 @@ class _SettingsScreenContent extends StatelessWidget {
                   children: [
                     Text(
                       title,
-                      style: GoogleFonts.inter(
-                        fontSize: 16,
+                      style: AppFonts.inter(
+                        fontSize: 15,
                         fontWeight:
                             isSelected ? FontWeight.w600 : FontWeight.w500,
                         color: isSelected
-                            ? Theme.of(context).colorScheme.primary
+                            ? AppTheme.primaryColor
                             : Theme.of(context).colorScheme.onBackground,
                       ),
                     ),
                     const SizedBox(height: 2),
                     Text(
                       subtitle,
-                      style: GoogleFonts.inter(
-                        fontSize: 14,
+                      style: AppFonts.inter(
+                        fontSize: 13,
                         color: Theme.of(context)
                             .colorScheme
                             .onSurface
@@ -1073,7 +1163,7 @@ class _SettingsScreenContent extends StatelessWidget {
               if (isSelected)
                 Icon(
                   Icons.check_circle,
-                  color: Theme.of(context).colorScheme.primary,
+                  color: AppTheme.primaryColor,
                   size: 24,
                 ),
             ],
@@ -1101,30 +1191,61 @@ class _SettingsScreenContent extends StatelessWidget {
         },
         borderRadius: BorderRadius.circular(12),
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          margin: const EdgeInsets.only(bottom: 8),
           decoration: BoxDecoration(
-            color: isSelected
-                ? Theme.of(context).colorScheme.primary.withOpacity(0.1)
-                : Colors.transparent,
+            gradient: isSelected
+                ? LinearGradient(
+                    colors: [
+                      AppTheme.primaryColor.withOpacity(0.1),
+                      AppTheme.secondaryPurple.withOpacity(0.05),
+                    ],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  )
+                : null,
+            color: isSelected ? null : Colors.transparent,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: isSelected
-                  ? Theme.of(context).colorScheme.primary
-                  : Colors.transparent,
+              color: isSelected ? AppTheme.primaryColor : Colors.transparent,
               width: 2,
             ),
           ),
           child: Row(
             children: [
+              Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  gradient: isSelected ? AppTheme.primaryGradient : null,
+                  color: isSelected
+                      ? null
+                      : Theme.of(context)
+                          .colorScheme
+                          .onSurface
+                          .withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(
+                  Icons.language,
+                  size: 18,
+                  color: isSelected
+                      ? Colors.white
+                      : Theme.of(context)
+                          .colorScheme
+                          .onSurface
+                          .withOpacity(0.6),
+                ),
+              ),
               const SizedBox(width: 16),
               Expanded(
                 child: Text(
                   label,
-                  style: GoogleFonts.inter(
-                    fontSize: 16,
+                  style: AppFonts.inter(
+                    fontSize: 15,
                     fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
                     color: isSelected
-                        ? Theme.of(context).colorScheme.primary
+                        ? AppTheme.primaryColor
                         : Theme.of(context).colorScheme.onBackground,
                   ),
                 ),
@@ -1132,7 +1253,7 @@ class _SettingsScreenContent extends StatelessWidget {
               if (isSelected)
                 Icon(
                   Icons.check_circle,
-                  color: Theme.of(context).colorScheme.primary,
+                  color: AppTheme.primaryColor,
                   size: 24,
                 ),
             ],
@@ -1160,7 +1281,7 @@ class _SettingsScreenContent extends StatelessWidget {
               width: 40,
               height: 4,
               decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.3),
+                color: AppTheme.primaryColor.withOpacity(0.3),
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -1169,30 +1290,37 @@ class _SettingsScreenContent extends StatelessWidget {
               width: 80,
               height: 80,
               decoration: BoxDecoration(
-                color: AppTheme.accentColor.withOpacity(0.2),
+                gradient: AppTheme.primaryGradient,
                 borderRadius: BorderRadius.circular(20),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppTheme.primaryColor.withOpacity(0.3),
+                    blurRadius: 16,
+                    offset: const Offset(0, 6),
+                  ),
+                ],
               ),
               child: const Icon(
                 Icons.favorite,
                 size: 40,
-                color: AppTheme.accentColor,
+                color: Colors.white,
               ),
             ),
             const SizedBox(height: 24),
             Text(
               context.tr(TranslationKeys.settingsSupportTitle),
-              style: GoogleFonts.playfairDisplay(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: Theme.of(context).colorScheme.primary,
+              style: AppFonts.inter(
+                fontSize: 20,
+                fontWeight: FontWeight.w700,
+                color: Theme.of(context).colorScheme.onBackground,
               ),
             ),
             const SizedBox(height: 16),
             Text(
               context.tr(TranslationKeys.settingsSupportMessage),
-              style: GoogleFonts.inter(
-                fontSize: 16,
-                color: Theme.of(context).colorScheme.onBackground,
+              style: AppFonts.inter(
+                fontSize: 15,
+                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
                 height: 1.5,
               ),
               textAlign: TextAlign.center,
@@ -1204,8 +1332,7 @@ class _SettingsScreenContent extends StatelessWidget {
                   child: OutlinedButton(
                     onPressed: () => Navigator.of(context).pop(),
                     style: OutlinedButton.styleFrom(
-                      side: BorderSide(
-                          color: Theme.of(context).colorScheme.primary),
+                      side: BorderSide(color: AppTheme.primaryColor),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
@@ -1213,31 +1340,45 @@ class _SettingsScreenContent extends StatelessWidget {
                     ),
                     child: Text(
                       context.tr(TranslationKeys.settingsClose),
-                      style: GoogleFonts.inter(
+                      style: AppFonts.inter(
                         fontWeight: FontWeight.w600,
-                        color: Theme.of(context).colorScheme.primary,
+                        color: AppTheme.primaryColor,
                       ),
                     ),
                   ),
                 ),
                 const SizedBox(width: 16),
                 Expanded(
-                  child: ElevatedButton(
-                    onPressed: () {
-                      Navigator.of(context).pop();
-                      _launchBuyMeCoffee();
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Theme.of(context).colorScheme.primary,
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      padding: const EdgeInsets.symmetric(vertical: 16),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      gradient: AppTheme.primaryGradient,
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppTheme.primaryColor.withOpacity(0.3),
+                          blurRadius: 12,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
                     ),
-                    child: Text(
-                      context.tr(TranslationKeys.settingsSupport),
-                      style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+                    child: ElevatedButton(
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                        _launchBuyMeCoffee();
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.transparent,
+                        shadowColor: Colors.transparent,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                      ),
+                      child: Text(
+                        context.tr(TranslationKeys.settingsSupport),
+                        style: AppFonts.inter(fontWeight: FontWeight.w600),
+                      ),
                     ),
                   ),
                 ),
@@ -1261,7 +1402,7 @@ class _SettingsScreenContent extends StatelessWidget {
       SnackBar(
         content: Text(
           message,
-          style: GoogleFonts.inter(
+          style: AppFonts.inter(
             fontWeight: FontWeight.w500,
             color: Colors.white,
           ),

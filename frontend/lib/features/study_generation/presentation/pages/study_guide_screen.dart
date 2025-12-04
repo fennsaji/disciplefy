@@ -3,7 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:google_fonts/google_fonts.dart';
+import '../../../../core/constants/app_fonts.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../../../../core/theme/app_theme.dart';
@@ -13,6 +13,7 @@ import '../../../../core/extensions/translation_extension.dart';
 import '../../../../core/i18n/translation_keys.dart';
 import '../../domain/entities/study_guide.dart';
 import '../../../../core/navigation/study_navigator.dart';
+import '../../../home/data/services/recommended_guides_service.dart';
 import '../bloc/study_bloc.dart';
 import '../bloc/study_event.dart';
 import '../bloc/study_state.dart';
@@ -95,6 +96,7 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
   bool _hasScrolledToBottom = false;
   bool _completionMarked = false;
   bool _isCompletionTrackingStarted = false;
+  final GlobalKey _prayerPointsKey = GlobalKey();
 
   @override
   void initState() {
@@ -305,12 +307,12 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
     });
   }
 
-  /// Setup scroll listener to detect when user reaches bottom
+  /// Setup scroll listener to detect when user reaches prayer points section
   void _startScrollListener() {
     _scrollController.addListener(() {
       if (!_completionMarked &&
           !_hasScrolledToBottom &&
-          _isScrolledToBottom()) {
+          _isPrayerPointsSectionVisible()) {
         setState(() {
           _hasScrolledToBottom = true;
         });
@@ -319,16 +321,21 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
     });
   }
 
-  /// Check if user has scrolled to the bottom of the page
-  bool _isScrolledToBottom() {
-    if (!_scrollController.hasClients) return false;
+  /// Check if the prayer points section is visible on screen
+  bool _isPrayerPointsSectionVisible() {
+    final keyContext = _prayerPointsKey.currentContext;
+    if (keyContext == null) return false;
 
-    final maxScroll = _scrollController.position.maxScrollExtent;
-    final currentScroll = _scrollController.position.pixels;
+    final RenderObject? renderObject = keyContext.findRenderObject();
+    if (renderObject == null || renderObject is! RenderBox) return false;
 
-    // Consider "bottom" as within 100px of the actual bottom
-    // This accounts for different screen sizes and scroll behavior
-    return currentScroll >= (maxScroll - 100);
+    final RenderBox box = renderObject;
+    final Offset position = box.localToGlobal(Offset.zero);
+    final Size screenSize = MediaQuery.of(context).size;
+
+    // Check if the top of the prayer points section is visible on screen
+    // Consider visible when the section enters the bottom 80% of the screen
+    return position.dy < screenSize.height * 0.8;
   }
 
   /// Check if both completion conditions are met and mark complete if so
@@ -479,6 +486,11 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
               );
             }
           }
+          // Handle study completion - invalidate cache
+          else if (state is StudyCompletionSuccess) {
+            // Invalidate the "For You" cache so completed topics don't show again
+            sl<RecommendedGuidesService>().clearForYouCache();
+          }
         },
         child: Scaffold(
           backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -501,7 +513,7 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
             ),
             title: Text(
               _getDisplayTitle(),
-              style: GoogleFonts.playfairDisplay(
+              style: AppFonts.poppins(
                 fontSize: 20,
                 fontWeight: FontWeight.w600,
                 color: Theme.of(context).colorScheme.primary,
@@ -610,7 +622,7 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
             ),
             title: Text(
               'Study Guide',
-              style: GoogleFonts.playfairDisplay(
+              style: AppFonts.poppins(
                 fontSize: 20,
                 fontWeight: FontWeight.w600,
                 color: Theme.of(context).colorScheme.primary,
@@ -631,8 +643,8 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
                   ),
                   const SizedBox(height: 24),
                   Text(
-                    'We couldn\'t generate a study guide',
-                    style: GoogleFonts.playfairDisplay(
+                    context.tr(TranslationKeys.studyGuideErrorTitleAlt),
+                    style: AppFonts.poppins(
                       fontSize: 28,
                       fontWeight: FontWeight.w600,
                       color: Theme.of(context).colorScheme.onBackground,
@@ -642,9 +654,10 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
                   const SizedBox(height: 16),
                   Text(
                     _errorMessage.isEmpty
-                        ? 'Something went wrong. Please try again later.'
+                        ? context.tr(
+                            TranslationKeys.studyGuideErrorDefaultMessageAlt)
                         : _errorMessage,
-                    style: GoogleFonts.inter(
+                    style: AppFonts.inter(
                       fontSize: 18,
                       color: Theme.of(context)
                           .colorScheme
@@ -667,8 +680,8 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
                       ),
                     ),
                     child: Text(
-                      'View Saved Guides',
-                      style: GoogleFonts.inter(
+                      context.tr(TranslationKeys.studyGuideErrorViewSaved),
+                      style: AppFonts.inter(
                         fontSize: 18,
                         fontWeight: FontWeight.w600,
                       ),
@@ -735,6 +748,7 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
 
           // Prayer Points Section
           _StudySection(
+            key: _prayerPointsKey,
             title: context.tr(TranslationKeys.studyGuidePrayerPoints),
             icon: Icons.favorite,
             content: _currentStudyGuide.prayerPoints
@@ -759,7 +773,7 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
               const SizedBox(width: 8),
               Text(
                 context.tr(TranslationKeys.studyGuidePersonalNotes),
-                style: GoogleFonts.inter(
+                style: AppFonts.inter(
                   fontSize: 20,
                   fontWeight: FontWeight.w600,
                   color: Theme.of(context).colorScheme.onBackground,
@@ -779,7 +793,7 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
             child: TextField(
               controller: _notesController,
               maxLines: 6,
-              style: GoogleFonts.inter(
+              style: AppFonts.inter(
                 fontSize: 16,
                 color: Theme.of(context).colorScheme.onBackground,
                 height: 1.5,
@@ -787,7 +801,7 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
               decoration: InputDecoration(
                 hintText: context
                     .tr(TranslationKeys.studyGuidePersonalNotesPlaceholder),
-                hintStyle: GoogleFonts.inter(
+                hintStyle: AppFonts.inter(
                   color:
                       Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
                 ),
@@ -841,7 +855,7 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
                           ),
                           label: Text(
                             currentStep ?? 'Saving...',
-                            style: GoogleFonts.inter(
+                            style: AppFonts.inter(
                               fontSize: 18,
                               fontWeight: FontWeight.w600,
                             ),
@@ -874,7 +888,7 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
                                 ? context.tr(TranslationKeys.studyGuideSaved)
                                 : context
                                     .tr(TranslationKeys.studyGuideSaveStudy),
-                            style: GoogleFonts.inter(
+                            style: AppFonts.inter(
                               fontSize: 18,
                               fontWeight: FontWeight.w600,
                             ),
@@ -900,24 +914,40 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
             ),
             const SizedBox(width: 16),
             Expanded(
-              child: ElevatedButton.icon(
-                onPressed: _shareStudyGuide,
-                icon: Icon(Icons.share),
-                label: Text(
-                  context.tr(TranslationKeys.studyGuideShare),
-                  style: GoogleFonts.inter(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
-                  ),
+              child: Container(
+                height: 56,
+                decoration: BoxDecoration(
+                  gradient: AppTheme.primaryGradient,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppTheme.primaryColor.withOpacity(0.3),
+                      blurRadius: 12,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
                 ),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Theme.of(context).colorScheme.primary,
-                  foregroundColor: Colors.white,
-                  minimumSize: const Size.fromHeight(56),
-                  shape: RoundedRectangleBorder(
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    onTap: _shareStudyGuide,
                     borderRadius: BorderRadius.circular(12),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(Icons.share, color: Colors.white, size: 20),
+                        const SizedBox(width: 8),
+                        Text(
+                          context.tr(TranslationKeys.studyGuideShare),
+                          style: AppFonts.inter(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                  elevation: 0,
                 ),
               ),
             ),
@@ -970,7 +1000,7 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
         shadowColor: Colors.black.withOpacity(0.1),
         title: Text(
           context.tr(TranslationKeys.studyGuideAuthRequired),
-          style: GoogleFonts.playfairDisplay(
+          style: AppFonts.poppins(
             fontSize: 22,
             fontWeight: FontWeight.bold,
             color: const Color(0xFF333333), // Primary gray text
@@ -978,7 +1008,7 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
         ),
         content: Text(
           context.tr(TranslationKeys.studyGuideAuthRequiredMessage),
-          style: GoogleFonts.inter(
+          style: AppFonts.inter(
             fontSize: 18,
             color: const Color(0xFF333333), // Primary gray text
             height: 1.5,
@@ -997,7 +1027,7 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
             ),
             child: Text(
               context.tr(TranslationKeys.commonCancel),
-              style: GoogleFonts.inter(
+              style: AppFonts.inter(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
                 color: const Color(0xFF888888), // Light gray text
@@ -1011,7 +1041,7 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
               sl<StudyNavigator>().navigateToLogin(context);
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF7A56DB), // Primary purple
+              backgroundColor: AppTheme.primaryColor,
               foregroundColor: Colors.white,
               elevation: 0,
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
@@ -1021,7 +1051,7 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
             ),
             child: Text(
               context.tr(TranslationKeys.studyGuideSignIn),
-              style: GoogleFonts.inter(
+              style: AppFonts.inter(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
               ),
@@ -1049,7 +1079,7 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
         shadowColor: Colors.black.withOpacity(0.1),
         title: Text(
           context.tr(TranslationKeys.studyGuideAuthRequired),
-          style: GoogleFonts.playfairDisplay(
+          style: AppFonts.poppins(
             fontSize: 20,
             fontWeight: FontWeight.bold,
             color: const Color(0xFF333333), // Primary gray text
@@ -1057,7 +1087,7 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
         ),
         content: Text(
           context.tr(TranslationKeys.studyGuideAuthRequiredMessage),
-          style: GoogleFonts.inter(
+          style: AppFonts.inter(
             fontSize: 18,
             color: const Color(0xFF333333), // Primary gray text
             height: 1.5,
@@ -1076,7 +1106,7 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
             ),
             child: Text(
               context.tr(TranslationKeys.commonCancel),
-              style: GoogleFonts.inter(
+              style: AppFonts.inter(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
                 color: const Color(0xFF888888), // Light gray text
@@ -1090,7 +1120,7 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
               sl<StudyNavigator>().navigateToLogin(context);
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF7A56DB), // Primary purple
+              backgroundColor: AppTheme.primaryColor,
               foregroundColor: Colors.white,
               elevation: 0,
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
@@ -1100,7 +1130,7 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
             ),
             child: Text(
               context.tr(TranslationKeys.studyGuideSignIn),
-              style: GoogleFonts.inter(
+              style: AppFonts.inter(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
               ),
@@ -1186,7 +1216,7 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
             Expanded(
               child: Text(
                 message,
-                style: GoogleFonts.inter(
+                style: AppFonts.inter(
                   color: Colors.white,
                   fontWeight: FontWeight.w500,
                 ),
@@ -1244,6 +1274,7 @@ class _StudySection extends StatelessWidget {
   final String content;
 
   const _StudySection({
+    super.key,
     required this.title,
     required this.icon,
     required this.content,
@@ -1292,7 +1323,7 @@ class _StudySection extends StatelessWidget {
                 Expanded(
                   child: Text(
                     title,
-                    style: GoogleFonts.inter(
+                    style: AppFonts.inter(
                       fontSize: 20,
                       fontWeight: FontWeight.w600,
                       color: Theme.of(context).colorScheme.onBackground,
@@ -1338,7 +1369,7 @@ class _StudySection extends StatelessWidget {
       SnackBar(
         content: Text(
           context.tr(TranslationKeys.studyGuideCopiedToClipboard),
-          style: GoogleFonts.inter(color: Colors.white),
+          style: AppFonts.inter(color: Colors.white),
         ),
         backgroundColor: Theme.of(context).colorScheme.primary,
         behavior: SnackBarBehavior.floating,

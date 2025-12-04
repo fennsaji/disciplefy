@@ -78,6 +78,34 @@ class AuthenticationFailedException extends AuthException {
             code: 'AUTH_FAILED');
 }
 
+/// Email already exists exception
+class EmailAlreadyExistsException extends AuthException {
+  const EmailAlreadyExistsException([String? message])
+      : super(message ?? 'An account with this email already exists.',
+            code: 'EMAIL_EXISTS');
+}
+
+/// Invalid credentials exception (wrong email or password)
+class InvalidCredentialsException extends AuthException {
+  const InvalidCredentialsException([String? message])
+      : super(message ?? 'Invalid email or password.',
+            code: 'INVALID_CREDENTIALS');
+}
+
+/// Weak password exception
+class WeakPasswordException extends AuthException {
+  const WeakPasswordException([String? message])
+      : super(message ?? 'Password must be at least 8 characters.',
+            code: 'WEAK_PASSWORD');
+}
+
+/// Invalid email format exception
+class InvalidEmailException extends AuthException {
+  const InvalidEmailException([String? message])
+      : super(message ?? 'Please enter a valid email address.',
+            code: 'INVALID_EMAIL');
+}
+
 /// Error severity levels for UI handling
 enum ErrorSeverity {
   info, // User cancelled action - low severity
@@ -101,6 +129,10 @@ extension AuthExceptionSeverity on AuthException {
       case AuthenticationFailedException:
       case UserNotFoundException:
       case PermissionDeniedException:
+      case EmailAlreadyExistsException:
+      case InvalidCredentialsException:
+      case WeakPasswordException:
+      case InvalidEmailException:
         return ErrorSeverity.error;
       case AuthConfigException:
         return ErrorSeverity.critical;

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:google_fonts/google_fonts.dart';
+import '../../../../core/constants/app_fonts.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/di/injection_container.dart';
 import '../../../../core/extensions/translation_extension.dart';
@@ -115,7 +115,7 @@ class _FeedbackBottomSheetState extends State<FeedbackBottomSheet> {
         children: [
           Text(
             context.tr(TranslationKeys.feedbackSendFeedback),
-            style: GoogleFonts.playfairDisplay(
+            style: AppFonts.poppins(
               fontSize: 24,
               fontWeight: FontWeight.bold,
               color: colorScheme.primary,
@@ -124,7 +124,7 @@ class _FeedbackBottomSheetState extends State<FeedbackBottomSheet> {
           const SizedBox(height: 8),
           Text(
             context.tr(TranslationKeys.feedbackSubtitle),
-            style: GoogleFonts.inter(
+            style: AppFonts.inter(
               fontSize: 14,
               color: colorScheme.onSurface.withOpacity(0.7),
             ),
@@ -148,7 +148,7 @@ class _FeedbackBottomSheetState extends State<FeedbackBottomSheet> {
             const SizedBox(width: 12),
             Text(
               context.tr(TranslationKeys.feedbackIsHelpful),
-              style: GoogleFonts.inter(
+              style: AppFonts.inter(
                 fontSize: 14,
                 fontWeight: FontWeight.w500,
                 color: colorScheme.primary,
@@ -259,7 +259,7 @@ class _FeedbackBottomSheetState extends State<FeedbackBottomSheet> {
                     )
                   : Text(
                       context.tr(TranslationKeys.feedbackButtonSend),
-                      style: GoogleFonts.inter(
+                      style: AppFonts.inter(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
                       ),

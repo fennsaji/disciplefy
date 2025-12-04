@@ -107,3 +107,54 @@ class ForceLogoutRequested extends AuthEvent {
   @override
   List<Object?> get props => [reason];
 }
+
+/// Event to request email/password sign up
+class EmailSignUpRequested extends AuthEvent {
+  final String email;
+  final String password;
+  final String fullName;
+
+  const EmailSignUpRequested({
+    required this.email,
+    required this.password,
+    required this.fullName,
+  });
+
+  @override
+  List<Object?> get props => [email, password, fullName];
+}
+
+/// Event to request email/password sign in
+class EmailSignInRequested extends AuthEvent {
+  final String email;
+  final String password;
+
+  const EmailSignInRequested({
+    required this.email,
+    required this.password,
+  });
+
+  @override
+  List<Object?> get props => [email, password];
+}
+
+/// Event to request password reset
+class PasswordResetRequested extends AuthEvent {
+  final String email;
+
+  const PasswordResetRequested({required this.email});
+
+  @override
+  List<Object?> get props => [email];
+}
+
+/// Event to request resending email verification
+class ResendVerificationEmailRequested extends AuthEvent {
+  const ResendVerificationEmailRequested();
+}
+
+/// Event to refresh user profile data (e.g., after email verification)
+/// This fetches the latest profile from the database and updates the state
+class RefreshUserProfileRequested extends AuthEvent {
+  const RefreshUserProfileRequested();
+}

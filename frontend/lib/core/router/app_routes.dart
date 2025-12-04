@@ -22,6 +22,8 @@ class AppRoutes {
   static const String login = '/login';
   static const String phoneAuth = '/phone-auth';
   static const String phoneAuthVerify = '/phone-auth/verify';
+  static const String emailAuth = '/email-auth';
+  static const String passwordReset = '/password-reset';
   static const String profileSetup = '/profile-setup';
   static const String authCallback = '/auth/callback';
   static const String error = '/error';
@@ -29,4 +31,21 @@ class AppRoutes {
   // Memory Verses
   static const String memoryVerses = '/memory-verses';
   static const String verseReview = '/memory-verse-review';
+
+  // Voice Buddy
+  static const String voiceConversation = '/voice-conversation';
+  static const String voicePreferences = '/voice-preferences';
+
+  // Personalization
+  static const String personalizationQuestionnaire =
+      '/personalization-questionnaire';
+
+  // Learning Paths
+  static const String learningPathDetail = '/learning-path/:pathId';
+
+  // Leaderboard
+  static const String leaderboard = '/leaderboard';
+
+  // Public Pages
+  static const String pricing = '/pricing';
 }

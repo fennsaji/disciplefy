@@ -85,9 +85,21 @@ import '../../features/user_profile/domain/usecases/update_user_profile.dart';
 import '../../features/user_profile/domain/usecases/delete_user_profile.dart';
 import '../../features/user_profile/presentation/bloc/user_profile_bloc.dart';
 import '../../features/study_topics/data/datasources/study_topics_remote_datasource.dart';
+import '../../features/study_topics/data/datasources/topic_progress_remote_datasource.dart';
 import '../../features/study_topics/data/repositories/study_topics_repository_impl.dart';
+import '../../features/study_topics/data/repositories/topic_progress_repository_impl.dart';
 import '../../features/study_topics/domain/repositories/study_topics_repository.dart';
+import '../../features/study_topics/domain/repositories/topic_progress_repository.dart';
 import '../../features/study_topics/presentation/bloc/study_topics_bloc.dart';
+import '../../features/study_topics/data/datasources/learning_paths_remote_datasource.dart';
+import '../../features/study_topics/data/repositories/learning_paths_repository_impl.dart';
+import '../../features/study_topics/domain/repositories/learning_paths_repository.dart';
+import '../../features/study_topics/presentation/bloc/learning_paths_bloc.dart';
+import '../../features/study_topics/presentation/bloc/continue_learning_bloc.dart';
+import '../../features/study_topics/data/datasources/leaderboard_remote_datasource.dart';
+import '../../features/study_topics/data/repositories/leaderboard_repository_impl.dart';
+import '../../features/study_topics/domain/repositories/leaderboard_repository.dart';
+import '../../features/study_topics/presentation/bloc/leaderboard_bloc.dart';
 import '../services/theme_service.dart';
 import '../services/auth_state_provider.dart';
 import '../services/language_preference_service.dart';
@@ -131,7 +143,6 @@ import '../../features/tokens/domain/usecases/create_payment_order.dart';
 import '../../features/tokens/domain/usecases/get_purchase_history.dart';
 import '../../features/tokens/domain/usecases/get_purchase_statistics.dart';
 import '../../features/tokens/presentation/bloc/token_bloc.dart';
-import '../../features/tokens/presentation/bloc/payment_method_bloc.dart';
 import '../../features/tokens/di/tokens_injection.dart';
 import '../../features/follow_up_chat/presentation/bloc/follow_up_chat_bloc.dart';
 import '../../features/follow_up_chat/data/services/conversation_service.dart';
@@ -157,6 +168,13 @@ import '../../features/memory_verses/domain/usecases/get_statistics.dart';
 import '../../features/memory_verses/domain/usecases/fetch_verse_text.dart';
 import '../../features/memory_verses/domain/usecases/delete_verse.dart';
 import '../../features/memory_verses/presentation/bloc/memory_verse_bloc.dart';
+import '../../features/voice_buddy/data/datasources/voice_buddy_remote_data_source.dart';
+import '../../features/voice_buddy/data/repositories/voice_buddy_repository_impl.dart';
+import '../../features/voice_buddy/data/services/speech_service.dart';
+import '../../features/voice_buddy/data/services/tts_service.dart';
+import '../../features/voice_buddy/domain/repositories/voice_buddy_repository.dart';
+import '../../features/voice_buddy/presentation/bloc/voice_conversation_bloc.dart';
+import '../../features/voice_buddy/presentation/bloc/voice_preferences_bloc.dart';
 
 /// Service locator instance for dependency injection
 final sl = GetIt.instance;
@@ -469,6 +487,7 @@ Future<void> initializeDependencies() async {
     () => RecommendedTopicsBloc(
       topicsService: sl(),
       languagePreferenceService: sl(),
+      prefs: sl(),
     ),
     dispose: (bloc) => bloc.close(),
   );
@@ -485,6 +504,7 @@ Future<void> initializeDependencies() async {
       topicsBloc: sl(),
       studyGenerationBloc: sl(),
       languagePreferenceService: sl(),
+      learningPathsRepository: sl(),
     ),
     dispose: (bloc) => bloc.close(),
   );
@@ -501,6 +521,46 @@ Future<void> initializeDependencies() async {
   sl.registerFactory(() => StudyTopicsBloc(
         repository: sl(),
         languagePreferenceService: sl(),
+      ));
+
+  //! Topic Progress Tracking
+  sl.registerLazySingleton<TopicProgressRemoteDataSource>(
+    () => TopicProgressRemoteDataSourceImpl(httpService: sl()),
+  );
+
+  sl.registerLazySingleton<TopicProgressRepository>(
+    () => TopicProgressRepositoryImpl(remoteDataSource: sl()),
+  );
+
+  //! Learning Paths (Curated Learning Journeys)
+  sl.registerLazySingleton<LearningPathsRemoteDataSource>(
+    () => LearningPathsRemoteDataSourceImpl(httpService: sl()),
+  );
+
+  sl.registerLazySingleton<LearningPathsRepository>(
+    () => LearningPathsRepositoryImpl(remoteDataSource: sl()),
+  );
+
+  sl.registerFactory(() => LearningPathsBloc(
+        repository: sl(),
+      ));
+
+  //! Continue Learning (In-Progress Topics)
+  sl.registerFactory(() => ContinueLearningBloc(
+        repository: sl<TopicProgressRepository>(),
+      ));
+
+  //! Leaderboard (XP Rankings)
+  sl.registerLazySingleton<LeaderboardRemoteDataSource>(
+    () => LeaderboardRemoteDataSource(supabaseClient: sl()),
+  );
+
+  sl.registerLazySingleton<LeaderboardRepository>(
+    () => LeaderboardRepositoryImpl(remoteDataSource: sl()),
+  );
+
+  sl.registerFactory(() => LeaderboardBloc(
+        repository: sl(),
       ));
 
   //! Onboarding
@@ -618,5 +678,36 @@ Future<void> initializeDependencies() async {
         updatePreferences: sl(),
         requestPermissions: sl(),
         checkPermissions: sl(),
+      ));
+
+  //! Voice Buddy
+  // Services
+  sl.registerLazySingleton(() => SpeechService());
+  sl.registerLazySingleton(() => TTSService());
+
+  // Data Source
+  sl.registerLazySingleton<VoiceBuddyRemoteDataSource>(
+    () => VoiceBuddyRemoteDataSourceImpl(
+      supabaseClient: sl(),
+    ),
+  );
+
+  // Repository
+  sl.registerLazySingleton<VoiceBuddyRepository>(
+    () => VoiceBuddyRepositoryImpl(
+      remoteDataSource: sl(),
+    ),
+  );
+
+  // BLoC
+  sl.registerFactory(() => VoicePreferencesBloc(
+        repository: sl(),
+      ));
+
+  sl.registerFactory(() => VoiceConversationBloc(
+        repository: sl(),
+        speechService: sl(),
+        ttsService: sl(),
+        supabaseClient: sl(),
       ));
 }

@@ -3,11 +3,13 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
+import '../../../../core/constants/app_fonts.dart';
+import '../../../../core/animations/app_animations.dart';
 
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/utils/category_utils.dart';
 import '../../../../core/di/injection_container.dart';
+import '../../../../core/router/app_router.dart';
 import '../../../../core/services/auth_state_provider.dart';
 import '../../../../core/widgets/auth_protected_screen.dart';
 import '../../../../core/extensions/translation_extension.dart';
@@ -18,10 +20,16 @@ import '../../../daily_verse/presentation/bloc/daily_verse_event.dart';
 import '../../../daily_verse/presentation/bloc/daily_verse_state.dart';
 import '../../../daily_verse/presentation/widgets/daily_verse_card.dart';
 import '../../../daily_verse/domain/entities/daily_verse_entity.dart';
+import '../../../notifications/presentation/widgets/notification_enable_prompt.dart';
+import '../../../auth/presentation/bloc/auth_bloc.dart';
+import '../../../auth/presentation/widgets/email_verification_banner.dart';
 
 import '../bloc/home_bloc.dart';
 import '../bloc/home_event.dart';
 import '../bloc/home_state.dart';
+import '../../../personalization/presentation/widgets/personalization_prompt_card.dart';
+import '../../../study_topics/domain/repositories/learning_paths_repository.dart';
+import '../../../study_topics/presentation/widgets/learning_path_card.dart';
 
 /// Home screen displaying daily verse, navigation options, and study recommendations.
 ///
@@ -50,6 +58,10 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
   // Track if we're currently navigating to prevent multiple navigations
   bool _isNavigating = false;
 
+  // Track if we've already triggered the notification prompts this session
+  bool _hasTriggeredDailyVersePrompt = false;
+  bool _hasTriggeredStreakPrompt = false;
+
   @override
   void initState() {
     super.initState();
@@ -58,8 +70,60 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
     final homeBloc = sl<HomeBloc>();
     final current = homeBloc.state;
     if (current is! HomeCombinedState || current.topics.isEmpty) {
-      homeBloc.add(const LoadRecommendedTopics(limit: 6));
+      // Use LoadForYouTopics for authenticated users (bloc handles fallback)
+      homeBloc.add(const LoadForYouTopics());
     }
+    // Load active learning path for the For You section
+    if (current is! HomeCombinedState || current.activeLearningPath == null) {
+      homeBloc.add(const LoadActiveLearningPath());
+    }
+  }
+
+  /// Shows the Daily Verse notification prompt if not already shown
+  Future<void> _showDailyVerseNotificationPrompt(String languageCode) async {
+    if (_hasTriggeredDailyVersePrompt) return;
+    _hasTriggeredDailyVersePrompt = true;
+
+    // Small delay to let the UI settle after verse loads
+    await Future.delayed(const Duration(milliseconds: 800));
+
+    if (!mounted) return;
+
+    await showNotificationEnablePrompt(
+      context: context,
+      type: NotificationPromptType.dailyVerse,
+      languageCode: languageCode,
+    );
+  }
+
+  /// Shows streak notification prompts based on streak milestone
+  /// - After 3+ day streak: Show streak reminder prompt
+  /// - After 7+ day streak: Show streak milestone prompt
+  Future<void> _showStreakNotificationPrompt(
+      String languageCode, int currentStreak) async {
+    if (_hasTriggeredStreakPrompt) return;
+
+    // Only show streak prompts for meaningful streaks
+    if (currentStreak < 3) return;
+
+    _hasTriggeredStreakPrompt = true;
+
+    // Delay to show after daily verse prompt (if shown)
+    await Future.delayed(const Duration(milliseconds: 1500));
+
+    if (!mounted) return;
+
+    // Show streak reminder prompt at 3+ days
+    // Show milestone prompt at 7+ days (includes streak lost notifications)
+    final promptType = currentStreak >= 7
+        ? NotificationPromptType.streakMilestone
+        : NotificationPromptType.streakReminder;
+
+    await showNotificationEnablePrompt(
+      context: context,
+      type: promptType,
+      languageCode: languageCode,
+    );
   }
 
   /// Load daily verse - called only once during initialization
@@ -154,74 +218,98 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
     final screenHeight = MediaQuery.of(context).size.height;
     final isLargeScreen = screenHeight > 700;
 
-    return ListenableBuilder(
-      listenable: sl<AuthStateProvider>(),
-      builder: (context, _) {
-        final authProvider = sl<AuthStateProvider>();
-        final currentUserName = authProvider.currentUserName;
+    return BlocListener<DailyVerseBloc, DailyVerseState>(
+      bloc: sl<DailyVerseBloc>(),
+      listener: (context, state) {
+        // Trigger notification prompts when daily verse loads successfully
+        if (state is DailyVerseLoaded) {
+          final languageCode = _getLanguageCode(state.currentLanguage);
+          _showDailyVerseNotificationPrompt(languageCode);
 
-        if (kDebugMode) {
-          print(
-              '👤 [HOME] User loaded via AuthStateProvider: $currentUserName');
-          print('👤 [HOME] Auth state: ${authProvider.debugInfo}');
+          // Also check for streak and show streak notification prompt
+          final streak = state.streak;
+          if (streak != null && streak.currentStreak > 0) {
+            _showStreakNotificationPrompt(languageCode, streak.currentStreak);
+          }
         }
+      },
+      child: ListenableBuilder(
+        listenable: sl<AuthStateProvider>(),
+        builder: (context, _) {
+          final authProvider = sl<AuthStateProvider>();
+          final currentUserName = authProvider.currentUserName;
 
-        return Scaffold(
-          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-          body: SafeArea(
-            child: Column(
-              children: [
-                // Main content
-                Expanded(
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.symmetric(horizontal: 24),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        SizedBox(height: isLargeScreen ? 32 : 24),
+          if (kDebugMode) {
+            print(
+                '👤 [HOME] User loaded via AuthStateProvider: $currentUserName');
+            print('👤 [HOME] Auth state: ${authProvider.debugInfo}');
+          }
 
-                        // App Header with Logo
-                        _buildAppHeader(),
+          return Scaffold(
+            backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+            body: SafeArea(
+              child: Column(
+                children: [
+                  // Main content
+                  Expanded(
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.symmetric(horizontal: 24),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          SizedBox(height: isLargeScreen ? 32 : 24),
 
-                        SizedBox(height: isLargeScreen ? 32 : 24),
+                          // App Header with Logo
+                          _buildAppHeader(),
 
-                        // Welcome Message
-                        _buildWelcomeMessage(currentUserName),
+                          SizedBox(height: isLargeScreen ? 32 : 24),
 
-                        SizedBox(height: isLargeScreen ? 32 : 24),
+                          // Welcome Message
+                          _buildWelcomeMessage(currentUserName),
 
-                        // Daily Verse Card with click functionality
-                        DailyVerseCard(
-                          margin: EdgeInsets.zero,
-                          onTap: _onDailyVerseCardTap,
-                        ),
+                          SizedBox(height: isLargeScreen ? 16 : 12),
 
-                        SizedBox(height: isLargeScreen ? 24 : 20),
+                          // Email Verification Banner (shown for unverified email users)
+                          BlocProvider.value(
+                            value: sl<AuthBloc>(),
+                            child: const EmailVerificationBanner(),
+                          ),
 
-                        // Generate Study Guide Button
-                        _buildGenerateStudyButton(),
+                          SizedBox(height: isLargeScreen ? 16 : 12),
 
-                        SizedBox(height: isLargeScreen ? 32 : 24),
+                          // Daily Verse Card with click functionality
+                          DailyVerseCard(
+                            margin: EdgeInsets.zero,
+                            onTap: _onDailyVerseCardTap,
+                          ),
 
-                        // Resume Last Study (conditional)
-                        if (_hasResumeableStudy) ...[
-                          _buildResumeStudyBanner(),
+                          SizedBox(height: isLargeScreen ? 24 : 20),
+
+                          // Generate Study Guide Button
+                          _buildGenerateStudyButton(),
+
+                          SizedBox(height: isLargeScreen ? 32 : 24),
+
+                          // Resume Last Study (conditional)
+                          if (_hasResumeableStudy) ...[
+                            _buildResumeStudyBanner(),
+                            SizedBox(height: isLargeScreen ? 32 : 24),
+                          ],
+
+                          // Recommended Study Topics
+                          _buildRecommendedTopics(),
+
                           SizedBox(height: isLargeScreen ? 32 : 24),
                         ],
-
-                        // Recommended Study Topics
-                        _buildRecommendedTopics(),
-
-                        SizedBox(height: isLargeScreen ? 32 : 24),
-                      ],
+                      ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-        ).withHomeProtection();
-      },
+          ).withHomeProtection();
+        },
+      ),
     );
   }
 
@@ -304,7 +392,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
         children: [
           Text(
             context.tr(TranslationKeys.homeWelcomeBack, {'name': userName}),
-            style: GoogleFonts.inter(
+            style: AppFonts.inter(
               fontSize: 28,
               fontWeight: FontWeight.w600,
               color: Theme.of(context).colorScheme.onBackground,
@@ -314,7 +402,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
           const SizedBox(height: 8),
           Text(
             context.tr(TranslationKeys.homeContinueJourney),
-            style: GoogleFonts.inter(
+            style: AppFonts.inter(
               fontSize: 16,
               color:
                   Theme.of(context).colorScheme.onBackground.withOpacity(0.7),
@@ -324,32 +412,49 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
         ],
       );
 
-  Widget _buildGenerateStudyButton() => SizedBox(
-        width: double.infinity,
-        child: ElevatedButton.icon(
-          onPressed: () => context.go('/generate-study'),
-          icon: const Icon(
-            Icons.auto_awesome,
-            size: 24,
+  Widget _buildGenerateStudyButton() {
+    return Container(
+      width: double.infinity,
+      height: 64,
+      decoration: BoxDecoration(
+        gradient: AppTheme.primaryGradient,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: AppTheme.primaryColor.withOpacity(0.35),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
           ),
-          label: Text(
-            context.tr(TranslationKeys.homeGenerateStudyGuide),
-            style: GoogleFonts.inter(
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: AppTheme.primaryColor,
-            foregroundColor: Colors.white,
-            minimumSize: const Size.fromHeight(64),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-            ),
-            elevation: 0,
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () => context.go('/generate-study'),
+          borderRadius: BorderRadius.circular(16),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(
+                Icons.auto_awesome,
+                size: 24,
+                color: Colors.white,
+              ),
+              const SizedBox(width: 12),
+              Text(
+                context.tr(TranslationKeys.homeGenerateStudyGuide),
+                style: AppFonts.inter(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.white,
+                ),
+              ),
+            ],
           ),
         ),
-      );
+      ),
+    );
+  }
 
   Widget _buildResumeStudyBanner() => Container(
         padding: const EdgeInsets.all(20),
@@ -374,7 +479,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
                 children: [
                   Text(
                     context.tr(TranslationKeys.homeResumeLastStudy),
-                    style: GoogleFonts.inter(
+                    style: AppFonts.inter(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
                       color: AppTheme.textPrimary,
@@ -384,7 +489,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
                   Text(
                     context.tr(TranslationKeys.homeContinueStudying,
                         {'topic': 'Faith in Trials'}),
-                    style: GoogleFonts.inter(
+                    style: AppFonts.inter(
                       fontSize: 14,
                       color: AppTheme.onSurfaceVariant,
                     ),
@@ -401,68 +506,156 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
         ),
       );
 
-  Widget _buildRecommendedTopics() => BlocBuilder<HomeBloc, HomeState>(
-        builder: (context, state) {
-          final homeState =
-              state is HomeCombinedState ? state : const HomeCombinedState();
+  Widget _buildRecommendedTopics() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    context.tr(TranslationKeys.homeRecommendedTopics),
-                    style: GoogleFonts.inter(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w600,
-                      color: Theme.of(context).colorScheme.onBackground,
-                    ),
-                  ),
-                  if (homeState.isLoadingTopics)
-                    const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation<Color>(
-                            AppTheme.primaryColor),
-                      ),
-                    )
-                  else if (homeState.topics.isNotEmpty)
-                    TextButton.icon(
-                      onPressed: () => context.push('/study-topics'),
-                      label: Text(
-                        context.tr(TranslationKeys.homeViewAll),
-                        style: GoogleFonts.inter(
-                          fontSize: 14,
+    return BlocBuilder<HomeBloc, HomeState>(
+      builder: (context, state) {
+        final homeState =
+            state is HomeCombinedState ? state : const HomeCombinedState();
+
+        // Determine section title based on personalization state
+        final sectionTitle = homeState.isPersonalized
+            ? context.tr(TranslationKeys.homeForYou)
+            : context.tr(TranslationKeys.homeExploreTopics);
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Personalization prompt card (shown when needed)
+            if (homeState.showPersonalizationPrompt) ...[
+              PersonalizationPromptCard(
+                onGetStarted: () => _navigateToQuestionnaire(),
+                onSkip: () => context
+                    .read<HomeBloc>()
+                    .add(const DismissPersonalizationPrompt()),
+              ),
+              const SizedBox(height: 24),
+            ],
+
+            // Section header
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        sectionTitle,
+                        style: AppFonts.inter(
+                          fontSize: 20,
                           fontWeight: FontWeight.w600,
-                          color: AppTheme.primaryColor,
+                          color: isDark
+                              ? Colors.white.withOpacity(0.9)
+                              : const Color(0xFF1F2937),
                         ),
                       ),
-                      style: TextButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 8, vertical: 4),
-                        minimumSize: Size.zero,
-                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      if (homeState.isPersonalized) ...[
+                        const SizedBox(height: 4),
+                        Text(
+                          context.tr(TranslationKeys.homeForYouSubtitle),
+                          style: AppFonts.inter(
+                            fontSize: 13,
+                            color: isDark
+                                ? Colors.white.withOpacity(0.6)
+                                : const Color(0xFF6B7280),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+                if (homeState.isLoadingTopics || homeState.isLoadingActivePath)
+                  const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor:
+                          AlwaysStoppedAnimation<Color>(AppTheme.primaryColor),
+                    ),
+                  )
+                else if (homeState.activeLearningPath != null ||
+                    homeState.topics.isNotEmpty)
+                  TextButton(
+                    onPressed: () => context.go('/study-topics'),
+                    style: TextButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 6),
+                      minimumSize: Size.zero,
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      backgroundColor: isDark
+                          ? AppTheme.primaryColor.withOpacity(0.15)
+                          : const Color(0xFFF3F0FF),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
                       ),
                     ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              if (homeState.topicsError != null)
-                _buildTopicsErrorWidget(homeState.topicsError!)
-              else if (homeState.isLoadingTopics)
-                _buildTopicsLoadingWidget()
-              else if (homeState.topics.isEmpty)
-                _buildNoTopicsWidget()
-              else
-                _buildTopicsGrid(homeState.topics),
-            ],
-          );
-        },
-      );
+                    child: Text(
+                      context.tr(TranslationKeys.homeViewAll),
+                      style: AppFonts.inter(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: AppTheme.primaryColor,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            // Show Learning Path card if available (for all user types)
+            if (homeState.activeLearningPath != null)
+              LearningPathCard(
+                path: homeState.activeLearningPath!,
+                compact: false,
+                onTap: () =>
+                    _navigateToLearningPath(homeState.activeLearningPath!.id),
+              )
+            // Fallback to topics grid only if no learning path is available
+            else if (homeState.topicsError != null)
+              _buildTopicsErrorWidget(homeState.topicsError!)
+            else if (homeState.isLoadingTopics || homeState.isLoadingActivePath)
+              _buildTopicsLoadingWidget()
+            else if (homeState.topics.isEmpty)
+              _buildNoTopicsWidget()
+            else
+              _buildTopicsGrid(homeState.topics),
+          ],
+        );
+      },
+    );
+  }
+
+  /// Navigate to the personalization questionnaire
+  void _navigateToQuestionnaire() {
+    context.push('/personalization-questionnaire').then((_) {
+      // Ensure widget is still mounted before dispatching events
+      if (!mounted) return;
+      // Clear LearningPaths repository cache so Study Topics screen gets fresh data
+      sl<LearningPathsRepository>().clearCache();
+      // Refresh all personalization-dependent data after questionnaire completion
+      sl<HomeBloc>().add(const LoadForYouTopics(forceRefresh: true));
+      sl<HomeBloc>().add(const LoadActiveLearningPath(forceRefresh: true));
+    });
+  }
+
+  /// Navigate to learning path detail and refresh on return
+  void _navigateToLearningPath(String pathId) {
+    if (_isNavigating) return;
+    _isNavigating = true;
+
+    debugPrint('[HOME] Navigating to learning path: $pathId');
+
+    // Use context.go() to properly update the browser URL
+    // Include source=home so back button returns to home screen
+    context.go('/learning-path/$pathId?source=home');
+
+    // Reset navigation flag after navigation completes
+    Future.delayed(const Duration(milliseconds: 500), () {
+      _isNavigating = false;
+    });
+  }
 
   Widget _buildTopicsErrorWidget(String error) => Container(
         padding: const EdgeInsets.all(24),
@@ -483,7 +676,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
             const SizedBox(height: 12),
             Text(
               context.tr(TranslationKeys.homeFailedToLoadTopics),
-              style: GoogleFonts.inter(
+              style: AppFonts.inter(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
                 color: Theme.of(context).colorScheme.onBackground,
@@ -492,7 +685,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
             const SizedBox(height: 8),
             Text(
               context.tr(TranslationKeys.homeSomethingWentWrong),
-              style: GoogleFonts.inter(
+              style: AppFonts.inter(
                 fontSize: 14,
                 color:
                     Theme.of(context).colorScheme.onBackground.withOpacity(0.7),
@@ -518,23 +711,8 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
         ),
       );
 
-  Widget _buildTopicsLoadingWidget() => LayoutBuilder(
-        builder: (context, constraints) {
-          const double spacing = 16.0;
-          final double cardWidth = (constraints.maxWidth - spacing) / 2;
-
-          return Wrap(
-            spacing: spacing,
-            runSpacing: spacing,
-            children: List.generate(
-                6,
-                (index) => SizedBox(
-                      width: cardWidth,
-                      child: _buildLoadingTopicCard(),
-                    )),
-          );
-        },
-      );
+  Widget _buildTopicsLoadingWidget() =>
+      const LearningPathCardSkeleton(compact: false);
 
   Widget _buildLoadingTopicCard() => Container(
         padding: const EdgeInsets.all(16),
@@ -665,7 +843,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
             const SizedBox(height: 12),
             Text(
               context.tr(TranslationKeys.homeNoTopicsAvailable),
-              style: GoogleFonts.inter(
+              style: AppFonts.inter(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
                 color: Theme.of(context).colorScheme.onBackground,
@@ -674,7 +852,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
             const SizedBox(height: 8),
             Text(
               context.tr(TranslationKeys.homeCheckConnection),
-              style: GoogleFonts.inter(
+              style: AppFonts.inter(
                 fontSize: 14,
                 color:
                     Theme.of(context).colorScheme.onBackground.withOpacity(0.7),
@@ -691,7 +869,6 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
       builder: (context, constraints) {
         // Calculate optimal card width (accounting for spacing)
         const double spacing = 16.0;
-        final double cardWidth = (constraints.maxWidth - spacing) / 2;
 
         // Group topics into pairs for rows
         final List<List<RecommendedGuideTopic>> rows = [];
@@ -700,41 +877,52 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
         }
 
         return Column(
-          children: rows
-              .map((rowTopics) => Padding(
-                    padding: EdgeInsets.only(
-                      bottom: rowTopics != rows.last ? spacing : 0,
-                    ),
-                    child: IntrinsicHeight(
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          // First topic in the row
-                          Expanded(
-                            child: _RecommendedGuideTopicCard(
-                              topic: rowTopics[0],
-                              onTap: () => _navigateToStudyGuide(rowTopics[0]),
-                            ),
-                          ),
-                          // Second topic if available, otherwise spacer
-                          if (rowTopics.length > 1) ...[
-                            const SizedBox(width: spacing),
-                            Expanded(
-                              child: _RecommendedGuideTopicCard(
-                                topic: rowTopics[1],
-                                onTap: () =>
-                                    _navigateToStudyGuide(rowTopics[1]),
-                              ),
-                            ),
-                          ] else ...[
-                            const SizedBox(width: spacing),
-                            const Expanded(child: SizedBox()), // Empty space
-                          ],
-                        ],
+          children: rows.asMap().entries.map((entry) {
+            final rowIndex = entry.key;
+            final rowTopics = entry.value;
+
+            return Padding(
+              padding: EdgeInsets.only(
+                bottom: rowTopics != rows.last ? spacing : 0,
+              ),
+              child: IntrinsicHeight(
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    // First topic in the row with stagger animation
+                    Expanded(
+                      child: FadeInWidget(
+                        delay: AppAnimations.getStaggerDelay(rowIndex * 2),
+                        slideOffset: const Offset(0, 0.1),
+                        child: _RecommendedGuideTopicCard(
+                          topic: rowTopics[0],
+                          onTap: () => _navigateToStudyGuide(rowTopics[0]),
+                        ),
                       ),
                     ),
-                  ))
-              .toList(),
+                    // Second topic if available, otherwise spacer
+                    if (rowTopics.length > 1) ...[
+                      const SizedBox(width: spacing),
+                      Expanded(
+                        child: FadeInWidget(
+                          delay:
+                              AppAnimations.getStaggerDelay(rowIndex * 2 + 1),
+                          slideOffset: const Offset(0, 0.1),
+                          child: _RecommendedGuideTopicCard(
+                            topic: rowTopics[1],
+                            onTap: () => _navigateToStudyGuide(rowTopics[1]),
+                          ),
+                        ),
+                      ),
+                    ] else ...[
+                      const SizedBox(width: spacing),
+                      const Expanded(child: SizedBox()), // Empty space
+                    ],
+                  ],
+                ),
+              ),
+            );
+          }).toList(),
         );
       },
     );
@@ -786,7 +974,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
 }
 
 /// Recommended guide topic card widget for API-based topics.
-class _RecommendedGuideTopicCard extends StatelessWidget {
+class _RecommendedGuideTopicCard extends StatefulWidget {
   final RecommendedGuideTopic topic;
   final VoidCallback onTap;
 
@@ -796,72 +984,129 @@ class _RecommendedGuideTopicCard extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
-    final iconData = CategoryUtils.getIconForTopic(topic);
-    final color = CategoryUtils.getColorForTopic(context, topic);
+  State<_RecommendedGuideTopicCard> createState() =>
+      _RecommendedGuideTopicCardState();
+}
 
-    return Semantics(
-      button: true,
-      enabled: true,
-      label: topic.title,
-      child: Material(
-        color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(12),
-        elevation: 2,
-        clipBehavior: Clip.hardEdge,
-        child: DecoratedBox(
-          decoration: BoxDecoration(
-            border: Border.all(
-              color: color.withOpacity(0.2),
+class _RecommendedGuideTopicCardState extends State<_RecommendedGuideTopicCard>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _scaleAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 100),
+    );
+    _scaleAnimation = Tween<double>(
+      begin: 1.0,
+      end: 0.97,
+    ).animate(CurvedAnimation(
+      parent: _controller,
+      curve: AppAnimations.defaultCurve,
+    ));
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _onTapDown(TapDownDetails details) {
+    _controller.forward();
+  }
+
+  void _onTapUp(TapUpDetails details) {
+    _controller.reverse();
+    widget.onTap();
+  }
+
+  void _onTapCancel() {
+    _controller.reverse();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final iconData = CategoryUtils.getIconForTopic(widget.topic);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return GestureDetector(
+      onTapDown: _onTapDown,
+      onTapUp: _onTapUp,
+      onTapCancel: _onTapCancel,
+      child: AnimatedBuilder(
+        animation: _scaleAnimation,
+        builder: (context, child) => Transform.scale(
+          scale: _scaleAnimation.value,
+          child: child,
+        ),
+        child: Semantics(
+          button: true,
+          enabled: true,
+          label: widget.topic.title,
+          child: Container(
+            decoration: BoxDecoration(
+              color: isDark
+                  ? Colors.white.withOpacity(0.05)
+                  : const Color(0xFFF9FAFB),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: isDark
+                    ? Colors.white.withOpacity(0.1)
+                    : const Color(0xFFE5E7EB),
+              ),
             ),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: InkWell(
-            onTap: onTap,
-            borderRadius: BorderRadius.circular(12),
             child: Container(
               padding: const EdgeInsets.all(16),
               constraints: const BoxConstraints(
-                minHeight: 160, // Minimum height for visual consistency
+                minHeight: 160,
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize:
-                    MainAxisSize.min, // Important: Don't expand unnecessarily
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   // Header row with icon
                   Row(
                     children: [
                       Container(
-                        width: 36, // Slightly smaller for better proportions
+                        width: 36,
                         height: 36,
                         decoration: BoxDecoration(
-                          color: color.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(8),
+                          color: isDark
+                              ? Colors.white.withOpacity(0.08)
+                              : const Color(0xFFF3F4F6),
+                          borderRadius: BorderRadius.circular(10),
                         ),
                         child: Icon(
                           iconData,
-                          color: color,
+                          color: isDark
+                              ? Colors.white.withOpacity(0.7)
+                              : const Color(0xFF6B7280),
                           size: 18,
                         ),
                       ),
-                      const SizedBox(
-                          width: 8), // Fixed spacing instead of Spacer
+                      const SizedBox(width: 8),
                       Flexible(
-                        // Use Flexible instead of Spacer
                         child: Container(
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 6, vertical: 3),
+                              horizontal: 8, vertical: 4),
                           decoration: BoxDecoration(
-                            color: color.withOpacity(0.1),
+                            color: isDark
+                                ? Colors.white.withOpacity(0.08)
+                                : const Color(0xFFF3F4F6),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Text(
-                            topic.category,
-                            style: GoogleFonts.inter(
-                              fontSize: 12,
+                            widget.topic.category,
+                            style: AppFonts.inter(
+                              fontSize: 11,
                               fontWeight: FontWeight.w600,
-                              color: color,
+                              color: isDark
+                                  ? Colors.white.withOpacity(0.7)
+                                  : const Color(0xFF6B7280),
                             ),
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -870,88 +1115,99 @@ class _RecommendedGuideTopicCard extends StatelessWidget {
                     ],
                   ),
 
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 14),
 
-                  // Title with proper constraints
+                  // Title
                   Text(
-                    topic.title,
-                    style: GoogleFonts.inter(
-                      fontSize: 16,
+                    widget.topic.title,
+                    style: AppFonts.inter(
+                      fontSize: 15,
                       fontWeight: FontWeight.w600,
-                      color: Theme.of(context).colorScheme.onSurface,
-                      height: 1.2, // Tighter line height
+                      color: isDark
+                          ? Colors.white.withOpacity(0.9)
+                          : const Color(0xFF1F2937),
+                      height: 1.3,
                     ),
-                    maxLines: 2, // Allow 2 lines for longer titles
+                    maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
 
-                  const SizedBox(height: 6), // Reduced spacing
+                  const SizedBox(height: 8),
 
-                  // Description with expanded height for better readability
+                  // Description
                   Expanded(
                     child: Text(
-                      topic.description,
-                      style: GoogleFonts.inter(
-                        fontSize: 14,
-                        color: Theme.of(context)
-                            .colorScheme
-                            .onSurface
-                            .withOpacity(0.7),
-                        height:
-                            1.4, // Slightly more line height for readability
+                      widget.topic.description,
+                      style: AppFonts.inter(
+                        fontSize: 13,
+                        color: isDark
+                            ? Colors.white.withOpacity(0.6)
+                            : const Color(0xFF6B7280),
+                        height: 1.5,
                       ),
-                      maxLines:
-                          4, // Allow up to 4 lines for better content display
+                      maxLines: widget.topic.isFromLearningPath ? 3 : 4,
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
 
-                  const SizedBox(height: 12), // Fixed spacing instead of Spacer
-
-                  // Footer with metadata - use Wrap for overflow protection
-                  // Wrap(
-                  //   spacing: 8,
-                  //   runSpacing: 4,
-                  //   crossAxisAlignment: WrapCrossAlignment.center,
-                  //   children: [
-                  //     Row(
-                  //       mainAxisSize: MainAxisSize.min,
-                  //       children: [
-                  //         const Icon(
-                  //           Icons.schedule,
-                  //           size: 12,
-                  //           color: AppTheme.onSurfaceVariant,
-                  //         ),
-                  //         const SizedBox(width: 3),
-                  //         Text(
-                  //           '${topic.estimatedMinutes}min',
-                  //           style: GoogleFonts.inter(
-                  //             fontSize: 10,
-                  //             color: AppTheme.onSurfaceVariant,
-                  //           ),
-                  //         ),
-                  //       ],
-                  //     ),
-                  //     Row(
-                  //       mainAxisSize: MainAxisSize.min,
-                  //       children: [
-                  //         const Icon(
-                  //           Icons.book_outlined,
-                  //           size: 12,
-                  //           color: AppTheme.onSurfaceVariant,
-                  //         ),
-                  //         const SizedBox(width: 3),
-                  //         Text(
-                  //           '${topic.scriptureCount}',
-                  //           style: GoogleFonts.inter(
-                  //             fontSize: 10,
-                  //             color: AppTheme.onSurfaceVariant,
-                  //           ),
-                  //         ),
-                  //       ],
-                  //     ),
-                  //   ],
-                  // ),
+                  // Learning path badge (if from a learning path)
+                  if (widget.topic.isFromLearningPath) ...[
+                    const SizedBox(height: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: isDark
+                            ? Theme.of(context)
+                                .colorScheme
+                                .primary
+                                .withOpacity(0.15)
+                            : Theme.of(context)
+                                .colorScheme
+                                .primary
+                                .withOpacity(0.08),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.route_outlined,
+                            size: 12,
+                            color: Theme.of(context).colorScheme.primary,
+                          ),
+                          const SizedBox(width: 4),
+                          Flexible(
+                            child: Text(
+                              widget.topic.learningPathName ?? '',
+                              style: AppFonts.inter(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w600,
+                                color: Theme.of(context).colorScheme.primary,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          if (widget
+                              .topic.formattedPositionInPath.isNotEmpty) ...[
+                            const SizedBox(width: 6),
+                            Text(
+                              widget.topic.formattedPositionInPath,
+                              style: AppFonts.inter(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w500,
+                                color: isDark
+                                    ? Colors.white.withOpacity(0.5)
+                                    : const Color(0xFF9CA3AF),
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ),

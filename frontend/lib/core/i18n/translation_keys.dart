@@ -31,6 +31,7 @@ class TranslationKeys {
       'study_guide.placeholders.personal_notes';
 
   // Common Actions
+  static const commonRetry = 'common.retry';
   static const commonCancel = 'common.actions.cancel';
   static const commonShare = 'common.actions.share';
   static const commonCopy = 'common.actions.copy';
@@ -81,6 +82,16 @@ class TranslationKeys {
   static const followUpChatDoubleTapTo = 'follow_up_chat.double_tap_to';
   static const followUpChatCollapse = 'follow_up_chat.collapse';
   static const followUpChatExpand = 'follow_up_chat.expand';
+  static const followUpChatGenerateNewStudy =
+      'follow_up_chat.generate_new_study';
+  static const followUpChatNoMessagesYet = 'follow_up_chat.no_messages_yet';
+  static const followUpChatStartByAsking = 'follow_up_chat.start_by_asking';
+  static const followUpChatListening = 'follow_up_chat.listening';
+  static const followUpChatStop = 'follow_up_chat.stop';
+  static const followUpChatStopListening = 'follow_up_chat.stop_listening';
+  static const followUpChatTapToSpeak = 'follow_up_chat.tap_to_speak';
+  static const followUpChatSpeechNotAvailable =
+      'follow_up_chat.speech_not_available';
 
   // Home Screen
   static const homeWelcomeBack = 'home.welcome_back';
@@ -101,6 +112,16 @@ class TranslationKeys {
   static const homeFailedToGenerate = 'home.failed_to_generate';
   static const homeDismiss = 'home.dismiss';
   static const homeVerseNotLoaded = 'home.verse_not_loaded';
+  static const homeForYou = 'home.for_you';
+  static const homeForYouSubtitle = 'home.for_you_subtitle';
+  static const homeExploreTopics = 'home.explore_topics';
+  static const homePersonalizePromptTitle = 'home.personalize_prompt_title';
+  static const homePersonalizePromptSubtitle =
+      'home.personalize_prompt_subtitle';
+  static const homePersonalizePromptDescription =
+      'home.personalize_prompt_description';
+  static const homePersonalizeGetStarted = 'home.personalize_get_started';
+  static const homePersonalizeMaybeLater = 'home.personalize_maybe_later';
 
   // Daily Verse
   static const dailyVerseRefreshing = 'daily_verse.refreshing';
@@ -137,12 +158,21 @@ class TranslationKeys {
   static const generateStudyQuestionError = 'generate_study.question_error';
   static const generateStudyTopicError = 'generate_study.topic_error';
   static const generateStudySuggestions = 'generate_study.suggestions';
+  static const generateStudyScriptureSuggestions =
+      'generate_study.scripture_suggestions';
+  static const generateStudyTopicSuggestions =
+      'generate_study.topic_suggestions';
+  static const generateStudyQuestionSuggestions =
+      'generate_study.question_suggestions';
   static const generateStudyGenerating = 'generate_study.generating';
   static const generateStudyConsumingTokens = 'generate_study.consuming_tokens';
   static const generateStudyButtonGenerating =
       'generate_study.button_generating';
   static const generateStudyButtonGenerate = 'generate_study.button_generate';
   static const generateStudyViewSaved = 'generate_study.view_saved';
+  static const generateStudyTalkToAiBuddy = 'generate_study.talk_to_ai_buddy';
+  static const generateStudyTalkToAiBuddySubtitle =
+      'generate_study.talk_to_ai_buddy_subtitle';
   static const generateStudyInProgress = 'generate_study.in_progress';
   static const generateStudyGenerationFailed =
       'generate_study.generation_failed';
@@ -185,6 +215,51 @@ class TranslationKeys {
   static const loginFeatureDailyVerseSubtitle =
       'login.feature_daily_verse_subtitle';
   static const loginPrivacyPolicy = 'login.privacy_policy';
+  static const loginContinueWithEmail = 'login.continue_with_email';
+
+  // Email Auth Screen
+  static const emailAuthTitle = 'email_auth.title';
+  static const emailAuthSignIn = 'email_auth.sign_in';
+  static const emailAuthSignUp = 'email_auth.sign_up';
+  static const emailAuthEmail = 'email_auth.email';
+  static const emailAuthEmailHint = 'email_auth.email_hint';
+  static const emailAuthPassword = 'email_auth.password';
+  static const emailAuthPasswordHint = 'email_auth.password_hint';
+  static const emailAuthFullName = 'email_auth.full_name';
+  static const emailAuthFullNameHint = 'email_auth.full_name_hint';
+  static const emailAuthForgotPassword = 'email_auth.forgot_password';
+  static const emailAuthSignInButton = 'email_auth.sign_in_button';
+  static const emailAuthSignUpButton = 'email_auth.sign_up_button';
+  static const emailAuthNoAccount = 'email_auth.no_account';
+  static const emailAuthHaveAccount = 'email_auth.have_account';
+  static const emailAuthCreateAccount = 'email_auth.create_account';
+  static const emailAuthSignInLink = 'email_auth.sign_in_link';
+  static const emailAuthInvalidEmail = 'email_auth.invalid_email';
+  static const emailAuthInvalidPassword = 'email_auth.invalid_password';
+  static const emailAuthInvalidName = 'email_auth.invalid_name';
+  static const emailAuthEmailExists = 'email_auth.email_exists';
+  static const emailAuthInvalidCredentials = 'email_auth.invalid_credentials';
+  static const emailAuthWeakPassword = 'email_auth.weak_password';
+
+  // Password Reset Screen
+  static const passwordResetTitle = 'password_reset.title';
+  static const passwordResetSubtitle = 'password_reset.subtitle';
+  static const passwordResetEmail = 'password_reset.email';
+  static const passwordResetEmailHint = 'password_reset.email_hint';
+  static const passwordResetSendButton = 'password_reset.send_button';
+  static const passwordResetBackToSignIn = 'password_reset.back_to_sign_in';
+  static const passwordResetSuccess = 'password_reset.success';
+  static const passwordResetSuccessTitle = 'password_reset.success_title';
+  static const passwordResetSuccessMessage = 'password_reset.success_message';
+  static const passwordResetInvalidEmail = 'password_reset.invalid_email';
+  static const passwordResetResend = 'password_reset.resend';
+  static const passwordResetError = 'password_reset.error';
+
+  // Email Verification Banner
+  static const emailVerificationTitle = 'email_verification.title';
+  static const emailVerificationDescription = 'email_verification.description';
+  static const emailVerificationResend = 'email_verification.resend';
+  static const emailVerificationSent = 'email_verification.sent';
 
   // Onboarding
   static const onboardingWelcome = 'onboarding.welcome';
@@ -243,6 +318,54 @@ class TranslationKeys {
   static const settingsClose = 'settings.close';
   static const settingsSupport = 'settings.support';
   static const settingsNoEmail = 'settings.no_email';
+
+  // Settings - Personalization
+  static const settingsPersonalization = 'settings.personalization';
+  static const settingsRetakeQuestionnaire = 'settings.retake_questionnaire';
+  static const settingsRetakeQuestionnaireSubtitle =
+      'settings.retake_questionnaire_subtitle';
+  static const settingsTakeQuestionnaire = 'settings.take_questionnaire';
+  static const settingsTakeQuestionnaireSubtitle =
+      'settings.take_questionnaire_subtitle';
+
+  // Personalization Questionnaire
+  static const questionnaireYourJourney = 'questionnaire.your_journey';
+  static const questionnaireWhatYouSeek = 'questionnaire.what_you_seek';
+  static const questionnaireYourTime = 'questionnaire.your_time';
+  static const questionnairePersonalize = 'questionnaire.personalize';
+  static const questionnaireSkip = 'questionnaire.skip';
+  static const questionnaireContinue = 'questionnaire.continue';
+  static const questionnaireBack = 'questionnaire.back';
+  static const questionnaireDone = 'questionnaire.done';
+  static const questionnaireSkipTitle = 'questionnaire.skip_title';
+  static const questionnaireSkipMessage = 'questionnaire.skip_message';
+  static const questionnaireCancel = 'questionnaire.cancel';
+
+  // Question 1: Faith Journey
+  static const questionnaireFaithTitle = 'questionnaire.faith.title';
+  static const questionnaireFaithSubtitle = 'questionnaire.faith.subtitle';
+  static const questionnaireFaithNew = 'questionnaire.faith.new';
+  static const questionnaireFaithGrowing = 'questionnaire.faith.growing';
+  static const questionnaireFaithMature = 'questionnaire.faith.mature';
+
+  // Question 2: What You Seek
+  static const questionnaireSeekingTitle = 'questionnaire.seeking.title';
+  static const questionnaireSeekingSubtitle = 'questionnaire.seeking.subtitle';
+  static const questionnaireSeekingPeace = 'questionnaire.seeking.peace';
+  static const questionnaireSeekingGuidance = 'questionnaire.seeking.guidance';
+  static const questionnaireSeekingKnowledge =
+      'questionnaire.seeking.knowledge';
+  static const questionnaireSeekingRelationships =
+      'questionnaire.seeking.relationships';
+  static const questionnaireSeekingChallenges =
+      'questionnaire.seeking.challenges';
+
+  // Question 3: Time Commitment
+  static const questionnaireTimeTitle = 'questionnaire.time.title';
+  static const questionnaireTimeSubtitle = 'questionnaire.time.subtitle';
+  static const questionnaireTime5Min = 'questionnaire.time.5min';
+  static const questionnaireTime15Min = 'questionnaire.time.15min';
+  static const questionnaireTime30Min = 'questionnaire.time.30min';
 
   // Saved Guides Screen
   static const savedGuidesTitle = 'saved_guides.title';
@@ -416,6 +539,159 @@ class TranslationKeys {
   static const statisticsSince = 'tokens.stats.since';
   static const statisticsFailedToLoad = 'tokens.stats.failed_to_load';
 
+  // Premium Upgrade Page
+  static const premiumUpgradeTitle = 'premium.upgrade_title';
+  static const premiumDisciplefyPremium = 'premium.disciplefy_premium';
+  static const premiumUnlockAccess = 'premium.unlock_access';
+  static const premiumPriceMonth = 'premium.price_month';
+  static const premiumCancelAnytime = 'premium.cancel_anytime';
+  static const premiumPromoDiscount = 'premium.promo_discount';
+  static const premiumWhatYouGet = 'premium.what_you_get';
+  static const premiumUnlimitedTokens = 'premium.unlimited_tokens';
+  static const premiumUnlimitedTokensDesc = 'premium.unlimited_tokens_desc';
+  static const premiumUnlimitedFollowups = 'premium.unlimited_followups';
+  static const premiumUnlimitedFollowupsDesc =
+      'premium.unlimited_followups_desc';
+  static const premiumAiModels = 'premium.ai_models';
+  static const premiumAiModelsDesc = 'premium.ai_models_desc';
+  static const premiumCompleteHistory = 'premium.complete_history';
+  static const premiumCompleteHistoryDesc = 'premium.complete_history_desc';
+  static const premiumPrioritySupport = 'premium.priority_support';
+  static const premiumPrioritySupportDesc = 'premium.priority_support_desc';
+  static const premiumAiDiscipler = 'premium.ai_discipler';
+  static const premiumAiDisciplerDesc = 'premium.ai_discipler_desc';
+  static const premiumPlanComparison = 'premium.plan_comparison';
+  static const premiumDailyTokens = 'premium.daily_tokens';
+  static const premiumFollowupQuestions = 'premium.followup_questions';
+  static const premiumAiModel = 'premium.ai_model';
+  static const premiumSupport = 'premium.support';
+  static const premiumLimited = 'premium.limited';
+  static const premiumUnlimited = 'premium.unlimited';
+  static const premiumBasic = 'premium.basic';
+  static const premiumPremiumModel = 'premium.premium_model';
+  static const premiumStandard = 'premium.standard';
+  static const premiumPriority = 'premium.priority';
+  static const premiumUpgradeButton = 'premium.upgrade_button';
+  static const premiumTermsAgree = 'premium.terms_agree';
+  static const premiumSecurePayment = 'premium.secure_payment';
+  static const premiumSubscriptionCreated = 'premium.subscription_created';
+  static const premiumSubscriptionActivated = 'premium.subscription_activated';
+  static const premiumPaymentCompletedHint = 'premium.payment_completed_hint';
+  static const premiumCheckStatus = 'premium.check_status';
+
+  // Token Purchase Dialog
+  static const tokenPurchaseDialogTitle = 'tokens.purchase_dialog.title';
+  static const tokenPurchaseDialogSubtitle = 'tokens.purchase_dialog.subtitle';
+  static const tokenPurchaseDialogCurrentBalance =
+      'tokens.purchase_dialog.current_balance';
+  static const tokenPurchaseDialogTokens = 'tokens.purchase_dialog.tokens';
+  static const tokenPurchaseDialogSavedMethods =
+      'tokens.purchase_dialog.saved_methods';
+  static const tokenPurchaseDialogPackages = 'tokens.purchase_dialog.packages';
+  static const tokenPurchaseDialogCustom = 'tokens.purchase_dialog.custom';
+  static const tokenPurchaseDialogCustomTab =
+      'tokens.purchase_dialog.custom_tab';
+  static const tokenPurchaseDialogChooseSaved =
+      'tokens.purchase_dialog.choose_saved';
+  static const tokenPurchaseDialogChooseSavedMethod =
+      'tokens.purchase_dialog.choose_saved_method';
+  static const tokenPurchaseDialogChoosePackage =
+      'tokens.purchase_dialog.choose_package';
+  static const tokenPurchaseDialogChooseAmount =
+      'tokens.purchase_dialog.choose_amount';
+  static const tokenPurchaseDialogEnterCustom =
+      'tokens.purchase_dialog.enter_custom';
+  static const tokenPurchaseDialogTokenAmount =
+      'tokens.purchase_dialog.token_amount';
+  static const tokenPurchaseDialogAmountHint =
+      'tokens.purchase_dialog.amount_hint';
+  static const tokenPurchaseDialogPricingInfo =
+      'tokens.purchase_dialog.pricing_info';
+  static const tokenPurchaseDialogRate = 'tokens.purchase_dialog.rate';
+  static const tokenPurchaseDialogMinimum = 'tokens.purchase_dialog.minimum';
+  static const tokenPurchaseDialogMaximum = 'tokens.purchase_dialog.maximum';
+  static const tokenPurchaseDialogCost = 'tokens.purchase_dialog.cost';
+  static const tokenPurchaseDialogTotalCost =
+      'tokens.purchase_dialog.total_cost';
+  static const tokenPurchaseDialogForTokens =
+      'tokens.purchase_dialog.for_tokens';
+  static const tokenPurchaseDialogCancel = 'tokens.purchase_dialog.cancel';
+  static const tokenPurchaseDialogSelectAmount =
+      'tokens.purchase_dialog.select_amount';
+  static const tokenPurchaseDialogPurchase = 'tokens.purchase_dialog.purchase';
+  static const tokenPurchaseDialogCreatingOrder =
+      'tokens.purchase_dialog.creating_order';
+  static const tokenPurchaseDialogPaymentOpened =
+      'tokens.purchase_dialog.payment_opened';
+  static const tokenPurchaseDialogProcessing =
+      'tokens.purchase_dialog.processing';
+  static const tokenPurchaseDialogPopular = 'tokens.purchase_dialog.popular';
+  static const tokenPurchaseDialogOff = 'tokens.purchase_dialog.off';
+  static const tokenPurchaseDialogTokensPerRupee =
+      'tokens.purchase_dialog.tokens_per_rupee';
+  static const tokenPurchaseDialogDefault = 'tokens.purchase_dialog.default';
+  static const tokenPurchaseDialogLastUsed = 'tokens.purchase_dialog.last_used';
+  static const tokenPurchaseDialogPremiumMember =
+      'tokens.purchase_dialog.premium_member';
+  static const tokenPurchaseDialogPurchaseRestricted =
+      'tokens.purchase_dialog.purchase_restricted';
+  static const tokenPurchaseDialogUpgradePlan =
+      'tokens.purchase_dialog.upgrade_plan';
+  static const tokenPurchaseDialogGotIt = 'tokens.purchase_dialog.got_it';
+  static const tokenPurchaseDialogContinue = 'tokens.purchase_dialog.continue';
+  static const tokenPurchaseDialogMinutesAgo =
+      'tokens.purchase_dialog.minutes_ago';
+  static const tokenPurchaseDialogHoursAgo = 'tokens.purchase_dialog.hours_ago';
+  static const tokenPurchaseDialogDaysAgo = 'tokens.purchase_dialog.days_ago';
+  static const tokenPurchaseDialogPaymentMethodCard =
+      'tokens.purchase_dialog.payment_method_card';
+  static const tokenPurchaseDialogPaymentMethodUpi =
+      'tokens.purchase_dialog.payment_method_upi';
+  static const tokenPurchaseDialogPaymentMethodNetbanking =
+      'tokens.purchase_dialog.payment_method_netbanking';
+  static const tokenPurchaseDialogPaymentMethodWallet =
+      'tokens.purchase_dialog.payment_method_wallet';
+  static const tokenPurchaseDialogPaymentMethod =
+      'tokens.purchase_dialog.payment_method';
+
+  // Subscription Management Page
+  static const subscriptionTitle = 'subscription.title';
+  static const subscriptionRefresh = 'subscription.refresh';
+  static const subscriptionNoActive = 'subscription.no_active';
+  static const subscriptionUpgradePrompt = 'subscription.upgrade_prompt';
+  static const subscriptionUpgradeButton = 'subscription.upgrade_button';
+  static const subscriptionBillingInfo = 'subscription.billing_info';
+  static const subscriptionAmount = 'subscription.amount';
+  static const subscriptionPerMonth = 'subscription.per_month';
+  static const subscriptionNextBilling = 'subscription.next_billing';
+  static const subscriptionDaysUntilBilling = 'subscription.days_until_billing';
+  static const subscriptionDays = 'subscription.days';
+  static const subscriptionCurrentPeriodEnds =
+      'subscription.current_period_ends';
+  static const subscriptionPlanDetails = 'subscription.plan_details';
+  static const subscriptionIncludedFeatures = 'subscription.included_features';
+  static const subscriptionPlanType = 'subscription.plan_type';
+  static const subscriptionSubscriptionType = 'subscription.subscription_type';
+  static const subscriptionUnlimited = 'subscription.unlimited';
+  static const subscriptionMonths = 'subscription.months';
+  static const subscriptionCompletedCycles = 'subscription.completed_cycles';
+  static const subscriptionRemainingCycles = 'subscription.remaining_cycles';
+  static const subscriptionBillingCyclesCompleted =
+      'subscription.billing_cycles_completed';
+  static const subscriptionEndsIn = 'subscription.ends_in';
+  static const subscriptionContinueButton = 'subscription.continue_button';
+  static const subscriptionCancelAtEnd = 'subscription.cancel_at_end';
+  static const subscriptionCancelImmediately =
+      'subscription.cancel_immediately';
+  static const subscriptionCancelEndTitle = 'subscription.cancel_end_title';
+  static const subscriptionCancelImmediateTitle =
+      'subscription.cancel_immediate_title';
+  static const subscriptionCancelEndMessage = 'subscription.cancel_end_message';
+  static const subscriptionCancelImmediateMessage =
+      'subscription.cancel_immediate_message';
+  static const subscriptionKeep = 'subscription.keep';
+  static const subscriptionConfirmCancel = 'subscription.confirm_cancel';
+
   // Category Filter
   static const categoryFilterTitle = 'category_filter.title';
   static const categoryFilterClearAll = 'category_filter.clear_all';
@@ -583,4 +859,116 @@ class TranslationKeys {
   static const ratingForgotLabel = 'memory.ratingSheet.forgot.label';
   static const ratingForgotDescription =
       'memory.ratingSheet.forgot.description';
+
+  // Learning Paths
+  static const learningPathsTitle = 'learning_paths.title';
+  static const learningPathsSubtitle = 'learning_paths.subtitle';
+  static const learningPathsViewMore = 'learning_paths.view_more';
+  static const learningPathsViewLess = 'learning_paths.view_less';
+  static const learningPathsEmpty = 'learning_paths.empty';
+  static const learningPathsEmptyMessage = 'learning_paths.empty_message';
+  static const learningPathsError = 'learning_paths.error';
+  static const learningPathsErrorMessage = 'learning_paths.error_message';
+  static const learningPathsCompleted = 'learning_paths.completed';
+  static const learningPathsInProgress = 'learning_paths.in_progress';
+  static const learningPathsFeatured = 'learning_paths.featured';
+  static const learningPathsEnroll = 'learning_paths.enroll';
+  static const learningPathsContinue = 'learning_paths.continue';
+  static const learningPathsReview = 'learning_paths.review';
+  static const learningPathsExplore = 'learning_paths.explore';
+  static const learningPathsTopics = 'learning_paths.topics';
+  static const learningPathsDays = 'learning_paths.days';
+  static const learningPathsXp = 'learning_paths.xp';
+  static const learningPathsProgress = 'learning_paths.progress';
+  static const learningPathsTopicsCompleted = 'learning_paths.topics_completed';
+  static const learningPathsStartPath = 'learning_paths.start_path';
+  static const learningPathsResumePath = 'learning_paths.resume_path';
+  static const learningPathsPathCompleted = 'learning_paths.path_completed';
+  static const learningPathsEnrolledSuccess = 'learning_paths.enrolled_success';
+  static const learningPathsEnrolledError = 'learning_paths.enrolled_error';
+  static const learningPathsNextTopic = 'learning_paths.next_topic';
+  static const learningPathsLocked = 'learning_paths.locked';
+  static const learningPathsUnlocked = 'learning_paths.unlocked';
+  static const learningPathsMilestone = 'learning_paths.milestone';
+  static const learningPathsLoadingDetails = 'learning_paths.loading_details';
+  static const learningPathsEnrolling = 'learning_paths.enrolling';
+  static const learningPathsFailedToLoad = 'learning_paths.failed_to_load';
+  static const learningPathsLoadingTopics = 'learning_paths.loading_topics';
+  static const learningPathsPercentComplete = 'learning_paths.percent_complete';
+
+  // Disciple Levels
+  static const discipleLevelSeeker = 'disciple_level.seeker';
+  static const discipleLevelBeliever = 'disciple_level.believer';
+  static const discipleLevelDisciple = 'disciple_level.disciple';
+  static const discipleLevelLeader = 'disciple_level.leader';
+
+  // Continue Learning
+  static const continueLearningTitle = 'continue_learning.title';
+  static const continueLearningEmpty = 'continue_learning.empty';
+  static const continueLearningEmptyMessage = 'continue_learning.empty_message';
+  static const continueLearningDone = 'continue_learning.done';
+  static const continueLearningInProgress = 'continue_learning.in_progress';
+  static const continueLearningStart = 'continue_learning.start';
+  static const continueLearningContinueAction =
+      'continue_learning.continue_action';
+  static const continueLearningOfDone = 'continue_learning.of_done';
+
+  // Leaderboard
+  static const leaderboardTitle = 'leaderboard.title';
+  static const leaderboardTooltip = 'leaderboard.tooltip';
+  static const leaderboardYourRank = 'leaderboard.your_rank';
+  static const leaderboardXpPoints = 'leaderboard.xp_points';
+  static const leaderboardClose = 'leaderboard.close';
+  static const leaderboardError = 'leaderboard.error';
+
+  // Pricing Page (Public)
+  static const pricingTitle = 'pricing.title';
+  static const pricingSubtitle = 'pricing.subtitle';
+  static const pricingPerMonth = 'pricing.per_month';
+  static const pricingFreeForYear = 'pricing.free_for_year';
+  static const pricingLimitedTimeOffer = 'pricing.limited_time_offer';
+  static const pricingGetStarted = 'pricing.get_started';
+  static const pricingMostPopular = 'pricing.most_popular';
+  static const pricingBestValue = 'pricing.best_value';
+  static const pricingTokensDaily = 'pricing.tokens_daily';
+  static const pricingUnlimitedTokens = 'pricing.unlimited_tokens';
+  static const pricingFreePlan = 'pricing.free_plan';
+  static const pricingStandardPlan = 'pricing.standard_plan';
+  static const pricingPremiumPlan = 'pricing.premium_plan';
+  // Free Plan Features
+  static const pricingFreeFeature1 = 'pricing.free.feature1';
+  static const pricingFreeFeature2 = 'pricing.free.feature2';
+  static const pricingFreeFeature3 = 'pricing.free.feature3';
+  static const pricingFreeFeature4 = 'pricing.free.feature4';
+  // Standard Plan Features
+  static const pricingStandardFeature1 = 'pricing.standard.feature1';
+  static const pricingStandardFeature2 = 'pricing.standard.feature2';
+  static const pricingStandardFeature3 = 'pricing.standard.feature3';
+  static const pricingStandardFeature4 = 'pricing.standard.feature4';
+  static const pricingStandardFeature5 = 'pricing.standard.feature5';
+  // Premium Plan Features
+  static const pricingPremiumFeature1 = 'pricing.premium.feature1';
+  static const pricingPremiumFeature2 = 'pricing.premium.feature2';
+  static const pricingPremiumFeature3 = 'pricing.premium.feature3';
+  static const pricingPremiumFeature4 = 'pricing.premium.feature4';
+  static const pricingPremiumFeature5 = 'pricing.premium.feature5';
+  static const pricingPremiumFeature6 = 'pricing.premium.feature6';
+  static const pricingSecurePayments = 'pricing.secure_payments';
+  static const pricingPricesInInr = 'pricing.prices_in_inr';
+
+  // Study Guide Error Screen
+  static const studyGuideErrorTitle = 'study_guide.error.title';
+  static const studyGuideErrorTitleAlt = 'study_guide.error.title_alt';
+  static const studyGuideErrorDefaultMessage =
+      'study_guide.error.default_message';
+  static const studyGuideErrorDefaultMessageAlt =
+      'study_guide.error.default_message_alt';
+  static const studyGuideErrorNetwork = 'study_guide.error.network';
+  static const studyGuideErrorServer = 'study_guide.error.server';
+  static const studyGuideErrorAuth = 'study_guide.error.auth';
+  static const studyGuideErrorInsufficientTokens =
+      'study_guide.error.insufficient_tokens';
+  static const studyGuideErrorGoBack = 'study_guide.error.go_back';
+  static const studyGuideErrorTryAgain = 'study_guide.error.try_again';
+  static const studyGuideErrorViewSaved = 'study_guide.error.view_saved';
 }

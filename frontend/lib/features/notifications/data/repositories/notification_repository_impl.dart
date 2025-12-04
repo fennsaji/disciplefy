@@ -32,30 +32,31 @@ class NotificationRepositoryImpl implements NotificationRepository {
       if (currentUser == null || currentUser.isAnonymous) {
         final prefs = await SharedPreferences.getInstance();
         final dailyVerseEnabled =
-            prefs.getBool('notification_pref_daily_verse_enabled') ?? true;
+            prefs.getBool('notification_pref_daily_verse_enabled') ?? false;
         final recommendedTopicEnabled =
             prefs.getBool('notification_pref_recommended_topic_enabled') ??
-                true;
+                false;
         final streakReminderEnabled =
-            prefs.getBool('notification_pref_streak_reminder_enabled') ?? true;
+            prefs.getBool('notification_pref_streak_reminder_enabled') ?? false;
         final streakMilestoneEnabled =
-            prefs.getBool('notification_pref_streak_milestone_enabled') ?? true;
+            prefs.getBool('notification_pref_streak_milestone_enabled') ??
+                false;
         final streakLostEnabled =
-            prefs.getBool('notification_pref_streak_lost_enabled') ?? true;
+            prefs.getBool('notification_pref_streak_lost_enabled') ?? false;
         final reminderHour =
             prefs.getInt('notification_pref_streak_reminder_hour') ?? 20;
         final reminderMinute =
             prefs.getInt('notification_pref_streak_reminder_minute') ?? 0;
         final memoryVerseReminderEnabled =
             prefs.getBool('notification_pref_memory_verse_reminder_enabled') ??
-                true;
+                false;
         final memoryVerseReminderHour =
             prefs.getInt('notification_pref_memory_verse_reminder_hour') ?? 9;
         final memoryVerseReminderMinute =
             prefs.getInt('notification_pref_memory_verse_reminder_minute') ?? 0;
         final memoryVerseOverdueEnabled =
             prefs.getBool('notification_pref_memory_verse_overdue_enabled') ??
-                true;
+                false;
 
         return Right(NotificationPreferencesModel(
           userId: currentUser?.id ?? '',
@@ -113,15 +114,15 @@ class NotificationRepositoryImpl implements NotificationRepository {
         // Return default preferences if data structure is unexpected
         return Right(NotificationPreferencesModel(
           userId: currentUser.id,
-          dailyVerseEnabled: true,
-          recommendedTopicEnabled: true,
-          streakReminderEnabled: true,
-          streakMilestoneEnabled: true,
-          streakLostEnabled: true,
+          dailyVerseEnabled: false,
+          recommendedTopicEnabled: false,
+          streakReminderEnabled: false,
+          streakMilestoneEnabled: false,
+          streakLostEnabled: false,
           streakReminderTime: const TimeOfDayVO(hour: 20, minute: 0),
-          memoryVerseReminderEnabled: true,
+          memoryVerseReminderEnabled: false,
           memoryVerseReminderTime: const TimeOfDayVO(hour: 9, minute: 0),
-          memoryVerseOverdueEnabled: true,
+          memoryVerseOverdueEnabled: false,
           createdAt: DateTime.now(),
           updatedAt: DateTime.now(),
         ));
@@ -131,15 +132,15 @@ class NotificationRepositoryImpl implements NotificationRepository {
       // This ensures the UI doesn't get stuck loading
       return Right(NotificationPreferencesModel(
         userId: currentUser.id,
-        dailyVerseEnabled: true,
-        recommendedTopicEnabled: true,
-        streakReminderEnabled: true,
-        streakMilestoneEnabled: true,
-        streakLostEnabled: true,
+        dailyVerseEnabled: false,
+        recommendedTopicEnabled: false,
+        streakReminderEnabled: false,
+        streakMilestoneEnabled: false,
+        streakLostEnabled: false,
         streakReminderTime: const TimeOfDayVO(hour: 20, minute: 0),
-        memoryVerseReminderEnabled: true,
+        memoryVerseReminderEnabled: false,
         memoryVerseReminderTime: const TimeOfDayVO(hour: 9, minute: 0),
-        memoryVerseOverdueEnabled: true,
+        memoryVerseOverdueEnabled: false,
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
       ));
@@ -147,15 +148,15 @@ class NotificationRepositoryImpl implements NotificationRepository {
       // Even on auth errors, return default preferences to prevent UI blocking
       return Right(NotificationPreferencesModel(
         userId: supabaseClient.auth.currentUser?.id ?? '',
-        dailyVerseEnabled: true,
-        recommendedTopicEnabled: true,
-        streakReminderEnabled: true,
-        streakMilestoneEnabled: true,
-        streakLostEnabled: true,
+        dailyVerseEnabled: false,
+        recommendedTopicEnabled: false,
+        streakReminderEnabled: false,
+        streakMilestoneEnabled: false,
+        streakLostEnabled: false,
         streakReminderTime: const TimeOfDayVO(hour: 20, minute: 0),
-        memoryVerseReminderEnabled: true,
+        memoryVerseReminderEnabled: false,
         memoryVerseReminderTime: const TimeOfDayVO(hour: 9, minute: 0),
-        memoryVerseOverdueEnabled: true,
+        memoryVerseOverdueEnabled: false,
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
       ));
@@ -164,15 +165,15 @@ class NotificationRepositoryImpl implements NotificationRepository {
       // This ensures the notification settings screen always loads
       return Right(NotificationPreferencesModel(
         userId: supabaseClient.auth.currentUser?.id ?? '',
-        dailyVerseEnabled: true,
-        recommendedTopicEnabled: true,
-        streakReminderEnabled: true,
-        streakMilestoneEnabled: true,
-        streakLostEnabled: true,
+        dailyVerseEnabled: false,
+        recommendedTopicEnabled: false,
+        streakReminderEnabled: false,
+        streakMilestoneEnabled: false,
+        streakLostEnabled: false,
         streakReminderTime: const TimeOfDayVO(hour: 20, minute: 0),
-        memoryVerseReminderEnabled: true,
+        memoryVerseReminderEnabled: false,
         memoryVerseReminderTime: const TimeOfDayVO(hour: 9, minute: 0),
-        memoryVerseOverdueEnabled: true,
+        memoryVerseOverdueEnabled: false,
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
       ));
@@ -201,30 +202,31 @@ class NotificationRepositoryImpl implements NotificationRepository {
 
         // Load current preferences
         final currentDailyVerse =
-            prefs.getBool('notification_pref_daily_verse_enabled') ?? true;
+            prefs.getBool('notification_pref_daily_verse_enabled') ?? false;
         final currentRecommendedTopic =
             prefs.getBool('notification_pref_recommended_topic_enabled') ??
-                true;
+                false;
         final currentStreakReminder =
-            prefs.getBool('notification_pref_streak_reminder_enabled') ?? true;
+            prefs.getBool('notification_pref_streak_reminder_enabled') ?? false;
         final currentStreakMilestone =
-            prefs.getBool('notification_pref_streak_milestone_enabled') ?? true;
+            prefs.getBool('notification_pref_streak_milestone_enabled') ??
+                false;
         final currentStreakLost =
-            prefs.getBool('notification_pref_streak_lost_enabled') ?? true;
+            prefs.getBool('notification_pref_streak_lost_enabled') ?? false;
         final currentReminderHour =
             prefs.getInt('notification_pref_streak_reminder_hour') ?? 20;
         final currentReminderMinute =
             prefs.getInt('notification_pref_streak_reminder_minute') ?? 0;
         final currentMemoryVerseReminder =
             prefs.getBool('notification_pref_memory_verse_reminder_enabled') ??
-                true;
+                false;
         final currentMemoryVerseReminderHour =
             prefs.getInt('notification_pref_memory_verse_reminder_hour') ?? 9;
         final currentMemoryVerseReminderMinute =
             prefs.getInt('notification_pref_memory_verse_reminder_minute') ?? 0;
         final currentMemoryVerseOverdue =
             prefs.getBool('notification_pref_memory_verse_overdue_enabled') ??
-                true;
+                false;
 
         // Update preferences
         final newDailyVerse = dailyVerseEnabled ?? currentDailyVerse;

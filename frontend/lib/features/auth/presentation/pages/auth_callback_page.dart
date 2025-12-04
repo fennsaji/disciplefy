@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
+import '../../../../core/constants/app_fonts.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/services/auth_flow_service.dart';
 import '../bloc/auth_bloc.dart';
@@ -223,7 +223,7 @@ class _AuthCallbackPageState extends State<AuthCallbackPage> {
                     // Processing text
                     Text(
                       _getProcessingText(),
-                      style: GoogleFonts.inter(
+                      style: AppFonts.inter(
                         fontSize: 20,
                         fontWeight: FontWeight.w600,
                         color: AppTheme.textPrimary,
@@ -236,7 +236,7 @@ class _AuthCallbackPageState extends State<AuthCallbackPage> {
                     // Status message
                     Text(
                       _getStatusMessage(),
-                      style: GoogleFonts.inter(
+                      style: AppFonts.inter(
                         fontSize: 14,
                         color: AppTheme.onSurfaceVariant,
                         height: 1.5,
@@ -295,7 +295,7 @@ class _AuthCallbackPageState extends State<AuthCallbackPage> {
           children: [
             Text(
               'Debug Info:',
-              style: GoogleFonts.inter(
+              style: AppFonts.inter(
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
                 color: AppTheme.textPrimary,
@@ -319,7 +319,7 @@ class _AuthCallbackPageState extends State<AuthCallbackPage> {
           children: [
             Text(
               '$label: ',
-              style: GoogleFonts.inter(
+              style: AppFonts.inter(
                 fontSize: 11,
                 fontWeight: FontWeight.w500,
                 color: AppTheme.onSurfaceVariant,
@@ -328,7 +328,7 @@ class _AuthCallbackPageState extends State<AuthCallbackPage> {
             Expanded(
               child: Text(
                 value,
-                style: GoogleFonts.inter(
+                style: AppFonts.inter(
                   fontSize: 11,
                   color: AppTheme.onSurfaceVariant,
                 ),

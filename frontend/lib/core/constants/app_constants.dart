@@ -28,63 +28,37 @@ class AppConstants {
   static const double SMALL_PADDING = 8.0;
   static const double EXTRA_SMALL_PADDING = 4.0;
   static const double EXTRA_LARGE_PADDING = 32.0;
-  static const double CARD_PADDING = 20.0;
-  static const double BUTTON_PADDING = 10.0;
-  static const double HORIZONTAL_MARGIN = 20.0;
   static const double BORDER_RADIUS = 12.0;
   static const double LARGE_BORDER_RADIUS = 16.0;
   static const double SMALL_BORDER_RADIUS = 4.0;
-  static const double CARD_ELEVATION = 2.0;
 
-  // Spacing Configuration
+  // Spacing Configuration (only used values)
   static const double SPACING_4 = 4.0;
-  static const double SPACING_6 = 6.0;
   static const double SPACING_8 = 8.0;
-  static const double SPACING_10 = 10.0;
   static const double SPACING_12 = 12.0;
   static const double SPACING_16 = 16.0;
-  static const double SPACING_18 = 18.0;
   static const double SPACING_20 = 20.0;
 
-  // Typography Configuration
-  static const double FONT_SIZE_12 = 12.0;
+  // Typography Configuration (only used values)
   static const double FONT_SIZE_14 = 14.0;
   static const double FONT_SIZE_16 = 16.0;
   static const double FONT_SIZE_18 = 18.0;
   static const double FONT_SIZE_20 = 20.0;
   static const double FONT_SIZE_24 = 24.0;
-  static const double FONT_SIZE_28 = 28.0;
-  static const double FONT_SIZE_32 = 32.0;
 
-  // Line Heights
-  static const double LINE_HEIGHT_1_2 = 1.2;
-  static const double LINE_HEIGHT_1_4 = 1.4;
-  static const double LINE_HEIGHT_1_6 = 1.6;
-  static const double LINE_HEIGHT_1_7 = 1.7;
-
-  // Icon Sizes
+  // Icon Sizes (only used values)
   static const double ICON_SIZE_16 = 16.0;
   static const double ICON_SIZE_20 = 20.0;
   static const double ICON_SIZE_24 = 24.0;
   static const double ICON_SIZE_40 = 40.0;
-  static const double ICON_SIZE_80 = 80.0;
 
-  // Border Widths
-  static const double BORDER_WIDTH_THIN = 1.0;
-  static const double BORDER_WIDTH_MEDIUM = 1.5;
-  static const double BORDER_WIDTH_THICK = 2.0;
-
-  // Animation Durations
+  // Animation Durations (only used values)
   static const int DEFAULT_ANIMATION_DURATION_MS = 300;
-  static const int LOADING_ANIMATION_DURATION_MS = 1000;
   static const int PAGE_TRANSITION_DURATION_MS = 250;
 
-  // Storage Keys
+  // Storage Keys (only used values)
   static const String ONBOARDING_COMPLETED_KEY = 'onboarding_completed';
   static const String SELECTED_LANGUAGE_KEY = 'selected_language';
-  static const String SELECTED_THEME_KEY = 'selected_theme';
-  static const String USER_PREFERENCES_KEY = 'user_preferences';
-  static const String CACHED_STUDIES_KEY = 'cached_studies';
 
   // Default Values
   static const String DEFAULT_LANGUAGE = 'en';
@@ -144,8 +118,4 @@ class AppAssets {
   // Logo Assets
   static const String logoLight = 'assets/images/app_logo.png';
   static const String logoDark = 'assets/images/app_logo_dark.png';
-  static const String logoTransparent = 'assets/images/logo_transparent.png';
-
-  // Google Logo
-  static const String googleLogo = 'assets/images/google_logo.png';
 }

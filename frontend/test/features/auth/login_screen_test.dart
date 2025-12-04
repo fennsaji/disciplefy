@@ -1,6 +1,9 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:hive/hive.dart';
 import 'package:mockito/mockito.dart';
 import 'package:mockito/annotations.dart';
 import 'package:go_router/go_router.dart';
@@ -22,8 +25,14 @@ import '../../../test/helpers/mock_translation_provider.dart';
 void main() {
   late MockAuthBloc mockAuthBloc;
   late MockTranslationService mockTranslationService;
+  late Directory tempDir;
 
-  setUpAll(() {
+  setUpAll(() async {
+    // Initialize Hive with a temp directory for tests
+    tempDir = await Directory.systemTemp.createTemp('hive_test');
+    Hive.init(tempDir.path);
+    await Hive.openBox('app_settings');
+
     // Register mock translation service
     mockTranslationService = MockTranslationService();
     sl.registerLazySingleton<TranslationService>(() => mockTranslationService);
@@ -42,7 +51,9 @@ void main() {
     );
   });
 
-  tearDownAll(() {
+  tearDownAll(() async {
+    await Hive.close();
+    await tempDir.delete(recursive: true);
     sl.reset();
   });
 
@@ -98,19 +109,20 @@ void main() {
       // Assert
       expect(find.byType(CircularProgressIndicator), findsOneWidget);
 
-      // Buttons should be disabled during loading
-      final googleButton = find.byType(ElevatedButton);
-      final guestButton = find.byType(OutlinedButton);
+      // Both OutlinedButtons (Email and Guest) should be disabled during loading
+      final outlinedButtons = find.byType(OutlinedButton);
+      expect(outlinedButtons, findsNWidgets(2)); // Email and Guest buttons
 
-      expect(googleButton, findsOneWidget);
-      expect(guestButton, findsOneWidget);
+      // Verify all OutlinedButtons are disabled during loading
+      for (final element in outlinedButtons.evaluate()) {
+        final button = element.widget as OutlinedButton;
+        expect(button.onPressed, isNull,
+            reason: 'OutlinedButton should be disabled during loading');
+      }
 
-      // Verify buttons are disabled
-      final googleButtonWidget = tester.widget<ElevatedButton>(googleButton);
-      final guestButtonWidget = tester.widget<OutlinedButton>(guestButton);
-
-      expect(googleButtonWidget.onPressed, isNull);
-      expect(guestButtonWidget.onPressed, isNull);
+      // Google button uses InkWell - verify it exists but doesn't show the text
+      // (shows loading indicator instead)
+      expect(find.text('Continue with Google'), findsNothing);
     });
 
     testWidgets('should trigger Google sign-in when Google button is tapped',
@@ -261,13 +273,17 @@ void main() {
       // Assert
       expect(find.byType(Container), findsWidgets);
 
-      // Find the Google button container
+      // Find the Google button - it uses InkWell with a Row inside
       final googleButtonRow = find.descendant(
-        of: find.byType(ElevatedButton),
+        of: find.byType(InkWell),
         matching: find.byType(Row),
       );
 
-      expect(googleButtonRow, findsOneWidget);
+      // There should be at least one Row inside an InkWell (the Google button)
+      expect(googleButtonRow, findsWidgets);
+
+      // Verify the Google button text exists
+      expect(find.text('Continue with Google'), findsOneWidget);
     });
 
     testWidgets('should display privacy policy text', (tester) async {

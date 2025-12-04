@@ -11,21 +11,14 @@ class PaymentConstants {
   static const String companyName = 'Disciplefy';
   static const String companyDescription = 'Bible Study Token Purchase';
   static const String currency = 'INR';
-  static const String contactEmail = 'support@disciplefy.in';
-  static const String contactPhone = '+919876543210';
 
   // Payment themes
   static const Map<String, dynamic> razorpayTheme = {
-    'color': '#6A4FB6', // Primary purple
+    'color': '#7C3AED', // Vibrant purple
   };
 
   // Token pricing
   static const int tokensPerRupee = 10; // 10 tokens = ₹1
-  static const int minimumTokenPurchase = 1;
-  static const int maximumTokenPurchase = 10000;
-
-  // Payment timeout
-  static const int paymentTimeoutSeconds = 300; // 5 minutes
 
   // Default payment packages
   static const List<Map<String, dynamic>> defaultPackages = [

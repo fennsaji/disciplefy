@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/animations/app_animations.dart';
 import 'bottom_nav.dart' as bottom_nav;
 
 /// Main App Shell with Bottom Navigation
@@ -10,7 +11,7 @@ import 'bottom_nav.dart' as bottom_nav;
 /// - Persistent bottom navigation using IndexedStack
 /// - Bottom navigation with Disciplefy branding
 /// - Android back button handling
-/// - No animations on bottom bar when switching tabs
+/// - Smooth fade animation when switching tabs
 /// - Memory-efficient screen management
 /// - Accessibility support
 class AppShell extends StatefulWidget {
@@ -22,10 +23,99 @@ class AppShell extends StatefulWidget {
   State<AppShell> createState() => _AppShellState();
 }
 
-class _AppShellState extends State<AppShell> {
+class _AppShellState extends State<AppShell>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _animController;
+  late Animation<double> _fadeAnimation;
+  late Animation<double> _scaleAnimation;
+  int _previousIndex = 0;
+  int? _pendingTabIndex;
+
+  @override
+  void initState() {
+    super.initState();
+    // Quick cross-fade for snappy tab transitions
+    _animController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 100),
+    );
+    _setupAnimations();
+    _animController.addStatusListener(_onAnimationStatusChanged);
+    _animController.value = 1.0; // Start at end position (visible)
+  }
+
+  void _onAnimationStatusChanged(AnimationStatus status) {
+    if (!mounted) return;
+
+    if (status == AnimationStatus.dismissed && _pendingTabIndex != null) {
+      // Reverse animation completed - switch to new tab
+      final targetIndex = _pendingTabIndex!;
+      _pendingTabIndex = null;
+      widget.navigationShell.goBranch(targetIndex);
+      _animController.forward();
+    }
+  }
+
+  void _setupAnimations() {
+    // Fade through: cross-fade animation (Material Design recommended)
+    _fadeAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(
+      parent: _animController,
+      curve: Curves.easeInOut,
+    ));
+
+    // Subtle scale: 92% → 100% for incoming content (Material Motion)
+    _scaleAnimation = Tween<double>(
+      begin: 0.92,
+      end: 1.0,
+    ).animate(CurvedAnimation(
+      parent: _animController,
+      curve: Curves.easeOut,
+    ));
+  }
+
+  @override
+  void dispose() {
+    _animController.removeStatusListener(_onAnimationStatusChanged);
+    _animController.stop();
+    _animController.dispose();
+    super.dispose();
+  }
+
+  void _onTabChange(int index) {
+    // Ignore if already on this tab
+    if (index == widget.navigationShell.currentIndex &&
+        _pendingTabIndex == null) {
+      return;
+    }
+
+    // Allow interrupting ongoing animation with new tab selection
+    _pendingTabIndex = index;
+
+    // If animation is already reversing, just update pending index (handled above)
+    // Otherwise, start the fade-out animation
+    if (_animController.status != AnimationStatus.reverse) {
+      _animController.reverse();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final currentIndex = widget.navigationShell.currentIndex;
+
+    // Detect tab change from external navigation (e.g., back button)
+    // Only handle if no pending animation and controller is idle
+    if (currentIndex != _previousIndex &&
+        _pendingTabIndex == null &&
+        _animController.status == AnimationStatus.completed) {
+      _previousIndex = currentIndex;
+
+      // Quick fade in when tab changes externally
+      _animController.value = 0.0;
+      _animController.forward();
+    }
 
     return PopScope(
       canPop: false,
@@ -36,16 +126,18 @@ class _AppShellState extends State<AppShell> {
       },
       child: Scaffold(
         backgroundColor: const Color(0xFF1E1E1E),
-        body: widget.navigationShell,
+        // Material Design: Cross-fade with subtle scale (no lateral motion)
+        body: FadeTransition(
+          opacity: _fadeAnimation,
+          child: ScaleTransition(
+            scale: _scaleAnimation,
+            child: widget.navigationShell,
+          ),
+        ),
         bottomNavigationBar: bottom_nav.DisciplefyBottomNav(
           currentIndex: currentIndex,
           tabs: bottom_nav.DisciplefyBottomNav.defaultTabs,
-          onTap: (index) {
-            widget.navigationShell.goBranch(
-              index,
-              initialLocation: index == widget.navigationShell.currentIndex,
-            );
-          },
+          onTap: _onTabChange,
         ),
       ),
     );

@@ -1,6 +1,8 @@
+import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
+import '../animations/page_transitions.dart';
 import '../../features/onboarding/presentation/pages/onboarding_screen.dart';
 import '../../features/onboarding/presentation/pages/language_selection_screen.dart';
 import '../../features/onboarding/presentation/pages/onboarding_language_page.dart';
@@ -11,6 +13,8 @@ import '../../features/study_generation/domain/entities/study_guide.dart';
 import '../../features/auth/presentation/pages/login_screen.dart';
 import '../../features/auth/presentation/pages/phone_number_input_screen.dart';
 import '../../features/auth/presentation/pages/otp_verification_screen.dart';
+import '../../features/auth/presentation/pages/email_auth_screen.dart';
+import '../../features/auth/presentation/pages/password_reset_screen.dart';
 import '../../features/auth/presentation/pages/auth_callback_page.dart';
 import '../../features/profile_setup/presentation/pages/profile_setup_screen.dart';
 import '../presentation/widgets/app_shell.dart';
@@ -27,10 +31,25 @@ import '../../features/tokens/presentation/pages/token_management_page.dart';
 import '../../features/tokens/presentation/pages/purchase_history_page.dart';
 import '../../features/subscription/presentation/pages/premium_upgrade_page.dart';
 import '../../features/subscription/presentation/pages/subscription_management_page.dart';
+import '../../features/subscription/presentation/pages/pricing_page.dart';
 import '../../features/subscription/presentation/bloc/subscription_bloc.dart';
 import '../../features/memory_verses/presentation/pages/memory_verses_home_page.dart';
 import '../../features/memory_verses/presentation/pages/verse_review_page.dart';
 import '../../features/memory_verses/presentation/bloc/memory_verse_bloc.dart';
+import '../../features/voice_buddy/presentation/pages/voice_conversation_page.dart';
+import '../../features/voice_buddy/presentation/pages/voice_preferences_page.dart';
+import '../../features/voice_buddy/presentation/pages/voice_preferences_page_wrapper.dart';
+import '../../features/voice_buddy/presentation/bloc/voice_preferences_bloc.dart';
+import '../../features/voice_buddy/presentation/bloc/voice_preferences_event.dart';
+import '../../features/voice_buddy/presentation/bloc/voice_preferences_state.dart';
+import '../../features/voice_buddy/domain/entities/voice_conversation_entity.dart';
+import '../../features/voice_buddy/domain/entities/voice_preferences_entity.dart';
+import '../../features/voice_buddy/domain/repositories/voice_buddy_repository.dart';
+import '../../features/personalization/presentation/pages/personalization_questionnaire_page.dart';
+import '../../features/study_topics/presentation/pages/learning_path_detail_page.dart';
+import '../../features/study_topics/presentation/pages/leaderboard_page.dart';
+import '../../features/study_topics/presentation/bloc/learning_paths_bloc.dart';
+import '../../features/study_topics/presentation/bloc/leaderboard_bloc.dart';
 import 'app_routes.dart';
 import 'router_guard.dart';
 import 'auth_notifier.dart';
@@ -39,7 +58,12 @@ import 'app_loading_screen.dart'; // ANDROID FIX: Loading screen during session 
 class AppRouter {
   static final AuthNotifier _authNotifier = AuthNotifier();
 
+  /// Root navigator key for routes that should be pushed outside the shell
+  static final GlobalKey<NavigatorState> rootNavigatorKey =
+      GlobalKey<NavigatorState>(debugLabel: 'root');
+
   static final GoRouter router = GoRouter(
+    navigatorKey: rootNavigatorKey,
     initialLocation: '/', // Let the redirect logic handle the initial route
     refreshListenable: _authNotifier, // Listen to auth state changes
     redirect: (context, state) async => await RouterGuard.handleRedirect(
@@ -59,7 +83,10 @@ class AppRouter {
       GoRoute(
         path: AppRoutes.onboarding,
         name: 'onboarding',
-        builder: (context, state) => const OnboardingScreen(),
+        pageBuilder: (context, state) => fadeTransitionPage(
+          child: const OnboardingScreen(),
+          state: state,
+        ),
       ),
       GoRoute(
         path: AppRoutes.languageSelection,
@@ -107,6 +134,20 @@ class AppRouter {
               ),
             ],
           ),
+          // Study Topics Branch
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: AppRoutes.studyTopics,
+                name: 'study_topics_tab',
+                builder: (context, state) {
+                  // Extract topic_id from query parameters for notification deep linking
+                  final topicId = state.uri.queryParameters['topic_id'];
+                  return StudyTopicsScreen(topicId: topicId);
+                },
+              ),
+            ],
+          ),
         ],
       ),
 
@@ -114,7 +155,7 @@ class AppRouter {
       GoRoute(
         path: AppRoutes.saved,
         name: 'saved',
-        builder: (context, state) {
+        pageBuilder: (context, state) {
           // Parse tab parameter from query string
           final tabParam = state.uri.queryParameters['tab'];
           final sourceParam = state.uri.queryParameters['source'];
@@ -124,30 +165,27 @@ class AppRouter {
           } else if (tabParam == 'saved') {
             initialTabIndex = 0; // Saved tab
           }
-          return SavedScreen(
-            initialTabIndex: initialTabIndex,
-            navigationSource: sourceParam,
+          return slideRightTransitionPage(
+            child: SavedScreen(
+              initialTabIndex: initialTabIndex,
+              navigationSource: sourceParam,
+            ),
+            state: state,
           );
         },
       ),
       GoRoute(
         path: AppRoutes.settings,
         name: 'settings',
-        builder: (context, state) => const SettingsScreen(),
+        pageBuilder: (context, state) => slideUpTransitionPage(
+          child: const SettingsScreen(),
+          state: state,
+        ),
       ),
       GoRoute(
         path: AppRoutes.notificationSettings,
         name: 'notification_settings',
         builder: (context, state) => const NotificationSettingsScreen(),
-      ),
-      GoRoute(
-        path: AppRoutes.studyTopics,
-        name: 'study_topics',
-        builder: (context, state) {
-          // Extract topic_id from query parameters for notification deep linking
-          final topicId = state.uri.queryParameters['topic_id'];
-          return StudyTopicsScreen(topicId: topicId);
-        },
       ),
       GoRoute(
         path: AppRoutes.tokenManagement,
@@ -183,9 +221,12 @@ class AppRouter {
       GoRoute(
         path: AppRoutes.memoryVerses,
         name: 'memory_verses',
-        builder: (context, state) => BlocProvider(
-          create: (context) => sl<MemoryVerseBloc>(),
-          child: const MemoryVersesHomePage(),
+        pageBuilder: (context, state) => slideRightTransitionPage(
+          child: BlocProvider(
+            create: (context) => sl<MemoryVerseBloc>(),
+            child: const MemoryVersesHomePage(),
+          ),
+          state: state,
         ),
       ),
       GoRoute(
@@ -213,11 +254,100 @@ class AppRouter {
         },
       ),
 
+      // Voice Buddy Routes
+      GoRoute(
+        path: AppRoutes.voiceConversation,
+        name: 'voice_conversation',
+        builder: (context, state) {
+          // Extract optional parameters from extra data
+          final Map<String, dynamic> extra;
+          if (state.extra is Map<String, dynamic>) {
+            extra = state.extra as Map<String, dynamic>;
+          } else {
+            extra = {};
+          }
+
+          final studyGuideId = extra['studyGuideId'] as String?;
+          final relatedScripture = extra['relatedScripture'] as String?;
+          final conversationType =
+              extra['conversationType'] as ConversationType? ??
+                  ConversationType.general;
+
+          return VoiceConversationPage(
+            studyGuideId: studyGuideId,
+            relatedScripture: relatedScripture,
+            conversationType: conversationType,
+          );
+        },
+      ),
+      GoRoute(
+        path: AppRoutes.voicePreferences,
+        name: 'voice_preferences',
+        builder: (context, state) => BlocProvider(
+          create: (_) => VoicePreferencesBloc(
+            repository: sl<VoiceBuddyRepository>(),
+          )..add(const LoadVoicePreferences()),
+          child: const VoicePreferencesPageWrapper(),
+        ),
+      ),
+
+      // Personalization Routes
+      GoRoute(
+        path: AppRoutes.personalizationQuestionnaire,
+        name: 'personalization_questionnaire',
+        builder: (context, state) {
+          // Extract onComplete callback from extra if provided
+          VoidCallback? onComplete;
+          if (state.extra is Map<String, dynamic>) {
+            final extra = state.extra as Map<String, dynamic>;
+            onComplete = extra['onComplete'] as VoidCallback?;
+          }
+          return PersonalizationQuestionnairePage(onComplete: onComplete);
+        },
+      ),
+
+      // Learning Paths Routes
+      GoRoute(
+        path: '/learning-path/:pathId',
+        name: 'learning_path_detail',
+        parentNavigatorKey: rootNavigatorKey,
+        builder: (context, state) {
+          final pathId = state.pathParameters['pathId'] ?? '';
+          final source = state.uri.queryParameters['source'];
+          return BlocProvider(
+            create: (context) => sl<LearningPathsBloc>(),
+            child: LearningPathDetailPage(pathId: pathId, source: source),
+          );
+        },
+      ),
+
+      // Leaderboard Route
+      GoRoute(
+        path: AppRoutes.leaderboard,
+        name: 'leaderboard',
+        parentNavigatorKey: rootNavigatorKey,
+        builder: (context, state) => BlocProvider(
+          create: (context) => sl<LeaderboardBloc>(),
+          child: const LeaderboardPage(),
+        ),
+      ),
+
+      // Public Pricing Page (accessible without authentication)
+      GoRoute(
+        path: AppRoutes.pricing,
+        name: 'pricing',
+        parentNavigatorKey: rootNavigatorKey,
+        builder: (context, state) => const PricingPage(),
+      ),
+
       // Authentication Routes (outside app shell)
       GoRoute(
         path: AppRoutes.login,
         name: 'login',
-        builder: (context, state) => const LoginScreen(),
+        pageBuilder: (context, state) => fadeTransitionPage(
+          child: const LoginScreen(),
+          state: state,
+        ),
       ),
       GoRoute(
         path: AppRoutes.phoneAuth,
@@ -252,6 +382,16 @@ class AppRouter {
         },
       ),
       GoRoute(
+        path: AppRoutes.emailAuth,
+        name: 'email_auth',
+        builder: (context, state) => const EmailAuthScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.passwordReset,
+        name: 'password_reset',
+        builder: (context, state) => const PasswordResetScreen(),
+      ),
+      GoRoute(
         path: AppRoutes.authCallback,
         name: 'auth_callback',
         builder: (context, state) {
@@ -275,7 +415,7 @@ class AppRouter {
       GoRoute(
         path: AppRoutes.studyGuide,
         name: 'study_guide',
-        builder: (context, state) {
+        pageBuilder: (context, state) {
           // Handle different types of navigation data
           StudyGuide? studyGuide;
           Map<String, dynamic>? routeExtra;
@@ -291,10 +431,13 @@ class AppRouter {
             routeExtra = state.extra as Map<String, dynamic>;
           }
 
-          return StudyGuideScreen(
-            studyGuide: studyGuide,
-            routeExtra: routeExtra,
-            navigationSource: navigationSource,
+          return slideRightTransitionPage(
+            child: StudyGuideScreen(
+              studyGuide: studyGuide,
+              routeExtra: routeExtra,
+              navigationSource: navigationSource,
+            ),
+            state: state,
           );
         },
       ),
@@ -303,7 +446,7 @@ class AppRouter {
       GoRoute(
         path: AppRoutes.studyGuideV2,
         name: 'study_guide_v2',
-        builder: (context, state) {
+        pageBuilder: (context, state) {
           // Parse query parameters
           final topicId = state.uri.queryParameters['topic_id'];
           final input = state.uri.queryParameters['input'];
@@ -316,13 +459,16 @@ class AppRouter {
           final navigationSource =
               sl<StudyNavigator>().parseNavigationSource(sourceString);
 
-          return StudyGuideScreenV2(
-            topicId: topicId,
-            input: input,
-            type: type,
-            description: description,
-            language: language,
-            navigationSource: navigationSource,
+          return slideRightTransitionPage(
+            child: StudyGuideScreenV2(
+              topicId: topicId,
+              input: input,
+              type: type,
+              description: description,
+              language: language,
+              navigationSource: navigationSource,
+            ),
+            state: state,
           );
         },
       ),
@@ -365,6 +511,8 @@ extension AppRouterExtension on GoRouter {
   void goToPurchaseHistory() => go(AppRoutes.purchaseHistory);
   void goToLogin() => go(AppRoutes.login);
   void goToPhoneAuth() => go(AppRoutes.phoneAuth);
+  void goToEmailAuth() => go(AppRoutes.emailAuth);
+  void goToPasswordReset() => go(AppRoutes.passwordReset);
   void goToPhoneAuthVerify({
     required String phoneNumber,
     required String countryCode,
@@ -395,4 +543,31 @@ extension AppRouterExtension on GoRouter {
         'verseId': verseId,
         'verseIds': verseIds,
       });
+
+  /// Navigates to the voice conversation page for AI Discipler.
+  ///
+  /// [studyGuideId] - Optional study guide ID for contextual conversations
+  /// [relatedScripture] - Optional scripture reference for focused discussions
+  /// [conversationType] - Type of conversation (general, study_guide, scripture_exploration, etc.)
+  void goToVoiceConversation({
+    String? studyGuideId,
+    String? relatedScripture,
+    ConversationType conversationType = ConversationType.general,
+  }) =>
+      go(AppRoutes.voiceConversation, extra: {
+        'studyGuideId': studyGuideId,
+        'relatedScripture': relatedScripture,
+        'conversationType': conversationType,
+      });
+
+  /// Navigates to the personalization questionnaire page.
+  ///
+  /// [onComplete] - Optional callback to execute when questionnaire is completed
+  void goToPersonalizationQuestionnaire({VoidCallback? onComplete}) =>
+      go(AppRoutes.personalizationQuestionnaire, extra: {
+        'onComplete': onComplete,
+      });
+
+  /// Navigates to the leaderboard page showing XP rankings.
+  void goToLeaderboard() => go(AppRoutes.leaderboard);
 }

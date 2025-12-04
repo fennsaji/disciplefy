@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
+import '../../../../core/constants/app_fonts.dart';
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 
 import 'package:hive_flutter/hive_flutter.dart';
+import '../../../../core/router/app_routes.dart';
+import '../../../../core/theme/app_theme.dart';
 import '../../../auth/presentation/bloc/auth_bloc.dart';
 import '../../../auth/presentation/bloc/auth_state.dart' as auth_states;
 
@@ -109,7 +111,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     await box.put('onboarding_completed', true);
 
     if (mounted) {
-      context.go('/login');
+      // Navigate to pricing page to show plans before login
+      context.go(AppRoutes.pricing);
     }
   }
 
@@ -119,7 +122,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     await box.put('onboarding_completed', true);
 
     if (mounted) {
-      context.go('/login');
+      // Navigate to pricing page to show plans before login
+      context.go(AppRoutes.pricing);
     }
   }
 
@@ -147,7 +151,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     onPressed: _skipOnboarding,
                     child: Text(
                       'Skip',
-                      style: GoogleFonts.inter(
+                      style: AppFonts.inter(
                         fontSize: 14,
                         fontWeight: FontWeight.w500,
                         color: theme.colorScheme.onSurface.withOpacity(0.6),
@@ -192,26 +196,37 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             // Continue button (navigates to next slide) or Get Started (last slide)
             Padding(
               padding: EdgeInsets.fromLTRB(24, 0, 24, isLargeScreen ? 40 : 24),
-              child: SizedBox(
+              child: Container(
                 width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: _handleContinueButton,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: theme.colorScheme.primary,
-                    foregroundColor: theme.colorScheme.onPrimary,
-                    minimumSize: const Size.fromHeight(56),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                height: 56,
+                decoration: BoxDecoration(
+                  gradient: AppTheme.primaryGradient,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppTheme.primaryColor.withOpacity(0.4),
+                      blurRadius: 16,
+                      offset: const Offset(0, 6),
                     ),
-                    elevation: 0,
-                  ),
-                  child: Text(
-                    _currentPage == _slides.length - 1
-                        ? 'Get Started'
-                        : 'Continue',
-                    style: GoogleFonts.inter(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
+                  ],
+                ),
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    onTap: _handleContinueButton,
+                    borderRadius: BorderRadius.circular(12),
+                    child: Center(
+                      child: Text(
+                        _currentPage == _slides.length - 1
+                            ? 'Get Started'
+                            : 'Continue',
+                        style: AppFonts.inter(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: const Color(0xFFFFFFFF),
+                          letterSpacing: 0.5,
+                        ),
+                      ),
                     ),
                   ),
                 ),
@@ -274,7 +289,7 @@ class _OnboardingSlideWidget extends StatelessWidget {
           // Title
           Text(
             slide.title,
-            style: GoogleFonts.playfairDisplay(
+            style: AppFonts.poppins(
               fontSize: isLargeScreen ? 32 : 28,
               fontWeight: FontWeight.bold,
               color: theme.colorScheme.onBackground,
@@ -288,7 +303,7 @@ class _OnboardingSlideWidget extends StatelessWidget {
           // Subtitle
           Text(
             slide.subtitle,
-            style: GoogleFonts.inter(
+            style: AppFonts.inter(
               fontSize: isLargeScreen ? 20 : 18,
               fontWeight: FontWeight.w500,
               color: theme.colorScheme.primary,
@@ -302,7 +317,7 @@ class _OnboardingSlideWidget extends StatelessWidget {
           // Description
           Text(
             slide.description,
-            style: GoogleFonts.inter(
+            style: AppFonts.inter(
               fontSize: 16,
               color: theme.colorScheme.onSurface.withOpacity(0.7),
               height: 1.6,
@@ -326,7 +341,7 @@ class _OnboardingSlideWidget extends StatelessWidget {
             ),
             child: Text(
               slide.verse,
-              style: GoogleFonts.inter(
+              style: AppFonts.inter(
                 fontSize: 14,
                 fontStyle: FontStyle.italic,
                 color: theme.colorScheme.onBackground.withOpacity(0.8),
@@ -380,7 +395,7 @@ class _LogoWidget extends StatelessWidget {
               const SizedBox(width: 12),
               Text(
                 'Disciplefy',
-                style: GoogleFonts.poppins(
+                style: AppFonts.poppins(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
                   color: theme.colorScheme.primary,
