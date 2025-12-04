@@ -69,6 +69,7 @@ class VoiceConversationState extends Equatable {
     VoiceConversationEntity? conversation,
     List<ConversationMessageEntity>? messages,
     String? currentTranscription,
+    bool clearCurrentTranscription = false,
     String? streamingResponse,
     bool? isListening,
     bool? isPlaying,
@@ -86,7 +87,9 @@ class VoiceConversationState extends Equatable {
       status: status ?? this.status,
       conversation: conversation ?? this.conversation,
       messages: messages ?? this.messages,
-      currentTranscription: currentTranscription ?? this.currentTranscription,
+      currentTranscription: clearCurrentTranscription
+          ? null
+          : (currentTranscription ?? this.currentTranscription),
       streamingResponse: streamingResponse ?? this.streamingResponse,
       isListening: isListening ?? this.isListening,
       isPlaying: isPlaying ?? this.isPlaying,
