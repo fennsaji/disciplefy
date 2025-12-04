@@ -155,7 +155,8 @@ jobs:
             --dart-define=FLUTTER_WEB_USE_SKIA=true \
             --dart-define=FLUTTER_WEB_AUTO_DETECT=false \
             --dart-define=ENABLE_LOGGING=false \
-            --dart-define=IS_DEVELOPMENT=false
+            --dart-define=IS_DEVELOPMENT=false \
+            --dart-define=GOOGLE_CLOUD_TTS_API_KEY=${{ secrets.GOOGLE_CLOUD_TTS_API_KEY }}
           
           echo "📊 Build statistics:"
           du -sh build/web
