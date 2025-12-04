@@ -15,7 +15,9 @@ class CloudTTSService {
   CloudTTSService();
 
   bool _isInitialized = false;
-  final AudioPlayer _audioPlayer = AudioPlayer();
+
+  /// AudioPlayer instance - created fresh for each playback to avoid web issues
+  AudioPlayer? _audioPlayer;
   late final Dio _dio;
 
   /// Cancel token for in-flight requests
@@ -38,7 +40,7 @@ class CloudTTSService {
 
   /// Current playback state
   bool get isPlaying =>
-      _audioPlayer.state == PlayerState.playing || _isSpeaking;
+      _audioPlayer?.state == PlayerState.playing || _isSpeaking;
 
   /// Google Cloud TTS API endpoint
   static const String _apiEndpoint =
@@ -231,32 +233,56 @@ class CloudTTSService {
   }
 
   /// Play audio bytes.
+  /// Creates a fresh AudioPlayer for each playback to avoid web platform issues.
   Future<void> _playAudio(
       Uint8List audioBytes, void Function()? onComplete) async {
     try {
-      // Cancel any existing completion listener
+      // Cancel any existing completion listener and dispose old player
       await _playerCompleteSubscription?.cancel();
       _playerCompleteSubscription = null;
 
-      // Set up completion listener BEFORE playing
-      if (onComplete != null) {
-        _playerCompleteSubscription = _audioPlayer.onPlayerComplete.listen((_) {
-          print('🔊 [CLOUD TTS] Playback complete');
-          _isSpeaking = false;
-          _playerCompleteSubscription?.cancel();
-          _playerCompleteSubscription = null;
-          onComplete();
-        }, onError: (error) {
-          print('🔊 [CLOUD TTS] Audio player error: $error');
-          _isSpeaking = false;
-          _playerCompleteSubscription?.cancel();
-          _playerCompleteSubscription = null;
-          onComplete();
-        });
+      // Dispose old player safely
+      try {
+        await _audioPlayer?.stop();
+        await _audioPlayer?.dispose();
+      } catch (e) {
+        // Player may already be disposed, ignore
+        print('🔊 [CLOUD TTS] Old player cleanup: $e');
       }
 
+      // Create fresh player for this playback (fixes web issues)
+      _audioPlayer = AudioPlayer();
+      final player = _audioPlayer!;
+
+      // Set up completion listener BEFORE playing
+      _playerCompleteSubscription = player.onPlayerComplete.listen((_) {
+        print('🔊 [CLOUD TTS] Playback complete');
+        _isSpeaking = false;
+        _playerCompleteSubscription?.cancel();
+        _playerCompleteSubscription = null;
+        // Dispose player after completion
+        try {
+          player.dispose();
+        } catch (e) {
+          // Ignore disposal errors
+        }
+        onComplete?.call();
+      }, onError: (error) {
+        print('🔊 [CLOUD TTS] Audio player error: $error');
+        _isSpeaking = false;
+        _playerCompleteSubscription?.cancel();
+        _playerCompleteSubscription = null;
+        // Dispose player on error
+        try {
+          player.dispose();
+        } catch (e) {
+          // Ignore disposal errors
+        }
+        onComplete?.call();
+      });
+
       // Play from bytes
-      await _audioPlayer.play(BytesSource(audioBytes));
+      await player.play(BytesSource(audioBytes));
       print('🔊 [CLOUD TTS] Playback started');
     } catch (e) {
       print('🔊 [CLOUD TTS] Error playing audio: $e');
@@ -301,27 +327,47 @@ class CloudTTSService {
     await _playerCompleteSubscription?.cancel();
     _playerCompleteSubscription = null;
 
-    // Stop audio player
-    await _audioPlayer.stop();
+    // Stop and dispose audio player safely
+    try {
+      await _audioPlayer?.stop();
+      await _audioPlayer?.dispose();
+      _audioPlayer = null;
+    } catch (e) {
+      // Player may already be disposed
+      print('🔊 [CLOUD TTS] Stop cleanup: $e');
+    }
     _isSpeaking = false;
     print('🔊 [CLOUD TTS] Playback stopped');
   }
 
   /// Pause current playback.
   Future<void> pause() async {
-    await _audioPlayer.pause();
+    try {
+      await _audioPlayer?.pause();
+    } catch (e) {
+      print('🔊 [CLOUD TTS] Pause error: $e');
+    }
   }
 
   /// Resume paused playback.
   Future<void> resume() async {
-    await _audioPlayer.resume();
+    try {
+      await _audioPlayer?.resume();
+    } catch (e) {
+      print('🔊 [CLOUD TTS] Resume error: $e');
+    }
   }
 
   /// Dispose of resources.
   void dispose() {
     _currentCancelToken?.cancel('Dispose');
     _playerCompleteSubscription?.cancel();
-    _audioPlayer.dispose();
+    try {
+      _audioPlayer?.dispose();
+    } catch (e) {
+      // Ignore disposal errors
+    }
+    _audioPlayer = null;
   }
 }
 
