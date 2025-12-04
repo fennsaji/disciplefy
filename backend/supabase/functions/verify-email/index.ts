@@ -56,24 +56,47 @@ Deno.serve(async (req) => {
       }
     )
 
-    // Find user profile by email directly (efficient single-row lookup)
-    const { data: profile, error: profileError } = await supabaseAdmin
-      .from('user_profiles')
-      .select('id, email_verification_token, email_verification_token_expires_at, email_verified')
-      .eq('email', email)
-      .single()
-    
-    if (profileError || !profile) {
-      // Log without PII - use generic message
-      console.error('[VERIFY EMAIL] User not found for provided identifier, error:', profileError?.code || 'no_profile')
+    // First, find user in auth.users by email to get their ID
+    // (user_profiles doesn't have an email column - it references auth.users)
+    const { data: listData, error: listError } = await supabaseAdmin.auth.admin.listUsers()
+
+    if (listError) {
+      console.error('[VERIFY EMAIL] Auth lookup error:', listError.message)
+      return new Response(
+        JSON.stringify({ success: false, error: 'Verification failed' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    // Find user by email (case-insensitive)
+    const authUser = listData.users.find(
+      u => u.email?.toLowerCase() === email.toLowerCase()
+    )
+
+    if (!authUser) {
+      console.error('[VERIFY EMAIL] User not found for provided email')
       return new Response(
         JSON.stringify({ success: false, error: 'Invalid verification link' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
-    // Use profile.id as the user identifier (non-PII)
-    const userId = profile.id
+    const userId = authUser.id
+
+    // Now fetch the user profile by ID
+    const { data: profile, error: profileError } = await supabaseAdmin
+      .from('user_profiles')
+      .select('email_verification_token, email_verification_token_expires_at, email_verified')
+      .eq('id', userId)
+      .single()
+
+    if (profileError || !profile) {
+      console.error('[VERIFY EMAIL] Profile not found for user_id:', userId, 'error:', profileError?.code || 'no_profile')
+      return new Response(
+        JSON.stringify({ success: false, error: 'Invalid verification link' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
 
     // Check if already verified
     if (profile.email_verified) {
