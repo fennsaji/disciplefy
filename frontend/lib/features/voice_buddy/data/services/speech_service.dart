@@ -66,7 +66,7 @@ class SpeechService {
   /// [onResult] - Callback for recognition results
   /// [onSoundLevelChange] - Optional callback for sound level (for waveform visualization)
   /// [onStatusChange] - Optional callback for status changes (listening, notListening, done)
-  /// [pauseFor] - Duration of silence before automatically stopping (default 10 seconds)
+  /// [pauseFor] - Duration of silence before automatically stopping (default 60 seconds)
   /// [listenFor] - Maximum duration to listen (default 60 seconds)
   Future<void> startListening({
     required String languageCode,

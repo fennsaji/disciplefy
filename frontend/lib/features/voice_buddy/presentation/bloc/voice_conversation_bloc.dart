@@ -473,39 +473,18 @@ class VoiceConversationBloc
       // Clean up any existing stream
       _cleanupStream();
 
-      // Get authentication headers
+      // Get authentication headers (sent via EventSourceBridge, not in URL)
       final headers = await ApiAuthHelper.getAuthHeaders();
       const baseUrl = AppConfig.supabaseUrl;
 
-      // Extract auth parameters
-      String? authToken;
-      String? apiKey;
-
-      if (headers.containsKey('Authorization')) {
-        final authHeader = headers['Authorization']!;
-        if (authHeader.startsWith('Bearer ')) {
-          authToken = authHeader.substring(7);
-        }
-      }
-
-      if (headers.containsKey('apikey')) {
-        apiKey = headers['apikey'];
-      }
-
       // Create URL with query parameters for GET request
+      // Note: Authentication is handled via headers in EventSourceBridge.connect()
+      // Do NOT include credentials in query params (insecure, redundant)
       final queryParams = <String, String>{
         'conversation_id': state.conversation!.id,
         'message': message,
         'language_code': state.languageCode,
       };
-
-      // Add authentication parameters to query (since EventSource can't send headers)
-      if (authToken != null) {
-        queryParams['authorization'] = authToken;
-      }
-      if (apiKey != null) {
-        queryParams['apikey'] = apiKey;
-      }
 
       // Create URI with query parameters
       final uri = Uri.parse('$baseUrl/functions/v1/voice-conversation').replace(

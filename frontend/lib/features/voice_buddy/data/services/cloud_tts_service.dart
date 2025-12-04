@@ -200,12 +200,19 @@ class CloudTTSService {
 
       if (response.statusCode != 200) {
         print('🔊 [CLOUD TTS] API error: ${response.statusCode}');
+        _isSpeaking = false;
         return false;
       }
 
-      // Decode audio content (base64)
-      final audioContent = response.data['audioContent'] as String;
-      final audioBytes = base64Decode(audioContent);
+      // Decode audio content (base64) with null-safety
+      final dynamic rawAudioContent = response.data['audioContent'];
+      if (rawAudioContent == null || rawAudioContent is! String) {
+        print(
+            '🔊 [CLOUD TTS] API response missing audioContent or invalid type');
+        _isSpeaking = false;
+        return false;
+      }
+      final audioBytes = base64Decode(rawAudioContent);
 
       print('🔊 [CLOUD TTS] Received ${audioBytes.length} bytes of audio');
 
