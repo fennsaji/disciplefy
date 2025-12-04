@@ -32,8 +32,10 @@ class VoiceButton extends StatefulWidget {
 }
 
 class _VoiceButtonState extends State<VoiceButton>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   late AnimationController _speakingController;
+  late AnimationController _listeningController;
+  late Animation<double> _pulseAnimation;
 
   @override
   void initState() {
@@ -42,14 +44,25 @@ class _VoiceButtonState extends State<VoiceButton>
       vsync: this,
       duration: const Duration(milliseconds: 1000),
     );
-    if (widget.state == VoiceButtonState.speaking) {
-      _speakingController.repeat(reverse: true);
-    }
+    _listeningController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1500),
+    );
+    _pulseAnimation = Tween<double>(begin: 1.0, end: 1.15).animate(
+      CurvedAnimation(parent: _listeningController, curve: Curves.easeInOut),
+    );
+
+    _updateAnimations();
   }
 
   @override
   void didUpdateWidget(VoiceButton oldWidget) {
     super.didUpdateWidget(oldWidget);
+    _updateAnimations();
+  }
+
+  void _updateAnimations() {
+    // Speaking animation
     if (widget.state == VoiceButtonState.speaking) {
       if (!_speakingController.isAnimating) {
         _speakingController.repeat(reverse: true);
@@ -58,11 +71,22 @@ class _VoiceButtonState extends State<VoiceButton>
       _speakingController.stop();
       _speakingController.reset();
     }
+
+    // Listening pulse animation
+    if (widget.state == VoiceButtonState.listening) {
+      if (!_listeningController.isAnimating) {
+        _listeningController.repeat(reverse: true);
+      }
+    } else {
+      _listeningController.stop();
+      _listeningController.reset();
+    }
   }
 
   @override
   void dispose() {
     _speakingController.dispose();
+    _listeningController.dispose();
     super.dispose();
   }
 
@@ -71,6 +95,10 @@ class _VoiceButtonState extends State<VoiceButton>
     final theme = Theme.of(context);
     final primaryColor = theme.colorScheme.primary;
     final secondaryColor = theme.colorScheme.secondary;
+    final isListening = widget.state == VoiceButtonState.listening;
+
+    // Listening color - bright blue/cyan for clear distinction
+    const listeningColor = Color(0xFF2196F3); // Bright blue
 
     return GestureDetector(
       // In continuous mode: tap to toggle listening
@@ -89,39 +117,111 @@ class _VoiceButtonState extends State<VoiceButton>
               ? (_) => widget.onTapUp?.call()
               : null,
       onTapCancel: !widget.isContinuousMode ? widget.onTapCancel : null,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        width: widget.size,
-        height: widget.size,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: _getGradientColors(primaryColor, secondaryColor),
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: primaryColor.withAlpha((0.3 * 255).round()),
-              blurRadius: 20,
-              spreadRadius: widget.state == VoiceButtonState.listening ||
-                      widget.state == VoiceButtonState.speaking
-                  ? 10
-                  : 0,
-            ),
-          ],
-        ),
-        child: Center(
-          child: _buildIcon(),
+      child: SizedBox(
+        // Fixed size to prevent layout shifts during animation
+        width: widget.size * 1.5,
+        height: widget.size * 1.5,
+        child: AnimatedBuilder(
+          animation: _pulseAnimation,
+          builder: (context, child) {
+            return Stack(
+              alignment: Alignment.center,
+              children: [
+                // Pulsing ring when listening
+                if (isListening)
+                  AnimatedBuilder(
+                    animation: _listeningController,
+                    builder: (context, _) {
+                      return Container(
+                        width: widget.size *
+                            (1.3 + 0.2 * _listeningController.value),
+                        height: widget.size *
+                            (1.3 + 0.2 * _listeningController.value),
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: listeningColor.withAlpha(
+                              ((0.6 - 0.4 * _listeningController.value) * 255)
+                                  .round(),
+                            ),
+                            width: 3,
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                // Second pulsing ring (delayed) when listening
+                if (isListening)
+                  AnimatedBuilder(
+                    animation: _listeningController,
+                    builder: (context, _) {
+                      final delayedValue =
+                          (_listeningController.value + 0.5) % 1.0;
+                      return Container(
+                        width: widget.size * (1.15 + 0.25 * delayedValue),
+                        height: widget.size * (1.15 + 0.25 * delayedValue),
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: listeningColor.withAlpha(
+                              ((0.4 - 0.3 * delayedValue) * 255).round(),
+                            ),
+                            width: 2,
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                // Main button
+                Transform.scale(
+                  scale: isListening ? _pulseAnimation.value : 1.0,
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    width: widget.size,
+                    height: widget.size,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: _getGradientColors(
+                          primaryColor,
+                          secondaryColor,
+                          listeningColor,
+                        ),
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: isListening
+                              ? listeningColor.withAlpha((0.5 * 255).round())
+                              : primaryColor.withAlpha((0.3 * 255).round()),
+                          blurRadius: isListening ? 25 : 20,
+                          spreadRadius: isListening ||
+                                  widget.state == VoiceButtonState.speaking
+                              ? 8
+                              : 0,
+                        ),
+                      ],
+                    ),
+                    child: Center(
+                      child: _buildIcon(),
+                    ),
+                  ),
+                ),
+              ],
+            );
+          },
         ),
       ),
     );
   }
 
-  List<Color> _getGradientColors(Color primary, Color secondary) {
+  List<Color> _getGradientColors(
+      Color primary, Color secondary, Color listeningColor) {
     switch (widget.state) {
       case VoiceButtonState.listening:
-        return [primary, primary.withAlpha((0.7 * 255).round())];
+        // Bright blue gradient for clear visual distinction
+        return [listeningColor, listeningColor.withAlpha((0.8 * 255).round())];
       case VoiceButtonState.processing:
         return [
           primary.withAlpha((0.5 * 255).round()),

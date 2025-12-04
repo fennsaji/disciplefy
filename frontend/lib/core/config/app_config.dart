@@ -17,6 +17,10 @@ class AppConfig {
   static const String googleClientId =
       String.fromEnvironment('GOOGLE_CLIENT_ID');
 
+  // Google Cloud TTS Configuration (for high-quality voice synthesis)
+  static const String googleCloudTtsApiKey =
+      String.fromEnvironment('GOOGLE_CLOUD_TTS_API_KEY');
+
   // Apple OAuth not implemented yet - placeholder for future
   static const String appleClientId = 'com.disciplefy.bible_study';
 

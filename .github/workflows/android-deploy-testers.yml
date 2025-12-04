@@ -71,6 +71,7 @@ jobs:
             --dart-define=GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_OAUTH_CLIENT_ID_ANDROID }} \
             --dart-define=APP_URL=${{ secrets.DEV_APP_URL }} \
             --dart-define=FLUTTER_ENV=development \
+            --dart-define=GOOGLE_CLOUD_TTS_API_KEY=${{ secrets.GOOGLE_CLOUD_TTS_API_KEY }} \
             --build-name=1.0.${{ github.run_number }} \
             --build-number=${{ github.run_number }}
 
