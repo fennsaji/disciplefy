@@ -97,6 +97,7 @@ flutter run -d chrome \
   --dart-define=GOOGLE_CLIENT_ID="$GOOGLE_CLIENT_ID" \
   --dart-define=APP_URL="$APP_URL" \
   --dart-define=FLUTTER_ENV="$FLUTTER_ENV" \
+  --dart-define=GOOGLE_CLOUD_TTS_API_KEY="$GOOGLE_CLOUD_TTS_API_KEY" \
   --dart-define=WEB_OAUTH_REDIRECT_URL="http://localhost:59641/auth/callback"
 
 echo -e "${GREEN}✅ Flutter development session ended${NC}"

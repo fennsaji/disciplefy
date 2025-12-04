@@ -28,21 +28,6 @@ class AppColors {
   static const Color shadowLight = Color(0x0F000000);
   static const Color shadowMedium = Color(0x1A000000);
 
-  // Payment method colors
-  static const Color cardBackground = Color(0xFFF8FAFC);
-  static const Color upiGreen = Color(0xFF059669);
-  static const Color netbankingBlue = Color(0xFF2563EB);
-  static const Color walletOrange = Color(0xFFF59E0B);
-
-  // Token purchase colors
-  static const Color tokenGold = Color(0xFFFFD700);
-  static const Color purchaseSuccess = Color(0xFF10B981);
-  static const Color purchaseFailure = Color(0xFFEF4444);
-
-  // Preference colors
-  static const Color preferenceSelected = Color(0xFFE0E7FF);
-  static const Color preferenceUnselected = Color(0xFFF9FAFB);
-
   // Additional getters for compatibility
   static Color get primaryColor => primary;
   static Color get secondaryColor => secondary;
@@ -50,7 +35,5 @@ class AppColors {
   static Color get successColor => success;
   static Color get warningColor => warning;
   static Color get surfaceColor => surface;
-  static Color get borderColor => divider;
   static Color get textTertiary => textSecondary;
-  static Color get highlightColor => secondary;
 }

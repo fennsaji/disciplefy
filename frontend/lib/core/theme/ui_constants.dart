@@ -164,35 +164,4 @@ class UIConstants {
   static const double chipPaddingVertical = 4.0;
   static const double chipBorderRadius = radiusMd; // 12.0
   static const double chipIconSize = iconSizeXs; // 16.0
-
-  // === HELPER METHODS ===
-
-  /// Get responsive padding based on screen width
-  static EdgeInsets getResponsivePadding(double screenWidth) {
-    if (screenWidth < breakpointMobile) {
-      return paddingMd; // 16px on mobile
-    } else if (screenWidth < breakpointTablet) {
-      return paddingLg; // 20px on large mobile/small tablet
-    } else {
-      return paddingXl; // 24px on tablet/desktop
-    }
-  }
-
-  /// Get responsive text size based on screen width
-  static double getResponsiveFontSize(double screenWidth, double baseFontSize) {
-    if (screenWidth < breakpointMobile) {
-      return baseFontSize * 0.9; // Slightly smaller on mobile
-    } else if (screenWidth < breakpointTablet) {
-      return baseFontSize; // Base size on tablet
-    } else {
-      return baseFontSize * 1.1; // Slightly larger on desktop
-    }
-  }
-
-  /// Get appropriate spacing based on content density
-  static double getContextualSpacing({
-    required bool isCompact,
-    double normalSpacing = spacingMd,
-  }) =>
-      isCompact ? normalSpacing * 0.75 : normalSpacing;
 }

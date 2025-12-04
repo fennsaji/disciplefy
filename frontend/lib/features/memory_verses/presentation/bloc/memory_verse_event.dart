@@ -176,21 +176,6 @@ class RefreshVerses extends MemoryVerseEvent {
   List<Object?> get props => [language];
 }
 
-/// Event to load a specific verse by ID.
-///
-/// Triggers fetching of a single verse for detailed view.
-///
-/// **Parameters:**
-/// - [verseId] - UUID of the verse to load
-class LoadVerseById extends MemoryVerseEvent {
-  final String verseId;
-
-  const LoadVerseById(this.verseId);
-
-  @override
-  List<Object?> get props => [verseId];
-}
-
 /// Event to fetch verse text from Bible API.
 ///
 /// Triggers fetching of verse text and localized reference from the

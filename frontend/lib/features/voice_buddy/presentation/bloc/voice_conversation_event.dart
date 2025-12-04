@@ -186,3 +186,13 @@ class PlaybackCompleted extends VoiceConversationEvent {
   @override
   List<Object?> get props => [shouldContinueListening];
 }
+
+/// Handle speech recognition status change.
+class SpeechStatusChanged extends VoiceConversationEvent {
+  final String status;
+
+  const SpeechStatusChanged(this.status);
+
+  @override
+  List<Object?> get props => [status];
+}

@@ -17,6 +17,31 @@ class AppConfig {
   static const String googleClientId =
       String.fromEnvironment('GOOGLE_CLIENT_ID');
 
+  /// Google Cloud Text-to-Speech API key for high-quality voice synthesis.
+  ///
+  /// Used by [CloudTTSService] to provide natural-sounding WaveNet and Neural2
+  /// voices for English, Hindi, and Malayalam in the Voice Buddy feature.
+  ///
+  /// **Optional Configuration:**
+  /// - May be empty when Cloud TTS is disabled or not configured
+  /// - When empty, the app falls back to device-native TTS (FlutterTts)
+  /// - Callers should check [CloudTTSService.isAvailable] before attempting synthesis
+  ///
+  /// **Security Notes:**
+  /// - This key is compiled into the app binary and should be treated as non-secret
+  /// - MUST be restricted in GCP Console to:
+  ///   - Cloud Text-to-Speech API only
+  ///   - Appropriate application restrictions (Android/iOS/Web referrers)
+  ///   - Quota limits to prevent abuse
+  /// - See: https://cloud.google.com/docs/authentication/api-keys#securing
+  ///
+  /// **Build Configuration:**
+  /// ```bash
+  /// flutter run --dart-define=GOOGLE_CLOUD_TTS_API_KEY=your_api_key
+  /// ```
+  static const String googleCloudTtsApiKey =
+      String.fromEnvironment('GOOGLE_CLOUD_TTS_API_KEY');
+
   // Apple OAuth not implemented yet - placeholder for future
   static const String appleClientId = 'com.disciplefy.bible_study';
 

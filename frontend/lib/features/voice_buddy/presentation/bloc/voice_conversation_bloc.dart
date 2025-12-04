@@ -1,11 +1,16 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../../../core/config/app_config.dart';
+import '../../../../core/services/api_auth_helper.dart';
+import '../../../../core/utils/event_source_bridge.dart';
 import '../../data/services/speech_service.dart';
 import '../../data/services/tts_service.dart';
+import '../../data/services/vad_service.dart';
 import '../../domain/entities/voice_conversation_entity.dart';
 import '../../domain/repositories/voice_buddy_repository.dart';
 import 'voice_conversation_event.dart';
@@ -19,20 +24,44 @@ class VoiceConversationBloc
   final TTSService _ttsService;
   final SupabaseClient _supabaseClient;
 
+  /// Voice Activity Detection service for intelligent silence detection
+  late final VADService _vadService;
+
   StreamSubscription? _speechSubscription;
   StreamSubscription? _streamSubscription;
-  Timer? _silenceTimer;
+
+  /// Current transcription text and confidence for VAD
+  String _currentTranscription = '';
+  double _currentConfidence = 0.0;
+
+  /// Timer for detecting silence after speech (3 seconds)
+  Timer? _silenceAfterSpeechTimer;
+
+  /// Whether user has started speaking in current session
+  bool _hasStartedSpeaking = false;
+
+  /// Buffer for accumulating text chunks during streaming TTS
+  String _streamingSentenceBuffer = '';
+
+  /// Whether streaming TTS session has been started
+  bool _streamingTTSStarted = false;
 
   VoiceConversationBloc({
     required VoiceBuddyRepository repository,
     required SpeechService speechService,
     required TTSService ttsService,
     required SupabaseClient supabaseClient,
+    VADConfig? vadConfig,
   })  : _repository = repository,
         _speechService = speechService,
         _ttsService = ttsService,
         _supabaseClient = supabaseClient,
         super(const VoiceConversationState()) {
+    // Initialize VAD service with configuration
+    _vadService = (vadConfig ?? VADConfig.defaultConfig).createService();
+    _vadService.onSilenceDetected = _onVADSilenceDetected;
+    _vadService.onStateChanged = _onVADStateChanged;
+
     on<StartConversation>(_onStartConversation);
     on<EndConversation>(_onEndConversation);
     on<StartListening>(_onStartListening);
@@ -51,6 +80,44 @@ class VoiceConversationBloc
     on<ToggleContinuousMode>(_onToggleContinuousMode);
     on<ChangeLanguage>(_onChangeLanguage);
     on<PlaybackCompleted>(_onPlaybackCompleted);
+    on<SpeechStatusChanged>(_onSpeechStatusChanged);
+  }
+
+  /// Called by VAD service when silence is detected (ready to auto-send)
+  void _onVADSilenceDetected(String text, double confidence) {
+    if (!state.isContinuousMode) return;
+    if (!state.isListening) return;
+    if (text.isEmpty) return;
+
+    print('🎙️ [VAD] Silence detected - auto-sending message');
+    print(
+        '  - Text: "${text.length > 50 ? '${text.substring(0, 50)}...' : text}"');
+    print('  - Confidence: ${(confidence * 100).toStringAsFixed(1)}%');
+
+    add(const StopListening());
+    add(SendTextMessage(text));
+  }
+
+  /// Called by VAD service when state changes
+  void _onVADStateChanged(VADState vadState) {
+    // Log VAD state changes for debugging
+    switch (vadState) {
+      case VADState.calibrating:
+        print('🎙️ [VAD] Calibrating ambient noise...');
+        break;
+      case VADState.listening:
+        print('🎙️ [VAD] Ready - listening for speech');
+        break;
+      case VADState.speaking:
+        // Don't log every speaking state change (too noisy)
+        break;
+      case VADState.silenceDetected:
+        print('🎙️ [VAD] Silence detected');
+        break;
+      case VADState.stopped:
+        print('🎙️ [VAD] Stopped');
+        break;
+    }
   }
 
   Future<void> _onLoadPreferences(
@@ -158,17 +225,25 @@ class VoiceConversationBloc
     if (!state.hasActiveConversation) return;
 
     // Stop any ongoing TTS playback when user starts speaking
-    if (state.isPlaying) {
+    if (state.isPlaying || _streamingTTSStarted) {
       print('🎙️ [VOICE] User started speaking - stopping TTS playback');
       _playbackFallbackTimer?.cancel();
       _playbackFallbackTimer = null;
-      await _ttsService.stop();
+      if (_streamingTTSStarted) {
+        await _ttsService.cancelStreaming();
+        _streamingTTSStarted = false;
+        _streamingSentenceBuffer = '';
+      } else {
+        await _ttsService.stop();
+      }
     }
 
     emit(state.copyWith(
       status: VoiceConversationStatus.listening,
       isListening: true,
       isPlaying: false,
+      clearCurrentTranscription:
+          true, // Clear old transcription when starting fresh
     ));
 
     // Initialize speech service if needed
@@ -182,6 +257,18 @@ class VoiceConversationBloc
       return;
     }
 
+    // Reset transcription tracking
+    _currentTranscription = '';
+    _currentConfidence = 0.0;
+    _hasStartedSpeaking = false;
+    _silenceAfterSpeechTimer?.cancel();
+    _silenceAfterSpeechTimer = null;
+
+    // Start VAD in continuous mode (with calibration on first start)
+    if (state.isContinuousMode) {
+      _vadService.start();
+    }
+
     // Start listening
     _speechSubscription?.cancel();
 
@@ -191,21 +278,72 @@ class VoiceConversationBloc
     try {
       await _speechService.startListening(
         languageCode: state.languageCode,
+        // Defaults: listenFor=60s, pauseFor=60s
+        // 3-second silence detection is handled by _silenceAfterSpeechTimer
         onResult: (result) {
           final text = result.recognizedWords;
           final confidence = result.confidence;
 
+          // Update tracking variables
+          _currentTranscription = text;
+          _currentConfidence = confidence;
+
           add(ProcessSpeechText(text: text, confidence: confidence));
 
-          // In continuous mode, the silence timer handles sending
-          // In normal mode, send on finalResult
-          if (result.finalResult && !isContinuousMode) {
-            add(const StopListening());
-            add(SendTextMessage(text));
+          // Feed transcription to VAD for debounced silence detection
+          if (isContinuousMode) {
+            _vadService.processTranscription(
+                text, confidence, result.finalResult);
+          }
+
+          // Simplified 3-second silence detection for continuous mode
+          if (isContinuousMode && text.isNotEmpty && !result.finalResult) {
+            _hasStartedSpeaking = true;
+
+            // Cancel existing timer and start new 3-second timer
+            _silenceAfterSpeechTimer?.cancel();
+            _silenceAfterSpeechTimer = Timer(const Duration(seconds: 3), () {
+              // After 3 seconds of no new transcription, send the message
+              if (_hasStartedSpeaking && _currentTranscription.isNotEmpty) {
+                print(
+                    '🎙️ [VOICE] 3-second silence detected - sending message');
+                print(
+                    '  - Text: "${_currentTranscription.length > 50 ? '${_currentTranscription.substring(0, 50)}...' : _currentTranscription}"');
+                add(const StopListening());
+                add(SendTextMessage(_currentTranscription));
+              }
+            });
+          }
+
+          // Handle finalResult - send message in both modes
+          if (result.finalResult && text.isNotEmpty) {
+            // Cancel silence timer since we're sending via finalResult
+            _silenceAfterSpeechTimer?.cancel();
+            _silenceAfterSpeechTimer = null;
+
+            if (isContinuousMode) {
+              // In continuous mode, send message but don't stop listening
+              // VAD might have already sent via silence detection, but that's ok
+              // as SendTextMessage checks for empty/duplicate
+              print(
+                  '🎙️ [VOICE] FinalResult in continuous mode - sending message');
+              add(SendTextMessage(text));
+            } else {
+              // In normal mode, stop listening and send
+              add(const StopListening());
+              add(SendTextMessage(text));
+            }
           }
         },
         onSoundLevelChange: (level) {
-          // Could emit sound level for waveform visualization
+          // Feed sound levels to VAD for audio-based silence detection
+          if (isContinuousMode) {
+            _vadService.processSoundLevel(level);
+          }
+        },
+        onStatusChange: (status) {
+          // Handle speech recognition status changes
+          add(SpeechStatusChanged(status));
         },
       );
     } catch (e) {
@@ -217,8 +355,13 @@ class VoiceConversationBloc
     StopListening event,
     Emitter<VoiceConversationState> emit,
   ) async {
-    _silenceTimer?.cancel();
-    _silenceTimer = null;
+    // Stop VAD service
+    _vadService.stop();
+
+    // Cancel silence timer
+    _silenceAfterSpeechTimer?.cancel();
+    _silenceAfterSpeechTimer = null;
+    _hasStartedSpeaking = false;
 
     await _speechService.stopListening();
     _speechSubscription?.cancel();
@@ -236,24 +379,8 @@ class VoiceConversationBloc
     Emitter<VoiceConversationState> emit,
   ) {
     emit(state.copyWith(currentTranscription: event.text));
-
-    // In continuous mode, start/reset silence timer to auto-send when user stops speaking
-    if (state.isContinuousMode && event.text.isNotEmpty) {
-      _startSilenceTimer(event.text);
-    }
-  }
-
-  void _startSilenceTimer(String currentText) {
-    _silenceTimer?.cancel();
-
-    // Wait 1.5 seconds of silence before auto-sending
-    _silenceTimer = Timer(const Duration(milliseconds: 1500), () {
-      if (state.isListening && currentText.isNotEmpty) {
-        print('🎙️ [VOICE] Silence detected - auto-sending message');
-        add(const StopListening());
-        add(SendTextMessage(currentText));
-      }
-    });
+    // Note: In continuous mode, VAD service handles silence detection via
+    // processTranscription() called in _onStartListening's onResult callback
   }
 
   Future<void> _onSendTextMessage(
@@ -262,9 +389,22 @@ class VoiceConversationBloc
   ) async {
     if (!state.hasActiveConversation || event.message.isEmpty) return;
 
+    // Prevent duplicate submissions if already processing/streaming
+    if (state.status == VoiceConversationStatus.processing ||
+        state.status == VoiceConversationStatus.streaming) {
+      print(
+          '🎙️ [VOICE] Ignoring duplicate SendTextMessage - already processing');
+      return;
+    }
+
+    // Clear transcription and reset internal tracking
+    _currentTranscription = '';
+    _currentConfidence = 0.0;
+
     emit(state.copyWith(
       status: VoiceConversationStatus.processing,
       streamingResponse: '',
+      clearCurrentTranscription: true, // Clear the displayed transcription
     ));
 
     // Add user message to local state
@@ -313,6 +453,156 @@ class VoiceConversationBloc
         return;
       }
 
+      // Check if we're on web and can use EventSource for true streaming
+      const supportsEventSource = kIsWeb;
+
+      if (supportsEventSource) {
+        await _startEventSourceStream(message);
+      } else {
+        // Fallback to regular HTTP request for mobile
+        await _fallbackHttpRequest(message);
+      }
+    } catch (e) {
+      add(StreamError(e.toString()));
+    }
+  }
+
+  /// Start true SSE streaming using EventSourceBridge (web only)
+  Future<void> _startEventSourceStream(String message) async {
+    try {
+      // Clean up any existing stream
+      _cleanupStream();
+
+      // Get authentication headers (sent via EventSourceBridge, not in URL)
+      final headers = await ApiAuthHelper.getAuthHeaders();
+      const baseUrl = AppConfig.supabaseUrl;
+
+      // Create URL with query parameters for GET request
+      // Note: Authentication is handled via headers in EventSourceBridge.connect()
+      // Do NOT include credentials in query params (insecure, redundant)
+      final queryParams = <String, String>{
+        'conversation_id': state.conversation!.id,
+        'message': message,
+        'language_code': state.languageCode,
+      };
+
+      // Create URI with query parameters
+      final uri = Uri.parse('$baseUrl/functions/v1/voice-conversation').replace(
+        queryParameters: queryParams,
+      );
+
+      print(
+          '🎙️ [VOICE] Starting EventSource stream to: ${uri.toString().substring(0, 100)}...');
+
+      // Create EventSource connection
+      final stream = EventSourceBridge.connect(
+        url: uri.toString(),
+        headers: headers,
+      );
+
+      _streamSubscription = stream.listen(
+        (String data) {
+          try {
+            final jsonData = jsonDecode(data) as Map<String, dynamic>;
+            _handleStreamingEvent(jsonData);
+          } catch (e) {
+            print('🎙️ [VOICE] Error parsing streaming data: $e');
+          }
+        },
+        onError: (error) {
+          print('🎙️ [VOICE] EventSource error: $error');
+
+          if (error.toString().contains('QUOTA_EXCEEDED')) {
+            add(const StreamError('Daily voice conversation quota exceeded'));
+          } else if (error.toString().contains('CONVERSATION_LIMIT_EXCEEDED')) {
+            add(const StreamError(
+                'Conversation message limit reached. Please start a new conversation.'));
+          } else {
+            add(StreamError('Streaming connection error: $error'));
+          }
+        },
+        onDone: () {
+          print('🎙️ [VOICE] EventSource connection closed');
+        },
+      );
+    } catch (e) {
+      add(StreamError('Failed to start streaming: $e'));
+    }
+  }
+
+  /// Handle individual streaming events from the backend
+  void _handleStreamingEvent(Map<String, dynamic> data) {
+    // The backend sends event type as a separate SSE field, but our bridge
+    // combines the JSON data. Check for known event patterns.
+
+    // Check for error events
+    if (data.containsKey('code')) {
+      final code = data['code'] as String?;
+      final message = data['message'] as String? ?? 'Unknown error';
+
+      if (code == 'UNAUTHORIZED') {
+        add(StreamError('Authentication required: $message'));
+        return;
+      } else if (code == 'SERVER_ERROR') {
+        add(StreamError(message));
+        return;
+      }
+    }
+
+    // Check for quota_exceeded event
+    if (data.containsKey('limit') &&
+        data.containsKey('tier') &&
+        !data.containsKey('remaining')) {
+      final message = data['message'] as String? ?? 'Quota exceeded';
+      add(StreamError(message));
+      return;
+    }
+
+    // Check for content event (streaming chunk)
+    if (data.containsKey('text')) {
+      final text = data['text'] as String? ?? '';
+      if (text.isNotEmpty) {
+        add(ReceiveStreamChunk(text));
+      }
+      return;
+    }
+
+    // Check for stream_end event
+    if (data.containsKey('scripture_references')) {
+      final refs = (data['scripture_references'] as List?)
+              ?.map((e) => e.toString())
+              .toList() ??
+          [];
+      add(StreamCompleted(scriptureReferences: refs));
+      _cleanupStream();
+      return;
+    }
+
+    // Check for quota_status event (informational, can ignore)
+    if (data.containsKey('remaining') && data.containsKey('limit')) {
+      print('🎙️ [VOICE] Quota status: ${data['remaining']}/${data['limit']}');
+      return;
+    }
+
+    // Check for stream_start event (informational)
+    if (data.containsKey('timestamp') &&
+        !data.containsKey('scripture_references')) {
+      print('🎙️ [VOICE] Stream started');
+      return;
+    }
+
+    // Check for conversation_limit_exceeded
+    if (data.containsKey('messageCount') && data.containsKey('limit')) {
+      final message =
+          data['message'] as String? ?? 'Conversation message limit reached';
+      add(StreamError(message));
+      return;
+    }
+  }
+
+  /// Fallback HTTP request for mobile platforms (non-streaming)
+  Future<void> _fallbackHttpRequest(String message) async {
+    try {
       // Use Supabase functions to call edge function
       final response = await _supabaseClient.functions.invoke(
         'voice-conversation',
@@ -328,12 +618,10 @@ class VoiceConversationBloc
       if (response.data is String) {
         responseText = response.data as String;
       } else if (response.data != null) {
-        // It might be a ByteStream or other type, try to convert
         try {
           final bytes = await response.data.toBytes();
           responseText = utf8.decode(bytes);
         } catch (e) {
-          // Fallback: try toString
           responseText = response.data.toString();
         }
       }
@@ -403,13 +691,97 @@ class VoiceConversationBloc
     }
   }
 
+  /// Cleans up streaming resources
+  void _cleanupStream() {
+    _streamSubscription?.cancel();
+    _streamSubscription = null;
+    EventSourceBridge.closeAll();
+  }
+
   void _onReceiveStreamChunk(
     ReceiveStreamChunk event,
     Emitter<VoiceConversationState> emit,
   ) {
-    emit(state.copyWith(
-      streamingResponse: state.streamingResponse + event.chunk,
-    ));
+    // Check if we need to start streaming TTS with this chunk
+    final shouldStartTTS = state.autoPlayResponse && !_streamingTTSStarted;
+
+    if (shouldStartTTS) {
+      // For the first chunk, combine streamingResponse AND isPlaying in one emit
+      // This ensures the UI shows the speaking animation immediately
+      emit(state.copyWith(
+        streamingResponse: state.streamingResponse + event.chunk,
+        isPlaying: true,
+      ));
+      _startStreamingTTS(emit);
+    } else {
+      // For subsequent chunks, just update the streaming response
+      emit(state.copyWith(
+        streamingResponse: state.streamingResponse + event.chunk,
+      ));
+    }
+
+    // Only process TTS if streaming was started
+    if (_streamingTTSStarted) {
+      _processChunkForTTS(event.chunk);
+    }
+  }
+
+  /// Start streaming TTS session with the current language
+  void _startStreamingTTS(Emitter<VoiceConversationState> emit) {
+    if (_streamingTTSStarted) return;
+
+    _streamingTTSStarted = true;
+    _streamingSentenceBuffer = '';
+
+    // Capture continuous mode state for the callback
+    final shouldContinueListening = state.isContinuousMode;
+
+    print('🎙️ [VOICE] Starting streaming TTS session');
+
+    // Note: isPlaying is already set to true in _onReceiveStreamChunk
+    // to ensure both streamingResponse and isPlaying are emitted together
+
+    _ttsService.startStreamingSession(
+      languageCode: state.languageCode,
+      onComplete: () {
+        print(
+            '🎙️ [VOICE] Streaming TTS complete, shouldContinueListening: $shouldContinueListening');
+        add(PlaybackCompleted(
+            shouldContinueListening: shouldContinueListening));
+      },
+    );
+  }
+
+  /// Process incoming text chunk for TTS - detect and queue complete sentences
+  void _processChunkForTTS(String chunk) {
+    // Add chunk to buffer
+    _streamingSentenceBuffer += chunk;
+
+    // Define sentence-ending punctuation patterns
+    // Match: sentence-ending punctuation followed by space or end of text
+    final sentencePattern = RegExp(r'([.!?।॥]+)\s+');
+
+    // Find all sentence boundaries
+    while (true) {
+      final match = sentencePattern.firstMatch(_streamingSentenceBuffer);
+      if (match == null) break;
+
+      // Extract the complete sentence (up to and including punctuation)
+      final sentenceEnd = match.end;
+      final completeSentence = _streamingSentenceBuffer.substring(
+          0, match.start + match.group(1)!.length);
+
+      // Remove the sentence from buffer
+      _streamingSentenceBuffer =
+          _streamingSentenceBuffer.substring(sentenceEnd);
+
+      // Add to TTS queue if it has meaningful content
+      if (completeSentence.trim().length > 3) {
+        print(
+            '🎙️ [VOICE] Queueing sentence: "${completeSentence.length > 50 ? '${completeSentence.substring(0, 50)}...' : completeSentence}"');
+        _ttsService.addSentenceToQueue(completeSentence.trim());
+      }
+    }
   }
 
   void _onStreamCompleted(
@@ -429,15 +801,39 @@ class VoiceConversationBloc
       createdAt: DateTime.now(),
     );
 
-    emit(state.copyWith(
-      status: VoiceConversationStatus.ready,
-      messages: [...state.messages, assistantMessage],
-      streamingResponse: '',
-    ));
+    // If streaming TTS was used, finish it and queue any remaining text
+    if (_streamingTTSStarted) {
+      // Queue any remaining buffered text (last sentence without trailing space)
+      if (_streamingSentenceBuffer.trim().isNotEmpty) {
+        print(
+            '🎙️ [VOICE] Queueing final sentence: "${_streamingSentenceBuffer.length > 50 ? '${_streamingSentenceBuffer.substring(0, 50)}...' : _streamingSentenceBuffer}"');
+        _ttsService.addSentenceToQueue(_streamingSentenceBuffer.trim());
+      }
 
-    // Auto-play response only if preference is enabled
-    if (state.autoPlayResponse) {
-      add(const PlayResponse());
+      // Mark streaming as finished - TTS will continue playing queued sentences
+      _ttsService.finishStreaming();
+
+      // Reset streaming state
+      _streamingTTSStarted = false;
+      _streamingSentenceBuffer = '';
+
+      emit(state.copyWith(
+        messages: [...state.messages, assistantMessage],
+        streamingResponse: '',
+        // Keep isPlaying true - TTS is still playing
+      ));
+    } else {
+      // No streaming TTS - use traditional flow
+      emit(state.copyWith(
+        status: VoiceConversationStatus.ready,
+        messages: [...state.messages, assistantMessage],
+        streamingResponse: '',
+      ));
+
+      // Auto-play response only if preference is enabled and streaming TTS wasn't used
+      if (state.autoPlayResponse) {
+        add(const PlayResponse());
+      }
     }
   }
 
@@ -445,10 +841,18 @@ class VoiceConversationBloc
     StreamError event,
     Emitter<VoiceConversationState> emit,
   ) {
+    // Cancel any streaming TTS
+    if (_streamingTTSStarted) {
+      _ttsService.cancelStreaming();
+      _streamingTTSStarted = false;
+      _streamingSentenceBuffer = '';
+    }
+
     emit(state.copyWith(
       status: VoiceConversationStatus.error,
       errorMessage: event.message,
       streamingResponse: '',
+      isPlaying: false,
     ));
   }
 
@@ -669,7 +1073,14 @@ class VoiceConversationBloc
     _playbackFallbackTimer?.cancel();
     _playbackFallbackTimer = null;
 
-    await _ttsService.stop();
+    // Cancel streaming TTS if active
+    if (_streamingTTSStarted) {
+      await _ttsService.cancelStreaming();
+      _streamingTTSStarted = false;
+      _streamingSentenceBuffer = '';
+    } else {
+      await _ttsService.stop();
+    }
 
     emit(state.copyWith(
       isPlaying: false,
@@ -742,12 +1153,49 @@ class VoiceConversationBloc
     emit(state.copyWith(languageCode: event.languageCode));
   }
 
+  /// Handle speech recognition status changes.
+  /// Updates UI when speech recognition stops due to timeout or completion.
+  void _onSpeechStatusChanged(
+    SpeechStatusChanged event,
+    Emitter<VoiceConversationState> emit,
+  ) {
+    print('🎙️ [VOICE] Speech status changed: ${event.status}');
+
+    // When status changes to 'notListening' or 'done', update UI accordingly
+    if ((event.status == 'notListening' || event.status == 'done') &&
+        state.isListening) {
+      print('🎙️ [VOICE] Speech recognition stopped - updating UI');
+
+      // Before stopping, check if we have unsent transcription
+      // Send it if we're not already processing a message
+      if (_currentTranscription.isNotEmpty &&
+          state.status != VoiceConversationStatus.processing &&
+          state.status != VoiceConversationStatus.streaming) {
+        print(
+            '🎙️ [VOICE] Speech stopped with pending text - sending: $_currentTranscription');
+        add(SendTextMessage(_currentTranscription));
+      }
+
+      // Stop VAD service
+      _vadService.stop();
+
+      // Update state to reflect that we're no longer listening
+      emit(state.copyWith(
+        isListening: false,
+        status: state.hasActiveConversation
+            ? VoiceConversationStatus.ready
+            : state.status,
+      ));
+    }
+  }
+
   @override
   Future<void> close() {
     _playbackFallbackTimer?.cancel();
-    _silenceTimer?.cancel();
+    _silenceAfterSpeechTimer?.cancel();
+    _vadService.dispose();
     _speechSubscription?.cancel();
-    _streamSubscription?.cancel();
+    _cleanupStream();
     _speechService.dispose();
     _ttsService.dispose();
     return super.close();

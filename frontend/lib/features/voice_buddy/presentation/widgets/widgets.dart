@@ -6,4 +6,3 @@ library;
 export 'conversation_bubble.dart';
 export 'language_selector.dart';
 export 'voice_button.dart';
-export 'voice_waveform.dart';
