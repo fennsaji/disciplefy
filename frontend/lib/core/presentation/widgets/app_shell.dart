@@ -29,7 +29,6 @@ class _AppShellState extends State<AppShell>
   late Animation<double> _fadeAnimation;
   late Animation<double> _scaleAnimation;
   int _previousIndex = 0;
-  bool _isAnimating = false;
   int? _pendingTabIndex;
 
   @override
@@ -50,12 +49,10 @@ class _AppShellState extends State<AppShell>
 
     if (status == AnimationStatus.dismissed && _pendingTabIndex != null) {
       // Reverse animation completed - switch to new tab
-      widget.navigationShell.goBranch(_pendingTabIndex!);
+      final targetIndex = _pendingTabIndex!;
       _pendingTabIndex = null;
+      widget.navigationShell.goBranch(targetIndex);
       _animController.forward();
-    } else if (status == AnimationStatus.completed && _isAnimating) {
-      // Forward animation completed - finish transition
-      _isAnimating = false;
     }
   }
 
@@ -88,14 +85,20 @@ class _AppShellState extends State<AppShell>
   }
 
   void _onTabChange(int index) {
-    if (index == widget.navigationShell.currentIndex || _isAnimating) return;
+    // Ignore if already on this tab
+    if (index == widget.navigationShell.currentIndex &&
+        _pendingTabIndex == null) {
+      return;
+    }
 
-    _isAnimating = true;
+    // Allow interrupting ongoing animation with new tab selection
     _pendingTabIndex = index;
 
-    // Fade through: fade out current content
-    // The status listener will handle switching tabs and fading in
-    _animController.reverse();
+    // If animation is already reversing, just update pending index (handled above)
+    // Otherwise, start the fade-out animation
+    if (_animController.status != AnimationStatus.reverse) {
+      _animController.reverse();
+    }
   }
 
   @override
@@ -103,7 +106,10 @@ class _AppShellState extends State<AppShell>
     final currentIndex = widget.navigationShell.currentIndex;
 
     // Detect tab change from external navigation (e.g., back button)
-    if (currentIndex != _previousIndex && !_isAnimating) {
+    // Only handle if no pending animation and controller is idle
+    if (currentIndex != _previousIndex &&
+        _pendingTabIndex == null &&
+        _animController.status == AnimationStatus.completed) {
       _previousIndex = currentIndex;
 
       // Quick fade in when tab changes externally
