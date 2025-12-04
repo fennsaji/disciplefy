@@ -6,7 +6,7 @@
  * - Server-Sent Events (SSE) for real-time streaming
  * - Multi-language support (English, Hindi, Malayalam)
  * - Conversation context management
- * - Quota enforcement (Free: not available, Standard: 3/day, Premium: unlimited)
+ * - Quota enforcement (Free: not available, Standard: 10/month, Premium: unlimited)
  * - Scripture reference integration
  */
 
@@ -405,42 +405,34 @@ Deno.serve(async (req) => {
 
       console.log(`🎙️ [VOICE] Processing message for conversation: ${conversation_id}`)
 
-      // Check quota using centralized authService for consistent plan logic
-      // Create AuthService instance with the same service client for consistent plan determination
+      // Get user's subscription tier for message limit check
       const authService = new AuthService(SUPABASE_URL, SUPABASE_ANON_KEY, supabaseAdmin)
       const tier = await authService.getUserPlan(req)
-      const quota = await checkAndUpdateQuota(supabaseAdmin, user.id, tier)
 
-      if (!quota.canProceed) {
-        await sendEvent('quota_exceeded', {
-          message: 'Daily voice conversation quota exceeded',
-          limit: quota.limit,
-          tier
-        })
-        await writer.close()
-        return
-      }
-
-      // Send quota status
-      await sendEvent('quota_status', {
-        remaining: quota.remaining,
-        limit: quota.limit,
-        tier
-      })
-
-      // Check conversation message limit (skip for premium users)
+      // NOTE: Monthly conversation quota (10/month for standard) is checked when STARTING
+      // a conversation, not here. This endpoint handles messages in EXISTING conversations.
+      // See: frontend/voice_buddy_remote_data_source.dart startConversation()
+      
+      // Check conversation message limit (50 messages per conversation for non-premium)
       if (tier !== 'premium') {
         const messageLimit = await checkConversationMessageLimit(supabaseAdmin, conversation_id)
 
         if (!messageLimit.canProceed) {
           await sendEvent('conversation_limit_exceeded', {
-            message: 'This conversation has reached the maximum message limit. Please start a new conversation.',
+            message: 'This conversation has reached the maximum message limit (50). Please start a new conversation.',
             messageCount: messageLimit.messageCount,
             limit: MAX_MESSAGES_PER_CONVERSATION
           })
           await writer.close()
           return
         }
+        
+        // Send message limit status
+        await sendEvent('message_limit_status', {
+          messageCount: messageLimit.messageCount,
+          limit: MAX_MESSAGES_PER_CONVERSATION,
+          remaining: MAX_MESSAGES_PER_CONVERSATION - messageLimit.messageCount
+        })
       }
 
       // Get user context
@@ -509,31 +501,11 @@ Deno.serve(async (req) => {
         }
       )
 
-      // Increment voice usage quota (skip for premium users with unlimited quota)
-      let updatedRemaining = quota.remaining
-      if (tier !== 'premium') {
-        const { error: usageError } = await supabaseAdmin.rpc('increment_voice_usage', {
-          p_user_id: user.id,
-          p_tier: tier,
-          p_language: language_code,
-        })
-
-        if (usageError) {
-          console.error('❌ [VOICE] Failed to increment voice usage:', usageError)
-          // Log but don't fail the request - the response was already sent successfully
-        } else {
-          // Update in-memory remaining counter
-          updatedRemaining = quota.remaining > 0 ? quota.remaining - 1 : 0
-          console.log(`📊 [VOICE] Incremented usage for user ${user.id}, tier: ${tier}, remaining: ${updatedRemaining}`)
-        }
-      }
-
-      // Send completion event with updated quota info
+      // Send completion event
       await sendEvent('stream_end', {
         timestamp: Date.now(),
         scripture_references: scriptureRefs,
         translation: getPrimaryTranslation(language_code),
-        quota_remaining: tier === 'premium' ? -1 : updatedRemaining,
       })
 
       console.log(`✅ [VOICE] Completed response for conversation: ${conversation_id}`)
