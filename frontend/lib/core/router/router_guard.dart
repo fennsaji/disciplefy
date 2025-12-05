@@ -27,6 +27,10 @@ class RouterGuard {
   static DateTime? _languageCacheTime;
   static const Duration _languageCacheExpiry = Duration(minutes: 10);
 
+  // PERFORMANCE FIX: Session-level cache for language selection (never expires during session)
+  // Once language selection is confirmed, don't re-check until app restart or logout
+  static bool _sessionLanguageConfirmed = false;
+
   // Flag to track if we've registered with the cache coordinator
   static bool _isRegisteredWithCoordinator = false;
 
@@ -39,16 +43,6 @@ class RouterGuard {
     // Clean any hash fragments that might interfere with routing
     // This is a safeguard for OAuth callback URLs that might preserve fragments
     final cleanPath = currentPath.split('#').first;
-
-    Logger.info(
-      'Processing route redirect',
-      tag: 'ROUTER',
-      context: {
-        'original_path': currentPath,
-        'clean_path': cleanPath,
-        'is_auth_initialized': isAuthInitialized,
-      },
-    );
 
     // ANDROID FIX: Show loading screen while Supabase is restoring session
     // This prevents the flash of login screen during app startup on Android
@@ -71,9 +65,6 @@ class RouterGuard {
     final onboardingState = _getOnboardingState();
     final languageSelectionState = await _getLanguageSelectionState();
     final routeAnalysis = _analyzeCurrentRoute(cleanPath);
-
-    _logNavigationState(
-        authState, onboardingState, routeAnalysis, languageSelectionState);
 
     return await _determineRedirect(
         authState, onboardingState, languageSelectionState, routeAnalysis);
@@ -169,8 +160,13 @@ class RouterGuard {
   }
 
   /// Get language selection completion state with router-level caching
-  /// This prevents excessive API calls on every navigation
+  /// PERFORMANCE FIX: Uses session-level cache to avoid async calls on every navigation
   static Future<LanguageSelectionState> _getLanguageSelectionState() async {
+    // PERFORMANCE FIX: If language is already confirmed this session, skip all checks
+    if (_sessionLanguageConfirmed) {
+      return const LanguageSelectionState(isCompleted: true);
+    }
+
     // Ensure we're registered with the cache coordinator
     _registerWithCacheCoordinator();
 
@@ -181,15 +177,27 @@ class RouterGuard {
       if (_isLanguageCacheFresh() &&
           _cachedUserId == currentUserId &&
           _cachedLanguageState != null) {
-        Logger.info(
-          'Using cached language selection state',
-          tag: 'LANGUAGE_SELECTION_CACHE',
-          context: {
-            'cached_completion_status': _cachedLanguageState!.isCompleted,
-            'user_id': currentUserId,
-          },
-        );
+        // PERFORMANCE FIX: If cached as completed, set session flag to skip future checks
+        if (_cachedLanguageState!.isCompleted) {
+          _sessionLanguageConfirmed = true;
+        }
         return _cachedLanguageState!;
+      }
+
+      // PERFORMANCE FIX: Check local SharedPreferences first (synchronous)
+      // This avoids the database call in most cases
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        final locallyCompleted =
+            prefs.getBool('has_completed_language_selection') ?? false;
+        if (locallyCompleted) {
+          _sessionLanguageConfirmed = true;
+          _cacheLanguageSelectionState(
+              currentUserId, const LanguageSelectionState(isCompleted: true));
+          return const LanguageSelectionState(isCompleted: true);
+        }
+      } catch (_) {
+        // Ignore SharedPreferences errors, fall through to full check
       }
 
       final languageService = sl<LanguagePreferenceService>();
@@ -199,14 +207,10 @@ class RouterGuard {
       _cacheLanguageSelectionState(
           currentUserId, LanguageSelectionState(isCompleted: isCompleted));
 
-      Logger.info(
-        'Language selection state retrieved and cached',
-        tag: 'LANGUAGE_SELECTION',
-        context: {
-          'language_selection_completed': isCompleted,
-          'user_id': currentUserId,
-        },
-      );
+      // PERFORMANCE FIX: Set session flag if completed
+      if (isCompleted) {
+        _sessionLanguageConfirmed = true;
+      }
 
       return LanguageSelectionState(isCompleted: isCompleted);
     } catch (e) {
@@ -587,84 +591,67 @@ class RouterGuard {
   }
 
   /// Check for pending premium upgrade flag and return redirect if needed
-  /// Also checks if user already has premium - if so, clears flag and skips redirect
+  /// PERFORMANCE FIX: Only does database check if flag is actually set (rare case)
   static Future<String?> _checkPendingPremiumUpgradeAsync() async {
     try {
       final box = Hive.box(_hiveBboxName);
       final pendingPremiumUpgrade =
           box.get('pending_premium_upgrade', defaultValue: false);
 
-      if (pendingPremiumUpgrade == true) {
-        // Check if user already has an active premium subscription
-        final userId = Supabase.instance.client.auth.currentUser?.id;
-        if (userId != null) {
-          Map<String, dynamic>? subscription;
-          try {
-            subscription = await Supabase.instance.client
-                .from('subscriptions')
-                .select('status, plan_type')
-                .eq('user_id', userId)
-                .inFilter('status',
-                    ['active', 'authenticated', 'pending_cancellation'])
-                .maybeSingle()
-                .timeout(
-                  const Duration(seconds: 10),
-                  onTimeout: () {
-                    Logger.warning(
-                      'Subscription query timed out after 10 seconds',
-                      tag: 'ROUTER',
-                      context: {'user_id': userId},
-                    );
-                    return null;
-                  },
-                );
-          } on TimeoutException catch (e) {
-            Logger.warning(
-              'Subscription query timeout: ${e.message}',
-              tag: 'ROUTER',
-              context: {'user_id': userId},
-            );
-            // Continue without subscription check - allow redirect to upgrade page
-          } catch (e) {
-            Logger.error(
-              'Error checking subscription status',
-              tag: 'ROUTER',
-              error: e,
-              context: {'user_id': userId},
-            );
-            // Continue without subscription check - allow redirect to upgrade page
-          }
+      // PERFORMANCE FIX: Early return if no pending upgrade (most common case)
+      if (pendingPremiumUpgrade != true) {
+        return null;
+      }
 
-          if (subscription != null &&
-              (subscription['plan_type'] as String?)?.startsWith('premium') ==
-                  true) {
-            // User already has premium - clear flag and don't redirect
-            box.delete('pending_premium_upgrade');
-            Logger.info(
-              'User already has premium subscription - skipping upgrade redirect',
-              tag: 'ROUTER',
-              context: {
-                'user_id': userId,
-                'subscription_status': subscription['status'],
-                'plan_type': subscription['plan_type'],
-              },
-            );
-            return null;
-          }
+      // Only reach here if there's actually a pending upgrade flag (rare)
+      // Check if user already has an active premium subscription
+      final userId = Supabase.instance.client.auth.currentUser?.id;
+      if (userId != null) {
+        Map<String, dynamic>? subscription;
+        try {
+          subscription = await Supabase.instance.client
+              .from('subscriptions')
+              .select('status, plan_type')
+              .eq('user_id', userId)
+              .inFilter(
+                  'status', ['active', 'authenticated', 'pending_cancellation'])
+              .maybeSingle()
+              .timeout(
+                const Duration(seconds: 5), // Reduced from 10 to 5 seconds
+                onTimeout: () {
+                  Logger.warning(
+                    'Subscription query timed out',
+                    tag: 'ROUTER',
+                  );
+                  return null;
+                },
+              );
+        } on TimeoutException {
+          // Continue without subscription check - allow redirect to upgrade page
+        } catch (e) {
+          Logger.error(
+            'Error checking subscription status',
+            tag: 'ROUTER',
+            error: e,
+          );
         }
 
-        // Clear the flag and redirect to premium upgrade
-        box.delete('pending_premium_upgrade');
-        Logger.info(
-          'Pending premium upgrade detected - redirecting to premium page',
-          tag: 'ROUTER',
-          context: {
-            'redirect_target': AppRoutes.premiumUpgrade,
-            'redirect_reason': 'pending_premium_upgrade',
-          },
-        );
-        return AppRoutes.premiumUpgrade;
+        if (subscription != null &&
+            (subscription['plan_type'] as String?)?.startsWith('premium') ==
+                true) {
+          // User already has premium - clear flag and don't redirect
+          box.delete('pending_premium_upgrade');
+          return null;
+        }
       }
+
+      // Clear the flag and redirect to premium upgrade
+      box.delete('pending_premium_upgrade');
+      Logger.info(
+        'Pending premium upgrade detected - redirecting to premium page',
+        tag: 'ROUTER',
+      );
+      return AppRoutes.premiumUpgrade;
     } catch (e) {
       Logger.error(
         'Error checking pending premium upgrade',
@@ -778,6 +765,7 @@ class RouterGuard {
     _cachedUserId = null;
     _cachedLanguageState = null;
     _languageCacheTime = null;
+    _sessionLanguageConfirmed = false; // PERFORMANCE FIX: Reset session flag
     Logger.info('Router language selection cache invalidated',
         tag: 'ROUTER_CACHE');
   }
