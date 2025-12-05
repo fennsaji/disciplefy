@@ -198,7 +198,7 @@ class _AppShellState extends State<AppShell>
         }
       },
       child: Scaffold(
-        backgroundColor: const Color(0xFF1E1E1E),
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         body: Stack(
           children: [
             // Main content with animation
@@ -211,12 +211,18 @@ class _AppShellState extends State<AppShell>
             ),
             // Loading indicator overlay - shown during async navigation
             if (_showLoadingIndicator)
-              Container(
-                color: const Color(0xFF1E1E1E),
-                child: Center(
-                  child: CircularProgressIndicator(
-                    color: Theme.of(context).colorScheme.primary,
-                    strokeWidth: 3,
+              Semantics(
+                label: 'Loading content',
+                liveRegion: true,
+                container: true,
+                child: Container(
+                  color: Theme.of(context).scaffoldBackgroundColor,
+                  child: Center(
+                    child: CircularProgressIndicator(
+                      color: Theme.of(context).colorScheme.primary,
+                      strokeWidth: 3,
+                      semanticsLabel: 'Loading',
+                    ),
                   ),
                 ),
               ),
