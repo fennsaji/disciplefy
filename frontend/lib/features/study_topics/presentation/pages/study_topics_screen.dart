@@ -89,11 +89,18 @@ class _StudyTopicsScreenState extends State<StudyTopicsScreen> {
   }
 
   Future<void> _loadLanguageAndInitialize() async {
+    // PERFORMANCE FIX: Set languageLoaded immediately to unblock UI,
+    // then update with actual language when available
+    if (mounted && !_languageLoaded) {
+      setState(() {
+        _languageLoaded = true;
+      });
+    }
+
     final language = await _languageService.getSelectedLanguage();
     if (mounted) {
       setState(() {
         _currentLanguage = language.code;
-        _languageLoaded = true;
       });
       // Always force refresh to ensure correct language content is loaded
       // This handles cases where the screen is kept alive by IndexedStack
