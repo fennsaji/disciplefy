@@ -12,12 +12,15 @@ import { LLMService, LLMServiceConfig } from '../services/llm-service.ts'
 import { StudyGuideRepository } from '../repositories/study-guide-repository.ts'
 import { TopicsRepository } from '../repositories/topics-repository.ts'
 import { FeedbackRepository } from '../repositories/feedback-repository.ts'
+import { VoiceConversationRepository } from '../repositories/voice-conversation-repository.ts'
 import { StudyGuideService } from '../services/study-guide-service.ts'
 import { FeedbackService } from '../services/feedback-service.ts'
 import { PersonalNotesService } from '../services/personal-notes-service.ts'
 import { RateLimiter } from '../services/rate-limiter.ts'
 import { TokenService } from '../services/token-service.ts'
 import { AnalyticsLogger } from '../services/analytics-service.ts'
+import { VoiceStreamingService } from '../services/voice-streaming-service.ts'
+import { VoiceQuotaService } from '../services/voice-quota-service.ts'
 import { SecurityValidator } from '../utils/security-validator.ts'
 import { AppError } from '../utils/error-handler.ts'
 import { DailyVerseService } from '../../daily-verse/daily-verse-service.ts'
@@ -43,6 +46,7 @@ export interface ServiceContainer {
   readonly studyGuideRepository: StudyGuideRepository
   readonly topicsRepository: TopicsRepository
   readonly feedbackRepository: FeedbackRepository
+  readonly voiceConversationRepository: VoiceConversationRepository
   readonly studyGuideService: StudyGuideService
   readonly feedbackService: FeedbackService
   readonly personalNotesService: PersonalNotesService
@@ -51,6 +55,8 @@ export interface ServiceContainer {
   readonly analyticsLogger: AnalyticsLogger
   readonly securityValidator: SecurityValidator
   readonly dailyVerseService: DailyVerseService
+  readonly voiceStreamingService: VoiceStreamingService
+  readonly voiceQuotaService: VoiceQuotaService
   readonly serviceRoleClient: SupabaseClient // Alias for compatibility
 }
 
@@ -123,6 +129,7 @@ async function initializeServiceContainer(): Promise<ServiceContainer> {
     const studyGuideRepository = new StudyGuideRepository(supabaseServiceClient)
     const topicsRepository = new TopicsRepository(supabaseServiceClient)
     const feedbackRepository = new FeedbackRepository(supabaseServiceClient)
+    const voiceConversationRepository = new VoiceConversationRepository(supabaseServiceClient)
     const studyGuideService = new StudyGuideService(llmService, studyGuideRepository)
     const feedbackService = new FeedbackService()
     const personalNotesService = new PersonalNotesService(studyGuideRepository)
@@ -132,6 +139,11 @@ async function initializeServiceContainer(): Promise<ServiceContainer> {
     const analyticsLogger = new AnalyticsLogger(supabaseServiceClient)
     const securityValidator = new SecurityValidator()
     const dailyVerseService = new DailyVerseService(supabaseServiceClient, llmService)
+    const voiceStreamingService = new VoiceStreamingService({
+      openaiApiKey: config.openaiApiKey || '',
+      anthropicApiKey: config.anthropicApiKey
+    })
+    const voiceQuotaService = new VoiceQuotaService(supabaseServiceClient)
 
     // Test LLM service initialization
     try {
@@ -150,6 +162,7 @@ async function initializeServiceContainer(): Promise<ServiceContainer> {
       studyGuideRepository,
       topicsRepository,
       feedbackRepository,
+      voiceConversationRepository,
       studyGuideService,
       feedbackService,
       personalNotesService,
@@ -158,6 +171,8 @@ async function initializeServiceContainer(): Promise<ServiceContainer> {
       analyticsLogger,
       securityValidator,
       dailyVerseService,
+      voiceStreamingService,
+      voiceQuotaService,
       serviceRoleClient: supabaseServiceClient // Alias for compatibility
     }
 
