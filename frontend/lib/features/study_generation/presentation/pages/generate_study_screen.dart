@@ -242,9 +242,13 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
   }
 
   bool _validateScriptureReference(String text) {
-    // Basic regex pattern for scripture references
-    final scripturePattern =
-        RegExp(r'^[1-3]?\s*[a-zA-Z]+\s+\d+(?::\d+(?:-\d+)?)?$');
+    // Unicode-aware regex pattern for scripture references
+    // Uses [\p{L}\p{M}]+ to match letters AND combining marks
+    // (required for Malayalam, Hindi, and other Indic scripts)
+    final scripturePattern = RegExp(
+      r'^[1-3]?\s*[\p{L}\p{M}]+\s+\d+(?::\d+(?:-\d+)?)?$',
+      unicode: true,
+    );
     return scripturePattern.hasMatch(text);
   }
 
