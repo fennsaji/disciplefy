@@ -373,12 +373,14 @@ class SubscriptionRemoteDataSourceImpl implements SubscriptionRemoteDataSource {
       // Query subscriptions table for active subscription
       // Include 'cancelled' status to handle subscriptions that are cancelled
       // but still active until the end of the billing period
+      // Use .limit(1) to ensure only one row is returned when multiple exist
       final response = await _supabaseClient
           .from('subscriptions')
           .select()
           .eq('user_id', user.id)
           .inFilter('status', ['active', 'authenticated', 'cancelled'])
           .order('created_at', ascending: false)
+          .limit(1)
           .maybeSingle();
 
       print('💎 [SUBSCRIPTION_API] Active subscription response: $response');
