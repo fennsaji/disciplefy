@@ -328,6 +328,14 @@ class TranslationKeys {
   static const settingsTakeQuestionnaireSubtitle =
       'settings.take_questionnaire_subtitle';
 
+  // Settings - Help & Support
+  static const settingsHelpSupport = 'settings.help_support';
+  static const settingsReportPurchaseIssue = 'settings.report_purchase_issue';
+  static const settingsReportPurchaseIssueSubtitle =
+      'settings.report_purchase_issue_subtitle';
+  static const settingsContactUs = 'settings.contact_us';
+  static const settingsContactUsSubtitle = 'settings.contact_us_subtitle';
+
   // Personalization Questionnaire
   static const questionnaireYourJourney = 'questionnaire.your_journey';
   static const questionnaireWhatYouSeek = 'questionnaire.what_you_seek';
