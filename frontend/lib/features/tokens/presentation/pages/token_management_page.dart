@@ -321,31 +321,49 @@ class _TokenManagementPageState extends State<TokenManagementPage>
 
   @override
   Widget build(BuildContext context) {
-    return BlocListener<SubscriptionBloc, SubscriptionState>(
-      listener: (context, state) {
-        // Handle subscription resume success
-        if (state is SubscriptionResumed) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(state.result.message),
-              backgroundColor: Colors.green,
-            ),
-          );
-          // Refresh token status to update UI
-          context.read<TokenBloc>().add(const RefreshTokenStatus());
-          // Refresh subscription to clear pending_cancellation flag
-          context.read<SubscriptionBloc>().add(const RefreshSubscription());
-        }
-        // Handle subscription resume error
-        else if (state is SubscriptionError && state.operation == 'resuming') {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(state.failure.message),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
-      },
+    return MultiBlocListener(
+      listeners: [
+        // Token BLoC listener for purchase success
+        BlocListener<TokenBloc, TokenState>(
+          listener: (context, state) {
+            // Handle purchase success - refresh token status immediately
+            if (state is TokenPurchaseSuccess) {
+              debugPrint(
+                  '[TokenManagementPage] TokenPurchaseSuccess received - refreshing token status');
+              // Immediately refresh to get the latest balance
+              context.read<TokenBloc>().add(const RefreshTokenStatus());
+            }
+          },
+        ),
+        // Subscription BLoC listener
+        BlocListener<SubscriptionBloc, SubscriptionState>(
+          listener: (context, state) {
+            // Handle subscription resume success
+            if (state is SubscriptionResumed) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(state.result.message),
+                  backgroundColor: Colors.green,
+                ),
+              );
+              // Refresh token status to update UI
+              context.read<TokenBloc>().add(const RefreshTokenStatus());
+              // Refresh subscription to clear pending_cancellation flag
+              context.read<SubscriptionBloc>().add(const RefreshSubscription());
+            }
+            // Handle subscription resume error
+            else if (state is SubscriptionError &&
+                state.operation == 'resuming') {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(state.failure.message),
+                  backgroundColor: Colors.red,
+                ),
+              );
+            }
+          },
+        ),
+      ],
       child: PopScope(
         canPop: false,
         onPopInvokedWithResult: (didPop, result) {
@@ -473,6 +491,10 @@ class _TokenManagementPageState extends State<TokenManagementPage>
                 );
               } else if (state is TokenLoaded) {
                 return _buildTokenManagement(state.tokenStatus);
+              } else if (state is TokenPurchaseSuccess) {
+                // Show updated balance immediately from purchase success state
+                // while refresh is in progress
+                return _buildTokenManagement(state.updatedTokenStatus);
               }
 
               // Handle any other unexpected states
@@ -490,7 +512,7 @@ class _TokenManagementPageState extends State<TokenManagementPage>
           ),
         ), // PopScope child: Scaffold
       ), // PopScope
-    ); // BlocListener
+    ); // MultiBlocListener
   }
 
   Widget _buildTokenManagement(TokenStatus tokenStatus) {
