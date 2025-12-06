@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../../../../core/router/app_routes.dart';
 import '../../../../core/constants/app_fonts.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/di/injection_container.dart';
@@ -136,6 +137,10 @@ class _SettingsScreenContent extends StatelessWidget {
 
                         // Personalization Section (only for authenticated non-anonymous users)
                         _buildPersonalizationSection(context),
+
+                        // Help & Support Section
+                        _buildHelpSupportSection(context),
+                        const SizedBox(height: 24),
 
                         // Account Section
                         _buildAccountSection(context),
@@ -434,6 +439,64 @@ class _SettingsScreenContent extends StatelessWidget {
     });
   }
 
+  /// Help & Support Section
+  Widget _buildHelpSupportSection(BuildContext context) => _buildSection(
+        title: context.tr(TranslationKeys.settingsHelpSupport),
+        children: [
+          // Send Feedback tile
+          _buildSettingsTile(
+            context: context,
+            icon: Icons.feedback_outlined,
+            title: context.tr(TranslationKeys.settingsFeedback),
+            subtitle: context.tr(TranslationKeys.settingsFeedbackSubtitle),
+            trailing: Icon(
+              Icons.arrow_forward_ios,
+              size: 16,
+              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+            ),
+            onTap: () => _showFeedbackBottomSheet(context),
+          ),
+          _buildDivider(),
+          // Report Purchase Issue tile
+          _buildSettingsTile(
+            context: context,
+            icon: Icons.receipt_long_outlined,
+            title: context.tr(TranslationKeys.settingsReportPurchaseIssue),
+            subtitle:
+                context.tr(TranslationKeys.settingsReportPurchaseIssueSubtitle),
+            trailing: Icon(
+              Icons.arrow_forward_ios,
+              size: 16,
+              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+            ),
+            onTap: () => context.push(AppRoutes.purchaseHistory),
+          ),
+          _buildDivider(),
+          // Contact Us tile
+          _buildSettingsTile(
+            context: context,
+            icon: Icons.email_outlined,
+            title: context.tr(TranslationKeys.settingsContactUs),
+            subtitle: context.tr(TranslationKeys.settingsContactUsSubtitle),
+            trailing: Icon(
+              Icons.arrow_forward_ios,
+              size: 16,
+              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+            ),
+            onTap: () => _launchContactEmail(),
+          ),
+        ],
+      );
+
+  /// Launch contact email
+  Future<void> _launchContactEmail() async {
+    final uri = Uri.parse(
+        'mailto:contact@disciplefy.com?subject=Disciplefy Support Request');
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri);
+    }
+  }
+
   /// Account Section with AuthStateProvider integration
   Widget _buildAccountSection(BuildContext context) => ListenableBuilder(
         listenable: sl<AuthStateProvider>(),
@@ -530,19 +593,6 @@ class _SettingsScreenContent extends StatelessWidget {
               color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
             ),
             onTap: () => _launchPrivacyPolicy(),
-          ),
-          _buildDivider(),
-          _buildSettingsTile(
-            context: context,
-            icon: Icons.feedback_outlined,
-            title: context.tr(TranslationKeys.settingsFeedback),
-            subtitle: context.tr(TranslationKeys.settingsFeedbackSubtitle),
-            trailing: Icon(
-              Icons.arrow_forward_ios,
-              size: 16,
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-            ),
-            onTap: () => _showFeedbackBottomSheet(context),
           ),
         ],
       );
