@@ -133,7 +133,8 @@ async function handleStudyGenerate(req: Request, { authService, llmService, stud
     inputType: input_type,
     inputValue: input_value,
     topicDescription: topic_description,  // Provides additional context for topic-based guides
-    language: targetLanguage
+    language: targetLanguage,
+    tier: userPlan  // Premium English users get GPT-4.1-mini
   })
 
   // 8. Save to repository

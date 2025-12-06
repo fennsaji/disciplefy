@@ -13,6 +13,11 @@ import { AppError } from '../_shared/utils/error-handler.ts'
 import { TokenPurchaseRequest } from '../_shared/types/token-types.ts'
 import Razorpay from 'npm:razorpay'
 import { createHmac } from 'node:crypto'
+import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import type { AuthService } from '../_shared/services/auth-service.ts'
+import type { RateLimiter } from '../_shared/services/rate-limiter.ts'
+import type { TokenService } from '../_shared/services/token-service.ts'
+import type { AnalyticsLogger } from '../_shared/services/analytics-service.ts'
 
 /**
  * Token purchase handler - main orchestrator
@@ -64,7 +69,7 @@ async function handleTokenPurchase(req: Request, services: ServiceContainer): Pr
 /**
  * Authenticate user and authorize purchase operation
  */
-async function authenticateAndAuthorize(req: Request, authService: any, rateLimiter: any, tokenService: any): Promise<{ userId: string, userPlan: string }> {
+async function authenticateAndAuthorize(req: Request, authService: AuthService, rateLimiter: RateLimiter, tokenService: TokenService): Promise<{ userId: string, userPlan: string }> {
   const userContext = await authService.getUserContext(req)
   
   if (userContext.type !== 'authenticated') {
@@ -137,7 +142,7 @@ async function parseAndValidateRequestBody(req: Request): Promise<{ tokenAmount:
 /**
  * Check for duplicate payment to prevent double-spending
  */
-async function checkForDuplicatePayment(paymentId: string | undefined, supabaseServiceClient: any): Promise<void> {
+async function checkForDuplicatePayment(paymentId: string | undefined, supabaseServiceClient: SupabaseClient): Promise<void> {
   if (!paymentId) return
   
   const { data, error } = await supabaseServiceClient
@@ -168,7 +173,7 @@ async function checkForDuplicatePayment(paymentId: string | undefined, supabaseS
  * Compute cost in rupees and paise
  * Now async to support pricing package lookup with discounts
  */
-async function computeCost(tokenAmount: number, tokenService: any): Promise<{ costInRupees: number, costInPaise: number }> {
+async function computeCost(tokenAmount: number, tokenService: TokenService): Promise<{ costInRupees: number, costInPaise: number }> {
   const costInRupees = await tokenService.calculateCostInRupees(tokenAmount)
 
   if (!Number.isFinite(costInRupees)) {
@@ -214,7 +219,7 @@ async function persistPendingPurchase(params: {
   order_id: string
   token_amount: number
   amount_paise: number
-}, supabaseServiceClient: any): Promise<void> {
+}, supabaseServiceClient: SupabaseClient): Promise<void> {
   const { data: purchaseId, error } = await supabaseServiceClient
     .rpc('store_pending_purchase', {
       p_user_id: params.user_id,
@@ -254,7 +259,7 @@ async function logSuccessAndRespond(params: {
   costInRupees: number
   userPlan: string
   userId: string
-}, analyticsLogger: any, forwardedFor: string | null): Promise<Response> {
+}, analyticsLogger: AnalyticsLogger, forwardedFor: string | null): Promise<Response> {
   // Validate RAZORPAY_KEY_ID is configured before including in response
   const razorpayKeyId = Deno.env.get('RAZORPAY_KEY_ID')
   if (!razorpayKeyId) {
@@ -293,7 +298,7 @@ async function logSuccessAndRespond(params: {
 /**
  * Log failure event
  */
-async function logFailure(error: any, analyticsLogger: any, forwardedFor: string | null): Promise<void> {
+async function logFailure(error: unknown, analyticsLogger: AnalyticsLogger, forwardedFor: string | null): Promise<void> {
   await analyticsLogger.logEvent('payment_order_failed', {
     error_message: error instanceof Error ? error.message : 'Unknown error'
   }, forwardedFor)

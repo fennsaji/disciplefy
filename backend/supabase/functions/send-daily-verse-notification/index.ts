@@ -4,11 +4,37 @@
 // Sends daily Bible verse push notifications to all eligible users
 // Triggered by GitHub Actions workflow at 6 AM across different timezones
 
-import { createSimpleFunction } from '../_shared/core/function-factory.ts';
-import { ServiceContainer } from '../_shared/core/services.ts';
-import { FCMService, logNotification, getBatchNotificationStatus } from '../_shared/fcm-service.ts';
-import { AppError } from '../_shared/utils/error-handler.ts';
-import { formatError } from '../_shared/utils/error-formatter.ts';
+import { createSimpleFunction } from '../_shared/core/function-factory.ts'
+import { ServiceContainer } from '../_shared/core/services.ts'
+import {
+  createNotificationHelper,
+  NotificationUser,
+  NotificationContentParams,
+} from '../_shared/services/notification-helper-service.ts'
+import { AppError } from '../_shared/utils/error-handler.ts'
+import { formatError } from '../_shared/utils/error-formatter.ts'
+
+// ============================================================================
+// Types
+// ============================================================================
+
+interface DailyVerseUser extends NotificationUser {
+  readonly timezone_offset_minutes: number
+}
+
+interface DailyVerseData {
+  readonly reference: string
+  readonly referenceTranslations: {
+    readonly en: string
+    readonly hi?: string
+    readonly ml?: string
+  }
+  readonly translations: {
+    readonly esv: string
+    readonly hi?: string
+    readonly ml?: string
+  }
+}
 
 // ============================================================================
 // Notification Titles by Language
@@ -18,7 +44,7 @@ const NOTIFICATION_TITLES: Record<string, string> = {
   en: '📖 Daily Verse',
   hi: '📖 दैनिक पद',
   ml: '📖 ദിവസത്തെ വാക്യം',
-};
+}
 
 // ============================================================================
 // Main Handler
@@ -28,52 +54,30 @@ async function handleDailyVerseNotification(
   req: Request,
   services: ServiceContainer
 ): Promise<Response> {
-  // Verify cron authentication using dedicated secret
-  const cronHeader = req.headers.get('X-Cron-Secret');
-  const cronSecret = Deno.env.get('CRON_SECRET');
-  const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY'); // still used later for Supabase client helpers
+  const notificationHelper = createNotificationHelper()
 
-  if (!cronHeader || cronHeader !== cronSecret) {
-    throw new AppError('UNAUTHORIZED', 'Cron secret authentication required', 401);
-  }
+  // Verify cron authentication
+  notificationHelper.verifyCronSecret(req)
 
-  console.log('Starting daily verse notification process...');
+  console.log('[DailyVerse] Starting notification process...')
 
-  const supabase = services.supabaseServiceClient;
+  const supabase = services.supabaseServiceClient
 
-  // Get Supabase URL and service role key for FCM service
-  const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
-  const SUPABASE_SERVICE_ROLE_KEY = serviceRoleKey!;
+  // Step 1: Calculate timezone offset range for users who should receive notification
+  const currentHour = new Date().getUTCHours()
+  const targetOffsetMinutes = (6 - currentHour) * 60 // 6 AM target
+  const offsetRangeMin = Math.max(-720, targetOffsetMinutes - 180)
+  const offsetRangeMax = Math.min(840, targetOffsetMinutes + 180)
 
-  // Initialize FCM service
-  const fcmService = new FCMService();
+  console.log(`[DailyVerse] UTC hour: ${currentHour}, targeting offset: ${targetOffsetMinutes} (±3 hours)`)
 
-  // Step 1: Get current hour in UTC
-  const currentHour = new Date().getUTCHours();
-  console.log(`Current UTC hour: ${currentHour}`);
-
-  // Step 2: Calculate timezone offset range for users who should receive notification now
-  // targetOffsetMinutes represents minutes to add to UTC to reach 6 AM local time
-  // Example: If UTC hour is 0, we want users with timezone offset +360 minutes (UTC+6)
-  // because for them, localTime = UTC + offset = 0 + 6 hours = 6:00 AM
-  const targetOffsetMinutes = (6 - currentHour) * 60; // 6 AM target
-  const unclamped_offsetRangeMin = targetOffsetMinutes - 180; // ±3 hours buffer
-  const unclamped_offsetRangeMax = targetOffsetMinutes + 180;
-
-  // Clamp timezone offsets to valid range: -720 (UTC-12) to +840 (UTC+14)
-  const offsetRangeMin = Math.max(-720, unclamped_offsetRangeMin);
-  const offsetRangeMax = Math.min(840, unclamped_offsetRangeMax);
-
-  console.log(`Targeting users with timezone offset: ${targetOffsetMinutes} minutes (±3 hours, clamped to ${offsetRangeMin}-${offsetRangeMax})`);
-
-  // Step 3: Fetch eligible users with valid FCM tokens using direct query
-  // Query tokens table and manually join with preferences
+  // Step 2: Fetch eligible users with valid FCM tokens
   const { data: tokens, error: tokensError } = await supabase
     .from('user_notification_tokens')
-    .select('user_id, fcm_token');
+    .select('user_id, fcm_token')
 
   if (tokensError) {
-    throw new AppError('DATABASE_ERROR', `Failed to fetch tokens: ${tokensError.message}`, 500);
+    throw new AppError('DATABASE_ERROR', `Failed to fetch tokens: ${tokensError.message}`, 500)
   }
 
   const { data: preferences, error: prefsError } = await supabase
@@ -81,270 +85,107 @@ async function handleDailyVerseNotification(
     .select('user_id, timezone_offset_minutes, daily_verse_enabled')
     .eq('daily_verse_enabled', true)
     .gte('timezone_offset_minutes', offsetRangeMin)
-    .lte('timezone_offset_minutes', offsetRangeMax);
+    .lte('timezone_offset_minutes', offsetRangeMax)
 
   if (prefsError) {
-    throw new AppError('DATABASE_ERROR', `Failed to fetch preferences: ${prefsError.message}`, 500);
+    throw new AppError('DATABASE_ERROR', `Failed to fetch preferences: ${prefsError.message}`, 500)
   }
 
   // Manual join: match tokens with preferences
-  const prefsMap = new Map(preferences?.map(p => [p.user_id, p]) || []);
-  const allUsers = tokens?.filter(t => prefsMap.has(t.user_id))
+  const prefsMap = new Map(preferences?.map(p => [p.user_id, p]) || [])
+  const allUsers: DailyVerseUser[] = tokens
+    ?.filter(t => prefsMap.has(t.user_id))
     .map(t => ({
       user_id: t.user_id,
       fcm_token: t.fcm_token,
-      timezone_offset_minutes: prefsMap.get(t.user_id)!.timezone_offset_minutes
-    })) || [];
+      timezone_offset_minutes: prefsMap.get(t.user_id)!.timezone_offset_minutes,
+    })) || []
 
-  const usersError = null;
-
-  if (!allUsers || allUsers.length === 0) {
-    console.log('No eligible users found for this time window');
-    return new Response(
-      JSON.stringify({
-        success: true,
-        message: 'No eligible users',
-        sentCount: 0,
-      }),
-      {
-        status: 200,
-        headers: { 'Content-Type': 'application/json' },
-      }
-    );
+  if (allUsers.length === 0) {
+    return notificationHelper.createSuccessResponse('No eligible users', { sentCount: 0 })
   }
 
-  // Data is already in the correct format from SQL query
-  const usersWithTokens = allUsers || [];
+  // Step 3: Filter out anonymous users
+  const authenticatedUsers = await notificationHelper.filterAnonymousUsers(supabase, allUsers)
 
-  // Step 4: Filter out anonymous/guest users using batched concurrent getUserById calls
-  const CONCURRENCY_LIMIT = 10;
-  const anonymousUserIds = new Set<string>();
-  let authCheckErrors = 0;
-
-  // Process user IDs in concurrent batches (get unique user IDs)
-  const uniqueUserIds = [...new Set(usersWithTokens.map(u => u.user_id))];
-  const eligibleUserIds = uniqueUserIds;
-  for (let i = 0; i < eligibleUserIds.length; i += CONCURRENCY_LIMIT) {
-    const batch = eligibleUserIds.slice(i, i + CONCURRENCY_LIMIT);
-
-    const results = await Promise.allSettled(
-      batch.map(async (userId: string) => {
-        const { data, error } = await supabase.auth.admin.getUserById(userId);
-        if (error) {
-          console.warn(`Failed to fetch auth user ${userId}:`, error.message);
-          authCheckErrors++;
-          return null;
-        }
-        return data.user;
-      })
-    );
-
-    // Collect anonymous user IDs from successful fetches
-    for (const result of results) {
-      if (result.status === 'fulfilled' && result.value && result.value.is_anonymous) {
-        anonymousUserIds.add(result.value.id);
-      }
-    }
+  if (authenticatedUsers.length === 0) {
+    return notificationHelper.createSuccessResponse('No authenticated users eligible', { sentCount: 0 })
   }
 
-  // Filter out anonymous users from tokens list
-  const users = usersWithTokens.filter(u => !anonymousUserIds.has(u.user_id));
+  // Step 4: Filter out users who already received notification today
+  const userIds = authenticatedUsers.map(u => u.user_id)
+  const alreadySentUserIds = await notificationHelper.getAlreadySentUserIds(userIds, 'daily_verse')
+  const eligibleUsers = authenticatedUsers.filter(u => !alreadySentUserIds.has(u.user_id))
 
-  console.log(`Found ${uniqueUserIds.length} unique users with ${usersWithTokens.length} total tokens (${anonymousUserIds.size} anonymous users excluded, ${users.length} authenticated user tokens, ${authCheckErrors} auth check errors)`);
-
-  if (!users || users.length === 0) {
-    console.log('No authenticated users found for this time window');
-    return new Response(
-      JSON.stringify({
-        success: true,
-        message: 'No authenticated users eligible',
-        sentCount: 0,
-      }),
-      {
-        status: 200,
-        headers: { 'Content-Type': 'application/json' },
-      }
-    );
-  }
-
-  // Step 5: Filter out users who already received notification today (batched query)
-  const allUserIds = users.map((u: any) => u.user_id);
-  const alreadySentUserIds = await getBatchNotificationStatus(
-    SUPABASE_URL,
-    SUPABASE_SERVICE_ROLE_KEY,
-    allUserIds,
-    'daily_verse'
-  );
-
-  const eligibleUsers = users.filter((u: any) => !alreadySentUserIds.has(u.user_id));
-
-  console.log(`${eligibleUsers.length} users need notification (${alreadySentUserIds.size} already received today)`);
+  console.log(`[DailyVerse] ${eligibleUsers.length} users need notification (${alreadySentUserIds.size} already received)`)
 
   if (eligibleUsers.length === 0) {
-    return new Response(
-      JSON.stringify({
-        success: true,
-        message: 'All users already received notification today',
-        sentCount: 0,
-      }),
-      {
-        status: 200,
-        headers: { 'Content-Type': 'application/json' },
-      }
-    );
+    return notificationHelper.createSuccessResponse('All users already received notification today', { sentCount: 0 })
   }
 
-  // Step 5: Get today's daily verse (generate if doesn't exist)
-  const today = new Date().toISOString().split('T')[0];
-  console.log(`Fetching daily verse for date: ${today}`);
+  // Step 5: Get today's daily verse
+  const today = new Date().toISOString().split('T')[0]
+  let dailyVerse: DailyVerseData
 
-  // Use the daily verse service to get or generate the verse
-  // This service handles caching and generation automatically
-  let dailyVerse;
   try {
-    const verseData = await services.dailyVerseService.getDailyVerse(today, 'en');
-    console.log(`Daily verse obtained: ${verseData.reference}`);
-
-    // Store complete verse data with all translations and reference translations
+    const verseData = await services.dailyVerseService.getDailyVerse(today, 'en')
     dailyVerse = {
       reference: verseData.reference,
       referenceTranslations: verseData.referenceTranslations,
       translations: verseData.translations,
-      date: today,
-    };
+    }
+    console.log(`[DailyVerse] Verse: ${dailyVerse.reference}`)
   } catch (error) {
-    console.error('Failed to get daily verse:', error);
-    throw new AppError('INTERNAL_ERROR', `Failed to get daily verse: ${formatError(error)}`, 500);
+    throw new AppError('INTERNAL_ERROR', `Failed to get daily verse: ${formatError(error)}`, 500)
   }
 
   // Step 6: Get user language preferences
-  const userIds = eligibleUsers.map(u => u.user_id);
-  const { data: profiles, error: profilesError } = await supabase
-    .from('user_profiles')
-    .select('id, language_preference')
-    .in('id', userIds);
+  const languageMap = await notificationHelper.getUserLanguagePreferences(
+    supabase,
+    eligibleUsers.map(u => u.user_id)
+  )
 
-  if (profilesError) {
-    throw new AppError('DATABASE_ERROR', `Failed to fetch user profiles: ${profilesError.message}`, 500);
-  }
+  // Step 7: Send notifications using helper
+  const result = await notificationHelper.sendNotificationBatch(
+    eligibleUsers,
+    'daily_verse',
+    languageMap,
+    ({ language }: NotificationContentParams<DailyVerseUser>) => {
+      // Select localized content
+      const localizedReference = language === 'hi' && dailyVerse.referenceTranslations.hi
+        ? dailyVerse.referenceTranslations.hi
+        : language === 'ml' && dailyVerse.referenceTranslations.ml
+          ? dailyVerse.referenceTranslations.ml
+          : dailyVerse.referenceTranslations.en
 
-  // Map user IDs to language preferences
-  const languageMap: Record<string, string> = {};
-  profiles?.forEach(profile => {
-    languageMap[profile.id] = profile.language_preference || 'en';
-  });
+      const verseText = language === 'hi' && dailyVerse.translations.hi
+        ? dailyVerse.translations.hi
+        : language === 'ml' && dailyVerse.translations.ml
+          ? dailyVerse.translations.ml
+          : dailyVerse.translations.esv
 
-  // Step 7: Send notifications (batch processing to avoid timeout)
-  let successCount = 0;
-  let failureCount = 0;
-  const NOTIFICATION_BATCH_SIZE = 10; // Process 10 notifications concurrently
+      const title = NOTIFICATION_TITLES[language] || NOTIFICATION_TITLES.en
+      const truncatedVerse = verseText.length > 100 ? `${verseText.substring(0, 100)}...` : verseText
+      const body = `${localizedReference}\n\n${truncatedVerse}`
 
-  // Process users in concurrent batches
-  for (let i = 0; i < eligibleUsers.length; i += NOTIFICATION_BATCH_SIZE) {
-    const batch = eligibleUsers.slice(i, i + NOTIFICATION_BATCH_SIZE);
-
-    // Send notifications concurrently within batch
-    const results = await Promise.allSettled(
-      batch.map(async (user: any) => {
-        try {
-          const language = languageMap[user.user_id] || 'en';
-
-          // Select localized verse reference based on language
-          let localizedReference = dailyVerse.referenceTranslations.en;
-          if (language === 'hi' && dailyVerse.referenceTranslations.hi) {
-            localizedReference = dailyVerse.referenceTranslations.hi;
-          } else if (language === 'ml' && dailyVerse.referenceTranslations.ml) {
-            localizedReference = dailyVerse.referenceTranslations.ml;
-          }
-
-          // Select verse text based on language
-          let verseText = dailyVerse.translations.esv;
-          if (language === 'hi' && dailyVerse.translations.hi) {
-            verseText = dailyVerse.translations.hi;
-          } else if (language === 'ml' && dailyVerse.translations.ml) {
-            verseText = dailyVerse.translations.ml;
-          }
-
-          const title = NOTIFICATION_TITLES[language] || NOTIFICATION_TITLES.en;
-          const body = `${localizedReference}\n\n${verseText.substring(0, 100)}${verseText.length > 100 ? '...' : ''}`;
-
-          const result = await fcmService.sendNotification({
-            token: user.fcm_token,
-            notification: { title, body },
-            data: {
-              type: 'daily_verse',
-              reference: dailyVerse.reference,
-              language,
-            },
-            android: { priority: 'high' },
-            apns: {
-              headers: { 'apns-priority': '10' },
-              payload: { aps: { sound: 'default', badge: 1 } },
-            },
-          });
-
-          if (result.success) {
-            // Log successful send
-            await logNotification(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
-              userId: user.user_id,
-              notificationType: 'daily_verse',
-              title,
-              body,
-              verseReference: localizedReference,
-              language,
-              deliveryStatus: 'sent',
-              fcmMessageId: result.messageId,
-            });
-            return { success: true, userId: user.user_id };
-          } else {
-            // Log failure
-            await logNotification(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
-              userId: user.user_id,
-              notificationType: 'daily_verse',
-              title,
-              body,
-              verseReference: localizedReference,
-              language,
-              deliveryStatus: 'failed',
-              errorMessage: result.error,
-            });
-            return { success: false, userId: user.user_id, error: result.error };
-          }
-        } catch (error) {
-          console.error(`Error sending to user ${user.user_id}:`, error);
-          return { success: false, userId: user.user_id, error: String(error) };
-        }
-      })
-    );
-
-    // Count successes and failures for this batch
-    results.forEach((result) => {
-      if (result.status === 'fulfilled' && result.value.success) {
-        successCount++;
-      } else {
-        failureCount++;
+      return {
+        title,
+        body,
+        data: {
+          reference: dailyVerse.reference,
+        },
       }
-    });
-
-    console.log(`Batch ${Math.floor(i / NOTIFICATION_BATCH_SIZE) + 1} complete: ${successCount} sent, ${failureCount} failed so far`);
-  }
-
-  console.log(`Notification process complete: ${successCount} sent, ${failureCount} failed`);
-
-  return new Response(
-    JSON.stringify({
-      success: true,
-      message: 'Daily verse notifications sent',
-      totalEligible: eligibleUsers.length,
-      successCount,
-      failureCount,
-      verseReference: dailyVerse.reference,
-    }),
-    {
-      status: 200,
-      headers: { 'Content-Type': 'application/json' },
     }
-  );
+  )
+
+  console.log(`[DailyVerse] Complete: ${result.successCount} sent, ${result.failureCount} failed`)
+
+  return notificationHelper.createSuccessResponse('Daily verse notifications sent', {
+    totalEligible: eligibleUsers.length,
+    successCount: result.successCount,
+    failureCount: result.failureCount,
+    verseReference: dailyVerse.reference,
+  })
 }
 
 // ============================================================================
@@ -354,4 +195,4 @@ async function handleDailyVerseNotification(
 createSimpleFunction(handleDailyVerseNotification, {
   allowedMethods: ['POST'],
   enableAnalytics: false,
-});
+})

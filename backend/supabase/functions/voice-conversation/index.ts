@@ -152,7 +152,21 @@ async function handleVoiceConversation(
   // Parse request
   let requestData: VoiceConversationRequest
   if (req.method === 'POST') {
-    requestData = await req.json()
+    try {
+      requestData = await req.json()
+    } catch (error) {
+      console.error('[Voice] Failed to parse JSON request body:', error)
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: { 
+            code: 'INVALID_JSON', 
+            message: 'Request body contains malformed JSON' 
+          } 
+        }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
   } else {
     requestData = parseRequest(req)
   }
@@ -241,49 +255,94 @@ async function handleVoiceConversation(
       { role: 'user', content: message }
     ]
 
-    // Save user message
-    await voiceConversationRepository.saveMessage({
-      conversationId: conversation_id,
-      userId,
-      role: 'user',
-      content: message,
-      language: language_code
-    })
-
-    // Stream AI response
+    // Stream AI response - defer message persistence until streaming succeeds
     let fullResponse = ''
     const modelUsed = voiceStreamingService.selectModel(tier)
+    let streamingSucceeded = false
 
     console.log(`[Voice] Starting stream for conversation: ${conversation_id}, tier: ${tier}, model: ${modelUsed}`)
 
-    await sendEvent({
-      type: 'stream_start',
-      data: { timestamp: Date.now() }
-    })
-
-    for await (const chunk of voiceStreamingService.stream(llmMessages, tier)) {
-      fullResponse += chunk
+    try {
       await sendEvent({
-        type: 'content',
-        data: { text: chunk }
+        type: 'stream_start',
+        data: { timestamp: Date.now() }
       })
+
+      for await (const chunk of voiceStreamingService.stream(llmMessages, tier)) {
+        fullResponse += chunk
+        await sendEvent({
+          type: 'content',
+          data: { text: chunk }
+        })
+      }
+
+      // Mark streaming as successful only after complete iteration
+      streamingSucceeded = true
+    } catch (streamError) {
+      console.error(`[Voice] Streaming failed for conversation ${conversation_id}:`, streamError)
+      await sendEvent({
+        type: 'error',
+        data: {
+          code: 'STREAMING_ERROR',
+          message: 'Failed to generate response. Please try again.'
+        }
+      })
+      // Do not save any messages on streaming failure
+      return
+    }
+
+    // Only persist messages after streaming succeeds
+    if (!streamingSucceeded || !fullResponse.trim()) {
+      console.error(`[Voice] Streaming incomplete for conversation ${conversation_id}`)
+      await sendEvent({
+        type: 'error',
+        data: {
+          code: 'INCOMPLETE_RESPONSE',
+          message: 'Response generation was incomplete. Please try again.'
+        }
+      })
+      return
     }
 
     // Extract scripture references
     const scriptureRefs = extractScriptureReferences(fullResponse)
 
-    // Save assistant message
-    await voiceConversationRepository.saveMessage({
-      conversationId: conversation_id,
-      userId,
-      role: 'assistant',
-      content: fullResponse,
-      language: language_code,
-      metadata: {
-        llmModelUsed: modelUsed,
-        scriptureReferences: scriptureRefs,
-      }
-    })
+    // Save both messages together after successful streaming
+    // This ensures no orphaned messages on failure
+    try {
+      // Save user message first
+      await voiceConversationRepository.saveMessage({
+        conversationId: conversation_id,
+        userId,
+        role: 'user',
+        content: message,
+        language: language_code
+      })
+
+      // Save assistant message
+      await voiceConversationRepository.saveMessage({
+        conversationId: conversation_id,
+        userId,
+        role: 'assistant',
+        content: fullResponse,
+        language: language_code,
+        metadata: {
+          llmModelUsed: modelUsed,
+          scriptureReferences: scriptureRefs,
+        }
+      })
+    } catch (saveError) {
+      console.error(`[Voice] Failed to save messages for conversation ${conversation_id}:`, saveError)
+      // Streaming succeeded but save failed - still send the response to user
+      // The messages won't be persisted but user gets the response
+      await sendEvent({
+        type: 'error',
+        data: {
+          code: 'SAVE_WARNING',
+          message: 'Response generated but conversation history may not be saved.'
+        }
+      })
+    }
 
     // Send completion event
     await sendEvent({
