@@ -1,9 +1,11 @@
 /**
  * Shared TypeScript types for Supabase Edge Functions
- * 
+ *
  * This file contains all shared type definitions used across
  * the backend services, ensuring consistency and maintainability.
  */
+
+import type { User, Session } from 'https://esm.sh/@supabase/supabase-js@2'
 
 // =============================================================================
 // User and Authentication Types
@@ -23,8 +25,8 @@ export interface UserContext {
  * Authentication context
  */
 export interface AuthContext {
-  readonly user: any
-  readonly session: any
+  readonly user: User | null
+  readonly session: Session | null
   readonly isAuthenticated: boolean
 }
 

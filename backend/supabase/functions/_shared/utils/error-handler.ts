@@ -62,7 +62,7 @@ export class ErrorHandler {
    * @returns Formatted HTTP error response
    */
   static handleError(
-    error: any, 
+    error: unknown,
     corsHeaders: Record<string, string>,
     requestId?: string
   ): Response {
@@ -139,12 +139,13 @@ export class ErrorHandler {
    * @param error - Error object to categorize
    * @returns Error pattern with code, message, and status
    */
-  private static categorizeError(error: any): {
+  private static categorizeError(error: unknown): {
     code: string
     message: string
     statusCode: number
   } {
-    const errorMessage = error?.message?.toLowerCase() || ''
+    const err = error as { message?: string } | null
+    const errorMessage = err?.message?.toLowerCase() || ''
 
     // Rate limiting errors - very specific
     if (errorMessage.includes('rate limit') || errorMessage.includes('too many requests')) {
@@ -213,7 +214,7 @@ export class ErrorHandler {
     if (errorMessage.includes('validation') || errorMessage.includes('invalid') || errorMessage.includes('required')) {
       return {
         code: 'VALIDATION_ERROR',
-        message: error?.message || 'Invalid input data provided.',
+        message: err?.message || 'Invalid input data provided.',
         statusCode: 400
       }
     }
@@ -235,22 +236,23 @@ export class ErrorHandler {
    * @param error - Error object to log
    * @param requestId - Optional request ID for correlation
    */
-  private static logError(error: any, requestId?: string): void {
+  private static logError(error: unknown, requestId?: string): void {
+    const err = error as Record<string, unknown> | null
     const logContext = {
       timestamp: new Date().toISOString(),
       requestId,
-      errorType: error?.constructor?.name || 'Unknown',
-      errorCode: error?.code,
-      statusCode: error?.statusCode,
+      errorType: err?.constructor?.name || 'Unknown',
+      errorCode: err?.code,
+      statusCode: err?.statusCode,
       // Only log the error message, not the full error object to avoid sensitive data
-      message: error?.message ? String(error.message).substring(0, 500) : 'No message',
+      message: err?.message ? String(err.message).substring(0, 500) : 'No message',
     }
 
     console.error('Edge Function Error:', JSON.stringify(logContext))
-    
+
     // If it's an unexpected error (not AppError), log the stack trace
-    if (!(error instanceof AppError) && error?.stack) {
-      console.error('Stack trace:', error.stack.substring(0, 1000))
+    if (!(error instanceof AppError) && err?.stack) {
+      console.error('Stack trace:', String(err.stack).substring(0, 1000))
     }
   }
 
@@ -261,7 +263,7 @@ export class ErrorHandler {
    * @param details - Optional validation details
    * @returns AppError instance for validation failure
    */
-  static createValidationError(message: string, details?: any): AppError {
+  static createValidationError(message: string, details?: Record<string, unknown>): AppError {
     const errorMessage = details ? 
       `${message}: ${JSON.stringify(details)}` : 
       message

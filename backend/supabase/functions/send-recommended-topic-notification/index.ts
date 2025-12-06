@@ -4,11 +4,23 @@
 // Sends recommended Bible study topic push notifications to all eligible users
 // Triggered by GitHub Actions workflow at 8 AM across different timezones
 
-import { createSimpleFunction } from '../_shared/core/function-factory.ts';
-import { ServiceContainer } from '../_shared/core/services.ts';
-import { FCMService, logNotification, getBatchNotificationStatus } from '../_shared/fcm-service.ts';
-import { selectTopicForUser, getLocalizedTopicContent } from '../_shared/topic-selector.ts';
-import { AppError } from '../_shared/utils/error-handler.ts';
+import { createSimpleFunction } from '../_shared/core/function-factory.ts'
+import { ServiceContainer } from '../_shared/core/services.ts'
+import { FCMService, logNotification } from '../_shared/fcm-service.ts'
+import { selectTopicForUser, getLocalizedTopicContent } from '../_shared/topic-selector.ts'
+import {
+  createNotificationHelper,
+  NotificationUser,
+} from '../_shared/services/notification-helper-service.ts'
+import { AppError } from '../_shared/utils/error-handler.ts'
+
+// ============================================================================
+// Types
+// ============================================================================
+
+interface RecommendedTopicUser extends NotificationUser {
+  readonly timezone_offset_minutes: number
+}
 
 // ============================================================================
 // Notification Titles by Language
@@ -18,13 +30,97 @@ const NOTIFICATION_TITLES: Record<string, string> = {
   en: '💡 Recommended Topic',
   hi: '💡 अनुशंसित विषय',
   ml: '💡 ശുപാർശിത വിഷയം',
-};
+}
 
 const NOTIFICATION_INTROS: Record<string, string> = {
   en: 'Explore today:',
   hi: 'आज जानें:',
   ml: 'ഇന്ന് പര്യവേക്ഷണം ചെയ്യുക:',
-};
+}
+
+// ============================================================================
+// Helper Functions
+// ============================================================================
+
+function calculateTimezoneOffsetRange(currentHour: number): { offsetRangeMin: number; offsetRangeMax: number } {
+  let targetOffsetMinutes = (8 - currentHour) * 60 // 8 AM target
+
+  // Normalize to valid timezone range: -720 (UTC-12) to +840 (UTC+14)
+  if (targetOffsetMinutes < -720) {
+    targetOffsetMinutes += 1440
+  } else if (targetOffsetMinutes > 840) {
+    targetOffsetMinutes -= 1440
+  }
+
+  const offsetRangeMin = Math.max(-720, targetOffsetMinutes - 180)
+  const offsetRangeMax = Math.min(840, targetOffsetMinutes + 180)
+
+  return { offsetRangeMin, offsetRangeMax }
+}
+
+async function fetchEligibleUsersWithTimezone(
+  supabase: ServiceContainer['supabaseServiceClient'],
+  offsetRangeMin: number,
+  offsetRangeMax: number
+): Promise<RecommendedTopicUser[]> {
+  // Fetch all tokens
+  const { data: tokens, error: tokensError } = await supabase
+    .from('user_notification_tokens')
+    .select('user_id, fcm_token')
+
+  if (tokensError) {
+    throw new AppError('DATABASE_ERROR', `Failed to fetch tokens: ${tokensError.message}`, 500)
+  }
+
+  // Handle wrap-around case
+  let preferences: Array<{ user_id: string; timezone_offset_minutes: number }>
+
+  if (offsetRangeMin > offsetRangeMax) {
+    const [result1, result2] = await Promise.all([
+      supabase
+        .from('user_notification_preferences')
+        .select('user_id, timezone_offset_minutes, recommended_topic_enabled')
+        .eq('recommended_topic_enabled', true)
+        .gte('timezone_offset_minutes', offsetRangeMin)
+        .lte('timezone_offset_minutes', 840),
+
+      supabase
+        .from('user_notification_preferences')
+        .select('user_id, timezone_offset_minutes, recommended_topic_enabled')
+        .eq('recommended_topic_enabled', true)
+        .gte('timezone_offset_minutes', -720)
+        .lte('timezone_offset_minutes', offsetRangeMax)
+    ])
+
+    if (result1.error || result2.error) {
+      throw new AppError('DATABASE_ERROR', `Failed to fetch preferences: ${(result1.error || result2.error)!.message}`, 500)
+    }
+
+    preferences = [...(result1.data || []), ...(result2.data || [])]
+  } else {
+    const { data, error } = await supabase
+      .from('user_notification_preferences')
+      .select('user_id, timezone_offset_minutes, recommended_topic_enabled')
+      .eq('recommended_topic_enabled', true)
+      .gte('timezone_offset_minutes', offsetRangeMin)
+      .lte('timezone_offset_minutes', offsetRangeMax)
+
+    if (error) {
+      throw new AppError('DATABASE_ERROR', `Failed to fetch preferences: ${error.message}`, 500)
+    }
+
+    preferences = data || []
+  }
+
+  // Manual join: match tokens with preferences
+  const prefsMap = new Map(preferences.map(p => [p.user_id, p]))
+  return tokens?.filter((t: { user_id: string; fcm_token: string }) => prefsMap.has(t.user_id))
+    .map((t: { user_id: string; fcm_token: string }) => ({
+      user_id: t.user_id,
+      fcm_token: t.fcm_token,
+      timezone_offset_minutes: prefsMap.get(t.user_id)!.timezone_offset_minutes
+    })) || []
+}
 
 // ============================================================================
 // Main Handler
@@ -34,293 +130,94 @@ async function handleRecommendedTopicNotification(
   req: Request,
   services: ServiceContainer
 ): Promise<Response> {
-  // Verify cron authentication using dedicated secret
-  const cronHeader = req.headers.get('X-Cron-Secret');
-  const cronSecret = Deno.env.get('CRON_SECRET');
-  const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY'); // still used later for Supabase client helpers
+  const notificationHelper = createNotificationHelper()
 
-  if (!cronHeader || cronHeader !== cronSecret) {
-    throw new AppError('UNAUTHORIZED', 'Cron secret authentication required', 401);
+  // Verify cron authentication
+  notificationHelper.verifyCronSecret(req)
+
+  console.log('[RecommendedTopic] Starting notification process...')
+
+  const supabase = services.supabaseServiceClient
+  const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
+  const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+
+  // Step 1: Calculate timezone offset range
+  const currentHour = new Date().getUTCHours()
+  const { offsetRangeMin, offsetRangeMax } = calculateTimezoneOffsetRange(currentHour)
+  console.log(`[RecommendedTopic] UTC hour: ${currentHour}, offset range: ${offsetRangeMin} to ${offsetRangeMax}`)
+
+  // Step 2: Fetch eligible users
+  const allUsers = await fetchEligibleUsersWithTimezone(supabase, offsetRangeMin, offsetRangeMax)
+
+  if (allUsers.length === 0) {
+    return notificationHelper.createSuccessResponse('No eligible users', { sentCount: 0 })
   }
 
-  console.log('Starting recommended topic notification process...');
+  console.log(`[RecommendedTopic] Found ${allUsers.length} users with tokens`)
 
-  const supabase = services.supabaseServiceClient;
+  // Step 3: Filter out anonymous users
+  const authenticatedUsers = await notificationHelper.filterAnonymousUsers(supabase, allUsers)
 
-  // Get Supabase URL and service role key for FCM service
-  const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
-  const SUPABASE_SERVICE_ROLE_KEY = serviceRoleKey!;
-
-  // Initialize FCM service
-  const fcmService = new FCMService();
-
-  // Step 1: Get current hour in UTC
-  const currentHour = new Date().getUTCHours();
-  console.log(`Current UTC hour: ${currentHour}`);
-
-  // Step 2: Calculate timezone offset range for users who should receive notification now
-  // targetOffsetMinutes represents minutes to add to UTC to reach 8 AM local time
-  // Example: If UTC hour is 2, we want users with timezone offset +360 minutes (UTC+6)
-  // because for them, localTime = UTC + offset = 2 + 6 hours = 8:00 AM
-  let targetOffsetMinutes = (8 - currentHour) * 60; // 8 AM target
-
-  // Normalize targetOffsetMinutes to valid timezone range: -720 (UTC-12) to +840 (UTC+14)
-  if (targetOffsetMinutes < -720) {
-    targetOffsetMinutes += 1440; // Add 24 hours
-  } else if (targetOffsetMinutes > 840) {
-    targetOffsetMinutes -= 1440; // Subtract 24 hours
+  if (authenticatedUsers.length === 0) {
+    return notificationHelper.createSuccessResponse('No authenticated users eligible', { sentCount: 0 })
   }
 
-  // Calculate ±3 hour window (180 minutes) without clamping
-  const unclamped_offsetRangeMin = targetOffsetMinutes - 180;
-  const unclamped_offsetRangeMax = targetOffsetMinutes + 180;
+  // Step 4: Filter out users who already received notification today
+  const userIds = authenticatedUsers.map(u => u.user_id)
+  const alreadySentUserIds = await notificationHelper.getAlreadySentUserIds(userIds, 'recommended_topic')
+  const usersToNotify = authenticatedUsers.filter(u => !alreadySentUserIds.has(u.user_id))
 
-  // Clamp to valid timezone range
-  const offsetRangeMin = Math.max(-720, unclamped_offsetRangeMin);
-  const offsetRangeMax = Math.min(840, unclamped_offsetRangeMax);
+  console.log(`[RecommendedTopic] ${usersToNotify.length} users need notification (${alreadySentUserIds.size} already received)`)
 
-  console.log(`Targeting users with timezone offset: ${targetOffsetMinutes} minutes (±3 hours, range: ${offsetRangeMin} to ${offsetRangeMax})`);
-
-  // Step 3: Fetch eligible users with valid FCM tokens (join preferences with tokens)
-  // Handle wrap-around case: if min > max, query requires two ranges
-  let allUsers;
-  let usersError;
-
-  if (offsetRangeMin > offsetRangeMax) {
-    // Wrap-around case: split into two ranges
-    // Range 1: offsetRangeMin to 840 (max valid)
-    // Range 2: -720 (min valid) to offsetRangeMax
-    console.log(`Wrap-around detected: querying ranges [${offsetRangeMin}, 840] and [-720, ${offsetRangeMax}]`);
-
-    // Fetch all tokens
-    const { data: tokens, error: tokensError } = await supabase
-      .from('user_notification_tokens')
-      .select('user_id, fcm_token');
-
-    if (tokensError) {
-      throw new AppError('DATABASE_ERROR', `Failed to fetch tokens: ${tokensError.message}`, 500);
-    }
-
-    // Fetch preferences for both ranges
-    const [result1, result2] = await Promise.all([
-      supabase
-        .from('user_notification_preferences')
-        .select('user_id, timezone_offset_minutes, recommended_topic_enabled')
-        .eq('recommended_topic_enabled', true)
-        .gte('timezone_offset_minutes', offsetRangeMin)
-        .lte('timezone_offset_minutes', 840),
-      
-      supabase
-        .from('user_notification_preferences')
-        .select('user_id, timezone_offset_minutes, recommended_topic_enabled')
-        .eq('recommended_topic_enabled', true)
-        .gte('timezone_offset_minutes', -720)
-        .lte('timezone_offset_minutes', offsetRangeMax)
-    ]);
-
-    if (result1.error || result2.error) {
-      const error = result1.error || result2.error;
-      throw new AppError('DATABASE_ERROR', `Failed to fetch preferences: ${error!.message}`, 500);
-    } else {
-      // Combine preferences from both ranges
-      const preferences = [...(result1.data || []), ...(result2.data || [])];
-      
-      // Manual join: match tokens with preferences
-      const prefsMap = new Map(preferences.map(p => [p.user_id, p]));
-      allUsers = tokens?.filter(t => prefsMap.has(t.user_id))
-        .map(t => ({
-          user_id: t.user_id,
-          fcm_token: t.fcm_token,
-          timezone_offset_minutes: prefsMap.get(t.user_id)!.timezone_offset_minutes
-        })) || [];
-      usersError = null;
-    }
-  } else {
-    // Normal case: single range query
-    const { data: tokens, error: tokensError } = await supabase
-      .from('user_notification_tokens')
-      .select('user_id, fcm_token');
-
-    if (tokensError) {
-      throw new AppError('DATABASE_ERROR', `Failed to fetch tokens: ${tokensError.message}`, 500);
-    }
-
-    const { data: preferences, error: prefsError } = await supabase
-      .from('user_notification_preferences')
-      .select('user_id, timezone_offset_minutes, recommended_topic_enabled')
-      .eq('recommended_topic_enabled', true)
-      .gte('timezone_offset_minutes', offsetRangeMin)
-      .lte('timezone_offset_minutes', offsetRangeMax);
-
-    if (prefsError) {
-      throw new AppError('DATABASE_ERROR', `Failed to fetch preferences: ${prefsError.message}`, 500);
-    }
-
-    // Manual join: match tokens with preferences
-    const prefsMap = new Map(preferences?.map(p => [p.user_id, p]) || []);
-    allUsers = tokens?.filter(t => prefsMap.has(t.user_id))
-      .map(t => ({
-        user_id: t.user_id,
-        fcm_token: t.fcm_token,
-        timezone_offset_minutes: prefsMap.get(t.user_id)!.timezone_offset_minutes
-      })) || [];
-    usersError = null;
-  }
-
-  if (!allUsers || allUsers.length === 0) {
-    console.log('No eligible users found for this time window');
-    return new Response(
-      JSON.stringify({
-        success: true,
-        message: 'No eligible users',
-        sentCount: 0,
-      }),
-      {
-        status: 200,
-        headers: { 'Content-Type': 'application/json' },
-      }
-    );
-  }
-
-  // Data is already in the correct format from manual join
-  const usersWithTokens = allUsers || [];
-
-  // Step 4: Filter out anonymous/guest users using batched concurrent getUserById calls
-  const CONCURRENCY_LIMIT = 10;
-  const anonymousUserIds = new Set<string>();
-  let authCheckErrors = 0;
-
-  // Process user IDs in concurrent batches (get unique user IDs)
-  const uniqueUserIds = [...new Set(usersWithTokens.map(u => u.user_id))];
-  const eligibleUserIds = uniqueUserIds;
-  for (let i = 0; i < eligibleUserIds.length; i += CONCURRENCY_LIMIT) {
-    const batch = eligibleUserIds.slice(i, i + CONCURRENCY_LIMIT);
-
-    const results = await Promise.allSettled(
-      batch.map(async (userId: string) => {
-        const { data, error } = await supabase.auth.admin.getUserById(userId);
-        if (error) {
-          console.warn(`Failed to fetch auth user ${userId}:`, error.message);
-          authCheckErrors++;
-          return null;
-        }
-        return data.user;
-      })
-    );
-
-    // Collect anonymous user IDs from successful fetches
-    for (const result of results) {
-      if (result.status === 'fulfilled' && result.value && result.value.is_anonymous) {
-        anonymousUserIds.add(result.value.id);
-      }
-    }
-  }
-
-  // Filter out anonymous users from tokens list
-  const users = usersWithTokens.filter(u => !anonymousUserIds.has(u.user_id));
-
-  console.log(`Found ${uniqueUserIds.length} unique users with ${usersWithTokens.length} total tokens (${anonymousUserIds.size} anonymous users excluded, ${users.length} authenticated user tokens, ${authCheckErrors} auth check errors)`);
-
-  if (!users || users.length === 0) {
-    console.log('No authenticated users found for this time window');
-    return new Response(
-      JSON.stringify({
-        success: true,
-        message: 'No authenticated users eligible',
-        sentCount: 0,
-      }),
-      {
-        status: 200,
-        headers: { 'Content-Type': 'application/json' },
-      }
-    );
-  }
-
-  // Step 5: Filter out users who already received notification today (batched query)
-  const allUserIds = users.map((u: any) => u.user_id);
-  const alreadySentUserIds = await getBatchNotificationStatus(
-    SUPABASE_URL,
-    SUPABASE_SERVICE_ROLE_KEY,
-    allUserIds,
-    'recommended_topic'
-  );
-
-  const eligibleUsers = users.filter((u: any) => !alreadySentUserIds.has(u.user_id));
-
-  console.log(`${eligibleUsers.length} users need notification (${alreadySentUserIds.size} already received today)`);
-
-  if (eligibleUsers.length === 0) {
-    return new Response(
-      JSON.stringify({
-        success: true,
-        message: 'All users already received notification today',
-        sentCount: 0,
-      }),
-      {
-        status: 200,
-        headers: { 'Content-Type': 'application/json' },
-      }
-    );
+  if (usersToNotify.length === 0) {
+    return notificationHelper.createSuccessResponse('All users already received notification today', { sentCount: 0 })
   }
 
   // Step 5: Get user language preferences
-  const userIds = eligibleUsers.map(u => u.user_id);
-  const { data: profiles, error: profilesError } = await supabase
-    .from('user_profiles')
-    .select('id, language_preference')
-    .in('id', userIds);
+  const languageMap = await notificationHelper.getUserLanguagePreferences(
+    supabase,
+    usersToNotify.map(u => u.user_id)
+  )
 
-  if (profilesError) {
-    throw new AppError('DATABASE_ERROR', `Failed to fetch user profiles: ${profilesError.message}`, 500);
-  }
+  // Step 6: Send notifications with topic selection (custom batch logic due to per-user topic selection)
+  const fcmService = new FCMService()
+  let successCount = 0
+  let failureCount = 0
+  let topicSelectionFailures = 0
+  const uniqueTopicIds = new Set<string>()
+  const BATCH_SIZE = 10
 
-  // Map user IDs to language preferences
-  const languageMap: Record<string, string> = {};
-  profiles?.forEach(profile => {
-    languageMap[profile.id] = profile.language_preference || 'en';
-  });
+  for (let i = 0; i < usersToNotify.length; i += BATCH_SIZE) {
+    const batch = usersToNotify.slice(i, i + BATCH_SIZE)
 
-  // Step 6: Select personalized topics and send notifications (batch processing to avoid timeout)
-  let successCount = 0;
-  let failureCount = 0;
-  let topicSelectionFailures = 0;
-  const uniqueTopicIds = new Set<string>();
-  const NOTIFICATION_BATCH_SIZE = 10; // Process 10 notifications concurrently
-
-  // Process users in concurrent batches
-  for (let i = 0; i < eligibleUsers.length; i += NOTIFICATION_BATCH_SIZE) {
-    const batch = eligibleUsers.slice(i, i + NOTIFICATION_BATCH_SIZE);
-
-    // Send notifications concurrently within batch
     const results = await Promise.allSettled(
-      batch.map(async (user: any) => {
+      batch.map(async (user) => {
         try {
-          const language = languageMap[user.user_id] || 'en';
+          const language = languageMap.get(user.user_id) || 'en'
 
-          // Select best topic for this user (avoiding recently sent topics)
+          // Select topic for this user
           const topicResult = await selectTopicForUser(
             SUPABASE_URL,
             SUPABASE_SERVICE_ROLE_KEY,
             user.user_id,
             language
-          );
+          )
 
           if (!topicResult.success || !topicResult.topic) {
-            console.error(`Failed to select topic for user ${user.user_id}:`, topicResult.error);
-            return { success: false, userId: user.user_id, topicSelectionFailed: true };
+            console.error(`[RecommendedTopic] Topic selection failed for user ${user.user_id}:`, topicResult.error)
+            return { success: false, topicSelectionFailed: true }
           }
 
-          // Get localized content
           const localizedContent = await getLocalizedTopicContent(
             SUPABASE_URL,
             SUPABASE_SERVICE_ROLE_KEY,
             topicResult.topic,
             language
-          );
+          )
 
-          const title = NOTIFICATION_TITLES[language] || NOTIFICATION_TITLES.en;
-          const intro = NOTIFICATION_INTROS[language] || NOTIFICATION_INTROS.en;
-          const body = `${intro} ${localizedContent.title}`;
+          const title = NOTIFICATION_TITLES[language] || NOTIFICATION_TITLES.en
+          const intro = NOTIFICATION_INTROS[language] || NOTIFICATION_INTROS.en
+          const body = `${intro} ${localizedContent.title}`
 
           const result = await fcmService.sendNotification({
             token: user.fcm_token,
@@ -329,7 +226,7 @@ async function handleRecommendedTopicNotification(
               type: 'recommended_topic',
               topic_id: topicResult.topic.id,
               topic_title: localizedContent.title,
-              topic_description: localizedContent.description, // Include description for richer study guide context
+              topic_description: localizedContent.description,
               language,
             },
             android: { priority: 'high' },
@@ -337,82 +234,57 @@ async function handleRecommendedTopicNotification(
               headers: { 'apns-priority': '10' },
               payload: { aps: { sound: 'default', badge: 1 } },
             },
-          });
+          })
 
-          if (result.success) {
-            // Log successful send
-            await logNotification(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
-              userId: user.user_id,
-              notificationType: 'recommended_topic',
-              title,
-              body,
-              topicId: topicResult.topic.id,
-              language,
-              deliveryStatus: 'sent',
-              fcmMessageId: result.messageId,
-            });
-            return { success: true, userId: user.user_id, topicId: topicResult.topic.id };
-          } else {
-            // Log failure
-            await logNotification(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
-              userId: user.user_id,
-              notificationType: 'recommended_topic',
-              title,
-              body,
-              topicId: topicResult.topic.id,
-              language,
-              deliveryStatus: 'failed',
-              errorMessage: result.error,
-            });
-            return { success: false, userId: user.user_id, error: result.error };
-          }
+          await logNotification(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
+            userId: user.user_id,
+            notificationType: 'recommended_topic',
+            title,
+            body,
+            topicId: topicResult.topic.id,
+            language,
+            deliveryStatus: result.success ? 'sent' : 'failed',
+            fcmMessageId: result.messageId,
+            errorMessage: result.error,
+          })
+
+          return { success: result.success, topicId: topicResult.topic.id }
         } catch (error) {
-          console.error(`Error sending to user ${user.user_id}:`, error);
-          return { success: false, userId: user.user_id, error: String(error) };
+          console.error(`[RecommendedTopic] Error for user ${user.user_id}:`, error)
+          return { success: false }
         }
       })
-    );
+    )
 
-    // Count successes, failures, and topic selection failures for this batch
-    results.forEach((result: any) => {
+    results.forEach((result) => {
       if (result.status === 'fulfilled') {
-        if (result.value.topicSelectionFailed) {
-          topicSelectionFailures++;
-          failureCount++;
-        } else if (result.value.success) {
-          successCount++;
-          // Track unique topic IDs
-          if (result.value.topicId) {
-            uniqueTopicIds.add(result.value.topicId);
-          }
+        const value = result.value as { success: boolean; topicSelectionFailed?: boolean; topicId?: string }
+        if (value.topicSelectionFailed) {
+          topicSelectionFailures++
+          failureCount++
+        } else if (value.success) {
+          successCount++
+          if (value.topicId) uniqueTopicIds.add(value.topicId)
         } else {
-          failureCount++;
+          failureCount++
         }
       } else {
-        failureCount++;
+        failureCount++
       }
-    });
+    })
 
-    console.log(`Batch ${Math.floor(i / NOTIFICATION_BATCH_SIZE) + 1} complete: ${successCount} sent, ${failureCount} failed so far`);
+    console.log(`[RecommendedTopic] Batch ${Math.floor(i / BATCH_SIZE) + 1} complete: ${successCount} sent, ${failureCount} failed`)
   }
 
-  console.log(`Notification process complete: ${successCount} sent, ${failureCount} failed`);
+  console.log(`[RecommendedTopic] Complete: ${successCount} sent, ${failureCount} failed`)
 
-  return new Response(
-    JSON.stringify({
-      success: true,
-      message: 'Recommended topic notifications sent',
-      totalEligible: eligibleUsers.length,
-      successCount,
-      failureCount,
-      topicSelectionFailures,
-      uniqueTopicsSent: uniqueTopicIds.size,
-    }),
-    {
-      status: 200,
-      headers: { 'Content-Type': 'application/json' },
-    }
-  );
+  return notificationHelper.createSuccessResponse('Recommended topic notifications sent', {
+    totalEligible: usersToNotify.length,
+    successCount,
+    failureCount,
+    topicSelectionFailures,
+    uniqueTopicsSent: uniqueTopicIds.size,
+  })
 }
 
 // ============================================================================
@@ -422,4 +294,4 @@ async function handleRecommendedTopicNotification(
 createSimpleFunction(handleRecommendedTopicNotification, {
   allowedMethods: ['POST'],
   enableAnalytics: false,
-});
+})

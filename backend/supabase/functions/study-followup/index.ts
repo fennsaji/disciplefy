@@ -16,6 +16,7 @@ import { AppError } from '../_shared/utils/error-handler.ts'
 import { SupportedLanguage } from '../_shared/types/token-types.ts'
 import { UserContext } from '../_shared/types/index.ts'
 import { getCorsHeaders } from '../_shared/utils/cors.ts'
+import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 /**
  * Request payload for follow-up questions
@@ -34,6 +35,41 @@ interface ConversationMessage {
   readonly role: 'user' | 'assistant'
   readonly content: string
   readonly tokens_consumed: number
+  readonly created_at: string
+}
+
+/**
+ * Partial conversation message for history queries (without tokens_consumed)
+ */
+interface ConversationHistoryMessage {
+  readonly id: string
+  readonly role: 'user' | 'assistant'
+  readonly content: string
+  readonly created_at: string
+}
+
+/**
+ * Study guide database record
+ */
+interface StudyGuide {
+  readonly id: string
+  readonly input_type: string
+  readonly input_value: string
+  readonly summary: string | null
+  readonly interpretation: string | null
+  readonly context: string | null
+  readonly language: string | null
+  readonly created_at: string
+}
+
+/**
+ * Conversation database record
+ */
+interface Conversation {
+  readonly id: string
+  readonly study_guide_id: string
+  readonly user_id: string | null
+  readonly session_id: string | null
   readonly created_at: string
 }
 
@@ -82,10 +118,10 @@ function parseRequestParams(req: Request): { study_guide_id: string; question: s
  * Find or create conversation for study guide and user
  */
 async function getOrCreateConversation(
-  supabaseClient: any,
+  supabaseClient: SupabaseClient,
   studyGuideId: string,
   userContext: UserContext
-): Promise<any> {
+): Promise<Conversation> {
   // First, try to find existing conversation
   if (userContext.userId) {
     const { data, error } = await supabaseClient
@@ -137,8 +173,8 @@ async function getOrCreateConversation(
  * Build LLM context from study guide and conversation history
  */
 function buildLLMContext(
-  studyGuide: any,
-  conversationHistory: any[],
+  studyGuide: StudyGuide,
+  conversationHistory: ConversationHistoryMessage[],
   targetLanguage: SupportedLanguage
 ): { systemMessage: string; conversationContext: string } {
   let studyContext = `Study Guide for: ${studyGuide.input_value || 'No input'} (${studyGuide.input_type || 'unknown'})\n`
@@ -313,7 +349,7 @@ async function handleStudyFollowUp(
   }
 
   // Load study guide from database
-  let studyGuide: any
+  let studyGuide: StudyGuide
   try {
     const { data, error } = await supabaseServiceClient
       .from('study_guides')
@@ -354,7 +390,7 @@ async function handleStudyFollowUp(
   }
 
   // Find or create conversation
-  let conversation: any
+  let conversation: Conversation
   try {
     conversation = await getOrCreateConversation(supabaseServiceClient, study_guide_id, userContext)
   } catch (error) {
@@ -388,7 +424,7 @@ async function handleStudyFollowUp(
   })
 
   // CRITICAL: Load conversation history FIRST to check limits BEFORE consuming tokens
-  let conversationHistory: any[] = []
+  let conversationHistory: ConversationHistoryMessage[] = []
   let userQuestionCount = 0
   try {
     const { data, error } = await supabaseServiceClient
@@ -499,7 +535,7 @@ async function handleStudyFollowUp(
   }
 
   // Store user message in database AFTER token consumption succeeds
-  let userMessage: any
+  let userMessage: ConversationMessage
   try {
     const { data, error } = await supabaseServiceClient
       .from('conversation_messages')
