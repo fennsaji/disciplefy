@@ -118,6 +118,8 @@ class _StudyGuideScreenV2ContentState
   bool _isLoading = true;
   bool _hasError = false;
   String _errorMessage = '';
+  bool _isInsufficientTokensError =
+      false; // Track token error for special handling
   bool _isSaved = false;
   DateTime? _lastSaveAttempt;
 
@@ -340,6 +342,7 @@ class _StudyGuideScreenV2ContentState
   /// Handle study guide generation failure
   void _handleGenerationFailure(Failure failure, {bool isRetryable = true}) {
     String errorKey = TranslationKeys.studyGuideErrorDefaultMessage;
+    bool isTokenError = false;
 
     if (failure is NetworkFailure) {
       errorKey = TranslationKeys.studyGuideErrorNetwork;
@@ -349,6 +352,7 @@ class _StudyGuideScreenV2ContentState
       errorKey = TranslationKeys.studyGuideErrorAuth;
     } else if (failure is InsufficientTokensFailure) {
       errorKey = TranslationKeys.studyGuideErrorInsufficientTokens;
+      isTokenError = true;
     }
 
     if (!mounted) return;
@@ -356,6 +360,7 @@ class _StudyGuideScreenV2ContentState
       _isLoading = false;
       _hasError = true;
       _errorMessage = context.tr(errorKey);
+      _isInsufficientTokensError = isTokenError;
     });
   }
 
@@ -366,6 +371,7 @@ class _StudyGuideScreenV2ContentState
       _isLoading = true;
       _hasError = false;
       _errorMessage = '';
+      _isInsufficientTokensError = false;
     });
 
     await _initializeStudyGuide();
@@ -766,7 +772,9 @@ class _StudyGuideScreenV2ContentState
               ),
               const SizedBox(height: 24),
               Text(
-                context.tr(TranslationKeys.studyGuideErrorTitle),
+                _isInsufficientTokensError
+                    ? context.tr(TranslationKeys.studyGuideErrorTitleNoTokens)
+                    : context.tr(TranslationKeys.studyGuideErrorTitle),
                 style: AppFonts.poppins(
                   fontSize: 28,
                   fontWeight: FontWeight.w600,
@@ -817,29 +825,55 @@ class _StudyGuideScreenV2ContentState
                     ),
                   ),
                   const SizedBox(width: 16),
-                  ElevatedButton.icon(
-                    onPressed: _retryGeneration,
-                    icon: const Icon(Icons.refresh),
-                    label: Text(
-                      context.tr(TranslationKeys.studyGuideErrorTryAgain),
-                      style: AppFonts.inter(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
+                  // Show different button based on error type
+                  if (_isInsufficientTokensError)
+                    ElevatedButton.icon(
+                      onPressed: () => context.push('/token-management'),
+                      icon: const Icon(Icons.token),
+                      label: Text(
+                        context.tr(TranslationKeys.studyGuideErrorMyPlan),
+                        style: AppFonts.inter(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Theme.of(context).colorScheme.primary,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 24,
+                          vertical: 16,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        elevation: 0,
+                      ),
+                    )
+                  else
+                    ElevatedButton.icon(
+                      onPressed: _retryGeneration,
+                      icon: const Icon(Icons.refresh),
+                      label: Text(
+                        context.tr(TranslationKeys.studyGuideErrorTryAgain),
+                        style: AppFonts.inter(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Theme.of(context).colorScheme.primary,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 24,
+                          vertical: 16,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        elevation: 0,
                       ),
                     ),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Theme.of(context).colorScheme.primary,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 24,
-                        vertical: 16,
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      elevation: 0,
-                    ),
-                  ),
                 ],
               ),
             ],

@@ -65,6 +65,8 @@ export interface StudyGuideResponse {
   readonly isSaved: boolean
   readonly createdAt: string
   readonly updatedAt: string
+  readonly creatorUserId?: string | null
+  readonly creatorSessionId?: string | null
 }
 
 // =============================================================================

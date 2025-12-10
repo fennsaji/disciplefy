@@ -967,6 +967,8 @@ class TranslationKeys {
   // Study Guide Error Screen
   static const studyGuideErrorTitle = 'study_guide.error.title';
   static const studyGuideErrorTitleAlt = 'study_guide.error.title_alt';
+  static const studyGuideErrorTitleNoTokens =
+      'study_guide.error.title_no_tokens';
   static const studyGuideErrorDefaultMessage =
       'study_guide.error.default_message';
   static const studyGuideErrorDefaultMessageAlt =
@@ -979,4 +981,5 @@ class TranslationKeys {
   static const studyGuideErrorGoBack = 'study_guide.error.go_back';
   static const studyGuideErrorTryAgain = 'study_guide.error.try_again';
   static const studyGuideErrorViewSaved = 'study_guide.error.view_saved';
+  static const studyGuideErrorMyPlan = 'study_guide.error.my_plan';
 }
