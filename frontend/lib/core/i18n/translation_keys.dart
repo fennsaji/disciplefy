@@ -17,6 +17,16 @@ class TranslationKeys {
   static const studyGuideCopy = 'study_guide.actions.copy';
   static const studyGuideSignIn = 'study_guide.actions.sign_in';
 
+  // Study Guide TTS
+  static const studyGuideListen = 'study_guide.tts.listen';
+  static const studyGuidePause = 'study_guide.tts.pause';
+  static const studyGuideResume = 'study_guide.tts.resume';
+  static const studyGuideLoading = 'study_guide.tts.loading';
+  static const studyGuideTtsControls = 'study_guide.tts.controls';
+  static const studyGuideTtsSpeed = 'study_guide.tts.speed';
+  static const studyGuideTtsNowReading = 'study_guide.tts.now_reading';
+  static const studyGuideTtsStop = 'study_guide.tts.stop';
+
   // Study Guide Messages
   static const studyGuideAuthRequired = 'study_guide.messages.auth_required';
   static const studyGuideAuthRequiredMessage =
