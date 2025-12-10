@@ -642,6 +642,7 @@ Future<void> initializeDependencies() async {
         getActiveSubscription: sl(),
         getSubscriptionHistory: sl(),
         getSubscriptionInvoices: sl(),
+        subscriptionRepository: sl(),
       ));
 
   //! Follow Up Chat

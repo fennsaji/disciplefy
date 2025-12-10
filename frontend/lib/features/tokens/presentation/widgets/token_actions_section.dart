@@ -89,12 +89,18 @@ class TokenActionsSection extends StatelessWidget {
                 width: double.infinity,
                 child: OutlinedButton.icon(
                   onPressed: onViewHistory,
-                  icon: const Icon(Icons.history),
+                  icon: Icon(Icons.history,
+                      color: Theme.of(context).colorScheme.onSurface),
                   label: Text(context.tr('tokens.management.view_history')),
                   style: OutlinedButton.styleFrom(
+                    foregroundColor: Theme.of(context).colorScheme.onSurface,
                     minimumSize: const Size(double.infinity, 48),
                     side: BorderSide(
-                        color: Theme.of(context).colorScheme.outline),
+                      color: Theme.of(context)
+                          .colorScheme
+                          .onSurface
+                          .withOpacity(0.5),
+                    ),
                   ),
                 ),
               ),

@@ -3,6 +3,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:dartz/dartz.dart';
 
 import '../../domain/entities/subscription.dart';
+import '../../domain/entities/user_subscription_status.dart';
+import '../../domain/repositories/subscription_repository.dart';
 import '../../domain/usecases/get_active_subscription.dart'
     as get_active_subscription;
 import '../../domain/usecases/create_subscription.dart' as create_subscription;
@@ -32,11 +34,16 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
   final resume_subscription.ResumeSubscription _resumeSubscription;
   final get_subscription_history.GetSubscriptionHistory _getSubscriptionHistory;
   final get_invoices.GetInvoices _getSubscriptionInvoices;
+  final SubscriptionRepository _subscriptionRepository;
 
   // Subscription cache with timestamp
   Subscription? _cachedSubscription;
   DateTime? _lastCacheUpdate;
   Timer? _refreshTimer;
+
+  // User subscription status cache
+  UserSubscriptionStatus? _cachedSubscriptionStatus;
+  DateTime? _lastStatusCacheUpdate;
 
   static const Duration _cacheValidityDuration = Duration(minutes: 10);
   static const Duration _autoRefreshInterval = Duration(minutes: 15);
@@ -50,12 +57,14 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
     required get_subscription_history.GetSubscriptionHistory
         getSubscriptionHistory,
     required get_invoices.GetInvoices getSubscriptionInvoices,
+    required SubscriptionRepository subscriptionRepository,
   })  : _getActiveSubscription = getActiveSubscription,
         _createSubscription = createSubscription,
         _cancelSubscription = cancelSubscription,
         _resumeSubscription = resumeSubscription,
         _getSubscriptionHistory = getSubscriptionHistory,
         _getSubscriptionInvoices = getSubscriptionInvoices,
+        _subscriptionRepository = subscriptionRepository,
         super(const SubscriptionInitial()) {
     // Register event handlers
     on<GetActiveSubscription>(_onGetActiveSubscription);
@@ -68,6 +77,11 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
     on<PrefetchSubscriptionData>(_onPrefetchSubscriptionData);
     on<SubscriptionActivated>(_onSubscriptionActivated);
     on<SubscriptionExpired>(_onSubscriptionExpired);
+    on<LoadSubscriptionStatus>(_onLoadSubscriptionStatus);
+    on<CreateStandardSubscription>(_onCreateStandardSubscription);
+    on<GetSubscriptionInvoices>(_onGetSubscriptionInvoices);
+    on<RefreshSubscriptionInvoices>(_onRefreshSubscriptionInvoices);
+    on<StartPremiumTrial>(_onStartPremiumTrial);
 
     // Start auto-refresh timer for active subscriptions
     _startAutoRefreshTimer();
@@ -344,6 +358,186 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
     add(const RefreshSubscription());
   }
 
+  /// Handles loading user subscription status (including trial info)
+  Future<void> _onLoadSubscriptionStatus(
+    LoadSubscriptionStatus event,
+    Emitter<SubscriptionState> emit,
+  ) async {
+    // Check if cached status is valid
+    if (_isStatusCacheValid() && _cachedSubscriptionStatus != null) {
+      emit(UserSubscriptionStatusLoaded(
+        subscriptionStatus: _cachedSubscriptionStatus!,
+        lastUpdated: _lastStatusCacheUpdate!,
+      ));
+      return;
+    }
+
+    emit(const SubscriptionLoading(operation: 'loading status'));
+
+    final result = await _subscriptionRepository.getSubscriptionStatus();
+
+    result.fold(
+      (failure) => emit(SubscriptionError(
+        failure: failure,
+        operation: 'loading subscription status',
+      )),
+      (status) {
+        _updateStatusCache(status);
+        emit(UserSubscriptionStatusLoaded(
+          subscriptionStatus: status,
+          lastUpdated: DateTime.now(),
+        ));
+      },
+    );
+  }
+
+  /// Handles creating a Standard subscription
+  Future<void> _onCreateStandardSubscription(
+    CreateStandardSubscription event,
+    Emitter<SubscriptionState> emit,
+  ) async {
+    // Preserve current status if available
+    UserSubscriptionStatus? currentStatus;
+    if (state is UserSubscriptionStatusLoaded) {
+      currentStatus =
+          (state as UserSubscriptionStatusLoaded).subscriptionStatus;
+    }
+
+    if (currentStatus != null) {
+      emit(UserSubscriptionStatusLoaded(
+        subscriptionStatus: currentStatus,
+        lastUpdated: DateTime.now(),
+        isLoading: true,
+      ));
+    } else {
+      emit(const SubscriptionLoading(
+          operation: 'creating standard subscription'));
+    }
+
+    final result = await _subscriptionRepository.createStandardSubscription();
+
+    result.fold(
+      (failure) {
+        final errorMessage = _getErrorMessage(failure);
+        if (currentStatus != null) {
+          emit(UserSubscriptionStatusLoaded(
+            subscriptionStatus: currentStatus,
+            lastUpdated: DateTime.now(),
+            errorMessage: errorMessage,
+          ));
+        } else {
+          emit(SubscriptionError(
+            failure: failure,
+            operation: 'creating standard subscription',
+          ));
+        }
+      },
+      (createResult) {
+        if (currentStatus != null) {
+          emit(UserSubscriptionStatusLoaded(
+            subscriptionStatus: currentStatus,
+            lastUpdated: DateTime.now(),
+            authorizationUrl: createResult.authorizationUrl,
+          ));
+        } else {
+          emit(SubscriptionCreated(
+            result: createResult,
+            createdAt: DateTime.now(),
+          ));
+        }
+      },
+    );
+  }
+
+  /// Handles fetching subscription invoices
+  Future<void> _onGetSubscriptionInvoices(
+    GetSubscriptionInvoices event,
+    Emitter<SubscriptionState> emit,
+  ) async {
+    emit(const SubscriptionLoading(operation: 'loading invoices'));
+
+    final params = get_invoices.GetInvoicesParams(
+      limit: event.limit ?? 20,
+      offset: event.offset ?? 0,
+    );
+
+    final result = await _getSubscriptionInvoices(params);
+
+    result.fold(
+      (failure) => emit(SubscriptionError(
+        failure: failure,
+        operation: 'loading invoices',
+        previousSubscription: _cachedSubscription,
+      )),
+      (invoices) {
+        emit(SubscriptionLoaded(
+          activeSubscription: _cachedSubscription,
+          invoices: invoices,
+          lastUpdated: DateTime.now(),
+        ));
+      },
+    );
+  }
+
+  /// Handles refreshing subscription invoices (ignores cache)
+  Future<void> _onRefreshSubscriptionInvoices(
+    RefreshSubscriptionInvoices event,
+    Emitter<SubscriptionState> emit,
+  ) async {
+    // If already loaded, preserve current data and show refresh indicator
+    List<SubscriptionInvoice>? currentInvoices;
+    if (state is SubscriptionLoaded) {
+      final currentState = state as SubscriptionLoaded;
+      currentInvoices = currentState.invoices;
+      emit(currentState.copyWith(isRefreshing: true));
+    } else {
+      emit(const SubscriptionLoading(operation: 'refreshing invoices'));
+    }
+
+    final params = get_invoices.GetInvoicesParams(
+      limit: 20,
+      offset: 0,
+    );
+
+    final result = await _getSubscriptionInvoices(params);
+
+    result.fold(
+      (failure) => emit(SubscriptionError(
+        failure: failure,
+        operation: 'refreshing invoices',
+        previousSubscription: _cachedSubscription,
+      )),
+      (invoices) {
+        emit(SubscriptionLoaded(
+          activeSubscription: _cachedSubscription,
+          invoices: invoices,
+          lastUpdated: DateTime.now(),
+        ));
+      },
+    );
+  }
+
+  /// Get user-friendly error message from failure
+  String _getErrorMessage(Failure failure) {
+    if (failure is NetworkFailure) {
+      return 'No internet connection. Please check your network.';
+    } else if (failure is AuthenticationFailure) {
+      return 'Please sign in to subscribe.';
+    } else if (failure is ServerFailure) {
+      return 'Server error. Please try again later.';
+    } else if (failure is ClientFailure) {
+      final clientFailure = failure;
+      if (clientFailure.code == 'TRIAL_STILL_ACTIVE') {
+        return 'Standard plan is currently free during trial period.';
+      } else if (clientFailure.code == 'SUBSCRIPTION_EXISTS') {
+        return 'You already have an active subscription.';
+      }
+      return clientFailure.message;
+    } else {
+      return 'An unexpected error occurred. Please try again.';
+    }
+  }
+
   // ========== Cache Management ==========
 
   /// Check if cached data is still valid
@@ -363,6 +557,111 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
   void _clearCache() {
     _cachedSubscription = null;
     _lastCacheUpdate = null;
+  }
+
+  /// Check if subscription status cache is still valid
+  bool _isStatusCacheValid() {
+    if (_lastStatusCacheUpdate == null) return false;
+    final now = DateTime.now();
+    return now.difference(_lastStatusCacheUpdate!) < _cacheValidityDuration;
+  }
+
+  /// Update subscription status cache
+  void _updateStatusCache(UserSubscriptionStatus status) {
+    _cachedSubscriptionStatus = status;
+    _lastStatusCacheUpdate = DateTime.now();
+  }
+
+  /// Clear subscription status cache
+  void _clearStatusCache() {
+    _cachedSubscriptionStatus = null;
+    _lastStatusCacheUpdate = null;
+  }
+
+  /// Handles starting a Premium trial
+  Future<void> _onStartPremiumTrial(
+    StartPremiumTrial event,
+    Emitter<SubscriptionState> emit,
+  ) async {
+    // Preserve current status if available
+    UserSubscriptionStatus? currentStatus;
+    if (state is UserSubscriptionStatusLoaded) {
+      currentStatus =
+          (state as UserSubscriptionStatusLoaded).subscriptionStatus;
+    }
+
+    if (currentStatus != null) {
+      emit(UserSubscriptionStatusLoaded(
+        subscriptionStatus: currentStatus,
+        lastUpdated: DateTime.now(),
+        isLoading: true,
+      ));
+    } else {
+      emit(const SubscriptionLoading(operation: 'starting premium trial'));
+    }
+
+    final result = await _subscriptionRepository.startPremiumTrial();
+
+    result.fold(
+      (failure) {
+        final errorMessage = _getPremiumTrialErrorMessage(failure);
+        if (currentStatus != null) {
+          emit(UserSubscriptionStatusLoaded(
+            subscriptionStatus: currentStatus,
+            lastUpdated: DateTime.now(),
+            errorMessage: errorMessage,
+          ));
+        } else {
+          emit(SubscriptionError(
+            failure: failure,
+            operation: 'starting premium trial',
+          ));
+        }
+      },
+      (trialResult) {
+        // Clear status cache since user plan has changed
+        _clearStatusCache();
+
+        emit(PremiumTrialStarted(
+          trialStartedAt: trialResult.trialStartedAt,
+          trialEndAt: trialResult.trialEndAt,
+          daysRemaining: trialResult.daysRemaining,
+          message: trialResult.message,
+        ));
+
+        // Refresh subscription status to get updated data after a short delay
+        Future.delayed(const Duration(seconds: 1), () {
+          if (!isClosed) {
+            add(const LoadSubscriptionStatus());
+          }
+        });
+      },
+    );
+  }
+
+  /// Get user-friendly error message for Premium trial failures
+  String _getPremiumTrialErrorMessage(Failure failure) {
+    if (failure is NetworkFailure) {
+      return 'No internet connection. Please check your network.';
+    } else if (failure is AuthenticationFailure) {
+      return 'Please sign in to start your free trial.';
+    } else if (failure is ServerFailure) {
+      return 'Server error. Please try again later.';
+    } else if (failure is ClientFailure) {
+      final clientFailure = failure;
+      if (clientFailure.code == 'TRIAL_ALREADY_USED') {
+        return 'You have already used your free Premium trial.';
+      } else if (clientFailure.code == 'ALREADY_PREMIUM') {
+        return 'You already have Premium access.';
+      } else if (clientFailure.code == 'NOT_ELIGIBLE') {
+        return 'Premium trial is only available for new users.';
+      } else if (clientFailure.code == 'TRIAL_NOT_AVAILABLE') {
+        return 'Premium trial is not currently available.';
+      }
+      return clientFailure.message;
+    } else {
+      return 'An unexpected error occurred. Please try again.';
+    }
   }
 
   // ========== Auto-Refresh Timer ==========

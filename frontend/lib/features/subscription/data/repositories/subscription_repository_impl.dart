@@ -4,6 +4,7 @@ import '../../../../core/error/exceptions.dart';
 import '../../../../core/error/failures.dart';
 import '../../../../core/network/network_info.dart';
 import '../../domain/entities/subscription.dart';
+import '../../domain/entities/user_subscription_status.dart';
 import '../../domain/repositories/subscription_repository.dart';
 import '../datasources/subscription_remote_data_source.dart';
 
@@ -140,6 +141,46 @@ class SubscriptionRepositoryImpl implements SubscriptionRepository {
         return invoices;
       },
       'subscription invoices fetch',
+    );
+  }
+
+  @override
+  Future<Either<Failure, UserSubscriptionStatus>>
+      getSubscriptionStatus() async {
+    return _execute<UserSubscriptionStatus>(
+      () async {
+        return await _remoteDataSource.getSubscriptionStatus();
+      },
+      'subscription status fetch',
+    );
+  }
+
+  @override
+  Future<Either<Failure, CreateSubscriptionResult>>
+      createStandardSubscription() async {
+    return _execute<CreateSubscriptionResult>(
+      () async {
+        final response = await _remoteDataSource.createStandardSubscription();
+        // Model already extends entity, so we can return it directly
+        return response;
+      },
+      'standard subscription creation',
+    );
+  }
+
+  @override
+  Future<Either<Failure, StartPremiumTrialResult>> startPremiumTrial() async {
+    return _execute<StartPremiumTrialResult>(
+      () async {
+        final response = await _remoteDataSource.startPremiumTrial();
+        return StartPremiumTrialResult(
+          trialStartedAt: response.trialStartedAt,
+          trialEndAt: response.trialEndAt,
+          daysRemaining: response.daysRemaining,
+          message: response.message,
+        );
+      },
+      'premium trial start',
     );
   }
 }

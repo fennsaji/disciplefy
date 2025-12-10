@@ -314,6 +314,11 @@ class _TokenManagementPageState extends State<TokenManagementPage>
     context.push(AppRoutes.subscriptionManagement);
   }
 
+  void _viewPlanDetails() {
+    // Navigate to subscription management page (same as manage)
+    context.push(AppRoutes.subscriptionManagement);
+  }
+
   void _resumeSubscription() {
     // Dispatch resume subscription event
     context.read<SubscriptionBloc>().add(const ResumeSubscription());
@@ -522,13 +527,42 @@ class _TokenManagementPageState extends State<TokenManagementPage>
         builder: (context, subscriptionState) {
           // Check if subscription has pending cancellation
           bool isCancelledButActive = false;
+          bool hasActiveSubscription = false;
+          String? subscriptionPlanType;
+
           if (subscriptionState is SubscriptionLoaded &&
               subscriptionState.activeSubscription != null) {
             final sub = subscriptionState.activeSubscription!;
             // Check if subscription is in pending_cancellation status
             isCancelledButActive =
                 sub.status == SubscriptionStatus.pending_cancellation;
+            // Check if user has active subscription (any status that counts as active)
+            hasActiveSubscription = sub.status == SubscriptionStatus.active ||
+                sub.status == SubscriptionStatus.authenticated ||
+                sub.status == SubscriptionStatus.created ||
+                sub.status == SubscriptionStatus.pending_cancellation;
+            subscriptionPlanType = sub.planType.toLowerCase();
           }
+
+          // Determine if we should show manage subscription button
+          // - Premium users: always show if they have an active subscription
+          // - Standard users: show only if they have an active Standard subscription
+          final bool showManageSubscription =
+              (tokenStatus.userPlan == UserPlan.premium &&
+                      hasActiveSubscription) ||
+                  (tokenStatus.userPlan == UserPlan.standard &&
+                      hasActiveSubscription &&
+                      subscriptionPlanType?.contains('standard') == true);
+
+          // Trial end date for Standard plan
+          final trialEndDate = DateTime(2026, 3, 31);
+          final isTrialActive = DateTime.now().isBefore(trialEndDate);
+
+          // Standard user in trial (no subscription yet)
+          final isStandardTrialUser =
+              tokenStatus.userPlan == UserPlan.standard &&
+                  isTrialActive &&
+                  !hasActiveSubscription;
 
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -545,18 +579,13 @@ class _TokenManagementPageState extends State<TokenManagementPage>
 
               const SizedBox(height: 24),
 
-              // Current Plan Section
+              // Current Plan Section - now with unified "My Plan" button
               CurrentPlanSection(
                 tokenStatus: tokenStatus,
-                onUpgrade: tokenStatus.userPlan == UserPlan.free
-                    ? _upgradeToStandard
-                    : _upgradeToPremium,
-                onManageSubscription: tokenStatus.userPlan == UserPlan.premium
-                    ? _manageSubscription
-                    : null,
+                onMyPlan: () => context.push(AppRoutes.myPlan),
+                isTrialActive: isStandardTrialUser,
+                trialEndDate: isStandardTrialUser ? trialEndDate : null,
                 isCancelledButActive: isCancelledButActive,
-                onContinueSubscription:
-                    isCancelledButActive ? _resumeSubscription : null,
               ),
 
               const SizedBox(height: 24),

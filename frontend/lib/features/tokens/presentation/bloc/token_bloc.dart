@@ -434,11 +434,12 @@ class TokenBloc extends Bloc<TokenEvent, TokenState> {
       return;
     }
 
-    // Only standard users can purchase tokens
-    if (_cachedTokenStatus!.userPlan != UserPlan.standard) {
+    // Premium users cannot purchase tokens (they have unlimited)
+    if (_cachedTokenStatus!.userPlan == UserPlan.premium) {
       emit(const TokenError(
         failure: ValidationFailure(
-            message: 'Only standard users can purchase tokens'),
+            message:
+                'Premium users have unlimited tokens and do not need to purchase'),
         operation: 'order_creation',
       ));
       return;

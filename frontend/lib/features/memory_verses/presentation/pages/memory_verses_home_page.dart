@@ -8,6 +8,11 @@ import '../../../../core/extensions/translation_extension.dart';
 import '../../../../core/i18n/translation_keys.dart';
 import '../../../../core/router/app_router.dart';
 import '../../../../core/widgets/auth_protected_screen.dart';
+import '../../../../core/di/injection_container.dart';
+import '../../../tokens/presentation/bloc/token_bloc.dart';
+import '../../../tokens/presentation/bloc/token_state.dart';
+import '../../../tokens/domain/entities/token_status.dart';
+import '../../../subscription/presentation/widgets/upgrade_required_dialog.dart';
 import '../../../daily_verse/domain/entities/daily_verse_entity.dart';
 import '../../../daily_verse/presentation/bloc/daily_verse_bloc.dart';
 import '../../../daily_verse/presentation/bloc/daily_verse_state.dart';
@@ -34,10 +39,50 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
   DueVersesLoaded? _lastLoadedState;
   VerseLanguage? _selectedLanguageFilter;
   bool _hasTriggeredMemoryVersePrompt = false;
+  bool _isAccessDenied = false;
 
   @override
   void initState() {
     super.initState();
+    _checkPlanAccess();
+  }
+
+  /// Checks if user has access to Memory Verses (Standard+ only)
+  void _checkPlanAccess() {
+    final tokenBloc = sl<TokenBloc>();
+    final tokenState = tokenBloc.state;
+
+    UserPlan? userPlan;
+    if (tokenState is TokenLoaded) {
+      userPlan = tokenState.tokenStatus.userPlan;
+    }
+
+    // Block free users - Memory Verses requires Standard or Premium
+    // Also block if plan is unknown (not loaded yet) - default to restricted
+    final bool hasAccess =
+        userPlan == UserPlan.standard || userPlan == UserPlan.premium;
+
+    if (!hasAccess) {
+      setState(() => _isAccessDenied = true);
+      // Show upgrade dialog and redirect after dismissal
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        UpgradeRequiredDialog.show(
+          context,
+          featureName: 'Memory Verses',
+          featureIcon: Icons.psychology_outlined,
+          featureDescription:
+              'Memorize Bible verses using proven spaced repetition techniques. Track your progress and strengthen your faith through scripture memorization.',
+        ).then((_) {
+          // Navigate back after dialog is dismissed
+          if (mounted) {
+            GoRouter.of(context).goToHome();
+          }
+        });
+      });
+      return;
+    }
+
+    // User has access - load verses
     _loadVerses();
   }
 
@@ -77,6 +122,14 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
 
   @override
   Widget build(BuildContext context) {
+    // Show empty scaffold while redirecting free users
+    if (_isAccessDenied) {
+      return Scaffold(
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        body: const SizedBox.shrink(),
+      );
+    }
+
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, result) {

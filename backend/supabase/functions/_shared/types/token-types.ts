@@ -123,8 +123,8 @@ export const DEFAULT_PLAN_CONFIGS: Record<UserPlan, UserPlanConfig> = {
   free: {
     dailyLimit: 20,
     isUnlimited: false,
-    canPurchaseTokens: false,    // Anonymous users cannot purchase
-    description: 'Anonymous users with daily token allocation'
+    canPurchaseTokens: true,     // Free authenticated users can purchase tokens
+    description: 'Free plan users with daily token allocation'
   },
   standard: {
     dailyLimit: 100,

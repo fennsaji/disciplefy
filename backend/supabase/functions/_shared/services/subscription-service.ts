@@ -17,8 +17,10 @@ import {
   CreateSubscriptionOptions,
   CancelSubscriptionOptions,
   SubscriptionServiceConfig,
-  DEFAULT_SUBSCRIPTION_CONFIG
+  DEFAULT_SUBSCRIPTION_CONFIG,
+  SubscriptionPlanType
 } from '../types/subscription-types.ts'
+import { getPlanConfig, PlanType } from '../config/subscription-config.ts'
 
 /**
  * SubscriptionService implementation
@@ -101,10 +103,11 @@ export class SubscriptionService {
       // We'll receive the customer_id via webhook when subscription is authenticated
       razorpaySubscription = await this.createRazorpaySubscription(options)
 
-      // Store subscription in database
+      // Store subscription in database with plan type
       const subscription = await this.storeSubscription(
         options.userId,
-        razorpaySubscription
+        razorpaySubscription,
+        options.planType
       )
 
       // Log creation event
@@ -568,16 +571,29 @@ export class SubscriptionService {
       )
     }
 
+    // Get plan configuration based on plan type
+    const planConfig = getPlanConfig(options.planType as PlanType)
+    const planId = planConfig.planId || this.config.planId
+
+    if (!planId) {
+      throw new AppError(
+        'CONFIGURATION_ERROR',
+        `Plan ID not configured for ${options.planType} plan`,
+        500
+      )
+    }
+
     try {
       // Build subscription request - omit total_count if null (unlimited)
       const subscriptionRequest: Record<string, any> = {
-        plan_id: this.config.planId,
+        plan_id: planId,
         // ❌ REMOVED: customer_id - Let hosted checkout create the customer
         customer_notify: this.config.customerNotify,
         quantity: 1,
         notes: {
           user_id: options.userId,
-          subscription_type: 'premium_monthly',
+          plan_type: options.planType,  // Store plan type in notes for webhook
+          subscription_type: `${options.planType}_monthly`,
           ...options.notes
         }
       }
@@ -711,7 +727,8 @@ export class SubscriptionService {
    */
   private async storeSubscription(
     userId: string,
-    razorpaySubscription: RazorpaySubscriptionResponse
+    razorpaySubscription: RazorpaySubscriptionResponse,
+    planType: SubscriptionPlanType = 'premium'
   ): Promise<Subscription> {
     const { data, error } = await this.supabaseClient
       .from('subscriptions')
@@ -721,7 +738,7 @@ export class SubscriptionService {
         razorpay_plan_id: razorpaySubscription.plan_id,
         razorpay_customer_id: razorpaySubscription.customer_id || null,
         status: this.mapRazorpayStatus(razorpaySubscription.status),
-        plan_type: 'premium_monthly',
+        plan_type: `${planType}_monthly`,
         current_period_start: razorpaySubscription.current_start
           ? new Date(razorpaySubscription.current_start * 1000).toISOString()
           : null,

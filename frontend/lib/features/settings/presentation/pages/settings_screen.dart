@@ -184,19 +184,22 @@ class _SettingsScreenContent extends StatelessWidget {
                     _buildUserProfileTile(context, authProvider),
                     if (!authProvider.isAnonymous) ...[
                       _buildDivider(),
-                      // Account Settings - DISABLED (contained theme/language settings)
-                      // _buildSettingsTile(
-                      //   context: context,
-                      //   icon: Icons.account_circle_outlined,
-                      //   title: 'Account Settings',
-                      //   subtitle: 'Manage your account preferences',
-                      //   trailing: const Icon(
-                      //     Icons.arrow_forward_ios,
-                      //     size: 16,
-                      //     color: AppTheme.onSurfaceVariant,
-                      //   ),
-                      //   onTap: () => _showAccountSettingsBottomSheet(context, authProvider),
-                      // ),
+                      // My Plan - unified plan and subscription management
+                      _buildSettingsTile(
+                        context: context,
+                        icon: Icons.card_membership_outlined,
+                        title: 'My Plan',
+                        subtitle: 'View plan details & billing',
+                        trailing: Icon(
+                          Icons.arrow_forward_ios,
+                          size: 16,
+                          color: Theme.of(context)
+                              .colorScheme
+                              .onSurface
+                              .withOpacity(0.6),
+                        ),
+                        onTap: () => context.push(AppRoutes.myPlan),
+                      ),
                     ],
                   ],
                 ),
