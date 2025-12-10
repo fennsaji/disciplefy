@@ -26,6 +26,16 @@ class AppTranslations {
         'copy': 'Copy',
         'sign_in': 'Sign In',
       },
+      'tts': {
+        'listen': 'Listen',
+        'pause': 'Pause',
+        'resume': 'Resume',
+        'loading': 'Loading...',
+        'controls': 'Playback Controls',
+        'speed': 'Speed',
+        'now_reading': 'Now Reading',
+        'stop': 'Stop Reading',
+      },
       'messages': {
         'auth_required': 'Authentication Required',
         'auth_required_message':
@@ -1181,6 +1191,16 @@ class AppTranslations {
         'copy': 'कॉपी करें',
         'sign_in': 'साइन इन करें',
       },
+      'tts': {
+        'listen': 'सुनें',
+        'pause': 'रुकें',
+        'resume': 'जारी रखें',
+        'loading': 'लोड हो रहा है...',
+        'controls': 'प्लेबैक नियंत्रण',
+        'speed': 'गति',
+        'now_reading': 'अभी पढ़ रहे हैं',
+        'stop': 'पढ़ना बंद करें',
+      },
       'messages': {
         'auth_required': 'साइन इन करें',
         'auth_required_message': 'इसे सेव करने के लिए साइन इन करें',
@@ -2321,6 +2341,16 @@ class AppTranslations {
         'share': 'ഷെയർ ചെയ്യൂ',
         'copy': 'കോപ്പി ചെയ്യൂ',
         'sign_in': 'സൈൻ ഇൻ ചെയ്യൂ',
+      },
+      'tts': {
+        'listen': 'കേൾക്കുക',
+        'pause': 'താൽക്കാലികമായി നിർത്തുക',
+        'resume': 'തുടരുക',
+        'loading': 'ലോഡ് ചെയ്യുന്നു...',
+        'controls': 'പ്ലേബാക്ക് നിയന്ത്രണങ്ങൾ',
+        'speed': 'വേഗത',
+        'now_reading': 'ഇപ്പോൾ വായിക്കുന്നത്',
+        'stop': 'വായന നിർത്തുക',
       },
       'messages': {
         'auth_required': 'സൈൻ ഇൻ ചെയ്യൂ',

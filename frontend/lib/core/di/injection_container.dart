@@ -173,6 +173,7 @@ import '../../features/voice_buddy/data/repositories/voice_buddy_repository_impl
 import '../../features/voice_buddy/data/services/speech_service.dart';
 import '../../features/voice_buddy/data/services/tts_service.dart';
 import '../../features/voice_buddy/domain/repositories/voice_buddy_repository.dart';
+import '../../features/study_generation/data/services/study_guide_tts_service.dart';
 import '../../features/voice_buddy/presentation/bloc/voice_conversation_bloc.dart';
 import '../../features/voice_buddy/presentation/bloc/voice_preferences_bloc.dart';
 import '../../features/purchase_issue/data/datasources/purchase_issue_remote_datasource.dart';
@@ -691,6 +692,12 @@ Future<void> initializeDependencies() async {
   // Services
   sl.registerLazySingleton(() => SpeechService());
   sl.registerLazySingleton(() => TTSService());
+
+  //! Study Guide TTS
+  sl.registerLazySingleton(() => StudyGuideTTSService(
+        ttsService: sl<TTSService>(),
+        prefs: sl<SharedPreferences>(),
+      ));
 
   // Data Source
   sl.registerLazySingleton<VoiceBuddyRemoteDataSource>(
