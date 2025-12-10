@@ -30,7 +30,10 @@ import '../../features/study_topics/presentation/pages/study_topics_screen.dart'
 import '../../features/tokens/presentation/pages/token_management_page.dart';
 import '../../features/tokens/presentation/pages/purchase_history_page.dart';
 import '../../features/subscription/presentation/pages/premium_upgrade_page.dart';
+import '../../features/subscription/presentation/pages/standard_upgrade_page.dart';
 import '../../features/subscription/presentation/pages/subscription_management_page.dart';
+import '../../features/subscription/presentation/pages/subscription_payment_history_page.dart';
+import '../../features/subscription/presentation/pages/my_plan_page.dart';
 import '../../features/subscription/presentation/pages/pricing_page.dart';
 import '../../features/subscription/presentation/bloc/subscription_bloc.dart';
 import '../../features/memory_verses/presentation/pages/memory_verses_home_page.dart';
@@ -209,11 +212,35 @@ class AppRouter {
         ),
       ),
       GoRoute(
+        path: AppRoutes.standardUpgrade,
+        name: 'standard_upgrade',
+        builder: (context, state) => BlocProvider(
+          create: (context) => sl<SubscriptionBloc>(),
+          child: const StandardUpgradePage(),
+        ),
+      ),
+      GoRoute(
         path: AppRoutes.subscriptionManagement,
         name: 'subscription_management',
         builder: (context, state) => BlocProvider(
           create: (context) => sl<SubscriptionBloc>(),
           child: const SubscriptionManagementPage(),
+        ),
+      ),
+      GoRoute(
+        path: AppRoutes.myPlan,
+        name: 'my_plan',
+        builder: (context, state) => BlocProvider(
+          create: (context) => sl<SubscriptionBloc>(),
+          child: const MyPlanPage(),
+        ),
+      ),
+      GoRoute(
+        path: AppRoutes.subscriptionPaymentHistory,
+        name: 'subscription_payment_history',
+        builder: (context, state) => BlocProvider(
+          create: (context) => sl<SubscriptionBloc>(),
+          child: const SubscriptionPaymentHistoryPage(),
         ),
       ),
 
@@ -509,6 +536,13 @@ extension AppRouterExtension on GoRouter {
 
   /// Navigates to the purchase history page where users can view their past token purchases.
   void goToPurchaseHistory() => go(AppRoutes.purchaseHistory);
+
+  /// Navigates to the unified My Plan page showing plan details, billing, and history.
+  void goToMyPlan() => go(AppRoutes.myPlan);
+
+  /// Navigates to the subscription payment history page where users can view their subscription invoices.
+  void goToSubscriptionPaymentHistory() =>
+      go(AppRoutes.subscriptionPaymentHistory);
   void goToLogin() => go(AppRoutes.login);
   void goToPhoneAuth() => go(AppRoutes.phoneAuth);
   void goToEmailAuth() => go(AppRoutes.emailAuth);

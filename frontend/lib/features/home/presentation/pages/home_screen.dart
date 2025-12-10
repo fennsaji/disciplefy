@@ -23,6 +23,15 @@ import '../../../daily_verse/domain/entities/daily_verse_entity.dart';
 import '../../../notifications/presentation/widgets/notification_enable_prompt.dart';
 import '../../../auth/presentation/bloc/auth_bloc.dart';
 import '../../../auth/presentation/widgets/email_verification_banner.dart';
+import '../../../subscription/presentation/bloc/subscription_bloc.dart';
+import '../../../subscription/presentation/bloc/subscription_event.dart';
+import '../../../subscription/presentation/bloc/subscription_state.dart';
+import '../../../subscription/presentation/widgets/standard_subscription_banner.dart';
+import '../../../subscription/presentation/widgets/standard_subscription_sheet.dart';
+import '../../../subscription/presentation/widgets/upgrade_required_dialog.dart';
+import '../../../tokens/presentation/bloc/token_bloc.dart';
+import '../../../tokens/presentation/bloc/token_state.dart';
+import '../../../tokens/domain/entities/token_status.dart';
 
 import '../bloc/home_bloc.dart';
 import '../bloc/home_event.dart';
@@ -66,6 +75,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
   void initState() {
     super.initState();
     _loadDailyVerse();
+    _loadSubscriptionStatus();
     // Fire initial topics load once; HomeBloc is a singleton via DI
     final homeBloc = sl<HomeBloc>();
     final current = homeBloc.state;
@@ -77,6 +87,12 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
     if (current is! HomeCombinedState || current.activeLearningPath == null) {
       homeBloc.add(const LoadActiveLearningPath());
     }
+  }
+
+  /// Load subscription status for Standard plan banner
+  void _loadSubscriptionStatus() {
+    final subscriptionBloc = sl<SubscriptionBloc>();
+    subscriptionBloc.add(LoadSubscriptionStatus());
   }
 
   /// Shows the Daily Verse notification prompt if not already shown
@@ -275,6 +291,27 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
                             child: const EmailVerificationBanner(),
                           ),
 
+                          // Standard Subscription Banner (shown when trial ending/ended)
+                          BlocBuilder<SubscriptionBloc, SubscriptionState>(
+                            bloc: sl<SubscriptionBloc>(),
+                            builder: (context, state) {
+                              if (state is UserSubscriptionStatusLoaded &&
+                                  state.subscriptionStatus
+                                      .shouldShowSubscriptionBanner) {
+                                return Padding(
+                                  padding: EdgeInsets.only(
+                                      top: isLargeScreen ? 16 : 12),
+                                  child: StandardSubscriptionBannerCompact(
+                                    status: state.subscriptionStatus,
+                                    onSubscribe: () =>
+                                        _showStandardSubscriptionSheet(context),
+                                  ),
+                                );
+                              }
+                              return const SizedBox.shrink();
+                            },
+                          ),
+
                           SizedBox(height: isLargeScreen ? 16 : 12),
 
                           // Daily Verse Card with click functionality
@@ -326,7 +363,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
 
   Widget _buildMemoryVersesIconButton() {
     return IconButton(
-      onPressed: () => context.go('/memory-verses'),
+      onPressed: () => _handleMemoryVersesTap(),
       icon: const Icon(
         Icons.psychology_outlined,
         color: AppTheme.onSurfaceVariant,
@@ -334,6 +371,36 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
       ),
       tooltip: context.tr(TranslationKeys.homeMemoryVerses),
     );
+  }
+
+  /// Handles tap on Memory Verses button - checks plan and shows upgrade dialog for free users
+  void _handleMemoryVersesTap() {
+    // Get user plan from TokenBloc (more reliable as it's loaded early)
+    final tokenBloc = sl<TokenBloc>();
+    final tokenState = tokenBloc.state;
+
+    UserPlan? userPlan;
+    if (tokenState is TokenLoaded) {
+      userPlan = tokenState.tokenStatus.userPlan;
+    }
+
+    // Only allow Standard or Premium users
+    final bool hasAccess =
+        userPlan == UserPlan.standard || userPlan == UserPlan.premium;
+
+    if (!hasAccess) {
+      UpgradeRequiredDialog.show(
+        context,
+        featureName: 'Memory Verses',
+        featureIcon: Icons.psychology_outlined,
+        featureDescription:
+            'Memorize Bible verses using proven spaced repetition techniques. Track your progress and strengthen your faith through scripture memorization.',
+      );
+      return;
+    }
+
+    // User is on Standard or Premium plan - proceed to Memory Verses
+    context.go('/memory-verses');
   }
 
   Widget _buildLogoWidget() {
@@ -623,6 +690,37 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
               _buildTopicsGrid(homeState.topics),
           ],
         );
+      },
+    );
+  }
+
+  /// Show Standard subscription bottom sheet
+  void _showStandardSubscriptionSheet(BuildContext context) {
+    final subscriptionBloc = sl<SubscriptionBloc>();
+    final state = subscriptionBloc.state;
+
+    if (state is! UserSubscriptionStatusLoaded) {
+      // If status not loaded yet, show a loading snackbar
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Loading subscription status...'),
+          duration: Duration(seconds: 1),
+        ),
+      );
+      return;
+    }
+
+    StandardSubscriptionSheet.show(
+      context,
+      status: state.subscriptionStatus,
+      isLoading: state.isLoading,
+      authorizationUrl: state.authorizationUrl,
+      errorMessage: state.errorMessage,
+      onCreateSubscription: () {
+        subscriptionBloc.add(CreateStandardSubscription());
+      },
+      onClose: () {
+        Navigator.of(context).pop();
       },
     );
   }

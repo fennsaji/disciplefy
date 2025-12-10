@@ -1138,8 +1138,8 @@ class AppTranslations {
       'free': {
         'feature1': '20 AI tokens daily',
         'feature2': 'Daily verse notifications',
-        'feature3': 'Basic Bible reading tools',
-        'feature4': 'Limited follow-up questions',
+        'feature3': 'Learning paths & Study topics',
+        'feature4': 'Purchase additional tokens',
       },
       'standard': {
         'feature1': '100 AI tokens daily',
@@ -2277,8 +2277,8 @@ class AppTranslations {
       'free': {
         'feature1': '20 AI टोकन दैनिक',
         'feature2': 'दैनिक वचन सूचनाएं',
-        'feature3': 'बेसिक बाइबल रीडिंग टूल्स',
-        'feature4': 'सीमित फॉलो-अप प्रश्न',
+        'feature3': 'लर्निंग पाथ और स्टडी टॉपिक्स',
+        'feature4': 'अतिरिक्त टोकन खरीदें',
       },
       'standard': {
         'feature1': '100 AI टोकन दैनिक',
@@ -3481,8 +3481,8 @@ class AppTranslations {
       'free': {
         'feature1': '20 AI ടോക്കണുകൾ ദിവസവും',
         'feature2': 'ദൈനിക വചന അറിയിപ്പുകൾ',
-        'feature3': 'അടിസ്ഥാന ബൈബിൾ വായന ടൂളുകൾ',
-        'feature4': 'പരിമിതമായ ഫോളോ-അപ്പ് ചോദ്യങ്ങൾ',
+        'feature3': 'ലേണിംഗ് പാത്തുകളും സ്റ്റഡി ടോപ്പിക്കുകളും',
+        'feature4': 'അധിക ടോക്കണുകൾ വാങ്ങുക',
       },
       'standard': {
         'feature1': '100 AI ടോക്കണുകൾ ദിവസവും',

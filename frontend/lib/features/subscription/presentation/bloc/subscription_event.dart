@@ -166,9 +166,32 @@ class PrefetchSubscriptionData extends SubscriptionEvent {
   const PrefetchSubscriptionData();
 }
 
+/// Event to load the user's subscription status including trial information
+///
+/// Fetches UserSubscriptionStatus with current plan, trial status, and subscription details
+class LoadSubscriptionStatus extends SubscriptionEvent {
+  const LoadSubscriptionStatus();
+}
+
+/// Event to create a new Standard subscription
+///
+/// Creates a Razorpay subscription for Standard plan (₹50/month)
+/// Only allowed after trial period ends
+class CreateStandardSubscription extends SubscriptionEvent {
+  const CreateStandardSubscription();
+}
+
 /// Event to refresh subscription invoices from the server
 ///
 /// Forces a fresh API call for latest invoice data
 class RefreshSubscriptionInvoices extends SubscriptionEvent {
   const RefreshSubscriptionInvoices();
+}
+
+/// Event to start a 7-day Premium trial
+///
+/// Only available for new users who signed up after April 1st, 2025
+/// and haven't used their trial yet
+class StartPremiumTrial extends SubscriptionEvent {
+  const StartPremiumTrial();
 }

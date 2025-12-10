@@ -83,10 +83,11 @@ async function authenticateAndAuthorize(req: Request, authService: AuthService, 
   await rateLimiter.enforceRateLimit(userContext.userId!, 'authenticated')
   const userPlan = await authService.getUserPlan(req)
   
+  // Premium users cannot purchase (they have unlimited tokens)
   if (!tokenService.canPurchaseTokens(userPlan)) {
     throw new AppError(
       'PURCHASE_NOT_ALLOWED',
-      `${userPlan} plan users cannot purchase tokens`,
+      'Premium plan users have unlimited tokens and do not need to purchase more',
       403
     )
   }

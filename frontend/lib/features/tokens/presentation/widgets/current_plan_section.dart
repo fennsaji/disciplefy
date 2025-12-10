@@ -6,24 +6,28 @@ import '../../../../core/extensions/translation_extension.dart';
 import '../../../../core/i18n/translation_keys.dart';
 
 /// Widget that displays the current user plan information
+/// with a unified "My Plan" button for all plan management actions.
 class CurrentPlanSection extends StatelessWidget {
   final TokenStatus tokenStatus;
-  final VoidCallback onUpgrade;
-  final VoidCallback? onManageSubscription;
+  final VoidCallback onMyPlan;
   final bool isCancelledButActive;
-  final VoidCallback? onContinueSubscription;
+  final bool isTrialActive;
+  final DateTime? trialEndDate;
 
   const CurrentPlanSection({
     super.key,
     required this.tokenStatus,
-    required this.onUpgrade,
-    this.onManageSubscription,
+    required this.onMyPlan,
     this.isCancelledButActive = false,
-    this.onContinueSubscription,
+    this.isTrialActive = false,
+    this.trialEndDate,
   });
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final planColor = _getPlanColor(tokenStatus.userPlan);
+
     return Card(
       elevation: 2,
       child: Padding(
@@ -35,7 +39,7 @@ class CurrentPlanSection extends StatelessWidget {
               children: [
                 Icon(
                   _getPlanIcon(tokenStatus.userPlan),
-                  color: _getPlanColor(tokenStatus.userPlan),
+                  color: planColor,
                   size: 24,
                 ),
                 const SizedBox(width: 12),
@@ -56,11 +60,10 @@ class CurrentPlanSection extends StatelessWidget {
                   padding:
                       const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
-                    color: _getPlanColor(tokenStatus.userPlan).withOpacity(0.1),
+                    color: planColor.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(
-                      color:
-                          _getPlanColor(tokenStatus.userPlan).withOpacity(0.3),
+                      color: planColor.withOpacity(0.3),
                     ),
                   ),
                   child: Text(
@@ -68,41 +71,34 @@ class CurrentPlanSection extends StatelessWidget {
                     style: AppFonts.inter(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
-                      color: _getPlanColor(tokenStatus.userPlan),
+                      color: planColor,
                     ),
                   ),
                 ),
                 const Spacer(),
-                if (tokenStatus.userPlan == UserPlan.premium &&
-                    isCancelledButActive &&
-                    onContinueSubscription != null)
-                  // Show "Continue Subscription" for cancelled but active subscriptions
-                  OutlinedButton.icon(
-                    onPressed: onContinueSubscription,
-                    icon: const Icon(Icons.restart_alt),
-                    label: Text(
-                        context.tr(TranslationKeys.plansContinueSubscription)),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: Colors.green[700],
-                      side: BorderSide(color: Colors.green[700]!),
-                    ),
-                  )
-                else if (tokenStatus.userPlan == UserPlan.premium &&
-                    onManageSubscription != null)
-                  OutlinedButton.icon(
-                    onPressed: onManageSubscription,
-                    icon: const Icon(Icons.settings),
-                    label: Text(context.tr(TranslationKeys.plansManage)),
-                  )
-                else if (tokenStatus.userPlan != UserPlan.premium)
-                  OutlinedButton(
-                    onPressed: onUpgrade,
-                    child: Text(
-                      tokenStatus.userPlan == UserPlan.free
-                          ? context.tr('tokens.plans.upgrade_plan')
-                          : context.tr('tokens.plans.go_premium'),
+                // Single unified "My Plan" button - always visible
+                OutlinedButton.icon(
+                  onPressed: onMyPlan,
+                  icon: Icon(Icons.assignment_outlined,
+                      size: 18,
+                      color: isDark
+                          ? Theme.of(context).colorScheme.onSurface
+                          : planColor),
+                  label: const Text('My Plan'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: isDark
+                        ? Theme.of(context).colorScheme.onSurface
+                        : planColor,
+                    side: BorderSide(
+                      color: isDark
+                          ? Theme.of(context)
+                              .colorScheme
+                              .onSurface
+                              .withOpacity(0.5)
+                          : planColor,
                     ),
                   ),
+                ),
               ],
             ),
             const SizedBox(height: 12),
@@ -113,27 +109,37 @@ class CurrentPlanSection extends StatelessWidget {
                 color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
               ),
             ),
+            // Cancelled but active subscription notice
             if (isCancelledButActive) ...[
               const SizedBox(height: 8),
               Container(
                 padding:
                     const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 decoration: BoxDecoration(
-                  color: Colors.orange[50],
+                  color: isDark
+                      ? Colors.orange.withOpacity(0.15)
+                      : Colors.orange[50],
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.orange[300]!),
+                  border: Border.all(
+                    color: isDark
+                        ? Colors.orange.withOpacity(0.4)
+                        : Colors.orange[300]!,
+                  ),
                 ),
                 child: Row(
                   children: [
                     Icon(Icons.info_outline,
-                        size: 16, color: Colors.orange[700]),
+                        size: 16,
+                        color:
+                            isDark ? Colors.orange[300] : Colors.orange[700]),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
                         context.tr(TranslationKeys.plansCancelledNotice),
                         style: AppFonts.inter(
                           fontSize: 12,
-                          color: Colors.orange[900],
+                          color:
+                              isDark ? Colors.orange[200] : Colors.orange[900],
                         ),
                       ),
                     ),
@@ -141,8 +147,49 @@ class CurrentPlanSection extends StatelessWidget {
                 ),
               ),
             ],
+            // Standard trial info banner
+            if (tokenStatus.userPlan == UserPlan.standard &&
+                isTrialActive &&
+                trialEndDate != null) ...[
+              const SizedBox(height: 8),
+              _buildTrialBanner(context, isDark),
+            ],
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildTrialBanner(BuildContext context, bool isDark) {
+    const standardColor = Color(0xFF6A4FB6);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color:
+            isDark ? standardColor.withOpacity(0.15) : const Color(0xFFF3E8FF),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color:
+              isDark ? standardColor.withOpacity(0.4) : const Color(0xFFD8B4FE),
+        ),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.auto_awesome,
+              size: 16,
+              color: isDark ? const Color(0xFFB794F4) : standardColor),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              'Free until ${_formatDate(trialEndDate!)}',
+              style: AppFonts.inter(
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+                color: isDark ? const Color(0xFFB794F4) : standardColor,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -152,9 +199,9 @@ class CurrentPlanSection extends StatelessWidget {
       case UserPlan.free:
         return Icons.person;
       case UserPlan.standard:
-        return Icons.business;
+        return Icons.auto_awesome;
       case UserPlan.premium:
-        return Icons.star;
+        return Icons.workspace_premium;
     }
   }
 
@@ -163,7 +210,7 @@ class CurrentPlanSection extends StatelessWidget {
       case UserPlan.free:
         return Colors.grey[600]!;
       case UserPlan.standard:
-        return Colors.blue[600]!;
+        return const Color(0xFF6A4FB6);
       case UserPlan.premium:
         return Colors.amber[700]!;
     }
@@ -178,5 +225,23 @@ class CurrentPlanSection extends StatelessWidget {
       case UserPlan.premium:
         return context.tr('tokens.plans.premium_description');
     }
+  }
+
+  String _formatDate(DateTime date) {
+    final months = [
+      'January',
+      'February',
+      'March',
+      'April',
+      'May',
+      'June',
+      'July',
+      'August',
+      'September',
+      'October',
+      'November',
+      'December'
+    ];
+    return '${months[date.month - 1]} ${date.day}, ${date.year}';
   }
 }

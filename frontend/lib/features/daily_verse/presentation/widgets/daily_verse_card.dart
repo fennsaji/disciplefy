@@ -13,6 +13,10 @@ import '../../domain/entities/daily_verse_streak.dart';
 import '../../../memory_verses/presentation/bloc/memory_verse_bloc.dart';
 import '../../../memory_verses/presentation/bloc/memory_verse_event.dart';
 import '../../../memory_verses/presentation/bloc/memory_verse_state.dart';
+import '../../../tokens/presentation/bloc/token_bloc.dart';
+import '../../../tokens/presentation/bloc/token_state.dart';
+import '../../../tokens/domain/entities/token_status.dart';
+import '../../../subscription/presentation/widgets/upgrade_required_dialog.dart';
 import '../bloc/daily_verse_bloc.dart';
 import '../bloc/daily_verse_event.dart';
 import '../bloc/daily_verse_state.dart';
@@ -611,6 +615,30 @@ class DailyVerseCard extends StatelessWidget {
 
   /// Adds the current verse to memory deck
   void _addToMemory(BuildContext context, DailyVerseLoaded state) {
+    // Check user plan - Memory Verses is a Standard+ feature
+    final tokenBloc = sl<TokenBloc>();
+    final tokenState = tokenBloc.state;
+
+    UserPlan? userPlan;
+    if (tokenState is TokenLoaded) {
+      userPlan = tokenState.tokenStatus.userPlan;
+    }
+
+    // Only allow Standard or Premium users
+    final bool hasAccess =
+        userPlan == UserPlan.standard || userPlan == UserPlan.premium;
+
+    if (!hasAccess) {
+      UpgradeRequiredDialog.show(
+        context,
+        featureName: 'Memory Verses',
+        featureIcon: Icons.psychology_outlined,
+        featureDescription:
+            'Memorize Bible verses using proven spaced repetition techniques. Track your progress and strengthen your faith through scripture memorization.',
+      );
+      return;
+    }
+
     final memoryVerseBloc = sl<MemoryVerseBloc>();
     final dailyVerseId = state.verse.id;
     final languageCode =
