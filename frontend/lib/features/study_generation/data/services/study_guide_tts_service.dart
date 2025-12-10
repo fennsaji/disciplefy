@@ -215,6 +215,7 @@ class StudyGuideTTSService {
         currentSectionIndex: 0,
         currentSectionName: '',
       );
+      _currentGuide = null;
       return;
     }
 
@@ -231,19 +232,26 @@ class StudyGuideTTSService {
     );
 
     try {
+      // Define the completion callback
+      void onSectionComplete() {
+        print(
+            '🔊 [StudyGuideTTS] Section ${_currentSectionIndex + 1} completed');
+        if (_isIntentionallyStopping) {
+          print('🔊 [StudyGuideTTS] Intentional stop - not advancing');
+          _isIntentionallyStopping = false;
+          return;
+        }
+        // Move to next section
+        _currentSectionIndex++;
+        print('🔊 [StudyGuideTTS] Advancing to section $_currentSectionIndex');
+        _readCurrentSection();
+      }
+
       await _ttsService.speakWithSettings(
         text: section.fullText,
         languageCode: languageCode,
         speakingRate: state.value.speechRate,
-        onComplete: () {
-          if (_isIntentionallyStopping) {
-            _isIntentionallyStopping = false;
-            return;
-          }
-          // Move to next section
-          _currentSectionIndex++;
-          _readCurrentSection();
-        },
+        onComplete: onSectionComplete,
       );
     } catch (e) {
       print('🔊 [StudyGuideTTS] Error reading section: $e');
