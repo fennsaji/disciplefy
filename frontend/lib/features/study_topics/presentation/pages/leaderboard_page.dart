@@ -233,6 +233,9 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
     required int rank,
   }) {
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final avatarTextColor =
+        isDark ? const Color(0xFFA5B4FC) : AppTheme.primaryColor;
 
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -253,7 +256,7 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
           children: [
             CircleAvatar(
               radius: rank == 1 ? 36 : 30,
-              backgroundColor: AppTheme.primaryColor.withOpacity(0.15),
+              backgroundColor: AppTheme.primaryColor.withOpacity(0.2),
               child: Text(
                 entry.displayName.isNotEmpty
                     ? entry.displayName[0].toUpperCase()
@@ -261,7 +264,7 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
                 style: AppFonts.poppins(
                   fontSize: rank == 1 ? 28 : 22,
                   fontWeight: FontWeight.w600,
-                  color: AppTheme.primaryColor,
+                  color: avatarTextColor,
                 ),
               ),
             ),
@@ -361,7 +364,7 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
           // Avatar
           CircleAvatar(
             radius: 18,
-            backgroundColor: AppTheme.primaryColor.withOpacity(0.15),
+            backgroundColor: AppTheme.primaryColor.withOpacity(0.2),
             child: Text(
               entry.displayName.isNotEmpty
                   ? entry.displayName[0].toUpperCase()
@@ -369,7 +372,9 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
               style: AppFonts.inter(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
-                color: AppTheme.primaryColor,
+                color: theme.brightness == Brightness.dark
+                    ? const Color(0xFFA5B4FC) // Light indigo for dark mode
+                    : AppTheme.primaryColor,
               ),
             ),
           ),
@@ -392,7 +397,7 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
-              color: AppTheme.primaryColor.withOpacity(0.15),
+              color: AppTheme.primaryColor.withOpacity(0.2),
               borderRadius: BorderRadius.circular(16),
             ),
             child: Text(
@@ -400,7 +405,9 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
               style: AppFonts.inter(
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
-                color: AppTheme.primaryColor,
+                color: theme.brightness == Brightness.dark
+                    ? const Color(0xFFA5B4FC) // Light indigo for dark mode
+                    : AppTheme.primaryColor,
               ),
             ),
           ),
@@ -442,12 +449,14 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
                 width: 44,
                 height: 44,
                 decoration: BoxDecoration(
-                  color: AppTheme.primaryColor.withOpacity(0.15),
+                  color: AppTheme.primaryColor.withOpacity(0.2),
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.person,
-                  color: AppTheme.primaryColor,
+                  color: theme.brightness == Brightness.dark
+                      ? const Color(0xFFA5B4FC)
+                      : AppTheme.primaryColor,
                   size: 24,
                 ),
               ),

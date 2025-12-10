@@ -420,7 +420,7 @@ class _PremiumUpgradePageState extends State<PremiumUpgradePage>
         Container(
           padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
-            color: AppTheme.secondaryColor.withOpacity(0.3),
+            color: AppTheme.primaryColor.withOpacity(0.15),
             borderRadius: BorderRadius.circular(12),
           ),
           child: Icon(

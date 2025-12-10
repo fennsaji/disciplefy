@@ -41,6 +41,7 @@ class AppTranslations {
       'error': {
         'title': 'Oops! Something went wrong',
         'title_alt': 'We couldn\'t generate a study guide',
+        'title_no_tokens': 'Out of Tokens',
         'default_message':
             'We couldn\'t generate your study guide. Please try again.',
         'default_message_alt': 'Something went wrong. Please try again later.',
@@ -52,6 +53,7 @@ class AppTranslations {
         'go_back': 'Go Back',
         'try_again': 'Try Again',
         'view_saved': 'View Saved Guides',
+        'my_plan': 'Get Tokens',
       },
     },
     'common': {
@@ -1192,6 +1194,7 @@ class AppTranslations {
       'error': {
         'title': 'उफ़! कुछ गड़बड़ हो गई',
         'title_alt': 'स्टडी गाइड नहीं बना सके',
+        'title_no_tokens': 'टोकन खत्म हो गए',
         'default_message':
             'हम आपकी स्टडी गाइड नहीं बना सके। कृपया फिर से कोशिश करें।',
         'default_message_alt':
@@ -1205,6 +1208,7 @@ class AppTranslations {
         'go_back': 'वापस जाएं',
         'try_again': 'फिर कोशिश करें',
         'view_saved': 'सेव की गई गाइड देखें',
+        'my_plan': 'टोकन लें',
       },
     },
     'common': {
@@ -2331,6 +2335,7 @@ class AppTranslations {
       'error': {
         'title': 'ക്ഷമിക്കണം! എന്തോ തെറ്റായി',
         'title_alt': 'സ്റ്റഡി ഗൈഡ് ഉണ്ടാക്കാൻ കഴിഞ്ഞില്ല',
+        'title_no_tokens': 'ടോക്കണുകൾ തീർന്നു',
         'default_message':
             'സ്റ്റഡി ഗൈഡ് ഉണ്ടാക്കാൻ കഴിഞ്ഞില്ല. വീണ്ടും ശ്രമിക്കൂ.',
         'default_message_alt': 'എന്തോ തെറ്റി. പിന്നീട് വീണ്ടും ശ്രമിക്കൂ.',
@@ -2343,6 +2348,7 @@ class AppTranslations {
         'go_back': 'തിരികെ പോകൂ',
         'try_again': 'വീണ്ടും ശ്രമിക്കൂ',
         'view_saved': 'സേവ് ചെയ്ത ഗൈഡുകൾ കാണുക',
+        'my_plan': 'ടോക്കൺ നേടുക',
       },
     },
     'common': {

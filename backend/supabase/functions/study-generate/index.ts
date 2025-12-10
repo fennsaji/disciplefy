@@ -65,27 +65,112 @@ async function handleStudyGenerate(req: Request, { authService, llmService, stud
   }
 
   const existingContent = await studyGuideRepository.findExistingContent(studyGuideInput, userContext)
-  
-  if (existingContent) {
-    // Return cached content immediately (no rate limit check needed)
-    await analyticsLogger.logEvent('study_guide_cache_hit', {
-      input_type,
-      language: language || 'en',
-      user_type: userContext.type,
-      user_id: userContext.userId,
-      session_id: userContext.sessionId
-    }, req.headers.get('x-forwarded-for'))
 
-    return new Response(JSON.stringify({
-      success: true,
-      data: {
-        study_guide: existingContent,
-        from_cache: true
+  if (existingContent) {
+    // Check if current user is the original creator
+    const isCreator = checkIsCreator(existingContent, userContext)
+
+    if (isCreator) {
+      // Original creator - FREE access
+      await analyticsLogger.logEvent('study_guide_cache_hit_creator', {
+        input_type,
+        language: language || 'en',
+        user_type: userContext.type,
+        user_id: userContext.userId,
+        session_id: userContext.sessionId,
+        study_guide_id: existingContent.id
+      }, req.headers.get('x-forwarded-for'))
+
+      return new Response(JSON.stringify({
+        success: true,
+        data: {
+          study_guide: existingContent,
+          from_cache: true
+        }
+      }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' }
+      })
+    } else {
+      // Different user accessing cached content - CHARGE TOKENS
+      const userPlan = await authService.getUserPlan(req)
+      const targetLanguage = language || 'en'
+      const tokenCost = tokenService.calculateTokenCost(targetLanguage as SupportedLanguage)
+      const identifier = userContext.type === 'authenticated' ? userContext.userId! : userContext.sessionId!
+
+      let consumptionResult
+
+      if (tokenService.isUnlimitedPlan(userPlan)) {
+        // Premium/unlimited users are not charged tokens
+        consumptionResult = {
+          success: true,
+          availableTokens: 999999,
+          purchasedTokens: 0,
+          dailyLimit: 999999,
+          totalTokens: 999999,
+          errorMessage: undefined
+        }
+
+        await analyticsLogger.logEvent('study_guide_cache_hit_non_creator_unlimited', {
+          input_type,
+          language: targetLanguage,
+          user_type: userContext.type,
+          user_plan: userPlan,
+          user_id: userContext.userId,
+          session_id: userContext.sessionId,
+          study_guide_id: existingContent.id
+        }, req.headers.get('x-forwarded-for'))
+      } else {
+        // Standard and free users consume tokens for non-creator cached access
+        consumptionResult = await tokenService.consumeTokens(
+          identifier,
+          userPlan,
+          tokenCost,
+          {
+            userId: userContext.userId,
+            sessionId: userContext.sessionId,
+            userPlan: userPlan,
+            operation: 'consume',
+            language: targetLanguage as SupportedLanguage,
+            ipAddress: req.headers.get('x-forwarded-for') || undefined,
+            userAgent: req.headers.get('user-agent') || undefined,
+            timestamp: new Date()
+          }
+        )
+
+        await analyticsLogger.logEvent('study_guide_cache_hit_non_creator_charged', {
+          input_type,
+          language: targetLanguage,
+          user_type: userContext.type,
+          user_plan: userPlan,
+          tokens_consumed: tokenCost,
+          user_id: userContext.userId,
+          session_id: userContext.sessionId,
+          study_guide_id: existingContent.id
+        }, req.headers.get('x-forwarded-for'))
       }
-    }), {
-      status: 200,
-      headers: { 'Content-Type': 'application/json' }
-    })
+
+      return new Response(JSON.stringify({
+        success: true,
+        data: {
+          study_guide: existingContent,
+          from_cache: true
+        },
+        tokens: {
+          consumed: tokenService.isUnlimitedPlan(userPlan) ? 0 : tokenCost,
+          remaining: {
+            available_tokens: consumptionResult.availableTokens,
+            purchased_tokens: consumptionResult.purchasedTokens,
+            total_tokens: consumptionResult.totalTokens
+          },
+          daily_limit: consumptionResult.dailyLimit,
+          user_plan: userPlan
+        }
+      }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' }
+      })
+    }
   }
 
   // --- CACHE MISS: Only now enforce token consumption for expensive LLM generation ---
@@ -227,6 +312,30 @@ async function parseAndValidateRequest(req: Request): Promise<StudyGenerationReq
     input_value: requestBody.input_value,
     topic_description: requestBody.topic_description,
     language: requestBody.language
+  }
+}
+
+/**
+ * Check if the current user is the original creator of the cached content
+ *
+ * Rules:
+ * 1. Legacy guides (no creator) - treat as "creator" so they get free access
+ * 2. Authenticated users - match by userId
+ * 3. Anonymous users - match by sessionId
+ */
+function checkIsCreator(
+  content: { creatorUserId?: string | null; creatorSessionId?: string | null },
+  userContext: { type: 'authenticated' | 'anonymous'; userId?: string; sessionId?: string }
+): boolean {
+  // Legacy guides (no creator tracked) - free for all
+  if (!content.creatorUserId && !content.creatorSessionId) {
+    return true // Treat as "creator" so they get free access
+  }
+
+  if (userContext.type === 'authenticated') {
+    return content.creatorUserId === userContext.userId
+  } else {
+    return content.creatorSessionId === userContext.sessionId
   }
 }
 
