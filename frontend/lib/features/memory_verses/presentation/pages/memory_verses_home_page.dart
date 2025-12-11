@@ -58,6 +58,8 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
 
   /// Checks if user has access to Memory Verses (Standard+ only)
   void _checkPlanAccess() {
+    // Use the singleton TokenBloc instance which is shared across the app
+    // This ensures we get the token status that was fetched on auth
     final tokenBloc = sl<TokenBloc>();
     final currentState = tokenBloc.state;
 

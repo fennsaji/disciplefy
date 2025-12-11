@@ -1051,4 +1051,14 @@ class TranslationKeys {
   static const studyGuideErrorTryAgain = 'study_guide.error.try_again';
   static const studyGuideErrorViewSaved = 'study_guide.error.view_saved';
   static const studyGuideErrorMyPlan = 'study_guide.error.my_plan';
+
+  // Upgrade Required Dialog
+  static const upgradeDialogTitle = 'upgrade_dialog.title';
+  static const upgradeDialogStandardPlan = 'upgrade_dialog.standard_plan';
+  static const upgradeDialogPrice = 'upgrade_dialog.price';
+  static const upgradeDialogBenefitVoice = 'upgrade_dialog.benefit_voice';
+  static const upgradeDialogBenefitMemory = 'upgrade_dialog.benefit_memory';
+  static const upgradeDialogBenefitTokens = 'upgrade_dialog.benefit_tokens';
+  static const upgradeDialogUpgradeButton = 'upgrade_dialog.upgrade_button';
+  static const upgradeDialogMaybeLater = 'upgrade_dialog.maybe_later';
 }
