@@ -478,8 +478,8 @@ class StudyGuideTTSService {
   bool get hasGuide => _currentGuide != null;
 
   /// Clean up resources.
-  void dispose() {
-    stop();
+  Future<void> dispose() async {
+    await stop();
     state.dispose();
   }
 }
