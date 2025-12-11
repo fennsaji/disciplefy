@@ -19,6 +19,26 @@ export interface ConversationMessage {
 }
 
 /**
+ * Database row structure for voice_conversation_messages table
+ */
+interface VoiceMessageRow {
+  readonly role: string
+  readonly content_text: string | null
+}
+
+/**
+ * Valid message roles for voice conversations
+ */
+type ValidMessageRole = 'user' | 'assistant'
+
+/**
+ * Type guard to validate message role
+ */
+function isValidMessageRole(role: string): role is ValidMessageRole {
+  return role === 'user' || role === 'assistant'
+}
+
+/**
  * Parameters for saving a message
  */
 export interface SaveMessageParams {
@@ -95,10 +115,14 @@ export class VoiceConversationRepository {
 
     if (!messages) return []
 
-    return messages.map((msg: any) => ({
-      role: msg.role as 'user' | 'assistant',
-      content: msg.content_text
-    }))
+    return messages
+      .filter((msg: VoiceMessageRow): msg is VoiceMessageRow & { role: ValidMessageRole } => 
+        isValidMessageRole(msg.role)
+      )
+      .map((msg): ConversationMessage => ({
+        role: msg.role,
+        content: msg.content_text ?? ''
+      }))
   }
 
   /**

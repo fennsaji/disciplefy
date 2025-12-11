@@ -126,8 +126,8 @@ class _TokenPurchaseDialogState extends State<TokenPurchaseDialog>
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    // Only standard plan users can purchase tokens
-    if (widget.tokenStatus.userPlan != UserPlan.standard) {
+    // Only Premium users cannot purchase tokens (they have unlimited)
+    if (widget.tokenStatus.userPlan == UserPlan.premium) {
       return _buildRestrictedDialog(context);
     }
 
@@ -917,46 +917,26 @@ class _TokenPurchaseDialogState extends State<TokenPurchaseDialog>
     );
   }
 
+  /// Builds a dialog for Premium users who don't need to purchase tokens
   Widget _buildRestrictedDialog(BuildContext context) {
     final theme = Theme.of(context);
-    String message;
-    String actionText;
 
-    switch (widget.tokenStatus.userPlan) {
-      case UserPlan.free:
-        message = context.tr(TranslationKeys.tokenPurchaseRestrictedFree);
-        actionText = context.tr(TranslationKeys.tokenPurchaseDialogUpgradePlan);
-        break;
-      case UserPlan.premium:
-        message = context.tr(TranslationKeys.tokenPurchaseRestrictedPremium);
-        actionText = context.tr(TranslationKeys.tokenPurchaseDialogGotIt);
-        break;
-      case UserPlan.standard:
-      default:
-        message = context.tr(TranslationKeys.tokenPurchaseRestrictedStandard);
-        actionText = context.tr(TranslationKeys.tokenPurchaseDialogContinue);
-        break;
-    }
+    // This dialog is now only shown for Premium users
+    final message = context.tr(TranslationKeys.tokenPurchaseRestrictedPremium);
+    final actionText = context.tr(TranslationKeys.tokenPurchaseDialogGotIt);
 
     return AlertDialog(
       backgroundColor: theme.scaffoldBackgroundColor,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       title: Row(
         children: [
-          Icon(
-            widget.tokenStatus.userPlan == UserPlan.premium
-                ? Icons.star
-                : Icons.info_outline,
-            color: widget.tokenStatus.userPlan == UserPlan.premium
-                ? Colors.amber
-                : theme.colorScheme.primary,
+          const Icon(
+            Icons.star,
+            color: Colors.amber,
           ),
           const SizedBox(width: 8),
           Text(
-            widget.tokenStatus.userPlan == UserPlan.premium
-                ? context.tr(TranslationKeys.tokenPurchaseDialogPremiumMember)
-                : context
-                    .tr(TranslationKeys.tokenPurchaseDialogPurchaseRestricted),
+            context.tr(TranslationKeys.tokenPurchaseDialogPremiumMember),
             style: theme.textTheme.titleLarge,
           ),
         ],

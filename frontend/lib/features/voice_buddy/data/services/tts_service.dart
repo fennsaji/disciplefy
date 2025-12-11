@@ -436,11 +436,11 @@ class TTSService {
       await initialize();
     }
 
-    // Try Cloud TTS first for high-quality voices
+    // Try Cloud TTS first for high-quality voices (with streaming for faster start)
     if (_cloudTtsAvailable && _useCloudTts) {
-      print('🔊 [TTS] Using Google Cloud TTS (high-quality)');
+      print('🔊 [TTS] Using Google Cloud TTS (high-quality, streaming)');
 
-      final success = await _cloudTts.speak(
+      final success = await _cloudTts.speakStreaming(
         text: text,
         languageCode: languageCode,
         speakingRate: speakingRate ?? 1.0,
@@ -453,7 +453,7 @@ class TTSService {
 
       if (success) {
         _currentState = TtsState.playing;
-        print('🔊 [TTS] Cloud TTS playback started');
+        print('🔊 [TTS] Cloud TTS streaming playback started');
         return;
       }
 

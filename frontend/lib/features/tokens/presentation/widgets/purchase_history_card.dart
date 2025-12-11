@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 
 import '../../../../core/theme/app_theme.dart';
 import '../../domain/entities/purchase_history.dart';
+import '../../../purchase_issue/presentation/widgets/report_issue_bottom_sheet.dart';
 
 class PurchaseHistoryCard extends StatelessWidget {
   final PurchaseHistory purchase;
@@ -211,6 +212,34 @@ class PurchaseHistoryCard extends StatelessWidget {
                 _TransactionDetailRow(
                   label: 'Order ID',
                   value: purchase.orderId,
+                ),
+                const SizedBox(height: 16),
+                // Report Issue Button
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    onPressed: () =>
+                        showReportIssueBottomSheet(context, purchase),
+                    icon: Icon(
+                      Icons.report_problem_outlined,
+                      size: 18,
+                      color: Colors.orange.shade700,
+                    ),
+                    label: Text(
+                      'Report Issue',
+                      style: TextStyle(
+                        color: Colors.orange.shade700,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    style: OutlinedButton.styleFrom(
+                      side: BorderSide(color: Colors.orange.shade300),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                  ),
                 ),
               ],
             ),

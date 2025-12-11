@@ -260,10 +260,16 @@ export const DEFAULT_SUBSCRIPTION_CONFIG: SubscriptionServiceConfig = {
 }
 
 /**
+ * Subscription plan type
+ */
+export type SubscriptionPlanType = 'standard' | 'premium'
+
+/**
  * Subscription creation options
  */
 export interface CreateSubscriptionOptions {
   readonly userId: string
+  readonly planType: SubscriptionPlanType  // 'standard' or 'premium'
   readonly startAt?: number  // Unix timestamp for subscription start
   readonly notes?: Record<string, string>
 }

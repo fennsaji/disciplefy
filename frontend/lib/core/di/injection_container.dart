@@ -173,8 +173,15 @@ import '../../features/voice_buddy/data/repositories/voice_buddy_repository_impl
 import '../../features/voice_buddy/data/services/speech_service.dart';
 import '../../features/voice_buddy/data/services/tts_service.dart';
 import '../../features/voice_buddy/domain/repositories/voice_buddy_repository.dart';
+import '../../features/study_generation/data/services/study_guide_tts_service.dart';
 import '../../features/voice_buddy/presentation/bloc/voice_conversation_bloc.dart';
 import '../../features/voice_buddy/presentation/bloc/voice_preferences_bloc.dart';
+import '../../features/purchase_issue/data/datasources/purchase_issue_remote_datasource.dart';
+import '../../features/purchase_issue/data/datasources/purchase_issue_remote_datasource_impl.dart';
+import '../../features/purchase_issue/data/repositories/purchase_issue_repository_impl.dart';
+import '../../features/purchase_issue/domain/repositories/purchase_issue_repository.dart';
+import '../../features/purchase_issue/domain/usecases/submit_purchase_issue_usecase.dart';
+import '../../features/purchase_issue/presentation/bloc/purchase_issue_bloc.dart';
 
 /// Service locator instance for dependency injection
 final sl = GetIt.instance;
@@ -636,6 +643,7 @@ Future<void> initializeDependencies() async {
         getActiveSubscription: sl(),
         getSubscriptionHistory: sl(),
         getSubscriptionInvoices: sl(),
+        subscriptionRepository: sl(),
       ));
 
   //! Follow Up Chat
@@ -685,6 +693,12 @@ Future<void> initializeDependencies() async {
   sl.registerLazySingleton(() => SpeechService());
   sl.registerLazySingleton(() => TTSService());
 
+  //! Study Guide TTS
+  sl.registerLazySingleton(() => StudyGuideTTSService(
+        ttsService: sl<TTSService>(),
+        prefs: sl<SharedPreferences>(),
+      ));
+
   // Data Source
   sl.registerLazySingleton<VoiceBuddyRemoteDataSource>(
     () => VoiceBuddyRemoteDataSourceImpl(
@@ -709,5 +723,23 @@ Future<void> initializeDependencies() async {
         speechService: sl(),
         ttsService: sl(),
         supabaseClient: sl(),
+      ));
+
+  //! Purchase Issue Reporting
+  sl.registerLazySingleton<PurchaseIssueRemoteDataSource>(
+    () => PurchaseIssueRemoteDataSourceImpl(supabaseClient: sl()),
+  );
+
+  sl.registerLazySingleton<PurchaseIssueRepository>(
+    () => PurchaseIssueRepositoryImpl(remoteDataSource: sl()),
+  );
+
+  sl.registerLazySingleton(() => SubmitPurchaseIssueUseCase(repository: sl()));
+  sl.registerLazySingleton(
+      () => UploadIssueScreenshotUseCase(repository: sl()));
+
+  sl.registerFactory(() => PurchaseIssueBloc(
+        submitPurchaseIssueUseCase: sl(),
+        uploadIssueScreenshotUseCase: sl(),
       ));
 }

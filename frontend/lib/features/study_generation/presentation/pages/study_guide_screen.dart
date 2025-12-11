@@ -21,6 +21,9 @@ import '../../../saved_guides/data/models/saved_guide_model.dart';
 import '../../../follow_up_chat/presentation/widgets/follow_up_chat_widget.dart';
 import '../../../follow_up_chat/presentation/bloc/follow_up_chat_bloc.dart';
 import '../../../follow_up_chat/presentation/bloc/follow_up_chat_event.dart';
+import '../widgets/tts_control_button.dart';
+import '../widgets/tts_control_sheet.dart';
+import '../../data/services/study_guide_tts_service.dart';
 
 /// Study Guide Screen displaying generated content with sections and user interactions.
 ///
@@ -107,6 +110,9 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
 
   @override
   void dispose() {
+    // Stop TTS when navigating away
+    sl<StudyGuideTTSService>().stop();
+
     _autoSaveTimer?.cancel();
     _timeTrackingTimer?.cancel();
     _isCompletionTrackingStarted = false;
@@ -694,71 +700,90 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
         ), // Scaffold
       ); // PopScope
 
-  Widget _buildStudyContent() => Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Summary Section
-          _StudySection(
-            title: context.tr(TranslationKeys.studyGuideSummary),
-            icon: Icons.summarize,
-            content: _currentStudyGuide.summary,
-          ),
+  Widget _buildStudyContent() {
+    final ttsService = sl<StudyGuideTTSService>();
 
-          const SizedBox(height: 24),
+    return ValueListenableBuilder<StudyGuideTtsState>(
+      valueListenable: ttsService.state,
+      builder: (context, ttsState, child) {
+        // Check if TTS is actively reading (playing status)
+        final isReading = ttsState.status == TtsStatus.playing;
+        final currentSection = ttsState.currentSectionIndex;
 
-          // Interpretation Section
-          _StudySection(
-            title: context.tr(TranslationKeys.studyGuideInterpretation),
-            icon: Icons.lightbulb_outline,
-            content: _currentStudyGuide.interpretation,
-          ),
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Summary Section (index 0)
+            _StudySection(
+              title: context.tr(TranslationKeys.studyGuideSummary),
+              icon: Icons.summarize,
+              content: _currentStudyGuide.summary,
+              isBeingRead: isReading && currentSection == 0,
+            ),
 
-          const SizedBox(height: 24),
+            const SizedBox(height: 24),
 
-          // Context Section
-          _StudySection(
-            title: context.tr(TranslationKeys.studyGuideContext),
-            icon: Icons.history_edu,
-            content: _currentStudyGuide.context,
-          ),
+            // Interpretation Section (index 1)
+            _StudySection(
+              title: context.tr(TranslationKeys.studyGuideInterpretation),
+              icon: Icons.lightbulb_outline,
+              content: _currentStudyGuide.interpretation,
+              isBeingRead: isReading && currentSection == 1,
+            ),
 
-          const SizedBox(height: 24),
+            const SizedBox(height: 24),
 
-          // Related Verses Section
-          _StudySection(
-            title: context.tr(TranslationKeys.studyGuideRelatedVerses),
-            icon: Icons.menu_book,
-            content: _currentStudyGuide.relatedVerses.join('\n\n'),
-          ),
+            // Context Section (index 2)
+            _StudySection(
+              title: context.tr(TranslationKeys.studyGuideContext),
+              icon: Icons.history_edu,
+              content: _currentStudyGuide.context,
+              isBeingRead: isReading && currentSection == 2,
+            ),
 
-          const SizedBox(height: 24),
+            const SizedBox(height: 24),
 
-          // Discussion Questions Section
-          _StudySection(
-            title: context.tr(TranslationKeys.studyGuideDiscussionQuestions),
-            icon: Icons.quiz,
-            content: _currentStudyGuide.reflectionQuestions
-                .asMap()
-                .entries
-                .map((entry) => '${entry.key + 1}. ${entry.value}')
-                .join('\n\n'),
-          ),
+            // Related Verses Section (index 3)
+            _StudySection(
+              title: context.tr(TranslationKeys.studyGuideRelatedVerses),
+              icon: Icons.menu_book,
+              content: _currentStudyGuide.relatedVerses.join('\n\n'),
+              isBeingRead: isReading && currentSection == 3,
+            ),
 
-          const SizedBox(height: 24),
+            const SizedBox(height: 24),
 
-          // Prayer Points Section
-          _StudySection(
-            key: _prayerPointsKey,
-            title: context.tr(TranslationKeys.studyGuidePrayerPoints),
-            icon: Icons.favorite,
-            content: _currentStudyGuide.prayerPoints
-                .asMap()
-                .entries
-                .map((entry) => '• ${entry.value}')
-                .join('\n'),
-          ),
-        ],
-      );
+            // Discussion Questions Section (index 4)
+            _StudySection(
+              title: context.tr(TranslationKeys.studyGuideDiscussionQuestions),
+              icon: Icons.quiz,
+              content: _currentStudyGuide.reflectionQuestions
+                  .asMap()
+                  .entries
+                  .map((entry) => '${entry.key + 1}. ${entry.value}')
+                  .join('\n\n'),
+              isBeingRead: isReading && currentSection == 4,
+            ),
+
+            const SizedBox(height: 24),
+
+            // Prayer Points Section (index 5)
+            _StudySection(
+              key: _prayerPointsKey,
+              title: context.tr(TranslationKeys.studyGuidePrayerPoints),
+              icon: Icons.favorite,
+              content: _currentStudyGuide.prayerPoints
+                  .asMap()
+                  .entries
+                  .map((entry) => '• ${entry.value}')
+                  .join('\n'),
+              isBeingRead: isReading && currentSection == 5,
+            ),
+          ],
+        );
+      },
+    );
+  }
 
   Widget _buildNotesSection() => Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -913,42 +938,11 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
               ),
             ),
             const SizedBox(width: 16),
+            // TTS Control Button (replaces Share button)
             Expanded(
-              child: Container(
-                height: 56,
-                decoration: BoxDecoration(
-                  gradient: AppTheme.primaryGradient,
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppTheme.primaryColor.withOpacity(0.3),
-                      blurRadius: 12,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: Material(
-                  color: Colors.transparent,
-                  child: InkWell(
-                    onTap: _shareStudyGuide,
-                    borderRadius: BorderRadius.circular(12),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(Icons.share, color: Colors.white, size: 20),
-                        const SizedBox(width: 8),
-                        Text(
-                          context.tr(TranslationKeys.studyGuideShare),
-                          style: AppFonts.inter(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
+              child: TtsControlButton(
+                guide: _currentStudyGuide,
+                onControlsTap: () => showTtsControlSheet(context),
               ),
             ),
           ],
@@ -1272,96 +1266,145 @@ class _StudySection extends StatelessWidget {
   final String title;
   final IconData icon;
   final String content;
+  final bool isBeingRead;
 
   const _StudySection({
     super.key,
     required this.title,
     required this.icon,
     required this.content,
+    this.isBeingRead = false,
   });
 
   @override
-  Widget build(BuildContext context) => Container(
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surface,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+  Widget build(BuildContext context) {
+    final primaryColor = Theme.of(context).colorScheme.primary;
+
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeInOut,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: isBeingRead
+            ? primaryColor.withOpacity(0.08)
+            : Theme.of(context).colorScheme.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: isBeingRead
+              ? primaryColor.withOpacity(0.5)
+              : primaryColor.withOpacity(0.1),
+          width: isBeingRead ? 2 : 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: isBeingRead
+                ? primaryColor.withOpacity(0.15)
+                : primaryColor.withOpacity(0.05),
+            blurRadius: isBeingRead ? 16 : 10,
+            offset: const Offset(0, 2),
           ),
-          boxShadow: [
-            BoxShadow(
-              color: Theme.of(context).colorScheme.primary.withOpacity(0.05),
-              blurRadius: 10,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Section Header
-            Row(
-              children: [
-                Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color:
-                        Theme.of(context).colorScheme.primary.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Icon(
-                    icon,
-                    color: Theme.of(context).colorScheme.primary,
-                    size: 20,
-                  ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Section Header
+          Row(
+            children: [
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 300),
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: isBeingRead
+                      ? primaryColor
+                      : primaryColor.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(10),
                 ),
-
-                const SizedBox(width: 12),
-
-                Expanded(
-                  child: Text(
-                    title,
-                    style: AppFonts.inter(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w600,
-                      color: Theme.of(context).colorScheme.onBackground,
+                child: isBeingRead
+                    ? const _PulsingIcon(icon: Icons.volume_up, size: 20)
+                    : Icon(
+                        icon,
+                        color: primaryColor,
+                        size: 20,
+                      ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        title,
+                        style: AppFonts.inter(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w600,
+                          color: Theme.of(context).colorScheme.onBackground,
+                        ),
+                      ),
                     ),
-                  ),
+                    if (isBeingRead)
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: primaryColor,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(
+                              Icons.graphic_eq,
+                              color: Colors.white,
+                              size: 14,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              'Reading',
+                              style: AppFonts.inter(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                  ],
                 ),
-
-                // Copy button
-                IconButton(
-                  onPressed: () => _copyToClipboard(context, content),
-                  icon: Icon(
-                    Icons.copy,
-                    color: Theme.of(context)
-                        .colorScheme
-                        .onSurface
-                        .withOpacity(0.6),
-                    size: 18,
-                  ),
-                  constraints: const BoxConstraints(),
-                  padding: EdgeInsets.zero,
-                  tooltip: 'Copy $title',
+              ),
+              const SizedBox(width: 8),
+              // Copy button
+              IconButton(
+                onPressed: () => _copyToClipboard(context, content),
+                icon: Icon(
+                  Icons.copy,
+                  color:
+                      Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                  size: 18,
                 ),
-              ],
-            ),
-
-            const SizedBox(height: 16),
-
-            // Section Content
-            SelectableText(
-              content,
-              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                    color: Theme.of(context).colorScheme.onBackground,
-                    height: 1.6,
-                  ),
-            ),
-          ],
-        ),
-      );
+                constraints: const BoxConstraints(),
+                padding: EdgeInsets.zero,
+                tooltip: 'Copy $title',
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          // Section Content
+          SelectableText(
+            content,
+            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                  color: Theme.of(context).colorScheme.onBackground,
+                  height: 1.6,
+                ),
+          ),
+        ],
+      ),
+    );
+  }
 
   void _copyToClipboard(BuildContext context, String text) {
     Clipboard.setData(ClipboardData(text: text));
@@ -1375,6 +1418,62 @@ class _StudySection extends StatelessWidget {
         behavior: SnackBarBehavior.floating,
         duration: const Duration(seconds: 2),
       ),
+    );
+  }
+}
+
+/// Animated pulsing icon for TTS reading indicator.
+class _PulsingIcon extends StatefulWidget {
+  final IconData icon;
+  final double size;
+
+  const _PulsingIcon({
+    required this.icon,
+    required this.size,
+  });
+
+  @override
+  State<_PulsingIcon> createState() => _PulsingIconState();
+}
+
+class _PulsingIconState extends State<_PulsingIcon>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _animation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      duration: const Duration(milliseconds: 1000),
+      vsync: this,
+    )..repeat(reverse: true);
+
+    _animation = Tween<double>(begin: 0.6, end: 1.0).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _animation,
+      builder: (context, child) {
+        return Opacity(
+          opacity: _animation.value,
+          child: Icon(
+            widget.icon,
+            color: Colors.white,
+            size: widget.size,
+          ),
+        );
+      },
     );
   }
 }

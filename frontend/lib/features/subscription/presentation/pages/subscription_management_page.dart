@@ -3,13 +3,18 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/constants/app_fonts.dart';
 import 'package:intl/intl.dart';
 
+import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/extensions/translation_extension.dart';
 import '../../../../core/i18n/translation_keys.dart';
+import '../../../../core/router/app_routes.dart';
 import '../bloc/subscription_bloc.dart';
 import '../bloc/subscription_event.dart';
 import '../bloc/subscription_state.dart';
 import '../../domain/entities/subscription.dart';
+import '../../../tokens/presentation/bloc/token_bloc.dart';
+import '../../../tokens/presentation/bloc/token_state.dart';
+import '../../../tokens/domain/entities/token_status.dart';
 
 /// Subscription Management Page
 ///
@@ -59,52 +64,79 @@ class _SubscriptionManagementPageState
           ),
         ],
       ),
-      body: BlocConsumer<SubscriptionBloc, SubscriptionState>(
-        listener: (context, state) {
-          if (state is SubscriptionCancelled) {
-            // Show cancellation success message
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(state.message),
-                backgroundColor: AppTheme.warningColor,
-              ),
-            );
-          } else if (state is SubscriptionResumed) {
-            // Show resumption success message
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(state.message),
-                backgroundColor: AppTheme.successColor,
-              ),
-            );
-          } else if (state is SubscriptionError) {
-            // Show error message
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(state.errorMessage),
-                backgroundColor: AppTheme.errorColor,
-              ),
-            );
-          }
-        },
-        builder: (context, state) {
-          if (state is SubscriptionLoading && state.operation == 'fetching') {
-            return const Center(child: CircularProgressIndicator());
+      body: BlocBuilder<TokenBloc, TokenState>(
+        builder: (context, tokenState) {
+          // Get user plan info for Standard trial detection
+          TokenStatus? tokenStatus;
+          if (tokenState is TokenLoaded) {
+            tokenStatus = tokenState.tokenStatus;
           }
 
-          if (state is SubscriptionLoaded) {
-            if (state.activeSubscription == null) {
+          // Check if user is Standard trial (no subscription yet)
+          final trialEndDate = DateTime(2026, 3, 31);
+          final isTrialActive = DateTime.now().isBefore(trialEndDate);
+          final isStandardTrialUser = tokenStatus != null &&
+              tokenStatus.userPlan == UserPlan.standard &&
+              isTrialActive;
+
+          return BlocConsumer<SubscriptionBloc, SubscriptionState>(
+            listener: (context, state) {
+              if (state is SubscriptionCancelled) {
+                // Show cancellation success message
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(state.message),
+                    backgroundColor: AppTheme.warningColor,
+                  ),
+                );
+              } else if (state is SubscriptionResumed) {
+                // Show resumption success message
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(state.message),
+                    backgroundColor: AppTheme.successColor,
+                  ),
+                );
+              } else if (state is SubscriptionError) {
+                // Show error message
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(state.errorMessage),
+                    backgroundColor: AppTheme.errorColor,
+                  ),
+                );
+              }
+            },
+            builder: (context, state) {
+              if (state is SubscriptionLoading &&
+                  state.operation == 'fetching') {
+                return const Center(child: CircularProgressIndicator());
+              }
+
+              if (state is SubscriptionLoaded) {
+                if (state.activeSubscription == null) {
+                  // Show Standard trial view for Standard users in trial period
+                  if (isStandardTrialUser) {
+                    return _buildStandardTrialView(trialEndDate);
+                  }
+                  return _buildNoSubscriptionView();
+                }
+                return _buildSubscriptionView(state.activeSubscription!, state);
+              }
+
+              if (state is SubscriptionError &&
+                  state.previousSubscription != null) {
+                return _buildSubscriptionView(
+                    state.previousSubscription!, state);
+              }
+
+              // Default: check for Standard trial user
+              if (isStandardTrialUser) {
+                return _buildStandardTrialView(trialEndDate);
+              }
               return _buildNoSubscriptionView();
-            }
-            return _buildSubscriptionView(state.activeSubscription!, state);
-          }
-
-          if (state is SubscriptionError &&
-              state.previousSubscription != null) {
-            return _buildSubscriptionView(state.previousSubscription!, state);
-          }
-
-          return _buildNoSubscriptionView();
+            },
+          );
         },
       ),
     );
@@ -169,6 +201,271 @@ class _SubscriptionManagementPageState
     );
   }
 
+  /// Build view for Standard plan users in trial period (no subscription yet)
+  Widget _buildStandardTrialView(DateTime trialEndDate) {
+    const standardColor = Color(0xFF6A4FB6);
+    const standardColorLight =
+        Color(0xFFB794F4); // Lighter purple for dark mode
+    final daysRemaining = trialEndDate.difference(DateTime.now()).inDays;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    // Theme-aware colors
+    final iconColor = isDark ? standardColorLight : standardColor;
+    final textColor = isDark ? standardColorLight : standardColor;
+    final bannerBgColor =
+        isDark ? standardColor.withOpacity(0.15) : const Color(0xFFF3E8FF);
+    final bannerBorderColor =
+        isDark ? standardColor.withOpacity(0.4) : const Color(0xFFD8B4FE);
+
+    // Get Standard plan features
+    final features = [
+      context.tr(TranslationKeys.pricingStandardFeature1),
+      context.tr(TranslationKeys.pricingStandardFeature2),
+      context.tr(TranslationKeys.pricingStandardFeature3),
+      context.tr(TranslationKeys.pricingStandardFeature4),
+      context.tr(TranslationKeys.pricingStandardFeature5),
+    ];
+
+    return SingleChildScrollView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      padding: const EdgeInsets.all(20.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // Trial Status Card
+          Card(
+            elevation: 4,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(16),
+                gradient: LinearGradient(
+                  colors: [
+                    standardColor.withOpacity(0.15),
+                    standardColor.withOpacity(0.05),
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+              ),
+              child: Column(
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: standardColor.withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Icon(
+                          Icons.auto_awesome,
+                          color: iconColor,
+                          size: 32,
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Standard Plan',
+                              style: AppFonts.poppins(
+                                fontSize: 22,
+                                fontWeight: FontWeight.bold,
+                                color: Theme.of(context).colorScheme.onSurface,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'Free Trial Active',
+                              style: AppFonts.inter(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                                color: textColor,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+                  // Trial info banner
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: bannerBgColor,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: bannerBorderColor),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.calendar_today_rounded,
+                          color: iconColor,
+                          size: 24,
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Free until ${_formatTrialDate(trialEndDate)}',
+                                style: AppFonts.inter(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w600,
+                                  color: textColor,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                '$daysRemaining days remaining',
+                                style: AppFonts.inter(
+                                  fontSize: 13,
+                                  color: textColor.withOpacity(0.8),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 20),
+
+          // Plan Details Card
+          Card(
+            elevation: 2,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(20.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.auto_awesome,
+                        color: iconColor,
+                        size: 24,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        context.tr(TranslationKeys.subscriptionPlanDetails),
+                        style: AppFonts.poppins(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                          color: textColor,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  const Divider(),
+                  const SizedBox(height: 12),
+                  Text(
+                    context.tr(TranslationKeys.subscriptionIncludedFeatures),
+                    style: AppFonts.inter(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: Theme.of(context)
+                          .colorScheme
+                          .onSurface
+                          .withOpacity(0.7),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  ...features
+                      .map((feature) => _buildFeatureItem(feature, iconColor)),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 20),
+
+          // After Trial Info Card
+          Card(
+            elevation: 2,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(20.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.info_outline_rounded,
+                        color: Theme.of(context)
+                            .colorScheme
+                            .onSurface
+                            .withOpacity(0.7),
+                        size: 22,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        'After Trial Period',
+                        style: AppFonts.poppins(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: Theme.of(context).colorScheme.onSurface,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    'After ${_formatTrialDate(trialEndDate)}, you can continue using Standard features for just ₹50/month. We\'ll remind you before the trial ends.',
+                    style: AppFonts.inter(
+                      fontSize: 14,
+                      color: Theme.of(context)
+                          .colorScheme
+                          .onSurface
+                          .withOpacity(0.7),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 24),
+        ],
+      ),
+    );
+  }
+
+  String _formatTrialDate(DateTime date) {
+    final months = [
+      'January',
+      'February',
+      'March',
+      'April',
+      'May',
+      'June',
+      'July',
+      'August',
+      'September',
+      'October',
+      'November',
+      'December'
+    ];
+    return '${months[date.month - 1]} ${date.day}, ${date.year}';
+  }
+
   Widget _buildSubscriptionView(
       Subscription subscription, SubscriptionState state) {
     return RefreshIndicator(
@@ -188,6 +485,10 @@ class _SubscriptionManagementPageState
 
             // Billing Information
             _buildBillingInfo(subscription),
+            const SizedBox(height: 16),
+
+            // Payment History Button
+            _buildPaymentHistoryButton(),
             const SizedBox(height: 20),
 
             // Plan Details
@@ -370,10 +671,12 @@ class _SubscriptionManagementPageState
   }
 
   Widget _buildPlanDetails(Subscription subscription) {
-    // Format plan type nicely (premium_monthly -> Premium)
+    // Format plan type nicely (premium_monthly -> Premium, standard -> Standard)
     // Defensive validation: handle null, empty, or malformed planType
     String formattedPlanType = 'Premium';
-    final planType = subscription.planType;
+    final planType = subscription.planType.toLowerCase();
+    final isStandardPlan = planType.contains('standard');
+
     if (planType.isNotEmpty) {
       final parts = planType.split('_');
       final firstPart = parts.first;
@@ -382,14 +685,28 @@ class _SubscriptionManagementPageState
       }
     }
 
-    // Premium plan features
-    final premiumFeatures = [
-      context.tr(TranslationKeys.pricingPremiumFeature1),
-      context.tr(TranslationKeys.pricingPremiumFeature2),
-      context.tr(TranslationKeys.pricingPremiumFeature3),
-      context.tr(TranslationKeys.pricingPremiumFeature4),
-      context.tr(TranslationKeys.pricingPremiumFeature5),
-    ];
+    // Get features based on plan type
+    final features = isStandardPlan
+        ? [
+            context.tr(TranslationKeys.pricingStandardFeature1),
+            context.tr(TranslationKeys.pricingStandardFeature2),
+            context.tr(TranslationKeys.pricingStandardFeature3),
+            context.tr(TranslationKeys.pricingStandardFeature4),
+            context.tr(TranslationKeys.pricingStandardFeature5),
+          ]
+        : [
+            context.tr(TranslationKeys.pricingPremiumFeature1),
+            context.tr(TranslationKeys.pricingPremiumFeature2),
+            context.tr(TranslationKeys.pricingPremiumFeature3),
+            context.tr(TranslationKeys.pricingPremiumFeature4),
+            context.tr(TranslationKeys.pricingPremiumFeature5),
+          ];
+
+    // Plan icon and color based on type
+    final planIcon =
+        isStandardPlan ? Icons.auto_awesome : Icons.workspace_premium_rounded;
+    final planColor =
+        isStandardPlan ? const Color(0xFF6A4FB6) : AppTheme.primaryColor;
 
     return Card(
       elevation: 2,
@@ -404,8 +721,8 @@ class _SubscriptionManagementPageState
             Row(
               children: [
                 Icon(
-                  Icons.workspace_premium_rounded,
-                  color: AppTheme.primaryColor,
+                  planIcon,
+                  color: planColor,
                   size: 24,
                 ),
                 const SizedBox(width: 8),
@@ -414,7 +731,7 @@ class _SubscriptionManagementPageState
                   style: AppFonts.poppins(
                     fontSize: 18,
                     fontWeight: FontWeight.w600,
-                    color: AppTheme.primaryColor,
+                    color: planColor,
                   ),
                 ),
               ],
@@ -441,14 +758,14 @@ class _SubscriptionManagementPageState
               ),
             ),
             const SizedBox(height: 12),
-            ...premiumFeatures.map((feature) => _buildFeatureItem(feature)),
+            ...features.map((feature) => _buildFeatureItem(feature, planColor)),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildFeatureItem(String feature) {
+  Widget _buildFeatureItem(String feature, [Color? checkColor]) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 10.0),
       child: Row(
@@ -457,7 +774,7 @@ class _SubscriptionManagementPageState
           Icon(
             Icons.check_circle_rounded,
             size: 18,
-            color: AppTheme.successColor,
+            color: checkColor ?? AppTheme.successColor,
           ),
           const SizedBox(width: 10),
           Expanded(
@@ -503,6 +820,30 @@ class _SubscriptionManagementPageState
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildPaymentHistoryButton() {
+    return OutlinedButton.icon(
+      onPressed: () {
+        context.push(AppRoutes.subscriptionPaymentHistory);
+      },
+      icon: const Icon(Icons.receipt_long_outlined, size: 20),
+      label: Text(
+        'Payment History',
+        style: AppFonts.inter(
+          fontSize: 14,
+          fontWeight: FontWeight.w500,
+        ),
+      ),
+      style: OutlinedButton.styleFrom(
+        foregroundColor: AppTheme.primaryColor,
+        side: BorderSide(color: AppTheme.primaryColor.withOpacity(0.5)),
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+      ),
     );
   }
 

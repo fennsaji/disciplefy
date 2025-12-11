@@ -32,6 +32,8 @@ interface UserProfile {
   readonly is_admin: boolean
   readonly language_preference?: string
   readonly theme_preference?: string
+  readonly premium_trial_end_at?: string | null
+  readonly has_used_premium_trial?: boolean
 }
 
 /**
@@ -361,13 +363,26 @@ export class AuthService {
    * This method implements the user plan logic for the token system:
    * - Anonymous users → 'free' plan (20 tokens daily)
    * - Admin users (user_profiles.is_admin = true) → 'premium' plan (unlimited)
-   * - Subscription users (active subscription) → plan based on subscription type
-   * - Default authenticated users → 'standard' plan (100 tokens daily)
+   * - Premium subscription users → 'premium' plan (unlimited)
+   * - Standard subscription users → 'standard' plan (100 tokens daily)
+   * - Premium trial active → 'premium' plan (7-day trial for new users)
+   * - Trial active (before March 31, 2025) → 'standard' plan
+   * - Trial eligible + in grace period (April 1-7) → 'standard' plan
+   * - Trial eligible + after grace period → 'free' plan (trial expired)
+   * - New users (signed up after March 31) → 'free' plan
    *
    * @param req - HTTP request to get user context from
    * @returns Promise resolving to user's subscription plan
    */
   async getUserPlan(req: Request): Promise<UserPlan> {
+    // Import trial/grace period helpers
+    const {
+      isStandardTrialActive,
+      isInGracePeriod,
+      wasEligibleForTrial,
+      isInPremiumTrial
+    } = await import('../config/subscription-config.ts')
+
     try {
       const userContext = await this.getUserContext(req)
 
@@ -378,7 +393,7 @@ export class AuthService {
 
       // Must be authenticated with valid userId
       if (userContext.type !== 'authenticated' || !userContext.userId) {
-        return 'standard'
+        return 'free'
       }
 
       // Admin users get premium access
@@ -386,20 +401,105 @@ export class AuthService {
         return 'premium'
       }
 
-      // Check for active subscription
+      // Check for active subscription (premium or standard)
       const subscription = await this.getActiveSubscription(userContext.userId)
       if (subscription) {
         return this.mapSubscriptionToPlan(subscription)
       }
 
-      // Default: authenticated users without admin or subscription get standard plan
-      return 'standard'
+      // Check for active Premium trial (7-day trial for new users after April 1st)
+      const premiumTrialEndAt = await this.getPremiumTrialEndDate(userContext.userId)
+      if (isInPremiumTrial(premiumTrialEndAt)) {
+        return 'premium'
+      }
+
+      // No active subscription or Premium trial - check Standard trial eligibility
+
+      // 1. Standard trial is still active (before March 31, 2025) - all get standard
+      if (isStandardTrialActive()) {
+        return 'standard'
+      }
+
+      // 2. Get user creation date for trial eligibility check
+      const userCreatedAt = await this.getUserCreatedAt(userContext.userId)
+      const wasTrialEligible = wasEligibleForTrial(userCreatedAt)
+
+      // 3. User was eligible for Standard trial (signed up before March 31)
+      if (wasTrialEligible) {
+        // Check if in grace period (April 1-7, 2025)
+        if (isInGracePeriod()) {
+          return 'standard'
+        }
+        // Grace period ended, no subscription - downgrade to free
+        return 'free'
+      }
+
+      // 4. New user (signed up after March 31, 2025) - free plan
+      return 'free'
 
     } catch (error) {
       console.warn('[AuthService] Failed to determine user plan, defaulting to free:', error)
       // Fail safe: return free plan if determination fails
       return 'free'
     }
+  }
+
+  /**
+   * Gets user's Premium trial end date from user_profiles
+   *
+   * @param userId - User ID to look up
+   * @returns Promise resolving to Premium trial end date or null
+   */
+  private async getPremiumTrialEndDate(userId: string): Promise<Date | null> {
+    if (!this.supabaseServiceClient) {
+      return null
+    }
+
+    const { data: profile } = await this.supabaseServiceClient
+      .from('user_profiles')
+      .select('premium_trial_end_at')
+      .eq('id', userId)
+      .maybeSingle()
+
+    if (profile?.premium_trial_end_at) {
+      return new Date(profile.premium_trial_end_at)
+    }
+
+    return null
+  }
+
+  /**
+   * Gets user's account creation date
+   *
+   * @param userId - User ID to look up
+   * @returns Promise resolving to user's creation date
+   */
+  private async getUserCreatedAt(userId: string): Promise<Date> {
+    if (!this.supabaseServiceClient) {
+      return new Date() // Default to now if no service client (treat as new user)
+    }
+
+    // First try user_profiles
+    const { data: profile } = await this.supabaseServiceClient
+      .from('user_profiles')
+      .select('created_at')
+      .eq('id', userId)
+      .maybeSingle()
+
+    if (profile?.created_at) {
+      return new Date(profile.created_at)
+    }
+
+    // Fallback to auth.users via RPC
+    const { data: authCreatedAt } = await this.supabaseServiceClient
+      .rpc('get_user_created_at', { p_user_id: userId })
+
+    if (authCreatedAt) {
+      return new Date(authCreatedAt)
+    }
+
+    // Default to now if not found (treat as new user)
+    return new Date()
   }
 
   /**

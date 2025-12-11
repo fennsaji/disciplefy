@@ -4,6 +4,7 @@ import '../../../../core/error/exceptions.dart';
 import '../../../../core/services/api_auth_helper.dart';
 import '../models/subscription_model.dart';
 import '../../domain/entities/subscription.dart';
+import '../../domain/entities/user_subscription_status.dart';
 
 /// Abstract contract for remote subscription operations.
 abstract class SubscriptionRemoteDataSource {
@@ -82,6 +83,63 @@ abstract class SubscriptionRemoteDataSource {
     int? limit,
     int? offset,
   });
+
+  /// Gets the user's subscription status including trial information.
+  ///
+  /// Returns [UserSubscriptionStatus] with current plan, trial status,
+  /// and subscription details.
+  ///
+  /// Throws [NetworkException] if there's a network issue.
+  /// Throws [ServerException] if there's a server error.
+  /// Throws [AuthenticationException] if authentication fails.
+  Future<UserSubscriptionStatus> getSubscriptionStatus();
+
+  /// Creates a new Standard subscription for the authenticated user.
+  ///
+  /// Creates a Razorpay subscription for Standard plan (₹50/month)
+  /// and returns authorization URL for the user to complete payment setup.
+  ///
+  /// Returns [CreateSubscriptionResponseModel] with subscription details and payment URL
+  ///
+  /// Throws [NetworkException] if there's a network issue.
+  /// Throws [ServerException] if there's a server error.
+  /// Throws [AuthenticationException] if authentication fails.
+  /// Throws [ClientException] if trial is still active or subscription exists.
+  Future<CreateSubscriptionResponseModel> createStandardSubscription();
+
+  /// Starts a 7-day Premium trial for eligible users.
+  ///
+  /// Returns [StartPremiumTrialResponseModel] with trial details
+  ///
+  /// Throws [NetworkException] if there's a network issue.
+  /// Throws [ServerException] if there's a server error.
+  /// Throws [AuthenticationException] if authentication fails.
+  /// Throws [ClientException] if user is not eligible for trial.
+  Future<StartPremiumTrialResponseModel> startPremiumTrial();
+}
+
+/// Response model for starting a Premium trial
+class StartPremiumTrialResponseModel {
+  final DateTime trialStartedAt;
+  final DateTime trialEndAt;
+  final int daysRemaining;
+  final String message;
+
+  const StartPremiumTrialResponseModel({
+    required this.trialStartedAt,
+    required this.trialEndAt,
+    required this.daysRemaining,
+    required this.message,
+  });
+
+  factory StartPremiumTrialResponseModel.fromJson(Map<String, dynamic> json) {
+    return StartPremiumTrialResponseModel(
+      trialStartedAt: DateTime.parse(json['trial_started_at'] as String),
+      trialEndAt: DateTime.parse(json['trial_end_at'] as String),
+      daysRemaining: json['days_remaining'] as int,
+      message: json['message'] as String,
+    );
+  }
 }
 
 /// Implementation of SubscriptionRemoteDataSource using Supabase.
@@ -373,12 +431,14 @@ class SubscriptionRemoteDataSourceImpl implements SubscriptionRemoteDataSource {
       // Query subscriptions table for active subscription
       // Include 'cancelled' status to handle subscriptions that are cancelled
       // but still active until the end of the billing period
+      // Use .limit(1) to ensure only one row is returned when multiple exist
       final response = await _supabaseClient
           .from('subscriptions')
           .select()
           .eq('user_id', user.id)
           .inFilter('status', ['active', 'authenticated', 'cancelled'])
           .order('created_at', ascending: false)
+          .limit(1)
           .maybeSingle();
 
       print('💎 [SUBSCRIPTION_API] Active subscription response: $response');
@@ -548,6 +608,270 @@ class SubscriptionRemoteDataSourceImpl implements SubscriptionRemoteDataSource {
       throw ClientException(
         message: 'Unable to fetch invoices. Please try again later.',
         code: 'GET_INVOICES_FAILED',
+        context: {'originalError': e.toString()},
+      );
+    }
+  }
+
+  @override
+  Future<UserSubscriptionStatus> getSubscriptionStatus() async {
+    try {
+      print('💎 [SUBSCRIPTION_API] Fetching subscription status...');
+
+      // Get current user ID
+      final user = _supabaseClient.auth.currentUser;
+      if (user == null) {
+        // Return default status for unauthenticated users
+        print(
+            '💎 [SUBSCRIPTION_API] User not authenticated, returning default status');
+        return UserSubscriptionStatus.defaultStatus();
+      }
+
+      // Call the get_subscription_status RPC function
+      final response = await _supabaseClient.rpc(
+        'get_subscription_status',
+        params: {'p_user_id': user.id},
+      );
+
+      print('💎 [SUBSCRIPTION_API] Subscription status response: $response');
+
+      if (response != null) {
+        return UserSubscriptionStatus.fromJson(
+            response as Map<String, dynamic>);
+      } else {
+        return UserSubscriptionStatus.defaultStatus();
+      }
+    } on NetworkException {
+      rethrow;
+    } on ServerException {
+      rethrow;
+    } on AuthenticationException {
+      rethrow;
+    } catch (e) {
+      print(
+          '🚨 [SUBSCRIPTION_API] Unexpected error getting subscription status: $e');
+      // Return default status on error instead of throwing
+      return UserSubscriptionStatus.defaultStatus();
+    }
+  }
+
+  @override
+  Future<CreateSubscriptionResponseModel> createStandardSubscription() async {
+    try {
+      // Validate token before making authenticated request
+      await ApiAuthHelper.validateTokenForRequest();
+
+      // Use unified authentication helper
+      final headers = await ApiAuthHelper.getAuthHeaders();
+
+      print('💎 [SUBSCRIPTION_API] Creating Standard subscription...');
+
+      // Call Supabase Edge Function for Standard subscription creation
+      final response = await _supabaseClient.functions.invoke(
+        'create-standard-subscription',
+        headers: headers,
+      );
+
+      print('💎 [SUBSCRIPTION_API] Response status: ${response.status}');
+      print('💎 [SUBSCRIPTION_API] Response data: ${response.data}');
+
+      if (response.status == 201 && response.data != null) {
+        final responseData = response.data as Map<String, dynamic>;
+
+        if (responseData['success'] == true) {
+          return CreateSubscriptionResponseModel.fromJson(responseData);
+        } else {
+          final error = responseData['error'] as Map<String, dynamic>?;
+          throw ServerException(
+            message: error?['message'] as String? ??
+                'Failed to create Standard subscription',
+            code: error?['code'] as String? ?? 'SUBSCRIPTION_CREATION_FAILED',
+          );
+        }
+      } else if (response.status == 400) {
+        final errorData = response.data as Map<String, dynamic>?;
+        final error = errorData?['error'] as Map<String, dynamic>?;
+        final errorCode = error?['code'] as String?;
+
+        // Handle specific error cases
+        if (errorCode == 'TRIAL_STILL_ACTIVE') {
+          throw ClientException(
+            message: error?['message'] as String? ??
+                'Standard plan is currently free during trial period',
+            code: 'TRIAL_STILL_ACTIVE',
+          );
+        }
+        if (errorCode == 'ALREADY_PREMIUM') {
+          throw const ClientException(
+            message: 'You already have Premium access',
+            code: 'ALREADY_PREMIUM',
+          );
+        }
+        if (errorCode == 'SUBSCRIPTION_EXISTS') {
+          throw const ClientException(
+            message: 'You already have an active Standard subscription',
+            code: 'SUBSCRIPTION_EXISTS',
+          );
+        }
+
+        throw ClientException(
+          message:
+              error?['message'] as String? ?? 'Invalid subscription request',
+          code: errorCode ?? 'INVALID_REQUEST',
+        );
+      } else if (response.status == 401) {
+        throw const AuthenticationException(
+          message: 'Authentication required. Please sign in to continue.',
+          code: 'UNAUTHORIZED',
+        );
+      } else if (response.status >= 500) {
+        throw const ServerException(
+          message: 'Server error occurred. Please try again later.',
+          code: 'SERVER_ERROR',
+        );
+      } else {
+        throw const ServerException(
+          message:
+              'Failed to create Standard subscription. Please try again later.',
+          code: 'SUBSCRIPTION_CREATION_FAILED',
+        );
+      }
+    } on NetworkException {
+      rethrow;
+    } on ServerException {
+      rethrow;
+    } on AuthenticationException {
+      rethrow;
+    } on ClientException {
+      rethrow;
+    } on TokenValidationException {
+      throw const AuthenticationException(
+        message: 'Authentication token is invalid. Please sign in again.',
+        code: 'TOKEN_INVALID',
+      );
+    } catch (e) {
+      print(
+          '🚨 [SUBSCRIPTION_API] Unexpected error creating Standard subscription: $e');
+      throw ClientException(
+        message:
+            'Unable to create Standard subscription. Please try again later.',
+        code: 'SUBSCRIPTION_CREATION_FAILED',
+        context: {'originalError': e.toString()},
+      );
+    }
+  }
+
+  @override
+  Future<StartPremiumTrialResponseModel> startPremiumTrial() async {
+    try {
+      // Validate token before making authenticated request
+      await ApiAuthHelper.validateTokenForRequest();
+
+      // Use unified authentication helper
+      final headers = await ApiAuthHelper.getAuthHeaders();
+
+      print('💎 [SUBSCRIPTION_API] Starting Premium trial...');
+
+      // Call Supabase Edge Function for Premium trial
+      final response = await _supabaseClient.functions.invoke(
+        'start-premium-trial',
+        headers: headers,
+      );
+
+      print('💎 [SUBSCRIPTION_API] Response status: ${response.status}');
+      print('💎 [SUBSCRIPTION_API] Response data: ${response.data}');
+
+      if (response.status == 201 && response.data != null) {
+        final responseData = response.data as Map<String, dynamic>;
+
+        if (responseData['success'] == true) {
+          return StartPremiumTrialResponseModel.fromJson(responseData);
+        } else {
+          final error = responseData['error'] as Map<String, dynamic>?;
+          throw ServerException(
+            message:
+                error?['message'] as String? ?? 'Failed to start Premium trial',
+            code: error?['code'] as String? ?? 'TRIAL_START_FAILED',
+          );
+        }
+      } else if (response.status == 400) {
+        final errorData = response.data as Map<String, dynamic>?;
+        final error = errorData?['error'] as Map<String, dynamic>?;
+        final errorCode = error?['code'] as String?;
+
+        // Handle specific error cases
+        if (errorCode == 'TRIAL_NOT_AVAILABLE') {
+          throw ClientException(
+            message: error?['message'] as String? ??
+                'Premium trial is not available yet',
+            code: 'TRIAL_NOT_AVAILABLE',
+          );
+        }
+        if (errorCode == 'ALREADY_PREMIUM') {
+          throw const ClientException(
+            message: 'You already have Premium access',
+            code: 'ALREADY_PREMIUM',
+          );
+        }
+        if (errorCode == 'TRIAL_ALREADY_USED') {
+          throw const ClientException(
+            message: 'You have already used your Premium trial',
+            code: 'TRIAL_ALREADY_USED',
+          );
+        }
+        if (errorCode == 'TRIAL_ALREADY_ACTIVE') {
+          throw const ClientException(
+            message: 'You already have an active Premium trial',
+            code: 'TRIAL_ALREADY_ACTIVE',
+          );
+        }
+        if (errorCode == 'NOT_ELIGIBLE') {
+          throw ClientException(
+            message: error?['message'] as String? ??
+                'You are not eligible for the Premium trial',
+            code: 'NOT_ELIGIBLE',
+          );
+        }
+
+        throw ClientException(
+          message: error?['message'] as String? ?? 'Invalid trial request',
+          code: errorCode ?? 'INVALID_REQUEST',
+        );
+      } else if (response.status == 401) {
+        throw const AuthenticationException(
+          message: 'Authentication required. Please sign in to continue.',
+          code: 'UNAUTHORIZED',
+        );
+      } else if (response.status >= 500) {
+        throw const ServerException(
+          message: 'Server error occurred. Please try again later.',
+          code: 'SERVER_ERROR',
+        );
+      } else {
+        throw const ServerException(
+          message: 'Failed to start Premium trial. Please try again later.',
+          code: 'TRIAL_START_FAILED',
+        );
+      }
+    } on NetworkException {
+      rethrow;
+    } on ServerException {
+      rethrow;
+    } on AuthenticationException {
+      rethrow;
+    } on ClientException {
+      rethrow;
+    } on TokenValidationException {
+      throw const AuthenticationException(
+        message: 'Authentication token is invalid. Please sign in again.',
+        code: 'TOKEN_INVALID',
+      );
+    } catch (e) {
+      print(
+          '🚨 [SUBSCRIPTION_API] Unexpected error starting Premium trial: $e');
+      throw ClientException(
+        message: 'Unable to start Premium trial. Please try again later.',
+        code: 'TRIAL_START_FAILED',
         context: {'originalError': e.toString()},
       );
     }

@@ -181,11 +181,11 @@ export class TokenService {
     this.validateUserPlan(userPlan)
     this.validatePurchaseAmount(tokenAmount)
 
-    // Only standard plan users can purchase tokens
-    if (userPlan !== 'standard') {
+    // Premium users cannot purchase tokens (they have unlimited)
+    if (userPlan === 'premium') {
       throw new AppError(
         'INVALID_OPERATION',
-        `${userPlan} plan users cannot purchase tokens`,
+        'Premium plan users have unlimited tokens and cannot purchase more',
         400
       )
     }

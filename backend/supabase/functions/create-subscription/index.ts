@@ -54,6 +54,7 @@ async function handleCreateSubscription(
 
     const { subscription, shortUrl } = await subscriptionService.createSubscription({
       userId,
+      planType: 'premium',  // Premium subscription (₹100/month)
       notes: {
         source: 'mobile_app',
         created_at: new Date().toISOString()

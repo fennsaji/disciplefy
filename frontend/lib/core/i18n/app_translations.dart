@@ -26,6 +26,16 @@ class AppTranslations {
         'copy': 'Copy',
         'sign_in': 'Sign In',
       },
+      'tts': {
+        'listen': 'Listen',
+        'pause': 'Pause',
+        'resume': 'Resume',
+        'loading': 'Loading...',
+        'controls': 'Playback Controls',
+        'speed': 'Speed',
+        'now_reading': 'Now Reading',
+        'stop': 'Stop Reading',
+      },
       'messages': {
         'auth_required': 'Authentication Required',
         'auth_required_message':
@@ -41,6 +51,7 @@ class AppTranslations {
       'error': {
         'title': 'Oops! Something went wrong',
         'title_alt': 'We couldn\'t generate a study guide',
+        'title_no_tokens': 'Out of Tokens',
         'default_message':
             'We couldn\'t generate your study guide. Please try again.',
         'default_message_alt': 'Something went wrong. Please try again later.',
@@ -52,6 +63,7 @@ class AppTranslations {
         'go_back': 'Go Back',
         'try_again': 'Try Again',
         'view_saved': 'View Saved Guides',
+        'my_plan': 'Get Tokens',
       },
     },
     'common': {
@@ -367,6 +379,11 @@ class AppTranslations {
       'retake_questionnaire_subtitle': 'Update your topic recommendations',
       'take_questionnaire': 'Take Questionnaire',
       'take_questionnaire_subtitle': 'Get personalized topic recommendations',
+      'help_support': 'Help & Support',
+      'report_purchase_issue': 'Report Purchase Issue',
+      'report_purchase_issue_subtitle': 'Get help with token purchases',
+      'contact_us': 'Contact Us',
+      'contact_us_subtitle': 'contact@disciplefy.com',
     },
     'questionnaire': {
       'your_journey': 'Your Journey',
@@ -1133,8 +1150,8 @@ class AppTranslations {
       'free': {
         'feature1': '20 AI tokens daily',
         'feature2': 'Daily verse notifications',
-        'feature3': 'Basic Bible reading tools',
-        'feature4': 'Limited follow-up questions',
+        'feature3': 'Learning paths & Study topics',
+        'feature4': 'Purchase additional tokens',
       },
       'standard': {
         'feature1': '100 AI tokens daily',
@@ -1174,6 +1191,16 @@ class AppTranslations {
         'copy': 'कॉपी करें',
         'sign_in': 'साइन इन करें',
       },
+      'tts': {
+        'listen': 'सुनें',
+        'pause': 'रुकें',
+        'resume': 'जारी रखें',
+        'loading': 'लोड हो रहा है...',
+        'controls': 'प्लेबैक नियंत्रण',
+        'speed': 'गति',
+        'now_reading': 'अभी पढ़ रहे हैं',
+        'stop': 'पढ़ना बंद करें',
+      },
       'messages': {
         'auth_required': 'साइन इन करें',
         'auth_required_message': 'इसे सेव करने के लिए साइन इन करें',
@@ -1187,6 +1214,7 @@ class AppTranslations {
       'error': {
         'title': 'उफ़! कुछ गड़बड़ हो गई',
         'title_alt': 'स्टडी गाइड नहीं बना सके',
+        'title_no_tokens': 'टोकन खत्म हो गए',
         'default_message':
             'हम आपकी स्टडी गाइड नहीं बना सके। कृपया फिर से कोशिश करें।',
         'default_message_alt':
@@ -1200,6 +1228,7 @@ class AppTranslations {
         'go_back': 'वापस जाएं',
         'try_again': 'फिर कोशिश करें',
         'view_saved': 'सेव की गई गाइड देखें',
+        'my_plan': 'टोकन लें',
       },
     },
     'common': {
@@ -1504,6 +1533,11 @@ class AppTranslations {
       'retake_questionnaire_subtitle': 'अपने विषय सुझाव अपडेट करें',
       'take_questionnaire': 'प्रश्नावली भरें',
       'take_questionnaire_subtitle': 'व्यक्तिगत विषय सुझाव प्राप्त करें',
+      'help_support': 'सहायता और समर्थन',
+      'report_purchase_issue': 'खरीदारी समस्या रिपोर्ट करें',
+      'report_purchase_issue_subtitle': 'टोकन खरीदारी में मदद पाएं',
+      'contact_us': 'हमसे संपर्क करें',
+      'contact_us_subtitle': 'contact@disciplefy.com',
     },
     'questionnaire': {
       'your_journey': 'आपकी यात्रा',
@@ -2267,8 +2301,8 @@ class AppTranslations {
       'free': {
         'feature1': '20 AI टोकन दैनिक',
         'feature2': 'दैनिक वचन सूचनाएं',
-        'feature3': 'बेसिक बाइबल रीडिंग टूल्स',
-        'feature4': 'सीमित फॉलो-अप प्रश्न',
+        'feature3': 'लर्निंग पाथ और स्टडी टॉपिक्स',
+        'feature4': 'अतिरिक्त टोकन खरीदें',
       },
       'standard': {
         'feature1': '100 AI टोकन दैनिक',
@@ -2308,6 +2342,16 @@ class AppTranslations {
         'copy': 'കോപ്പി ചെയ്യൂ',
         'sign_in': 'സൈൻ ഇൻ ചെയ്യൂ',
       },
+      'tts': {
+        'listen': 'കേൾക്കുക',
+        'pause': 'താൽക്കാലികമായി നിർത്തുക',
+        'resume': 'തുടരുക',
+        'loading': 'ലോഡ് ചെയ്യുന്നു...',
+        'controls': 'പ്ലേബാക്ക് നിയന്ത്രണങ്ങൾ',
+        'speed': 'വേഗത',
+        'now_reading': 'ഇപ്പോൾ വായിക്കുന്നത്',
+        'stop': 'വായന നിർത്തുക',
+      },
       'messages': {
         'auth_required': 'സൈൻ ഇൻ ചെയ്യൂ',
         'auth_required_message': 'ഇത് സേവ് ചെയ്യാൻ സൈൻ ഇൻ ചെയ്യൂ',
@@ -2321,6 +2365,7 @@ class AppTranslations {
       'error': {
         'title': 'ക്ഷമിക്കണം! എന്തോ തെറ്റായി',
         'title_alt': 'സ്റ്റഡി ഗൈഡ് ഉണ്ടാക്കാൻ കഴിഞ്ഞില്ല',
+        'title_no_tokens': 'ടോക്കണുകൾ തീർന്നു',
         'default_message':
             'സ്റ്റഡി ഗൈഡ് ഉണ്ടാക്കാൻ കഴിഞ്ഞില്ല. വീണ്ടും ശ്രമിക്കൂ.',
         'default_message_alt': 'എന്തോ തെറ്റി. പിന്നീട് വീണ്ടും ശ്രമിക്കൂ.',
@@ -2333,6 +2378,7 @@ class AppTranslations {
         'go_back': 'തിരികെ പോകൂ',
         'try_again': 'വീണ്ടും ശ്രമിക്കൂ',
         'view_saved': 'സേവ് ചെയ്ത ഗൈഡുകൾ കാണുക',
+        'my_plan': 'ടോക്കൺ നേടുക',
       },
     },
     'common': {
@@ -2644,6 +2690,11 @@ class AppTranslations {
       'retake_questionnaire_subtitle': 'നിങ്ങളുടെ വിഷയ ശുപാർശകൾ പരിഷ്കരിക്കുക',
       'take_questionnaire': 'ചോദ്യാവലി പൂർത്തിയാക്കുക',
       'take_questionnaire_subtitle': 'വ്യക്തിഗത വിഷയ ശുപാർശകൾ നേടുക',
+      'help_support': 'സഹായവും പിന്തുണയും',
+      'report_purchase_issue': 'വാങ്ങൽ പ്രശ്നം റിപ്പോർട്ട് ചെയ്യുക',
+      'report_purchase_issue_subtitle': 'ടോക്കൺ വാങ്ങലിൽ സഹായം നേടുക',
+      'contact_us': 'ഞങ്ങളെ ബന്ധപ്പെടുക',
+      'contact_us_subtitle': 'contact@disciplefy.com',
     },
     'questionnaire': {
       'your_journey': 'നിങ്ങളുടെ യാത്ര',
@@ -3466,8 +3517,8 @@ class AppTranslations {
       'free': {
         'feature1': '20 AI ടോക്കണുകൾ ദിവസവും',
         'feature2': 'ദൈനിക വചന അറിയിപ്പുകൾ',
-        'feature3': 'അടിസ്ഥാന ബൈബിൾ വായന ടൂളുകൾ',
-        'feature4': 'പരിമിതമായ ഫോളോ-അപ്പ് ചോദ്യങ്ങൾ',
+        'feature3': 'ലേണിംഗ് പാത്തുകളും സ്റ്റഡി ടോപ്പിക്കുകളും',
+        'feature4': 'അധിക ടോക്കണുകൾ വാങ്ങുക',
       },
       'standard': {
         'feature1': '100 AI ടോക്കണുകൾ ദിവസവും',

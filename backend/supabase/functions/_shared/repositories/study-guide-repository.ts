@@ -42,6 +42,8 @@ export interface StudyGuideResponse {
   readonly isSaved: boolean
   readonly createdAt: string
   readonly updatedAt: string
+  readonly creatorUserId?: string | null
+  readonly creatorSessionId?: string | null
   personal_notes?: string | null
 }
 
@@ -69,11 +71,12 @@ export class StudyGuideRepository {
     // 1. Generate consistent hash for content deduplication
     const inputHash = await this.generateInputHash(input)
 
-    // 2. Find or create cached content
+    // 2. Find or create cached content (with creator tracking)
     const cachedContent = await this.findOrCreateCachedContent(
       input,
       inputHash,
-      content
+      content,
+      userContext
     )
 
     // 3. Link user to content
@@ -97,27 +100,31 @@ export class StudyGuideRepository {
       },
       isSaved: false, // Newly generated content is not saved by default
       createdAt: cachedContent.created_at,
-      updatedAt: cachedContent.updated_at
+      updatedAt: cachedContent.updated_at,
+      creatorUserId: cachedContent.creator_user_id,
+      creatorSessionId: cachedContent.creator_session_id
     }
   }
 
   /**
-   * Find existing cached content or create new using UPSERT
+   * Find existing cached content or create new
    *
-   * Uses UPSERT (INSERT ... ON CONFLICT DO UPDATE) to handle concurrent
-   * creation atomically without SELECT retry pattern. This prevents race
-   * conditions where content is deleted between INSERT failure and SELECT retry.
+   * Uses INSERT with ON CONFLICT DO NOTHING to preserve original creator.
+   * If INSERT succeeds, this user is the creator. If conflict, SELECT existing.
+   * This ensures the original creator is never overwritten.
+   *
+   * Creator tracking: Sets creator_user_id/creator_session_id on INSERT only.
    */
   private async findOrCreateCachedContent(
     input: StudyGuideInput,
     inputHash: string,
-    content: StudyGuideContent
+    content: StudyGuideContent,
+    userContext: UserContext
   ): Promise<any> {
-    // CRITICAL: Use UPSERT instead of INSERT + SELECT retry
-    // This handles concurrent creation atomically and prevents race conditions
-    const { data: upsertedContent, error: upsertError } = await this.supabase
+    // First, try to INSERT with creator info (ON CONFLICT DO NOTHING)
+    const { data: insertedContent, error: insertError } = await this.supabase
       .from('study_guides')
-      .upsert({
+      .insert({
         input_type: input.type,
         input_value: input.value,
         input_value_hash: inputHash,
@@ -128,37 +135,50 @@ export class StudyGuideRepository {
         related_verses: content.relatedVerses,
         reflection_questions: content.reflectionQuestions,
         prayer_points: content.prayerPoints,
-        updated_at: new Date().toISOString()
-      }, {
-        // Specify conflict target (unique constraint columns)
-        onConflict: 'input_type,input_value_hash,language',
-        // On conflict: UPDATE the existing row to refresh timestamp
-        // This prevents returning stale data and provides audit trail
-        ignoreDuplicates: false
+        updated_at: new Date().toISOString(),
+        // Creator tracking - set on INSERT
+        creator_user_id: userContext.type === 'authenticated' ? userContext.userId : null,
+        creator_session_id: userContext.type === 'anonymous' ? userContext.sessionId : null
       })
       .select()
       .single()
 
-    if (upsertError) {
-      console.error('[StudyGuideRepository] UPSERT failed:', upsertError)
-      throw new AppError(
-        'CACHE_CREATION_ERROR',
-        `Failed to create or retrieve cached content: ${upsertError.message}`,
-        500
-      )
+    // If INSERT succeeded, return the new content (this user is the creator)
+    if (!insertError && insertedContent) {
+      console.log(`[StudyGuideRepository] New content created with creator: ${insertedContent.id}`)
+      return insertedContent
     }
 
-    if (!upsertedContent) {
-      throw new AppError(
-        'CACHE_CORRUPTION',
-        'UPSERT succeeded but returned no data',
-        500
-      )
+    // If conflict (content already exists), SELECT the existing record
+    // This preserves the original creator
+    if (insertError && insertError.code === '23505') { // Unique constraint violation
+      const { data: existingContent, error: selectError } = await this.supabase
+        .from('study_guides')
+        .select('*')
+        .eq('input_type', input.type)
+        .eq('input_value_hash', inputHash)
+        .eq('language', input.language)
+        .single()
+
+      if (selectError || !existingContent) {
+        throw new AppError(
+          'CACHE_CORRUPTION',
+          `Content conflict detected but unable to retrieve: ${selectError?.message}`,
+          500
+        )
+      }
+
+      console.log(`[StudyGuideRepository] Existing content found (race condition): ${existingContent.id}`)
+      return existingContent
     }
 
-    console.log(`[StudyGuideRepository] Content cached/retrieved: ${upsertedContent.id}`)
-
-    return upsertedContent
+    // Other errors
+    console.error('[StudyGuideRepository] INSERT failed:', insertError)
+    throw new AppError(
+      'CACHE_CREATION_ERROR',
+      `Failed to create cached content: ${insertError?.message}`,
+      500
+    )
   }
 
   /**
@@ -547,6 +567,7 @@ export class StudyGuideRepository {
     }
 
     // Return cached content (for both authenticated and anonymous users)
+    // Include creator info so caller can determine if token should be charged
     return {
       id: content.id,
       input: {
@@ -564,7 +585,9 @@ export class StudyGuideRepository {
       },
       isSaved: false, // Anonymous users can't save, authenticated users get it linked above
       createdAt: content.created_at,
-      updatedAt: content.updated_at
+      updatedAt: content.updated_at,
+      creatorUserId: content.creator_user_id,
+      creatorSessionId: content.creator_session_id
     }
   }
 
