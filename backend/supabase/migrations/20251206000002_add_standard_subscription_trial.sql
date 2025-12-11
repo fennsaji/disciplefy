@@ -131,9 +131,9 @@ BEGIN
     v_trial_end_date := '2025-03-31T23:59:59+05:30'::TIMESTAMPTZ;
   END IF;
   
-  -- Calculate days difference
-  v_days := EXTRACT(DAY FROM (v_trial_end_date - NOW()));
-  
+  -- Calculate total days difference using epoch (total seconds / 86400)
+  v_days := CEIL(EXTRACT(EPOCH FROM (v_trial_end_date - NOW())) / 86400)::INTEGER;
+
   RETURN GREATEST(0, v_days);
 END;
 $$;
@@ -312,14 +312,14 @@ BEGIN
 
   -- Calculate grace days remaining if applicable
   IF v_in_grace_period THEN
-    SELECT v_grace_period_days - EXTRACT(DAY FROM (NOW() - updated_at))::INTEGER
+    SELECT v_grace_period_days - FLOOR(EXTRACT(EPOCH FROM (NOW() - updated_at)) / 86400)::INTEGER
     INTO v_grace_days_remaining
     FROM public.subscriptions
     WHERE user_id = p_user_id
     AND status = 'cancelled'
     ORDER BY updated_at DESC
     LIMIT 1;
-    
+
     v_grace_days_remaining := GREATEST(0, v_grace_days_remaining);
   END IF;
 

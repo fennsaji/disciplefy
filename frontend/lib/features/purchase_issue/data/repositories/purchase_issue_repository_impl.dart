@@ -21,7 +21,16 @@ class PurchaseIssueRepositoryImpl implements PurchaseIssueRepository {
   ) async {
     try {
       final response = await remoteDataSource.submitIssueReport(issue);
-      return Right(response);
+
+      if (response.success) {
+        return Right(response);
+      } else {
+        return Left(ServerFailure(
+          message: response.message.isNotEmpty
+              ? response.message
+              : 'Failed to submit issue report',
+        ));
+      }
     } on ServerException catch (e) {
       return Left(ServerFailure(message: e.message));
     } on NetworkException catch (e) {

@@ -55,7 +55,7 @@ export class AnthropicClient {
         return 'claude-sonnet-4-20250514'
       case 'en':
       default:
-        return 'claude-3-5-haiku-20241022'
+        return 'claude-haiku-4-5-20250514'
     }
   }
 
@@ -74,7 +74,7 @@ export class AnthropicClient {
     } = options
 
     const request: AnthropicRequest = {
-      model: 'claude-3-5-haiku-20241022',
+      model: 'claude-haiku-4-5-20250514',
       max_tokens: maxTokens,
       temperature,
       top_p: 0.9,
@@ -248,7 +248,7 @@ export class AnthropicClient {
    * @returns Response content string
    */
   async callForFollowUp(systemMessage: string, userMessage: string, language: string): Promise<string> {
-    const model = language === 'en' ? 'claude-3-5-haiku-20241022' : 'claude-sonnet-4-20250514'
+    const model = language === 'en' ? 'claude-haiku-4-5-20250514' : 'claude-sonnet-4-20250514'
 
     const request: AnthropicRequest = {
       model,

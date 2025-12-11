@@ -1190,7 +1190,7 @@ class _StudyGuideScreenV2ContentState
               Expanded(
                 child: TtsControlButton(
                   guide: _currentStudyGuide!,
-                  onLongPress: () => showTtsControlSheet(context),
+                  onControlsTap: () => showTtsControlSheet(context),
                 ),
               ),
           ],
