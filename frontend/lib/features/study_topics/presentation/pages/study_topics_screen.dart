@@ -22,6 +22,7 @@ import '../bloc/continue_learning_state.dart';
 import '../bloc/learning_paths_bloc.dart';
 import '../bloc/learning_paths_event.dart';
 import '../widgets/continue_learning_section.dart';
+import '../widgets/learning_path_card.dart';
 import '../widgets/learning_paths_section.dart';
 
 /// Screen for browsing study topics with Continue Learning and Learning Paths.
@@ -42,6 +43,7 @@ class StudyTopicsScreen extends StatefulWidget {
 class _StudyTopicsScreenState extends State<StudyTopicsScreen> {
   String _currentLanguage = 'en';
   bool _languageLoaded = false;
+  bool _dataLoadingStarted = false; // Track if BLoC events have been dispatched
   late ContinueLearningBloc _continueLearningBloc;
   late LearningPathsBloc _learningPathsBloc;
   late LanguagePreferenceService _languageService;
@@ -113,6 +115,12 @@ class _StudyTopicsScreenState extends State<StudyTopicsScreen> {
         language: _currentLanguage,
         forceRefresh: true,
       ));
+      // Mark that data loading has started
+      if (!_dataLoadingStarted) {
+        setState(() {
+          _dataLoadingStarted = true;
+        });
+      }
     }
   }
 
@@ -141,6 +149,7 @@ class _StudyTopicsScreenState extends State<StudyTopicsScreen> {
           topicId: widget.topicId,
           currentLanguage: _currentLanguage,
           languageLoaded: _languageLoaded,
+          dataLoadingStarted: _dataLoadingStarted,
         ),
       );
 }
@@ -155,10 +164,14 @@ class _StudyTopicsScreenContent extends StatefulWidget {
   /// Whether the language has been loaded
   final bool languageLoaded;
 
+  /// Whether BLoC events have been dispatched and data loading has started
+  final bool dataLoadingStarted;
+
   const _StudyTopicsScreenContent({
     this.topicId,
     required this.currentLanguage,
     required this.languageLoaded,
+    required this.dataLoadingStarted,
   });
 
   @override
@@ -220,13 +233,17 @@ class _StudyTopicsScreenContentState extends State<_StudyTopicsScreenContent> {
   }
 
   Widget _buildBody(BuildContext context) {
+    // Show loading state while waiting for language to load and BLoC events to be dispatched
+    final showInitialLoading = !widget.dataLoadingStarted;
+
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
         // Section 1: Continue Learning (Primary Focus)
         BlocBuilder<ContinueLearningBloc, ContinueLearningState>(
           builder: (context, state) {
-            if (state is ContinueLearningLoading) {
+            // Show loading if initial loading or BLoC is loading
+            if (showInitialLoading || state is ContinueLearningLoading) {
               return ContinueLearningSection(
                 topics: const [],
                 onTopicTap: _navigateToStudyGuideFromContinueLearning,
@@ -257,14 +274,85 @@ class _StudyTopicsScreenContentState extends State<_StudyTopicsScreenContent> {
         const SizedBox(height: 24),
 
         // Section 2: Learning Paths (Curated Learning Journeys)
-        LearningPathsSection(
-          onPathTap: _navigateToLearningPath,
-          onRetry: () => context
-              .read<LearningPathsBloc>()
-              .add(RefreshLearningPaths(language: widget.currentLanguage)),
-        ),
+        // Show loading state if initial loading hasn't completed
+        if (showInitialLoading)
+          _buildLearningPathsLoadingState(context)
+        else
+          LearningPathsSection(
+            onPathTap: _navigateToLearningPath,
+            onRetry: () => context
+                .read<LearningPathsBloc>()
+                .add(RefreshLearningPaths(language: widget.currentLanguage)),
+          ),
 
         const SizedBox(height: 24),
+      ],
+    );
+  }
+
+  /// Build loading state for Learning Paths section
+  Widget _buildLearningPathsLoadingState(BuildContext context) {
+    final theme = Theme.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Section header
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Row(
+            children: [
+              Container(
+                width: 32,
+                height: 32,
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.primary.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(
+                  Icons.route_outlined,
+                  color: theme.colorScheme.primary,
+                  size: 18,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      context.tr(TranslationKeys.learningPathsTitle),
+                      style: AppFonts.inter(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                        color: theme.colorScheme.onSurface,
+                      ),
+                    ),
+                    Text(
+                      context.tr(TranslationKeys.learningPathsSubtitle),
+                      style: AppFonts.inter(
+                        fontSize: 12,
+                        color:
+                            theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 14),
+        // Loading skeletons
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Column(
+            children: const [
+              LearningPathCardSkeleton(compact: false),
+              SizedBox(height: 12),
+              LearningPathCardSkeleton(compact: false),
+            ],
+          ),
+        ),
       ],
     );
   }
