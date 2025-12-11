@@ -29,21 +29,22 @@ export interface PlanConfig {
 export const GRACE_PERIOD_DAYS = 7
 
 /**
- * Standard trial end date (March 31st, 2025 at 23:59:59 IST)
+ * Standard trial end date (March 31st, 2026 at 23:59:59 IST)
+ * All users get free Standard plan access until this date.
  */
-export const STANDARD_TRIAL_END_DATE = new Date('2025-03-31T23:59:59+05:30')
+export const STANDARD_TRIAL_END_DATE = new Date('2026-03-31T23:59:59+05:30')
 
 /**
- * Grace period end date (April 7th, 2025 at 23:59:59 IST)
+ * Grace period end date (April 7th, 2026 at 23:59:59 IST)
  * Users who signed up before March 31 keep Standard access until this date
  */
-export const GRACE_PERIOD_END_DATE = new Date('2025-04-07T23:59:59+05:30')
+export const GRACE_PERIOD_END_DATE = new Date('2026-04-07T23:59:59+05:30')
 
 /**
- * Premium trial start date (April 1st, 2025 at 00:00:00 IST)
+ * Premium trial start date (April 1st, 2026 at 00:00:00 IST)
  * New users signing up after this date can get a 7-day Premium trial
  */
-export const PREMIUM_TRIAL_START_DATE = new Date('2025-04-01T00:00:00+05:30')
+export const PREMIUM_TRIAL_START_DATE = new Date('2026-04-01T00:00:00+05:30')
 
 /**
  * Premium trial duration in days

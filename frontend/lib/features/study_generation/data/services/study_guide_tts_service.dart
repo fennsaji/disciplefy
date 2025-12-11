@@ -215,40 +215,97 @@ class StudyGuideTTSService {
     }
   }
 
+  /// Get localized section titles based on language.
+  Map<StudyGuideSection, String> _getLocalizedSectionTitles(String language) {
+    switch (language.toLowerCase()) {
+      case 'hi':
+      case 'hindi':
+        return {
+          StudyGuideSection.summary: 'सारांश',
+          StudyGuideSection.interpretation: 'व्याख्या',
+          StudyGuideSection.context: 'पृष्ठभूमि',
+          StudyGuideSection.relatedVerses: 'संबंधित आयतें',
+          StudyGuideSection.discussionQuestions: 'सवाल',
+          StudyGuideSection.prayerPoints: 'प्रार्थना विषय',
+        };
+      case 'ml':
+      case 'malayalam':
+        return {
+          StudyGuideSection.summary: 'സംഗ്രഹം',
+          StudyGuideSection.interpretation: 'വ്യാഖ്യാനം',
+          StudyGuideSection.context: 'പശ്ചാത്തലം',
+          StudyGuideSection.relatedVerses: 'മറ്റ് വചനങ്ങൾ',
+          StudyGuideSection.discussionQuestions: 'ചോദ്യങ്ങൾ',
+          StudyGuideSection.prayerPoints: 'പ്രാർത്ഥന',
+        };
+      case 'en':
+      case 'english':
+      default:
+        return {
+          StudyGuideSection.summary: 'Summary',
+          StudyGuideSection.interpretation: 'Interpretation',
+          StudyGuideSection.context: 'Context',
+          StudyGuideSection.relatedVerses: 'Related Verses',
+          StudyGuideSection.discussionQuestions: 'Discussion Questions',
+          StudyGuideSection.prayerPoints: 'Prayer Points',
+        };
+    }
+  }
+
+  /// Get localized "Question" label for numbering.
+  String _getLocalizedQuestionLabel(String language, int number) {
+    switch (language.toLowerCase()) {
+      case 'hi':
+      case 'hindi':
+        return 'सवाल $number';
+      case 'ml':
+      case 'malayalam':
+        return 'ചോദ്യം $number';
+      case 'en':
+      case 'english':
+      default:
+        return 'Question $number';
+    }
+  }
+
   /// Prepare sections from a study guide.
   List<TtsSection> _prepareSections(StudyGuide guide) {
+    final titles = _getLocalizedSectionTitles(guide.language);
+    final language = guide.language;
+
     return [
       TtsSection(
-        title: 'Summary',
+        title: titles[StudyGuideSection.summary]!,
         content: guide.summary,
         section: StudyGuideSection.summary,
       ),
       TtsSection(
-        title: 'Interpretation',
+        title: titles[StudyGuideSection.interpretation]!,
         content: guide.interpretation,
         section: StudyGuideSection.interpretation,
       ),
       TtsSection(
-        title: 'Context',
+        title: titles[StudyGuideSection.context]!,
         content: guide.context,
         section: StudyGuideSection.context,
       ),
       TtsSection(
-        title: 'Related Verses',
+        title: titles[StudyGuideSection.relatedVerses]!,
         content: guide.relatedVerses.join('. '),
         section: StudyGuideSection.relatedVerses,
       ),
       TtsSection(
-        title: 'Discussion Questions',
+        title: titles[StudyGuideSection.discussionQuestions]!,
         content: guide.reflectionQuestions
             .asMap()
             .entries
-            .map((e) => 'Question ${e.key + 1}. ${e.value}')
+            .map((e) =>
+                '${_getLocalizedQuestionLabel(language, e.key + 1)}. ${e.value}')
             .join('. '),
         section: StudyGuideSection.discussionQuestions,
       ),
       TtsSection(
-        title: 'Prayer Points',
+        title: titles[StudyGuideSection.prayerPoints]!,
         content: guide.prayerPoints.join('. '),
         section: StudyGuideSection.prayerPoints,
       ),

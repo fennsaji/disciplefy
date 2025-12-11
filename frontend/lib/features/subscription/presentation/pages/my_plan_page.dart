@@ -44,7 +44,7 @@ class _MyPlanPageState extends State<MyPlanPage> {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          'My Plan',
+          context.tr(TranslationKeys.myPlanTitle),
           style: AppFonts.poppins(
             fontWeight: FontWeight.w600,
             color: AppTheme.primaryColor,
@@ -62,7 +62,7 @@ class _MyPlanPageState extends State<MyPlanPage> {
                   .read<SubscriptionBloc>()
                   .add(const RefreshSubscriptionInvoices());
             },
-            tooltip: 'Refresh',
+            tooltip: context.tr(TranslationKeys.myPlanRefresh),
           ),
         ],
       ),
@@ -225,49 +225,49 @@ class _MyPlanPageState extends State<MyPlanPage> {
     if (subscriptionStatus?.isInPremiumTrial == true) {
       final daysLeft = subscriptionStatus!.premiumTrialDaysRemaining;
       if (daysLeft <= 2) {
-        statusText = 'Trial Ending Soon';
+        statusText = context.tr(TranslationKeys.myPlanTrialEndingSoon);
         statusColor = AppTheme.warningColor;
         statusIcon = Icons.timer;
       } else {
-        statusText = 'Premium Trial Active';
+        statusText = context.tr(TranslationKeys.myPlanPremiumTrialActive);
         statusColor = const Color(0xFF7C4DFF);
         statusIcon = Icons.workspace_premium;
       }
     } else if (subscription != null && subscription.isActive) {
       if (subscription.status == SubscriptionStatus.pending_cancellation) {
-        statusText = 'Cancellation Pending';
+        statusText = context.tr(TranslationKeys.myPlanCancellationPending);
         statusColor = AppTheme.warningColor;
         statusIcon = Icons.warning_rounded;
       } else {
-        statusText = 'Active Subscription';
+        statusText = context.tr(TranslationKeys.myPlanActiveSubscription);
         statusColor = AppTheme.successColor;
         statusIcon = Icons.check_circle_rounded;
       }
     } else if (subscriptionStatus?.isInGracePeriod == true) {
       // Grace period state
-      statusText = 'Grace Period';
+      statusText = context.tr(TranslationKeys.myPlanGracePeriod);
       statusColor = AppTheme.warningColor;
       statusIcon = Icons.access_time;
     } else if (subscriptionStatus?.hasTrialExpired == true) {
       // Trial expired state
-      statusText = 'Trial Expired';
+      statusText = context.tr(TranslationKeys.myPlanTrialExpired);
       statusColor = AppTheme.errorColor;
       statusIcon = Icons.warning_amber_rounded;
     } else if (subscriptionStatus?.isNewUserWithoutTrial == true) {
       // New user (never had trial)
-      statusText = 'Free Plan';
+      statusText = context.tr(TranslationKeys.myPlanFreePlan);
       statusColor = Colors.grey;
       statusIcon = Icons.person;
     } else if (userPlan == UserPlan.standard && isTrialActive) {
-      statusText = 'Trial Active';
+      statusText = context.tr(TranslationKeys.myPlanTrialActive);
       statusColor = const Color(0xFF6A4FB6);
       statusIcon = Icons.auto_awesome;
     } else if (userPlan == UserPlan.free) {
-      statusText = 'Free Plan';
+      statusText = context.tr(TranslationKeys.myPlanFreePlan);
       statusColor = Colors.grey;
       statusIcon = Icons.person;
     } else {
-      statusText = 'Subscription Needed';
+      statusText = context.tr(TranslationKeys.myPlanSubscriptionNeeded);
       statusColor = AppTheme.errorColor;
       statusIcon = Icons.info_outline;
     }
@@ -415,7 +415,7 @@ class _MyPlanPageState extends State<MyPlanPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Free until ${_formatDate(trialEndDate)}',
+                  '${context.tr(TranslationKeys.myPlanFreeUntil)} ${_formatDate(trialEndDate)}',
                   style: AppFonts.inter(
                     fontSize: 15,
                     fontWeight: FontWeight.w600,
@@ -424,7 +424,7 @@ class _MyPlanPageState extends State<MyPlanPage> {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  '$daysRemaining days remaining',
+                  '$daysRemaining ${context.tr(TranslationKeys.myPlanDaysRemaining)}',
                   style: AppFonts.inter(
                     fontSize: 13,
                     color: (isDark ? const Color(0xFFB794F4) : standardColor)
@@ -477,7 +477,9 @@ class _MyPlanPageState extends State<MyPlanPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  isUrgent ? 'Grace period ends soon!' : 'Grace Period Active',
+                  isUrgent
+                      ? context.tr(TranslationKeys.myPlanGracePeriodEndsSoon)
+                      : context.tr(TranslationKeys.myPlanGracePeriodActive),
                   style: AppFonts.inter(
                     fontSize: 15,
                     fontWeight: FontWeight.w600,
@@ -490,7 +492,10 @@ class _MyPlanPageState extends State<MyPlanPage> {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  'Subscribe within ${status.graceDaysRemaining} days to keep Standard access',
+                  context
+                      .tr(TranslationKeys.myPlanSubscribeWithinDays)
+                      .replaceAll(
+                          '{days}', status.graceDaysRemaining.toString()),
                   style: AppFonts.inter(
                     fontSize: 13,
                     color: isDark
@@ -532,7 +537,7 @@ class _MyPlanPageState extends State<MyPlanPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Your Trial Has Ended',
+                  context.tr(TranslationKeys.myPlanTrialEnded),
                   style: AppFonts.inter(
                     fontSize: 15,
                     fontWeight: FontWeight.w600,
@@ -541,7 +546,7 @@ class _MyPlanPageState extends State<MyPlanPage> {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  'Subscribe to continue using Standard features',
+                  context.tr(TranslationKeys.myPlanSubscribeToContinue),
                   style: AppFonts.inter(
                     fontSize: 13,
                     color: isDark ? Colors.red[300] : Colors.red[700],
@@ -578,7 +583,7 @@ class _MyPlanPageState extends State<MyPlanPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Unlock Standard Features',
+                  context.tr(TranslationKeys.myPlanUnlockStandardFeatures),
                   style: AppFonts.inter(
                     fontSize: 15,
                     fontWeight: FontWeight.w600,
@@ -587,7 +592,7 @@ class _MyPlanPageState extends State<MyPlanPage> {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  'Get 100 tokens daily, AI study guides & more for just \u20b950/month',
+                  context.tr(TranslationKeys.myPlanGetTokensDaily),
                   style: AppFonts.inter(
                     fontSize: 13,
                     color: isDark ? Colors.green[300] : Colors.green[700],
@@ -641,8 +646,8 @@ class _MyPlanPageState extends State<MyPlanPage> {
               children: [
                 Text(
                   isUrgent
-                      ? 'Premium trial ends soon!'
-                      : 'Enjoying Premium Features',
+                      ? context.tr(TranslationKeys.myPlanPremiumTrialEndsSoon)
+                      : context.tr(TranslationKeys.myPlanEnjoyingPremium),
                   style: AppFonts.inter(
                     fontSize: 15,
                     fontWeight: FontWeight.w600,
@@ -655,7 +660,10 @@ class _MyPlanPageState extends State<MyPlanPage> {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  '${status.premiumTrialDaysRemaining} day${status.premiumTrialDaysRemaining == 1 ? '' : 's'} remaining in your free trial',
+                  context
+                      .tr(TranslationKeys.myPlanDaysRemainingInTrial)
+                      .replaceAll('{days}',
+                          status.premiumTrialDaysRemaining.toString()),
                   style: AppFonts.inter(
                     fontSize: 13,
                     color: isDark
@@ -719,7 +727,7 @@ class _MyPlanPageState extends State<MyPlanPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Try Premium FREE',
+                  context.tr(TranslationKeys.myPlanTryPremiumFree),
                   style: AppFonts.inter(
                     fontSize: 15,
                     fontWeight: FontWeight.w600,
@@ -730,7 +738,7 @@ class _MyPlanPageState extends State<MyPlanPage> {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  'Get 7 days of unlimited Premium features',
+                  context.tr(TranslationKeys.myPlanGet7DaysTrial),
                   style: AppFonts.inter(
                     fontSize: 13,
                     color: (isDark
@@ -781,7 +789,7 @@ class _MyPlanPageState extends State<MyPlanPage> {
                 if (subscription.currentPeriodEnd != null) ...[
                   const SizedBox(height: 4),
                   Text(
-                    'Access until ${_formatDate(subscription.currentPeriodEnd!)}',
+                    '${context.tr(TranslationKeys.myPlanAccessUntil)} ${_formatDate(subscription.currentPeriodEnd!)}',
                     style: AppFonts.inter(
                       fontSize: 13,
                       color: isDark ? Colors.orange[300] : Colors.orange[700],
@@ -822,7 +830,7 @@ class _MyPlanPageState extends State<MyPlanPage> {
                 ),
                 const SizedBox(width: 8),
                 Text(
-                  'Plan Features',
+                  context.tr(TranslationKeys.myPlanPlanFeatures),
                   style: AppFonts.poppins(
                     fontSize: 18,
                     fontWeight: FontWeight.w600,
@@ -888,7 +896,7 @@ class _MyPlanPageState extends State<MyPlanPage> {
                 ),
                 const SizedBox(width: 8),
                 Text(
-                  'Billing Details',
+                  context.tr(TranslationKeys.myPlanBillingDetails),
                   style: AppFonts.poppins(
                     fontSize: 18,
                     fontWeight: FontWeight.w600,
@@ -901,16 +909,18 @@ class _MyPlanPageState extends State<MyPlanPage> {
             const Divider(),
             const SizedBox(height: 12),
             _buildDetailRow(
-              'Amount',
+              context.tr(TranslationKeys.myPlanAmount),
               '\u20b9${subscription.amountRupees.toStringAsFixed(0)}/month',
             ),
             if (subscription.currentPeriodEnd != null)
               _buildDetailRow(
-                subscription.isActive ? 'Next Billing' : 'Access Until',
+                subscription.isActive
+                    ? context.tr(TranslationKeys.myPlanNextBilling)
+                    : context.tr(TranslationKeys.myPlanAccessUntil),
                 _formatDate(subscription.currentPeriodEnd!),
               ),
             _buildDetailRow(
-              'Status',
+              context.tr(TranslationKeys.myPlanStatus),
               subscription.status.displayName,
               valueColor: subscription.isActive
                   ? AppTheme.successColor
@@ -974,7 +984,7 @@ class _MyPlanPageState extends State<MyPlanPage> {
                     ),
                     const SizedBox(width: 8),
                     Text(
-                      'Recent Payments',
+                      context.tr(TranslationKeys.myPlanRecentPayments),
                       style: AppFonts.poppins(
                         fontSize: 18,
                         fontWeight: FontWeight.w600,
@@ -989,7 +999,7 @@ class _MyPlanPageState extends State<MyPlanPage> {
                       context.push(AppRoutes.subscriptionPaymentHistory);
                     },
                     child: Text(
-                      'View All',
+                      context.tr(TranslationKeys.myPlanViewAll),
                       style: AppFonts.inter(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
@@ -1011,7 +1021,8 @@ class _MyPlanPageState extends State<MyPlanPage> {
                       context.push(AppRoutes.subscriptionPaymentHistory);
                     },
                     icon: const Icon(Icons.receipt_long_outlined, size: 18),
-                    label: const Text('View Payment History'),
+                    label: Text(
+                        context.tr(TranslationKeys.myPlanViewPaymentHistory)),
                   ),
                 ),
               ),
@@ -1111,8 +1122,8 @@ class _MyPlanPageState extends State<MyPlanPage> {
         // Users eligible for Premium trial: Show start trial
         if (canStartPremiumTrial && !isInPremiumTrial) ...[
           _buildActionButton(
-            label: 'Start 7-Day Premium Trial',
-            sublabel: 'Try all Premium features FREE',
+            label: context.tr(TranslationKeys.myPlanStart7DayTrial),
+            sublabel: context.tr(TranslationKeys.myPlanTryAllFeaturesFree),
             icon: Icons.rocket_launch,
             color: const Color(0xFF6A4FB6),
             isLoading: isStartingPremiumTrial,
@@ -1124,7 +1135,7 @@ class _MyPlanPageState extends State<MyPlanPage> {
           ),
           const SizedBox(height: 12),
           _buildActionButton(
-            label: 'Upgrade to Standard',
+            label: context.tr(TranslationKeys.myPlanUpgradeToStandard),
             sublabel: '\u20b950/month',
             icon: Icons.auto_awesome,
             color: Colors.teal[600]!,
@@ -1136,16 +1147,16 @@ class _MyPlanPageState extends State<MyPlanPage> {
         // Users in Premium trial: Show upgrade options
         else if (isInPremiumTrial) ...[
           _buildActionButton(
-            label: 'Upgrade to Premium',
-            sublabel: 'Keep Premium access for \u20b9100/month',
+            label: context.tr(TranslationKeys.myPlanUpgradeToPremium),
+            sublabel: context.tr(TranslationKeys.myPlanKeepPremiumAccess),
             icon: Icons.workspace_premium,
             color: Colors.amber[700]!,
             onPressed: () => context.push(AppRoutes.premiumUpgrade),
           ),
           const SizedBox(height: 12),
           _buildActionButton(
-            label: 'Subscribe to Standard',
-            sublabel: '\u20b950/month after trial',
+            label: context.tr(TranslationKeys.myPlanSubscribeToStandard),
+            sublabel: context.tr(TranslationKeys.myPlanAfterTrial),
             icon: Icons.auto_awesome,
             color: const Color(0xFF6A4FB6),
             isLoading: isCreatingSubscription,
@@ -1156,8 +1167,8 @@ class _MyPlanPageState extends State<MyPlanPage> {
         // Grace period users: Show urgent subscribe
         else if (isInGracePeriod && subscription == null) ...[
           _buildActionButton(
-            label: 'Subscribe Now',
-            sublabel: 'Keep Standard access for \u20b950/month',
+            label: context.tr(TranslationKeys.myPlanSubscribeNow),
+            sublabel: context.tr(TranslationKeys.myPlanKeepStandardAccess),
             icon: Icons.credit_card,
             color: subscriptionStatus!.graceDaysRemaining <= 3
                 ? Colors.orange[700]!
@@ -1167,8 +1178,8 @@ class _MyPlanPageState extends State<MyPlanPage> {
           ),
           const SizedBox(height: 12),
           _buildActionButton(
-            label: 'Upgrade to Premium',
-            sublabel: 'Get all features for \u20b9100/month',
+            label: context.tr(TranslationKeys.myPlanUpgradeToPremium),
+            sublabel: context.tr(TranslationKeys.myPlanGetAllFeatures),
             icon: Icons.workspace_premium,
             color: Colors.amber[700]!,
             onPressed: () => context.push(AppRoutes.premiumUpgrade),
@@ -1178,8 +1189,8 @@ class _MyPlanPageState extends State<MyPlanPage> {
         // Trial expired users: Show subscribe to regain access
         else if (hasTrialExpired) ...[
           _buildActionButton(
-            label: 'Subscribe to Standard',
-            sublabel: 'Regain access for \u20b950/month',
+            label: context.tr(TranslationKeys.myPlanSubscribeToStandard),
+            sublabel: context.tr(TranslationKeys.myPlanRegainAccess),
             icon: Icons.auto_awesome,
             color: const Color(0xFF6A4FB6),
             isLoading: isCreatingSubscription,
@@ -1187,8 +1198,8 @@ class _MyPlanPageState extends State<MyPlanPage> {
           ),
           const SizedBox(height: 12),
           _buildActionButton(
-            label: 'Upgrade to Premium',
-            sublabel: 'Get all features for \u20b9100/month',
+            label: context.tr(TranslationKeys.myPlanUpgradeToPremium),
+            sublabel: context.tr(TranslationKeys.myPlanGetAllFeatures),
             icon: Icons.workspace_premium,
             color: Colors.amber[700]!,
             onPressed: () => context.push(AppRoutes.premiumUpgrade),
@@ -1198,8 +1209,8 @@ class _MyPlanPageState extends State<MyPlanPage> {
         // New users (never had trial): Show promo
         else if (isNewUserWithoutTrial) ...[
           _buildActionButton(
-            label: 'Upgrade to Standard',
-            sublabel: 'Get 100 tokens daily for \u20b950/month',
+            label: context.tr(TranslationKeys.myPlanUpgradeToStandard),
+            sublabel: context.tr(TranslationKeys.myPlanGetTokensDailyFor),
             icon: Icons.auto_awesome,
             color: const Color(0xFF6A4FB6),
             isLoading: isCreatingSubscription,
@@ -1207,8 +1218,8 @@ class _MyPlanPageState extends State<MyPlanPage> {
           ),
           const SizedBox(height: 12),
           _buildActionButton(
-            label: 'Upgrade to Premium',
-            sublabel: 'Unlimited tokens for \u20b9100/month',
+            label: context.tr(TranslationKeys.myPlanUpgradeToPremium),
+            sublabel: context.tr(TranslationKeys.myPlanUnlimitedTokensFor),
             icon: Icons.workspace_premium,
             color: Colors.amber[700]!,
             onPressed: () => context.push(AppRoutes.premiumUpgrade),
@@ -1218,7 +1229,7 @@ class _MyPlanPageState extends State<MyPlanPage> {
         // Free users (generic): Show upgrade options
         else if (userPlan == UserPlan.free) ...[
           _buildActionButton(
-            label: 'Upgrade to Standard',
+            label: context.tr(TranslationKeys.myPlanUpgradeToStandard),
             sublabel: '\u20b950/month',
             icon: Icons.auto_awesome,
             color: const Color(0xFF6A4FB6),
@@ -1227,7 +1238,7 @@ class _MyPlanPageState extends State<MyPlanPage> {
           ),
           const SizedBox(height: 12),
           _buildActionButton(
-            label: 'Upgrade to Premium',
+            label: context.tr(TranslationKeys.myPlanUpgradeToPremium),
             sublabel: '\u20b9100/month',
             icon: Icons.workspace_premium,
             color: Colors.amber[700]!,
@@ -1239,8 +1250,8 @@ class _MyPlanPageState extends State<MyPlanPage> {
             subscription == null &&
             isTrialActive) ...[
           _buildActionButton(
-            label: 'Subscribe Now',
-            sublabel: 'Continue after trial for \u20b950/month',
+            label: context.tr(TranslationKeys.myPlanSubscribeNow),
+            sublabel: context.tr(TranslationKeys.myPlanContinueAfterTrial),
             icon: Icons.credit_card,
             color: const Color(0xFF6A4FB6),
             isLoading: isCreatingSubscription,
@@ -1248,8 +1259,8 @@ class _MyPlanPageState extends State<MyPlanPage> {
           ),
           const SizedBox(height: 12),
           _buildActionButton(
-            label: 'Upgrade to Premium',
-            sublabel: 'Get all features for \u20b9100/month',
+            label: context.tr(TranslationKeys.myPlanUpgradeToPremium),
+            sublabel: context.tr(TranslationKeys.myPlanGetAllFeatures),
             icon: Icons.workspace_premium,
             color: Colors.amber[700]!,
             onPressed: () => context.push(AppRoutes.premiumUpgrade),
@@ -1260,8 +1271,8 @@ class _MyPlanPageState extends State<MyPlanPage> {
         else if (subscription?.status ==
             SubscriptionStatus.pending_cancellation) ...[
           _buildActionButton(
-            label: 'Continue Subscription',
-            sublabel: 'Resume your subscription',
+            label: context.tr(TranslationKeys.myPlanContinueSubscription),
+            sublabel: context.tr(TranslationKeys.myPlanResumeSubscription),
             icon: Icons.restart_alt,
             color: AppTheme.successColor,
             isLoading: isLoading,
@@ -1274,8 +1285,8 @@ class _MyPlanPageState extends State<MyPlanPage> {
           if (userPlan == UserPlan.standard) ...[
             const SizedBox(height: 12),
             _buildActionButton(
-              label: 'Upgrade to Premium',
-              sublabel: 'Get more features',
+              label: context.tr(TranslationKeys.myPlanUpgradeToPremium),
+              sublabel: context.tr(TranslationKeys.myPlanGetAllFeatures),
               icon: Icons.workspace_premium,
               color: Colors.amber[700]!,
               onPressed: () => context.push(AppRoutes.premiumUpgrade),
@@ -1287,8 +1298,8 @@ class _MyPlanPageState extends State<MyPlanPage> {
         else if (subscription != null && subscription.isActive) ...[
           if (userPlan == UserPlan.standard) ...[
             _buildActionButton(
-              label: 'Upgrade to Premium',
-              sublabel: 'Get all features for \u20b9100/month',
+              label: context.tr(TranslationKeys.myPlanUpgradeToPremium),
+              sublabel: context.tr(TranslationKeys.myPlanGetAllFeatures),
               icon: Icons.workspace_premium,
               color: Colors.amber[700]!,
               onPressed: () => context.push(AppRoutes.premiumUpgrade),
@@ -1296,8 +1307,8 @@ class _MyPlanPageState extends State<MyPlanPage> {
             const SizedBox(height: 12),
           ],
           _buildActionButton(
-            label: 'Cancel Subscription',
-            sublabel: 'Cancel at period end',
+            label: context.tr(TranslationKeys.myPlanCancelSubscription),
+            sublabel: context.tr(TranslationKeys.myPlanCancelAtPeriodEnd),
             icon: Icons.cancel_outlined,
             color: AppTheme.errorColor,
             isOutlined: true,
@@ -1308,8 +1319,8 @@ class _MyPlanPageState extends State<MyPlanPage> {
         // Expired subscription: Show resubscribe
         else if (subscription != null && !subscription.isActive) ...[
           _buildActionButton(
-            label: 'Resubscribe',
-            sublabel: 'Renew your subscription',
+            label: context.tr(TranslationKeys.myPlanResubscribe),
+            sublabel: context.tr(TranslationKeys.myPlanRenewSubscription),
             icon: Icons.refresh,
             color: AppTheme.primaryColor,
             onPressed: () {

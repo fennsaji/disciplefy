@@ -188,8 +188,9 @@ class _SettingsScreenContent extends StatelessWidget {
                       _buildSettingsTile(
                         context: context,
                         icon: Icons.card_membership_outlined,
-                        title: 'My Plan',
-                        subtitle: 'View plan details & billing',
+                        title: context.tr(TranslationKeys.settingsMyPlan),
+                        subtitle:
+                            context.tr(TranslationKeys.settingsMyPlanSubtitle),
                         trailing: Icon(
                           Icons.arrow_forward_ios,
                           size: 16,
