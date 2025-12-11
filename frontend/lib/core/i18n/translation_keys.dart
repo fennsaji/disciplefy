@@ -287,6 +287,8 @@ class TranslationKeys {
   static const settingsAccount = 'settings.account';
   static const settingsSignInToSync = 'settings.sign_in_to_sync';
   static const settingsSignIn = 'settings.sign_in';
+  static const settingsMyPlan = 'settings.my_plan';
+  static const settingsMyPlanSubtitle = 'settings.my_plan_subtitle';
   static const settingsAppearance = 'settings.appearance';
   static const settingsNotifications = 'settings.notifications';
   static const settingsNotificationPreferences =
@@ -973,6 +975,63 @@ class TranslationKeys {
   static const pricingPremiumFeature6 = 'pricing.premium.feature6';
   static const pricingSecurePayments = 'pricing.secure_payments';
   static const pricingPricesInInr = 'pricing.prices_in_inr';
+
+  // My Plan Page
+  static const myPlanTitle = 'my_plan.title';
+  static const myPlanRefresh = 'my_plan.refresh';
+  static const myPlanPlanFeatures = 'my_plan.plan_features';
+  static const myPlanBillingDetails = 'my_plan.billing_details';
+  static const myPlanRecentPayments = 'my_plan.recent_payments';
+  static const myPlanViewAll = 'my_plan.view_all';
+  static const myPlanViewPaymentHistory = 'my_plan.view_payment_history';
+  static const myPlanAmount = 'my_plan.amount';
+  static const myPlanNextBilling = 'my_plan.next_billing';
+  static const myPlanAccessUntil = 'my_plan.access_until';
+  static const myPlanStatus = 'my_plan.status';
+  static const myPlanFreeUntil = 'my_plan.free_until';
+  static const myPlanDaysRemaining = 'my_plan.days_remaining';
+  static const myPlanTrialActive = 'my_plan.trial_active';
+  static const myPlanTrialEndingSoon = 'my_plan.trial_ending_soon';
+  static const myPlanPremiumTrialActive = 'my_plan.premium_trial_active';
+  static const myPlanActiveSubscription = 'my_plan.active_subscription';
+  static const myPlanCancellationPending = 'my_plan.cancellation_pending';
+  static const myPlanGracePeriod = 'my_plan.grace_period';
+  static const myPlanTrialExpired = 'my_plan.trial_expired';
+  static const myPlanFreePlan = 'my_plan.free_plan';
+  static const myPlanSubscriptionNeeded = 'my_plan.subscription_needed';
+  static const myPlanGracePeriodActive = 'my_plan.grace_period_active';
+  static const myPlanGracePeriodEndsSoon = 'my_plan.grace_period_ends_soon';
+  static const myPlanSubscribeWithinDays = 'my_plan.subscribe_within_days';
+  static const myPlanTrialEnded = 'my_plan.trial_ended';
+  static const myPlanSubscribeToContinue = 'my_plan.subscribe_to_continue';
+  static const myPlanUnlockStandardFeatures =
+      'my_plan.unlock_standard_features';
+  static const myPlanGetTokensDaily = 'my_plan.get_tokens_daily';
+  static const myPlanEnjoyingPremium = 'my_plan.enjoying_premium';
+  static const myPlanPremiumTrialEndsSoon = 'my_plan.premium_trial_ends_soon';
+  static const myPlanDaysRemainingInTrial = 'my_plan.days_remaining_in_trial';
+  static const myPlanTryPremiumFree = 'my_plan.try_premium_free';
+  static const myPlanGet7DaysTrial = 'my_plan.get_7_days_trial';
+  static const myPlanStart7DayTrial = 'my_plan.start_7_day_trial';
+  static const myPlanTryAllFeaturesFree = 'my_plan.try_all_features_free';
+  static const myPlanUpgradeToStandard = 'my_plan.upgrade_to_standard';
+  static const myPlanUpgradeToPremium = 'my_plan.upgrade_to_premium';
+  static const myPlanKeepPremiumAccess = 'my_plan.keep_premium_access';
+  static const myPlanSubscribeToStandard = 'my_plan.subscribe_to_standard';
+  static const myPlanAfterTrial = 'my_plan.after_trial';
+  static const myPlanSubscribeNow = 'my_plan.subscribe_now';
+  static const myPlanKeepStandardAccess = 'my_plan.keep_standard_access';
+  static const myPlanGetAllFeatures = 'my_plan.get_all_features';
+  static const myPlanRegainAccess = 'my_plan.regain_access';
+  static const myPlanGetTokensDailyFor = 'my_plan.get_tokens_daily_for';
+  static const myPlanUnlimitedTokensFor = 'my_plan.unlimited_tokens_for';
+  static const myPlanContinueAfterTrial = 'my_plan.continue_after_trial';
+  static const myPlanContinueSubscription = 'my_plan.continue_subscription';
+  static const myPlanResumeSubscription = 'my_plan.resume_subscription';
+  static const myPlanCancelSubscription = 'my_plan.cancel_subscription';
+  static const myPlanCancelAtPeriodEnd = 'my_plan.cancel_at_period_end';
+  static const myPlanResubscribe = 'my_plan.resubscribe';
+  static const myPlanRenewSubscription = 'my_plan.renew_subscription';
 
   // Study Guide Error Screen
   static const studyGuideErrorTitle = 'study_guide.error.title';
