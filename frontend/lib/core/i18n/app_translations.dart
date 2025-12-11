@@ -1231,6 +1231,16 @@ class AppTranslations {
       'resubscribe': 'Resubscribe',
       'renew_subscription': 'Renew your subscription',
     },
+    'upgrade_dialog': {
+      'title': 'Upgrade to Unlock {feature}',
+      'standard_plan': 'Standard Plan',
+      'price': 'Just ₹50/month',
+      'benefit_voice': 'AI Voice Discipler conversations',
+      'benefit_memory': 'Memory verse memorization',
+      'benefit_tokens': '100 tokens daily + purchase more',
+      'upgrade_button': 'Upgrade to Standard',
+      'maybe_later': 'Maybe Later',
+    },
   };
 
   static const Map<String, dynamic> _hindiTranslations = {
@@ -2442,6 +2452,16 @@ class AppTranslations {
       'cancel_at_period_end': 'अवधि के अंत में रद्द करें',
       'resubscribe': 'फिर से सदस्यता लें',
       'renew_subscription': 'अपनी सदस्यता नवीनीकृत करें',
+    },
+    'upgrade_dialog': {
+      'title': '{feature} अनलॉक करने के लिए अपग्रेड करें',
+      'standard_plan': 'स्टैंडर्ड प्लान',
+      'price': 'सिर्फ ₹50/महीना',
+      'benefit_voice': 'AI वॉइस डिसाइपलर बातचीत',
+      'benefit_memory': 'स्मृति वचन याद करना',
+      'benefit_tokens': '100 टोकन दैनिक + और खरीदें',
+      'upgrade_button': 'स्टैंडर्ड में अपग्रेड करें',
+      'maybe_later': 'बाद में',
     },
   };
 
@@ -3720,6 +3740,18 @@ class AppTranslations {
       'cancel_at_period_end': 'കാലയളവ് അവസാനിക്കുമ്പോൾ റദ്ദാക്കുക',
       'resubscribe': 'വീണ്ടും സബ്‌സ്‌ക്രൈബ് ചെയ്യുക',
       'renew_subscription': 'നിങ്ങളുടെ സബ്‌സ്‌ക്രിപ്ഷൻ പുതുക്കുക',
+    },
+
+    // Upgrade Required Dialog
+    'upgrade_dialog': {
+      'title': '{feature} അൺലോക്ക് ചെയ്യാൻ അപ്‌ഗ്രേഡ് ചെയ്യുക',
+      'standard_plan': 'സ്റ്റാൻഡേർഡ് പ്ലാൻ',
+      'price': 'വെറും ₹50/മാസം',
+      'benefit_voice': 'AI വോയ്‌സ് ഡിസൈപ്ലർ സംഭാഷണങ്ങൾ',
+      'benefit_memory': 'മെമ്മറി വചനം മനഃപാഠമാക്കൽ',
+      'benefit_tokens': '100 ടോക്കണുകൾ ദിവസവും + കൂടുതൽ വാങ്ങുക',
+      'upgrade_button': 'സ്റ്റാൻഡേർഡിലേക്ക് അപ്‌ഗ്രേഡ് ചെയ്യുക',
+      'maybe_later': 'പിന്നീട്',
     },
   };
 }
