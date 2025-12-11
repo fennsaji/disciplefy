@@ -44,7 +44,7 @@ export class AnthropicClient {
 
   /**
    * Selects the optimal Anthropic model based on language.
-   * 
+   *
    * @param language - Target language code
    * @returns Anthropic model name
    */
@@ -55,36 +55,18 @@ export class AnthropicClient {
         return 'claude-sonnet-4-20250514'
       case 'en':
       default:
-        return 'claude-haiku-4-5-20250514'
+        return 'claude-haiku-4-5-20251001'
     }
   }
 
   /**
-   * Makes an API call to Anthropic.
-   * 
-   * @param options - Call options
-   * @returns Response content string
+   * Makes an HTTP POST request to the Anthropic API.
+   *
+   * @param request - The Anthropic request payload
+   * @returns The parsed API response
+   * @throws Error if the API request fails
    */
-  async call(options: AnthropicCallOptions): Promise<string> {
-    const {
-      systemMessage,
-      userMessage,
-      temperature = 0.3,
-      maxTokens = 3000
-    } = options
-
-    const request: AnthropicRequest = {
-      model: 'claude-haiku-4-5-20250514',
-      max_tokens: maxTokens,
-      temperature,
-      top_p: 0.9,
-      top_k: 250,
-      system: systemMessage,
-      messages: [
-        { role: 'user', content: userMessage }
-      ]
-    }
-
+  private async makeRequest(request: AnthropicRequest): Promise<AnthropicResponse> {
     const response = await fetch(this.baseUrl, {
       method: 'POST',
       headers: {
@@ -100,8 +82,17 @@ export class AnthropicClient {
       throw new Error(`Anthropic API error (${response.status}): ${errorText}`)
     }
 
-    const data: AnthropicResponse = await response.json()
-    
+    return await response.json()
+  }
+
+  /**
+   * Parses and validates the Anthropic API response.
+   *
+   * @param data - The raw API response
+   * @returns The extracted text content
+   * @throws Error if the response contains no valid text content
+   */
+  private parseResponse(data: AnthropicResponse): string {
     if (!data.content || data.content.length === 0) {
       throw new Error('Anthropic API returned no content')
     }
@@ -111,18 +102,43 @@ export class AnthropicClient {
       throw new Error('Anthropic API returned no text content')
     }
 
-    console.log(`[Anthropic] Usage: ${data.usage.input_tokens + data.usage.output_tokens} tokens`)
     return textContent.text
   }
 
   /**
-   * Makes an API call for study guide generation with optimized parameters.
-   * 
-   * @param systemMessage - System prompt
-   * @param userMessage - User prompt
-   * @param languageConfig - Language-specific configuration
-   * @param params - Generation parameters
+   * Makes an API call to Anthropic.
+   *
+   * @param options - Call options including system/user messages and parameters
    * @returns Response content string
+   * @throws Error if the API request fails or returns invalid content
+   */
+  async call(options: AnthropicCallOptions): Promise<string> {
+    const { systemMessage, userMessage, temperature = 0.3, maxTokens = 3000 } = options
+
+    const request: AnthropicRequest = {
+      model: this.selectModel('en'),
+      max_tokens: maxTokens,
+      temperature,
+      top_p: 0.9,
+      top_k: 250,
+      system: systemMessage,
+      messages: [{ role: 'user', content: userMessage }]
+    }
+
+    const data = await this.makeRequest(request)
+    console.log(`[Anthropic] Usage: ${data.usage.input_tokens + data.usage.output_tokens} tokens`)
+    return this.parseResponse(data)
+  }
+
+  /**
+   * Makes an API call for study guide generation with optimized parameters.
+   *
+   * @param systemMessage - System prompt for study guide generation
+   * @param userMessage - User prompt with scripture/topic details
+   * @param languageConfig - Language-specific configuration for token limits
+   * @param params - Generation parameters including language
+   * @returns Response content string with generated study guide
+   * @throws Error if the API request fails or returns invalid content
    */
   async callForStudyGuide(
     systemMessage: string,
@@ -140,9 +156,7 @@ export class AnthropicClient {
       top_p: 0.9,
       top_k: 250,
       system: systemMessage,
-      messages: [
-        { role: 'user', content: userMessage }
-      ]
+      messages: [{ role: 'user', content: userMessage }]
     }
 
     console.log(`[Anthropic] Calling API with request:`, {
@@ -153,51 +167,18 @@ export class AnthropicClient {
       systemMessageLength: request.system?.length || 0
     })
 
-    const response = await fetch(this.baseUrl, {
-      method: 'POST',
-      headers: {
-        'x-api-key': this.apiKey,
-        'Content-Type': 'application/json',
-        'anthropic-version': this.apiVersion
-      },
-      body: JSON.stringify(request)
-    })
-
-    console.log(`[Anthropic] API response status: ${response.status}`)
-
-    if (!response.ok) {
-      const errorText = await response.text()
-      console.error(`[Anthropic] API error details:`, {
-        status: response.status,
-        statusText: response.statusText,
-        headers: Object.fromEntries(response.headers.entries()),
-        errorBody: errorText,
-        timestamp: new Date().toISOString()
-      })
-      throw new Error(`Anthropic API error (${response.status}): ${errorText}`)
-    }
-
-    const data: AnthropicResponse = await response.json()
-    
-    if (!data.content || data.content.length === 0) {
-      throw new Error('Anthropic API returned no content')
-    }
-
-    const textContent = data.content.find(c => c.type === 'text')
-    if (!textContent) {
-      throw new Error('Anthropic API returned no text content')
-    }
-
+    const data = await this.makeRequest(request)
     console.log(`[Anthropic] Study guide usage: ${data.usage.input_tokens + data.usage.output_tokens} tokens`)
-    return textContent.text
+    return this.parseResponse(data)
   }
 
   /**
    * Makes an API call for verse generation.
-   * 
-   * @param systemMessage - System prompt
-   * @param userMessage - User prompt
-   * @returns Response content string
+   *
+   * @param systemMessage - System prompt for verse selection
+   * @param userMessage - User prompt with verse request details
+   * @returns Response content string with generated verse content
+   * @throws Error if the API request fails or returns invalid content
    */
   async callForVerse(systemMessage: string, userMessage: string): Promise<string> {
     const request: AnthropicRequest = {
@@ -205,88 +186,35 @@ export class AnthropicClient {
       max_tokens: 800,
       temperature: 0.2,
       system: systemMessage,
-      messages: [
-        { role: 'user', content: userMessage }
-      ]
+      messages: [{ role: 'user', content: userMessage }]
     }
 
-    const response = await fetch(this.baseUrl, {
-      method: 'POST',
-      headers: {
-        'x-api-key': this.apiKey,
-        'Content-Type': 'application/json',
-        'anthropic-version': this.apiVersion
-      },
-      body: JSON.stringify(request)
-    })
-
-    if (!response.ok) {
-      const errorText = await response.text()
-      throw new Error(`Anthropic API error (${response.status}): ${errorText}`)
-    }
-
-    const data: AnthropicResponse = await response.json()
-    
-    if (!data.content || data.content.length === 0) {
-      throw new Error('Anthropic API returned no content')
-    }
-
-    const textContent = data.content.find(c => c.type === 'text')
-    if (!textContent) {
-      throw new Error('Anthropic API returned no text content')
-    }
-
-    return textContent.text
+    const data = await this.makeRequest(request)
+    return this.parseResponse(data)
   }
 
   /**
    * Makes an API call for follow-up responses.
-   * 
-   * @param systemMessage - System prompt
-   * @param userMessage - User prompt
-   * @param language - Target language
-   * @returns Response content string
+   *
+   * @param systemMessage - System prompt for follow-up context
+   * @param userMessage - User's follow-up question
+   * @param language - Target language code ('en', 'hi', 'ml')
+   * @returns Response content string with follow-up answer
+   * @throws Error if the API request fails or returns invalid content
    */
   async callForFollowUp(systemMessage: string, userMessage: string, language: string): Promise<string> {
-    const model = language === 'en' ? 'claude-haiku-4-5-20250514' : 'claude-sonnet-4-20250514'
+    const model = language === 'en' ? 'claude-haiku-4-5-20251001' : 'claude-sonnet-4-20250514'
 
     const request: AnthropicRequest = {
       model,
       max_tokens: 800,
       temperature: 0.4,
       system: systemMessage,
-      messages: [
-        { role: 'user', content: userMessage }
-      ]
+      messages: [{ role: 'user', content: userMessage }]
     }
 
-    const response = await fetch(this.baseUrl, {
-      method: 'POST',
-      headers: {
-        'x-api-key': this.apiKey,
-        'Content-Type': 'application/json',
-        'anthropic-version': this.apiVersion
-      },
-      body: JSON.stringify(request)
-    })
-
-    if (!response.ok) {
-      const errorText = await response.text()
-      throw new Error(`Anthropic API error (${response.status}): ${errorText}`)
-    }
-
-    const data: AnthropicResponse = await response.json()
-    
-    if (!data.content || data.content.length === 0) {
-      throw new Error('Anthropic API returned no content')
-    }
-
-    const textContent = data.content.find(c => c.type === 'text')
-    if (!textContent) {
-      throw new Error('Anthropic API returned no text content')
-    }
-
-    return textContent.text
+    const data = await this.makeRequest(request)
+    return this.parseResponse(data)
   }
 }
 
