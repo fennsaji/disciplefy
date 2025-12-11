@@ -132,7 +132,7 @@ async function sendEmailWithResend(
 function generateAdminEmailHtml(report: {
   userEmail: string
   issueType: string
-  description: string
+  description: string // Already sanitized with escapeHtml before storage
   paymentId: string
   orderId: string
   tokenAmount: number
@@ -141,7 +141,8 @@ function generateAdminEmailHtml(report: {
   screenshotCount: number
   reportId: string
 }): string {
-  const safeDescription = escapeHtml(report.description).slice(0, 1000)
+  // Description is already sanitized at storage time - just truncate
+  const safeDescription = report.description.slice(0, 1000)
   const issueLabel = getIssueTypeLabel(report.issueType)
   const purchaseDate = new Date(report.purchasedAt).toLocaleString('en-IN', {
     timeZone: 'Asia/Kolkata',
@@ -425,6 +426,9 @@ Deno.serve(async (req) => {
         .eq('id', user.id)
         .single()
 
+      // Sanitize description before storing (escapeHtml for XSS prevention)
+      const sanitizedDescription = escapeHtml(reportData.description.trim())
+
       // Insert report into database
       const { data: report, error: insertError } = await supabaseAdmin
         .from('purchase_issue_reports')
@@ -438,7 +442,7 @@ Deno.serve(async (req) => {
           cost_rupees: reportData.costRupees,
           purchased_at: reportData.purchasedAt,
           issue_type: reportData.issueType,
-          description: reportData.description.trim(),
+          description: sanitizedDescription,
           screenshot_urls: screenshotUrls,
           status: 'pending'
         })
@@ -479,7 +483,7 @@ Deno.serve(async (req) => {
         const adminHtml = generateAdminEmailHtml({
           userEmail,
           issueType: reportData.issueType,
-          description: reportData.description,
+          description: sanitizedDescription, // Already sanitized
           paymentId: reportData.paymentId,
           orderId: reportData.orderId,
           tokenAmount: reportData.tokenAmount,

@@ -88,6 +88,12 @@ class _TtsControlSheetState extends State<TtsControlSheet> {
 
                 const SizedBox(height: 24),
 
+                // Progress bar for section navigation
+                if (_ttsService.hasGuide && _ttsService.totalSections > 1)
+                  _buildProgressBar(state, isDark),
+
+                const SizedBox(height: 20),
+
                 // Playback controls (Previous, Play/Pause, Next)
                 _buildPlaybackControls(state, isDark),
 
@@ -163,6 +169,7 @@ class _TtsControlSheetState extends State<TtsControlSheet> {
             isDark: isDark,
             size: 48,
             iconSize: 28,
+            semanticLabel: 'Previous section',
           ),
           const SizedBox(width: 24),
           // Play/Pause button (larger)
@@ -174,6 +181,7 @@ class _TtsControlSheetState extends State<TtsControlSheet> {
             isDark: isDark,
             size: 64,
             iconSize: 36,
+            semanticLabel: isPlaying ? 'Pause' : 'Play',
             isPrimary: true,
           ),
           const SizedBox(width: 24),
@@ -185,6 +193,96 @@ class _TtsControlSheetState extends State<TtsControlSheet> {
             isDark: isDark,
             size: 48,
             iconSize: 28,
+            semanticLabel: 'Next section',
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildProgressBar(StudyGuideTtsState state, bool isDark) {
+    final totalSections = _ttsService.totalSections;
+    final currentIndex = state.currentSectionIndex;
+    final sectionNames = _ttsService.sectionNames;
+    final sectionProgress = state.sectionProgress;
+    final elapsedSeconds = state.elapsedSeconds;
+    final estimatedSeconds = state.estimatedDurationSeconds;
+
+    // Format time as M:SS
+    String formatTime(int seconds) {
+      final mins = seconds ~/ 60;
+      final secs = seconds % 60;
+      return '$mins:${secs.toString().padLeft(2, '0')}';
+    }
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Current section label and section counter
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Text(
+                  currentIndex < sectionNames.length
+                      ? sectionNames[currentIndex]
+                      : '',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: AppTheme.primaryColor,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              Text(
+                '${currentIndex + 1} / $totalSections',
+                style: TextStyle(
+                  fontSize: 13,
+                  color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          // Section progress bar (within current section)
+          Semantics(
+            label: 'Section playback progress',
+            value: '${(sectionProgress * 100).round()} percent',
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(4),
+              child: LinearProgressIndicator(
+                value: sectionProgress,
+                minHeight: 6,
+                backgroundColor:
+                    isDark ? Colors.grey.shade800 : Colors.grey.shade300,
+                valueColor:
+                    AlwaysStoppedAnimation<Color>(AppTheme.primaryColor),
+              ),
+            ),
+          ),
+          const SizedBox(height: 6),
+          // Time labels
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                formatTime(elapsedSeconds),
+                style: TextStyle(
+                  fontSize: 12,
+                  color: isDark ? Colors.grey.shade500 : Colors.grey.shade600,
+                ),
+              ),
+              Text(
+                formatTime(estimatedSeconds),
+                style: TextStyle(
+                  fontSize: 12,
+                  color: isDark ? Colors.grey.shade500 : Colors.grey.shade600,
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -197,42 +295,50 @@ class _TtsControlSheetState extends State<TtsControlSheet> {
     required bool isDark,
     required double size,
     required double iconSize,
+    required String semanticLabel,
     bool isPrimary = false,
   }) {
     final isEnabled = onPressed != null;
 
-    return GestureDetector(
-      onTap: onPressed,
-      child: Container(
-        width: size,
-        height: size,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          color: isPrimary
-              ? (isEnabled
-                  ? AppTheme.primaryColor
-                  : AppTheme.primaryColor.withOpacity(0.5))
-              : (isDark
-                  ? (isEnabled ? Colors.grey.shade800 : Colors.grey.shade900)
-                  : (isEnabled ? Colors.grey.shade200 : Colors.grey.shade100)),
-          boxShadow: isPrimary && isEnabled
-              ? [
-                  BoxShadow(
-                    color: AppTheme.primaryColor.withOpacity(0.3),
-                    blurRadius: 12,
-                    offset: const Offset(0, 4),
-                  ),
-                ]
-              : null,
-        ),
-        child: Icon(
-          icon,
-          size: iconSize,
-          color: isPrimary
-              ? Colors.white
-              : (isEnabled
-                  ? (isDark ? Colors.white : Colors.black87)
-                  : (isDark ? Colors.grey.shade700 : Colors.grey.shade400)),
+    return Semantics(
+      button: true,
+      enabled: isEnabled,
+      label: semanticLabel,
+      child: GestureDetector(
+        onTap: onPressed,
+        child: Container(
+          width: size,
+          height: size,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: isPrimary
+                ? (isEnabled
+                    ? AppTheme.primaryColor
+                    : AppTheme.primaryColor.withOpacity(0.5))
+                : (isDark
+                    ? (isEnabled ? Colors.grey.shade800 : Colors.grey.shade900)
+                    : (isEnabled
+                        ? Colors.grey.shade200
+                        : Colors.grey.shade100)),
+            boxShadow: isPrimary && isEnabled
+                ? [
+                    BoxShadow(
+                      color: AppTheme.primaryColor.withOpacity(0.3),
+                      blurRadius: 12,
+                      offset: const Offset(0, 4),
+                    ),
+                  ]
+                : null,
+          ),
+          child: Icon(
+            icon,
+            size: iconSize,
+            color: isPrimary
+                ? Colors.white
+                : (isEnabled
+                    ? (isDark ? Colors.white : Colors.black87)
+                    : (isDark ? Colors.grey.shade700 : Colors.grey.shade400)),
+          ),
         ),
       ),
     );

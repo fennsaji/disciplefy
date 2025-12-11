@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -40,6 +42,7 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
   VerseLanguage? _selectedLanguageFilter;
   bool _hasTriggeredMemoryVersePrompt = false;
   bool _isAccessDenied = false;
+  StreamSubscription<TokenState>? _tokenSubscription;
 
   @override
   void initState() {
@@ -47,18 +50,47 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
     _checkPlanAccess();
   }
 
+  @override
+  void dispose() {
+    _tokenSubscription?.cancel();
+    super.dispose();
+  }
+
   /// Checks if user has access to Memory Verses (Standard+ only)
   void _checkPlanAccess() {
     final tokenBloc = sl<TokenBloc>();
-    final tokenState = tokenBloc.state;
+    final currentState = tokenBloc.state;
 
+    // If already loaded, verify access immediately
+    if (currentState is TokenLoaded || currentState is TokenError) {
+      _verifyAccess(currentState);
+      return;
+    }
+
+    // Subscribe to stream and wait for TokenLoaded or TokenError
+    _tokenSubscription = tokenBloc.stream
+        .where((state) => state is TokenLoaded || state is TokenError)
+        .timeout(
+          const Duration(seconds: 5),
+          onTimeout: (sink) => sink.add(currentState),
+        )
+        .first
+        .asStream()
+        .listen((state) {
+      if (mounted) {
+        _verifyAccess(state);
+      }
+    });
+  }
+
+  /// Verifies if user has access based on token state
+  void _verifyAccess(TokenState tokenState) {
     UserPlan? userPlan;
     if (tokenState is TokenLoaded) {
       userPlan = tokenState.tokenStatus.userPlan;
     }
 
     // Block free users - Memory Verses requires Standard or Premium
-    // Also block if plan is unknown (not loaded yet) - default to restricted
     final bool hasAccess =
         userPlan == UserPlan.standard || userPlan == UserPlan.premium;
 
@@ -66,6 +98,7 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
       setState(() => _isAccessDenied = true);
       // Show upgrade dialog and redirect after dismissal
       WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
         UpgradeRequiredDialog.show(
           context,
           featureName: 'Memory Verses',

@@ -10,16 +10,20 @@ import '../../domain/entities/study_guide.dart';
 /// A button widget for controlling TTS playback of study guides.
 ///
 /// Displays different states (idle, loading, playing, paused) with
-/// appropriate icons and labels. Supports tap for play/pause toggle
-/// and long press to open advanced controls.
+/// appropriate icons and labels. Supports tap for play/pause toggle.
+/// When playing/paused, shows a settings icon that opens advanced controls
+/// via [onControlsTap].
 class TtsControlButton extends StatefulWidget {
   final StudyGuide guide;
-  final VoidCallback? onLongPress;
+
+  /// Callback invoked when the user taps the controls/settings icon
+  /// (visible when playing or paused).
+  final VoidCallback? onControlsTap;
 
   const TtsControlButton({
     super.key,
     required this.guide,
-    this.onLongPress,
+    this.onControlsTap,
   });
 
   @override
@@ -165,7 +169,7 @@ class _TtsControlButtonState extends State<TtsControlButton> {
                 color: Colors.white.withOpacity(0.3),
               ),
               InkWell(
-                onTap: widget.onLongPress,
+                onTap: widget.onControlsTap,
                 borderRadius: const BorderRadius.horizontal(
                   right: Radius.circular(16),
                 ),

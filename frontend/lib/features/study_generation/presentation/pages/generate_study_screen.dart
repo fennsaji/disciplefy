@@ -1031,8 +1031,15 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
 
   /// Handles tap on Voice Buddy button - checks plan and shows upgrade dialog for free users
   void _handleVoiceBuddyTap(BuildContext context) {
+    // Block access until token status is loaded
+    if (_currentTokenStatus == null) {
+      // Token status not loaded yet - trigger refresh and wait
+      context.read<TokenBloc>().add(const GetTokenStatus());
+      return;
+    }
+
     // Check if user is on free plan
-    if (_currentTokenStatus?.userPlan == UserPlan.free) {
+    if (_currentTokenStatus!.userPlan == UserPlan.free) {
       // Show upgrade required dialog
       UpgradeRequiredDialog.show(
         context,
