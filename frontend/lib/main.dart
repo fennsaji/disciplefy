@@ -24,6 +24,8 @@ import 'features/daily_verse/presentation/bloc/daily_verse_event.dart';
 import 'features/settings/presentation/bloc/settings_bloc.dart';
 import 'features/settings/presentation/bloc/settings_event.dart';
 import 'features/tokens/presentation/bloc/token_bloc.dart';
+import 'features/tokens/presentation/bloc/token_event.dart';
+import 'features/auth/presentation/bloc/auth_state.dart' as auth_states;
 import 'features/feedback/presentation/bloc/feedback_bloc.dart';
 import 'features/notifications/presentation/bloc/notification_bloc.dart';
 import 'core/utils/web_splash_controller.dart';
@@ -340,23 +342,36 @@ class _DisciplefyBibleStudyAppState extends State<DisciplefyBibleStudyApp> {
           create: (context) => sl<NotificationBloc>(),
         ),
       ],
-      child: ListenableBuilder(
-        listenable: themeService,
-        builder: (context, child) => MaterialApp.router(
-          title: 'Disciplefy | Bible Study App',
-          debugShowCheckedModeBanner: false,
+      child: BlocListener<AuthBloc, auth_states.AuthState>(
+        listener: (context, state) {
+          // Fetch token status when user becomes authenticated
+          // This ensures Memory Verses and other features have plan info
+          if (state is auth_states.AuthenticatedState) {
+            if (kDebugMode) {
+              print(
+                  '🪙 [MAIN] Auth state changed to authenticated - fetching token status');
+            }
+            context.read<TokenBloc>().add(const GetTokenStatus());
+          }
+        },
+        child: ListenableBuilder(
+          listenable: themeService,
+          builder: (context, child) => MaterialApp.router(
+            title: 'Disciplefy | Bible Study App',
+            debugShowCheckedModeBanner: false,
 
-          // Dynamic theming based on ThemeService
-          themeMode: themeService.flutterThemeMode,
-          theme: AppTheme.lightTheme,
-          darkTheme: AppTheme.darkTheme,
+            // Dynamic theming based on ThemeService
+            themeMode: themeService.flutterThemeMode,
+            theme: AppTheme.lightTheme,
+            darkTheme: AppTheme.darkTheme,
 
-          // Localization
-          localizationsDelegates: AppLocalizations.localizationsDelegates,
-          supportedLocales: AppLocalizations.supportedLocales,
+            // Localization
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
 
-          // Navigation
-          routerConfig: AppRouter.router,
+            // Navigation
+            routerConfig: AppRouter.router,
+          ),
         ),
       ),
     );

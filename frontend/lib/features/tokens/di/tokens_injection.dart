@@ -71,7 +71,9 @@ void registerTokenDependencies(GetIt sl) {
   );
 
   //! Token BLoCs
-  sl.registerFactory(() => TokenBloc(
+  // IMPORTANT: Must be LazySingleton so all parts of the app share the same instance
+  // This ensures token status fetched on auth is available everywhere
+  sl.registerLazySingleton(() => TokenBloc(
         getTokenStatus: sl<GetTokenStatus>(),
         confirmPayment: sl<ConfirmPayment>(),
         createPaymentOrder: sl<CreatePaymentOrder>(),
