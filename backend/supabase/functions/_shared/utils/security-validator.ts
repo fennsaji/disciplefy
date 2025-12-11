@@ -290,6 +290,7 @@ export class SecurityValidator {
 
   /**
    * Parses scripture reference into components using simple regex.
+   * Supports Unicode book names (Malayalam, Hindi, etc.) using \p{L} and \p{M}.
    * 
    * @param input - Scripture reference string
    * @returns Parsed components or null if invalid
@@ -300,8 +301,9 @@ export class SecurityValidator {
     startVerse?: number
     endVerse?: number
   } | null {
-    // Simple regex to extract basic components
-    const match = input.match(/^([1-3]?\s*[a-zA-Z]+\.?)\s+(\d+)(?::(\d+))?(?:-(\d+))?$/i)
+    // Unicode-aware regex to extract basic components
+    // Uses [\p{L}\p{M}]+ to match letters AND combining marks (for Malayalam, Hindi, etc.)
+    const match = input.match(/^([1-3]?\s*[\p{L}\p{M}]+\.?)\s+(\d+)(?::(\d+))?(?:-(\d+))?$/iu)
     
     if (!match) {
       return null
@@ -335,6 +337,8 @@ export class SecurityValidator {
 
   /**
    * Validates book name against known Bible books.
+   * For non-English book names (containing non-ASCII characters), validation is skipped
+   * since the Bible API will validate the reference when fetching the actual text.
    * 
    * @param book - Book name to validate
    * @param bibleBooks - Set of known Bible books
@@ -345,6 +349,17 @@ export class SecurityValidator {
     message: string
     details: any
   } {
+    // Check if book name contains non-ASCII characters (Malayalam, Hindi, etc.)
+    // If so, skip English book name validation - the Bible API will validate
+    const hasNonAscii = /[^\x00-\x7F]/.test(book)
+    if (hasNonAscii) {
+      return {
+        isValid: true,
+        message: 'Non-English book name accepted',
+        details: { book: book, isNonEnglish: true }
+      }
+    }
+
     const normalizedBook = book.toLowerCase().replace(/\./g, '')
     
     if (bibleBooks.has(normalizedBook)) {

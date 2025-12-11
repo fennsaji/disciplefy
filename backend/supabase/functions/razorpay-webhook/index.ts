@@ -436,15 +436,18 @@ async function handleSubscriptionAuthenticated(
 
   const razorpaySubId = subscriptionEntity.id
   const userId = subscriptionEntity.notes?.user_id
+  // Extract plan_type from notes (set during subscription creation)
+  const planType = subscriptionEntity.notes?.plan_type || 'premium'
 
-  console.log(`[Webhook] Subscription authenticated: ${razorpaySubId}`)
+  console.log(`[Webhook] Subscription authenticated: ${razorpaySubId}, plan: ${planType}`)
 
-  // Update subscription status
+  // Update subscription status and ensure plan type is preserved
   const { error } = await supabaseServiceClient
     .from('subscriptions')
     .update({
       status: 'authenticated',
       razorpay_customer_id: subscriptionEntity.customer_id,
+      subscription_plan: planType,  // Ensure plan type is set
       updated_at: new Date().toISOString()
     })
     .eq('razorpay_subscription_id', razorpaySubId)
@@ -457,13 +460,14 @@ async function handleSubscriptionAuthenticated(
   // Log event
   await analyticsLogger.logEvent('webhook_subscription_authenticated', {
     user_id: userId,
-    subscription_id: razorpaySubId
+    subscription_id: razorpaySubId,
+    plan_type: planType
   })
 }
 
 /**
  * Handle subscription.activated event
- * Subscription is now active - grant premium access
+ * Subscription is now active - grant plan access (standard or premium)
  */
 async function handleSubscriptionActivated(
   payload: RazorpaySubscriptionWebhook,
@@ -479,14 +483,17 @@ async function handleSubscriptionActivated(
 
   const razorpaySubId = subscriptionEntity.id
   const userId = subscriptionEntity.notes?.user_id
+  // Extract plan_type from notes (set during subscription creation)
+  const planType = subscriptionEntity.notes?.plan_type || 'premium'
 
-  console.log(`[Webhook] Subscription activated: ${razorpaySubId} for user: ${userId}`)
+  console.log(`[Webhook] Subscription activated: ${razorpaySubId} for user: ${userId}, plan: ${planType}`)
 
-  // Update subscription status and billing info
+  // Update subscription status, billing info, and ensure plan type is preserved
   const { error } = await supabaseServiceClient
     .from('subscriptions')
     .update({
       status: 'active',
+      subscription_plan: planType,  // Ensure plan type is set
       current_period_start: subscriptionEntity.current_start
         ? new Date(subscriptionEntity.current_start * 1000).toISOString()
         : null,
@@ -507,12 +514,14 @@ async function handleSubscriptionActivated(
     return
   }
 
-  console.log(`[Webhook] ✅ Premium access granted to user: ${userId}`)
+  const planLabel = planType === 'standard' ? 'Standard' : 'Premium'
+  console.log(`[Webhook] ✅ ${planLabel} access granted to user: ${userId}`)
 
   // Log event
   await analyticsLogger.logEvent('webhook_subscription_activated', {
     user_id: userId,
     subscription_id: razorpaySubId,
+    plan_type: planType,
     period_start: subscriptionEntity.current_start,
     period_end: subscriptionEntity.current_end
   })

@@ -17,6 +17,16 @@ class TranslationKeys {
   static const studyGuideCopy = 'study_guide.actions.copy';
   static const studyGuideSignIn = 'study_guide.actions.sign_in';
 
+  // Study Guide TTS
+  static const studyGuideListen = 'study_guide.tts.listen';
+  static const studyGuidePause = 'study_guide.tts.pause';
+  static const studyGuideResume = 'study_guide.tts.resume';
+  static const studyGuideLoading = 'study_guide.tts.loading';
+  static const studyGuideTtsControls = 'study_guide.tts.controls';
+  static const studyGuideTtsSpeed = 'study_guide.tts.speed';
+  static const studyGuideTtsNowReading = 'study_guide.tts.now_reading';
+  static const studyGuideTtsStop = 'study_guide.tts.stop';
+
   // Study Guide Messages
   static const studyGuideAuthRequired = 'study_guide.messages.auth_required';
   static const studyGuideAuthRequiredMessage =
@@ -327,6 +337,14 @@ class TranslationKeys {
   static const settingsTakeQuestionnaire = 'settings.take_questionnaire';
   static const settingsTakeQuestionnaireSubtitle =
       'settings.take_questionnaire_subtitle';
+
+  // Settings - Help & Support
+  static const settingsHelpSupport = 'settings.help_support';
+  static const settingsReportPurchaseIssue = 'settings.report_purchase_issue';
+  static const settingsReportPurchaseIssueSubtitle =
+      'settings.report_purchase_issue_subtitle';
+  static const settingsContactUs = 'settings.contact_us';
+  static const settingsContactUsSubtitle = 'settings.contact_us_subtitle';
 
   // Personalization Questionnaire
   static const questionnaireYourJourney = 'questionnaire.your_journey';
@@ -959,6 +977,8 @@ class TranslationKeys {
   // Study Guide Error Screen
   static const studyGuideErrorTitle = 'study_guide.error.title';
   static const studyGuideErrorTitleAlt = 'study_guide.error.title_alt';
+  static const studyGuideErrorTitleNoTokens =
+      'study_guide.error.title_no_tokens';
   static const studyGuideErrorDefaultMessage =
       'study_guide.error.default_message';
   static const studyGuideErrorDefaultMessageAlt =
@@ -971,4 +991,5 @@ class TranslationKeys {
   static const studyGuideErrorGoBack = 'study_guide.error.go_back';
   static const studyGuideErrorTryAgain = 'study_guide.error.try_again';
   static const studyGuideErrorViewSaved = 'study_guide.error.view_saved';
+  static const studyGuideErrorMyPlan = 'study_guide.error.my_plan';
 }

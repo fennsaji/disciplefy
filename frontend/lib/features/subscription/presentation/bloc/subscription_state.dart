@@ -1,5 +1,6 @@
 import 'package:equatable/equatable.dart';
 import '../../domain/entities/subscription.dart';
+import '../../domain/entities/user_subscription_status.dart';
 import '../../../../core/error/failures.dart';
 
 /// Subscription BLoC States
@@ -271,4 +272,95 @@ class SubscriptionEligibilityChecked extends SubscriptionState {
       return 'Unable to subscribe at this time';
     }
   }
+}
+
+/// State when user subscription status has been loaded
+///
+/// Contains UserSubscriptionStatus with trial info and current plan
+class UserSubscriptionStatusLoaded extends SubscriptionState {
+  final UserSubscriptionStatus subscriptionStatus;
+  final DateTime lastUpdated;
+  final bool isLoading; // For Standard subscription creation
+  final String? authorizationUrl; // Razorpay authorization URL
+  final String? errorMessage; // Error during Standard subscription
+
+  const UserSubscriptionStatusLoaded({
+    required this.subscriptionStatus,
+    required this.lastUpdated,
+    this.isLoading = false,
+    this.authorizationUrl,
+    this.errorMessage,
+  });
+
+  @override
+  List<Object?> get props => [
+        subscriptionStatus,
+        lastUpdated,
+        isLoading,
+        authorizationUrl,
+        errorMessage,
+      ];
+
+  /// Create a copy with updated fields
+  UserSubscriptionStatusLoaded copyWith({
+    UserSubscriptionStatus? subscriptionStatus,
+    DateTime? lastUpdated,
+    bool? isLoading,
+    String? authorizationUrl,
+    String? errorMessage,
+    bool clearAuthorizationUrl = false,
+    bool clearErrorMessage = false,
+  }) {
+    return UserSubscriptionStatusLoaded(
+      subscriptionStatus: subscriptionStatus ?? this.subscriptionStatus,
+      lastUpdated: lastUpdated ?? this.lastUpdated,
+      isLoading: isLoading ?? this.isLoading,
+      authorizationUrl: clearAuthorizationUrl
+          ? null
+          : (authorizationUrl ?? this.authorizationUrl),
+      errorMessage:
+          clearErrorMessage ? null : (errorMessage ?? this.errorMessage),
+    );
+  }
+
+  /// Check if user needs to subscribe to Standard
+  bool get needsSubscription => subscriptionStatus.needsSubscription;
+
+  /// Check if trial is ending soon
+  bool get isTrialEndingSoon => subscriptionStatus.isTrialEndingSoon;
+
+  /// Whether to show subscription banner
+  bool get shouldShowBanner => subscriptionStatus.shouldShowSubscriptionBanner;
+
+  /// Current plan
+  String get currentPlan => subscriptionStatus.currentPlan;
+
+  /// Check if user can start Premium trial
+  bool get canStartPremiumTrial => subscriptionStatus.canStartPremiumTrial;
+
+  /// Check if user is in Premium trial
+  bool get isInPremiumTrial => subscriptionStatus.isInPremiumTrial;
+
+  /// Premium trial days remaining
+  int get premiumTrialDaysRemaining =>
+      subscriptionStatus.premiumTrialDaysRemaining;
+}
+
+/// State when Premium trial has been started successfully
+class PremiumTrialStarted extends SubscriptionState {
+  final DateTime trialStartedAt;
+  final DateTime trialEndAt;
+  final int daysRemaining;
+  final String message;
+
+  const PremiumTrialStarted({
+    required this.trialStartedAt,
+    required this.trialEndAt,
+    required this.daysRemaining,
+    required this.message,
+  });
+
+  @override
+  List<Object?> get props =>
+      [trialStartedAt, trialEndAt, daysRemaining, message];
 }

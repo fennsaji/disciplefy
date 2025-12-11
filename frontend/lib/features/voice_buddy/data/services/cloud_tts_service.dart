@@ -32,6 +32,24 @@ class CloudTTSService {
   /// Cached voices for each language
   final Map<String, _CloudVoice> _voiceCache = {};
 
+  /// Queue of pre-fetched audio chunks for streaming playback
+  final List<Uint8List> _audioQueue = [];
+
+  /// Current chunk index for streaming playback
+  int _currentChunkIndex = 0;
+
+  /// Total chunks for current streaming session
+  int _totalChunks = 0;
+
+  /// Flag to track if streaming is active
+  bool _isStreaming = false;
+
+  /// Completer for coordinating chunk fetching
+  Completer<Uint8List?>? _nextChunkCompleter;
+
+  /// Flag to signal stop during streaming
+  bool _streamingStopRequested = false;
+
   /// Whether the service is initialized
   bool get isInitialized => _isInitialized;
 
@@ -324,8 +342,332 @@ class CloudTTSService {
         .trim();
   }
 
+  /// Split text into chunks at sentence boundaries.
+  /// Target chunk size is ~100-150 words for fast initial response.
+  List<String> _splitIntoChunks(String text) {
+    final sentences = text.split(RegExp(r'(?<=[.!?])\s+'));
+    final chunks = <String>[];
+    var currentChunk = StringBuffer();
+    var wordCount = 0;
+    const targetWords = 100; // Target ~100 words per chunk for fast response
+
+    for (final sentence in sentences) {
+      final sentenceWords = sentence.split(RegExp(r'\s+')).length;
+
+      // If adding this sentence exceeds target and we have content, start new chunk
+      if (wordCount > 0 && wordCount + sentenceWords > targetWords) {
+        chunks.add(currentChunk.toString().trim());
+        currentChunk = StringBuffer();
+        wordCount = 0;
+      }
+
+      if (currentChunk.isNotEmpty) {
+        currentChunk.write(' ');
+      }
+      currentChunk.write(sentence);
+      wordCount += sentenceWords;
+    }
+
+    // Add remaining content
+    if (currentChunk.isNotEmpty) {
+      chunks.add(currentChunk.toString().trim());
+    }
+
+    return chunks;
+  }
+
+  /// Fetch audio for a single chunk from Cloud TTS API.
+  Future<Uint8List?> _fetchChunkAudio({
+    required String text,
+    required _CloudVoice voice,
+    required double speakingRate,
+    required double pitch,
+    CancelToken? cancelToken,
+  }) async {
+    try {
+      final sanitizedText = _sanitizeText(text);
+      if (sanitizedText.isEmpty) return null;
+
+      final requestBody = {
+        'input': {'text': sanitizedText},
+        'voice': {
+          'languageCode': voice.languageCode,
+          'name': voice.name,
+          'ssmlGender': voice.ssmlGender,
+        },
+        'audioConfig': {
+          'audioEncoding': 'MP3',
+          'speakingRate': speakingRate.clamp(0.25, 4.0),
+          'pitch': pitch.clamp(-20.0, 20.0),
+          'effectsProfileId': ['small-bluetooth-speaker-class-device'],
+        },
+      };
+
+      const apiKey = AppConfig.googleCloudTtsApiKey;
+      final response = await _dio.post(
+        '$_apiEndpoint?key=$apiKey',
+        data: requestBody,
+        options: Options(headers: {'Content-Type': 'application/json'}),
+        cancelToken: cancelToken,
+      );
+
+      if (response.statusCode != 200) return null;
+
+      final dynamic rawAudioContent = response.data['audioContent'];
+      if (rawAudioContent == null || rawAudioContent is! String) return null;
+
+      return base64Decode(rawAudioContent);
+    } on DioException catch (e) {
+      if (e.type != DioExceptionType.cancel) {
+        print('🔊 [CLOUD TTS] Chunk fetch error: ${e.message}');
+      }
+      return null;
+    } catch (e) {
+      print('🔊 [CLOUD TTS] Chunk fetch error: $e');
+      return null;
+    }
+  }
+
+  /// Speak text using streaming chunked playback for faster start.
+  ///
+  /// Splits text into chunks, starts playing first chunk immediately,
+  /// and pre-fetches subsequent chunks while playing.
+  Future<bool> speakStreaming({
+    required String text,
+    required String languageCode,
+    double speakingRate = 1.0,
+    double pitch = 0.0,
+    void Function()? onComplete,
+  }) async {
+    if (!_isInitialized) {
+      final success = await initialize();
+      if (!success) return false;
+    }
+
+    // Get voice for language
+    var voice = _voiceCache[languageCode];
+    if (voice == null) {
+      voice = _voiceCache['en-US'];
+      if (voice == null) {
+        print('🔊 [CLOUD TTS] No voice available for $languageCode');
+        return false;
+      }
+    }
+
+    // Split text into chunks
+    final chunks = _splitIntoChunks(text);
+    if (chunks.isEmpty) {
+      onComplete?.call();
+      return true;
+    }
+
+    // For very short text (1 chunk), use regular speak
+    if (chunks.length == 1) {
+      print('🔊 [CLOUD TTS] Short text, using single request');
+      return speak(
+        text: text,
+        languageCode: languageCode,
+        speakingRate: speakingRate,
+        pitch: pitch,
+        onComplete: onComplete,
+      );
+    }
+
+    print('🔊 [CLOUD TTS] Streaming ${chunks.length} chunks');
+
+    // Reset streaming state
+    _audioQueue.clear();
+    _currentChunkIndex = 0;
+    _totalChunks = chunks.length;
+    _isStreaming = true;
+    _streamingStopRequested = false;
+    _isSpeaking = true;
+
+    // Cancel any previous request
+    _currentCancelToken?.cancel('New streaming request');
+    _currentCancelToken = CancelToken();
+
+    try {
+      // Fetch first chunk and start playing immediately
+      print('🔊 [CLOUD TTS] Fetching first chunk...');
+      final firstChunkAudio = await _fetchChunkAudio(
+        text: chunks[0],
+        voice: voice,
+        speakingRate: speakingRate,
+        pitch: pitch,
+        cancelToken: _currentCancelToken,
+      );
+
+      if (firstChunkAudio == null || _streamingStopRequested) {
+        _resetStreamingState();
+        return false;
+      }
+
+      // Start pre-fetching remaining chunks in background
+      _prefetchChunks(
+        chunks: chunks.sublist(1),
+        voice: voice,
+        speakingRate: speakingRate,
+        pitch: pitch,
+      );
+
+      // Play chunks sequentially
+      await _playChunksSequentially(
+        firstChunk: firstChunkAudio,
+        onComplete: onComplete,
+      );
+
+      return true;
+    } catch (e) {
+      print('🔊 [CLOUD TTS] Streaming error: $e');
+      _resetStreamingState();
+      return false;
+    }
+  }
+
+  /// Pre-fetch remaining chunks in background.
+  Future<void> _prefetchChunks({
+    required List<String> chunks,
+    required _CloudVoice voice,
+    required double speakingRate,
+    required double pitch,
+  }) async {
+    for (var i = 0; i < chunks.length; i++) {
+      if (_streamingStopRequested) break;
+
+      final audio = await _fetchChunkAudio(
+        text: chunks[i],
+        voice: voice,
+        speakingRate: speakingRate,
+        pitch: pitch,
+        cancelToken: _currentCancelToken,
+      );
+
+      if (audio != null && !_streamingStopRequested) {
+        _audioQueue.add(audio);
+        print('🔊 [CLOUD TTS] Pre-fetched chunk ${i + 2}/$_totalChunks');
+
+        // Signal if someone is waiting for this chunk
+        _nextChunkCompleter?.complete(audio);
+        _nextChunkCompleter = null;
+      }
+    }
+  }
+
+  /// Play audio chunks sequentially.
+  Future<void> _playChunksSequentially({
+    required Uint8List firstChunk,
+    void Function()? onComplete,
+  }) async {
+    var currentAudio = firstChunk;
+    _currentChunkIndex = 0;
+
+    while (_currentChunkIndex < _totalChunks && !_streamingStopRequested) {
+      print(
+          '🔊 [CLOUD TTS] Playing chunk ${_currentChunkIndex + 1}/$_totalChunks');
+
+      // Create completer to wait for playback completion
+      final playbackCompleter = Completer<void>();
+
+      // Play current chunk
+      await _playAudioChunk(currentAudio, () {
+        if (!playbackCompleter.isCompleted) {
+          playbackCompleter.complete();
+        }
+      });
+
+      // Wait for playback to complete
+      await playbackCompleter.future;
+
+      if (_streamingStopRequested) break;
+
+      _currentChunkIndex++;
+
+      // Get next chunk if available
+      if (_currentChunkIndex < _totalChunks) {
+        final queueIndex =
+            _currentChunkIndex - 1; // -1 because first chunk wasn't queued
+
+        if (queueIndex < _audioQueue.length) {
+          // Chunk already pre-fetched
+          currentAudio = _audioQueue[queueIndex];
+        } else {
+          // Wait for chunk to be fetched
+          print(
+              '🔊 [CLOUD TTS] Waiting for chunk ${_currentChunkIndex + 1}...');
+          _nextChunkCompleter = Completer<Uint8List?>();
+          final nextAudio = await _nextChunkCompleter!.future;
+
+          if (nextAudio == null || _streamingStopRequested) break;
+          currentAudio = nextAudio;
+        }
+      }
+    }
+
+    _resetStreamingState();
+    print('🔊 [CLOUD TTS] Streaming playback complete');
+    onComplete?.call();
+  }
+
+  /// Play a single audio chunk and wait for completion.
+  Future<void> _playAudioChunk(
+      Uint8List audioBytes, void Function() onChunkComplete) async {
+    try {
+      // Cancel any existing completion listener
+      await _playerCompleteSubscription?.cancel();
+      _playerCompleteSubscription = null;
+
+      // Dispose old player safely
+      try {
+        await _audioPlayer?.stop();
+        await _audioPlayer?.dispose();
+      } catch (e) {
+        // Ignore
+      }
+
+      // Create fresh player
+      _audioPlayer = AudioPlayer();
+      final player = _audioPlayer!;
+
+      // Set up completion listener
+      _playerCompleteSubscription = player.onPlayerComplete.listen((_) {
+        _playerCompleteSubscription?.cancel();
+        _playerCompleteSubscription = null;
+        onChunkComplete();
+      }, onError: (error) {
+        print('🔊 [CLOUD TTS] Chunk playback error: $error');
+        _playerCompleteSubscription?.cancel();
+        _playerCompleteSubscription = null;
+        onChunkComplete();
+      });
+
+      // Play
+      await player.play(BytesSource(audioBytes));
+    } catch (e) {
+      print('🔊 [CLOUD TTS] Error playing chunk: $e');
+      onChunkComplete();
+    }
+  }
+
+  /// Reset streaming state.
+  void _resetStreamingState() {
+    _isStreaming = false;
+    _streamingStopRequested = false;
+    _audioQueue.clear();
+    _currentChunkIndex = 0;
+    _totalChunks = 0;
+    _isSpeaking = false;
+    _nextChunkCompleter?.complete(null);
+    _nextChunkCompleter = null;
+  }
+
   /// Stop current playback.
   Future<void> stop() async {
+    // Signal streaming to stop
+    if (_isStreaming) {
+      _streamingStopRequested = true;
+    }
+
     // Cancel any in-flight API request
     _currentCancelToken?.cancel('Stop requested');
     _currentCancelToken = null;
@@ -343,7 +685,10 @@ class CloudTTSService {
       // Player may already be disposed
       print('🔊 [CLOUD TTS] Stop cleanup: $e');
     }
-    _isSpeaking = false;
+
+    // Reset streaming state
+    _resetStreamingState();
+
     print('🔊 [CLOUD TTS] Playback stopped');
   }
 

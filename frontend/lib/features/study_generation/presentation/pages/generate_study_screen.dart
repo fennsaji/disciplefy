@@ -27,6 +27,7 @@ import '../../../tokens/presentation/bloc/token_event.dart';
 import '../../../tokens/presentation/bloc/token_state.dart';
 import '../../../tokens/domain/entities/token_status.dart';
 import '../../../../core/router/app_router.dart';
+import '../../../subscription/presentation/widgets/upgrade_required_dialog.dart';
 
 /// Generate Study Screen allowing users to input scripture reference or topic.
 ///
@@ -242,9 +243,13 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
   }
 
   bool _validateScriptureReference(String text) {
-    // Basic regex pattern for scripture references
-    final scripturePattern =
-        RegExp(r'^[1-3]?\s*[a-zA-Z]+\s+\d+(?::\d+(?:-\d+)?)?$');
+    // Unicode-aware regex pattern for scripture references
+    // Uses [\p{L}\p{M}]+ to match letters AND combining marks
+    // (required for Malayalam, Hindi, and other Indic scripts)
+    final scripturePattern = RegExp(
+      r'^[1-3]?\s*[\p{L}\p{M}]+\s+\d+(?::\d+(?:-\d+)?)?$',
+      unicode: true,
+    );
     return scripturePattern.hasMatch(text);
   }
 
@@ -917,7 +922,7 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          onTap: () => GoRouter.of(context).goToVoiceConversation(),
+          onTap: () => _handleVoiceBuddyTap(context),
           borderRadius: BorderRadius.circular(20),
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
@@ -1022,6 +1027,32 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
         ),
       ),
     );
+  }
+
+  /// Handles tap on Voice Buddy button - checks plan and shows upgrade dialog for free users
+  void _handleVoiceBuddyTap(BuildContext context) {
+    // Block access until token status is loaded
+    if (_currentTokenStatus == null) {
+      // Token status not loaded yet - trigger refresh and wait
+      context.read<TokenBloc>().add(const GetTokenStatus());
+      return;
+    }
+
+    // Check if user is on free plan
+    if (_currentTokenStatus!.userPlan == UserPlan.free) {
+      // Show upgrade required dialog
+      UpgradeRequiredDialog.show(
+        context,
+        featureName: 'AI Voice Discipler',
+        featureIcon: Icons.mic_rounded,
+        featureDescription:
+            'Have voice conversations with your AI Discipler to discuss scripture, ask questions, and deepen your understanding of the Bible.',
+      );
+      return;
+    }
+
+    // User is on Standard or Premium plan - proceed to Voice Buddy
+    GoRouter.of(context).goToVoiceConversation();
   }
 
   /// Builds the View Saved Guides button with modern styling
