@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/extensions/translation_extension.dart';
+import '../../../../core/i18n/translation_keys.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/router/app_routes.dart';
 
@@ -124,7 +126,10 @@ class UpgradeRequiredDialog extends StatelessWidget {
 
             // Title
             Text(
-              'Upgrade to Unlock $featureName',
+              context.tr(
+                TranslationKeys.upgradeDialogTitle,
+                {'feature': featureName},
+              ),
               style: theme.textTheme.titleLarge?.copyWith(
                 fontWeight: FontWeight.bold,
                 color: theme.colorScheme.onSurface,
@@ -176,14 +181,15 @@ class UpgradeRequiredDialog extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'Standard Plan',
+                              context.tr(
+                                  TranslationKeys.upgradeDialogStandardPlan),
                               style: theme.textTheme.titleSmall?.copyWith(
                                 fontWeight: FontWeight.bold,
                                 color: theme.colorScheme.onSurface,
                               ),
                             ),
                             Text(
-                              'Just \u20b950/month',
+                              context.tr(TranslationKeys.upgradeDialogPrice),
                               style: theme.textTheme.bodySmall?.copyWith(
                                 color: theme.colorScheme.onSurface
                                     .withValues(alpha: 0.7),
@@ -198,19 +204,19 @@ class UpgradeRequiredDialog extends StatelessWidget {
                   _buildBenefitRow(
                     context,
                     Icons.mic_outlined,
-                    'AI Voice Discipler conversations',
+                    context.tr(TranslationKeys.upgradeDialogBenefitVoice),
                   ),
                   const SizedBox(height: 8),
                   _buildBenefitRow(
                     context,
                     Icons.psychology_outlined,
-                    'Memory verse memorization',
+                    context.tr(TranslationKeys.upgradeDialogBenefitMemory),
                   ),
                   const SizedBox(height: 8),
                   _buildBenefitRow(
                     context,
                     Icons.token_outlined,
-                    '100 tokens daily + purchase more',
+                    context.tr(TranslationKeys.upgradeDialogBenefitTokens),
                   ),
                 ],
               ),
@@ -232,9 +238,9 @@ class UpgradeRequiredDialog extends StatelessWidget {
                     ),
                     elevation: 0,
                   ),
-                  child: const Text(
-                    'Upgrade to Standard',
-                    style: TextStyle(
+                  child: Text(
+                    context.tr(TranslationKeys.upgradeDialogUpgradeButton),
+                    style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
                     ),
@@ -244,7 +250,7 @@ class UpgradeRequiredDialog extends StatelessWidget {
                 TextButton(
                   onPressed: onDismiss,
                   child: Text(
-                    'Maybe Later',
+                    context.tr(TranslationKeys.upgradeDialogMaybeLater),
                     style: TextStyle(
                       color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                       fontSize: 14,
