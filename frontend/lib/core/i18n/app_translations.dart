@@ -267,6 +267,12 @@ class AppTranslations {
       'feature_daily_verse': 'Daily Verse & Insights',
       'feature_daily_verse_subtitle':
           'Start each day with inspiring scripture and instant study guides',
+      'feature_voice_discipler': 'Voice Discipler',
+      'feature_voice_discipler_subtitle':
+          'Talk with your AI Bible study companion',
+      'feature_memory_verse': 'Memory Verses',
+      'feature_memory_verse_subtitle':
+          'Memorize Scripture with spaced repetition',
       'privacy_policy':
           'By continuing, you agree to our Terms of Service and Privacy Policy',
       'continue_with_email': 'Continue with Email',
@@ -1492,6 +1498,11 @@ class AppTranslations {
       'feature_daily_verse': 'दैनिक वचन और अंतर्दृष्टि',
       'feature_daily_verse_subtitle':
           'प्रेरणादायक शास्त्र और त्वरित अध्ययन गाइड के साथ हर दिन शुरू करें',
+      'feature_voice_discipler': 'वॉइस डिसाइपलर',
+      'feature_voice_discipler_subtitle':
+          'अपने AI बाइबिल अध्ययन साथी से बात करें',
+      'feature_memory_verse': 'स्मृति वचन',
+      'feature_memory_verse_subtitle': 'स्पेस्ड रिपिटीशन से वचन याद करें',
       'privacy_policy':
           'जारी रखते हुए, आप हमारी सेवा की शर्तों और गोपनीयता नीति से सहमत हैं',
       'continue_with_email': 'ईमेल से जारी रखें',
@@ -2716,6 +2727,12 @@ class AppTranslations {
       'feature_daily_verse': 'ദൈനിക വചനവും ഉൾക്കാഴ്ചകളും',
       'feature_daily_verse_subtitle':
           'പ്രചോദനാത്മക വചനങ്ങളും പെട്ടെന്നുള്ള പഠന ഗൈഡുകളും ഉപയോഗിച്ച് ഓരോ ദിവസവും ആരംഭിക്കുക',
+      'feature_voice_discipler': 'വോയ്‌സ് ഡിസൈപ്ലർ',
+      'feature_voice_discipler_subtitle':
+          'നിങ്ങളുടെ AI ബൈബിൾ പഠന സഹായിയുമായി സംസാരിക്കുക',
+      'feature_memory_verse': 'മെമ്മറി വേഴ്‌സ്',
+      'feature_memory_verse_subtitle':
+          'സ്‌പേസ്ഡ് റിപ്പീറ്റേഷൻ ഉപയോഗിച്ച് വചനങ്ങൾ മനഃപാഠമാക്കുക',
       'privacy_policy':
           'തുടരുമ്പോൾ, നിങ്ങൾ ഞങ്ങളുടെ സേവന നിബന്ധനകളും സ്വകാര്യതാ നീതിയുമായി സംമതിക്കുന്നു',
       'continue_with_email': 'ഇമെയിൽ ഉപയോഗിച്ച് തുടരുക',

@@ -224,6 +224,12 @@ class TranslationKeys {
   static const loginFeatureDailyVerse = 'login.feature_daily_verse';
   static const loginFeatureDailyVerseSubtitle =
       'login.feature_daily_verse_subtitle';
+  static const loginFeatureVoiceDiscipler = 'login.feature_voice_discipler';
+  static const loginFeatureVoiceDisciplerSubtitle =
+      'login.feature_voice_discipler_subtitle';
+  static const loginFeatureMemoryVerse = 'login.feature_memory_verse';
+  static const loginFeatureMemoryVerseSubtitle =
+      'login.feature_memory_verse_subtitle';
   static const loginPrivacyPolicy = 'login.privacy_policy';
   static const loginContinueWithEmail = 'login.continue_with_email';
 
