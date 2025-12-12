@@ -25,6 +25,8 @@ class AppTranslations {
         'share': 'Share',
         'copy': 'Copy',
         'sign_in': 'Sign In',
+        'generating_pdf': 'Generating PDF...',
+        'pdf_wait_message': 'This may take a few seconds',
       },
       'tts': {
         'listen': 'Listen',
@@ -1266,6 +1268,8 @@ class AppTranslations {
         'share': 'शेयर करें',
         'copy': 'कॉपी करें',
         'sign_in': 'साइन इन करें',
+        'generating_pdf': 'PDF बना रहे हैं...',
+        'pdf_wait_message': 'कुछ सेकंड लग सकते हैं',
       },
       'tts': {
         'listen': 'सुनें',
@@ -2493,6 +2497,8 @@ class AppTranslations {
         'share': 'ഷെയർ ചെയ്യൂ',
         'copy': 'കോപ്പി ചെയ്യൂ',
         'sign_in': 'സൈൻ ഇൻ ചെയ്യൂ',
+        'generating_pdf': 'PDF ഉണ്ടാക്കുന്നു...',
+        'pdf_wait_message': 'കുറച്ച് സെക്കൻഡ് എടുക്കും',
       },
       'tts': {
         'listen': 'കേൾക്കുക',
