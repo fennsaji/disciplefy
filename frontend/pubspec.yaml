@@ -80,6 +80,11 @@ dependencies:
   audioplayers: ^6.1.0
   web_socket_channel: ^3.0.1
 
+  # PDF Export
+  pdf: ^3.11.1
+  printing: ^5.13.4
+  path_provider: ^2.1.5
+
   # Development
   flutter_lints: ^6.0.0
 
