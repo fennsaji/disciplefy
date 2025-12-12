@@ -89,7 +89,7 @@ class AppConstants {
   static const bool ENABLE_OFFLINE_MODE = true;
   static const bool ENABLE_DARK_THEME = true;
 
-  // Jeff Reed Methodology
+  //  Methodology
   static const List<String> JEFF_REED_STEPS = [
     'Observation',
     'Interpretation',

@@ -230,7 +230,7 @@ core app infrastructure.
 
 - Privacy issues with shared content
 
-### **🕸 Version 2.0 -- Jeff Reed Study Flow (Dec 6 -- Jan 2)**
+### **🕸 Version 2.0 --  Study Flow (Dec 6 -- Jan 2)**
 
 #### **🌀 Sprint 10: Dec 6--Dec 19**
 

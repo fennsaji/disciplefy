@@ -106,7 +106,7 @@
 | **Missing Auth** | Anonymous | Default | 401 | Error: AU-E-001 | No DB access |
 | **Database Slow** | Authenticated | Default | 200 | Warning: DB-W-003 | >3s response |
 
-### **Jeff Reed Topics - GET /api/topics/jeffreed**
+### ** Topics - GET /api/topics/jeffreed**
 
 | **Test Scenario** | **Auth Type** | **Query Params** | **Expected Status** | **Expected Response** | **Caching** |
 |-------------------|---------------|------------------|--------------------|--------------------|-------------|

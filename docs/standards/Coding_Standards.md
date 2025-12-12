@@ -310,7 +310,7 @@ class BadPage extends StatelessWidget {
 ```dart
 /// Generates a comprehensive Bible study guide for a given verse or passage.
 /// 
-/// This use case implements the Jeff Reed methodology for biblical study,
+/// This use case implements the  methodology for biblical study,
 /// ensuring theological accuracy and educational value.
 /// 
 /// Throws [ServerException] when the API is unavailable.

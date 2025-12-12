@@ -1,8 +1,8 @@
-# **🗓 Sprint Task Breakdown -- Version 2.0 (Jeff Reed Study Flow)**
+# **🗓 Sprint Task Breakdown -- Version 2.0 ( Study Flow)**
 
 **Timeline:** Dec 6 -- Jan 2\
 **Goal:** Guide users through a repeatable 4-step Bible study method
-(Jeff Reed model) with topic selection, session tracking, journaling,
+( model) with topic selection, session tracking, journaling,
 and guided interaction.
 
 ## **🌀 Sprint 10: Dec 6--Dec 19**
@@ -28,9 +28,9 @@ flow UI
   static fallback, allow Bible version setting later)
 
 - Implement Step 2: **AI Study Guide**, reuse existing LLM integration
-  with Jeff Reed prompt schema
+  with  prompt schema
 
-- Add localization keys for all Jeff Reed UI (EN/HI/ML)
+- Add localization keys for all  UI (EN/HI/ML)
 
 - Fallback handling: show offline/stub content if API fails
 
@@ -75,7 +75,7 @@ flow UI
 
 ### **✅ Deliverables:**
 
-- Topics screen integrated with Jeff Reed session flow
+- Topics screen integrated with  session flow
 
 - Smooth multi-step experience with resume support
 

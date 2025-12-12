@@ -39,7 +39,7 @@ class AppLocalizations {
       // Onboarding
       'onboarding_welcome_title': 'Welcome to Disciplefy',
       'onboarding_welcome_subtitle':
-          'AI-powered Bible study guides following Jeff Reed methodology',
+          'AI-powered Bible study guides following  methodology',
       'onboarding_language_title': 'Choose Your Language',
       'onboarding_language_subtitle':
           'Select your preferred language for the app',
