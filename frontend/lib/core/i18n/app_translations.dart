@@ -10,6 +10,7 @@ class AppTranslations {
 
   static const Map<String, dynamic> _englishTranslations = {
     'study_guide': {
+      'page_title': 'Study Guide',
       'sections': {
         'summary': 'Summary',
         'interpretation': 'Interpretation',
@@ -1253,6 +1254,7 @@ class AppTranslations {
 
   static const Map<String, dynamic> _hindiTranslations = {
     'study_guide': {
+      'page_title': 'स्टडी गाइड',
       'sections': {
         'summary': 'सारांश',
         'interpretation': 'व्याख्या',
@@ -2482,6 +2484,7 @@ class AppTranslations {
 
   static const Map<String, dynamic> _malayalamTranslations = {
     'study_guide': {
+      'page_title': 'സ്റ്റഡി ഗൈഡ്',
       'sections': {
         'summary': 'സംഗ്രഹം',
         'interpretation': 'വ്യാഖ്യാനം',

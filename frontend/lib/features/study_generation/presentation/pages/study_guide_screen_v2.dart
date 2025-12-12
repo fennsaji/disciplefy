@@ -726,7 +726,7 @@ class _StudyGuideScreenV2ContentState
           tooltip: 'Go back',
         ),
         title: Text(
-          _getDisplayTitle(),
+          context.tr('study_guide.page_title'),
           style: AppFonts.poppins(
             fontSize: 20,
             fontWeight: FontWeight.w600,
@@ -926,6 +926,11 @@ class _StudyGuideScreenV2ContentState
               children: [
                 SizedBox(height: isLargeScreen ? 24 : 16),
 
+                // Topic Title
+                _buildTopicTitle(),
+
+                SizedBox(height: isLargeScreen ? 24 : 20),
+
                 // Study Guide Content
                 _buildStudyContent(),
 
@@ -967,6 +972,54 @@ class _StudyGuideScreenV2ContentState
         // Bottom Action Buttons
         _buildBottomActions(),
       ],
+    );
+  }
+
+  /// Builds the topic title section displayed below the AppBar
+  Widget _buildTopicTitle() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            Theme.of(context).colorScheme.primary.withOpacity(0.1),
+            Theme.of(context).colorScheme.secondary.withOpacity(0.05),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: Theme.of(context).colorScheme.primary.withOpacity(0.2),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            _currentStudyGuide?.inputType == 'scripture'
+                ? context.tr('generate_study.scripture_mode')
+                : context.tr('generate_study.topic_mode'),
+            style: AppFonts.inter(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: Theme.of(context).colorScheme.primary.withOpacity(0.7),
+              letterSpacing: 1.2,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            _getDisplayTitle(),
+            style: AppFonts.poppins(
+              fontSize: 22,
+              fontWeight: FontWeight.bold,
+              color: Theme.of(context).colorScheme.onBackground,
+              height: 1.3,
+            ),
+          ),
+        ],
+      ),
     );
   }
 
