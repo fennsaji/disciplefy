@@ -274,7 +274,7 @@ WHERE sg.user_id = '[USER-ID]';
 - Creating your first study guide
 
 **Features & Functionality:**
-- Jeff Reed methodology explanation
+-  methodology explanation
 - Study generation process
 - Saving and organizing studies
 - Sharing study guides
@@ -614,7 +614,7 @@ support@disciplefy.app
 
 **Week 1: Foundation Knowledge**
 - Disciplefy product overview and features
-- Jeff Reed methodology understanding
+-  methodology understanding
 - Basic troubleshooting techniques
 - Customer communication skills
 - Support system navigation

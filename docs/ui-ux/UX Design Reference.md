@@ -49,7 +49,7 @@
 
 3.  Feedback on AI-generated guides
 
-### **v2.0 -- Jeff Reed 4-Step Flow**
+### **v2.0 --  4-Step Flow**
 
 1.  **Step 1:** Study Scripture (verse reading w/ context)
 

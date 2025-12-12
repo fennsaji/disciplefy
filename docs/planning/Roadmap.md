@@ -62,7 +62,7 @@
 
 ---
 
-## 🕒 **Version 2.0 – Jeff Reed Study Flow**
+## 🕒 **Version 2.0 –  Study Flow**
 
 **Goal:** Guide users through a multi-step inductive Bible study method.
 
@@ -109,7 +109,7 @@
 
 | **Focus Area**      | **Strategy**                                                |
 | ------------------- | ----------------------------------------------------------- |
-| ✝️ Spiritual Depth  | Jeff Reed method, daily study, contextual reflection        |
+| ✝️ Spiritual Depth  |  method, daily study, contextual reflection        |
 | 🧠 LLM Quality      | Sermon-trained model + feedback loop                        |
 | 🌍 Language Reach   | Hindi, Malayalam, English UI + content                      |
 | 🤝 Fellowship       | Study guide sharing, feedback, discussion starter           |

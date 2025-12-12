@@ -146,7 +146,7 @@ Authorization: Bearer YOUR_ACCESS_TOKEN (optional)
 
 **Endpoint**: `GET /functions/v1/topics-recommended`
 
-**Description**: Retrieves curated Bible study topics following Jeff Reed's methodology.
+**Description**: Retrieves curated Bible study topics following.
 
 **Authentication**: Required (Bearer token from Supabase Auth or anonymous token)
 
@@ -338,7 +338,6 @@ Authorization: Bearer YOUR_ACCESS_TOKEN (optional)
 
 **Field Definitions**:
 - `study_guide_id`: ID of the study guide being reviewed (if applicable)
-- `jeff_reed_session_id`: ID of the Jeff Reed session being reviewed (if applicable)
 - `was_helpful`: Whether the content was helpful to the user
 - `message`: Free-form feedback text
 - `category`: Feedback category ("general", "content", "usability", "technical", "suggestion")

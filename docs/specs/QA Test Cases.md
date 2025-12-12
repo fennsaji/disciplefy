@@ -102,9 +102,9 @@ shown \|
 \| 2 \| Fill form, attach image \| Sent to backend, confirmation shown
 \|
 
-## **🔍 Test Cases for Version 2.0 (Jeff Reed Study)**
+## **🔍 Test Cases for Version 2.0 ( Study)**
 
-### **🔹 TC-014: Select Jeff Reed Topic**
+### **🔹 TC-014: Select  Topic**
 
 \| Step \| Tap \"Gospel\" \| 4-step layout appears \|
 

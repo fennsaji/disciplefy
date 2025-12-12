@@ -1,6 +1,6 @@
 # 📱 Disciplefy Bible Study - Frontend
 
-AI-powered Bible study guide application built with Flutter, following Jeff Reed methodology for structured Bible study.
+AI-powered Bible study guide application built with Flutter, following  methodology for structured Bible study.
 
 ## 🎯 Sprint 1 Status - ✅ COMPLETE
 

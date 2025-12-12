@@ -14,7 +14,7 @@
         },
         {
             "_id": "topics-folder", 
-            "name": "Jeff Reed Topics",
+            "name": "Topics",
             "containerId": "",
             "created": "2025-07-08T12:56:45.038Z",
             "sortNum": 20000
@@ -123,7 +123,7 @@
             "_id": "get-all-topics",
             "colId": "disciplefy-bible-study-api",
             "containerId": "topics-folder",
-            "name": "Get All Jeff Reed Topics", 
+            "name": "Get All Topics", 
             "url": "http://127.0.0.1:54321/functions/v1/topics-jeffreed",
             "method": "GET",
             "sortNum": 40000,

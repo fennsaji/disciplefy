@@ -73,7 +73,7 @@ CREATE TABLE public.user_profiles (
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- Jeff Reed Study Sessions
+--  Study Sessions
 CREATE TABLE public.jeff_reed_sessions (
   id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
   user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
@@ -357,7 +357,7 @@ export class LLMService {
     };
 
     return `
-As a Biblical scholar, create a study guide for the ${request.jeff_reed_step} step of the Jeff Reed methodology.
+As a Biblical scholar, create a study guide for the ${request.jeff_reed_step} step of the  methodology.
 
 Scripture: ${request.input_value}
 Step: ${request.jeff_reed_step}
