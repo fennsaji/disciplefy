@@ -552,17 +552,17 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
           const SizedBox(height: 12),
           _FeatureItem(
-            icon: Icons.school,
-            title: context.tr(TranslationKeys.loginFeatureStructuredLearning),
-            subtitle: context
-                .tr(TranslationKeys.loginFeatureStructuredLearningSubtitle),
+            icon: Icons.mic,
+            title: context.tr(TranslationKeys.loginFeatureVoiceDiscipler),
+            subtitle:
+                context.tr(TranslationKeys.loginFeatureVoiceDisciplerSubtitle),
           ),
           const SizedBox(height: 12),
           _FeatureItem(
-            icon: Icons.language,
-            title: context.tr(TranslationKeys.loginFeatureMultiLanguage),
+            icon: Icons.psychology,
+            title: context.tr(TranslationKeys.loginFeatureMemoryVerse),
             subtitle:
-                context.tr(TranslationKeys.loginFeatureMultiLanguageSubtitle),
+                context.tr(TranslationKeys.loginFeatureMemoryVerseSubtitle),
           ),
         ],
       ),
