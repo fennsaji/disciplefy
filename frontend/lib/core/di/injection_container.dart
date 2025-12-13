@@ -101,6 +101,7 @@ import '../../features/study_topics/data/repositories/leaderboard_repository_imp
 import '../../features/study_topics/domain/repositories/leaderboard_repository.dart';
 import '../../features/study_topics/presentation/bloc/leaderboard_bloc.dart';
 import '../services/theme_service.dart';
+import '../services/locale_service.dart';
 import '../services/auth_state_provider.dart';
 import '../services/language_preference_service.dart';
 import '../services/language_cache_coordinator.dart';
@@ -213,6 +214,9 @@ Future<void> initializeDependencies() async {
   // Register ThemeService
   sl.registerLazySingleton(() => ThemeService());
 
+  // Register LocaleService (requires LanguagePreferenceService - registered later)
+  // Note: LocaleService is registered after LanguagePreferenceService below
+
   // Register HttpService
   sl.registerLazySingleton(() => HttpService(httpClient: sl()));
 
@@ -246,6 +250,11 @@ Future<void> initializeDependencies() async {
         authStateProvider: sl(),
         userProfileService: sl(),
         cacheCoordinator: sl(),
+      ));
+
+  // Register LocaleService (for MaterialApp locale binding)
+  sl.registerLazySingleton(() => LocaleService(
+        languagePreferenceService: sl(),
       ));
 
   // Register Translation Service

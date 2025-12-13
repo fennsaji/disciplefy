@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/constants/app_fonts.dart';
+import '../../../../core/localization/app_localizations.dart';
 import '../../domain/entities/achievement.dart';
 import 'achievement_badge.dart';
 
@@ -51,7 +52,7 @@ class AchievementsGrid extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  'Achievements',
+                  AppLocalizations.of(context)!.progressAchievements,
                   style: AppFonts.poppins(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
@@ -149,7 +150,7 @@ class AchievementsGrid extends StatelessWidget {
         Padding(
           padding: const EdgeInsets.only(top: 16, bottom: 8),
           child: Text(
-            _getCategoryTitle(category),
+            _getCategoryTitle(context, category),
             style: AppFonts.inter(
               fontSize: 13,
               fontWeight: FontWeight.w600,
@@ -179,18 +180,19 @@ class AchievementsGrid extends StatelessWidget {
     return widgets;
   }
 
-  String _getCategoryTitle(AchievementCategory category) {
+  String _getCategoryTitle(BuildContext context, AchievementCategory category) {
+    final l10n = AppLocalizations.of(context)!;
     switch (category) {
       case AchievementCategory.study:
-        return '📚 Study Guides';
+        return '📚 ${l10n.achievementCategoryStudy}';
       case AchievementCategory.streak:
-        return '🔥 Study Streaks';
+        return '🔥 ${l10n.achievementCategoryStreak}';
       case AchievementCategory.memory:
-        return '🧠 Memory Verses';
+        return '🧠 ${l10n.achievementCategoryMemory}';
       case AchievementCategory.voice:
-        return '🎙️ Voice Discipler';
+        return '🎙️ ${l10n.achievementCategoryVoice}';
       case AchievementCategory.saved:
-        return '📕 Saved Guides';
+        return '📕 ${l10n.achievementCategorySaved}';
     }
   }
 
