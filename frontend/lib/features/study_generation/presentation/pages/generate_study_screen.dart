@@ -268,8 +268,9 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
     // Unicode-aware regex pattern for scripture references
     // Uses [\p{L}\p{M}]+ to match letters AND combining marks
     // (required for Malayalam, Hindi, and other Indic scripts)
+    // Allows multi-word book names like "भजन संहिता" or "Song of Solomon"
     final scripturePattern = RegExp(
-      r'^[1-3]?\s*[\p{L}\p{M}]+\s+\d+(?::\d+(?:-\d+)?)?$',
+      r'^[1-3]?\s*[\p{L}\p{M}]+(?:\s+[\p{L}\p{M}]+)*\s+\d+(?::\d+(?:-\d+)?)?$',
       unicode: true,
     );
     return scripturePattern.hasMatch(text);
