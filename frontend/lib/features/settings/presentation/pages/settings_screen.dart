@@ -184,6 +184,24 @@ class _SettingsScreenContent extends StatelessWidget {
                     _buildUserProfileTile(context, authProvider),
                     if (!authProvider.isAnonymous) ...[
                       _buildDivider(),
+                      // My Progress - gamification stats dashboard
+                      _buildSettingsTile(
+                        context: context,
+                        icon: Icons.emoji_events_outlined,
+                        title: context.tr(TranslationKeys.gamificationTitle),
+                        subtitle:
+                            context.tr(TranslationKeys.gamificationSubtitle),
+                        trailing: Icon(
+                          Icons.arrow_forward_ios,
+                          size: 16,
+                          color: Theme.of(context)
+                              .colorScheme
+                              .onSurface
+                              .withOpacity(0.6),
+                        ),
+                        onTap: () => context.push(AppRoutes.statsDashboard),
+                      ),
+                      _buildDivider(),
                       // My Plan - unified plan and subscription management
                       _buildSettingsTile(
                         context: context,

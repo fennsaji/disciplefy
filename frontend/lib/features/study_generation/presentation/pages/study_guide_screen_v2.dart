@@ -30,6 +30,8 @@ import '../widgets/tts_control_button.dart';
 import '../widgets/tts_control_sheet.dart';
 import '../../data/services/study_guide_tts_service.dart';
 import '../../data/services/study_guide_pdf_service.dart';
+import '../../../gamification/presentation/bloc/gamification_bloc.dart';
+import '../../../gamification/presentation/bloc/gamification_event.dart';
 
 /// Study Guide Screen V2 - Dynamically generates study guides from query parameters
 ///
@@ -654,6 +656,8 @@ class _StudyGuideScreenV2ContentState
             );
             if (state.guideSaved) {
               _setupAutoSave();
+              // Check saved achievements when guide is saved
+              sl<GamificationBloc>().add(const CheckSavedAchievements());
             }
           } else if (state is StudyEnhancedSaveFailure) {
             _handleEnhancedSaveError(state);
@@ -701,6 +705,10 @@ class _StudyGuideScreenV2ContentState
 
             // Track topic progress completion if we have a topic ID
             _completeTopicProgress();
+
+            // Update study streak and check achievements
+            sl<GamificationBloc>().add(const UpdateStudyStreak());
+            sl<GamificationBloc>().add(const CheckStudyAchievements());
 
             _showRecommendedTopicNotificationPrompt();
           }

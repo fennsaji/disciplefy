@@ -49,6 +49,9 @@ class AppRoutes {
   // Leaderboard
   static const String leaderboard = '/leaderboard';
 
+  // Gamification
+  static const String statsDashboard = '/my-progress';
+
   // Public Pages
   static const String pricing = '/pricing';
 }

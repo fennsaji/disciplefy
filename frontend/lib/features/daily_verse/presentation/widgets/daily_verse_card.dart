@@ -20,6 +20,8 @@ import '../../../subscription/presentation/widgets/upgrade_required_dialog.dart'
 import '../bloc/daily_verse_bloc.dart';
 import '../bloc/daily_verse_event.dart';
 import '../bloc/daily_verse_state.dart';
+import '../../../gamification/presentation/bloc/gamification_bloc.dart';
+import '../../../gamification/presentation/bloc/gamification_event.dart';
 
 /// Daily verse card widget for home screen
 class DailyVerseCard extends StatelessWidget {
@@ -654,6 +656,8 @@ class DailyVerseCard extends StatelessWidget {
     final subscription = memoryVerseBloc.stream.listen((memoryState) {
       if (memoryState is VerseAdded) {
         _showAddedSnackBar(context);
+        // Check memory achievements when verse is added
+        sl<GamificationBloc>().add(const CheckMemoryAchievements());
       } else if (memoryState is MemoryVerseError) {
         _showErrorSnackBar(context, memoryState.message);
       } else if (memoryState is OperationQueued) {
