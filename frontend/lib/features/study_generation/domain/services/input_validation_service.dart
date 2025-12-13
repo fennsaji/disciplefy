@@ -22,11 +22,14 @@ class InputValidationService {
   /// - Genesis 1:1-2:3
   /// - सभोपदेशक 3:1 (Hindi)
   /// - സങ്കീർത്തനം 23:1 (Malayalam)
+  /// - भजन संहिता 23:1 (Hindi - multi-word book names)
+  /// - Song of Solomon 1:1 (English - multi-word book names)
   ///
   /// Uses Unicode letter + mark matching ([\p{L}\p{M}]) to support all languages
   /// including scripts with combining characters (Malayalam, Hindi, etc.).
+  /// Allows spaces within book names for multi-word book names.
   static final RegExp _scripturePattern = RegExp(
-    r'^[1-3]?\s*[\p{L}\p{M}]+\s+\d+(?::\d+(?:-\d+)?)?$',
+    r'^[1-3]?\s*[\p{L}\p{M}]+(?:\s+[\p{L}\p{M}]+)*\s+\d+(?::\d+(?:-\d+)?)?$',
     unicode: true,
   );
 
