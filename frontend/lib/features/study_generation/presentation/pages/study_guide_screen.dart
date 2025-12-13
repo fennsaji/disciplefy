@@ -25,6 +25,8 @@ import '../widgets/tts_control_button.dart';
 import '../widgets/tts_control_sheet.dart';
 import '../../data/services/study_guide_tts_service.dart';
 import '../../data/services/study_guide_pdf_service.dart';
+import '../../../gamification/presentation/bloc/gamification_bloc.dart';
+import '../../../gamification/presentation/bloc/gamification_event.dart';
 
 /// Study Guide Screen displaying generated content with sections and user interactions.
 ///
@@ -428,6 +430,10 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
                   : Theme.of(context).colorScheme.primary,
               icon: state.saved ? Icons.check_circle : Icons.bookmark_remove,
             );
+            // Check saved achievements when guide is saved
+            if (state.saved) {
+              sl<GamificationBloc>().add(const CheckSavedAchievements());
+            }
           } else if (state is StudySaveFailure) {
             _handleSaveError(state.failure);
           } else if (state is StudyAuthenticationRequired) {
@@ -449,6 +455,8 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
             // Setup auto-save if guide was saved
             if (state.guideSaved) {
               _setupAutoSave();
+              // Check saved achievements when guide is saved
+              sl<GamificationBloc>().add(const CheckSavedAchievements());
             }
           } else if (state is StudyEnhancedSaveFailure) {
             _handleEnhancedSaveError(state);
@@ -496,10 +504,14 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
               );
             }
           }
-          // Handle study completion - invalidate cache
+          // Handle study completion - invalidate cache and update gamification
           else if (state is StudyCompletionSuccess) {
             // Invalidate the "For You" cache so completed topics don't show again
             sl<RecommendedGuidesService>().clearForYouCache();
+
+            // Update study streak and check achievements
+            sl<GamificationBloc>().add(const UpdateStudyStreak());
+            sl<GamificationBloc>().add(const CheckStudyAchievements());
           }
         },
         child: Scaffold(

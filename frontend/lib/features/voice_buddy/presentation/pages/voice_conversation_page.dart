@@ -12,6 +12,8 @@ import '../bloc/voice_conversation_state.dart';
 import '../widgets/conversation_bubble.dart';
 import '../widgets/language_selector.dart' show VoiceLanguage;
 import '../widgets/voice_button.dart';
+import '../../../gamification/presentation/bloc/gamification_bloc.dart';
+import '../../../gamification/presentation/bloc/gamification_event.dart';
 
 /// Main page for voice conversations with the AI Discipler.
 class VoiceConversationPage extends StatelessWidget {
@@ -122,6 +124,8 @@ class _VoiceConversationViewState extends State<_VoiceConversationView> {
             feedbackText: feedback,
             wasHelpful: helpful,
           ));
+          // Check voice achievements when session ends
+          sl<GamificationBloc>().add(const CheckVoiceAchievements());
           Navigator.of(dialogContext).pop();
         },
       ),
