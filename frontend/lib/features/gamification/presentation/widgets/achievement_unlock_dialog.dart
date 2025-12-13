@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/constants/app_fonts.dart';
+import '../../../../core/localization/app_localizations.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../domain/entities/achievement.dart';
 
@@ -92,6 +93,7 @@ class _AchievementUnlockDialogState extends State<AchievementUnlockDialog>
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context)!;
 
     return Center(
       child: Material(
@@ -115,7 +117,7 @@ class _AchievementUnlockDialogState extends State<AchievementUnlockDialog>
             children: [
               // Celebration text
               Text(
-                '🎉 Achievement Unlocked! 🎉',
+                l10n.progressAchievementUnlocked,
                 style: AppFonts.poppins(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
@@ -212,7 +214,7 @@ class _AchievementUnlockDialogState extends State<AchievementUnlockDialog>
                 width: double.infinity,
                 child: ElevatedButton(
                   onPressed: () {
-                    Navigator.of(context).pop();
+                    // Just call onDismiss - the caller is responsible for popping
                     widget.onDismiss();
                   },
                   style: ElevatedButton.styleFrom(
@@ -224,7 +226,7 @@ class _AchievementUnlockDialogState extends State<AchievementUnlockDialog>
                     ),
                   ),
                   child: Text(
-                    'Awesome!',
+                    l10n.progressAwesome,
                     style: AppFonts.inter(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,

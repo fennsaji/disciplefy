@@ -3,6 +3,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/constants/app_fonts.dart';
+import '../../../../core/localization/app_localizations.dart';
+import '../../../../core/router/app_router.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/di/injection_container.dart';
 import '../../../../core/services/auth_state_provider.dart';
@@ -71,7 +73,7 @@ class _StatsDashboardPageState extends State<StatsDashboardPage> {
           ),
         ),
         title: Text(
-          'My Progress',
+          AppLocalizations.of(context)!.progressTitle,
           style: AppFonts.inter(
             fontSize: 20,
             fontWeight: FontWeight.w700,
@@ -269,7 +271,7 @@ class _StatsDashboardPageState extends State<StatsDashboardPage> {
                 const SizedBox(height: 4),
                 if (state.stats != null)
                   Text(
-                    '${state.stats!.totalXp} XP total',
+                    '${state.stats!.totalXp} ${AppLocalizations.of(context)!.progressXpTotal}',
                     style: AppFonts.inter(
                       fontSize: 13,
                       color: theme.colorScheme.onSurface.withOpacity(0.6),
@@ -278,34 +280,38 @@ class _StatsDashboardPageState extends State<StatsDashboardPage> {
               ],
             ),
           ),
-          // Leaderboard rank badge
+          // Leaderboard rank badge (tappable)
           if (state.stats?.isOnLeaderboard == true) ...[
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              decoration: BoxDecoration(
-                color: Colors.amber.withOpacity(0.2),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: Colors.amber.withOpacity(0.5),
+            GestureDetector(
+              onTap: () => AppRouter.router.goToLeaderboard(),
+              child: Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: Colors.amber.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: Colors.amber.withOpacity(0.5),
+                  ),
                 ),
-              ),
-              child: Column(
-                children: [
-                  Icon(
-                    Icons.emoji_events,
-                    color: Colors.amber[700],
-                    size: 20,
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    '#${state.stats!.leaderboardRank}',
-                    style: AppFonts.poppins(
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.amber[800],
+                child: Column(
+                  children: [
+                    Icon(
+                      Icons.emoji_events,
+                      color: Colors.amber[700],
+                      size: 20,
                     ),
-                  ),
-                ],
+                    const SizedBox(height: 2),
+                    Text(
+                      '#${state.stats!.leaderboardRank}',
+                      style: AppFonts.poppins(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.amber[800],
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ],
@@ -387,7 +393,7 @@ class _StatsDashboardPageState extends State<StatsDashboardPage> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Statistics',
+            AppLocalizations.of(context)!.progressStatistics,
             style: AppFonts.poppins(
               fontSize: 16,
               fontWeight: FontWeight.w600,
@@ -402,7 +408,7 @@ class _StatsDashboardPageState extends State<StatsDashboardPage> {
                 child: _StatCard(
                   icon: Icons.menu_book,
                   iconColor: AppTheme.primaryColor,
-                  label: 'Studies',
+                  label: AppLocalizations.of(context)!.progressStudies,
                   value: '${stats.totalStudiesCompleted}',
                 ),
               ),
@@ -411,7 +417,7 @@ class _StatsDashboardPageState extends State<StatsDashboardPage> {
                 child: _StatCard(
                   icon: Icons.access_time,
                   iconColor: Colors.blue,
-                  label: 'Time Spent',
+                  label: AppLocalizations.of(context)!.progressTimeSpent,
                   value: stats.formattedTimeSpent,
                 ),
               ),
@@ -424,7 +430,7 @@ class _StatsDashboardPageState extends State<StatsDashboardPage> {
                 child: _StatCard(
                   icon: Icons.psychology,
                   iconColor: Colors.purple,
-                  label: 'Memory Verses',
+                  label: AppLocalizations.of(context)!.progressMemoryVerses,
                   value: '${stats.totalMemoryVerses}',
                 ),
               ),
@@ -433,7 +439,7 @@ class _StatsDashboardPageState extends State<StatsDashboardPage> {
                 child: _StatCard(
                   icon: Icons.mic,
                   iconColor: Colors.teal,
-                  label: 'Voice Sessions',
+                  label: AppLocalizations.of(context)!.progressVoiceSessions,
                   value: '${stats.totalVoiceSessions}',
                 ),
               ),
@@ -446,7 +452,7 @@ class _StatsDashboardPageState extends State<StatsDashboardPage> {
                 child: _StatCard(
                   icon: Icons.bookmark,
                   iconColor: Colors.orange,
-                  label: 'Saved Guides',
+                  label: AppLocalizations.of(context)!.progressSavedGuides,
                   value: '${stats.totalSavedGuides}',
                 ),
               ),
@@ -455,11 +461,41 @@ class _StatsDashboardPageState extends State<StatsDashboardPage> {
                 child: _StatCard(
                   icon: Icons.calendar_today,
                   iconColor: Colors.green,
-                  label: 'Study Days',
+                  label: AppLocalizations.of(context)!.progressStudyDays,
                   value: '${stats.totalStudyDays}',
                 ),
               ),
             ],
+          ),
+          const SizedBox(height: 16),
+          // View Leaderboard button
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: () => AppRouter.router.goToLeaderboard(),
+              icon: Icon(
+                Icons.leaderboard,
+                size: 18,
+                color: theme.colorScheme.primary,
+              ),
+              label: Text(
+                AppLocalizations.of(context)!.progressViewLeaderboard,
+                style: AppFonts.inter(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: theme.colorScheme.primary,
+                ),
+              ),
+              style: OutlinedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                side: BorderSide(
+                  color: theme.colorScheme.primary.withOpacity(0.5),
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            ),
           ),
         ],
       ),
@@ -482,7 +518,7 @@ class _StatsDashboardPageState extends State<StatsDashboardPage> {
             ),
             const SizedBox(height: 16),
             Text(
-              'Failed to load stats',
+              AppLocalizations.of(context)!.progressFailedLoad,
               style: AppFonts.poppins(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
@@ -491,7 +527,7 @@ class _StatsDashboardPageState extends State<StatsDashboardPage> {
             ),
             const SizedBox(height: 8),
             Text(
-              errorMessage ?? 'Please try again later',
+              errorMessage ?? AppLocalizations.of(context)!.progressTryAgain,
               style: AppFonts.inter(
                 fontSize: 14,
                 color: theme.colorScheme.onSurface.withOpacity(0.6),
@@ -506,7 +542,7 @@ class _StatsDashboardPageState extends State<StatsDashboardPage> {
                     .add(const LoadGamificationStats());
               },
               icon: const Icon(Icons.refresh),
-              label: const Text('Retry'),
+              label: Text(AppLocalizations.of(context)!.progressRetry),
               style: ElevatedButton.styleFrom(
                 backgroundColor: theme.colorScheme.primary,
                 foregroundColor: Colors.white,
@@ -646,7 +682,7 @@ class _StatsDashboardPageState extends State<StatsDashboardPage> {
             // Status
             if (achievement.isUnlocked && achievement.unlockedAt != null) ...[
               Text(
-                'Unlocked on ${_formatDate(achievement.unlockedAt!)}',
+                '${AppLocalizations.of(context)!.progressUnlockedOn} ${_formatDate(achievement.unlockedAt!)}',
                 style: AppFonts.inter(
                   fontSize: 12,
                   color: theme.colorScheme.onSurface.withOpacity(0.5),
@@ -670,7 +706,7 @@ class _StatsDashboardPageState extends State<StatsDashboardPage> {
                     ),
                     const SizedBox(width: 6),
                     Text(
-                      'Locked',
+                      AppLocalizations.of(context)!.progressLocked,
                       style: AppFonts.inter(
                         fontSize: 12,
                         color: theme.colorScheme.onSurface.withOpacity(0.5),

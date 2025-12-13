@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/constants/app_fonts.dart';
+import '../../../../core/localization/app_localizations.dart';
 import '../../domain/entities/achievement.dart';
 
 /// Widget to display a single achievement badge
@@ -163,7 +164,7 @@ class AchievementBadge extends StatelessWidget {
                   if (isUnlocked && achievement.unlockedAt != null) ...[
                     const SizedBox(height: 4),
                     Text(
-                      'Unlocked ${_formatDate(achievement.unlockedAt!)}',
+                      '${AppLocalizations.of(context)!.progressUnlocked} ${_formatDate(context, achievement.unlockedAt!)}',
                       style: AppFonts.inter(
                         fontSize: 11,
                         color: _getCategoryColor(achievement.category),
@@ -213,16 +214,17 @@ class AchievementBadge extends StatelessWidget {
     }
   }
 
-  String _formatDate(DateTime date) {
+  String _formatDate(BuildContext context, DateTime date) {
+    final l10n = AppLocalizations.of(context)!;
     final now = DateTime.now();
     final diff = now.difference(date);
 
     if (diff.inDays == 0) {
-      return 'today';
+      return l10n.progressToday;
     } else if (diff.inDays == 1) {
-      return 'yesterday';
+      return l10n.progressYesterday;
     } else if (diff.inDays < 7) {
-      return '${diff.inDays} days ago';
+      return '${diff.inDays} ${l10n.progressDaysAgo}';
     } else {
       return '${date.day}/${date.month}/${date.year}';
     }

@@ -190,6 +190,8 @@ class _AppShellState extends State<AppShell>
       _animController.forward();
     }
 
+    // Note: Achievement unlock dialog is handled globally in main.dart
+    // to ensure it works for ALL routes including Memory Verses outside AppShell
     return PopScope(
       canPop: false,
       onPopInvoked: (didPop) {

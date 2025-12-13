@@ -11,15 +11,56 @@ import '../datasources/gamification_remote_datasource.dart';
 class GamificationRepositoryImpl implements GamificationRepository {
   final GamificationRemoteDataSource _remoteDataSource;
 
+  /// Placeholder XP values for leaderboard (same as LeaderboardRemoteDataSource)
+  /// These give the appearance of an active community while the app grows
+  static const List<int> _placeholderXpValues = [
+    600,
+    550,
+    500,
+    450,
+    400,
+    350,
+    300,
+    300,
+    250,
+    250
+  ];
+
   GamificationRepositoryImpl({
     required GamificationRemoteDataSource remoteDataSource,
   }) : _remoteDataSource = remoteDataSource;
+
+  /// Calculate the user's rank considering placeholder accounts
+  /// This ensures consistency between the leaderboard page and My Progress page
+  int _calculateRankWithPlaceholders(int userXp) {
+    if (userXp < 200) {
+      // User not eligible for leaderboard (< 200 XP)
+      return 0;
+    }
+
+    // Count how many placeholders have more XP than the user
+    int rank = 1;
+    for (final placeholderXp in _placeholderXpValues) {
+      if (placeholderXp > userXp) {
+        rank++;
+      }
+    }
+    return rank;
+  }
 
   @override
   Future<Either<Failure, UserStats>> getUserStats(String userId) async {
     try {
       final result = await _remoteDataSource.getUserStats(userId);
-      return Right(result.toEntity());
+      final stats = result.toEntity();
+
+      // Recalculate rank considering placeholder accounts
+      // This ensures My Progress shows the same rank as the Leaderboard page
+      final adjustedRank = _calculateRankWithPlaceholders(stats.totalXp);
+
+      return Right(stats.copyWith(
+        leaderboardRank: adjustedRank > 0 ? adjustedRank : null,
+      ));
     } catch (e) {
       return Left(ServerFailure(message: 'Failed to load user stats: $e'));
     }

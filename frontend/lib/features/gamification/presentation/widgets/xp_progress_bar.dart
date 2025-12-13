@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/constants/app_fonts.dart';
+import '../../../../core/localization/app_localizations.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../domain/entities/user_level.dart';
 
@@ -97,8 +98,8 @@ class XpProgressBar extends StatelessWidget {
                 children: [
                   Text(
                     level.isMaxLevel
-                        ? 'Max Level Reached!'
-                        : '${level.xpNeededForNextLevel} XP to next level',
+                        ? AppLocalizations.of(context)!.progressMaxLevel
+                        : '${level.xpNeededForNextLevel} ${AppLocalizations.of(context)!.progressXpToNextLevel}',
                     style: AppFonts.inter(
                       fontSize: 12,
                       color: theme.colorScheme.onSurface.withOpacity(0.6),

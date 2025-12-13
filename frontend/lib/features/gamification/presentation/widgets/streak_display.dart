@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/constants/app_fonts.dart';
+import '../../../../core/localization/app_localizations.dart';
 
 /// Widget to display study and verse streaks
 class StreakDisplay extends StatelessWidget {
@@ -25,6 +26,8 @@ class StreakDisplay extends StatelessWidget {
       return _buildCompactView(theme);
     }
 
+    final l10n = AppLocalizations.of(context)!;
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -38,7 +41,7 @@ class StreakDisplay extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Streaks',
+            l10n.progressStreaks,
             style: AppFonts.poppins(
               fontSize: 16,
               fontWeight: FontWeight.w600,
@@ -51,9 +54,9 @@ class StreakDisplay extends StatelessWidget {
               Expanded(
                 child: _StreakItem(
                   icon: '🔥',
-                  label: 'Study',
+                  label: l10n.progressStudyStreak,
                   value: studyStreak,
-                  suffix: 'days',
+                  suffix: l10n.progressDays,
                   color: Colors.orange,
                 ),
               ),
@@ -61,9 +64,9 @@ class StreakDisplay extends StatelessWidget {
               Expanded(
                 child: _StreakItem(
                   icon: '📖',
-                  label: 'Verse',
+                  label: l10n.progressVerseStreak,
                   value: verseStreak,
-                  suffix: 'days',
+                  suffix: l10n.progressDays,
                   color: Colors.blue,
                 ),
               ),
@@ -80,7 +83,7 @@ class StreakDisplay extends StatelessWidget {
                 ),
                 const SizedBox(width: 6),
                 Text(
-                  'Personal Best: $longestStreak days',
+                  '${l10n.progressPersonalBest}: $longestStreak ${l10n.progressDays}',
                   style: AppFonts.inter(
                     fontSize: 13,
                     color: theme.colorScheme.onSurface.withOpacity(0.6),
