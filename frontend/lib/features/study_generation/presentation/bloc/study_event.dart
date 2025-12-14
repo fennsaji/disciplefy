@@ -213,3 +213,94 @@ class MarkStudyGuideCompleteRequested extends StudyEvent {
   @override
   List<Object?> get props => [guideId, timeSpentSeconds, scrolledToBottom];
 }
+
+// ==================== Streaming Events ====================
+
+/// Event to request streaming generation of a study guide.
+///
+/// This event uses SSE streaming for progressive section rendering,
+/// reducing perceived loading time.
+class GenerateStudyGuideStreamingRequested extends StudyEvent {
+  /// The input text (verse reference or topic).
+  final String input;
+
+  /// The type of input ('scripture', 'topic', or 'question').
+  final String inputType;
+
+  /// Optional topic description for providing additional context.
+  final String? topicDescription;
+
+  /// Language code for the study guide.
+  final String language;
+
+  const GenerateStudyGuideStreamingRequested({
+    required this.input,
+    required this.inputType,
+    this.topicDescription,
+    required this.language,
+  });
+
+  @override
+  List<Object?> get props => [input, inputType, topicDescription, language];
+}
+
+/// Internal event when a streaming section is received.
+///
+/// This event is dispatched internally when the SSE stream
+/// delivers a completed section.
+class StudyStreamSectionReceived extends StudyEvent {
+  /// The section event containing type and content.
+  final dynamic sectionEvent;
+
+  const StudyStreamSectionReceived({required this.sectionEvent});
+
+  @override
+  List<Object?> get props => [sectionEvent];
+}
+
+/// Internal event when streaming completes successfully.
+class StudyStreamCompleted extends StudyEvent {
+  /// The study guide ID from the backend.
+  final String studyGuideId;
+
+  /// Number of tokens consumed.
+  final int tokensConsumed;
+
+  /// Whether content was from cache.
+  final bool fromCache;
+
+  const StudyStreamCompleted({
+    required this.studyGuideId,
+    required this.tokensConsumed,
+    required this.fromCache,
+  });
+
+  @override
+  List<Object?> get props => [studyGuideId, tokensConsumed, fromCache];
+}
+
+/// Internal event when streaming encounters an error.
+class StudyStreamErrorOccurred extends StudyEvent {
+  /// Error code from the backend.
+  final String code;
+
+  /// Error message.
+  final String message;
+
+  /// Whether the error is retryable.
+  final bool retryable;
+
+  const StudyStreamErrorOccurred({
+    required this.code,
+    required this.message,
+    required this.retryable,
+  });
+
+  @override
+  List<Object?> get props => [code, message, retryable];
+}
+
+/// Event to cancel an ongoing streaming generation.
+class CancelStudyStreamingRequested extends StudyEvent {
+  const CancelStudyStreamingRequested();
+}

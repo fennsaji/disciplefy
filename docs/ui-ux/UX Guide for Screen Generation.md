@@ -225,7 +225,7 @@ Build feedback modal\
 
 ## **🧭 Version 2.0**
 
-### **📄 Jeff Reed Guided Study Flow:**
+### **📄  Guided Study Flow:**
 
 \"Design a 4-Step Bible Study Flow screen with:
 
@@ -256,7 +256,7 @@ Build feedback modal\
 
 - Filters: sort by scripture/topic, or by date
 
-- Completion indicators for Jeff Reed flow studies
+- Completion indicators for  flow studies
 
 - Tap to resume or view completed guide\
   Use a structured, journal-style layout that promotes continuity and
@@ -311,7 +311,7 @@ yet. Try the Daily Verse to begin.\'\
 
 - Visual stats: % positive/negative, word clouds from feedback text
 
-- Filters by date or type of study (topic/scripture/Jeff Reed)
+- Filters by date or type of study (topic/scripture/)
 
 - Export to CSV or copy to clipboard\
   Use a minimalist, admin-friendly design with visual clarity.

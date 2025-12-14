@@ -7,7 +7,7 @@
 
 ## **1. 📌 Problem Statement**
 
-Most churchgoers and pastors struggle to access personalized, scripture-based study guides quickly. Traditional commentaries are bulky, time-consuming, and not context-aware. There's a need for an app that simplifies Bible learning by generating instant, meaningful study guides based on any verse or predefined spiritual topic (including guided formats like Jeff Reed's method).
+Most churchgoers and pastors struggle to access personalized, scripture-based study guides quickly. Traditional commentaries are bulky, time-consuming, and not context-aware. There's a need for an app that simplifies Bible learning by generating instant, meaningful study guides based on any verse or predefined spiritual topic (including guided formats like 's method).
 
 ## **2. 🎯 Goals and Objectives**
 
@@ -16,7 +16,7 @@ Most churchgoers and pastors struggle to access personalized, scripture-based st
 - Offer sharing capabilities for group study and sermons.
 - Support both mobile (Flutter) and basic web platform access.
 - Enable future multilingual support (e.g., Hindi, Malayalam).
-- Include Jeff Reed's 4-step Study Flow as a structured, doctrinally sound alternative.
+- Include 's 4-step Study Flow as a structured, doctrinally sound alternative.
 
 ## **3. 👤 User Personas**
 
@@ -38,20 +38,20 @@ Most churchgoers and pastors struggle to access personalized, scripture-based st
 |-------------|-----------------|
 | 📥 Input Reference or Topic | User enters a Bible verse (e.g., Romans 12:1) or selects from predefined spiritual topics |
 | 📘 Generate Study Guide | AI generates **Summary**, **Context**, **Related Verses**, **Reflection Questions**, **Prayer Points** |
-| 🧭 Jeff Reed Study Mode | Fixed topic guides split into 4 structured steps: Context, Scholar, Group, Application |
+| 🧭  Study Mode | Fixed topic guides split into 4 structured steps: Context, Scholar, Group, Application |
 | 🌐 Share Guide | Share via WhatsApp, Email, or Copy |
 | 🔁 View Recent | Stores last 5-10 guides for quick reuse |
 | 🔒 Auth (optional) | Login with Google/Apple (Supabase Auth) |
 | 📝 Feedback System | Allows users to rate or suggest improvements to the LLM-generated guide |
 | 📊 Analytics (Basic) | Track usage metrics: completions, shares, inputs |
-| 🧠 Multilingual (V1.2) | English, Hindi and Malayalam. Topics localized and cached for Jeff Reed mode |
+| 🧠 Multilingual (V1.2) | English, Hindi and Malayalam. Topics localized and cached for  mode |
 
 ## **5. 📊 Success Metrics**
 
 - ⏱️ Avg guide generation time < 3 seconds
 - ✅ 90%+ user satisfaction on relevance of study guides  
 - 📈 >100 MAUs within 3 months of launch
-- 🔁 70%+ of users complete at least 3 Jeff Reed steps per session
+- 🔁 70%+ of users complete at least 3  steps per session
 - 💸 LLM cost < $12/month for 500 queries (early phase)
 
 ## **6. ❗ Assumptions and Constraints**
@@ -63,7 +63,7 @@ Most churchgoers and pastors struggle to access personalized, scripture-based st
 | RAG not mandatory in V1 | Predefined guide structure to control output size |
 | Supabase edge functions preferred | No expensive managed hosting (e.g., VMs, GPUs) |
 | Anonymous usage allowed | Rate-limited: 3 guides/hour for anonymous, 30/hour for authenticated users |
-| User input optional in Jeff Reed mode | Topics are predefined static list; fallback to default topic if config fails |
+| User input optional in  mode | Topics are predefined static list; fallback to default topic if config fails |
 
 ## **7. 🏗️ Technical Constraints**
 
@@ -86,6 +86,6 @@ Most churchgoers and pastors struggle to access personalized, scripture-based st
 | **Term** | **Definition** |
 |----------|----------------|
 | **Study Guide Output Sections** | Standardized as: Summary, Context, Related Verses, Reflection Questions, Prayer Points |
-| **Jeff Reed Topics** | Predefined static list of spiritual topics (Gospel, Grace, Faith, Discipleship) |
+| ** Topics** | Predefined static list of spiritual topics (Gospel, Grace, Faith, Discipleship) |
 | **Anonymous User** | User without authentication, subject to stricter rate limits |
 | **Guide Generation** | The process of LLM creating a structured study guide from user input |

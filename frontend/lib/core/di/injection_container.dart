@@ -101,6 +101,7 @@ import '../../features/study_topics/data/repositories/leaderboard_repository_imp
 import '../../features/study_topics/domain/repositories/leaderboard_repository.dart';
 import '../../features/study_topics/presentation/bloc/leaderboard_bloc.dart';
 import '../services/theme_service.dart';
+import '../services/locale_service.dart';
 import '../services/auth_state_provider.dart';
 import '../services/language_preference_service.dart';
 import '../services/language_cache_coordinator.dart';
@@ -182,6 +183,10 @@ import '../../features/purchase_issue/data/repositories/purchase_issue_repositor
 import '../../features/purchase_issue/domain/repositories/purchase_issue_repository.dart';
 import '../../features/purchase_issue/domain/usecases/submit_purchase_issue_usecase.dart';
 import '../../features/purchase_issue/presentation/bloc/purchase_issue_bloc.dart';
+import '../../features/gamification/data/datasources/gamification_remote_datasource.dart';
+import '../../features/gamification/data/repositories/gamification_repository_impl.dart';
+import '../../features/gamification/domain/repositories/gamification_repository.dart';
+import '../../features/gamification/presentation/bloc/gamification_bloc.dart';
 
 /// Service locator instance for dependency injection
 final sl = GetIt.instance;
@@ -208,6 +213,9 @@ Future<void> initializeDependencies() async {
 
   // Register ThemeService
   sl.registerLazySingleton(() => ThemeService());
+
+  // Register LocaleService (requires LanguagePreferenceService - registered later)
+  // Note: LocaleService is registered after LanguagePreferenceService below
 
   // Register HttpService
   sl.registerLazySingleton(() => HttpService(httpClient: sl()));
@@ -242,6 +250,11 @@ Future<void> initializeDependencies() async {
         authStateProvider: sl(),
         userProfileService: sl(),
         cacheCoordinator: sl(),
+      ));
+
+  // Register LocaleService (for MaterialApp locale binding)
+  sl.registerLazySingleton(() => LocaleService(
+        languagePreferenceService: sl(),
       ));
 
   // Register Translation Service
@@ -742,4 +755,26 @@ Future<void> initializeDependencies() async {
         submitPurchaseIssueUseCase: sl(),
         uploadIssueScreenshotUseCase: sl(),
       ));
+
+  //! Gamification (Study Streaks, Achievements, Levels)
+  sl.registerLazySingleton<GamificationRemoteDataSource>(
+    () => GamificationRemoteDataSourceImpl(
+      supabaseClient: sl(),
+    ),
+  );
+
+  sl.registerLazySingleton<GamificationRepository>(
+    () => GamificationRepositoryImpl(
+      remoteDataSource: sl(),
+    ),
+  );
+
+  sl.registerLazySingleton(
+    () => GamificationBloc(
+      repository: sl(),
+      authStateProvider: sl(),
+      languagePreferenceService: sl(),
+    ),
+    dispose: (bloc) => bloc.close(),
+  );
 }

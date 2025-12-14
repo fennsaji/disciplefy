@@ -30,13 +30,6 @@ Enter any Bible verse and receive a comprehensive study guide with:
 • Discussion Questions - For personal reflection or group study
 • Prayer Points - Apply what you've learned
 
-📚 Jeff Reed 4-Step Study Method
-Follow the proven discipleship methodology:
-1. Context - Understand the passage
-2. Scholar - Dig deeper into meaning
-3. Group - Questions for discussion
-4. Application - Live it out daily
-
 🗣️ Text-to-Speech
 Listen to your study guides with natural voice narration. Perfect for commuting, exercising, or when you prefer audio learning.
 
@@ -103,7 +96,7 @@ Character count: ~2200 ✓
 We're excited to launch our AI-powered Bible study app. Here's what you can do:
 
 • Generate instant study guides for any Bible verse
-• Follow the Jeff Reed 4-step study methodology
+• Follow the  4-step study methodology
 • Listen to studies with text-to-speech
 • Study in English, Hindi, or Malayalam
 • Get daily verse inspiration

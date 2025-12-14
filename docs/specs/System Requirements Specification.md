@@ -30,14 +30,14 @@
   FR-06    Optional         Google/Apple login (via Firebase) allows syncing
            Authentication   of saved content across devices.
 
-  FR-07    Jeff Reed Study  For predefined topics, users can access a 4-step
+  FR-07     Study  For predefined topics, users can access a 4-step
            Flow             structured study: Context, Scholar Guide, Group
                             Discussion, and Application.
 
   FR-08    Feedback         Users can rate the relevance of guides and leave
            Submission       written feedback.
 
-  FR-09    Topic            Predefined Jeff Reed topics are localized and
+  FR-09    Topic            Predefined  topics are localized and
            Localization     cached client-side.
   ----------------------------------------------------------------------------
 
@@ -101,7 +101,7 @@
 
 3.  On future login, the user can revisit and re-share the saved guides
 
-### **✅ Use Case 3: Jeff Reed Guided Study**
+### **✅ Use Case 3:  Guided Study**
 
 **Actor:** Logged-in or anonymous user\
 **Steps:**

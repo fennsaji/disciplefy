@@ -26,9 +26,13 @@ import '../../../follow_up_chat/presentation/bloc/follow_up_chat_bloc.dart';
 import '../../../follow_up_chat/presentation/bloc/follow_up_chat_event.dart';
 import '../../../notifications/presentation/widgets/notification_enable_prompt.dart';
 import '../widgets/engaging_loading_screen.dart';
+import '../widgets/streaming_study_content.dart';
 import '../widgets/tts_control_button.dart';
 import '../widgets/tts_control_sheet.dart';
 import '../../data/services/study_guide_tts_service.dart';
+import '../../data/services/study_guide_pdf_service.dart';
+import '../../../gamification/presentation/bloc/gamification_bloc.dart';
+import '../../../gamification/presentation/bloc/gamification_event.dart';
 
 /// Study Guide Screen V2 - Dynamically generates study guides from query parameters
 ///
@@ -176,6 +180,9 @@ class _StudyGuideScreenV2ContentState
   bool _hasTriggeredNotificationPrompt = false;
   bool _isCompletionTrackingStarted = false;
 
+  // PDF export state
+  bool _isExportingPdf = false;
+
   @override
   void initState() {
     super.initState();
@@ -256,8 +263,9 @@ class _StudyGuideScreenV2ContentState
     // Track topic progress start if we have a topic ID
     _startTopicProgress();
 
-    // Dispatch study guide generation event
-    context.read<StudyBloc>().add(GenerateStudyGuideRequested(
+    // Dispatch streaming study guide generation event (V2 API)
+    // This uses SSE for progressive section rendering
+    context.read<StudyBloc>().add(GenerateStudyGuideStreamingRequested(
           input: widget.input!,
           inputType: widget.type!,
           topicDescription: widget
@@ -367,6 +375,21 @@ class _StudyGuideScreenV2ContentState
       _hasError = true;
       _errorMessage = context.tr(errorKey);
       _isInsufficientTokensError = isTokenError;
+    });
+  }
+
+  /// Handle streaming failure with partial content
+  void _handleStreamingFailure(StudyGenerationStreamingFailed state) {
+    if (!mounted) return;
+    setState(() {
+      _isLoading = false;
+      _hasError = true;
+      _errorMessage = state.failure.message;
+      // Check for token-related errors by type or error code
+      _isInsufficientTokensError = state.failure is InsufficientTokensFailure ||
+          state.failure is TokenFailure ||
+          state.failure.code == 'INSUFFICIENT_TOKENS' ||
+          state.failure.code == 'TOKEN_LIMIT_EXCEEDED';
     });
   }
 
@@ -628,6 +651,15 @@ class _StudyGuideScreenV2ContentState
               _isLoading = true;
               _hasError = false;
             });
+          } else if (state is StudyGenerationStreaming) {
+            // Handle streaming state - UI will rebuild with BlocBuilder
+            if (!mounted) return;
+            setState(() {
+              _isLoading = false;
+              _hasError = false;
+            });
+          } else if (state is StudyGenerationStreamingFailed) {
+            _handleStreamingFailure(state);
           } else if (state is StudyGenerationSuccess) {
             _handleGenerationSuccess(state.studyGuide);
           } else if (state is StudyGenerationFailure) {
@@ -650,6 +682,8 @@ class _StudyGuideScreenV2ContentState
             );
             if (state.guideSaved) {
               _setupAutoSave();
+              // Check saved achievements when guide is saved
+              sl<GamificationBloc>().add(const CheckSavedAchievements());
             }
           } else if (state is StudyEnhancedSaveFailure) {
             _handleEnhancedSaveError(state);
@@ -698,6 +732,10 @@ class _StudyGuideScreenV2ContentState
             // Track topic progress completion if we have a topic ID
             _completeTopicProgress();
 
+            // Update study streak and check achievements
+            sl<GamificationBloc>().add(const UpdateStudyStreak());
+            sl<GamificationBloc>().add(const CheckStudyAchievements());
+
             _showRecommendedTopicNotificationPrompt();
           }
         },
@@ -722,7 +760,7 @@ class _StudyGuideScreenV2ContentState
           tooltip: 'Go back',
         ),
         title: Text(
-          _getDisplayTitle(),
+          context.tr('study_guide.page_title'),
           style: AppFonts.poppins(
             fontSize: 20,
             fontWeight: FontWeight.w600,
@@ -732,6 +770,23 @@ class _StudyGuideScreenV2ContentState
         centerTitle: true,
         actions: _currentStudyGuide != null
             ? [
+                IconButton(
+                  onPressed: _isExportingPdf ? null : _exportToPdf,
+                  icon: _isExportingPdf
+                      ? SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Theme.of(context).colorScheme.primary,
+                          ),
+                        )
+                      : Icon(
+                          Icons.picture_as_pdf_outlined,
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
+                  tooltip: 'Export as PDF',
+                ),
                 IconButton(
                   onPressed: _shareStudyGuide,
                   icon: Icon(
@@ -745,19 +800,137 @@ class _StudyGuideScreenV2ContentState
       );
 
   Widget _buildBody() {
-    if (_isLoading) {
-      return _buildLoadingScreen();
-    }
+    // Use BlocBuilder to handle streaming states
+    return BlocBuilder<StudyBloc, StudyState>(
+      buildWhen: (previous, current) =>
+          current is StudyGenerationStreaming ||
+          current is StudyGenerationStreamingFailed ||
+          current is StudyGenerationInProgress ||
+          current is StudyGenerationSuccess ||
+          current is StudyGenerationFailure ||
+          current is StudyInitial,
+      builder: (context, state) {
+        // Handle streaming state - show progressive content
+        if (state is StudyGenerationStreaming) {
+          // If streaming is complete and we have the full study guide,
+          // show the complete content view (with Follow-up Chat and Notes)
+          if (state.content.isComplete && _currentStudyGuide != null) {
+            return _buildStudyGuideContent();
+          }
 
-    if (_hasError) {
-      return _buildErrorScreen();
-    }
+          // Otherwise show progressive streaming content
+          return StreamingStudyContent(
+            content: state.content,
+            inputType: state.inputType,
+            inputValue: state.inputValue,
+            language: state.language,
+            scrollController: _scrollController,
+            onComplete:
+                state.content.isComplete && state.content.studyGuideId != null
+                    ? () => _handleStreamingComplete(state)
+                    : null,
+          );
+        }
 
-    if (_currentStudyGuide == null) {
-      return _buildErrorScreen();
-    }
+        // Handle streaming failure with partial content
+        if (state is StudyGenerationStreamingFailed) {
+          if (state.hasPartialContent) {
+            // Show partial content with error banner
+            return _buildPartialContentWithError(state);
+          }
+          // No partial content, show error screen
+          return _buildErrorScreen();
+        }
 
-    return _buildStudyGuideContent();
+        // Regular loading state
+        if (_isLoading || state is StudyGenerationInProgress) {
+          return _buildLoadingScreen();
+        }
+
+        // Error state
+        if (_hasError) {
+          return _buildErrorScreen();
+        }
+
+        // Success state with complete study guide
+        if (_currentStudyGuide == null) {
+          return _buildErrorScreen();
+        }
+
+        return _buildStudyGuideContent();
+      },
+    );
+  }
+
+  /// Handle streaming completion - convert to full study guide
+  void _handleStreamingComplete(StudyGenerationStreaming state) {
+    if (state.content.studyGuideId == null) return;
+
+    // Create a StudyGuide from streaming content
+    final studyGuide = StudyGuide(
+      id: state.content.studyGuideId!,
+      input: state.inputValue,
+      inputType: state.inputType,
+      language: state.language,
+      summary: state.content.summary ?? '',
+      interpretation: state.content.interpretation ?? '',
+      context: state.content.context ?? '',
+      relatedVerses: state.content.relatedVerses ?? [],
+      reflectionQuestions: state.content.reflectionQuestions ?? [],
+      prayerPoints: state.content.prayerPoints ?? [],
+      createdAt: DateTime.now(),
+      isSaved: false,
+    );
+
+    _handleGenerationSuccess(studyGuide);
+  }
+
+  /// Build partial content with error banner
+  Widget _buildPartialContentWithError(StudyGenerationStreamingFailed state) {
+    return Column(
+      children: [
+        // Error banner
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(16),
+          color: Theme.of(context).colorScheme.error.withOpacity(0.1),
+          child: Row(
+            children: [
+              Icon(
+                Icons.warning_amber_rounded,
+                color: Theme.of(context).colorScheme.error,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  'Generation interrupted. Partial content shown below.',
+                  style: AppFonts.inter(
+                    color: Theme.of(context).colorScheme.error,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+              if (state.canRetry)
+                TextButton(
+                  onPressed: _retryGeneration,
+                  child: const Text('Retry'),
+                ),
+            ],
+          ),
+        ),
+        // Partial content
+        Expanded(
+          child: StreamingStudyContent(
+            content: state.partialContent!,
+            inputType: state.inputType,
+            inputValue: state.inputValue,
+            language: state.language,
+            scrollController: _scrollController,
+            isPartial: true,
+          ),
+        ),
+      ],
+    );
   }
 
   Widget _buildLoadingScreen() => EngagingLoadingScreen(
@@ -790,9 +963,13 @@ class _StudyGuideScreenV2ContentState
               ),
               const SizedBox(height: 16),
               Text(
-                _errorMessage.isEmpty
-                    ? context.tr(TranslationKeys.studyGuideErrorDefaultMessage)
-                    : _errorMessage,
+                _isInsufficientTokensError
+                    ? context
+                        .tr(TranslationKeys.studyGuideErrorInsufficientTokens)
+                    : (_errorMessage.isEmpty
+                        ? context
+                            .tr(TranslationKeys.studyGuideErrorDefaultMessage)
+                        : _errorMessage),
                 style: AppFonts.inter(
                   fontSize: 16,
                   color:
@@ -905,6 +1082,11 @@ class _StudyGuideScreenV2ContentState
               children: [
                 SizedBox(height: isLargeScreen ? 24 : 16),
 
+                // Topic Title
+                _buildTopicTitle(),
+
+                SizedBox(height: isLargeScreen ? 24 : 20),
+
                 // Study Guide Content
                 _buildStudyContent(),
 
@@ -946,6 +1128,54 @@ class _StudyGuideScreenV2ContentState
         // Bottom Action Buttons
         _buildBottomActions(),
       ],
+    );
+  }
+
+  /// Builds the topic title section displayed below the AppBar
+  Widget _buildTopicTitle() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            Theme.of(context).colorScheme.primary.withOpacity(0.1),
+            Theme.of(context).colorScheme.secondary.withOpacity(0.05),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: Theme.of(context).colorScheme.primary.withOpacity(0.2),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            _currentStudyGuide?.inputType == 'scripture'
+                ? context.tr('generate_study.scripture_mode')
+                : context.tr('generate_study.topic_mode'),
+            style: AppFonts.inter(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: Theme.of(context).colorScheme.primary.withOpacity(0.7),
+              letterSpacing: 1.2,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            _getDisplayTitle(),
+            style: AppFonts.poppins(
+              fontSize: 22,
+              fontWeight: FontWeight.bold,
+              color: Theme.of(context).colorScheme.onBackground,
+              height: 1.3,
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -1432,6 +1662,142 @@ Generated by Disciplefy - Bible Study App
     Share.share(
       shareText,
       subject: 'Bible Study: ${_getDisplayTitle()}',
+    );
+  }
+
+  /// Exports the current study guide as a PDF and opens the system share sheet.
+  ///
+  /// For English, uses native PDF text rendering.
+  /// For Hindi/Malayalam, uses image-based rendering to ensure proper
+  /// ligature and character display.
+  Future<void> _exportToPdf() async {
+    if (_currentStudyGuide == null) return;
+
+    // Show loading dialog for Hindi/Malayalam (image-based rendering takes time)
+    final isComplexScript =
+        _currentStudyGuide!.language.toLowerCase() == 'hi' ||
+            _currentStudyGuide!.language.toLowerCase() == 'ml';
+
+    setState(() {
+      _isExportingPdf = true;
+    });
+
+    if (isComplexScript && mounted) {
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (ctx) => PopScope(
+          canPop: false,
+          child: AlertDialog(
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Use a static icon instead of animated spinner
+                // since the main thread will be busy with rendering
+                Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: Theme.of(ctx).colorScheme.primary.withOpacity(0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    Icons.picture_as_pdf,
+                    color: Theme.of(ctx).colorScheme.primary,
+                    size: 28,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  context.tr('study_guide.actions.generating_pdf'),
+                  style: Theme.of(ctx).textTheme.titleMedium,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  context.tr('study_guide.actions.pdf_wait_message'),
+                  style: Theme.of(ctx).textTheme.bodySmall?.copyWith(
+                        color: Theme.of(ctx)
+                            .colorScheme
+                            .onSurface
+                            .withOpacity(0.6),
+                      ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+
+      // Wait for dialog to fully render before starting heavy work
+      await Future.delayed(const Duration(milliseconds: 150));
+    }
+
+    try {
+      final pdfService = StudyGuidePdfService();
+      // Pass context for image-based rendering (needed for Hindi/Malayalam)
+      await pdfService.sharePdf(_currentStudyGuide!, context: context);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to export PDF: ${e.toString()}'),
+            backgroundColor: Theme.of(context).colorScheme.error,
+          ),
+        );
+      }
+    } finally {
+      // Close loading dialog if it was shown
+      if (isComplexScript && mounted) {
+        Navigator.of(context, rootNavigator: true).pop();
+      }
+      if (mounted) {
+        setState(() {
+          _isExportingPdf = false;
+        });
+      }
+    }
+  }
+
+  /// Shows a dialog explaining PDF export limitation for non-English languages.
+  /// This method is kept for potential future use but currently all languages
+  /// are supported via image-based rendering.
+  void _showPdfLanguageNotSupportedDialog() {
+    final languageName = _currentStudyGuide!.language.toLowerCase() == 'hi'
+        ? 'Hindi'
+        : 'Malayalam';
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Row(
+          children: [
+            Icon(
+              Icons.info_outline,
+              color: Theme.of(context).colorScheme.primary,
+            ),
+            const SizedBox(width: 12),
+            const Text('PDF Export'),
+          ],
+        ),
+        content: Text(
+          'PDF export is currently available only for English study guides. '
+          '$languageName text requires special rendering that isn\'t supported yet.\n\n'
+          'Would you like to share as text instead?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              _shareStudyGuide();
+            },
+            child: const Text('Share as Text'),
+          ),
+        ],
+      ),
     );
   }
 }

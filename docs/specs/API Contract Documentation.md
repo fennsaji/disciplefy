@@ -149,12 +149,12 @@
 }
 ```
 
-## **📘 5. Get Jeff Reed Topics**
+## **📘 5. Get  Topics**
 
 **Endpoint**: GET /api/topics/jeffreed  
 **Auth Required**: ❌ No
 
-**Description**: Returns predefined static topics for Jeff Reed study method
+**Description**: Returns predefined static topics for  study method
 
 ### **Query Parameters**
 - `language` (optional): Language for topic names (default: "en")
@@ -181,12 +181,12 @@
 }
 ```
 
-## **🧠 6. Generate Jeff Reed Study Session**
+## **🧠 6. Generate  Study Session**
 
 **Endpoint**: POST /api/study/jeffreed  
 **Auth Required**: ❌ No (optional for saving progress)
 
-**Description**: Generates a 4-step Jeff Reed study guide for a selected static topic
+**Description**: Generates a 4-step  study guide for a selected static topic
 
 ### **Request Body**
 ```json
@@ -211,12 +211,12 @@
 }
 ```
 
-## **📈 7. Update Jeff Reed Session Progress**
+## **📈 7. Update  Session Progress**
 
 **Endpoint**: PUT /api/study/jeffreed/{session_id}/progress  
 **Auth Required**: ✅ Yes
 
-**Description**: Updates user's progress through Jeff Reed study steps
+**Description**: Updates user's progress through  study steps
 
 ### **Request Body**
 ```json
@@ -484,7 +484,7 @@ Accept-Language: hi-IN,hi;q=0.9,en;q=0.8
 
 ### **Localized Endpoints**
 - All user-facing content respects language preference
-- Jeff Reed topics available in all supported languages
+-  topics available in all supported languages
 - Error messages localized based on Accept-Language header
 
 ## **✅ API Contract Validation**

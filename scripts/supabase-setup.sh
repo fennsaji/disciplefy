@@ -158,7 +158,7 @@ CREATE TABLE IF NOT EXISTS public.user_profiles (
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- Jeff Reed study sessions
+--  study sessions
 CREATE TABLE IF NOT EXISTS public.jeff_reed_sessions (
   id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
   user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
@@ -304,7 +304,7 @@ CREATE POLICY "Users can view and edit their own profile"
   ON user_profiles FOR ALL
   USING (auth.uid() = id);
 
--- Jeff Reed sessions policies
+--  sessions policies
 CREATE POLICY "Users can manage their own sessions"
   ON jeff_reed_sessions FOR ALL
   USING (auth.uid() = user_id);
@@ -712,7 +712,7 @@ VALUES (
   '{"theme": "light", "notifications": true}'
 ) ON CONFLICT (id) DO NOTHING;
 
--- Insert sample Jeff Reed session
+-- Insert sample  session
 INSERT INTO jeff_reed_sessions (
   id,
   user_id,

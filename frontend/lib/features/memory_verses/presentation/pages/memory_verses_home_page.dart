@@ -29,6 +29,8 @@ import '../widgets/memory_verse_list_item.dart';
 import '../widgets/options_menu_sheet.dart';
 import '../widgets/statistics_card.dart';
 import '../widgets/statistics_dialog.dart';
+import '../../../gamification/presentation/bloc/gamification_bloc.dart';
+import '../../../gamification/presentation/bloc/gamification_event.dart';
 
 class MemoryVersesHomePage extends StatefulWidget {
   const MemoryVersesHomePage({super.key});
@@ -257,6 +259,8 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
                 ),
               );
               _loadVerses();
+              // Check memory achievements when verse is added
+              sl<GamificationBloc>().add(const CheckMemoryAchievements());
               // Show notification prompt for memory verse reminder after adding first verse
               _showMemoryVerseReminderPrompt();
             } else if (state is OperationQueued) {

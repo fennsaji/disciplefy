@@ -5,7 +5,7 @@ import '../../../tokens/domain/entities/token_consumption.dart';
 /// Domain entity representing a Bible study guide.
 ///
 /// This entity encapsulates all the information about a generated study guide,
-/// following the Jeff Reed methodology with standardized sections.
+/// following the  methodology with standardized sections.
 class StudyGuide extends Equatable {
   /// Unique identifier for the study guide.
   final String id;

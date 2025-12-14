@@ -185,7 +185,7 @@ This document presents comprehensive research and recommendations for premium fe
 
 **Core Strengths:**
 - ✅ AI study guide generation (Scripture + Topic modes)
-- ✅ Jeff Reed 4-step methodology
+- ✅  4-step methodology
 - ✅ Multi-language support (EN, HI, ML)
 - ✅ Follow-up chat with streaming
 - ✅ Daily verse feature

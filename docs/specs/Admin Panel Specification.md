@@ -30,7 +30,7 @@ The Admin Panel provides authorized administrators with tools to monitor app usa
 **Usage Metrics Dashboard**
 - Daily/Weekly/Monthly active users
 - Study guide generation trends
-- Jeff Reed flow completion rates
+-  flow completion rates
 - Most popular topics and verses
 - Language usage distribution
 - Anonymous vs authenticated user ratio
@@ -156,7 +156,7 @@ Admin Dashboard
 
 ### **Topic Management**
 
-**Jeff Reed Topic Administration**
+** Topic Administration**
 - Add/edit/disable predefined topics
 - Multi-language topic management
 - Topic popularity analytics

@@ -1,6 +1,6 @@
 # 🗄️ Disciplefy Bible Study - Backend
 
-Supabase-powered backend with Edge Functions for AI-driven Bible study guide generation using Jeff Reed methodology.
+Supabase-powered backend with Edge Functions for AI-driven Bible study guide generation using  methodology.
 
 ## 🚀 Quick Start
 
@@ -122,7 +122,7 @@ curl -X POST 'http://localhost:54321/functions/v1/study-generate' \
   }'
 ```
 
-#### Test Jeff Reed Topics
+#### Test  Topics
 
 ```bash
 curl -X GET 'http://localhost:54321/functions/v1/topics-jeffreed?category=Spiritual%20Growth&limit=5' \
@@ -166,7 +166,7 @@ backend/
 │       ├── study-generate/             # Study guide generation
 │       │   └── index.ts
 │       │
-│       ├── topics-jeffreed/            # Jeff Reed topics
+│       ├── topics-jeffreed/            #  topics
 │       │   └── index.ts
 │       │
 │       ├── feedback/                   # User feedback
@@ -193,8 +193,8 @@ backend/
 - `reflection_questions`, `prayer_points`
 - `language`, `is_saved`, `created_at`
 
-**Jeff Reed Sessions:**
-- Multi-step study sessions following Jeff Reed methodology
+** Sessions:**
+- Multi-step study sessions following  methodology
 - Tracks progress through 4 steps: Context, Scholar, Discussion, Application
 
 **Security & Analytics:**
@@ -245,9 +245,9 @@ if (!securityResult.isValid) {
 - **Anthropic Claude Haiku**: Alternative provider
 - **Mock Data**: Offline development mode
 
-### Jeff Reed Methodology Implementation
+###  Methodology Implementation
 
-The LLM service implements Jeff Reed's 4-step Bible study method:
+The LLM service implements 's 4-step Bible study method:
 
 1. **Context**: Historical and cultural background
 2. **Scholar's Guide**: Original meaning and interpretation
@@ -265,7 +265,7 @@ The LLM service implements Jeff Reed's 4-step Bible study method:
 - **Method**: POST
 - **Auth**: Optional (anonymous supported)
 - **Features**: Input validation, rate limiting, LLM integration
-- **Response**: Complete study guide with Jeff Reed structure
+- **Response**: Complete study guide with  structure
 
 ### `/topics-jeffreed` - Predefined Topics
 - **Method**: GET
