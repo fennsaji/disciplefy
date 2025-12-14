@@ -252,31 +252,6 @@ class StreamingStudyContent extends StatelessWidget {
               height: 1.3,
             ),
           ),
-          if (content.isFromCache) ...[
-            const SizedBox(height: 8),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(
-                color: Colors.green.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(Icons.flash_on, size: 14, color: Colors.green),
-                  const SizedBox(width: 4),
-                  Text(
-                    'From cache',
-                    style: AppFonts.inter(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.green,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
         ],
       ),
     );
