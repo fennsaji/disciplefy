@@ -4,11 +4,11 @@
 [![Supabase](https://img.shields.io/badge/Supabase-Powered-3ECF8E.svg?logo=supabase)](https://supabase.com)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-**AI-powered Bible study guide generator implementing Jeff Reed's 4-step methodology for transformational Scripture engagement.**
+**AI-powered Bible study guide generator implementing 's 4-step methodology for transformational Scripture engagement.**
 
 ## ✨ **Key Features**
 
-- **AI Study Generation**: OpenAI GPT-3.5 Turbo & Anthropic Claude integration with Jeff Reed methodology
+- **AI Study Generation**: OpenAI GPT-3.5 Turbo & Anthropic Claude integration with  methodology
 - **Multi-Language**: English, Hindi (हिन्दी), Malayalam (മലയാളം) support
 - **Flexible Auth**: Anonymous (3 guides/hour) or OAuth (30 guides/hour) with Google/Apple Sign-In
 - **Cross-Platform**: Flutter app for iOS, Android, and Web with WCAG AA accessibility
@@ -62,7 +62,7 @@ flutter test --coverage      API endpoint testing         Rate limiting (3/30 pe
 
 ## 📊 **Core APIs**
 
-- `POST /functions/v1/study-generate` - AI study guide generation with Jeff Reed methodology
+- `POST /functions/v1/study-generate` - AI study guide generation with  methodology
 - `GET /functions/v1/topics-recommended` - Predefined biblical topics
 - `POST /functions/v1/auth-session` - Session management (anonymous/OAuth)
 - `GET /functions/v1/daily-verse` - Daily Bible verse in multiple languages

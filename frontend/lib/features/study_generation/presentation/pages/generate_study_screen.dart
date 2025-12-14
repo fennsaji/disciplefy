@@ -27,6 +27,7 @@ import '../../../tokens/presentation/bloc/token_event.dart';
 import '../../../tokens/presentation/bloc/token_state.dart';
 import '../../../tokens/domain/entities/token_status.dart';
 import '../../../../core/router/app_router.dart';
+import '../../../subscription/presentation/widgets/upgrade_required_dialog.dart';
 
 /// Generate Study Screen allowing users to input scripture reference or topic.
 ///
@@ -88,7 +89,29 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
     // Load initial token status
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
-        context.read<TokenBloc>().add(const GetTokenStatus());
+        // First, check if token status is already loaded in the bloc
+        final currentState = context.read<TokenBloc>().state;
+        if (kDebugMode) {
+          print(
+              '🔄 [GENERATE_STUDY] initState - current bloc state: ${currentState.runtimeType}');
+        }
+
+        if (currentState is TokenLoaded) {
+          // Token already loaded - use it directly
+          if (kDebugMode) {
+            print(
+                '✅ [GENERATE_STUDY] Token already loaded on init: ${currentState.tokenStatus.userPlan}');
+          }
+          setState(() {
+            _currentTokenStatus = currentState.tokenStatus;
+          });
+        } else {
+          // Token not loaded - request it
+          if (kDebugMode) {
+            print('🔄 [GENERATE_STUDY] Token not loaded - requesting...');
+          }
+          context.read<TokenBloc>().add(const GetTokenStatus());
+        }
       }
     });
   }
@@ -242,9 +265,14 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
   }
 
   bool _validateScriptureReference(String text) {
-    // Basic regex pattern for scripture references
-    final scripturePattern =
-        RegExp(r'^[1-3]?\s*[a-zA-Z]+\s+\d+(?::\d+(?:-\d+)?)?$');
+    // Unicode-aware regex pattern for scripture references
+    // Uses [\p{L}\p{M}]+ to match letters AND combining marks
+    // (required for Malayalam, Hindi, and other Indic scripts)
+    // Allows multi-word book names like "भजन संहिता" or "Song of Solomon"
+    final scripturePattern = RegExp(
+      r'^[1-3]?\s*[\p{L}\p{M}]+(?:\s+[\p{L}\p{M}]+)*\s+\d+(?::\d+(?:-\d+)?)?$',
+      unicode: true,
+    );
     return scripturePattern.hasMatch(text);
   }
 
@@ -518,28 +546,39 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
         BlocListener<TokenBloc, TokenState>(
           listener: (context, state) {
             if (kDebugMode) {
-              print('🎯 [DEBUG] TokenBloc state changed: ${state.runtimeType}');
+              print(
+                  '🎯 [GENERATE_STUDY] TokenBloc state changed: ${state.runtimeType}');
             }
             if (state is TokenLoaded) {
               if (kDebugMode) {
                 print(
-                    '💰 [DEBUG] Token loaded - totalTokens: ${state.tokenStatus.totalTokens}, isPremium: ${state.tokenStatus.isPremium}');
+                    '💰 [GENERATE_STUDY] Token loaded - totalTokens: ${state.tokenStatus.totalTokens}, userPlan: ${state.tokenStatus.userPlan}, isPremium: ${state.tokenStatus.isPremium}');
               }
               setState(() {
                 _currentTokenStatus = state.tokenStatus;
                 _isRefreshingTokens =
                     false; // Reset refresh flag when tokens load
               });
-            } else if (state is TokenError &&
-                state.previousTokenStatus != null) {
+            } else if (state is TokenLoading) {
+              if (kDebugMode) {
+                print('⏳ [GENERATE_STUDY] Token loading...');
+              }
+            } else if (state is TokenError) {
               if (kDebugMode) {
                 print(
-                    '❌ [DEBUG] Token error with previous status - totalTokens: ${state.previousTokenStatus!.totalTokens}');
+                    '❌ [GENERATE_STUDY] Token error: ${state.failure.message}');
               }
-              setState(() {
-                _currentTokenStatus = state.previousTokenStatus;
-                _isRefreshingTokens = false; // Reset refresh flag even on error
-              });
+              if (state.previousTokenStatus != null) {
+                if (kDebugMode) {
+                  print(
+                      '❌ [GENERATE_STUDY] Using previous status - totalTokens: ${state.previousTokenStatus!.totalTokens}');
+                }
+                setState(() {
+                  _currentTokenStatus = state.previousTokenStatus;
+                  _isRefreshingTokens =
+                      false; // Reset refresh flag even on error
+                });
+              }
             }
           },
         ),
@@ -917,7 +956,7 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          onTap: () => GoRouter.of(context).goToVoiceConversation(),
+          onTap: () => _handleVoiceBuddyTap(context),
           borderRadius: BorderRadius.circular(20),
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
@@ -1022,6 +1061,57 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
         ),
       ),
     );
+  }
+
+  /// Handles tap on Voice Buddy button - checks plan and shows upgrade dialog for free users
+  void _handleVoiceBuddyTap(BuildContext context) {
+    if (kDebugMode) {
+      print('🎤 [VOICE BUDDY] Button tapped');
+      print('🎤 [VOICE BUDDY] _currentTokenStatus: $_currentTokenStatus');
+      if (_currentTokenStatus != null) {
+        print('🎤 [VOICE BUDDY] userPlan: ${_currentTokenStatus!.userPlan}');
+      }
+    }
+
+    // Block access until token status is loaded
+    if (_currentTokenStatus == null) {
+      // Token status not loaded yet - trigger refresh and wait
+      if (kDebugMode) {
+        print('🎤 [VOICE BUDDY] Token status is null - triggering refresh');
+      }
+      context.read<TokenBloc>().add(const GetTokenStatus());
+      // Show a loading indicator or snackbar to inform the user
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Loading... Please try again.'),
+          duration: Duration(seconds: 1),
+        ),
+      );
+      return;
+    }
+
+    // Check if user is on free plan
+    if (_currentTokenStatus!.userPlan == UserPlan.free) {
+      if (kDebugMode) {
+        print('🎤 [VOICE BUDDY] User is on FREE plan - showing upgrade dialog');
+      }
+      // Show upgrade required dialog
+      UpgradeRequiredDialog.show(
+        context,
+        featureName: 'AI Voice Discipler',
+        featureIcon: Icons.mic_rounded,
+        featureDescription:
+            'Have voice conversations with your AI Discipler to discuss scripture, ask questions, and deepen your understanding of the Bible.',
+      );
+      return;
+    }
+
+    // User is on Standard or Premium plan - proceed to Voice Buddy
+    if (kDebugMode) {
+      print(
+          '🎤 [VOICE BUDDY] User is on ${_currentTokenStatus!.userPlan} plan - navigating to voice conversation');
+    }
+    GoRouter.of(context).goToVoiceConversation();
   }
 
   /// Builds the View Saved Guides button with modern styling

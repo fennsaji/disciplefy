@@ -12,7 +12,7 @@ Flutter App (Client)
 ├── Prompt Input Screen
 ├── Daily Verse View  
 ├── Study Guide View
-├── Jeff Reed 4-Step Flow
+├──  4-Step Flow
 ├── Settings / History / Donate
 │
 REST API Gateway (Supabase)
@@ -20,7 +20,7 @@ REST API Gateway (Supabase)
 Backend Services (Supabase Edge Functions)
 ├── LLM Prompt Router
 ├── Study Generator  
-├── Jeff Reed Topic Engine (Static input)
+├──  Topic Engine (Static input)
 ├── Feedback Collector
 ├── History Tracker
 └── Admin Dashboard API
@@ -28,7 +28,7 @@ Backend Services (Supabase Edge Functions)
 Supabase Database (PostgreSQL)
 ├── User Profiles
 ├── Study Guides
-├── Jeff Reed Sessions
+├──  Sessions
 ├── Feedback Records
 └── Analytics Data
 ```
@@ -51,7 +51,7 @@ Supabase Database (PostgreSQL)
 
 - **/api/study/generate**: Handles scripture/topic prompt via LLM
 - **/api/study/jeffreed**: Static topic lookup + LLM contextual guidance. Returns each step as separate fields for frontend progression.
-- **/api/topics**: Returns predefined Jeff Reed study topics (static list)
+- **/api/topics**: Returns predefined  study topics (static list)
 - **/api/history**: Manages retrieval and resume states
 - **/api/feedback**: Accepts and aggregates feedback data
 - **/api/admin/dashboard**: Admin analytics and feedback insights
@@ -111,7 +111,7 @@ Supabase Database (PostgreSQL)
 
 1. App Launch → Welcome/Login (Supabase Auth)
 2. Home → Generate Study → Prompt Input → Study Guide
-3. Home → Jeff Reed Study → Topic Cards → 4-Step Flow
+3. Home →  Study → Topic Cards → 4-Step Flow
 4. Study Guide → Feedback Modal or Share Modal
 5. Settings → Donate / Language / Theme
 6. History → Resume Study or View
@@ -129,7 +129,7 @@ Supabase Database (PostgreSQL)
 
 ### **Cached Content**
 - Last 10 generated study guides (encrypted local storage)
-- Jeff Reed topic list and static content
+-  topic list and static content
 - User preferences and settings
 - Bible verse cache for offline reference
 
@@ -161,6 +161,6 @@ Supabase Database (PostgreSQL)
 ## **9. Upcoming Integrations**
 
 - Integrate /api/history with JeffReedFlow to persist progress
-- Automatically set 'completion_status' flag when all Jeff Reed steps completed
+- Automatically set 'completion_status' flag when all  steps completed
 - Map feedback sentiment analysis to admin dashboard visualizations
 - Anonymous user session tracking and abuse prevention

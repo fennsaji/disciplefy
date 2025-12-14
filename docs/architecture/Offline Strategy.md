@@ -15,7 +15,7 @@
 
 ### **Offline Capabilities Scope**
 - Study guide generation from cached content
-- Jeff Reed session creation and progress tracking
+-  session creation and progress tracking
 - Study history viewing and management
 - Personal notes and journal entries
 - Bible verse lookup from cached scripture
@@ -43,11 +43,11 @@ class OfflineDataManager {
 | **Data Type** | **Storage Method** | **Cache Size** | **Retention** | **Sync Priority** |
 |---------------|-------------------|----------------|---------------|-------------------|
 | **Study Guides** | SQLite | Last 50 guides | 30 days | High |
-| **Jeff Reed Sessions** | SQLite | All active sessions | Until completion | High |
+| ** Sessions** | SQLite | All active sessions | Until completion | High |
 | **Bible Verses** | SQLite | Common verses (500+) | Permanent | Low |
 | **User Preferences** | Hive | All settings | Permanent | Medium |
 | **Draft Notes** | SQLite | All drafts | Until synced | High |
-| **Jeff Reed Topics** | Hive | Complete list | 7 days | Low |
+| ** Topics** | Hive | Complete list | 7 days | Low |
 
 ### **Cache Storage Limits**
 ```dart
@@ -139,7 +139,7 @@ class OfflineLLMService {
 - **Pre-cached Guides**: 50 most popular verses/topics pre-generated and cached
 - **Template Responses**: Structured templates for common study guide sections
 - **Bible Cross-References**: Offline verse linking and reference system
-- **Jeff Reed Content**: Complete 4-step methodology cached locally
+- ** Content**: Complete 4-step methodology cached locally
 
 ### **Fallback Mechanisms**
 ```dart
@@ -163,10 +163,10 @@ class OfflineContentService {
 
 ## **5. 📝 Offline Study Creation**
 
-### **Jeff Reed Offline Flow**
+### ** Offline Flow**
 ```dart
 class OfflineJeffReedService {
-  // Complete Jeff Reed session creation offline
+  // Complete  session creation offline
   static Future<JeffReedSession> createOfflineSession(String topicId) async {
     final topic = await _getTopicFromCache(topicId);
     
@@ -439,7 +439,7 @@ class OfflineDataMigration {
 - [ ] Offline status indicators
 
 ### **Phase 2: Enhanced Offline Features (V1.1)**
-- [ ] Jeff Reed session offline creation
+- [ ]  session offline creation
 - [ ] Bible verse caching
 - [ ] Background sync implementation
 - [ ] Conflict resolution framework
@@ -460,7 +460,7 @@ class OfflineDataMigration {
 
 ### **Core Features**
 - [ ] Study guide offline caching active
-- [ ] Jeff Reed offline session creation working
+- [ ]  offline session creation working
 - [ ] Bible verse lookup offline functional
 - [ ] User preferences sync properly
 

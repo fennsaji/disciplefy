@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -8,6 +10,11 @@ import '../../../../core/extensions/translation_extension.dart';
 import '../../../../core/i18n/translation_keys.dart';
 import '../../../../core/router/app_router.dart';
 import '../../../../core/widgets/auth_protected_screen.dart';
+import '../../../../core/di/injection_container.dart';
+import '../../../tokens/presentation/bloc/token_bloc.dart';
+import '../../../tokens/presentation/bloc/token_state.dart';
+import '../../../tokens/domain/entities/token_status.dart';
+import '../../../subscription/presentation/widgets/upgrade_required_dialog.dart';
 import '../../../daily_verse/domain/entities/daily_verse_entity.dart';
 import '../../../daily_verse/presentation/bloc/daily_verse_bloc.dart';
 import '../../../daily_verse/presentation/bloc/daily_verse_state.dart';
@@ -22,6 +29,8 @@ import '../widgets/memory_verse_list_item.dart';
 import '../widgets/options_menu_sheet.dart';
 import '../widgets/statistics_card.dart';
 import '../widgets/statistics_dialog.dart';
+import '../../../gamification/presentation/bloc/gamification_bloc.dart';
+import '../../../gamification/presentation/bloc/gamification_event.dart';
 
 class MemoryVersesHomePage extends StatefulWidget {
   const MemoryVersesHomePage({super.key});
@@ -34,10 +43,83 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
   DueVersesLoaded? _lastLoadedState;
   VerseLanguage? _selectedLanguageFilter;
   bool _hasTriggeredMemoryVersePrompt = false;
+  bool _isAccessDenied = false;
+  StreamSubscription<TokenState>? _tokenSubscription;
 
   @override
   void initState() {
     super.initState();
+    _checkPlanAccess();
+  }
+
+  @override
+  void dispose() {
+    _tokenSubscription?.cancel();
+    super.dispose();
+  }
+
+  /// Checks if user has access to Memory Verses (Standard+ only)
+  void _checkPlanAccess() {
+    // Use the singleton TokenBloc instance which is shared across the app
+    // This ensures we get the token status that was fetched on auth
+    final tokenBloc = sl<TokenBloc>();
+    final currentState = tokenBloc.state;
+
+    // If already loaded, verify access immediately
+    if (currentState is TokenLoaded || currentState is TokenError) {
+      _verifyAccess(currentState);
+      return;
+    }
+
+    // Subscribe to stream and wait for TokenLoaded or TokenError
+    _tokenSubscription = tokenBloc.stream
+        .where((state) => state is TokenLoaded || state is TokenError)
+        .timeout(
+          const Duration(seconds: 5),
+          onTimeout: (sink) => sink.add(currentState),
+        )
+        .first
+        .asStream()
+        .listen((state) {
+      if (mounted) {
+        _verifyAccess(state);
+      }
+    });
+  }
+
+  /// Verifies if user has access based on token state
+  void _verifyAccess(TokenState tokenState) {
+    UserPlan? userPlan;
+    if (tokenState is TokenLoaded) {
+      userPlan = tokenState.tokenStatus.userPlan;
+    }
+
+    // Block free users - Memory Verses requires Standard or Premium
+    final bool hasAccess =
+        userPlan == UserPlan.standard || userPlan == UserPlan.premium;
+
+    if (!hasAccess) {
+      setState(() => _isAccessDenied = true);
+      // Show upgrade dialog and redirect after dismissal
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        UpgradeRequiredDialog.show(
+          context,
+          featureName: 'Memory Verses',
+          featureIcon: Icons.psychology_outlined,
+          featureDescription:
+              'Memorize Bible verses using proven spaced repetition techniques. Track your progress and strengthen your faith through scripture memorization.',
+        ).then((_) {
+          // Navigate back after dialog is dismissed
+          if (mounted) {
+            GoRouter.of(context).goToHome();
+          }
+        });
+      });
+      return;
+    }
+
+    // User has access - load verses
     _loadVerses();
   }
 
@@ -77,6 +159,14 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
 
   @override
   Widget build(BuildContext context) {
+    // Show empty scaffold while redirecting free users
+    if (_isAccessDenied) {
+      return Scaffold(
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        body: const SizedBox.shrink(),
+      );
+    }
+
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, result) {
@@ -169,6 +259,8 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
                 ),
               );
               _loadVerses();
+              // Check memory achievements when verse is added
+              sl<GamificationBloc>().add(const CheckMemoryAchievements());
               // Show notification prompt for memory verse reminder after adding first verse
               _showMemoryVerseReminderPrompt();
             } else if (state is OperationQueued) {

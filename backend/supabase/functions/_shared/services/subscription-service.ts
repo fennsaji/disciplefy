@@ -17,8 +17,10 @@ import {
   CreateSubscriptionOptions,
   CancelSubscriptionOptions,
   SubscriptionServiceConfig,
-  DEFAULT_SUBSCRIPTION_CONFIG
+  DEFAULT_SUBSCRIPTION_CONFIG,
+  SubscriptionPlanType
 } from '../types/subscription-types.ts'
+import { getPlanConfig, PlanType } from '../config/subscription-config.ts'
 
 /**
  * SubscriptionService implementation
@@ -101,10 +103,11 @@ export class SubscriptionService {
       // We'll receive the customer_id via webhook when subscription is authenticated
       razorpaySubscription = await this.createRazorpaySubscription(options)
 
-      // Store subscription in database
+      // Store subscription in database with plan type
       const subscription = await this.storeSubscription(
         options.userId,
-        razorpaySubscription
+        razorpaySubscription,
+        options.planType
       )
 
       // Log creation event
@@ -568,26 +571,45 @@ export class SubscriptionService {
       )
     }
 
+    // Get plan configuration based on plan type
+    const planConfig = getPlanConfig(options.planType as PlanType)
+    const planId = planConfig.planId || this.config.planId
+
+    if (!planId) {
+      throw new AppError(
+        'CONFIGURATION_ERROR',
+        `Plan ID not configured for ${options.planType} plan`,
+        500
+      )
+    }
+
     try {
       // Build subscription request - omit total_count if null (unlimited)
       const subscriptionRequest: Record<string, any> = {
-        plan_id: this.config.planId,
+        plan_id: planId,
         // ❌ REMOVED: customer_id - Let hosted checkout create the customer
         customer_notify: this.config.customerNotify,
         quantity: 1,
-        start_at: options.startAt,
         notes: {
           user_id: options.userId,
-          subscription_type: 'premium_monthly',
+          plan_type: options.planType,  // Store plan type in notes for webhook
+          subscription_type: `${options.planType}_monthly`,
           ...options.notes
         }
       }
 
+      // ✅ FIX: Only include start_at if it has a valid value
+      // Passing undefined causes Razorpay to throw "end_time must be between..." error
+      if (options.startAt) {
+        subscriptionRequest.start_at = options.startAt
+      }
+
       // ✅ Handle total_count for unlimited vs limited subscriptions
       // Razorpay requires either total_count OR end_at
-      // For unlimited: use 1200 (max allowed by Razorpay = 100 years of monthly billing)
+      // UPI payments have a 30-year limit (360 months)
+      // Using 360 to support all payment methods including UPI
       // For limited: use the specified count
-      subscriptionRequest.total_count = this.config.totalCount ?? 1200
+      subscriptionRequest.total_count = this.config.totalCount ?? 360
 
       console.log('[SubscriptionService] Creating subscription with request:', JSON.stringify(subscriptionRequest, null, 2))
       console.log('[SubscriptionService] Config totalCount:', this.config.totalCount)
@@ -705,7 +727,8 @@ export class SubscriptionService {
    */
   private async storeSubscription(
     userId: string,
-    razorpaySubscription: RazorpaySubscriptionResponse
+    razorpaySubscription: RazorpaySubscriptionResponse,
+    planType: SubscriptionPlanType = 'premium'
   ): Promise<Subscription> {
     const { data, error } = await this.supabaseClient
       .from('subscriptions')
@@ -715,7 +738,7 @@ export class SubscriptionService {
         razorpay_plan_id: razorpaySubscription.plan_id,
         razorpay_customer_id: razorpaySubscription.customer_id || null,
         status: this.mapRazorpayStatus(razorpaySubscription.status),
-        plan_type: 'premium_monthly',
+        plan_type: `${planType}_monthly`,
         current_period_start: razorpaySubscription.current_start
           ? new Date(razorpaySubscription.current_start * 1000).toISOString()
           : null,

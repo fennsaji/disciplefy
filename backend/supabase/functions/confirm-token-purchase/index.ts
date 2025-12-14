@@ -1,6 +1,6 @@
 /**
  * Confirm Token Purchase Edge Function
- * 
+ *
  * Handles manual payment confirmation with signature verification
  * for frontend payment completion
  */
@@ -9,6 +9,9 @@ import { createSimpleFunction } from '../_shared/core/function-factory.ts'
 import { ServiceContainer } from '../_shared/core/services.ts'
 import { AppError } from '../_shared/utils/error-handler.ts'
 import { createHmac } from 'node:crypto'
+import type { UserContext } from '../_shared/types/index.ts'
+import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import type { TokenService } from '../_shared/services/token-service.ts'
 
 interface ConfirmPurchaseRequest {
   order_id: string
@@ -16,12 +19,32 @@ interface ConfirmPurchaseRequest {
   signature: string
 }
 
+interface PendingPurchase {
+  order_id: string
+  user_id: string
+  token_amount: number
+  amount_paise: number
+  status: 'pending' | 'processing' | 'completed' | 'failed'
+  payment_id?: string
+  error_message?: string
+  updated_at?: string
+}
+
+interface AddTokensResult {
+  success: boolean
+  newPurchasedBalance: number
+}
+
+interface AuthService {
+  getUserContext(req: Request): Promise<UserContext>
+}
+
 /**
  * Handle payment confirmation with signature verification - main orchestrator
  */
 async function handleConfirmPurchase(req: Request, services: ServiceContainer): Promise<Response> {
   let requestData: ConfirmPurchaseRequest | null = null
-  let userContext: any = null
+  let userContext: UserContext | null = null
   
   try {
     console.log('[Purchase] 🚀 Starting payment confirmation process')
@@ -115,7 +138,7 @@ async function handleConfirmPurchase(req: Request, services: ServiceContainer): 
 /**
  * Authenticate user and ensure they're logged in
  */
-async function authenticateUser(req: Request, authService: any): Promise<any> {
+async function authenticateUser(req: Request, authService: AuthService): Promise<UserContext> {
   const userContext = await authService.getUserContext(req)
   if (userContext.type !== 'authenticated') {
     throw new AppError(
@@ -169,7 +192,7 @@ async function verifySignature(requestData: ConfirmPurchaseRequest): Promise<voi
 /**
  * Load pending purchase from database
  */
-async function loadPendingPurchase(orderId: string, userId: string, supabaseServiceClient: any): Promise<any> {
+async function loadPendingPurchase(orderId: string, userId: string, supabaseServiceClient: SupabaseClient): Promise<PendingPurchase> {
   const { data: pendingPurchase, error } = await supabaseServiceClient
     .from('pending_token_purchases')
     .select('*')
@@ -191,7 +214,7 @@ async function loadPendingPurchase(orderId: string, userId: string, supabaseServ
 /**
  * Atomic claim operation - updates status from pending or retryable failed to processing
  */
-async function claimPendingPurchaseForProcessing(orderId: string, userId: string, supabaseServiceClient: any): Promise<any> {
+async function claimPendingPurchaseForProcessing(orderId: string, userId: string, supabaseServiceClient: SupabaseClient): Promise<PendingPurchase> {
   // First try to claim pending purchases
   let { data: claimedPurchase, error } = await supabaseServiceClient
     .from('pending_token_purchases')
@@ -322,7 +345,7 @@ async function claimPendingPurchaseForProcessing(orderId: string, userId: string
 /**
  * Short-circuit if purchase is already completed or failed
  */
-async function shortCircuitIfCompletedOrFailed(pendingPurchase: any, userId: string, tokenService: any): Promise<Response | null> {
+async function shortCircuitIfCompletedOrFailed(pendingPurchase: PendingPurchase, userId: string, tokenService: TokenService): Promise<Response | null> {
   if (pendingPurchase.status === 'completed') {
     const currentTokens = await tokenService.getUserTokens(userId, 'standard')
     return buildResponse({
@@ -355,7 +378,7 @@ async function shortCircuitIfCompletedOrFailed(pendingPurchase: any, userId: str
 /**
  * Credit tokens to user account
  */
-async function creditTokens(userId: string, tokenAmount: number, tokenService: any): Promise<any> {
+async function creditTokens(userId: string, tokenAmount: number, tokenService: TokenService): Promise<AddTokensResult> {
   const addResult = await tokenService.addPurchasedTokens(
     userId,
     'standard',
@@ -378,7 +401,7 @@ async function creditTokens(userId: string, tokenAmount: number, tokenService: a
 /**
  * Record purchase in history table
  */
-async function recordPurchaseHistory(purchase: any, paymentId: string, userId: string, supabaseServiceClient: any): Promise<void> {
+async function recordPurchaseHistory(purchase: PendingPurchase, paymentId: string, userId: string, supabaseServiceClient: SupabaseClient): Promise<void> {
   const costRupees = purchase.amount_paise / 100
   const paymentMethod = 'razorpay'
   
@@ -405,7 +428,7 @@ async function recordPurchaseHistory(purchase: any, paymentId: string, userId: s
 /**
  * Mark pending purchase as completed
  */
-async function markPendingCompleted(orderId: string, paymentId: string, supabaseServiceClient: any): Promise<void> {
+async function markPendingCompleted(orderId: string, paymentId: string, supabaseServiceClient: SupabaseClient): Promise<void> {
   await supabaseServiceClient
     .from('pending_token_purchases')
     .update({
@@ -419,7 +442,7 @@ async function markPendingCompleted(orderId: string, paymentId: string, supabase
 /**
  * Mark pending purchase as failed
  */
-async function markPendingFailed(orderId: string, error: any, supabaseServiceClient: any): Promise<void> {
+async function markPendingFailed(orderId: string, error: unknown, supabaseServiceClient: SupabaseClient): Promise<void> {
   await supabaseServiceClient
     .from('pending_token_purchases')
     .update({
@@ -433,7 +456,7 @@ async function markPendingFailed(orderId: string, error: any, supabaseServiceCli
 /**
  * Build standardized response
  */
-function buildResponse(data: any): Response {
+function buildResponse(data: Record<string, unknown>): Response {
   return new Response(JSON.stringify(data), {
     status: 200,
     headers: { 'Content-Type': 'application/json' }

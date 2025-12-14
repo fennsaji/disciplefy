@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
@@ -30,6 +32,12 @@ class _AppShellState extends State<AppShell>
   late Animation<double> _scaleAnimation;
   int _previousIndex = 0;
   int? _pendingTabIndex;
+  bool _showLoadingIndicator = false;
+  int?
+      _waitingForIndex; // Track which index we're waiting for navigation to complete
+  Timer? _loadingTimeout; // Safety timeout to prevent infinite loading
+
+  static const _loadingTimeoutDuration = Duration(seconds: 10);
 
   @override
   void initState() {
@@ -48,12 +56,44 @@ class _AppShellState extends State<AppShell>
     if (!mounted) return;
 
     if (status == AnimationStatus.dismissed && _pendingTabIndex != null) {
-      // Reverse animation completed - switch to new tab
       final targetIndex = _pendingTabIndex!;
       _pendingTabIndex = null;
+
+      // Show loading indicator and track what we're waiting for
+      setState(() {
+        _showLoadingIndicator = true;
+        _waitingForIndex = targetIndex;
+      });
+
+      // Start safety timeout to prevent infinite loading
+      _startLoadingTimeout();
+
+      // Trigger navigation - this returns immediately but router guard runs async
       widget.navigationShell.goBranch(targetIndex);
-      _animController.forward();
+
+      // DON'T start fade-in here - it will be triggered in build()
+      // when we detect currentIndex has changed to targetIndex
     }
+  }
+
+  void _startLoadingTimeout() {
+    _loadingTimeout?.cancel();
+    _loadingTimeout = Timer(_loadingTimeoutDuration, () {
+      if (mounted && _showLoadingIndicator) {
+        // Timeout reached - hide loading and show current content
+        setState(() {
+          _showLoadingIndicator = false;
+          _waitingForIndex = null;
+          _previousIndex = widget.navigationShell.currentIndex;
+        });
+        _animController.value = 1.0; // Show content immediately
+      }
+    });
+  }
+
+  void _cancelLoadingTimeout() {
+    _loadingTimeout?.cancel();
+    _loadingTimeout = null;
   }
 
   void _setupAnimations() {
@@ -78,6 +118,7 @@ class _AppShellState extends State<AppShell>
 
   @override
   void dispose() {
+    _cancelLoadingTimeout();
     _animController.removeStatusListener(_onAnimationStatusChanged);
     _animController.stop();
     _animController.dispose();
@@ -85,14 +126,28 @@ class _AppShellState extends State<AppShell>
   }
 
   void _onTabChange(int index) {
-    // Ignore if already on this tab
+    // Ignore if already on this tab and not waiting for anything
     if (index == widget.navigationShell.currentIndex &&
-        _pendingTabIndex == null) {
+        _pendingTabIndex == null &&
+        _waitingForIndex == null) {
       return;
     }
 
-    // Allow interrupting ongoing animation with new tab selection
+    // Allow interrupting ongoing animation or loading with new tab selection
     _pendingTabIndex = index;
+
+    // If currently showing loading indicator (animation is dismissed),
+    // directly trigger navigation to the new tab
+    if (_showLoadingIndicator &&
+        _animController.status == AnimationStatus.dismissed) {
+      final targetIndex = _pendingTabIndex!;
+      _pendingTabIndex = null;
+      setState(() {
+        _waitingForIndex = targetIndex;
+      });
+      widget.navigationShell.goBranch(targetIndex);
+      return;
+    }
 
     // If animation is already reversing, just update pending index (handled above)
     // Otherwise, start the fade-out animation
@@ -105,9 +160,27 @@ class _AppShellState extends State<AppShell>
   Widget build(BuildContext context) {
     final currentIndex = widget.navigationShell.currentIndex;
 
+    // Check if our navigation completed (router guard finished async work)
+    if (_waitingForIndex != null && currentIndex == _waitingForIndex) {
+      // Schedule state update for next frame to avoid setState during build
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && _waitingForIndex != null) {
+          _cancelLoadingTimeout(); // Navigation succeeded, cancel timeout
+          setState(() {
+            _showLoadingIndicator = false;
+            _previousIndex = currentIndex;
+            _waitingForIndex = null;
+          });
+          _animController.value = 0.0;
+          _animController.forward();
+        }
+      });
+    }
+
     // Detect tab change from external navigation (e.g., back button)
-    // Only handle if no pending animation and controller is idle
-    if (currentIndex != _previousIndex &&
+    // Only handle if no pending animation, not waiting for navigation, and controller is idle
+    if (_waitingForIndex == null &&
+        currentIndex != _previousIndex &&
         _pendingTabIndex == null &&
         _animController.status == AnimationStatus.completed) {
       _previousIndex = currentIndex;
@@ -117,6 +190,8 @@ class _AppShellState extends State<AppShell>
       _animController.forward();
     }
 
+    // Note: Achievement unlock dialog is handled globally in main.dart
+    // to ensure it works for ALL routes including Memory Verses outside AppShell
     return PopScope(
       canPop: false,
       onPopInvoked: (didPop) {
@@ -125,14 +200,35 @@ class _AppShellState extends State<AppShell>
         }
       },
       child: Scaffold(
-        backgroundColor: const Color(0xFF1E1E1E),
-        // Material Design: Cross-fade with subtle scale (no lateral motion)
-        body: FadeTransition(
-          opacity: _fadeAnimation,
-          child: ScaleTransition(
-            scale: _scaleAnimation,
-            child: widget.navigationShell,
-          ),
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        body: Stack(
+          children: [
+            // Main content with animation
+            FadeTransition(
+              opacity: _fadeAnimation,
+              child: ScaleTransition(
+                scale: _scaleAnimation,
+                child: widget.navigationShell,
+              ),
+            ),
+            // Loading indicator overlay - shown during async navigation
+            if (_showLoadingIndicator)
+              Semantics(
+                label: 'Loading content',
+                liveRegion: true,
+                container: true,
+                child: Container(
+                  color: Theme.of(context).scaffoldBackgroundColor,
+                  child: Center(
+                    child: CircularProgressIndicator(
+                      color: Theme.of(context).colorScheme.primary,
+                      strokeWidth: 3,
+                      semanticsLabel: 'Loading',
+                    ),
+                  ),
+                ),
+              ),
+          ],
         ),
         bottomNavigationBar: bottom_nav.DisciplefyBottomNav(
           currentIndex: currentIndex,

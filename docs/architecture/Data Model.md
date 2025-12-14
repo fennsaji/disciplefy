@@ -204,7 +204,7 @@ CREATE POLICY "Users can view own study guides" ON study_guides
 CREATE POLICY "Users can insert own study guides" ON study_guides
   FOR INSERT WITH CHECK (auth.uid() = user_id OR user_id IS NULL);
 
--- Jeff Reed Sessions
+--  Sessions
 ALTER TABLE jeff_reed_sessions ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Users can view own jeff reed sessions" ON jeff_reed_sessions
   FOR SELECT USING (auth.uid() = user_id OR user_id IS NULL);
@@ -268,7 +268,7 @@ WHERE sg.user_id = ?
 ORDER BY sg.created_at DESC 
 LIMIT 20;
 
--- Jeff Reed session progress query
+--  session progress query
 SELECT topic, current_step, completion_status 
 FROM jeff_reed_sessions 
 WHERE user_id = ? AND completion_status = false 
@@ -279,7 +279,7 @@ ORDER BY updated_at DESC;
 
 ### **Version Compatibility**
 - **V1.0**: Basic study guide generation
-- **V1.1**: Jeff Reed session tracking
+- **V1.1**:  session tracking
 - **V1.2**: Multi-language support
 - **V2.0**: Advanced analytics and admin features
 - **V2.1**: Enhanced security logging
@@ -298,7 +298,7 @@ ORDER BY updated_at DESC;
 - **input_type**: Must be 'scripture' or 'topic'
 - **language**: Must be valid ISO language code (en, hi, ml)
 - **amount**: Must be positive integer for donations
-- **current_step**: Must be between 1 and 4 for Jeff Reed sessions
+- **current_step**: Must be between 1 and 4 for  sessions
 
 ### **Content Validation**
 - **summary, context**: Non-empty text fields
@@ -314,7 +314,7 @@ ORDER BY updated_at DESC;
 - **reflection_questions**: Array of thoughtful questions
 - **prayer_points**: Array of prayer and action items
 
-### **Jeff Reed Session Steps**
+### ** Session Steps**
 - **step_1_context**: Historical and cultural background
 - **step_2_scholar_guide**: Theological explanation and commentary
 - **step_3_group_discussion**: Questions for group reflection

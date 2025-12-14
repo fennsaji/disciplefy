@@ -101,6 +101,7 @@ import '../../features/study_topics/data/repositories/leaderboard_repository_imp
 import '../../features/study_topics/domain/repositories/leaderboard_repository.dart';
 import '../../features/study_topics/presentation/bloc/leaderboard_bloc.dart';
 import '../services/theme_service.dart';
+import '../services/locale_service.dart';
 import '../services/auth_state_provider.dart';
 import '../services/language_preference_service.dart';
 import '../services/language_cache_coordinator.dart';
@@ -173,8 +174,19 @@ import '../../features/voice_buddy/data/repositories/voice_buddy_repository_impl
 import '../../features/voice_buddy/data/services/speech_service.dart';
 import '../../features/voice_buddy/data/services/tts_service.dart';
 import '../../features/voice_buddy/domain/repositories/voice_buddy_repository.dart';
+import '../../features/study_generation/data/services/study_guide_tts_service.dart';
 import '../../features/voice_buddy/presentation/bloc/voice_conversation_bloc.dart';
 import '../../features/voice_buddy/presentation/bloc/voice_preferences_bloc.dart';
+import '../../features/purchase_issue/data/datasources/purchase_issue_remote_datasource.dart';
+import '../../features/purchase_issue/data/datasources/purchase_issue_remote_datasource_impl.dart';
+import '../../features/purchase_issue/data/repositories/purchase_issue_repository_impl.dart';
+import '../../features/purchase_issue/domain/repositories/purchase_issue_repository.dart';
+import '../../features/purchase_issue/domain/usecases/submit_purchase_issue_usecase.dart';
+import '../../features/purchase_issue/presentation/bloc/purchase_issue_bloc.dart';
+import '../../features/gamification/data/datasources/gamification_remote_datasource.dart';
+import '../../features/gamification/data/repositories/gamification_repository_impl.dart';
+import '../../features/gamification/domain/repositories/gamification_repository.dart';
+import '../../features/gamification/presentation/bloc/gamification_bloc.dart';
 
 /// Service locator instance for dependency injection
 final sl = GetIt.instance;
@@ -201,6 +213,9 @@ Future<void> initializeDependencies() async {
 
   // Register ThemeService
   sl.registerLazySingleton(() => ThemeService());
+
+  // Register LocaleService (requires LanguagePreferenceService - registered later)
+  // Note: LocaleService is registered after LanguagePreferenceService below
 
   // Register HttpService
   sl.registerLazySingleton(() => HttpService(httpClient: sl()));
@@ -235,6 +250,11 @@ Future<void> initializeDependencies() async {
         authStateProvider: sl(),
         userProfileService: sl(),
         cacheCoordinator: sl(),
+      ));
+
+  // Register LocaleService (for MaterialApp locale binding)
+  sl.registerLazySingleton(() => LocaleService(
+        languagePreferenceService: sl(),
       ));
 
   // Register Translation Service
@@ -636,6 +656,7 @@ Future<void> initializeDependencies() async {
         getActiveSubscription: sl(),
         getSubscriptionHistory: sl(),
         getSubscriptionInvoices: sl(),
+        subscriptionRepository: sl(),
       ));
 
   //! Follow Up Chat
@@ -685,6 +706,12 @@ Future<void> initializeDependencies() async {
   sl.registerLazySingleton(() => SpeechService());
   sl.registerLazySingleton(() => TTSService());
 
+  //! Study Guide TTS
+  sl.registerLazySingleton(() => StudyGuideTTSService(
+        ttsService: sl<TTSService>(),
+        prefs: sl<SharedPreferences>(),
+      ));
+
   // Data Source
   sl.registerLazySingleton<VoiceBuddyRemoteDataSource>(
     () => VoiceBuddyRemoteDataSourceImpl(
@@ -710,4 +737,44 @@ Future<void> initializeDependencies() async {
         ttsService: sl(),
         supabaseClient: sl(),
       ));
+
+  //! Purchase Issue Reporting
+  sl.registerLazySingleton<PurchaseIssueRemoteDataSource>(
+    () => PurchaseIssueRemoteDataSourceImpl(supabaseClient: sl()),
+  );
+
+  sl.registerLazySingleton<PurchaseIssueRepository>(
+    () => PurchaseIssueRepositoryImpl(remoteDataSource: sl()),
+  );
+
+  sl.registerLazySingleton(() => SubmitPurchaseIssueUseCase(repository: sl()));
+  sl.registerLazySingleton(
+      () => UploadIssueScreenshotUseCase(repository: sl()));
+
+  sl.registerFactory(() => PurchaseIssueBloc(
+        submitPurchaseIssueUseCase: sl(),
+        uploadIssueScreenshotUseCase: sl(),
+      ));
+
+  //! Gamification (Study Streaks, Achievements, Levels)
+  sl.registerLazySingleton<GamificationRemoteDataSource>(
+    () => GamificationRemoteDataSourceImpl(
+      supabaseClient: sl(),
+    ),
+  );
+
+  sl.registerLazySingleton<GamificationRepository>(
+    () => GamificationRepositoryImpl(
+      remoteDataSource: sl(),
+    ),
+  );
+
+  sl.registerLazySingleton(
+    () => GamificationBloc(
+      repository: sl(),
+      authStateProvider: sl(),
+      languagePreferenceService: sl(),
+    ),
+    dispose: (bloc) => bloc.close(),
+  );
 }

@@ -17,6 +17,20 @@ class TranslationKeys {
   static const studyGuideCopy = 'study_guide.actions.copy';
   static const studyGuideSignIn = 'study_guide.actions.sign_in';
 
+  // Study Guide Streaming
+  static const studyGuideStreamingLoading = 'study_guide.streaming.loading';
+  static const studyGuideStreamingSections = 'study_guide.streaming.sections';
+
+  // Study Guide TTS
+  static const studyGuideListen = 'study_guide.tts.listen';
+  static const studyGuidePause = 'study_guide.tts.pause';
+  static const studyGuideResume = 'study_guide.tts.resume';
+  static const studyGuideLoading = 'study_guide.tts.loading';
+  static const studyGuideTtsControls = 'study_guide.tts.controls';
+  static const studyGuideTtsSpeed = 'study_guide.tts.speed';
+  static const studyGuideTtsNowReading = 'study_guide.tts.now_reading';
+  static const studyGuideTtsStop = 'study_guide.tts.stop';
+
   // Study Guide Messages
   static const studyGuideAuthRequired = 'study_guide.messages.auth_required';
   static const studyGuideAuthRequiredMessage =
@@ -214,6 +228,12 @@ class TranslationKeys {
   static const loginFeatureDailyVerse = 'login.feature_daily_verse';
   static const loginFeatureDailyVerseSubtitle =
       'login.feature_daily_verse_subtitle';
+  static const loginFeatureVoiceDiscipler = 'login.feature_voice_discipler';
+  static const loginFeatureVoiceDisciplerSubtitle =
+      'login.feature_voice_discipler_subtitle';
+  static const loginFeatureMemoryVerse = 'login.feature_memory_verse';
+  static const loginFeatureMemoryVerseSubtitle =
+      'login.feature_memory_verse_subtitle';
   static const loginPrivacyPolicy = 'login.privacy_policy';
   static const loginContinueWithEmail = 'login.continue_with_email';
 
@@ -277,6 +297,8 @@ class TranslationKeys {
   static const settingsAccount = 'settings.account';
   static const settingsSignInToSync = 'settings.sign_in_to_sync';
   static const settingsSignIn = 'settings.sign_in';
+  static const settingsMyPlan = 'settings.my_plan';
+  static const settingsMyPlanSubtitle = 'settings.my_plan_subtitle';
   static const settingsAppearance = 'settings.appearance';
   static const settingsNotifications = 'settings.notifications';
   static const settingsNotificationPreferences =
@@ -327,6 +349,14 @@ class TranslationKeys {
   static const settingsTakeQuestionnaire = 'settings.take_questionnaire';
   static const settingsTakeQuestionnaireSubtitle =
       'settings.take_questionnaire_subtitle';
+
+  // Settings - Help & Support
+  static const settingsHelpSupport = 'settings.help_support';
+  static const settingsReportPurchaseIssue = 'settings.report_purchase_issue';
+  static const settingsReportPurchaseIssueSubtitle =
+      'settings.report_purchase_issue_subtitle';
+  static const settingsContactUs = 'settings.contact_us';
+  static const settingsContactUsSubtitle = 'settings.contact_us_subtitle';
 
   // Personalization Questionnaire
   static const questionnaireYourJourney = 'questionnaire.your_journey';
@@ -956,9 +986,68 @@ class TranslationKeys {
   static const pricingSecurePayments = 'pricing.secure_payments';
   static const pricingPricesInInr = 'pricing.prices_in_inr';
 
+  // My Plan Page
+  static const myPlanTitle = 'my_plan.title';
+  static const myPlanRefresh = 'my_plan.refresh';
+  static const myPlanPlanFeatures = 'my_plan.plan_features';
+  static const myPlanBillingDetails = 'my_plan.billing_details';
+  static const myPlanRecentPayments = 'my_plan.recent_payments';
+  static const myPlanViewAll = 'my_plan.view_all';
+  static const myPlanViewPaymentHistory = 'my_plan.view_payment_history';
+  static const myPlanAmount = 'my_plan.amount';
+  static const myPlanNextBilling = 'my_plan.next_billing';
+  static const myPlanAccessUntil = 'my_plan.access_until';
+  static const myPlanStatus = 'my_plan.status';
+  static const myPlanFreeUntil = 'my_plan.free_until';
+  static const myPlanDaysRemaining = 'my_plan.days_remaining';
+  static const myPlanTrialActive = 'my_plan.trial_active';
+  static const myPlanTrialEndingSoon = 'my_plan.trial_ending_soon';
+  static const myPlanPremiumTrialActive = 'my_plan.premium_trial_active';
+  static const myPlanActiveSubscription = 'my_plan.active_subscription';
+  static const myPlanCancellationPending = 'my_plan.cancellation_pending';
+  static const myPlanGracePeriod = 'my_plan.grace_period';
+  static const myPlanTrialExpired = 'my_plan.trial_expired';
+  static const myPlanFreePlan = 'my_plan.free_plan';
+  static const myPlanSubscriptionNeeded = 'my_plan.subscription_needed';
+  static const myPlanGracePeriodActive = 'my_plan.grace_period_active';
+  static const myPlanGracePeriodEndsSoon = 'my_plan.grace_period_ends_soon';
+  static const myPlanSubscribeWithinDays = 'my_plan.subscribe_within_days';
+  static const myPlanTrialEnded = 'my_plan.trial_ended';
+  static const myPlanSubscribeToContinue = 'my_plan.subscribe_to_continue';
+  static const myPlanUnlockStandardFeatures =
+      'my_plan.unlock_standard_features';
+  static const myPlanGetTokensDaily = 'my_plan.get_tokens_daily';
+  static const myPlanEnjoyingPremium = 'my_plan.enjoying_premium';
+  static const myPlanPremiumTrialEndsSoon = 'my_plan.premium_trial_ends_soon';
+  static const myPlanDaysRemainingInTrial = 'my_plan.days_remaining_in_trial';
+  static const myPlanTryPremiumFree = 'my_plan.try_premium_free';
+  static const myPlanGet7DaysTrial = 'my_plan.get_7_days_trial';
+  static const myPlanStart7DayTrial = 'my_plan.start_7_day_trial';
+  static const myPlanTryAllFeaturesFree = 'my_plan.try_all_features_free';
+  static const myPlanUpgradeToStandard = 'my_plan.upgrade_to_standard';
+  static const myPlanUpgradeToPremium = 'my_plan.upgrade_to_premium';
+  static const myPlanKeepPremiumAccess = 'my_plan.keep_premium_access';
+  static const myPlanSubscribeToStandard = 'my_plan.subscribe_to_standard';
+  static const myPlanAfterTrial = 'my_plan.after_trial';
+  static const myPlanSubscribeNow = 'my_plan.subscribe_now';
+  static const myPlanKeepStandardAccess = 'my_plan.keep_standard_access';
+  static const myPlanGetAllFeatures = 'my_plan.get_all_features';
+  static const myPlanRegainAccess = 'my_plan.regain_access';
+  static const myPlanGetTokensDailyFor = 'my_plan.get_tokens_daily_for';
+  static const myPlanUnlimitedTokensFor = 'my_plan.unlimited_tokens_for';
+  static const myPlanContinueAfterTrial = 'my_plan.continue_after_trial';
+  static const myPlanContinueSubscription = 'my_plan.continue_subscription';
+  static const myPlanResumeSubscription = 'my_plan.resume_subscription';
+  static const myPlanCancelSubscription = 'my_plan.cancel_subscription';
+  static const myPlanCancelAtPeriodEnd = 'my_plan.cancel_at_period_end';
+  static const myPlanResubscribe = 'my_plan.resubscribe';
+  static const myPlanRenewSubscription = 'my_plan.renew_subscription';
+
   // Study Guide Error Screen
   static const studyGuideErrorTitle = 'study_guide.error.title';
   static const studyGuideErrorTitleAlt = 'study_guide.error.title_alt';
+  static const studyGuideErrorTitleNoTokens =
+      'study_guide.error.title_no_tokens';
   static const studyGuideErrorDefaultMessage =
       'study_guide.error.default_message';
   static const studyGuideErrorDefaultMessageAlt =
@@ -971,4 +1060,51 @@ class TranslationKeys {
   static const studyGuideErrorGoBack = 'study_guide.error.go_back';
   static const studyGuideErrorTryAgain = 'study_guide.error.try_again';
   static const studyGuideErrorViewSaved = 'study_guide.error.view_saved';
+  static const studyGuideErrorMyPlan = 'study_guide.error.my_plan';
+
+  // Upgrade Required Dialog
+  static const upgradeDialogTitle = 'upgrade_dialog.title';
+  static const upgradeDialogStandardPlan = 'upgrade_dialog.standard_plan';
+  static const upgradeDialogPrice = 'upgrade_dialog.price';
+  static const upgradeDialogBenefitVoice = 'upgrade_dialog.benefit_voice';
+  static const upgradeDialogBenefitMemory = 'upgrade_dialog.benefit_memory';
+  static const upgradeDialogBenefitTokens = 'upgrade_dialog.benefit_tokens';
+  static const upgradeDialogUpgradeButton = 'upgrade_dialog.upgrade_button';
+  static const upgradeDialogMaybeLater = 'upgrade_dialog.maybe_later';
+
+  // Gamification (My Progress)
+  static const gamificationTitle = 'gamification.title';
+  static const gamificationSubtitle = 'gamification.subtitle';
+  static const gamificationStreaks = 'gamification.streaks';
+  static const gamificationStudyStreak = 'gamification.study_streak';
+  static const gamificationVerseStreak = 'gamification.verse_streak';
+  static const gamificationPersonalBest = 'gamification.personal_best';
+  static const gamificationDays = 'gamification.days';
+  static const gamificationStatistics = 'gamification.statistics';
+  static const gamificationStudies = 'gamification.studies';
+  static const gamificationTimeSpent = 'gamification.time_spent';
+  static const gamificationMemoryVerses = 'gamification.memory_verses';
+  static const gamificationVoiceSessions = 'gamification.voice_sessions';
+  static const gamificationSavedGuides = 'gamification.saved_guides';
+  static const gamificationStudyDays = 'gamification.study_days';
+  static const gamificationAchievements = 'gamification.achievements';
+  static const gamificationXpTotal = 'gamification.xp_total';
+  static const gamificationXpToNextLevel = 'gamification.xp_to_next_level';
+  static const gamificationMaxLevel = 'gamification.max_level';
+  static const gamificationUnlocked = 'gamification.unlocked';
+  static const gamificationLocked = 'gamification.locked';
+  static const gamificationUnlockedOn = 'gamification.unlocked_on';
+  static const gamificationNewAchievement = 'gamification.new_achievement';
+  static const gamificationCongratulations = 'gamification.congratulations';
+  static const gamificationEarnedXp = 'gamification.earned_xp';
+  static const gamificationContinue = 'gamification.continue';
+  static const gamificationFailedToLoad = 'gamification.failed_to_load';
+  static const gamificationRetry = 'gamification.retry';
+
+  // Achievement Categories
+  static const gamificationCategoryStudy = 'gamification.category.study';
+  static const gamificationCategoryStreak = 'gamification.category.streak';
+  static const gamificationCategoryMemory = 'gamification.category.memory';
+  static const gamificationCategoryVoice = 'gamification.category.voice';
+  static const gamificationCategorySaved = 'gamification.category.saved';
 }

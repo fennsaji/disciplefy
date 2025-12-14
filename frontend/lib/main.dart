@@ -24,10 +24,18 @@ import 'features/daily_verse/presentation/bloc/daily_verse_event.dart';
 import 'features/settings/presentation/bloc/settings_bloc.dart';
 import 'features/settings/presentation/bloc/settings_event.dart';
 import 'features/tokens/presentation/bloc/token_bloc.dart';
+import 'features/tokens/presentation/bloc/token_event.dart';
+import 'features/auth/presentation/bloc/auth_state.dart' as auth_states;
 import 'features/feedback/presentation/bloc/feedback_bloc.dart';
 import 'features/notifications/presentation/bloc/notification_bloc.dart';
+import 'features/gamification/domain/entities/achievement.dart';
+import 'features/gamification/presentation/bloc/gamification_bloc.dart';
+import 'features/gamification/presentation/bloc/gamification_event.dart';
+import 'features/gamification/presentation/bloc/gamification_state.dart';
+import 'features/gamification/presentation/widgets/achievement_unlock_dialog.dart';
 import 'core/utils/web_splash_controller.dart';
 import 'core/services/theme_service.dart';
+import 'core/services/locale_service.dart';
 import 'core/services/auth_state_provider.dart';
 import 'core/services/auth_session_validator.dart';
 import 'core/services/notification_service.dart';
@@ -189,6 +197,11 @@ void main() async {
     await sl<ThemeService>().initialize();
     if (kDebugMode) print('✅ [MAIN] Theme service completed');
 
+    // Initialize locale service
+    if (kDebugMode) print('🔧 [MAIN] Initializing locale service...');
+    await sl<LocaleService>().initialize();
+    if (kDebugMode) print('✅ [MAIN] Locale service completed');
+
     // Initialize Phase 2 & 3 keyboard shadow fixes (mobile only)
     if (!kIsWeb) {
       await DeviceKeyboardHandler.initialize();
@@ -298,6 +311,39 @@ class _DisciplefyBibleStudyAppState extends State<DisciplefyBibleStudyApp> {
     }
   }
 
+  /// Show achievement unlock dialog globally
+  /// This is placed at the app level to catch achievements from ANY route,
+  /// including Memory Verses which is outside AppShell
+  void _showAchievementUnlockDialog(AchievementUnlockResult result) {
+    // Use the router's root navigator key which is always available
+    final navigatorState = AppRouter.rootNavigatorKey.currentState;
+    if (navigatorState == null) {
+      if (kDebugMode) {
+        print('⚠️ [MAIN] Cannot show achievement dialog - no navigator state');
+      }
+      return;
+    }
+
+    final navigatorContext = navigatorState.context;
+    if (kDebugMode) {
+      print(
+          '🏆 [MAIN] Showing achievement unlock dialog: ${result.achievementName}');
+    }
+
+    showDialog(
+      context: navigatorContext,
+      barrierDismissible: false,
+      builder: (dialogContext) => AchievementUnlockDialog(
+        achievement: result,
+        onDismiss: () {
+          Navigator.of(dialogContext).pop();
+          // Dismiss this notification from the queue
+          sl<GamificationBloc>().add(const DismissAchievementNotification());
+        },
+      ),
+    );
+  }
+
   @override
   void dispose() {
     _authSessionValidator?.unregister();
@@ -311,6 +357,7 @@ class _DisciplefyBibleStudyAppState extends State<DisciplefyBibleStudyApp> {
   @override
   Widget build(BuildContext context) {
     final themeService = sl<ThemeService>();
+    final localeService = sl<LocaleService>();
 
     return MultiBlocProvider(
       providers: [
@@ -340,23 +387,55 @@ class _DisciplefyBibleStudyAppState extends State<DisciplefyBibleStudyApp> {
           create: (context) => sl<NotificationBloc>(),
         ),
       ],
-      child: ListenableBuilder(
-        listenable: themeService,
-        builder: (context, child) => MaterialApp.router(
-          title: 'Disciplefy | Bible Study App',
-          debugShowCheckedModeBanner: false,
+      child: BlocListener<AuthBloc, auth_states.AuthState>(
+        listener: (context, state) {
+          // Fetch token status when user becomes authenticated
+          // This ensures Memory Verses and other features have plan info
+          if (state is auth_states.AuthenticatedState) {
+            if (kDebugMode) {
+              print(
+                  '🪙 [MAIN] Auth state changed to authenticated - fetching token status');
+            }
+            context.read<TokenBloc>().add(const GetTokenStatus());
+          }
+        },
+        // Global achievement unlock listener - catches achievements from ALL routes
+        // including Memory Verses which is outside AppShell
+        child: BlocListener<GamificationBloc, GamificationState>(
+          bloc: sl<GamificationBloc>(),
+          listenWhen: (previous, current) {
+            // Listen when new pending notifications are added
+            return current.hasPendingNotifications &&
+                current.pendingNotifications.length >
+                    previous.pendingNotifications.length;
+          },
+          listener: (context, state) {
+            // Show achievement unlock dialog when there are pending notifications
+            if (state.hasPendingNotifications &&
+                state.nextNotification != null) {
+              _showAchievementUnlockDialog(state.nextNotification!);
+            }
+          },
+          child: ListenableBuilder(
+            listenable: Listenable.merge([themeService, localeService]),
+            builder: (context, child) => MaterialApp.router(
+              title: 'Disciplefy | Bible Study App',
+              debugShowCheckedModeBanner: false,
 
-          // Dynamic theming based on ThemeService
-          themeMode: themeService.flutterThemeMode,
-          theme: AppTheme.lightTheme,
-          darkTheme: AppTheme.darkTheme,
+              // Dynamic theming based on ThemeService
+              themeMode: themeService.flutterThemeMode,
+              theme: AppTheme.lightTheme,
+              darkTheme: AppTheme.darkTheme,
 
-          // Localization
-          localizationsDelegates: AppLocalizations.localizationsDelegates,
-          supportedLocales: AppLocalizations.supportedLocales,
+              // Localization - Use LocaleService for dynamic language switching
+              locale: localeService.currentLocale,
+              localizationsDelegates: AppLocalizations.localizationsDelegates,
+              supportedLocales: AppLocalizations.supportedLocales,
 
-          // Navigation
-          routerConfig: AppRouter.router,
+              // Navigation
+              routerConfig: AppRouter.router,
+            ),
+          ),
         ),
       ),
     );

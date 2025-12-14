@@ -21,6 +21,12 @@ import '../../../saved_guides/data/models/saved_guide_model.dart';
 import '../../../follow_up_chat/presentation/widgets/follow_up_chat_widget.dart';
 import '../../../follow_up_chat/presentation/bloc/follow_up_chat_bloc.dart';
 import '../../../follow_up_chat/presentation/bloc/follow_up_chat_event.dart';
+import '../widgets/tts_control_button.dart';
+import '../widgets/tts_control_sheet.dart';
+import '../../data/services/study_guide_tts_service.dart';
+import '../../data/services/study_guide_pdf_service.dart';
+import '../../../gamification/presentation/bloc/gamification_bloc.dart';
+import '../../../gamification/presentation/bloc/gamification_event.dart';
 
 /// Study Guide Screen displaying generated content with sections and user interactions.
 ///
@@ -89,6 +95,9 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
   // Follow-up chat state
   bool _isChatExpanded = false;
 
+  // PDF export state
+  bool _isExportingPdf = false;
+
   // Completion tracking state
   DateTime? _pageOpenedAt;
   int _timeSpentSeconds = 0;
@@ -107,6 +116,9 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
 
   @override
   void dispose() {
+    // Stop TTS when navigating away
+    sl<StudyGuideTTSService>().stop();
+
     _autoSaveTimer?.cancel();
     _timeTrackingTimer?.cancel();
     _isCompletionTrackingStarted = false;
@@ -418,6 +430,10 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
                   : Theme.of(context).colorScheme.primary,
               icon: state.saved ? Icons.check_circle : Icons.bookmark_remove,
             );
+            // Check saved achievements when guide is saved
+            if (state.saved) {
+              sl<GamificationBloc>().add(const CheckSavedAchievements());
+            }
           } else if (state is StudySaveFailure) {
             _handleSaveError(state.failure);
           } else if (state is StudyAuthenticationRequired) {
@@ -439,6 +455,8 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
             // Setup auto-save if guide was saved
             if (state.guideSaved) {
               _setupAutoSave();
+              // Check saved achievements when guide is saved
+              sl<GamificationBloc>().add(const CheckSavedAchievements());
             }
           } else if (state is StudyEnhancedSaveFailure) {
             _handleEnhancedSaveError(state);
@@ -486,10 +504,14 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
               );
             }
           }
-          // Handle study completion - invalidate cache
+          // Handle study completion - invalidate cache and update gamification
           else if (state is StudyCompletionSuccess) {
             // Invalidate the "For You" cache so completed topics don't show again
             sl<RecommendedGuidesService>().clearForYouCache();
+
+            // Update study streak and check achievements
+            sl<GamificationBloc>().add(const UpdateStudyStreak());
+            sl<GamificationBloc>().add(const CheckStudyAchievements());
           }
         },
         child: Scaffold(
@@ -512,7 +534,7 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
               tooltip: 'Go back',
             ),
             title: Text(
-              _getDisplayTitle(),
+              context.tr('study_guide.page_title'),
               style: AppFonts.poppins(
                 fontSize: 20,
                 fontWeight: FontWeight.w600,
@@ -521,6 +543,23 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
             ),
             centerTitle: true,
             actions: [
+              IconButton(
+                onPressed: _isExportingPdf ? null : _exportToPdf,
+                icon: _isExportingPdf
+                    ? SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
+                      )
+                    : Icon(
+                        Icons.picture_as_pdf_outlined,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                tooltip: 'Export as PDF',
+              ),
               IconButton(
                 onPressed: _shareStudyGuide,
                 icon: Icon(
@@ -542,6 +581,11 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       SizedBox(height: isLargeScreen ? 24 : 16),
+
+                      // Topic Title
+                      _buildTopicTitle(),
+
+                      SizedBox(height: isLargeScreen ? 24 : 20),
 
                       // Study Guide Content
                       _buildStudyContent(),
@@ -694,71 +738,138 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
         ), // Scaffold
       ); // PopScope
 
-  Widget _buildStudyContent() => Column(
+  /// Builds the topic title section displayed below the AppBar
+  Widget _buildTopicTitle() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            Theme.of(context).colorScheme.primary.withOpacity(0.1),
+            Theme.of(context).colorScheme.secondary.withOpacity(0.05),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: Theme.of(context).colorScheme.primary.withOpacity(0.2),
+        ),
+      ),
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Summary Section
-          _StudySection(
-            title: context.tr(TranslationKeys.studyGuideSummary),
-            icon: Icons.summarize,
-            content: _currentStudyGuide.summary,
+          Text(
+            _currentStudyGuide.inputType == 'scripture'
+                ? context.tr('generate_study.scripture_mode')
+                : context.tr('generate_study.topic_mode'),
+            style: AppFonts.inter(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: Theme.of(context).colorScheme.primary.withOpacity(0.7),
+              letterSpacing: 1.2,
+            ),
           ),
-
-          const SizedBox(height: 24),
-
-          // Interpretation Section
-          _StudySection(
-            title: context.tr(TranslationKeys.studyGuideInterpretation),
-            icon: Icons.lightbulb_outline,
-            content: _currentStudyGuide.interpretation,
-          ),
-
-          const SizedBox(height: 24),
-
-          // Context Section
-          _StudySection(
-            title: context.tr(TranslationKeys.studyGuideContext),
-            icon: Icons.history_edu,
-            content: _currentStudyGuide.context,
-          ),
-
-          const SizedBox(height: 24),
-
-          // Related Verses Section
-          _StudySection(
-            title: context.tr(TranslationKeys.studyGuideRelatedVerses),
-            icon: Icons.menu_book,
-            content: _currentStudyGuide.relatedVerses.join('\n\n'),
-          ),
-
-          const SizedBox(height: 24),
-
-          // Discussion Questions Section
-          _StudySection(
-            title: context.tr(TranslationKeys.studyGuideDiscussionQuestions),
-            icon: Icons.quiz,
-            content: _currentStudyGuide.reflectionQuestions
-                .asMap()
-                .entries
-                .map((entry) => '${entry.key + 1}. ${entry.value}')
-                .join('\n\n'),
-          ),
-
-          const SizedBox(height: 24),
-
-          // Prayer Points Section
-          _StudySection(
-            key: _prayerPointsKey,
-            title: context.tr(TranslationKeys.studyGuidePrayerPoints),
-            icon: Icons.favorite,
-            content: _currentStudyGuide.prayerPoints
-                .asMap()
-                .entries
-                .map((entry) => '• ${entry.value}')
-                .join('\n'),
+          const SizedBox(height: 8),
+          Text(
+            _getDisplayTitle(),
+            style: AppFonts.poppins(
+              fontSize: 22,
+              fontWeight: FontWeight.bold,
+              color: Theme.of(context).colorScheme.onBackground,
+              height: 1.3,
+            ),
           ),
         ],
-      );
+      ),
+    );
+  }
+
+  Widget _buildStudyContent() {
+    final ttsService = sl<StudyGuideTTSService>();
+
+    return ValueListenableBuilder<StudyGuideTtsState>(
+      valueListenable: ttsService.state,
+      builder: (context, ttsState, child) {
+        // Check if TTS is actively reading (playing status)
+        final isReading = ttsState.status == TtsStatus.playing;
+        final currentSection = ttsState.currentSectionIndex;
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Summary Section (index 0)
+            _StudySection(
+              title: context.tr(TranslationKeys.studyGuideSummary),
+              icon: Icons.summarize,
+              content: _currentStudyGuide.summary,
+              isBeingRead: isReading && currentSection == 0,
+            ),
+
+            const SizedBox(height: 24),
+
+            // Interpretation Section (index 1)
+            _StudySection(
+              title: context.tr(TranslationKeys.studyGuideInterpretation),
+              icon: Icons.lightbulb_outline,
+              content: _currentStudyGuide.interpretation,
+              isBeingRead: isReading && currentSection == 1,
+            ),
+
+            const SizedBox(height: 24),
+
+            // Context Section (index 2)
+            _StudySection(
+              title: context.tr(TranslationKeys.studyGuideContext),
+              icon: Icons.history_edu,
+              content: _currentStudyGuide.context,
+              isBeingRead: isReading && currentSection == 2,
+            ),
+
+            const SizedBox(height: 24),
+
+            // Related Verses Section (index 3)
+            _StudySection(
+              title: context.tr(TranslationKeys.studyGuideRelatedVerses),
+              icon: Icons.menu_book,
+              content: _currentStudyGuide.relatedVerses.join('\n\n'),
+              isBeingRead: isReading && currentSection == 3,
+            ),
+
+            const SizedBox(height: 24),
+
+            // Discussion Questions Section (index 4)
+            _StudySection(
+              title: context.tr(TranslationKeys.studyGuideDiscussionQuestions),
+              icon: Icons.quiz,
+              content: _currentStudyGuide.reflectionQuestions
+                  .asMap()
+                  .entries
+                  .map((entry) => '${entry.key + 1}. ${entry.value}')
+                  .join('\n\n'),
+              isBeingRead: isReading && currentSection == 4,
+            ),
+
+            const SizedBox(height: 24),
+
+            // Prayer Points Section (index 5)
+            _StudySection(
+              key: _prayerPointsKey,
+              title: context.tr(TranslationKeys.studyGuidePrayerPoints),
+              icon: Icons.favorite,
+              content: _currentStudyGuide.prayerPoints
+                  .asMap()
+                  .entries
+                  .map((entry) => '• ${entry.value}')
+                  .join('\n'),
+              isBeingRead: isReading && currentSection == 5,
+            ),
+          ],
+        );
+      },
+    );
+  }
 
   Widget _buildNotesSection() => Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -913,42 +1024,11 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
               ),
             ),
             const SizedBox(width: 16),
+            // TTS Control Button (replaces Share button)
             Expanded(
-              child: Container(
-                height: 56,
-                decoration: BoxDecoration(
-                  gradient: AppTheme.primaryGradient,
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppTheme.primaryColor.withOpacity(0.3),
-                      blurRadius: 12,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: Material(
-                  color: Colors.transparent,
-                  child: InkWell(
-                    onTap: _shareStudyGuide,
-                    borderRadius: BorderRadius.circular(12),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(Icons.share, color: Colors.white, size: 20),
-                        const SizedBox(width: 8),
-                        Text(
-                          context.tr(TranslationKeys.studyGuideShare),
-                          style: AppFonts.inter(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
+              child: TtsControlButton(
+                guide: _currentStudyGuide,
+                onControlsTap: () => showTtsControlSheet(context),
               ),
             ),
           ],
@@ -1265,6 +1345,89 @@ Generated by Disciplefy - Bible Study App
       subject: 'Bible Study: ${_getDisplayTitle()}',
     );
   }
+
+  /// Exports the current study guide as a PDF and opens the system share sheet.
+  Future<void> _exportToPdf() async {
+    // Show loading dialog for Hindi/Malayalam (image-based rendering takes time)
+    final isComplexScript = _currentStudyGuide.language.toLowerCase() == 'hi' ||
+        _currentStudyGuide.language.toLowerCase() == 'ml';
+
+    setState(() {
+      _isExportingPdf = true;
+    });
+
+    if (isComplexScript && mounted) {
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (ctx) => PopScope(
+          canPop: false,
+          child: AlertDialog(
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: Theme.of(ctx).colorScheme.primary.withOpacity(0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    Icons.picture_as_pdf,
+                    color: Theme.of(ctx).colorScheme.primary,
+                    size: 28,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  context.tr('study_guide.actions.generating_pdf'),
+                  style: Theme.of(ctx).textTheme.titleMedium,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  context.tr('study_guide.actions.pdf_wait_message'),
+                  style: Theme.of(ctx).textTheme.bodySmall?.copyWith(
+                        color: Theme.of(ctx)
+                            .colorScheme
+                            .onSurface
+                            .withOpacity(0.6),
+                      ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+
+      // Wait for dialog to fully render before starting heavy work
+      await Future.delayed(const Duration(milliseconds: 150));
+    }
+
+    try {
+      final pdfService = StudyGuidePdfService();
+      await pdfService.sharePdf(_currentStudyGuide, context: context);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to export PDF: ${e.toString()}'),
+            backgroundColor: Theme.of(context).colorScheme.error,
+          ),
+        );
+      }
+    } finally {
+      // Close loading dialog if it was shown
+      if (isComplexScript && mounted) {
+        Navigator.of(context, rootNavigator: true).pop();
+      }
+      if (mounted) {
+        setState(() {
+          _isExportingPdf = false;
+        });
+      }
+    }
+  }
 }
 
 /// Study section widget for displaying content with consistent styling.
@@ -1272,96 +1435,145 @@ class _StudySection extends StatelessWidget {
   final String title;
   final IconData icon;
   final String content;
+  final bool isBeingRead;
 
   const _StudySection({
     super.key,
     required this.title,
     required this.icon,
     required this.content,
+    this.isBeingRead = false,
   });
 
   @override
-  Widget build(BuildContext context) => Container(
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surface,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+  Widget build(BuildContext context) {
+    final primaryColor = Theme.of(context).colorScheme.primary;
+
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeInOut,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: isBeingRead
+            ? primaryColor.withOpacity(0.08)
+            : Theme.of(context).colorScheme.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: isBeingRead
+              ? primaryColor.withOpacity(0.5)
+              : primaryColor.withOpacity(0.1),
+          width: isBeingRead ? 2 : 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: isBeingRead
+                ? primaryColor.withOpacity(0.15)
+                : primaryColor.withOpacity(0.05),
+            blurRadius: isBeingRead ? 16 : 10,
+            offset: const Offset(0, 2),
           ),
-          boxShadow: [
-            BoxShadow(
-              color: Theme.of(context).colorScheme.primary.withOpacity(0.05),
-              blurRadius: 10,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Section Header
-            Row(
-              children: [
-                Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color:
-                        Theme.of(context).colorScheme.primary.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Icon(
-                    icon,
-                    color: Theme.of(context).colorScheme.primary,
-                    size: 20,
-                  ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Section Header
+          Row(
+            children: [
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 300),
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: isBeingRead
+                      ? primaryColor
+                      : primaryColor.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(10),
                 ),
-
-                const SizedBox(width: 12),
-
-                Expanded(
-                  child: Text(
-                    title,
-                    style: AppFonts.inter(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w600,
-                      color: Theme.of(context).colorScheme.onBackground,
+                child: isBeingRead
+                    ? const _PulsingIcon(icon: Icons.volume_up, size: 20)
+                    : Icon(
+                        icon,
+                        color: primaryColor,
+                        size: 20,
+                      ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        title,
+                        style: AppFonts.inter(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w600,
+                          color: Theme.of(context).colorScheme.onBackground,
+                        ),
+                      ),
                     ),
-                  ),
+                    if (isBeingRead)
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: primaryColor,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(
+                              Icons.graphic_eq,
+                              color: Colors.white,
+                              size: 14,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              'Reading',
+                              style: AppFonts.inter(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                  ],
                 ),
-
-                // Copy button
-                IconButton(
-                  onPressed: () => _copyToClipboard(context, content),
-                  icon: Icon(
-                    Icons.copy,
-                    color: Theme.of(context)
-                        .colorScheme
-                        .onSurface
-                        .withOpacity(0.6),
-                    size: 18,
-                  ),
-                  constraints: const BoxConstraints(),
-                  padding: EdgeInsets.zero,
-                  tooltip: 'Copy $title',
+              ),
+              const SizedBox(width: 8),
+              // Copy button
+              IconButton(
+                onPressed: () => _copyToClipboard(context, content),
+                icon: Icon(
+                  Icons.copy,
+                  color:
+                      Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                  size: 18,
                 ),
-              ],
-            ),
-
-            const SizedBox(height: 16),
-
-            // Section Content
-            SelectableText(
-              content,
-              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                    color: Theme.of(context).colorScheme.onBackground,
-                    height: 1.6,
-                  ),
-            ),
-          ],
-        ),
-      );
+                constraints: const BoxConstraints(),
+                padding: EdgeInsets.zero,
+                tooltip: 'Copy $title',
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          // Section Content
+          SelectableText(
+            content,
+            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                  color: Theme.of(context).colorScheme.onBackground,
+                  height: 1.6,
+                ),
+          ),
+        ],
+      ),
+    );
+  }
 
   void _copyToClipboard(BuildContext context, String text) {
     Clipboard.setData(ClipboardData(text: text));
@@ -1375,6 +1587,62 @@ class _StudySection extends StatelessWidget {
         behavior: SnackBarBehavior.floating,
         duration: const Duration(seconds: 2),
       ),
+    );
+  }
+}
+
+/// Animated pulsing icon for TTS reading indicator.
+class _PulsingIcon extends StatefulWidget {
+  final IconData icon;
+  final double size;
+
+  const _PulsingIcon({
+    required this.icon,
+    required this.size,
+  });
+
+  @override
+  State<_PulsingIcon> createState() => _PulsingIconState();
+}
+
+class _PulsingIconState extends State<_PulsingIcon>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _animation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      duration: const Duration(milliseconds: 1000),
+      vsync: this,
+    )..repeat(reverse: true);
+
+    _animation = Tween<double>(begin: 0.6, end: 1.0).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _animation,
+      builder: (context, child) {
+        return Opacity(
+          opacity: _animation.value,
+          child: Icon(
+            widget.icon,
+            color: Colors.white,
+            size: widget.size,
+          ),
+        );
+      },
     );
   }
 }

@@ -123,7 +123,7 @@ When implementing any feature:
 1. **Read and Apply LLM Development Guide**: Load `docs/internal/LLM_Development_Guide.md` and strictly follow all guidelines
 2. **Security First**: Never proceed without input sanitization and output validation
 3. **Theological Accuracy**: All LLM outputs must align with orthodox Christian theology
-4. **Jeff Reed Methodology**: Ensure all Bible study content follows the 4-step process exactly
+4. ** Methodology**: Ensure all Bible study content follows the 4-step process exactly
 
 ### ✅ LLM Task Execution Checklist
 
@@ -135,7 +135,7 @@ When implementing any feature:
 
 **Prompt Engineering:**
 - [ ] Use modular prompt templates from LLM Development Guide
-- [ ] Include Jeff Reed methodology instructions
+- [ ] Include  methodology instructions
 - [ ] Apply theological accuracy guidelines
 - [ ] Ensure JSON schema-compatible output format
 

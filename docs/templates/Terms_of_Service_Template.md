@@ -34,7 +34,7 @@ By downloading, installing, accessing, or using the Disciplefy: Bible Study App 
 
 ### 1.2 About Our Service
 
-Disciplefy is a mobile application and web platform that provides AI-powered Bible study guides, commentary, and educational content to help users engage with Scripture using the Jeff Reed methodology.
+Disciplefy is a mobile application and web platform that provides AI-powered Bible study guides, commentary, and educational content to help users engage with Scripture using the  methodology.
 
 **Service Provider:**
 - **Company:** [COMPANY_NAME]

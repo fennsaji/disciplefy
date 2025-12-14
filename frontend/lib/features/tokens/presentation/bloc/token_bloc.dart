@@ -93,8 +93,18 @@ class TokenBloc extends Bloc<TokenEvent, TokenState> {
     GetTokenStatus event,
     Emitter<TokenState> emit,
   ) async {
+    if (kDebugMode) {
+      print('🪙 [TOKEN_BLOC] GetTokenStatus event received');
+      print(
+          '🪙 [TOKEN_BLOC] Cache valid: ${_isCacheValid()}, cached status: $_cachedTokenStatus');
+    }
+
     // Check if cached data is valid
     if (_isCacheValid() && _cachedTokenStatus != null) {
+      if (kDebugMode) {
+        print(
+            '🪙 [TOKEN_BLOC] Using cached token status: ${_cachedTokenStatus!.userPlan}');
+      }
       emit(TokenLoaded(
         tokenStatus: _cachedTokenStatus!,
         lastUpdated: _lastCacheUpdate!,
@@ -102,17 +112,29 @@ class TokenBloc extends Bloc<TokenEvent, TokenState> {
       return;
     }
 
+    if (kDebugMode) {
+      print('🪙 [TOKEN_BLOC] Fetching token status from API...');
+    }
     emit(const TokenLoading(operation: 'fetching'));
 
     final result = await _getTokenStatus(NoParams());
 
     result.fold(
-      (failure) => emit(TokenError(
-        failure: failure,
-        operation: 'fetching',
-        previousTokenStatus: _cachedTokenStatus,
-      )),
+      (failure) {
+        if (kDebugMode) {
+          print('🪙 [TOKEN_BLOC] ❌ Token fetch failed: ${failure.message}');
+        }
+        emit(TokenError(
+          failure: failure,
+          operation: 'fetching',
+          previousTokenStatus: _cachedTokenStatus,
+        ));
+      },
       (tokenStatus) {
+        if (kDebugMode) {
+          print(
+              '🪙 [TOKEN_BLOC] ✅ Token fetch success: plan=${tokenStatus.userPlan}, tokens=${tokenStatus.totalTokens}');
+        }
         _updateCache(tokenStatus);
         emit(TokenLoaded(
           tokenStatus: tokenStatus,
@@ -434,11 +456,12 @@ class TokenBloc extends Bloc<TokenEvent, TokenState> {
       return;
     }
 
-    // Only standard users can purchase tokens
-    if (_cachedTokenStatus!.userPlan != UserPlan.standard) {
+    // Premium users cannot purchase tokens (they have unlimited)
+    if (_cachedTokenStatus!.userPlan == UserPlan.premium) {
       emit(const TokenError(
         failure: ValidationFailure(
-            message: 'Only standard users can purchase tokens'),
+            message:
+                'Premium users have unlimited tokens and do not need to purchase'),
         operation: 'order_creation',
       ));
       return;
