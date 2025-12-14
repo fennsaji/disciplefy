@@ -125,6 +125,90 @@ export class LLMService {
   }
 
   /**
+   * Streams study guide generation, yielding raw text chunks.
+   *
+   * This is an async generator that yields raw text chunks from the LLM.
+   * The caller is responsible for parsing these chunks into sections
+   * using the StreamingJsonParser.
+   *
+   * @param params - Generation parameters (input type, value, language, tier)
+   * @yields Raw text chunks from the LLM stream
+   * @throws Error if mock mode is enabled or no provider is available
+   */
+  async *streamStudyGuide(
+    params: LLMGenerationParams
+  ): AsyncGenerator<string, void, unknown> {
+    this.validateParams(params)
+    console.log(`[LLM] Starting streaming study guide for ${params.inputType}: ${params.inputValue}`)
+
+    if (this.useMockData) {
+      // Yield mock data in chunks for testing
+      const mockGuide = this.getMockStudyGuide()
+      const mockJson = JSON.stringify(mockGuide)
+      const chunkSize = 50
+
+      for (let i = 0; i < mockJson.length; i += chunkSize) {
+        yield mockJson.slice(i, i + chunkSize)
+        // Small delay to simulate streaming
+        await new Promise(resolve => setTimeout(resolve, 50))
+      }
+      return
+    }
+
+    const languageConfig = getLanguageConfigOrDefault(params.language)
+    const prompt = createStudyGuidePrompt(params, languageConfig)
+    const selectedProvider = this.selectOptimalProvider(params.language)
+
+    console.log(`[LLM] Streaming with ${selectedProvider} API for language: ${languageConfig.name}`)
+
+    try {
+      if (selectedProvider === 'openai' && this.openaiClient) {
+        yield* this.openaiClient.streamStudyGuide(
+          prompt.systemMessage,
+          prompt.userMessage,
+          languageConfig,
+          params
+        )
+      } else if (selectedProvider === 'anthropic' && this.anthropicClient) {
+        yield* this.anthropicClient.streamStudyGuide(
+          prompt.systemMessage,
+          prompt.userMessage,
+          languageConfig,
+          params
+        )
+      } else {
+        throw new Error(`No streaming client available for provider: ${selectedProvider}`)
+      }
+    } catch (error) {
+      console.error(`[LLM] Streaming failed with ${selectedProvider}:`, error)
+
+      // Try fallback provider
+      const fallbackProvider = this.getFallbackProvider(selectedProvider)
+      if (fallbackProvider) {
+        console.log(`[LLM] Attempting streaming with fallback provider: ${fallbackProvider}`)
+
+        if (fallbackProvider === 'openai' && this.openaiClient) {
+          yield* this.openaiClient.streamStudyGuide(
+            prompt.systemMessage,
+            prompt.userMessage,
+            languageConfig,
+            params
+          )
+        } else if (fallbackProvider === 'anthropic' && this.anthropicClient) {
+          yield* this.anthropicClient.streamStudyGuide(
+            prompt.systemMessage,
+            prompt.userMessage,
+            languageConfig,
+            params
+          )
+        }
+      } else {
+        throw error
+      }
+    }
+  }
+
+  /**
    * Generates a follow-up response for study guide questions.
    */
   async generateFollowUpResponse(

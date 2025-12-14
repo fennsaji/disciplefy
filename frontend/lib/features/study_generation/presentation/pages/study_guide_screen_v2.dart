@@ -26,6 +26,7 @@ import '../../../follow_up_chat/presentation/bloc/follow_up_chat_bloc.dart';
 import '../../../follow_up_chat/presentation/bloc/follow_up_chat_event.dart';
 import '../../../notifications/presentation/widgets/notification_enable_prompt.dart';
 import '../widgets/engaging_loading_screen.dart';
+import '../widgets/streaming_study_content.dart';
 import '../widgets/tts_control_button.dart';
 import '../widgets/tts_control_sheet.dart';
 import '../../data/services/study_guide_tts_service.dart';
@@ -262,8 +263,9 @@ class _StudyGuideScreenV2ContentState
     // Track topic progress start if we have a topic ID
     _startTopicProgress();
 
-    // Dispatch study guide generation event
-    context.read<StudyBloc>().add(GenerateStudyGuideRequested(
+    // Dispatch streaming study guide generation event (V2 API)
+    // This uses SSE for progressive section rendering
+    context.read<StudyBloc>().add(GenerateStudyGuideStreamingRequested(
           input: widget.input!,
           inputType: widget.type!,
           topicDescription: widget
@@ -373,6 +375,21 @@ class _StudyGuideScreenV2ContentState
       _hasError = true;
       _errorMessage = context.tr(errorKey);
       _isInsufficientTokensError = isTokenError;
+    });
+  }
+
+  /// Handle streaming failure with partial content
+  void _handleStreamingFailure(StudyGenerationStreamingFailed state) {
+    if (!mounted) return;
+    setState(() {
+      _isLoading = false;
+      _hasError = true;
+      _errorMessage = state.failure.message;
+      // Check for token-related errors by type or error code
+      _isInsufficientTokensError = state.failure is InsufficientTokensFailure ||
+          state.failure is TokenFailure ||
+          state.failure.code == 'INSUFFICIENT_TOKENS' ||
+          state.failure.code == 'TOKEN_LIMIT_EXCEEDED';
     });
   }
 
@@ -634,6 +651,15 @@ class _StudyGuideScreenV2ContentState
               _isLoading = true;
               _hasError = false;
             });
+          } else if (state is StudyGenerationStreaming) {
+            // Handle streaming state - UI will rebuild with BlocBuilder
+            if (!mounted) return;
+            setState(() {
+              _isLoading = false;
+              _hasError = false;
+            });
+          } else if (state is StudyGenerationStreamingFailed) {
+            _handleStreamingFailure(state);
           } else if (state is StudyGenerationSuccess) {
             _handleGenerationSuccess(state.studyGuide);
           } else if (state is StudyGenerationFailure) {
@@ -774,19 +800,137 @@ class _StudyGuideScreenV2ContentState
       );
 
   Widget _buildBody() {
-    if (_isLoading) {
-      return _buildLoadingScreen();
-    }
+    // Use BlocBuilder to handle streaming states
+    return BlocBuilder<StudyBloc, StudyState>(
+      buildWhen: (previous, current) =>
+          current is StudyGenerationStreaming ||
+          current is StudyGenerationStreamingFailed ||
+          current is StudyGenerationInProgress ||
+          current is StudyGenerationSuccess ||
+          current is StudyGenerationFailure ||
+          current is StudyInitial,
+      builder: (context, state) {
+        // Handle streaming state - show progressive content
+        if (state is StudyGenerationStreaming) {
+          // If streaming is complete and we have the full study guide,
+          // show the complete content view (with Follow-up Chat and Notes)
+          if (state.content.isComplete && _currentStudyGuide != null) {
+            return _buildStudyGuideContent();
+          }
 
-    if (_hasError) {
-      return _buildErrorScreen();
-    }
+          // Otherwise show progressive streaming content
+          return StreamingStudyContent(
+            content: state.content,
+            inputType: state.inputType,
+            inputValue: state.inputValue,
+            language: state.language,
+            scrollController: _scrollController,
+            onComplete:
+                state.content.isComplete && state.content.studyGuideId != null
+                    ? () => _handleStreamingComplete(state)
+                    : null,
+          );
+        }
 
-    if (_currentStudyGuide == null) {
-      return _buildErrorScreen();
-    }
+        // Handle streaming failure with partial content
+        if (state is StudyGenerationStreamingFailed) {
+          if (state.hasPartialContent) {
+            // Show partial content with error banner
+            return _buildPartialContentWithError(state);
+          }
+          // No partial content, show error screen
+          return _buildErrorScreen();
+        }
 
-    return _buildStudyGuideContent();
+        // Regular loading state
+        if (_isLoading || state is StudyGenerationInProgress) {
+          return _buildLoadingScreen();
+        }
+
+        // Error state
+        if (_hasError) {
+          return _buildErrorScreen();
+        }
+
+        // Success state with complete study guide
+        if (_currentStudyGuide == null) {
+          return _buildErrorScreen();
+        }
+
+        return _buildStudyGuideContent();
+      },
+    );
+  }
+
+  /// Handle streaming completion - convert to full study guide
+  void _handleStreamingComplete(StudyGenerationStreaming state) {
+    if (state.content.studyGuideId == null) return;
+
+    // Create a StudyGuide from streaming content
+    final studyGuide = StudyGuide(
+      id: state.content.studyGuideId!,
+      input: state.inputValue,
+      inputType: state.inputType,
+      language: state.language,
+      summary: state.content.summary ?? '',
+      interpretation: state.content.interpretation ?? '',
+      context: state.content.context ?? '',
+      relatedVerses: state.content.relatedVerses ?? [],
+      reflectionQuestions: state.content.reflectionQuestions ?? [],
+      prayerPoints: state.content.prayerPoints ?? [],
+      createdAt: DateTime.now(),
+      isSaved: false,
+    );
+
+    _handleGenerationSuccess(studyGuide);
+  }
+
+  /// Build partial content with error banner
+  Widget _buildPartialContentWithError(StudyGenerationStreamingFailed state) {
+    return Column(
+      children: [
+        // Error banner
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(16),
+          color: Theme.of(context).colorScheme.error.withOpacity(0.1),
+          child: Row(
+            children: [
+              Icon(
+                Icons.warning_amber_rounded,
+                color: Theme.of(context).colorScheme.error,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  'Generation interrupted. Partial content shown below.',
+                  style: AppFonts.inter(
+                    color: Theme.of(context).colorScheme.error,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+              if (state.canRetry)
+                TextButton(
+                  onPressed: _retryGeneration,
+                  child: const Text('Retry'),
+                ),
+            ],
+          ),
+        ),
+        // Partial content
+        Expanded(
+          child: StreamingStudyContent(
+            content: state.partialContent!,
+            inputType: state.inputType,
+            inputValue: state.inputValue,
+            language: state.language,
+            scrollController: _scrollController,
+            isPartial: true,
+          ),
+        ),
+      ],
+    );
   }
 
   Widget _buildLoadingScreen() => EngagingLoadingScreen(
@@ -819,9 +963,13 @@ class _StudyGuideScreenV2ContentState
               ),
               const SizedBox(height: 16),
               Text(
-                _errorMessage.isEmpty
-                    ? context.tr(TranslationKeys.studyGuideErrorDefaultMessage)
-                    : _errorMessage,
+                _isInsufficientTokensError
+                    ? context
+                        .tr(TranslationKeys.studyGuideErrorInsufficientTokens)
+                    : (_errorMessage.isEmpty
+                        ? context
+                            .tr(TranslationKeys.studyGuideErrorDefaultMessage)
+                        : _errorMessage),
                 style: AppFonts.inter(
                   fontSize: 16,
                   color:

@@ -216,6 +216,116 @@ export class AnthropicClient {
     const data = await this.makeRequest(request)
     return this.parseResponse(data)
   }
+
+  /**
+   * Streams study guide generation, yielding chunks as they arrive.
+   *
+   * This is an async generator that yields raw text chunks from the LLM.
+   * The caller is responsible for parsing these chunks into sections.
+   *
+   * @param systemMessage - System prompt
+   * @param userMessage - User prompt
+   * @param languageConfig - Language configuration
+   * @param params - Generation parameters
+   * @yields Raw text chunks from the LLM stream
+   */
+  async *streamStudyGuide(
+    systemMessage: string,
+    userMessage: string,
+    languageConfig: LanguageConfig,
+    params: LLMGenerationParams
+  ): AsyncGenerator<string, void, unknown> {
+    const model = this.selectModel(params.language)
+    const maxTokens = calculateOptimalTokens(params, languageConfig)
+
+    // Anthropic streaming request
+    const request = {
+      model,
+      max_tokens: maxTokens,
+      temperature: languageConfig.temperature,
+      top_p: 0.9,
+      top_k: 250,
+      system: systemMessage,
+      messages: [{ role: 'user', content: userMessage }],
+      stream: true
+    }
+
+    console.log(`[Anthropic] Starting streaming study guide generation with model: ${model}`)
+
+    const response = await fetch(this.baseUrl, {
+      method: 'POST',
+      headers: {
+        'x-api-key': this.apiKey,
+        'Content-Type': 'application/json',
+        'anthropic-version': this.apiVersion
+      },
+      body: JSON.stringify(request)
+    })
+
+    if (!response.ok) {
+      const errorText = await response.text()
+      throw new Error(`Anthropic API error (${response.status}): ${errorText}`)
+    }
+
+    const reader = response.body?.getReader()
+    if (!reader) {
+      throw new Error('No response body reader available')
+    }
+
+    const decoder = new TextDecoder()
+    let totalChars = 0
+    let buffer = ''
+
+    try {
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+
+        buffer += decoder.decode(value, { stream: true })
+
+        // Process complete SSE events from buffer
+        const lines = buffer.split('\n')
+        buffer = lines.pop() || '' // Keep incomplete line in buffer
+
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            const data = line.slice(6)
+
+            // Skip empty data or ping events
+            if (!data || data === '[DONE]') continue
+
+            try {
+              const parsed = JSON.parse(data)
+
+              // Handle different Anthropic SSE event types
+              if (parsed.type === 'content_block_delta') {
+                const delta = parsed.delta?.text
+                if (delta) {
+                  totalChars += delta.length
+                  yield delta
+                }
+              } else if (parsed.type === 'message_stop') {
+                console.log(`[Anthropic] Stream completed: ${totalChars} total characters`)
+                return
+              } else if (parsed.type === 'error') {
+                throw new Error(`Anthropic stream error: ${parsed.error?.message || 'Unknown error'}`)
+              }
+            } catch (parseError) {
+              // Skip malformed JSON chunks
+              if (parseError instanceof SyntaxError) {
+                continue
+              }
+              throw parseError
+            }
+          }
+        }
+      }
+    } finally {
+      reader.releaseLock()
+    }
+
+    console.log(`[Anthropic] Stream ended: ${totalChars} total characters`)
+  }
 }
 
 /**

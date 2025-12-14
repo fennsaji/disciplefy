@@ -30,8 +30,11 @@ class ErrorMessageSanitizer {
       // Rate limiting
       final RateLimitFailure f => _sanitizeRateLimitError(f),
 
-      // Insufficient tokens
+      // Insufficient tokens (detailed failure type)
       final InsufficientTokensFailure f => _sanitizeInsufficientTokensError(f),
+
+      // Token errors (generic token failure from streaming)
+      final TokenFailure f => _sanitizeTokenError(f),
 
       // Storage errors
       final StorageFailure f => _sanitizeStorageError(f),
@@ -112,6 +115,12 @@ class ErrorMessageSanitizer {
     }
 
     return message;
+  }
+
+  static String _sanitizeTokenError(TokenFailure failure) {
+    // Token errors from streaming - show user-friendly message
+    // Don't expose internal error details
+    return 'You don\'t have enough tokens for this operation. Please get more tokens to continue.';
   }
 
   static String _sanitizeStorageError(StorageFailure failure) {

@@ -17,6 +17,10 @@ class TranslationKeys {
   static const studyGuideCopy = 'study_guide.actions.copy';
   static const studyGuideSignIn = 'study_guide.actions.sign_in';
 
+  // Study Guide Streaming
+  static const studyGuideStreamingLoading = 'study_guide.streaming.loading';
+  static const studyGuideStreamingSections = 'study_guide.streaming.sections';
+
   // Study Guide TTS
   static const studyGuideListen = 'study_guide.tts.listen';
   static const studyGuidePause = 'study_guide.tts.pause';
