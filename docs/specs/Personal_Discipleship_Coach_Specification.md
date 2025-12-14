@@ -2242,7 +2242,7 @@ For each day (Monday-Sunday), create:
 3. Secondary Scripture references (2-3 supporting passages)
 4. Estimated reading time (based on user's daily minutes)
 5. Study objectives (2-3 specific learning goals)
-6. Jeff Reed 4-step outline:
+6.  4-step outline:
    - Observation questions (3-4 questions)
    - Interpretation questions (3-4 questions)
    - Application questions (2-3 questions)
@@ -2305,7 +2305,7 @@ OUTPUT FORMAT (JSON):
 
 QUALITY CHECKLIST:
 ✓ Each study builds on previous days
-✓ Questions follow Jeff Reed methodology
+✓ Questions follow  methodology
 ✓ Appropriate difficulty for maturity level
 ✓ Practical application included
 ✓ Time estimates are realistic

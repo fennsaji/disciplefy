@@ -362,16 +362,112 @@ export class OpenAIClient {
       return fullContent
 
     } catch (error) {
-      console.warn('[OpenAI] Streaming error, falling back to standard mode:', 
+      console.warn('[OpenAI] Streaming error, falling back to standard mode:',
         error instanceof Error ? error.message : String(error))
       return this.callForStudyGuide(systemMessage, userMessage, languageConfig, params)
     }
+  }
+
+  /**
+   * Streams study guide generation, yielding chunks as they arrive.
+   *
+   * This is an async generator that yields raw text chunks from the LLM.
+   * The caller is responsible for parsing these chunks into sections.
+   *
+   * @param systemMessage - System prompt
+   * @param userMessage - User prompt
+   * @param languageConfig - Language configuration
+   * @param params - Generation parameters
+   * @yields Raw text chunks from the LLM stream
+   */
+  async *streamStudyGuide(
+    systemMessage: string,
+    userMessage: string,
+    languageConfig: LanguageConfig,
+    params: LLMGenerationParams
+  ): AsyncGenerator<string, void, unknown> {
+    const model = this.selectModel(params.language, params.tier)
+    const maxTokens = calculateOptimalTokens(params, languageConfig)
+
+    const request: OpenAIRequest = {
+      model,
+      messages: [
+        { role: 'system', content: systemMessage },
+        { role: 'user', content: userMessage }
+      ],
+      temperature: languageConfig.temperature,
+      max_tokens: maxTokens,
+      presence_penalty: 0.1,
+      frequency_penalty: 0.1,
+      response_format: { type: 'json_object' },
+      stream: true
+    }
+
+    console.log(`[OpenAI] Starting streaming study guide generation with model: ${model}`)
+
+    const response = await fetch(this.baseUrl, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${this.apiKey}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(request)
+    })
+
+    if (!response.ok) {
+      const errorText = await response.text()
+      throw new Error(`OpenAI API error (${response.status}): ${errorText}`)
+    }
+
+    const reader = response.body?.getReader()
+    if (!reader) {
+      throw new Error('No response body reader available')
+    }
+
+    const decoder = new TextDecoder()
+    let totalChars = 0
+
+    try {
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+
+        const chunk = decoder.decode(value, { stream: true })
+        const lines = chunk.split('\n')
+
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            const data = line.slice(6)
+            if (data === '[DONE]') {
+              console.log(`[OpenAI] Stream completed: ${totalChars} total characters`)
+              return
+            }
+
+            try {
+              const parsed = JSON.parse(data)
+              const delta = parsed.choices?.[0]?.delta?.content
+              if (delta) {
+                totalChars += delta.length
+                yield delta
+              }
+            } catch {
+              // Skip malformed JSON chunks
+              continue
+            }
+          }
+        }
+      }
+    } finally {
+      reader.releaseLock()
+    }
+
+    console.log(`[OpenAI] Stream ended: ${totalChars} total characters`)
   }
 }
 
 /**
  * Validates OpenAI API key format.
- * 
+ *
  * @param apiKey - API key to validate
  * @returns True if valid format
  */

@@ -47,36 +47,36 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       title: 'Daily Inspiration & Study',
       subtitle: 'Start each day with God\'s Word',
       description:
-          'Receive daily verses with instant study guides. Tap any verse to dive deeper with AI-powered insights, context, and practical applications for your life.',
+          'Receive daily verses with instant study guides. Tap any verse to dive deeper with AI-powered insights, context, and practical applications.',
       iconData: Icons.wb_sunny,
       verse:
           '"Your word is a lamp for my feet, a light on my path." - Psalm 119:105',
     ),
     OnboardingSlide(
-      title: 'Generate Personalized Study Guides',
-      subtitle: 'AI-powered insights tailored to your journey',
+      title: 'AI-Powered Study Guides',
+      subtitle: 'Personalized insights for your journey',
       description:
-          'Enter any scripture or spiritual topic to create comprehensive study guides with context, interpretation, reflection questions, and prayer points.',
+          'Enter any scripture or topic to create comprehensive study guides with context, interpretation, reflection questions, and prayer points.',
       iconData: Icons.auto_awesome,
       verse:
           '"All Scripture is God-breathed and is useful for teaching..." - 2 Timothy 3:16',
     ),
     OnboardingSlide(
-      title: 'Explore Curated Topics',
-      subtitle: 'Discover guided studies on faith essentials',
+      title: 'Voice Discipler',
+      subtitle: 'Talk with your AI Bible companion',
       description:
-          'Choose from carefully curated topics like Gospel, Prayer, Baptism, Grace, and Faith in Trials. Each topic follows a proven 4-step study methodology.',
-      iconData: Icons.menu_book_rounded,
-      verse: '"Study to show yourself approved unto God..." - 2 Timothy 2:15',
+          'Have natural voice conversations about Scripture. Ask questions, get answers, and deepen your understanding through guided dialogue.',
+      iconData: Icons.mic,
+      verse: '"Call to me and I will answer you..." - Jeremiah 33:3',
     ),
     OnboardingSlide(
-      title: 'Save Notes & Track Growth',
-      subtitle: 'Build your personal spiritual journal',
+      title: 'Memory Verses',
+      subtitle: 'Hide God\'s Word in your heart',
       description:
-          'Add personal notes to any study, save your insights, and track your spiritual growth journey. Access your saved guides anytime, anywhere.',
-      iconData: Icons.bookmark_added,
+          'Memorize Scripture with scientifically-proven spaced repetition. Review verses at optimal intervals to commit them to long-term memory.',
+      iconData: Icons.psychology,
       verse:
-          '"The grass withers and the flowers fall, but the word of our God endures forever." - Isaiah 40:8',
+          '"I have hidden your word in my heart that I might not sin against you." - Psalm 119:11',
     ),
   ];
 

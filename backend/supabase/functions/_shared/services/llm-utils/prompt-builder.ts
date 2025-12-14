@@ -6,7 +6,7 @@
  */
 
 import type { LLMGenerationParams, LanguageConfig } from '../llm-types.ts'
-import { getLanguageExamples, getLanguageConfigOrDefault } from '../llm-config/language-configs.ts'
+import { getLanguageExamples, getLanguageConfigOrDefault, type SupportedLanguage } from '../llm-config/language-configs.ts'
 
 /**
  * Prompt pair containing system and user messages
@@ -86,6 +86,9 @@ QUESTION-SPECIFIC REQUIREMENTS:
 `
   }
 
+  // Language-specific verse reference examples
+  const verseReferenceExamples = getVerseReferenceExamples(params.language)
+
   return `TASK: ${taskDescription}
 
 REQUIRED JSON OUTPUT FORMAT (follow exactly):
@@ -93,10 +96,15 @@ REQUIRED JSON OUTPUT FORMAT (follow exactly):
   "summary": "Brief overview (2-3 sentences) capturing the main message${inputType === 'question' ? ' and answering the question' : ''}",
   "interpretation": "Theological interpretation (4-5 paragraphs) explaining meaning and key teachings${inputType === 'question' ? ' with direct answer to the question' : ''}", 
   "context": "Historical and cultural background (1-2 paragraphs) for understanding",
-  "relatedVerses": ["3-5 relevant Bible verses with references"],
+  "relatedVerses": ["3-5 relevant Bible verses with references in ${languageConfig.name}"],
   "reflectionQuestions": ["4-6 practical application questions"],
   "prayerPoints": ["3-4 prayer suggestions"]
 }${specificInstructions}
+
+CRITICAL: RELATED VERSES LANGUAGE REQUIREMENT
+- ALL verse references in "relatedVerses" MUST be in ${languageConfig.name}
+- Book names must be in ${languageConfig.name} script/language
+${verseReferenceExamples}
 
 CRITICAL JSON FORMATTING RULES:
 - Output ONLY valid JSON - no markdown, no extra text before or after
@@ -307,4 +315,26 @@ export function calculateOptimalTokens(params: LLMGenerationParams, languageConf
   const languageBonus = (params.language === 'hi' || params.language === 'ml') ? 500 : 0
   
   return Math.min(baseTokens + complexityFactor + languageBonus, 8000)
+}
+
+/**
+ * Verse reference examples for each supported language.
+ * Used to guide LLM on correct book name formatting.
+ */
+const verseReferenceExamplesMap: Record<SupportedLanguage, string> = {
+  en: `- Example format: "John 3:16", "Romans 8:28", "Philippians 4:13", "Jeremiah 29:11"`,
+  hi: `- उदाहरण प्रारूप: "यूहन्ना 3:16", "रोमियों 8:28", "फिलिप्पियों 4:13", "यिर्मयाह 29:11"
+- पुस्तक नाम हिंदी में होने चाहिए (English में नहीं)`,
+  ml: `- ഉദാഹരണ ഫോർമാറ്റ്: "യോഹന്നാൻ 3:16", "റോമർ 8:28", "ഫിലിപ്പിയർ 4:13", "യിരെമ്യാവ് 29:11"
+- പുസ്തക നാമങ്ങൾ മലയാളത്തിൽ ആയിരിക്കണം (English അല്ല)`
+}
+
+/**
+ * Gets language-specific verse reference examples.
+ * 
+ * @param language - Language code
+ * @returns Verse reference examples string
+ */
+export function getVerseReferenceExamples(language: string): string {
+  return verseReferenceExamplesMap[language as SupportedLanguage] || verseReferenceExamplesMap.en
 }

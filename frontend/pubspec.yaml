@@ -1,5 +1,5 @@
 name: disciplefy_bible_study
-description: AI-powered Bible study guide application following Jeff Reed methodology
+description: AI-powered Bible study guide application following  methodology
 version: 1.0.0+1
 
 environment:
@@ -11,6 +11,7 @@ dependencies:
     sdk: flutter
   flutter_web_plugins:
     sdk: flutter
+  cupertino_icons: ^1.0.6
 
   # Core Utilities
   collection: ^1.18.0
@@ -79,6 +80,11 @@ dependencies:
   record: ^6.1.2
   audioplayers: ^6.1.0
   web_socket_channel: ^3.0.1
+
+  # PDF Export
+  pdf: ^3.11.1
+  printing: ^5.13.4
+  path_provider: ^2.1.5
 
   # Development
   flutter_lints: ^6.0.0

@@ -53,6 +53,8 @@ import '../../features/study_topics/presentation/pages/learning_path_detail_page
 import '../../features/study_topics/presentation/pages/leaderboard_page.dart';
 import '../../features/study_topics/presentation/bloc/learning_paths_bloc.dart';
 import '../../features/study_topics/presentation/bloc/leaderboard_bloc.dart';
+import '../../features/gamification/presentation/pages/stats_dashboard_page.dart';
+import '../../features/gamification/presentation/bloc/gamification_bloc.dart';
 import 'app_routes.dart';
 import 'router_guard.dart';
 import 'auth_notifier.dart';
@@ -359,6 +361,17 @@ class AppRouter {
         ),
       ),
 
+      // Stats Dashboard (My Progress) Route
+      GoRoute(
+        path: AppRoutes.statsDashboard,
+        name: 'stats_dashboard',
+        parentNavigatorKey: rootNavigatorKey,
+        builder: (context, state) => BlocProvider.value(
+          value: sl<GamificationBloc>(),
+          child: const StatsDashboardPage(),
+        ),
+      ),
+
       // Public Pricing Page (accessible without authentication)
       GoRoute(
         path: AppRoutes.pricing,
@@ -604,4 +617,7 @@ extension AppRouterExtension on GoRouter {
 
   /// Navigates to the leaderboard page showing XP rankings.
   void goToLeaderboard() => go(AppRoutes.leaderboard);
+
+  /// Navigates to the stats dashboard (My Progress) page showing gamification stats.
+  void goToStatsDashboard() => go(AppRoutes.statsDashboard);
 }

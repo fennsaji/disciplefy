@@ -17,6 +17,10 @@ class TranslationKeys {
   static const studyGuideCopy = 'study_guide.actions.copy';
   static const studyGuideSignIn = 'study_guide.actions.sign_in';
 
+  // Study Guide Streaming
+  static const studyGuideStreamingLoading = 'study_guide.streaming.loading';
+  static const studyGuideStreamingSections = 'study_guide.streaming.sections';
+
   // Study Guide TTS
   static const studyGuideListen = 'study_guide.tts.listen';
   static const studyGuidePause = 'study_guide.tts.pause';
@@ -224,6 +228,12 @@ class TranslationKeys {
   static const loginFeatureDailyVerse = 'login.feature_daily_verse';
   static const loginFeatureDailyVerseSubtitle =
       'login.feature_daily_verse_subtitle';
+  static const loginFeatureVoiceDiscipler = 'login.feature_voice_discipler';
+  static const loginFeatureVoiceDisciplerSubtitle =
+      'login.feature_voice_discipler_subtitle';
+  static const loginFeatureMemoryVerse = 'login.feature_memory_verse';
+  static const loginFeatureMemoryVerseSubtitle =
+      'login.feature_memory_verse_subtitle';
   static const loginPrivacyPolicy = 'login.privacy_policy';
   static const loginContinueWithEmail = 'login.continue_with_email';
 
@@ -1061,4 +1071,40 @@ class TranslationKeys {
   static const upgradeDialogBenefitTokens = 'upgrade_dialog.benefit_tokens';
   static const upgradeDialogUpgradeButton = 'upgrade_dialog.upgrade_button';
   static const upgradeDialogMaybeLater = 'upgrade_dialog.maybe_later';
+
+  // Gamification (My Progress)
+  static const gamificationTitle = 'gamification.title';
+  static const gamificationSubtitle = 'gamification.subtitle';
+  static const gamificationStreaks = 'gamification.streaks';
+  static const gamificationStudyStreak = 'gamification.study_streak';
+  static const gamificationVerseStreak = 'gamification.verse_streak';
+  static const gamificationPersonalBest = 'gamification.personal_best';
+  static const gamificationDays = 'gamification.days';
+  static const gamificationStatistics = 'gamification.statistics';
+  static const gamificationStudies = 'gamification.studies';
+  static const gamificationTimeSpent = 'gamification.time_spent';
+  static const gamificationMemoryVerses = 'gamification.memory_verses';
+  static const gamificationVoiceSessions = 'gamification.voice_sessions';
+  static const gamificationSavedGuides = 'gamification.saved_guides';
+  static const gamificationStudyDays = 'gamification.study_days';
+  static const gamificationAchievements = 'gamification.achievements';
+  static const gamificationXpTotal = 'gamification.xp_total';
+  static const gamificationXpToNextLevel = 'gamification.xp_to_next_level';
+  static const gamificationMaxLevel = 'gamification.max_level';
+  static const gamificationUnlocked = 'gamification.unlocked';
+  static const gamificationLocked = 'gamification.locked';
+  static const gamificationUnlockedOn = 'gamification.unlocked_on';
+  static const gamificationNewAchievement = 'gamification.new_achievement';
+  static const gamificationCongratulations = 'gamification.congratulations';
+  static const gamificationEarnedXp = 'gamification.earned_xp';
+  static const gamificationContinue = 'gamification.continue';
+  static const gamificationFailedToLoad = 'gamification.failed_to_load';
+  static const gamificationRetry = 'gamification.retry';
+
+  // Achievement Categories
+  static const gamificationCategoryStudy = 'gamification.category.study';
+  static const gamificationCategoryStreak = 'gamification.category.streak';
+  static const gamificationCategoryMemory = 'gamification.category.memory';
+  static const gamificationCategoryVoice = 'gamification.category.voice';
+  static const gamificationCategorySaved = 'gamification.category.saved';
 }

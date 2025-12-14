@@ -522,9 +522,9 @@ const int maxRetryAttempts = 3;
 
 **Documentation:**
 ```dart
-/// Generates a Bible study guide using Jeff Reed methodology.
+/// Generates a Bible study guide using  methodology.
 /// 
-/// Takes a [scripture] reference and [step] from the Jeff Reed process
+/// Takes a [scripture] reference and [step] from the  process
 /// and returns a comprehensive study guide. Throws [ValidationException]
 /// if the input is invalid or [ServiceException] if generation fails.
 /// 

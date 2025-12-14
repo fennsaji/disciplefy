@@ -29,8 +29,9 @@ class LeaderboardRemoteDataSource {
 
   /// Gets the leaderboard with top 10 users.
   ///
-  /// Real users with 200+ XP are shown first, remaining spots filled with
-  /// placeholder data using fixed Indian names and XP values.
+  /// Combines all 10 placeholder accounts with real users (200+ XP),
+  /// sorts by XP descending, and returns top 10. This ensures real users
+  /// are ranked correctly among the placeholder community.
   Future<List<LeaderboardEntry>> getLeaderboard() async {
     final currentUserId = _supabaseClient.auth.currentUser?.id;
 
@@ -50,13 +51,13 @@ class LeaderboardRemoteDataSource {
             ))
         .toList();
 
-    // If we have 10 real entries, return them
+    // If we have 10+ real entries, just return them (no placeholders needed)
     if (realEntries.length >= 10) {
       return realEntries;
     }
 
-    // Fill remaining spots with placeholder data (fixed names and XP)
-    final List<LeaderboardEntry> result = List.from(realEntries);
+    // Combine ALL placeholders with real entries, then sort and take top 10
+    final List<LeaderboardEntry> combined = List.from(realEntries);
     final usedNames = <String>{};
 
     // Track names already used by real entries to avoid duplicates
@@ -64,31 +65,29 @@ class LeaderboardRemoteDataSource {
       usedNames.add(entry.displayName);
     }
 
-    // Add placeholder entries with fixed XP values
-    int placeholderIndex = 0;
-    while (result.length < 10 && placeholderIndex < _placeholderData.length) {
-      final placeholder = _placeholderData[placeholderIndex];
-      placeholderIndex++;
-
+    // Add ALL placeholder entries (not just enough to fill 10)
+    for (final placeholder in _placeholderData) {
       // Skip if name is already used by a real entry
       if (usedNames.contains(placeholder.name)) {
         continue;
       }
 
-      result.add(LeaderboardEntry.placeholder(
+      combined.add(LeaderboardEntry.placeholder(
         displayName: placeholder.name,
         totalXp: placeholder.xp,
-        rank: result.length + 1,
+        rank: 0, // Will be reassigned after sorting
       ));
 
       usedNames.add(placeholder.name);
     }
 
-    // Sort all entries by XP descending and reassign ranks
-    result.sort((a, b) => b.totalXp.compareTo(a.totalXp));
+    // Sort all entries by XP descending
+    combined.sort((a, b) => b.totalXp.compareTo(a.totalXp));
+
+    // Take top 10 and reassign ranks
     final sortedResult = <LeaderboardEntry>[];
-    for (int i = 0; i < result.length; i++) {
-      final entry = result[i];
+    for (int i = 0; i < combined.length && i < 10; i++) {
+      final entry = combined[i];
       if (entry.isPlaceholder) {
         sortedResult.add(LeaderboardEntry.placeholder(
           displayName: entry.displayName,
@@ -96,7 +95,7 @@ class LeaderboardRemoteDataSource {
           rank: i + 1,
         ));
       } else {
-        // Re-create real entry with updated rank if needed
+        // Re-create real entry with updated rank
         sortedResult.add(LeaderboardEntry(
           displayName: entry.displayName,
           totalXp: entry.totalXp,
@@ -110,9 +109,29 @@ class LeaderboardRemoteDataSource {
     return sortedResult;
   }
 
+  /// Calculate rank considering placeholder accounts
+  /// This ensures consistency across the app
+  ///
+  /// The rank is calculated by counting how many placeholders have MORE XP
+  /// than the user, then adding 1. This matches how the leaderboard list
+  /// is sorted and displayed.
+  int _calculateRankWithPlaceholders(int userXp) {
+    if (userXp < 200) return 0; // Not eligible
+
+    // Count placeholders with STRICTLY greater XP
+    int rank = 1;
+    for (final placeholder in _placeholderData) {
+      if (placeholder.xp > userXp) {
+        rank++;
+      }
+    }
+    return rank;
+  }
+
   /// Gets the current user's XP and rank.
   ///
   /// Returns [UserXpRank] with total XP and rank (null if < 200 XP).
+  /// Rank is calculated considering placeholder accounts for consistency.
   Future<UserXpRank> getCurrentUserXpRank() async {
     final userId = _supabaseClient.auth.currentUser?.id;
 
@@ -132,7 +151,15 @@ class LeaderboardRemoteDataSource {
       return const UserXpRank(totalXp: 0);
     }
 
-    return UserXpRank.fromJson(data.first as Map<String, dynamic>);
+    final dbResult = UserXpRank.fromJson(data.first as Map<String, dynamic>);
+
+    // Recalculate rank considering placeholder accounts
+    final adjustedRank = _calculateRankWithPlaceholders(dbResult.totalXp);
+
+    return UserXpRank(
+      totalXp: dbResult.totalXp,
+      rank: adjustedRank > 0 ? adjustedRank : null,
+    );
   }
 
   /// Gets both leaderboard and current user's rank in a single call.

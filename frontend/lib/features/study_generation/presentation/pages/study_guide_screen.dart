@@ -24,6 +24,9 @@ import '../../../follow_up_chat/presentation/bloc/follow_up_chat_event.dart';
 import '../widgets/tts_control_button.dart';
 import '../widgets/tts_control_sheet.dart';
 import '../../data/services/study_guide_tts_service.dart';
+import '../../data/services/study_guide_pdf_service.dart';
+import '../../../gamification/presentation/bloc/gamification_bloc.dart';
+import '../../../gamification/presentation/bloc/gamification_event.dart';
 
 /// Study Guide Screen displaying generated content with sections and user interactions.
 ///
@@ -91,6 +94,9 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
 
   // Follow-up chat state
   bool _isChatExpanded = false;
+
+  // PDF export state
+  bool _isExportingPdf = false;
 
   // Completion tracking state
   DateTime? _pageOpenedAt;
@@ -424,6 +430,10 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
                   : Theme.of(context).colorScheme.primary,
               icon: state.saved ? Icons.check_circle : Icons.bookmark_remove,
             );
+            // Check saved achievements when guide is saved
+            if (state.saved) {
+              sl<GamificationBloc>().add(const CheckSavedAchievements());
+            }
           } else if (state is StudySaveFailure) {
             _handleSaveError(state.failure);
           } else if (state is StudyAuthenticationRequired) {
@@ -445,6 +455,8 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
             // Setup auto-save if guide was saved
             if (state.guideSaved) {
               _setupAutoSave();
+              // Check saved achievements when guide is saved
+              sl<GamificationBloc>().add(const CheckSavedAchievements());
             }
           } else if (state is StudyEnhancedSaveFailure) {
             _handleEnhancedSaveError(state);
@@ -492,10 +504,14 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
               );
             }
           }
-          // Handle study completion - invalidate cache
+          // Handle study completion - invalidate cache and update gamification
           else if (state is StudyCompletionSuccess) {
             // Invalidate the "For You" cache so completed topics don't show again
             sl<RecommendedGuidesService>().clearForYouCache();
+
+            // Update study streak and check achievements
+            sl<GamificationBloc>().add(const UpdateStudyStreak());
+            sl<GamificationBloc>().add(const CheckStudyAchievements());
           }
         },
         child: Scaffold(
@@ -518,7 +534,7 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
               tooltip: 'Go back',
             ),
             title: Text(
-              _getDisplayTitle(),
+              context.tr('study_guide.page_title'),
               style: AppFonts.poppins(
                 fontSize: 20,
                 fontWeight: FontWeight.w600,
@@ -527,6 +543,23 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
             ),
             centerTitle: true,
             actions: [
+              IconButton(
+                onPressed: _isExportingPdf ? null : _exportToPdf,
+                icon: _isExportingPdf
+                    ? SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
+                      )
+                    : Icon(
+                        Icons.picture_as_pdf_outlined,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                tooltip: 'Export as PDF',
+              ),
               IconButton(
                 onPressed: _shareStudyGuide,
                 icon: Icon(
@@ -548,6 +581,11 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       SizedBox(height: isLargeScreen ? 24 : 16),
+
+                      // Topic Title
+                      _buildTopicTitle(),
+
+                      SizedBox(height: isLargeScreen ? 24 : 20),
 
                       // Study Guide Content
                       _buildStudyContent(),
@@ -699,6 +737,54 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
           ), // body: Center
         ), // Scaffold
       ); // PopScope
+
+  /// Builds the topic title section displayed below the AppBar
+  Widget _buildTopicTitle() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            Theme.of(context).colorScheme.primary.withOpacity(0.1),
+            Theme.of(context).colorScheme.secondary.withOpacity(0.05),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: Theme.of(context).colorScheme.primary.withOpacity(0.2),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            _currentStudyGuide.inputType == 'scripture'
+                ? context.tr('generate_study.scripture_mode')
+                : context.tr('generate_study.topic_mode'),
+            style: AppFonts.inter(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: Theme.of(context).colorScheme.primary.withOpacity(0.7),
+              letterSpacing: 1.2,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            _getDisplayTitle(),
+            style: AppFonts.poppins(
+              fontSize: 22,
+              fontWeight: FontWeight.bold,
+              color: Theme.of(context).colorScheme.onBackground,
+              height: 1.3,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
   Widget _buildStudyContent() {
     final ttsService = sl<StudyGuideTTSService>();
@@ -1258,6 +1344,89 @@ Generated by Disciplefy - Bible Study App
       shareText,
       subject: 'Bible Study: ${_getDisplayTitle()}',
     );
+  }
+
+  /// Exports the current study guide as a PDF and opens the system share sheet.
+  Future<void> _exportToPdf() async {
+    // Show loading dialog for Hindi/Malayalam (image-based rendering takes time)
+    final isComplexScript = _currentStudyGuide.language.toLowerCase() == 'hi' ||
+        _currentStudyGuide.language.toLowerCase() == 'ml';
+
+    setState(() {
+      _isExportingPdf = true;
+    });
+
+    if (isComplexScript && mounted) {
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (ctx) => PopScope(
+          canPop: false,
+          child: AlertDialog(
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: Theme.of(ctx).colorScheme.primary.withOpacity(0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    Icons.picture_as_pdf,
+                    color: Theme.of(ctx).colorScheme.primary,
+                    size: 28,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  context.tr('study_guide.actions.generating_pdf'),
+                  style: Theme.of(ctx).textTheme.titleMedium,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  context.tr('study_guide.actions.pdf_wait_message'),
+                  style: Theme.of(ctx).textTheme.bodySmall?.copyWith(
+                        color: Theme.of(ctx)
+                            .colorScheme
+                            .onSurface
+                            .withOpacity(0.6),
+                      ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+
+      // Wait for dialog to fully render before starting heavy work
+      await Future.delayed(const Duration(milliseconds: 150));
+    }
+
+    try {
+      final pdfService = StudyGuidePdfService();
+      await pdfService.sharePdf(_currentStudyGuide, context: context);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to export PDF: ${e.toString()}'),
+            backgroundColor: Theme.of(context).colorScheme.error,
+          ),
+        );
+      }
+    } finally {
+      // Close loading dialog if it was shown
+      if (isComplexScript && mounted) {
+        Navigator.of(context, rootNavigator: true).pop();
+      }
+      if (mounted) {
+        setState(() {
+          _isExportingPdf = false;
+        });
+      }
+    }
   }
 }
 

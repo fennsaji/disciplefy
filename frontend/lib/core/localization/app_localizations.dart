@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 
 class AppLocalizations {
   final Locale locale;
@@ -13,8 +14,9 @@ class AppLocalizations {
 
   static const List<LocalizationsDelegate<dynamic>> localizationsDelegates = [
     delegate,
-    DefaultMaterialLocalizations.delegate,
-    DefaultWidgetsLocalizations.delegate,
+    GlobalMaterialLocalizations.delegate,
+    GlobalWidgetsLocalizations.delegate,
+    GlobalCupertinoLocalizations.delegate,
   ];
 
   static const List<Locale> supportedLocales = [
@@ -39,7 +41,7 @@ class AppLocalizations {
       // Onboarding
       'onboarding_welcome_title': 'Welcome to Disciplefy',
       'onboarding_welcome_subtitle':
-          'AI-powered Bible study guides following Jeff Reed methodology',
+          'AI-powered Bible study guides following  methodology',
       'onboarding_language_title': 'Choose Your Language',
       'onboarding_language_subtitle':
           'Select your preferred language for the app',
@@ -81,6 +83,44 @@ class AppLocalizations {
 
       // Loading Screen Time Estimate
       'loading_time_estimate': 'This usually takes 20-30 seconds',
+
+      // Gamification - My Progress Page
+      'progress_title': 'My Progress',
+      'progress_xp_total': 'XP total',
+      'progress_xp_to_next_level': 'XP to next level',
+      'progress_max_level': 'Max Level Reached!',
+      'progress_streaks': 'Streaks',
+      'progress_study_streak': 'Study',
+      'progress_verse_streak': 'Verse',
+      'progress_days': 'days',
+      'progress_personal_best': 'Personal Best',
+      'progress_statistics': 'Statistics',
+      'progress_studies': 'Studies',
+      'progress_time_spent': 'Time Spent',
+      'progress_memory_verses': 'Memory Verses',
+      'progress_voice_sessions': 'Voice Sessions',
+      'progress_saved_guides': 'Saved Guides',
+      'progress_study_days': 'Study Days',
+      'progress_achievements': 'Achievements',
+      'progress_failed_load': 'Failed to load stats',
+      'progress_try_again': 'Please try again later',
+      'progress_retry': 'Retry',
+      'progress_unlocked_on': 'Unlocked on',
+      'progress_locked': 'Locked',
+      'progress_view_leaderboard': 'View Leaderboard',
+      'progress_unlocked': 'Unlocked',
+      'progress_today': 'today',
+      'progress_yesterday': 'yesterday',
+      'progress_days_ago': 'days ago',
+      'progress_achievement_unlocked': '🎉 Achievement Unlocked! 🎉',
+      'progress_awesome': 'Awesome!',
+
+      // Achievement Categories
+      'achievement_category_study': 'Study Guides',
+      'achievement_category_streak': 'Study Streaks',
+      'achievement_category_memory': 'Memory Verses',
+      'achievement_category_voice': 'Voice Discipler',
+      'achievement_category_saved': 'Saved Guides',
 
       // First Century Christian Facts for Loading Screen (60 facts)
       'loading_fact_1':
@@ -262,6 +302,44 @@ class AppLocalizations {
       // Loading Screen Time Estimate
       'loading_time_estimate': 'इसमें आमतौर पर 20-30 सेकंड लगते हैं',
 
+      // Gamification - My Progress Page
+      'progress_title': 'मेरी प्रगति',
+      'progress_xp_total': 'कुल XP',
+      'progress_xp_to_next_level': 'अगले स्तर तक XP',
+      'progress_max_level': 'अधिकतम स्तर प्राप्त!',
+      'progress_streaks': 'स्ट्रीक्स',
+      'progress_study_streak': 'अध्ययन',
+      'progress_verse_streak': 'वचन',
+      'progress_days': 'दिन',
+      'progress_personal_best': 'व्यक्तिगत सर्वश्रेष्ठ',
+      'progress_statistics': 'आंकड़े',
+      'progress_studies': 'अध्ययन',
+      'progress_time_spent': 'समय बिताया',
+      'progress_memory_verses': 'याद के पद',
+      'progress_voice_sessions': 'वॉयस सत्र',
+      'progress_saved_guides': 'सहेजी गई गाइड',
+      'progress_study_days': 'अध्ययन दिवस',
+      'progress_achievements': 'उपलब्धियाँ',
+      'progress_failed_load': 'आंकड़े लोड करने में विफल',
+      'progress_try_again': 'कृपया बाद में पुनः प्रयास करें',
+      'progress_retry': 'पुनः प्रयास',
+      'progress_unlocked_on': 'अनलॉक हुआ',
+      'progress_locked': 'लॉक्ड',
+      'progress_view_leaderboard': 'लीडरबोर्ड देखें',
+      'progress_unlocked': 'अनलॉक हुआ',
+      'progress_today': 'आज',
+      'progress_yesterday': 'कल',
+      'progress_days_ago': 'दिन पहले',
+      'progress_achievement_unlocked': '🎉 उपलब्धि अनलॉक! 🎉',
+      'progress_awesome': 'शानदार!',
+
+      // Achievement Categories
+      'achievement_category_study': 'अध्ययन गाइड',
+      'achievement_category_streak': 'अध्ययन स्ट्रीक्स',
+      'achievement_category_memory': 'स्मृति वचन',
+      'achievement_category_voice': 'वॉइस डिसाइपलर',
+      'achievement_category_saved': 'सहेजे गए गाइड',
+
       // First Century Christian Facts for Loading Screen (60 facts - Hindi)
       'loading_fact_1':
           'प्रारंभिक मसीही निजी घरों में मिलते थे, चर्च भवनों में नहीं।',
@@ -442,6 +520,44 @@ class AppLocalizations {
 
       // Loading Screen Time Estimate
       'loading_time_estimate': 'ഇതിന് സാധാരണയായി 20-30 സെക്കൻഡ് എടുക്കും',
+
+      // Gamification - My Progress Page
+      'progress_title': 'എന്റെ പുരോഗതി',
+      'progress_xp_total': 'ആകെ XP',
+      'progress_xp_to_next_level': 'അടുത്ത ലെവലിലേക്ക് XP',
+      'progress_max_level': 'പരമാവധി ലെവൽ എത്തി!',
+      'progress_streaks': 'സ്ട്രീക്കുകൾ',
+      'progress_study_streak': 'പഠനം',
+      'progress_verse_streak': 'വചനം',
+      'progress_days': 'ദിവസം',
+      'progress_personal_best': 'വ്യക്തിഗത മികച്ചത്',
+      'progress_statistics': 'സ്ഥിതിവിവരക്കണക്കുകൾ',
+      'progress_studies': 'പഠനങ്ങൾ',
+      'progress_time_spent': 'ചെലവഴിച്ച സമയം',
+      'progress_memory_verses': 'ഓർമ്മ വാക്യങ്ങൾ',
+      'progress_voice_sessions': 'വോയ്സ് സെഷനുകൾ',
+      'progress_saved_guides': 'സേവ് ചെയ്ത ഗൈഡുകൾ',
+      'progress_study_days': 'പഠന ദിനങ്ങൾ',
+      'progress_achievements': 'നേട്ടങ്ങൾ',
+      'progress_failed_load': 'സ്ഥിതിവിവരക്കണക്കുകൾ ലോഡ് ചെയ്യാനായില്ല',
+      'progress_try_again': 'ദയവായി പിന്നീട് വീണ്ടും ശ്രമിക്കുക',
+      'progress_retry': 'വീണ്ടും ശ്രമിക്കുക',
+      'progress_unlocked_on': 'അൺലോക്ക് ചെയ്തത്',
+      'progress_locked': 'ലോക്ക് ചെയ്തിരിക്കുന്നു',
+      'progress_view_leaderboard': 'ലീഡർബോർഡ് കാണുക',
+      'progress_unlocked': 'അൺലോക്ക് ചെയ്തു',
+      'progress_today': 'ഇന്ന്',
+      'progress_yesterday': 'ഇന്നലെ',
+      'progress_days_ago': 'ദിവസം മുമ്പ്',
+      'progress_achievement_unlocked': '🎉 നേട്ടം അൺലോക്ക്! 🎉',
+      'progress_awesome': 'അതിശയകരം!',
+
+      // Achievement Categories
+      'achievement_category_study': 'പഠന ഗൈഡുകൾ',
+      'achievement_category_streak': 'പഠന സ്ട്രീക്കുകൾ',
+      'achievement_category_memory': 'ഓർമ്മ വാക്യങ്ങൾ',
+      'achievement_category_voice': 'വോയ്സ് ഡിസൈപ്ലർ',
+      'achievement_category_saved': 'സേവ് ചെയ്ത ഗൈഡുകൾ',
 
       // First Century Christian Facts for Loading Screen (60 facts - Malayalam)
       'loading_fact_1':
@@ -657,6 +773,78 @@ class AppLocalizations {
   // Loading Screen Time Estimate
   String get loadingTimeEstimate =>
       _localizedValues[locale.languageCode]!['loading_time_estimate']!;
+
+  // Gamification - My Progress Page
+  String get progressTitle =>
+      _localizedValues[locale.languageCode]!['progress_title']!;
+  String get progressXpTotal =>
+      _localizedValues[locale.languageCode]!['progress_xp_total']!;
+  String get progressXpToNextLevel =>
+      _localizedValues[locale.languageCode]!['progress_xp_to_next_level']!;
+  String get progressMaxLevel =>
+      _localizedValues[locale.languageCode]!['progress_max_level']!;
+  String get progressStreaks =>
+      _localizedValues[locale.languageCode]!['progress_streaks']!;
+  String get progressStudyStreak =>
+      _localizedValues[locale.languageCode]!['progress_study_streak']!;
+  String get progressVerseStreak =>
+      _localizedValues[locale.languageCode]!['progress_verse_streak']!;
+  String get progressDays =>
+      _localizedValues[locale.languageCode]!['progress_days']!;
+  String get progressPersonalBest =>
+      _localizedValues[locale.languageCode]!['progress_personal_best']!;
+  String get progressStatistics =>
+      _localizedValues[locale.languageCode]!['progress_statistics']!;
+  String get progressStudies =>
+      _localizedValues[locale.languageCode]!['progress_studies']!;
+  String get progressTimeSpent =>
+      _localizedValues[locale.languageCode]!['progress_time_spent']!;
+  String get progressMemoryVerses =>
+      _localizedValues[locale.languageCode]!['progress_memory_verses']!;
+  String get progressVoiceSessions =>
+      _localizedValues[locale.languageCode]!['progress_voice_sessions']!;
+  String get progressSavedGuides =>
+      _localizedValues[locale.languageCode]!['progress_saved_guides']!;
+  String get progressStudyDays =>
+      _localizedValues[locale.languageCode]!['progress_study_days']!;
+  String get progressAchievements =>
+      _localizedValues[locale.languageCode]!['progress_achievements']!;
+  String get progressFailedLoad =>
+      _localizedValues[locale.languageCode]!['progress_failed_load']!;
+  String get progressTryAgain =>
+      _localizedValues[locale.languageCode]!['progress_try_again']!;
+  String get progressRetry =>
+      _localizedValues[locale.languageCode]!['progress_retry']!;
+  String get progressUnlockedOn =>
+      _localizedValues[locale.languageCode]!['progress_unlocked_on']!;
+  String get progressLocked =>
+      _localizedValues[locale.languageCode]!['progress_locked']!;
+  String get progressViewLeaderboard =>
+      _localizedValues[locale.languageCode]!['progress_view_leaderboard']!;
+  String get progressUnlocked =>
+      _localizedValues[locale.languageCode]!['progress_unlocked']!;
+  String get progressToday =>
+      _localizedValues[locale.languageCode]!['progress_today']!;
+  String get progressYesterday =>
+      _localizedValues[locale.languageCode]!['progress_yesterday']!;
+  String get progressDaysAgo =>
+      _localizedValues[locale.languageCode]!['progress_days_ago']!;
+  String get progressAchievementUnlocked =>
+      _localizedValues[locale.languageCode]!['progress_achievement_unlocked']!;
+  String get progressAwesome =>
+      _localizedValues[locale.languageCode]!['progress_awesome']!;
+
+  // Achievement Categories
+  String get achievementCategoryStudy =>
+      _localizedValues[locale.languageCode]!['achievement_category_study']!;
+  String get achievementCategoryStreak =>
+      _localizedValues[locale.languageCode]!['achievement_category_streak']!;
+  String get achievementCategoryMemory =>
+      _localizedValues[locale.languageCode]!['achievement_category_memory']!;
+  String get achievementCategoryVoice =>
+      _localizedValues[locale.languageCode]!['achievement_category_voice']!;
+  String get achievementCategorySaved =>
+      _localizedValues[locale.languageCode]!['achievement_category_saved']!;
 
   // First Century Christian Facts for Loading Screen
   String getLoadingFact(int index) {

@@ -8,7 +8,7 @@
 ## **1. 🎯 Overview & Scope**
 
 ### **Anonymous User Definition**
-Anonymous users are individuals who access the Disciplefy: Bible Study app without creating an authenticated account. They can generate study guides, use Jeff Reed sessions, and provide feedback while maintaining privacy.
+Anonymous users are individuals who access the Disciplefy: Bible Study app without creating an authenticated account. They can generate study guides, use  sessions, and provide feedback while maintaining privacy.
 
 ### **Data Lifecycle Scope**
 - Session management and tracking
@@ -32,7 +32,7 @@ Anonymous users are individuals who access the Disciplefy: Bible Study app witho
 | **Data Type** | **Purpose** | **Retention** | **Storage** | **Migration Path** |
 |---------------|-------------|---------------|-------------|-------------------|
 | Study Guides | User reference | 7 days | Local cache | Copy to user account |
-| Jeff Reed Sessions | Progress tracking | 7 days | Local + server | Transfer ownership |
+|  Sessions | Progress tracking | 7 days | Local + server | Transfer ownership |
 | Input Queries | Service improvement | 24 hours | Anonymized logs | Discard |
 | Feedback | Quality improvement | 6 months | Anonymous aggregation | No migration |
 
@@ -131,9 +131,9 @@ CREATE INDEX idx_anonymous_guides_expiry ON anonymous_study_guides(expires_at);
 CREATE INDEX idx_anonymous_guides_hash ON anonymous_study_guides(input_value_hash);
 ```
 
-### **Jeff Reed Anonymous Sessions**
+### ** Anonymous Sessions**
 ```sql
--- Anonymous Jeff Reed sessions
+-- Anonymous  sessions
 -- Note: This table likely needs to be renamed to match actual implementation
 CREATE TABLE anonymous_jeff_reed_sessions (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -179,7 +179,7 @@ class AnonymousToAuthMigration {
         WHERE session_id = ?
       ''', [userId, sessionId]);
       
-      // Migrate Jeff Reed sessions
+      // Migrate  sessions
       await txn.execute('''
         INSERT INTO jeff_reed_sessions (
           user_id, topic, current_step, step_1_context, step_2_scholar_guide,
@@ -272,7 +272,7 @@ BEGIN
   DELETE FROM anonymous_study_guides WHERE expires_at < NOW();
   GET DIAGNOSTICS cleaned_count = ROW_COUNT;
   
-  -- Cleanup expired Jeff Reed sessions
+  -- Cleanup expired  sessions
   DELETE FROM anonymous_jeff_reed_sessions WHERE expires_at < NOW();
   
   -- Cleanup expired and migrated sessions
@@ -561,7 +561,7 @@ WHERE DATE(created_at) = CURRENT_DATE;
 ### **Data Architecture**
 - [ ] Anonymous session table created with automatic cleanup
 - [ ] Anonymous study guides table with expiration
-- [ ] Anonymous Jeff Reed sessions table configured
+- [ ] Anonymous  sessions table configured
 - [ ] Privacy-safe analytics collection implemented
 
 ### **Lifecycle Management**
