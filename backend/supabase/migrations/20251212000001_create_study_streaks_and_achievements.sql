@@ -35,7 +35,6 @@ ALTER TABLE user_study_streaks ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Users can read own study streak" ON user_study_streaks;
 DROP POLICY IF EXISTS "Users can insert own study streak" ON user_study_streaks;
 DROP POLICY IF EXISTS "Users can update own study streak" ON user_study_streaks;
-DROP POLICY IF EXISTS "Service role has full access to study streaks" ON user_study_streaks;
 
 CREATE POLICY "Users can read own study streak"
     ON user_study_streaks FOR SELECT
@@ -49,10 +48,6 @@ CREATE POLICY "Users can update own study streak"
     ON user_study_streaks FOR UPDATE
     USING (auth.uid() = user_id)
     WITH CHECK (auth.uid() = user_id);
-
-CREATE POLICY "Service role has full access to study streaks"
-    ON user_study_streaks FOR ALL
-    USING (auth.role() = 'service_role');
 
 -- =============================================================================
 -- TABLE: achievements
@@ -111,7 +106,6 @@ ALTER TABLE user_achievements ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Users can read own achievements" ON user_achievements;
 DROP POLICY IF EXISTS "Users can insert own achievements" ON user_achievements;
 DROP POLICY IF EXISTS "Users can update own achievements" ON user_achievements;
-DROP POLICY IF EXISTS "Service role has full access to user achievements" ON user_achievements;
 
 CREATE POLICY "Users can read own achievements"
     ON user_achievements FOR SELECT
@@ -125,10 +119,6 @@ CREATE POLICY "Users can update own achievements"
     ON user_achievements FOR UPDATE
     USING (auth.uid() = user_id)
     WITH CHECK (auth.uid() = user_id);
-
-CREATE POLICY "Service role has full access to user achievements"
-    ON user_achievements FOR ALL
-    USING (auth.role() = 'service_role');
 
 -- =============================================================================
 -- SEED: Achievement Data
