@@ -29,6 +29,10 @@ class AppTranslations {
         'generating_pdf': 'Generating PDF...',
         'pdf_wait_message': 'This may take a few seconds',
       },
+      'streaming': {
+        'loading': 'Loading study guide...',
+        'sections': '{count}/6 sections',
+      },
       'tts': {
         'listen': 'Listen',
         'pause': 'Pause',
@@ -1315,6 +1319,10 @@ class AppTranslations {
         'generating_pdf': 'PDF बना रहे हैं...',
         'pdf_wait_message': 'कुछ सेकंड लग सकते हैं',
       },
+      'streaming': {
+        'loading': 'स्टडी गाइड लोड हो रही है...',
+        'sections': '{count}/6 सेक्शन',
+      },
       'tts': {
         'listen': 'सुनें',
         'pause': 'रुकें',
@@ -2586,6 +2594,10 @@ class AppTranslations {
         'sign_in': 'സൈൻ ഇൻ ചെയ്യൂ',
         'generating_pdf': 'PDF ഉണ്ടാക്കുന്നു...',
         'pdf_wait_message': 'കുറച്ച് സെക്കൻഡ് എടുക്കും',
+      },
+      'streaming': {
+        'loading': 'സ്റ്റഡി ഗൈഡ് ലോഡ് ചെയ്യുന്നു...',
+        'sections': '{count}/6 സെക്ഷനുകൾ',
       },
       'tts': {
         'listen': 'കേൾക്കുക',

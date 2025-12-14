@@ -2,6 +2,7 @@ import 'package:equatable/equatable.dart';
 
 import '../../../../core/error/failures.dart';
 import '../../domain/entities/study_guide.dart';
+import '../../domain/entities/study_stream_event.dart';
 
 /// States for the Study Generation BLoC.
 ///
@@ -28,6 +29,97 @@ class StudyGenerationInProgress extends StudyState {
 
   @override
   List<Object?> get props => [progress];
+}
+
+/// State indicating that study guide is being streamed progressively.
+///
+/// This state holds partial content as sections arrive from the SSE stream.
+/// UI can render available sections while waiting for remaining ones.
+class StudyGenerationStreaming extends StudyState {
+  /// Accumulated streaming content with sections loaded so far.
+  final StreamingStudyGuideContent content;
+
+  /// Input type used for generation (for context).
+  final String inputType;
+
+  /// Input value used for generation (for context).
+  final String inputValue;
+
+  /// Language of the study guide.
+  final String language;
+
+  const StudyGenerationStreaming({
+    required this.content,
+    required this.inputType,
+    required this.inputValue,
+    required this.language,
+  });
+
+  /// Convenience getter for progress (0.0 to 1.0).
+  double get progress => content.progress;
+
+  /// Whether all sections have been loaded.
+  bool get isComplete => content.isComplete;
+
+  /// Whether content is from cache.
+  bool get isFromCache => content.isFromCache;
+
+  /// Create a new state with an additional section.
+  StudyGenerationStreaming withSection(StudyStreamSectionEvent section) {
+    return StudyGenerationStreaming(
+      content: content.copyWithSection(section),
+      inputType: inputType,
+      inputValue: inputValue,
+      language: language,
+    );
+  }
+
+  @override
+  List<Object?> get props => [content.props, inputType, inputValue, language];
+}
+
+/// State indicating streaming failed but partial content may be available.
+class StudyGenerationStreamingFailed extends StudyState {
+  /// Partial content that was received before failure.
+  final StreamingStudyGuideContent? partialContent;
+
+  /// The failure that occurred.
+  final Failure failure;
+
+  /// Whether the failure is retryable.
+  final bool canRetry;
+
+  /// Input type used for generation (for retry).
+  final String inputType;
+
+  /// Input value used for generation (for retry).
+  final String inputValue;
+
+  /// Language of the study guide (for retry).
+  final String language;
+
+  const StudyGenerationStreamingFailed({
+    this.partialContent,
+    required this.failure,
+    required this.canRetry,
+    required this.inputType,
+    required this.inputValue,
+    required this.language,
+  });
+
+  /// Whether any partial content is available.
+  bool get hasPartialContent =>
+      partialContent != null && partialContent!.sectionsLoaded > 0;
+
+  @override
+  List<Object?> get props => [
+        partialContent?.props,
+        failure,
+        canRetry,
+        inputType,
+        inputValue,
+        language,
+      ];
 }
 
 /// State indicating successful study guide generation.
