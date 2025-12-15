@@ -64,7 +64,7 @@ class ConversationBubble extends StatelessWidget {
             // Message bubble
             Flexible(
               child: Container(
-                padding: const EdgeInsets.all(12),
+                padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
                   color: isUser
                       ? theme.colorScheme.primary.withAlpha((0.1 * 255).round())
@@ -88,8 +88,10 @@ class ConversationBubble extends StatelessWidget {
                     // Message content
                     Text(
                       content,
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        height: 1.4,
+                      style: theme.textTheme.bodyLarge?.copyWith(
+                        height: 1.6,
+                        letterSpacing: 0.2,
+                        fontSize: 16,
                       ),
                     ),
 
@@ -102,24 +104,34 @@ class ConversationBubble extends StatelessWidget {
                         spacing: 6,
                         runSpacing: 6,
                         children: scriptureReferences!.map((ref) {
+                          final isDark = theme.brightness == Brightness.dark;
                           return InkWell(
                             onTap: () => onScriptureReferenceTap?.call(ref),
                             borderRadius: BorderRadius.circular(12),
                             child: Container(
                               padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 4,
+                                horizontal: 10,
+                                vertical: 6,
                               ),
                               decoration: BoxDecoration(
-                                color: theme.colorScheme.secondary
-                                    .withAlpha((0.3 * 255).round()),
+                                color: isDark
+                                    ? const Color(0xFF4A3B8C)
+                                    : theme.colorScheme.secondary
+                                        .withAlpha((0.3 * 255).round()),
                                 borderRadius: BorderRadius.circular(12),
+                                border: isDark
+                                    ? Border.all(
+                                        color: const Color(0xFF9D8FD9),
+                                      )
+                                    : null,
                               ),
                               child: Text(
                                 ref,
                                 style: theme.textTheme.labelSmall?.copyWith(
-                                  color: theme.colorScheme.primary,
-                                  fontWeight: FontWeight.w500,
+                                  color: isDark
+                                      ? const Color(0xFFB8A9F0)
+                                      : theme.colorScheme.primary,
+                                  fontWeight: FontWeight.w600,
                                 ),
                               ),
                             ),
