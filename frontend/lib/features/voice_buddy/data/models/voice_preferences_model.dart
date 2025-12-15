@@ -32,7 +32,7 @@ class VoicePreferencesModel extends VoicePreferencesEntity {
       pitch: (json['pitch'] as num?)?.toDouble() ?? 0.0,
       autoPlayResponse: json['auto_play_response'] as bool? ?? true,
       showTranscription: json['show_transcription'] as bool? ?? true,
-      continuousMode: json['continuous_mode'] as bool? ?? false,
+      continuousMode: json['continuous_mode'] as bool? ?? true,
       useStudyContext: json['use_study_context'] as bool? ?? true,
       citeScriptureReferences:
           json['cite_scripture_references'] as bool? ?? true,
