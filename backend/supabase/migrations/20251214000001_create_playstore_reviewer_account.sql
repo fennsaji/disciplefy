@@ -70,7 +70,7 @@ BEGIN
     'premium',
     NOW(),
     NOW() + INTERVAL '100 years',
-    0,
+    100,  -- Nominal 1 rupee (granted subscription)
     'INR'
   );
 

@@ -3,6 +3,11 @@ allprojects {
         google()
         mavenCentral()
     }
+
+    // Suppress warnings from third-party plugins (Razorpay, etc.)
+    tasks.withType<JavaCompile>().configureEach {
+        options.compilerArgs.addAll(listOf("-Xlint:-options", "-Xlint:-deprecation"))
+    }
 }
 
 buildscript {
