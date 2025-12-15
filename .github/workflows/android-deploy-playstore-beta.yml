@@ -1,0 +1,140 @@
+name: Deploy Android to Play Store (Beta)
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'frontend/**'
+      - '.github/workflows/android-deploy-playstore-beta.yml'
+  workflow_dispatch:
+    inputs:
+      release_notes:
+        description: 'Release notes for this build'
+        required: false
+        default: 'Bug fixes and performance improvements'
+
+env:
+  FLUTTER_VERSION: '3.32.8'
+  JAVA_VERSION: '17'
+
+jobs:
+  build-and-deploy:
+    name: Build and Deploy to Play Store Internal Track
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: ${{ env.JAVA_VERSION }}
+          cache: 'gradle'
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: 'stable'
+          cache: true
+
+      - name: Get Flutter dependencies
+        run: |
+          cd frontend
+          flutter pub get
+
+      - name: Run Flutter analyze
+        run: |
+          cd frontend
+          flutter analyze --no-fatal-infos
+        continue-on-error: true
+
+      - name: Decode Android keystore
+        run: |
+          echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 --decode > frontend/android/app/upload-keystore.jks
+
+      - name: Create key.properties
+        run: |
+          cd frontend/android
+          cat > key.properties << EOF
+          storePassword=${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          keyPassword=${{ secrets.ANDROID_KEY_PASSWORD }}
+          keyAlias=${{ secrets.ANDROID_KEY_ALIAS }}
+          storeFile=upload-keystore.jks
+          EOF
+
+      - name: Create google-services.json
+        run: |
+          echo '${{ secrets.GOOGLE_SERVICES_JSON }}' > frontend/android/app/google-services.json
+
+      - name: Build Android App Bundle (Production)
+        run: |
+          cd frontend
+          flutter build appbundle --release \
+            --dart-define=SUPABASE_URL=https://${{ secrets.SUPABASE_PROJECT_REF }}.supabase.co \
+            --dart-define=SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }} \
+            --dart-define=GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_OAUTH_CLIENT_ID_ANDROID }} \
+            --dart-define=APP_URL=https://www.disciplefy.in \
+            --dart-define=FLUTTER_ENV=production \
+            --dart-define=GOOGLE_CLOUD_TTS_API_KEY=${{ secrets.GOOGLE_CLOUD_TTS_API_KEY }} \
+            --dart-define=RAZORPAY_KEY_ID=${{ secrets.RAZORPAY_KEY_ID }} \
+            --build-name=1.0.${{ github.run_number }} \
+            --build-number=${{ github.run_number }}
+
+      - name: Setup Google Play credentials
+        run: |
+          echo '${{ secrets.PLAY_STORE_SERVICE_ACCOUNT_JSON }}' > play-store-service-account.json
+
+      - name: Upload to Play Store (Internal Testing)
+        uses: r0adkll/upload-google-play@v1
+        with:
+          serviceAccountJson: play-store-service-account.json
+          packageName: com.disciplefy.bible_study
+          releaseFiles: frontend/build/app/outputs/bundle/release/app-release.aab
+          track: internal
+          status: completed
+          whatsNewDirectory: distribution/whatsnew
+
+      - name: Cleanup sensitive files
+        if: always()
+        run: |
+          rm -f frontend/android/app/upload-keystore.jks
+          rm -f frontend/android/key.properties
+          rm -f frontend/android/app/google-services.json
+          rm -f play-store-service-account.json
+
+      - name: Upload build artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-aab-beta-${{ github.run_number }}
+          path: frontend/build/app/outputs/bundle/release/app-release.aab
+          retention-days: 90
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: v1.0.${{ github.run_number }}-beta
+          name: Beta v1.0.${{ github.run_number }}
+          body: |
+            ## 🧪 Beta Release v1.0.${{ github.run_number }}
+
+            **Track:** Internal Testing (Play Store)
+
+            ### What's New
+            ${{ github.event.inputs.release_notes || 'Bug fixes and performance improvements' }}
+
+            ### Commit Details
+            - **Commit:** ${{ github.sha }}
+            - **Author:** ${{ github.event.head_commit.author.name }}
+            - **Message:** ${{ github.event.head_commit.message }}
+
+            ---
+            📱 Available to internal testers via Play Store
+          draft: false
+          prerelease: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
