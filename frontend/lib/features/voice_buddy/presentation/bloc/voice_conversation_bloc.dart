@@ -89,13 +89,14 @@ class VoiceConversationBloc
     if (!state.isListening) return;
     if (text.isEmpty) return;
 
-    print('🎙️ [VAD] Silence detected - auto-sending message');
+    print('🎙️ [VAD] Silence detected - stopping to get final result');
     print(
-        '  - Text: "${text.length > 50 ? '${text.substring(0, 50)}...' : text}"');
+        '  - Current text: "${text.length > 50 ? '${text.substring(0, 50)}...' : text}"');
     print('  - Confidence: ${(confidence * 100).toStringAsFixed(1)}%');
 
+    // Just stop listening - let finalResult handler send the complete message
     add(const StopListening());
-    add(SendTextMessage(text));
+    // Message will be sent by finalResult handler or _onSpeechStatusChanged
   }
 
   /// Called by VAD service when state changes
@@ -303,14 +304,16 @@ class VoiceConversationBloc
             // Cancel existing timer and start new 3-second timer
             _silenceAfterSpeechTimer?.cancel();
             _silenceAfterSpeechTimer = Timer(const Duration(seconds: 3), () {
-              // After 3 seconds of no new transcription, send the message
+              // After 3 seconds of no new transcription, stop listening
+              // This will trigger finalResult which contains the complete text
+              // Don't send here - let finalResult/statusChange handler send
               if (_hasStartedSpeaking && _currentTranscription.isNotEmpty) {
                 print(
-                    '🎙️ [VOICE] 3-second silence detected - sending message');
+                    '🎙️ [VOICE] 3-second silence detected - stopping to get final result');
                 print(
-                    '  - Text: "${_currentTranscription.length > 50 ? '${_currentTranscription.substring(0, 50)}...' : _currentTranscription}"');
+                    '  - Current text: "${_currentTranscription.length > 50 ? '${_currentTranscription.substring(0, 50)}...' : _currentTranscription}"');
                 add(const StopListening());
-                add(SendTextMessage(_currentTranscription));
+                // Message will be sent by finalResult handler or _onSpeechStatusChanged
               }
             });
           }

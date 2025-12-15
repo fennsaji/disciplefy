@@ -28,7 +28,7 @@ class VoicePreferencesEntity extends Equatable {
     this.pitch = 0.0,
     this.autoPlayResponse = true,
     this.showTranscription = true,
-    this.continuousMode = false,
+    this.continuousMode = true,
     this.useStudyContext = true,
     this.citeScriptureReferences = true,
     this.notifyDailyQuotaReached = true,
