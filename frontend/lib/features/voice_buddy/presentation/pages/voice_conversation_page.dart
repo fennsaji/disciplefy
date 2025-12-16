@@ -10,7 +10,7 @@ import '../bloc/voice_conversation_bloc.dart';
 import '../bloc/voice_conversation_event.dart';
 import '../bloc/voice_conversation_state.dart';
 import '../widgets/conversation_bubble.dart';
-import '../widgets/scripture_verse_sheet.dart';
+import '../../../../shared/widgets/scripture_verse_sheet.dart';
 import '../widgets/language_selector.dart' show VoiceLanguage;
 import '../widgets/voice_button.dart';
 import '../../../gamification/presentation/bloc/gamification_bloc.dart';

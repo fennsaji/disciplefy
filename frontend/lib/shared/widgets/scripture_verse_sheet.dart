@@ -3,10 +3,12 @@ import 'package:flutter/services.dart';
 import 'package:get_it/get_it.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../../core/router/app_routes.dart';
-import '../../../../core/services/language_preference_service.dart';
-import '../../../memory_verses/domain/usecases/fetch_verse_text.dart';
-import '../../../memory_verses/domain/usecases/add_verse_manually.dart';
+import '../../core/extensions/translation_extension.dart';
+import '../../core/i18n/translation_keys.dart';
+import '../../core/router/app_routes.dart';
+import '../../core/services/language_preference_service.dart';
+import '../../features/memory_verses/domain/usecases/fetch_verse_text.dart';
+import '../../features/memory_verses/domain/usecases/add_verse_manually.dart';
 
 /// A bottom sheet widget for displaying scripture verse text.
 ///
@@ -59,7 +61,8 @@ class _ScriptureVerseSheetState extends State<ScriptureVerseSheet> {
     if (parsed == null) {
       setState(() {
         _isLoading = false;
-        _errorMessage = 'Could not parse reference: ${widget.reference}';
+        _errorMessage =
+            '${context.tr(TranslationKeys.verseSheetCouldNotParse)}: ${widget.reference}';
       });
       return;
     }
@@ -81,7 +84,7 @@ class _ScriptureVerseSheetState extends State<ScriptureVerseSheet> {
       (failure) {
         setState(() {
           _isLoading = false;
-          _errorMessage = 'Could not load verse text';
+          _errorMessage = context.tr(TranslationKeys.verseSheetCouldNotLoad);
         });
       },
       (fetchedVerse) {
@@ -96,27 +99,22 @@ class _ScriptureVerseSheetState extends State<ScriptureVerseSheet> {
 
   /// Parses a scripture reference string into components.
   ///
-  /// Supports formats:
+  /// Supports formats in English, Hindi (Devanagari), and Malayalam:
   /// - "John 3:16" -> book: John, chapter: 3, verse: 16
   /// - "1 John 3:16" -> book: 1 John, chapter: 3, verse: 16
   /// - "Matthew 5:1-12" -> book: Matthew, chapter: 5, verseStart: 1, verseEnd: 12
+  /// - "यूहन्ना 3:16" -> book: यूहन्ना, chapter: 3, verse: 16
+  /// - "രോമർ 8:28" -> book: രോമർ, chapter: 8, verse: 28
   _ParsedReference? _parseReference(String reference) {
-    // Pattern: captures book name (may start with number), chapter, verse(s)
-    // Examples: "John 3:16", "1 John 3:16", "Matthew 5:1-12"
-    final regex = RegExp(r'^(\d?\s?[A-Za-z]+)\s+(\d+):(\d+)(?:-(\d+))?$');
+    // Pattern: captures book name in English, Hindi, or Malayalam (may start with number), chapter, verse(s)
+    // Unicode ranges: Devanagari (Hindi) \u0900-\u097F, Malayalam \u0D00-\u0D7F
+    final regex = RegExp(
+      r'^(\d?\s?(?:[A-Za-z]+|[\u0900-\u097F]+|[\u0D00-\u0D7F]+))\s+(\d+):(\d+)(?:-(\d+))?$',
+    );
     final match = regex.firstMatch(reference.trim());
 
     if (match == null) {
-      // Try simpler pattern without verse range
-      final simpleRegex = RegExp(r'^(\d?\s?[A-Za-z]+)\s+(\d+):(\d+)$');
-      final simpleMatch = simpleRegex.firstMatch(reference.trim());
-      if (simpleMatch == null) return null;
-
-      return _ParsedReference(
-        book: simpleMatch.group(1)!.trim(),
-        chapter: int.parse(simpleMatch.group(2)!),
-        verseStart: int.parse(simpleMatch.group(3)!),
-      );
+      return null;
     }
 
     return _ParsedReference(
@@ -132,9 +130,9 @@ class _ScriptureVerseSheetState extends State<ScriptureVerseSheet> {
       final textToCopy = '"$_verseText" - $_localizedReference';
       Clipboard.setData(ClipboardData(text: textToCopy));
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Verse copied to clipboard'),
-          duration: Duration(seconds: 2),
+        SnackBar(
+          content: Text(context.tr(TranslationKeys.verseSheetCopied)),
+          duration: const Duration(seconds: 2),
         ),
       );
     }
@@ -222,7 +220,7 @@ class _ScriptureVerseSheetState extends State<ScriptureVerseSheet> {
             ),
             const SizedBox(height: 16),
             Text(
-              'Loading verse...',
+              context.tr(TranslationKeys.verseSheetLoading),
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
               ),
@@ -337,7 +335,8 @@ class _ScriptureVerseSheetState extends State<ScriptureVerseSheet> {
         (failure) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Failed to add verse: ${failure.message}'),
+              content: Text(
+                  '${context.tr(TranslationKeys.verseSheetFailedToAdd)}: ${failure.message}'),
               backgroundColor: Theme.of(context).colorScheme.error,
             ),
           );
@@ -345,9 +344,10 @@ class _ScriptureVerseSheetState extends State<ScriptureVerseSheet> {
         (_) {
           Navigator.pop(context);
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Added to Memory Verses'),
-              duration: Duration(seconds: 2),
+            SnackBar(
+              content:
+                  Text(context.tr(TranslationKeys.verseSheetAddedToMemory)),
+              duration: const Duration(seconds: 2),
             ),
           );
         },
@@ -362,7 +362,7 @@ class _ScriptureVerseSheetState extends State<ScriptureVerseSheet> {
         // Study button
         _ActionButton(
           icon: Icons.auto_stories_rounded,
-          label: 'Study',
+          label: context.tr(TranslationKeys.verseSheetStudy),
           onTap: _generateStudyGuide,
           theme: theme,
         ),
@@ -370,7 +370,7 @@ class _ScriptureVerseSheetState extends State<ScriptureVerseSheet> {
         // Memory button
         _ActionButton(
           icon: Icons.bookmark_add_rounded,
-          label: 'Memory',
+          label: context.tr(TranslationKeys.verseSheetMemory),
           onTap: _addToMemoryVerses,
           theme: theme,
         ),
@@ -378,7 +378,7 @@ class _ScriptureVerseSheetState extends State<ScriptureVerseSheet> {
         // Copy button
         _ActionButton(
           icon: Icons.copy_rounded,
-          label: 'Copy',
+          label: context.tr(TranslationKeys.verseSheetCopy),
           onTap: _copyToClipboard,
           theme: theme,
         ),

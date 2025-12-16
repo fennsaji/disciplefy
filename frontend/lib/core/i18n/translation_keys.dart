@@ -1107,4 +1107,15 @@ class TranslationKeys {
   static const gamificationCategoryMemory = 'gamification.category.memory';
   static const gamificationCategoryVoice = 'gamification.category.voice';
   static const gamificationCategorySaved = 'gamification.category.saved';
+
+  // Scripture Verse Sheet
+  static const verseSheetLoading = 'verse_sheet.loading';
+  static const verseSheetStudy = 'verse_sheet.study';
+  static const verseSheetMemory = 'verse_sheet.memory';
+  static const verseSheetCopy = 'verse_sheet.copy';
+  static const verseSheetCopied = 'verse_sheet.copied';
+  static const verseSheetCouldNotLoad = 'verse_sheet.could_not_load';
+  static const verseSheetCouldNotParse = 'verse_sheet.could_not_parse';
+  static const verseSheetAddedToMemory = 'verse_sheet.added_to_memory';
+  static const verseSheetFailedToAdd = 'verse_sheet.failed_to_add';
 }
