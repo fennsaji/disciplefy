@@ -52,7 +52,7 @@ class ConversationBubble extends StatelessWidget {
               const CircleAvatar(
                 radius: 16,
                 backgroundColor: Color(0xFFFAF8F5),
-                backgroundImage: AssetImage('images/AIDiscipler.png'),
+                backgroundImage: AssetImage('assets/images/AIDiscipler.png'),
               ),
               const SizedBox(width: 8),
             ],
@@ -195,7 +195,7 @@ class ThinkingBubble extends StatelessWidget {
             const CircleAvatar(
               radius: 16,
               backgroundColor: Color(0xFFFAF8F5),
-              backgroundImage: AssetImage('images/AIDiscipler.png'),
+              backgroundImage: AssetImage('assets/images/AIDiscipler.png'),
             ),
             const SizedBox(width: 8),
             Container(

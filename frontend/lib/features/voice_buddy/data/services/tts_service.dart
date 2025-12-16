@@ -30,6 +30,11 @@ class TTSService {
   /// Language code for current streaming session
   String _streamingLanguageCode = 'en-US';
 
+  /// Voice settings for current streaming session
+  double _streamingSpeakingRate = 1.0;
+  double _streamingPitch = 0.0;
+  String _streamingVoiceGender = 'female';
+
   /// Callback when all queued sentences are done
   void Function()? _onStreamingComplete;
 
@@ -552,16 +557,24 @@ class TTSService {
   /// Uses Cloud TTS when available for high-quality voices.
   Future<void> startStreamingSession({
     required String languageCode,
+    double speakingRate = 1.0,
+    double pitch = 0.0,
+    String voiceGender = 'female',
     void Function()? onComplete,
   }) async {
     print('🔊 [TTS STREAM] Starting streaming session for $languageCode');
     print(
         '🔊 [TTS STREAM] Cloud TTS available: $_cloudTtsAvailable, enabled: $_useCloudTts');
+    print(
+        '🔊 [TTS STREAM] Voice settings: rate=$speakingRate, pitch=$pitch, gender=$voiceGender');
 
     // Set streaming mode IMMEDIATELY so sentences can be queued during init
     _isStreamingMode = true;
     _isInitializingStreamingSession = true;
     _streamingLanguageCode = languageCode;
+    _streamingSpeakingRate = speakingRate;
+    _streamingPitch = pitch;
+    _streamingVoiceGender = voiceGender;
     _onStreamingComplete = onComplete;
 
     // Clear any previous queue
@@ -659,9 +672,18 @@ class TTSService {
       return;
     }
 
-    // Fallback to device TTS
+    // Fallback to device TTS with voice settings
+    print('🔊 [TTS STREAM] Using device TTS with settings');
+    _applyDeviceTTSSettings();
     _flutterTts.speak(sentence);
     _currentState = TtsState.playing;
+  }
+
+  /// Apply stored streaming voice settings to device TTS
+  Future<void> _applyDeviceTTSSettings() async {
+    await setSpeechRate(_streamingSpeakingRate);
+    await setPitch(_streamingPitch);
+    await _selectVoiceByGender(_streamingLanguageCode, _streamingVoiceGender);
   }
 
   /// Speak using Cloud TTS with proper error handling.
@@ -670,6 +692,8 @@ class TTSService {
       final success = await _cloudTts.speak(
         text: sentence,
         languageCode: _streamingLanguageCode,
+        speakingRate: _streamingSpeakingRate,
+        pitch: _streamingPitch,
         onComplete: () {
           _currentState = TtsState.stopped;
           // Always call _playNextInQueue - it handles empty queue and completion callback
