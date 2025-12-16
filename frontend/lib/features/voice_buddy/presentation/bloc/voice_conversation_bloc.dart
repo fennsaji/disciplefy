@@ -7,6 +7,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../../core/config/app_config.dart';
 import '../../../../core/services/api_auth_helper.dart';
+import '../../../../core/services/language_preference_service.dart';
 import '../../../../core/utils/event_source_bridge.dart';
 import '../../data/services/speech_service.dart';
 import '../../data/services/tts_service.dart';
@@ -23,6 +24,7 @@ class VoiceConversationBloc
   final SpeechService _speechService;
   final TTSService _ttsService;
   final SupabaseClient _supabaseClient;
+  final LanguagePreferenceService _languagePreferenceService;
 
   /// Voice Activity Detection service for intelligent silence detection
   late final VADService _vadService;
@@ -51,11 +53,13 @@ class VoiceConversationBloc
     required SpeechService speechService,
     required TTSService ttsService,
     required SupabaseClient supabaseClient,
+    required LanguagePreferenceService languagePreferenceService,
     VADConfig? vadConfig,
   })  : _repository = repository,
         _speechService = speechService,
         _ttsService = ttsService,
         _supabaseClient = supabaseClient,
+        _languagePreferenceService = languagePreferenceService,
         super(const VoiceConversationState()) {
     // Initialize VAD service with configuration
     _vadService = (vadConfig ?? VADConfig.defaultConfig).createService();
@@ -127,22 +131,61 @@ class VoiceConversationBloc
   ) async {
     final result = await _repository.getPreferences();
 
-    result.fold(
-      (failure) {
-        // On failure, keep default language (en-US)
-        print('Failed to load preferences: ${failure.message}');
-      },
-      (preferences) {
-        emit(state.copyWith(
-          languageCode: preferences.preferredLanguage,
-          isContinuousMode: preferences.continuousMode,
-          showTranscription: preferences.showTranscription,
-          autoPlayResponse: preferences.autoPlayResponse,
-          autoDetectLanguage: preferences.autoDetectLanguage,
-          notifyDailyQuotaReached: preferences.notifyDailyQuotaReached,
-        ));
-      },
+    // Handle failure case
+    if (result.isLeft()) {
+      result.fold(
+        (failure) => print('Failed to load preferences: ${failure.message}'),
+        (_) {},
+      );
+      return;
+    }
+
+    // Extract preferences from successful result
+    final preferences = result.getOrElse(
+      () => throw Exception('Unexpected null preferences'),
     );
+
+    // Resolve the language code
+    String languageCode = preferences.preferredLanguage;
+
+    // If 'default' is selected, get the user's app language preference
+    if (languageCode == 'default') {
+      try {
+        final appLanguage =
+            await _languagePreferenceService.getSelectedLanguage();
+        // Convert app language code to voice language code
+        languageCode = _appLanguageToVoiceCode(appLanguage.code);
+        print(
+            '🎙️ [VOICE] Resolved default language to: $languageCode (from app language: ${appLanguage.code})');
+      } catch (e) {
+        // Fallback to English if unable to get app language
+        languageCode = 'en-US';
+        print('🎙️ [VOICE] Failed to get app language, using en-US: $e');
+      }
+    }
+
+    emit(state.copyWith(
+      languageCode: languageCode,
+      isContinuousMode: preferences.continuousMode,
+      showTranscription: preferences.showTranscription,
+      autoPlayResponse: preferences.autoPlayResponse,
+      autoDetectLanguage: preferences.autoDetectLanguage,
+      notifyDailyQuotaReached: preferences.notifyDailyQuotaReached,
+    ));
+  }
+
+  /// Convert app language code (en, hi, ml) to voice language code (en-US, hi-IN, ml-IN)
+  String _appLanguageToVoiceCode(String appLanguageCode) {
+    switch (appLanguageCode.toLowerCase()) {
+      case 'en':
+        return 'en-US';
+      case 'hi':
+        return 'hi-IN';
+      case 'ml':
+        return 'ml-IN';
+      default:
+        return 'en-US';
+    }
   }
 
   Future<void> _onStartConversation(

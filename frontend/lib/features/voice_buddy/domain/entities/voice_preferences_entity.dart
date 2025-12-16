@@ -21,7 +21,7 @@ class VoicePreferencesEntity extends Equatable {
   const VoicePreferencesEntity({
     this.id,
     required this.userId,
-    this.preferredLanguage = 'en-US',
+    this.preferredLanguage = 'default',
     this.autoDetectLanguage = true,
     this.ttsVoiceGender = VoiceGender.female,
     this.speakingRate = 0.95,
