@@ -1,0 +1,154 @@
+name: Deploy Android to Play Store (Production)
+
+# Production releases are triggered manually or by creating a release tag
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      version_name:
+        description: 'Version name (e.g., 1.0.0)'
+        required: true
+        default: '1.0.0'
+      release_notes:
+        description: 'Release notes for this build'
+        required: true
+        default: 'Bug fixes and performance improvements'
+      rollout_percentage:
+        description: 'Staged rollout percentage (10, 25, 50, 100)'
+        required: true
+        default: '10'
+        type: choice
+        options:
+          - '10'
+          - '25'
+          - '50'
+          - '100'
+
+env:
+  FLUTTER_VERSION: '3.32.8'
+  JAVA_VERSION: '17'
+
+jobs:
+  build-and-deploy:
+    name: Build and Deploy to Play Store Production
+    runs-on: ubuntu-latest
+    environment: production  # Requires approval for production deployments
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Extract version from tag or input
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" == "release" ]; then
+            VERSION="${{ github.event.release.tag_name }}"
+            VERSION="${VERSION#v}"  # Remove 'v' prefix if present
+          else
+            VERSION="${{ github.event.inputs.version_name }}"
+          fi
+          echo "version_name=$VERSION" >> $GITHUB_OUTPUT
+          # Generate build number from timestamp
+          BUILD_NUMBER=$(date +%Y%m%d%H%M)
+          echo "build_number=$BUILD_NUMBER" >> $GITHUB_OUTPUT
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: ${{ env.JAVA_VERSION }}
+          cache: 'gradle'
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: 'stable'
+          cache: true
+
+      - name: Get Flutter dependencies
+        run: |
+          cd frontend
+          flutter pub get
+
+      - name: Run Flutter analyze
+        run: |
+          cd frontend
+          flutter analyze --no-fatal-infos
+
+      - name: Run Flutter tests
+        run: |
+          cd frontend
+          flutter test
+        continue-on-error: true
+
+      - name: Decode Android keystore
+        run: |
+          echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 --decode > frontend/android/app/upload-keystore.jks
+
+      - name: Create key.properties
+        run: |
+          cd frontend/android
+          cat > key.properties << EOF
+          storePassword=${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          keyPassword=${{ secrets.ANDROID_KEY_PASSWORD }}
+          keyAlias=${{ secrets.ANDROID_KEY_ALIAS }}
+          storeFile=upload-keystore.jks
+          EOF
+
+      - name: Create google-services.json
+        run: |
+          echo '${{ secrets.GOOGLE_SERVICES_JSON }}' > frontend/android/app/google-services.json
+
+      - name: Build Android App Bundle (Production)
+        run: |
+          cd frontend
+          flutter build appbundle --release \
+            --dart-define=SUPABASE_URL=https://${{ secrets.SUPABASE_PROJECT_REF }}.supabase.co \
+            --dart-define=SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }} \
+            --dart-define=GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_OAUTH_CLIENT_ID_ANDROID }} \
+            --dart-define=APP_URL=https://www.disciplefy.in \
+            --dart-define=FLUTTER_ENV=production \
+            --dart-define=GOOGLE_CLOUD_TTS_API_KEY=${{ secrets.GOOGLE_CLOUD_TTS_API_KEY }} \
+            --dart-define=RAZORPAY_KEY_ID=${{ secrets.RAZORPAY_KEY_ID }} \
+            --build-name=${{ steps.version.outputs.version_name }} \
+            --build-number=${{ steps.version.outputs.build_number }}
+
+      - name: Setup Google Play credentials
+        run: |
+          echo '${{ secrets.PLAY_STORE_SERVICE_ACCOUNT_JSON }}' > play-store-service-account.json
+
+      - name: Upload to Play Store (Production with Staged Rollout)
+        uses: r0adkll/upload-google-play@v1
+        with:
+          serviceAccountJson: play-store-service-account.json
+          packageName: com.disciplefy.bible_study
+          releaseFiles: frontend/build/app/outputs/bundle/release/app-release.aab
+          track: production
+          status: inProgress
+          userFraction: ${{ github.event.inputs.rollout_percentage && format('{0}', github.event.inputs.rollout_percentage) || '10' }}
+          whatsNewDirectory: distribution/whatsnew
+
+      - name: Cleanup sensitive files
+        if: always()
+        run: |
+          rm -f frontend/android/app/upload-keystore.jks
+          rm -f frontend/android/key.properties
+          rm -f frontend/android/app/google-services.json
+          rm -f play-store-service-account.json
+
+      - name: Upload build artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-aab-production-${{ steps.version.outputs.version_name }}
+          path: frontend/build/app/outputs/bundle/release/app-release.aab
+          retention-days: 365
+
+      - name: Notify on success
+        if: success()
+        run: |
+          echo "✅ Production release v${{ steps.version.outputs.version_name }} deployed to Play Store"
+          echo "📊 Rollout: ${{ github.event.inputs.rollout_percentage || '10' }}%"
+          echo "🔗 Build: ${{ steps.version.outputs.build_number }}"

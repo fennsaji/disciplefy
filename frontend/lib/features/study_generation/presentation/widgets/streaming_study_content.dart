@@ -5,6 +5,7 @@ import 'package:shimmer/shimmer.dart';
 import '../../../../core/constants/app_fonts.dart';
 import '../../../../core/extensions/translation_extension.dart';
 import '../../../../core/i18n/translation_keys.dart';
+import '../../../../shared/widgets/clickable_scripture_text.dart';
 import '../../domain/entities/study_stream_event.dart';
 
 /// Widget for displaying streaming study guide content with progressive rendering.
@@ -415,9 +416,9 @@ class _StreamingSectionState extends State<_StreamingSection>
                 ],
               ),
               const SizedBox(height: 16),
-              // Section Content
-              SelectableText(
-                widget.content,
+              // Section Content with clickable scripture references
+              ClickableScriptureText(
+                text: widget.content,
                 style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                       color: Theme.of(context).colorScheme.onBackground,
                       height: 1.6,

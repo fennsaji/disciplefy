@@ -105,6 +105,83 @@ const BIBLE_VERSIONS = {
   ml: '3ea0147e32eebe47-01', // Indian Revised Version Malayalam 2025
 } as const
 
+// Reverse mappings: Hindi/Malayalam book names -> English
+const HINDI_TO_ENGLISH: Record<string, string> = Object.fromEntries(
+  Object.entries(HINDI_BOOK_NAMES).map(([en, hi]) => [hi, en])
+)
+
+const MALAYALAM_TO_ENGLISH: Record<string, string> = Object.fromEntries(
+  Object.entries(MALAYALAM_BOOK_NAMES).map(([en, ml]) => [ml, en])
+)
+
+// Alternate spellings for book names (common variations from LLM output)
+const ALTERNATE_SPELLINGS: Record<string, string> = {
+  // Malayalam alternates
+  'റോമർ': 'Romans',
+  'റോമര്‍': 'Romans',
+  'കൊരിന്ത്യർ': 'Corinthians',
+  '1 കൊരിന്ത്യർ': '1 Corinthians',
+  '2 കൊരിന്ത്യർ': '2 Corinthians',
+  'ഗലാത്യർ': 'Galatians',
+  'എഫെസ്യർ': 'Ephesians',
+  'ഫിലിപ്പിയർ': 'Philippians',
+  'കൊലൊസ്സ്യർ': 'Colossians',
+  'തെസ്സലൊനീക്യർ': 'Thessalonians',
+  '1 തെസ്സലൊനീക്യർ': '1 Thessalonians',
+  '2 തെസ്സലൊനീക്യർ': '2 Thessalonians',
+  'എബ്രായർ': 'Hebrews',
+  'യോഹന്നാൻ': 'John',
+  '1 യോഹന്നാൻ': '1 John',
+  '2 യോഹന്നാൻ': '2 John',
+  '3 യോഹന്നാൻ': '3 John',
+  '1 പത്രോസ്': '1 Peter',
+  '2 പത്രോസ്': '2 Peter',
+  'സങ്കീർത്തനം': 'Psalms',
+  'സങ്കീര്‍ത്തനം': 'Psalms',
+  'സങ്കീർത്തനങ്ങൾ': 'Psalms',
+  'ലൂക്കാ': 'Luke',
+  'ലൂക്കോസ്': 'Luke',
+  'മത്തായി': 'Matthew',
+  'മർക്കോസ്': 'Mark',
+  'എഫേസ്യർ': 'Ephesians',
+  'ജോൺ': 'John',
+  // Hindi alternates
+  'रोमियो': 'Romans',
+  'यूहन्ना': 'John',
+  '1 यूहन्ना': '1 John',
+  '2 यूहन्ना': '2 John',
+  '3 यूहन्ना': '3 John',
+}
+
+/**
+ * Normalize book name to English for API lookup
+ * Handles English, Hindi, and Malayalam book names
+ */
+function normalizeBookName(book: string): string {
+  // Already English
+  if (BOOK_CODES[book]) {
+    return book
+  }
+
+  // Try Hindi
+  if (HINDI_TO_ENGLISH[book]) {
+    return HINDI_TO_ENGLISH[book]
+  }
+
+  // Try Malayalam
+  if (MALAYALAM_TO_ENGLISH[book]) {
+    return MALAYALAM_TO_ENGLISH[book]
+  }
+
+  // Try alternate spellings (common variations from LLM output)
+  if (ALTERNATE_SPELLINGS[book]) {
+    return ALTERNATE_SPELLINGS[book]
+  }
+
+  // Return as-is (will fail validation later)
+  return book
+}
+
 /**
  * Get localized book name based on language
  */
@@ -164,7 +241,7 @@ function buildVerseUrl(bibleId: string, verseId: string): string {
  */
 async function handleFetchVerse(
   req: Request,
-  services: ServiceContainer
+  _services: ServiceContainer
 ): Promise<Response> {
 
   // Parse and validate request body
@@ -174,14 +251,17 @@ async function handleFetchVerse(
     throw new AppError('VALIDATION_ERROR', 'book, chapter, verse_start, and language are required', 400)
   }
 
-  // Validate book name
-  if (!BOOK_CODES[body.book]) {
-    throw new AppError('VALIDATION_ERROR', `Unknown book name: ${body.book}`, 400)
-  }
-
   // Validate language
   if (!['en', 'hi', 'ml'].includes(body.language)) {
     throw new AppError('VALIDATION_ERROR', 'Invalid language. Must be en, hi, or ml', 400)
+  }
+
+  // Normalize book name to English (handles Hindi/Malayalam book names)
+  const englishBookName = normalizeBookName(body.book)
+
+  // Validate book name
+  if (!BOOK_CODES[englishBookName]) {
+    throw new AppError('VALIDATION_ERROR', `Unknown book name: ${body.book}`, 400)
   }
 
   const apiKey = Deno.env.get('BIBLE_API')
@@ -190,7 +270,7 @@ async function handleFetchVerse(
   }
 
   const bibleId = BIBLE_VERSIONS[body.language]
-  const bookCode = BOOK_CODES[body.book]
+  const bookCode = BOOK_CODES[englishBookName]
 
   // Build reference and fetch verse(s)
   let verseText = ''
@@ -199,8 +279,8 @@ async function handleFetchVerse(
 
   if (body.verse_end && body.verse_end > body.verse_start) {
     // Fetch verse range
-    reference = `${body.book} ${body.chapter}:${body.verse_start}-${body.verse_end}`
-    const localizedBook = getLocalizedBookName(body.book, body.language)
+    reference = `${englishBookName} ${body.chapter}:${body.verse_start}-${body.verse_end}`
+    const localizedBook = getLocalizedBookName(englishBookName, body.language)
     localizedReference = `${localizedBook} ${body.chapter}:${body.verse_start}-${body.verse_end}`
 
     // Fetch each verse in the range
@@ -236,8 +316,8 @@ async function handleFetchVerse(
     verseText = verseTexts.join(' ')
   } else {
     // Fetch single verse
-    reference = `${body.book} ${body.chapter}:${body.verse_start}`
-    const localizedBook = getLocalizedBookName(body.book, body.language)
+    reference = `${englishBookName} ${body.chapter}:${body.verse_start}`
+    const localizedBook = getLocalizedBookName(englishBookName, body.language)
     localizedReference = `${localizedBook} ${body.chapter}:${body.verse_start}`
 
     const verseId = `${bookCode}.${body.chapter}.${body.verse_start}`
