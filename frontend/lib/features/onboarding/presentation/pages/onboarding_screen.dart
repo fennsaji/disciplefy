@@ -253,11 +253,13 @@ class _OnboardingSlideWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return Padding(
+    return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 32),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
+          SizedBox(height: isLargeScreen ? 24 : 16),
+
           // Icon container with brand styling
           Container(
             width: isLargeScreen ? 140 : 120,
@@ -284,13 +286,13 @@ class _OnboardingSlideWidget extends StatelessWidget {
             ),
           ),
 
-          SizedBox(height: isLargeScreen ? 56 : 48),
+          SizedBox(height: isLargeScreen ? 48 : 32),
 
           // Title
           Text(
             slide.title,
             style: AppFonts.poppins(
-              fontSize: isLargeScreen ? 32 : 28,
+              fontSize: isLargeScreen ? 32 : 26,
               fontWeight: FontWeight.bold,
               color: theme.colorScheme.onBackground,
               height: 1.2,
@@ -298,13 +300,13 @@ class _OnboardingSlideWidget extends StatelessWidget {
             textAlign: TextAlign.center,
           ),
 
-          SizedBox(height: isLargeScreen ? 20 : 16),
+          SizedBox(height: isLargeScreen ? 16 : 12),
 
           // Subtitle
           Text(
             slide.subtitle,
             style: AppFonts.inter(
-              fontSize: isLargeScreen ? 20 : 18,
+              fontSize: isLargeScreen ? 20 : 17,
               fontWeight: FontWeight.w500,
               color: theme.colorScheme.primary,
               height: 1.4,
@@ -312,26 +314,24 @@ class _OnboardingSlideWidget extends StatelessWidget {
             textAlign: TextAlign.center,
           ),
 
-          SizedBox(height: isLargeScreen ? 28 : 24),
+          SizedBox(height: isLargeScreen ? 24 : 16),
 
-          // Description
+          // Description - removed maxLines to allow full text
           Text(
             slide.description,
             style: AppFonts.inter(
-              fontSize: 16,
+              fontSize: isLargeScreen ? 16 : 15,
               color: theme.colorScheme.onSurface.withOpacity(0.7),
               height: 1.6,
             ),
             textAlign: TextAlign.center,
-            maxLines: 4,
-            overflow: TextOverflow.ellipsis,
           ),
 
-          SizedBox(height: isLargeScreen ? 32 : 28),
+          SizedBox(height: isLargeScreen ? 28 : 20),
 
           // Bible verse (spiritual encouragement)
           Container(
-            padding: const EdgeInsets.all(20),
+            padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               color: theme.colorScheme.secondary.withOpacity(0.3),
               borderRadius: BorderRadius.circular(16),
@@ -350,6 +350,8 @@ class _OnboardingSlideWidget extends StatelessWidget {
               textAlign: TextAlign.center,
             ),
           ),
+
+          SizedBox(height: isLargeScreen ? 24 : 16),
         ],
       ),
     );

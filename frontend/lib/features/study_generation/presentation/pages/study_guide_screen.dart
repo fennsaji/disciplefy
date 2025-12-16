@@ -7,6 +7,7 @@ import '../../../../core/constants/app_fonts.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../../../../core/theme/app_theme.dart';
+import '../../../../shared/widgets/clickable_scripture_text.dart';
 import '../../../../core/error/failures.dart';
 import '../../../../core/di/injection_container.dart';
 import '../../../../core/extensions/translation_extension.dart';
@@ -1562,9 +1563,9 @@ class _StudySection extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 16),
-          // Section Content
-          SelectableText(
-            content,
+          // Section Content with clickable scripture references
+          ClickableScriptureText(
+            text: content,
             style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                   color: Theme.of(context).colorScheme.onBackground,
                   height: 1.6,
