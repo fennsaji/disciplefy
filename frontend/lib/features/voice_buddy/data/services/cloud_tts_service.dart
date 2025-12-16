@@ -180,8 +180,8 @@ class CloudTTSService {
       print('  - Voice: ${voice.name}');
       print('  - Text length: ${text.length} chars');
 
-      // Sanitize text
-      final sanitizedText = _sanitizeText(text);
+      // Sanitize text with Bible reference conversion
+      final sanitizedText = _sanitizeText(text, languageCode: languageCode);
 
       // Build request body
       final requestBody = {
@@ -318,9 +318,87 @@ class CloudTTSService {
     }
   }
 
+  /// Convert Bible references to spoken format for natural TTS pronunciation.
+  ///
+  /// Transforms references like "John 3:16" to "John Chapter 3 verse 16"
+  /// and "1 Corinthians 1:1-2" to "First Corinthians Chapter 1 verses 1 to 2".
+  /// Supports English, Hindi, and Malayalam localization.
+  String _convertBibleReferencesForTTS(String text, String languageCode) {
+    // Pattern matches: "Book Chapter:Verse" or "Book Chapter:Verse-Verse"
+    // Group 1: Optional number prefix (1, 2, 3 for numbered books)
+    // Group 2: Book name (supports English, Hindi, Malayalam characters)
+    // Group 3: Chapter number
+    // Group 4: Start verse
+    // Group 5: End verse (optional, for ranges)
+    final bibleRefPattern = RegExp(
+      r'(\d)?\s*([A-Za-z\u0900-\u097F\u0D00-\u0D7F]+(?:\s+[A-Za-z\u0900-\u097F\u0D00-\u0D7F]+)*)\s+(\d+):(\d+)(?:-(\d+))?',
+      caseSensitive: false,
+    );
+
+    return text.replaceAllMapped(bibleRefPattern, (match) {
+      final bookNumber = match.group(1); // "1", "2", "3" or null
+      final bookName = match.group(2)!;
+      final chapter = match.group(3)!;
+      final verseStart = match.group(4)!;
+      final verseEnd = match.group(5); // null if single verse
+
+      // Get localized terms based on language
+      final (chapterWord, verseWord, versesWord, toWord) =
+          _getLocalizedBibleTerms(languageCode);
+
+      // Convert numbered books for English (1 → First, etc.)
+      String fullBookName;
+      if (bookNumber != null && languageCode.startsWith('en')) {
+        final ordinal = _numberToOrdinal(bookNumber);
+        fullBookName = '$ordinal $bookName';
+      } else if (bookNumber != null) {
+        fullBookName = '$bookNumber $bookName';
+      } else {
+        fullBookName = bookName;
+      }
+
+      if (verseEnd != null) {
+        return '$fullBookName $chapterWord $chapter $versesWord $verseStart $toWord $verseEnd';
+      } else {
+        return '$fullBookName $chapterWord $chapter $verseWord $verseStart';
+      }
+    });
+  }
+
+  /// Convert number to ordinal word for numbered Bible books (English only).
+  String _numberToOrdinal(String number) {
+    switch (number) {
+      case '1':
+        return 'First';
+      case '2':
+        return 'Second';
+      case '3':
+        return 'Third';
+      default:
+        return number;
+    }
+  }
+
+  /// Get localized terms for Bible references.
+  /// Returns (chapter, verse, verses, to) in the specified language.
+  (String, String, String, String) _getLocalizedBibleTerms(
+      String languageCode) {
+    switch (languageCode) {
+      case 'hi-IN':
+        return ('अध्याय', 'पद', 'पद', 'से');
+      case 'ml-IN':
+        return ('അദ്ധ്യായം', 'വാക്യം', 'വാക്യങ്ങൾ', 'മുതൽ');
+      default: // en-US, en-IN and others
+        return ('Chapter', 'verse', 'verses', 'to');
+    }
+  }
+
   /// Sanitize text for TTS.
-  String _sanitizeText(String text) {
-    return text
+  String _sanitizeText(String text, {String languageCode = 'en-US'}) {
+    // First convert Bible references to spoken format
+    final withBibleRefs = _convertBibleReferencesForTTS(text, languageCode);
+
+    return withBibleRefs
         // Keep sentence-ending punctuation for natural pauses
         .replaceAll('!', '.')
         .replaceAll('?', '.')
@@ -385,7 +463,8 @@ class CloudTTSService {
     CancelToken? cancelToken,
   }) async {
     try {
-      final sanitizedText = _sanitizeText(text);
+      final sanitizedText =
+          _sanitizeText(text, languageCode: voice.languageCode);
       if (sanitizedText.isEmpty) return null;
 
       final requestBody = {
