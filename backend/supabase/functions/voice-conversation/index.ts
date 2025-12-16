@@ -43,10 +43,15 @@ type SSEEvent =
   | { type: 'error'; data: { code: string; message: string } }
 
 /**
- * Extract scripture references from text using simple regex
+ * Extract scripture references from text using regex
+ * Supports English, Hindi (Devanagari), and Malayalam scripts
  */
 function extractScriptureReferences(text: string): string[] {
-  const pattern = /(?:\d\s)?[A-Za-z]+\s+\d+(?::\d+(?:-\d+)?)?/g
+  // Pattern supports:
+  // - English: "John 3:16", "1 John 3:16", "Genesis 1:1-3"
+  // - Hindi (Devanagari \u0900-\u097F): "यूहन्ना 3:16", "उत्पत्ति 1:1"
+  // - Malayalam (\u0D00-\u0D7F): "യോഹന്നാൻ 3:16", "ഉല്പത്തി 1:1"
+  const pattern = /(?:\d\s)?(?:[A-Za-z]+|[\u0900-\u097F]+|[\u0D00-\u0D7F]+)\s+\d+(?::\d+(?:-\d+)?)?/g
   const matches = text.match(pattern) || []
   return [...new Set(matches)]
 }

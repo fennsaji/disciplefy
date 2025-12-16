@@ -144,6 +144,7 @@ const ALTERNATE_SPELLINGS: Record<string, string> = {
   'മത്തായി': 'Matthew',
   'മർക്കോസ്': 'Mark',
   'എഫേസ്യർ': 'Ephesians',
+  'ജോൺ': 'John',
   // Hindi alternates
   'रोमियो': 'Romans',
   'यूहन्ना': 'John',
@@ -240,7 +241,7 @@ function buildVerseUrl(bibleId: string, verseId: string): string {
  */
 async function handleFetchVerse(
   req: Request,
-  services: ServiceContainer
+  _services: ServiceContainer
 ): Promise<Response> {
 
   // Parse and validate request body
