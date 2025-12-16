@@ -475,10 +475,44 @@ async function parseUserContext(
     throw new Error('Missing authorization header')
   }
 
+  // Extract the token from Bearer prefix
+  const token = authToken.replace('Bearer ', '')
+
+  // Check if the token is the anon key (not a valid user JWT)
+  // When frontend has no session, it falls back to using anon key as Bearer token
+  if (token === config.supabaseAnonKey) {
+    console.log('[AUTH] Token is anon key - treating as guest user')
+
+    // Try to get session ID from x-session-id header for guest tracking
+    const sessionId = req.headers.get('x-session-id')
+    if (sessionId) {
+      console.log('[AUTH] Guest user with session ID:', sessionId)
+      return {
+        type: 'anonymous',
+        userId: undefined,
+        sessionId: sessionId
+      }
+    }
+
+    // No session ID - throw error for endpoints that require auth
+    console.log('[AUTH] Guest user without session ID')
+    throw new Error('Guest user without session - please sign in or use anonymous session')
+  }
+
   const userSupabaseClient = createUserSupabaseClient(authToken, config.supabaseUrl, config.supabaseAnonKey)
   const { data: { user }, error } = await userSupabaseClient.auth.getUser()
 
   if (error) {
+    // If JWT validation fails and we have a session ID, treat as guest
+    const sessionId = req.headers.get('x-session-id')
+    if (sessionId) {
+      console.log('[AUTH] JWT validation failed but session ID present - treating as guest:', sessionId)
+      return {
+        type: 'anonymous',
+        userId: undefined,
+        sessionId: sessionId
+      }
+    }
     throw new Error(`Authentication failed: ${error.message}`)
   }
 
