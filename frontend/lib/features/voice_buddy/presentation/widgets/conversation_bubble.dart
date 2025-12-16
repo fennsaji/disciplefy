@@ -49,14 +49,10 @@ class ConversationBubble extends StatelessWidget {
           children: [
             // Assistant avatar (left side)
             if (!isUser) ...[
-              CircleAvatar(
+              const CircleAvatar(
                 radius: 16,
-                backgroundColor: theme.colorScheme.primary,
-                child: const Icon(
-                  Icons.smart_toy,
-                  color: Colors.white,
-                  size: 18,
-                ),
+                backgroundColor: Color(0xFFFAF8F5),
+                backgroundImage: AssetImage('images/AIDiscipler.png'),
               ),
               const SizedBox(width: 8),
             ],
@@ -196,14 +192,10 @@ class ThinkingBubble extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
-            CircleAvatar(
+            const CircleAvatar(
               radius: 16,
-              backgroundColor: theme.colorScheme.primary,
-              child: const Icon(
-                Icons.smart_toy,
-                color: Colors.white,
-                size: 18,
-              ),
+              backgroundColor: Color(0xFFFAF8F5),
+              backgroundImage: AssetImage('images/AIDiscipler.png'),
             ),
             const SizedBox(width: 8),
             Container(
