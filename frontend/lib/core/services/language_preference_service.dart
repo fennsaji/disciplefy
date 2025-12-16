@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/app_language.dart';
+import '../router/router_guard.dart';
 import '../../features/auth/data/services/auth_service.dart';
 import '../../features/user_profile/data/services/user_profile_service.dart';
 import '../services/auth_state_provider.dart';
@@ -166,6 +167,9 @@ class LanguagePreferenceService {
           print(
               '✅ [LANGUAGE_SERVICE] Marked language selection completed after DB save');
 
+          // FIX: Notify router guard to update its session cache immediately
+          RouterGuard.markLanguageSelectionCompleted();
+
           // Now invalidate other caches after successful DB update
           _authStateProvider.invalidateProfileCache();
           _cacheCoordinator.invalidateLanguageCaches();
@@ -180,6 +184,9 @@ class LanguagePreferenceService {
         await _prefs.setBool(_hasCompletedLanguageSelectionKey, true);
         print(
             '✅ [LANGUAGE_SERVICE] Marked language selection completed for anonymous user');
+
+        // FIX: Notify router guard to update its session cache immediately
+        RouterGuard.markLanguageSelectionCompleted();
       }
 
       // Notify listeners of the language change
@@ -302,6 +309,10 @@ class LanguagePreferenceService {
       // Also cache the completion state for the current user
       final currentUserId = _authStateProvider.userId;
       _cacheLanguageCompletion(currentUserId, true);
+
+      // FIX: Notify router guard to update its session cache immediately
+      // This prevents redirect loop when navigating to home after language selection
+      RouterGuard.markLanguageSelectionCompleted();
     } catch (e) {
       print('Error marking language selection completed: $e');
     }

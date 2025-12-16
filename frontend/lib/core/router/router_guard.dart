@@ -770,6 +770,16 @@ class RouterGuard {
         tag: 'ROUTER_CACHE');
   }
 
+  /// Mark language selection as completed in router cache
+  /// Call this when user completes language selection to avoid redirect loop
+  static void markLanguageSelectionCompleted() {
+    _sessionLanguageConfirmed = true;
+    _cachedLanguageState = const LanguageSelectionState(isCompleted: true);
+    _languageCacheTime = DateTime.now();
+    Logger.info('Router language selection marked as completed',
+        tag: 'ROUTER_CACHE');
+  }
+
   /// Register router cache invalidation with the language cache coordinator
   static void _registerWithCacheCoordinator() {
     if (_isRegisteredWithCoordinator) return;
