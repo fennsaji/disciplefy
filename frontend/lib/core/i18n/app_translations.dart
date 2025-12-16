@@ -1296,6 +1296,17 @@ class AppTranslations {
       'error_loading': 'Error loading progress',
       'tap_to_retry': 'Tap to retry',
     },
+    'verse_sheet': {
+      'loading': 'Loading verse...',
+      'study': 'Study',
+      'memory': 'Memory',
+      'copy': 'Copy',
+      'copied': 'Verse copied to clipboard',
+      'could_not_load': 'Could not load verse text',
+      'could_not_parse': 'Could not parse reference',
+      'added_to_memory': 'Added to Memory Verses',
+      'failed_to_add': 'Failed to add verse',
+    },
   };
 
   static const Map<String, dynamic> _hindiTranslations = {
@@ -2571,6 +2582,17 @@ class AppTranslations {
       'keep_studying': 'उपलब्धियाँ अनलॉक करने के लिए अध्ययन जारी रखें!',
       'error_loading': 'प्रगति लोड करने में त्रुटि',
       'tap_to_retry': 'पुनः प्रयास करने के लिए टैप करें',
+    },
+    'verse_sheet': {
+      'loading': 'आयत लोड हो रही है...',
+      'study': 'अध्ययन',
+      'memory': 'स्मृति',
+      'copy': 'कॉपी',
+      'copied': 'आयत कॉपी हो गई',
+      'could_not_load': 'आयत लोड नहीं हो सकी',
+      'could_not_parse': 'संदर्भ समझ नहीं आया',
+      'added_to_memory': 'स्मृति वचनों में जोड़ा गया',
+      'failed_to_add': 'आयत जोड़ने में विफल',
     },
   };
 
@@ -3916,6 +3938,17 @@ class AppTranslations {
       'keep_studying': 'നേട്ടങ്ങൾ അൺലോക്ക് ചെയ്യാൻ പഠനം തുടരുക!',
       'error_loading': 'പുരോഗതി ലോഡ് ചെയ്യുന്നതിൽ പിശക്',
       'tap_to_retry': 'വീണ്ടും ശ്രമിക്കാൻ ടാപ്പ് ചെയ്യുക',
+    },
+    'verse_sheet': {
+      'loading': 'വചനം ലോഡ് ചെയ്യുന്നു...',
+      'study': 'പഠനം',
+      'memory': 'മെമ്മറി',
+      'copy': 'കോപ്പി',
+      'copied': 'വചനം കോപ്പി ചെയ്തു',
+      'could_not_load': 'വചനം ലോഡ് ചെയ്യാനായില്ല',
+      'could_not_parse': 'റഫറൻസ് മനസ്സിലായില്ല',
+      'added_to_memory': 'മെമ്മറി വചനങ്ങളിൽ ചേർത്തു',
+      'failed_to_add': 'വചനം ചേർക്കാനായില്ല',
     },
   };
 }
