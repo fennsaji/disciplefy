@@ -312,7 +312,7 @@ class _VoiceConversationViewState extends State<_VoiceConversationView> {
             ),
             clipBehavior: Clip.antiAlias,
             child: Image.asset(
-              'images/AIDiscipler.png',
+              'assets/images/AIDiscipler.png',
               fit: BoxFit.cover,
             ),
           ),
