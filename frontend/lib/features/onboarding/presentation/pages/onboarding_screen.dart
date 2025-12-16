@@ -129,110 +129,134 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final screenHeight = MediaQuery.of(context).size.height;
+    final screenSize = MediaQuery.of(context).size;
+    final screenHeight = screenSize.height;
+    final screenWidth = screenSize.width;
     final isLargeScreen = screenHeight > 700;
+    final isWideScreen = screenWidth > 800; // Desktop/tablet breakpoint
     final theme = Theme.of(context);
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       body: SafeArea(
-        child: Column(
-          children: [
-            // Header with logo and skip
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  // Disciplefy Logo
-                  const _LogoWidget(),
-                  // Skip button
-                  TextButton(
-                    onPressed: _skipOnboarding,
-                    child: Text(
-                      'Skip',
-                      style: AppFonts.inter(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                        color: theme.colorScheme.onSurface.withOpacity(0.6),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            // Page view with slides
-            Expanded(
-              child: PageView.builder(
-                controller: _pageController,
-                onPageChanged: _onPageChanged,
-                itemCount: _slides.length,
-                itemBuilder: (context, index) => _OnboardingSlideWidget(
-                  slide: _slides[index],
-                  isLargeScreen: isLargeScreen,
-                ),
-              ),
-            ),
-
-            // Page indicator
-            Padding(
-              padding: EdgeInsets.symmetric(
-                vertical: isLargeScreen ? 32 : 24,
-              ),
-              child: SmoothPageIndicator(
-                controller: _pageController,
-                count: _slides.length,
-                effect: WormEffect(
-                  dotHeight: 8,
-                  dotWidth: 8,
-                  activeDotColor: theme.colorScheme.primary,
-                  dotColor: theme.colorScheme.primary.withOpacity(0.3),
-                  spacing: 12,
-                ),
-              ),
-            ),
-
-            // Continue button (navigates to next slide) or Get Started (last slide)
-            Padding(
-              padding: EdgeInsets.fromLTRB(24, 0, 24, isLargeScreen ? 40 : 24),
-              child: Container(
-                width: double.infinity,
-                height: 56,
-                decoration: BoxDecoration(
-                  gradient: AppTheme.primaryGradient,
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppTheme.primaryColor.withOpacity(0.4),
-                      blurRadius: 16,
-                      offset: const Offset(0, 6),
-                    ),
-                  ],
-                ),
-                child: Material(
-                  color: Colors.transparent,
-                  child: InkWell(
-                    onTap: _handleContinueButton,
-                    borderRadius: BorderRadius.circular(12),
-                    child: Center(
-                      child: Text(
-                        _currentPage == _slides.length - 1
-                            ? 'Get Started'
-                            : 'Continue',
-                        style: AppFonts.inter(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: const Color(0xFFFFFFFF),
-                          letterSpacing: 0.5,
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 1200),
+            child: Column(
+              children: [
+                // Header with logo and skip
+                Padding(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      // Disciplefy Logo
+                      const _LogoWidget(),
+                      // Skip button
+                      TextButton(
+                        onPressed: _skipOnboarding,
+                        child: Text(
+                          'Skip',
+                          style: AppFonts.inter(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                            color: theme.colorScheme.onSurface.withOpacity(0.6),
+                          ),
                         ),
                       ),
+                    ],
+                  ),
+                ),
+
+                // Page view with slides
+                Expanded(
+                  child: PageView.builder(
+                    controller: _pageController,
+                    onPageChanged: _onPageChanged,
+                    itemCount: _slides.length,
+                    itemBuilder: (context, index) => _OnboardingSlideWidget(
+                      slide: _slides[index],
+                      isLargeScreen: isLargeScreen,
+                      isWideScreen: isWideScreen,
                     ),
                   ),
                 ),
-              ),
+
+                // Bottom section with indicator and button
+                Padding(
+                  padding: EdgeInsets.fromLTRB(
+                    24,
+                    0,
+                    24,
+                    isLargeScreen ? 40 : 24,
+                  ),
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 500),
+                    child: Column(
+                      children: [
+                        // Page indicator
+                        Padding(
+                          padding: EdgeInsets.symmetric(
+                            vertical: isLargeScreen ? 24 : 16,
+                          ),
+                          child: SmoothPageIndicator(
+                            controller: _pageController,
+                            count: _slides.length,
+                            effect: WormEffect(
+                              dotHeight: 8,
+                              dotWidth: 8,
+                              activeDotColor: theme.colorScheme.primary,
+                              dotColor:
+                                  theme.colorScheme.primary.withOpacity(0.3),
+                              spacing: 12,
+                            ),
+                          ),
+                        ),
+
+                        // Continue button
+                        Container(
+                          width: double.infinity,
+                          height: 56,
+                          decoration: BoxDecoration(
+                            gradient: AppTheme.primaryGradient,
+                            borderRadius: BorderRadius.circular(12),
+                            boxShadow: [
+                              BoxShadow(
+                                color: AppTheme.primaryColor.withOpacity(0.4),
+                                blurRadius: 16,
+                                offset: const Offset(0, 6),
+                              ),
+                            ],
+                          ),
+                          child: Material(
+                            color: Colors.transparent,
+                            child: InkWell(
+                              onTap: _handleContinueButton,
+                              borderRadius: BorderRadius.circular(12),
+                              child: Center(
+                                child: Text(
+                                  _currentPage == _slides.length - 1
+                                      ? 'Get Started'
+                                      : 'Continue',
+                                  style: AppFonts.inter(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                    color: const Color(0xFFFFFFFF),
+                                    letterSpacing: 0.5,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );
@@ -243,116 +267,234 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 class _OnboardingSlideWidget extends StatelessWidget {
   final OnboardingSlide slide;
   final bool isLargeScreen;
+  final bool isWideScreen;
 
   const _OnboardingSlideWidget({
     required this.slide,
     required this.isLargeScreen,
+    required this.isWideScreen,
   });
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(horizontal: 32),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          SizedBox(height: isLargeScreen ? 24 : 16),
+    // Use horizontal layout for wide screens
+    if (isWideScreen) {
+      return _buildWideLayout(context, theme);
+    }
 
-          // Icon container with brand styling
-          Container(
-            width: isLargeScreen ? 140 : 120,
-            height: isLargeScreen ? 140 : 120,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  theme.colorScheme.primary.withOpacity(0.1),
-                  theme.colorScheme.secondary.withOpacity(0.2),
-                ],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: BorderRadius.circular(30),
-              border: Border.all(
-                color: theme.colorScheme.primary.withOpacity(0.2),
-                width: 2,
+    return _buildNarrowLayout(context, theme);
+  }
+
+  /// Horizontal layout for desktop/tablet screens
+  Widget _buildWideLayout(BuildContext context, ThemeData theme) {
+    return Center(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.symmetric(horizontal: 48, vertical: 24),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            // Left side - Large icon with decorative elements
+            Expanded(
+              flex: 2,
+              child: Center(
+                child: _buildIconSection(theme, size: 200),
               ),
             ),
-            child: Icon(
-              slide.iconData,
-              size: isLargeScreen ? 64 : 56,
-              color: theme.colorScheme.primary,
-            ),
-          ),
 
-          SizedBox(height: isLargeScreen ? 48 : 32),
+            const SizedBox(width: 64),
 
-          // Title
-          Text(
-            slide.title,
-            style: AppFonts.poppins(
-              fontSize: isLargeScreen ? 32 : 26,
-              fontWeight: FontWeight.bold,
-              color: theme.colorScheme.onBackground,
-              height: 1.2,
-            ),
-            textAlign: TextAlign.center,
-          ),
+            // Right side - Content
+            Expanded(
+              flex: 3,
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 500),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Title
+                    Text(
+                      slide.title,
+                      style: AppFonts.poppins(
+                        fontSize: 36,
+                        fontWeight: FontWeight.bold,
+                        color: theme.colorScheme.onSurface,
+                        height: 1.2,
+                      ),
+                    ),
 
-          SizedBox(height: isLargeScreen ? 16 : 12),
+                    const SizedBox(height: 16),
 
-          // Subtitle
-          Text(
-            slide.subtitle,
-            style: AppFonts.inter(
-              fontSize: isLargeScreen ? 20 : 17,
-              fontWeight: FontWeight.w500,
-              color: theme.colorScheme.primary,
-              height: 1.4,
-            ),
-            textAlign: TextAlign.center,
-          ),
+                    // Subtitle
+                    Text(
+                      slide.subtitle,
+                      style: AppFonts.inter(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w500,
+                        color: theme.colorScheme.primary,
+                        height: 1.4,
+                      ),
+                    ),
 
-          SizedBox(height: isLargeScreen ? 24 : 16),
+                    const SizedBox(height: 24),
 
-          // Description - removed maxLines to allow full text
-          Text(
-            slide.description,
-            style: AppFonts.inter(
-              fontSize: isLargeScreen ? 16 : 15,
-              color: theme.colorScheme.onSurface.withOpacity(0.7),
-              height: 1.6,
-            ),
-            textAlign: TextAlign.center,
-          ),
+                    // Description
+                    Text(
+                      slide.description,
+                      style: AppFonts.inter(
+                        fontSize: 16,
+                        color: theme.colorScheme.onSurface.withOpacity(0.7),
+                        height: 1.7,
+                      ),
+                    ),
 
-          SizedBox(height: isLargeScreen ? 28 : 20),
+                    const SizedBox(height: 32),
 
-          // Bible verse (spiritual encouragement)
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: theme.colorScheme.secondary.withOpacity(0.3),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: theme.colorScheme.secondary.withOpacity(0.5),
+                    // Bible verse
+                    Container(
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.secondary.withOpacity(0.3),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: theme.colorScheme.secondary.withOpacity(0.5),
+                        ),
+                      ),
+                      child: Text(
+                        slide.verse,
+                        style: AppFonts.inter(
+                          fontSize: 15,
+                          fontStyle: FontStyle.italic,
+                          color: theme.colorScheme.onSurface.withOpacity(0.8),
+                          height: 1.6,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
-            child: Text(
-              slide.verse,
-              style: AppFonts.inter(
-                fontSize: 14,
-                fontStyle: FontStyle.italic,
-                color: theme.colorScheme.onBackground.withOpacity(0.8),
-                height: 1.5,
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Vertical layout for mobile screens
+  Widget _buildNarrowLayout(BuildContext context, ThemeData theme) {
+    return Center(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Icon container
+            _buildIconSection(theme, size: isLargeScreen ? 140 : 110),
+
+            SizedBox(height: isLargeScreen ? 40 : 28),
+
+            // Title
+            Text(
+              slide.title,
+              style: AppFonts.poppins(
+                fontSize: isLargeScreen ? 32 : 26,
+                fontWeight: FontWeight.bold,
+                color: theme.colorScheme.onSurface,
+                height: 1.2,
               ),
               textAlign: TextAlign.center,
             ),
-          ),
 
-          SizedBox(height: isLargeScreen ? 24 : 16),
+            SizedBox(height: isLargeScreen ? 12 : 8),
+
+            // Subtitle
+            Text(
+              slide.subtitle,
+              style: AppFonts.inter(
+                fontSize: isLargeScreen ? 20 : 17,
+                fontWeight: FontWeight.w500,
+                color: theme.colorScheme.primary,
+                height: 1.4,
+              ),
+              textAlign: TextAlign.center,
+            ),
+
+            SizedBox(height: isLargeScreen ? 20 : 14),
+
+            // Description
+            Text(
+              slide.description,
+              style: AppFonts.inter(
+                fontSize: isLargeScreen ? 16 : 15,
+                color: theme.colorScheme.onSurface.withOpacity(0.7),
+                height: 1.6,
+              ),
+              textAlign: TextAlign.center,
+            ),
+
+            SizedBox(height: isLargeScreen ? 24 : 18),
+
+            // Bible verse
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.secondary.withOpacity(0.3),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: theme.colorScheme.secondary.withOpacity(0.5),
+                ),
+              ),
+              child: Text(
+                slide.verse,
+                style: AppFonts.inter(
+                  fontSize: 14,
+                  fontStyle: FontStyle.italic,
+                  color: theme.colorScheme.onSurface.withOpacity(0.8),
+                  height: 1.5,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Builds the icon section with decorative container
+  Widget _buildIconSection(ThemeData theme, {required double size}) {
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            theme.colorScheme.primary.withOpacity(0.1),
+            theme.colorScheme.secondary.withOpacity(0.2),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(size * 0.22),
+        border: Border.all(
+          color: theme.colorScheme.primary.withOpacity(0.2),
+          width: 2,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: theme.colorScheme.primary.withOpacity(0.1),
+            blurRadius: 30,
+            spreadRadius: 5,
+          ),
         ],
+      ),
+      child: Icon(
+        slide.iconData,
+        size: size * 0.45,
+        color: theme.colorScheme.primary,
       ),
     );
   }
