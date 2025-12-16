@@ -306,21 +306,14 @@ class _VoiceConversationViewState extends State<_VoiceConversationView> {
           Container(
             width: 120,
             height: 120,
-            decoration: BoxDecoration(
+            decoration: const BoxDecoration(
               shape: BoxShape.circle,
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  theme.colorScheme.primary,
-                  theme.colorScheme.secondary,
-                ],
-              ),
+              color: Color(0xFFFAF8F5),
             ),
-            child: const Icon(
-              Icons.smart_toy,
-              size: 60,
-              color: Colors.white,
+            clipBehavior: Clip.antiAlias,
+            child: Image.asset(
+              'images/AIDiscipler.png',
+              fit: BoxFit.cover,
             ),
           ),
           const SizedBox(height: 32),
