@@ -736,6 +736,7 @@ Future<void> initializeDependencies() async {
         speechService: sl(),
         ttsService: sl(),
         supabaseClient: sl(),
+        languagePreferenceService: sl(),
       ));
 
   //! Purchase Issue Reporting
