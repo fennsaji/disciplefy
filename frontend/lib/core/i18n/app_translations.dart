@@ -1146,6 +1146,8 @@ class AppTranslations {
             'This will reset all voice settings to their default values. This action cannot be undone.',
         'reset_button': 'Reset',
         'select_language': 'Select Language',
+        'default_language': 'Default',
+        'default_language_subtitle': 'Uses your app language preference',
       },
     },
     'pricing': {
@@ -2432,6 +2434,8 @@ class AppTranslations {
             'यह सभी वॉयस सेटिंग्स को उनके डिफ़ॉल्ट मान पर रीसेट कर देगा। यह क्रिया पूर्ववत नहीं हो सकती।',
         'reset_button': 'रीसेट',
         'select_language': 'भाषा चुनें',
+        'default_language': 'डिफ़ॉल्ट',
+        'default_language_subtitle': 'आपकी ऐप भाषा पसंद का उपयोग करता है',
       },
     },
     'pricing': {
@@ -3785,6 +3789,9 @@ class AppTranslations {
             'ഇത് എല്ലാ വോയ്സ് സെറ്റിംഗ്സും അവയുടെ ഡിഫോൾട്ട് മൂല്യങ്ങളിലേക്ക് റീസെറ്റ് ചെയ്യും. ഈ പ്രവർത്തനം പഴയപടിയാക്കാൻ കഴിയില്ല.',
         'reset_button': 'റീസെറ്റ്',
         'select_language': 'ഭാഷ തിരഞ്ഞെടുക്കുക',
+        'default_language': 'ഡിഫോൾട്ട്',
+        'default_language_subtitle':
+            'നിങ്ങളുടെ ആപ്പ് ഭാഷ മുൻഗണന ഉപയോഗിക്കുന്നു',
       },
     },
     'pricing': {

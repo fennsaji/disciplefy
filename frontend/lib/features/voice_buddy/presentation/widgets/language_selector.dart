@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 
 /// Supported languages for voice conversations.
 enum VoiceLanguage {
+  /// Default option - uses the app's preferred language
+  defaultLang('default', 'Default', '\u{1F310}'),
   english('en-US', 'English', '\u{1F1FA}\u{1F1F8}'),
   hindi('hi-IN', '\u0939\u093F\u0928\u094D\u0926\u0940', '\u{1F1EE}\u{1F1F3}'),
   malayalam(
@@ -19,18 +21,21 @@ enum VoiceLanguage {
   /// Get short language code (e.g., 'en' from 'en-US').
   String get shortCode => code.split('-').first;
 
+  /// Whether this is the default (app language) option.
+  bool get isDefault => this == VoiceLanguage.defaultLang;
+
   /// Find VoiceLanguage from code (supports both 'en-US' and 'en' formats).
   static VoiceLanguage fromCode(String code) {
     // Try exact match first
     for (final lang in VoiceLanguage.values) {
       if (lang.code == code) return lang;
     }
-    // Try short code match
+    // Try short code match (skip default since it doesn't have a short code)
     for (final lang in VoiceLanguage.values) {
-      if (lang.shortCode == code) return lang;
+      if (!lang.isDefault && lang.shortCode == code) return lang;
     }
-    // Default to English
-    return VoiceLanguage.english;
+    // Default to the default option
+    return VoiceLanguage.defaultLang;
   }
 }
 

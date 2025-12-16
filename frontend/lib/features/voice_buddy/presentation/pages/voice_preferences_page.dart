@@ -234,12 +234,17 @@ class _VoicePreferencesPageState extends State<VoicePreferencesPage> {
   Widget _buildLanguagePreference(ThemeData theme) {
     final currentLanguage = VoiceLanguage.values.firstWhere(
       (lang) => lang.code == _preferences.preferredLanguage,
-      orElse: () => VoiceLanguage.english,
+      orElse: () => VoiceLanguage.defaultLang,
     );
+
+    // Build subtitle based on whether it's default or a specific language
+    final subtitle = currentLanguage.isDefault
+        ? context.tr('voice_buddy.settings.default_language_subtitle')
+        : currentLanguage.displayName;
 
     return ListTile(
       title: Text(context.tr('voice_buddy.settings.preferred_language')),
-      subtitle: Text(currentLanguage.displayName),
+      subtitle: Text(subtitle),
       trailing: const Icon(Icons.chevron_right),
       onTap: () => _showLanguageSelector(theme),
     );
@@ -263,7 +268,24 @@ class _VoicePreferencesPageState extends State<VoicePreferencesPage> {
               final isSelected =
                   language.code == _preferences.preferredLanguage;
               return ListTile(
-                title: Text(language.displayName),
+                leading: Text(
+                  language.flag,
+                  style: const TextStyle(fontSize: 24),
+                ),
+                title: Text(
+                  language.isDefault
+                      ? context.tr('voice_buddy.settings.default_language')
+                      : language.displayName,
+                ),
+                subtitle: language.isDefault
+                    ? Text(
+                        context.tr(
+                            'voice_buddy.settings.default_language_subtitle'),
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                      )
+                    : null,
                 trailing: isSelected
                     ? Icon(Icons.check, color: theme.colorScheme.primary)
                     : null,
