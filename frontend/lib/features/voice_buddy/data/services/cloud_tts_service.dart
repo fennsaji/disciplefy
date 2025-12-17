@@ -323,15 +323,17 @@ class CloudTTSService {
   /// Transforms references like "John 3:16" to "John Chapter 3 verse 16"
   /// and "1 Corinthians 1:1-2" to "First Corinthians Chapter 1 verses 1 to 2".
   /// Supports English, Hindi, and Malayalam localization.
+  /// Limits book name to max 3 words to avoid false positives.
   String _convertBibleReferencesForTTS(String text, String languageCode) {
     // Pattern matches: "Book Chapter:Verse" or "Book Chapter:Verse-Verse"
     // Group 1: Optional number prefix (1, 2, 3 for numbered books)
-    // Group 2: Book name (supports English, Hindi, Malayalam characters)
+    // Group 2: Book name (1-3 words, supports English, Hindi, Malayalam)
     // Group 3: Chapter number
     // Group 4: Start verse
     // Group 5: End verse (optional, for ranges)
+    // Limits to 3 words max to avoid matching "आप शायद भजन संहिता 23:1"
     final bibleRefPattern = RegExp(
-      r'(\d)?\s*([A-Za-z\u0900-\u097F\u0D00-\u0D7F]+(?:\s+[A-Za-z\u0900-\u097F\u0D00-\u0D7F]+)*)\s+(\d+):(\d+)(?:-(\d+))?',
+      r'(\d)?\s*([A-Za-z\u0900-\u097F\u0D00-\u0D7F]+(?:\s+[A-Za-z\u0900-\u097F\u0D00-\u0D7F]+){0,2})\s+(\d+):(\d+)(?:-(\d+))?',
       caseSensitive: false,
     );
 

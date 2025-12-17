@@ -277,7 +277,40 @@ async function handleFetchVerse(
   let reference: string
   let localizedReference: string
 
-  if (body.verse_end && body.verse_end > body.verse_start) {
+  // Check if this is a chapter-only request (verse_start: 1, verse_end: 999)
+  const isChapterOnly = body.verse_start === 1 && body.verse_end === 999
+
+  if (isChapterOnly) {
+    // Fetch entire chapter using chapters endpoint
+    reference = `${englishBookName} ${body.chapter}`
+    const localizedBook = getLocalizedBookName(englishBookName, body.language)
+    localizedReference = `${localizedBook} ${body.chapter}`
+
+    const chapterId = `${bookCode}.${body.chapter}`
+    const chapterUrl = `https://api.scripture.api.bible/v1/bibles/${bibleId}/chapters/${chapterId}`
+    const params = new URLSearchParams({
+      'content-type': 'text',
+      'include-notes': 'false',
+      'include-titles': 'false',
+      'include-chapter-numbers': 'false',
+      'include-verse-numbers': 'false',
+    })
+
+    const response = await fetchWithTimeout(
+      `${chapterUrl}?${params.toString()}`,
+      { headers: { 'api-key': apiKey } },
+      15000 // 15 seconds for chapter
+    )
+
+    if (!response.ok) {
+      const errorData = await response.json()
+      console.error('[FetchVerse] Chapter API error:', errorData)
+      throw new AppError('NOT_FOUND', `Chapter not found: ${reference}`, 404)
+    }
+
+    const data = await response.json()
+    verseText = cleanVerseText(data.data.content)
+  } else if (body.verse_end && body.verse_end > body.verse_start) {
     // Fetch verse range
     reference = `${englishBookName} ${body.chapter}:${body.verse_start}-${body.verse_end}`
     const localizedBook = getLocalizedBookName(englishBookName, body.language)
