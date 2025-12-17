@@ -54,15 +54,29 @@ jobs:
     runs-on: ubuntu-latest
     name: Send Daily Verse Notifications (Prod)
 
-    # Run on schedule (job checks hour internally) OR manual dispatch
+    # Run on schedule OR manual dispatch
     if: |
       github.event_name == 'schedule' ||
       (github.event_name == 'workflow_dispatch' &&
        (github.event.inputs.notification_type == 'daily_verse' ||
         github.event.inputs.notification_type == 'all'))
-    
+
     steps:
+      - name: Check if this hour should run Daily Verse
+        id: should_run
+        run: |
+          # Daily Verse should run every 3 hours: 0, 3, 6, 9, 12, 15, 18, 21
+          current_hour=$(date -u +%H)
+          if [[ $current_hour -eq 0 || $current_hour -eq 3 || $current_hour -eq 6 || $current_hour -eq 9 || $current_hour -eq 12 || $current_hour -eq 15 || $current_hour -eq 18 || $current_hour -eq 21 ]] || [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            echo "should_run=true" >> $GITHUB_OUTPUT
+            echo "✅ Should run Daily Verse at UTC hour $current_hour"
+          else
+            echo "should_run=false" >> $GITHUB_OUTPUT
+            echo "⏭️ Skipping Daily Verse at UTC hour $current_hour (not a scheduled hour)"
+          fi
+
       - name: Send Daily Verse Push Notifications (Prod)
+        if: steps.should_run.outputs.should_run == 'true'
         run: |
           echo "Triggering Daily Verse notification Edge Function (Production)..."
 
@@ -91,6 +105,7 @@ jobs:
         if: always()
         run: |
           echo "Job Status: ${{ job.status }}"
+          echo "Should Run: ${{ steps.should_run.outputs.should_run }}"
           echo "Triggered at: $(date -u)"
           echo "Environment: Production"
           echo "Notification Type: Daily Verse (6 AM)"
@@ -102,15 +117,29 @@ jobs:
     runs-on: ubuntu-latest
     name: Send Recommended Topic Notifications (Prod)
 
-    # Run on schedule (Edge Function filters by user timezone) OR manual dispatch
+    # Run on schedule OR manual dispatch
     if: |
       github.event_name == 'schedule' ||
       (github.event_name == 'workflow_dispatch' &&
        (github.event.inputs.notification_type == 'recommended_topic' ||
         github.event.inputs.notification_type == 'all'))
-    
+
     steps:
+      - name: Check if this hour should run Recommended Topic
+        id: should_run
+        run: |
+          # Recommended Topic should run every 3 hours: 2, 5, 8, 11, 14, 17, 20, 23
+          current_hour=$(date -u +%H)
+          if [[ $current_hour -eq 2 || $current_hour -eq 5 || $current_hour -eq 8 || $current_hour -eq 11 || $current_hour -eq 14 || $current_hour -eq 17 || $current_hour -eq 20 || $current_hour -eq 23 ]] || [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            echo "should_run=true" >> $GITHUB_OUTPUT
+            echo "✅ Should run Recommended Topic at UTC hour $current_hour"
+          else
+            echo "should_run=false" >> $GITHUB_OUTPUT
+            echo "⏭️ Skipping Recommended Topic at UTC hour $current_hour (not a scheduled hour)"
+          fi
+
       - name: Send Recommended Topic Push Notifications (Prod)
+        if: steps.should_run.outputs.should_run == 'true'
         run: |
           echo "Triggering Recommended Topic notification Edge Function (Production)..."
 
@@ -139,6 +168,7 @@ jobs:
         if: always()
         run: |
           echo "Job Status: ${{ job.status }}"
+          echo "Should Run: ${{ steps.should_run.outputs.should_run }}"
           echo "Triggered at: $(date -u)"
           echo "Environment: Production"
           echo "Notification Type: Recommended Topic (8 AM)"
@@ -150,7 +180,7 @@ jobs:
     runs-on: ubuntu-latest
     name: Send Streak Reminder Notifications (Prod)
 
-    # Run on schedule (Edge Function filters by user timezone) OR manual dispatch
+    # Run every hour (users set their own reminder time)
     if: |
       github.event_name == 'schedule' ||
       (github.event_name == 'workflow_dispatch' &&
@@ -198,7 +228,7 @@ jobs:
     runs-on: ubuntu-latest
     name: Send Memory Verse Reminder Notifications (Prod)
 
-    # Run on schedule (Edge Function filters by user timezone) OR manual dispatch
+    # Run on schedule OR manual dispatch
     if: |
       github.event_name == 'schedule' ||
       (github.event_name == 'workflow_dispatch' &&
@@ -206,7 +236,21 @@ jobs:
         github.event.inputs.notification_type == 'all'))
 
     steps:
+      - name: Check if this hour should run Memory Verse Reminder
+        id: should_run
+        run: |
+          # Memory Verse Reminder should run every 3 hours: 0, 3, 6, 9, 12, 15, 18, 21
+          current_hour=$(date -u +%H)
+          if [[ $current_hour -eq 0 || $current_hour -eq 3 || $current_hour -eq 6 || $current_hour -eq 9 || $current_hour -eq 12 || $current_hour -eq 15 || $current_hour -eq 18 || $current_hour -eq 21 ]] || [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            echo "should_run=true" >> $GITHUB_OUTPUT
+            echo "✅ Should run Memory Verse Reminder at UTC hour $current_hour"
+          else
+            echo "should_run=false" >> $GITHUB_OUTPUT
+            echo "⏭️ Skipping Memory Verse Reminder at UTC hour $current_hour (not a scheduled hour)"
+          fi
+
       - name: Send Memory Verse Reminder Push Notifications (Prod)
+        if: steps.should_run.outputs.should_run == 'true'
         run: |
           echo "Triggering Memory Verse Reminder notification Edge Function (Production)..."
 
@@ -235,6 +279,7 @@ jobs:
         if: always()
         run: |
           echo "Job Status: ${{ job.status }}"
+          echo "Should Run: ${{ steps.should_run.outputs.should_run }}"
           echo "Triggered at: $(date -u)"
           echo "Environment: Production"
           echo "Notification Type: Memory Verse Reminder (9 AM)"
@@ -246,7 +291,7 @@ jobs:
     runs-on: ubuntu-latest
     name: Send Memory Verse Overdue Notifications (Prod)
 
-    # Run on schedule (Edge Function filters by user timezone) OR manual dispatch
+    # Run on schedule OR manual dispatch
     if: |
       github.event_name == 'schedule' ||
       (github.event_name == 'workflow_dispatch' &&
@@ -254,7 +299,21 @@ jobs:
         github.event.inputs.notification_type == 'all'))
 
     steps:
+      - name: Check if this hour should run Memory Verse Overdue
+        id: should_run
+        run: |
+          # Memory Verse Overdue should run every 3 hours: 0, 3, 6, 9, 12, 15, 18, 21
+          current_hour=$(date -u +%H)
+          if [[ $current_hour -eq 0 || $current_hour -eq 3 || $current_hour -eq 6 || $current_hour -eq 9 || $current_hour -eq 12 || $current_hour -eq 15 || $current_hour -eq 18 || $current_hour -eq 21 ]] || [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            echo "should_run=true" >> $GITHUB_OUTPUT
+            echo "✅ Should run Memory Verse Overdue at UTC hour $current_hour"
+          else
+            echo "should_run=false" >> $GITHUB_OUTPUT
+            echo "⏭️ Skipping Memory Verse Overdue at UTC hour $current_hour (not a scheduled hour)"
+          fi
+
       - name: Send Memory Verse Overdue Push Notifications (Prod)
+        if: steps.should_run.outputs.should_run == 'true'
         run: |
           echo "Triggering Memory Verse Overdue notification Edge Function (Production)..."
 
@@ -283,6 +342,7 @@ jobs:
         if: always()
         run: |
           echo "Job Status: ${{ job.status }}"
+          echo "Should Run: ${{ steps.should_run.outputs.should_run }}"
           echo "Triggered at: $(date -u)"
           echo "Environment: Production"
           echo "Notification Type: Memory Verse Overdue (6 PM)"
