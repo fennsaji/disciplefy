@@ -51,6 +51,8 @@ export interface SaveMessageParams {
     llmModelUsed?: string
     llmTokensUsed?: number
     scriptureReferences?: string[]
+    bookNamesCorrected?: boolean
+    correctionsMade?: Array<{ original: string; corrected: string }>
   }
 }
 

@@ -19,6 +19,7 @@ import {
   getPrimaryTranslation
 } from '../_shared/prompts/voice-conversation-prompts.ts'
 import { StreamMessage } from '../_shared/services/voice-streaming-service.ts'
+import { BibleBookNormalizer } from '../_shared/utils/bible-book-normalizer.ts'
 
 /**
  * Request payload for voice conversation
@@ -41,20 +42,6 @@ type SSEEvent =
   | { type: 'message_limit_status'; data: { messageCount: number; limit: number; remaining: number } }
   | { type: 'conversation_limit_exceeded'; data: { message: string; messageCount: number; limit: number } }
   | { type: 'error'; data: { code: string; message: string } }
-
-/**
- * Extract scripture references from text using regex
- * Supports English, Hindi (Devanagari), and Malayalam scripts
- */
-function extractScriptureReferences(text: string): string[] {
-  // Pattern supports:
-  // - English: "John 3:16", "1 John 3:16", "Genesis 1:1-3"
-  // - Hindi (Devanagari \u0900-\u097F): "यूहन्ना 3:16", "उत्पत्ति 1:1"
-  // - Malayalam (\u0D00-\u0D7F): "യോഹന്നാൻ 3:16", "ഉല്പത്തി 1:1"
-  const pattern = /(?:\d\s)?(?:[A-Za-z]+|[\u0900-\u097F]+|[\u0D00-\u0D7F]+)\s+\d+(?::\d+(?:-\d+)?)?/g
-  const matches = text.match(pattern) || []
-  return [...new Set(matches)]
-}
 
 /**
  * Parse request data from GET or POST
@@ -309,8 +296,18 @@ async function handleVoiceConversation(
       return
     }
 
-    // Extract scripture references
-    const scriptureRefs = extractScriptureReferences(fullResponse)
+    // Normalize Bible book names (auto-correct common abbreviations and mistakes)
+    const normalizer = new BibleBookNormalizer(language_code)
+    const normalizedResponse = normalizer.normalizeBibleBooks(fullResponse)
+
+    // Validate and log any corrections made
+    const validation = normalizer.validateBibleBooks(fullResponse)
+    if (validation.correctedBooks.length > 0 || validation.invalidBooks.length > 0) {
+      normalizer.logValidationWarnings(validation, conversation_id)
+    }
+
+    // Extract scripture references from normalized response using shared utility
+    const scriptureRefs = normalizer.extractScriptureReferences(normalizedResponse)
 
     // Save both messages together after successful streaming
     // This ensures no orphaned messages on failure
@@ -324,16 +321,18 @@ async function handleVoiceConversation(
         language: language_code
       })
 
-      // Save assistant message
+      // Save assistant message (using normalized response with corrected book names)
       await voiceConversationRepository.saveMessage({
         conversationId: conversation_id,
         userId,
         role: 'assistant',
-        content: fullResponse,
+        content: normalizedResponse,
         language: language_code,
         metadata: {
           llmModelUsed: modelUsed,
           scriptureReferences: scriptureRefs,
+          bookNamesCorrected: validation.correctedBooks.length > 0,
+          correctionsMade: validation.correctedBooks
         }
       })
     } catch (saveError) {

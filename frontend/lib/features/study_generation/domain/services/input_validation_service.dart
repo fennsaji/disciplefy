@@ -146,7 +146,7 @@ class InputValidationService {
       return const ValidationResult(
         isValid: false,
         errorMessage:
-            'Please enter a valid scripture reference (e.g., John 3:16)',
+            'Please enter a valid scripture reference (e.g., John 3:16 or Psalm 23)',
       );
     }
 

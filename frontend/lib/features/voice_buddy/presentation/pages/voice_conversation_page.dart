@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/di/injection_container.dart';
 import '../../../../core/extensions/translation_extension.dart';
 import '../../../../core/router/app_routes.dart';
+import '../../../../core/services/auth_state_provider.dart';
 import '../../domain/entities/voice_conversation_entity.dart';
 import '../bloc/voice_conversation_bloc.dart';
 import '../bloc/voice_conversation_event.dart';
@@ -416,6 +417,9 @@ class _VoiceConversationViewState extends State<_VoiceConversationView> {
   }
 
   Widget _buildConversationView(VoiceConversationState state) {
+    // Fetch user profile picture URL once to avoid repeated getter calls
+    final userProfilePictureUrl = sl<AuthStateProvider>().profilePictureUrl;
+
     return Column(
       children: [
         // Messages list
@@ -446,14 +450,18 @@ class _VoiceConversationViewState extends State<_VoiceConversationView> {
                     }
 
                     final message = state.messages[index];
+                    final isUserMessage = message.role == MessageRole.user;
+
                     return ConversationBubble(
                       content: message.contentText,
-                      isUser: message.role == MessageRole.user,
+                      isUser: isUserMessage,
                       scriptureReferences: message.scriptureReferences,
                       timestamp: message.createdAt,
                       onScriptureReferenceTap: (ref) {
                         ScriptureVerseSheet.show(context, reference: ref);
                       },
+                      userProfilePictureUrl:
+                          isUserMessage ? userProfilePictureUrl : null,
                     );
                   },
                 ),

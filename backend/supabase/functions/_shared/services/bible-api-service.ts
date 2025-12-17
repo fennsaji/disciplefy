@@ -295,8 +295,8 @@ export async function fetchVerseAllLanguages(
   ]);
 
   // Extract results with detailed logging
-  const en = results[0].status === 'fulfilled' 
-    ? results[0].value 
+  const en = results[0].status === 'fulfilled'
+    ? results[0].value
     : (() => {
         console.error(`[Bible API] ❌ Failed to fetch English translation:`, results[0].reason);
         throw new Error(`English translation required but failed: ${results[0].reason}`);
@@ -337,6 +337,114 @@ export async function fetchVerseAllLanguages(
     en_length: en.text.length,
     hi_length: hi.text.length,
     ml_length: ml.text.length,
+  });
+
+  return { en, hi, ml };
+}
+
+/**
+ * Bible book information from API.Bible
+ */
+export interface BibleBook {
+  id: string;          // Book code (e.g., "GEN", "MRK")
+  bibleId: string;     // Bible version ID
+  abbreviation: string; // Short abbreviation
+  name: string;        // Full book name in the language of the Bible version
+  nameLong?: string;   // Optional longer name
+}
+
+/**
+ * Fetches the list of Bible books from API.Bible for a specific language
+ *
+ * @param language - Language code ('en', 'hi', 'ml')
+ * @returns Promise<BibleBook[]> - Array of Bible books with official names
+ * @throws Error if API request fails
+ */
+export async function fetchBibleBooks(
+  language: 'en' | 'hi' | 'ml'
+): Promise<BibleBook[]> {
+  const apiKey = Deno.env.get('BIBLE_API');
+
+  if (!apiKey) {
+    throw new Error('BIBLE_API key not configured in environment variables');
+  }
+
+  const bibleId = BIBLE_VERSIONS[language];
+  const url = `https://api.scripture.api.bible/v1/bibles/${bibleId}/books`;
+
+  console.log(`[Bible API] Fetching books for ${language} (${bibleId})...`);
+
+  return withRetry(async () => {
+    try {
+      const response = await fetchWithTimeout(
+        url,
+        {
+          headers: {
+            'api-key': apiKey,
+          },
+        },
+        10000 // 10 second timeout
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(
+          `API.Bible books request failed: ${response.status} - ${JSON.stringify(errorData)}`
+        );
+      }
+
+      const data = await response.json();
+
+      console.log(`[Bible API] ✅ Fetched ${data.data.length} books for ${language}`);
+
+      return data.data as BibleBook[];
+    } catch (error) {
+      console.error(`[Bible API] Error fetching books for ${language}:`, error);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      throw new Error(`Failed to fetch Bible books: ${errorMessage}`);
+    }
+  });
+}
+
+/**
+ * Fetches Bible books for all three languages
+ *
+ * @returns Promise<Record<'en' | 'hi' | 'ml', BibleBook[]>> - Books in all languages
+ */
+export async function fetchBibleBooksAllLanguages(): Promise<Record<'en' | 'hi' | 'ml', BibleBook[]>> {
+  console.log(`[Bible API] Fetching books in all languages...`);
+
+  const results = await Promise.allSettled([
+    fetchBibleBooks('en'),
+    fetchBibleBooks('hi'),
+    fetchBibleBooks('ml'),
+  ]);
+
+  const en = results[0].status === 'fulfilled'
+    ? results[0].value
+    : (() => {
+        console.error(`[Bible API] ❌ Failed to fetch English books:`, results[0].reason);
+        throw new Error(`English books required but failed: ${results[0].reason}`);
+      })();
+
+  const hi = results[1].status === 'fulfilled'
+    ? results[1].value
+    : (() => {
+        console.error(`[Bible API] ❌ Failed to fetch Hindi books:`, results[1].reason);
+        throw new Error(`Hindi books required but failed: ${results[1].reason}`);
+      })();
+
+  const ml = results[2].status === 'fulfilled'
+    ? results[2].value
+    : (() => {
+        console.error(`[Bible API] ❌ Failed to fetch Malayalam books:`, results[2].reason);
+        throw new Error(`Malayalam books required but failed: ${results[2].reason}`);
+      })();
+
+  console.log('[Bible API] ✅ Books fetch complete:', {
+    en_books: en.length,
+    hi_books: hi.length,
+    ml_books: ml.length,
   });
 
   return { en, hi, ml };
