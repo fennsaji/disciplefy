@@ -153,15 +153,22 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     children: [
                       // Disciplefy Logo
                       const _LogoWidget(),
-                      // Skip button
+                      // Skip button - uses semantic color for accessibility
                       TextButton(
                         onPressed: _skipOnboarding,
+                        style: TextButton.styleFrom(
+                          // Ensure 44px minimum touch target for accessibility
+                          minimumSize: const Size(44, 44),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 12),
+                        ),
                         child: Text(
                           'Skip',
                           style: AppFonts.inter(
                             fontSize: 14,
                             fontWeight: FontWeight.w500,
-                            color: theme.colorScheme.onSurface.withOpacity(0.6),
+                            // Use semantic color instead of hard-coded opacity for better contrast
+                            color: theme.colorScheme.onSurfaceVariant,
                           ),
                         ),
                       ),

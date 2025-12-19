@@ -5,9 +5,15 @@
 
 BEGIN;
 
--- Drop the old constraint
+-- Drop the old constraint first
 ALTER TABLE memory_practice_modes
 DROP CONSTRAINT IF EXISTS memory_practice_modes_mode_type_check;
+
+-- Migrate existing data: convert old mode names to new ones
+-- word_order -> word_bank
+UPDATE memory_practice_modes SET mode_type = 'word_bank' WHERE mode_type = 'word_order';
+-- typing -> type_it_out  
+UPDATE memory_practice_modes SET mode_type = 'type_it_out' WHERE mode_type = 'typing';
 
 -- Add the new constraint with correct mode names
 ALTER TABLE memory_practice_modes

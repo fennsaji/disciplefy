@@ -40,8 +40,13 @@ class ClickableScriptureText extends StatefulWidget {
 
   /// Regex pattern to match scripture references in English, Hindi, and Malayalam.
   ///
-  /// Uses a whitelist approach for Hindi Bible book names to avoid false positives.
-  /// Multi-word book names (भजन संहिता, प्रेरितों के काम) are listed explicitly.
+  /// **Design Note**: Uses a whitelist approach with explicit book names to avoid
+  /// false positives like "Section 3:16" or "Room 1:30". This is intentionally
+  /// stricter than [InputValidationService.isValidScripture] which uses a generic
+  /// Unicode pattern for input validation (more lenient to accept user input).
+  ///
+  /// Multi-word book names (भजन संहिता, प्रेरितों के काम) are listed explicitly
+  /// before single-word patterns to ensure correct matching.
   static final RegExp scripturePattern = RegExp(
     r'('
     r'(?:\d\s?)?' // Optional number prefix like "1 " or "1" for numbered books
@@ -112,14 +117,16 @@ class _ClickableScriptureTextState extends State<ClickableScriptureText> {
     final isDark = theme.brightness == Brightness.dark;
     final List<InlineSpan> spans = [];
 
+    // Use tertiary color for dark mode (lighter purple), primary for light mode
+    final scriptureColor =
+        isDark ? theme.colorScheme.tertiary : theme.colorScheme.primary;
+
     // Style for scripture references
     final scriptureStyle = (widget.style ?? const TextStyle()).copyWith(
-      color: isDark ? const Color(0xFFB8A9F0) : theme.colorScheme.primary,
+      color: scriptureColor,
       fontWeight: FontWeight.w600,
       decoration: TextDecoration.underline,
-      decorationColor:
-          (isDark ? const Color(0xFFB8A9F0) : theme.colorScheme.primary)
-              .withOpacity(0.5),
+      decorationColor: scriptureColor.withOpacity(0.5),
       decorationStyle: TextDecorationStyle.dotted,
     );
 

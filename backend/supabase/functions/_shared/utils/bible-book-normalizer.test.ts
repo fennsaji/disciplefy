@@ -153,14 +153,32 @@ Deno.test('BibleBookNormalizer - should correct Hindi abbreviations', () => {
   assertEquals(normalized.includes('भज 23:1'), false)
 })
 
-Deno.test('BibleBookNormalizer - should work with Malayalam book names', () => {
+Deno.test('BibleBookNormalizer - should recognize canonical Malayalam book names', () => {
   const normalizer = new BibleBookNormalizer('ml-IN')
+  // Use canonical abbreviated form from CANONICAL_BIBLE_BOOKS['ml-IN']
+  const text = 'യോഹ. 3:16 ദൈവത്തിന്റെ സ്നേഹത്തെക്കുറിച്ച് പറയുന്നു.'
+
+  const validation = normalizer.validateBibleBooks(text)
+
+  assertEquals(validation.isValid, true)
+  assertEquals(validation.invalidBooks.length, 0)
+  // Canonical form should not require correction
+  assertEquals(validation.correctedBooks.length, 0)
+})
+
+Deno.test('BibleBookNormalizer - should correct non-canonical Malayalam book names', () => {
+  const normalizer = new BibleBookNormalizer('ml-IN')
+  // Use full form that maps to canonical 'യോഹ.' via INCORRECT_TO_CORRECT['ml-IN']
   const text = 'യോഹന്നാൻ 3:16 ദൈവത്തിന്റെ സ്നേഹത്തെക്കുറിച്ച് പറയുന്നു.'
 
   const validation = normalizer.validateBibleBooks(text)
 
   assertEquals(validation.isValid, true)
   assertEquals(validation.invalidBooks.length, 0)
+  // Explicitly verify the correction mapping was applied
+  assertEquals(validation.correctedBooks.length, 1)
+  assertEquals(validation.correctedBooks[0].original, 'യോഹന്നാൻ')
+  assertEquals(validation.correctedBooks[0].corrected, 'യോഹ.')
 })
 
 // ==================== EDGE CASES ====================

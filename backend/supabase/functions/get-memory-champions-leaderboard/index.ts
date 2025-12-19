@@ -113,25 +113,56 @@ async function getLeaderboard(
     return []
   }
 
-  // For each user, calculate their statistics
+  // OPTIMIZATION: Fetch all master verse counts in one aggregated query
+  // This replaces N individual count queries with a single bulk query
+  // Note: For production at scale, consider a materialized view or scheduled aggregation
+  const { data: masterVerseCounts, error: masterError } = await supabaseClient
+    .from('memory_verses')
+    .select('user_id')
+    .gte('repetitions', 5) // Define "master" as 5+ repetitions (matches get-due-memory-verses)
+
+  if (masterError) {
+    console.error('[Leaderboard] Master verse count fetch error:', masterError)
+  }
+
+  // Build map of user_id -> master verse count
+  const masterVerseMap = new Map<string, number>()
+  if (masterVerseCounts) {
+    for (const row of masterVerseCounts) {
+      const userId = row.user_id as string
+      masterVerseMap.set(userId, (masterVerseMap.get(userId) || 0) + 1)
+    }
+  }
+
+  // OPTIMIZATION: Fetch all streak data in one bulk query
+  // This replaces N individual streak queries with a single query
+  const { data: allStreakData, error: streakError } = await supabaseClient
+    .from('memory_verse_streaks')
+    .select('user_id, current_streak, longest_streak, total_practice_days')
+
+  if (streakError) {
+    console.error('[Leaderboard] Streak data fetch error:', streakError)
+  }
+
+  // Build map of user_id -> streak data
+  const streakMap = new Map<string, { current_streak: number; longest_streak: number; total_practice_days: number }>()
+  if (allStreakData) {
+    for (const streak of allStreakData) {
+      streakMap.set(streak.user_id, {
+        current_streak: streak.current_streak || 0,
+        longest_streak: streak.longest_streak || 0,
+        total_practice_days: streak.total_practice_days || 0
+      })
+    }
+  }
+
+  // Iterate users once and construct entries from the pre-fetched maps
   const leaderboardEntries: Array<LeaderboardEntry & { sort_key: string }> = []
 
   for (const user of users) {
-    // Count master verses (repetitions >= 5, consistent with get-due-memory-verses)
-    const { count: masterCount } = await supabaseClient
-      .from('memory_verses')
-      .select('*', { count: 'exact', head: true })
-      .eq('user_id', user.id)
-      .gte('repetitions', 5) // Define "master" as 5+ repetitions (matches get-due-memory-verses)
-
-    // Get actual streak data from memory_verse_streaks table
-    const { data: streakData } = await supabaseClient
-      .from('memory_verse_streaks')
-      .select('current_streak, longest_streak, total_practice_days')
-      .eq('user_id', user.id)
-      .maybeSingle()
-
-    const masterVerses = masterCount || 0
+    // Look up pre-fetched data from maps (O(1) lookup instead of DB query)
+    const masterVerses = masterVerseMap.get(user.id) || 0
+    const streakData = streakMap.get(user.id)
     const longestStreak = streakData?.longest_streak || 0
     const totalPracticeDays = streakData?.total_practice_days || 0
 

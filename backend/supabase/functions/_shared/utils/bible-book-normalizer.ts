@@ -488,15 +488,28 @@ export class BibleBookNormalizer {
     while ((match = pattern.exec(text)) !== null) {
       // Normalize the book name to its canonical form
       const bookName = match[1]
+      const bookKey = bookName.toLowerCase() // Normalize for case-insensitive lookups
       const chapter = match[2]
       const verse = match[3]
       const endVerse = match[4]
 
-      // Find canonical name (check incorrect mapping first, then canonical)
-      const canonicalBook = this.incorrectMapping[bookName] ||
-                           Array.from(this.canonicalBooks).find(
-                             b => b.toLowerCase() === bookName.toLowerCase()
-                           ) || bookName
+      // Find canonical name (check incorrect mapping first with case-insensitive lookup, then canonical)
+      // Look up in incorrectMapping using case-insensitive comparison
+      let canonicalBook: string | undefined
+      for (const [incorrect, correct] of Object.entries(this.incorrectMapping)) {
+        if (incorrect.toLowerCase() === bookKey) {
+          canonicalBook = correct
+          break
+        }
+      }
+      // If not found in incorrectMapping, try canonical books with case-insensitive comparison
+      if (!canonicalBook) {
+        canonicalBook = Array.from(this.canonicalBooks).find(
+          b => b.toLowerCase() === bookKey
+        )
+      }
+      // Fallback to original book name if no match found
+      canonicalBook = canonicalBook || bookName
 
       // Reconstruct reference with canonical book name
       let ref = `${canonicalBook} ${chapter}`
