@@ -30,6 +30,11 @@ class TTSService {
   /// Language code for current streaming session
   String _streamingLanguageCode = 'en-US';
 
+  /// Voice settings for current streaming session
+  double _streamingSpeakingRate = 1.0;
+  double _streamingPitch = 0.0;
+  String _streamingVoiceGender = 'female';
+
   /// Callback when all queued sentences are done
   void Function()? _onStreamingComplete;
 
@@ -337,10 +342,90 @@ class TTSService {
     await _flutterTts.setVoice(voice);
   }
 
+  /// Convert Bible references to spoken format for natural TTS pronunciation.
+  ///
+  /// Transforms references like "John 3:16" to "John Chapter 3 verse 16"
+  /// and "1 Corinthians 1:1-2" to "First Corinthians Chapter 1 verses 1 to 2".
+  /// Supports English, Hindi, and Malayalam localization.
+  /// Limits book name to max 3 words to avoid false positives.
+  String _convertBibleReferencesForTTS(String text, String languageCode) {
+    // Pattern matches: "Book Chapter:Verse" or "Book Chapter:Verse-Verse"
+    // Group 1: Optional number prefix (1, 2, 3 for numbered books)
+    // Group 2: Book name (1-3 words, supports English, Hindi, Malayalam)
+    // Group 3: Chapter number
+    // Group 4: Start verse
+    // Group 5: End verse (optional, for ranges)
+    // Limits to 3 words max to avoid matching "आप शायद भजन संहिता 23:1"
+    final bibleRefPattern = RegExp(
+      r'(\d)?\s*([A-Za-z\u0900-\u097F\u0D00-\u0D7F]+(?:\s+[A-Za-z\u0900-\u097F\u0D00-\u0D7F]+){0,2})\s+(\d+):(\d+)(?:-(\d+))?',
+      caseSensitive: false,
+    );
+
+    return text.replaceAllMapped(bibleRefPattern, (match) {
+      final bookNumber = match.group(1); // "1", "2", "3" or null
+      final bookName = match.group(2)!;
+      final chapter = match.group(3)!;
+      final verseStart = match.group(4)!;
+      final verseEnd = match.group(5); // null if single verse
+
+      // Get localized terms based on language
+      final (chapterWord, verseWord, versesWord, toWord) =
+          _getLocalizedBibleTerms(languageCode);
+
+      // Convert numbered books for English (1 → First, etc.)
+      String fullBookName;
+      if (bookNumber != null && languageCode.startsWith('en')) {
+        final ordinal = _numberToOrdinal(bookNumber);
+        fullBookName = '$ordinal $bookName';
+      } else if (bookNumber != null) {
+        fullBookName = '$bookNumber $bookName';
+      } else {
+        fullBookName = bookName;
+      }
+
+      if (verseEnd != null) {
+        return '$fullBookName $chapterWord $chapter $versesWord $verseStart $toWord $verseEnd';
+      } else {
+        return '$fullBookName $chapterWord $chapter $verseWord $verseStart';
+      }
+    });
+  }
+
+  /// Convert number to ordinal word for numbered Bible books (English only).
+  String _numberToOrdinal(String number) {
+    switch (number) {
+      case '1':
+        return 'First';
+      case '2':
+        return 'Second';
+      case '3':
+        return 'Third';
+      default:
+        return number;
+    }
+  }
+
+  /// Get localized terms for Bible references.
+  /// Returns (chapter, verse, verses, to) in the specified language.
+  (String, String, String, String) _getLocalizedBibleTerms(
+      String languageCode) {
+    switch (languageCode) {
+      case 'hi-IN':
+        return ('अध्याय', 'पद', 'पद', 'से');
+      case 'ml-IN':
+        return ('അദ്ധ്യായം', 'വാക്യം', 'വാക്യങ്ങൾ', 'മുതൽ');
+      default: // en-US, en-IN and others
+        return ('Chapter', 'verse', 'verses', 'to');
+    }
+  }
+
   /// Sanitize text for TTS to prevent reading punctuation as words.
-  String _sanitizeTextForTTS(String text) {
+  String _sanitizeTextForTTS(String text, {String languageCode = 'en-US'}) {
+    // First convert Bible references to spoken format
+    final withBibleRefs = _convertBibleReferencesForTTS(text, languageCode);
+
     // Remove or replace punctuation that TTS might read literally
-    final sanitized = text
+    final sanitized = withBibleRefs
         // Keep sentence-ending punctuation for natural pauses
         .replaceAll('!', '.')
         .replaceAll('?', '.')
@@ -552,16 +637,24 @@ class TTSService {
   /// Uses Cloud TTS when available for high-quality voices.
   Future<void> startStreamingSession({
     required String languageCode,
+    double speakingRate = 1.0,
+    double pitch = 0.0,
+    String voiceGender = 'female',
     void Function()? onComplete,
   }) async {
     print('🔊 [TTS STREAM] Starting streaming session for $languageCode');
     print(
         '🔊 [TTS STREAM] Cloud TTS available: $_cloudTtsAvailable, enabled: $_useCloudTts');
+    print(
+        '🔊 [TTS STREAM] Voice settings: rate=$speakingRate, pitch=$pitch, gender=$voiceGender');
 
     // Set streaming mode IMMEDIATELY so sentences can be queued during init
     _isStreamingMode = true;
     _isInitializingStreamingSession = true;
     _streamingLanguageCode = languageCode;
+    _streamingSpeakingRate = speakingRate;
+    _streamingPitch = pitch;
+    _streamingVoiceGender = voiceGender;
     _onStreamingComplete = onComplete;
 
     // Clear any previous queue
@@ -614,7 +707,8 @@ class TTSService {
     final trimmed = sentence.trim();
     if (trimmed.isEmpty) return;
 
-    final sanitized = _sanitizeTextForTTS(trimmed);
+    final sanitized =
+        _sanitizeTextForTTS(trimmed, languageCode: _streamingLanguageCode);
     if (sanitized.isEmpty) return;
 
     print(
@@ -631,7 +725,7 @@ class TTSService {
 
   /// Play the next sentence in the queue.
   /// Uses Cloud TTS when available for high-quality voices.
-  void _playNextInQueue() {
+  Future<void> _playNextInQueue() async {
     if (_sentenceQueue.isEmpty) {
       print('🔊 [TTS STREAM] Queue empty');
       // Check if streaming is finished
@@ -659,9 +753,19 @@ class TTSService {
       return;
     }
 
-    // Fallback to device TTS
-    _flutterTts.speak(sentence);
+    // Fallback to device TTS with voice settings
+    // Await settings to ensure they are applied before speaking
+    print('🔊 [TTS STREAM] Using device TTS with settings');
+    await _applyDeviceTTSSettings();
+    await _flutterTts.speak(sentence);
     _currentState = TtsState.playing;
+  }
+
+  /// Apply stored streaming voice settings to device TTS
+  Future<void> _applyDeviceTTSSettings() async {
+    await setSpeechRate(_streamingSpeakingRate);
+    await setPitch(_streamingPitch);
+    await _selectVoiceByGender(_streamingLanguageCode, _streamingVoiceGender);
   }
 
   /// Speak using Cloud TTS with proper error handling.
@@ -670,6 +774,8 @@ class TTSService {
       final success = await _cloudTts.speak(
         text: sentence,
         languageCode: _streamingLanguageCode,
+        speakingRate: _streamingSpeakingRate,
+        pitch: _streamingPitch,
         onComplete: () {
           _currentState = TtsState.stopped;
           // Always call _playNextInQueue - it handles empty queue and completion callback

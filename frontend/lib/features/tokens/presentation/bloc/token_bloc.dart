@@ -3,6 +3,9 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:dartz/dartz.dart';
 import 'package:flutter/foundation.dart';
 
+import '../../../../core/di/injection_container.dart';
+import '../../../auth/presentation/bloc/auth_bloc.dart';
+import '../../../auth/presentation/bloc/auth_state.dart' as auth_state;
 import '../../domain/entities/token_status.dart';
 import '../../domain/entities/purchase_history.dart';
 import '../../domain/entities/purchase_statistics.dart';
@@ -99,6 +102,25 @@ class TokenBloc extends Bloc<TokenEvent, TokenState> {
           '🪙 [TOKEN_BLOC] Cache valid: ${_isCacheValid()}, cached status: $_cachedTokenStatus');
     }
 
+    // Check if user is a guest (anonymous) - provide default token status without API call
+    final authState = sl<AuthBloc>().state;
+    final isGuest =
+        authState is auth_state.AuthenticatedState && authState.isAnonymous;
+
+    if (isGuest) {
+      if (kDebugMode) {
+        print(
+            '🪙 [TOKEN_BLOC] Guest user detected - using default token status');
+      }
+      final guestTokenStatus = _createGuestTokenStatus();
+      _updateCache(guestTokenStatus);
+      emit(TokenLoaded(
+        tokenStatus: guestTokenStatus,
+        lastUpdated: DateTime.now(),
+      ));
+      return;
+    }
+
     // Check if cached data is valid
     if (_isCacheValid() && _cachedTokenStatus != null) {
       if (kDebugMode) {
@@ -144,11 +166,51 @@ class TokenBloc extends Bloc<TokenEvent, TokenState> {
     );
   }
 
+  /// Creates a default token status for guest users
+  TokenStatus _createGuestTokenStatus() {
+    final now = DateTime.now();
+    final nextReset = DateTime(now.year, now.month, now.day + 1);
+    return TokenStatus(
+      availableTokens: 20,
+      purchasedTokens: 0,
+      totalTokens: 20,
+      dailyLimit: 20,
+      totalConsumedToday: 0,
+      userPlan: UserPlan.free,
+      lastReset: now,
+      nextResetTime: nextReset,
+      authenticationType: AuthenticationType.anonymous,
+      isPremium: false,
+      unlimitedUsage: false,
+      canPurchaseTokens: false,
+      planDescription: 'Guest user with 20 tokens daily. Sign in to get more!',
+    );
+  }
+
   /// Handles refreshing token status (ignores cache)
   Future<void> _onRefreshTokenStatus(
     RefreshTokenStatus event,
     Emitter<TokenState> emit,
   ) async {
+    // Check if user is a guest - use default token status
+    final authState = sl<AuthBloc>().state;
+    final isGuest =
+        authState is auth_state.AuthenticatedState && authState.isAnonymous;
+
+    if (isGuest) {
+      if (kDebugMode) {
+        print(
+            '🪙 [TOKEN_BLOC] Guest user - using default token status on refresh');
+      }
+      final guestTokenStatus = _createGuestTokenStatus();
+      _updateCache(guestTokenStatus);
+      emit(TokenLoaded(
+        tokenStatus: guestTokenStatus,
+        lastUpdated: DateTime.now(),
+      ));
+      return;
+    }
+
     // If already loaded, show refresh indicator
     if (state is TokenLoaded) {
       final currentState = state as TokenLoaded;

@@ -207,13 +207,18 @@ function getTranslationName(language: 'en' | 'hi' | 'ml'): string {
 }
 
 /**
- * Clean verse text from HTML and formatting
+ * Clean verse text from HTML, cross-references, and formatting
  */
 function cleanVerseText(content: string): string {
   let cleaned = content
 
   // Remove HTML tags
   cleaned = cleaned.replace(/<[^>]*>/g, '')
+
+  // Remove inline cross-references in parentheses
+  // Matches patterns like: (नीति. 23:12), (Prov. 23:12), (Gen. 1:1; Ex. 3:14), (1 Cor. 13:4-7)
+  // Pattern: parentheses containing chapter:verse reference(s)
+  cleaned = cleaned.replace(/\s*\([^)]*\d+:\d+[^)]*\)/g, '')
 
   // Normalize whitespace
   cleaned = cleaned.replace(/\s+/g, ' ').trim()
@@ -277,7 +282,40 @@ async function handleFetchVerse(
   let reference: string
   let localizedReference: string
 
-  if (body.verse_end && body.verse_end > body.verse_start) {
+  // Check if this is a chapter-only request (verse_start: 1, verse_end: 999)
+  const isChapterOnly = body.verse_start === 1 && body.verse_end === 999
+
+  if (isChapterOnly) {
+    // Fetch entire chapter using chapters endpoint
+    reference = `${englishBookName} ${body.chapter}`
+    const localizedBook = getLocalizedBookName(englishBookName, body.language)
+    localizedReference = `${localizedBook} ${body.chapter}`
+
+    const chapterId = `${bookCode}.${body.chapter}`
+    const chapterUrl = `https://api.scripture.api.bible/v1/bibles/${bibleId}/chapters/${chapterId}`
+    const params = new URLSearchParams({
+      'content-type': 'text',
+      'include-notes': 'false',
+      'include-titles': 'false',
+      'include-chapter-numbers': 'false',
+      'include-verse-numbers': 'false',
+    })
+
+    const response = await fetchWithTimeout(
+      `${chapterUrl}?${params.toString()}`,
+      { headers: { 'api-key': apiKey } },
+      15000 // 15 seconds for chapter
+    )
+
+    if (!response.ok) {
+      const errorData = await response.json()
+      console.error('[FetchVerse] Chapter API error:', errorData)
+      throw new AppError('NOT_FOUND', `Chapter not found: ${reference}`, 404)
+    }
+
+    const data = await response.json()
+    verseText = cleanVerseText(data.data.content)
+  } else if (body.verse_end && body.verse_end > body.verse_start) {
     // Fetch verse range
     reference = `${englishBookName} ${body.chapter}:${body.verse_start}-${body.verse_end}`
     const localizedBook = getLocalizedBookName(englishBookName, body.language)

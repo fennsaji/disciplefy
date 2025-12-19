@@ -38,4 +38,10 @@ class AppColors {
   static Color get warningColor => warning;
   static Color get surfaceColor => surface;
   static Color get textTertiary => textSecondary;
+
+  // Memory verse feature aliases
+  static Color get primaryPurple => const Color(0xFF6A4FB6);
+  static Color get highlightGold => secondary;
+  static Color get successGreen => success;
+  static Color get errorRed => error;
 }

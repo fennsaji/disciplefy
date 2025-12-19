@@ -7,11 +7,12 @@
 
 import { StudyGuideRepository } from '../repositories/study-guide-repository.ts'
 import { LLMService } from './llm-service.ts'
-import { 
-  StudyGuideInput, 
-  StudyGuideContent, 
-  StudyGuideResponse, 
-  UserContext 
+import { BibleBookNormalizer } from '../utils/bible-book-normalizer.ts'
+import {
+  StudyGuideInput,
+  StudyGuideContent,
+  StudyGuideResponse,
+  UserContext
 } from '../types/index.ts'
 
 /**
@@ -185,13 +186,13 @@ export class StudyGuideService {
 
   /**
    * Generates new content using LLM with retry logic
-   * 
+   *
    * @param input - Study guide input
    * @returns Generated content
    */
   private async generateNewContent(input: StudyGuideInput): Promise<StudyGuideContent> {
     let lastError: Error | null = null
-    
+
     for (let attempt = 1; attempt <= this.config.maxRetries; attempt++) {
       try {
         const generated = await this.llmService.generateStudyGuide({
@@ -200,18 +201,28 @@ export class StudyGuideService {
           language: input.language
         })
 
+        // Normalize Bible book names in ALL fields (auto-correct abbreviations and mistakes)
+        // LLM can generate incorrect book names anywhere in the content
+        const normalizer = new BibleBookNormalizer(input.language)
+        
         return {
-          summary: generated.summary,
-          interpretation: generated.interpretation,
-          context: generated.context,
-          relatedVerses: generated.relatedVerses,
-          reflectionQuestions: generated.reflectionQuestions,
-          prayerPoints: generated.prayerPoints
+          summary: normalizer.normalizeBibleBooks(generated.summary),
+          interpretation: normalizer.normalizeBibleBooks(generated.interpretation),
+          context: normalizer.normalizeBibleBooks(generated.context),
+          relatedVerses: generated.relatedVerses.map(verse =>
+            normalizer.normalizeBibleBooks(verse)
+          ),
+          reflectionQuestions: generated.reflectionQuestions.map(q =>
+            normalizer.normalizeBibleBooks(q)
+          ),
+          prayerPoints: generated.prayerPoints.map(p =>
+            normalizer.normalizeBibleBooks(p)
+          )
         }
 
       } catch (error) {
         lastError = error instanceof Error ? error : new Error(String(error))
-        
+
         if (attempt < this.config.maxRetries) {
           console.warn(`[StudyGuideService] Generation attempt ${attempt} failed, retrying...`)
           await this.delay(this.config.retryDelayMs * attempt)

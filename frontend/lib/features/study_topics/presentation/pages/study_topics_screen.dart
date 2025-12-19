@@ -13,6 +13,7 @@ import '../../../../core/i18n/translation_keys.dart';
 import '../../../../core/models/app_language.dart';
 import '../../../../core/services/language_preference_service.dart';
 import '../../../../core/utils/logger.dart';
+import '../../../../core/services/auth_state_provider.dart';
 import '../../../home/presentation/bloc/home_bloc.dart';
 import '../../domain/entities/learning_path.dart';
 import '../../domain/entities/topic_progress.dart';
@@ -104,17 +105,26 @@ class _StudyTopicsScreenState extends State<StudyTopicsScreen> {
       setState(() {
         _currentLanguage = language.code;
       });
-      // Always force refresh to ensure correct language content is loaded
-      // This handles cases where the screen is kept alive by IndexedStack
-      // but the language was changed while on another screen
-      _continueLearningBloc.add(LoadContinueLearning(
-        language: _currentLanguage,
-        forceRefresh: true,
-      ));
+
+      // Check if user is authenticated (not anonymous/guest)
+      // Guest users don't have continue learning data stored
+      final authProvider = sl<AuthStateProvider>();
+      final isGuest = authProvider.isAnonymous;
+
+      // Only load continue learning for authenticated users
+      if (!isGuest) {
+        _continueLearningBloc.add(LoadContinueLearning(
+          language: _currentLanguage,
+          forceRefresh: true,
+        ));
+      }
+
+      // Always load learning paths (available for all users)
       _learningPathsBloc.add(LoadLearningPaths(
         language: _currentLanguage,
         forceRefresh: true,
       ));
+
       // Mark that data loading has started
       if (!_dataLoadingStarted) {
         setState(() {
@@ -236,42 +246,49 @@ class _StudyTopicsScreenContentState extends State<_StudyTopicsScreenContent> {
     // Show loading state while waiting for language to load and BLoC events to be dispatched
     final showInitialLoading = !widget.dataLoadingStarted;
 
+    // Check if user is a guest (anonymous) - don't show Continue Learning for guests
+    final authProvider = sl<AuthStateProvider>();
+    final isGuest = authProvider.isAnonymous;
+
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
         // Section 1: Continue Learning (Primary Focus)
-        BlocBuilder<ContinueLearningBloc, ContinueLearningState>(
-          builder: (context, state) {
-            // Show loading if initial loading or BLoC is loading
-            if (showInitialLoading || state is ContinueLearningLoading) {
+        // Hidden for guest users since we don't store their progress
+        if (!isGuest)
+          BlocBuilder<ContinueLearningBloc, ContinueLearningState>(
+            builder: (context, state) {
+              // Show loading if initial loading or BLoC is loading
+              if (showInitialLoading || state is ContinueLearningLoading) {
+                return ContinueLearningSection(
+                  topics: const [],
+                  onTopicTap: _navigateToStudyGuideFromContinueLearning,
+                  isLoading: true,
+                );
+              } else if (state is ContinueLearningError) {
+                return ContinueLearningSection(
+                  topics: const [],
+                  onTopicTap: _navigateToStudyGuideFromContinueLearning,
+                  errorMessage: state.message,
+                  onRetry: () => context.read<ContinueLearningBloc>().add(
+                      RefreshContinueLearning(
+                          language: widget.currentLanguage)),
+                );
+              } else if (state is ContinueLearningLoaded) {
+                return ContinueLearningSection(
+                  topics: state.topics,
+                  onTopicTap: _navigateToStudyGuideFromContinueLearning,
+                );
+              }
+              // ContinueLearningEmpty or Initial - section hides itself
               return ContinueLearningSection(
                 topics: const [],
                 onTopicTap: _navigateToStudyGuideFromContinueLearning,
-                isLoading: true,
               );
-            } else if (state is ContinueLearningError) {
-              return ContinueLearningSection(
-                topics: const [],
-                onTopicTap: _navigateToStudyGuideFromContinueLearning,
-                errorMessage: state.message,
-                onRetry: () => context.read<ContinueLearningBloc>().add(
-                    RefreshContinueLearning(language: widget.currentLanguage)),
-              );
-            } else if (state is ContinueLearningLoaded) {
-              return ContinueLearningSection(
-                topics: state.topics,
-                onTopicTap: _navigateToStudyGuideFromContinueLearning,
-              );
-            }
-            // ContinueLearningEmpty or Initial - section hides itself
-            return ContinueLearningSection(
-              topics: const [],
-              onTopicTap: _navigateToStudyGuideFromContinueLearning,
-            );
-          },
-        ),
+            },
+          ),
 
-        const SizedBox(height: 24),
+        if (!isGuest) const SizedBox(height: 24),
 
         // Section 2: Learning Paths (Curated Learning Journeys)
         // Show loading state if initial loading hasn't completed

@@ -20,15 +20,22 @@ import '../../../daily_verse/presentation/bloc/daily_verse_bloc.dart';
 import '../../../daily_verse/presentation/bloc/daily_verse_state.dart';
 import '../../../notifications/presentation/widgets/notification_enable_prompt.dart';
 import '../../domain/entities/memory_verse_entity.dart';
+import '../../domain/entities/memory_streak_entity.dart';
+import '../../domain/entities/daily_goal_entity.dart';
 import '../bloc/memory_verse_bloc.dart';
 import '../bloc/memory_verse_event.dart';
 import '../bloc/memory_verse_state.dart';
 import '../widgets/add_manual_verse_dialog.dart';
 import '../widgets/add_verse_options_sheet.dart';
+import '../widgets/suggested_verses_sheet.dart';
 import '../widgets/memory_verse_list_item.dart';
 import '../widgets/options_menu_sheet.dart';
 import '../widgets/statistics_card.dart';
-import '../widgets/statistics_dialog.dart';
+import '../widgets/streak_display_widget.dart';
+import '../widgets/daily_goal_progress_widget.dart';
+import '../widgets/milestone_celebration_dialog.dart';
+import '../widgets/streak_protection_dialog.dart';
+import '../widgets/memory_verse_navigation_bar.dart';
 import '../../../gamification/presentation/bloc/gamification_bloc.dart';
 import '../../../gamification/presentation/bloc/gamification_event.dart';
 
@@ -45,6 +52,8 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
   bool _hasTriggeredMemoryVersePrompt = false;
   bool _isAccessDenied = false;
   StreamSubscription<TokenState>? _tokenSubscription;
+  MemoryStreakEntity? _memoryStreak;
+  DailyGoalEntity? _dailyGoal;
 
   @override
   void initState() {
@@ -105,10 +114,10 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
         if (!mounted) return;
         UpgradeRequiredDialog.show(
           context,
-          featureName: 'Memory Verses',
+          featureName: context.tr(TranslationKeys.memoryHomeTitle),
           featureIcon: Icons.psychology_outlined,
           featureDescription:
-              'Memorize Bible verses using proven spaced repetition techniques. Track your progress and strengthen your faith through scripture memorization.',
+              context.tr(TranslationKeys.memoryHomeFeatureDescription),
         ).then((_) {
           // Navigate back after dialog is dismissed
           if (mounted) {
@@ -128,6 +137,9 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
           language: _selectedLanguageFilter?.code,
           forceRefresh: forceRefresh,
         ));
+    // Load gamification data
+    context.read<MemoryVerseBloc>().add(const LoadMemoryStreakEvent());
+    context.read<MemoryVerseBloc>().add(const LoadDailyGoalEvent());
   }
 
   /// Shows the memory verse reminder notification prompt (once per session)
@@ -223,7 +235,7 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
                   ),
                 ),
                 onPressed: () => _showAddVerseOptions(context),
-                tooltip: 'Add verse',
+                tooltip: context.tr(TranslationKeys.memoryHomeAddVerse),
               ),
             ),
             IconButton(
@@ -233,19 +245,75 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
                     Theme.of(context).colorScheme.onBackground.withOpacity(0.7),
               ),
               onPressed: () => _showOptionsMenu(context),
-              tooltip: 'Options',
+              tooltip: context.tr(TranslationKeys.memoryHomeOptions),
             ),
           ],
         ),
         body: BlocConsumer<MemoryVerseBloc, MemoryVerseState>(
           listener: (context, state) {
-            if (state is MemoryVerseError) {
+            // Handle streak data loaded
+            if (state is MemoryStreakLoaded) {
+              setState(() {
+                _memoryStreak = MemoryStreakEntity(
+                  currentStreak: state.currentStreak,
+                  longestStreak: state.longestStreak,
+                  lastPracticeDate: state.lastPracticeDate,
+                  totalPracticeDays: state.totalPracticeDays,
+                  freezeDaysAvailable: state.freezeDaysAvailable,
+                  freezeDaysUsed: state.freezeDaysUsed,
+                  milestones: state.milestones,
+                );
+              });
+            }
+            // Handle daily goal data loaded
+            else if (state is DailyGoalLoaded) {
+              setState(() {
+                _dailyGoal = DailyGoalEntity(
+                  targetReviews: state.targetReviews,
+                  completedReviews: state.completedReviews,
+                  targetNewVerses: state.targetNewVerses,
+                  addedNewVerses: state.addedNewVerses,
+                  goalAchieved: state.goalAchieved,
+                  bonusXpAwarded: state.bonusXpAwarded,
+                );
+              });
+            }
+            // Handle milestone reached
+            else if (state is StreakMilestoneReached) {
+              // Show celebration dialog
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (mounted) {
+                  MilestoneCelebrationDialog.show(
+                    context,
+                    milestoneDays: state.milestone,
+                    xpEarned: state.xpEarned,
+                  );
+                }
+              });
+              // Reload streak to show updated milestone
+              context
+                  .read<MemoryVerseBloc>()
+                  .add(const LoadMemoryStreakEvent());
+            }
+            // Handle streak freeze used
+            else if (state is StreakFreezeUsed) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(state.message),
+                  backgroundColor: Colors.blue,
+                ),
+              );
+              // Reload streak to show updated freeze days
+              context
+                  .read<MemoryVerseBloc>()
+                  .add(const LoadMemoryStreakEvent());
+            } else if (state is MemoryVerseError) {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text(state.message),
                   backgroundColor: Colors.red,
                   action: SnackBarAction(
-                    label: 'Retry',
+                    label: context.tr(TranslationKeys.commonRetry),
                     textColor: Colors.white,
                     onPressed: _loadVerses,
                   ),
@@ -306,6 +374,12 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
             if (state is DueVersesLoaded) {
               return _buildLoadedState(state);
             }
+            // Preserve loaded verses during transient states (errors, fetch operations, etc.)
+            // This handles: MemoryVerseError, FetchingVerseText, VerseTextFetched,
+            // FetchVerseTextError, and any other states from modal operations
+            if (_lastLoadedState != null) {
+              return _buildLoadedState(_lastLoadedState!);
+            }
             return _buildEmptyState();
           },
         ),
@@ -314,13 +388,13 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
   }
 
   Widget _buildLoadingState() {
-    return const Center(
+    return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          CircularProgressIndicator(),
-          SizedBox(height: 16),
-          Text('Loading your verses...'),
+          const CircularProgressIndicator(),
+          const SizedBox(height: 16),
+          Text(context.tr(TranslationKeys.memoryHomeLoading)),
         ],
       ),
     );
@@ -346,68 +420,8 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    context.tr(TranslationKeys.memoryYourProgress),
-                    style: AppFonts.inter(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: AppTheme.primaryColor,
-                      letterSpacing: 0.5,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  StatisticsCard(statistics: state.statistics),
-                  const SizedBox(height: 16),
-                  // Review All button - only show when there are due verses
-                  if (state.verses.isNotEmpty)
-                    Container(
-                      width: double.infinity,
-                      height: 56,
-                      decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [
-                            AppTheme.primaryColor,
-                            AppTheme.secondaryPurple
-                          ],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
-                        borderRadius: BorderRadius.circular(14),
-                        boxShadow: [
-                          BoxShadow(
-                            color: AppTheme.primaryColor.withOpacity(0.35),
-                            blurRadius: 16,
-                            offset: const Offset(0, 6),
-                          ),
-                        ],
-                      ),
-                      child: Material(
-                        color: Colors.transparent,
-                        child: InkWell(
-                          onTap: () => _startReviewAll(context, state.verses),
-                          borderRadius: BorderRadius.circular(14),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              const Icon(
-                                Icons.play_arrow_rounded,
-                                color: Colors.white,
-                                size: 24,
-                              ),
-                              const SizedBox(width: 8),
-                              Text(
-                                '${context.tr(TranslationKeys.memoryReviewAll)} (${state.verses.length})',
-                                style: AppFonts.inter(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
-                                  color: Colors.white,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
+                  // Compact streak + Daily goal + action buttons
+                  _buildCompactProgressSection(state),
                   const SizedBox(height: 24),
                   _buildLanguageFilter(context),
                   const SizedBox(height: 16),
@@ -506,6 +520,243 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
     );
   }
 
+  /// Builds a compact progress section combining streak, daily goal, and action buttons
+  Widget _buildCompactProgressSection(DueVersesLoaded state) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Theme.of(context)
+            .colorScheme
+            .surfaceContainerHighest
+            .withOpacity(0.5),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        children: [
+          // Header row with streak
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              // Streak badge
+              if (_memoryStreak != null)
+                GestureDetector(
+                  onTap: () {
+                    if (!_memoryStreak!.isPracticedToday &&
+                        _memoryStreak!.canUseFreeze) {
+                      StreakProtectionDialog.show(
+                        context,
+                        freezeDaysAvailable: _memoryStreak!.freezeDaysAvailable,
+                        currentStreak: _memoryStreak!.currentStreak,
+                        onConfirm: () {
+                          context.read<MemoryVerseBloc>().add(
+                                UseStreakFreezeEvent(
+                                    freezeDate: DateTime.now()),
+                              );
+                        },
+                      );
+                    }
+                  },
+                  child: Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          Colors.orange.shade400,
+                          Colors.deepOrange.shade400,
+                        ],
+                      ),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.local_fire_department,
+                            color: Colors.white, size: 18),
+                        const SizedBox(width: 4),
+                        Text(
+                          '${_memoryStreak!.currentStreak} ${_memoryStreak!.currentStreak != 1 ? context.tr(TranslationKeys.memoryHomeStreakDays) : context.tr(TranslationKeys.memoryHomeStreakDay)}',
+                          style: AppFonts.inter(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                )
+              else
+                const SizedBox.shrink(),
+              // Quick stats
+              Row(
+                children: [
+                  _buildMiniStat(
+                    Icons.library_books_outlined,
+                    '${state.statistics.totalVerses}',
+                    context.tr(TranslationKeys.memoryHomeTotal),
+                  ),
+                  const SizedBox(width: 16),
+                  _buildMiniStat(
+                    Icons.star_outline,
+                    '${state.statistics.masteredVerses}',
+                    context.tr(TranslationKeys.memoryHomeMastered),
+                    color: Colors.amber,
+                  ),
+                ],
+              ),
+            ],
+          ),
+          // Daily goal progress - Reviews only (simpler)
+          if (_dailyGoal != null) ...[
+            const SizedBox(height: 16),
+            _buildGoalProgress(
+              context.tr(TranslationKeys.memoryHomeDailyReviews),
+              _dailyGoal!.completedReviews,
+              _dailyGoal!.targetReviews,
+              AppTheme.primaryColor,
+            ),
+          ],
+          // Action buttons row
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: _buildActionButton(
+                  icon: Icons.emoji_events_outlined,
+                  label: context.tr(TranslationKeys.memoryHomeChampions),
+                  onTap: () => context.push('/memory-verses/champions'),
+                  color: Colors.amber,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildActionButton(
+                  icon: Icons.bar_chart_outlined,
+                  label: context.tr(TranslationKeys.memoryHomeStatistics),
+                  onTap: () => context.push('/memory-verses/stats'),
+                  color: AppTheme.primaryColor,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildActionButton({
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+    required Color color,
+  }) {
+    return Material(
+      color: color.withOpacity(0.1),
+      borderRadius: BorderRadius.circular(12),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, size: 18, color: color),
+              const SizedBox(width: 8),
+              Text(
+                label,
+                style: AppFonts.inter(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: color,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMiniStat(IconData icon, String value, String label,
+      {Color? color}) {
+    return Column(
+      children: [
+        Icon(icon,
+            size: 18,
+            color: color ?? Theme.of(context).colorScheme.onSurfaceVariant),
+        const SizedBox(height: 2),
+        Text(
+          value,
+          style: AppFonts.inter(
+            fontSize: 14,
+            fontWeight: FontWeight.w700,
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
+        ),
+        Text(
+          label,
+          style: AppFonts.inter(
+            fontSize: 10,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildGoalProgress(
+      String label, int current, int target, Color color) {
+    final progress = target > 0 ? (current / target).clamp(0.0, 1.0) : 0.0;
+    final isComplete = current >= target;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              label,
+              style: AppFonts.inter(
+                fontSize: 12,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+            ),
+            Row(
+              children: [
+                if (isComplete)
+                  Icon(Icons.check_circle,
+                      size: 14, color: Colors.green.shade400),
+                const SizedBox(width: 4),
+                Text(
+                  '$current/$target',
+                  style: AppFonts.inter(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: isComplete ? Colors.green.shade400 : color,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+        const SizedBox(height: 4),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(4),
+          child: LinearProgressIndicator(
+            value: progress,
+            backgroundColor: color.withOpacity(0.15),
+            valueColor: AlwaysStoppedAnimation(
+                isComplete ? Colors.green.shade400 : color),
+            minHeight: 6,
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget _buildEmptyState() {
     return Center(
       child: Padding(
@@ -535,7 +786,7 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
             ),
             const SizedBox(height: 24),
             Text(
-              'No Verses Yet',
+              context.tr(TranslationKeys.memoryHomeNoVersesTitle),
               style: AppFonts.inter(
                 fontSize: 22,
                 fontWeight: FontWeight.w700,
@@ -544,7 +795,7 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
             ),
             const SizedBox(height: 12),
             Text(
-              'Start building your memory verse collection.\nAdd verses to review them with spaced repetition.',
+              context.tr(TranslationKeys.memoryHomeNoVersesSubtitle),
               textAlign: TextAlign.center,
               style: AppFonts.inter(
                 fontSize: 15,
@@ -589,7 +840,7 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
                         ),
                         const SizedBox(width: 8),
                         Text(
-                          'Add Your First Verse',
+                          context.tr(TranslationKeys.memoryHomeAddFirstVerse),
                           style: AppFonts.inter(
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
@@ -612,7 +863,33 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
     AddVerseOptionsSheet.show(
       context,
       onAddFromDaily: () => _showAddFromDailyDialog(context),
+      onAddSuggested: () => _showSuggestedVersesSheet(context),
       onAddManually: () => _showAddManuallyDialog(context),
+    );
+  }
+
+  void _showSuggestedVersesSheet(BuildContext context) {
+    // Get language: use filter if selected, otherwise use user's preferred language
+    String language;
+    if (_selectedLanguageFilter != null) {
+      language = _selectedLanguageFilter!.code;
+    } else {
+      // Get user's preferred language from TranslationService
+      language = context.translationService.currentLanguage.code;
+    }
+
+    SuggestedVersesSheet.show(
+      context,
+      language: language,
+      onVerseAdded: () {
+        // Reload verses list to show the newly added verse
+        context.read<MemoryVerseBloc>().add(
+              LoadDueVerses(
+                forceRefresh: true,
+                language: _selectedLanguageFilter?.code,
+              ),
+            );
+      },
     );
   }
 
@@ -806,22 +1083,18 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
       onSync: () => memoryVerseBloc
           .add(SyncWithRemote(language: _selectedLanguageFilter?.code)),
       onViewStatistics: () {
-        if (_lastLoadedState != null) {
-          StatisticsDialog.show(context, _lastLoadedState!.statistics);
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text(
-                  'Statistics not available. Please wait for verses to load.'),
-            ),
-          );
-        }
+        // Navigate to the new comprehensive statistics page
+        context.push('/memory-verses/stats');
+      },
+      onViewChampions: () {
+        context.push('/memory-verses/champions');
       },
     );
   }
 
   void _navigateToReviewPage(BuildContext context, String verseId) {
-    GoRouter.of(context).goToVerseReview(verseId: verseId);
+    // Navigate to practice mode selection to let user choose their preferred mode
+    context.push('/memory-verses/practice/$verseId');
   }
 
   void _startReviewAll(BuildContext context, List<MemoryVerseEntity> verses) {
