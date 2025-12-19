@@ -8,16 +8,14 @@ import '../../../../core/router/app_router.dart';
 import '../../../../core/widgets/auth_protected_screen.dart';
 import '../../../../core/i18n/translation_keys.dart';
 import '../../../../core/extensions/translation_extension.dart';
-import '../../../notifications/presentation/widgets/notification_enable_prompt.dart';
 import '../../domain/entities/memory_verse_entity.dart';
+import '../../domain/entities/practice_result_params.dart';
 import '../bloc/memory_verse_bloc.dart';
 import '../bloc/memory_verse_event.dart';
 import '../bloc/memory_verse_state.dart';
-import '../widgets/quality_rating_buttons.dart';
-import '../widgets/review_feedback_dialog.dart';
+import '../widgets/self_assessment_bottom_sheet.dart';
 import '../widgets/timer_badge.dart';
 import '../widgets/verse_flip_card.dart';
-import '../widgets/verse_rating_sheet.dart';
 
 class VerseReviewPage extends StatefulWidget {
   final String verseId;
@@ -38,8 +36,6 @@ class _VerseReviewPageState extends State<VerseReviewPage> {
   bool isFlipped = false;
   Timer? reviewTimer;
   int elapsedSeconds = 0;
-  int currentIndex = 0;
-  bool _hasTriggeredNotificationPrompt = false;
 
   @override
   void initState() {
@@ -60,36 +56,11 @@ class _VerseReviewPageState extends State<VerseReviewPage> {
     });
   }
 
-  void _resetTimer() {
-    setState(() => elapsedSeconds = 0);
-  }
-
-  /// Shows memory verse overdue notification prompt after first review
-  Future<void> _showMemoryVerseOverduePrompt() async {
-    if (_hasTriggeredNotificationPrompt) return;
-    _hasTriggeredNotificationPrompt = true;
-
-    // Delay to show after the review feedback
-    await Future.delayed(const Duration(milliseconds: 2000));
-
-    if (!mounted) return;
-
-    final languageCode = context.translationService.currentLanguage.code;
-    await showNotificationEnablePrompt(
-      context: context,
-      type: NotificationPromptType.memoryVerseOverdue,
-      languageCode: languageCode,
-    );
-  }
-
   void _loadVerse() {
     final state = context.read<MemoryVerseBloc>().state;
     if (state is DueVersesLoaded) {
       try {
-        final targetId = widget.verseIds != null
-            ? widget.verseIds![currentIndex]
-            : widget.verseId;
-        final verse = state.verses.firstWhere((v) => v.id == targetId);
+        final verse = state.verses.firstWhere((v) => v.id == widget.verseId);
         setState(() => currentVerse = verse);
       } catch (e) {
         if (mounted) {
@@ -100,28 +71,25 @@ class _VerseReviewPageState extends State<VerseReviewPage> {
             ),
           );
           Future.delayed(const Duration(seconds: 2), () {
-            if (mounted) {
-              context.pop();
-            }
+            if (mounted) context.pop();
           });
         }
       }
     } else {
       context.read<MemoryVerseBloc>().add(const LoadDueVerses());
       Future.delayed(const Duration(milliseconds: 500), () {
-        if (mounted) {
-          _loadVerse();
-        }
+        if (mounted) _loadVerse();
       });
     }
   }
 
-  /// Handle back navigation - go to memory verses when can't pop
+  /// Handle back navigation - go to practice mode selection when can't pop
   void _handleBackNavigation() {
     if (context.canPop()) {
       context.pop();
     } else {
-      GoRouter.of(context).goToMemoryVerses();
+      // Fallback to practice mode selection
+      context.go('/memory-verses/practice/${widget.verseId}');
     }
   }
 
@@ -142,55 +110,11 @@ class _VerseReviewPageState extends State<VerseReviewPage> {
           ),
           title: Text(context.tr(TranslationKeys.reviewVerseTitle)),
           actions: [
-            if (widget.verseIds != null)
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                child: Center(
-                  child: Text(
-                    '${currentIndex + 1}/${widget.verseIds!.length}',
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ),
+            TimerBadge(elapsedSeconds: elapsedSeconds, compact: true),
+            const SizedBox(width: 8),
           ],
         ),
-        body: BlocConsumer<MemoryVerseBloc, MemoryVerseState>(
-          listener: (context, state) {
-            if (state is ReviewSubmitted) {
-              _showReviewFeedback(context, state);
-              // Only show notification prompt if there are more verses to review
-              // This prevents race condition where navigation occurs while prompt is showing
-              final hasMoreVerses = widget.verseIds != null &&
-                  currentIndex < widget.verseIds!.length - 1;
-              if (hasMoreVerses) {
-                _showMemoryVerseOverduePrompt();
-              }
-              _moveToNextVerse();
-            } else if (state is MemoryVerseError) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(state.message),
-                  backgroundColor: Colors.red,
-                ),
-              );
-            } else if (state is OperationQueued) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Row(
-                    children: [
-                      const Icon(Icons.cloud_off, color: Colors.white),
-                      const SizedBox(width: 8),
-                      Expanded(child: Text(state.message)),
-                    ],
-                  ),
-                  backgroundColor: Colors.orange,
-                ),
-              );
-              _moveToNextVerse();
-            }
-          },
+        body: BlocBuilder<MemoryVerseBloc, MemoryVerseState>(
           builder: (context, state) {
             if (currentVerse == null) {
               return const Center(child: CircularProgressIndicator());
@@ -200,11 +124,9 @@ class _VerseReviewPageState extends State<VerseReviewPage> {
                 children: [
                   Column(
                     children: [
-                      TimerBadge(elapsedSeconds: elapsedSeconds),
                       Expanded(
                         child: Padding(
-                          padding:
-                              const EdgeInsets.fromLTRB(16.0, 0, 16.0, 16.0),
+                          padding: const EdgeInsets.all(16.0),
                           child: VerseFlipCard(
                             verse: currentVerse!,
                             isFlipped: isFlipped,
@@ -224,20 +146,6 @@ class _VerseReviewPageState extends State<VerseReviewPage> {
                             ),
                           ),
                         ),
-                      if (!isFlipped)
-                        Padding(
-                          padding: const EdgeInsets.only(bottom: 16.0),
-                          child: TextButton.icon(
-                            onPressed: _skipVerse,
-                            icon: const Icon(Icons.skip_next),
-                            label: Text(
-                                context.tr(TranslationKeys.reviewSkipForNow)),
-                            style: TextButton.styleFrom(
-                              foregroundColor:
-                                  theme.colorScheme.onSurfaceVariant,
-                            ),
-                          ),
-                        ),
                       if (isFlipped) const SizedBox(height: 80),
                     ],
                   ),
@@ -247,10 +155,9 @@ class _VerseReviewPageState extends State<VerseReviewPage> {
                       left: 16,
                       right: 16,
                       child: ElevatedButton.icon(
-                        onPressed: () => _showRatingBottomSheet(context),
-                        icon: const Icon(Icons.rate_review),
-                        label:
-                            Text(context.tr(TranslationKeys.reviewRateReview)),
+                        onPressed: _submitPractice,
+                        icon: const Icon(Icons.check),
+                        label: Text(context.tr(TranslationKeys.practiceSubmit)),
                         style: ElevatedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(vertical: 16),
                           backgroundColor: theme.colorScheme.primaryContainer,
@@ -271,71 +178,39 @@ class _VerseReviewPageState extends State<VerseReviewPage> {
     ).withAuthProtection();
   }
 
-  void _showRatingBottomSheet(BuildContext context) {
-    VerseRatingSheet.show(
-      context,
-      onRatingSelected: _submitReview,
-    );
-  }
-
-  void _submitReview(int qualityRating) {
+  Future<void> _submitPractice() async {
     if (currentVerse == null) return;
-    context.read<MemoryVerseBloc>().add(
-          SubmitReview(
-            memoryVerseId: currentVerse!.id,
-            qualityRating: qualityRating,
-            timeSpentSeconds: elapsedSeconds,
-          ),
-        );
-  }
 
-  void _showReviewFeedback(BuildContext context, ReviewSubmitted state) {
-    ReviewFeedbackDialog.show(
-      context,
-      qualityRating: state.qualityRating,
-      message: state.message,
-      intervalDays: state.verse.intervalDays,
+    // Show self-assessment bottom sheet for passive mode
+    final rating = await SelfAssessmentBottomSheet.show(context);
+
+    // User cancelled
+    if (rating == null || !mounted) return;
+
+    // Stop the timer
+    reviewTimer?.cancel();
+
+    // Use self-assessment values
+    final accuracy = rating.accuracyPercentage;
+    final quality = rating.qualityRating;
+    final confidence = rating.confidenceRating;
+    const hintsUsed = 0;
+    const showedAnswer = false;
+
+    // Navigate to results page
+    final params = PracticeResultParams(
+      verseId: widget.verseId,
+      verseReference: currentVerse!.verseReference,
+      verseText: currentVerse!.verseText,
+      practiceMode: 'flip_card',
+      timeSpentSeconds: elapsedSeconds,
+      accuracyPercentage: accuracy,
+      hintsUsed: hintsUsed,
+      showedAnswer: showedAnswer,
+      qualityRating: quality,
+      confidenceRating: confidence,
     );
-  }
 
-  void _moveToNextVerse() {
-    if (widget.verseIds != null && currentIndex < widget.verseIds!.length - 1) {
-      setState(() {
-        currentIndex++;
-        isFlipped = false;
-        currentVerse = null;
-        _resetTimer();
-      });
-      _loadVerse();
-    } else {
-      Future.delayed(const Duration(milliseconds: 1500), () {
-        if (mounted) {
-          context.pop();
-        }
-      });
-    }
-  }
-
-  void _skipVerse() {
-    showDialog(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: Text(context.tr(TranslationKeys.reviewSkipTitle)),
-        content: Text(context.tr(TranslationKeys.reviewSkipContent)),
-        actions: [
-          TextButton(
-            onPressed: () => dialogContext.pop(),
-            child: Text(context.tr(TranslationKeys.reviewCancel)),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              dialogContext.pop();
-              _moveToNextVerse();
-            },
-            child: Text(context.tr(TranslationKeys.reviewSkip)),
-          ),
-        ],
-      ),
-    );
+    GoRouter.of(context).goToPracticeResults(params);
   }
 }

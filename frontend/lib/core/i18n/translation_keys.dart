@@ -890,6 +890,33 @@ class TranslationKeys {
   static const ratingForgotDescription =
       'memory.ratingSheet.forgot.description';
 
+  // Add Verse Options Sheet
+  static const addMemoryVerseTitle = 'memory.addOptions.title';
+  static const addFromDailyVerse = 'memory.addOptions.fromDaily';
+  static const addFromDailyVerseDesc = 'memory.addOptions.fromDailyDesc';
+  static const addSuggestedVerse = 'memory.addOptions.suggested';
+  static const addSuggestedVerseDesc = 'memory.addOptions.suggestedDesc';
+  static const addCustomVerse = 'memory.addOptions.custom';
+  static const addCustomVerseDesc = 'memory.addOptions.customDesc';
+
+  // Suggested Verses Sheet
+  static const suggestedVersesTitle = 'memory.suggested.title';
+  static const alreadyAdded = 'memory.suggested.alreadyAdded';
+  static const addToMemoryDeck = 'memory.suggested.addToMemoryDeck';
+  static const suggestedNoVersesFound = 'memory.suggested.noVersesFound';
+  static const retry = 'memory.suggested.retry';
+
+  // Suggested Verse Categories
+  static const categoryAll = 'memory.category.all';
+  static const categorySalvation = 'memory.category.salvation';
+  static const categoryComfort = 'memory.category.comfort';
+  static const categoryStrength = 'memory.category.strength';
+  static const categoryWisdom = 'memory.category.wisdom';
+  static const categoryPromise = 'memory.category.promise';
+  static const categoryGuidance = 'memory.category.guidance';
+  static const categoryFaith = 'memory.category.faith';
+  static const categoryLove = 'memory.category.love';
+
   // Learning Paths
   static const learningPathsTitle = 'learning_paths.title';
   static const learningPathsSubtitle = 'learning_paths.subtitle';
@@ -1118,4 +1145,279 @@ class TranslationKeys {
   static const verseSheetCouldNotParse = 'verse_sheet.could_not_parse';
   static const verseSheetAddedToMemory = 'verse_sheet.added_to_memory';
   static const verseSheetFailedToAdd = 'verse_sheet.failed_to_add';
+
+  // Collections (Sprint 5 - Verse Collections)
+  static const collectionsTitle = 'collections.title';
+  static const createCollection = 'collections.create';
+  static const createFirstCollection = 'collections.create_first';
+  static const editCollection = 'collections.edit';
+  static const deleteCollection = 'collections.delete';
+  static const deleteCollectionConfirmation = 'collections.delete_confirmation';
+  static const collectionName = 'collections.name';
+  static const nameRequired = 'collections.name_required';
+  static const nameMinLength = 'collections.name_min_length';
+  static const category = 'collections.category_label';
+  static const icon = 'collections.icon_label';
+  static const color = 'collections.color_label';
+  static const descriptionOptional = 'collections.description_optional';
+  static const cancel = 'common.cancel';
+  static const save = 'common.save';
+  static const delete = 'common.delete';
+  static const remove = 'common.remove';
+  static const removeVerse = 'collections.remove_verse';
+  static const removeVerseConfirmation =
+      'collections.remove_verse_confirmation';
+  static const collectionNotFound = 'collections.not_found';
+  static const verseCount = 'collections.verse_count';
+  static const versesInCollection = 'collections.verses_in_collection';
+  static const noVersesInCollection = 'collections.no_verses.title';
+  static const addVersesPrompt = 'collections.no_verses.subtitle';
+  static const addVerses = 'collections.add_verses';
+  static const searchVerses = 'collections.search_verses';
+  static const versesSelected = 'collections.verses_selected';
+  static const noVersesFound = 'collections.no_verses_found';
+  static const addToCollection = 'collections.add_to_collection';
+  static const noCollectionsYet = 'collections.empty.title';
+  static const createCollectionPrompt = 'collections.empty.subtitle';
+  static const noCollectionsInCategory = 'collections.no_results';
+  static const all = 'collections.filter.all';
+  static const comfort = 'collections.category.comfort';
+  static const wisdom = 'collections.category.wisdom';
+  static const promises = 'collections.category.promises';
+  static const commands = 'collections.category.commands';
+  static const prophecy = 'collections.category.prophecy';
+  static const gospel = 'collections.category.gospel';
+  static const prayer = 'collections.category.prayer';
+  static const custom = 'collections.category.custom';
+
+  // Memory Champions Leaderboard (Sprint 5)
+  static const memoryChampions = 'leaderboard.title';
+  static const weekly = 'leaderboard.weekly';
+  static const monthly = 'leaderboard.monthly';
+  static const allTime = 'leaderboard.all_time';
+
+  // Memory Stats Page (Sprint 5)
+  static const memoryStats = 'memory_stats.title';
+  static const practiceActivity = 'memory_stats.practice_activity';
+  static const masteryDistribution = 'memory_stats.mastery_distribution';
+  static const practiceModeStats = 'memory_stats.practice_mode_stats';
+  static const overallStats = 'memory_stats.overall_stats';
+
+  // Memory Verse Navigation
+  static const myCollections = 'memory_nav.my_collections';
+  static const champions = 'memory_nav.champions';
+  static const statistics = 'memory_nav.statistics';
+
+  // Practice Results Page (Sprint 5)
+  static const practiceResultsTitle = 'practice_results.title';
+  static const practiceResultsAccuracy = 'practice_results.accuracy';
+  static const practiceResultsTime = 'practice_results.time';
+  static const practiceResultsHintsUsed = 'practice_results.hints_used';
+  static const practiceResultsMode = 'practice_results.mode';
+  static const practiceResultsAnswerShown = 'practice_results.answer_shown';
+  static const practiceResultsPenaltyApplied =
+      'practice_results.penalty_applied';
+  static const practiceResultsDone = 'practice_results.done';
+  static const practiceResultsPracticeAgain = 'practice_results.practice_again';
+
+  // Quality Rating Labels
+  static const qualityPerfect = 'quality.perfect';
+  static const qualityGood = 'quality.good';
+  static const qualityOk = 'quality.ok';
+  static const qualityNeedsWork = 'quality.needs_work';
+  static const qualityTryAgain = 'quality.try_again';
+
+  // Practice Badge Labels
+  static const practiceBadgeMastered = 'practice_badge.mastered';
+  static const practiceBadgeProficient = 'practice_badge.proficient';
+
+  // Practice Mode Names
+  static const practiceModeFlipCard = 'practice_mode.flip_card';
+  static const practiceModeFirstLetter = 'practice_mode.first_letter';
+  static const practiceModeProgressive = 'practice_mode.progressive';
+  static const practiceModeCloze = 'practice_mode.cloze';
+  static const practiceModeWordScramble = 'practice_mode.word_scramble';
+  static const practiceModeWordBank = 'practice_mode.word_bank';
+  static const practiceModeAudio = 'practice_mode.audio';
+  static const practiceModeTypeItOut = 'practice_mode.type_it_out';
+
+  // Self-Assessment (for passive practice modes)
+  static const selfAssessmentTitle = 'self_assessment.title';
+  static const selfAssessmentSubtitle = 'self_assessment.subtitle';
+  static const selfAssessmentDidNotKnow = 'self_assessment.did_not_know';
+  static const selfAssessmentDidNotKnowDesc =
+      'self_assessment.did_not_know_desc';
+  static const selfAssessmentKnewALittle = 'self_assessment.knew_a_little';
+  static const selfAssessmentKnewALittleDesc =
+      'self_assessment.knew_a_little_desc';
+  static const selfAssessmentKnewHalf = 'self_assessment.knew_half';
+  static const selfAssessmentKnewHalfDesc = 'self_assessment.knew_half_desc';
+  static const selfAssessmentKnewMost = 'self_assessment.knew_most';
+  static const selfAssessmentKnewMostDesc = 'self_assessment.knew_most_desc';
+  static const selfAssessmentKnewPerfectly = 'self_assessment.knew_perfectly';
+  static const selfAssessmentKnewPerfectlyDesc =
+      'self_assessment.knew_perfectly_desc';
+
+  // Practice Mode Selection Page
+  static const practiceSelectionTitle = 'practice_selection.title';
+  static const practiceSelectionLoading = 'practice_selection.loading';
+  static const practiceSelectionSubtitle = 'practice_selection.subtitle';
+  static const practiceSelectionFilter = 'practice_selection.filter';
+  static const practiceSelectionNoModes = 'practice_selection.no_modes';
+  static const practiceSelectionLoadError = 'practice_selection.load_error';
+  static const practiceSelectionMasterThisFirst =
+      'practice_selection.master_this_first';
+  static const practiceSelectionMasterThisNext =
+      'practice_selection.master_this_next';
+
+  // Practice Mode Descriptions
+  static const practiceModeFlipCardDesc = 'practice_mode.flip_card_desc';
+  static const practiceModeFirstLetterDesc = 'practice_mode.first_letter_desc';
+  static const practiceModeProgressiveDesc = 'practice_mode.progressive_desc';
+  static const practiceModeClozeDesc = 'practice_mode.cloze_desc';
+  static const practiceModeWordScrambleDesc =
+      'practice_mode.word_scramble_desc';
+  static const practiceModeWordBankDesc = 'practice_mode.word_bank_desc';
+  static const practiceModeAudioDesc = 'practice_mode.audio_desc';
+  static const practiceModeTypeItOutDesc = 'practice_mode.type_it_out_desc';
+
+  // Difficulty Labels
+  static const difficultyEasy = 'difficulty.easy';
+  static const difficultyMedium = 'difficulty.medium';
+  static const difficultyHard = 'difficulty.hard';
+  static const difficultyAll = 'difficulty.all';
+
+  // Common Practice Actions
+  static const practiceSubmit = 'practice.submit';
+  static const practiceShowAnswer = 'practice.show_answer';
+  static const practiceReset = 'practice.reset';
+  static const practiceUseHint = 'practice.use_hint';
+  static const practiceHints = 'practice.hints';
+  static const practiceHintsUsedCount = 'practice.hints_used_count';
+  static const practiceClear = 'practice.clear';
+  static const practiceRetry = 'practice.retry';
+  static const practiceComplete = 'practice.complete';
+
+  // Word Bank Practice Page
+  static const wordBankTapWordsInstruction = 'word_bank.tap_words_instruction';
+  static const wordBankLongPressHint = 'word_bank.long_press_hint';
+  static const wordBankYourAnswer = 'word_bank.your_answer';
+  static const wordBankTryAgain = 'word_bank.try_again';
+
+  // Cloze Practice Page
+  static const clozePracticeTitle = 'cloze_practice.title';
+
+  // Word Scramble Practice Page
+  static const wordScrambleTitle = 'word_scramble.title';
+  static const wordScrambleInstruction = 'word_scramble.instruction';
+  static const wordScrambleAvailablePhrases = 'word_scramble.available_phrases';
+  static const wordScrambleDropHere = 'word_scramble.drop_here';
+
+  // Progressive Reveal Practice Page
+  static const progressiveRevealTitle = 'progressive_reveal.title';
+  static const progressiveRevealInstruction = 'progressive_reveal.instruction';
+  static const progressiveRevealWordByWord = 'progressive_reveal.word_by_word';
+  static const progressiveRevealPhraseByPhrase =
+      'progressive_reveal.phrase_by_phrase';
+  static const progressiveRevealNext = 'progressive_reveal.reveal_next';
+  static const progressiveRevealAuto = 'progressive_reveal.auto_reveal';
+  static const progressiveRevealPause = 'progressive_reveal.pause';
+  static const progressiveRevealAll = 'progressive_reveal.reveal_all';
+  static const progressiveWordByWord = 'progressive_reveal.word_by_word_label';
+  static const progressivePhraseByPhrase =
+      'progressive_reveal.phrase_by_phrase_label';
+  static const progressiveWords = 'progressive_reveal.words';
+  static const progressivePhrases = 'progressive_reveal.phrases';
+  static const progressivePause = 'progressive_reveal.pause_label';
+  static const progressiveAutoReveal = 'progressive_reveal.auto_reveal_label';
+
+  // First Letter Hints Practice Page
+  static const firstLetterTitle = 'first_letter.title';
+  static const firstLetterInstruction = 'first_letter.instruction';
+  static const firstLetterHintsUsed = 'first_letter.hints_used';
+
+  // Audio Practice Page
+  static const audioPracticeTitle = 'audio_practice.title';
+  static const audioPracticeListen = 'audio_practice.listen';
+  static const audioPracticeSpeak = 'audio_practice.speak';
+  static const audioPracticeResults = 'audio_practice.results';
+  static const audioPracticeListenInstruction =
+      'audio_practice.listen_instruction';
+  static const audioPracticePlayedTimes = 'audio_practice.played_times';
+  static const audioPracticeTapToPlay = 'audio_practice.tap_to_play';
+  static const audioPracticeReadyToSpeak = 'audio_practice.ready_to_speak';
+  static const audioPracticeSpeakNow = 'audio_practice.speak_now';
+  static const audioPracticeTapMicrophone = 'audio_practice.tap_microphone';
+  static const audioPracticeRecognized = 'audio_practice.recognized';
+  static const audioPracticeCheckResult = 'audio_practice.check_result';
+  static const audioPracticeAccuracy = 'audio_practice.accuracy';
+  static const audioPracticeExpected = 'audio_practice.expected';
+  static const audioPracticeYouSaid = 'audio_practice.you_said';
+  static const audioPracticeWordComparison = 'audio_practice.word_comparison';
+  static const audioPracticeExtraWord = 'audio_practice.extra_word';
+  static const audioPracticeWordMissed = 'audio_practice.word_missed';
+  static const audioPracticeCorrect = 'audio_practice.correct';
+  static const audioPracticeSpeechError = 'audio_practice.speech_error';
+  // Additional audio keys used in audio_practice_page.dart
+  static const audioListenCarefully = 'audio.listen_carefully';
+  static const audioPlayed = 'audio.played';
+  static const audioTimes = 'audio.times';
+  static const audioTime = 'audio.time';
+  static const audioTapToPlay = 'audio.tap_to_play';
+  static const audioReadyToSpeak = 'audio.ready_to_speak';
+  static const audioSpeakNow = 'audio.speak_now';
+  static const audioTapMicrophone = 'audio.tap_microphone';
+  static const audioRecognized = 'audio.recognized';
+  static const audioCheckResult = 'audio.check_result';
+  static const audioExpected = 'audio.expected';
+  static const audioYouSaid = 'audio.you_said';
+  static const audioNothingRecognized = 'audio.nothing_recognized';
+  static const audioWordComparison = 'audio.word_comparison';
+
+  // Type It Out Practice Page
+  static const typeItOutTitle = 'type_it_out.title';
+  static const typeItOutPlaceholder = 'type_it_out.placeholder';
+  static const typeItOutInstruction = 'type_it_out.instruction';
+  static const typeItOutHindiHinglish = 'type_it_out.hindi_hinglish';
+  static const typeItOutMalayalamManglish = 'type_it_out.malayalam_manglish';
+  static const typeItOutRomanizedHint = 'type_it_out.romanized_hint';
+  static const typeItOutWordCount = 'type_it_out.word_count';
+
+  // Memory Verse Home Page
+  static const memoryHomeTitle = 'memory_home.title';
+  static const memoryHomeFeatureDescription = 'memory_home.feature_description';
+  static const memoryHomeAddVerse = 'memory_home.add_verse';
+  static const memoryHomeOptions = 'memory_home.options';
+  static const memoryHomeLoading = 'memory_home.loading';
+  static const memoryHomeTotal = 'memory_home.total';
+  static const memoryHomeMastered = 'memory_home.mastered';
+  static const memoryHomeDailyReviews = 'memory_home.daily_reviews';
+  static const memoryHomeChampions = 'memory_home.champions';
+  static const memoryHomeStatistics = 'memory_home.statistics';
+  static const memoryHomeNoVersesTitle = 'memory_home.no_verses_title';
+  static const memoryHomeNoVersesSubtitle = 'memory_home.no_verses_subtitle';
+  static const memoryHomeAddFirstVerse = 'memory_home.add_first_verse';
+  static const memoryHomeStreakDay = 'memory_home.streak_day';
+  static const memoryHomeStreakDays = 'memory_home.streak_days';
+
+  // Memory Champions Page
+  static const memoryChampionsTitle = 'memory_champions.title';
+  static const memoryChampionsWeekly = 'memory_champions.weekly';
+  static const memoryChampionsMonthly = 'memory_champions.monthly';
+  static const memoryChampionsAllTime = 'memory_champions.all_time';
+  static const memoryChampionsLoadFailed = 'memory_champions.load_failed';
+  static const memoryChampionsNoData = 'memory_champions.no_data';
+  static const memoryChampionsRank = 'memory_champions.rank';
+  static const memoryChampionsYourProgress = 'memory_champions.your_progress';
+  static const memoryChampionsMaster = 'memory_champions.master';
+  static const memoryChampionsStreak = 'memory_champions.streak';
+
+  // Memory Stats Page
+  static const memoryStatsTitle = 'memory_stats_page.title';
+  static const memoryStatsLoadFailed = 'memory_stats_page.load_failed';
+  static const memoryStatsNoData = 'memory_stats_page.no_data';
+  static const memoryStatsBeginner = 'memory_stats_page.beginner';
+  static const memoryStatsIntermediate = 'memory_stats_page.intermediate';
+  static const memoryStatsAdvanced = 'memory_stats_page.advanced';
+  static const memoryStatsExpert = 'memory_stats_page.expert';
 }

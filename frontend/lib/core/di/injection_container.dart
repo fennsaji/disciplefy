@@ -5,6 +5,7 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/foundation.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 import '../network/network_info.dart';
 import '../../features/auth/data/services/auth_service.dart';
@@ -168,6 +169,23 @@ import '../../features/memory_verses/domain/usecases/submit_review.dart';
 import '../../features/memory_verses/domain/usecases/get_statistics.dart';
 import '../../features/memory_verses/domain/usecases/fetch_verse_text.dart';
 import '../../features/memory_verses/domain/usecases/delete_verse.dart';
+import '../../features/memory_verses/domain/usecases/select_practice_mode.dart';
+import '../../features/memory_verses/domain/usecases/submit_practice_session.dart';
+import '../../features/memory_verses/domain/usecases/get_practice_mode_statistics.dart';
+import '../../features/memory_verses/domain/usecases/get_memory_statistics.dart';
+import '../../features/memory_verses/domain/usecases/get_memory_streak.dart';
+import '../../features/memory_verses/domain/usecases/use_streak_freeze.dart';
+import '../../features/memory_verses/domain/usecases/check_streak_milestone.dart';
+import '../../features/memory_verses/domain/usecases/get_mastery_progress.dart';
+import '../../features/memory_verses/domain/usecases/update_mastery_level.dart';
+import '../../features/memory_verses/domain/usecases/get_daily_goal.dart';
+import '../../features/memory_verses/domain/usecases/update_daily_goal_progress.dart';
+import '../../features/memory_verses/domain/usecases/set_daily_goal_targets.dart';
+import '../../features/memory_verses/domain/usecases/get_active_challenges.dart';
+import '../../features/memory_verses/domain/usecases/claim_challenge_reward.dart';
+import '../../features/memory_verses/domain/usecases/get_memory_champions_leaderboard.dart';
+import '../../features/memory_verses/domain/usecases/get_suggested_verses.dart';
+import '../../features/memory_verses/data/services/memory_verse_notification_service.dart';
 import '../../features/memory_verses/presentation/bloc/memory_verse_bloc.dart';
 import '../../features/voice_buddy/data/datasources/voice_buddy_remote_data_source.dart';
 import '../../features/voice_buddy/data/repositories/voice_buddy_repository_impl.dart';
@@ -436,6 +454,36 @@ Future<void> initializeDependencies() async {
   sl.registerLazySingleton(() => FetchVerseText(sl()));
   sl.registerLazySingleton(() => DeleteVerse(sl()));
 
+  // Memory Verses Enhancement - Practice Mode Use Cases
+  sl.registerLazySingleton(() => SelectPracticeMode(sl()));
+  sl.registerLazySingleton(() => SubmitPracticeSession(sl()));
+  sl.registerLazySingleton(() => GetPracticeModeStatistics(sl()));
+  sl.registerLazySingleton(() => GetMemoryStatistics(sl()));
+
+  // Memory Verses Enhancement - Streak Use Cases
+  sl.registerLazySingleton(() => GetMemoryStreak(sl()));
+  sl.registerLazySingleton(() => UseStreakFreeze(sl()));
+  sl.registerLazySingleton(() => CheckStreakMilestone(sl()));
+
+  // Memory Verses Enhancement - Mastery Use Cases
+  sl.registerLazySingleton(() => GetMasteryProgress(sl()));
+  sl.registerLazySingleton(() => UpdateMasteryLevel(sl()));
+
+  // Memory Verses Enhancement - Daily Goal Use Cases
+  sl.registerLazySingleton(() => GetDailyGoal(sl()));
+  sl.registerLazySingleton(() => UpdateDailyGoalProgress(sl()));
+  sl.registerLazySingleton(() => SetDailyGoalTargets(sl()));
+
+  // Memory Verses Enhancement - Challenge Use Cases
+  sl.registerLazySingleton(() => GetActiveChallenges(sl()));
+  sl.registerLazySingleton(() => ClaimChallengeReward(sl()));
+
+  // Memory Verses Enhancement - Leaderboard & Statistics Use Cases
+  sl.registerLazySingleton(() => GetMemoryChampionsLeaderboard(sl()));
+
+  // Memory Verses Enhancement - Suggested Verses Use Cases
+  sl.registerLazySingleton(() => GetSuggestedVerses(sl()));
+
   // BLoC
   sl.registerFactory(() => MemoryVerseBloc(
         getDueVerses: sl(),
@@ -445,6 +493,22 @@ Future<void> initializeDependencies() async {
         getStatistics: sl(),
         fetchVerseText: sl(),
         deleteVerse: sl(),
+        selectPracticeMode: sl(),
+        submitPracticeSession: sl(),
+        getPracticeModeStatistics: sl(),
+        getMemoryStreak: sl(),
+        useStreakFreeze: sl(),
+        getMasteryProgress: sl(),
+        updateMasteryLevel: sl(),
+        getDailyGoal: sl(),
+        updateDailyGoalProgress: sl(),
+        setDailyGoalTargets: sl(),
+        getActiveChallenges: sl(),
+        claimChallengeReward: sl(),
+        getMemoryChampionsLeaderboard: sl(),
+        getMemoryStatistics: sl(),
+        getSuggestedVerses: sl(),
+        notificationService: sl(),
       ));
 
   //! Saved Guides
@@ -673,11 +737,22 @@ Future<void> initializeDependencies() async {
   // Register GoRouter (required by NotificationService)
   sl.registerLazySingleton<GoRouter>(() => AppRouter.router);
 
+  // Register FlutterLocalNotificationsPlugin for local notifications
+  sl.registerLazySingleton<FlutterLocalNotificationsPlugin>(
+    () => FlutterLocalNotificationsPlugin(),
+  );
+
   // Register NotificationService first (required by repository)
   sl.registerLazySingleton<NotificationService>(() => NotificationService(
         supabaseClient: sl(),
         router: sl(),
       ));
+
+  // Register MemoryVerseNotificationService (Sprint 5)
+  // Uses FlutterLocalNotificationsPlugin for scheduled notifications
+  sl.registerLazySingleton<MemoryVerseNotificationService>(
+    () => MemoryVerseNotificationService(sl<FlutterLocalNotificationsPlugin>()),
+  );
 
   sl.registerLazySingleton<NotificationRepository>(
       () => NotificationRepositoryImpl(

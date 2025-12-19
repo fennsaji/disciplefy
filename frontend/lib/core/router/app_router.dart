@@ -38,6 +38,18 @@ import '../../features/subscription/presentation/pages/pricing_page.dart';
 import '../../features/subscription/presentation/bloc/subscription_bloc.dart';
 import '../../features/memory_verses/presentation/pages/memory_verses_home_page.dart';
 import '../../features/memory_verses/presentation/pages/verse_review_page.dart';
+import '../../features/memory_verses/presentation/pages/practice_mode_selection_page.dart';
+import '../../features/memory_verses/presentation/pages/word_bank_practice_page.dart';
+import '../../features/memory_verses/presentation/pages/cloze_review_page.dart';
+import '../../features/memory_verses/presentation/pages/first_letter_hints_page.dart';
+import '../../features/memory_verses/presentation/pages/progressive_reveal_practice_page.dart';
+import '../../features/memory_verses/presentation/pages/word_scramble_practice_page.dart';
+import '../../features/memory_verses/presentation/pages/memory_champions_page.dart';
+import '../../features/memory_verses/presentation/pages/memory_stats_page.dart';
+import '../../features/memory_verses/presentation/pages/audio_practice_page.dart';
+import '../../features/memory_verses/presentation/pages/type_it_out_practice_page.dart';
+import '../../features/memory_verses/presentation/pages/practice_results_page.dart';
+import '../../features/memory_verses/domain/entities/practice_result_params.dart';
 import '../../features/memory_verses/presentation/bloc/memory_verse_bloc.dart';
 import '../../features/voice_buddy/presentation/pages/voice_conversation_page.dart';
 import '../../features/voice_buddy/presentation/pages/voice_preferences_page.dart';
@@ -281,6 +293,136 @@ class AppRouter {
             ),
           );
         },
+      ),
+      // Practice results route must come BEFORE the wildcard :verseId route
+      GoRoute(
+        path: '/memory-verses/practice/results',
+        name: 'practice_results',
+        redirect: (context, state) {
+          // Redirect to memory verses if params are missing (e.g., page refresh on web)
+          if (state.extra == null) {
+            return AppRoutes.memoryVerses;
+          }
+          return null;
+        },
+        builder: (context, state) {
+          final params = state.extra as PracticeResultParams;
+          return BlocProvider(
+            create: (context) => sl<MemoryVerseBloc>(),
+            child: PracticeResultsPage(params: params),
+          );
+        },
+      ),
+      GoRoute(
+        path: '/memory-verses/practice/:verseId',
+        name: 'practice_mode_selection',
+        builder: (context, state) {
+          final verseId = state.pathParameters['verseId'] ?? '';
+          final lastMode = state.uri.queryParameters['lastMode'];
+          return BlocProvider(
+            create: (context) => sl<MemoryVerseBloc>(),
+            child: PracticeModeSelectionPage(
+              verseId: verseId,
+              lastPracticeMode: lastMode,
+            ),
+          );
+        },
+      ),
+      GoRoute(
+        path: '/memory-verses/practice/word-bank/:verseId',
+        name: 'word_bank_practice',
+        builder: (context, state) {
+          final verseId = state.pathParameters['verseId'] ?? '';
+          return BlocProvider(
+            create: (context) => sl<MemoryVerseBloc>(),
+            child: WordBankPracticePage(verseId: verseId),
+          );
+        },
+      ),
+      GoRoute(
+        path: '/memory-verses/practice/cloze/:verseId',
+        name: 'cloze_practice',
+        builder: (context, state) {
+          final verseId = state.pathParameters['verseId'] ?? '';
+          return BlocProvider(
+            create: (context) => sl<MemoryVerseBloc>(),
+            child: ClozeReviewPage(verseId: verseId),
+          );
+        },
+      ),
+      GoRoute(
+        path: '/memory-verses/practice/first-letter/:verseId',
+        name: 'first_letter_practice',
+        builder: (context, state) {
+          final verseId = state.pathParameters['verseId'] ?? '';
+          return BlocProvider(
+            create: (context) => sl<MemoryVerseBloc>(),
+            child: FirstLetterHintsPage(verseId: verseId),
+          );
+        },
+      ),
+      GoRoute(
+        path: '/memory-verses/practice/progressive/:verseId',
+        name: 'progressive_practice',
+        builder: (context, state) {
+          final verseId = state.pathParameters['verseId'] ?? '';
+          return BlocProvider(
+            create: (context) => sl<MemoryVerseBloc>(),
+            child: ProgressiveRevealPracticePage(verseId: verseId),
+          );
+        },
+      ),
+      GoRoute(
+        path: '/memory-verses/practice/word-scramble/:verseId',
+        name: 'word_scramble_practice',
+        builder: (context, state) {
+          final verseId = state.pathParameters['verseId'] ?? '';
+          return BlocProvider(
+            create: (context) => sl<MemoryVerseBloc>(),
+            child: WordScramblePracticePage(verseId: verseId),
+          );
+        },
+      ),
+      GoRoute(
+        path: '/memory-verses/practice/audio/:verseId',
+        name: 'audio_practice',
+        builder: (context, state) {
+          final verseId = state.pathParameters['verseId'] ?? '';
+          return BlocProvider(
+            create: (context) => sl<MemoryVerseBloc>(),
+            child: AudioPracticePage(verseId: verseId),
+          );
+        },
+      ),
+      GoRoute(
+        path: '/memory-verses/practice/type-it-out/:verseId',
+        name: 'type_it_out_practice',
+        builder: (context, state) {
+          final verseId = state.pathParameters['verseId'] ?? '';
+          return BlocProvider(
+            create: (context) => sl<MemoryVerseBloc>(),
+            child: TypeItOutPracticePage(verseId: verseId),
+          );
+        },
+      ),
+      GoRoute(
+        path: AppRoutes.memoryChampions,
+        name: 'memory_champions',
+        pageBuilder: (context, state) => slideRightTransitionPage(
+          child: const MemoryChampionsPage(),
+          state: state,
+        ),
+      ),
+      GoRoute(
+        path: AppRoutes.memoryStats,
+        name: 'memory_stats',
+        pageBuilder: (context, state) => slideRightTransitionPage(
+          child: BlocProvider(
+            create: (context) => sl<MemoryVerseBloc>(),
+            child: const MemoryStatsPage(),
+          ),
+          state: state,
+        ),
       ),
 
       // Voice Buddy Routes
@@ -590,6 +732,54 @@ extension AppRouterExtension on GoRouter {
         'verseId': verseId,
         'verseIds': verseIds,
       });
+
+  /// Navigates to the practice mode selection page.
+  ///
+  /// [verseId] - Required ID of the verse to practice
+  void goToPracticeModeSelection(String verseId) =>
+      go('/memory-verses/practice/$verseId');
+
+  /// Navigates to the word bank practice page.
+  ///
+  /// [verseId] - Required ID of the verse to practice
+  void goToWordBankPractice(String verseId) =>
+      go('/memory-verses/practice/word-bank/$verseId');
+
+  /// Navigates to the cloze deletion practice page.
+  ///
+  /// [verseId] - Required ID of the verse to practice
+  void goToClozePractice(String verseId) =>
+      go('/memory-verses/practice/cloze/$verseId');
+
+  /// Navigates to the first letter hints practice page.
+  ///
+  /// [verseId] - Required ID of the verse to practice
+  void goToFirstLetterPractice(String verseId) =>
+      go('/memory-verses/practice/first-letter/$verseId');
+
+  void goToProgressivePractice(String verseId) =>
+      go('/memory-verses/practice/progressive/$verseId');
+
+  void goToWordScramblePractice(String verseId) =>
+      go('/memory-verses/practice/word-scramble/$verseId');
+
+  /// Navigates to the type it out practice page.
+  ///
+  /// [verseId] - Required ID of the verse to practice
+  void goToTypeItOutPractice(String verseId) =>
+      go('/memory-verses/practice/type-it-out/$verseId');
+
+  /// Navigates to the memory champions leaderboard page.
+  void goToMemoryChampions() => go(AppRoutes.memoryChampions);
+
+  /// Navigates to the memory verses statistics page with heat map.
+  void goToMemoryStats() => go(AppRoutes.memoryStats);
+
+  /// Navigates to the practice results page with completion stats.
+  ///
+  /// [params] - Required practice result parameters containing all stats
+  void goToPracticeResults(PracticeResultParams params) =>
+      go(AppRoutes.practiceResults, extra: params);
 
   /// Navigates to the voice conversation page for AI Discipler.
   ///
