@@ -20,6 +20,9 @@ class ConversationBubble extends StatelessWidget {
   /// Callback when a scripture reference is tapped.
   final ValueChanged<String>? onScriptureReferenceTap;
 
+  /// Optional URL to user's profile picture (for user messages).
+  final String? userProfilePictureUrl;
+
   const ConversationBubble({
     super.key,
     required this.content,
@@ -27,6 +30,7 @@ class ConversationBubble extends StatelessWidget {
     this.scriptureReferences,
     this.timestamp,
     this.onScriptureReferenceTap,
+    this.userProfilePictureUrl,
   });
 
   @override
@@ -52,7 +56,7 @@ class ConversationBubble extends StatelessWidget {
               const CircleAvatar(
                 radius: 16,
                 backgroundColor: Color(0xFFFAF8F5),
-                backgroundImage: AssetImage('images/AIDiscipler.png'),
+                backgroundImage: AssetImage('assets/images/AIDiscipler.png'),
               ),
               const SizedBox(width: 8),
             ],
@@ -155,15 +159,7 @@ class ConversationBubble extends StatelessWidget {
             // User avatar (right side)
             if (isUser) ...[
               const SizedBox(width: 8),
-              CircleAvatar(
-                radius: 16,
-                backgroundColor: theme.colorScheme.primary,
-                child: const Icon(
-                  Icons.person,
-                  color: Colors.white,
-                  size: 18,
-                ),
-              ),
+              _buildUserAvatar(theme),
             ],
           ],
         ),
@@ -173,6 +169,60 @@ class ConversationBubble extends StatelessWidget {
 
   String _formatTime(DateTime time) {
     return '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}';
+  }
+
+  /// Build user avatar with dynamic profile picture support
+  Widget _buildUserAvatar(ThemeData theme) {
+    // If profile picture URL is available, use network image
+    if (userProfilePictureUrl != null && userProfilePictureUrl!.isNotEmpty) {
+      return CircleAvatar(
+        radius: 16,
+        backgroundColor:
+            theme.colorScheme.primary.withAlpha((0.1 * 255).round()),
+        child: ClipOval(
+          child: Image.network(
+            userProfilePictureUrl!,
+            width: 32,
+            height: 32,
+            fit: BoxFit.cover,
+            loadingBuilder: (context, child, loadingProgress) {
+              if (loadingProgress == null) return child;
+              return Center(
+                child: SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                      theme.colorScheme.primary,
+                    ),
+                  ),
+                ),
+              );
+            },
+            errorBuilder: (context, error, stackTrace) {
+              // Fallback to icon on image load error
+              return Icon(
+                Icons.person,
+                size: 18,
+                color: theme.colorScheme.primary,
+              );
+            },
+          ),
+        ),
+      );
+    }
+
+    // Fallback to icon (no profile picture)
+    return CircleAvatar(
+      radius: 16,
+      backgroundColor: theme.colorScheme.primary,
+      child: const Icon(
+        Icons.person,
+        color: Colors.white,
+        size: 18,
+      ),
+    );
   }
 }
 
@@ -195,7 +245,7 @@ class ThinkingBubble extends StatelessWidget {
             const CircleAvatar(
               radius: 16,
               backgroundColor: Color(0xFFFAF8F5),
-              backgroundImage: AssetImage('images/AIDiscipler.png'),
+              backgroundImage: AssetImage('assets/images/AIDiscipler.png'),
             ),
             const SizedBox(width: 8),
             Container(

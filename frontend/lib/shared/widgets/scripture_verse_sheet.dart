@@ -100,16 +100,22 @@ class _ScriptureVerseSheetState extends State<ScriptureVerseSheet> {
   /// Parses a scripture reference string into components.
   ///
   /// Supports formats in English, Hindi (Devanagari), and Malayalam:
-  /// - "John 3:16" -> book: John, chapter: 3, verse: 16
-  /// - "1 John 3:16" -> book: 1 John, chapter: 3, verse: 16
-  /// - "Matthew 5:1-12" -> book: Matthew, chapter: 5, verseStart: 1, verseEnd: 12
-  /// - "यूहन्ना 3:16" -> book: यूहन्ना, chapter: 3, verse: 16
-  /// - "രോമർ 8:28" -> book: രോമർ, chapter: 8, verse: 28
+  /// - "John 3:16" -> book: John, chapter: 3, verseStart: 16, verseEnd: null (single verse)
+  /// - "John 3" -> book: John, chapter: 3, verseStart: 1, verseEnd: 999 (entire chapter)
+  /// - "1 John 3:16" -> book: 1 John, chapter: 3, verseStart: 16, verseEnd: null
+  /// - "Matthew 5:1-12" -> book: Matthew, chapter: 5, verseStart: 1, verseEnd: 12 (verse range)
+  /// - "यूहन्ना 3:16" -> book: यूहन्ना, chapter: 3, verseStart: 16, verseEnd: null
+  /// - "भजन संहिता 23" -> book: भजन संहिता, chapter: 23, verseStart: 1, verseEnd: 999 (entire chapter)
+  /// - "भजन संहिता 119:105" -> book: भजन संहिता, chapter: 119, verseStart: 105, verseEnd: null
+  /// - "രോമർ 8:28" -> book: രോമർ, chapter: 8, verseStart: 28, verseEnd: null
   _ParsedReference? _parseReference(String reference) {
-    // Pattern: captures book name in English, Hindi, or Malayalam (may start with number), chapter, verse(s)
+    // Pattern: captures book name in English, Hindi, or Malayalam
+    // - May start with number (1 John, 2 Timothy, etc.)
+    // - Supports multi-word book names (भजन संहिता, Song of Solomon, etc.)
+    // - Supports both chapter:verse and chapter-only formats
     // Unicode ranges: Devanagari (Hindi) \u0900-\u097F, Malayalam \u0D00-\u0D7F
     final regex = RegExp(
-      r'^(\d?\s?(?:[A-Za-z]+|[\u0900-\u097F]+|[\u0D00-\u0D7F]+))\s+(\d+):(\d+)(?:-(\d+))?$',
+      r'^(\d?\s?[A-Za-z\u0900-\u097F\u0D00-\u0D7F]+(?:\s+[A-Za-z\u0900-\u097F\u0D00-\u0D7F]+)*)\s+(\d+)(?::(\d+)(?:-(\d+))?)?$',
     );
     final match = regex.firstMatch(reference.trim());
 
@@ -117,11 +123,19 @@ class _ScriptureVerseSheetState extends State<ScriptureVerseSheet> {
       return null;
     }
 
+    // If verse is not specified (chapter-only), fetch entire chapter (verses 1-999)
+    final verseStart = match.group(3) != null ? int.parse(match.group(3)!) : 1;
+    final verseEnd = match.group(4) != null
+        ? int.parse(match.group(4)!)
+        : (match.group(3) == null
+            ? 999
+            : null); // If chapter-only, fetch whole chapter; if single verse, fetch only that verse
+
     return _ParsedReference(
       book: match.group(1)!.trim(),
       chapter: int.parse(match.group(2)!),
-      verseStart: int.parse(match.group(3)!),
-      verseEnd: match.group(4) != null ? int.parse(match.group(4)!) : null,
+      verseStart: verseStart,
+      verseEnd: verseEnd,
     );
   }
 

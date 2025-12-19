@@ -18,6 +18,9 @@ env:
   FLUTTER_VERSION: '3.32.8'
   JAVA_VERSION: '17'
 
+permissions:
+  contents: write
+
 jobs:
   build-and-deploy:
     name: Build and Deploy to Play Store Internal Track

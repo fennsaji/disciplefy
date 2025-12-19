@@ -306,8 +306,9 @@ class _LoginScreenState extends State<LoginScreen> {
               //
               // const SizedBox(height: 16),
 
-              // Continue as Guest Button
-              _buildGuestSignInButton(context, isLoading),
+              // Continue as Guest Button - REMOVED
+              // Guest mode disabled - all users must sign in
+              // _buildGuestSignInButton(context, isLoading),
             ],
           );
         },
