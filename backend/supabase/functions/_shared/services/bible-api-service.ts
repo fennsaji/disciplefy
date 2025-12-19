@@ -451,7 +451,7 @@ export async function fetchBibleBooksAllLanguages(): Promise<Record<'en' | 'hi' 
 }
 
 /**
- * Removes HTML tags, verse numbers, and formatting from API.Bible verse content
+ * Removes HTML tags, verse numbers, cross-references, and formatting from API.Bible verse content
  *
  * @param content - Raw HTML content from API.Bible
  * @returns Clean verse text
@@ -468,6 +468,11 @@ function cleanVerseText(content: string): string {
 
   // Remove footnote markers
   cleaned = cleaned.replace(/\s*\*+\s*/g, ' ');
+
+  // Remove inline cross-references in parentheses
+  // Matches patterns like: (नीति. 23:12), (Prov. 23:12), (Gen. 1:1; Ex. 3:14), (1 Cor. 13:4-7)
+  // Pattern: parentheses containing chapter:verse reference(s)
+  cleaned = cleaned.replace(/\s*\([^)]*\d+:\d+[^)]*\)/g, '');
 
   // Normalize whitespace
   cleaned = cleaned.replace(/\s+/g, ' ').trim();

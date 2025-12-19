@@ -207,13 +207,18 @@ function getTranslationName(language: 'en' | 'hi' | 'ml'): string {
 }
 
 /**
- * Clean verse text from HTML and formatting
+ * Clean verse text from HTML, cross-references, and formatting
  */
 function cleanVerseText(content: string): string {
   let cleaned = content
 
   // Remove HTML tags
   cleaned = cleaned.replace(/<[^>]*>/g, '')
+
+  // Remove inline cross-references in parentheses
+  // Matches patterns like: (नीति. 23:12), (Prov. 23:12), (Gen. 1:1; Ex. 3:14), (1 Cor. 13:4-7)
+  // Pattern: parentheses containing chapter:verse reference(s)
+  cleaned = cleaned.replace(/\s*\([^)]*\d+:\d+[^)]*\)/g, '')
 
   // Normalize whitespace
   cleaned = cleaned.replace(/\s+/g, ' ').trim()

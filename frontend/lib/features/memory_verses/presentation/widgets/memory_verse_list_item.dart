@@ -4,12 +4,15 @@ import 'package:intl/intl.dart';
 import '../../../../core/extensions/translation_extension.dart';
 import '../../../../core/i18n/translation_keys.dart';
 import '../../domain/entities/memory_verse_entity.dart';
+import '../../domain/entities/mastery_progress_entity.dart';
+import 'mastery_level_badge.dart';
 
 /// List item widget for displaying a memory verse card.
 ///
 /// Shows:
 /// - Verse reference
 /// - Verse text (truncated)
+/// - Mastery level badge (if available)
 /// - Due status indicator
 /// - Days overdue badge
 /// - Difficulty level indicator
@@ -19,12 +22,14 @@ class MemoryVerseListItem extends StatelessWidget {
   final MemoryVerseEntity verse;
   final VoidCallback onTap;
   final VoidCallback? onDelete;
+  final MasteryLevel? masteryLevel;
 
   const MemoryVerseListItem({
     super.key,
     required this.verse,
     required this.onTap,
     this.onDelete,
+    this.masteryLevel,
   });
 
   @override
@@ -45,7 +50,7 @@ class MemoryVerseListItem extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Header: Reference, Language Badge, and Status Badge
+              // Header: Reference, Language Badge, Mastery Badge, and Status Badge
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -64,6 +69,14 @@ class MemoryVerseListItem extends StatelessWidget {
                         ),
                         const SizedBox(width: 8),
                         _buildLanguageBadge(context),
+                        if (masteryLevel != null) ...[
+                          const SizedBox(width: 8),
+                          MasteryLevelBadge(
+                            masteryLevel: masteryLevel!,
+                            isCompact: true,
+                            size: 16,
+                          ),
+                        ],
                       ],
                     ),
                   ),

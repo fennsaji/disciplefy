@@ -34,6 +34,23 @@ class AppRoutes {
   // Memory Verses
   static const String memoryVerses = '/memory-verses';
   static const String verseReview = '/memory-verse-review';
+  static const String practiceModeSelection =
+      '/memory-verses/practice/:verseId';
+  static const String wordBankPractice =
+      '/memory-verses/practice/word-bank/:verseId';
+  static const String clozePractice = '/memory-verses/practice/cloze/:verseId';
+  static const String firstLetterPractice =
+      '/memory-verses/practice/first-letter/:verseId';
+  static const String progressivePractice =
+      '/memory-verses/practice/progressive/:verseId';
+  static const String wordScramblePractice =
+      '/memory-verses/practice/word-scramble/:verseId';
+  static const String audioPractice = '/memory-verses/practice/audio/:verseId';
+  static const String memoryChampions = '/memory-verses/champions';
+  static const String memoryStats = '/memory-verses/stats';
+  static const String typeItOutPractice =
+      '/memory-verses/practice/type-it-out/:verseId';
+  static const String practiceResults = '/memory-verses/practice/results';
 
   // Voice Buddy
   static const String voiceConversation = '/voice-conversation';
