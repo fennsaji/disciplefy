@@ -6,6 +6,7 @@ import 'package:audioplayers/audioplayers.dart';
 import 'package:dio/dio.dart';
 
 import '../../../../core/config/app_config.dart';
+import '../../../../core/constants/bible_data.dart';
 
 /// Service for high-quality text-to-speech using Google Cloud TTS REST API.
 ///
@@ -324,6 +325,72 @@ class CloudTTSService {
   /// and "1 Corinthians 1:1-2" to "First Corinthians Chapter 1 verses 1 to 2".
   /// Supports English, Hindi, and Malayalam localization.
   /// Limits book name to max 3 words to avoid false positives.
+  /// Valid Bible book names for reference detection (lowercase for comparison).
+  /// Includes canonical names, common abbreviations, and multi-language support.
+  static final Set<String> _validBibleBooks = {
+    // From BibleData canonical names (lowercase)
+    ...BibleData.bookNames.map((n) => n.toLowerCase()),
+    // Common English abbreviations
+    'gen', 'ex', 'exod', 'lev', 'num', 'deut', 'josh', 'judg', 'jdg',
+    'sam', 'kgs', 'chr', 'chron', 'neh', 'est', 'ps', 'psa', 'prov',
+    'eccl', 'eccles', 'song', 'isa', 'jer', 'lam', 'ezek', 'dan',
+    'hos', 'jl', 'am', 'ob', 'obad', 'jon', 'mic', 'nah', 'hab',
+    'zeph', 'hag', 'zech', 'mal',
+    'matt', 'mt', 'mk', 'lk', 'jn', 'rom', 'cor', 'gal', 'eph',
+    'phil', 'col', 'thess', 'tim', 'tit', 'phm', 'philem', 'heb',
+    'jas', 'pet', 'jude', 'rev',
+    // Multi-word books (lowercase)
+    'song of solomon', 'song of songs',
+    // Hindi book names
+    'उत्पत्ति', 'निर्गमन', 'लैव्यव्यवस्था', 'गिनती', 'व्यवस्थाविवरण',
+    'यहोशू', 'न्यायियों', 'रूत', 'शमूएल', 'राजा', 'इतिहास',
+    'एज्रा', 'नहेम्याह', 'एस्तेर', 'अय्यूब', 'भजन', 'भजन संहिता',
+    'नीतिवचन', 'सभोपदेशक', 'श्रेष्ठगीत', 'यशायाह', 'यिर्मयाह',
+    'विलापगीत', 'यहेजकेल', 'दानिय्येल', 'होशे', 'योएल', 'आमोस',
+    'ओबद्याह', 'योना', 'मीका', 'नहूम', 'हबक्कूक', 'सपन्याह',
+    'हाग्गै', 'जकर्याह', 'मलाकी',
+    'मत्ती', 'मरकुस', 'लूका', 'यूहन्ना', 'प्रेरितों', 'रोमियों',
+    'कुरिन्थियों', 'गलातियों', 'इफिसियों', 'फिलिप्पियों', 'कुलुस्सियों',
+    'थिस्सलुनीकियों', 'तीमुथियुस', 'तीतुस', 'फिलेमोन', 'इब्रानियों',
+    'याकूब', 'पतरस', 'यहूदा', 'प्रकाशितवाक्य',
+    // Malayalam book names
+    'ഉല്പത്തി', 'പുറപ്പാട്', 'ലേവ്യപുസ്തകം', 'സംഖ്യ', 'ആവർത്തനം',
+    'യോശുവ', 'ന്യായാധിപന്മാർ', 'രൂത്ത്', 'ശമുവേൽ', 'രാജാക്കന്മാർ',
+    'ദിനവൃത്താന്തം', 'എസ്രാ', 'നെഹെമ്യാവ്', 'എസ്ഥേർ', 'ഇയ്യോബ്',
+    'സങ്കീർത്തനങ്ങൾ', 'സദൃശവാക്യങ്ങൾ', 'സഭാപ്രസംഗി', 'ഉത്തമഗീതം',
+    'യെശയ്യാവ്', 'യിരെമ്യാവ്', 'വിലാപങ്ങൾ', 'യെഹെസ്കേൽ', 'ദാനിയേൽ',
+    'ഹോശേയ', 'യോവേൽ', 'ആമോസ്', 'ഓബദ്യാവ്', 'യോനാ', 'മീഖാ',
+    'നഹൂം', 'ഹബക്കൂക്', 'സെഫന്യാവ്', 'ഹഗ്ഗായി', 'സെഖര്യാവ്', 'മലാഖി',
+    'മത്തായി', 'മർക്കൊസ്', 'ലൂക്കൊസ്', 'യോഹന്നാൻ', 'യോഹ',
+    'അപ്പൊ', 'അപ്പൊസ്തലന്മാരുടെ', 'റോമർ', 'കൊരിന്ത്യർ', 'ഗലാത്യർ',
+    'എഫെസ്യർ', 'ഫിലിപ്പിയർ', 'കൊലൊസ്സ്യർ', 'തെസ്സലൊനീക്യർ',
+    'തിമൊഥെയൊസ്', 'തീത്തൊസ്', 'ഫിലേമോൻ', 'എബ്രായർ', 'യാക്കോബ്',
+    'പത്രൊസ്', 'യൂദാ', 'വെളിപ്പാട്',
+  };
+
+  /// Check if text is a valid Bible book name.
+  bool _isValidBibleBook(String bookName, String? bookNumber) {
+    final normalized = bookName.toLowerCase().trim();
+
+    // Check direct match
+    if (_validBibleBooks.contains(normalized)) return true;
+
+    // Check with number prefix (e.g., "1 Samuel" -> "samuel")
+    if (bookNumber != null) {
+      final withNumber = '$bookNumber $normalized';
+      if (_validBibleBooks.contains(withNumber)) return true;
+    }
+
+    // Check if any valid book starts with this text (handles partial matches)
+    for (final validBook in _validBibleBooks) {
+      if (validBook.startsWith(normalized) && normalized.length >= 3) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
   String _convertBibleReferencesForTTS(String text, String languageCode) {
     // Pattern matches: "Book Chapter:Verse" or "Book Chapter:Verse-Verse"
     // Group 1: Optional number prefix (1, 2, 3 for numbered books)
@@ -331,7 +398,6 @@ class CloudTTSService {
     // Group 3: Chapter number
     // Group 4: Start verse
     // Group 5: End verse (optional, for ranges)
-    // Limits to 3 words max to avoid matching "आप शायद भजन संहिता 23:1"
     final bibleRefPattern = RegExp(
       r'(\d)?\s*([A-Za-z\u0900-\u097F\u0D00-\u0D7F]+(?:\s+[A-Za-z\u0900-\u097F\u0D00-\u0D7F]+){0,2})\s+(\d+):(\d+)(?:-(\d+))?',
       caseSensitive: false,
@@ -343,6 +409,12 @@ class CloudTTSService {
       final chapter = match.group(3)!;
       final verseStart = match.group(4)!;
       final verseEnd = match.group(5); // null if single verse
+
+      // Validate against known Bible book names to avoid false positives
+      // (e.g., "Section 3:16" or "Room 1:30" should not be transformed)
+      if (!_isValidBibleBook(bookName, bookNumber)) {
+        return match.group(0)!; // Return original text unchanged
+      }
 
       // Get localized terms based on language
       final (chapterWord, verseWord, versesWord, toWord) =

@@ -725,7 +725,7 @@ class TTSService {
 
   /// Play the next sentence in the queue.
   /// Uses Cloud TTS when available for high-quality voices.
-  void _playNextInQueue() {
+  Future<void> _playNextInQueue() async {
     if (_sentenceQueue.isEmpty) {
       print('🔊 [TTS STREAM] Queue empty');
       // Check if streaming is finished
@@ -754,9 +754,10 @@ class TTSService {
     }
 
     // Fallback to device TTS with voice settings
+    // Await settings to ensure they are applied before speaking
     print('🔊 [TTS STREAM] Using device TTS with settings');
-    _applyDeviceTTSSettings();
-    _flutterTts.speak(sentence);
+    await _applyDeviceTTSSettings();
+    await _flutterTts.speak(sentence);
     _currentState = TtsState.playing;
   }
 

@@ -119,6 +119,12 @@ DECLARE
     v_was_completed BOOLEAN;
     v_is_now_completed BOOLEAN;
 BEGIN
+    -- Authorization check: verify caller can only update their own progress
+    IF p_user_id != auth.uid() THEN
+        RAISE EXCEPTION 'Unauthorized: Cannot update challenge progress for another user'
+            USING ERRCODE = '42501'; -- insufficient_privilege
+    END IF;
+
     -- Find active challenges matching the target type
     FOR v_challenge IN
         SELECT id, target_value, xp_reward
@@ -187,6 +193,12 @@ DECLARE
     v_progress RECORD;
     v_challenge RECORD;
 BEGIN
+    -- Authorization check: verify caller can only claim their own rewards
+    IF p_user_id != auth.uid() THEN
+        RAISE EXCEPTION 'Unauthorized: Cannot claim challenge reward for another user'
+            USING ERRCODE = '42501'; -- insufficient_privilege
+    END IF;
+
     -- Get challenge details
     SELECT xp_reward INTO v_challenge
     FROM memory_challenges

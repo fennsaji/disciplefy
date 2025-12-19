@@ -668,7 +668,7 @@ async function handleSubmitMemoryPractice(
 
   // Update memory verse with new SM-2 state
   const now = new Date().toISOString()
-  await services.supabaseServiceClient
+  const { error: updateError } = await services.supabaseServiceClient
     .from('memory_verses')
     .update({
       ease_factor: sm2Result.easeFactor,
@@ -681,6 +681,11 @@ async function handleSubmitMemoryPractice(
       updated_at: now
     })
     .eq('id', body.memory_verse_id)
+
+  if (updateError) {
+    console.error('[SubmitPractice] Failed to update verse:', updateError)
+    throw new AppError('DATABASE_ERROR', 'Failed to save practice result', 500)
+  }
 
   // Record the review session with enhanced data
   await services.supabaseServiceClient

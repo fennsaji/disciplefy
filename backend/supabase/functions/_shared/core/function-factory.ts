@@ -71,6 +71,13 @@ interface FunctionConfig {
   readonly timeout?: number
   /** Custom CORS headers */
   readonly corsHeaders?: Record<string, string>
+  /**
+   * Whether to allow fallback to guest session when JWT validation fails.
+   * When true: If JWT validation fails but x-session-id header is present, treat as anonymous guest.
+   * When false (default): JWT validation failures will throw an authentication error.
+   * Only set to true for endpoints that explicitly support guest access.
+   */
+  readonly allowGuestOnJwtFailure?: boolean
 }
 
 /**
@@ -82,7 +89,8 @@ const DEFAULT_CONFIG: Required<FunctionConfig> = {
   allowedMethods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
   maxBodySize: 10 * 1024 * 1024, // 10MB
   timeout: 60000, // 60 seconds
-  corsHeaders: {}
+  corsHeaders: {},
+  allowGuestOnJwtFailure: false // Default: do not silently fall back to guest on JWT errors
 }
 
 /**
@@ -169,7 +177,7 @@ export function createFunction(
       // This allows handlers to access authenticated user info for optional features
       let userContext: UserContext | undefined
       try {
-        userContext = await parseUserContext(req, services)
+        userContext = await parseUserContext(req, services, finalConfig.allowGuestOnJwtFailure)
         metrics.authTime = performance.now()
       } catch (authError) {
         // If auth is required, rethrow the error
@@ -451,7 +459,8 @@ export function createServiceRoleFunction(
  */
 async function parseUserContext(
   req: Request,
-  services: ServiceContainer
+  services: ServiceContainer,
+  allowGuestOnJwtFailure: boolean = false
 ): Promise<UserContext> {
   let authToken = req.headers.get('Authorization') || ''
   const hasHeaderAuth = !!authToken
@@ -503,16 +512,31 @@ async function parseUserContext(
   const { data: { user }, error } = await userSupabaseClient.auth.getUser()
 
   if (error) {
-    // If JWT validation fails and we have a session ID, treat as guest
+    // Always log the original error details first for debugging
+    const endpoint = new URL(req.url).pathname
     const sessionId = req.headers.get('x-session-id')
-    if (sessionId) {
-      console.log('[AUTH] JWT validation failed but session ID present - treating as guest:', sessionId)
+    console.error('[AUTH] JWT validation error:', {
+      endpoint,
+      sessionId: sessionId || 'none',
+      errorMessage: error.message,
+      errorStack: error.stack || 'no stack trace',
+      allowGuestOnJwtFailure
+    })
+
+    // Only fall back to guest if explicitly allowed for this endpoint
+    if (allowGuestOnJwtFailure && sessionId) {
+      console.log('[AUTH] Falling back to guest session (allowGuestOnJwtFailure=true):', {
+        endpoint,
+        sessionId
+      })
       return {
         type: 'anonymous',
         userId: undefined,
         sessionId: sessionId
       }
     }
+
+    // Rethrow authentication error - do not silently fall back to guest
     throw new Error(`Authentication failed: ${error.message}`)
   }
 

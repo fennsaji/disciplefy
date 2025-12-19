@@ -165,9 +165,8 @@ class VoiceConversationBloc
       }
     }
 
-    // Convert VoiceGender enum to string for TTS
-    final voiceGenderStr =
-        preferences.ttsVoiceGender == VoiceGender.male ? 'male' : 'female';
+    // Use VoiceGenderExtension.value for consistent enum-to-string conversion
+    final voiceGenderStr = preferences.ttsVoiceGender.value;
 
     emit(state.copyWith(
       languageCode: languageCode,
@@ -183,7 +182,7 @@ class VoiceConversationBloc
     ));
 
     print(
-        '🎙️ [VOICE] Loaded TTS preferences: rate=${preferences.speakingRate}, pitch=${preferences.pitch}, gender=$voiceGenderStr');
+        '🎙️ [VOICE] Loaded TTS preferences: rate=${preferences.speakingRate}, pitch=${preferences.pitch}, gender=${preferences.ttsVoiceGender.value}');
   }
 
   /// Convert app language code (en, hi, ml) to voice language code (en-US, hi-IN, ml-IN)

@@ -175,6 +175,8 @@ export class VoiceConversationRepository {
         llm_model_used: metadata?.llmModelUsed,
         llm_tokens_used: metadata?.llmTokensUsed,
         scripture_references: metadata?.scriptureReferences,
+        book_names_corrected: metadata?.bookNamesCorrected ?? false,
+        corrections_made: metadata?.correctionsMade ?? null,
       })
 
     if (insertError) {
