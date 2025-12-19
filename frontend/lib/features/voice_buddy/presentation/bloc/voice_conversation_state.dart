@@ -24,6 +24,11 @@ class VoiceConversationState extends Equatable {
   final bool autoDetectLanguage;
   final bool notifyDailyQuotaReached;
 
+  // TTS voice preferences
+  final double speakingRate;
+  final double pitch;
+  final String voiceGender; // 'male' or 'female'
+
   const VoiceConversationState({
     this.status = VoiceConversationStatus.initial,
     this.conversation,
@@ -42,6 +47,10 @@ class VoiceConversationState extends Equatable {
     this.autoPlayResponse = true,
     this.autoDetectLanguage = true,
     this.notifyDailyQuotaReached = true,
+    // TTS voice preference defaults
+    this.speakingRate = 1.0,
+    this.pitch = 0.0,
+    this.voiceGender = 'female',
   });
 
   @override
@@ -62,6 +71,9 @@ class VoiceConversationState extends Equatable {
         autoPlayResponse,
         autoDetectLanguage,
         notifyDailyQuotaReached,
+        speakingRate,
+        pitch,
+        voiceGender,
       ];
 
   VoiceConversationState copyWith({
@@ -82,6 +94,9 @@ class VoiceConversationState extends Equatable {
     bool? autoPlayResponse,
     bool? autoDetectLanguage,
     bool? notifyDailyQuotaReached,
+    double? speakingRate,
+    double? pitch,
+    String? voiceGender,
   }) {
     return VoiceConversationState(
       status: status ?? this.status,
@@ -103,6 +118,9 @@ class VoiceConversationState extends Equatable {
       autoDetectLanguage: autoDetectLanguage ?? this.autoDetectLanguage,
       notifyDailyQuotaReached:
           notifyDailyQuotaReached ?? this.notifyDailyQuotaReached,
+      speakingRate: speakingRate ?? this.speakingRate,
+      pitch: pitch ?? this.pitch,
+      voiceGender: voiceGender ?? this.voiceGender,
     );
   }
 

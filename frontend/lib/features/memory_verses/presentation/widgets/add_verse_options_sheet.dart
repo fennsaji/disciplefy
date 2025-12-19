@@ -1,17 +1,23 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/extensions/translation_extension.dart';
+import '../../../../core/i18n/translation_keys.dart';
+
 /// Bottom sheet for selecting how to add a new memory verse.
 ///
-/// Provides two options:
+/// Provides three options:
 /// - Add from Daily Verse
+/// - Add Suggested Verse (curated popular verses)
 /// - Add Custom Verse
 class AddVerseOptionsSheet extends StatelessWidget {
   final VoidCallback onAddFromDaily;
+  final VoidCallback onAddSuggested;
   final VoidCallback onAddManually;
 
   const AddVerseOptionsSheet({
     super.key,
     required this.onAddFromDaily,
+    required this.onAddSuggested,
     required this.onAddManually,
   });
 
@@ -19,6 +25,7 @@ class AddVerseOptionsSheet extends StatelessWidget {
   static void show(
     BuildContext context, {
     required VoidCallback onAddFromDaily,
+    required VoidCallback onAddSuggested,
     required VoidCallback onAddManually,
   }) {
     showModalBottomSheet(
@@ -27,6 +34,10 @@ class AddVerseOptionsSheet extends StatelessWidget {
         onAddFromDaily: () {
           Navigator.pop(bottomSheetContext);
           onAddFromDaily();
+        },
+        onAddSuggested: () {
+          Navigator.pop(bottomSheetContext);
+          onAddSuggested();
         },
         onAddManually: () {
           Navigator.pop(bottomSheetContext);
@@ -38,23 +49,78 @@ class AddVerseOptionsSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return SafeArea(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
+          // Header
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Text(
+              context.tr(TranslationKeys.addMemoryVerseTitle),
+              style: theme.textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+          const Divider(height: 1),
+
+          // Option 1: Add from Daily Verse
           ListTile(
-            leading: const Icon(Icons.today),
-            title: const Text('Add from Daily Verse'),
-            subtitle: const Text("Add today's verse to your memory deck"),
+            leading: Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.primaryContainer,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(
+                Icons.today,
+                color: theme.colorScheme.onPrimaryContainer,
+              ),
+            ),
+            title: Text(context.tr(TranslationKeys.addFromDailyVerse)),
+            subtitle: Text(context.tr(TranslationKeys.addFromDailyVerseDesc)),
             onTap: onAddFromDaily,
           ),
+
+          // Option 2: Add Suggested Verse (NEW)
           ListTile(
-            leading: const Icon(Icons.edit),
-            title: const Text('Add Custom Verse'),
-            subtitle: const Text('Enter any Bible verse manually'),
+            leading: Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.secondaryContainer,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(
+                Icons.lightbulb_outline,
+                color: theme.colorScheme.onSecondaryContainer,
+              ),
+            ),
+            title: Text(context.tr(TranslationKeys.addSuggestedVerse)),
+            subtitle: Text(context.tr(TranslationKeys.addSuggestedVerseDesc)),
+            onTap: onAddSuggested,
+          ),
+
+          // Option 3: Add Custom Verse
+          ListTile(
+            leading: Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.tertiaryContainer,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(
+                Icons.edit,
+                color: theme.colorScheme.onTertiaryContainer,
+              ),
+            ),
+            title: Text(context.tr(TranslationKeys.addCustomVerse)),
+            subtitle: Text(context.tr(TranslationKeys.addCustomVerseDesc)),
             onTap: onAddManually,
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 16),
         ],
       ),
     );

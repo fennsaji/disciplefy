@@ -13,6 +13,7 @@ import '../../data/services/speech_service.dart';
 import '../../data/services/tts_service.dart';
 import '../../data/services/vad_service.dart';
 import '../../domain/entities/voice_conversation_entity.dart';
+import '../../domain/entities/voice_preferences_entity.dart';
 import '../../domain/repositories/voice_buddy_repository.dart';
 import 'voice_conversation_event.dart';
 import 'voice_conversation_state.dart';
@@ -164,6 +165,9 @@ class VoiceConversationBloc
       }
     }
 
+    // Use VoiceGenderExtension.value for consistent enum-to-string conversion
+    final voiceGenderStr = preferences.ttsVoiceGender.value;
+
     emit(state.copyWith(
       languageCode: languageCode,
       isContinuousMode: preferences.continuousMode,
@@ -171,7 +175,14 @@ class VoiceConversationBloc
       autoPlayResponse: preferences.autoPlayResponse,
       autoDetectLanguage: preferences.autoDetectLanguage,
       notifyDailyQuotaReached: preferences.notifyDailyQuotaReached,
+      // TTS voice preferences
+      speakingRate: preferences.speakingRate,
+      pitch: preferences.pitch,
+      voiceGender: voiceGenderStr,
     ));
+
+    print(
+        '🎙️ [VOICE] Loaded TTS preferences: rate=${preferences.speakingRate}, pitch=${preferences.pitch}, gender=${preferences.ttsVoiceGender.value}');
   }
 
   /// Convert app language code (en, hi, ml) to voice language code (en-US, hi-IN, ml-IN)
@@ -783,12 +794,17 @@ class VoiceConversationBloc
     final shouldContinueListening = state.isContinuousMode;
 
     print('🎙️ [VOICE] Starting streaming TTS session');
+    print(
+        '🎙️ [VOICE] Voice settings: rate=${state.speakingRate}, pitch=${state.pitch}, gender=${state.voiceGender}');
 
     // Note: isPlaying is already set to true in _onReceiveStreamChunk
     // to ensure both streamingResponse and isPlaying are emitted together
 
     _ttsService.startStreamingSession(
       languageCode: state.languageCode,
+      speakingRate: state.speakingRate,
+      pitch: state.pitch,
+      voiceGender: state.voiceGender,
       onComplete: () {
         print(
             '🎙️ [VOICE] Streaming TTS complete, shouldContinueListening: $shouldContinueListening');
@@ -1011,10 +1027,13 @@ class VoiceConversationBloc
           shouldUpdateLanguage ? detectedLanguage : state.languageCode,
     ));
 
-    // Use speakWithSettings with detected language
+    // Use speakWithSettings with detected language and voice preferences
     await _ttsService.speakWithSettings(
       text: lastMessage.contentText,
       languageCode: detectedLanguage,
+      speakingRate: state.speakingRate,
+      pitch: state.pitch,
+      voiceGender: state.voiceGender,
       onComplete: () {
         print(
             '🎙️ [VOICE] TTS completed, shouldContinueListening: $shouldContinueListening');

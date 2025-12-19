@@ -10,24 +10,36 @@ class TimerBadge extends StatelessWidget {
   /// The elapsed time in seconds to display.
   final int elapsedSeconds;
 
+  /// Whether this badge is used in an AppBar (uses compact padding).
+  final bool compact;
+
   const TimerBadge({
     super.key,
     required this.elapsedSeconds,
+    this.compact = false,
   });
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
+    // Use explicit colors for better contrast in both themes
+    final backgroundColor = isDark
+        ? theme.colorScheme.primary.withOpacity(0.3)
+        : theme.colorScheme.primaryContainer;
+    final contentColor =
+        isDark ? Colors.white : theme.colorScheme.onPrimaryContainer;
 
     return Padding(
-      padding: const EdgeInsets.all(16.0),
+      padding: EdgeInsets.all(compact ? 4.0 : 16.0),
       child: Container(
         padding: const EdgeInsets.symmetric(
           horizontal: 16,
           vertical: 8,
         ),
         decoration: BoxDecoration(
-          color: theme.colorScheme.primaryContainer,
+          color: backgroundColor,
           borderRadius: BorderRadius.circular(20),
         ),
         child: Row(
@@ -36,14 +48,14 @@ class TimerBadge extends StatelessWidget {
             Icon(
               Icons.timer,
               size: 20,
-              color: theme.colorScheme.onPrimaryContainer,
+              color: contentColor,
             ),
             const SizedBox(width: 8),
             Text(
               VerseReviewUtils.formatTime(elapsedSeconds),
               style: theme.textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.bold,
-                color: theme.colorScheme.onPrimaryContainer,
+                color: contentColor,
               ),
             ),
           ],

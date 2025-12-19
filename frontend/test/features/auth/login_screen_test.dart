@@ -91,7 +91,8 @@ void main() {
       expect(find.text('Deepen your faith through guided Bible study'),
           findsOneWidget);
       expect(find.text('Continue with Google'), findsOneWidget);
-      expect(find.text('Continue as Guest'), findsOneWidget);
+      // Guest button removed - all users must sign in
+      expect(find.text('Continue as Guest'), findsNothing);
     });
 
     testWidgets('should show loading state when authentication is in progress',
@@ -109,11 +110,11 @@ void main() {
       // Assert
       expect(find.byType(CircularProgressIndicator), findsOneWidget);
 
-      // Both OutlinedButtons (Email and Guest) should be disabled during loading
+      // Only Email OutlinedButton should exist (Guest button removed)
       final outlinedButtons = find.byType(OutlinedButton);
-      expect(outlinedButtons, findsNWidgets(2)); // Email and Guest buttons
+      expect(outlinedButtons, findsNWidgets(1)); // Email button only
 
-      // Verify all OutlinedButtons are disabled during loading
+      // Verify the Email OutlinedButton is disabled during loading
       for (final element in outlinedButtons.evaluate()) {
         final button = element.widget as OutlinedButton;
         expect(button.onPressed, isNull,
@@ -165,7 +166,9 @@ void main() {
 
       // Assert
       verify(mockAuthBloc.add(const AnonymousSignInRequested())).called(1);
-    });
+    },
+        skip:
+            true); // Guest login disabled - all users must sign in with Google or Email
 
     testWidgets('should show error snackbar when authentication fails',
         (tester) async {

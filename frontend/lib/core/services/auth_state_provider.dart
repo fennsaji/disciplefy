@@ -138,10 +138,7 @@ class AuthStateProvider extends ChangeNotifier {
     final pictureUrl = profilePicture?.toString();
 
     if (pictureUrl != null && pictureUrl.isNotEmpty) {
-      if (kDebugMode) {
-        print(
-            '👤 [AUTH STATE PROVIDER] Using profile picture from cached data');
-      }
+      // Debug log removed to reduce noise during frequent UI rebuilds
       return pictureUrl;
     }
     return null;
@@ -159,10 +156,7 @@ class AuthStateProvider extends ChangeNotifier {
         (metadata['avatar_url'] ?? metadata['picture'])?.toString();
 
     if (avatarUrl != null && avatarUrl.isNotEmpty) {
-      if (kDebugMode) {
-        print(
-            '👤 [AUTH STATE PROVIDER] Using profile picture from OAuth metadata');
-      }
+      // Debug log removed to reduce noise during frequent UI rebuilds
       return avatarUrl;
     }
     return null;
@@ -179,9 +173,7 @@ class AuthStateProvider extends ChangeNotifier {
     final oauthUrl = _profilePictureFromOAuth();
     if (oauthUrl != null) return oauthUrl;
 
-    if (kDebugMode) {
-      print('👤 [AUTH STATE PROVIDER] No profile picture available');
-    }
+    // Debug log removed to reduce noise during frequent UI rebuilds
     return null;
   }
 
@@ -232,9 +224,7 @@ class AuthStateProvider extends ChangeNotifier {
       if (_cachedProfile != null &&
           _cachedUserId == authState.user.id &&
           _isProfileCacheFresh()) {
-        if (kDebugMode) {
-          print('📄 [AUTH STATE PROVIDER] Using cached profile');
-        }
+        // Debug log removed to reduce noise during frequent UI rebuilds
         return _cachedProfile;
       }
 
