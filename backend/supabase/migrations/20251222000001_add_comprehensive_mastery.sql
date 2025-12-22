@@ -1,5 +1,5 @@
 -- Migration: Add Comprehensive Mastery Tracking (v2.0 - Stricter Criteria)
--- Date: 2025-01-22
+-- Date: 2025-12-22
 -- Version: 2.0
 -- Description: Adds is_fully_mastered column and calculation logic to track
 --              comprehensive mastery with stricter criteria to ensure true long-term retention
@@ -123,7 +123,8 @@ BEGIN
 
   -- Criterion 7: Time elapsed since verse was added (at least 60 days / 2 months)
   -- Prevents "instant mastery" and ensures long-term retention verification
-  days_since_added := EXTRACT(DAY FROM (NOW() - verse_record.added_date));
+  -- Calculate total days (not just day component) between current date and added date
+  days_since_added := (CURRENT_DATE - verse_record.added_date::date);
 
   IF days_since_added < 60 THEN
     RETURN FALSE;

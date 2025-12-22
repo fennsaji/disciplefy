@@ -60,7 +60,7 @@ BEGIN
     AND EXTRACT(MINUTE FROM p.memory_verse_reminder_time)::INTEGER =
         (((target_hour * 60 + target_minute + p.timezone_offset_minutes) % 1440 + 1440) % 1440) % 60;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SET search_path = public, pg_temp SECURITY DEFINER;
 
 -- ============================================================================
 -- 3. DROP OVERDUE-RELATED INDEX
