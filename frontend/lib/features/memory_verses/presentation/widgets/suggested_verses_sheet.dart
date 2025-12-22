@@ -55,18 +55,27 @@ class SuggestedVersesSheet extends StatefulWidget {
 
 class _SuggestedVersesSheetState extends State<SuggestedVersesSheet> {
   SuggestedVerseCategory? _selectedCategory;
+  late String _currentLanguage;
 
   @override
   void initState() {
     super.initState();
+    _currentLanguage = widget.language;
     _loadSuggestedVerses();
   }
 
   void _loadSuggestedVerses() {
     context.read<MemoryVerseBloc>().add(LoadSuggestedVersesEvent(
           category: _selectedCategory?.name,
-          language: widget.language,
+          language: _currentLanguage,
         ));
+  }
+
+  void _onLanguageChanged(String language) {
+    setState(() {
+      _currentLanguage = language;
+    });
+    _loadSuggestedVerses();
   }
 
   void _onCategorySelected(SuggestedVerseCategory? category) {
@@ -75,7 +84,7 @@ class _SuggestedVersesSheetState extends State<SuggestedVersesSheet> {
     });
     context.read<MemoryVerseBloc>().add(LoadSuggestedVersesEvent(
           category: category?.name,
-          language: widget.language,
+          language: _currentLanguage,
         ));
   }
 
@@ -83,7 +92,7 @@ class _SuggestedVersesSheetState extends State<SuggestedVersesSheet> {
     context.read<MemoryVerseBloc>().add(AddSuggestedVerseEvent(
           verseReference: verse.localizedReference,
           verseText: verse.verseText,
-          language: widget.language,
+          language: _currentLanguage,
         ));
   }
 
@@ -181,7 +190,69 @@ class _SuggestedVersesSheetState extends State<SuggestedVersesSheet> {
               ),
             ),
           ),
+          _buildLanguageSwitcher(context, theme),
         ],
+      ),
+    );
+  }
+
+  Widget _buildLanguageSwitcher(BuildContext context, ThemeData theme) {
+    final languageOptions = {
+      'en': 'English',
+      'hi': 'हिन्दी',
+      'ml': 'മലയാളം',
+    };
+
+    return PopupMenuButton<String>(
+      initialValue: _currentLanguage,
+      onSelected: _onLanguageChanged,
+      icon: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: theme.colorScheme.primaryContainer,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: theme.colorScheme.primary.withOpacity(0.3),
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              languageOptions[_currentLanguage] ?? 'English',
+              style: theme.textTheme.labelLarge?.copyWith(
+                fontWeight: FontWeight.w600,
+                color: theme.colorScheme.onPrimaryContainer,
+              ),
+            ),
+            const SizedBox(width: 4),
+            Icon(
+              Icons.arrow_drop_down,
+              color: theme.colorScheme.onPrimaryContainer,
+              size: 20,
+            ),
+          ],
+        ),
+      ),
+      itemBuilder: (BuildContext context) {
+        return languageOptions.entries.map((entry) {
+          return PopupMenuItem<String>(
+            value: entry.key,
+            child: Row(
+              children: [
+                if (entry.key == _currentLanguage)
+                  Icon(Icons.check, size: 18, color: theme.colorScheme.primary)
+                else
+                  const SizedBox(width: 18),
+                const SizedBox(width: 8),
+                Text(entry.value),
+              ],
+            ),
+          );
+        }).toList();
+      },
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
       ),
     );
   }

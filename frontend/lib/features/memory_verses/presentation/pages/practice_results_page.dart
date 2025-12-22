@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/extensions/translation_extension.dart';
 import '../../../../core/i18n/translation_keys.dart';
 import '../../../../core/widgets/auth_protected_screen.dart';
+import '../../data/services/transliteration_service.dart';
 import '../../domain/entities/practice_result_params.dart';
 import '../bloc/memory_verse_bloc.dart';
 import '../bloc/memory_verse_event.dart';
@@ -145,7 +146,14 @@ class _PracticeResultsPageState extends State<PracticeResultsPage> {
 
                 // Stats Card
                 _buildStatsCard(theme),
-                const SizedBox(height: 32),
+                const SizedBox(height: 24),
+
+                // Blank Comparisons (Fill in the Blanks mode only)
+                if (params.blankComparisons != null &&
+                    params.blankComparisons!.isNotEmpty) ...[
+                  _buildBlankComparisonsCard(theme),
+                  const SizedBox(height: 24),
+                ],
 
                 // Action Buttons
                 _buildActionButtons(theme),
@@ -335,6 +343,206 @@ class _PracticeResultsPageState extends State<PracticeResultsPage> {
             color: valueColor,
           ),
         ),
+      ],
+    );
+  }
+
+  Widget _buildBlankComparisonsCard(ThemeData theme) {
+    final comparisons = widget.params.blankComparisons!;
+
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Header
+            Row(
+              children: [
+                Icon(
+                  Icons.compare_arrows,
+                  color: theme.colorScheme.primary,
+                  size: 24,
+                ),
+                const SizedBox(width: 12),
+                Text(
+                  context.tr(TranslationKeys.practiceResultsAnswerComparison),
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+
+            // Comparisons list
+            ...comparisons.asMap().entries.map((entry) {
+              final index = entry.key;
+              final comparison = entry.value;
+              final isLast = index == comparisons.length - 1;
+
+              return Column(
+                children: [
+                  _buildComparisonRow(theme, comparison, index + 1),
+                  if (!isLast) const Divider(height: 24),
+                ],
+              );
+            }),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildComparisonRow(
+    ThemeData theme,
+    BlankComparison comparison,
+    int blankNumber,
+  ) {
+    final isCorrect = comparison.isCorrect;
+    final statusColor = isCorrect ? Colors.green : Colors.red;
+    final statusIcon = isCorrect ? Icons.check_circle : Icons.cancel;
+
+    // Detect language and transliterate correct answer for Fill-in-the-Blanks only
+    // Fill-in-the-Blanks: Users type romanized text, so show romanized correct answers
+    // Word Bank/Phrase Scramble: Users see original script, so show original script
+    final params = widget.params;
+    final detectedLanguage =
+        TransliterationService.detectLanguage(params.verseText);
+
+    String correctAnswerDisplay;
+    if (params.practiceMode == 'cloze' && detectedLanguage != 'en') {
+      // Fill-in-the-Blanks: Show romanized text for non-English verses
+      correctAnswerDisplay = TransliterationService.transliterate(
+            comparison.expected,
+            detectedLanguage,
+          ) ??
+          comparison.expected;
+    } else {
+      // All other modes: Show original script
+      correctAnswerDisplay = comparison.expected;
+    }
+
+    // Use appropriate label based on practice mode
+    final labelKey = params.practiceMode == 'word_bank'
+        ? TranslationKeys.practiceResultsWord
+        : params.practiceMode == 'word_scramble'
+            ? TranslationKeys.practiceResultsPhrase
+            : TranslationKeys.practiceResultsBlank;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Blank/Word number and status
+        Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.primaryContainer,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                '${context.tr(labelKey)} $blankNumber',
+                style: theme.textTheme.labelMedium?.copyWith(
+                  color: theme.colorScheme.onPrimaryContainer,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Icon(
+              statusIcon,
+              size: 20,
+              color: statusColor,
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+
+        // User's answer
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            SizedBox(
+              width: 80,
+              child: Text(
+                context.tr(TranslationKeys.practiceResultsYourAnswer),
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+            Expanded(
+              child: Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: isCorrect
+                      ? Colors.green.withAlpha((0.1 * 255).round())
+                      : Colors.red.withAlpha((0.1 * 255).round()),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: isCorrect
+                        ? Colors.green.withAlpha((0.3 * 255).round())
+                        : Colors.red.withAlpha((0.3 * 255).round()),
+                  ),
+                ),
+                child: Text(
+                  comparison.userInput,
+                  style: theme.textTheme.bodyLarge?.copyWith(
+                    color:
+                        isCorrect ? Colors.green.shade700 : Colors.red.shade700,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+
+        // Expected answer (only show if incorrect)
+        if (!isCorrect) ...[
+          const SizedBox(height: 8),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              SizedBox(
+                width: 80,
+                child: Text(
+                  context.tr(TranslationKeys.practiceResultsCorrectAnswer),
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+              Expanded(
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.green.withAlpha((0.1 * 255).round()),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: Colors.green.withAlpha((0.3 * 255).round()),
+                    ),
+                  ),
+                  child: Text(
+                    correctAnswerDisplay,
+                    style: theme.textTheme.bodyLarge?.copyWith(
+                      color: Colors.green.shade700,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
       ],
     );
   }

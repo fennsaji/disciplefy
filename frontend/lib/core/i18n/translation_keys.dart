@@ -1219,6 +1219,13 @@ class TranslationKeys {
       'practice_results.penalty_applied';
   static const practiceResultsDone = 'practice_results.done';
   static const practiceResultsPracticeAgain = 'practice_results.practice_again';
+  static const practiceResultsAnswerComparison =
+      'practice_results.answer_comparison';
+  static const practiceResultsBlank = 'practice_results.blank';
+  static const practiceResultsWord = 'practice_results.word';
+  static const practiceResultsPhrase = 'practice_results.phrase';
+  static const practiceResultsYourAnswer = 'practice_results.your_answer';
+  static const practiceResultsCorrectAnswer = 'practice_results.correct_answer';
 
   // Quality Rating Labels
   static const qualityPerfect = 'quality.perfect';

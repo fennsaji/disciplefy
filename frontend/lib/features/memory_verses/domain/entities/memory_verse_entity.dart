@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import 'practice_mode_entity.dart';
 
 /// Sentinel class for copyWith method to distinguish between null and unset values.
 ///
@@ -63,6 +64,10 @@ class MemoryVerseEntity extends Equatable {
   /// Timestamp when the entity was created
   final DateTime createdAt;
 
+  /// Cached comprehensive mastery status from backend
+  /// Updated via database trigger when practice sessions are submitted
+  final bool isFullyMasteredCached;
+
   const MemoryVerseEntity({
     required this.id,
     required this.verseReference,
@@ -78,13 +83,94 @@ class MemoryVerseEntity extends Equatable {
     this.lastReviewed,
     required this.totalReviews,
     required this.createdAt,
+    this.isFullyMasteredCached = false,
   });
 
   /// Checks if the verse is due for review (next review date has passed)
   bool get isDue => DateTime.now().isAfter(nextReviewDate);
 
   /// Checks if the verse is mastered (repetitions >= 5 successful reviews)
+  ///
+  /// **Note**: This is a simplified mastery check based only on SM-2 repetitions.
+  /// For comprehensive mastery criteria, use [isFullyMastered] which requires
+  /// practice mode mastery and spaced review intervals.
   bool get isMastered => repetitions >= 5;
+
+  /// Checks if the verse is fully mastered with comprehensive criteria v2.0 (stricter).
+  ///
+  /// **IMPORTANT**: Prefer using [isFullyMasteredCached] field which is calculated and
+  /// cached by the backend with complete criteria including total reviews and success rate.
+  /// This method provides client-side validation but cannot check all backend criteria.
+  ///
+  /// **Enhanced Mastery Requirements v2.0 (Stricter):**
+  /// 1. At least 6 different practice modes mastered (80%+ over 8+ practices each)
+  /// 2. Both hard modes mastered (Audio AND Type It Out with 80%+ over 8+ practices)
+  /// 3. Reviews spaced over at least 21 days (intervalDays >= 21)
+  /// 4. At least 8 consecutive successful SM-2 reviews (repetitions >= 8)
+  ///
+  /// **Additional backend-only criteria** (not checkable here):
+  /// 5. Total reviews >= 20 (from total_reviews field)
+  /// 6. Successful reviews >= 15 (75%+ success rate from review_sessions table)
+  /// 7. Days since added >= 60 (2+ months elapsed since verse was added)
+  ///
+  /// **Edge Cases:**
+  /// - Returns `false` if `practiceModes` is empty or contains invalid data
+  /// - Returns `false` if fewer than 6 unique modes have been practiced
+  /// - Requires ALL criteria to be met simultaneously
+  /// - Duplicate modes are automatically deduplicated using Set
+  ///
+  /// **Parameters:**
+  /// - [practiceModes] - List of practice mode entities with performance stats.
+  ///                     Must contain unique modes with valid statistics.
+  ///
+  /// **Returns:**
+  /// - `true` if ALL client-checkable mastery criteria are met
+  /// - `false` if ANY criterion fails or input is invalid
+  ///
+  /// **Example:**
+  /// ```dart
+  /// // Prefer using the cached backend value:
+  /// if (verse.isFullyMasteredCached) {
+  ///   print('Verse fully mastered (verified by backend)!');
+  /// }
+  ///
+  /// // Or for client-side validation (incomplete check):
+  /// final modes = await repository.getPracticeModeStatistics(verseId);
+  /// final isFullyMastered = verse.isFullyMastered(modes);
+  /// ```
+  bool isFullyMastered(List<PracticeModeEntity> practiceModes) {
+    // Input validation: Check for empty list
+    if (practiceModes.isEmpty) return false;
+
+    // Criterion 1: SM-2 consecutive successful reviews (must have 8+ repetitions)
+    if (repetitions < 8) return false;
+
+    // Criterion 2: Review interval (reviews must be spaced over at least 21 days / 3 weeks)
+    if (intervalDays < 21) return false;
+
+    // Criterion 3: Count unique mastered modes (80%+ success rate over 8+ practices)
+    // Use Set to ensure uniqueness and prevent duplicate mode counting
+    // Note: isMastered checks times_practiced >= 8 and success_rate >= 80
+    final uniqueMasteredModes = practiceModes
+        .where((mode) => mode.isMastered)
+        .map((mode) => mode.modeType)
+        .toSet();
+
+    if (uniqueMasteredModes.length < 6) return false;
+
+    // Criterion 4: Both hard modes mastered (Audio AND Type It Out)
+    // Count unique hard modes that are mastered
+    final masteredHardModes = practiceModes
+        .where((mode) => mode.isMastered && mode.difficulty == Difficulty.hard)
+        .map((mode) => mode.modeType)
+        .toSet();
+
+    if (masteredHardModes.length < 2) return false;
+
+    // All client-checkable criteria met
+    // Note: Backend also checks total_reviews >= 20, successful_reviews >= 15, days >= 60
+    return true;
+  }
 
   /// Checks if the verse is new (never successfully reviewed)
   bool get isNew => repetitions == 0;
@@ -160,6 +246,7 @@ class MemoryVerseEntity extends Equatable {
     Object? lastReviewed = unsetValue,
     int? totalReviews,
     DateTime? createdAt,
+    bool? isFullyMasteredCached,
   }) {
     return MemoryVerseEntity(
       id: id ?? this.id,
@@ -178,6 +265,8 @@ class MemoryVerseEntity extends Equatable {
           : lastReviewed as DateTime?,
       totalReviews: totalReviews ?? this.totalReviews,
       createdAt: createdAt ?? this.createdAt,
+      isFullyMasteredCached:
+          isFullyMasteredCached ?? this.isFullyMasteredCached,
     );
   }
 
@@ -197,6 +286,7 @@ class MemoryVerseEntity extends Equatable {
         lastReviewed,
         totalReviews,
         createdAt,
+        isFullyMasteredCached,
       ];
 
   @override

@@ -178,9 +178,13 @@ class MemoryHeatMap extends StatelessWidget {
           .add(_MonthSpan(currentMonth, spanStart, weeks.length - spanStart));
     }
 
+    // Calculate total width needed for all weeks
+    final totalWidth = weeks.length * (_cellSize + _cellGap);
+
     // Build month labels using Stack for proper positioning
     return SizedBox(
       height: 16,
+      width: totalWidth,
       child: Padding(
         padding: const EdgeInsets.only(left: 36), // Align with grid
         child: Stack(
