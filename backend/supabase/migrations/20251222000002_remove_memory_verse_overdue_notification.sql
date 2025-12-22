@@ -21,6 +21,9 @@ DROP FUNCTION IF EXISTS get_memory_verse_overdue_notification_users();
 -- 2. UPDATE REMINDER FUNCTION TO REMOVE OVERDUE COUNT
 -- ============================================================================
 
+-- Drop existing function first (return type is changing)
+DROP FUNCTION IF EXISTS get_memory_verse_reminder_notification_users(INTEGER, INTEGER);
+
 CREATE OR REPLACE FUNCTION get_memory_verse_reminder_notification_users(
   target_hour INTEGER,
   target_minute INTEGER
