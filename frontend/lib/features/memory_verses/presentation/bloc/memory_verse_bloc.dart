@@ -30,6 +30,7 @@ import '../../domain/usecases/use_streak_freeze.dart';
 import '../../domain/usecases/get_memory_champions_leaderboard.dart';
 // Services
 import '../../data/services/memory_verse_notification_service.dart';
+import '../../data/services/suggested_verses_cache_service.dart';
 import 'memory_verse_event.dart';
 import 'memory_verse_state.dart';
 
@@ -83,6 +84,7 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
 
   // Services
   final MemoryVerseNotificationService notificationService;
+  final SuggestedVersesCacheService suggestedVersesCacheService;
 
   MemoryVerseBloc({
     required this.getDueVerses,
@@ -112,6 +114,7 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
     required this.getSuggestedVerses,
     // Services
     required this.notificationService,
+    required this.suggestedVersesCacheService,
   }) : super(const MemoryVerseInitial()) {
     on<LoadDueVerses>(_onLoadDueVerses);
     on<AddVerseFromDaily>(_onAddVerseFromDaily);
@@ -254,9 +257,15 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
             ));
           }
         },
-        (verse) {
+        (verse) async {
           if (kDebugMode) {
             print('✅ [BLOC] Verse added: ${verse.verseReference}');
+          }
+
+          // Clear suggested verses cache to refresh "Already Added" status
+          await suggestedVersesCacheService.clearCache();
+          if (kDebugMode) {
+            print('🗑️ [BLOC] Cleared suggested verses cache');
           }
 
           emit(VerseAdded(
@@ -1613,9 +1622,15 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
             ));
           }
         },
-        (verse) {
+        (verse) async {
           if (kDebugMode) {
             print('✅ [BLOC] Suggested verse added: ${verse.verseReference}');
+          }
+
+          // Clear suggested verses cache to refresh "Already Added" status
+          await suggestedVersesCacheService.clearCache();
+          if (kDebugMode) {
+            print('🗑️ [BLOC] Cleared suggested verses cache');
           }
 
           emit(VerseAdded(

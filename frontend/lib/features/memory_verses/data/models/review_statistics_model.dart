@@ -10,6 +10,7 @@ class ReviewStatisticsModel extends ReviewStatisticsEntity {
     required super.reviewedToday,
     required super.upcomingReviews,
     required super.masteredVerses,
+    required super.fullyMasteredVerses,
   });
 
   /// Creates a model from domain entity
@@ -20,6 +21,7 @@ class ReviewStatisticsModel extends ReviewStatisticsEntity {
       reviewedToday: entity.reviewedToday,
       upcomingReviews: entity.upcomingReviews,
       masteredVerses: entity.masteredVerses,
+      fullyMasteredVerses: entity.fullyMasteredVerses,
     );
   }
 
@@ -31,6 +33,7 @@ class ReviewStatisticsModel extends ReviewStatisticsEntity {
       reviewedToday: json['reviewed_today'] as int,
       upcomingReviews: json['upcoming_reviews'] as int,
       masteredVerses: json['mastered_verses'] as int,
+      fullyMasteredVerses: json['fully_mastered_verses'] as int,
     );
   }
 
@@ -42,6 +45,7 @@ class ReviewStatisticsModel extends ReviewStatisticsEntity {
       'reviewed_today': reviewedToday,
       'upcoming_reviews': upcomingReviews,
       'mastered_verses': masteredVerses,
+      'fully_mastered_verses': fullyMasteredVerses,
     };
   }
 
@@ -53,6 +57,7 @@ class ReviewStatisticsModel extends ReviewStatisticsEntity {
       reviewedToday: reviewedToday,
       upcomingReviews: upcomingReviews,
       masteredVerses: masteredVerses,
+      fullyMasteredVerses: fullyMasteredVerses,
     );
   }
 
@@ -64,6 +69,7 @@ class ReviewStatisticsModel extends ReviewStatisticsEntity {
     int? reviewedToday,
     int? upcomingReviews,
     int? masteredVerses,
+    int? fullyMasteredVerses,
   }) {
     return ReviewStatisticsModel(
       totalVerses: totalVerses ?? this.totalVerses,
@@ -71,6 +77,7 @@ class ReviewStatisticsModel extends ReviewStatisticsEntity {
       reviewedToday: reviewedToday ?? this.reviewedToday,
       upcomingReviews: upcomingReviews ?? this.upcomingReviews,
       masteredVerses: masteredVerses ?? this.masteredVerses,
+      fullyMasteredVerses: fullyMasteredVerses ?? this.fullyMasteredVerses,
     );
   }
 }

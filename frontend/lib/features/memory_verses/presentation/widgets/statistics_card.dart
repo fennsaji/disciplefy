@@ -8,7 +8,10 @@ import '../../domain/entities/review_statistics_entity.dart';
 /// Shows key metrics in a visually appealing card layout:
 /// - Total verses in deck
 /// - Verses due for review
-/// - Mastered verses (repetitions >= 5)
+/// - Reviews completed today
+/// - Upcoming reviews (next 7 days)
+/// - Review Milestones (basic mastery: repetitions >= 5)
+/// - Fully Mastered (comprehensive mastery criteria)
 /// - Mastery percentage with progress bar
 class StatisticsCard extends StatelessWidget {
   final ReviewStatisticsEntity statistics;
@@ -58,7 +61,7 @@ class StatisticsCard extends StatelessWidget {
             ),
             const SizedBox(height: 20),
 
-            // Middle row: Reviewed Today and Mastered
+            // Middle row: Reviewed Today and Upcoming Reviews
             Row(
               children: [
                 Expanded(
@@ -74,9 +77,35 @@ class StatisticsCard extends StatelessWidget {
                 Expanded(
                   child: _buildStatItem(
                     context: context,
+                    icon: Icons.upcoming,
+                    label: context.tr('memory.upcoming'),
+                    value: statistics.upcomingReviews.toString(),
+                    color: Colors.purple,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+
+            // Bottom row: Review Milestones and Fully Mastered
+            Row(
+              children: [
+                Expanded(
+                  child: _buildStatItem(
+                    context: context,
                     icon: Icons.star,
-                    label: context.tr('memory.mastered'),
+                    label: context.tr('memory.reviewMilestones'),
                     value: statistics.masteredVerses.toString(),
+                    color: Colors.grey,
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: _buildStatItem(
+                    context: context,
+                    icon: Icons.emoji_events,
+                    label: context.tr('memory.fullyMastered'),
+                    value: statistics.fullyMasteredVerses.toString(),
                     color: Colors.amber,
                   ),
                 ),

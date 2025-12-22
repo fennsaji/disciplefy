@@ -8,21 +8,21 @@ on:
     # ============================================================================
     #
     # Hour mapping (all notifications that run at each UTC hour):
-    # UTC 0:  Daily Verse (6 AM UTC+6), Memory Verse Reminder (9 AM UTC+9), Memory Verse Overdue (6 PM UTC-6)
+    # UTC 0:  Daily Verse (6 AM UTC+6), Memory Verse Reminder (9 AM UTC+9)
     # UTC 2:  Recommended Topic (8 AM UTC+6)
-    # UTC 3:  Daily Verse (6 AM UTC+3), Memory Verse Reminder (9 AM UTC+6), Memory Verse Overdue (6 PM UTC-9)
+    # UTC 3:  Daily Verse (6 AM UTC+3), Memory Verse Reminder (9 AM UTC+6)
     # UTC 5:  Recommended Topic (8 AM UTC+3)
-    # UTC 6:  Daily Verse (6 AM UTC+0), Memory Verse Reminder (9 AM UTC+3), Memory Verse Overdue (6 PM UTC+12)
+    # UTC 6:  Daily Verse (6 AM UTC+0), Memory Verse Reminder (9 AM UTC+3)
     # UTC 8:  Recommended Topic (8 AM UTC+0)
-    # UTC 9:  Daily Verse (6 AM UTC-3), Memory Verse Reminder (9 AM UTC+0), Memory Verse Overdue (6 PM UTC+9)
+    # UTC 9:  Daily Verse (6 AM UTC-3), Memory Verse Reminder (9 AM UTC+0)
     # UTC 11: Recommended Topic (8 AM UTC-3)
-    # UTC 12: Daily Verse (6 AM UTC-6), Memory Verse Reminder (9 AM UTC-3), Memory Verse Overdue (6 PM UTC+6)
+    # UTC 12: Daily Verse (6 AM UTC-6), Memory Verse Reminder (9 AM UTC-3)
     # UTC 14: Recommended Topic (8 AM UTC-6)
-    # UTC 15: Daily Verse (6 AM UTC-9), Memory Verse Reminder (9 AM UTC-6), Memory Verse Overdue (6 PM UTC+3)
+    # UTC 15: Daily Verse (6 AM UTC-9), Memory Verse Reminder (9 AM UTC-6)
     # UTC 17: Recommended Topic (8 AM UTC-9)
-    # UTC 18: Daily Verse (6 AM UTC+12), Memory Verse Reminder (9 AM UTC-9), Memory Verse Overdue (6 PM UTC+0)
+    # UTC 18: Daily Verse (6 AM UTC+12), Memory Verse Reminder (9 AM UTC-9)
     # UTC 20: Recommended Topic (8 AM UTC+12)
-    # UTC 21: Daily Verse (6 AM UTC+9), Memory Verse Reminder (9 AM UTC+12), Memory Verse Overdue (6 PM UTC-3)
+    # UTC 21: Daily Verse (6 AM UTC+9), Memory Verse Reminder (9 AM UTC+12)
     # UTC 23: Recommended Topic (8 AM UTC+9)
     #
     # ============================================================================
@@ -43,7 +43,6 @@ on:
           - recommended_topic
           - streak_reminder
           - memory_verse_reminder
-          - memory_verse_overdue
           - all
 
 jobs:
@@ -285,75 +284,12 @@ jobs:
           echo "Notification Type: Memory Verse Reminder (9 AM)"
 
   # ==========================================================================
-  # Job 5: Send Memory Verse Overdue Notifications
-  # ==========================================================================
-  send-memory-verse-overdue:
-    runs-on: ubuntu-latest
-    name: Send Memory Verse Overdue Notifications (Prod)
-
-    # Run on schedule OR manual dispatch
-    if: |
-      github.event_name == 'schedule' ||
-      (github.event_name == 'workflow_dispatch' &&
-       (github.event.inputs.notification_type == 'memory_verse_overdue' ||
-        github.event.inputs.notification_type == 'all'))
-
-    steps:
-      - name: Check if this hour should run Memory Verse Overdue
-        id: should_run
-        run: |
-          # Memory Verse Overdue should run every 3 hours: 0, 3, 6, 9, 12, 15, 18, 21
-          current_hour=$(date -u +%H)
-          if [[ $current_hour -eq 0 || $current_hour -eq 3 || $current_hour -eq 6 || $current_hour -eq 9 || $current_hour -eq 12 || $current_hour -eq 15 || $current_hour -eq 18 || $current_hour -eq 21 ]] || [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
-            echo "should_run=true" >> $GITHUB_OUTPUT
-            echo "✅ Should run Memory Verse Overdue at UTC hour $current_hour"
-          else
-            echo "should_run=false" >> $GITHUB_OUTPUT
-            echo "⏭️ Skipping Memory Verse Overdue at UTC hour $current_hour (not a scheduled hour)"
-          fi
-
-      - name: Send Memory Verse Overdue Push Notifications (Prod)
-        if: steps.should_run.outputs.should_run == 'true'
-        run: |
-          echo "Triggering Memory Verse Overdue notification Edge Function (Production)..."
-
-          response=$(curl -X POST \
-            "https://${{ secrets.SUPABASE_PROJECT_REF }}.supabase.co/functions/v1/send-memory-verse-notification?type=overdue" \
-            -H "X-Cron-Secret: ${{ secrets.CRON_SECRET }}" \
-            -H "Content-Type: application/json" \
-            -w "\n%{http_code}" \
-            -s)
-
-          http_code=$(echo "$response" | tail -n1)
-          body=$(echo "$response" | sed '$d')
-
-          echo "Response Code: $http_code"
-          echo "Response Body: $body"
-
-          if [ "$http_code" -ge 200 ] && [ "$http_code" -lt 300 ]; then
-            echo "✅ Memory Verse Overdue notifications sent successfully (Production)"
-            exit 0
-          else
-            echo "❌ Failed to send Memory Verse Overdue notifications (Production)"
-            exit 1
-          fi
-
-      - name: Log Execution
-        if: always()
-        run: |
-          echo "Job Status: ${{ job.status }}"
-          echo "Should Run: ${{ steps.should_run.outputs.should_run }}"
-          echo "Triggered at: $(date -u)"
-          echo "Environment: Production"
-          echo "Notification Type: Memory Verse Overdue (6 PM)"
-
-  # ==========================================================================
-  # Job 6: Monitor Notification Health
+  # Job 5: Monitor Notification Health
   # ==========================================================================
   monitor-health:
     runs-on: ubuntu-latest
     name: Monitor Notification System Health (Prod)
-    needs: [send-daily-verse, send-recommended-topic, send-streak-reminder, send-memory-verse-reminder, send-memory-verse-overdue]
+    needs: [send-daily-verse, send-recommended-topic, send-streak-reminder, send-memory-verse-reminder]
     if: always()
 
     steps:

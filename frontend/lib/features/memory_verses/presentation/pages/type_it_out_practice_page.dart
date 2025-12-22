@@ -280,8 +280,8 @@ class _TypeItOutPracticePageState extends State<TypeItOutPracticePage> {
                   ],
                 ),
               ),
-      ).withAuthProtection(),
-    );
+      ),
+    ).withAuthProtection();
   }
 
   Widget _buildVerseReferenceHeader(ThemeData theme) {

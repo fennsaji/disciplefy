@@ -85,7 +85,6 @@ class NotificationBloc extends Bloc<NotificationEvent, NotificationState> {
         streakReminderTime: domainStreakReminderTime,
         memoryVerseReminderEnabled: event.memoryVerseReminderEnabled,
         memoryVerseReminderTime: domainMemoryVerseReminderTime,
-        memoryVerseOverdueEnabled: event.memoryVerseOverdueEnabled,
       ),
     );
 

@@ -1343,6 +1343,12 @@ class AppTranslations {
       'penalty_applied': 'Yes (penalty applied)',
       'done': 'Done',
       'practice_again': 'Practice Again',
+      'answer_comparison': 'Answer Comparison',
+      'blank': 'Blank',
+      'word': 'Word',
+      'phrase': 'Phrase',
+      'your_answer': 'Your Answer:',
+      'correct_answer': 'Correct Answer:',
     },
     'quality': {
       'perfect': 'Perfect',
@@ -1462,7 +1468,7 @@ class AppTranslations {
     'word_scramble': {
       'title': 'Phrase Scramble',
       'instruction': 'Arrange phrases in correct order',
-      'available_phrases': 'Available Phrases (@count)',
+      'available_phrases': 'Available Phrases',
       'drop_here': 'Drop phrase here',
     },
     // Progressive Reveal Practice Page
@@ -2896,6 +2902,12 @@ class AppTranslations {
       'penalty_applied': 'हाँ (दंड लागू)',
       'done': 'पूर्ण',
       'practice_again': 'फिर से अभ्यास करें',
+      'answer_comparison': 'उत्तर तुलना',
+      'blank': 'रिक्त',
+      'word': 'शब्द',
+      'phrase': 'वाक्यांश',
+      'your_answer': 'आपका उत्तर:',
+      'correct_answer': 'सही उत्तर:',
     },
     'quality': {
       'perfect': 'उत्तम',
@@ -4520,6 +4532,12 @@ class AppTranslations {
       'penalty_applied': 'അതെ (ശിക്ഷ ലാഗൂ)',
       'done': 'പൂർത്തിയായി',
       'practice_again': 'വീണ്ടും പരിശീലിക്കുക',
+      'answer_comparison': 'ഉത്തര താരതമ്യം',
+      'blank': 'ശൂന്യം',
+      'word': 'വാക്ക്',
+      'phrase': 'വാചകം',
+      'your_answer': 'നിങ്ങളുടെ ഉത്തരം:',
+      'correct_answer': 'ശരിയായ ഉത്തരം:',
     },
     'quality': {
       'perfect': 'പൂർണ്ണം',

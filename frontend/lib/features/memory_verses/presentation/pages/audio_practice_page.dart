@@ -241,39 +241,20 @@ class _AudioPracticePageState extends State<AudioPracticePage> {
     final originalWords = _normalizeText(currentVerse!.verseText).split(' ');
     final recognizedWords = _normalizeText(_recognizedText).split(' ');
 
+    // Use sequence alignment to handle word insertions/deletions/splits
+    final alignedPairs = _alignWordSequences(originalWords, recognizedWords);
+
     final comparisons = <WordComparison>[];
     int matchedWords = 0;
 
-    // Use Levenshtein-like comparison for word matching
-    for (int i = 0; i < originalWords.length; i++) {
-      if (i < recognizedWords.length) {
-        final original = originalWords[i];
-        final recognized = recognizedWords[i];
-        final isMatch = _wordsMatch(original, recognized);
+    for (final pair in alignedPairs) {
+      final isMatch = pair.isMatch;
+      if (isMatch) matchedWords++;
 
-        if (isMatch) matchedWords++;
-
-        comparisons.add(WordComparison(
-          originalWord: original,
-          recognizedWord: recognized,
-          isMatch: isMatch,
-        ));
-      } else {
-        // Word was missed
-        comparisons.add(WordComparison(
-          originalWord: originalWords[i],
-          recognizedWord: '',
-          isMatch: false,
-        ));
-      }
-    }
-
-    // Handle extra words that were spoken
-    for (int i = originalWords.length; i < recognizedWords.length; i++) {
       comparisons.add(WordComparison(
-        originalWord: '',
-        recognizedWord: recognizedWords[i],
-        isMatch: false,
+        originalWord: pair.originalWord,
+        recognizedWord: pair.recognizedWord,
+        isMatch: isMatch,
       ));
     }
 
@@ -286,6 +267,116 @@ class _AudioPracticePageState extends State<AudioPracticePage> {
       _wordComparisons = comparisons;
       _currentPhase = AudioPhase.results;
     });
+  }
+
+  /// Align two word sequences using dynamic programming (similar to diff algorithms).
+  /// Handles insertions, deletions, and word splits gracefully.
+  List<_AlignedWordPair> _alignWordSequences(
+    List<String> original,
+    List<String> recognized,
+  ) {
+    final m = original.length;
+    final n = recognized.length;
+
+    // DP table: dp[i][j] = best score for aligning original[0..i-1] with recognized[0..j-1]
+    final dp = List.generate(m + 1, (_) => List.filled(n + 1, 0));
+
+    // Initialize: cost of deletions (missing words) and insertions (extra words)
+    for (int i = 0; i <= m; i++) {
+      dp[i][0] = i; // Cost of deleting i words
+    }
+    for (int j = 0; j <= n; j++) {
+      dp[0][j] = j; // Cost of inserting j words
+    }
+
+    // Fill DP table
+    for (int i = 1; i <= m; i++) {
+      for (int j = 1; j <= n; j++) {
+        final matchCost =
+            _wordsMatch(original[i - 1], recognized[j - 1]) ? 0 : 1;
+
+        dp[i][j] = [
+          dp[i - 1][j - 1] + matchCost, // Match or substitute
+          dp[i - 1][j] + 1, // Delete from original (word missing)
+          dp[i][j - 1] + 1, // Insert into original (extra word spoken)
+        ].reduce((a, b) => a < b ? a : b);
+      }
+    }
+
+    // Backtrack to find alignment
+    final aligned = <_AlignedWordPair>[];
+    int i = m;
+    int j = n;
+
+    while (i > 0 || j > 0) {
+      if (i > 0 && j > 0) {
+        final matchCost =
+            _wordsMatch(original[i - 1], recognized[j - 1]) ? 0 : 1;
+        final fromMatch = dp[i - 1][j - 1] + matchCost;
+        final fromDelete = i > 0 ? dp[i - 1][j] + 1 : double.infinity;
+        final fromInsert = j > 0 ? dp[i][j - 1] + 1 : double.infinity;
+
+        if (dp[i][j] == fromMatch) {
+          // Match or substitution
+          aligned.insert(
+            0,
+            _AlignedWordPair(
+              originalWord: original[i - 1],
+              recognizedWord: recognized[j - 1],
+              isMatch: _wordsMatch(original[i - 1], recognized[j - 1]),
+            ),
+          );
+          i--;
+          j--;
+        } else if (dp[i][j] == fromDelete) {
+          // Word was missed
+          aligned.insert(
+            0,
+            _AlignedWordPair(
+              originalWord: original[i - 1],
+              recognizedWord: '',
+              isMatch: false,
+            ),
+          );
+          i--;
+        } else {
+          // Extra word was spoken
+          aligned.insert(
+            0,
+            _AlignedWordPair(
+              originalWord: '',
+              recognizedWord: recognized[j - 1],
+              isMatch: false,
+            ),
+          );
+          j--;
+        }
+      } else if (i > 0) {
+        // Remaining words were missed
+        aligned.insert(
+          0,
+          _AlignedWordPair(
+            originalWord: original[i - 1],
+            recognizedWord: '',
+            isMatch: false,
+          ),
+        );
+        i--;
+      } else {
+        // Remaining extra words
+        aligned.insert(
+          0,
+          _AlignedWordPair(
+            originalWord: '',
+            recognizedWord: recognized[j - 1],
+            isMatch: false,
+          ),
+        );
+        j--;
+      }
+    }
+
+    return aligned;
   }
 
   String _normalizeText(String text) {
@@ -413,9 +504,9 @@ class _AudioPracticePageState extends State<AudioPracticePage> {
                 ? const Center(child: CircularProgressIndicator())
                 : _buildContent(theme),
           ),
-        ).withAuthProtection(),
+        ),
       ),
-    );
+    ).withAuthProtection();
   }
 
   Widget _buildContent(ThemeData theme) {
@@ -996,6 +1087,19 @@ class WordComparison {
   final bool isMatch;
 
   WordComparison({
+    required this.originalWord,
+    required this.recognizedWord,
+    required this.isMatch,
+  });
+}
+
+/// Internal class for aligned word pairs during sequence alignment
+class _AlignedWordPair {
+  final String originalWord;
+  final String recognizedWord;
+  final bool isMatch;
+
+  _AlignedWordPair({
     required this.originalWord,
     required this.recognizedWord,
     required this.isMatch,

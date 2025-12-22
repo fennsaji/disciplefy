@@ -220,9 +220,10 @@ async function handleGetSuggestedVerses(
   }
 
   // Add is_already_added flag to each verse
+  // Check against localized_reference for non-English languages
   const versesWithStatus: SuggestedVerse[] = verses.map(verse => ({
     ...verse,
-    is_already_added: existingReferences.has(verse.reference.toLowerCase().trim())
+    is_already_added: existingReferences.has(verse.localized_reference.toLowerCase().trim())
   }))
 
   // Log analytics event

@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/i18n/translation_keys.dart';
 import '../../../../core/extensions/translation_extension.dart';
 import '../../../../core/di/injection_container.dart';
+import '../../../../core/widgets/auth_protected_screen.dart';
 import '../../domain/entities/memory_champion_entry.dart';
 import '../bloc/memory_verse_bloc.dart';
 import '../bloc/memory_verse_event.dart';
@@ -72,80 +74,101 @@ class _MemoryChampionsPageState extends State<MemoryChampionsPage>
     super.dispose();
   }
 
+  /// Handle back navigation - go to memory verses home when can't pop
+  void _handleBackNavigation() {
+    if (context.canPop()) {
+      context.pop();
+    } else {
+      // Fallback to memory verses home
+      context.go('/memory-verses');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return BlocProvider.value(
       value: _bloc,
-      child: Scaffold(
-        appBar: AppBar(
-          title: Text(context.tr(TranslationKeys.memoryChampions)),
-          bottom: TabBar(
-            controller: _tabController,
-            tabs: [
-              Tab(text: context.tr(TranslationKeys.weekly)),
-              Tab(text: context.tr(TranslationKeys.monthly)),
-              Tab(text: context.tr(TranslationKeys.allTime)),
-            ],
+      child: PopScope(
+        canPop: false,
+        onPopInvokedWithResult: (didPop, result) {
+          if (didPop) return;
+          _handleBackNavigation();
+        },
+        child: Scaffold(
+          appBar: AppBar(
+            leading: IconButton(
+              icon: const Icon(Icons.arrow_back),
+              onPressed: _handleBackNavigation,
+            ),
+            title: Text(context.tr(TranslationKeys.memoryChampions)),
+            bottom: TabBar(
+              controller: _tabController,
+              tabs: [
+                Tab(text: context.tr(TranslationKeys.weekly)),
+                Tab(text: context.tr(TranslationKeys.monthly)),
+                Tab(text: context.tr(TranslationKeys.allTime)),
+              ],
+            ),
           ),
-        ),
-        body: BlocBuilder<MemoryVerseBloc, MemoryVerseState>(
-          builder: (context, state) {
-            if (state is MemoryVerseLoading) {
-              return const Center(child: CircularProgressIndicator());
-            }
+          body: BlocBuilder<MemoryVerseBloc, MemoryVerseState>(
+            builder: (context, state) {
+              if (state is MemoryVerseLoading) {
+                return const Center(child: CircularProgressIndicator());
+              }
 
-            if (state is MemoryVerseError) {
-              return Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.error_outline,
-                        size: 64, color: Colors.grey[400]),
-                    const SizedBox(height: 16),
-                    Text(
-                      'Failed to load leaderboard',
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: Colors.grey[600],
+              if (state is MemoryVerseError) {
+                return Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.error_outline,
+                          size: 64, color: Colors.grey[400]),
+                      const SizedBox(height: 16),
+                      Text(
+                        'Failed to load leaderboard',
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: Colors.grey[600],
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 8),
-                    TextButton.icon(
-                      icon: const Icon(Icons.refresh),
-                      label: const Text('Retry'),
-                      onPressed: () {
-                        _bloc.add(
-                          LoadMemoryChampionsLeaderboardEvent(
-                            period: _currentPeriod,
-                          ),
-                        );
-                      },
+                      const SizedBox(height: 8),
+                      TextButton.icon(
+                        icon: const Icon(Icons.refresh),
+                        label: const Text('Retry'),
+                        onPressed: () {
+                          _bloc.add(
+                            LoadMemoryChampionsLeaderboardEvent(
+                              period: _currentPeriod,
+                            ),
+                          );
+                        },
+                      ),
+                    ],
+                  ),
+                );
+              }
+
+              if (state is MemoryChampionsLeaderboardLoaded) {
+                return Column(
+                  children: [
+                    // User's current rank card
+                    _buildUserRankCard(state.userStats),
+
+                    // Leaderboard
+                    Expanded(
+                      child: _buildLeaderboard(state.leaderboard),
                     ),
                   ],
-                ),
+                );
+              }
+
+              // Default empty state
+              return const Center(
+                child: Text('No leaderboard data available'),
               );
-            }
-
-            if (state is MemoryChampionsLeaderboardLoaded) {
-              return Column(
-                children: [
-                  // User's current rank card
-                  _buildUserRankCard(state.userStats),
-
-                  // Leaderboard
-                  Expanded(
-                    child: _buildLeaderboard(state.leaderboard),
-                  ),
-                ],
-              );
-            }
-
-            // Default empty state
-            return const Center(
-              child: Text('No leaderboard data available'),
-            );
-          },
-        ),
+            },
+          ),
+        ).withAuthProtection(),
       ),
     );
   }
@@ -153,7 +176,7 @@ class _MemoryChampionsPageState extends State<MemoryChampionsPage>
   Widget _buildUserRankCard(UserMemoryStats userStats) {
     final userRank = userStats.rank;
     final userMasterVerses = userStats.masterVerses;
-    final userStreak = userStats.currentStreak;
+    final userStreak = userStats.longestStreak;
 
     return Container(
       margin: const EdgeInsets.all(16),

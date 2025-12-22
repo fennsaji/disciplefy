@@ -383,8 +383,8 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
             return _buildEmptyState();
           },
         ),
-      ),
-    ).withAuthProtection();
+      ).withAuthProtection(),
+    );
   }
 
   Widget _buildLoadingState() {
