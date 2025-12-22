@@ -35,6 +35,7 @@ interface MemoryVerse {
   readonly last_reviewed: string | null
   readonly total_reviews: number
   readonly added_date: string
+  readonly is_fully_mastered: boolean
 }
 
 /**
@@ -45,7 +46,8 @@ interface ReviewStatistics {
   readonly due_verses: number
   readonly reviewed_today: number
   readonly upcoming_reviews: number
-  readonly mastered_verses: number // repetitions >= 5
+  readonly mastered_verses: number // repetitions >= 5 (basic mastery)
+  readonly fully_mastered_verses: number // comprehensive mastery criteria
 }
 
 /**
@@ -116,12 +118,20 @@ async function getReviewStatistics(
     .eq('user_id', userId)
     .gte('repetitions', 5)
 
+  // Get fully mastered verses count (comprehensive criteria)
+  const { count: fullyMasteredCount } = await supabaseClient
+    .from('memory_verses')
+    .select('*', { count: 'exact', head: true })
+    .eq('user_id', userId)
+    .eq('is_fully_mastered', true)
+
   return {
     total_verses: totalCount || 0,
     due_verses: dueCount || 0,
     reviewed_today: reviewedTodayCount || 0,
     upcoming_reviews: upcomingCount || 0,
-    mastered_verses: masteredCount || 0
+    mastered_verses: masteredCount || 0,
+    fully_mastered_verses: fullyMasteredCount || 0
   }
 }
 

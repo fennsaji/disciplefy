@@ -200,14 +200,19 @@ class _ClozeReviewPageState extends State<ClozeReviewPage> {
   void _submitPractice() {
     if (currentVerse == null) return;
 
-    // Calculate hints used (number of blanks that are empty or incorrect)
+    // Fill-in-the-Blanks mode has no hint button, so hintsUsed is always 0
     final blanks = wordEntries.where((e) => e.isBlank).toList();
-    int hintsUsed = 0;
-    for (final entry in blanks) {
-      if (!_isWordCorrect(entry.word, entry.userInput)) {
-        hintsUsed++;
-      }
-    }
+    const int hintsUsed = 0;
+
+    // Collect blank comparisons for results page
+    final blankComparisons = blanks.map((entry) {
+      final isCorrect = _isWordCorrect(entry.word, entry.userInput);
+      return BlankComparison(
+        expected: entry.word,
+        userInput: entry.userInput.isEmpty ? '(empty)' : entry.userInput,
+        isCorrect: isCorrect,
+      );
+    }).toList();
 
     // Auto-calculate quality and confidence
     final quality = QualityCalculator.calculateQuality(
@@ -233,6 +238,7 @@ class _ClozeReviewPageState extends State<ClozeReviewPage> {
       showedAnswer: false,
       qualityRating: quality,
       confidenceRating: confidence,
+      blankComparisons: blankComparisons,
     );
 
     GoRouter.of(context).goToPracticeResults(params);

@@ -90,7 +90,7 @@ class PracticeModeProgression {
   static const double masteryThreshold = 80.0;
 
   /// Minimum practices required for mastery status
-  static const int masteryMinPractices = 5;
+  static const int masteryMinPractices = 8;
 
   /// Ordered progression from easiest to hardest.
   /// Users should achieve proficiency in each mode before moving to the next.
@@ -99,18 +99,18 @@ class PracticeModeProgression {
   /// 1. Flip Card - Passive recognition (see reference, recall verse)
   /// 2. Progressive Reveal - Guided recall (words appear one by one)
   /// 3. First Letter Hints - Minimal scaffolding (just first letters)
-  /// 4. Word Bank - Recognition + ordering (tap words in sequence)
-  /// 5. Cloze - Partial recall (fill missing words)
-  /// 6. Word Scramble - Structure recognition (arrange phrase chunks)
+  /// 4. Word Scramble - Structure recognition (arrange phrase chunks)
+  /// 5. Word Bank - Recognition + ordering (tap words in sequence)
+  /// 6. Cloze - Partial recall (fill missing words)
   /// 7. Audio - Auditory + verbal (listen and speak)
   /// 8. Type It Out - Full recall (type entire verse from memory)
   static const List<PracticeModeType> progressionOrder = [
     PracticeModeType.flipCard,
     PracticeModeType.progressive,
     PracticeModeType.firstLetter,
+    PracticeModeType.wordScramble,
     PracticeModeType.wordBank,
     PracticeModeType.cloze,
-    PracticeModeType.wordScramble,
     PracticeModeType.audio,
     PracticeModeType.typeItOut,
   ];
@@ -294,7 +294,7 @@ class PracticeModeEntity extends Equatable {
       (timesPracticed >= 3 &&
           successRate >= PracticeModeProgression.proficiencyThreshold);
 
-  /// Checks if this mode is mastered (80%+ success rate with 5+ practices)
+  /// Checks if this mode is mastered (80%+ success rate with 8+ practices)
   bool get isMastered =>
       timesPracticed >= PracticeModeProgression.masteryMinPractices &&
       successRate >= PracticeModeProgression.masteryThreshold;
@@ -338,7 +338,7 @@ class PracticeModeEntity extends Equatable {
       return 'Keep practicing - consistency is key!';
     }
 
-    if (successRate >= 70.0 && timesPracticed < 5) {
+    if (successRate >= 70.0 && timesPracticed < 8) {
       return 'Great progress! Practice more to master it.';
     }
 

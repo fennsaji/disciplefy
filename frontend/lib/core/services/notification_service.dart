@@ -483,7 +483,12 @@ class NotificationService {
     }
 
     // Validate against known notification types
-    const validTypes = {'daily_verse', 'recommended_topic'};
+    const validTypes = {
+      'daily_verse',
+      'recommended_topic',
+      'continue_learning',
+      'for_you'
+    };
     if (!validTypes.contains(type)) {
       if (kDebugMode) {
         print('[NotificationService] ⚠️  Unknown notification type: $type');
@@ -544,6 +549,68 @@ class NotificationService {
           if (kDebugMode) {
             print(
                 '[NotificationService] ⚠️  No topic title provided, navigating to study topics');
+          }
+        }
+        break;
+
+      case 'continue_learning':
+        // Continue Learning: Navigate to existing incomplete guide
+        final guideId = data['guide_id'];
+        final topicTitle = data['topic_title']; // For debug logging
+
+        if (guideId != null && guideId is String && guideId.isNotEmpty) {
+          // Navigate to the specific incomplete study guide
+          _router.go('/study-guide/$guideId');
+          if (kDebugMode) {
+            print(
+                '[NotificationService] ✅ Navigating to Continue Learning guide: $guideId (${topicTitle ?? 'unknown'})');
+          }
+        } else {
+          // Fallback to study topics page if no guide ID provided
+          _router.go('/study-topics');
+          if (kDebugMode) {
+            print(
+                '[NotificationService] ⚠️  No guide ID provided, navigating to study topics');
+          }
+        }
+        break;
+
+      case 'for_you':
+        // For You: Same as recommended_topic, personalized topic recommendation
+        final topicId = data['topic_id'];
+        final topicTitle = data['topic_title'];
+        final topicDescription = data['topic_description'];
+        final language = data['language'] ?? 'en';
+
+        if (topicTitle != null &&
+            topicTitle is String &&
+            topicTitle.isNotEmpty) {
+          // Navigate to study guide V2 with topic information
+          final encodedTitle = Uri.encodeComponent(topicTitle);
+
+          final topicIdParam =
+              (topicId != null && topicId is String && topicId.isNotEmpty)
+                  ? '&topic_id=$topicId'
+                  : '';
+
+          final descriptionParam = (topicDescription != null &&
+                  topicDescription is String &&
+                  topicDescription.isNotEmpty)
+              ? '&description=${Uri.encodeComponent(topicDescription)}'
+              : '';
+
+          _router.go(
+              '/study-guide-v2?input=$encodedTitle&type=topic&language=$language&source=for_you_notification$topicIdParam$descriptionParam');
+          if (kDebugMode) {
+            print(
+                '[NotificationService] ✅ Navigating to For You topic: $topicTitle (ID: ${topicId ?? 'none'})');
+          }
+        } else {
+          // Fallback to study topics page if no topic title provided
+          _router.go('/study-topics');
+          if (kDebugMode) {
+            print(
+                '[NotificationService] ⚠️  No For You topic title provided, navigating to study topics');
           }
         }
         break;

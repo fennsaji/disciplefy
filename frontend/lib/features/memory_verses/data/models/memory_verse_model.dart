@@ -20,6 +20,7 @@ class MemoryVerseModel extends MemoryVerseEntity {
     super.lastReviewed,
     required super.totalReviews,
     required super.createdAt,
+    super.isFullyMasteredCached,
   });
 
   /// Creates a model from domain entity
@@ -39,6 +40,7 @@ class MemoryVerseModel extends MemoryVerseEntity {
       lastReviewed: entity.lastReviewed,
       totalReviews: entity.totalReviews,
       createdAt: entity.createdAt,
+      isFullyMasteredCached: entity.isFullyMasteredCached,
     );
   }
 
@@ -61,6 +63,7 @@ class MemoryVerseModel extends MemoryVerseEntity {
           : null,
       totalReviews: json['total_reviews'] as int,
       createdAt: DateTime.parse(json['created_at'] as String),
+      isFullyMasteredCached: json['is_fully_mastered'] as bool? ?? false,
     );
   }
 
@@ -81,6 +84,7 @@ class MemoryVerseModel extends MemoryVerseEntity {
       'last_reviewed': lastReviewed?.toIso8601String(),
       'total_reviews': totalReviews,
       'created_at': createdAt.toIso8601String(),
+      'is_fully_mastered': isFullyMasteredCached,
     };
   }
 
@@ -101,6 +105,7 @@ class MemoryVerseModel extends MemoryVerseEntity {
       lastReviewed: lastReviewed,
       totalReviews: totalReviews,
       createdAt: createdAt,
+      isFullyMasteredCached: isFullyMasteredCached,
     );
   }
 
@@ -126,6 +131,7 @@ class MemoryVerseModel extends MemoryVerseEntity {
     Object? lastReviewed = unsetValue,
     int? totalReviews,
     DateTime? createdAt,
+    bool? isFullyMasteredCached,
   }) {
     return MemoryVerseModel(
       id: id ?? this.id,
@@ -144,6 +150,8 @@ class MemoryVerseModel extends MemoryVerseEntity {
           : lastReviewed as DateTime?,
       totalReviews: totalReviews ?? this.totalReviews,
       createdAt: createdAt ?? this.createdAt,
+      isFullyMasteredCached:
+          isFullyMasteredCached ?? this.isFullyMasteredCached,
     );
   }
 }

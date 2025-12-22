@@ -17,8 +17,11 @@ class ReviewStatisticsEntity extends Equatable {
   /// Number of reviews scheduled within the next 7 days
   final int upcomingReviews;
 
-  /// Number of mastered verses (repetitions >= 5)
+  /// Number of mastered verses (basic mastery: repetitions >= 5)
   final int masteredVerses;
+
+  /// Number of fully mastered verses (comprehensive mastery criteria)
+  final int fullyMasteredVerses;
 
   const ReviewStatisticsEntity({
     required this.totalVerses,
@@ -26,6 +29,7 @@ class ReviewStatisticsEntity extends Equatable {
     required this.reviewedToday,
     required this.upcomingReviews,
     required this.masteredVerses,
+    required this.fullyMasteredVerses,
   });
 
   /// Percentage of verses that are mastered (0-100)
@@ -83,6 +87,7 @@ class ReviewStatisticsEntity extends Equatable {
     int? reviewedToday,
     int? upcomingReviews,
     int? masteredVerses,
+    int? fullyMasteredVerses,
   }) {
     return ReviewStatisticsEntity(
       totalVerses: totalVerses ?? this.totalVerses,
@@ -90,6 +95,7 @@ class ReviewStatisticsEntity extends Equatable {
       reviewedToday: reviewedToday ?? this.reviewedToday,
       upcomingReviews: upcomingReviews ?? this.upcomingReviews,
       masteredVerses: masteredVerses ?? this.masteredVerses,
+      fullyMasteredVerses: fullyMasteredVerses ?? this.fullyMasteredVerses,
     );
   }
 
@@ -100,6 +106,7 @@ class ReviewStatisticsEntity extends Equatable {
         reviewedToday,
         upcomingReviews,
         masteredVerses,
+        fullyMasteredVerses,
       ];
 
   @override

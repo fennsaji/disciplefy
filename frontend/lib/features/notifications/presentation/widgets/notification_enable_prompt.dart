@@ -19,7 +19,6 @@ enum NotificationPromptType {
   streakReminder,
   streakMilestone,
   memoryVerseReminder,
-  memoryVerseOverdue,
 }
 
 /// Configuration for each notification prompt type
@@ -74,13 +73,6 @@ class NotificationPromptConfig {
           icon: Icons.psychology_rounded,
           sharedPrefsKey: 'notification_prompt_shown_memory_verse_reminder',
         );
-      case NotificationPromptType.memoryVerseOverdue:
-        return NotificationPromptConfig(
-          title: _getLocalizedTitle(type, languageCode),
-          description: _getLocalizedDescription(type, languageCode),
-          icon: Icons.notification_important_rounded,
-          sharedPrefsKey: 'notification_prompt_shown_memory_verse_overdue',
-        );
     }
   }
 
@@ -111,11 +103,6 @@ class NotificationPromptConfig {
         'en': 'Memory Verse Reminders',
         'hi': 'वचन याद रिमाइंडर',
         'ml': 'വാക്യ ഓർമ്മ റിമൈൻഡർ',
-      },
-      NotificationPromptType.memoryVerseOverdue: {
-        'en': 'Overdue Review Alerts',
-        'hi': 'देर हुई समीक्षा अलर्ट',
-        'ml': 'വൈകിയ അവലോകന അലേർട്ട്',
       },
     };
     return titles[type]?[languageCode] ?? titles[type]?['en'] ?? '';
@@ -163,14 +150,6 @@ class NotificationPromptConfig {
             'जब आपके वचन समीक्षा के लिए तैयार हों तो दैनिक रिमाइंडर प्राप्त करें।',
         'ml':
             'നിങ്ങളുടെ വാക്യങ്ങൾ അവലോകനത്തിന് തയ്യാറാകുമ്പോൾ ദൈനംദിന ഓർമ്മപ്പെടുത്തലുകൾ ലഭിക്കുക.',
-      },
-      NotificationPromptType.memoryVerseOverdue: {
-        'en':
-            'Get alerts when your memory verses become overdue so you don\'t lose progress.',
-        'hi':
-            'जब आपके वचन देर हो जाएं तो अलर्ट प्राप्त करें ताकि आप प्रगति न खोएं।',
-        'ml':
-            'നിങ്ങളുടെ വാക്യങ്ങൾ വൈകുമ്പോൾ അലേർട്ടുകൾ ലഭിക്കുക, അതിനാൽ നിങ്ങൾ പുരോഗതി നഷ്ടപ്പെടുത്തില്ല.',
       },
     };
     return descriptions[type]?[languageCode] ?? descriptions[type]?['en'] ?? '';
@@ -409,10 +388,6 @@ class _NotificationEnableSheet extends StatelessWidget {
       case NotificationPromptType.memoryVerseReminder:
         bloc.add(const UpdateNotificationPreferences(
             memoryVerseReminderEnabled: true));
-        break;
-      case NotificationPromptType.memoryVerseOverdue:
-        bloc.add(const UpdateNotificationPreferences(
-            memoryVerseOverdueEnabled: true));
         break;
     }
   }

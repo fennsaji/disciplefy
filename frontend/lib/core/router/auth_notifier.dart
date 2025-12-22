@@ -21,16 +21,39 @@ class AuthNotifier extends ChangeNotifier {
     // ANDROID FIX: Start as not initialized - session restoration in progress
     _isInitialized = false;
 
+    // ANDROID DEBUG: Log initialization start with timestamp
+    final initStartTime = DateTime.now();
+    print(
+        '🚀 [AUTH NOTIFIER] Initialization started at ${initStartTime.toIso8601String()}');
+
     // Check initial auth state (may be null during restoration)
     _isAuthenticated = Supabase.instance.client.auth.currentUser != null;
+
+    // ANDROID DEBUG: Log initial state
+    print(
+        '📊 [AUTH NOTIFIER] Initial state: isAuthenticated=$_isAuthenticated, user=${Supabase.instance.client.auth.currentUser?.id ?? "null"}');
 
     // Listen to auth state changes
     _authSubscription = Supabase.instance.client.auth.onAuthStateChange.listen(
       (AuthState authState) {
+        final eventTime = DateTime.now();
+        final timeSinceInit =
+            eventTime.difference(initStartTime).inMilliseconds;
+
         final wasAuthenticated = _isAuthenticated;
         final wasInitialized = _isInitialized;
 
         _isAuthenticated = authState.session?.user != null;
+
+        // ANDROID DEBUG: Log auth state event details
+        print(
+            '📨 [AUTH NOTIFIER] Auth state event received after ${timeSinceInit}ms:');
+        print('   └─ Event: ${authState.event}');
+        print(
+            '   └─ Session: ${authState.session != null ? "exists" : "null"}');
+        print('   └─ User: ${authState.session?.user.id ?? "null"}');
+        print(
+            '   └─ Was authenticated: $wasAuthenticated → Now: $_isAuthenticated');
 
         // ANDROID FIX: Mark as initialized after first auth state event
         // This indicates Supabase has completed session restoration
@@ -40,29 +63,48 @@ class AuthNotifier extends ChangeNotifier {
           _initTimeout?.cancel();
           _initTimeout = null;
           print(
-              '🔄 [AUTH NOTIFIER] Session restoration complete - auth initialized');
+              '✅ [AUTH NOTIFIER] Session restoration complete - auth initialized after ${timeSinceInit}ms');
         }
 
         // Notify if auth state changed OR if this is the first initialization
         if (wasAuthenticated != _isAuthenticated || !wasInitialized) {
-          print(
-              '🔄 [AUTH NOTIFIER] Auth state changed: wasAuthenticated=$wasAuthenticated, isAuthenticated=$_isAuthenticated, isInitialized=$_isInitialized');
+          print('🔄 [AUTH NOTIFIER] Notifying router of state change');
           notifyListeners();
+        } else {
+          print('⏭️  [AUTH NOTIFIER] State unchanged, skipping notification');
         }
       },
     );
 
     // ANDROID FIX: Fallback timeout to prevent infinite loading
-    // If no auth state event within 2 seconds, mark as initialized anyway
-    _initTimeout = Timer(const Duration(seconds: 2), () {
+    // If no auth state event within 5 seconds, mark as initialized anyway
+    // Increased from 2s to 5s to accommodate slow Android devices and network delays
+    _initTimeout = Timer(const Duration(seconds: 5), () {
+      final timeoutTime = DateTime.now();
+      final timeSinceInit =
+          timeoutTime.difference(initStartTime).inMilliseconds;
+
       // Only proceed if not disposed and not already initialized
       if (!_isDisposed && !_isInitialized) {
         _isInitialized = true;
         print(
-            '🔄 [AUTH NOTIFIER] Timeout reached - marking auth as initialized');
+            '⏱️ [AUTH NOTIFIER] TIMEOUT after ${timeSinceInit}ms - no auth event received');
+        print(
+            '⚠️  [AUTH NOTIFIER] Forcing initialization to prevent infinite loading');
+        print(
+            '   └─ Current user: ${Supabase.instance.client.auth.currentUser?.id ?? "null"}');
+        print('   └─ Is authenticated: $_isAuthenticated');
         notifyListeners();
+      } else if (_isDisposed) {
+        print(
+            '🗑️  [AUTH NOTIFIER] Timeout fired but already disposed, ignoring');
+      } else {
+        print(
+            '✅ [AUTH NOTIFIER] Timeout fired but already initialized, ignoring');
       }
     });
+
+    print('⏳ [AUTH NOTIFIER] 5-second timeout timer started');
   }
 
   bool get isAuthenticated => _isAuthenticated;
@@ -71,15 +113,23 @@ class AuthNotifier extends ChangeNotifier {
 
   @override
   void dispose() {
+    print('🗑️  [AUTH NOTIFIER] Disposing - cleaning up resources');
+
     // Mark as disposed to prevent timer callback from running
     _isDisposed = true;
 
     // Cancel and clear the initialization timeout timer
-    _initTimeout?.cancel();
-    _initTimeout = null;
+    if (_initTimeout != null) {
+      _initTimeout?.cancel();
+      _initTimeout = null;
+      print('   └─ Timeout timer cancelled');
+    }
 
     // Cancel auth state subscription
     _authSubscription.cancel();
+    print('   └─ Auth subscription cancelled');
+
+    print('✅ [AUTH NOTIFIER] Disposal complete');
 
     super.dispose();
   }
