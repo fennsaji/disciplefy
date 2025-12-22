@@ -12,6 +12,8 @@ import {
   NotificationContentParams,
 } from '../_shared/services/notification-helper-service.ts'
 import { AppError } from '../_shared/utils/error-handler.ts'
+import { i18n, type SupportedLocale } from '../_shared/services/i18n-service.ts'
+import { loadAllLocales } from '../_shared/locales/index.ts'
 
 // ============================================================================
 // Types
@@ -22,20 +24,11 @@ interface MemoryVerseUser extends NotificationUser {
 }
 
 // ============================================================================
-// Notification Content by Language
+// Initialize i18n
 // ============================================================================
 
-const REMINDER_TITLES: Record<string, string> = {
-  en: '📚 Review Time',
-  hi: '📚 समीक्षा करें',
-  ml: '📚 അവലോകനം',
-}
-
-const REMINDER_BODIES: Record<string, (count: number) => string> = {
-  en: (count) => `${count} verse${count === 1 ? '' : 's'} due today for review`,
-  hi: (count) => `${count} वचन आज याद करने के लिए`,
-  ml: (count) => `${count} വാക്യം ഇന്ന് ഓർമ്മിക്കാൻ`,
-}
+// Load all translation files on module initialization
+loadAllLocales()
 
 // ============================================================================
 // Main Handler
@@ -117,13 +110,27 @@ async function handleMemoryVerseNotification(
     ({ user, language }: NotificationContentParams<MemoryVerseUser>) => {
       const dueVerseCount = Number(user.due_verse_count ?? 0)
 
-      const title = REMINDER_TITLES[language] || REMINDER_TITLES.en
-      const bodyFn = REMINDER_BODIES[language] || REMINDER_BODIES.en
-      const body = bodyFn(dueVerseCount)
+      // Normalize language to supported locale (fallback to 'en')
+      const locale = (['en', 'hi', 'ml'].includes(language) ? language : 'en') as SupportedLocale
+
+      // Use i18n service for proper pluralization in all languages
+      const title = i18n.t('notification.memoryVerse.title', { locale })
+      const body = i18n.t('notification.memoryVerse.reminder', {
+        locale,
+        count: dueVerseCount
+      })
+
+      // Fallback to English if translation fails
+      const finalTitle = title.startsWith('notification.')
+        ? i18n.t('notification.memoryVerse.title', { locale: 'en' })
+        : title
+      const finalBody = body.startsWith('notification.')
+        ? i18n.t('notification.memoryVerse.reminder', { locale: 'en', count: dueVerseCount })
+        : body
 
       return {
-        title,
-        body,
+        title: finalTitle,
+        body: finalBody,
         data: {
           dueCount: String(dueVerseCount),
         },

@@ -57,6 +57,13 @@ class _SuggestedVersesSheetState extends State<SuggestedVersesSheet> {
   SuggestedVerseCategory? _selectedCategory;
   late String _currentLanguage;
 
+  /// Supported language codes and their display names
+  static const Map<String, String> _supportedLanguages = {
+    'en': 'English',
+    'hi': 'हिन्दी',
+    'ml': 'മലയാളം',
+  };
+
   @override
   void initState() {
     super.initState();
@@ -197,12 +204,6 @@ class _SuggestedVersesSheetState extends State<SuggestedVersesSheet> {
   }
 
   Widget _buildLanguageSwitcher(BuildContext context, ThemeData theme) {
-    final languageOptions = {
-      'en': 'English',
-      'hi': 'हिन्दी',
-      'ml': 'മലയാളം',
-    };
-
     return PopupMenuButton<String>(
       initialValue: _currentLanguage,
       onSelected: _onLanguageChanged,
@@ -219,7 +220,7 @@ class _SuggestedVersesSheetState extends State<SuggestedVersesSheet> {
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              languageOptions[_currentLanguage] ?? 'English',
+              _supportedLanguages[_currentLanguage] ?? 'English',
               style: theme.textTheme.labelLarge?.copyWith(
                 fontWeight: FontWeight.w600,
                 color: theme.colorScheme.onPrimaryContainer,
@@ -235,7 +236,7 @@ class _SuggestedVersesSheetState extends State<SuggestedVersesSheet> {
         ),
       ),
       itemBuilder: (BuildContext context) {
-        return languageOptions.entries.map((entry) {
+        return _supportedLanguages.entries.map((entry) {
           return PopupMenuItem<String>(
             value: entry.key,
             child: Row(
