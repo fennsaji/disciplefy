@@ -341,9 +341,6 @@ class StudyGuideTTSService {
 
   /// Read the current section.
   Future<void> _readCurrentSection() async {
-    // Reset intentional stop flag - we're starting fresh
-    _isIntentionallyStopping = false;
-
     if (_currentSectionIndex >= _sections.length) {
       // All sections read
       print('🔊 [StudyGuideTTS] All sections completed');
@@ -394,14 +391,8 @@ class StudyGuideTTSService {
         // Stop progress timer since section is done
         _stopProgressTimer();
 
-        // Check if we should NOT advance (paused, stopped, or intentionally stopping)
-        if (_isIntentionallyStopping) {
-          print('🔊 [StudyGuideTTS] Intentional stop flag set - not advancing');
-          _isIntentionallyStopping = false;
-          return;
-        }
-
-        // Also check current state - if paused or idle, don't auto-advance
+        // Check current state FIRST - if paused or idle, don't auto-advance
+        // This prevents race conditions where the flag might be reset
         final currentStatus = state.value.status;
         if (currentStatus == TtsStatus.paused ||
             currentStatus == TtsStatus.idle) {
@@ -409,10 +400,20 @@ class StudyGuideTTSService {
           return;
         }
 
-        // Move to next section
-        _currentSectionIndex++;
-        print('🔊 [StudyGuideTTS] Advancing to section $_currentSectionIndex');
-        _readCurrentSection();
+        // Check if we're intentionally stopping (backup check)
+        if (_isIntentionallyStopping) {
+          print('🔊 [StudyGuideTTS] Intentional stop flag set - not advancing');
+          return;
+        }
+
+        // Only advance if we're still in playing state
+        if (currentStatus == TtsStatus.playing) {
+          // Move to next section
+          _currentSectionIndex++;
+          print(
+              '🔊 [StudyGuideTTS] Advancing to section $_currentSectionIndex');
+          _readCurrentSection();
+        }
       }
 
       print(
@@ -462,6 +463,8 @@ class StudyGuideTTSService {
   /// Resume playback.
   Future<void> resume() async {
     print('🔊 [StudyGuideTTS] Resuming from section $_currentSectionIndex');
+    // Clear the intentional stop flag since we're intentionally resuming
+    _isIntentionallyStopping = false;
     // Note: _readCurrentSection will restart progress from 0
     // This is acceptable since we can't seek within TTS audio
     await _readCurrentSection();
@@ -527,6 +530,7 @@ class StudyGuideTTSService {
     if (state.value.status == TtsStatus.playing) {
       _isIntentionallyStopping = true;
       await _ttsService.stop();
+      _isIntentionallyStopping = false; // Clear flag before restarting
       await _readCurrentSection();
     }
   }
