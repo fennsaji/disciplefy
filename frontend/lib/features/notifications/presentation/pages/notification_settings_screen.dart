@@ -328,25 +328,6 @@ class _NotificationSettingsView extends StatelessWidget {
                 : null,
           ),
 
-          const SizedBox(height: 12),
-
-          // Memory Verse Overdue Alert
-          NotificationPreferenceCard(
-            title: context.tr(
-                TranslationKeys.notificationsSettingsMemoryVerseOverdueTitle),
-            description: context.tr(TranslationKeys
-                .notificationsSettingsMemoryVerseOverdueDescription),
-            icon: Icons.timer_off_outlined,
-            enabled: state.preferences.memoryVerseOverdueEnabled,
-            onChanged: (value) {
-              context.read<NotificationBloc>().add(
-                    UpdateNotificationPreferences(
-                      memoryVerseOverdueEnabled: value,
-                    ),
-                  );
-            },
-          ),
-
           const SizedBox(height: 32),
 
           // Info Section

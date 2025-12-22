@@ -349,7 +349,7 @@ export async function logNotification(
   supabaseKey: string,
   log: {
     userId: string;
-    notificationType: 'daily_verse' | 'recommended_topic' | 'streak_reminder' | 'streak_milestone' | 'streak_lost' | 'memory_verse_reminder' | 'memory_verse_overdue';
+    notificationType: 'daily_verse' | 'recommended_topic' | 'continue_learning' | 'streak_reminder' | 'streak_milestone' | 'streak_lost' | 'memory_verse_reminder' | 'memory_verse_overdue';
     title: string;
     body: string;
     topicId?: string;

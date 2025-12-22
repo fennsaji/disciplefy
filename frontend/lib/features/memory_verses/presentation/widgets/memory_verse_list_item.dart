@@ -203,11 +203,41 @@ class MemoryVerseListItem extends StatelessWidget {
   Widget _buildStatusBadge(BuildContext context) {
     final theme = Theme.of(context);
 
+    // Fully Mastered - Gold trophy (comprehensive mastery criteria met)
+    if (verse.isFullyMasteredCached) {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        decoration: BoxDecoration(
+          color: Colors.amber.withOpacity(0.3),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.emoji_events,
+              size: 16,
+              color: Colors.amber[800],
+            ),
+            const SizedBox(width: 4),
+            Text(
+              'Fully Mastered',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: Colors.amber[800],
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    // Review Milestone - Silver star (basic mastery: 5+ repetitions)
     if (verse.isMastered) {
       return Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
         decoration: BoxDecoration(
-          color: Colors.amber.withOpacity(0.2),
+          color: Colors.grey.withOpacity(0.2),
           borderRadius: BorderRadius.circular(12),
         ),
         child: Row(
@@ -216,13 +246,13 @@ class MemoryVerseListItem extends StatelessWidget {
             Icon(
               Icons.star,
               size: 16,
-              color: Colors.amber[700],
+              color: Colors.grey[700],
             ),
             const SizedBox(width: 4),
             Text(
-              'Mastered',
+              'Review Milestone',
               style: theme.textTheme.bodySmall?.copyWith(
-                color: Colors.amber[700],
+                color: Colors.grey[700],
                 fontWeight: FontWeight.bold,
               ),
             ),

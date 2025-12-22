@@ -4,16 +4,21 @@ import 'package:flutter/material.dart';
 /// from practice session performance metrics.
 ///
 /// Uses SM-2 spaced repetition algorithm scale (1-5):
-/// - 5: Perfect response with complete recall
-/// - 4: Correct response with minor hesitation
-/// - 3: Correct response with serious difficulty
-/// - 2: Incorrect response but correct answer seemed easy to recall
-/// - 1: Complete blackout, no recall
+/// - 5: Perfect response with complete recall (95%+)
+/// - 4: Correct response with minor hesitation (85-94%)
+/// - 3: Correct response with serious difficulty (65-84%)
+/// - 2: Incorrect response but correct answer seemed easy to recall (45-64%)
+/// - 1: Complete blackout, no recall (<45%)
 class QualityCalculator {
   /// Calculate quality rating (1-5) based on performance metrics.
   ///
   /// Takes into account:
-  /// - Accuracy percentage (primary factor)
+  /// - Accuracy percentage (primary factor):
+  ///   - 95%+ → 5 stars
+  ///   - 85%+ → 4 stars
+  ///   - 65%+ → 3 stars
+  ///   - 45%+ → 2 stars
+  ///   - <45% → 1 star
   /// - Hints used (each hint reduces score by 0.2, max 1.0 reduction)
   /// - Whether answer was shown (caps rating at 2)
   static int calculateQuality({
@@ -23,7 +28,7 @@ class QualityCalculator {
   }) {
     // If user showed the answer, cap rating at 2
     if (showedAnswer) {
-      return accuracy > 50 ? 2 : 1;
+      return accuracy > 45 ? 2 : 1;
     }
 
     // Base score from accuracy
@@ -32,9 +37,9 @@ class QualityCalculator {
       score = 5.0;
     } else if (accuracy >= 85) {
       score = 4.0;
-    } else if (accuracy >= 70) {
+    } else if (accuracy >= 65) {
       score = 3.0;
-    } else if (accuracy >= 50) {
+    } else if (accuracy >= 45) {
       score = 2.0;
     } else {
       score = 1.0;
@@ -63,8 +68,8 @@ class QualityCalculator {
     if (showedAnswer) return 1;
     if (accuracy >= 95 && hintsUsed == 0) return 5;
     if (accuracy >= 85 && hintsUsed <= 1) return 4;
-    if (accuracy >= 70 && hintsUsed <= 2) return 3;
-    if (accuracy >= 50) return 2;
+    if (accuracy >= 65 && hintsUsed <= 2) return 3;
+    if (accuracy >= 45) return 2;
     return 1;
   }
 
@@ -108,8 +113,8 @@ class QualityCalculator {
   static Color getAccuracyColor(double accuracy) {
     if (accuracy >= 95) return Colors.green;
     if (accuracy >= 85) return Colors.lightGreen;
-    if (accuracy >= 70) return Colors.orange;
-    if (accuracy >= 50) return Colors.deepOrange;
+    if (accuracy >= 65) return Colors.orange;
+    if (accuracy >= 45) return Colors.deepOrange;
     return Colors.red;
   }
 

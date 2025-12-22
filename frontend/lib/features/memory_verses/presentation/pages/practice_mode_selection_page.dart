@@ -426,8 +426,8 @@ class _PracticeModeSelectionPageState extends State<PracticeModeSelectionPage> {
             ],
           ),
         ),
-      ).withAuthProtection(),
-    );
+      ),
+    ).withAuthProtection();
   }
 }
 

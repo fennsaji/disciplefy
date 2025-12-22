@@ -443,8 +443,8 @@ class _ProgressiveRevealPracticePageState
             ],
           ),
         ),
-      ).withAuthProtection(),
-    );
+      ),
+    ).withAuthProtection();
   }
 }
 

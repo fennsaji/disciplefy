@@ -20,6 +20,8 @@ import '../datasources/memory_verse_local_datasource.dart';
 import '../datasources/memory_verse_remote_datasource.dart';
 import '../helpers/memory_verse_repository_helper.dart';
 import '../services/memory_verse_sync_service.dart';
+import '../services/suggested_verses_cache_service.dart';
+import '../../../../core/di/injection_container.dart';
 
 /// Implementation of MemoryVerseRepository with offline-first strategy.
 ///
@@ -139,6 +141,8 @@ class MemoryVerseRepositoryImpl implements MemoryVerseRepository {
           reviewedToday: 0,
           upcomingReviews: 0,
           masteredVerses: cachedVerses.where((v) => v.repetitions >= 5).length,
+          fullyMasteredVerses:
+              cachedVerses.where((v) => v.isFullyMasteredCached).length,
         )
       ));
     } catch (e) {
@@ -1020,13 +1024,42 @@ class MemoryVerseRepositoryImpl implements MemoryVerseRepository {
       _helper.logDebug(
           'Fetching suggested verses (category: ${category?.name ?? 'all'}, language: $language)');
 
+      // Check cache first
+      final cacheService = sl<SuggestedVersesCacheService>();
+      final cachedData = await cacheService.getCachedVerses(
+        language: language,
+        category: category?.name,
+      );
+
+      if (cachedData != null) {
+        _helper.logSuccess(
+            'Using cached suggested verses (${cachedData.verses.length} verses)');
+        return Right(SuggestedVersesResponse(
+          verses: cachedData.verses,
+          categories: cachedData.categories,
+          total: cachedData.total,
+        ));
+      }
+
+      // Cache miss - fetch from API
+      _helper.logDebug('Cache miss - fetching from API');
       final response = await _remoteDataSource.getSuggestedVerses(
         category: category?.name,
         language: language,
       );
 
+      final entityResponse = response.toEntity();
+
+      // Cache the response
+      await cacheService.cacheVerses(
+        verses: entityResponse.verses,
+        categories: entityResponse.categories,
+        language: language,
+        category: category?.name,
+      );
+
       _helper.logSuccess('Fetched ${response.total} suggested verses');
-      return Right(response.toEntity());
+      return Right(entityResponse);
     } on ServerException catch (e) {
       _helper.logError('Server error: ${e.message}');
       return Left(ServerFailure(message: e.message, code: e.code));

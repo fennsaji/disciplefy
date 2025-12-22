@@ -1,5 +1,26 @@
 import 'package:equatable/equatable.dart';
 
+/// Comparison data for a single blank in Fill in the Blanks mode.
+class BlankComparison extends Equatable {
+  /// The word/phrase that was expected (correct answer)
+  final String expected;
+
+  /// What the user actually typed
+  final String userInput;
+
+  /// Whether the answer was marked as correct
+  final bool isCorrect;
+
+  const BlankComparison({
+    required this.expected,
+    required this.userInput,
+    required this.isCorrect,
+  });
+
+  @override
+  List<Object?> get props => [expected, userInput, isCorrect];
+}
+
 /// Parameters passed to the Practice Results Page after completing any practice mode.
 ///
 /// This unified entity ensures all 8 practice modes pass consistent data
@@ -38,6 +59,9 @@ class PracticeResultParams extends Equatable {
   /// Optional next verse ID for queue navigation
   final String? nextVerseId;
 
+  /// Blank comparisons for Fill in the Blanks mode (null for other modes)
+  final List<BlankComparison>? blankComparisons;
+
   const PracticeResultParams({
     required this.verseId,
     required this.verseReference,
@@ -50,6 +74,7 @@ class PracticeResultParams extends Equatable {
     required this.qualityRating,
     required this.confidenceRating,
     this.nextVerseId,
+    this.blankComparisons,
   });
 
   @override
@@ -65,6 +90,7 @@ class PracticeResultParams extends Equatable {
         qualityRating,
         confidenceRating,
         nextVerseId,
+        blankComparisons,
       ];
 
   /// Get display name for the practice mode
