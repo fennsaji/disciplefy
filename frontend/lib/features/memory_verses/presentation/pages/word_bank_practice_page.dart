@@ -305,6 +305,20 @@ class _WordBankPracticePageState extends State<WordBankPracticePage> {
     // Calculate accuracy
     final accuracy = _calculateAccuracy();
 
+    // Collect word comparisons for results page
+    final wordComparisons = <BlankComparison>[];
+    for (int i = 0; i < correctWords.length; i++) {
+      final expected = correctWords[i];
+      final userInput = placedWords[i] ?? '(empty)';
+      final isCorrect = placedWords[i] == expected;
+
+      wordComparisons.add(BlankComparison(
+        expected: expected,
+        userInput: userInput,
+        isCorrect: isCorrect,
+      ));
+    }
+
     // Auto-calculate quality and confidence
     final quality = QualityCalculator.calculateQuality(
       accuracy: accuracy,
@@ -329,6 +343,7 @@ class _WordBankPracticePageState extends State<WordBankPracticePage> {
       showedAnswer: showedAnswer,
       qualityRating: quality,
       confidenceRating: confidence,
+      blankComparisons: wordComparisons,
     );
 
     GoRouter.of(context).goToPracticeResults(params);
@@ -582,8 +597,8 @@ class _WordBankPracticePageState extends State<WordBankPracticePage> {
             ],
           ),
         ),
-      ).withAuthProtection(),
-    );
+      ),
+    ).withAuthProtection();
   }
 
   Widget _buildAnswerSlot(int index) {

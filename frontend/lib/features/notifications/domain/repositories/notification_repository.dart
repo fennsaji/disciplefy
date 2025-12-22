@@ -22,7 +22,6 @@ abstract class NotificationRepository {
     TimeOfDayVO? streakReminderTime,
     bool? memoryVerseReminderEnabled,
     TimeOfDayVO? memoryVerseReminderTime,
-    bool? memoryVerseOverdueEnabled,
   });
 
   /// Check if notifications are enabled on device

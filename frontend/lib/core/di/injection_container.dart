@@ -161,6 +161,7 @@ import '../../features/subscription/presentation/bloc/subscription_bloc.dart';
 import '../../features/memory_verses/data/datasources/memory_verse_local_datasource.dart';
 import '../../features/memory_verses/data/datasources/memory_verse_remote_datasource.dart';
 import '../../features/memory_verses/data/repositories/memory_verse_repository_impl.dart';
+import '../../features/memory_verses/data/services/suggested_verses_cache_service.dart';
 import '../../features/memory_verses/domain/repositories/memory_verse_repository.dart';
 import '../../features/memory_verses/domain/usecases/get_due_verses.dart';
 import '../../features/memory_verses/domain/usecases/add_verse_from_daily.dart';
@@ -437,6 +438,11 @@ Future<void> initializeDependencies() async {
     ),
   );
 
+  // Cache Service
+  sl.registerLazySingleton<SuggestedVersesCacheService>(
+    () => SuggestedVersesCacheService()..initialize(),
+  );
+
   // Repository
   sl.registerLazySingleton<MemoryVerseRepository>(
     () => MemoryVerseRepositoryImpl(
@@ -509,6 +515,7 @@ Future<void> initializeDependencies() async {
         getMemoryStatistics: sl(),
         getSuggestedVerses: sl(),
         notificationService: sl(),
+        suggestedVersesCacheService: sl(),
       ));
 
   //! Saved Guides

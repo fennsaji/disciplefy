@@ -186,18 +186,17 @@ class _WordScramblePracticePageState extends State<WordScramblePracticePage> {
         placedPhrases[index] = null;
       }
     });
+    // Re-check completion status (will set isCompleted to false if incomplete)
+    _checkCompletion();
   }
 
   void _checkCompletion() {
-    // Check if all slots are filled and in correct order
-    if (placedPhrases.every((phrase) => phrase != null)) {
-      final isCorrect = _isCorrectOrder();
-      if (isCorrect) {
-        setState(() {
-          isCompleted = true;
-        });
-      }
-    }
+    // Check if all slots are filled (order correctness shown only in results)
+    final allFilled = placedPhrases.every((phrase) => phrase != null);
+
+    setState(() {
+      isCompleted = allFilled;
+    });
   }
 
   bool _isCorrectOrder() {
@@ -258,12 +257,17 @@ class _WordScramblePracticePageState extends State<WordScramblePracticePage> {
   void _submitPractice() {
     if (currentVerse == null) return;
 
-    // Calculate accuracy percentage
-    double accuracy = 100.0;
-    if (hintsUsed > 0) {
-      accuracy =
-          ((correctPhrases.length - hintsUsed) / correctPhrases.length) * 100;
+    // Calculate accuracy based on correctly placed phrases
+    int correctlyPlaced = 0;
+    for (int i = 0; i < correctPhrases.length; i++) {
+      if (placedPhrases[i] == correctPhrases[i]) {
+        correctlyPlaced++;
+      }
     }
+
+    double accuracy = (correctlyPlaced / correctPhrases.length) * 100;
+
+    // If user showed the answer, accuracy is 0
     if (showCorrectAnswer) {
       accuracy = 0.0;
     }
@@ -280,6 +284,20 @@ class _WordScramblePracticePageState extends State<WordScramblePracticePage> {
       showedAnswer: showCorrectAnswer,
     );
 
+    // Collect phrase comparisons for results page
+    final phraseComparisons = <BlankComparison>[];
+    for (int i = 0; i < correctPhrases.length; i++) {
+      final expected = correctPhrases[i];
+      final userInput = placedPhrases[i] ?? '(empty)';
+      final isCorrect = placedPhrases[i] == expected;
+
+      phraseComparisons.add(BlankComparison(
+        expected: expected,
+        userInput: userInput,
+        isCorrect: isCorrect,
+      ));
+    }
+
     // Navigate to results page
     final params = PracticeResultParams(
       verseId: widget.verseId,
@@ -292,6 +310,7 @@ class _WordScramblePracticePageState extends State<WordScramblePracticePage> {
       showedAnswer: showCorrectAnswer,
       qualityRating: quality,
       confidenceRating: confidence,
+      blankComparisons: phraseComparisons,
     );
 
     GoRouter.of(context).goToPracticeResults(params);
@@ -374,7 +393,10 @@ class _WordScramblePracticePageState extends State<WordScramblePracticePage> {
                       ],
                     ),
                     TextButton.icon(
-                      onPressed: !isCompleted ? _useHint : null,
+                      onPressed:
+                          availablePhrases.isNotEmpty && !showCorrectAnswer
+                              ? _useHint
+                              : null,
                       icon: const Icon(Icons.lightbulb, size: 18),
                       label: Text(context.tr(TranslationKeys.practiceUseHint)),
                     ),
@@ -386,7 +408,6 @@ class _WordScramblePracticePageState extends State<WordScramblePracticePage> {
 
               // Verse construction area (drop targets)
               Expanded(
-                flex: 2,
                 child: Container(
                   padding: const EdgeInsets.all(16.0),
                   child: SingleChildScrollView(
@@ -395,6 +416,7 @@ class _WordScramblePracticePageState extends State<WordScramblePracticePage> {
                       children: List.generate(
                         correctPhrases.length,
                         (index) => Padding(
+                          key: ValueKey('drop_target_$index'),
                           padding: const EdgeInsets.only(bottom: 8.0),
                           child: _buildDropTarget(index),
                         ),
@@ -407,38 +429,60 @@ class _WordScramblePracticePageState extends State<WordScramblePracticePage> {
               const Divider(height: 1),
 
               // Available phrases area (drag sources)
-              Expanded(
-                child: Container(
-                  padding: const EdgeInsets.all(16.0),
+              // Show minimized version when empty, expanded when has phrases
+              if (availablePhrases.isEmpty)
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 16.0, vertical: 12.0),
                   color: theme.colorScheme.surfaceVariant
                       .withAlpha((0.3 * 255).round()),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        '${context.tr(TranslationKeys.wordScrambleAvailablePhrases)} (${availablePhrases.length})',
-                        style: theme.textTheme.titleSmall?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
+                  child: Center(
+                    child: Text(
+                      '${context.tr(TranslationKeys.wordScrambleAvailablePhrases)} (0)',
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: theme.colorScheme.onSurfaceVariant
+                            .withAlpha((0.6 * 255).round()),
                       ),
-                      const SizedBox(height: 12),
-                      Expanded(
-                        child: SingleChildScrollView(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: availablePhrases.map((phrase) {
-                              return Padding(
-                                padding: const EdgeInsets.only(bottom: 8.0),
-                                child: _buildDraggablePhrase(phrase),
-                              );
-                            }).toList(),
+                    ),
+                  ),
+                )
+              else
+                Expanded(
+                  child: Container(
+                    padding: const EdgeInsets.all(16.0),
+                    color: theme.colorScheme.surfaceVariant
+                        .withAlpha((0.3 * 255).round()),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '${context.tr(TranslationKeys.wordScrambleAvailablePhrases)} (${availablePhrases.length})',
+                          style: theme.textTheme.titleSmall?.copyWith(
+                            fontWeight: FontWeight.bold,
                           ),
                         ),
-                      ),
-                    ],
+                        const SizedBox(height: 12),
+                        Expanded(
+                          child: SingleChildScrollView(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children:
+                                  availablePhrases.asMap().entries.map((entry) {
+                                final phrase = entry.value;
+                                return Padding(
+                                  key: ValueKey('available_$phrase'),
+                                  padding: const EdgeInsets.only(bottom: 8.0),
+                                  child: _buildDraggablePhrase(phrase),
+                                );
+                              }).toList(),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-              ),
 
               // Action buttons
               Padding(
@@ -497,18 +541,16 @@ class _WordScramblePracticePageState extends State<WordScramblePracticePage> {
             ],
           ),
         ),
-      ).withAuthProtection(),
-    );
+      ),
+    ).withAuthProtection();
   }
 
   Widget _buildDropTarget(int index) {
     final theme = Theme.of(context);
     final placedPhrase = placedPhrases[index];
-    final correctPhrase = correctPhrases[index];
-    final isCorrect = placedPhrase == correctPhrase;
 
     return DragTarget<String>(
-      onWillAccept: (phrase) => !isCompleted,
+      onWillAccept: (phrase) => placedPhrase == null,
       onAccept: (phrase) => _placePhrase(index, phrase),
       builder: (context, candidateData, rejectedData) {
         final isHovered = candidateData.isNotEmpty;
@@ -521,16 +563,14 @@ class _WordScramblePracticePageState extends State<WordScramblePracticePage> {
             color: isHovered
                 ? theme.colorScheme.primary.withAlpha((0.1 * 255).round())
                 : (placedPhrase != null
-                    ? (isCorrect
-                        ? Colors.green.withAlpha((0.1 * 255).round())
-                        : Colors.orange.withAlpha((0.1 * 255).round()))
+                    ? theme.colorScheme.surfaceContainerHighest
                     : theme.colorScheme.surfaceVariant
                         .withAlpha((0.5 * 255).round())),
             border: Border.all(
               color: isHovered
                   ? theme.colorScheme.primary
                   : (placedPhrase != null
-                      ? (isCorrect ? Colors.green : Colors.orange)
+                      ? theme.colorScheme.outline
                       : Colors.grey.shade300),
               width: 2,
             ),
@@ -596,6 +636,7 @@ class _WordScramblePracticePageState extends State<WordScramblePracticePage> {
     final theme = Theme.of(context);
 
     return Draggable<String>(
+      key: ValueKey('draggable_$phrase'),
       data: phrase,
       feedback: Material(
         elevation: 4,
