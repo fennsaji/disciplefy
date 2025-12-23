@@ -137,17 +137,26 @@ class ReflectionResponse extends Equatable {
       case ReflectionInteractionType.multiSelect:
         return {key: (value as List<String>?) ?? []};
       case ReflectionInteractionType.verseSelection:
-        return {'saved_verses': (value as List<String>?) ?? []};
+        // Include cardIndex to prevent duplicates
+        return {'saved_verses_$cardIndex': (value as List<String>?) ?? []};
       case ReflectionInteractionType.prayer:
         final prayerData = value as Map<String, dynamic>?;
+        // Include cardIndex to prevent duplicates
         return {
-          'prayer_mode': prayerData?['mode'] as String?,
-          'prayer_duration_seconds': prayerData?['duration'] as int?,
+          'prayer_mode_$cardIndex': prayerData?['mode'] as String?,
+          'prayer_duration_seconds_$cardIndex': prayerData?['duration'] as int?,
         };
     }
   }
 
   String _getJsonKey() {
+    // Include cardIndex in the key to ensure uniqueness across multiple cards
+    // with the same section title
+    final baseKey = _getBaseJsonKey();
+    return '${baseKey}_$cardIndex';
+  }
+
+  String _getBaseJsonKey() {
     switch (sectionTitle.toLowerCase()) {
       case 'summary':
         return 'summary_theme';

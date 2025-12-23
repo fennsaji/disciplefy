@@ -37,6 +37,7 @@ import '../../../gamification/presentation/bloc/gamification_event.dart';
 import '../../domain/entities/study_mode.dart';
 import '../widgets/reflect_mode_view.dart';
 import '../../domain/entities/reflection_response.dart';
+import '../../domain/repositories/reflections_repository.dart';
 import '../widgets/reading_completion_card.dart';
 
 /// Removes duplicate section title from content if present at the start
@@ -1345,16 +1346,50 @@ class _StudyGuideScreenV2ContentState
     List<ReflectionResponse> responses,
     int timeSpent,
   ) async {
-    // TODO: Save reflection responses to backend via repository
-    // For now, just show success message and switch back to read mode
+    if (_currentStudyGuide == null) {
+      _showSnackBar(
+        'Cannot save reflection: Study guide not loaded',
+        Colors.red,
+        icon: Icons.error,
+      );
+      return;
+    }
 
-    _showSnackBar(
-      'Reflection saved! Time spent: ${timeSpent ~/ 60} minutes',
-      Colors.green,
-      icon: Icons.check_circle,
-    );
+    try {
+      final reflectionsRepository = sl<ReflectionsRepository>();
+      await reflectionsRepository.saveReflection(
+        studyGuideId: _currentStudyGuide!.id,
+        studyMode: widget.studyMode,
+        responses: responses,
+        timeSpentSeconds: timeSpent,
+      );
 
-    setState(() => _viewMode = StudyViewMode.read);
+      if (kDebugMode) {
+        print(
+            '✅ [REFLECTION] Saved reflection for guide: ${_currentStudyGuide!.id}');
+        print('   Responses: ${responses.length}');
+        print('   Time spent: ${timeSpent}s');
+        print('   Study mode: ${widget.studyMode.displayName}');
+      }
+
+      _showSnackBar(
+        'Reflection saved! Time spent: ${timeSpent ~/ 60} minutes',
+        Colors.green,
+        icon: Icons.check_circle,
+      );
+
+      setState(() => _viewMode = StudyViewMode.read);
+    } catch (e) {
+      if (kDebugMode) {
+        print('❌ [REFLECTION] Error saving reflection: $e');
+      }
+
+      _showSnackBar(
+        'Failed to save reflection. Please try again.',
+        Colors.red,
+        icon: Icons.error,
+      );
+    }
   }
 
   /// Builds the topic title section displayed below the AppBar

@@ -441,39 +441,86 @@ class LanguagePreferenceService {
   // ============================================================================
 
   /// Save user's preferred study mode to local storage.
-  /// For authenticated users, this could be synced to the database.
+  /// For authenticated users, this is synced to the database.
   Future<void> saveStudyModePreference(StudyMode mode) async {
     try {
+      // Save to local storage first (always)
       await _prefs.setString(_studyModePreferenceKey, mode.name);
       print(
-          '💾 [PREFERENCE_SERVICE] Study mode preference saved: ${mode.displayName}');
+          '💾 [PREFERENCE_SERVICE] Study mode preference saved locally: ${mode.displayName}');
 
       // For authenticated users, also save to database
       if (_authStateProvider.isAuthenticated &&
           !_authStateProvider.isAnonymous) {
-        await _userProfileService.updateStudyModePreference(mode.value);
-        print('✅ [PREFERENCE_SERVICE] Study mode synced to database');
+        final updateResult =
+            await _userProfileService.updateStudyModePreference(mode.value);
+
+        final dbUpdateSuccessful = updateResult.fold(
+          (failure) {
+            print(
+                '❌ [PREFERENCE_SERVICE] Failed to sync study mode to database: ${failure.message}');
+            return false;
+          },
+          (profile) {
+            print(
+                '✅ [PREFERENCE_SERVICE] Study mode synced to database: ${mode.displayName}');
+            return true;
+          },
+        );
+
+        // If database update failed, log a warning but don't block user
+        // Local preference is still saved, so user experience is not disrupted
+        if (!dbUpdateSuccessful) {
+          print(
+              '⚠️ [PREFERENCE_SERVICE] Study mode saved locally but database sync failed');
+        }
       }
     } catch (e) {
-      print('Error saving study mode preference: $e');
+      print('❌ [PREFERENCE_SERVICE] Error saving study mode preference: $e');
+      // Re-throw to let caller handle the error
+      rethrow;
     }
   }
 
   /// Clear study mode preference (sets to "ask every time")
   Future<void> clearStudyModePreference() async {
     try {
-      // Clear local storage
+      // Clear local storage first (always)
       await _prefs.remove(_studyModePreferenceKey);
+      print('💾 [PREFERENCE_SERVICE] Study mode preference cleared locally');
 
-      // For authenticated users, clear database value
+      // For authenticated users, also clear database value
       if (_authStateProvider.isAuthenticated &&
           !_authStateProvider.isAnonymous) {
-        await _userProfileService.updateStudyModePreference(null);
-      }
+        final updateResult =
+            await _userProfileService.updateStudyModePreference(null);
 
-      print('✅ [PREFERENCE_SERVICE] Study mode preference cleared');
+        final dbUpdateSuccessful = updateResult.fold(
+          (failure) {
+            print(
+                '❌ [PREFERENCE_SERVICE] Failed to clear study mode in database: ${failure.message}');
+            return false;
+          },
+          (profile) {
+            print('✅ [PREFERENCE_SERVICE] Study mode cleared in database');
+            return true;
+          },
+        );
+
+        // If database update failed, log a warning but don't block user
+        // Local preference is still cleared, so user experience is not disrupted
+        if (!dbUpdateSuccessful) {
+          print(
+              '⚠️ [PREFERENCE_SERVICE] Study mode cleared locally but database sync failed');
+        }
+      } else {
+        print(
+            '✅ [PREFERENCE_SERVICE] Study mode preference cleared (local only)');
+      }
     } catch (e) {
-      print('Error clearing study mode preference: $e');
+      print('❌ [PREFERENCE_SERVICE] Error clearing study mode preference: $e');
+      // Re-throw to let caller handle the error
+      rethrow;
     }
   }
 
