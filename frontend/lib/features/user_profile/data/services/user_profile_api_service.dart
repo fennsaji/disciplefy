@@ -88,6 +88,12 @@ class UserProfileApiService {
     return _updateProfile({'theme_preference': themePreference});
   }
 
+  /// Update user profile study mode preference
+  Future<Either<Failure, UserProfileEntity>> updateStudyModePreference(
+      String? studyMode) async {
+    return _updateProfile({'default_study_mode': studyMode});
+  }
+
   /// Update multiple profile fields
   Future<Either<Failure, UserProfileEntity>> updateProfile(
       Map<String, dynamic> updates) async {

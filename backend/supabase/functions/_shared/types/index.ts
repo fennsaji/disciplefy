@@ -47,12 +47,18 @@ export interface StudyGuideContent {
 }
 
 /**
+ * Valid study modes for study guide generation
+ */
+export type StudyMode = 'quick' | 'standard' | 'deep' | 'lectio'
+
+/**
  * Study guide input parameters
  */
 export interface StudyGuideInput {
   readonly type: 'scripture' | 'topic' | 'question'
   readonly value: string
   readonly language: string
+  readonly study_mode: StudyMode
 }
 
 /**

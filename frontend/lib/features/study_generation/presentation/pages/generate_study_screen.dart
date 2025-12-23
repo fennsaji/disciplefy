@@ -22,6 +22,8 @@ import '../bloc/study_bloc.dart';
 import '../bloc/study_event.dart';
 import '../bloc/study_state.dart';
 import '../widgets/recent_guides_section.dart';
+import '../widgets/mode_selection_sheet.dart';
+import '../../domain/entities/study_mode.dart';
 import '../../../tokens/presentation/bloc/token_bloc.dart';
 import '../../../tokens/presentation/bloc/token_event.dart';
 import '../../../tokens/presentation/bloc/token_state.dart';
@@ -320,21 +322,21 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
           ? translatedList
           : ['Forgiveness', 'Love', 'Faith', 'Hope', 'Prayer'];
     } else {
+      // Question mode - single suggestion
       final translatedList =
           context.trList(TranslationKeys.generateStudyQuestionSuggestions);
-      suggestions = translatedList.isNotEmpty
-          ? translatedList
-          : [
-              'What does the Bible say about anxiety?',
-              'How can I strengthen my faith?',
-              'What is the purpose of prayer?',
-              'Why does God allow suffering?',
-              'How do I know God\'s will for my life?',
-            ];
+      suggestions =
+          translatedList.isNotEmpty ? translatedList : ['How should we pray'];
     }
 
     final query = _inputController.text.trim().toLowerCase();
-    if (query.isEmpty) return suggestions.take(5).toList();
+
+    // For Question mode, only show 1 suggestion
+    if (query.isEmpty) {
+      return _selectedMode == StudyInputMode.question
+          ? suggestions.take(1).toList()
+          : suggestions.take(3).toList();
+    }
 
     return suggestions
         .where((suggestion) => suggestion.toLowerCase().contains(query))
@@ -598,47 +600,39 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // Top spacing
-                    SizedBox(height: isLargeScreen ? 32 : 24),
+                    const SizedBox(height: 24),
 
-                    // Mode Toggle
-                    _buildModeToggle(),
+                    // Mode Toggle - Compact design
+                    _buildCompactModeToggle(),
 
-                    SizedBox(height: isLargeScreen ? 24 : 16),
+                    const SizedBox(height: 32),
 
-                    // Language Selection
-                    _buildLanguageSelection(),
-
-                    SizedBox(height: isLargeScreen ? 32 : 24),
-
-                    // Input Section
+                    // Input Section with inline language selector
                     _buildInputSection(),
 
-                    SizedBox(height: isLargeScreen ? 24 : 16),
-
-                    // Suggestions
+                    // Show 2-3 suggestions per category
+                    const SizedBox(height: 16),
                     _buildSuggestions(),
 
-                    SizedBox(height: isLargeScreen ? 32 : 24),
+                    const SizedBox(height: 32),
 
                     // Generate Button and Status
                     BlocBuilder<StudyBloc, StudyState>(
                       builder: (context, state) => _buildGenerateButton(state),
                     ),
 
-                    const SizedBox(height: 20),
-
-                    // AI Discipler button - Premium Feature Highlight
-                    _buildAiStudyBuddyButton(context),
-
-                    // 🔧 FIX: Only show recent guides when keyboard is hidden
+                    // 🔧 FIX: Only show additional sections when keyboard is hidden
                     if (!isKeyboardVisible) ...[
+                      const SizedBox(height: 24),
+
+                      // Compact AI Discipler option
+                      _buildCompactAiDisciplerButton(context),
+
                       const SizedBox(height: 32),
 
-                      // View Saved Guides button - modern styling
-                      _buildViewSavedGuidesButton(context),
-
+                      // Recent Studies (has "View All" link built-in)
                       const RecentGuidesSection(),
-                      SizedBox(height: isLargeScreen ? 40 : 24),
+                      const SizedBox(height: 32),
                     ],
                   ],
                 ),
@@ -664,6 +658,107 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
         body: body,
       );
     }
+  }
+
+  /// Compact mode toggle with minimal design
+  Widget _buildCompactModeToggle() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Row(
+      children: [
+        _buildCompactModeChip(
+          label: 'Scripture',
+          icon: Icons.menu_book_rounded,
+          isSelected: _selectedMode == StudyInputMode.scripture,
+          onTap: () => _switchMode(StudyInputMode.scripture),
+        ),
+        const SizedBox(width: 8),
+        _buildCompactModeChip(
+          label: 'Topic',
+          icon: Icons.lightbulb_outline_rounded,
+          isSelected: _selectedMode == StudyInputMode.topic,
+          onTap: () => _switchMode(StudyInputMode.topic),
+        ),
+        const SizedBox(width: 8),
+        _buildCompactModeChip(
+          label: 'Question',
+          icon: Icons.help_outline_rounded,
+          isSelected: _selectedMode == StudyInputMode.question,
+          onTap: () => _switchMode(StudyInputMode.question),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildCompactModeChip({
+    required String label,
+    required IconData icon,
+    required bool isSelected,
+    required VoidCallback onTap,
+  }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Expanded(
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(12),
+          child: Container(
+            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
+            decoration: BoxDecoration(
+              color: isSelected
+                  ? AppTheme.primaryColor.withOpacity(0.15)
+                  : (isDark
+                      ? Colors.white.withOpacity(0.05)
+                      : Colors.grey.withOpacity(0.1)),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: isSelected
+                    ? AppTheme.primaryColor.withOpacity(0.5)
+                    : Colors.transparent,
+                width: 1.5,
+              ),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  icon,
+                  size: 18,
+                  color: isSelected
+                      ? AppTheme.primaryColor
+                      : Theme.of(context)
+                          .colorScheme
+                          .onBackground
+                          .withOpacity(0.6),
+                ),
+                const SizedBox(width: 6),
+                Flexible(
+                  child: Text(
+                    label,
+                    style: AppFonts.inter(
+                      fontSize: 13,
+                      fontWeight:
+                          isSelected ? FontWeight.w600 : FontWeight.w500,
+                      color: isSelected
+                          ? AppTheme.primaryColor
+                          : Theme.of(context)
+                              .colorScheme
+                              .onBackground
+                              .withOpacity(0.7),
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
   }
 
   Widget _buildModeToggle() {
@@ -712,6 +807,202 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
           ),
         ),
       ],
+    );
+  }
+
+  /// Compact language selector as dropdown/chip
+  Widget _buildCompactLanguageSelector() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    String getLanguageLabel(StudyLanguage lang) {
+      switch (lang) {
+        case StudyLanguage.english:
+          return 'EN';
+        case StudyLanguage.hindi:
+          return 'हिं';
+        case StudyLanguage.malayalam:
+          return 'മ';
+      }
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: isDark
+            ? Colors.white.withOpacity(0.1)
+            : AppTheme.primaryColor.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: AppTheme.primaryColor.withOpacity(0.3),
+        ),
+      ),
+      child: PopupMenuButton<StudyLanguage>(
+        initialValue: _selectedLanguage,
+        onSelected: _switchLanguage,
+        offset: const Offset(0, 40),
+        color: Theme.of(context).scaffoldBackgroundColor,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+        itemBuilder: (context) => [
+          _buildLanguageMenuItem(StudyLanguage.english, 'English'),
+          _buildLanguageMenuItem(StudyLanguage.hindi, 'हिन्दी'),
+          _buildLanguageMenuItem(StudyLanguage.malayalam, 'മലയാളം'),
+        ],
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              getLanguageLabel(_selectedLanguage),
+              style: AppFonts.inter(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: AppTheme.primaryColor,
+              ),
+            ),
+            const SizedBox(width: 4),
+            Icon(
+              Icons.arrow_drop_down,
+              size: 18,
+              color: AppTheme.primaryColor,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  PopupMenuItem<StudyLanguage> _buildLanguageMenuItem(
+    StudyLanguage language,
+    String label,
+  ) {
+    final isSelected = _selectedLanguage == language;
+    return PopupMenuItem<StudyLanguage>(
+      value: language,
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              label,
+              style: AppFonts.inter(
+                fontSize: 14,
+                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                color: isSelected
+                    ? AppTheme.primaryColor
+                    : Theme.of(context).colorScheme.onBackground,
+              ),
+            ),
+          ),
+          if (isSelected)
+            const Icon(Icons.check, color: AppTheme.primaryColor, size: 18),
+        ],
+      ),
+    );
+  }
+
+  /// Compact AI Discipler button
+  Widget _buildCompactAiDisciplerButton(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () {
+          context.go('/ai-discipler');
+        },
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: isDark
+                ? Colors.white.withOpacity(0.05)
+                : AppTheme.primaryColor.withOpacity(0.08),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: AppTheme.primaryColor.withOpacity(0.3),
+              width: 1.5,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: AppTheme.primaryColor.withOpacity(0.15),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: AppTheme.primaryColor.withOpacity(0.15),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(
+                  Icons.mic_rounded,
+                  color: AppTheme.primaryColor,
+                  size: 24,
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Text(
+                          'Talk to AI Discipler',
+                          style: AppFonts.inter(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                            color: Theme.of(context).colorScheme.onBackground,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 6,
+                            vertical: 2,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppTheme.primaryColor,
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Text(
+                            'NEW',
+                            style: AppFonts.inter(
+                              fontSize: 9,
+                              fontWeight: FontWeight.w700,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Get personalized spiritual guidance',
+                      style: AppFonts.inter(
+                        fontSize: 12,
+                        color: Theme.of(context)
+                            .colorScheme
+                            .onBackground
+                            .withOpacity(0.6),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(
+                Icons.arrow_forward_ios,
+                size: 16,
+                color: AppTheme.primaryColor.withOpacity(0.5),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
@@ -783,19 +1074,28 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          _selectedMode == StudyInputMode.scripture
-              ? context.tr(TranslationKeys.generateStudyEnterScripture)
-              : _selectedMode == StudyInputMode.topic
-                  ? context.tr(TranslationKeys.generateStudyEnterTopic)
-                  : context.tr(TranslationKeys.generateStudyAskQuestion),
-          style: AppFonts.inter(
-            fontSize: 15,
-            fontWeight: FontWeight.w600,
-            color: isDark
-                ? Colors.white.withOpacity(0.9)
-                : const Color(0xFF374151),
-          ),
+        // Header with inline language selector
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                _selectedMode == StudyInputMode.scripture
+                    ? context.tr(TranslationKeys.generateStudyEnterScripture)
+                    : _selectedMode == StudyInputMode.topic
+                        ? context.tr(TranslationKeys.generateStudyEnterTopic)
+                        : context.tr(TranslationKeys.generateStudyAskQuestion),
+                style: AppFonts.inter(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                  color: isDark
+                      ? Colors.white.withOpacity(0.9)
+                      : const Color(0xFF374151),
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            _buildCompactLanguageSelector(),
+          ],
         ),
         const SizedBox(height: 12),
         Container(
@@ -1239,117 +1539,150 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
           ),
           const SizedBox(height: 16),
         ],
-        Container(
-          width: double.infinity,
-          height: 56,
-          decoration: BoxDecoration(
-            gradient: isEnabled ? AppTheme.primaryGradient : null,
-            color: isEnabled
-                ? null
-                : isDark
-                    ? Colors.white.withOpacity(0.1)
-                    : const Color(0xFFE5E7EB),
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: isEnabled
-                ? [
-                    BoxShadow(
-                      color: AppTheme.primaryColor.withOpacity(0.3),
-                      blurRadius: 12,
-                      offset: const Offset(0, 4),
-                    ),
-                  ]
-                : null,
-          ),
-          child: Material(
-            color: Colors.transparent,
-            child: InkWell(
-              onTap: isEnabled ? _generateStudyGuide : null,
-              borderRadius: BorderRadius.circular(16),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    if (isLoading) ...[
-                      const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          valueColor:
-                              AlwaysStoppedAnimation<Color>(Colors.white),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                    ],
-                    Flexible(
-                      child: Text(
-                        isLoading
-                            ? context.tr(
-                                TranslationKeys.generateStudyButtonGenerating)
-                            : context.tr(
-                                TranslationKeys.generateStudyButtonGenerate),
-                        style: AppFonts.inter(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: isEnabled
-                              ? Colors.white
-                              : isDark
-                                  ? Colors.white.withOpacity(0.4)
-                                  : const Color(0xFF9CA3AF),
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                    ),
-                    if (!isLoading) ...[
-                      const SizedBox(width: 12),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: isEnabled
-                              ? Colors.white.withOpacity(0.2)
-                              : isDark
-                                  ? Colors.white.withOpacity(0.05)
-                                  : Colors.black.withOpacity(0.05),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              Icons.token,
-                              size: 16,
-                              color: isEnabled
-                                  ? Colors.white.withOpacity(0.9)
-                                  : isDark
-                                      ? Colors.white.withOpacity(0.4)
-                                      : const Color(0xFF9CA3AF),
+        Row(
+          children: [
+            Expanded(
+              child: Container(
+                height: 56,
+                decoration: BoxDecoration(
+                  gradient: isEnabled ? AppTheme.primaryGradient : null,
+                  color: isEnabled
+                      ? null
+                      : isDark
+                          ? Colors.white.withOpacity(0.1)
+                          : const Color(0xFFE5E7EB),
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: isEnabled
+                      ? [
+                          BoxShadow(
+                            color: AppTheme.primaryColor.withOpacity(0.3),
+                            blurRadius: 12,
+                            offset: const Offset(0, 4),
+                          ),
+                        ]
+                      : null,
+                ),
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    onTap: isEnabled ? _generateStudyGuide : null,
+                    borderRadius: BorderRadius.circular(16),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          if (isLoading) ...[
+                            const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor:
+                                    AlwaysStoppedAnimation<Color>(Colors.white),
+                              ),
                             ),
-                            const SizedBox(width: 4),
-                            Text(
-                              '$tokenCost',
+                            const SizedBox(width: 12),
+                          ],
+                          Flexible(
+                            child: Text(
+                              isLoading
+                                  ? context.tr(TranslationKeys
+                                      .generateStudyButtonGenerating)
+                                  : context.tr(TranslationKeys
+                                      .generateStudyButtonGenerate),
                               style: AppFonts.inter(
-                                fontSize: 13,
+                                fontSize: 16,
                                 fontWeight: FontWeight.w600,
                                 color: isEnabled
-                                    ? Colors.white.withOpacity(0.9)
+                                    ? Colors.white
                                     : isDark
                                         ? Colors.white.withOpacity(0.4)
                                         : const Color(0xFF9CA3AF),
                               ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
+                          if (!isLoading) ...[
+                            const SizedBox(width: 12),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: isEnabled
+                                    ? Colors.white.withOpacity(0.2)
+                                    : isDark
+                                        ? Colors.white.withOpacity(0.05)
+                                        : Colors.black.withOpacity(0.05),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.token,
+                                    size: 16,
+                                    color: isEnabled
+                                        ? Colors.white.withOpacity(0.9)
+                                        : isDark
+                                            ? Colors.white.withOpacity(0.4)
+                                            : const Color(0xFF9CA3AF),
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    '$tokenCost',
+                                    style: AppFonts.inter(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w600,
+                                      color: isEnabled
+                                          ? Colors.white.withOpacity(0.9)
+                                          : isDark
+                                              ? Colors.white.withOpacity(0.4)
+                                              : const Color(0xFF9CA3AF),
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
                           ],
-                        ),
+                        ],
                       ),
-                    ],
-                  ],
+                    ),
+                  ),
                 ),
               ),
             ),
-          ),
+            const SizedBox(width: 12),
+            // Mode selector button
+            Container(
+              width: 56,
+              height: 56,
+              decoration: BoxDecoration(
+                color: isDark
+                    ? Colors.white.withOpacity(0.1)
+                    : AppTheme.primaryColor.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: AppTheme.primaryColor.withOpacity(0.3),
+                  width: 1.5,
+                ),
+              ),
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: _showStudyModePreferenceSheet,
+                  borderRadius: BorderRadius.circular(16),
+                  child: Icon(
+                    Icons.tune_rounded,
+                    color: AppTheme.primaryColor,
+                    size: 24,
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
       ],
     );
@@ -1384,7 +1717,327 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
     }
   }
 
-  void _generateStudyGuide() {
+  /// Show bottom sheet to change study mode preference
+  Future<void> _showStudyModePreferenceSheet() async {
+    final currentMode =
+        await _languagePreferenceService.getStudyModePreference();
+
+    if (!mounted) return;
+
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bottomPadding = MediaQuery.of(context).viewPadding.bottom;
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) => Container(
+        decoration: BoxDecoration(
+          color: isDark ? const Color(0xFF1E1E2E) : Colors.white,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 20,
+              offset: const Offset(0, -5),
+            ),
+          ],
+        ),
+        child: SafeArea(
+          child: Padding(
+            padding: EdgeInsets.only(
+              left: 24,
+              right: 24,
+              top: 16,
+              bottom: bottomPadding + 16,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // Handle bar
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: isDark
+                          ? Colors.white.withOpacity(0.2)
+                          : Colors.grey.shade300,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 20),
+
+                // Title
+                Text(
+                  'Study Mode Preference',
+                  style: AppFonts.poppins(
+                    fontSize: 22,
+                    fontWeight: FontWeight.w700,
+                    color: isDark ? Colors.white : const Color(0xFF1F2937),
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Choose your default study mode. You can change this anytime.',
+                  style: AppFonts.inter(
+                    fontSize: 14,
+                    color: isDark
+                        ? Colors.white.withOpacity(0.6)
+                        : const Color(0xFF6B7280),
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 24),
+
+                // Mode options
+                _buildModeOption(
+                  context: context,
+                  mode: null,
+                  title: 'Ask Every Time',
+                  subtitle: 'Choose mode when generating',
+                  icon: Icons.touch_app_outlined,
+                  currentMode: currentMode,
+                  duration: null,
+                ),
+                const SizedBox(height: 12),
+                _buildModeOption(
+                  context: context,
+                  mode: StudyMode.quick,
+                  title: 'Quick Read',
+                  subtitle: 'Key insight + verse + reflection',
+                  icon: Icons.bolt,
+                  currentMode: currentMode,
+                  duration: '3 min',
+                ),
+                const SizedBox(height: 12),
+                _buildModeOption(
+                  context: context,
+                  mode: StudyMode.standard,
+                  title: 'Standard Study',
+                  subtitle: 'Full guide with 6 sections',
+                  icon: Icons.library_books,
+                  currentMode: currentMode,
+                  duration: '10 min',
+                ),
+                const SizedBox(height: 12),
+                _buildModeOption(
+                  context: context,
+                  mode: StudyMode.deep,
+                  title: 'Deep Dive',
+                  subtitle: 'Word studies + Extended context',
+                  icon: Icons.search,
+                  currentMode: currentMode,
+                  duration: '25 min',
+                ),
+                const SizedBox(height: 12),
+                _buildModeOption(
+                  context: context,
+                  mode: StudyMode.lectio,
+                  title: 'Lectio Divina',
+                  subtitle: 'Meditative reading with silence',
+                  icon: Icons.self_improvement,
+                  currentMode: currentMode,
+                  duration: '15 min',
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildModeOption({
+    required BuildContext context,
+    required StudyMode? mode,
+    required String title,
+    required String subtitle,
+    required IconData icon,
+    required StudyMode? currentMode,
+    required String? duration,
+  }) {
+    final isSelected = mode == currentMode;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return GestureDetector(
+      onTap: () async {
+        Navigator.of(context).pop();
+
+        // Update preference
+        if (mode != null) {
+          await _languagePreferenceService.saveStudyModePreference(mode);
+        } else {
+          // Clear preference - save null
+          await _languagePreferenceService.clearStudyModePreference();
+        }
+
+        // Show confirmation
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              mode != null
+                  ? 'Default mode set to ${mode.displayName}'
+                  : 'Will ask for mode every time',
+            ),
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      },
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? isDark
+                  ? AppTheme.primaryColor.withOpacity(0.15)
+                  : const Color(0xFFF3F0FF)
+              : isDark
+                  ? Colors.white.withOpacity(0.05)
+                  : const Color(0xFFF9FAFB),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: isSelected
+                ? AppTheme.primaryColor
+                : isDark
+                    ? Colors.white.withOpacity(0.1)
+                    : const Color(0xFFE5E7EB),
+            width: isSelected ? 2 : 1,
+          ),
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: AppTheme.primaryColor.withOpacity(0.15),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
+                  ),
+                ]
+              : null,
+        ),
+        child: Row(
+          children: [
+            // Icon container
+            Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                color: isSelected
+                    ? AppTheme.primaryColor.withOpacity(0.15)
+                    : isDark
+                        ? Colors.white.withOpacity(0.1)
+                        : const Color(0xFFE5E7EB),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(
+                icon,
+                size: 24,
+                color: isSelected
+                    ? AppTheme.primaryColor
+                    : isDark
+                        ? Colors.white.withOpacity(0.7)
+                        : const Color(0xFF6B7280),
+              ),
+            ),
+            const SizedBox(width: 16),
+
+            // Text content
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: AppFonts.inter(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: isSelected
+                          ? AppTheme.primaryColor
+                          : isDark
+                              ? Colors.white
+                              : const Color(0xFF1F2937),
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    subtitle,
+                    style: AppFonts.inter(
+                      fontSize: 13,
+                      color: isDark
+                          ? Colors.white.withOpacity(0.6)
+                          : const Color(0xFF6B7280),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            // Duration badge (if provided)
+            if (duration != null) ...[
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
+                decoration: BoxDecoration(
+                  color: isSelected
+                      ? AppTheme.primaryColor
+                      : isDark
+                          ? Colors.white.withOpacity(0.1)
+                          : const Color(0xFFE5E7EB),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  duration,
+                  style: AppFonts.inter(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: isSelected
+                        ? Colors.white
+                        : isDark
+                            ? Colors.white.withOpacity(0.7)
+                            : const Color(0xFF4B5563),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+            ],
+
+            // Selection indicator
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              width: 24,
+              height: 24,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: isSelected ? AppTheme.primaryColor : Colors.transparent,
+                border: Border.all(
+                  color: isSelected
+                      ? AppTheme.primaryColor
+                      : isDark
+                          ? Colors.white.withOpacity(0.3)
+                          : const Color(0xFFD1D5DB),
+                  width: 2,
+                ),
+              ),
+              child: isSelected
+                  ? const Icon(
+                      Icons.check,
+                      size: 14,
+                      color: Colors.white,
+                    )
+                  : null,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _generateStudyGuide() async {
     if (!_isInputValid) return;
 
     // Prevent multiple clicks during navigation
@@ -1392,6 +2045,33 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
       return;
     }
 
+    // Check if user has a saved study mode preference
+    final savedMode = await _languagePreferenceService.getStudyModePreference();
+
+    if (savedMode != null) {
+      // User has saved preference - use it directly without showing sheet
+      if (kDebugMode) {
+        print(
+            '✅ [GENERATE_STUDY] Using saved study mode: ${savedMode.displayName}');
+      }
+      _navigateToStudyGuide(savedMode, false);
+    } else {
+      // No saved preference - show mode selection sheet
+      if (kDebugMode) {
+        print(
+            '🔍 [GENERATE_STUDY] No saved preference - showing mode selection sheet');
+      }
+      ModeSelectionSheet.show(
+        context: context,
+        onModeSelected: (mode, rememberChoice) {
+          _navigateToStudyGuide(mode, rememberChoice);
+        },
+      );
+    }
+  }
+
+  /// Navigate to study guide with selected mode.
+  void _navigateToStudyGuide(StudyMode mode, bool rememberChoice) {
     _isNavigating = true;
 
     final input = _inputController.text.trim();
@@ -1415,17 +2095,22 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
       context.read<TokenBloc>().add(const GetTokenStatus());
     }
 
+    // Save user's mode preference if they chose to remember
+    if (rememberChoice) {
+      _languagePreferenceService.saveStudyModePreference(mode);
+    }
+
     // Set flag to indicate navigation away (will trigger token refresh on return)
     _hasNavigatedAway = true;
 
     final encodedInput = Uri.encodeComponent(input);
 
     debugPrint(
-        '🔍 [GENERATE_STUDY] Navigating to study guide V2 for $inputType: $input');
+        '🔍 [GENERATE_STUDY] Navigating to study guide V2 for $inputType: $input with mode: ${mode.name}');
 
-    // Navigate directly to study guide V2 - it will handle generation
+    // Navigate to study guide V2 with mode parameter
     context.go(
-        '/study-guide-v2?input=$encodedInput&type=$inputType&language=$languageCode&source=generate');
+        '/study-guide-v2?input=$encodedInput&type=$inputType&language=$languageCode&mode=${mode.name}&source=generate');
 
     // Reset navigation flag after a short delay
     Future.delayed(const Duration(milliseconds: 500), () {

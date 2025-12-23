@@ -34,6 +34,41 @@ import '../../data/services/study_guide_tts_service.dart';
 import '../../data/services/study_guide_pdf_service.dart';
 import '../../../gamification/presentation/bloc/gamification_bloc.dart';
 import '../../../gamification/presentation/bloc/gamification_event.dart';
+import '../../domain/entities/study_mode.dart';
+import '../widgets/reflect_mode_view.dart';
+import '../../domain/entities/reflection_response.dart';
+import '../../domain/repositories/reflections_repository.dart';
+import '../widgets/reading_completion_card.dart';
+
+/// Removes duplicate section title from content if present at the start
+String _cleanDuplicateTitle(String content, String title) {
+  final lines = content.split('\n');
+  if (lines.isEmpty) return content;
+
+  // Remove markdown formatting and normalize for comparison
+  final normalizedTitle =
+      title.toLowerCase().replaceAll(RegExp(r'[^\w\s]'), '');
+  final firstLine =
+      lines.first.toLowerCase().replaceAll(RegExp(r'[*_#]'), '').trim();
+
+  // Check if first line matches the title (with some tolerance)
+  if (firstLine.contains(normalizedTitle) ||
+      normalizedTitle.contains(firstLine)) {
+    // Remove first line and any empty lines that follow
+    final cleanedLines =
+        lines.skip(1).skipWhile((line) => line.trim().isEmpty).toList();
+    return cleanedLines.join('\n');
+  }
+
+  return content;
+}
+
+/// Lightens a color for better contrast in dark mode
+Color _lightenColor(Color color, [double amount = 0.2]) {
+  final hsl = HSLColor.fromColor(color);
+  final lightness = (hsl.lightness + amount).clamp(0.0, 1.0);
+  return hsl.withLightness(lightness).toColor();
+}
 
 /// Study Guide Screen V2 - Dynamically generates study guides from query parameters
 ///
@@ -45,6 +80,7 @@ import '../../../gamification/presentation/bloc/gamification_event.dart';
 /// - Scripture: `/study-guide-v2?input=John 3:16&type=scripture`
 /// - With language: `/study-guide-v2?input=Love&type=topic&language=en`
 /// - With topic_id (from notification): `/study-guide-v2?topic_id=abc123&input=Love&type=topic`
+/// - With mode: `/study-guide-v2?input=Love&type=topic&mode=quick` (quick, standard, deep, lectio)
 ///
 /// **Features:**
 /// - Dynamic content loading based on URL parameters
@@ -71,6 +107,9 @@ class StudyGuideScreenV2 extends StatelessWidget {
   /// Navigation source for proper back navigation
   final StudyNavigationSource navigationSource;
 
+  /// Study mode (quick, standard, deep, lectio)
+  final StudyMode studyMode;
+
   const StudyGuideScreenV2({
     super.key,
     this.topicId,
@@ -79,6 +118,7 @@ class StudyGuideScreenV2 extends StatelessWidget {
     this.description,
     this.language,
     this.navigationSource = StudyNavigationSource.home,
+    this.studyMode = StudyMode.standard,
   });
 
   @override
@@ -91,6 +131,7 @@ class StudyGuideScreenV2 extends StatelessWidget {
           description: description,
           language: language,
           navigationSource: navigationSource,
+          studyMode: studyMode,
         ),
       );
 }
@@ -102,6 +143,7 @@ class _StudyGuideScreenV2Content extends StatefulWidget {
   final String? description;
   final String? language;
   final StudyNavigationSource navigationSource;
+  final StudyMode studyMode;
 
   const _StudyGuideScreenV2Content({
     this.topicId,
@@ -110,6 +152,7 @@ class _StudyGuideScreenV2Content extends StatefulWidget {
     this.description,
     this.language,
     required this.navigationSource,
+    required this.studyMode,
   });
 
   @override
@@ -130,6 +173,9 @@ class _StudyGuideScreenV2ContentState
       false; // Track token error for special handling
   bool _isSaved = false;
   DateTime? _lastSaveAttempt;
+
+  // View mode state for Read/Reflect toggle
+  StudyViewMode _viewMode = StudyViewMode.read;
 
   // Language state for loading screen localization
   String _selectedLanguage = 'en';
@@ -168,6 +214,7 @@ class _StudyGuideScreenV2ContentState
 
   // Follow-up chat state
   bool _isChatExpanded = false;
+  final GlobalKey _followUpChatKey = GlobalKey();
 
   // Completion tracking state
   DateTime? _pageOpenedAt;
@@ -272,6 +319,7 @@ class _StudyGuideScreenV2ContentState
           topicDescription: widget
               .description, // Include topic description for richer context
           language: normalizedLanguageCode,
+          studyMode: widget.studyMode,
         ));
   }
 
@@ -341,14 +389,13 @@ class _StudyGuideScreenV2ContentState
         _loadedNotes = studyGuide.personalNotes;
         _notesController.text = studyGuide.personalNotes!;
         _notesLoaded = true;
-
-        if (_isSaved) {
-          _setupAutoSave();
-        }
       } else if (_isSaved) {
         _loadPersonalNotesIfSaved();
       }
     });
+
+    // Always setup auto-save for personal notes (independent of save status)
+    _setupAutoSave();
 
     // Start completion tracking
     _startCompletionTracking();
@@ -428,6 +475,7 @@ class _StudyGuideScreenV2ContentState
   }
 
   /// Setup auto-save for personal notes
+  /// Notes are saved independently of whether the study guide is saved
   void _setupAutoSave() {
     if (_currentStudyGuide == null) return;
 
@@ -442,8 +490,12 @@ class _StudyGuideScreenV2ContentState
       _autoSaveTimer = Timer(const Duration(milliseconds: 2000), () {
         final currentText = _notesController.text.trim();
         if (currentText != (_loadedNotes ?? '').trim()) {
-          // Only auto-save if notes have changed and guide is saved
-          if (_isSaved && _currentStudyGuide != null) {
+          // Auto-save notes independently (no longer requires guide to be saved)
+          if (_currentStudyGuide != null) {
+            if (kDebugMode) {
+              print(
+                  '💾 [AUTO_SAVE] Saving personal notes (${currentText.length} chars)');
+            }
             context.read<StudyBloc>().add(UpdatePersonalNotesRequested(
                   guideId: _currentStudyGuide!.id,
                   personalNotes: currentText.isEmpty ? null : currentText,
@@ -464,8 +516,6 @@ class _StudyGuideScreenV2ContentState
 
   /// Start tracking completion conditions (time spent + scroll to bottom)
   void _startCompletionTracking() {
-    if (_currentStudyGuide == null) return;
-
     // Early return if already started to prevent duplicate timers/listeners
     if (_isCompletionTrackingStarted) return;
 
@@ -476,8 +526,8 @@ class _StudyGuideScreenV2ContentState
     _isCompletionTrackingStarted = true;
 
     if (kDebugMode) {
-      print(
-          '📊 [COMPLETION] Started tracking for guide: ${_currentStudyGuide!.id}');
+      final guideId = _currentStudyGuide?.id ?? 'streaming';
+      print('📊 [COMPLETION] Started tracking for guide: $guideId');
     }
   }
 
@@ -659,6 +709,12 @@ class _StudyGuideScreenV2ContentState
               _isLoading = false;
               _hasError = false;
             });
+
+            // Start completion tracking as soon as we have the first section
+            if (state.content.sectionsLoaded > 0 &&
+                !_isCompletionTrackingStarted) {
+              _startCompletionTracking();
+            }
           } else if (state is StudyGenerationStreamingFailed) {
             _handleStreamingFailure(state);
           } else if (state is StudyGenerationSuccess) {
@@ -701,9 +757,8 @@ class _StudyGuideScreenV2ContentState
                 _notesController.text = state.notes!;
               }
             });
-            if (_isSaved) {
-              _setupAutoSave();
-            }
+            // Always setup auto-save when notes are loaded
+            _setupAutoSave();
           } else if (state is StudyPersonalNotesSuccess) {
             if (!state.isAutoSave) {
               _showSnackBar(
@@ -749,56 +804,159 @@ class _StudyGuideScreenV2ContentState
     );
   }
 
-  PreferredSizeWidget _buildAppBar() => AppBar(
-        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-        elevation: 0,
-        leading: IconButton(
-          onPressed: _handleBackNavigation,
-          icon: Icon(
-            Icons.arrow_back_ios,
-            color: Theme.of(context).colorScheme.primary,
-          ),
-          tooltip: 'Go back',
+  PreferredSizeWidget _buildAppBar() {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final accentColor = isDark
+        ? _lightenColor(theme.colorScheme.primary, 0.10)
+        : theme.colorScheme.primary;
+
+    return AppBar(
+      backgroundColor: theme.scaffoldBackgroundColor,
+      elevation: 0,
+      leading: IconButton(
+        onPressed: _handleBackNavigation,
+        icon: Icon(
+          Icons.arrow_back_ios,
+          color: accentColor,
         ),
-        title: Text(
-          context.tr('study_guide.page_title'),
-          style: AppFonts.poppins(
-            fontSize: 20,
-            fontWeight: FontWeight.w600,
-            color: Theme.of(context).colorScheme.primary,
-          ),
+        tooltip: 'Go back',
+      ),
+      title: Text(
+        context.tr('study_guide.page_title'),
+        style: AppFonts.poppins(
+          fontSize: 20,
+          fontWeight: FontWeight.w600,
+          color: accentColor,
         ),
-        centerTitle: true,
-        actions: _currentStudyGuide != null
-            ? [
-                IconButton(
-                  onPressed: _isExportingPdf ? null : _exportToPdf,
-                  icon: _isExportingPdf
-                      ? SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: Theme.of(context).colorScheme.primary,
-                          ),
-                        )
-                      : Icon(
-                          Icons.picture_as_pdf_outlined,
-                          color: Theme.of(context).colorScheme.primary,
+      ),
+      centerTitle: true,
+      actions: _currentStudyGuide != null
+          ? [
+              PopupMenuButton<String>(
+                icon: Icon(
+                  Icons.more_vert,
+                  color: accentColor,
+                ),
+                tooltip: 'More options',
+                onSelected: (value) {
+                  switch (value) {
+                    case 'share':
+                      _shareStudyGuide();
+                      break;
+                    case 'pdf':
+                      _exportToPdf();
+                      break;
+                    case 'save':
+                      _saveStudyGuide();
+                      break;
+                    case 'complete':
+                      _markStudyGuideComplete();
+                      break;
+                  }
+                },
+                itemBuilder: (context) => [
+                  PopupMenuItem(
+                    value: 'share',
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.share_outlined,
+                          size: 20,
+                          color: accentColor,
                         ),
-                  tooltip: 'Export as PDF',
-                ),
-                IconButton(
-                  onPressed: _shareStudyGuide,
-                  icon: Icon(
-                    Icons.share_outlined,
-                    color: Theme.of(context).colorScheme.primary,
+                        const SizedBox(width: 12),
+                        Text(
+                          'Share',
+                          style: AppFonts.inter(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                  tooltip: 'Share study guide',
-                ),
-              ]
-            : null,
-      );
+                  PopupMenuItem(
+                    value: 'pdf',
+                    enabled: !_isExportingPdf,
+                    child: Row(
+                      children: [
+                        _isExportingPdf
+                            ? SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: accentColor,
+                                ),
+                              )
+                            : Icon(
+                                Icons.picture_as_pdf_outlined,
+                                size: 20,
+                                color: accentColor,
+                              ),
+                        const SizedBox(width: 12),
+                        Text(
+                          'Download PDF',
+                          style: AppFonts.inter(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  PopupMenuItem(
+                    value: 'save',
+                    child: Row(
+                      children: [
+                        Icon(
+                          _isSaved ? Icons.bookmark : Icons.bookmark_border,
+                          size: 20,
+                          color: _isSaved ? Colors.green : accentColor,
+                        ),
+                        const SizedBox(width: 12),
+                        Text(
+                          _isSaved ? 'Saved' : 'Save Study',
+                          style: AppFonts.inter(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w500,
+                            color: _isSaved ? Colors.green : null,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  PopupMenuItem(
+                    value: 'complete',
+                    enabled: !_completionMarked,
+                    child: Row(
+                      children: [
+                        Icon(
+                          _completionMarked
+                              ? Icons.check_circle
+                              : Icons.check_circle_outlined,
+                          size: 20,
+                          color: _completionMarked ? Colors.green : accentColor,
+                        ),
+                        const SizedBox(width: 12),
+                        Text(
+                          _completionMarked ? 'Completed' : 'Complete Study',
+                          style: AppFonts.inter(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w500,
+                            color: _completionMarked ? Colors.green : null,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ]
+          : null,
+    );
+  }
 
   Widget _buildBody() {
     // Use BlocBuilder to handle streaming states
@@ -826,6 +984,7 @@ class _StudyGuideScreenV2ContentState
             inputValue: state.inputValue,
             language: state.language,
             scrollController: _scrollController,
+            studyMode: widget.studyMode,
             onComplete:
                 state.content.isComplete && state.content.studyGuideId != null
                     ? () => _handleStreamingComplete(state)
@@ -927,6 +1086,7 @@ class _StudyGuideScreenV2ContentState
             inputValue: state.inputValue,
             language: state.language,
             scrollController: _scrollController,
+            studyMode: widget.studyMode,
             isPartial: true,
           ),
         ),
@@ -980,85 +1140,95 @@ class _StudyGuideScreenV2ContentState
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 32),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  OutlinedButton.icon(
-                    onPressed: _handleBackNavigation,
-                    icon: const Icon(Icons.arrow_back),
-                    label: Text(
-                      context.tr(TranslationKeys.studyGuideErrorGoBack),
-                      style: AppFonts.inter(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: Theme.of(context).colorScheme.primary,
-                      side: BorderSide(
-                        color: Theme.of(context).colorScheme.primary,
-                        width: 2,
-                      ),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 24,
-                        vertical: 16,
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  // Show different button based on error type
-                  if (_isInsufficientTokensError)
-                    ElevatedButton.icon(
-                      onPressed: () => context.push('/token-management'),
-                      icon: const Icon(Icons.token),
-                      label: Text(
-                        context.tr(TranslationKeys.studyGuideErrorMyPlan),
-                        style: AppFonts.inter(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
+              Builder(
+                builder: (context) {
+                  final theme = Theme.of(context);
+                  final isDark = theme.brightness == Brightness.dark;
+                  final accentColor = isDark
+                      ? _lightenColor(theme.colorScheme.primary, 0.10)
+                      : theme.colorScheme.primary;
+
+                  return Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      OutlinedButton.icon(
+                        onPressed: _handleBackNavigation,
+                        icon: const Icon(Icons.arrow_back),
+                        label: Text(
+                          context.tr(TranslationKeys.studyGuideErrorGoBack),
+                          style: AppFonts.inter(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: accentColor,
+                          side: BorderSide(
+                            color: accentColor,
+                            width: 2,
+                          ),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 24,
+                            vertical: 16,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
                         ),
                       ),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Theme.of(context).colorScheme.primary,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 24,
-                          vertical: 16,
+                      const SizedBox(width: 16),
+                      // Show different button based on error type
+                      if (_isInsufficientTokensError)
+                        ElevatedButton.icon(
+                          onPressed: () => context.push('/token-management'),
+                          icon: const Icon(Icons.token),
+                          label: Text(
+                            context.tr(TranslationKeys.studyGuideErrorMyPlan),
+                            style: AppFonts.inter(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: accentColor,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 24,
+                              vertical: 16,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            elevation: 0,
+                          ),
+                        )
+                      else
+                        ElevatedButton.icon(
+                          onPressed: _retryGeneration,
+                          icon: const Icon(Icons.refresh),
+                          label: Text(
+                            context.tr(TranslationKeys.studyGuideErrorTryAgain),
+                            style: AppFonts.inter(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: accentColor,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 24,
+                              vertical: 16,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            elevation: 0,
+                          ),
                         ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        elevation: 0,
-                      ),
-                    )
-                  else
-                    ElevatedButton.icon(
-                      onPressed: _retryGeneration,
-                      icon: const Icon(Icons.refresh),
-                      label: Text(
-                        context.tr(TranslationKeys.studyGuideErrorTryAgain),
-                        style: AppFonts.inter(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Theme.of(context).colorScheme.primary,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 24,
-                          vertical: 16,
-                        ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        elevation: 0,
-                      ),
-                    ),
-                ],
+                    ],
+                  );
+                },
               ),
             ],
           ),
@@ -1075,80 +1245,176 @@ class _StudyGuideScreenV2ContentState
       children: [
         // Main content
         Expanded(
-          child: SingleChildScrollView(
-            controller: _scrollController,
-            padding: const EdgeInsets.symmetric(horizontal: 24),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                SizedBox(height: isLargeScreen ? 24 : 16),
-
-                // Topic Title
-                _buildTopicTitle(),
-
-                SizedBox(height: isLargeScreen ? 24 : 20),
-
-                // Study Guide Content
-                _buildStudyContent(),
-
-                SizedBox(height: isLargeScreen ? 32 : 24),
-
-                // Follow-up Chat Section
-                BlocProvider(
-                  create: (context) {
-                    final bloc = sl<FollowUpChatBloc>();
-                    bloc.add(StartConversationEvent(
-                      studyGuideId: _currentStudyGuide!.id,
-                      studyGuideTitle: _getDisplayTitle(),
-                    ));
-                    return bloc;
-                  },
-                  child: FollowUpChatWidget(
-                    studyGuideId: _currentStudyGuide!.id,
-                    studyGuideTitle: _getDisplayTitle(),
-                    isExpanded: _isChatExpanded,
-                    onToggleExpanded: () {
-                      setState(() {
-                        _isChatExpanded = !_isChatExpanded;
-                      });
-                    },
-                  ),
-                ),
-
-                SizedBox(height: isLargeScreen ? 32 : 24),
-
-                // Notes Section
-                _buildNotesSection(),
-
-                SizedBox(height: isLargeScreen ? 32 : 24),
-              ],
-            ),
-          ),
+          child: _viewMode == StudyViewMode.read
+              ? _buildReadModeContent(isLargeScreen)
+              : _buildReflectModeContent(),
         ),
 
-        // Bottom Action Buttons
-        _buildBottomActions(),
+        // Bottom Action Buttons (only show in read mode)
+        if (_viewMode == StudyViewMode.read) _buildBottomActions(),
       ],
     );
   }
 
+  /// Builds the Read Mode content (traditional scrollable view)
+  Widget _buildReadModeContent(bool isLargeScreen) {
+    return SingleChildScrollView(
+      controller: _scrollController,
+      padding: const EdgeInsets.symmetric(horizontal: 24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(height: isLargeScreen ? 24 : 16),
+
+          // Topic Title
+          _buildTopicTitle(),
+
+          SizedBox(height: isLargeScreen ? 24 : 20),
+
+          // Study Guide Content
+          _buildStudyContent(),
+
+          SizedBox(height: isLargeScreen ? 32 : 24),
+
+          // Reading Completion Card
+          ReadingCompletionCard(
+            onReflect: () {
+              setState(() => _viewMode = StudyViewMode.reflect);
+            },
+            onMaybeLater: () {
+              // Scroll to Follow-up Chat section
+              _scrollController.animateTo(
+                _scrollController.position.maxScrollExtent,
+                duration: const Duration(milliseconds: 500),
+                curve: Curves.easeInOut,
+              );
+            },
+          ),
+
+          SizedBox(height: isLargeScreen ? 32 : 24),
+
+          // Follow-up Chat Section
+          Container(
+            key: _followUpChatKey,
+            child: BlocProvider(
+              create: (context) {
+                final bloc = sl<FollowUpChatBloc>();
+                bloc.add(StartConversationEvent(
+                  studyGuideId: _currentStudyGuide!.id,
+                  studyGuideTitle: _getDisplayTitle(),
+                ));
+                return bloc;
+              },
+              child: FollowUpChatWidget(
+                studyGuideId: _currentStudyGuide!.id,
+                studyGuideTitle: _getDisplayTitle(),
+                isExpanded: _isChatExpanded,
+                onToggleExpanded: () {
+                  setState(() {
+                    _isChatExpanded = !_isChatExpanded;
+                  });
+                },
+              ),
+            ),
+          ),
+
+          SizedBox(height: isLargeScreen ? 32 : 24),
+
+          // Notes Section
+          _buildNotesSection(),
+
+          SizedBox(height: isLargeScreen ? 32 : 24),
+        ],
+      ),
+    );
+  }
+
+  /// Builds the Reflect Mode content (interactive card-by-card view)
+  Widget _buildReflectModeContent() {
+    return ReflectModeView(
+      studyGuide: _currentStudyGuide!,
+      onSwitchToRead: () {
+        setState(() => _viewMode = StudyViewMode.read);
+      },
+      onComplete: _handleReflectionComplete,
+      onExit: () => _handleBackNavigation(),
+    );
+  }
+
+  /// Handles reflection completion - saves responses and shows success message
+  void _handleReflectionComplete(
+    List<ReflectionResponse> responses,
+    int timeSpent,
+  ) async {
+    if (_currentStudyGuide == null) {
+      _showSnackBar(
+        'Cannot save reflection: Study guide not loaded',
+        Colors.red,
+        icon: Icons.error,
+      );
+      return;
+    }
+
+    try {
+      final reflectionsRepository = sl<ReflectionsRepository>();
+      await reflectionsRepository.saveReflection(
+        studyGuideId: _currentStudyGuide!.id,
+        studyMode: widget.studyMode,
+        responses: responses,
+        timeSpentSeconds: timeSpent,
+      );
+
+      if (kDebugMode) {
+        print(
+            '✅ [REFLECTION] Saved reflection for guide: ${_currentStudyGuide!.id}');
+        print('   Responses: ${responses.length}');
+        print('   Time spent: ${timeSpent}s');
+        print('   Study mode: ${widget.studyMode.displayName}');
+      }
+
+      _showSnackBar(
+        'Reflection saved! Time spent: ${timeSpent ~/ 60} minutes',
+        Colors.green,
+        icon: Icons.check_circle,
+      );
+
+      setState(() => _viewMode = StudyViewMode.read);
+    } catch (e) {
+      if (kDebugMode) {
+        print('❌ [REFLECTION] Error saving reflection: $e');
+      }
+
+      _showSnackBar(
+        'Failed to save reflection. Please try again.',
+        Colors.red,
+        icon: Icons.error,
+      );
+    }
+  }
+
   /// Builds the topic title section displayed below the AppBar
   Widget _buildTopicTitle() {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final accentColor = isDark
+        ? _lightenColor(theme.colorScheme.primary, 0.10)
+        : theme.colorScheme.primary;
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            Theme.of(context).colorScheme.primary.withOpacity(0.1),
-            Theme.of(context).colorScheme.secondary.withOpacity(0.05),
+            accentColor.withOpacity(0.1),
+            theme.colorScheme.secondary.withOpacity(0.05),
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: Theme.of(context).colorScheme.primary.withOpacity(0.2),
+          color: accentColor.withOpacity(0.2),
         ),
       ),
       child: Column(
@@ -1161,7 +1427,7 @@ class _StudyGuideScreenV2ContentState
             style: AppFonts.inter(
               fontSize: 12,
               fontWeight: FontWeight.w600,
-              color: Theme.of(context).colorScheme.primary.withOpacity(0.7),
+              color: accentColor.withOpacity(0.7),
               letterSpacing: 1.2,
             ),
           ),
@@ -1171,7 +1437,7 @@ class _StudyGuideScreenV2ContentState
             style: AppFonts.poppins(
               fontSize: 22,
               fontWeight: FontWeight.bold,
-              color: Theme.of(context).colorScheme.onBackground,
+              color: theme.colorScheme.onBackground,
               height: 1.3,
             ),
           ),
@@ -1181,6 +1447,17 @@ class _StudyGuideScreenV2ContentState
   }
 
   Widget _buildStudyContent() {
+    // Route to mode-specific layout
+    return switch (widget.studyMode) {
+      StudyMode.quick => _buildQuickModeStudyContent(),
+      StudyMode.deep => _buildDeepModeStudyContent(),
+      StudyMode.lectio => _buildLectioDivinaStudyContent(),
+      StudyMode.standard => _buildStandardModeStudyContent(),
+    };
+  }
+
+  /// Standard mode - full 6-section layout (default)
+  Widget _buildStandardModeStudyContent() {
     final ttsService = sl<StudyGuideTTSService>();
 
     return ValueListenableBuilder<StudyGuideTtsState>(
@@ -1265,168 +1542,595 @@ class _StudyGuideScreenV2ContentState
     );
   }
 
-  Widget _buildNotesSection() => Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(
-                Icons.edit_note,
-                color: Theme.of(context).colorScheme.primary,
-                size: 24,
-              ),
-              const SizedBox(width: 8),
-              Text(
-                context.tr(TranslationKeys.studyGuidePersonalNotes),
-                style: AppFonts.inter(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w600,
-                  color: Theme.of(context).colorScheme.onBackground,
-                ),
-              ),
-            ],
+  /// Quick mode - compact card layout for 3-minute reads
+  Widget _buildQuickModeStudyContent() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Quick Read badge
+        _buildQuickReadBadge(),
+
+        const SizedBox(height: 16),
+
+        // Key Insight (summary)
+        _QuickStudySection(
+          title: 'Key Insight',
+          content: _currentStudyGuide!.summary,
+          isHighlight: true,
+        ),
+
+        const SizedBox(height: 16),
+
+        // Key Verse (interpretation)
+        _QuickStudySection(
+          title: 'Key Verse',
+          content: _currentStudyGuide!.interpretation,
+        ),
+
+        const SizedBox(height: 16),
+
+        // Quick Reflection
+        if (_currentStudyGuide!.reflectionQuestions.isNotEmpty)
+          _QuickStudySection(
+            title: '🤔 Quick Reflection',
+            content: _currentStudyGuide!.reflectionQuestions.first,
           ),
-          const SizedBox(height: 16),
-          Container(
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surface,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: Theme.of(context).colorScheme.primary.withOpacity(0.2),
+
+        const SizedBox(height: 16),
+
+        // Brief Prayer
+        if (_currentStudyGuide!.prayerPoints.isNotEmpty)
+          _QuickStudySection(
+            title: 'Brief Prayer',
+            content: _currentStudyGuide!.prayerPoints.first,
+          ),
+      ],
+    );
+  }
+
+  /// Quick Read badge
+  Widget _buildQuickReadBadge() {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final accentColor = isDark
+        ? _lightenColor(theme.colorScheme.primary, 0.10)
+        : theme.colorScheme.primary;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: accentColor.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: accentColor.withOpacity(0.3)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.bolt, size: 16, color: accentColor),
+          const SizedBox(width: 6),
+          Text(
+            '3-Minute Read',
+            style: AppFonts.inter(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: accentColor,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Deep Dive mode - extended scholarly content
+  Widget _buildDeepModeStudyContent() {
+    final ttsService = sl<StudyGuideTTSService>();
+
+    return ValueListenableBuilder<StudyGuideTtsState>(
+      valueListenable: ttsService.state,
+      builder: (context, ttsState, child) {
+        final isReading = ttsState.status == TtsStatus.playing;
+        final currentSection = ttsState.currentSectionIndex;
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Deep Dive badge
+            _buildDeepDiveBadge(),
+
+            const SizedBox(height: 20),
+
+            // Comprehensive Overview
+            _StudySection(
+              title: 'Comprehensive Overview',
+              icon: Icons.summarize,
+              content: _currentStudyGuide!.summary,
+              isBeingRead: isReading && currentSection == 0,
+            ),
+
+            const SizedBox(height: 28),
+
+            // In-Depth Interpretation
+            _StudySection(
+              title: 'In-Depth Interpretation & Word Studies',
+              icon: Icons.lightbulb_outline,
+              content: _currentStudyGuide!.interpretation,
+              isBeingRead: isReading && currentSection == 1,
+            ),
+
+            const SizedBox(height: 28),
+
+            // Historical Context
+            _StudySection(
+              title: 'Historical Context & Cross-References',
+              icon: Icons.history_edu,
+              content: _currentStudyGuide!.context,
+              isBeingRead: isReading && currentSection == 2,
+            ),
+
+            const SizedBox(height: 28),
+
+            // Scripture Connections
+            _StudySection(
+              title: 'Scripture Connections',
+              icon: Icons.menu_book,
+              content: _currentStudyGuide!.relatedVerses.join('\n\n'),
+              isBeingRead: isReading && currentSection == 3,
+            ),
+
+            const SizedBox(height: 28),
+
+            // Deep Reflection
+            _StudySection(
+              title: 'Deep Reflection & Journaling',
+              icon: Icons.edit_note,
+              content: _currentStudyGuide!.reflectionQuestions
+                  .asMap()
+                  .entries
+                  .map((entry) => '${entry.key + 1}. ${entry.value}')
+                  .join('\n\n'),
+              isBeingRead: isReading && currentSection == 4,
+            ),
+
+            const SizedBox(height: 28),
+
+            // Prayer for Application
+            _StudySection(
+              key: _prayerPointsKey,
+              title: 'Prayer for Deep Application',
+              icon: Icons.favorite,
+              content: _currentStudyGuide!.prayerPoints
+                  .asMap()
+                  .entries
+                  .map((entry) => '• ${entry.value}')
+                  .join('\n'),
+              isBeingRead: isReading && currentSection == 5,
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  /// Deep Dive badge
+  Widget _buildDeepDiveBadge() {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final accentColor = isDark
+        ? _lightenColor(theme.colorScheme.primary, 0.10)
+        : theme.colorScheme.primary;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: accentColor.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: accentColor.withOpacity(0.3)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.explore, size: 16, color: accentColor),
+          const SizedBox(width: 6),
+          Text(
+            '25-Minute Deep Dive',
+            style: AppFonts.inter(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: accentColor,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Lectio Divina mode - meditative 4-movement layout
+  Widget _buildLectioDivinaStudyContent() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Lectio Divina badge
+        _buildLectioDivinaBadge(),
+
+        const SizedBox(height: 20),
+
+        // Scripture for Meditation
+        _LectioStudySection(
+          title: 'Scripture for Meditation',
+          content: _currentStudyGuide!.summary,
+          icon: Icons.menu_book,
+        ),
+
+        const SizedBox(height: 24),
+
+        // Lectio & Meditatio
+        _LectioStudySection(
+          title: 'Lectio & Meditatio',
+          subtitle: 'Read & Meditate',
+          content: _currentStudyGuide!.interpretation,
+          icon: Icons.auto_stories,
+        ),
+
+        const SizedBox(height: 24),
+
+        // About This Practice
+        _LectioStudySection(
+          title: '🕯️ About This Practice',
+          content: _currentStudyGuide!.context,
+          icon: Icons.info_outline,
+        ),
+
+        const SizedBox(height: 24),
+
+        // Focus Words
+        if (_currentStudyGuide!.relatedVerses.isNotEmpty)
+          _LectioStudySection(
+            title: '✨ Focus Words for Meditation',
+            content: _currentStudyGuide!.relatedVerses.join('\n• '),
+            icon: Icons.highlight,
+          ),
+
+        const SizedBox(height: 24),
+
+        // Oratio & Contemplatio
+        _LectioStudySection(
+          title: 'Oratio & Contemplatio',
+          subtitle: 'Pray & Rest',
+          content: _currentStudyGuide!.reflectionQuestions.join('\n\n'),
+          icon: Icons.self_improvement,
+        ),
+
+        const SizedBox(height: 24),
+
+        // Closing Blessing
+        if (_currentStudyGuide!.prayerPoints.isNotEmpty)
+          _LectioStudySection(
+            title: '🌟 Closing Blessing',
+            content: _currentStudyGuide!.prayerPoints.join('\n\n'),
+            icon: Icons.wb_sunny_outlined,
+          ),
+      ],
+    );
+  }
+
+  /// Lectio Divina badge
+  Widget _buildLectioDivinaBadge() {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final accentColor = isDark
+        ? _lightenColor(theme.colorScheme.primary, 0.10)
+        : theme.colorScheme.primary;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: accentColor.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: accentColor.withOpacity(0.3)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.spa, size: 16, color: accentColor),
+          const SizedBox(width: 6),
+          Text(
+            'Lectio Divina • 15 Minutes',
+            style: AppFonts.inter(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: accentColor,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildNotesSection() {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final accentColor = isDark
+        ? _lightenColor(theme.colorScheme.primary, 0.10)
+        : theme.colorScheme.primary;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Icon(
+              Icons.edit_note,
+              color: accentColor,
+              size: 24,
+            ),
+            const SizedBox(width: 8),
+            Text(
+              context.tr(TranslationKeys.studyGuidePersonalNotes),
+              style: AppFonts.inter(
+                fontSize: 20,
+                fontWeight: FontWeight.w600,
+                color: theme.colorScheme.onBackground,
               ),
             ),
-            child: TextField(
-              controller: _notesController,
-              maxLines: 6,
-              style: AppFonts.inter(
-                fontSize: 16,
-                color: Theme.of(context).colorScheme.onBackground,
-                height: 1.5,
+          ],
+        ),
+        const SizedBox(height: 16),
+        Container(
+          decoration: BoxDecoration(
+            color: theme.colorScheme.surface,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: accentColor.withOpacity(0.2),
+            ),
+          ),
+          child: TextField(
+            controller: _notesController,
+            maxLines: 6,
+            style: AppFonts.inter(
+              fontSize: 16,
+              color: theme.colorScheme.onBackground,
+              height: 1.5,
+            ),
+            decoration: InputDecoration(
+              hintText: context
+                  .tr(TranslationKeys.studyGuidePersonalNotesPlaceholder),
+              hintStyle: AppFonts.inter(
+                color: theme.colorScheme.onSurface.withOpacity(0.6),
               ),
-              decoration: InputDecoration(
-                hintText: context
-                    .tr(TranslationKeys.studyGuidePersonalNotesPlaceholder),
-                hintStyle: AppFonts.inter(
-                  color:
-                      Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+              border: InputBorder.none,
+              contentPadding: const EdgeInsets.all(16),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildBottomActions() {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final accentColor = isDark
+        ? _lightenColor(theme.colorScheme.primary, 0.10)
+        : theme.colorScheme.primary;
+    final ttsService = sl<StudyGuideTTSService>();
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface,
+        boxShadow: [
+          BoxShadow(
+            color: accentColor.withOpacity(0.1),
+            blurRadius: 10,
+            offset: const Offset(0, -2),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          // Listen Button (Left) - Reactive to TTS state
+          Expanded(
+            child: SizedBox(
+              height: 56,
+              child: ValueListenableBuilder<StudyGuideTtsState>(
+                valueListenable: ttsService.state,
+                builder: (context, ttsState, child) {
+                  final isPlaying = ttsState.status == TtsStatus.playing;
+                  final isPaused = ttsState.status == TtsStatus.paused;
+                  final isLoading = ttsState.status == TtsStatus.loading;
+                  final showControls = isPlaying || isPaused;
+
+                  if (showControls) {
+                    // Show split button with pause/resume + settings
+                    return Container(
+                      decoration: BoxDecoration(
+                        border: Border.all(color: accentColor, width: 2),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Row(
+                        children: [
+                          // Main play/pause button
+                          Expanded(
+                            child: InkWell(
+                              onTap: () => ttsService.togglePlayPause(),
+                              borderRadius: const BorderRadius.horizontal(
+                                left: Radius.circular(10),
+                              ),
+                              child: Padding(
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 16),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(
+                                      isPlaying
+                                          ? Icons.pause_rounded
+                                          : Icons.play_arrow_rounded,
+                                      color: accentColor,
+                                      size: 22,
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      isPlaying ? 'Pause' : 'Resume',
+                                      style: AppFonts.inter(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w600,
+                                        color: accentColor,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                          // Divider
+                          Container(
+                            width: 1,
+                            height: 32,
+                            color: accentColor.withOpacity(0.3),
+                          ),
+                          // Settings button
+                          InkWell(
+                            onTap: () => showTtsControlSheet(context),
+                            borderRadius: const BorderRadius.horizontal(
+                              right: Radius.circular(10),
+                            ),
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 14, vertical: 16),
+                              child: Icon(
+                                Icons.tune,
+                                color: accentColor,
+                                size: 22,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  } else {
+                    // Show regular Listen button
+                    return OutlinedButton.icon(
+                      onPressed: () {
+                        if (_currentStudyGuide != null) {
+                          // Load and start reading the study guide if not already playing
+                          final status = ttsService.state.value.status;
+                          if (status == TtsStatus.idle ||
+                              status == TtsStatus.error) {
+                            ttsService.startReading(_currentStudyGuide!,
+                                mode: widget.studyMode);
+                          }
+                          // Open the control sheet
+                          showTtsControlSheet(context);
+                        }
+                      },
+                      icon: isLoading
+                          ? SizedBox(
+                              width: 22,
+                              height: 22,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: accentColor,
+                              ),
+                            )
+                          : const Icon(
+                              Icons.headphones_rounded,
+                              size: 22,
+                            ),
+                      label: Text(
+                        isLoading ? 'Loading...' : 'Listen',
+                        style: AppFonts.inter(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: accentColor,
+                        side: BorderSide(
+                          color: accentColor,
+                          width: 2,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                    );
+                  }
+                },
+              ),
+            ),
+          ),
+          const SizedBox(width: 16),
+          // Ask AI Button (Right) - Scroll to Follow-up Chat section
+          Expanded(
+            child: SizedBox(
+              height: 56,
+              child: Container(
+                decoration: BoxDecoration(
+                  gradient: AppTheme.primaryGradient,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppTheme.primaryColor.withOpacity(0.3),
+                      blurRadius: 12,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
                 ),
-                border: InputBorder.none,
-                contentPadding: const EdgeInsets.all(16),
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    onTap: () {
+                      // Expand chat first if collapsed
+                      if (!_isChatExpanded) {
+                        setState(() {
+                          _isChatExpanded = true;
+                        });
+                      }
+
+                      // Then scroll to Follow-up Chat section after a brief delay
+                      // to allow the expand animation to start
+                      Future.delayed(const Duration(milliseconds: 100), () {
+                        final chatContext = _followUpChatKey.currentContext;
+                        if (chatContext != null && mounted) {
+                          Scrollable.ensureVisible(
+                            chatContext,
+                            duration: const Duration(milliseconds: 500),
+                            curve: Curves.easeInOut,
+                            alignment: 0.1, // Position near top of viewport
+                          );
+                        }
+                      });
+                    },
+                    borderRadius: BorderRadius.circular(12),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(
+                          Icons.auto_awesome_rounded,
+                          color: Colors.white,
+                          size: 22,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Ask AI',
+                          style: AppFonts.inter(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
               ),
             ),
           ),
         ],
-      );
-
-  Widget _buildBottomActions() => Container(
-        padding: const EdgeInsets.all(24),
-        decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surface,
-          boxShadow: [
-            BoxShadow(
-              color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
-              blurRadius: 10,
-              offset: const Offset(0, -2),
-            ),
-          ],
-        ),
-        child: Row(
-          children: [
-            Expanded(
-              child: BlocBuilder<StudyBloc, StudyState>(
-                builder: (context, state) {
-                  final isSaving = (state is StudyEnhancedSaveInProgress &&
-                      _currentStudyGuide != null &&
-                      state.guideId == _currentStudyGuide!.id);
-
-                  String? currentStep;
-                  if (state is StudyEnhancedSaveInProgress) {
-                    currentStep = state.currentStep;
-                  }
-
-                  return isSaving
-                      ? OutlinedButton.icon(
-                          onPressed: null,
-                          icon: SizedBox(
-                            width: 16,
-                            height: 16,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation<Color>(
-                                  Theme.of(context).colorScheme.primary),
-                            ),
-                          ),
-                          label: Text(
-                            currentStep ?? 'Saving...',
-                            style: AppFonts.inter(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: Theme.of(context)
-                                .colorScheme
-                                .primary
-                                .withOpacity(0.6),
-                            side: BorderSide(
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .primary
-                                  .withOpacity(0.6),
-                              width: 2,
-                            ),
-                            minimumSize: const Size.fromHeight(56),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                        )
-                      : OutlinedButton.icon(
-                          onPressed: _saveStudyGuide,
-                          icon: Icon(_isSaved
-                              ? Icons.bookmark
-                              : Icons.bookmark_border),
-                          label: Text(
-                            _isSaved
-                                ? context.tr(TranslationKeys.studyGuideSaved)
-                                : context
-                                    .tr(TranslationKeys.studyGuideSaveStudy),
-                            style: AppFonts.inter(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: _isSaved
-                                ? Colors.green
-                                : Theme.of(context).colorScheme.primary,
-                            side: BorderSide(
-                              color: _isSaved
-                                  ? Colors.green
-                                  : Theme.of(context).colorScheme.primary,
-                              width: 2,
-                            ),
-                            minimumSize: const Size.fromHeight(56),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                        );
-                },
-              ),
-            ),
-            const SizedBox(width: 16),
-            // TTS Control Button (replaces Share button)
-            if (_currentStudyGuide != null)
-              Expanded(
-                child: TtsControlButton(
-                  guide: _currentStudyGuide!,
-                  onControlsTap: () => showTtsControlSheet(context),
-                ),
-              ),
-          ],
-        ),
-      );
+      ),
+    );
+  }
 
   String _getDisplayTitle() {
     if (_currentStudyGuide == null) {
@@ -1557,27 +2261,38 @@ class _StudyGuideScreenV2ContentState
             ),
           ),
           const SizedBox(width: 12),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-              sl<StudyNavigator>().navigateToLogin(context);
+          Builder(
+            builder: (context) {
+              final theme = Theme.of(context);
+              final isDark = theme.brightness == Brightness.dark;
+              final accentColor = isDark
+                  ? _lightenColor(theme.colorScheme.primary, 0.10)
+                  : theme.colorScheme.primary;
+
+              return ElevatedButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                  sl<StudyNavigator>().navigateToLogin(context);
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: accentColor,
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                child: Text(
+                  context.tr(TranslationKeys.studyGuideSignIn),
+                  style: AppFonts.inter(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              );
             },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.primaryColor,
-              foregroundColor: Colors.white,
-              elevation: 0,
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-            child: Text(
-              context.tr(TranslationKeys.studyGuideSignIn),
-              style: AppFonts.inter(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
           ),
         ],
       ),
@@ -1820,7 +2535,11 @@ class _StudySection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final primaryColor = Theme.of(context).colorScheme.primary;
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final accentColor = isDark
+        ? _lightenColor(theme.colorScheme.primary, 0.10)
+        : theme.colorScheme.primary;
 
     return AnimatedContainer(
       duration: const Duration(milliseconds: 300),
@@ -1828,20 +2547,20 @@ class _StudySection extends StatelessWidget {
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: isBeingRead
-            ? primaryColor.withOpacity(0.08)
-            : Theme.of(context).colorScheme.surface,
+            ? accentColor.withOpacity(0.08)
+            : theme.colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: isBeingRead
-              ? primaryColor.withOpacity(0.5)
-              : primaryColor.withOpacity(0.1),
+              ? accentColor.withOpacity(0.5)
+              : accentColor.withOpacity(0.1),
           width: isBeingRead ? 2 : 1,
         ),
         boxShadow: [
           BoxShadow(
             color: isBeingRead
-                ? primaryColor.withOpacity(0.15)
-                : primaryColor.withOpacity(0.05),
+                ? accentColor.withOpacity(0.15)
+                : accentColor.withOpacity(0.05),
             blurRadius: isBeingRead ? 16 : 10,
             offset: const Offset(0, 2),
           ),
@@ -1858,16 +2577,15 @@ class _StudySection extends StatelessWidget {
                 width: 40,
                 height: 40,
                 decoration: BoxDecoration(
-                  color: isBeingRead
-                      ? primaryColor
-                      : primaryColor.withOpacity(0.1),
+                  color:
+                      isBeingRead ? accentColor : accentColor.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: isBeingRead
                     ? const _PulsingIcon(icon: Icons.volume_up, size: 20)
                     : Icon(
                         icon,
-                        color: primaryColor,
+                        color: accentColor,
                         size: 20,
                       ),
               ),
@@ -1883,6 +2601,8 @@ class _StudySection extends StatelessWidget {
                           fontWeight: FontWeight.w600,
                           color: Theme.of(context).colorScheme.onBackground,
                         ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
                     if (isBeingRead)
@@ -1892,7 +2612,7 @@ class _StudySection extends StatelessWidget {
                           vertical: 4,
                         ),
                         decoration: BoxDecoration(
-                          color: primaryColor,
+                          color: accentColor,
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Row(
@@ -1937,7 +2657,7 @@ class _StudySection extends StatelessWidget {
           const SizedBox(height: 16),
           // Section Content with clickable scripture references
           ClickableScriptureText(
-            text: content,
+            text: _cleanDuplicateTitle(content, title),
             style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                   color: Theme.of(context).colorScheme.onBackground,
                   height: 1.6,
@@ -2016,6 +2736,265 @@ class _PulsingIconState extends State<_PulsingIcon>
           ),
         );
       },
+    );
+  }
+}
+
+/// Compact section widget for Quick Read mode (completed content)
+class _QuickStudySection extends StatelessWidget {
+  final String title;
+  final String content;
+  final bool isHighlight;
+
+  const _QuickStudySection({
+    required this.title,
+    required this.content,
+    this.isHighlight = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final accentColor = isDark
+        ? _lightenColor(theme.colorScheme.primary, 0.10)
+        : theme.colorScheme.primary;
+    final highlightColor = theme.colorScheme.secondary;
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: isHighlight
+            ? highlightColor.withOpacity(0.15)
+            : theme.colorScheme.surface,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: isHighlight
+              ? highlightColor.withOpacity(0.4)
+              : accentColor.withOpacity(0.1),
+          width: isHighlight ? 1.5 : 1,
+        ),
+        boxShadow: isHighlight
+            ? [
+                BoxShadow(
+                  color: highlightColor.withOpacity(0.1),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ]
+            : null,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Title row with copy button
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  title,
+                  style: AppFonts.inter(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w600,
+                    color: isHighlight
+                        ? accentColor
+                        : theme.colorScheme.onBackground.withOpacity(0.8),
+                  ),
+                ),
+              ),
+              IconButton(
+                onPressed: () => _copyToClipboard(context),
+                icon: Icon(
+                  Icons.copy,
+                  color:
+                      Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+                  size: 16,
+                ),
+                constraints: const BoxConstraints(),
+                padding: EdgeInsets.zero,
+                visualDensity: VisualDensity.compact,
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          // Content
+          ClickableScriptureText(
+            text: _cleanDuplicateTitle(content, title),
+            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                  fontWeight: isHighlight ? FontWeight.w500 : FontWeight.w400,
+                  color: Theme.of(context).colorScheme.onBackground,
+                  height: 1.6,
+                ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _copyToClipboard(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final accentColor = isDark
+        ? _lightenColor(theme.colorScheme.primary, 0.10)
+        : theme.colorScheme.primary;
+
+    Clipboard.setData(ClipboardData(text: content));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          context.tr(TranslationKeys.studyGuideCopiedToClipboard),
+          style: AppFonts.inter(color: Colors.white),
+        ),
+        backgroundColor: accentColor,
+        behavior: SnackBarBehavior.floating,
+        duration: const Duration(seconds: 2),
+      ),
+    );
+  }
+}
+
+/// Meditative section widget for Lectio Divina mode (completed content)
+class _LectioStudySection extends StatelessWidget {
+  final String title;
+  final String? subtitle;
+  final String content;
+  final IconData icon;
+
+  const _LectioStudySection({
+    required this.title,
+    this.subtitle,
+    required this.content,
+    required this.icon,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final accentColor = isDark
+        ? _lightenColor(theme.colorScheme.primary, 0.10)
+        : theme.colorScheme.primary;
+
+    // Softer, more meditative colors
+    final backgroundColor =
+        isDark ? accentColor.withOpacity(0.08) : accentColor.withOpacity(0.04);
+    final borderColor =
+        isDark ? accentColor.withOpacity(0.2) : accentColor.withOpacity(0.15);
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: backgroundColor,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: borderColor),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header with icon
+          Row(
+            children: [
+              Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  color: accentColor.withOpacity(0.15),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(
+                  icon,
+                  color: accentColor,
+                  size: 18,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: AppFonts.inter(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w600,
+                        color: Theme.of(context).colorScheme.onBackground,
+                      ),
+                    ),
+                    if (subtitle != null) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        subtitle!,
+                        style: AppFonts.inter(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                          color: accentColor.withOpacity(0.8),
+                          fontStyle: FontStyle.italic,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              IconButton(
+                onPressed: () => _copyToClipboard(context),
+                icon: Icon(
+                  Icons.copy,
+                  color:
+                      Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+                  size: 16,
+                ),
+                constraints: const BoxConstraints(),
+                padding: EdgeInsets.zero,
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          // Divider for meditative feel
+          Container(
+            height: 1,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  accentColor.withOpacity(0.0),
+                  accentColor.withOpacity(0.2),
+                  accentColor.withOpacity(0.0),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+          // Content with meditative typography
+          ClickableScriptureText(
+            text: _cleanDuplicateTitle(content, title),
+            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                  fontWeight: FontWeight.w400,
+                  color: Theme.of(context).colorScheme.onBackground,
+                  height: 1.7, // Extra line height for meditative reading
+                ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _copyToClipboard(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final accentColor = isDark
+        ? _lightenColor(theme.colorScheme.primary, 0.10)
+        : theme.colorScheme.primary;
+
+    Clipboard.setData(ClipboardData(text: content));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          context.tr(TranslationKeys.studyGuideCopiedToClipboard),
+          style: AppFonts.inter(color: Colors.white),
+        ),
+        backgroundColor: accentColor,
+        behavior: SnackBarBehavior.floating,
+        duration: const Duration(seconds: 2),
+      ),
     );
   }
 }

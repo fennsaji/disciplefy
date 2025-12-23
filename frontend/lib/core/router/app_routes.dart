@@ -69,6 +69,9 @@ class AppRoutes {
   // Gamification
   static const String statsDashboard = '/my-progress';
 
+  // Study Reflections
+  static const String reflectionJournal = '/reflection-journal';
+
   // Public Pages
   static const String pricing = '/pricing';
 }

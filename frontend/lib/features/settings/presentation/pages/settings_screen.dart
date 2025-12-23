@@ -22,6 +22,8 @@ import '../../../../core/i18n/translation_keys.dart';
 import '../../../home/presentation/bloc/home_bloc.dart';
 import '../../../home/presentation/bloc/home_event.dart';
 import '../../../study_topics/domain/repositories/learning_paths_repository.dart';
+import '../../../study_generation/domain/entities/study_mode.dart';
+import '../../../user_profile/data/services/user_profile_service.dart';
 
 /// Settings Screen with proper AuthBloc integration
 /// Handles both authenticated and anonymous users
@@ -200,6 +202,23 @@ class _SettingsScreenContent extends StatelessWidget {
                               .withOpacity(0.6),
                         ),
                         onTap: () => context.push(AppRoutes.statsDashboard),
+                      ),
+                      _buildDivider(),
+                      // Reflection Journal - view past reflections
+                      _buildSettingsTile(
+                        context: context,
+                        icon: Icons.edit_note_outlined,
+                        title: 'Reflection Journal',
+                        subtitle: 'View your past study reflections',
+                        trailing: Icon(
+                          Icons.arrow_forward_ios,
+                          size: 16,
+                          color: Theme.of(context)
+                              .colorScheme
+                              .onSurface
+                              .withOpacity(0.6),
+                        ),
+                        onTap: () => context.push(AppRoutes.reflectionJournal),
                       ),
                       _buildDivider(),
                       // My Plan - unified plan and subscription management
@@ -442,6 +461,8 @@ class _SettingsScreenContent extends StatelessWidget {
                     ),
                     onTap: () => _navigateToQuestionnaire(context),
                   ),
+                  _buildDivider(),
+                  _buildStudyModePreferenceTile(context, authProvider),
                 ],
               ),
               const SizedBox(height: 24),
@@ -459,6 +480,42 @@ class _SettingsScreenContent extends StatelessWidget {
       sl<HomeBloc>().add(const LoadForYouTopics(forceRefresh: true));
       sl<HomeBloc>().add(const LoadActiveLearningPath(forceRefresh: true));
     });
+  }
+
+  /// Build study mode preference tile
+  Widget _buildStudyModePreferenceTile(
+      BuildContext context, AuthStateProvider authProvider) {
+    final defaultMode =
+        authProvider.userProfile?['default_study_mode'] as String?;
+    final subtitle = defaultMode != null
+        ? 'Current: ${_getStudyModeDisplayName(defaultMode)}'
+        : 'Ask every time';
+
+    return _buildSettingsTile(
+      context: context,
+      icon: Icons.school_outlined,
+      title: 'Study Mode Preference',
+      subtitle: subtitle,
+      trailing: Icon(
+        Icons.arrow_forward_ios,
+        size: 16,
+        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+      ),
+      onTap: () => _showStudyModeBottomSheet(context, defaultMode),
+    );
+  }
+
+  /// Get display name for study mode
+  String _getStudyModeDisplayName(String modeString) {
+    try {
+      final mode = StudyMode.values.firstWhere(
+        (m) => m.value == modeString,
+        orElse: () => StudyMode.standard,
+      );
+      return mode.displayName;
+    } catch (e) {
+      return 'Standard';
+    }
   }
 
   /// Help & Support Section
@@ -1135,6 +1192,87 @@ class _SettingsScreenContent extends StatelessWidget {
     );
   }
 
+  /// Show study mode preference bottom sheet
+  void _showStudyModeBottomSheet(BuildContext context, String? currentMode) {
+    // Capture parent context for snackbars after sheet closes
+    final parentContext = context;
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (builderContext) => Container(
+        decoration: BoxDecoration(
+          color: Theme.of(builderContext).colorScheme.surface,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: AppTheme.primaryColor.withOpacity(0.3),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            const SizedBox(height: 24),
+            Text(
+              'Study Mode Preference',
+              style: AppFonts.inter(
+                fontSize: 20,
+                fontWeight: FontWeight.w700,
+                color: Theme.of(builderContext).colorScheme.onBackground,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Choose your default study mode or ask every time',
+              style: AppFonts.inter(
+                fontSize: 14,
+                color: Theme.of(builderContext)
+                    .colorScheme
+                    .onSurface
+                    .withOpacity(0.6),
+              ),
+            ),
+            const SizedBox(height: 24),
+            // Ask every time option
+            _buildStudyModeOption(
+              builderContext,
+              parentContext,
+              null,
+              'Ask Every Time',
+              Icons.help_outline,
+              'Choose mode each time you start a study',
+              currentMode,
+            ),
+            const SizedBox(height: 8),
+            // Study mode options
+            ...StudyMode.values.map((mode) => Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: _buildStudyModeOption(
+                    builderContext,
+                    parentContext,
+                    mode.value,
+                    mode.displayName,
+                    mode.iconData,
+                    '${mode.durationText} - ${mode.description}',
+                    currentMode,
+                  ),
+                )),
+            const SizedBox(height: 24),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildThemeOption(
     BuildContext context,
     SettingsBloc settingsBloc,
@@ -1320,6 +1458,153 @@ class _SettingsScreenContent extends StatelessWidget {
                         ? AppTheme.primaryColor
                         : Theme.of(context).colorScheme.onBackground,
                   ),
+                ),
+              ),
+              if (isSelected)
+                Icon(
+                  Icons.check_circle,
+                  color: AppTheme.primaryColor,
+                  size: 24,
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Build study mode option tile
+  Widget _buildStudyModeOption(
+    BuildContext sheetContext, // Sheet context for Navigator.pop() and Theme
+    BuildContext
+        parentContext, // Parent context for snackbars after sheet closes
+    String? value,
+    String label,
+    IconData icon,
+    String subtitle,
+    String? currentMode,
+  ) {
+    final isSelected = value == currentMode;
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () async {
+          // Use sheet context for Navigator.pop()
+          Navigator.of(sheetContext).pop();
+
+          // Update user profile with new study mode preference
+          try {
+            final userProfileService = sl<UserProfileService>();
+            final result =
+                await userProfileService.updateStudyModePreference(value);
+
+            // Use parent context for snackbars after sheet closes
+            if (parentContext.mounted) {
+              result.fold(
+                (failure) => _showSnackBar(
+                  parentContext,
+                  'Failed to update study mode preference: ${failure.message}',
+                  Theme.of(parentContext).colorScheme.error,
+                ),
+                (profile) {
+                  _showSnackBar(
+                    parentContext,
+                    value == null
+                        ? 'Study mode preference cleared'
+                        : 'Default study mode set to $label',
+                    Colors.green,
+                  );
+                },
+              );
+            }
+          } catch (e) {
+            // Use parent context for error snackbars
+            if (parentContext.mounted) {
+              _showSnackBar(
+                parentContext,
+                'Failed to update study mode preference: $e',
+                Theme.of(parentContext).colorScheme.error,
+              );
+            }
+          }
+        },
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          margin: const EdgeInsets.only(bottom: 8),
+          decoration: BoxDecoration(
+            gradient: isSelected
+                ? LinearGradient(
+                    colors: [
+                      AppTheme.primaryColor.withOpacity(0.1),
+                      AppTheme.secondaryPurple.withOpacity(0.05),
+                    ],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  )
+                : null,
+            color: isSelected ? null : Colors.transparent,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: isSelected ? AppTheme.primaryColor : Colors.transparent,
+              width: 2,
+            ),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 42,
+                height: 42,
+                decoration: BoxDecoration(
+                  gradient: isSelected ? AppTheme.primaryGradient : null,
+                  color: isSelected
+                      ? null
+                      : Theme.of(sheetContext)
+                          .colorScheme
+                          .onSurface
+                          .withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  icon,
+                  size: 20,
+                  color: isSelected
+                      ? Colors.white
+                      : Theme.of(sheetContext)
+                          .colorScheme
+                          .onSurface
+                          .withOpacity(0.6),
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      label,
+                      style: AppFonts.inter(
+                        fontSize: 15,
+                        fontWeight:
+                            isSelected ? FontWeight.w600 : FontWeight.w500,
+                        color: isSelected
+                            ? AppTheme.primaryColor
+                            : Theme.of(sheetContext).colorScheme.onBackground,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      subtitle,
+                      style: AppFonts.inter(
+                        fontSize: 13,
+                        color: Theme.of(sheetContext)
+                            .colorScheme
+                            .onSurface
+                            .withOpacity(0.6),
+                      ),
+                    ),
+                  ],
                 ),
               ),
               if (isSelected)

@@ -6,6 +6,7 @@ import '../../../../core/i18n/translation_keys.dart';
 import '../../../../core/extensions/translation_extension.dart';
 import '../../data/services/study_guide_tts_service.dart';
 import '../../domain/entities/study_guide.dart';
+import '../../domain/entities/study_mode.dart';
 
 /// A button widget for controlling TTS playback of study guides.
 ///
@@ -16,6 +17,9 @@ import '../../domain/entities/study_guide.dart';
 class TtsControlButton extends StatefulWidget {
   final StudyGuide guide;
 
+  /// Study mode for mode-specific section titles
+  final StudyMode mode;
+
   /// Callback invoked when the user taps the controls/settings icon
   /// (visible when playing or paused).
   final VoidCallback? onControlsTap;
@@ -23,6 +27,7 @@ class TtsControlButton extends StatefulWidget {
   const TtsControlButton({
     super.key,
     required this.guide,
+    this.mode = StudyMode.standard,
     this.onControlsTap,
   });
 
@@ -49,8 +54,8 @@ class _TtsControlButtonState extends State<TtsControlButton> {
     final status = _ttsService.state.value.status;
 
     if (status == TtsStatus.idle || status == TtsStatus.error) {
-      // Start reading from the beginning
-      _ttsService.startReading(widget.guide);
+      // Start reading from the beginning with mode-specific section titles
+      _ttsService.startReading(widget.guide, mode: widget.mode);
     } else {
       // Toggle play/pause
       _ttsService.togglePlayPause();
