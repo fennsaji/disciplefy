@@ -5,6 +5,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../../core/config/app_config.dart';
 import '../../../../core/utils/event_source_bridge.dart';
+import '../../domain/entities/study_mode.dart';
 import '../../domain/entities/study_stream_event.dart';
 
 /// Service for streaming study guide generation via SSE
@@ -19,6 +20,7 @@ class StudyStreamService {
   /// - [inputValue]: The actual input value (verse reference, topic, or question)
   /// - [topicDescription]: Optional description for topic-based studies
   /// - [language]: Target language code ('en', 'hi', 'ml')
+  /// - [studyMode]: Study mode ('quick', 'standard', 'deep', 'lectio')
   ///
   /// Returns a stream of [StudyStreamEvent] objects representing:
   /// - init: Stream started or cache hit
@@ -30,6 +32,7 @@ class StudyStreamService {
     required String inputValue,
     String? topicDescription,
     required String language,
+    StudyMode studyMode = StudyMode.standard,
   }) async* {
     // Build URL with query parameters (auth is passed via headers, not query params)
     final baseUrl = '${AppConfig.baseApiUrl}/study-generate-v2';
@@ -37,6 +40,7 @@ class StudyStreamService {
       'input_type': inputType,
       'input_value': inputValue,
       'language': language,
+      'mode': studyMode.name,
     };
 
     if (topicDescription != null && topicDescription.isNotEmpty) {

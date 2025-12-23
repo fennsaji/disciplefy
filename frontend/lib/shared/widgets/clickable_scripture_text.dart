@@ -112,68 +112,168 @@ class _ClickableScriptureTextState extends State<ClickableScriptureText> {
     }
   }
 
+  /// Parse markdown formatting and build text spans with both markdown styling
+  /// and clickable scripture references.
   List<InlineSpan> _buildTextSpans(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final List<InlineSpan> spans = [];
+    final baseStyle = widget.style ?? theme.textTheme.bodyMedium;
 
     // Use tertiary color for dark mode (lighter purple), primary for light mode
     final scriptureColor =
         isDark ? theme.colorScheme.tertiary : theme.colorScheme.primary;
 
-    // Style for scripture references
-    final scriptureStyle = (widget.style ?? const TextStyle()).copyWith(
-      color: scriptureColor,
-      fontWeight: FontWeight.w600,
-      decoration: TextDecoration.underline,
-      decorationColor: scriptureColor.withOpacity(0.5),
-      decorationStyle: TextDecorationStyle.dotted,
+    // Parse markdown and scripture in the text
+    return _parseMarkdownAndScripture(
+      widget.text,
+      context,
+      baseStyle,
+      scriptureColor,
     );
+  }
 
-    // Find all matches
-    final matches =
-        ClickableScriptureText.scripturePattern.allMatches(widget.text);
+  /// Recursively parse markdown formatting and scripture references
+  List<InlineSpan> _parseMarkdownAndScripture(
+    String text,
+    BuildContext context,
+    TextStyle? baseStyle,
+    Color scriptureColor,
+  ) {
+    final List<InlineSpan> spans = [];
 
-    if (matches.isEmpty) {
-      // No scripture references found, return plain text
-      return [TextSpan(text: widget.text, style: widget.style)];
-    }
+    // Markdown patterns (ordered by precedence)
+    final patterns = [
+      // Bold + Italic: ***text*** or **_text_** or _**text**_
+      RegExp(r'\*\*\*(.+?)\*\*\*'),
+      RegExp(r'\*\*_(.+?)_\*\*'),
+      RegExp(r'_\*\*(.+?)\*\*_'),
+      // Bold: **text** or __text__
+      RegExp(r'\*\*(.+?)\*\*'),
+      RegExp(r'__(.+?)__'),
+      // Italic: *text* or _text_
+      RegExp(r'\*(.+?)\*'),
+      RegExp(r'_(.+?)_'),
+      // Code: `code`
+      RegExp(r'`([^`]+)`'),
+    ];
 
     int currentIndex = 0;
 
-    for (final match in matches) {
-      // Add text before this match
-      if (match.start > currentIndex) {
+    // Find the earliest markdown or scripture pattern
+    while (currentIndex < text.length) {
+      int? earliestStart;
+      Match? earliestMatch;
+      String? patternType;
+
+      // Check all markdown patterns
+      for (final pattern in patterns) {
+        final match = pattern.firstMatch(text.substring(currentIndex));
+        if (match != null) {
+          final absoluteStart = currentIndex + match.start;
+          if (earliestStart == null || absoluteStart < earliestStart) {
+            earliestStart = absoluteStart;
+            earliestMatch = match;
+            patternType = 'markdown';
+          }
+        }
+      }
+
+      // Check scripture pattern
+      final scriptureMatch = ClickableScriptureText.scripturePattern
+          .firstMatch(text.substring(currentIndex));
+      if (scriptureMatch != null) {
+        final absoluteStart = currentIndex + scriptureMatch.start;
+        if (earliestStart == null || absoluteStart < earliestStart) {
+          earliestStart = absoluteStart;
+          earliestMatch = scriptureMatch;
+          patternType = 'scripture';
+        }
+      }
+
+      // No more patterns found
+      if (earliestMatch == null || earliestStart == null) {
+        // Add remaining text
+        if (currentIndex < text.length) {
+          spans.add(TextSpan(
+            text: text.substring(currentIndex),
+            style: baseStyle,
+          ));
+        }
+        break;
+      }
+
+      // Add text before the match
+      if (earliestStart > currentIndex) {
         spans.add(TextSpan(
-          text: widget.text.substring(currentIndex, match.start),
-          style: widget.style,
+          text: text.substring(currentIndex, earliestStart),
+          style: baseStyle,
         ));
       }
 
-      // Create the scripture reference
-      final reference = match.group(0)!;
+      if (patternType == 'scripture') {
+        // Handle scripture reference
+        final reference = earliestMatch.group(0)!;
+        final recognizer = TapGestureRecognizer()
+          ..onTap = () => _onScriptureTap(context, reference);
+        _recognizers.add(recognizer);
 
-      // Create a tap recognizer for this reference
-      final recognizer = TapGestureRecognizer()
-        ..onTap = () => _onScriptureTap(context, reference);
-      _recognizers.add(recognizer);
+        final scriptureStyle = (baseStyle ?? const TextStyle()).copyWith(
+          color: scriptureColor,
+          fontWeight: FontWeight.w600,
+          decoration: TextDecoration.underline,
+          decorationColor: scriptureColor.withOpacity(0.5),
+          decorationStyle: TextDecorationStyle.dotted,
+        );
 
-      // Add the styled, tappable scripture reference
-      spans.add(TextSpan(
-        text: reference,
-        style: scriptureStyle,
-        recognizer: recognizer,
-      ));
+        spans.add(TextSpan(
+          text: reference,
+          style: scriptureStyle,
+          recognizer: recognizer,
+        ));
+      } else {
+        // Handle markdown formatting
+        final fullMatch = earliestMatch.group(0)!;
+        final innerText = earliestMatch.group(1)!;
 
-      currentIndex = match.end;
-    }
+        TextStyle styledText = baseStyle ?? const TextStyle();
 
-    // Add any remaining text after the last match
-    if (currentIndex < widget.text.length) {
-      spans.add(TextSpan(
-        text: widget.text.substring(currentIndex),
-        style: widget.style,
-      ));
+        // Determine markdown type and apply styling
+        if (fullMatch.startsWith('***') ||
+            fullMatch.startsWith('**_') ||
+            fullMatch.startsWith('_**')) {
+          // Bold + Italic
+          styledText = styledText.copyWith(
+            fontWeight: FontWeight.bold,
+            fontStyle: FontStyle.italic,
+          );
+        } else if (fullMatch.startsWith('**') || fullMatch.startsWith('__')) {
+          // Bold
+          styledText = styledText.copyWith(fontWeight: FontWeight.bold);
+        } else if (fullMatch.startsWith('*') || fullMatch.startsWith('_')) {
+          // Italic
+          styledText = styledText.copyWith(fontStyle: FontStyle.italic);
+        } else if (fullMatch.startsWith('`')) {
+          // Code
+          styledText = styledText.copyWith(
+            fontFamily: 'monospace',
+            backgroundColor:
+                Theme.of(context).colorScheme.surfaceContainerHighest,
+            fontSize: (styledText.fontSize ?? 14) * 0.9,
+          );
+        }
+
+        // Recursively parse the inner text for nested formatting
+        final innerSpans = _parseMarkdownAndScripture(
+          innerText,
+          context,
+          styledText,
+          scriptureColor,
+        );
+
+        spans.addAll(innerSpans);
+      }
+
+      currentIndex = earliestStart + earliestMatch.group(0)!.length;
     }
 
     return spans;

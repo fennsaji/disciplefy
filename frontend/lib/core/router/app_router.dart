@@ -10,6 +10,7 @@ import '../../features/onboarding/presentation/pages/onboarding_purpose_page.dar
 import '../../features/study_generation/presentation/pages/study_guide_screen.dart';
 import '../../features/study_generation/presentation/pages/study_guide_screen_v2.dart';
 import '../../features/study_generation/domain/entities/study_guide.dart';
+import '../../features/study_generation/domain/entities/study_mode.dart';
 import '../../features/auth/presentation/pages/login_screen.dart';
 import '../../features/auth/presentation/pages/phone_number_input_screen.dart';
 import '../../features/auth/presentation/pages/otp_verification_screen.dart';
@@ -67,6 +68,7 @@ import '../../features/study_topics/presentation/bloc/learning_paths_bloc.dart';
 import '../../features/study_topics/presentation/bloc/leaderboard_bloc.dart';
 import '../../features/gamification/presentation/pages/stats_dashboard_page.dart';
 import '../../features/gamification/presentation/bloc/gamification_bloc.dart';
+import '../../features/study_generation/presentation/pages/reflection_journal_screen.dart';
 import 'app_routes.dart';
 import 'router_guard.dart';
 import 'auth_notifier.dart';
@@ -296,7 +298,7 @@ class AppRouter {
       ),
       // Practice results route must come BEFORE the wildcard :verseId route
       GoRoute(
-        path: '/memory-verses/practice/results',
+        path: AppRoutes.practiceResults,
         name: 'practice_results',
         redirect: (context, state) {
           // Redirect to memory verses if params are missing (e.g., page refresh on web)
@@ -314,7 +316,7 @@ class AppRouter {
         },
       ),
       GoRoute(
-        path: '/memory-verses/practice/:verseId',
+        path: AppRoutes.practiceModeSelection,
         name: 'practice_mode_selection',
         builder: (context, state) {
           final verseId = state.pathParameters['verseId'] ?? '';
@@ -329,7 +331,7 @@ class AppRouter {
         },
       ),
       GoRoute(
-        path: '/memory-verses/practice/word-bank/:verseId',
+        path: AppRoutes.wordBankPractice,
         name: 'word_bank_practice',
         builder: (context, state) {
           final verseId = state.pathParameters['verseId'] ?? '';
@@ -340,7 +342,7 @@ class AppRouter {
         },
       ),
       GoRoute(
-        path: '/memory-verses/practice/cloze/:verseId',
+        path: AppRoutes.clozePractice,
         name: 'cloze_practice',
         builder: (context, state) {
           final verseId = state.pathParameters['verseId'] ?? '';
@@ -351,7 +353,7 @@ class AppRouter {
         },
       ),
       GoRoute(
-        path: '/memory-verses/practice/first-letter/:verseId',
+        path: AppRoutes.firstLetterPractice,
         name: 'first_letter_practice',
         builder: (context, state) {
           final verseId = state.pathParameters['verseId'] ?? '';
@@ -362,7 +364,7 @@ class AppRouter {
         },
       ),
       GoRoute(
-        path: '/memory-verses/practice/progressive/:verseId',
+        path: AppRoutes.progressivePractice,
         name: 'progressive_practice',
         builder: (context, state) {
           final verseId = state.pathParameters['verseId'] ?? '';
@@ -373,7 +375,7 @@ class AppRouter {
         },
       ),
       GoRoute(
-        path: '/memory-verses/practice/word-scramble/:verseId',
+        path: AppRoutes.wordScramblePractice,
         name: 'word_scramble_practice',
         builder: (context, state) {
           final verseId = state.pathParameters['verseId'] ?? '';
@@ -384,7 +386,7 @@ class AppRouter {
         },
       ),
       GoRoute(
-        path: '/memory-verses/practice/audio/:verseId',
+        path: AppRoutes.audioPractice,
         name: 'audio_practice',
         builder: (context, state) {
           final verseId = state.pathParameters['verseId'] ?? '';
@@ -395,7 +397,7 @@ class AppRouter {
         },
       ),
       GoRoute(
-        path: '/memory-verses/practice/type-it-out/:verseId',
+        path: AppRoutes.typeItOutPractice,
         name: 'type_it_out_practice',
         builder: (context, state) {
           final verseId = state.pathParameters['verseId'] ?? '';
@@ -479,7 +481,7 @@ class AppRouter {
 
       // Learning Paths Routes
       GoRoute(
-        path: '/learning-path/:pathId',
+        path: AppRoutes.learningPathDetail,
         name: 'learning_path_detail',
         parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) {
@@ -511,6 +513,17 @@ class AppRouter {
         builder: (context, state) => BlocProvider.value(
           value: sl<GamificationBloc>(),
           child: const StatsDashboardPage(),
+        ),
+      ),
+
+      // Reflection Journal Route
+      GoRoute(
+        path: AppRoutes.reflectionJournal,
+        name: 'reflection_journal',
+        parentNavigatorKey: rootNavigatorKey,
+        pageBuilder: (context, state) => slideRightTransitionPage(
+          child: const ReflectionJournalScreen(),
+          state: state,
         ),
       ),
 
@@ -636,10 +649,15 @@ class AppRouter {
           final description = state.uri.queryParameters['description'];
           final language = state.uri.queryParameters['language'];
           final sourceString = state.uri.queryParameters['source'];
+          final modeString = state.uri.queryParameters['mode'];
 
           // Parse navigation source
           final navigationSource =
               sl<StudyNavigator>().parseNavigationSource(sourceString);
+
+          // Parse study mode (default to standard)
+          final studyMode =
+              StudyModeExtension.fromString(modeString ?? 'standard');
 
           return slideRightTransitionPage(
             child: StudyGuideScreenV2(
@@ -649,6 +667,7 @@ class AppRouter {
               description: description,
               language: language,
               navigationSource: navigationSource,
+              studyMode: studyMode,
             ),
             state: state,
           );
@@ -810,4 +829,7 @@ extension AppRouterExtension on GoRouter {
 
   /// Navigates to the stats dashboard (My Progress) page showing gamification stats.
   void goToStatsDashboard() => go(AppRoutes.statsDashboard);
+
+  /// Navigates to the reflection journal page showing past reflections.
+  void goToReflectionJournal() => go(AppRoutes.reflectionJournal);
 }

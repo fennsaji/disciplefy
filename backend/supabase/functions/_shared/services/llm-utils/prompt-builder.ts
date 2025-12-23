@@ -5,7 +5,7 @@
  * Provides type-safe prompt generation for study guides, daily verses, and follow-ups.
  */
 
-import type { LLMGenerationParams, LanguageConfig } from '../llm-types.ts'
+import type { LLMGenerationParams, LanguageConfig, StudyMode } from '../llm-types.ts'
 import { getLanguageExamples, getLanguageConfigOrDefault, type SupportedLanguage } from '../llm-config/language-configs.ts'
 
 /**
@@ -120,16 +120,273 @@ Output format: Start with { and end with } - nothing else.`
 
 /**
  * Creates an enhanced prompt for study guide generation.
- * 
- * @param params - Generation parameters
+ * Routes to mode-specific prompts based on studyMode parameter.
+ *
+ * @param params - Generation parameters (includes studyMode)
  * @param languageConfig - Language-specific configuration
  * @returns Prompt pair with system and user messages
  */
 export function createStudyGuidePrompt(params: LLMGenerationParams, languageConfig: LanguageConfig): PromptPair {
-  return {
-    systemMessage: createStudyGuideSystemMessage(languageConfig),
-    userMessage: createStudyGuideUserMessage(params, languageConfig)
+  const studyMode = params.studyMode || 'standard'
+
+  switch (studyMode) {
+    case 'quick':
+      return createQuickReadPrompt(params, languageConfig)
+    case 'deep':
+      return createDeepDivePrompt(params, languageConfig)
+    case 'lectio':
+      return createLectioDivinaPrompt(params, languageConfig)
+    case 'standard':
+    default:
+      return {
+        systemMessage: createStudyGuideSystemMessage(languageConfig),
+        userMessage: createStudyGuideUserMessage(params, languageConfig)
+      }
   }
+}
+
+// ==================== Mode-Specific Prompts ====================
+
+/**
+ * Creates a Quick Read prompt (3-minute study).
+ * Generates condensed content using the standard 6-section format for streaming compatibility.
+ * Sections are adapted for brevity: key insight, key verse, single reflection, brief prayer.
+ */
+function createQuickReadPrompt(params: LLMGenerationParams, languageConfig: LanguageConfig): PromptPair {
+  const { inputType, inputValue, topicDescription } = params
+  const languageExamples = getLanguageExamples(params.language)
+  const verseReferenceExamples = getVerseReferenceExamples(params.language)
+
+  let taskDescription: string
+  if (inputType === 'scripture') {
+    taskDescription = `Create a QUICK 3-minute Bible study for: "${inputValue}"`
+  } else if (inputType === 'topic') {
+    taskDescription = topicDescription
+      ? `Create a QUICK 3-minute Bible study on: "${inputValue}"\n\nContext: ${topicDescription}`
+      : `Create a QUICK 3-minute Bible study on: "${inputValue}"`
+  } else {
+    taskDescription = `Answer briefly and create a QUICK 3-minute study for: "${inputValue}"`
+  }
+
+  const systemMessage = `You are a biblical scholar creating CONCISE Bible study guides for busy readers. Your responses must be valid JSON only.
+
+STUDY MODE: QUICK READ (3 minutes)
+Focus on delivering ONE powerful insight that readers can apply immediately.
+
+THEOLOGICAL APPROACH:
+- Protestant theological alignment
+- Biblical accuracy and Christ-centered interpretation
+- Immediately practical spiritual application
+
+LANGUAGE REQUIREMENTS:
+- ${languageConfig.promptModifiers.languageInstruction}
+- ${languageConfig.promptModifiers.complexityInstruction}
+- Cultural Context: ${languageConfig.culturalContext}
+- Use simple, accessible vocabulary
+
+JSON OUTPUT REQUIREMENTS:
+- Output ONLY valid JSON - no extra text
+- Use proper JSON string escaping
+- Keep content brief and impactful
+
+TONE: Direct, warm, encouraging, immediately actionable.`
+
+  const userMessage = `TASK: ${taskDescription}
+
+QUICK READ FORMAT - REQUIRED JSON OUTPUT (use EXACTLY these field names):
+{
+  "summary": "ONE powerful key insight in 2-3 sentences - the main takeaway",
+  "interpretation": "Key verse with brief explanation: [Reference]: [Verse text]. [1-2 sentence explanation]",
+  "context": "Brief context (1-2 sentences) - keep minimal for quick reading",
+  "relatedVerses": ["Include ONLY the single most relevant verse with reference in ${languageConfig.name}"],
+  "reflectionQuestions": ["ONE practical reflection question for immediate application"],
+  "prayerPoints": ["ONE brief, focused prayer point"]
+}
+
+CRITICAL RULES FOR QUICK READ:
+- Keep EVERYTHING concise - this is a 3-minute study
+- "interpretation" must include the key verse text with its reference
+- Only ONE item in each array field
+- Focus on immediate practical takeaway
+
+CRITICAL: VERSE REFERENCE MUST BE IN ${languageConfig.name}
+${verseReferenceExamples}
+
+CRITICAL JSON FORMATTING RULES:
+- Output ONLY valid JSON - no markdown, no extra text
+- Use proper JSON string escaping
+- No trailing commas
+
+${languageExamples}
+
+Output format: Start with { and end with } - nothing else.`
+
+  return { systemMessage, userMessage }
+}
+
+/**
+ * Creates a Deep Dive prompt (25-minute study).
+ * Generates extended content using the standard 6-section format for streaming compatibility.
+ * Word studies and cross-references are embedded in the interpretation and context sections.
+ */
+function createDeepDivePrompt(params: LLMGenerationParams, languageConfig: LanguageConfig): PromptPair {
+  const { inputType, inputValue, topicDescription } = params
+  const languageExamples = getLanguageExamples(params.language)
+  const verseReferenceExamples = getVerseReferenceExamples(params.language)
+
+  let taskDescription: string
+  if (inputType === 'scripture') {
+    taskDescription = `Create a COMPREHENSIVE Deep Dive Bible study for: "${inputValue}"`
+  } else if (inputType === 'topic') {
+    taskDescription = topicDescription
+      ? `Create a COMPREHENSIVE Deep Dive Bible study on: "${inputValue}"\n\nContext: ${topicDescription}`
+      : `Create a COMPREHENSIVE Deep Dive Bible study on: "${inputValue}"`
+  } else {
+    taskDescription = `Provide a thorough answer and create a COMPREHENSIVE Deep Dive study for: "${inputValue}"`
+  }
+
+  const systemMessage = `You are an expert biblical scholar creating IN-DEPTH Bible study guides for serious students. Your responses must be valid JSON only.
+
+STUDY MODE: DEEP DIVE (25 minutes)
+Provide scholarly depth while maintaining accessibility.
+
+THEOLOGICAL APPROACH:
+- Protestant theological alignment
+- Biblical accuracy with original language insights
+- Historical-grammatical hermeneutics
+- Christ-centered interpretation
+- Thorough practical application
+
+LANGUAGE REQUIREMENTS:
+- ${languageConfig.promptModifiers.languageInstruction}
+- ${languageConfig.promptModifiers.complexityInstruction}
+- Cultural Context: ${languageConfig.culturalContext}
+- Balance scholarly depth with clarity
+
+JSON OUTPUT REQUIREMENTS:
+- Output ONLY valid JSON - no extra text
+- Use proper JSON string escaping
+- Provide comprehensive content
+
+TONE: Scholarly yet pastoral, thorough, illuminating.`
+
+  const userMessage = `TASK: ${taskDescription}
+
+DEEP DIVE FORMAT - REQUIRED JSON OUTPUT (use EXACTLY these field names):
+{
+  "summary": "Comprehensive overview (4-5 sentences) with key themes and scholarly insights",
+  "interpretation": "In-depth theological interpretation (6-8 paragraphs) including:\\n\\n**Word Studies:**\\n- Include 2-3 Greek/Hebrew words with transliterations and meanings\\n- Explain theological significance of key terms\\n\\n**Doctrinal Implications:**\\n- Explore theological depth and application",
+  "context": "Extended historical, cultural, and literary context (3-4 paragraphs) including:\\n\\n**Cross-References:**\\n- Include 5-8 related passages with brief explanations of connections\\n- Show how other Scriptures illuminate this passage",
+  "relatedVerses": ["5-8 relevant Bible verses with references in ${languageConfig.name} - include a brief note on each connection"],
+  "reflectionQuestions": ["6-8 deep, thought-provoking questions including one journaling prompt at the end"],
+  "prayerPoints": ["4-5 comprehensive prayer suggestions for deep application"]
+}
+
+CRITICAL CONTENT REQUIREMENTS FOR DEEP DIVE:
+- "interpretation" MUST include word study section with Greek/Hebrew terms
+- "context" MUST include cross-reference connections
+- Each section should be substantially longer than standard study
+- Include scholarly insights while remaining accessible
+- Last item in "reflectionQuestions" should be a journaling prompt
+
+CRITICAL: ALL VERSE REFERENCES MUST BE IN ${languageConfig.name}
+${verseReferenceExamples}
+
+CRITICAL JSON FORMATTING RULES:
+- Output ONLY valid JSON - no markdown, no extra text
+- Use proper JSON string escaping (\\n for newlines)
+- No trailing commas
+
+${languageExamples}
+
+Output format: Start with { and end with } - nothing else.`
+
+  return { systemMessage, userMessage }
+}
+
+/**
+ * Creates a Lectio Divina prompt (15-minute meditative study).
+ * Generates content using the standard 6-section format for streaming compatibility.
+ * Maps Lectio Divina movements to standard sections for meditation guidance.
+ */
+function createLectioDivinaPrompt(params: LLMGenerationParams, languageConfig: LanguageConfig): PromptPair {
+  const { inputType, inputValue, topicDescription } = params
+  const languageExamples = getLanguageExamples(params.language)
+  const verseReferenceExamples = getVerseReferenceExamples(params.language)
+
+  let taskDescription: string
+  if (inputType === 'scripture') {
+    taskDescription = `Create a Lectio Divina meditation guide for: "${inputValue}"`
+  } else if (inputType === 'topic') {
+    taskDescription = topicDescription
+      ? `Create a Lectio Divina meditation guide on: "${inputValue}"\n\nContext: ${topicDescription}`
+      : `Create a Lectio Divina meditation guide on: "${inputValue}"`
+  } else {
+    taskDescription = `Create a Lectio Divina meditation guide for: "${inputValue}"`
+  }
+
+  const systemMessage = `You are a spiritual director guiding readers through Lectio Divina, the ancient practice of divine reading. Your responses must be valid JSON only.
+
+STUDY MODE: LECTIO DIVINA (15 minutes)
+Guide the reader through the four movements of sacred reading.
+
+LECTIO DIVINA MOVEMENTS:
+1. LECTIO (Read) - Slow, attentive reading of Scripture
+2. MEDITATIO (Meditate) - Pondering words/phrases that resonate
+3. ORATIO (Pray) - Responding to God in prayer
+4. CONTEMPLATIO (Rest) - Silent rest in God's presence
+
+THEOLOGICAL APPROACH:
+- Contemplative Christian tradition
+- Focus on personal encounter with God through Scripture
+- Christ-centered, Spirit-led meditation
+- Emphasis on listening and receiving
+
+LANGUAGE REQUIREMENTS:
+- ${languageConfig.promptModifiers.languageInstruction}
+- ${languageConfig.promptModifiers.complexityInstruction}
+- Cultural Context: ${languageConfig.culturalContext}
+- Use gentle, inviting, meditative language
+
+JSON OUTPUT REQUIREMENTS:
+- Output ONLY valid JSON - no extra text
+- Use proper JSON string escaping
+
+TONE: Contemplative, gentle, inviting, spiritually nurturing.`
+
+  const userMessage = `TASK: ${taskDescription}
+
+LECTIO DIVINA FORMAT - REQUIRED JSON OUTPUT (use EXACTLY these field names):
+{
+  "summary": "**Scripture for Meditation**\\n\\n[Reference in ${languageConfig.name}]\\n\\n[Complete scripture passage text]\\n\\n*Read this passage slowly 2-3 times, letting the words wash over you.*",
+  "interpretation": "**LECTIO (Read) & MEDITATIO (Meditate)**\\n\\nLECTIO: [Guidance for slow, attentive reading]\\n\\nMEDITATIO: [Guidance for pondering and meditation]\\n\\nAs you read again slowly, notice which word or phrase catches your attention. This is the Spirit inviting you to pause and receive.",
+  "context": "**About Lectio Divina**\\n\\nLectio Divina (divine reading) is an ancient Christian practice dating back to the 3rd century. It invites us to move from reading about God to encountering God through His Word. There are four movements: Lectio (read), Meditatio (meditate), Oratio (pray), and Contemplatio (rest).\\n\\nApproach this time with an open heart, free from agenda. Let God speak to you through His Word.",
+  "relatedVerses": ["List 5-7 significant words or phrases from the passage for meditation - these are focus words that invite deeper reflection"],
+  "reflectionQuestions": ["**ORATIO (Pray)** - A prayer starter to respond to God based on the passage...", "What is God inviting you to in this Word?", "How might this passage shape your day?", "**CONTEMPLATIO (Rest)** - Rest in God's presence. Sit in silence for 2-3 minutes, simply being with God, letting go of words and thoughts."],
+  "prayerPoints": ["[Prayer template/starter that the reader can personalize]", "[A blessing to carry with you: A brief sending word]", "[One way to carry this Word into daily life]"]
+}
+
+CRITICAL CONTENT REQUIREMENTS FOR LECTIO DIVINA:
+- "summary" must include the full scripture text formatted for slow reading
+- "interpretation" must guide through LECTIO and MEDITATIO movements
+- "relatedVerses" should be FOCUS WORDS/PHRASES from the passage for meditation (not other verses)
+- "reflectionQuestions" must include ORATIO and CONTEMPLATIO movements
+- "prayerPoints" should include prayer template, blessing, and practice reminder
+- Use meditative, gentle, inviting language throughout
+
+CRITICAL: SCRIPTURE REFERENCE MUST BE IN ${languageConfig.name}
+${verseReferenceExamples}
+
+CRITICAL JSON FORMATTING RULES:
+- Output ONLY valid JSON - no markdown, no extra text
+- Use proper JSON string escaping (\\n for newlines)
+- No trailing commas
+
+${languageExamples}
+
+Output format: Start with { and end with } - nothing else.`
+
+  return { systemMessage, userMessage }
 }
 
 /**

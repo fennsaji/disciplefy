@@ -1,5 +1,7 @@
 import 'package:equatable/equatable.dart';
 
+import '../../domain/entities/study_mode.dart';
+
 /// Events for the Study Generation BLoC.
 ///
 /// These events represent user actions that trigger study guide generation
@@ -233,15 +235,20 @@ class GenerateStudyGuideStreamingRequested extends StudyEvent {
   /// Language code for the study guide.
   final String language;
 
+  /// Study mode for different study experiences.
+  final StudyMode studyMode;
+
   const GenerateStudyGuideStreamingRequested({
     required this.input,
     required this.inputType,
     this.topicDescription,
     required this.language,
+    this.studyMode = StudyMode.standard,
   });
 
   @override
-  List<Object?> get props => [input, inputType, topicDescription, language];
+  List<Object?> get props =>
+      [input, inputType, topicDescription, language, studyMode];
 }
 
 /// Internal event when a streaming section is received.
@@ -303,4 +310,92 @@ class StudyStreamErrorOccurred extends StudyEvent {
 /// Event to cancel an ongoing streaming generation.
 class CancelStudyStreamingRequested extends StudyEvent {
   const CancelStudyStreamingRequested();
+}
+
+// ==================== Reflect Mode Events ====================
+
+/// Event to enter Reflect Mode for a study guide.
+///
+/// This transitions from Read Mode to Reflect Mode with card-by-card
+/// interactive progression through the study guide sections.
+class EnterReflectModeRequested extends StudyEvent {
+  /// The study guide to reflect upon.
+  final String studyGuideId;
+
+  const EnterReflectModeRequested({
+    required this.studyGuideId,
+  });
+
+  @override
+  List<Object?> get props => [studyGuideId];
+}
+
+/// Event when user completes an interaction on a reflect mode card.
+class ReflectCardInteractionCompleted extends StudyEvent {
+  /// The card index that was completed.
+  final int cardIndex;
+
+  /// The response from the interaction.
+  final dynamic response;
+
+  const ReflectCardInteractionCompleted({
+    required this.cardIndex,
+    required this.response,
+  });
+
+  @override
+  List<Object?> get props => [cardIndex, response];
+}
+
+/// Event to advance to the next card in Reflect Mode.
+class ReflectNextCardRequested extends StudyEvent {
+  const ReflectNextCardRequested();
+}
+
+/// Event to go back to the previous card in Reflect Mode.
+class ReflectPreviousCardRequested extends StudyEvent {
+  const ReflectPreviousCardRequested();
+}
+
+/// Event to complete Reflect Mode and save responses.
+class ReflectModeCompleteRequested extends StudyEvent {
+  /// All collected responses.
+  final List<dynamic> responses;
+
+  /// Total time spent in seconds.
+  final int timeSpentSeconds;
+
+  const ReflectModeCompleteRequested({
+    required this.responses,
+    required this.timeSpentSeconds,
+  });
+
+  @override
+  List<Object?> get props => [responses, timeSpentSeconds];
+}
+
+/// Event to exit Reflect Mode without saving.
+class ExitReflectModeRequested extends StudyEvent {
+  /// Whether to return to Read Mode (true) or close entirely (false).
+  final bool returnToReadMode;
+
+  const ExitReflectModeRequested({
+    this.returnToReadMode = true,
+  });
+
+  @override
+  List<Object?> get props => [returnToReadMode];
+}
+
+/// Event to update time spent in Reflect Mode (for tracking).
+class ReflectModeTimeUpdated extends StudyEvent {
+  /// Total time spent in seconds.
+  final int timeSpentSeconds;
+
+  const ReflectModeTimeUpdated({
+    required this.timeSpentSeconds,
+  });
+
+  @override
+  List<Object?> get props => [timeSpentSeconds];
 }

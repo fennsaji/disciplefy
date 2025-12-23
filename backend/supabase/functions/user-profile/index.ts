@@ -20,6 +20,7 @@ interface UserProfile {
   first_name: string | null
   last_name: string | null
   profile_picture: string | null
+  default_study_mode: string | null
   email: string | null
   phone: string | null
   is_admin: boolean
@@ -33,6 +34,7 @@ interface UpdateProfileRequest {
   first_name?: string | null
   last_name?: string | null
   profile_picture?: string | null
+  default_study_mode?: string | null
 }
 
 // ============================================================================
@@ -105,6 +107,18 @@ function parseAndValidateUpdate(body: any): UpdateProfileRequest {
     }
   }
 
+  if (body.default_study_mode !== undefined) {
+    if (body.default_study_mode === null || body.default_study_mode === '') {
+      updateData.default_study_mode = null
+    } else {
+      const validModes = ['quick', 'standard', 'deep', 'lectio']
+      if (!validModes.includes(body.default_study_mode)) {
+        throw new AppError('VALIDATION_ERROR', 'Invalid study mode. Must be one of: quick, standard, deep, lectio', 400)
+      }
+      updateData.default_study_mode = body.default_study_mode
+    }
+  }
+
   if (Object.keys(updateData).length === 0) {
     throw new AppError('VALIDATION_ERROR', 'No valid fields to update', 400)
   }
@@ -147,6 +161,7 @@ async function createDefaultProfile(
     first_name: updateData?.first_name || oauthData.first_name || null,
     last_name: updateData?.last_name || oauthData.last_name || null,
     profile_picture: updateData?.profile_picture || oauthData.profile_picture || null,
+    default_study_mode: updateData?.default_study_mode || null,
     email: null,
     phone: null,
     is_admin: false,

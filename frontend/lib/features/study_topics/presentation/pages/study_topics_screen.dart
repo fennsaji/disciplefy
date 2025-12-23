@@ -15,6 +15,8 @@ import '../../../../core/services/language_preference_service.dart';
 import '../../../../core/utils/logger.dart';
 import '../../../../core/services/auth_state_provider.dart';
 import '../../../home/presentation/bloc/home_bloc.dart';
+import '../../../study_generation/domain/entities/study_mode.dart';
+import '../../../study_generation/presentation/widgets/mode_selection_sheet.dart';
 import '../../domain/entities/learning_path.dart';
 import '../../domain/entities/topic_progress.dart';
 import '../bloc/continue_learning_bloc.dart';
@@ -209,11 +211,21 @@ class _StudyTopicsScreenContentState extends State<_StudyTopicsScreenContent> {
   void _handleTopicDeepLink(String topicId) async {
     debugPrint('[StudyTopics] Deep link detected for topic ID: $topicId');
 
-    // Navigate directly to study guide V2 with the topic ID
+    // Show mode selection sheet before navigating
     if (mounted) {
-      final encodedTopicId = Uri.encodeComponent(topicId);
-      context.go(
-          '/study-guide-v2?input=&type=topic&language=en&source=deepLink&topic_id=$encodedTopicId');
+      ModeSelectionSheet.show(
+        context: context,
+        onModeSelected: (mode, rememberChoice) {
+          // Save user's mode preference if they chose to remember
+          if (rememberChoice) {
+            sl<LanguagePreferenceService>().saveStudyModePreference(mode);
+          }
+
+          final encodedTopicId = Uri.encodeComponent(topicId);
+          context.go(
+              '/study-guide-v2?input=&type=topic&language=${widget.currentLanguage}&mode=${mode.name}&source=deepLink&topic_id=$encodedTopicId');
+        },
+      );
     }
   }
 
@@ -384,10 +396,29 @@ class _StudyTopicsScreenContentState extends State<_StudyTopicsScreenContent> {
 
     _isNavigating = true;
 
-    // Use the current language from the screen's state (already loaded from LanguagePreferenceService)
+    // Show mode selection sheet before navigating
+    ModeSelectionSheet.show(
+      context: context,
+      onModeSelected: (mode, rememberChoice) async {
+        await _navigateToStudyGuideWithMode(topic, mode, rememberChoice);
+      },
+    );
+  }
+
+  /// Navigate to study guide with the selected mode
+  Future<void> _navigateToStudyGuideWithMode(
+    InProgressTopic topic,
+    StudyMode mode,
+    bool rememberChoice,
+  ) async {
+    // Save user's mode preference if they chose to remember
+    if (rememberChoice) {
+      sl<LanguagePreferenceService>().saveStudyModePreference(mode);
+    }
+
+    // Use the current language from the screen's state
     final languageCode = widget.currentLanguage;
 
-    // Navigate directly to study guide V2
     final encodedTitle = Uri.encodeComponent(topic.title);
     final encodedDescription = Uri.encodeComponent(topic.description);
     final topicIdParam =
@@ -398,11 +429,11 @@ class _StudyTopicsScreenContentState extends State<_StudyTopicsScreenContent> {
         topic.learningPathId != null ? '&path_id=${topic.learningPathId}' : '';
 
     debugPrint(
-        '[CONTINUE_LEARNING] Navigating to study guide V2 for topic: ${topic.title} (ID: ${topic.topicId})');
+        '[CONTINUE_LEARNING] Navigating to study guide V2 for topic: ${topic.title} with mode: ${mode.name}');
 
     // Use push() and await - when user returns, refresh the data
     await context.push(
-        '/study-guide-v2?input=$encodedTitle&type=topic&language=$languageCode&source=continueLearning$topicIdParam$descriptionParam$pathIdParam');
+        '/study-guide-v2?input=$encodedTitle&type=topic&language=$languageCode&mode=${mode.name}&source=continueLearning$topicIdParam$descriptionParam$pathIdParam');
 
     // Refresh data when returning from the study guide
     if (mounted) {

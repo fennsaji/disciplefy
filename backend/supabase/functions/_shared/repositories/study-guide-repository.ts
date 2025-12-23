@@ -15,12 +15,18 @@ export interface StudyGuideContent {
 }
 
 /**
+ * Valid study modes
+ */
+export type StudyMode = 'quick' | 'standard' | 'deep' | 'lectio'
+
+/**
  * Study guide input parameters
  */
 export interface StudyGuideInput {
   readonly type: 'scripture' | 'topic' | 'question'
   readonly value: string
   readonly language: string
+  readonly study_mode: StudyMode
 }
 
 /**
@@ -88,7 +94,8 @@ export class StudyGuideRepository {
       input: {
         type: input.type,
         value: input.value, // Show original input value
-        language: input.language
+        language: input.language,
+        study_mode: input.study_mode
       },
       content: {
         summary: cachedContent.summary,
@@ -129,6 +136,7 @@ export class StudyGuideRepository {
         input_value: input.value,
         input_value_hash: inputHash,
         language: input.language,
+        study_mode: input.study_mode, // Include study_mode for mode-specific caching
         summary: content.summary,
         interpretation: content.interpretation,
         context: content.context,
@@ -158,6 +166,7 @@ export class StudyGuideRepository {
         .eq('input_type', input.type)
         .eq('input_value_hash', inputHash)
         .eq('language', input.language)
+        .eq('study_mode', input.study_mode) // Include study_mode for mode-specific caching
         .single()
 
       if (selectError || !existingContent) {
@@ -528,13 +537,14 @@ export class StudyGuideRepository {
   ): Promise<StudyGuideResponse | null> {
     const inputHash = await this.generateInputHash(input)
 
-    // Check if content exists in cache
+    // Check if content exists in cache (including study_mode for mode-specific caching)
     const { data: content, error } = await this.supabase
       .from('study_guides')
       .select('*')
       .eq('input_type', input.type)
       .eq('input_value_hash', inputHash)
       .eq('language', input.language)
+      .eq('study_mode', input.study_mode)
       .single()
 
     if (error || !content) {
@@ -573,7 +583,8 @@ export class StudyGuideRepository {
       input: {
         type: input.type,
         value: content.input_value || input.value, // Use stored input value from database
-        language: input.language
+        language: input.language,
+        study_mode: input.study_mode
       },
       content: {
         summary: content.summary,
@@ -767,15 +778,16 @@ export class StudyGuideRepository {
   /**
    * Generate hash for study guide input
    *
-   * Includes type and language to prevent collisions where same value
+   * Includes type, language, and study_mode to prevent collisions where same value
    * means different things (e.g., "Faith" as topic vs "Faith" as scripture reference)
+   * and to allow different cached content for each study mode.
    */
   private async generateInputHash(input: StudyGuideInput): Promise<string> {
     // Normalize the value for consistent hashing
     const normalizedValue = input.value.toLowerCase().trim().replace(/\s+/g, ' ')
 
-    // Include type and language to prevent collisions
-    const hashInput = `${input.type}:${input.language}:${normalizedValue}`
+    // Include type, language, and study_mode to prevent collisions and allow per-mode caching
+    const hashInput = `${input.type}:${input.language}:${input.study_mode}:${normalizedValue}`
 
     return await this.securityValidator.hashSensitiveData(hashInput)
   }
@@ -795,7 +807,8 @@ export class StudyGuideRepository {
       input: {
         type: studyGuide.input_type as 'scripture' | 'topic',
         value: studyGuide.input_value || originalInputValue || '[Content]', // Use stored input value from database
-        language: studyGuide.language
+        language: studyGuide.language,
+        study_mode: studyGuide.study_mode || 'standard' // Default to 'standard' for legacy records
       },
       content: {
         summary: studyGuide.summary,

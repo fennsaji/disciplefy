@@ -6,6 +6,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../../core/error/failures.dart';
 import '../../../../../core/utils/error_message_sanitizer.dart';
 import '../../../data/services/study_stream_service.dart';
+import '../../../domain/entities/study_mode.dart';
 import '../../../domain/entities/study_stream_event.dart';
 import '../study_event.dart';
 import '../study_state.dart';
@@ -54,6 +55,7 @@ class StudyStreamingHandler {
         inputValue: event.input,
         topicDescription: event.topicDescription,
         language: event.language,
+        studyMode: event.studyMode,
       );
 
       await for (final streamEvent in stream) {

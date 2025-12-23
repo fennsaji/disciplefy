@@ -11,6 +11,7 @@ import '../../../../core/utils/category_utils.dart';
 import '../../../../core/di/injection_container.dart';
 import '../../../../core/router/app_router.dart';
 import '../../../../core/services/auth_state_provider.dart';
+import '../../../../core/services/language_preference_service.dart';
 import '../../../../core/widgets/auth_protected_screen.dart';
 import '../../../../core/extensions/translation_extension.dart';
 import '../../../../core/i18n/translation_keys.dart';
@@ -37,6 +38,8 @@ import '../bloc/home_bloc.dart';
 import '../bloc/home_event.dart';
 import '../bloc/home_state.dart';
 import '../../../personalization/presentation/widgets/personalization_prompt_card.dart';
+import '../../../study_generation/domain/entities/study_mode.dart';
+import '../../../study_generation/presentation/widgets/mode_selection_sheet.dart';
 import '../../../study_topics/domain/repositories/learning_paths_repository.dart';
 import '../../../study_topics/presentation/widgets/learning_path_card.dart';
 
@@ -162,50 +165,14 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
     final dailyVerseBloc = context.read<DailyVerseBloc>();
     final currentState = dailyVerseBloc.state;
 
-    if (currentState is DailyVerseLoaded) {
-      _isNavigating = true;
-
-      final verseReference = currentState.verse.reference;
-      final languageCode = _getLanguageCode(currentState.currentLanguage);
-      final encodedReference = Uri.encodeComponent(verseReference);
-
-      debugPrint(
-          '🔍 [HOME] Navigating to study guide V2 for daily verse: $verseReference');
-
-      // Navigate directly to study guide V2 - it will handle generation
-      context.go(
-          '/study-guide-v2?input=$encodedReference&type=scripture&language=$languageCode&source=home');
-
-      // Reset navigation flag after a short delay
-      Future.delayed(const Duration(milliseconds: 500), () {
-        if (mounted) {
-          setState(() {
-            _isNavigating = false;
-          });
-        }
-      });
-    } else if (currentState is DailyVerseOffline) {
-      _isNavigating = true;
-
-      final verseReference = currentState.verse.reference;
-      final languageCode = _getLanguageCode(currentState.currentLanguage);
-      final encodedReference = Uri.encodeComponent(verseReference);
-
-      debugPrint(
-          '🔍 [HOME] Navigating to study guide V2 for daily verse (offline): $verseReference');
-
-      // Navigate directly to study guide V2 - it will handle generation
-      context.go(
-          '/study-guide-v2?input=$encodedReference&type=scripture&language=$languageCode&source=home');
-
-      // Reset navigation flag after a short delay
-      Future.delayed(const Duration(milliseconds: 500), () {
-        if (mounted) {
-          setState(() {
-            _isNavigating = false;
-          });
-        }
-      });
+    if (currentState is DailyVerseLoaded || currentState is DailyVerseOffline) {
+      // Show mode selection sheet before navigating
+      ModeSelectionSheet.show(
+        context: context,
+        onModeSelected: (mode, rememberChoice) {
+          _navigateToDailyVerseStudy(currentState, mode, rememberChoice);
+        },
+      );
     } else {
       // Show error if verse is not loaded
       ScaffoldMessenger.of(context).showSnackBar(
@@ -215,6 +182,52 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
         ),
       );
     }
+  }
+
+  /// Navigate to daily verse study guide with selected mode
+  void _navigateToDailyVerseStudy(
+    DailyVerseState currentState,
+    StudyMode mode,
+    bool rememberChoice,
+  ) {
+    _isNavigating = true;
+
+    // Save user's mode preference if they chose to remember
+    if (rememberChoice) {
+      sl<LanguagePreferenceService>().saveStudyModePreference(mode);
+    }
+
+    String verseReference;
+    String languageCode;
+
+    if (currentState is DailyVerseLoaded) {
+      verseReference = currentState.verse.reference;
+      languageCode = _getLanguageCode(currentState.currentLanguage);
+    } else if (currentState is DailyVerseOffline) {
+      verseReference = currentState.verse.reference;
+      languageCode = _getLanguageCode(currentState.currentLanguage);
+    } else {
+      _isNavigating = false;
+      return;
+    }
+
+    final encodedReference = Uri.encodeComponent(verseReference);
+
+    debugPrint(
+        '🔍 [HOME] Navigating to study guide V2 for daily verse: $verseReference with mode: ${mode.name}');
+
+    // Navigate directly to study guide V2 - it will handle generation
+    context.go(
+        '/study-guide-v2?input=$encodedReference&type=scripture&language=$languageCode&mode=${mode.name}&source=home');
+
+    // Reset navigation flag after a short delay
+    Future.delayed(const Duration(milliseconds: 500), () {
+      if (mounted) {
+        setState(() {
+          _isNavigating = false;
+        });
+      }
+    });
   }
 
   /// Convert VerseLanguage enum to language code string
@@ -1032,7 +1045,27 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
       return;
     }
 
+    // Show mode selection sheet before navigating
+    ModeSelectionSheet.show(
+      context: context,
+      onModeSelected: (mode, rememberChoice) {
+        _navigateToStudyGuideWithMode(topic, mode, rememberChoice);
+      },
+    );
+  }
+
+  /// Navigate to study guide with selected mode
+  void _navigateToStudyGuideWithMode(
+    RecommendedGuideTopic topic,
+    StudyMode mode,
+    bool rememberChoice,
+  ) {
     _isNavigating = true;
+
+    // Save user's mode preference if they chose to remember
+    if (rememberChoice) {
+      sl<LanguagePreferenceService>().saveStudyModePreference(mode);
+    }
 
     // Get the current language from Daily Verse state
     final dailyVerseBloc = context.read<DailyVerseBloc>();
@@ -1054,11 +1087,11 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
         topic.description.isNotEmpty ? '&description=$encodedDescription' : '';
 
     debugPrint(
-        '🔍 [HOME] Navigating to study guide V2 for topic: ${topic.title} (ID: ${topic.id})');
+        '🔍 [HOME] Navigating to study guide V2 for topic: ${topic.title} with mode: ${mode.name}');
 
     // Navigate directly to study guide V2 - it will handle generation
     context.go(
-        '/study-guide-v2?input=$encodedTitle&type=topic&language=$languageCode&source=home$topicIdParam$descriptionParam');
+        '/study-guide-v2?input=$encodedTitle&type=topic&language=$languageCode&mode=${mode.name}&source=home$topicIdParam$descriptionParam');
 
     // Reset navigation flag after a short delay
     Future.delayed(const Duration(milliseconds: 500), () {
