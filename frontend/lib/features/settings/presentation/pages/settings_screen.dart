@@ -1194,6 +1194,9 @@ class _SettingsScreenContent extends StatelessWidget {
 
   /// Show study mode preference bottom sheet
   void _showStudyModeBottomSheet(BuildContext context, String? currentMode) {
+    // Capture parent context for snackbars after sheet closes
+    final parentContext = context;
+
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
@@ -1242,6 +1245,7 @@ class _SettingsScreenContent extends StatelessWidget {
             // Ask every time option
             _buildStudyModeOption(
               builderContext,
+              parentContext,
               null,
               'Ask Every Time',
               Icons.help_outline,
@@ -1254,6 +1258,7 @@ class _SettingsScreenContent extends StatelessWidget {
                   padding: const EdgeInsets.only(bottom: 8),
                   child: _buildStudyModeOption(
                     builderContext,
+                    parentContext,
                     mode.value,
                     mode.displayName,
                     mode.iconData,
@@ -1470,7 +1475,9 @@ class _SettingsScreenContent extends StatelessWidget {
 
   /// Build study mode option tile
   Widget _buildStudyModeOption(
-    BuildContext context,
+    BuildContext sheetContext, // Sheet context for Navigator.pop() and Theme
+    BuildContext
+        parentContext, // Parent context for snackbars after sheet closes
     String? value,
     String label,
     IconData icon,
@@ -1483,7 +1490,8 @@ class _SettingsScreenContent extends StatelessWidget {
       color: Colors.transparent,
       child: InkWell(
         onTap: () async {
-          Navigator.of(context).pop();
+          // Use sheet context for Navigator.pop()
+          Navigator.of(sheetContext).pop();
 
           // Update user profile with new study mode preference
           try {
@@ -1491,16 +1499,17 @@ class _SettingsScreenContent extends StatelessWidget {
             final result =
                 await userProfileService.updateStudyModePreference(value);
 
-            if (context.mounted) {
+            // Use parent context for snackbars after sheet closes
+            if (parentContext.mounted) {
               result.fold(
                 (failure) => _showSnackBar(
-                  context,
+                  parentContext,
                   'Failed to update study mode preference: ${failure.message}',
-                  Theme.of(context).colorScheme.error,
+                  Theme.of(parentContext).colorScheme.error,
                 ),
                 (profile) {
                   _showSnackBar(
-                    context,
+                    parentContext,
                     value == null
                         ? 'Study mode preference cleared'
                         : 'Default study mode set to $label',
@@ -1510,11 +1519,12 @@ class _SettingsScreenContent extends StatelessWidget {
               );
             }
           } catch (e) {
-            if (context.mounted) {
+            // Use parent context for error snackbars
+            if (parentContext.mounted) {
               _showSnackBar(
-                context,
+                parentContext,
                 'Failed to update study mode preference: $e',
-                Theme.of(context).colorScheme.error,
+                Theme.of(parentContext).colorScheme.error,
               );
             }
           }
@@ -1550,7 +1560,7 @@ class _SettingsScreenContent extends StatelessWidget {
                   gradient: isSelected ? AppTheme.primaryGradient : null,
                   color: isSelected
                       ? null
-                      : Theme.of(context)
+                      : Theme.of(sheetContext)
                           .colorScheme
                           .onSurface
                           .withOpacity(0.1),
@@ -1561,7 +1571,7 @@ class _SettingsScreenContent extends StatelessWidget {
                   size: 20,
                   color: isSelected
                       ? Colors.white
-                      : Theme.of(context)
+                      : Theme.of(sheetContext)
                           .colorScheme
                           .onSurface
                           .withOpacity(0.6),
@@ -1580,7 +1590,7 @@ class _SettingsScreenContent extends StatelessWidget {
                             isSelected ? FontWeight.w600 : FontWeight.w500,
                         color: isSelected
                             ? AppTheme.primaryColor
-                            : Theme.of(context).colorScheme.onBackground,
+                            : Theme.of(sheetContext).colorScheme.onBackground,
                       ),
                     ),
                     const SizedBox(height: 2),
@@ -1588,7 +1598,7 @@ class _SettingsScreenContent extends StatelessWidget {
                       subtitle,
                       style: AppFonts.inter(
                         fontSize: 13,
-                        color: Theme.of(context)
+                        color: Theme.of(sheetContext)
                             .colorScheme
                             .onSurface
                             .withOpacity(0.6),

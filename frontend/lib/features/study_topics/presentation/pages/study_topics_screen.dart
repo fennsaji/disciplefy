@@ -394,15 +394,26 @@ class _StudyTopicsScreenContentState extends State<_StudyTopicsScreenContent> {
       return;
     }
 
-    _isNavigating = true;
-
     // Show mode selection sheet before navigating
     ModeSelectionSheet.show(
       context: context,
       onModeSelected: (mode, rememberChoice) async {
+        // Set navigation flag only when user actually selects a mode
+        _isNavigating = true;
         await _navigateToStudyGuideWithMode(topic, mode, rememberChoice);
       },
-    );
+    ).then((_) {
+      // Reset flag when sheet closes if it was dismissed without selection
+      // This prevents the flag from getting stuck
+      if (mounted && _isNavigating) {
+        // Delay slightly to avoid race condition with onModeSelected
+        Future.delayed(const Duration(milliseconds: 100), () {
+          if (mounted && _isNavigating) {
+            _isNavigating = false;
+          }
+        });
+      }
+    });
   }
 
   /// Navigate to study guide with the selected mode

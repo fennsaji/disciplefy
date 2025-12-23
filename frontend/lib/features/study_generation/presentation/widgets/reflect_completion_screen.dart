@@ -448,6 +448,7 @@ class _ReflectCompletionScreenState extends State<ReflectCompletionScreen>
                 icon: const Icon(Icons.menu_book, size: 18),
                 label: const Text('Read Full Guide'),
                 style: OutlinedButton.styleFrom(
+                  minimumSize: const Size.fromHeight(44),
                   padding: const EdgeInsets.symmetric(vertical: 12),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -462,6 +463,7 @@ class _ReflectCompletionScreenState extends State<ReflectCompletionScreen>
                 icon: const Icon(Icons.book, size: 18),
                 label: const Text('View Journal'),
                 style: OutlinedButton.styleFrom(
+                  minimumSize: const Size.fromHeight(44),
                   padding: const EdgeInsets.symmetric(vertical: 12),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),

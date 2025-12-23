@@ -151,36 +151,43 @@ class _ModeSelectionSheetState extends State<ModeSelectionSheet> {
                       _rememberChoice = !_rememberChoice;
                     });
                   },
+                  behavior: HitTestBehavior.opaque,
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    padding: const EdgeInsets.symmetric(vertical: 12),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
+                      mainAxisSize: MainAxisSize.min,
                       children: [
-                        AnimatedContainer(
-                          duration: const Duration(milliseconds: 200),
-                          width: 22,
-                          height: 22,
-                          decoration: BoxDecoration(
-                            color: _rememberChoice
-                                ? AppTheme.primaryColor
-                                : Colors.transparent,
-                            borderRadius: BorderRadius.circular(6),
-                            border: Border.all(
-                              color: _rememberChoice
-                                  ? AppTheme.primaryColor
-                                  : isDark
-                                      ? Colors.white.withOpacity(0.3)
-                                      : const Color(0xFFD1D5DB),
-                              width: 2,
+                        SizedBox(
+                          height: 44,
+                          child: Center(
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 200),
+                              width: 22,
+                              height: 22,
+                              decoration: BoxDecoration(
+                                color: _rememberChoice
+                                    ? AppTheme.primaryColor
+                                    : Colors.transparent,
+                                borderRadius: BorderRadius.circular(6),
+                                border: Border.all(
+                                  color: _rememberChoice
+                                      ? AppTheme.primaryColor
+                                      : isDark
+                                          ? Colors.white.withOpacity(0.3)
+                                          : const Color(0xFFD1D5DB),
+                                  width: 2,
+                                ),
+                              ),
+                              child: _rememberChoice
+                                  ? const Icon(
+                                      Icons.check,
+                                      size: 14,
+                                      color: Colors.white,
+                                    )
+                                  : null,
                             ),
                           ),
-                          child: _rememberChoice
-                              ? const Icon(
-                                  Icons.check,
-                                  size: 14,
-                                  color: Colors.white,
-                                )
-                              : null,
                         ),
                         const SizedBox(width: 10),
                         Text(

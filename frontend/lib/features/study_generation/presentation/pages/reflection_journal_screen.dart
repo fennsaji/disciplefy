@@ -572,7 +572,9 @@ class _ReflectionJournalScreenState extends State<ReflectionJournalScreen> {
                     ),
                     const SizedBox(width: 8),
                     TextButton.icon(
-                      onPressed: () => _deleteReflection(reflection.id!),
+                      onPressed: reflection.id != null
+                          ? () => _deleteReflection(reflection.id!)
+                          : null,
                       icon: const Icon(Icons.delete_outline, size: 18),
                       label: const Text('Delete'),
                       style: TextButton.styleFrom(foregroundColor: Colors.red),
