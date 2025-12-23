@@ -6,6 +6,9 @@ class UserProfileEntity extends Equatable {
   final String languagePreference;
   final String themePreference;
 
+  /// User's default study mode preference (quick, standard, deep, lectio)
+  final String? defaultStudyMode;
+
   /// User's first name, null if not provided
   final String? firstName;
 
@@ -32,6 +35,7 @@ class UserProfileEntity extends Equatable {
     required this.id,
     required this.languagePreference,
     required this.themePreference,
+    this.defaultStudyMode,
 
     /// User's first name, null if not provided
     this.firstName,
@@ -60,6 +64,7 @@ class UserProfileEntity extends Equatable {
     String? id,
     String? languagePreference,
     String? themePreference,
+    String? defaultStudyMode,
     String? firstName,
     String? lastName,
     String? profilePicture,
@@ -74,6 +79,7 @@ class UserProfileEntity extends Equatable {
       id: id ?? this.id,
       languagePreference: languagePreference ?? this.languagePreference,
       themePreference: themePreference ?? this.themePreference,
+      defaultStudyMode: defaultStudyMode ?? this.defaultStudyMode,
       firstName: firstName ?? this.firstName,
       lastName: lastName ?? this.lastName,
       profilePicture: profilePicture ?? this.profilePicture,
@@ -124,6 +130,7 @@ class UserProfileEntity extends Equatable {
         id,
         languagePreference,
         themePreference,
+        defaultStudyMode,
         firstName,
         lastName,
         profilePicture,

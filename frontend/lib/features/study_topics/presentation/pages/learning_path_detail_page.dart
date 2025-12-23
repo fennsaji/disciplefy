@@ -9,6 +9,8 @@ import '../../../../core/i18n/translation_keys.dart';
 import '../../../../core/router/app_routes.dart';
 import '../../../../core/services/language_preference_service.dart';
 import '../../../../core/utils/category_utils.dart';
+import '../../../study_generation/domain/entities/study_mode.dart';
+import '../../../study_generation/presentation/widgets/mode_selection_sheet.dart';
 import '../../domain/entities/learning_path.dart';
 import '../bloc/learning_paths_bloc.dart';
 import '../bloc/learning_paths_event.dart';
@@ -79,6 +81,29 @@ class _LearningPathDetailPageState extends State<LearningPathDetailPage> {
           .add(EnrollInLearningPath(pathId: path.id));
     }
 
+    // Show mode selection sheet before navigating
+    ModeSelectionSheet.show(
+      context: context,
+      onModeSelected: (mode, rememberChoice) async {
+        await _navigateToTopicWithMode(topic, path, mode, rememberChoice);
+      },
+    );
+  }
+
+  /// Navigate to topic with the selected study mode
+  Future<void> _navigateToTopicWithMode(
+    LearningPathTopic topic,
+    LearningPathDetail path,
+    StudyMode mode,
+    bool rememberChoice,
+  ) async {
+    final languageService = sl<LanguagePreferenceService>();
+
+    // Save user's mode preference if they chose to remember
+    if (rememberChoice) {
+      languageService.saveStudyModePreference(mode);
+    }
+
     final encodedTitle = Uri.encodeComponent(topic.title);
     final encodedDescription = Uri.encodeComponent(topic.description);
     final topicIdParam =
@@ -87,9 +112,12 @@ class _LearningPathDetailPageState extends State<LearningPathDetailPage> {
         topic.description.isNotEmpty ? '&description=$encodedDescription' : '';
     final pathIdParam = path.id.isNotEmpty ? '&path_id=${path.id}' : '';
 
+    debugPrint(
+        '[LEARNING_PATH_DETAIL] Navigating to topic: ${topic.title} with mode: ${mode.name}');
+
     // Use push and await the result - when user returns, refresh the data
     await context.push(
-      '${AppRoutes.studyGuideV2}?input=$encodedTitle&type=topic&language=$_currentLanguage&source=learningPath$topicIdParam$descriptionParam$pathIdParam',
+      '${AppRoutes.studyGuideV2}?input=$encodedTitle&type=topic&language=$_currentLanguage&mode=${mode.name}&source=learningPath$topicIdParam$descriptionParam$pathIdParam',
     );
 
     // Refresh data when returning from the study guide - force refresh to bypass cache
