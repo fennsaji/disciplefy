@@ -21,6 +21,7 @@ import { AppError } from '../_shared/utils/error-handler.ts'
 import { StudyGuideInput } from '../_shared/types/index.ts'
 import { SupportedLanguage } from '../_shared/types/token-types.ts'
 import { UserContext } from '../_shared/types/index.ts'
+import type { StudyMode } from '../_shared/services/llm-types.ts'
 import { getCorsHeaders } from '../_shared/utils/cors.ts'
 import {
   StreamingJsonParser,
@@ -63,6 +64,7 @@ function parseRequestParams(req: Request): {
   input_value: string
   topic_description?: string
   language: string
+  study_mode: StudyMode
 } | null {
   const url = new URL(req.url)
 
@@ -70,6 +72,7 @@ function parseRequestParams(req: Request): {
   const input_value = url.searchParams.get('input_value')
   const topic_description = url.searchParams.get('topic_description') || undefined
   const language = url.searchParams.get('language') || 'en'
+  const mode = url.searchParams.get('mode') as StudyMode | null
 
   if (!input_type || !input_value) {
     return null
@@ -79,7 +82,11 @@ function parseRequestParams(req: Request): {
     return null
   }
 
-  return { input_type, input_value, topic_description, language }
+  // Validate and default study mode
+  const validModes: StudyMode[] = ['quick', 'standard', 'deep', 'lectio']
+  const study_mode: StudyMode = mode && validModes.includes(mode) ? mode : 'standard'
+
+  return { input_type, input_value, topic_description, language, study_mode }
 }
 
 /**
@@ -206,7 +213,9 @@ async function handleStudyGenerateV2(
     )
   }
 
-  const { input_type, input_value, topic_description, language } = params
+  const { input_type, input_value, topic_description, language, study_mode } = params
+
+  console.log(`📝 [STUDY-V2] Study mode: ${study_mode}`)
 
   // Security validation
   const securityResult = await securityValidator.validateInput(input_value, input_type)
@@ -228,11 +237,12 @@ async function handleStudyGenerateV2(
     )
   }
 
-  // Check for cached content
+  // Check for cached content (including study_mode for mode-specific caching)
   const studyGuideInput: StudyGuideInput = {
     type: input_type,
     value: input_value,
-    language: language
+    language: language,
+    study_mode: study_mode
   }
 
   const existingContent = await studyGuideRepository.findExistingContent(studyGuideInput, userContext)
@@ -318,7 +328,8 @@ async function handleStudyGenerateV2(
             user_type: userContext.type,
             user_plan: userPlan,
             is_creator: isCreator,
-            study_guide_id: existingContent.id
+            study_guide_id: existingContent.id,
+            study_mode
           }, req.headers.get('x-forwarded-for'))
 
           controller.close()
@@ -373,7 +384,8 @@ async function handleStudyGenerateV2(
           inputValue: input_value,
           topicDescription: topic_description,
           language: targetLanguage,
-          tier: userPlan
+          tier: userPlan,
+          studyMode: study_mode
         })
 
         for await (const chunk of llmStream) {
@@ -441,7 +453,8 @@ async function handleStudyGenerateV2(
           user_type: userContext.type,
           user_plan: userPlan,
           tokens_consumed: tokenCost,
-          study_guide_id: savedGuide.id
+          study_guide_id: savedGuide.id,
+          study_mode
         }, req.headers.get('x-forwarded-for'))
 
         controller.close()

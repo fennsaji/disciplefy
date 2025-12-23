@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../voice_buddy/data/services/tts_service.dart';
 import '../../domain/entities/study_guide.dart';
+import '../../domain/entities/study_mode.dart';
 
 /// Represents a section of the study guide for TTS reading.
 class TtsSection {
@@ -215,8 +216,61 @@ class StudyGuideTTSService {
     }
   }
 
-  /// Get localized section titles based on language.
-  Map<StudyGuideSection, String> _getLocalizedSectionTitles(String language) {
+  /// Get localized section titles based on language and study mode.
+  Map<StudyGuideSection, String> _getLocalizedSectionTitles(
+      String language, StudyMode mode) {
+    // Mode-specific titles take precedence
+    switch (mode) {
+      case StudyMode.quick:
+        return _getQuickModeTitles(language);
+      case StudyMode.deep:
+        return _getDeepModeTitles(language);
+      case StudyMode.lectio:
+        return _getLectioDivinaTitles(language);
+      case StudyMode.standard:
+        return _getStandardModeTitles(language);
+    }
+  }
+
+  /// Get Quick Mode section titles (3-minute read).
+  Map<StudyGuideSection, String> _getQuickModeTitles(String language) {
+    switch (language.toLowerCase()) {
+      case 'hi':
+      case 'hindi':
+        return {
+          StudyGuideSection.summary: 'मुख्य बात',
+          StudyGuideSection.interpretation: 'मुख्य आयत',
+          StudyGuideSection.context: 'संदर्भ',
+          StudyGuideSection.relatedVerses: 'संबंधित आयतें',
+          StudyGuideSection.discussionQuestions: 'त्वरित चिंतन',
+          StudyGuideSection.prayerPoints: 'प्रार्थना',
+        };
+      case 'ml':
+      case 'malayalam':
+        return {
+          StudyGuideSection.summary: 'പ്രധാന കാര്യം',
+          StudyGuideSection.interpretation: 'പ്രധാന വാക്യം',
+          StudyGuideSection.context: 'സന്ദർഭം',
+          StudyGuideSection.relatedVerses: 'മറ്റ് വചനങ്ങൾ',
+          StudyGuideSection.discussionQuestions: 'ചിന്താവിഷയം',
+          StudyGuideSection.prayerPoints: 'പ്രാർത്ഥന',
+        };
+      case 'en':
+      case 'english':
+      default:
+        return {
+          StudyGuideSection.summary: 'Key Insight',
+          StudyGuideSection.interpretation: 'Key Verse',
+          StudyGuideSection.context: 'Context',
+          StudyGuideSection.relatedVerses: 'Related Verses',
+          StudyGuideSection.discussionQuestions: 'Quick Reflection',
+          StudyGuideSection.prayerPoints: 'Prayer',
+        };
+    }
+  }
+
+  /// Get Standard Mode section titles (10-minute read).
+  Map<StudyGuideSection, String> _getStandardModeTitles(String language) {
     switch (language.toLowerCase()) {
       case 'hi':
       case 'hindi':
@@ -252,6 +306,82 @@ class StudyGuideTTSService {
     }
   }
 
+  /// Get Deep Mode section titles (25-minute read).
+  Map<StudyGuideSection, String> _getDeepModeTitles(String language) {
+    switch (language.toLowerCase()) {
+      case 'hi':
+      case 'hindi':
+        return {
+          StudyGuideSection.summary: 'व्यापक अवलोकन',
+          StudyGuideSection.interpretation: 'गहन व्याख्या',
+          StudyGuideSection.context: 'विस्तृत संदर्भ',
+          StudyGuideSection.relatedVerses: 'संबंधित आयतें और संदर्भ',
+          StudyGuideSection.discussionQuestions: 'गहन चिंतन प्रश्न',
+          StudyGuideSection.prayerPoints: 'प्रार्थना विषय',
+        };
+      case 'ml':
+      case 'malayalam':
+        return {
+          StudyGuideSection.summary: 'സമഗ്രമായ അവലോകനം',
+          StudyGuideSection.interpretation: 'ആഴത്തിലുള്ള വ്യാഖ്യാനം',
+          StudyGuideSection.context: 'വിശദമായ സന്ദർഭം',
+          StudyGuideSection.relatedVerses: 'മറ്റ് വചനങ്ങളും സന്ദർഭങ്ങളും',
+          StudyGuideSection.discussionQuestions: 'ആഴത്തിലുള്ള ചോദ്യങ്ങൾ',
+          StudyGuideSection.prayerPoints: 'പ്രാർത്ഥന',
+        };
+      case 'en':
+      case 'english':
+      default:
+        return {
+          StudyGuideSection.summary: 'Comprehensive Overview',
+          StudyGuideSection.interpretation: 'In-Depth Interpretation',
+          StudyGuideSection.context: 'Extended Context',
+          StudyGuideSection.relatedVerses: 'Cross-References',
+          StudyGuideSection.discussionQuestions: 'Deep Reflection Questions',
+          StudyGuideSection.prayerPoints: 'Prayer Points',
+        };
+    }
+  }
+
+  /// Get Lectio Divina mode section titles (15-minute meditative read).
+  Map<StudyGuideSection, String> _getLectioDivinaTitles(String language) {
+    switch (language.toLowerCase()) {
+      case 'hi':
+      case 'hindi':
+        return {
+          StudyGuideSection.summary: 'ध्यान के लिए पवित्रशास्त्र',
+          StudyGuideSection.interpretation: 'लेक्टियो और मेडिटेटियो',
+          StudyGuideSection.context: 'लेक्टियो डिविना के बारे में',
+          StudyGuideSection.relatedVerses: 'ध्यान के लिए फोकस शब्द',
+          StudyGuideSection.discussionQuestions:
+              'ओरेशियो - प्रार्थना प्रतिबिंब',
+          StudyGuideSection.prayerPoints: 'कंटेम्प्लेटियो - मौन में विश्राम',
+        };
+      case 'ml':
+      case 'malayalam':
+        return {
+          StudyGuideSection.summary: 'ധ്യാനത്തിനായുള്ള തിരുവെഴുത്ത്',
+          StudyGuideSection.interpretation: 'ലെക്സിയോയും മെഡിറ്റേഷനും',
+          StudyGuideSection.context: 'ലെക്സിയോ ദിവീനയെക്കുറിച്ച്',
+          StudyGuideSection.relatedVerses: 'ധ്യാനത്തിനുള്ള പ്രധാന വാക്കുകൾ',
+          StudyGuideSection.discussionQuestions: 'ഓറാഷ്യോ - പ്രാർത്ഥനാ ചിന്ത',
+          StudyGuideSection.prayerPoints:
+              'കോണ്ടംപ്ലാഷ്യോ - നിശ്ശബ്ദതയിൽ വിശ്രമം',
+        };
+      case 'en':
+      case 'english':
+      default:
+        return {
+          StudyGuideSection.summary: 'Scripture for Meditation',
+          StudyGuideSection.interpretation: 'Lectio and Meditatio',
+          StudyGuideSection.context: 'About Lectio Divina',
+          StudyGuideSection.relatedVerses: 'Focus Words for Meditation',
+          StudyGuideSection.discussionQuestions: 'Oratio - Prayer Reflection',
+          StudyGuideSection.prayerPoints: 'Contemplatio - Rest in Silence',
+        };
+    }
+  }
+
   /// Get localized "Question" label for numbering.
   String _getLocalizedQuestionLabel(String language, int number) {
     switch (language.toLowerCase()) {
@@ -268,9 +398,9 @@ class StudyGuideTTSService {
     }
   }
 
-  /// Prepare sections from a study guide.
-  List<TtsSection> _prepareSections(StudyGuide guide) {
-    final titles = _getLocalizedSectionTitles(guide.language);
+  /// Prepare sections from a study guide with mode-specific titles.
+  List<TtsSection> _prepareSections(StudyGuide guide, StudyMode mode) {
+    final titles = _getLocalizedSectionTitles(guide.language, mode);
     final language = guide.language;
 
     return [
@@ -312,9 +442,13 @@ class StudyGuideTTSService {
     ];
   }
 
-  /// Start reading a study guide from the beginning.
-  Future<void> startReading(StudyGuide guide) async {
-    print('🔊 [StudyGuideTTS] Starting to read guide: ${guide.input}');
+  /// Start reading a study guide from the beginning with mode-specific section names.
+  Future<void> startReading(
+    StudyGuide guide, {
+    StudyMode mode = StudyMode.standard,
+  }) async {
+    print(
+        '🔊 [StudyGuideTTS] Starting to read guide: ${guide.input} (mode: ${mode.name})');
 
     // Stop any current playback
     if (state.value.status == TtsStatus.playing ||
@@ -323,7 +457,7 @@ class StudyGuideTTSService {
     }
 
     _currentGuide = guide;
-    _sections = _prepareSections(guide);
+    _sections = _prepareSections(guide, mode);
     _currentSectionIndex = 0;
 
     state.value = state.value.copyWith(

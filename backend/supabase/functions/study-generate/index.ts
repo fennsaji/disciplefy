@@ -26,6 +26,7 @@ interface StudyGenerationRequest {
   readonly input_value: string
   readonly topic_description?: string  // Optional: provides context for topic-based study guides
   readonly language?: string
+  readonly study_mode?: 'quick' | 'standard' | 'deep' | 'lectio'  // Optional: defaults to 'standard'
 }
 
 /**
@@ -41,7 +42,7 @@ async function handleStudyGenerate(req: Request, { authService, llmService, stud
   const userContext = await authService.getUserContext(req)
 
   // 2. Validate request body and parse data
-  const { input_type, input_value, topic_description, language } = await parseAndValidateRequest(req)
+  const { input_type, input_value, topic_description, language, study_mode } = await parseAndValidateRequest(req)
   
   // 3. Security validation of input
   const securityResult = await securityValidator.validateInput(input_value, input_type)
@@ -61,7 +62,8 @@ async function handleStudyGenerate(req: Request, { authService, llmService, stud
   const studyGuideInput: StudyGuideInput = {
     type: input_type,
     value: input_value,
-    language: language || 'en'
+    language: language || 'en',
+    study_mode: study_mode || 'standard'
   }
 
   const existingContent = await studyGuideRepository.findExistingContent(studyGuideInput, userContext)
@@ -302,6 +304,10 @@ async function parseAndValidateRequest(req: Request): Promise<StudyGenerationReq
     language: {
       required: false,
       allowedValues: ['en', 'hi', 'ml']
+    },
+    study_mode: {
+      required: false,
+      allowedValues: ['quick', 'standard', 'deep', 'lectio']
     }
   }
 
@@ -311,7 +317,8 @@ async function parseAndValidateRequest(req: Request): Promise<StudyGenerationReq
     input_type: requestBody.input_type,
     input_value: requestBody.input_value,
     topic_description: requestBody.topic_description,
-    language: requestBody.language
+    language: requestBody.language,
+    study_mode: requestBody.study_mode
   }
 }
 
