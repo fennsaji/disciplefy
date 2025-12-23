@@ -3,6 +3,7 @@ import 'package:dartz/dartz.dart';
 import '../../../../core/error/failures.dart';
 import '../../../../core/models/app_language.dart';
 import '../../../auth/data/services/auth_service.dart';
+import '../../../study_generation/domain/entities/study_mode.dart';
 import '../../domain/entities/user_profile_entity.dart';
 import '../models/user_profile_model.dart';
 import 'user_profile_api_service.dart';
@@ -198,5 +199,38 @@ class UserProfileService {
     }
 
     return await _apiService.syncOAuthProfile(profileData);
+  }
+
+  /// Update user's default study mode preference
+  Future<Either<Failure, UserProfileEntity>> updateStudyModePreference(
+      String? modeValue) async {
+    final currentUser = _authService.currentUser;
+    if (!_authService.isAuthenticated ||
+        currentUser == null ||
+        currentUser.isAnonymous) {
+      return const Left(AuthenticationFailure(
+        message: 'User must be authenticated to update study mode preference',
+      ));
+    }
+
+    return await _apiService.updateStudyModePreference(modeValue);
+  }
+
+  /// Get user's default study mode preference
+  /// Returns null if no preference is set (meaning "ask every time")
+  Future<Either<Failure, StudyMode?>> getStudyModePreference() async {
+    final profileResult = await getUserProfile();
+
+    return profileResult.fold(
+      (failure) => Left(failure),
+      (profile) {
+        // Get study mode from profile, return null if not set
+        final modeString = profile.defaultStudyMode;
+        if (modeString == null || modeString.isEmpty) {
+          return const Right(null); // No preference saved - ask every time
+        }
+        return Right(StudyModeExtension.fromString(modeString));
+      },
+    );
   }
 }

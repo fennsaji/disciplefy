@@ -23,6 +23,15 @@ export interface LLMServiceConfig {
 }
 
 /**
+ * Study mode for different study guide experiences.
+ * - quick: 3 min read - condensed key insight, verse, and reflection
+ * - standard: 10 min read - full 6-section guide (default)
+ * - deep: 25 min read - extended with word studies and cross-references
+ * - lectio: 15 min - Lectio Divina meditative format
+ */
+export type StudyMode = 'quick' | 'standard' | 'deep' | 'lectio'
+
+/**
  * Parameters for LLM study guide generation.
  */
 export interface LLMGenerationParams {
@@ -31,6 +40,7 @@ export interface LLMGenerationParams {
   readonly topicDescription?: string  // Optional: provides additional context for topic-based guides
   readonly language: string
   readonly tier?: string  // Optional: user subscription tier for model selection
+  readonly studyMode?: StudyMode  // Optional: study mode for different experiences (default: 'standard')
 }
 
 /**

@@ -29,6 +29,13 @@ import '../../data/services/study_guide_pdf_service.dart';
 import '../../../gamification/presentation/bloc/gamification_bloc.dart';
 import '../../../gamification/presentation/bloc/gamification_event.dart';
 
+/// Lightens a color for better contrast in dark mode
+Color _lightenColor(Color color, [double amount = 0.2]) {
+  final hsl = HSLColor.fromColor(color);
+  final lightness = (hsl.lightness + amount).clamp(0.0, 1.0);
+  return hsl.withLightness(lightness).toColor();
+}
+
 /// Study Guide Screen displaying generated content with sections and user interactions.
 ///
 /// Features scrollable content, note-taking, save/share functionality, and error handling
@@ -95,6 +102,7 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
 
   // Follow-up chat state
   bool _isChatExpanded = false;
+  final GlobalKey _followUpChatKey = GlobalKey();
 
   // PDF export state
   bool _isExportingPdf = false;
@@ -167,9 +175,8 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
       _notesController.text = _currentStudyGuide.personalNotes!;
       _notesLoaded = true;
 
-      if (_isSaved) {
-        _setupAutoSave();
-      }
+      // Always setup auto-save for personal notes (independent of save status)
+      _setupAutoSave();
     } else {
       _loadPersonalNotesIfSaved();
     }
@@ -271,14 +278,16 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
       _autoSaveTimer = Timer(const Duration(milliseconds: 2000), () {
         final currentText = _notesController.text.trim();
         if (currentText != (_loadedNotes ?? '').trim()) {
-          // Only auto-save if notes have changed and guide is saved
-          if (_isSaved) {
-            context.read<StudyBloc>().add(UpdatePersonalNotesRequested(
-                  guideId: _currentStudyGuide.id,
-                  personalNotes: currentText.isEmpty ? null : currentText,
-                  isAutoSave: true,
-                ));
+          // Auto-save notes independently (no longer requires guide to be saved)
+          if (kDebugMode) {
+            print(
+                '💾 [AUTO_SAVE] Saving personal notes (${currentText.length} chars)');
           }
+          context.read<StudyBloc>().add(UpdatePersonalNotesRequested(
+                guideId: _currentStudyGuide.id,
+                personalNotes: currentText.isEmpty ? null : currentText,
+                isAutoSave: true,
+              ));
         }
       });
     };
@@ -477,10 +486,8 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
                 _notesController.text = state.notes!;
               }
             });
-            // Setup auto-save for saved guides
-            if (_isSaved) {
-              _setupAutoSave();
-            }
+            // Always setup auto-save when notes are loaded
+            _setupAutoSave();
           } else if (state is StudyPersonalNotesSuccess) {
             if (!state.isAutoSave) {
               _showSnackBar(
@@ -544,30 +551,100 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
             ),
             centerTitle: true,
             actions: [
-              IconButton(
-                onPressed: _isExportingPdf ? null : _exportToPdf,
-                icon: _isExportingPdf
-                    ? SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: Theme.of(context).colorScheme.primary,
-                        ),
-                      )
-                    : Icon(
-                        Icons.picture_as_pdf_outlined,
-                        color: Theme.of(context).colorScheme.primary,
-                      ),
-                tooltip: 'Export as PDF',
-              ),
-              IconButton(
-                onPressed: _shareStudyGuide,
+              PopupMenuButton<String>(
                 icon: Icon(
-                  Icons.share_outlined,
+                  Icons.more_vert,
                   color: Theme.of(context).colorScheme.primary,
                 ),
-                tooltip: 'Share study guide',
+                tooltip: 'More options',
+                onSelected: (value) {
+                  switch (value) {
+                    case 'share':
+                      _shareStudyGuide();
+                      break;
+                    case 'pdf':
+                      _exportToPdf();
+                      break;
+                    case 'save':
+                      _saveStudyGuide();
+                      break;
+                  }
+                },
+                itemBuilder: (context) => [
+                  PopupMenuItem(
+                    value: 'share',
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.share_outlined,
+                          size: 20,
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
+                        const SizedBox(width: 12),
+                        Text(
+                          'Share',
+                          style: AppFonts.inter(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  PopupMenuItem(
+                    value: 'pdf',
+                    enabled: !_isExportingPdf,
+                    child: Row(
+                      children: [
+                        _isExportingPdf
+                            ? SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Theme.of(context).colorScheme.primary,
+                                ),
+                              )
+                            : Icon(
+                                Icons.picture_as_pdf_outlined,
+                                size: 20,
+                                color: Theme.of(context).colorScheme.primary,
+                              ),
+                        const SizedBox(width: 12),
+                        Text(
+                          'Download PDF',
+                          style: AppFonts.inter(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  PopupMenuItem(
+                    value: 'save',
+                    child: Row(
+                      children: [
+                        Icon(
+                          _isSaved ? Icons.bookmark : Icons.bookmark_border,
+                          size: 20,
+                          color: _isSaved
+                              ? Colors.green
+                              : Theme.of(context).colorScheme.primary,
+                        ),
+                        const SizedBox(width: 12),
+                        Text(
+                          _isSaved ? 'Saved' : 'Save Study',
+                          style: AppFonts.inter(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w500,
+                            color: _isSaved ? Colors.green : null,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
@@ -594,24 +671,27 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
                       SizedBox(height: isLargeScreen ? 32 : 24),
 
                       // Follow-up Chat Section
-                      BlocProvider(
-                        create: (context) {
-                          final bloc = sl<FollowUpChatBloc>();
-                          bloc.add(StartConversationEvent(
+                      Container(
+                        key: _followUpChatKey,
+                        child: BlocProvider(
+                          create: (context) {
+                            final bloc = sl<FollowUpChatBloc>();
+                            bloc.add(StartConversationEvent(
+                              studyGuideId: _currentStudyGuide.id,
+                              studyGuideTitle: _getDisplayTitle(),
+                            ));
+                            return bloc;
+                          },
+                          child: FollowUpChatWidget(
                             studyGuideId: _currentStudyGuide.id,
                             studyGuideTitle: _getDisplayTitle(),
-                          ));
-                          return bloc;
-                        },
-                        child: FollowUpChatWidget(
-                          studyGuideId: _currentStudyGuide.id,
-                          studyGuideTitle: _getDisplayTitle(),
-                          isExpanded: _isChatExpanded,
-                          onToggleExpanded: () {
-                            setState(() {
-                              _isChatExpanded = !_isChatExpanded;
-                            });
-                          },
+                            isExpanded: _isChatExpanded,
+                            onToggleExpanded: () {
+                              setState(() {
+                                _isChatExpanded = !_isChatExpanded;
+                              });
+                            },
+                          ),
                         ),
                       ),
 
@@ -925,116 +1005,228 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
         ],
       );
 
-  Widget _buildBottomActions() => Container(
-        padding: const EdgeInsets.all(24),
-        decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surface,
-          boxShadow: [
-            BoxShadow(
-              color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
-              blurRadius: 10,
-              offset: const Offset(0, -2),
-            ),
-          ],
-        ),
-        child: Row(
-          children: [
-            Expanded(
-              child: BlocBuilder<StudyBloc, StudyState>(
-                builder: (context, state) {
-                  final isSaving = (state is StudySaveInProgress &&
-                          state.guideId == _currentStudyGuide.id) ||
-                      (state is StudyEnhancedSaveInProgress &&
-                          state.guideId == _currentStudyGuide.id);
+  Widget _buildBottomActions() {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final accentColor = isDark
+        ? _lightenColor(theme.colorScheme.primary, 0.10)
+        : theme.colorScheme.primary;
+    final ttsService = sl<StudyGuideTTSService>();
 
-                  // Get current step for enhanced save progress
-                  String? currentStep;
-                  if (state is StudyEnhancedSaveInProgress) {
-                    currentStep = state.currentStep;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface,
+        boxShadow: [
+          BoxShadow(
+            color: accentColor.withOpacity(0.1),
+            blurRadius: 10,
+            offset: const Offset(0, -2),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          // Listen Button (Left) - Reactive to TTS state
+          Expanded(
+            child: SizedBox(
+              height: 56,
+              child: ValueListenableBuilder<StudyGuideTtsState>(
+                valueListenable: ttsService.state,
+                builder: (context, ttsState, child) {
+                  final isPlaying = ttsState.status == TtsStatus.playing;
+                  final isPaused = ttsState.status == TtsStatus.paused;
+                  final isLoading = ttsState.status == TtsStatus.loading;
+                  final showControls = isPlaying || isPaused;
+
+                  if (showControls) {
+                    // Show split button with pause/resume + settings
+                    return Container(
+                      decoration: BoxDecoration(
+                        border: Border.all(color: accentColor, width: 2),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Row(
+                        children: [
+                          // Main play/pause button
+                          Expanded(
+                            child: InkWell(
+                              onTap: () => ttsService.togglePlayPause(),
+                              borderRadius: const BorderRadius.horizontal(
+                                left: Radius.circular(10),
+                              ),
+                              child: Padding(
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 16),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(
+                                      isPlaying
+                                          ? Icons.pause_rounded
+                                          : Icons.play_arrow_rounded,
+                                      color: accentColor,
+                                      size: 22,
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      isPlaying ? 'Pause' : 'Resume',
+                                      style: AppFonts.inter(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w600,
+                                        color: accentColor,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                          // Divider
+                          Container(
+                            width: 1,
+                            height: 32,
+                            color: accentColor.withOpacity(0.3),
+                          ),
+                          // Settings button
+                          InkWell(
+                            onTap: () => showTtsControlSheet(context),
+                            borderRadius: const BorderRadius.horizontal(
+                              right: Radius.circular(10),
+                            ),
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 14, vertical: 16),
+                              child: Icon(
+                                Icons.tune,
+                                color: accentColor,
+                                size: 22,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  } else {
+                    // Show regular Listen button
+                    return OutlinedButton.icon(
+                      onPressed: () {
+                        // Load and start reading the study guide if not already playing
+                        final status = ttsService.state.value.status;
+                        if (status == TtsStatus.idle ||
+                            status == TtsStatus.error) {
+                          ttsService.startReading(_currentStudyGuide);
+                        }
+                        // Open the control sheet
+                        showTtsControlSheet(context);
+                      },
+                      icon: isLoading
+                          ? SizedBox(
+                              width: 22,
+                              height: 22,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: accentColor,
+                              ),
+                            )
+                          : const Icon(
+                              Icons.headphones_rounded,
+                              size: 22,
+                            ),
+                      label: Text(
+                        isLoading ? 'Loading...' : 'Listen',
+                        style: AppFonts.inter(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: accentColor,
+                        side: BorderSide(
+                          color: accentColor,
+                          width: 2,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                    );
                   }
-
-                  return isSaving
-                      ? OutlinedButton.icon(
-                          onPressed: null,
-                          icon: SizedBox(
-                            width: 16,
-                            height: 16,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation<Color>(
-                                  Theme.of(context).colorScheme.primary),
-                            ),
-                          ),
-                          label: Text(
-                            currentStep ?? 'Saving...',
-                            style: AppFonts.inter(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: Theme.of(context)
-                                .colorScheme
-                                .primary
-                                .withOpacity(0.6),
-                            side: BorderSide(
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .primary
-                                  .withOpacity(0.6),
-                              width: 2,
-                            ),
-                            minimumSize: const Size.fromHeight(56),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                        )
-                      : OutlinedButton.icon(
-                          onPressed: _saveStudyGuide,
-                          icon: Icon(_isSaved
-                              ? Icons.bookmark
-                              : Icons.bookmark_border),
-                          label: Text(
-                            _isSaved
-                                ? context.tr(TranslationKeys.studyGuideSaved)
-                                : context
-                                    .tr(TranslationKeys.studyGuideSaveStudy),
-                            style: AppFonts.inter(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: _isSaved
-                                ? Colors.green
-                                : Theme.of(context).colorScheme.primary,
-                            side: BorderSide(
-                              color: _isSaved
-                                  ? Colors.green
-                                  : Theme.of(context).colorScheme.primary,
-                              width: 2,
-                            ),
-                            minimumSize: const Size.fromHeight(56),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                        );
                 },
               ),
             ),
-            const SizedBox(width: 16),
-            // TTS Control Button (replaces Share button)
-            Expanded(
-              child: TtsControlButton(
-                guide: _currentStudyGuide,
-                onControlsTap: () => showTtsControlSheet(context),
+          ),
+          const SizedBox(width: 16),
+          // Ask AI Button (Right) - Scroll to Follow-up Chat section
+          Expanded(
+            child: SizedBox(
+              height: 56,
+              child: Container(
+                decoration: BoxDecoration(
+                  gradient: AppTheme.primaryGradient,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppTheme.primaryColor.withOpacity(0.3),
+                      blurRadius: 12,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    onTap: () {
+                      // Expand chat first if collapsed
+                      if (!_isChatExpanded) {
+                        setState(() {
+                          _isChatExpanded = true;
+                        });
+                      }
+
+                      // Then scroll to Follow-up Chat section after a brief delay
+                      // to allow the expand animation to start
+                      Future.delayed(const Duration(milliseconds: 100), () {
+                        final chatContext = _followUpChatKey.currentContext;
+                        if (chatContext != null && mounted) {
+                          Scrollable.ensureVisible(
+                            chatContext,
+                            duration: const Duration(milliseconds: 500),
+                            curve: Curves.easeInOut,
+                            alignment: 0.1, // Position near top of viewport
+                          );
+                        }
+                      });
+                    },
+                    borderRadius: BorderRadius.circular(12),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(
+                          Icons.auto_awesome_rounded,
+                          color: Colors.white,
+                          size: 22,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Ask AI',
+                          style: AppFonts.inter(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
               ),
             ),
-          ],
-        ),
-      );
+          ),
+        ],
+      ),
+    );
+  }
 
   String _getDisplayTitle() {
     if (_currentStudyGuide.inputType == 'scripture') {

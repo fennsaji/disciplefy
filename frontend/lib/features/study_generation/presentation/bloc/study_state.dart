@@ -1,6 +1,7 @@
 import 'package:equatable/equatable.dart';
 
 import '../../../../core/error/failures.dart';
+import '../../domain/entities/reflection_response.dart';
 import '../../domain/entities/study_guide.dart';
 import '../../domain/entities/study_stream_event.dart';
 
@@ -522,4 +523,228 @@ class StudyCompletionFailure extends StudyState {
 
   @override
   List<Object> get props => [guideId, failure, isRetryable];
+}
+
+// ==================== Reflect Mode States ====================
+
+/// State indicating Reflect Mode is active with card-by-card progression.
+///
+/// This state holds the current reflection session with all responses
+/// collected so far and the current card index.
+class StudyReflectModeActive extends StudyState {
+  /// The study guide being reflected upon.
+  final StudyGuide studyGuide;
+
+  /// The streaming content (for section data).
+  final StreamingStudyGuideContent? streamingContent;
+
+  /// Current card index (0-based).
+  final int currentCardIndex;
+
+  /// Total number of cards.
+  final int totalCards;
+
+  /// Collected responses so far.
+  final List<ReflectionResponse> responses;
+
+  /// Timestamp when reflect mode started.
+  final DateTime startedAt;
+
+  /// Time spent so far in seconds.
+  final int timeSpentSeconds;
+
+  const StudyReflectModeActive({
+    required this.studyGuide,
+    this.streamingContent,
+    required this.currentCardIndex,
+    required this.totalCards,
+    required this.responses,
+    required this.startedAt,
+    this.timeSpentSeconds = 0,
+  });
+
+  /// Creates a new state with an additional response.
+  StudyReflectModeActive withResponse(ReflectionResponse response) {
+    return StudyReflectModeActive(
+      studyGuide: studyGuide,
+      streamingContent: streamingContent,
+      currentCardIndex: currentCardIndex,
+      totalCards: totalCards,
+      responses: [...responses, response],
+      startedAt: startedAt,
+      timeSpentSeconds: timeSpentSeconds,
+    );
+  }
+
+  /// Creates a new state advancing to the next card.
+  StudyReflectModeActive nextCard() {
+    return StudyReflectModeActive(
+      studyGuide: studyGuide,
+      streamingContent: streamingContent,
+      currentCardIndex: currentCardIndex + 1,
+      totalCards: totalCards,
+      responses: responses,
+      startedAt: startedAt,
+      timeSpentSeconds: timeSpentSeconds,
+    );
+  }
+
+  /// Creates a new state with updated time spent.
+  StudyReflectModeActive withTimeSpent(int seconds) {
+    return StudyReflectModeActive(
+      studyGuide: studyGuide,
+      streamingContent: streamingContent,
+      currentCardIndex: currentCardIndex,
+      totalCards: totalCards,
+      responses: responses,
+      startedAt: startedAt,
+      timeSpentSeconds: seconds,
+    );
+  }
+
+  /// Whether we're on the last card.
+  bool get isLastCard => currentCardIndex >= totalCards - 1;
+
+  /// Progress through reflect mode (0.0 to 1.0).
+  double get progress =>
+      totalCards > 0 ? (currentCardIndex + 1) / totalCards : 0.0;
+
+  @override
+  List<Object?> get props => [
+        studyGuide,
+        streamingContent?.props,
+        currentCardIndex,
+        totalCards,
+        responses,
+        startedAt,
+        timeSpentSeconds,
+      ];
+}
+
+/// State indicating Reflect Mode is saving responses.
+class StudyReflectModeSaving extends StudyState {
+  /// The study guide ID.
+  final String studyGuideId;
+
+  /// The responses being saved.
+  final List<ReflectionResponse> responses;
+
+  /// Time spent in seconds.
+  final int timeSpentSeconds;
+
+  const StudyReflectModeSaving({
+    required this.studyGuideId,
+    required this.responses,
+    required this.timeSpentSeconds,
+  });
+
+  @override
+  List<Object> get props => [studyGuideId, responses, timeSpentSeconds];
+}
+
+/// State indicating Reflect Mode completed successfully.
+///
+/// Contains the complete reflection session summary.
+class StudyReflectModeCompleted extends StudyState {
+  /// The study guide that was reflected upon.
+  final StudyGuide studyGuide;
+
+  /// All collected responses.
+  final List<ReflectionResponse> responses;
+
+  /// Total time spent in seconds.
+  final int timeSpentSeconds;
+
+  /// Timestamp when reflection was completed.
+  final DateTime completedAt;
+
+  /// The saved reflection session (if saved to backend).
+  final ReflectionSession? savedSession;
+
+  const StudyReflectModeCompleted({
+    required this.studyGuide,
+    required this.responses,
+    required this.timeSpentSeconds,
+    required this.completedAt,
+    this.savedSession,
+  });
+
+  /// Number of life areas selected (for summary).
+  List<String> get selectedLifeAreas {
+    for (final response in responses) {
+      if (response.interactionType == ReflectionInteractionType.multiSelect &&
+          response.value is List) {
+        return List<String>.from(response.value as List);
+      }
+    }
+    return [];
+  }
+
+  /// Number of verses saved (for summary).
+  List<String> get savedVerses {
+    for (final response in responses) {
+      if (response.interactionType ==
+              ReflectionInteractionType.verseSelection &&
+          response.value is List) {
+        return List<String>.from(response.value as List);
+      }
+    }
+    return [];
+  }
+
+  /// Prayer mode selected (for summary).
+  String? get prayerMode {
+    for (final response in responses) {
+      if (response.interactionType == ReflectionInteractionType.prayer &&
+          response.value is Map) {
+        return (response.value as Map)['mode'] as String?;
+      }
+    }
+    return null;
+  }
+
+  /// Prayer duration in seconds (for summary).
+  int? get prayerDuration {
+    for (final response in responses) {
+      if (response.interactionType == ReflectionInteractionType.prayer &&
+          response.value is Map) {
+        return (response.value as Map)['duration'] as int?;
+      }
+    }
+    return null;
+  }
+
+  @override
+  List<Object?> get props => [
+        studyGuide,
+        responses,
+        timeSpentSeconds,
+        completedAt,
+        savedSession,
+      ];
+}
+
+/// State indicating Reflect Mode save failed.
+class StudyReflectModeSaveFailure extends StudyState {
+  /// The study guide ID.
+  final String studyGuideId;
+
+  /// The responses that failed to save.
+  final List<ReflectionResponse> responses;
+
+  /// The failure that occurred.
+  final Failure failure;
+
+  /// Whether the failure is retryable.
+  final bool isRetryable;
+
+  const StudyReflectModeSaveFailure({
+    required this.studyGuideId,
+    required this.responses,
+    required this.failure,
+    this.isRetryable = true,
+  });
+
+  @override
+  List<Object> get props => [studyGuideId, responses, failure, isRetryable];
 }
