@@ -340,7 +340,7 @@ class _ReflectCompletionScreenState extends State<ReflectCompletionScreen>
                       LifeAreaOption(id: area, label: area, icon: '•'),
                 );
                 return Chip(
-                  avatar: Text(lifeArea.icon),
+                  avatar: lifeArea.icon != null ? Text(lifeArea.icon!) : null,
                   label: Text(lifeArea.label),
                   visualDensity: VisualDensity.compact,
                 );

@@ -31,6 +31,16 @@ import '../../features/study_generation/domain/usecases/generate_study_guide.dar
 import '../../features/study_generation/domain/usecases/get_default_study_language.dart';
 import '../../features/study_generation/domain/services/input_validation_service.dart';
 import '../../features/study_generation/presentation/bloc/study_bloc.dart';
+import '../../features/study_generation/domain/repositories/reflections_repository.dart';
+import '../../features/study_generation/data/repositories/reflections_repository_impl.dart';
+import '../../features/study_generation/data/datasources/reflections_remote_data_source.dart';
+import '../../features/study_generation/domain/usecases/save_reflection.dart';
+import '../../features/study_generation/domain/usecases/get_reflection.dart';
+import '../../features/study_generation/domain/usecases/get_reflection_for_guide.dart';
+import '../../features/study_generation/domain/usecases/list_reflections.dart';
+import '../../features/study_generation/domain/usecases/delete_reflection.dart';
+import '../../features/study_generation/domain/usecases/get_reflection_stats.dart';
+import '../../features/study_generation/presentation/bloc/reflections_bloc.dart';
 import '../../features/settings/domain/repositories/settings_repository.dart';
 import '../../features/settings/data/repositories/settings_repository_impl.dart';
 import '../../features/settings/data/datasources/settings_local_data_source.dart';
@@ -344,6 +354,42 @@ Future<void> initializeDependencies() async {
   sl.registerLazySingleton(() => GetDefaultStudyLanguage(sl()));
 
   sl.registerLazySingleton(() => InputValidationService());
+
+  //! Reflections (Reflect Mode)
+  // Data Sources
+  sl.registerLazySingleton<ReflectionsRemoteDataSource>(
+    () => ReflectionsRemoteDataSourceImpl(
+      supabaseClient: sl(),
+    ),
+  );
+
+  // Repository
+  sl.registerLazySingleton<ReflectionsRepository>(
+    () => ReflectionsRepositoryImpl(
+      remoteDataSource: sl(),
+      networkInfo: sl(),
+    ),
+  );
+
+  // Use Cases
+  sl.registerLazySingleton(() => SaveReflection(sl()));
+  sl.registerLazySingleton(() => GetReflection(sl()));
+  sl.registerLazySingleton(() => GetReflectionForGuide(sl()));
+  sl.registerLazySingleton(() => ListReflections(sl()));
+  sl.registerLazySingleton(() => DeleteReflection(sl()));
+  sl.registerLazySingleton(() => GetReflectionStats(sl()));
+
+  // BLoC
+  sl.registerFactory(
+    () => ReflectionsBloc(
+      saveReflection: sl(),
+      getReflection: sl(),
+      getReflectionForGuide: sl(),
+      listReflections: sl(),
+      deleteReflection: sl(),
+      getReflectionStats: sl(),
+    ),
+  );
 
   sl.registerFactory(() => StudyBloc(
         generateStudyGuide: sl(),

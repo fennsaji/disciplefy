@@ -3,7 +3,8 @@ import { AppError } from '../utils/error-handler.ts'
 import { SecurityValidator } from '../utils/security-validator.ts'
 
 /**
- * Study guide content for caching
+ * Study guide content for caching.
+ * All 14 fields are required to ensure complete study guide generation.
  */
 export interface StudyGuideContent {
   readonly summary: string
@@ -12,6 +13,16 @@ export interface StudyGuideContent {
   readonly relatedVerses: readonly string[]
   readonly reflectionQuestions: readonly string[]
   readonly prayerPoints: readonly string[]
+  // Reflect Mode fields - insights and answers
+  readonly interpretationInsights: readonly string[]  // 2-5 theological insights for Reflect Mode multi-select
+  readonly summaryInsights: readonly string[]  // 2-5 resonance themes for Summary card (Reflect Mode)
+  readonly reflectionAnswers: readonly string[]  // 2-5 actionable life application responses for Reflection card (Reflect Mode)
+  // Reflect Mode fields - dynamic questions
+  readonly contextQuestion: string  // Yes/no question from historical context for Reflect Mode
+  readonly summaryQuestion: string  // Engaging question about the summary (8-12 words)
+  readonly relatedVersesQuestion: string  // Question prompting verse selection/memorization (8-12 words)
+  readonly reflectionQuestion: string  // Question connecting study to daily life (8-12 words)
+  readonly prayerQuestion: string  // Question inviting personal prayer response (6-10 words)
 }
 
 /**
@@ -103,7 +114,15 @@ export class StudyGuideRepository {
         context: cachedContent.context,
         relatedVerses: cachedContent.related_verses,
         reflectionQuestions: cachedContent.reflection_questions,
-        prayerPoints: cachedContent.prayer_points
+        prayerPoints: cachedContent.prayer_points,
+        interpretationInsights: cachedContent.interpretation_insights || [],
+        summaryInsights: cachedContent.summary_insights || [],
+        reflectionAnswers: cachedContent.reflection_answers || [],
+        contextQuestion: cachedContent.context_question || '',
+        summaryQuestion: cachedContent.summary_question || '',
+        relatedVersesQuestion: cachedContent.related_verses_question || '',
+        reflectionQuestion: cachedContent.reflection_question || '',
+        prayerQuestion: cachedContent.prayer_question || ''
       },
       isSaved: false, // Newly generated content is not saved by default
       createdAt: cachedContent.created_at,
@@ -143,6 +162,14 @@ export class StudyGuideRepository {
         related_verses: content.relatedVerses,
         reflection_questions: content.reflectionQuestions,
         prayer_points: content.prayerPoints,
+        interpretation_insights: content.interpretationInsights, // NEW: For Reflect Mode multi-select
+        summary_insights: content.summaryInsights, // NEW: For Summary card resonance themes
+        reflection_answers: content.reflectionAnswers, // NEW: For Reflection card actionable life application responses
+        context_question: content.contextQuestion, // NEW: For Reflect Mode yes/no question
+        summary_question: content.summaryQuestion, // NEW: Dynamic question for summary card
+        related_verses_question: content.relatedVersesQuestion, // NEW: Dynamic question for related verses card
+        reflection_question: content.reflectionQuestion, // NEW: Dynamic question for reflection card
+        prayer_question: content.prayerQuestion, // NEW: Dynamic question for prayer card
         updated_at: new Date().toISOString(),
         // Creator tracking - set on INSERT
         creator_user_id: userContext.type === 'authenticated' ? userContext.userId : null,
@@ -353,6 +380,14 @@ export class StudyGuideRepository {
           related_verses,
           reflection_questions,
           prayer_points,
+          interpretation_insights,
+          summary_insights,
+          reflection_answers,
+          context_question,
+          summary_question,
+          related_verses_question,
+          reflection_question,
+          prayer_question,
           created_at,
           updated_at
         )
@@ -480,6 +515,14 @@ export class StudyGuideRepository {
           related_verses,
           reflection_questions,
           prayer_points,
+          interpretation_insights,
+          summary_insights,
+          reflection_answers,
+          context_question,
+          summary_question,
+          related_verses_question,
+          reflection_question,
+          prayer_question,
           created_at,
           updated_at
         )
@@ -592,7 +635,15 @@ export class StudyGuideRepository {
         context: content.context,
         relatedVerses: content.related_verses,
         reflectionQuestions: content.reflection_questions,
-        prayerPoints: content.prayer_points
+        prayerPoints: content.prayer_points,
+        interpretationInsights: content.interpretation_insights || [],
+        summaryInsights: content.summary_insights || [],
+        reflectionAnswers: content.reflection_answers || [],
+        contextQuestion: content.context_question || '',
+        summaryQuestion: content.summary_question || '',
+        relatedVersesQuestion: content.related_verses_question || '',
+        reflectionQuestion: content.reflection_question || '',
+        prayerQuestion: content.prayer_question || ''
       },
       isSaved: false, // Anonymous users can't save, authenticated users get it linked above
       createdAt: content.created_at,
@@ -626,14 +677,25 @@ export class StudyGuideRepository {
             input_value,
             input_value_hash,
             language,
+            study_mode,
             summary,
             interpretation,
             context,
             related_verses,
             reflection_questions,
             prayer_points,
+            interpretation_insights,
+            summary_insights,
+            reflection_answers,
+            context_question,
+            summary_question,
+            related_verses_question,
+            reflection_question,
+            prayer_question,
             created_at,
-            updated_at
+            updated_at,
+            creator_user_id,
+            creator_session_id
           )
         `)
         .eq('study_guide_id', contentId)
@@ -816,7 +878,15 @@ export class StudyGuideRepository {
         context: studyGuide.context,
         relatedVerses: studyGuide.related_verses,
         reflectionQuestions: studyGuide.reflection_questions,
-        prayerPoints: studyGuide.prayer_points
+        prayerPoints: studyGuide.prayer_points,
+        interpretationInsights: studyGuide.interpretation_insights || [],
+        summaryInsights: studyGuide.summary_insights || [],
+        reflectionAnswers: studyGuide.reflection_answers || [],
+        contextQuestion: studyGuide.context_question || '',
+        summaryQuestion: studyGuide.summary_question || '',
+        relatedVersesQuestion: studyGuide.related_verses_question || '',
+        reflectionQuestion: studyGuide.reflection_question || '',
+        prayerQuestion: studyGuide.prayer_question || ''
       },
       isSaved: data.is_saved,
       createdAt: data.created_at,

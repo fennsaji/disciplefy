@@ -17,6 +17,16 @@ class SavedGuideEntity extends Equatable {
   final List<String>? reflectionQuestions;
   final List<String>? prayerPoints;
 
+  // Reflection enhancement fields
+  final List<String>? interpretationInsights;
+  final List<String>? summaryInsights;
+  final List<String>? reflectionAnswers;
+  final String? contextQuestion;
+  final String? summaryQuestion;
+  final String? relatedVersesQuestion;
+  final String? reflectionQuestion;
+  final String? prayerQuestion;
+
   // Legacy content field for backward compatibility
   final String content;
 
@@ -43,6 +53,14 @@ class SavedGuideEntity extends Equatable {
     this.relatedVerses,
     this.reflectionQuestions,
     this.prayerPoints,
+    this.interpretationInsights,
+    this.summaryInsights,
+    this.reflectionAnswers,
+    this.contextQuestion,
+    this.summaryQuestion,
+    this.relatedVersesQuestion,
+    this.reflectionQuestion,
+    this.prayerQuestion,
   });
 
   SavedGuideEntity copyWith({
@@ -61,6 +79,14 @@ class SavedGuideEntity extends Equatable {
     List<String>? relatedVerses,
     List<String>? reflectionQuestions,
     List<String>? prayerPoints,
+    List<String>? interpretationInsights,
+    List<String>? summaryInsights,
+    List<String>? reflectionAnswers,
+    String? contextQuestion,
+    String? summaryQuestion,
+    String? relatedVersesQuestion,
+    String? reflectionQuestion,
+    String? prayerQuestion,
   }) =>
       SavedGuideEntity(
         id: id ?? this.id,
@@ -78,6 +104,16 @@ class SavedGuideEntity extends Equatable {
         relatedVerses: relatedVerses ?? this.relatedVerses,
         reflectionQuestions: reflectionQuestions ?? this.reflectionQuestions,
         prayerPoints: prayerPoints ?? this.prayerPoints,
+        interpretationInsights:
+            interpretationInsights ?? this.interpretationInsights,
+        summaryInsights: summaryInsights ?? this.summaryInsights,
+        reflectionAnswers: reflectionAnswers ?? this.reflectionAnswers,
+        contextQuestion: contextQuestion ?? this.contextQuestion,
+        summaryQuestion: summaryQuestion ?? this.summaryQuestion,
+        relatedVersesQuestion:
+            relatedVersesQuestion ?? this.relatedVersesQuestion,
+        reflectionQuestion: reflectionQuestion ?? this.reflectionQuestion,
+        prayerQuestion: prayerQuestion ?? this.prayerQuestion,
       );
 
   String get displayTitle {
@@ -148,5 +184,13 @@ class SavedGuideEntity extends Equatable {
         relatedVerses,
         reflectionQuestions,
         prayerPoints,
+        interpretationInsights,
+        summaryInsights,
+        reflectionAnswers,
+        contextQuestion,
+        summaryQuestion,
+        relatedVersesQuestion,
+        reflectionQuestion,
+        prayerQuestion,
       ];
 }

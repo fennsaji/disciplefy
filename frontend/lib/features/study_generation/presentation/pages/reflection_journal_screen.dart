@@ -4,6 +4,9 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../../../core/di/injection_container.dart';
+import '../../../../core/extensions/translation_extension.dart';
+import '../../../../core/i18n/translation_keys.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../data/datasources/reflections_remote_data_source.dart';
 import '../../data/repositories/reflections_repository_impl.dart';
@@ -51,6 +54,7 @@ class _ReflectionJournalScreenState extends State<ReflectionJournalScreen> {
     );
     _repository = ReflectionsRepositoryImpl(
       remoteDataSource: remoteDataSource,
+      networkInfo: sl(),
     );
     _loadInitialData();
   }
@@ -131,21 +135,79 @@ class _ReflectionJournalScreenState extends State<ReflectionJournalScreen> {
     });
   }
 
+  Future<void> _viewStudyGuide(
+      BuildContext context, ReflectionSession reflection) async {
+    try {
+      // Fetch study guide data from database
+      final supabase = Supabase.instance.client;
+      final response = await supabase
+          .from('study_guides')
+          .select()
+          .eq('id', reflection.studyGuideId)
+          .single();
+
+      // Navigate with full study guide data
+      if (mounted) {
+        context.push('/study-guide?source=reflection_journal', extra: {
+          'study_guide': {
+            'id': response['id'],
+            'title': response['input_value'] ?? '',
+            'content': '',
+            'type': response['input_type'] ?? 'scripture',
+            'verse_reference': response['input_value'],
+            'topic_name': response['input_value'],
+            'is_saved': true,
+            'created_at': response['created_at'],
+            'last_accessed_at': response['updated_at'],
+            'summary': response['summary'],
+            'interpretation': response['interpretation'],
+            'context': response['context'],
+            'related_verses': response['related_verses'],
+            'reflection_questions': response['reflection_questions'],
+            'prayer_points': response['prayer_points'],
+            'interpretation_insights': response['interpretation_insights'],
+            'summary_insights': response['summary_insights'],
+            'reflection_answers': response['reflection_answers'],
+            'context_question': response['context_question'],
+            'summary_question': response['summary_question'],
+            'related_verses_question': response['related_verses_question'],
+            'reflection_question': response['reflection_question'],
+            'prayer_question': response['prayer_question'],
+          }
+        });
+      }
+    } catch (e, stackTrace) {
+      // Log error with stack trace (metadata only, no user content)
+      debugPrint('[ReflectionJournal] Failed to load study guide: $e');
+      debugPrint('[ReflectionJournal] Stack trace: $stackTrace');
+
+      // Show user-friendly error message without raw exception
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+              content: Text(context
+                  .tr(TranslationKeys.reflectionJournalLoadStudyFailed))),
+        );
+      }
+    }
+  }
+
   Future<void> _deleteReflection(String reflectionId) async {
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Delete Reflection'),
-        content: const Text('Are you sure you want to delete this reflection?'),
+      builder: (dialogContext) => AlertDialog(
+        title: Text(context.tr(TranslationKeys.reflectionJournalDeleteTitle)),
+        content:
+            Text(context.tr(TranslationKeys.reflectionJournalDeleteMessage)),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: Text(context.tr(TranslationKeys.reflectionJournalCancel)),
           ),
           TextButton(
-            onPressed: () => Navigator.pop(context, true),
+            onPressed: () => Navigator.pop(dialogContext, true),
             style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('Delete'),
+            child: Text(context.tr(TranslationKeys.reflectionJournalDelete)),
           ),
         ],
       ),
@@ -159,13 +221,18 @@ class _ReflectionJournalScreenState extends State<ReflectionJournalScreen> {
         });
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Reflection deleted')),
+            SnackBar(
+                content:
+                    Text(context.tr(TranslationKeys.reflectionJournalDeleted))),
           );
         }
       } catch (e) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Failed to delete: $e')),
+            SnackBar(
+                content: Text(context
+                    .tr(TranslationKeys.reflectionJournalDeleteFailed)
+                    .replaceAll('{error}', e.toString()))),
           );
         }
       }
@@ -185,7 +252,7 @@ class _ReflectionJournalScreenState extends State<ReflectionJournalScreen> {
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text('Reflection Journal'),
+        title: Text(context.tr(TranslationKeys.reflectionJournalTitle)),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () => context.pop(),
@@ -196,11 +263,12 @@ class _ReflectionJournalScreenState extends State<ReflectionJournalScreen> {
               Icons.filter_list,
               color: _selectedMode != null ? AppTheme.primaryColor : null,
             ),
-            tooltip: 'Filter by mode',
+            tooltip: context.tr(TranslationKeys.reflectionJournalFilterByMode),
             onSelected: _onModeFilterChanged,
             itemBuilder: (context) => [
-              const PopupMenuItem(
-                child: Text('All Modes'),
+              PopupMenuItem(
+                child:
+                    Text(context.tr(TranslationKeys.reflectionJournalAllModes)),
               ),
               ...StudyMode.values.map((mode) => PopupMenuItem(
                     value: mode,
@@ -240,7 +308,7 @@ class _ReflectionJournalScreenState extends State<ReflectionJournalScreen> {
             const SizedBox(height: 16),
             ElevatedButton(
               onPressed: _loadInitialData,
-              child: const Text('Retry'),
+              child: Text(context.tr(TranslationKeys.reflectionJournalRetry)),
             ),
           ],
         ),
@@ -311,12 +379,12 @@ class _ReflectionJournalScreenState extends State<ReflectionJournalScreen> {
             ),
             const SizedBox(height: 16),
             Text(
-              'No reflections yet',
+              context.tr(TranslationKeys.reflectionJournalNoReflections),
               style: theme.textTheme.titleLarge,
             ),
             const SizedBox(height: 8),
             Text(
-              'Complete a study guide in Reflect Mode to see your reflections here.',
+              context.tr(TranslationKeys.reflectionJournalEmptyMessage),
               textAlign: TextAlign.center,
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: theme.textTheme.bodySmall?.color,
@@ -326,7 +394,8 @@ class _ReflectionJournalScreenState extends State<ReflectionJournalScreen> {
             ElevatedButton.icon(
               onPressed: () => context.go('/study'),
               icon: const Icon(Icons.add),
-              label: const Text('Start a Study'),
+              label:
+                  Text(context.tr(TranslationKeys.reflectionJournalStartStudy)),
             ),
           ],
         ),
@@ -359,7 +428,7 @@ class _ReflectionJournalScreenState extends State<ReflectionJournalScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Your Journey',
+              context.tr(TranslationKeys.reflectionJournalYourJourney),
               style: theme.textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.bold,
               ),
@@ -369,23 +438,28 @@ class _ReflectionJournalScreenState extends State<ReflectionJournalScreen> {
               children: [
                 _buildStatItem(
                   theme,
+                  context,
                   icon: Icons.auto_stories,
                   value: stats.totalReflections.toString(),
-                  label: 'Reflections',
+                  label:
+                      context.tr(TranslationKeys.reflectionJournalReflections),
                 ),
                 const SizedBox(width: 24),
                 _buildStatItem(
                   theme,
+                  context,
                   icon: Icons.timer_outlined,
                   value: stats.formattedTotalTime,
-                  label: 'Time Spent',
+                  label: context.tr(TranslationKeys.reflectionJournalTimeSpent),
                 ),
                 const SizedBox(width: 24),
                 _buildStatItem(
                   theme,
+                  context,
                   icon: Icons.speed,
                   value: '${stats.averageTimeMinutes}m',
-                  label: 'Avg/Session',
+                  label:
+                      context.tr(TranslationKeys.reflectionJournalAvgSession),
                 ),
               ],
             ),
@@ -394,7 +468,7 @@ class _ReflectionJournalScreenState extends State<ReflectionJournalScreen> {
               const Divider(),
               const SizedBox(height: 12),
               Text(
-                'Top focus areas:',
+                context.tr(TranslationKeys.reflectionJournalTopFocusAreas),
                 style: theme.textTheme.bodySmall?.copyWith(
                   color: theme.textTheme.bodySmall?.color?.withOpacity(0.7),
                 ),
@@ -410,7 +484,11 @@ class _ReflectionJournalScreenState extends State<ReflectionJournalScreen> {
                         LifeAreaOption(id: area, label: area, icon: '•'),
                   );
                   return Chip(
-                    label: Text('${lifeArea.icon} ${lifeArea.label}'),
+                    label: Text(
+                      lifeArea.icon != null
+                          ? '${lifeArea.icon} ${lifeArea.label}'
+                          : lifeArea.label,
+                    ),
                     visualDensity: VisualDensity.compact,
                     materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                   );
@@ -424,7 +502,8 @@ class _ReflectionJournalScreenState extends State<ReflectionJournalScreen> {
   }
 
   Widget _buildStatItem(
-    ThemeData theme, {
+    ThemeData theme,
+    BuildContext context, {
     required IconData icon,
     required String value,
     required String label,
@@ -549,7 +628,7 @@ class _ReflectionJournalScreenState extends State<ReflectionJournalScreen> {
               // Summary of responses (always visible)
               if (reflection.responses.isNotEmpty) ...[
                 const SizedBox(height: 12),
-                _buildResponseSummary(theme, reflection),
+                _buildResponseSummary(theme, context, reflection),
               ],
 
               // Expanded details
@@ -557,18 +636,16 @@ class _ReflectionJournalScreenState extends State<ReflectionJournalScreen> {
                 const SizedBox(height: 16),
                 const Divider(),
                 const SizedBox(height: 12),
-                _buildExpandedDetails(theme, reflection),
+                _buildExpandedDetails(theme, context, reflection),
                 const SizedBox(height: 12),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
                     TextButton.icon(
-                      onPressed: () {
-                        // Navigate to study guide
-                        context.push('/study-guide/${reflection.studyGuideId}');
-                      },
+                      onPressed: () => _viewStudyGuide(context, reflection),
                       icon: const Icon(Icons.visibility, size: 18),
-                      label: const Text('View Study'),
+                      label: Text(context
+                          .tr(TranslationKeys.reflectionJournalViewStudy)),
                     ),
                     const SizedBox(width: 8),
                     TextButton.icon(
@@ -576,7 +653,8 @@ class _ReflectionJournalScreenState extends State<ReflectionJournalScreen> {
                           ? () => _deleteReflection(reflection.id!)
                           : null,
                       icon: const Icon(Icons.delete_outline, size: 18),
-                      label: const Text('Delete'),
+                      label: Text(
+                          context.tr(TranslationKeys.reflectionJournalDelete)),
                       style: TextButton.styleFrom(foregroundColor: Colors.red),
                     ),
                   ],
@@ -589,7 +667,8 @@ class _ReflectionJournalScreenState extends State<ReflectionJournalScreen> {
     );
   }
 
-  Widget _buildResponseSummary(ThemeData theme, ReflectionSession reflection) {
+  Widget _buildResponseSummary(
+      ThemeData theme, BuildContext context, ReflectionSession reflection) {
     final summaryItems = <String>[];
 
     for (final response in reflection.responses) {
@@ -608,7 +687,9 @@ class _ReflectionJournalScreenState extends State<ReflectionJournalScreen> {
         case ReflectionInteractionType.verseSelection:
           final verses = response.value as List<String>?;
           if (verses != null && verses.isNotEmpty) {
-            summaryItems.add('${verses.length} verses saved');
+            summaryItems.add(context
+                .tr(TranslationKeys.reflectionJournalVersesSaved)
+                .replaceAll('{count}', verses.length.toString()));
           }
           break;
         default:
@@ -637,20 +718,22 @@ class _ReflectionJournalScreenState extends State<ReflectionJournalScreen> {
     );
   }
 
-  Widget _buildExpandedDetails(ThemeData theme, ReflectionSession reflection) {
+  Widget _buildExpandedDetails(
+      ThemeData theme, BuildContext context, ReflectionSession reflection) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: reflection.responses.map((response) {
         return Padding(
           padding: const EdgeInsets.only(bottom: 12),
-          child: _buildResponseDetail(theme, response),
+          child: _buildResponseDetail(theme, context, response),
         );
       }).toList(),
     );
   }
 
-  Widget _buildResponseDetail(ThemeData theme, ReflectionResponse response) {
-    final valueWidget = _buildResponseValue(theme, response);
+  Widget _buildResponseDetail(
+      ThemeData theme, BuildContext context, ReflectionResponse response) {
+    final valueWidget = _buildResponseValue(theme, context, response);
     if (valueWidget == null) return const SizedBox.shrink();
 
     return Column(
@@ -669,7 +752,8 @@ class _ReflectionJournalScreenState extends State<ReflectionJournalScreen> {
     );
   }
 
-  Widget? _buildResponseValue(ThemeData theme, ReflectionResponse response) {
+  Widget? _buildResponseValue(
+      ThemeData theme, BuildContext context, ReflectionResponse response) {
     switch (response.interactionType) {
       case ReflectionInteractionType.tapSelection:
         if (response.value == null) return null;
@@ -706,7 +790,12 @@ class _ReflectionJournalScreenState extends State<ReflectionJournalScreen> {
                   color: isYes ? Colors.green : Colors.red[300],
                 ),
                 const SizedBox(width: 4),
-                Text(isYes ? 'Yes' : 'No', style: theme.textTheme.bodyMedium),
+                Text(
+                  isYes
+                      ? context.tr(TranslationKeys.reflectionJournalYes)
+                      : context.tr(TranslationKeys.reflectionJournalNo),
+                  style: theme.textTheme.bodyMedium,
+                ),
               ],
             ),
             if (response.additionalText != null &&

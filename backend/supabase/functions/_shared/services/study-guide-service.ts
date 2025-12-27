@@ -217,7 +217,21 @@ export class StudyGuideService {
           ),
           prayerPoints: generated.prayerPoints.map(p =>
             normalizer.normalizeBibleBooks(p)
-          )
+          ),
+          interpretationInsights: generated.interpretationInsights.map(insight =>
+            normalizer.normalizeBibleBooks(insight)
+          ),
+          summaryInsights: generated.summaryInsights.map(insight =>
+            normalizer.normalizeBibleBooks(insight)
+          ),
+          reflectionAnswers: generated.reflectionAnswers.map(answer =>
+            normalizer.normalizeBibleBooks(answer)
+          ),
+          contextQuestion: normalizer.normalizeBibleBooks(generated.contextQuestion),
+          summaryQuestion: normalizer.normalizeBibleBooks(generated.summaryQuestion),
+          relatedVersesQuestion: normalizer.normalizeBibleBooks(generated.relatedVersesQuestion),
+          reflectionQuestion: normalizer.normalizeBibleBooks(generated.reflectionQuestion),
+          prayerQuestion: normalizer.normalizeBibleBooks(generated.prayerQuestion)
         }
 
       } catch (error) {

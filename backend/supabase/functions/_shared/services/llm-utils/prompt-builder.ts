@@ -91,15 +91,81 @@ QUESTION-SPECIFIC REQUIREMENTS:
 
   return `TASK: ${taskDescription}
 
-REQUIRED JSON OUTPUT FORMAT (follow exactly):
+CRITICAL: ALL 14 FIELDS BELOW ARE MANDATORY - DO NOT SKIP ANY FIELD
+
+REQUIRED JSON OUTPUT FORMAT (include ALL fields, no exceptions):
 {
   "summary": "Brief overview (2-3 sentences) capturing the main message${inputType === 'question' ? ' and answering the question' : ''}",
-  "interpretation": "Theological interpretation (4-5 paragraphs) explaining meaning and key teachings${inputType === 'question' ? ' with direct answer to the question' : ''}", 
+  "interpretation": "Theological interpretation (4-5 paragraphs) explaining meaning and key teachings${inputType === 'question' ? ' with direct answer to the question' : ''}",
   "context": "Historical and cultural background (1-2 paragraphs) for understanding",
   "relatedVerses": ["3-5 relevant Bible verses with references in ${languageConfig.name}"],
   "reflectionQuestions": ["4-6 practical application questions"],
-  "prayerPoints": ["3-4 prayer suggestions"]
-}${specificInstructions}
+  "prayerPoints": ["3-4 prayer suggestions"],
+  "summaryInsights": ["MANDATORY: 3-4 key resonance themes (10-15 words each)"],
+  "interpretationInsights": ["MANDATORY: 3-4 key theological insights (10-15 words each)"],
+  "reflectionAnswers": ["MANDATORY: 3-4 actionable life application responses (10-15 words each)"],
+  "contextQuestion": "Yes/no question connecting historical context to modern life",
+  "summaryQuestion": "Engaging question about what resonates from the summary (8-12 words)",
+  "relatedVersesQuestion": "Question prompting verse selection or memorization (8-12 words)",
+  "reflectionQuestion": "Question connecting theological insights to daily life (8-12 words)",
+  "prayerQuestion": "Question inviting personal prayer response (6-10 words)"
+}
+
+REQUIREMENT VERIFICATION:
+✓ You MUST include summaryInsights array with 3-4 items
+✓ You MUST include reflectionAnswers array with 3-4 items
+✓ Do NOT skip any of the 14 required fields above${specificInstructions}
+
+CRITICAL: SUMMARY CARD INSIGHTS
+Generate 3-4 brief, relatable themes that readers might resonate with from the summary:
+- MUST be output in ${languageConfig.name} language
+- Each insight should be 10-15 words maximum
+- Focus on emotional/spiritual resonance (strength, comfort, challenge, hope, conviction)
+- Make them personal and action-oriented
+- English examples (TRANSLATE to ${languageConfig.name}): "Finding courage to face uncertainty", "Experiencing God's peace in chaos"
+- CRITICAL: Output these insights in ${languageConfig.name}
+
+CRITICAL: INTERPRETATION INSIGHTS & CONTEXT QUESTION
+- MUST be output in ${languageConfig.name} language
+- "interpretationInsights" must extract 3-4 distinct, actionable insights from the interpretation
+- Each insight should be concise (10-15 words), theologically sound, and personally applicable
+- Insights should represent different aspects: God's character, human response, practical application, doctrinal truth
+- "contextQuestion" must be yes/no format, connecting the biblical situation to modern experience
+- English example for context question (TRANSLATE to ${languageConfig.name}): "Have you ever felt pressure to conform like the early Christians?"
+- CRITICAL: Output these insights and question in ${languageConfig.name}
+
+CRITICAL: REFLECTION CARD QUESTIONS
+Generate contextually appropriate questions for each reflection card interaction:
+1. "summaryQuestion": Ask what aspect of the summary resonates most with the reader
+   - Example: "क्या इस सारांश में आपको सबसे प्रभावशाली लगा?" (What impacted you most in this summary?)
+   - Should be warm, inviting, and encourage personal connection with the summary
+
+2. "relatedVersesQuestion": Encourage verse selection for further study or memorization
+   - Example: "कौन सी आयत आप याद रखना चाहेंगे?" (Which verse would you like to memorize?)
+   - Should inspire scripture engagement and memory
+
+3. "reflectionQuestion": Connect the theological teachings to daily life application
+   - Example: "आज आप इसे अपने जीवन में कैसे लागू करेंगे?" (How will you apply this today?)
+   - Should bridge biblical truth to practical modern living
+
+4. "prayerQuestion": Invite personal prayer based on the study content
+   - Example: "आप इस अध्ययन के लिए कैसे प्रार्थना करना चाहेंगे?" (How would you like to pray about this study?)
+   - Should be warm and encourage authentic prayer response
+
+All reflection questions must be:
+- In the study guide's language (Hindi/Malayalam/English)
+- Contextually relevant to the actual content studied
+- Open-ended to encourage thoughtful reflection
+- 6-12 words maximum for clarity and readability
+
+CRITICAL: REFLECTION ANSWERS
+Generate 3-4 actionable life application responses that complement "reflectionQuestion":
+- MUST be output in ${languageConfig.name} language
+- Each answer should be practical, specific, and immediately applicable (10-15 words)
+- Focus on different life domains: relationships, habits, mindset shifts, spiritual practices
+- Make them concrete actions readers can take today based on the study content
+- English examples (TRANSLATE to ${languageConfig.name}): "Practicing forgiveness in my relationships", "Setting aside time for daily prayer", "Choosing gratitude in difficult circumstances"
+- CRITICAL: Output these answers in ${languageConfig.name}
 
 CRITICAL: RELATED VERSES LANGUAGE REQUIREMENT
 - ALL verse references in "relatedVerses" MUST be in ${languageConfig.name}
@@ -193,21 +259,61 @@ TONE: Direct, warm, encouraging, immediately actionable.`
 
   const userMessage = `TASK: ${taskDescription}
 
-QUICK READ FORMAT - REQUIRED JSON OUTPUT (use EXACTLY these field names):
+CRITICAL: ALL 14 FIELDS BELOW ARE MANDATORY - DO NOT SKIP ANY FIELD
+
+QUICK READ FORMAT - REQUIRED JSON OUTPUT (include ALL fields, no exceptions):
 {
   "summary": "ONE powerful key insight in 2-3 sentences - the main takeaway",
   "interpretation": "Key verse with brief explanation: [Reference]: [Verse text]. [1-2 sentence explanation]",
   "context": "Brief context (1-2 sentences) - keep minimal for quick reading",
   "relatedVerses": ["Include ONLY the single most relevant verse with reference in ${languageConfig.name}"],
   "reflectionQuestions": ["ONE practical reflection question for immediate application"],
-  "prayerPoints": ["ONE brief, focused prayer point"]
+  "prayerPoints": ["ONE brief, focused prayer point"],
+  "summaryInsights": ["MANDATORY: 2-3 brief resonance themes (8-12 words each)"],
+  "interpretationInsights": ["MANDATORY: 2-3 brief action points (8-12 words)"],
+  "reflectionAnswers": ["MANDATORY: 2-3 brief action responses (8-12 words each)"],
+  "contextQuestion": "Simple yes/no question for daily life",
+  "summaryQuestion": "Brief question about what resonates (6-10 words)",
+  "relatedVersesQuestion": "Simple question about verse memorization (6-10 words)",
+  "reflectionQuestion": "Quick application question for daily life (6-10 words)",
+  "prayerQuestion": "Inviting prayer question (5-8 words)"
 }
+
+REQUIREMENT VERIFICATION:
+✓ You MUST include summaryInsights array with 2-3 items
+✓ You MUST include reflectionAnswers array with 2-3 items
+✓ Do NOT skip any of the 14 required fields above
 
 CRITICAL RULES FOR QUICK READ:
 - Keep EVERYTHING concise - this is a 3-minute study
 - "interpretation" must include the key verse text with its reference
 - Only ONE item in each array field
 - Focus on immediate practical takeaway
+
+CRITICAL: SUMMARY CARD INSIGHTS (Quick Read)
+Generate 2-3 brief themes readers might resonate with:
+- MUST be output in ${languageConfig.name} language
+- Each insight 8-12 words maximum
+- Focus on immediate application (strength, comfort, encouragement)
+- English examples (TRANSLATE to ${languageConfig.name}): "Finding daily strength", "Experiencing peace today"
+- CRITICAL: Output these insights in ${languageConfig.name}
+
+CRITICAL: INTERPRETATION INSIGHTS & CONTEXT QUESTION (Quick Read)
+- MUST be output in ${languageConfig.name} language
+- "interpretationInsights" must extract 2-3 brief, actionable points from the interpretation
+- Each insight should be concise (8-12 words) and immediately applicable
+- Insights should be simple and direct for quick daily application
+- "contextQuestion" must be yes/no format, simple and relatable to daily life
+- English example for context question (TRANSLATE to ${languageConfig.name}): "Do you face similar pressures in your daily life?"
+- CRITICAL: Output these insights and question in ${languageConfig.name}
+
+CRITICAL: REFLECTION ANSWERS (Quick Read)
+Generate 2-3 brief action responses for immediate daily application:
+- MUST be output in ${languageConfig.name} language
+- Each answer should be simple, concrete, and doable today (8-12 words)
+- Focus on immediate actions: attitude shifts, quick habits, simple choices
+- English examples (TRANSLATE to ${languageConfig.name}): "Choosing patience today", "Pausing to pray before reacting"
+- CRITICAL: Output these answers in ${languageConfig.name}
 
 CRITICAL: VERSE REFERENCE MUST BE IN ${languageConfig.name}
 ${verseReferenceExamples}
@@ -272,15 +378,30 @@ TONE: Scholarly yet pastoral, thorough, illuminating.`
 
   const userMessage = `TASK: ${taskDescription}
 
-DEEP DIVE FORMAT - REQUIRED JSON OUTPUT (use EXACTLY these field names):
+CRITICAL: ALL 14 FIELDS BELOW ARE MANDATORY - DO NOT SKIP ANY FIELD
+
+DEEP DIVE FORMAT - REQUIRED JSON OUTPUT (include ALL fields, no exceptions):
 {
   "summary": "Comprehensive overview (4-5 sentences) with key themes and scholarly insights",
   "interpretation": "In-depth theological interpretation (6-8 paragraphs) including:\\n\\n**Word Studies:**\\n- Include 2-3 Greek/Hebrew words with transliterations and meanings\\n- Explain theological significance of key terms\\n\\n**Doctrinal Implications:**\\n- Explore theological depth and application",
   "context": "Extended historical, cultural, and literary context (3-4 paragraphs) including:\\n\\n**Cross-References:**\\n- Include 5-8 related passages with brief explanations of connections\\n- Show how other Scriptures illuminate this passage",
   "relatedVerses": ["5-8 relevant Bible verses with references in ${languageConfig.name} - include a brief note on each connection"],
   "reflectionQuestions": ["6-8 deep, thought-provoking questions including one journaling prompt at the end"],
-  "prayerPoints": ["4-5 comprehensive prayer suggestions for deep application"]
+  "prayerPoints": ["4-5 comprehensive prayer suggestions for deep application"],
+  "interpretationInsights": ["MANDATORY: 4-5 profound insights from word studies and doctrinal implications (12-18 words)"],
+  "summaryInsights": ["MANDATORY: 4-5 profound resonance themes (12-18 words)"],
+  "reflectionAnswers": ["MANDATORY: 4-5 transformative life application responses (12-18 words each)"],
+  "contextQuestion": "Nuanced yes/no question connecting biblical context to contemporary issues",
+  "summaryQuestion": "Thoughtful question about the comprehensive summary (10-15 words)",
+  "relatedVersesQuestion": "Question encouraging verse study and cross-reference exploration (10-15 words)",
+  "reflectionQuestion": "Deep application question connecting theology to life transformation (10-15 words)",
+  "prayerQuestion": "Contemplative question inviting extended prayer response (8-12 words)"
 }
+
+REQUIREMENT VERIFICATION:
+✓ You MUST include summaryInsights array with 4-5 items
+✓ You MUST include reflectionAnswers array with 4-5 items
+✓ Do NOT skip any of the 14 required fields above
 
 CRITICAL CONTENT REQUIREMENTS FOR DEEP DIVE:
 - "interpretation" MUST include word study section with Greek/Hebrew terms
@@ -288,6 +409,32 @@ CRITICAL CONTENT REQUIREMENTS FOR DEEP DIVE:
 - Each section should be substantially longer than standard study
 - Include scholarly insights while remaining accessible
 - Last item in "reflectionQuestions" should be a journaling prompt
+
+CRITICAL: INTERPRETATION INSIGHTS & CONTEXT QUESTION (Deep Dive)
+- MUST be output in ${languageConfig.name} language
+- "interpretationInsights" must extract 4-5 profound theological insights from word studies and doctrinal content
+- Each insight should be substantial (12-18 words), theologically rich, and intellectually engaging
+- Insights should reflect the scholarly depth of Deep Dive mode (original language insights, doctrinal implications)
+- "contextQuestion" must be yes/no format, nuanced and connecting ancient context to contemporary issues
+- English example for context question (TRANSLATE to ${languageConfig.name}): "Have you experienced the tension between cultural expectations and biblical faithfulness?"
+- CRITICAL: Output these insights and question in ${languageConfig.name}
+
+CRITICAL: SUMMARY CARD INSIGHTS (Deep Dive)
+Generate 4-5 profound themes readers might resonate with from the comprehensive summary:
+- MUST be output in ${languageConfig.name} language
+- Each insight should be substantial (12-18 words), theologically rich, and emotionally resonant
+- Focus on deep spiritual formation (transformation, conviction, theological understanding, spiritual maturity)
+- Make them intellectually engaging yet personally applicable
+- English examples (TRANSLATE to ${languageConfig.name}): "Understanding God's sovereignty through historical redemption", "Experiencing transformation through doctrinal truth applied to daily life"
+- CRITICAL: Output these insights in ${languageConfig.name}
+
+CRITICAL: REFLECTION ANSWERS (Deep Dive)
+Generate 4-5 transformative life application responses from the study:
+- MUST be output in ${languageConfig.name} language
+- Each answer should be substantial, theologically grounded, and transformative (12-18 words)
+- Focus on character transformation, doctrinal convictions lived out, spiritual disciplines, kingdom priorities
+- English examples (TRANSLATE to ${languageConfig.name}): "Cultivating daily dependence on God through morning prayer and meditation", "Reordering priorities to reflect kingdom values over worldly success"
+- CRITICAL: Output these answers in ${languageConfig.name}
 
 CRITICAL: ALL VERSE REFERENCES MUST BE IN ${languageConfig.name}
 ${verseReferenceExamples}
@@ -356,15 +503,30 @@ TONE: Contemplative, gentle, inviting, spiritually nurturing.`
 
   const userMessage = `TASK: ${taskDescription}
 
-LECTIO DIVINA FORMAT - REQUIRED JSON OUTPUT (use EXACTLY these field names):
+CRITICAL: ALL 14 FIELDS BELOW ARE MANDATORY - DO NOT SKIP ANY FIELD
+
+LECTIO DIVINA FORMAT - REQUIRED JSON OUTPUT (include ALL fields, no exceptions):
 {
   "summary": "**Scripture for Meditation**\\n\\n[Reference in ${languageConfig.name}]\\n\\n[Complete scripture passage text]\\n\\n*Read this passage slowly 2-3 times, letting the words wash over you.*",
   "interpretation": "**LECTIO (Read) & MEDITATIO (Meditate)**\\n\\nLECTIO: [Guidance for slow, attentive reading]\\n\\nMEDITATIO: [Guidance for pondering and meditation]\\n\\nAs you read again slowly, notice which word or phrase catches your attention. This is the Spirit inviting you to pause and receive.",
   "context": "**About Lectio Divina**\\n\\nLectio Divina (divine reading) is an ancient Christian practice dating back to the 3rd century. It invites us to move from reading about God to encountering God through His Word. There are four movements: Lectio (read), Meditatio (meditate), Oratio (pray), and Contemplatio (rest).\\n\\nApproach this time with an open heart, free from agenda. Let God speak to you through His Word.",
   "relatedVerses": ["List 5-7 significant words or phrases from the passage for meditation - these are focus words that invite deeper reflection"],
   "reflectionQuestions": ["**ORATIO (Pray)** - A prayer starter to respond to God based on the passage...", "What is God inviting you to in this Word?", "How might this passage shape your day?", "**CONTEMPLATIO (Rest)** - Rest in God's presence. Sit in silence for 2-3 minutes, simply being with God, letting go of words and thoughts."],
-  "prayerPoints": ["[Prayer template/starter that the reader can personalize]", "[A blessing to carry with you: A brief sending word]", "[One way to carry this Word into daily life]"]
+  "prayerPoints": ["[Prayer template/starter that the reader can personalize]", "[A blessing to carry with you: A brief sending word]", "[One way to carry this Word into daily life]"],
+  "interpretationInsights": ["MANDATORY: 2-3 contemplative insights for reflection (8-12 words)"],
+  "summaryInsights": ["MANDATORY: 2-3 gentle resonance themes (8-12 words)"],
+  "reflectionAnswers": ["MANDATORY: 2-3 gentle responses to God's invitation (8-12 words each)"],
+  "contextQuestion": "Gentle yes/no question inviting personal reflection",
+  "summaryQuestion": "Gentle question about what draws attention in the passage (8-12 words)",
+  "relatedVersesQuestion": "Inviting question about meditation focus words (8-12 words)",
+  "reflectionQuestion": "Contemplative question about God's invitation (8-12 words)",
+  "prayerQuestion": "Gentle question encouraging prayer response (6-10 words)"
 }
+
+REQUIREMENT VERIFICATION:
+✓ You MUST include summaryInsights array with 2-3 items
+✓ You MUST include reflectionAnswers array with 2-3 items
+✓ Do NOT skip any of the 14 required fields above
 
 CRITICAL CONTENT REQUIREMENTS FOR LECTIO DIVINA:
 - "summary" must include the full scripture text formatted for slow reading
@@ -373,6 +535,32 @@ CRITICAL CONTENT REQUIREMENTS FOR LECTIO DIVINA:
 - "reflectionQuestions" must include ORATIO and CONTEMPLATIO movements
 - "prayerPoints" should include prayer template, blessing, and practice reminder
 - Use meditative, gentle, inviting language throughout
+
+CRITICAL: INTERPRETATION INSIGHTS & CONTEXT QUESTION (Lectio Divina)
+- MUST be output in ${languageConfig.name} language
+- "interpretationInsights" must extract 2-3 gentle, contemplative insights from the meditation
+- Each insight should be brief (8-12 words), spiritually nurturing, and invitation-focused
+- Insights should reflect the contemplative nature of Lectio Divina (listening, receiving, resting)
+- "contextQuestion" must be yes/no format, gentle and inviting personal reflection on God's presence
+- English example for context question (TRANSLATE to ${languageConfig.name}): "Have you felt God inviting you to slow down and listen?"
+- CRITICAL: Output these insights and question in ${languageConfig.name}
+
+CRITICAL: SUMMARY CARD INSIGHTS (Lectio Divina)
+Generate 2-3 gentle themes readers might resonate with from the Scripture meditation:
+- MUST be output in ${languageConfig.name} language
+- Each insight should be brief (8-12 words), spiritually nurturing, and invitation-focused
+- Focus on contemplative receptivity (listening to God, resting in His presence, receiving His love)
+- Make them gentle and encouraging, reflecting the meditative nature of Lectio Divina
+- English examples (TRANSLATE to ${languageConfig.name}): "Resting in God's loving presence", "Receiving God's word as gift today"
+- CRITICAL: Output these insights in ${languageConfig.name}
+
+CRITICAL: REFLECTION ANSWERS (Lectio Divina)
+Generate 2-3 gentle responses to God's invitation from the meditation:
+- MUST be output in ${languageConfig.name} language
+- Each answer should be contemplative, receptive, and invitation-focused (8-12 words)
+- Focus on spiritual receptivity: listening, resting, receiving, surrendering, abiding
+- English examples (TRANSLATE to ${languageConfig.name}): "Sitting in silence with God daily", "Letting go of control and trusting"
+- CRITICAL: Output these answers in ${languageConfig.name}
 
 CRITICAL: SCRIPTURE REFERENCE MUST BE IN ${languageConfig.name}
 ${verseReferenceExamples}

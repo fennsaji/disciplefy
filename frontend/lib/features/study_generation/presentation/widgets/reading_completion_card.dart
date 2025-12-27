@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../../../core/constants/app_fonts.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/extensions/translation_extension.dart';
+import '../../../../core/i18n/translation_keys.dart';
 
 /// Card shown at the end of all study sections to prompt user to reflect
 class ReadingCompletionCard extends StatelessWidget {
@@ -75,7 +77,7 @@ class ReadingCompletionCard extends StatelessWidget {
 
           // Title
           Text(
-            'Reading Complete!',
+            context.tr(TranslationKeys.readingCompleteTitle),
             style: AppFonts.poppins(
               fontSize: 24,
               fontWeight: FontWeight.w700,
@@ -88,7 +90,7 @@ class ReadingCompletionCard extends StatelessWidget {
 
           // Description
           Text(
-            'Take 5 minutes to reflect\nand deepen your understanding',
+            context.tr(TranslationKeys.readingCompleteDescription),
             style: AppFonts.inter(
               fontSize: 15,
               color: isDark
@@ -125,7 +127,7 @@ class ReadingCompletionCard extends StatelessWidget {
                         ),
                       ),
                       child: Text(
-                        'Maybe Later',
+                        context.tr(TranslationKeys.readingCompleteMaybeLater),
                         style: AppFonts.inter(
                           fontSize: 15,
                           fontWeight: FontWeight.w600,
@@ -167,7 +169,8 @@ class ReadingCompletionCard extends StatelessWidget {
                             ),
                             const SizedBox(width: 8),
                             Text(
-                              'Reflect Now',
+                              context.tr(
+                                  TranslationKeys.readingCompleteReflectNow),
                               style: AppFonts.inter(
                                 fontSize: 15,
                                 fontWeight: FontWeight.w600,

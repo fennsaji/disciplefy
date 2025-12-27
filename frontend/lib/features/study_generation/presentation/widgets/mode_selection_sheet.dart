@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/constants/app_fonts.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/extensions/translation_extension.dart';
+import '../../../../core/i18n/translation_keys.dart';
 import '../../domain/entities/study_mode.dart';
 
 /// Bottom sheet for selecting study mode before generating a study guide.
@@ -105,7 +107,7 @@ class _ModeSelectionSheetState extends State<ModeSelectionSheet> {
 
               // Title
               Text(
-                'How would you like to study?',
+                context.tr(TranslationKeys.modeSelectionTitle),
                 style: AppFonts.poppins(
                   fontSize: 22,
                   fontWeight: FontWeight.w700,
@@ -115,7 +117,7 @@ class _ModeSelectionSheetState extends State<ModeSelectionSheet> {
               ),
               const SizedBox(height: 8),
               Text(
-                'Choose a study mode based on your available time',
+                context.tr(TranslationKeys.modeSelectionSubtitle),
                 style: AppFonts.inter(
                   fontSize: 14,
                   color: isDark
@@ -133,6 +135,12 @@ class _ModeSelectionSheetState extends State<ModeSelectionSheet> {
                       mode: mode,
                       isSelected: _selectedMode == mode,
                       isDefault: mode == StudyMode.standard,
+                      translatedName:
+                          _getStudyModeTranslatedName(mode, context),
+                      translatedDescription:
+                          _getStudyModeTranslatedDescription(mode, context),
+                      defaultBadgeText:
+                          context.tr(TranslationKeys.modeSelectionDefaultBadge),
                       onTap: () {
                         setState(() {
                           _selectedMode = mode;
@@ -191,7 +199,8 @@ class _ModeSelectionSheetState extends State<ModeSelectionSheet> {
                         ),
                         const SizedBox(width: 10),
                         Text(
-                          'Remember my choice',
+                          context
+                              .tr(TranslationKeys.modeSelectionRememberChoice),
                           style: AppFonts.inter(
                             fontSize: 14,
                             fontWeight: FontWeight.w500,
@@ -240,7 +249,12 @@ class _ModeSelectionSheetState extends State<ModeSelectionSheet> {
                           ),
                           const SizedBox(width: 10),
                           Text(
-                            'Start ${_selectedMode.displayName}',
+                            context
+                                .tr(TranslationKeys.modeSelectionStartButton)
+                                .replaceAll(
+                                    '{mode}',
+                                    _getStudyModeTranslatedName(
+                                        _selectedMode, context)),
                             style: AppFonts.inter(
                               fontSize: 16,
                               fontWeight: FontWeight.w600,
@@ -278,6 +292,35 @@ class _ModeSelectionSheetState extends State<ModeSelectionSheet> {
       ),
     );
   }
+
+  /// Get translated display name for study mode
+  String _getStudyModeTranslatedName(StudyMode mode, BuildContext context) {
+    switch (mode) {
+      case StudyMode.quick:
+        return context.tr(TranslationKeys.studyModeQuickName);
+      case StudyMode.standard:
+        return context.tr(TranslationKeys.studyModeStandardName);
+      case StudyMode.deep:
+        return context.tr(TranslationKeys.studyModeDeepName);
+      case StudyMode.lectio:
+        return context.tr(TranslationKeys.studyModeLectioName);
+    }
+  }
+
+  /// Get translated description for study mode
+  String _getStudyModeTranslatedDescription(
+      StudyMode mode, BuildContext context) {
+    switch (mode) {
+      case StudyMode.quick:
+        return context.tr(TranslationKeys.studyModeQuickDescription);
+      case StudyMode.standard:
+        return context.tr(TranslationKeys.studyModeStandardDescription);
+      case StudyMode.deep:
+        return context.tr(TranslationKeys.studyModeDeepDescription);
+      case StudyMode.lectio:
+        return context.tr(TranslationKeys.studyModeLectioDescription);
+    }
+  }
 }
 
 /// Individual mode option card widget.
@@ -285,12 +328,18 @@ class _ModeOptionCard extends StatelessWidget {
   final StudyMode mode;
   final bool isSelected;
   final bool isDefault;
+  final String translatedName;
+  final String translatedDescription;
+  final String defaultBadgeText;
   final VoidCallback onTap;
 
   const _ModeOptionCard({
     required this.mode,
     required this.isSelected,
     required this.isDefault,
+    required this.translatedName,
+    required this.translatedDescription,
+    required this.defaultBadgeText,
     required this.onTap,
   });
 
@@ -365,7 +414,7 @@ class _ModeOptionCard extends StatelessWidget {
                     children: [
                       Flexible(
                         child: Text(
-                          mode.displayName,
+                          translatedName,
                           style: AppFonts.inter(
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
@@ -390,7 +439,7 @@ class _ModeOptionCard extends StatelessWidget {
                             borderRadius: BorderRadius.circular(6),
                           ),
                           child: Text(
-                            'Default',
+                            defaultBadgeText,
                             style: AppFonts.inter(
                               fontSize: 10,
                               fontWeight: FontWeight.w600,
@@ -403,7 +452,7 @@ class _ModeOptionCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    mode.description,
+                    translatedDescription,
                     style: AppFonts.inter(
                       fontSize: 13,
                       color: isDark

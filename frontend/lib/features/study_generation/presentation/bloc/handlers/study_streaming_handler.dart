@@ -160,13 +160,14 @@ class StudyStreamingHandler {
     final content = currentState.content;
 
     // Create a new streaming state with completion info
-    // Mark sectionsLoaded as 6 to trigger isComplete = true
+    // Preserve actual sections loaded count to maintain progress accuracy
     // The UI layer will convert this to the full study guide when needed
     emit(StudyGenerationStreaming(
       content: content.copyWith(
         studyGuideId: event.studyGuideId,
         isFromCache: event.fromCache,
-        sectionsLoaded: 6, // Mark as complete so onComplete callback fires
+        sectionsLoaded:
+            content.sectionsLoaded, // Use actual count from streaming
       ),
       inputType: currentState.inputType,
       inputValue: currentState.inputValue,
