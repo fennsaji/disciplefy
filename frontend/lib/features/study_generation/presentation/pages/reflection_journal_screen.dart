@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../../../core/di/injection_container.dart';
 import '../../../../core/extensions/translation_extension.dart';
 import '../../../../core/i18n/translation_keys.dart';
 import '../../../../core/theme/app_theme.dart';
@@ -53,6 +54,7 @@ class _ReflectionJournalScreenState extends State<ReflectionJournalScreen> {
     );
     _repository = ReflectionsRepositoryImpl(
       remoteDataSource: remoteDataSource,
+      networkInfo: sl(),
     );
     _loadInitialData();
   }
@@ -174,10 +176,17 @@ class _ReflectionJournalScreenState extends State<ReflectionJournalScreen> {
           }
         });
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
+      // Log error with stack trace (metadata only, no user content)
+      debugPrint('[ReflectionJournal] Failed to load study guide: $e');
+      debugPrint('[ReflectionJournal] Stack trace: $stackTrace');
+
+      // Show user-friendly error message without raw exception
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to load study guide: $e')),
+          SnackBar(
+              content: Text(context
+                  .tr(TranslationKeys.reflectionJournalLoadStudyFailed))),
         );
       }
     }
@@ -475,7 +484,11 @@ class _ReflectionJournalScreenState extends State<ReflectionJournalScreen> {
                         LifeAreaOption(id: area, label: area, icon: '•'),
                   );
                   return Chip(
-                    label: Text('${lifeArea.icon} ${lifeArea.label}'),
+                    label: Text(
+                      lifeArea.icon != null
+                          ? '${lifeArea.icon} ${lifeArea.label}'
+                          : lifeArea.label,
+                    ),
                     visualDensity: VisualDensity.compact,
                     materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                   );

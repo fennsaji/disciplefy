@@ -1429,168 +1429,402 @@ class TranslationKeys {
   static const memoryStatsExpert = 'memory_stats_page.expert';
 
   // Study Mode Selection Sheet
+  /// Title for the study mode selection bottom sheet
   static const modeSelectionTitle = 'mode_selection.title';
+
+  /// Subtitle explaining study mode options in the selection sheet
   static const modeSelectionSubtitle = 'mode_selection.subtitle';
+
+  /// Checkbox label to remember user's study mode preference
   static const modeSelectionRememberChoice = 'mode_selection.remember_choice';
+
+  /// Start button text in the mode selection sheet
   static const modeSelectionStartButton = 'mode_selection.start_button';
+
+  /// Badge label indicating the default study mode
   static const modeSelectionDefaultBadge = 'mode_selection.default_badge';
 
   // Study Mode Names & Descriptions
+  /// Name of the Quick study mode (3-minute read)
   static const studyModeQuickName = 'study_mode.quick.name';
+
+  /// Description of the Quick study mode
   static const studyModeQuickDescription = 'study_mode.quick.description';
+
+  /// Name of the Standard study mode (10-minute read)
   static const studyModeStandardName = 'study_mode.standard.name';
+
+  /// Description of the Standard study mode
   static const studyModeStandardDescription = 'study_mode.standard.description';
+
+  /// Name of the Deep study mode (25-minute read)
   static const studyModeDeepName = 'study_mode.deep.name';
+
+  /// Description of the Deep study mode
   static const studyModeDeepDescription = 'study_mode.deep.description';
+
+  /// Name of the Lectio Divina study mode (15-minute meditative)
   static const studyModeLectioName = 'study_mode.lectio.name';
+
+  /// Description of the Lectio Divina study mode
   static const studyModeLectioDescription = 'study_mode.lectio.description';
 
   // Settings - Study Mode Preference
+  /// Settings label for study mode preference option
   static const settingsStudyModePreference = 'settings.study_mode_preference';
+
+  /// Label showing current study mode preference in settings
   static const settingsStudyModePreferenceCurrent =
       'settings.study_mode_preference_current';
+
+  /// Settings option to ask for study mode every time
   static const settingsAskEveryTime = 'settings.ask_every_time';
+
+  /// Subtitle for the "ask every time" settings option
   static const settingsAskEveryTimeSubtitle =
       'settings.ask_every_time_subtitle';
 
   // Settings - Reflection Journal
+  /// Settings label for reflection journal navigation option
   static const settingsReflectionJournal = 'settings.reflection_journal';
+
+  /// Subtitle describing the reflection journal feature
   static const settingsReflectionJournalSubtitle =
       'settings.reflection_journal_subtitle';
 
   // Study Mode Preference Dialog
+  /// Title for the study mode preference selection dialog
   static const studyModePreferenceTitle = 'study_mode_preference.title';
+
+  /// Subtitle explaining study mode preference options in the dialog
   static const studyModePreferenceSubtitle = 'study_mode_preference.subtitle';
+
+  /// Dialog option to ask for study mode every time
   static const studyModePreferenceAskEveryTime =
       'study_mode_preference.ask_every_time';
+
+  /// Subtitle for the "ask every time" dialog option
   static const studyModePreferenceAskEveryTimeSubtitle =
       'study_mode_preference.ask_every_time_subtitle';
 
   // Reflection Journal Screen
+  /// Title for the Reflection Journal screen
   static const reflectionJournalTitle = 'reflection_journal.title';
+
+  /// Filter button label to filter reflections by study mode
   static const reflectionJournalFilterByMode =
       'reflection_journal.filter_by_mode';
+
+  /// Filter option to show all study modes
   static const reflectionJournalAllModes = 'reflection_journal.all_modes';
+
+  /// Retry button text when loading reflections fails
   static const reflectionJournalRetry = 'reflection_journal.retry';
+
+  /// Title shown when no reflections exist
   static const reflectionJournalNoReflections =
       'reflection_journal.no_reflections';
+
+  /// Message explaining how to create first reflection
   static const reflectionJournalEmptyMessage =
       'reflection_journal.empty_message';
+
+  /// Button text to start a new study from empty state
   static const reflectionJournalStartStudy = 'reflection_journal.start_study';
+
+  /// Section header for user's reflection statistics
   static const reflectionJournalYourJourney = 'reflection_journal.your_journey';
+
+  /// Label for total reflection count statistic
   static const reflectionJournalReflections = 'reflection_journal.reflections';
+
+  /// Label for total time spent in reflection
   static const reflectionJournalTimeSpent = 'reflection_journal.time_spent';
+
+  /// Label for average session duration statistic
   static const reflectionJournalAvgSession = 'reflection_journal.avg_session';
+
+  /// Label for top focus areas section
   static const reflectionJournalTopFocusAreas =
       'reflection_journal.top_focus_areas';
+
+  /// Title for reflection deletion confirmation dialog
   static const reflectionJournalDeleteTitle = 'reflection_journal.delete_title';
+
+  /// Message in reflection deletion confirmation dialog
   static const reflectionJournalDeleteMessage =
       'reflection_journal.delete_message';
+
+  /// Cancel button text in deletion dialog
   static const reflectionJournalCancel = 'reflection_journal.cancel';
+
+  /// Delete button text in deletion dialog
   static const reflectionJournalDelete = 'reflection_journal.delete';
+
+  /// Success message shown after reflection deletion
   static const reflectionJournalDeleted = 'reflection_journal.deleted';
+
+  /// Error message shown when deletion fails
   static const reflectionJournalDeleteFailed =
       'reflection_journal.delete_failed';
+
+  /// Error message shown when loading study guide fails
+  static const reflectionJournalLoadStudyFailed =
+      'reflection_journal.load_study_failed';
+
+  /// Button text to view the associated study guide
   static const reflectionJournalViewStudy = 'reflection_journal.view_study';
+
+  /// Label indicating number of verses saved in a reflection
   static const reflectionJournalVersesSaved = 'reflection_journal.verses_saved';
+
+  /// "Yes" option for reflection responses
   static const reflectionJournalYes = 'reflection_journal.yes';
+
+  /// "No" option for reflection responses
   static const reflectionJournalNo = 'reflection_journal.no';
 
   // Study Guide Screen - Additional Keys
+  /// Section title for key insight in Quick mode
   static const studyGuideKeyInsight = 'study_guide.key_insight';
+
+  /// Section title for key verse in Quick mode
   static const studyGuideKeyVerse = 'study_guide.key_verse';
+
+  /// Section title for quick reflection in Quick mode
   static const studyGuideQuickReflection = 'study_guide.quick_reflection';
+
+  /// Section title for brief prayer in Quick mode
   static const studyGuideBriefPrayer = 'study_guide.brief_prayer';
+
+  /// Button text to ask AI follow-up questions
   static const studyGuideAskAi = 'study_guide.ask_ai';
 
   // Deep Dive Mode Sections
+  /// Section title for comprehensive overview in Deep mode
   static const studyGuideComprehensiveOverview =
       'study_guide.comprehensive_overview';
+
+  /// Section title for in-depth interpretation in Deep mode
   static const studyGuideInDepthInterpretation =
       'study_guide.in_depth_interpretation';
+
+  /// Section title for historical context in Deep mode
   static const studyGuideHistoricalContext = 'study_guide.historical_context';
+
+  /// Section title for scripture connections in Deep mode
   static const studyGuideScriptureConnections =
       'study_guide.scripture_connections';
+
+  /// Section title for deep reflection in Deep mode
   static const studyGuideDeepReflection = 'study_guide.deep_reflection';
+
+  /// Section title for prayer for application in Deep mode
   static const studyGuidePrayerForApplication =
       'study_guide.prayer_for_application';
 
   // Study Mode Duration Labels
+  /// Duration label for Quick mode (e.g., "3 min")
   static const studyModeQuickDuration = 'study_mode.quick.duration_label';
+
+  /// Duration label for Standard mode (e.g., "10 min")
   static const studyModeStandardDuration = 'study_mode.standard.duration_label';
+
+  /// Duration label for Deep mode (e.g., "25 min")
   static const studyModeDeepDuration = 'study_mode.deep.duration_label';
+
+  /// Duration label for Lectio mode (e.g., "15 min")
   static const studyModeLectioDuration = 'study_mode.lectio.duration_label';
 
   // Lectio Divina Mode Sections
+  /// Section title for scripture passage in Lectio mode
   static const lectioScriptureForMeditation = 'lectio.scripture_for_meditation';
+
+  /// Section title for Lectio Meditatio (read and meditate)
   static const lectioLectioMeditatio = 'lectio.lectio_meditatio';
+
+  /// Subtitle for read and meditate section
   static const lectioReadMeditate = 'lectio.read_meditate';
+
+  /// Section title for about the practice
   static const lectioAboutPractice = 'lectio.about_practice';
+
+  /// Emoji for about the practice section
   static const lectioAboutPracticeEmoji = 'lectio.about_practice_emoji';
+
+  /// Section title for focus words
   static const lectioFocusWords = 'lectio.focus_words';
+
+  /// Emoji for focus words section
   static const lectioFocusWordsEmoji = 'lectio.focus_words_emoji';
+
+  /// Section title for Oratio Contemplatio (pray and rest)
   static const lectioOratioContemplatio = 'lectio.oratio_contemplatio';
+
+  /// Subtitle for pray and rest section
   static const lectioPrayRest = 'lectio.pray_rest';
+
+  /// Section title for closing blessing
   static const lectioClosingBlessing = 'lectio.closing_blessing';
+
+  /// Emoji for closing blessing section
   static const lectioClosingBlessingEmoji = 'lectio.closing_blessing_emoji';
+
+  /// Duration label for Lectio mode (deprecated, use studyModeLectioDuration)
   static const lectioDurationLabel = 'lectio.duration_label';
 
   // Reading Completion Card
+  /// Title for reading completion prompt card
   static const readingCompleteTitle = 'reading_complete.title';
+
+  /// Description encouraging reflection after reading
   static const readingCompleteDescription = 'reading_complete.description';
+
+  /// Button to dismiss and continue later
   static const readingCompleteMaybeLater = 'reading_complete.maybe_later';
+
+  /// Button to start Reflect Mode immediately
   static const readingCompleteReflectNow = 'reading_complete.reflect_now';
 
   // Reflect Mode Card
+  /// Card progress indicator (e.g., "3 of 6")
   static const reflectModeCardOf = 'reflect_mode.card_of';
+
+  /// "Yes" option for yes/no questions in Reflect Mode
   static const reflectModeYes = 'reflect_mode.yes';
+
+  /// "No" option for yes/no questions in Reflect Mode
   static const reflectModeNo = 'reflect_mode.no';
+
+  /// Prompt to share brief thoughts for text input
   static const reflectModeShareBriefly = 'reflect_mode.share_briefly';
+
+  /// Left label for slider ("Not at all")
   static const reflectModeSliderNotAtAll = 'reflect_mode.slider_not_at_all';
+
+  /// Right label for slider ("Very much")
   static const reflectModeSliderVeryMuch = 'reflect_mode.slider_very_much';
+
+  /// Encouragement text below reflection input
   static const reflectModeTakeYourTime = 'reflect_mode.take_your_time';
+
+  /// Continue button text to move to next card
   static const reflectModeContinue = 'reflect_mode.continue';
+
+  /// Complete button text on final card
   static const reflectModeComplete = 'reflect_mode.complete';
 
   // Reflect Mode View - Section Titles
+  /// Summary section title in Reflect Mode view
   static const reflectModeSectionSummary = 'reflect_mode.section_summary';
+
+  /// Interpretation section title in Reflect Mode view
   static const reflectModeSectionInterpretation =
       'reflect_mode.section_interpretation';
+
+  /// Context section title in Reflect Mode view
   static const reflectModeSectionContext = 'reflect_mode.section_context';
+
+  /// Related verses section title in Reflect Mode view
   static const reflectModeSectionRelatedVerses =
       'reflect_mode.section_related_verses';
+
+  /// Reflection section title in Reflect Mode view
   static const reflectModeSectionReflection = 'reflect_mode.section_reflection';
+
+  /// Prayer section title in Reflect Mode view
   static const reflectModeSectionPrayer = 'reflect_mode.section_prayer';
 
   // Reflect Mode View - UI Elements
+  /// Button text to read section content before reflecting
   static const reflectModeRead = 'reflect_mode.read';
+
+  /// Button text to go to previous reflection card
   static const reflectModePrevious = 'reflect_mode.previous';
 
   // Reflect Mode Questions
+  /// Fallback question for interpretation section
   static const reflectModeQuestionInterpretation =
       'reflect_mode.question_interpretation';
+
+  /// Fallback option: God's character revealed
+  static const reflectModeFallbackGodsCharacter =
+      'reflect_mode.fallback_gods_character';
+
+  /// Fallback option: My response to God
+  static const reflectModeFallbackMyResponse =
+      'reflect_mode.fallback_my_response';
+
+  /// Fallback option: Life application
+  static const reflectModeFallbackLifeApplication =
+      'reflect_mode.fallback_life_application';
+
+  /// Summary card option: Finding strength
+  static const reflectModeSummaryFindingStrength =
+      'reflect_mode.summary_finding_strength';
+
+  /// Summary card option: Experiencing comfort
+  static const reflectModeSummaryExperiencingComfort =
+      'reflect_mode.summary_experiencing_comfort';
+
+  /// Summary card option: Accepting a challenge
+  static const reflectModeSummaryAcceptingChallenge =
+      'reflect_mode.summary_accepting_challenge';
+
+  /// Fallback question for context section
   static const reflectModeQuestionContextFallback =
       'reflect_mode.question_context_fallback';
+
+  /// Fallback question for summary section
   static const reflectModeQuestionSummaryFallback =
       'reflect_mode.question_summary_fallback';
+
+  /// Fallback question for related verses section
   static const reflectModeQuestionRelatedVersesFallback =
       'reflect_mode.question_related_verses_fallback';
+
+  /// Fallback question for reflection section
   static const reflectModeQuestionReflectionFallback =
       'reflect_mode.question_reflection_fallback';
+
+  /// Fallback prompt for prayer section
   static const reflectModePrayerFallback = 'reflect_mode.prayer_fallback';
 
   // Prayer Modes
+  /// Prayer mode option to listen to audio
   static const prayerModeListen = 'prayer_mode.listen';
+
+  /// Prayer mode option to read silently
   static const prayerModeReadSilently = 'prayer_mode.read_silently';
+
+  /// Prayer mode option to write your own prayer
   static const prayerModeWriteOwn = 'prayer_mode.write_own';
+
+  /// Message shown when audio prayer is not yet available
   static const prayerModeAudioComingSoon = 'prayer_mode.audio_coming_soon';
+
+  /// Prompt to write a personal prayer
   static const prayerModeWritePersonalPrayer =
       'prayer_mode.write_personal_prayer';
+
+  /// Placeholder text for prayer text input
   static const prayerModeTypePlaceholder = 'prayer_mode.type_placeholder';
+
+  /// Title for listen to prayer mode
   static const prayerModeListenToPrayer = 'prayer_mode.listen_to_prayer';
+
+  /// Status text when prayer is playing
   static const prayerModePlayingPrayer = 'prayer_mode.playing_prayer';
+
+  /// Play button text for audio prayer
   static const prayerModePlay = 'prayer_mode.play';
+
+  /// Pause button text for audio prayer
   static const prayerModePause = 'prayer_mode.pause';
+
+  /// Stop button text for audio prayer
   static const prayerModeStop = 'prayer_mode.stop';
+
+  /// Loading text for prayer audio
   static const prayerModeLoading = 'prayer_mode.loading';
 }
