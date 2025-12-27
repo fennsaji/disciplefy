@@ -237,8 +237,8 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
         language: event.language,
       );
 
-      result.fold(
-        (failure) {
+      await result.fold(
+        (failure) async {
           if (kDebugMode) {
             print('❌ [BLOC] Add verse from daily failed: ${failure.message}');
           }
@@ -268,10 +268,13 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
             print('🗑️ [BLOC] Cleared suggested verses cache');
           }
 
-          emit(VerseAdded(
-            verse: verse,
-            message: '${verse.verseReference} added to memory deck!',
-          ));
+          // Check if emit is still valid before emitting
+          if (!emit.isDone) {
+            emit(VerseAdded(
+              verse: verse,
+              message: '${verse.verseReference} added to memory deck!',
+            ));
+          }
         },
       );
     } catch (e) {
@@ -1602,8 +1605,8 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
         language: event.language,
       );
 
-      result.fold(
-        (failure) {
+      await result.fold(
+        (failure) async {
           if (kDebugMode) {
             print('❌ [BLOC] Add suggested verse failed: ${failure.message}');
           }
@@ -1633,10 +1636,13 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
             print('🗑️ [BLOC] Cleared suggested verses cache');
           }
 
-          emit(VerseAdded(
-            verse: verse,
-            message: '${verse.verseReference} added to memory deck!',
-          ));
+          // Check if emit is still valid before emitting
+          if (!emit.isDone) {
+            emit(VerseAdded(
+              verse: verse,
+              message: '${verse.verseReference} added to memory deck!',
+            ));
+          }
         },
       );
     } catch (e) {
