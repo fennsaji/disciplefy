@@ -20,8 +20,34 @@ class MemoryVerseLocalDataSource {
   /// Hive box for storing cached memory verses
   Box<String>? _cacheBox;
 
+  /// Flag to prevent concurrent initialization attempts
+  bool _isInitializing = false;
+
   /// Initialize the Hive box for caching
   Future<void> initialize() async {
+    // If already initialized, skip
+    if (_cacheBox != null && _cacheBox!.isOpen) {
+      if (kDebugMode) {
+        print('ℹ️ [MEMORY VERSES CACHE] Hive box already initialized');
+      }
+      return;
+    }
+
+    // Prevent concurrent initialization
+    if (_isInitializing) {
+      if (kDebugMode) {
+        print(
+            '⏳ [MEMORY VERSES CACHE] Initialization already in progress, waiting...');
+      }
+      // Wait for initialization to complete
+      while (_isInitializing) {
+        await Future.delayed(const Duration(milliseconds: 100));
+      }
+      return;
+    }
+
+    _isInitializing = true;
+
     try {
       _cacheBox = await Hive.openBox<String>(_boxName);
       if (kDebugMode) {
@@ -30,9 +56,44 @@ class MemoryVerseLocalDataSource {
     } catch (e) {
       if (kDebugMode) {
         print('❌ [MEMORY VERSES CACHE] Failed to initialize Hive box: $e');
+        print(
+            '🔄 [MEMORY VERSES CACHE] Attempting to delete corrupted box and retry...');
       }
-      rethrow;
+
+      // Try to delete corrupted box and retry
+      try {
+        await Hive.deleteBoxFromDisk(_boxName);
+        _cacheBox = await Hive.openBox<String>(_boxName);
+        if (kDebugMode) {
+          print('✅ [MEMORY VERSES CACHE] Hive box recovered after deletion');
+        }
+      } catch (recoveryError) {
+        if (kDebugMode) {
+          print('❌ [MEMORY VERSES CACHE] Recovery failed: $recoveryError');
+        }
+        rethrow;
+      }
+    } finally {
+      _isInitializing = false;
     }
+  }
+
+  /// Ensures the Hive box is initialized before use (lazy initialization)
+  Future<Box<String>> _ensureInitialized() async {
+    if (_cacheBox == null || !_cacheBox!.isOpen) {
+      if (kDebugMode) {
+        print(
+            '⚠️ [MEMORY VERSES CACHE] Box not initialized, initializing now...');
+      }
+      await initialize();
+    }
+
+    if (_cacheBox == null) {
+      throw Exception(
+          'Hive box failed to initialize after multiple attempts. Please restart the app.');
+    }
+
+    return _cacheBox!;
   }
 
   /// Gets all cached memory verses
@@ -40,10 +101,7 @@ class MemoryVerseLocalDataSource {
   /// Returns empty list if no cache exists
   Future<List<MemoryVerseModel>> getAllCachedVerses() async {
     try {
-      final box = _cacheBox;
-      if (box == null) {
-        throw Exception('Hive box not initialized. Call initialize() first.');
-      }
+      final box = await _ensureInitialized();
 
       final versesJson = box.get(_versesKey);
       if (versesJson == null) {
@@ -104,10 +162,7 @@ class MemoryVerseLocalDataSource {
   /// Caches a list of memory verses (replaces entire cache)
   Future<void> cacheVerses(List<MemoryVerseModel> verses) async {
     try {
-      final box = _cacheBox;
-      if (box == null) {
-        throw Exception('Hive box not initialized. Call initialize() first.');
-      }
+      final box = await _ensureInitialized();
 
       final versesJson = jsonEncode(
         verses.map((verse) => verse.toJson()).toList(),
@@ -173,10 +228,7 @@ class MemoryVerseLocalDataSource {
   /// Operations are stored as JSON and processed when online
   Future<void> addToSyncQueue(Map<String, dynamic> operation) async {
     try {
-      final box = _cacheBox;
-      if (box == null) {
-        throw Exception('Hive box not initialized. Call initialize() first.');
-      }
+      final box = await _ensureInitialized();
 
       final queueJson = box.get(_syncQueueKey) ?? '[]';
       final List<dynamic> queue = jsonDecode(queueJson);
@@ -203,10 +255,7 @@ class MemoryVerseLocalDataSource {
   /// Gets all pending operations from the sync queue
   Future<List<Map<String, dynamic>>> getSyncQueue() async {
     try {
-      final box = _cacheBox;
-      if (box == null) {
-        throw Exception('Hive box not initialized. Call initialize() first.');
-      }
+      final box = await _ensureInitialized();
 
       final queueJson = box.get(_syncQueueKey) ?? '[]';
       final List<dynamic> queue = jsonDecode(queueJson);
@@ -223,10 +272,7 @@ class MemoryVerseLocalDataSource {
   /// Clears the sync queue after successful sync
   Future<void> clearSyncQueue() async {
     try {
-      final box = _cacheBox;
-      if (box == null) {
-        throw Exception('Hive box not initialized. Call initialize() first.');
-      }
+      final box = await _ensureInitialized();
 
       await box.put(_syncQueueKey, '[]');
 
@@ -244,10 +290,7 @@ class MemoryVerseLocalDataSource {
   /// Updates the last sync timestamp
   Future<void> updateLastSyncTime() async {
     try {
-      final box = _cacheBox;
-      if (box == null) {
-        throw Exception('Hive box not initialized. Call initialize() first.');
-      }
+      final box = await _ensureInitialized();
 
       await box.put(_lastSyncKey, DateTime.now().toIso8601String());
 
@@ -264,10 +307,7 @@ class MemoryVerseLocalDataSource {
   /// Gets the last sync timestamp
   Future<DateTime?> getLastSyncTime() async {
     try {
-      final box = _cacheBox;
-      if (box == null) {
-        throw Exception('Hive box not initialized. Call initialize() first.');
-      }
+      final box = await _ensureInitialized();
 
       final timestampStr = box.get(_lastSyncKey);
       if (timestampStr == null) return null;
@@ -284,10 +324,7 @@ class MemoryVerseLocalDataSource {
   /// Clears all cached data (for logout or reset)
   Future<void> clearCache() async {
     try {
-      final box = _cacheBox;
-      if (box == null) {
-        throw Exception('Hive box not initialized. Call initialize() first.');
-      }
+      final box = await _ensureInitialized();
 
       await box.clear();
 
