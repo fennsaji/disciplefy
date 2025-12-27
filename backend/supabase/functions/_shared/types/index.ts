@@ -35,7 +35,8 @@ export interface AuthContext {
 // =============================================================================
 
 /**
- * Study guide content for caching
+ * Study guide content for caching.
+ * All 14 fields are required to ensure complete study guide generation.
  */
 export interface StudyGuideContent {
   readonly summary: string
@@ -44,14 +45,14 @@ export interface StudyGuideContent {
   readonly relatedVerses: readonly string[]
   readonly reflectionQuestions: readonly string[]
   readonly prayerPoints: readonly string[]
-  readonly interpretationInsights?: readonly string[]  // Optional: for Reflect Mode multi-select
-  readonly summaryInsights?: readonly string[]  // Optional: for Summary card resonance themes (Reflect Mode)
-  readonly reflectionAnswers?: readonly string[]  // Optional: for Reflection card actionable life application responses (Reflect Mode)
-  readonly contextQuestion?: string  // Optional: for Reflect Mode yes/no question
-  readonly summaryQuestion?: string  // Optional: Engaging question about the summary (8-12 words)
-  readonly relatedVersesQuestion?: string  // Optional: Question prompting verse selection/memorization (8-12 words)
-  readonly reflectionQuestion?: string  // Optional: Question connecting study to daily life (8-12 words)
-  readonly prayerQuestion?: string  // Optional: Question inviting personal prayer response (6-10 words)
+  readonly interpretationInsights: readonly string[]  // 2-5 theological insights for Reflect Mode multi-select
+  readonly summaryInsights: readonly string[]  // 2-5 resonance themes for Summary card (Reflect Mode)
+  readonly reflectionAnswers: readonly string[]  // 2-5 actionable life application responses for Reflection card (Reflect Mode)
+  readonly contextQuestion: string  // Yes/no question from historical context for Reflect Mode
+  readonly summaryQuestion: string  // Engaging question about the summary (8-12 words)
+  readonly relatedVersesQuestion: string  // Question prompting verse selection/memorization (8-12 words)
+  readonly reflectionQuestion: string  // Question connecting study to daily life (8-12 words)
+  readonly prayerQuestion: string  // Question inviting personal prayer response (6-10 words)
 }
 
 /**

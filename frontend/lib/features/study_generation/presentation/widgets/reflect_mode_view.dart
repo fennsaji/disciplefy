@@ -85,11 +85,7 @@ class _ReflectModeViewState extends State<ReflectModeView> {
         interactionType: ReflectionInteractionType.tapSelection,
         question: widget.studyGuide.summaryQuestion ??
             context.tr(TranslationKeys.reflectModeQuestionSummaryFallback),
-        options: const [
-          InteractionOption(label: 'Finding strength'),
-          InteractionOption(label: 'Experiencing comfort'),
-          InteractionOption(label: 'Accepting a challenge'),
-        ],
+        options: [], // Will be populated dynamically from summaryInsights or fallback
       ),
 
       // Interpretation - Multi-select with dynamic insights (or fallback)
@@ -205,8 +201,18 @@ class _ReflectModeViewState extends State<ReflectModeView> {
             .map((insight) => InteractionOption(label: insight))
             .toList();
       } else {
-        // Fallback for legacy guides (already set in config, but ensure no emojis)
-        // The fallback is already defined in the config above
+        // Fallback for legacy study guides without summaryInsights
+        options = [
+          InteractionOption(
+              label: context
+                  .tr(TranslationKeys.reflectModeSummaryFindingStrength)),
+          InteractionOption(
+              label: context
+                  .tr(TranslationKeys.reflectModeSummaryExperiencingComfort)),
+          InteractionOption(
+              label: context
+                  .tr(TranslationKeys.reflectModeSummaryAcceptingChallenge)),
+        ];
       }
     }
 
@@ -220,10 +226,15 @@ class _ReflectModeViewState extends State<ReflectModeView> {
             .toList();
       } else {
         // Fallback for legacy study guides without insights
-        options = const [
-          InteractionOption(label: 'God\'s character revealed'),
-          InteractionOption(label: 'My response to God'),
-          InteractionOption(label: 'Life application'),
+        options = [
+          InteractionOption(
+              label:
+                  context.tr(TranslationKeys.reflectModeFallbackGodsCharacter)),
+          InteractionOption(
+              label: context.tr(TranslationKeys.reflectModeFallbackMyResponse)),
+          InteractionOption(
+              label: context
+                  .tr(TranslationKeys.reflectModeFallbackLifeApplication)),
         ];
       }
     }

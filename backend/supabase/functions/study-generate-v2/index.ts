@@ -519,10 +519,25 @@ async function handleStudyGenerateV2(
           }
         }
 
-        // Save to database
+        // Save to database (convert CompleteStudyGuide to StudyGuideContent with fallbacks)
         const savedGuide = await studyGuideRepository.saveStudyGuide(
           studyGuideInput,
-          studyGuideData,
+          {
+            summary: studyGuideData.summary,
+            interpretation: studyGuideData.interpretation,
+            context: studyGuideData.context,
+            relatedVerses: studyGuideData.relatedVerses,
+            reflectionQuestions: studyGuideData.reflectionQuestions,
+            prayerPoints: studyGuideData.prayerPoints,
+            interpretationInsights: studyGuideData.interpretationInsights || [],
+            summaryInsights: studyGuideData.summaryInsights || [],
+            reflectionAnswers: studyGuideData.reflectionAnswers || [],
+            contextQuestion: studyGuideData.contextQuestion || '',
+            summaryQuestion: studyGuideData.summaryQuestion || '',
+            relatedVersesQuestion: studyGuideData.relatedVersesQuestion || '',
+            reflectionQuestion: studyGuideData.reflectionQuestion || '',
+            prayerQuestion: studyGuideData.prayerQuestion || ''
+          },
           userContext
         )
 

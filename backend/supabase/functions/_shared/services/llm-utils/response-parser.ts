@@ -97,6 +97,7 @@ export function repairTruncatedJSON(json: string): string {
 
 /**
  * Validates LLM response structure for study guides.
+ * Ensures all 14 required fields are present and valid.
  * 
  * @param response - Parsed LLM response
  * @returns True if valid, false otherwise
@@ -107,8 +108,25 @@ export function validateStudyGuideResponse(response: unknown): response is LLMRe
     return false
   }
 
-  const requiredFields = ['summary', 'interpretation', 'context', 'relatedVerses', 'reflectionQuestions', 'prayerPoints']
   const resp = response as Record<string, unknown>
+  
+  // Validate all 14 required fields are present
+  const requiredFields = [
+    'summary',
+    'interpretation',
+    'context',
+    'relatedVerses',
+    'reflectionQuestions',
+    'prayerPoints',
+    'summaryInsights',
+    'interpretationInsights',
+    'reflectionAnswers',
+    'contextQuestion',
+    'summaryQuestion',
+    'relatedVersesQuestion',
+    'reflectionQuestion',
+    'prayerQuestion'
+  ]
   
   for (const field of requiredFields) {
     if (!(field in resp)) {
@@ -117,9 +135,9 @@ export function validateStudyGuideResponse(response: unknown): response is LLMRe
     }
   }
 
-  // Validate array fields
-  const arrayFields = ['relatedVerses', 'reflectionQuestions', 'prayerPoints']
-  for (const field of arrayFields) {
+  // Validate base array fields
+  const baseArrayFields = ['relatedVerses', 'reflectionQuestions', 'prayerPoints']
+  for (const field of baseArrayFields) {
     if (!Array.isArray(resp[field])) {
       console.error(`[ResponseParser] Field ${field} is not an array`)
       return false
@@ -130,78 +148,50 @@ export function validateStudyGuideResponse(response: unknown): response is LLMRe
     }
   }
 
-  // Validate string fields
-  const stringFields = ['summary', 'context', 'interpretation']
-  for (const field of stringFields) {
+  // Validate insights array fields (should have 2-5 items)
+  const insightArrayFields = ['summaryInsights', 'interpretationInsights', 'reflectionAnswers']
+  for (const field of insightArrayFields) {
+    if (!Array.isArray(resp[field])) {
+      console.error(`[ResponseParser] Field ${field} is not an array`)
+      return false
+    }
+    const arr = resp[field] as unknown[]
+    if (!arr.every((item) => typeof item === 'string')) {
+      console.error(`[ResponseParser] Field ${field} contains non-string elements`)
+      return false
+    }
+    if (arr.length < 2 || arr.length > 5) {
+      console.error(`[ResponseParser] Field ${field} should have 2-5 items, got ${arr.length}`)
+      return false
+    }
+  }
+
+  // Validate base string fields
+  const baseStringFields = ['summary', 'context', 'interpretation']
+  for (const field of baseStringFields) {
     if (typeof resp[field] !== 'string' || (resp[field] as string).trim().length === 0) {
       console.error(`[ResponseParser] Field ${field} is not a valid string`)
       return false
     }
   }
 
-  // Validate optional interpretationInsights
-  if ('interpretationInsights' in resp) {
-    if (!Array.isArray(resp.interpretationInsights)) {
-      console.warn('[ResponseParser] interpretationInsights is not an array, will be ignored')
-    } else if ((resp.interpretationInsights as unknown[]).length < 2) {
-      console.warn('[ResponseParser] interpretationInsights has fewer than 2 items, may not be ideal for multi-select')
-    }
-  }
-
-  // Validate optional summaryInsights
-  if ('summaryInsights' in resp) {
-    if (!Array.isArray(resp.summaryInsights)) {
-      console.warn('[ResponseParser] summaryInsights is not an array, will be ignored')
-    } else {
-      const insights = resp.summaryInsights as unknown[]
-      if (!insights.every((i) => typeof i === 'string')) {
-        console.warn('[ResponseParser] summaryInsights contains non-string elements')
-      }
-      if (insights.length < 2) {
-        console.warn('[ResponseParser] summaryInsights has fewer than 2 items, may not be ideal for selection')
-      }
-    }
-  }
-
-  // Validate optional reflectionAnswers
-  if ('reflectionAnswers' in resp) {
-    if (!Array.isArray(resp.reflectionAnswers)) {
-      console.warn('[ResponseParser] reflectionAnswers is not an array, will be ignored')
-    } else {
-      const answers = resp.reflectionAnswers as unknown[]
-      if (!answers.every((a) => typeof a === 'string')) {
-        console.warn('[ResponseParser] reflectionAnswers contains non-string elements')
-      }
-      if (answers.length < 2) {
-        console.warn('[ResponseParser] reflectionAnswers has fewer than 2 items, may not be ideal for selection')
-      }
-    }
-  }
-
-  // Validate optional contextQuestion
-  if ('contextQuestion' in resp) {
-    if (typeof resp.contextQuestion !== 'string') {
-      console.warn('[ResponseParser] contextQuestion is not a string, will be ignored')
-    } else if ((resp.contextQuestion as string).trim().length === 0) {
-      console.warn('[ResponseParser] contextQuestion is empty, will be ignored')
-    }
-  }
-
-  // Validate optional reflection questions
+  // Validate question string fields
   const questionFields = [
+    'contextQuestion',
     'summaryQuestion',
     'relatedVersesQuestion',
     'reflectionQuestion',
     'prayerQuestion'
-  ] as const
+  ]
 
   for (const field of questionFields) {
-    if (field in resp) {
-      if (typeof resp[field] !== 'string') {
-        console.warn(`[ResponseParser] ${field} is not a string, will be ignored`)
-      } else if ((resp[field] as string).trim().length === 0) {
-        console.warn(`[ResponseParser] ${field} is empty, will be ignored`)
-      }
+    if (typeof resp[field] !== 'string') {
+      console.error(`[ResponseParser] ${field} is not a string`)
+      return false
+    }
+    if ((resp[field] as string).trim().length === 0) {
+      console.error(`[ResponseParser] ${field} is empty`)
+      return false
     }
   }
 
@@ -252,6 +242,7 @@ export function sanitizeMarkdownText(text: string): string {
 
 /**
  * Sanitizes study guide response for security and consistency.
+ * All 14 fields are required and will be sanitized.
  * 
  * @param response - Raw LLM response
  * @returns Sanitized response
@@ -259,37 +250,26 @@ export function sanitizeMarkdownText(text: string): string {
 export function sanitizeStudyGuideResponse(response: Record<string, unknown>): LLMResponse {
   return {
     summary: sanitizeText(response.summary as string),
-    interpretation: sanitizeText((response.interpretation as string) || ''),
+    interpretation: sanitizeText(response.interpretation as string),
     context: sanitizeText(response.context as string),
     relatedVerses: (response.relatedVerses as string[]).map(verse => sanitizeText(verse)),
     reflectionQuestions: (response.reflectionQuestions as string[]).map(q => sanitizeText(q)),
     prayerPoints: (response.prayerPoints as string[]).map(point => sanitizeText(point)),
-    interpretationInsights: response.interpretationInsights
-      ? (response.interpretationInsights as string[])
-          .map(sanitizeText)
-          .filter(insight => insight.length > 0 && insight.length <= 150)
-      : undefined,
-    summaryInsights: Array.isArray(response.summaryInsights)
-      ? (response.summaryInsights as string[]).map(sanitizeText).slice(0, 5)
-      : undefined,
-    reflectionAnswers: Array.isArray(response.reflectionAnswers)
-      ? (response.reflectionAnswers as string[]).map(sanitizeText).slice(0, 5)
-      : undefined,
-    contextQuestion: response.contextQuestion
-      ? sanitizeText(response.contextQuestion as string)
-      : undefined,
-    summaryQuestion: response.summaryQuestion
-      ? sanitizeText(response.summaryQuestion as string)
-      : undefined,
-    relatedVersesQuestion: response.relatedVersesQuestion
-      ? sanitizeText(response.relatedVersesQuestion as string)
-      : undefined,
-    reflectionQuestion: response.reflectionQuestion
-      ? sanitizeText(response.reflectionQuestion as string)
-      : undefined,
-    prayerQuestion: response.prayerQuestion
-      ? sanitizeText(response.prayerQuestion as string)
-      : undefined
+    interpretationInsights: (response.interpretationInsights as string[])
+      .map(sanitizeText)
+      .filter(insight => insight.length > 0 && insight.length <= 150)
+      .slice(0, 5),
+    summaryInsights: (response.summaryInsights as string[])
+      .map(sanitizeText)
+      .slice(0, 5),
+    reflectionAnswers: (response.reflectionAnswers as string[])
+      .map(sanitizeText)
+      .slice(0, 5),
+    contextQuestion: sanitizeText(response.contextQuestion as string),
+    summaryQuestion: sanitizeText(response.summaryQuestion as string),
+    relatedVersesQuestion: sanitizeText(response.relatedVersesQuestion as string),
+    reflectionQuestion: sanitizeText(response.reflectionQuestion as string),
+    prayerQuestion: sanitizeText(response.prayerQuestion as string)
   }
 }
 

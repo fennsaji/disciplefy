@@ -187,7 +187,8 @@ class _ReflectModeCardState extends State<ReflectModeCard>
 
     debugPrint('🔊 [TTS] Speaking prayer with language: $languageCode');
     debugPrint('🔊 [TTS] Content language: ${widget.contentLanguage}');
-    debugPrint('🔊 [TTS] Content: "${widget.sectionContent}"');
+    debugPrint(
+        '🔊 [TTS] Content length: ${widget.sectionContent.length} characters');
 
     try {
       // TTSService handles all sanitization internally
