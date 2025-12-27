@@ -239,6 +239,10 @@ class _StudyGuideScreenV2ContentState
   // PDF export state
   bool _isExportingPdf = false;
 
+  // Scroll position preservation during streaming-to-complete transition
+  double? _savedScrollPosition;
+  bool _isTransitioningFromStreaming = false;
+
   @override
   void initState() {
     super.initState();
@@ -982,8 +986,27 @@ class _StudyGuideScreenV2ContentState
           // If streaming is complete and we have the full study guide,
           // show the complete content view (with Follow-up Chat and Notes)
           if (state.content.isComplete && _currentStudyGuide != null) {
+            // Save scroll position during transition from streaming to complete
+            if (!_isTransitioningFromStreaming &&
+                _scrollController.hasClients) {
+              _savedScrollPosition = _scrollController.offset;
+              _isTransitioningFromStreaming = true;
+
+              // Restore scroll position after build completes
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (_savedScrollPosition != null &&
+                    _scrollController.hasClients) {
+                  _scrollController.jumpTo(_savedScrollPosition!);
+                  _savedScrollPosition = null;
+                  _isTransitioningFromStreaming = false;
+                }
+              });
+            }
             return _buildStudyGuideContent();
           }
+
+          // Reset transition flag if we're back to streaming
+          _isTransitioningFromStreaming = false;
 
           // Otherwise show progressive streaming content
           return StreamingStudyContent(
