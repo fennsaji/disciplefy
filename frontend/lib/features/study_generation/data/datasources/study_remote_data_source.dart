@@ -314,6 +314,26 @@ class StudyRemoteDataSourceImpl implements StudyRemoteDataSource {
           DateTime.now().toIso8601String()),
       personalNotes: personalNotes, // Enhanced field
       isSaved: isSaved, // Enhanced field
+      interpretationInsights:
+          (content['interpretationInsights'] as List<dynamic>?)
+              ?.map((e) => e.toString())
+              .toList(), // Optional: for Reflect Mode multi-select
+      summaryInsights: (content['summaryInsights'] as List<dynamic>?)
+          ?.map((e) => e.toString())
+          .toList(), // Optional: for Reflect Mode summary card
+      reflectionAnswers: (content['reflectionAnswers'] as List<dynamic>?)
+          ?.map((e) => e.toString())
+          .toList(), // Optional: for Reflect Mode reflection card
+      contextQuestion: content['contextQuestion']
+          as String?, // Optional: for Reflect Mode context card
+      summaryQuestion: content['summaryQuestion']
+          as String?, // Optional: for Reflect Mode summary card
+      relatedVersesQuestion: content['relatedVersesQuestion']
+          as String?, // Optional: for Reflect Mode verses card
+      reflectionQuestion: content['reflectionQuestion']
+          as String?, // Optional: for Reflect Mode reflection card
+      prayerQuestion: content['prayerQuestion']
+          as String?, // Optional: for Reflect Mode prayer card
       tokenConsumption: tokenConsumption, // Token information
       fromCache: fromCache, // Cache status
     );

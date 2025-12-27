@@ -32,13 +32,21 @@ class SavedGuideModelAdapter extends TypeAdapter<SavedGuideModel> {
       relatedVerses: (fields[12] as List?)?.cast<String>(),
       reflectionQuestions: (fields[13] as List?)?.cast<String>(),
       prayerPoints: (fields[14] as List?)?.cast<String>(),
+      interpretationInsights: (fields[15] as List?)?.cast<String>(),
+      summaryInsights: (fields[21] as List?)?.cast<String>(),
+      reflectionAnswers: (fields[22] as List?)?.cast<String>(),
+      contextQuestion: fields[16] as String?,
+      summaryQuestion: fields[17] as String?,
+      relatedVersesQuestion: fields[18] as String?,
+      reflectionQuestion: fields[19] as String?,
+      prayerQuestion: fields[20] as String?,
     );
   }
 
   @override
   void write(BinaryWriter writer, SavedGuideModel obj) {
     writer
-      ..writeByte(15)
+      ..writeByte(23)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -57,6 +65,22 @@ class SavedGuideModelAdapter extends TypeAdapter<SavedGuideModel> {
       ..write(obj.reflectionQuestions)
       ..writeByte(14)
       ..write(obj.prayerPoints)
+      ..writeByte(15)
+      ..write(obj.interpretationInsights)
+      ..writeByte(16)
+      ..write(obj.contextQuestion)
+      ..writeByte(17)
+      ..write(obj.summaryQuestion)
+      ..writeByte(18)
+      ..write(obj.relatedVersesQuestion)
+      ..writeByte(19)
+      ..write(obj.reflectionQuestion)
+      ..writeByte(20)
+      ..write(obj.prayerQuestion)
+      ..writeByte(21)
+      ..write(obj.summaryInsights)
+      ..writeByte(22)
+      ..write(obj.reflectionAnswers)
       ..writeByte(3)
       ..write(obj.typeString)
       ..writeByte(4)
@@ -109,6 +133,20 @@ SavedGuideModel _$SavedGuideModelFromJson(Map<String, dynamic> json) =>
       prayerPoints: (json['prayerPoints'] as List<dynamic>?)
           ?.map((e) => e as String)
           .toList(),
+      interpretationInsights: (json['interpretationInsights'] as List<dynamic>?)
+          ?.map((e) => e as String)
+          .toList(),
+      summaryInsights: (json['summaryInsights'] as List<dynamic>?)
+          ?.map((e) => e as String)
+          .toList(),
+      reflectionAnswers: (json['reflectionAnswers'] as List<dynamic>?)
+          ?.map((e) => e as String)
+          .toList(),
+      contextQuestion: json['contextQuestion'] as String?,
+      summaryQuestion: json['summaryQuestion'] as String?,
+      relatedVersesQuestion: json['relatedVersesQuestion'] as String?,
+      reflectionQuestion: json['reflectionQuestion'] as String?,
+      prayerQuestion: json['prayerQuestion'] as String?,
     );
 
 Map<String, dynamic> _$SavedGuideModelToJson(SavedGuideModel instance) =>
@@ -122,6 +160,14 @@ Map<String, dynamic> _$SavedGuideModelToJson(SavedGuideModel instance) =>
       'relatedVerses': instance.relatedVerses,
       'reflectionQuestions': instance.reflectionQuestions,
       'prayerPoints': instance.prayerPoints,
+      'interpretationInsights': instance.interpretationInsights,
+      'contextQuestion': instance.contextQuestion,
+      'summaryQuestion': instance.summaryQuestion,
+      'relatedVersesQuestion': instance.relatedVersesQuestion,
+      'reflectionQuestion': instance.reflectionQuestion,
+      'prayerQuestion': instance.prayerQuestion,
+      'summaryInsights': instance.summaryInsights,
+      'reflectionAnswers': instance.reflectionAnswers,
       'type': instance.typeString,
       'createdAt': instance.createdAt.toIso8601String(),
       'lastAccessedAt': instance.lastAccessedAt.toIso8601String(),

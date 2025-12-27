@@ -1427,4 +1427,170 @@ class TranslationKeys {
   static const memoryStatsIntermediate = 'memory_stats_page.intermediate';
   static const memoryStatsAdvanced = 'memory_stats_page.advanced';
   static const memoryStatsExpert = 'memory_stats_page.expert';
+
+  // Study Mode Selection Sheet
+  static const modeSelectionTitle = 'mode_selection.title';
+  static const modeSelectionSubtitle = 'mode_selection.subtitle';
+  static const modeSelectionRememberChoice = 'mode_selection.remember_choice';
+  static const modeSelectionStartButton = 'mode_selection.start_button';
+  static const modeSelectionDefaultBadge = 'mode_selection.default_badge';
+
+  // Study Mode Names & Descriptions
+  static const studyModeQuickName = 'study_mode.quick.name';
+  static const studyModeQuickDescription = 'study_mode.quick.description';
+  static const studyModeStandardName = 'study_mode.standard.name';
+  static const studyModeStandardDescription = 'study_mode.standard.description';
+  static const studyModeDeepName = 'study_mode.deep.name';
+  static const studyModeDeepDescription = 'study_mode.deep.description';
+  static const studyModeLectioName = 'study_mode.lectio.name';
+  static const studyModeLectioDescription = 'study_mode.lectio.description';
+
+  // Settings - Study Mode Preference
+  static const settingsStudyModePreference = 'settings.study_mode_preference';
+  static const settingsStudyModePreferenceCurrent =
+      'settings.study_mode_preference_current';
+  static const settingsAskEveryTime = 'settings.ask_every_time';
+  static const settingsAskEveryTimeSubtitle =
+      'settings.ask_every_time_subtitle';
+
+  // Settings - Reflection Journal
+  static const settingsReflectionJournal = 'settings.reflection_journal';
+  static const settingsReflectionJournalSubtitle =
+      'settings.reflection_journal_subtitle';
+
+  // Study Mode Preference Dialog
+  static const studyModePreferenceTitle = 'study_mode_preference.title';
+  static const studyModePreferenceSubtitle = 'study_mode_preference.subtitle';
+  static const studyModePreferenceAskEveryTime =
+      'study_mode_preference.ask_every_time';
+  static const studyModePreferenceAskEveryTimeSubtitle =
+      'study_mode_preference.ask_every_time_subtitle';
+
+  // Reflection Journal Screen
+  static const reflectionJournalTitle = 'reflection_journal.title';
+  static const reflectionJournalFilterByMode =
+      'reflection_journal.filter_by_mode';
+  static const reflectionJournalAllModes = 'reflection_journal.all_modes';
+  static const reflectionJournalRetry = 'reflection_journal.retry';
+  static const reflectionJournalNoReflections =
+      'reflection_journal.no_reflections';
+  static const reflectionJournalEmptyMessage =
+      'reflection_journal.empty_message';
+  static const reflectionJournalStartStudy = 'reflection_journal.start_study';
+  static const reflectionJournalYourJourney = 'reflection_journal.your_journey';
+  static const reflectionJournalReflections = 'reflection_journal.reflections';
+  static const reflectionJournalTimeSpent = 'reflection_journal.time_spent';
+  static const reflectionJournalAvgSession = 'reflection_journal.avg_session';
+  static const reflectionJournalTopFocusAreas =
+      'reflection_journal.top_focus_areas';
+  static const reflectionJournalDeleteTitle = 'reflection_journal.delete_title';
+  static const reflectionJournalDeleteMessage =
+      'reflection_journal.delete_message';
+  static const reflectionJournalCancel = 'reflection_journal.cancel';
+  static const reflectionJournalDelete = 'reflection_journal.delete';
+  static const reflectionJournalDeleted = 'reflection_journal.deleted';
+  static const reflectionJournalDeleteFailed =
+      'reflection_journal.delete_failed';
+  static const reflectionJournalViewStudy = 'reflection_journal.view_study';
+  static const reflectionJournalVersesSaved = 'reflection_journal.verses_saved';
+  static const reflectionJournalYes = 'reflection_journal.yes';
+  static const reflectionJournalNo = 'reflection_journal.no';
+
+  // Study Guide Screen - Additional Keys
+  static const studyGuideKeyInsight = 'study_guide.key_insight';
+  static const studyGuideKeyVerse = 'study_guide.key_verse';
+  static const studyGuideQuickReflection = 'study_guide.quick_reflection';
+  static const studyGuideBriefPrayer = 'study_guide.brief_prayer';
+  static const studyGuideAskAi = 'study_guide.ask_ai';
+
+  // Deep Dive Mode Sections
+  static const studyGuideComprehensiveOverview =
+      'study_guide.comprehensive_overview';
+  static const studyGuideInDepthInterpretation =
+      'study_guide.in_depth_interpretation';
+  static const studyGuideHistoricalContext = 'study_guide.historical_context';
+  static const studyGuideScriptureConnections =
+      'study_guide.scripture_connections';
+  static const studyGuideDeepReflection = 'study_guide.deep_reflection';
+  static const studyGuidePrayerForApplication =
+      'study_guide.prayer_for_application';
+
+  // Study Mode Duration Labels
+  static const studyModeQuickDuration = 'study_mode.quick.duration_label';
+  static const studyModeStandardDuration = 'study_mode.standard.duration_label';
+  static const studyModeDeepDuration = 'study_mode.deep.duration_label';
+  static const studyModeLectioDuration = 'study_mode.lectio.duration_label';
+
+  // Lectio Divina Mode Sections
+  static const lectioScriptureForMeditation = 'lectio.scripture_for_meditation';
+  static const lectioLectioMeditatio = 'lectio.lectio_meditatio';
+  static const lectioReadMeditate = 'lectio.read_meditate';
+  static const lectioAboutPractice = 'lectio.about_practice';
+  static const lectioAboutPracticeEmoji = 'lectio.about_practice_emoji';
+  static const lectioFocusWords = 'lectio.focus_words';
+  static const lectioFocusWordsEmoji = 'lectio.focus_words_emoji';
+  static const lectioOratioContemplatio = 'lectio.oratio_contemplatio';
+  static const lectioPrayRest = 'lectio.pray_rest';
+  static const lectioClosingBlessing = 'lectio.closing_blessing';
+  static const lectioClosingBlessingEmoji = 'lectio.closing_blessing_emoji';
+  static const lectioDurationLabel = 'lectio.duration_label';
+
+  // Reading Completion Card
+  static const readingCompleteTitle = 'reading_complete.title';
+  static const readingCompleteDescription = 'reading_complete.description';
+  static const readingCompleteMaybeLater = 'reading_complete.maybe_later';
+  static const readingCompleteReflectNow = 'reading_complete.reflect_now';
+
+  // Reflect Mode Card
+  static const reflectModeCardOf = 'reflect_mode.card_of';
+  static const reflectModeYes = 'reflect_mode.yes';
+  static const reflectModeNo = 'reflect_mode.no';
+  static const reflectModeShareBriefly = 'reflect_mode.share_briefly';
+  static const reflectModeSliderNotAtAll = 'reflect_mode.slider_not_at_all';
+  static const reflectModeSliderVeryMuch = 'reflect_mode.slider_very_much';
+  static const reflectModeTakeYourTime = 'reflect_mode.take_your_time';
+  static const reflectModeContinue = 'reflect_mode.continue';
+  static const reflectModeComplete = 'reflect_mode.complete';
+
+  // Reflect Mode View - Section Titles
+  static const reflectModeSectionSummary = 'reflect_mode.section_summary';
+  static const reflectModeSectionInterpretation =
+      'reflect_mode.section_interpretation';
+  static const reflectModeSectionContext = 'reflect_mode.section_context';
+  static const reflectModeSectionRelatedVerses =
+      'reflect_mode.section_related_verses';
+  static const reflectModeSectionReflection = 'reflect_mode.section_reflection';
+  static const reflectModeSectionPrayer = 'reflect_mode.section_prayer';
+
+  // Reflect Mode View - UI Elements
+  static const reflectModeRead = 'reflect_mode.read';
+  static const reflectModePrevious = 'reflect_mode.previous';
+
+  // Reflect Mode Questions
+  static const reflectModeQuestionInterpretation =
+      'reflect_mode.question_interpretation';
+  static const reflectModeQuestionContextFallback =
+      'reflect_mode.question_context_fallback';
+  static const reflectModeQuestionSummaryFallback =
+      'reflect_mode.question_summary_fallback';
+  static const reflectModeQuestionRelatedVersesFallback =
+      'reflect_mode.question_related_verses_fallback';
+  static const reflectModeQuestionReflectionFallback =
+      'reflect_mode.question_reflection_fallback';
+  static const reflectModePrayerFallback = 'reflect_mode.prayer_fallback';
+
+  // Prayer Modes
+  static const prayerModeListen = 'prayer_mode.listen';
+  static const prayerModeReadSilently = 'prayer_mode.read_silently';
+  static const prayerModeWriteOwn = 'prayer_mode.write_own';
+  static const prayerModeAudioComingSoon = 'prayer_mode.audio_coming_soon';
+  static const prayerModeWritePersonalPrayer =
+      'prayer_mode.write_personal_prayer';
+  static const prayerModeTypePlaceholder = 'prayer_mode.type_placeholder';
+  static const prayerModeListenToPrayer = 'prayer_mode.listen_to_prayer';
+  static const prayerModePlayingPrayer = 'prayer_mode.playing_prayer';
+  static const prayerModePlay = 'prayer_mode.play';
+  static const prayerModePause = 'prayer_mode.pause';
+  static const prayerModeStop = 'prayer_mode.stop';
+  static const prayerModeLoading = 'prayer_mode.loading';
 }

@@ -53,6 +53,14 @@ export interface LLMResponse {
   readonly relatedVerses: readonly string[]
   readonly reflectionQuestions: readonly string[]
   readonly prayerPoints: readonly string[]
+  readonly interpretationInsights?: readonly string[]  // Optional: 2-5 theological insights for Reflect Mode multi-select
+  readonly summaryInsights?: readonly string[]  // Optional: 2-5 resonance themes for Summary card (Quick/Lectio: 2-3, Standard/Deep: 3-5)
+  readonly reflectionAnswers?: readonly string[]  // Optional: 2-5 actionable life application responses for Reflection card (Quick/Lectio: 2-3, Standard/Deep: 3-5)
+  readonly contextQuestion?: string  // Optional: Yes/no question from historical context for Reflect Mode
+  readonly summaryQuestion?: string  // Optional: Engaging question about the summary (8-12 words)
+  readonly relatedVersesQuestion?: string  // Optional: Question prompting verse selection/memorization (8-12 words)
+  readonly reflectionQuestion?: string  // Optional: Question connecting study to daily life (8-12 words)
+  readonly prayerQuestion?: string  // Optional: Question inviting personal prayer response (6-10 words)
 }
 
 /**
@@ -86,7 +94,9 @@ export interface OpenAIRequest {
   max_tokens: number
   presence_penalty?: number
   frequency_penalty?: number
-  response_format?: { type: 'json_object' }
+  response_format?: 
+    | { type: 'json_object' } 
+    | { type: 'json_schema'; json_schema: any }
   stream?: boolean
 }
 

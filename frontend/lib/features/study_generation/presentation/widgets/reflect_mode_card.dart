@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/constants/app_fonts.dart';
+import '../../../../core/extensions/translation_extension.dart';
+import '../../../../core/i18n/translation_keys.dart';
 import '../../../../shared/widgets/clickable_scripture_text.dart';
+import '../../../voice_buddy/data/services/tts_service.dart';
 import '../../domain/entities/reflection_response.dart';
 
 /// Lightens a color for better contrast in dark mode
@@ -9,6 +12,18 @@ Color _lightenColor(Color color, [double amount = 0.2]) {
   final hsl = HSLColor.fromColor(color);
   final lightness = (hsl.lightness + amount).clamp(0.0, 1.0);
   return hsl.withLightness(lightness).toColor();
+}
+
+/// Returns the translated display name for a prayer mode
+String _getPrayerModeDisplayName(BuildContext context, PrayerMode mode) {
+  switch (mode) {
+    case PrayerMode.listen:
+      return context.tr(TranslationKeys.prayerModeListen);
+    case PrayerMode.readSilently:
+      return context.tr(TranslationKeys.prayerModeReadSilently);
+    case PrayerMode.writeOwn:
+      return context.tr(TranslationKeys.prayerModeWriteOwn);
+  }
 }
 
 /// A card component for Reflect Mode that displays one section at a time
@@ -50,6 +65,9 @@ class ReflectModeCard extends StatefulWidget {
   /// Whether this card is currently active
   final bool isActive;
 
+  /// Language of the content (for TTS)
+  final String? contentLanguage;
+
   const ReflectModeCard({
     super.key,
     required this.cardIndex,
@@ -63,6 +81,7 @@ class ReflectModeCard extends StatefulWidget {
     required this.onInteractionComplete,
     required this.onContinue,
     this.isActive = true,
+    this.contentLanguage,
   });
 
   @override
@@ -78,6 +97,11 @@ class _ReflectModeCardState extends State<ReflectModeCard>
   bool _hasInteracted = false;
   dynamic _selectedValue;
   String? _additionalText;
+
+  // TTS for Listen mode
+  final TTSService _ttsService = TTSService();
+  bool _isTtsPlaying = false;
+  bool _isTtsLoading = false;
 
   @override
   void initState() {
@@ -114,7 +138,17 @@ class _ReflectModeCardState extends State<ReflectModeCard>
   @override
   void dispose() {
     _controller.dispose();
+    _ttsService.stop();
     super.dispose();
+  }
+
+  /// Determines if the user can proceed to the next card.
+  /// Returns true if:
+  /// - User has interacted with the card, OR
+  /// - Card is a verse selection (optional interaction)
+  bool get _canProceed {
+    return _hasInteracted ||
+        widget.interactionType == ReflectionInteractionType.verseSelection;
   }
 
   void _handleInteraction(dynamic value, {String? additionalText}) {
@@ -132,6 +166,94 @@ class _ReflectModeCardState extends State<ReflectModeCard>
       additionalText: additionalText,
       respondedAt: DateTime.now(),
     ));
+  }
+
+  /// Play prayer text via TTS
+  Future<void> _playPrayer() async {
+    setState(() {
+      _isTtsLoading = true;
+    });
+
+    // Use content language if provided, otherwise fall back to UI locale
+    String languageCode;
+    if (widget.contentLanguage != null) {
+      // Map study guide language codes to TTS language codes
+      languageCode = _mapLanguageCodeForTTS(widget.contentLanguage!);
+    } else {
+      // Fallback to UI locale
+      final locale = Localizations.localeOf(context);
+      languageCode = '${locale.languageCode}-${locale.countryCode}';
+    }
+
+    debugPrint('🔊 [TTS] Speaking prayer with language: $languageCode');
+    debugPrint('🔊 [TTS] Content language: ${widget.contentLanguage}');
+    debugPrint('🔊 [TTS] Content: "${widget.sectionContent}"');
+
+    try {
+      // TTSService handles all sanitization internally
+      await _ttsService.speakWithSettings(
+        text: widget.sectionContent,
+        languageCode: languageCode,
+        speakingRate: 0.7, // Slightly slower for better comprehension
+        pitch: 0.0,
+        voiceGender: 'female',
+        onComplete: () {
+          if (mounted) {
+            setState(() {
+              _isTtsPlaying = false;
+            });
+          }
+        },
+      );
+
+      setState(() {
+        _isTtsLoading = false;
+        _isTtsPlaying = true;
+      });
+    } catch (e) {
+      debugPrint('🔊 [TTS ERROR] $e');
+      setState(() {
+        _isTtsLoading = false;
+        _isTtsPlaying = false;
+      });
+    }
+  }
+
+  /// Map study guide language codes to TTS language codes
+  String _mapLanguageCodeForTTS(String languageCode) {
+    switch (languageCode.toLowerCase()) {
+      case 'en':
+      case 'en-us':
+      case 'english':
+        return 'en-US';
+      case 'hi':
+      case 'hi-in':
+      case 'hindi':
+        return 'hi-IN';
+      case 'ml':
+      case 'ml-in':
+      case 'malayalam':
+        return 'ml-IN';
+      default:
+        // If already in proper format or unknown, return as-is
+        return languageCode;
+    }
+  }
+
+  /// Pause TTS playback
+  Future<void> _pausePrayer() async {
+    await _ttsService.pause();
+    setState(() {
+      _isTtsPlaying = false;
+    });
+  }
+
+  /// Stop TTS playback
+  Future<void> _stopPrayer() async {
+    await _ttsService.stop();
+    setState(() {
+      _isTtsPlaying = false;
+    });
   }
 
   @override
@@ -172,10 +294,14 @@ class _ReflectModeCardState extends State<ReflectModeCard>
                       // Section title
                       _buildSectionHeader(context),
 
-                      const SizedBox(height: 16),
-
-                      // Section content
-                      _buildSectionContent(context),
+                      // Section content (hide for verse selection and prayer to avoid duplication)
+                      if (widget.interactionType !=
+                              ReflectionInteractionType.verseSelection &&
+                          widget.interactionType !=
+                              ReflectionInteractionType.prayer) ...[
+                        const SizedBox(height: 16),
+                        _buildSectionContent(context),
+                      ],
                     ],
                   ),
                 ),
@@ -212,7 +338,16 @@ class _ReflectModeCardState extends State<ReflectModeCard>
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'Card ${widget.cardIndex + 1} of ${widget.totalCards}',
+                context
+                    .tr(TranslationKeys.reflectModeCardOf)
+                    .replaceAll(
+                      '{current}',
+                      '${widget.cardIndex + 1}',
+                    )
+                    .replaceAll(
+                      '{total}',
+                      '${widget.totalCards}',
+                    ),
                 style: AppFonts.inter(
                   fontSize: 13,
                   fontWeight: FontWeight.w500,
@@ -405,14 +540,17 @@ class _ReflectModeCardState extends State<ReflectModeCard>
                   Text(option.icon!, style: const TextStyle(fontSize: 18)),
                   const SizedBox(width: 8),
                 ],
-                Text(
-                  option.label,
-                  style: AppFonts.inter(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w500,
-                    color: isSelected
-                        ? Colors.white
-                        : theme.colorScheme.onBackground,
+                Flexible(
+                  child: Text(
+                    option.label,
+                    style: AppFonts.inter(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w500,
+                      color: isSelected
+                          ? Colors.white
+                          : theme.colorScheme.onBackground,
+                    ),
+                    softWrap: true,
                   ),
                 ),
               ],
@@ -426,7 +564,10 @@ class _ReflectModeCardState extends State<ReflectModeCard>
   Widget _buildSlider(BuildContext context) {
     final theme = Theme.of(context);
     final labels = widget.sliderLabels ??
-        const SliderLabels(left: 'Not at all', right: 'Very much');
+        SliderLabels(
+          left: context.tr(TranslationKeys.reflectModeSliderNotAtAll),
+          right: context.tr(TranslationKeys.reflectModeSliderVeryMuch),
+        );
     final value = (_selectedValue as double?) ?? 0.5;
 
     return Column(
@@ -486,7 +627,7 @@ class _ReflectModeCardState extends State<ReflectModeCard>
             Expanded(
               child: _buildYesNoButton(
                 context,
-                label: 'Yes',
+                label: context.tr(TranslationKeys.reflectModeYes),
                 icon: Icons.check_circle_outline,
                 isSelected: _selectedValue == true,
                 onTap: () => _handleInteraction(true),
@@ -496,7 +637,7 @@ class _ReflectModeCardState extends State<ReflectModeCard>
             Expanded(
               child: _buildYesNoButton(
                 context,
-                label: 'No',
+                label: context.tr(TranslationKeys.reflectModeNo),
                 icon: Icons.cancel_outlined,
                 isSelected: _selectedValue == false,
                 onTap: () => _handleInteraction(false),
@@ -508,7 +649,7 @@ class _ReflectModeCardState extends State<ReflectModeCard>
           const SizedBox(height: 16),
           TextField(
             decoration: InputDecoration(
-              hintText: 'Share briefly (optional)...',
+              hintText: context.tr(TranslationKeys.reflectModeShareBriefly),
               hintStyle: AppFonts.inter(
                 fontSize: 14,
                 color: theme.colorScheme.onBackground.withOpacity(0.4),
@@ -567,13 +708,18 @@ class _ReflectModeCardState extends State<ReflectModeCard>
               size: 22,
             ),
             const SizedBox(width: 8),
-            Text(
-              label,
-              style: AppFonts.inter(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color:
-                    isSelected ? Colors.white : theme.colorScheme.onBackground,
+            Flexible(
+              child: Text(
+                label,
+                style: AppFonts.inter(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: isSelected
+                      ? Colors.white
+                      : theme.colorScheme.onBackground,
+                ),
+                textAlign: TextAlign.center,
+                softWrap: true,
               ),
             ),
           ],
@@ -626,14 +772,18 @@ class _ReflectModeCardState extends State<ReflectModeCard>
                   Text(option.icon!, style: const TextStyle(fontSize: 16)),
                   const SizedBox(width: 6),
                 ],
-                Text(
-                  option.label,
-                  style: AppFonts.inter(
-                    fontSize: 14,
-                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                    color: isSelected
-                        ? accentColor
-                        : theme.colorScheme.onBackground,
+                Flexible(
+                  child: Text(
+                    option.label,
+                    style: AppFonts.inter(
+                      fontSize: 14,
+                      fontWeight:
+                          isSelected ? FontWeight.w600 : FontWeight.w500,
+                      color: isSelected
+                          ? accentColor
+                          : theme.colorScheme.onBackground,
+                    ),
+                    softWrap: true,
                   ),
                 ),
                 if (isSelected) ...[
@@ -659,6 +809,10 @@ class _ReflectModeCardState extends State<ReflectModeCard>
         ? _lightenColor(theme.colorScheme.primary, 0.10)
         : theme.colorScheme.primary;
 
+    final selectedMode = _selectedValue is Map
+        ? PrayerModeExtension.fromString(_selectedValue['mode'] as String?)
+        : null;
+
     return Column(
       children: [
         Row(
@@ -671,33 +825,284 @@ class _ReflectModeCardState extends State<ReflectModeCard>
             ],
           ],
         ),
-        if (_selectedValue != null) ...[
+        if (selectedMode != null) ...[
           const SizedBox(height: 20),
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
+          _buildPrayerModeContent(context, selectedMode, accentColor),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildPrayerModeContent(
+    BuildContext context,
+    PrayerMode mode,
+    Color accentColor,
+  ) {
+    switch (mode) {
+      case PrayerMode.listen:
+        return _buildListenMode(context, accentColor);
+      case PrayerMode.readSilently:
+        return _buildReadSilentlyMode(context, accentColor);
+      case PrayerMode.writeOwn:
+        return _buildWriteOwnMode(context, accentColor);
+    }
+  }
+
+  Widget _buildListenMode(BuildContext context, Color accentColor) {
+    return Column(
+      children: [
+        // Audio controls
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: accentColor.withOpacity(0.15),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Column(
+            children: [
+              Row(
+                children: [
+                  Icon(
+                    Icons.headphones,
+                    color: accentColor,
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      _isTtsPlaying
+                          ? context.tr(TranslationKeys.prayerModePlayingPrayer)
+                          : context
+                              .tr(TranslationKeys.prayerModeListenToPrayer),
+                      style: AppFonts.inter(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                        color: accentColor,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              // Playback controls
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  // Play/Pause button
+                  if (!_isTtsPlaying)
+                    ElevatedButton.icon(
+                      onPressed: _isTtsLoading ? null : _playPrayer,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: accentColor,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 24,
+                          vertical: 12,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(24),
+                        ),
+                      ),
+                      icon: _isTtsLoading
+                          ? const SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  Colors.white,
+                                ),
+                              ),
+                            )
+                          : const Icon(Icons.play_arrow, size: 24),
+                      label: Text(
+                        _isTtsLoading
+                            ? context.tr(TranslationKeys.prayerModeLoading)
+                            : context.tr(TranslationKeys.prayerModePlay),
+                        style: AppFonts.inter(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    )
+                  else ...[
+                    // Pause button
+                    ElevatedButton.icon(
+                      onPressed: _pausePrayer,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: accentColor,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 20,
+                          vertical: 12,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(24),
+                        ),
+                      ),
+                      icon: const Icon(Icons.pause, size: 24),
+                      label: Text(
+                        context.tr(TranslationKeys.prayerModePause),
+                        style: AppFonts.inter(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    // Stop button
+                    OutlinedButton.icon(
+                      onPressed: _stopPrayer,
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: accentColor,
+                        side: BorderSide(color: accentColor),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 20,
+                          vertical: 12,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(24),
+                        ),
+                      ),
+                      icon: const Icon(Icons.stop, size: 20),
+                      label: Text(
+                        context.tr(TranslationKeys.prayerModeStop),
+                        style: AppFonts.inter(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 12),
+        // Prayer text display
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: accentColor.withOpacity(0.05),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
               color: accentColor.withOpacity(0.15),
-              borderRadius: BorderRadius.circular(12),
             ),
-            child: Row(
-              children: [
-                Icon(
-                  Icons.timer_outlined,
-                  color: accentColor,
-                ),
-                const SizedBox(width: 12),
-                Text(
-                  'Take your time in prayer',
+          ),
+          child: Text(
+            widget.sectionContent,
+            style: AppFonts.inter(
+              fontSize: 15,
+              height: 1.6,
+              color: Theme.of(context).colorScheme.onBackground,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildReadSilentlyMode(BuildContext context, Color accentColor) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: accentColor.withOpacity(0.15),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            Icons.timer_outlined,
+            color: accentColor,
+          ),
+          const SizedBox(width: 12),
+          Text(
+            context.tr(TranslationKeys.reflectModeTakeYourTime),
+            style: AppFonts.inter(
+              fontSize: 15,
+              fontWeight: FontWeight.w500,
+              color: accentColor,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildWriteOwnMode(BuildContext context, Color accentColor) {
+    final theme = Theme.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: accentColor.withOpacity(0.15),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Row(
+            children: [
+              Icon(
+                Icons.edit_outlined,
+                color: accentColor,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  context.tr(TranslationKeys.prayerModeWritePersonalPrayer),
                   style: AppFonts.inter(
                     fontSize: 15,
                     fontWeight: FontWeight.w500,
                     color: accentColor,
                   ),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
-        ],
+        ),
+        const SizedBox(height: 12),
+        TextField(
+          decoration: InputDecoration(
+            hintText: context.tr(TranslationKeys.prayerModeTypePlaceholder),
+            hintStyle: AppFonts.inter(
+              fontSize: 15,
+              color: theme.colorScheme.onBackground.withOpacity(0.4),
+            ),
+            filled: true,
+            fillColor: accentColor.withOpacity(0.05),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(
+                color: accentColor.withOpacity(0.15),
+              ),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(
+                color: accentColor.withOpacity(0.15),
+              ),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(
+                color: accentColor,
+                width: 2,
+              ),
+            ),
+            contentPadding: const EdgeInsets.all(16),
+          ),
+          maxLines: 6,
+          minLines: 4,
+          onChanged: (text) {
+            _additionalText = text;
+            // Update the selected value with the prayer text
+            _handleInteraction({
+              'mode': PrayerMode.writeOwn.value,
+              'duration': 60,
+              'customPrayer': text,
+            }, additionalText: text);
+          },
+        ),
       ],
     );
   }
@@ -739,8 +1144,9 @@ class _ReflectModeCardState extends State<ReflectModeCard>
             ),
             const SizedBox(height: 6),
             Text(
-              mode.displayName,
+              _getPrayerModeDisplayName(context, mode),
               textAlign: TextAlign.center,
+              softWrap: true,
               style: AppFonts.inter(
                 fontSize: 13,
                 fontWeight: FontWeight.w500,
@@ -766,9 +1172,9 @@ class _ReflectModeCardState extends State<ReflectModeCard>
       padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
       child: AnimatedOpacity(
         duration: const Duration(milliseconds: 300),
-        opacity: _hasInteracted ? 1.0 : 0.5,
+        opacity: _canProceed ? 1.0 : 0.5,
         child: ElevatedButton(
-          onPressed: _hasInteracted ? widget.onContinue : null,
+          onPressed: _canProceed ? widget.onContinue : null,
           style: ElevatedButton.styleFrom(
             backgroundColor: accentColor,
             foregroundColor: Colors.white,
@@ -776,13 +1182,15 @@ class _ReflectModeCardState extends State<ReflectModeCard>
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),
             ),
-            elevation: _hasInteracted ? 4 : 0,
+            elevation: _canProceed ? 4 : 0,
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Text(
-                isLastCard ? 'Complete' : 'Continue',
+                isLastCard
+                    ? context.tr(TranslationKeys.reflectModeComplete)
+                    : context.tr(TranslationKeys.reflectModeContinue),
                 style: AppFonts.inter(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
