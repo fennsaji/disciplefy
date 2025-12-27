@@ -118,6 +118,12 @@ class MockAuthenticationService extends _i1.Mock
       ) as _i5.Stream<_i2.AuthState>);
 
   @override
+  bool get isEmailVerified => (super.noSuchMethod(
+        Invocation.getter(#isEmailVerified),
+        returnValue: false,
+      ) as bool);
+
+  @override
   _i5.Future<bool> isAuthenticatedAsync() => (super.noSuchMethod(
         Invocation.method(
           #isAuthenticatedAsync,
@@ -186,6 +192,71 @@ class MockAuthenticationService extends _i1.Mock
   _i5.Future<bool> signInAnonymously() => (super.noSuchMethod(
         Invocation.method(
           #signInAnonymously,
+          [],
+        ),
+        returnValue: _i5.Future<bool>.value(false),
+      ) as _i5.Future<bool>);
+
+  @override
+  _i5.Future<bool> signUpWithEmail({
+    required String? email,
+    required String? password,
+    required String? fullName,
+  }) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #signUpWithEmail,
+          [],
+          {
+            #email: email,
+            #password: password,
+            #fullName: fullName,
+          },
+        ),
+        returnValue: _i5.Future<bool>.value(false),
+      ) as _i5.Future<bool>);
+
+  @override
+  _i5.Future<bool> signInWithEmail({
+    required String? email,
+    required String? password,
+  }) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #signInWithEmail,
+          [],
+          {
+            #email: email,
+            #password: password,
+          },
+        ),
+        returnValue: _i5.Future<bool>.value(false),
+      ) as _i5.Future<bool>);
+
+  @override
+  _i5.Future<void> sendPasswordResetEmail(String? email) => (super.noSuchMethod(
+        Invocation.method(
+          #sendPasswordResetEmail,
+          [email],
+        ),
+        returnValue: _i5.Future<void>.value(),
+        returnValueForMissingStub: _i5.Future<void>.value(),
+      ) as _i5.Future<void>);
+
+  @override
+  _i5.Future<void> resendVerificationEmail() => (super.noSuchMethod(
+        Invocation.method(
+          #resendVerificationEmail,
+          [],
+        ),
+        returnValue: _i5.Future<void>.value(),
+        returnValueForMissingStub: _i5.Future<void>.value(),
+      ) as _i5.Future<void>);
+
+  @override
+  _i5.Future<bool> syncEmailVerificationStatus() => (super.noSuchMethod(
+        Invocation.method(
+          #syncEmailVerificationStatus,
           [],
         ),
         returnValue: _i5.Future<bool>.value(false),

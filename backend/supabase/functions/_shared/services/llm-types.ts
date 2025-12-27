@@ -45,14 +45,23 @@ export interface LLMGenerationParams {
 
 /**
  * LLM response structure (matches expected format).
+ * All 14 fields are required to ensure complete study guide generation.
  */
 export interface LLMResponse {
   readonly summary: string
-  readonly interpretation: string // Optional field for additional context
+  readonly interpretation: string
   readonly context: string
   readonly relatedVerses: readonly string[]
   readonly reflectionQuestions: readonly string[]
   readonly prayerPoints: readonly string[]
+  readonly interpretationInsights: readonly string[]  // 2-5 theological insights for Reflect Mode multi-select
+  readonly summaryInsights: readonly string[]  // 2-5 resonance themes for Summary card (Quick/Lectio: 2-3, Standard/Deep: 3-5)
+  readonly reflectionAnswers: readonly string[]  // 2-5 actionable life application responses for Reflection card (Quick/Lectio: 2-3, Standard/Deep: 3-5)
+  readonly contextQuestion: string  // Yes/no question from historical context for Reflect Mode
+  readonly summaryQuestion: string  // Engaging question about the summary (8-12 words)
+  readonly relatedVersesQuestion: string  // Question prompting verse selection/memorization (8-12 words)
+  readonly reflectionQuestion: string  // Question connecting study to daily life (8-12 words)
+  readonly prayerQuestion: string  // Question inviting personal prayer response (6-10 words)
 }
 
 /**
@@ -74,6 +83,15 @@ export interface DailyVerseResponse {
 }
 
 /**
+ * OpenAI JSON Schema structure for structured outputs.
+ */
+export interface OpenAIJsonSchema {
+  name: string
+  strict?: boolean
+  schema: Record<string, unknown>
+}
+
+/**
  * OpenAI ChatCompletion API request structure.
  */
 export interface OpenAIRequest {
@@ -86,7 +104,9 @@ export interface OpenAIRequest {
   max_tokens: number
   presence_penalty?: number
   frequency_penalty?: number
-  response_format?: { type: 'json_object' }
+  response_format?: 
+    | { type: 'json_object' } 
+    | { type: 'json_schema'; json_schema: OpenAIJsonSchema }
   stream?: boolean
 }
 

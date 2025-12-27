@@ -1,28 +1,44 @@
 /**
  * Streaming JSON Parser for Study Guide Generation
- * 
+ *
  * Parses incremental JSON chunks from LLM streaming responses and
  * emits complete sections as they become available.
- * 
+ *
  * The parser expects JSON in this order:
- * 1. summary (string)
- * 2. interpretation (string)
- * 3. context (string)
- * 4. relatedVerses (array of strings)
- * 5. reflectionQuestions (array of strings)
- * 6. prayerPoints (array of strings)
+ * 1. summary (string) - Required
+ * 2. interpretation (string) - Required
+ * 3. context (string) - Required
+ * 4. relatedVerses (array of strings) - Required
+ * 5. reflectionQuestions (array of strings) - Required
+ * 6. prayerPoints (array of strings) - Required
+ * 7. interpretationInsights (array of strings) - Optional
+ * 8. summaryInsights (array of strings) - Optional
+ * 9. reflectionAnswers (array of strings) - Optional
+ * 10. contextQuestion (string) - Optional
+ * 11. summaryQuestion (string) - Optional
+ * 12. relatedVersesQuestion (string) - Optional
+ * 13. reflectionQuestion (string) - Optional
+ * 14. prayerQuestion (string) - Optional
  */
 
 /**
  * Section types in the order they appear in the study guide
  */
-export type SectionType = 
-  | 'summary' 
-  | 'interpretation' 
-  | 'context' 
-  | 'relatedVerses' 
-  | 'reflectionQuestions' 
+export type SectionType =
+  | 'summary'
+  | 'interpretation'
+  | 'context'
+  | 'relatedVerses'
+  | 'reflectionQuestions'
   | 'prayerPoints'
+  | 'interpretationInsights'
+  | 'summaryInsights'
+  | 'reflectionAnswers'
+  | 'contextQuestion'
+  | 'summaryQuestion'
+  | 'relatedVersesQuestion'
+  | 'reflectionQuestion'
+  | 'prayerQuestion'
 
 /**
  * A parsed section from the streaming response
@@ -43,6 +59,14 @@ export interface CompleteStudyGuide {
   relatedVerses: string[]
   reflectionQuestions: string[]
   prayerPoints: string[]
+  interpretationInsights?: string[]
+  summaryInsights?: string[]
+  reflectionAnswers?: string[]
+  contextQuestion?: string
+  summaryQuestion?: string
+  relatedVersesQuestion?: string
+  reflectionQuestion?: string
+  prayerQuestion?: string
 }
 
 /**
@@ -50,7 +74,27 @@ export interface CompleteStudyGuide {
  */
 const SECTION_ORDER: SectionType[] = [
   'summary',
-  'interpretation', 
+  'interpretation',
+  'context',
+  'relatedVerses',
+  'reflectionQuestions',
+  'prayerPoints',
+  'interpretationInsights',
+  'summaryInsights',
+  'reflectionAnswers',
+  'contextQuestion',
+  'summaryQuestion',
+  'relatedVersesQuestion',
+  'reflectionQuestion',
+  'prayerQuestion'
+]
+
+/**
+ * Required sections that must be present for completion
+ */
+const REQUIRED_SECTIONS: SectionType[] = [
+  'summary',
+  'interpretation',
   'context',
   'relatedVerses',
   'reflectionQuestions',
@@ -114,12 +158,19 @@ export class StreamingJsonParser {
 
   /**
    * Attempts to extract a complete section value from the buffer
-   * 
+   *
    * @param sectionType - The section type to look for
    * @returns The extracted value or null if not complete
    */
   private tryExtractSection(sectionType: SectionType): string | string[] | null {
-    const isArrayType = ['relatedVerses', 'reflectionQuestions', 'prayerPoints'].includes(sectionType)
+    const isArrayType = [
+      'relatedVerses',
+      'reflectionQuestions',
+      'prayerPoints',
+      'interpretationInsights',
+      'summaryInsights',
+      'reflectionAnswers'
+    ].includes(sectionType)
 
     if (isArrayType) {
       return this.tryExtractArray(sectionType)
@@ -252,10 +303,11 @@ export class StreamingJsonParser {
   }
 
   /**
-   * Checks if all sections have been emitted
+   * Checks if all required sections have been emitted
+   * (Optional sections like interpretationInsights and contextQuestion are not required)
    */
   isComplete(): boolean {
-    return this.emittedSections.size === SECTION_ORDER.length
+    return REQUIRED_SECTIONS.every(section => this.emittedSections.has(section))
   }
 
   /**
@@ -266,8 +318,8 @@ export class StreamingJsonParser {
   }
 
   /**
-   * Gets the complete study guide if all sections are parsed
-   * 
+   * Gets the complete study guide if all required sections are parsed
+   *
    * @throws Error if parsing is not complete
    */
   getCompleteStudyGuide(): CompleteStudyGuide {
@@ -275,7 +327,7 @@ export class StreamingJsonParser {
       throw new Error('Study guide parsing is not complete')
     }
 
-    return {
+    const result: CompleteStudyGuide = {
       summary: this.parsedData.summary!,
       interpretation: this.parsedData.interpretation!,
       context: this.parsedData.context!,
@@ -283,6 +335,34 @@ export class StreamingJsonParser {
       reflectionQuestions: this.parsedData.reflectionQuestions!,
       prayerPoints: this.parsedData.prayerPoints!
     }
+
+    // Add optional fields if present
+    if (this.parsedData.interpretationInsights) {
+      result.interpretationInsights = this.parsedData.interpretationInsights
+    }
+    if (this.parsedData.summaryInsights) {
+      result.summaryInsights = this.parsedData.summaryInsights
+    }
+    if (this.parsedData.reflectionAnswers) {
+      result.reflectionAnswers = this.parsedData.reflectionAnswers
+    }
+    if (this.parsedData.contextQuestion) {
+      result.contextQuestion = this.parsedData.contextQuestion
+    }
+    if (this.parsedData.summaryQuestion) {
+      result.summaryQuestion = this.parsedData.summaryQuestion
+    }
+    if (this.parsedData.relatedVersesQuestion) {
+      result.relatedVersesQuestion = this.parsedData.relatedVersesQuestion
+    }
+    if (this.parsedData.reflectionQuestion) {
+      result.reflectionQuestion = this.parsedData.reflectionQuestion
+    }
+    if (this.parsedData.prayerQuestion) {
+      result.prayerQuestion = this.parsedData.prayerQuestion
+    }
+
+    return result
   }
 
   /**
@@ -309,8 +389,8 @@ export class StreamingJsonParser {
       }
 
       const parsed = JSON.parse(cleanBuffer)
-      
-      // Validate structure
+
+      // Validate required structure
       if (
         typeof parsed.summary === 'string' &&
         typeof parsed.interpretation === 'string' &&
@@ -319,7 +399,42 @@ export class StreamingJsonParser {
         Array.isArray(parsed.reflectionQuestions) &&
         Array.isArray(parsed.prayerPoints)
       ) {
-        return parsed as CompleteStudyGuide
+        const result: CompleteStudyGuide = {
+          summary: parsed.summary,
+          interpretation: parsed.interpretation,
+          context: parsed.context,
+          relatedVerses: parsed.relatedVerses,
+          reflectionQuestions: parsed.reflectionQuestions,
+          prayerPoints: parsed.prayerPoints
+        }
+
+        // Add optional fields if present and valid
+        if (Array.isArray(parsed.interpretationInsights)) {
+          result.interpretationInsights = parsed.interpretationInsights
+        }
+        if (Array.isArray(parsed.summaryInsights)) {
+          result.summaryInsights = parsed.summaryInsights
+        }
+        if (Array.isArray(parsed.reflectionAnswers)) {
+          result.reflectionAnswers = parsed.reflectionAnswers
+        }
+        if (typeof parsed.contextQuestion === 'string') {
+          result.contextQuestion = parsed.contextQuestion
+        }
+        if (typeof parsed.summaryQuestion === 'string') {
+          result.summaryQuestion = parsed.summaryQuestion
+        }
+        if (typeof parsed.relatedVersesQuestion === 'string') {
+          result.relatedVersesQuestion = parsed.relatedVersesQuestion
+        }
+        if (typeof parsed.reflectionQuestion === 'string') {
+          result.reflectionQuestion = parsed.reflectionQuestion
+        }
+        if (typeof parsed.prayerQuestion === 'string') {
+          result.prayerQuestion = parsed.prayerQuestion
+        }
+
+        return result
       }
 
       return null

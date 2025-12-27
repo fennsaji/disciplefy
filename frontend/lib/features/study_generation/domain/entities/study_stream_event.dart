@@ -7,7 +7,15 @@ enum StudyStreamSectionType {
   context,
   relatedVerses,
   reflectionQuestions,
-  prayerPoints;
+  prayerPoints,
+  interpretationInsights,
+  summaryInsights,
+  reflectionAnswers,
+  contextQuestion,
+  summaryQuestion,
+  relatedVersesQuestion,
+  reflectionQuestion,
+  prayerQuestion;
 
   static StudyStreamSectionType? fromString(String value) {
     return StudyStreamSectionType.values.firstWhere(
@@ -167,7 +175,16 @@ class StreamingStudyGuideContent {
   final List<String>? relatedVerses;
   final List<String>? reflectionQuestions;
   final List<String>? prayerPoints;
+  final List<String>? interpretationInsights;
+  final List<String>? summaryInsights;
+  final List<String>? reflectionAnswers;
+  final String? contextQuestion;
+  final String? summaryQuestion;
+  final String? relatedVersesQuestion;
+  final String? reflectionQuestion;
+  final String? prayerQuestion;
   final int sectionsLoaded;
+  final int totalSections;
   final bool isFromCache;
   final String? studyGuideId;
 
@@ -178,7 +195,16 @@ class StreamingStudyGuideContent {
     this.relatedVerses,
     this.reflectionQuestions,
     this.prayerPoints,
+    this.interpretationInsights,
+    this.summaryInsights,
+    this.reflectionAnswers,
+    this.contextQuestion,
+    this.summaryQuestion,
+    this.relatedVersesQuestion,
+    this.reflectionQuestion,
+    this.prayerQuestion,
     this.sectionsLoaded = 0,
+    this.totalSections = 14,
     this.isFromCache = false,
     this.studyGuideId,
   });
@@ -189,9 +215,10 @@ class StreamingStudyGuideContent {
   }
 
   /// Progress from 0.0 to 1.0
-  double get progress => sectionsLoaded / 6.0;
+  double get progress =>
+      totalSections > 0 ? sectionsLoaded / totalSections : 0.0;
 
-  /// Whether all sections have been loaded
+  /// Whether all required sections have been loaded (at least 6 core sections)
   bool get isComplete => sectionsLoaded >= 6;
 
   /// Create a copy with a new section added
@@ -216,7 +243,36 @@ class StreamingStudyGuideContent {
       prayerPoints: section.type == StudyStreamSectionType.prayerPoints
           ? section.contentAsList
           : prayerPoints,
+      interpretationInsights:
+          section.type == StudyStreamSectionType.interpretationInsights
+              ? section.contentAsList
+              : interpretationInsights,
+      summaryInsights: section.type == StudyStreamSectionType.summaryInsights
+          ? section.contentAsList
+          : summaryInsights,
+      reflectionAnswers:
+          section.type == StudyStreamSectionType.reflectionAnswers
+              ? section.contentAsList
+              : reflectionAnswers,
+      contextQuestion: section.type == StudyStreamSectionType.contextQuestion
+          ? section.contentAsString
+          : contextQuestion,
+      summaryQuestion: section.type == StudyStreamSectionType.summaryQuestion
+          ? section.contentAsString
+          : summaryQuestion,
+      relatedVersesQuestion:
+          section.type == StudyStreamSectionType.relatedVersesQuestion
+              ? section.contentAsString
+              : relatedVersesQuestion,
+      reflectionQuestion:
+          section.type == StudyStreamSectionType.reflectionQuestion
+              ? section.contentAsString
+              : reflectionQuestion,
+      prayerQuestion: section.type == StudyStreamSectionType.prayerQuestion
+          ? section.contentAsString
+          : prayerQuestion,
       sectionsLoaded: sectionsLoaded + 1,
+      totalSections: section.total,
       isFromCache: isFromCache,
     );
   }
@@ -230,7 +286,16 @@ class StreamingStudyGuideContent {
       relatedVerses: relatedVerses,
       reflectionQuestions: reflectionQuestions,
       prayerPoints: prayerPoints,
+      interpretationInsights: interpretationInsights,
+      summaryInsights: summaryInsights,
+      reflectionAnswers: reflectionAnswers,
+      contextQuestion: contextQuestion,
+      summaryQuestion: summaryQuestion,
+      relatedVersesQuestion: relatedVersesQuestion,
+      reflectionQuestion: reflectionQuestion,
+      prayerQuestion: prayerQuestion,
       sectionsLoaded: sectionsLoaded,
+      totalSections: totalSections,
       isFromCache: fromCache,
       studyGuideId: studyGuideId,
     );
@@ -244,7 +309,16 @@ class StreamingStudyGuideContent {
     List<String>? relatedVerses,
     List<String>? reflectionQuestions,
     List<String>? prayerPoints,
+    List<String>? interpretationInsights,
+    List<String>? summaryInsights,
+    List<String>? reflectionAnswers,
+    String? contextQuestion,
+    String? summaryQuestion,
+    String? relatedVersesQuestion,
+    String? reflectionQuestion,
+    String? prayerQuestion,
     int? sectionsLoaded,
+    int? totalSections,
     bool? isFromCache,
     String? studyGuideId,
   }) {
@@ -255,7 +329,18 @@ class StreamingStudyGuideContent {
       relatedVerses: relatedVerses ?? this.relatedVerses,
       reflectionQuestions: reflectionQuestions ?? this.reflectionQuestions,
       prayerPoints: prayerPoints ?? this.prayerPoints,
+      interpretationInsights:
+          interpretationInsights ?? this.interpretationInsights,
+      summaryInsights: summaryInsights ?? this.summaryInsights,
+      reflectionAnswers: reflectionAnswers ?? this.reflectionAnswers,
+      contextQuestion: contextQuestion ?? this.contextQuestion,
+      summaryQuestion: summaryQuestion ?? this.summaryQuestion,
+      relatedVersesQuestion:
+          relatedVersesQuestion ?? this.relatedVersesQuestion,
+      reflectionQuestion: reflectionQuestion ?? this.reflectionQuestion,
+      prayerQuestion: prayerQuestion ?? this.prayerQuestion,
       sectionsLoaded: sectionsLoaded ?? this.sectionsLoaded,
+      totalSections: totalSections ?? this.totalSections,
       isFromCache: isFromCache ?? this.isFromCache,
       studyGuideId: studyGuideId ?? this.studyGuideId,
     );
@@ -269,7 +354,16 @@ class StreamingStudyGuideContent {
         relatedVerses,
         reflectionQuestions,
         prayerPoints,
+        interpretationInsights,
+        summaryInsights,
+        reflectionAnswers,
+        contextQuestion,
+        summaryQuestion,
+        relatedVersesQuestion,
+        reflectionQuestion,
+        prayerQuestion,
         sectionsLoaded,
+        totalSections,
         isFromCache,
         studyGuideId,
       ];

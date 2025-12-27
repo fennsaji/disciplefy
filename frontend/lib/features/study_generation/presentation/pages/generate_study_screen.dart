@@ -1772,7 +1772,7 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
 
                 // Title
                 Text(
-                  'Study Mode Preference',
+                  context.tr(TranslationKeys.studyModePreferenceTitle),
                   style: AppFonts.poppins(
                     fontSize: 22,
                     fontWeight: FontWeight.w700,
@@ -1782,7 +1782,7 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Choose your default study mode. You can change this anytime.',
+                  context.tr(TranslationKeys.studyModePreferenceSubtitle),
                   style: AppFonts.inter(
                     fontSize: 14,
                     color: isDark
@@ -1797,8 +1797,10 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
                 _buildModeOption(
                   context: context,
                   mode: null,
-                  title: 'Ask Every Time',
-                  subtitle: 'Choose mode when generating',
+                  title: context
+                      .tr(TranslationKeys.studyModePreferenceAskEveryTime),
+                  subtitle: context.tr(
+                      TranslationKeys.studyModePreferenceAskEveryTimeSubtitle),
                   icon: Icons.touch_app_outlined,
                   currentMode: currentMode,
                   duration: null,
@@ -1807,8 +1809,9 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
                 _buildModeOption(
                   context: context,
                   mode: StudyMode.quick,
-                  title: 'Quick Read',
-                  subtitle: 'Key insight + verse + reflection',
+                  title: context.tr(TranslationKeys.studyModeQuickName),
+                  subtitle:
+                      context.tr(TranslationKeys.studyModeQuickDescription),
                   icon: Icons.bolt,
                   currentMode: currentMode,
                   duration: '3 min',
@@ -1817,8 +1820,9 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
                 _buildModeOption(
                   context: context,
                   mode: StudyMode.standard,
-                  title: 'Standard Study',
-                  subtitle: 'Full guide with 6 sections',
+                  title: context.tr(TranslationKeys.studyModeStandardName),
+                  subtitle:
+                      context.tr(TranslationKeys.studyModeStandardDescription),
                   icon: Icons.library_books,
                   currentMode: currentMode,
                   duration: '10 min',
@@ -1827,8 +1831,9 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
                 _buildModeOption(
                   context: context,
                   mode: StudyMode.deep,
-                  title: 'Deep Dive',
-                  subtitle: 'Word studies + Extended context',
+                  title: context.tr(TranslationKeys.studyModeDeepName),
+                  subtitle:
+                      context.tr(TranslationKeys.studyModeDeepDescription),
                   icon: Icons.search,
                   currentMode: currentMode,
                   duration: '25 min',
@@ -1837,8 +1842,9 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
                 _buildModeOption(
                   context: context,
                   mode: StudyMode.lectio,
-                  title: 'Lectio Divina',
-                  subtitle: 'Meditative reading with silence',
+                  title: context.tr(TranslationKeys.studyModeLectioName),
+                  subtitle:
+                      context.tr(TranslationKeys.studyModeLectioDescription),
                   icon: Icons.self_improvement,
                   currentMode: currentMode,
                   duration: '15 min',

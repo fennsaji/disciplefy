@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../../../../core/constants/app_fonts.dart';
+import '../../../../core/extensions/translation_extension.dart';
+import '../../../../core/i18n/translation_keys.dart';
 import '../../domain/entities/reflection_response.dart';
 import '../../domain/entities/study_guide.dart';
 import '../../domain/entities/study_mode.dart';
@@ -57,89 +59,86 @@ class ReflectModeView extends StatefulWidget {
 }
 
 class _ReflectModeViewState extends State<ReflectModeView> {
+  static const int _totalCards =
+      6; // Summary, Interpretation, Context, Related Verses, Reflection, Prayer
+
   int _currentCardIndex = 0;
   final List<ReflectionResponse> _responses = [];
   late DateTime _startTime;
   Timer? _timeTracker;
   int _timeSpentSeconds = 0;
 
-  /// Card configurations for each section
-  late final List<ReflectCardConfig> _cardConfigs;
-
   @override
   void initState() {
     super.initState();
     _startTime = DateTime.now();
     _startTimeTracking();
-    _initializeCardConfigs();
   }
 
-  void _initializeCardConfigs() {
-    _cardConfigs = [
-      // Summary - Tap Selection
+  /// Get card configurations for each section
+  List<ReflectCardConfig> _getCardConfigs(BuildContext context) {
+    return [
+      // Summary - Tap Selection (Dynamic question)
       ReflectCardConfig(
-        sectionTitle: 'Summary',
+        sectionTitle: context.tr(TranslationKeys.reflectModeSectionSummary),
         getContent: (guide) => guide.summary,
         interactionType: ReflectionInteractionType.tapSelection,
-        question: 'What resonates most with you?',
-        options: const [
-          InteractionOption(label: 'Strength', icon: '💪'),
-          InteractionOption(label: 'Comfort', icon: '🤗'),
-          InteractionOption(label: 'Challenge', icon: '🎯'),
-        ],
+        question: widget.studyGuide.summaryQuestion ??
+            context.tr(TranslationKeys.reflectModeQuestionSummaryFallback),
+        options: [], // Will be populated dynamically from summaryInsights or fallback
       ),
 
-      // Interpretation - Slider
+      // Interpretation - Multi-select with dynamic insights (or fallback)
       ReflectCardConfig(
-        sectionTitle: 'Interpretation',
+        sectionTitle:
+            context.tr(TranslationKeys.reflectModeSectionInterpretation),
         getContent: (guide) => guide.interpretation,
-        interactionType: ReflectionInteractionType.slider,
-        question: 'How much does this apply to your life right now?',
-        sliderLabels: const SliderLabels(
-          left: 'Not at all',
-          right: 'Very much',
-        ),
+        interactionType: ReflectionInteractionType.multiSelect,
+        question: context.tr(TranslationKeys.reflectModeQuestionInterpretation),
+        options: [], // Will be populated dynamically from interpretationInsights
       ),
 
-      // Context - Yes/No
+      // Context - Yes/No with dynamic question (or fallback)
       ReflectCardConfig(
-        sectionTitle: 'Context',
+        sectionTitle: context.tr(TranslationKeys.reflectModeSectionContext),
         getContent: (guide) => guide.context,
         interactionType: ReflectionInteractionType.yesNo,
-        question: 'Have you faced a similar situation before?',
+        question: '', // Will be populated dynamically from contextQuestion
       ),
 
-      // Related Verses - Multi-select (verse selection)
+      // Related Verses - Multi-select (verse selection) with dynamic question
       ReflectCardConfig(
-        sectionTitle: 'Related Verses',
+        sectionTitle:
+            context.tr(TranslationKeys.reflectModeSectionRelatedVerses),
         getContent: (guide) => guide.relatedVerses.join('\n\n'),
         interactionType: ReflectionInteractionType.verseSelection,
-        question: 'Tap verses to save for later:',
+        question: widget.studyGuide.relatedVersesQuestion ??
+            context
+                .tr(TranslationKeys.reflectModeQuestionRelatedVersesFallback),
         options: [], // Will be populated dynamically
       ),
 
-      // Reflection Questions - Multi-select (life areas)
+      // Reflection Questions - Multi-select with dynamic reflection answers
       ReflectCardConfig(
-        sectionTitle: 'Reflection',
+        sectionTitle: context.tr(TranslationKeys.reflectModeSectionReflection),
         getContent: (guide) => guide.reflectionQuestions
             .asMap()
             .entries
             .map((e) => '${e.key + 1}. ${e.value}')
             .join('\n\n'),
         interactionType: ReflectionInteractionType.multiSelect,
-        question: 'Where do you need this today?',
-        options: LifeAreas.all
-            .map(
-                (area) => InteractionOption(label: area.label, icon: area.icon))
-            .toList(),
+        question: widget.studyGuide.reflectionQuestion ??
+            context.tr(TranslationKeys.reflectModeQuestionReflectionFallback),
+        options: [], // Will be populated dynamically from reflectionAnswers
       ),
 
-      // Prayer - Prayer mode selection
+      // Prayer - Prayer mode selection with dynamic question
       ReflectCardConfig(
-        sectionTitle: 'Prayer',
+        sectionTitle: context.tr(TranslationKeys.reflectModeSectionPrayer),
         getContent: (guide) => guide.prayerPoints.map((p) => '• $p').join('\n'),
         interactionType: ReflectionInteractionType.prayer,
-        question: 'How would you like to pray?',
+        question: widget.studyGuide.prayerQuestion ??
+            context.tr(TranslationKeys.reflectModePrayerFallback),
       ),
     ];
   }
@@ -165,7 +164,7 @@ class _ReflectModeViewState extends State<ReflectModeView> {
   }
 
   void _handleContinue() {
-    if (_currentCardIndex < _cardConfigs.length - 1) {
+    if (_currentCardIndex < _totalCards - 1) {
       setState(() {
         _currentCardIndex++;
       });
@@ -186,15 +185,88 @@ class _ReflectModeViewState extends State<ReflectModeView> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final currentConfig = _cardConfigs[_currentCardIndex];
+    final cardConfigs = _getCardConfigs(context);
+    final currentConfig = cardConfigs[_currentCardIndex];
 
-    // Get dynamic options for verse selection
+    // Get dynamic options and questions based on card index
     List<InteractionOption>? options = currentConfig.options;
+    String question = currentConfig.question;
+
+    // Card 0: Summary - Dynamic insights from LLM or fallback
+    if (_currentCardIndex == 0) {
+      final insights = widget.studyGuide.summaryInsights;
+      if (insights != null && insights.length >= 2) {
+        // Use LLM-generated insights
+        options = insights
+            .map((insight) => InteractionOption(label: insight))
+            .toList();
+      } else {
+        // Fallback for legacy study guides without summaryInsights
+        options = [
+          InteractionOption(
+              label: context
+                  .tr(TranslationKeys.reflectModeSummaryFindingStrength)),
+          InteractionOption(
+              label: context
+                  .tr(TranslationKeys.reflectModeSummaryExperiencingComfort)),
+          InteractionOption(
+              label: context
+                  .tr(TranslationKeys.reflectModeSummaryAcceptingChallenge)),
+        ];
+      }
+    }
+
+    // Card 1: Interpretation - Dynamic insights from LLM or fallback
+    if (_currentCardIndex == 1) {
+      final insights = widget.studyGuide.interpretationInsights;
+      if (insights != null && insights.length >= 2) {
+        // Use LLM-generated insights
+        options = insights
+            .map((insight) => InteractionOption(label: insight))
+            .toList();
+      } else {
+        // Fallback for legacy study guides without insights
+        options = [
+          InteractionOption(
+              label:
+                  context.tr(TranslationKeys.reflectModeFallbackGodsCharacter)),
+          InteractionOption(
+              label: context.tr(TranslationKeys.reflectModeFallbackMyResponse)),
+          InteractionOption(
+              label: context
+                  .tr(TranslationKeys.reflectModeFallbackLifeApplication)),
+        ];
+      }
+    }
+
+    // Card 2: Context - Dynamic question from LLM or fallback
+    if (_currentCardIndex == 2) {
+      final contextQ = widget.studyGuide.contextQuestion;
+      question = contextQ ??
+          context.tr(TranslationKeys.reflectModeQuestionContextFallback);
+    }
+
+    // Card 3: Related Verses - Dynamic verse selection
     if (currentConfig.interactionType ==
         ReflectionInteractionType.verseSelection) {
       options = widget.studyGuide.relatedVerses
           .map((verse) => InteractionOption(label: verse))
           .toList();
+    }
+
+    // Card 4: Reflection - Dynamic answers from LLM or fallback to life areas
+    if (_currentCardIndex == 4) {
+      final answers = widget.studyGuide.reflectionAnswers;
+      if (answers != null && answers.length >= 2) {
+        // Use LLM-generated actionable life application responses
+        options =
+            answers.map((answer) => InteractionOption(label: answer)).toList();
+      } else {
+        // Fallback to life areas for legacy study guides
+        options = LifeAreas.all
+            .map((area) => InteractionOption(label: area.label))
+            .toList();
+      }
     }
 
     return Column(
@@ -224,13 +296,15 @@ class _ReflectModeViewState extends State<ReflectModeView> {
             child: ReflectModeCard(
               key: ValueKey(_currentCardIndex),
               cardIndex: _currentCardIndex,
-              totalCards: _cardConfigs.length,
+              totalCards: cardConfigs.length,
               sectionTitle: currentConfig.sectionTitle,
               sectionContent: currentConfig.getContent(widget.studyGuide),
               interactionType: currentConfig.interactionType,
-              interactionQuestion: currentConfig.question,
-              options: options,
+              interactionQuestion: question, // Use dynamic question
+              options: options, // Use dynamic options
               sliderLabels: currentConfig.sliderLabels,
+              contentLanguage:
+                  widget.studyGuide.language, // Pass content language for TTS
               onInteractionComplete: _handleInteractionComplete,
               onContinue: _handleContinue,
             ),
@@ -304,7 +378,7 @@ class _ReflectModeViewState extends State<ReflectModeView> {
             onPressed: widget.onSwitchToRead,
             icon: const Icon(Icons.menu_book_outlined, size: 18),
             label: Text(
-              'Read',
+              context.tr(TranslationKeys.reflectModeRead),
               style: AppFonts.inter(
                 fontSize: 13,
                 fontWeight: FontWeight.w500,
@@ -322,7 +396,7 @@ class _ReflectModeViewState extends State<ReflectModeView> {
       child: TextButton.icon(
         onPressed: _handleBack,
         icon: const Icon(Icons.arrow_back, size: 18),
-        label: const Text('Previous'),
+        label: Text(context.tr(TranslationKeys.reflectModePrevious)),
       ),
     );
   }
