@@ -258,25 +258,56 @@ extension ReflectionInteractionTypeExtension on ReflectionInteractionType {
 /// Predefined life areas for the reflection multi-select interaction.
 class LifeAreas {
   static const List<LifeAreaOption> all = [
-    LifeAreaOption(id: 'work', label: 'Work', icon: '💼'),
-    LifeAreaOption(id: 'family', label: 'Family', icon: '👨‍👩‍👧'),
-    LifeAreaOption(id: 'health', label: 'Health', icon: '💪'),
-    LifeAreaOption(id: 'finances', label: 'Finances', icon: '💰'),
-    LifeAreaOption(id: 'faith', label: 'Faith', icon: '✝️'),
-    LifeAreaOption(id: 'anxiety', label: 'Anxiety', icon: '😰'),
+    LifeAreaOption(id: 'work', label: 'Work'),
+    LifeAreaOption(id: 'family', label: 'Family'),
+    LifeAreaOption(id: 'health', label: 'Health'),
+    LifeAreaOption(id: 'finances', label: 'Finances'),
+    LifeAreaOption(id: 'faith', label: 'Faith'),
+    LifeAreaOption(id: 'anxiety', label: 'Anxiety'),
   ];
 }
 
-/// Represents a life area option for multi-select.
+/// Represents a life area option for multi-select interactions in Reflect Mode.
+///
+/// Each life area option consists of an identifier, a display label, and an optional icon.
+/// The [icon] field is nullable to support both icon-based and text-only display modes.
+///
+/// **UI Implementation Note:**
+/// When displaying a [LifeAreaOption], UI components should handle the nullable [icon]
+/// by conditionally prefixing it to the label only when non-null:
+/// ```dart
+/// Text(
+///   lifeArea.icon != null
+///       ? '${lifeArea.icon} ${lifeArea.label}'
+///       : lifeArea.label,
+/// )
+/// ```
+///
+/// Example:
+/// ```dart
+/// const LifeAreaOption(
+///   id: 'work',
+///   label: 'Work',
+///   icon: '💼', // Optional icon
+/// )
+/// ```
 class LifeAreaOption {
+  /// Unique identifier for this life area.
   final String id;
+
+  /// Display label for this life area.
   final String label;
-  final String icon;
+
+  /// Optional icon emoji to display alongside the label.
+  ///
+  /// When null, UI components should display only the [label] without prefixing.
+  /// This allows for flexible presentation in different contexts.
+  final String? icon;
 
   const LifeAreaOption({
     required this.id,
     required this.label,
-    required this.icon,
+    this.icon,
   });
 }
 

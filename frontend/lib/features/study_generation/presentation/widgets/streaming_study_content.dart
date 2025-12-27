@@ -26,7 +26,15 @@ String _cleanDuplicateTitle(String content, String title) {
     // Remove first line and any empty lines that follow
     final cleanedLines =
         lines.skip(1).skipWhile((line) => line.trim().isEmpty).toList();
-    return cleanedLines.join('\n');
+    final cleaned = cleanedLines.join('\n');
+
+    // If removing the title left no content, return original
+    // (the "title" might have been the entire content)
+    if (cleaned.trim().isEmpty) {
+      return content;
+    }
+
+    return cleaned;
   }
 
   return content;
@@ -227,7 +235,7 @@ class StreamingStudyContent extends StatelessWidget {
                 // Key Insight Card (summary)
                 _buildQuickSection(
                   context,
-                  title: 'Key Insight',
+                  title: context.tr(TranslationKeys.studyGuideKeyInsight),
                   content: content.summary,
                   index: 0,
                   isHighlight: true,
@@ -238,7 +246,7 @@ class StreamingStudyContent extends StatelessWidget {
                 // Key Verse Card (interpretation contains verse)
                 _buildQuickSection(
                   context,
-                  title: 'Key Verse',
+                  title: context.tr(TranslationKeys.studyGuideKeyVerse),
                   content: content.interpretation,
                   index: 1,
                 ),
@@ -248,7 +256,7 @@ class StreamingStudyContent extends StatelessWidget {
                 // Quick Reflection (single question)
                 _buildQuickSection(
                   context,
-                  title: '🤔 Quick Reflection',
+                  title: context.tr(TranslationKeys.studyGuideQuickReflection),
                   content: content.reflectionQuestions?.isNotEmpty == true
                       ? content.reflectionQuestions!.first
                       : null,
@@ -260,7 +268,7 @@ class StreamingStudyContent extends StatelessWidget {
                 // Brief Prayer
                 _buildQuickSection(
                   context,
-                  title: 'Brief Prayer',
+                  title: context.tr(TranslationKeys.studyGuideBriefPrayer),
                   content: content.prayerPoints?.isNotEmpty == true
                       ? content.prayerPoints!.first
                       : null,
@@ -293,7 +301,7 @@ class StreamingStudyContent extends StatelessWidget {
           Icon(Icons.bolt, size: 16, color: primaryColor),
           const SizedBox(width: 6),
           Text(
-            '3-Minute Read',
+            context.tr(TranslationKeys.studyModeQuickDuration),
             style: AppFonts.inter(
               fontSize: 12,
               fontWeight: FontWeight.w600,
@@ -365,7 +373,8 @@ class StreamingStudyContent extends StatelessWidget {
                 // Comprehensive Overview (summary)
                 _buildSection(
                   context,
-                  title: 'Comprehensive Overview',
+                  title: context
+                      .tr(TranslationKeys.studyGuideComprehensiveOverview),
                   icon: Icons.summarize,
                   content: content.summary,
                   index: 0,
@@ -376,7 +385,8 @@ class StreamingStudyContent extends StatelessWidget {
                 // In-Depth Interpretation with Word Studies (interpretation)
                 _buildSection(
                   context,
-                  title: 'In-Depth Interpretation & Word Studies',
+                  title: context
+                      .tr(TranslationKeys.studyGuideInDepthInterpretation),
                   icon: Icons.lightbulb_outline,
                   content: content.interpretation,
                   index: 1,
@@ -387,7 +397,8 @@ class StreamingStudyContent extends StatelessWidget {
                 // Extended Context with Cross-References (context)
                 _buildSection(
                   context,
-                  title: 'Historical Context & Cross-References',
+                  title:
+                      context.tr(TranslationKeys.studyGuideHistoricalContext),
                   icon: Icons.history_edu,
                   content: content.context,
                   index: 2,
@@ -398,7 +409,8 @@ class StreamingStudyContent extends StatelessWidget {
                 // Scripture Connections (relatedVerses)
                 _buildSection(
                   context,
-                  title: 'Scripture Connections',
+                  title: context
+                      .tr(TranslationKeys.studyGuideScriptureConnections),
                   icon: Icons.menu_book,
                   content: content.relatedVerses?.join('\n\n'),
                   index: 3,
@@ -409,7 +421,7 @@ class StreamingStudyContent extends StatelessWidget {
                 // Deep Reflection Questions (reflectionQuestions)
                 _buildSection(
                   context,
-                  title: 'Deep Reflection & Journaling',
+                  title: context.tr(TranslationKeys.studyGuideDeepReflection),
                   icon: Icons.edit_note,
                   content: content.reflectionQuestions
                       ?.asMap()
@@ -424,7 +436,8 @@ class StreamingStudyContent extends StatelessWidget {
                 // Comprehensive Prayer (prayerPoints)
                 _buildSection(
                   context,
-                  title: 'Prayer for Deep Application',
+                  title: context
+                      .tr(TranslationKeys.studyGuidePrayerForApplication),
                   icon: Icons.favorite,
                   content: content.prayerPoints
                       ?.asMap()
@@ -460,7 +473,7 @@ class StreamingStudyContent extends StatelessWidget {
           Icon(Icons.explore, size: 16, color: primaryColor),
           const SizedBox(width: 6),
           Text(
-            '25-Minute Deep Dive',
+            context.tr(TranslationKeys.studyModeDeepDuration),
             style: AppFonts.inter(
               fontSize: 12,
               fontWeight: FontWeight.w600,
@@ -497,7 +510,8 @@ class StreamingStudyContent extends StatelessWidget {
                 // Scripture for Meditation (summary contains scripture)
                 _buildLectioSection(
                   context,
-                  title: 'Scripture for Meditation',
+                  title:
+                      context.tr(TranslationKeys.lectioScriptureForMeditation),
                   content: content.summary,
                   index: 0,
                   icon: Icons.menu_book,
@@ -508,8 +522,8 @@ class StreamingStudyContent extends StatelessWidget {
                 // LECTIO & MEDITATIO (interpretation)
                 _buildLectioSection(
                   context,
-                  title: 'Lectio & Meditatio',
-                  subtitle: 'Read & Meditate',
+                  title: context.tr(TranslationKeys.lectioLectioMeditatio),
+                  subtitle: context.tr(TranslationKeys.lectioReadMeditate),
                   content: content.interpretation,
                   index: 1,
                   icon: Icons.auto_stories,
@@ -520,7 +534,7 @@ class StreamingStudyContent extends StatelessWidget {
                 // About Lectio Divina (context)
                 _buildLectioSection(
                   context,
-                  title: 'About This Practice',
+                  title: context.tr(TranslationKeys.lectioAboutPractice),
                   content: content.context,
                   index: 2,
                   icon: Icons.info_outline,
@@ -531,7 +545,7 @@ class StreamingStudyContent extends StatelessWidget {
                 // Focus Words (relatedVerses contains focus words)
                 _buildLectioSection(
                   context,
-                  title: 'Focus Words for Meditation',
+                  title: context.tr(TranslationKeys.lectioFocusWords),
                   content: content.relatedVerses?.join('\n• '),
                   index: 3,
                   icon: Icons.highlight,
@@ -542,8 +556,8 @@ class StreamingStudyContent extends StatelessWidget {
                 // ORATIO & CONTEMPLATIO (reflectionQuestions)
                 _buildLectioSection(
                   context,
-                  title: 'Oratio & Contemplatio',
-                  subtitle: 'Pray & Rest',
+                  title: context.tr(TranslationKeys.lectioOratioContemplatio),
+                  subtitle: context.tr(TranslationKeys.lectioPrayRest),
                   content: content.reflectionQuestions?.join('\n\n'),
                   index: 4,
                   icon: Icons.self_improvement,
@@ -554,7 +568,7 @@ class StreamingStudyContent extends StatelessWidget {
                 // Closing (prayerPoints)
                 _buildLectioSection(
                   context,
-                  title: '🌟 Closing Blessing',
+                  title: context.tr(TranslationKeys.lectioClosingBlessingEmoji),
                   content: content.prayerPoints?.join('\n\n'),
                   index: 5,
                   icon: Icons.wb_sunny_outlined,
@@ -586,7 +600,7 @@ class StreamingStudyContent extends StatelessWidget {
           Icon(Icons.spa, size: 16, color: primaryColor),
           const SizedBox(width: 6),
           Text(
-            'Lectio Divina • 15 Minutes',
+            context.tr(TranslationKeys.lectioDurationLabel),
             style: AppFonts.inter(
               fontSize: 12,
               fontWeight: FontWeight.w600,

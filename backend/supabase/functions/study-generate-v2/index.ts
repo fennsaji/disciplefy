@@ -123,8 +123,38 @@ async function* streamCachedContent(
     { type: 'prayerPoints', content: studyGuide.prayerPoints, index: 5 }
   ]
 
+  // Add optional sections if present (in SECTION_ORDER)
+  let currentIndex = 6
+
+  if (studyGuide.interpretationInsights) {
+    sections.push({ type: 'interpretationInsights', content: studyGuide.interpretationInsights, index: currentIndex++ })
+  }
+  if (studyGuide.summaryInsights) {
+    sections.push({ type: 'summaryInsights', content: studyGuide.summaryInsights, index: currentIndex++ })
+  }
+  if (studyGuide.reflectionAnswers) {
+    sections.push({ type: 'reflectionAnswers', content: studyGuide.reflectionAnswers, index: currentIndex++ })
+  }
+  if (studyGuide.contextQuestion) {
+    sections.push({ type: 'contextQuestion', content: studyGuide.contextQuestion, index: currentIndex++ })
+  }
+  if (studyGuide.summaryQuestion) {
+    sections.push({ type: 'summaryQuestion', content: studyGuide.summaryQuestion, index: currentIndex++ })
+  }
+  if (studyGuide.relatedVersesQuestion) {
+    sections.push({ type: 'relatedVersesQuestion', content: studyGuide.relatedVersesQuestion, index: currentIndex++ })
+  }
+  if (studyGuide.reflectionQuestion) {
+    sections.push({ type: 'reflectionQuestion', content: studyGuide.reflectionQuestion, index: currentIndex++ })
+  }
+  if (studyGuide.prayerQuestion) {
+    sections.push({ type: 'prayerQuestion', content: studyGuide.prayerQuestion, index: currentIndex++ })
+  }
+
+  const totalSections = sections.length
+
   for (const section of sections) {
-    yield createSectionEvent(section, 6)
+    yield createSectionEvent(section, totalSections)
     // Small delay between cached sections for smooth UX
     await new Promise(resolve => setTimeout(resolve, 50))
   }
@@ -297,9 +327,6 @@ async function handleStudyGenerateV2(
 
           console.log('📦 [STUDY-V2] Streaming cached content')
 
-          // Emit init event for cache hit
-          emit(createInitEvent('cache_hit', 6))
-
           // Stream cached sections (content is nested under 'content' property from repository)
           // Spread readonly arrays to create mutable copies for CompleteStudyGuide type
           const cachedGuide: CompleteStudyGuide = {
@@ -308,8 +335,40 @@ async function handleStudyGenerateV2(
             context: existingContent.content.context || '',
             relatedVerses: [...(existingContent.content.relatedVerses || [])],
             reflectionQuestions: [...(existingContent.content.reflectionQuestions || [])],
-            prayerPoints: [...(existingContent.content.prayerPoints || [])]
+            prayerPoints: [...(existingContent.content.prayerPoints || [])],
+            // Reflection Mode fields - insights and answers
+            interpretationInsights: existingContent.content.interpretationInsights
+              ? [...existingContent.content.interpretationInsights]
+              : undefined,
+            summaryInsights: existingContent.content.summaryInsights
+              ? [...existingContent.content.summaryInsights]
+              : undefined,
+            reflectionAnswers: existingContent.content.reflectionAnswers
+              ? [...existingContent.content.reflectionAnswers]
+              : undefined,
+            // Reflection Mode fields - dynamic questions
+            contextQuestion: existingContent.content.contextQuestion || undefined,
+            summaryQuestion: existingContent.content.summaryQuestion || undefined,
+            relatedVersesQuestion: existingContent.content.relatedVersesQuestion || undefined,
+            reflectionQuestion: existingContent.content.reflectionQuestion || undefined,
+            prayerQuestion: existingContent.content.prayerQuestion || undefined
           }
+
+          // Calculate total sections for this cached guide (base 6 + optional fields)
+          const cachedSectionCount = 6 +
+            (cachedGuide.interpretationInsights ? 1 : 0) +
+            (cachedGuide.summaryInsights ? 1 : 0) +
+            (cachedGuide.reflectionAnswers ? 1 : 0) +
+            (cachedGuide.contextQuestion ? 1 : 0) +
+            (cachedGuide.summaryQuestion ? 1 : 0) +
+            (cachedGuide.relatedVersesQuestion ? 1 : 0) +
+            (cachedGuide.reflectionQuestion ? 1 : 0) +
+            (cachedGuide.prayerQuestion ? 1 : 0)
+
+          console.log('📊 [STUDY-V2] Cached section count:', cachedSectionCount)
+
+          // Emit init event for cache hit
+          emit(createInitEvent('cache_hit', cachedSectionCount))
 
           for await (const event of streamCachedContent(cachedGuide)) {
             emit(event)
@@ -372,11 +431,11 @@ async function handleStudyGenerateV2(
 
         console.log('🪙 [STUDY-V2] Tokens consumed, starting generation')
 
-        // Emit init event
-        emit(createInitEvent('started', 6))
-
         // Initialize streaming JSON parser
         const parser = new StreamingJsonParser()
+
+        // Emit init event with expected total sections
+        emit(createInitEvent('started', parser.getTotalSections()))
 
         // Stream from LLM and parse sections
         const llmStream = llmService.streamStudyGuide({
@@ -394,7 +453,7 @@ async function handleStudyGenerateV2(
           // Emit any newly complete sections
           for (const section of newSections) {
             console.log(`📤 [STUDY-V2] Emitting section: ${section.type}`)
-            emit(createSectionEvent(section, 6))
+            emit(createSectionEvent(section, parser.getTotalSections()))
           }
         }
 
@@ -420,8 +479,38 @@ async function handleStudyGenerateV2(
               { type: 'prayerPoints', content: studyGuideData.prayerPoints, index: 5 }
             ]
 
+            // Add optional sections if present (in SECTION_ORDER)
+            let currentIndex = 6
+
+            if (studyGuideData.interpretationInsights) {
+              allSections.push({ type: 'interpretationInsights', content: studyGuideData.interpretationInsights, index: currentIndex++ })
+            }
+            if (studyGuideData.summaryInsights) {
+              allSections.push({ type: 'summaryInsights', content: studyGuideData.summaryInsights, index: currentIndex++ })
+            }
+            if (studyGuideData.reflectionAnswers) {
+              allSections.push({ type: 'reflectionAnswers', content: studyGuideData.reflectionAnswers, index: currentIndex++ })
+            }
+            if (studyGuideData.contextQuestion) {
+              allSections.push({ type: 'contextQuestion', content: studyGuideData.contextQuestion, index: currentIndex++ })
+            }
+            if (studyGuideData.summaryQuestion) {
+              allSections.push({ type: 'summaryQuestion', content: studyGuideData.summaryQuestion, index: currentIndex++ })
+            }
+            if (studyGuideData.relatedVersesQuestion) {
+              allSections.push({ type: 'relatedVersesQuestion', content: studyGuideData.relatedVersesQuestion, index: currentIndex++ })
+            }
+            if (studyGuideData.reflectionQuestion) {
+              allSections.push({ type: 'reflectionQuestion', content: studyGuideData.reflectionQuestion, index: currentIndex++ })
+            }
+            if (studyGuideData.prayerQuestion) {
+              allSections.push({ type: 'prayerQuestion', content: studyGuideData.prayerQuestion, index: currentIndex++ })
+            }
+
+            const totalSections = allSections.length
+
             for (let i = emittedCount; i < allSections.length; i++) {
-              emit(createSectionEvent(allSections[i], 6))
+              emit(createSectionEvent(allSections[i], totalSections))
             }
           } else {
             console.error('❌ [STUDY-V2] Failed to parse complete study guide')
@@ -430,10 +519,25 @@ async function handleStudyGenerateV2(
           }
         }
 
-        // Save to database
+        // Save to database (convert CompleteStudyGuide to StudyGuideContent with fallbacks)
         const savedGuide = await studyGuideRepository.saveStudyGuide(
           studyGuideInput,
-          studyGuideData,
+          {
+            summary: studyGuideData.summary,
+            interpretation: studyGuideData.interpretation,
+            context: studyGuideData.context,
+            relatedVerses: studyGuideData.relatedVerses,
+            reflectionQuestions: studyGuideData.reflectionQuestions,
+            prayerPoints: studyGuideData.prayerPoints,
+            interpretationInsights: studyGuideData.interpretationInsights || [],
+            summaryInsights: studyGuideData.summaryInsights || [],
+            reflectionAnswers: studyGuideData.reflectionAnswers || [],
+            contextQuestion: studyGuideData.contextQuestion || '',
+            summaryQuestion: studyGuideData.summaryQuestion || '',
+            relatedVersesQuestion: studyGuideData.relatedVersesQuestion || '',
+            reflectionQuestion: studyGuideData.reflectionQuestion || '',
+            prayerQuestion: studyGuideData.prayerQuestion || ''
+          },
           userContext
         )
 

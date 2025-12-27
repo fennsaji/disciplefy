@@ -57,7 +57,15 @@ String _cleanDuplicateTitle(String content, String title) {
     // Remove first line and any empty lines that follow
     final cleanedLines =
         lines.skip(1).skipWhile((line) => line.trim().isEmpty).toList();
-    return cleanedLines.join('\n');
+    final cleaned = cleanedLines.join('\n');
+
+    // If removing the title left no content, return original
+    // (the "title" might have been the entire content)
+    if (cleaned.trim().isEmpty) {
+      return content;
+    }
+
+    return cleaned;
   }
 
   return content;
@@ -1038,6 +1046,14 @@ class _StudyGuideScreenV2ContentState
       relatedVerses: state.content.relatedVerses ?? [],
       reflectionQuestions: state.content.reflectionQuestions ?? [],
       prayerPoints: state.content.prayerPoints ?? [],
+      interpretationInsights: state.content.interpretationInsights,
+      summaryInsights: state.content.summaryInsights,
+      reflectionAnswers: state.content.reflectionAnswers,
+      contextQuestion: state.content.contextQuestion,
+      summaryQuestion: state.content.summaryQuestion,
+      relatedVersesQuestion: state.content.relatedVersesQuestion,
+      reflectionQuestion: state.content.reflectionQuestion,
+      prayerQuestion: state.content.prayerQuestion,
       createdAt: DateTime.now(),
       isSaved: false,
     );
@@ -1554,7 +1570,7 @@ class _StudyGuideScreenV2ContentState
 
         // Key Insight (summary)
         _QuickStudySection(
-          title: 'Key Insight',
+          title: context.tr(TranslationKeys.studyGuideKeyInsight),
           content: _currentStudyGuide!.summary,
           isHighlight: true,
         ),
@@ -1563,7 +1579,7 @@ class _StudyGuideScreenV2ContentState
 
         // Key Verse (interpretation)
         _QuickStudySection(
-          title: 'Key Verse',
+          title: context.tr(TranslationKeys.studyGuideKeyVerse),
           content: _currentStudyGuide!.interpretation,
         ),
 
@@ -1572,7 +1588,7 @@ class _StudyGuideScreenV2ContentState
         // Quick Reflection
         if (_currentStudyGuide!.reflectionQuestions.isNotEmpty)
           _QuickStudySection(
-            title: '🤔 Quick Reflection',
+            title: context.tr(TranslationKeys.studyGuideQuickReflection),
             content: _currentStudyGuide!.reflectionQuestions.first,
           ),
 
@@ -1581,7 +1597,7 @@ class _StudyGuideScreenV2ContentState
         // Brief Prayer
         if (_currentStudyGuide!.prayerPoints.isNotEmpty)
           _QuickStudySection(
-            title: 'Brief Prayer',
+            title: context.tr(TranslationKeys.studyGuideBriefPrayer),
             content: _currentStudyGuide!.prayerPoints.first,
           ),
       ],
@@ -1609,7 +1625,7 @@ class _StudyGuideScreenV2ContentState
           Icon(Icons.bolt, size: 16, color: accentColor),
           const SizedBox(width: 6),
           Text(
-            '3-Minute Read',
+            context.tr(TranslationKeys.studyModeQuickDuration),
             style: AppFonts.inter(
               fontSize: 12,
               fontWeight: FontWeight.w600,
@@ -1641,7 +1657,8 @@ class _StudyGuideScreenV2ContentState
 
             // Comprehensive Overview
             _StudySection(
-              title: 'Comprehensive Overview',
+              title:
+                  context.tr(TranslationKeys.studyGuideComprehensiveOverview),
               icon: Icons.summarize,
               content: _currentStudyGuide!.summary,
               isBeingRead: isReading && currentSection == 0,
@@ -1651,7 +1668,8 @@ class _StudyGuideScreenV2ContentState
 
             // In-Depth Interpretation
             _StudySection(
-              title: 'In-Depth Interpretation & Word Studies',
+              title:
+                  context.tr(TranslationKeys.studyGuideInDepthInterpretation),
               icon: Icons.lightbulb_outline,
               content: _currentStudyGuide!.interpretation,
               isBeingRead: isReading && currentSection == 1,
@@ -1661,7 +1679,7 @@ class _StudyGuideScreenV2ContentState
 
             // Historical Context
             _StudySection(
-              title: 'Historical Context & Cross-References',
+              title: context.tr(TranslationKeys.studyGuideHistoricalContext),
               icon: Icons.history_edu,
               content: _currentStudyGuide!.context,
               isBeingRead: isReading && currentSection == 2,
@@ -1671,7 +1689,7 @@ class _StudyGuideScreenV2ContentState
 
             // Scripture Connections
             _StudySection(
-              title: 'Scripture Connections',
+              title: context.tr(TranslationKeys.studyGuideScriptureConnections),
               icon: Icons.menu_book,
               content: _currentStudyGuide!.relatedVerses.join('\n\n'),
               isBeingRead: isReading && currentSection == 3,
@@ -1681,7 +1699,7 @@ class _StudyGuideScreenV2ContentState
 
             // Deep Reflection
             _StudySection(
-              title: 'Deep Reflection & Journaling',
+              title: context.tr(TranslationKeys.studyGuideDeepReflection),
               icon: Icons.edit_note,
               content: _currentStudyGuide!.reflectionQuestions
                   .asMap()
@@ -1696,7 +1714,7 @@ class _StudyGuideScreenV2ContentState
             // Prayer for Application
             _StudySection(
               key: _prayerPointsKey,
-              title: 'Prayer for Deep Application',
+              title: context.tr(TranslationKeys.studyGuidePrayerForApplication),
               icon: Icons.favorite,
               content: _currentStudyGuide!.prayerPoints
                   .asMap()
@@ -1732,7 +1750,7 @@ class _StudyGuideScreenV2ContentState
           Icon(Icons.explore, size: 16, color: accentColor),
           const SizedBox(width: 6),
           Text(
-            '25-Minute Deep Dive',
+            context.tr(TranslationKeys.studyModeDeepDuration),
             style: AppFonts.inter(
               fontSize: 12,
               fontWeight: FontWeight.w600,
@@ -1756,7 +1774,7 @@ class _StudyGuideScreenV2ContentState
 
         // Scripture for Meditation
         _LectioStudySection(
-          title: 'Scripture for Meditation',
+          title: context.tr(TranslationKeys.lectioScriptureForMeditation),
           content: _currentStudyGuide!.summary,
           icon: Icons.menu_book,
         ),
@@ -1765,8 +1783,8 @@ class _StudyGuideScreenV2ContentState
 
         // Lectio & Meditatio
         _LectioStudySection(
-          title: 'Lectio & Meditatio',
-          subtitle: 'Read & Meditate',
+          title: context.tr(TranslationKeys.lectioLectioMeditatio),
+          subtitle: context.tr(TranslationKeys.lectioReadMeditate),
           content: _currentStudyGuide!.interpretation,
           icon: Icons.auto_stories,
         ),
@@ -1775,7 +1793,7 @@ class _StudyGuideScreenV2ContentState
 
         // About This Practice
         _LectioStudySection(
-          title: '🕯️ About This Practice',
+          title: context.tr(TranslationKeys.lectioAboutPracticeEmoji),
           content: _currentStudyGuide!.context,
           icon: Icons.info_outline,
         ),
@@ -1785,7 +1803,7 @@ class _StudyGuideScreenV2ContentState
         // Focus Words
         if (_currentStudyGuide!.relatedVerses.isNotEmpty)
           _LectioStudySection(
-            title: '✨ Focus Words for Meditation',
+            title: context.tr(TranslationKeys.lectioFocusWordsEmoji),
             content: _currentStudyGuide!.relatedVerses.join('\n• '),
             icon: Icons.highlight,
           ),
@@ -1794,8 +1812,8 @@ class _StudyGuideScreenV2ContentState
 
         // Oratio & Contemplatio
         _LectioStudySection(
-          title: 'Oratio & Contemplatio',
-          subtitle: 'Pray & Rest',
+          title: context.tr(TranslationKeys.lectioOratioContemplatio),
+          subtitle: context.tr(TranslationKeys.lectioPrayRest),
           content: _currentStudyGuide!.reflectionQuestions.join('\n\n'),
           icon: Icons.self_improvement,
         ),
@@ -1805,7 +1823,7 @@ class _StudyGuideScreenV2ContentState
         // Closing Blessing
         if (_currentStudyGuide!.prayerPoints.isNotEmpty)
           _LectioStudySection(
-            title: '🌟 Closing Blessing',
+            title: context.tr(TranslationKeys.lectioClosingBlessingEmoji),
             content: _currentStudyGuide!.prayerPoints.join('\n\n'),
             icon: Icons.wb_sunny_outlined,
           ),
@@ -1834,7 +1852,7 @@ class _StudyGuideScreenV2ContentState
           Icon(Icons.spa, size: 16, color: accentColor),
           const SizedBox(width: 6),
           Text(
-            'Lectio Divina • 15 Minutes',
+            context.tr(TranslationKeys.lectioDurationLabel),
             style: AppFonts.inter(
               fontSize: 12,
               fontWeight: FontWeight.w600,
@@ -2038,7 +2056,9 @@ class _StudyGuideScreenV2ContentState
                               size: 22,
                             ),
                       label: Text(
-                        isLoading ? 'Loading...' : 'Listen',
+                        isLoading
+                            ? context.tr(TranslationKeys.studyGuideLoading)
+                            : context.tr(TranslationKeys.studyGuideListen),
                         style: AppFonts.inter(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
@@ -2113,7 +2133,7 @@ class _StudyGuideScreenV2ContentState
                         ),
                         const SizedBox(width: 8),
                         Text(
-                          'Ask AI',
+                          context.tr(TranslationKeys.studyGuideAskAi),
                           style: AppFonts.inter(
                             fontSize: 16,
                             fontWeight: FontWeight.w600,

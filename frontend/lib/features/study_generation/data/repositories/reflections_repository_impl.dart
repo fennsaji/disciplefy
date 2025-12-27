@@ -1,3 +1,4 @@
+import '../../../../core/network/network_info.dart';
 import '../../domain/entities/reflection_response.dart';
 import '../../domain/entities/study_mode.dart';
 import '../../domain/repositories/reflections_repository.dart';
@@ -9,12 +10,16 @@ import '../datasources/reflections_remote_data_source.dart';
 /// - Implementing the domain repository interface
 /// - Delegating to the data layer remote data source
 /// - Converting between data models and domain entities
+/// - Checking network connectivity before remote operations
 class ReflectionsRepositoryImpl implements ReflectionsRepository {
   final ReflectionsRemoteDataSource _remoteDataSource;
+  final NetworkInfo _networkInfo;
 
   ReflectionsRepositoryImpl({
     required ReflectionsRemoteDataSource remoteDataSource,
-  }) : _remoteDataSource = remoteDataSource;
+    required NetworkInfo networkInfo,
+  })  : _remoteDataSource = remoteDataSource,
+        _networkInfo = networkInfo;
 
   @override
   Future<ReflectionSession> saveReflection({
