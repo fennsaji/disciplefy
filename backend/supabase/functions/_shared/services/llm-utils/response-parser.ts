@@ -139,6 +139,72 @@ export function validateStudyGuideResponse(response: unknown): response is LLMRe
     }
   }
 
+  // Validate optional interpretationInsights
+  if ('interpretationInsights' in resp) {
+    if (!Array.isArray(resp.interpretationInsights)) {
+      console.warn('[ResponseParser] interpretationInsights is not an array, will be ignored')
+    } else if ((resp.interpretationInsights as unknown[]).length < 2) {
+      console.warn('[ResponseParser] interpretationInsights has fewer than 2 items, may not be ideal for multi-select')
+    }
+  }
+
+  // Validate optional summaryInsights
+  if ('summaryInsights' in resp) {
+    if (!Array.isArray(resp.summaryInsights)) {
+      console.warn('[ResponseParser] summaryInsights is not an array, will be ignored')
+    } else {
+      const insights = resp.summaryInsights as unknown[]
+      if (!insights.every((i) => typeof i === 'string')) {
+        console.warn('[ResponseParser] summaryInsights contains non-string elements')
+      }
+      if (insights.length < 2) {
+        console.warn('[ResponseParser] summaryInsights has fewer than 2 items, may not be ideal for selection')
+      }
+    }
+  }
+
+  // Validate optional reflectionAnswers
+  if ('reflectionAnswers' in resp) {
+    if (!Array.isArray(resp.reflectionAnswers)) {
+      console.warn('[ResponseParser] reflectionAnswers is not an array, will be ignored')
+    } else {
+      const answers = resp.reflectionAnswers as unknown[]
+      if (!answers.every((a) => typeof a === 'string')) {
+        console.warn('[ResponseParser] reflectionAnswers contains non-string elements')
+      }
+      if (answers.length < 2) {
+        console.warn('[ResponseParser] reflectionAnswers has fewer than 2 items, may not be ideal for selection')
+      }
+    }
+  }
+
+  // Validate optional contextQuestion
+  if ('contextQuestion' in resp) {
+    if (typeof resp.contextQuestion !== 'string') {
+      console.warn('[ResponseParser] contextQuestion is not a string, will be ignored')
+    } else if ((resp.contextQuestion as string).trim().length === 0) {
+      console.warn('[ResponseParser] contextQuestion is empty, will be ignored')
+    }
+  }
+
+  // Validate optional reflection questions
+  const questionFields = [
+    'summaryQuestion',
+    'relatedVersesQuestion',
+    'reflectionQuestion',
+    'prayerQuestion'
+  ] as const
+
+  for (const field of questionFields) {
+    if (field in resp) {
+      if (typeof resp[field] !== 'string') {
+        console.warn(`[ResponseParser] ${field} is not a string, will be ignored`)
+      } else if ((resp[field] as string).trim().length === 0) {
+        console.warn(`[ResponseParser] ${field} is empty, will be ignored`)
+      }
+    }
+  }
+
   return true
 }
 
@@ -197,7 +263,33 @@ export function sanitizeStudyGuideResponse(response: Record<string, unknown>): L
     context: sanitizeText(response.context as string),
     relatedVerses: (response.relatedVerses as string[]).map(verse => sanitizeText(verse)),
     reflectionQuestions: (response.reflectionQuestions as string[]).map(q => sanitizeText(q)),
-    prayerPoints: (response.prayerPoints as string[]).map(point => sanitizeText(point))
+    prayerPoints: (response.prayerPoints as string[]).map(point => sanitizeText(point)),
+    interpretationInsights: response.interpretationInsights
+      ? (response.interpretationInsights as string[])
+          .map(sanitizeText)
+          .filter(insight => insight.length > 0 && insight.length <= 150)
+      : undefined,
+    summaryInsights: Array.isArray(response.summaryInsights)
+      ? (response.summaryInsights as string[]).map(sanitizeText).slice(0, 5)
+      : undefined,
+    reflectionAnswers: Array.isArray(response.reflectionAnswers)
+      ? (response.reflectionAnswers as string[]).map(sanitizeText).slice(0, 5)
+      : undefined,
+    contextQuestion: response.contextQuestion
+      ? sanitizeText(response.contextQuestion as string)
+      : undefined,
+    summaryQuestion: response.summaryQuestion
+      ? sanitizeText(response.summaryQuestion as string)
+      : undefined,
+    relatedVersesQuestion: response.relatedVersesQuestion
+      ? sanitizeText(response.relatedVersesQuestion as string)
+      : undefined,
+    reflectionQuestion: response.reflectionQuestion
+      ? sanitizeText(response.reflectionQuestion as string)
+      : undefined,
+    prayerQuestion: response.prayerQuestion
+      ? sanitizeText(response.prayerQuestion as string)
+      : undefined
   }
 }
 

@@ -44,6 +44,14 @@ export interface StudyGuideContent {
   readonly relatedVerses: readonly string[]
   readonly reflectionQuestions: readonly string[]
   readonly prayerPoints: readonly string[]
+  readonly interpretationInsights?: readonly string[]  // Optional: for Reflect Mode multi-select
+  readonly summaryInsights?: readonly string[]  // Optional: for Summary card resonance themes (Reflect Mode)
+  readonly reflectionAnswers?: readonly string[]  // Optional: for Reflection card actionable life application responses (Reflect Mode)
+  readonly contextQuestion?: string  // Optional: for Reflect Mode yes/no question
+  readonly summaryQuestion?: string  // Optional: Engaging question about the summary (8-12 words)
+  readonly relatedVersesQuestion?: string  // Optional: Question prompting verse selection/memorization (8-12 words)
+  readonly reflectionQuestion?: string  // Optional: Question connecting study to daily life (8-12 words)
+  readonly prayerQuestion?: string  // Optional: Question inviting personal prayer response (6-10 words)
 }
 
 /**

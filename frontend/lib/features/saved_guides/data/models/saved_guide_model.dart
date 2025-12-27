@@ -45,6 +45,39 @@ class SavedGuideModel extends SavedGuideEntity {
   @HiveField(14)
   final List<String>? prayerPoints;
 
+  // Reflection enhancement fields
+  @override
+  @HiveField(15)
+  final List<String>? interpretationInsights;
+
+  @override
+  @HiveField(16)
+  final String? contextQuestion;
+
+  @override
+  @HiveField(17)
+  final String? summaryQuestion;
+
+  @override
+  @HiveField(18)
+  final String? relatedVersesQuestion;
+
+  @override
+  @HiveField(19)
+  final String? reflectionQuestion;
+
+  @override
+  @HiveField(20)
+  final String? prayerQuestion;
+
+  @override
+  @HiveField(21)
+  final List<String>? summaryInsights;
+
+  @override
+  @HiveField(22)
+  final List<String>? reflectionAnswers;
+
   @HiveField(3)
   @JsonKey(name: 'type')
   final String typeString;
@@ -85,6 +118,14 @@ class SavedGuideModel extends SavedGuideEntity {
     this.relatedVerses,
     this.reflectionQuestions,
     this.prayerPoints,
+    this.interpretationInsights,
+    this.summaryInsights,
+    this.reflectionAnswers,
+    this.contextQuestion,
+    this.summaryQuestion,
+    this.relatedVersesQuestion,
+    this.reflectionQuestion,
+    this.prayerQuestion,
   }) : super(
           id: id,
           title: title,
@@ -101,6 +142,14 @@ class SavedGuideModel extends SavedGuideEntity {
           relatedVerses: relatedVerses,
           reflectionQuestions: reflectionQuestions,
           prayerPoints: prayerPoints,
+          interpretationInsights: interpretationInsights,
+          summaryInsights: summaryInsights,
+          reflectionAnswers: reflectionAnswers,
+          contextQuestion: contextQuestion,
+          summaryQuestion: summaryQuestion,
+          relatedVersesQuestion: relatedVersesQuestion,
+          reflectionQuestion: reflectionQuestion,
+          prayerQuestion: prayerQuestion,
         );
 
   factory SavedGuideModel.fromJson(Map<String, dynamic> json) =>
@@ -125,6 +174,14 @@ class SavedGuideModel extends SavedGuideEntity {
         relatedVerses: entity.relatedVerses,
         reflectionQuestions: entity.reflectionQuestions,
         prayerPoints: entity.prayerPoints,
+        interpretationInsights: entity.interpretationInsights,
+        summaryInsights: entity.summaryInsights,
+        reflectionAnswers: entity.reflectionAnswers,
+        contextQuestion: entity.contextQuestion,
+        summaryQuestion: entity.summaryQuestion,
+        relatedVersesQuestion: entity.relatedVersesQuestion,
+        reflectionQuestion: entity.reflectionQuestion,
+        prayerQuestion: entity.prayerQuestion,
       );
 
   /// Create model from API response
@@ -150,6 +207,25 @@ class SavedGuideModel extends SavedGuideEntity {
         (contentData['prayerPoints'] as List<dynamic>?)?.cast<String>() ??
             <String>[];
 
+    // Extract reflection enhancement fields
+    final interpretationInsights =
+        (contentData['interpretationInsights'] as List<dynamic>?)
+                ?.cast<String>() ??
+            <String>[];
+    final summaryInsights =
+        (contentData['summaryInsights'] as List<dynamic>?)?.cast<String>() ??
+            <String>[];
+    final reflectionAnswers =
+        (contentData['reflectionAnswers'] as List<dynamic>?)?.cast<String>() ??
+            <String>[];
+    final contextQuestion = contentData['contextQuestion'] as String? ?? '';
+    final summaryQuestion = contentData['summaryQuestion'] as String? ?? '';
+    final relatedVersesQuestion =
+        contentData['relatedVersesQuestion'] as String? ?? '';
+    final reflectionQuestion =
+        contentData['reflectionQuestion'] as String? ?? '';
+    final prayerQuestion = contentData['prayerQuestion'] as String? ?? '';
+
     return SavedGuideModel(
       id: json['id'] as String,
       title: inputValue,
@@ -173,6 +249,19 @@ class SavedGuideModel extends SavedGuideEntity {
       reflectionQuestions:
           reflectionQuestions.isNotEmpty ? reflectionQuestions : null,
       prayerPoints: prayerPoints.isNotEmpty ? prayerPoints : null,
+      // Store reflection enhancement fields
+      interpretationInsights:
+          interpretationInsights.isNotEmpty ? interpretationInsights : null,
+      summaryInsights: summaryInsights.isNotEmpty ? summaryInsights : null,
+      reflectionAnswers:
+          reflectionAnswers.isNotEmpty ? reflectionAnswers : null,
+      contextQuestion: contextQuestion.isNotEmpty ? contextQuestion : null,
+      summaryQuestion: summaryQuestion.isNotEmpty ? summaryQuestion : null,
+      relatedVersesQuestion:
+          relatedVersesQuestion.isNotEmpty ? relatedVersesQuestion : null,
+      reflectionQuestion:
+          reflectionQuestion.isNotEmpty ? reflectionQuestion : null,
+      prayerQuestion: prayerQuestion.isNotEmpty ? prayerQuestion : null,
     );
   }
 
@@ -192,6 +281,14 @@ class SavedGuideModel extends SavedGuideEntity {
         relatedVerses: relatedVerses,
         reflectionQuestions: reflectionQuestions,
         prayerPoints: prayerPoints,
+        interpretationInsights: interpretationInsights,
+        summaryInsights: summaryInsights,
+        reflectionAnswers: reflectionAnswers,
+        contextQuestion: contextQuestion,
+        summaryQuestion: summaryQuestion,
+        relatedVersesQuestion: relatedVersesQuestion,
+        reflectionQuestion: reflectionQuestion,
+        prayerQuestion: prayerQuestion,
       );
 
   @override
@@ -205,6 +302,14 @@ class SavedGuideModel extends SavedGuideEntity {
     List<String>? relatedVerses,
     List<String>? reflectionQuestions,
     List<String>? prayerPoints,
+    List<String>? interpretationInsights,
+    List<String>? summaryInsights,
+    List<String>? reflectionAnswers,
+    String? contextQuestion,
+    String? summaryQuestion,
+    String? relatedVersesQuestion,
+    String? reflectionQuestion,
+    String? prayerQuestion,
     GuideType? type,
     DateTime? createdAt,
     DateTime? lastAccessedAt,
@@ -231,6 +336,16 @@ class SavedGuideModel extends SavedGuideEntity {
         relatedVerses: relatedVerses ?? this.relatedVerses,
         reflectionQuestions: reflectionQuestions ?? this.reflectionQuestions,
         prayerPoints: prayerPoints ?? this.prayerPoints,
+        interpretationInsights:
+            interpretationInsights ?? this.interpretationInsights,
+        summaryInsights: summaryInsights ?? this.summaryInsights,
+        reflectionAnswers: reflectionAnswers ?? this.reflectionAnswers,
+        contextQuestion: contextQuestion ?? this.contextQuestion,
+        summaryQuestion: summaryQuestion ?? this.summaryQuestion,
+        relatedVersesQuestion:
+            relatedVersesQuestion ?? this.relatedVersesQuestion,
+        reflectionQuestion: reflectionQuestion ?? this.reflectionQuestion,
+        prayerQuestion: prayerQuestion ?? this.prayerQuestion,
       );
 
   /// Convert to StudyGuide with structured content only
@@ -248,8 +363,17 @@ class SavedGuideModel extends SavedGuideEntity {
         reflectionQuestions:
             reflectionQuestions ?? _extractReflectionQuestionsFromContent(),
         prayerPoints: prayerPoints ?? _extractPrayerPointsFromContent(),
+        interpretationInsights: interpretationInsights,
+        summaryInsights: summaryInsights,
+        reflectionAnswers: reflectionAnswers,
+        contextQuestion: contextQuestion,
+        summaryQuestion: summaryQuestion,
+        relatedVersesQuestion: relatedVersesQuestion,
+        reflectionQuestion: reflectionQuestion,
+        prayerQuestion: prayerQuestion,
         language: 'en', // Default language
         createdAt: createdAt,
+        isSaved: isSaved,
       );
 
   /// Extract summary from content as fallback (safer than full parsing)

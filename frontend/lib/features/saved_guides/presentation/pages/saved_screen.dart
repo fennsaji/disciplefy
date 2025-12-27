@@ -645,6 +645,15 @@ class _SavedScreenContent extends StatelessWidget {
         'related_verses': guide.relatedVerses,
         'reflection_questions': guide.reflectionQuestions,
         'prayer_points': guide.prayerPoints,
+        // Include reflection enhancement fields
+        'interpretation_insights': guide.interpretationInsights,
+        'summary_insights': guide.summaryInsights,
+        'reflection_answers': guide.reflectionAnswers,
+        'context_question': guide.contextQuestion,
+        'summary_question': guide.summaryQuestion,
+        'related_verses_question': guide.relatedVersesQuestion,
+        'reflection_question': guide.reflectionQuestion,
+        'prayer_question': guide.prayerQuestion,
       }
     });
   }

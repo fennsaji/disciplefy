@@ -10,6 +10,7 @@
 
 import type { OpenAIRequest, OpenAIResponse, LanguageConfig, LLMGenerationParams } from '../llm-types.ts'
 import { calculateOptimalTokens } from '../llm-utils/prompt-builder.ts'
+import { studyGuideSchema } from '../llm-utils/study-guide-schema.ts'
 
 /**
  * OpenAI API configuration
@@ -144,7 +145,10 @@ export class OpenAIClient {
       max_tokens: maxTokens,
       presence_penalty: 0.1,
       frequency_penalty: 0.1,
-      response_format: { type: 'json_object' }
+      response_format: {
+        type: 'json_schema',
+        json_schema: studyGuideSchema
+      }
     }
 
     const response = await fetch(this.baseUrl, {
@@ -399,7 +403,10 @@ export class OpenAIClient {
       max_tokens: maxTokens,
       presence_penalty: 0.1,
       frequency_penalty: 0.1,
-      response_format: { type: 'json_object' },
+      response_format: {
+        type: 'json_schema',
+        json_schema: studyGuideSchema
+      },
       stream: true
     }
 

@@ -221,6 +221,19 @@ class _StudyGuideScreenContentState extends State<_StudyGuideScreenContent> {
           (guideData['reflection_questions'] as List<dynamic>?)?.cast<String>(),
       prayerPoints:
           (guideData['prayer_points'] as List<dynamic>?)?.cast<String>(),
+      // Include reflection enhancement fields
+      interpretationInsights:
+          (guideData['interpretation_insights'] as List<dynamic>?)
+              ?.cast<String>(),
+      summaryInsights:
+          (guideData['summary_insights'] as List<dynamic>?)?.cast<String>(),
+      reflectionAnswers:
+          (guideData['reflection_answers'] as List<dynamic>?)?.cast<String>(),
+      contextQuestion: guideData['context_question'] as String?,
+      summaryQuestion: guideData['summary_question'] as String?,
+      relatedVersesQuestion: guideData['related_verses_question'] as String?,
+      reflectionQuestion: guideData['reflection_question'] as String?,
+      prayerQuestion: guideData['prayer_question'] as String?,
     );
   }
 

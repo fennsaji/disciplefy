@@ -258,12 +258,12 @@ extension ReflectionInteractionTypeExtension on ReflectionInteractionType {
 /// Predefined life areas for the reflection multi-select interaction.
 class LifeAreas {
   static const List<LifeAreaOption> all = [
-    LifeAreaOption(id: 'work', label: 'Work', icon: '💼'),
-    LifeAreaOption(id: 'family', label: 'Family', icon: '👨‍👩‍👧'),
-    LifeAreaOption(id: 'health', label: 'Health', icon: '💪'),
-    LifeAreaOption(id: 'finances', label: 'Finances', icon: '💰'),
-    LifeAreaOption(id: 'faith', label: 'Faith', icon: '✝️'),
-    LifeAreaOption(id: 'anxiety', label: 'Anxiety', icon: '😰'),
+    LifeAreaOption(id: 'work', label: 'Work'),
+    LifeAreaOption(id: 'family', label: 'Family'),
+    LifeAreaOption(id: 'health', label: 'Health'),
+    LifeAreaOption(id: 'finances', label: 'Finances'),
+    LifeAreaOption(id: 'faith', label: 'Faith'),
+    LifeAreaOption(id: 'anxiety', label: 'Anxiety'),
   ];
 }
 
@@ -271,12 +271,12 @@ class LifeAreas {
 class LifeAreaOption {
   final String id;
   final String label;
-  final String icon;
+  final String? icon;
 
   const LifeAreaOption({
     required this.id,
     required this.label,
-    required this.icon,
+    this.icon,
   });
 }
 

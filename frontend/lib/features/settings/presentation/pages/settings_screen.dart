@@ -208,8 +208,10 @@ class _SettingsScreenContent extends StatelessWidget {
                       _buildSettingsTile(
                         context: context,
                         icon: Icons.edit_note_outlined,
-                        title: 'Reflection Journal',
-                        subtitle: 'View your past study reflections',
+                        title: context
+                            .tr(TranslationKeys.settingsReflectionJournal),
+                        subtitle: context.tr(
+                            TranslationKeys.settingsReflectionJournalSubtitle),
                         trailing: Icon(
                           Icons.arrow_forward_ios,
                           size: 16,
@@ -488,13 +490,16 @@ class _SettingsScreenContent extends StatelessWidget {
     final defaultMode =
         authProvider.userProfile?['default_study_mode'] as String?;
     final subtitle = defaultMode != null
-        ? 'Current: ${_getStudyModeDisplayName(defaultMode)}'
-        : 'Ask every time';
+        ? context
+            .tr(TranslationKeys.settingsStudyModePreferenceCurrent)
+            .replaceAll(
+                '{mode}', _getStudyModeDisplayName(defaultMode, context))
+        : context.tr(TranslationKeys.settingsAskEveryTime);
 
     return _buildSettingsTile(
       context: context,
       icon: Icons.school_outlined,
-      title: 'Study Mode Preference',
+      title: context.tr(TranslationKeys.settingsStudyModePreference),
       subtitle: subtitle,
       trailing: Icon(
         Icons.arrow_forward_ios,
@@ -506,15 +511,54 @@ class _SettingsScreenContent extends StatelessWidget {
   }
 
   /// Get display name for study mode
-  String _getStudyModeDisplayName(String modeString) {
+  String _getStudyModeDisplayName(String modeString, BuildContext context) {
     try {
       final mode = StudyMode.values.firstWhere(
         (m) => m.value == modeString,
         orElse: () => StudyMode.standard,
       );
-      return mode.displayName;
+
+      switch (mode) {
+        case StudyMode.quick:
+          return context.tr(TranslationKeys.studyModeQuickName);
+        case StudyMode.standard:
+          return context.tr(TranslationKeys.studyModeStandardName);
+        case StudyMode.deep:
+          return context.tr(TranslationKeys.studyModeDeepName);
+        case StudyMode.lectio:
+          return context.tr(TranslationKeys.studyModeLectioName);
+      }
     } catch (e) {
-      return 'Standard';
+      return context.tr(TranslationKeys.studyModeStandardName);
+    }
+  }
+
+  /// Get translated display name for study mode enum
+  String _getStudyModeTranslatedName(StudyMode mode, BuildContext context) {
+    switch (mode) {
+      case StudyMode.quick:
+        return context.tr(TranslationKeys.studyModeQuickName);
+      case StudyMode.standard:
+        return context.tr(TranslationKeys.studyModeStandardName);
+      case StudyMode.deep:
+        return context.tr(TranslationKeys.studyModeDeepName);
+      case StudyMode.lectio:
+        return context.tr(TranslationKeys.studyModeLectioName);
+    }
+  }
+
+  /// Get translated description for study mode enum
+  String _getStudyModeTranslatedDescription(
+      StudyMode mode, BuildContext context) {
+    switch (mode) {
+      case StudyMode.quick:
+        return context.tr(TranslationKeys.studyModeQuickDescription);
+      case StudyMode.standard:
+        return context.tr(TranslationKeys.studyModeStandardDescription);
+      case StudyMode.deep:
+        return context.tr(TranslationKeys.studyModeDeepDescription);
+      case StudyMode.lectio:
+        return context.tr(TranslationKeys.studyModeLectioDescription);
     }
   }
 
@@ -1223,7 +1267,7 @@ class _SettingsScreenContent extends StatelessWidget {
             ),
             const SizedBox(height: 24),
             Text(
-              'Study Mode Preference',
+              context.tr(TranslationKeys.settingsStudyModePreference),
               style: AppFonts.inter(
                 fontSize: 20,
                 fontWeight: FontWeight.w700,
@@ -1232,7 +1276,7 @@ class _SettingsScreenContent extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              'Choose your default study mode or ask every time',
+              context.tr(TranslationKeys.modeSelectionSubtitle),
               style: AppFonts.inter(
                 fontSize: 14,
                 color: Theme.of(builderContext)
@@ -1247,9 +1291,9 @@ class _SettingsScreenContent extends StatelessWidget {
               builderContext,
               parentContext,
               null,
-              'Ask Every Time',
+              context.tr(TranslationKeys.settingsAskEveryTime),
               Icons.help_outline,
-              'Choose mode each time you start a study',
+              context.tr(TranslationKeys.settingsAskEveryTimeSubtitle),
               currentMode,
             ),
             const SizedBox(height: 8),
@@ -1260,9 +1304,9 @@ class _SettingsScreenContent extends StatelessWidget {
                     builderContext,
                     parentContext,
                     mode.value,
-                    mode.displayName,
+                    _getStudyModeTranslatedName(mode, context),
                     mode.iconData,
-                    '${mode.durationText} - ${mode.description}',
+                    '${mode.durationText} - ${_getStudyModeTranslatedDescription(mode, context)}',
                     currentMode,
                   ),
                 )),
