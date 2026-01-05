@@ -523,7 +523,7 @@ class StreamingStudyContent extends StatelessWidget {
                 if (content.summaryQuestion != null)
                   _buildLectioSection(
                     context,
-                    title: 'Reflection Prompt',
+                    title: context.tr(TranslationKeys.lectioReflectionPrompt),
                     content: content.summaryQuestion,
                     index: 1,
                     icon: Icons.psychology,
@@ -536,7 +536,7 @@ class StreamingStudyContent extends StatelessWidget {
                     content.summaryInsights!.isNotEmpty)
                   _buildLectioSection(
                     context,
-                    title: 'Key Themes',
+                    title: context.tr(TranslationKeys.lectioKeyThemes),
                     content: content.summaryInsights!
                         .map((insight) => '• $insight')
                         .join('\n'),
@@ -563,7 +563,8 @@ class StreamingStudyContent extends StatelessWidget {
                     content.interpretationInsights!.isNotEmpty)
                   _buildLectioSection(
                     context,
-                    title: 'Theological Insights',
+                    title:
+                        context.tr(TranslationKeys.lectioTheologicalInsights),
                     content: content.interpretationInsights!
                         .map((insight) => '• $insight')
                         .join('\n'),
@@ -588,7 +589,7 @@ class StreamingStudyContent extends StatelessWidget {
                 if (content.contextQuestion != null)
                   _buildLectioSection(
                     context,
-                    title: 'Connect to Today',
+                    title: context.tr(TranslationKeys.lectioConnectToToday),
                     content: content.contextQuestion,
                     index: 6,
                     icon: Icons.question_answer,
@@ -613,7 +614,7 @@ class StreamingStudyContent extends StatelessWidget {
                 if (content.relatedVersesQuestion != null)
                   _buildLectioSection(
                     context,
-                    title: 'Verse Reflection',
+                    title: context.tr(TranslationKeys.lectioVerseReflection),
                     content: content.relatedVersesQuestion,
                     index: 8,
                     icon: Icons.format_quote,
@@ -641,7 +642,8 @@ class StreamingStudyContent extends StatelessWidget {
                 if (content.reflectionQuestion != null)
                   _buildLectioSection(
                     context,
-                    title: 'Personal Application',
+                    title:
+                        context.tr(TranslationKeys.lectioPersonalApplication),
                     content: content.reflectionQuestion,
                     index: 10,
                     icon: Icons.lightbulb,
@@ -654,7 +656,7 @@ class StreamingStudyContent extends StatelessWidget {
                     content.reflectionAnswers!.isNotEmpty)
                   _buildLectioSection(
                     context,
-                    title: 'Living It Out',
+                    title: context.tr(TranslationKeys.lectioLivingItOut),
                     content: content.reflectionAnswers!
                         .map((answer) => '• $answer')
                         .join('\n'),
@@ -681,7 +683,7 @@ class StreamingStudyContent extends StatelessWidget {
                 if (content.prayerQuestion != null)
                   _buildLectioSection(
                     context,
-                    title: 'Prayer Invitation',
+                    title: context.tr(TranslationKeys.lectioPrayerInvitation),
                     content: content.prayerQuestion,
                     index: 13,
                     icon: Icons.favorite,

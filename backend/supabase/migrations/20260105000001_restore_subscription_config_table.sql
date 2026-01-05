@@ -57,7 +57,7 @@ INSERT INTO public.subscription_config (key, value, description) VALUES
   ),
   (
     'premium_trial_start_date',
-    '2025-04-01T00:00:00+05:30',
+    '2026-04-01T00:00:00+05:30',
     'Start date for Premium trial eligibility period'
   ),
   (

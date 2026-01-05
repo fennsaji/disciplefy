@@ -407,17 +407,9 @@ export class StreamingJsonParser {
         cleanBuffer = cleanBuffer.substring(0, endIndex + 1)
       }
 
-      // Escape control characters for valid JSON
-      // JSON doesn't allow literal newlines, tabs, etc. in strings - they must be escaped
-      const sanitizedBuffer = cleanBuffer
-        .replace(/\\/g, '\\\\')   // Escape backslashes first
-        .replace(/\n/g, '\\n')    // Escape newlines
-        .replace(/\r/g, '\\r')    // Escape carriage returns
-        .replace(/\t/g, '\\t')    // Escape tabs
-        .replace(/\f/g, '\\f')    // Escape form feeds
-        .replace(/\b/g, '\\b')    // Escape backspaces
-
-      const parsed = JSON.parse(sanitizedBuffer)
+      // First attempt: parse the cleaned buffer directly
+      // LLM should return properly escaped JSON; additional escaping corrupts valid sequences
+      const parsed = JSON.parse(cleanBuffer)
 
       // Validate required structure
       if (
