@@ -172,176 +172,196 @@ class _ModeSelectionSheetState extends State<ModeSelectionSheet> {
               ),
               const SizedBox(height: 24),
 
-              // Mode options
-              ...StudyMode.values.map((mode) => Padding(
-                    padding: const EdgeInsets.only(bottom: 12),
-                    child: _ModeOptionCard(
-                      mode: mode,
-                      isSelected: _selectedMode == mode,
-                      isRecommended: mode == widget.recommendedMode,
-                      translatedName:
-                          _getStudyModeTranslatedName(mode, context),
-                      translatedDescription:
-                          _getStudyModeTranslatedDescription(mode, context),
-                      recommendedBadgeText: widget.isFromLearningPath
-                          ? context.tr(
-                              TranslationKeys.learningPathRecommendedModeBadge)
-                          : context.tr(
-                              TranslationKeys.modeSelectionRecommendedBadge),
-                      onTap: () {
-                        setState(() {
-                          _selectedMode = mode;
-                        });
-                      },
-                    ),
-                  )),
+              // Scrollable content area
+              Flexible(
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // Mode options
+                      ...StudyMode.values.map((mode) => Padding(
+                            padding: const EdgeInsets.only(bottom: 12),
+                            child: _ModeOptionCard(
+                              mode: mode,
+                              isSelected: _selectedMode == mode,
+                              isRecommended: mode == widget.recommendedMode,
+                              translatedName:
+                                  _getStudyModeTranslatedName(mode, context),
+                              translatedDescription:
+                                  _getStudyModeTranslatedDescription(
+                                      mode, context),
+                              recommendedBadgeText: widget.isFromLearningPath
+                                  ? context.tr(TranslationKeys
+                                      .learningPathRecommendedModeBadge)
+                                  : context.tr(TranslationKeys
+                                      .modeSelectionRecommendedBadge),
+                              onTap: () {
+                                setState(() {
+                                  _selectedMode = mode;
+                                });
+                              },
+                            ),
+                          )),
 
-              const SizedBox(height: 8),
+                      const SizedBox(height: 8),
 
-              // "Always use recommended" checkbox (for learning paths)
-              if (widget.isFromLearningPath && widget.recommendedMode != null)
-                GestureDetector(
-                  onTap: () {
-                    setState(() {
-                      _alwaysUseRecommended = !_alwaysUseRecommended;
-                    });
-                  },
-                  behavior: HitTestBehavior.opaque,
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        SizedBox(
-                          height: 44,
-                          child: Center(
-                            child: AnimatedContainer(
-                              duration: const Duration(milliseconds: 200),
-                              width: 22,
-                              height: 22,
-                              decoration: BoxDecoration(
-                                color: _alwaysUseRecommended
-                                    ? const Color(
-                                        0xFFF59E0B) // Gold for recommended
-                                    : Colors.transparent,
-                                borderRadius: BorderRadius.circular(6),
-                                border: Border.all(
-                                  color: _alwaysUseRecommended
-                                      ? const Color(0xFFF59E0B)
-                                      : isDark
-                                          ? Colors.white.withOpacity(0.3)
-                                          : const Color(0xFFD1D5DB),
-                                  width: 2,
+                      // "Always use recommended" checkbox (for learning paths)
+                      if (widget.isFromLearningPath &&
+                          widget.recommendedMode != null)
+                        GestureDetector(
+                          onTap: () {
+                            setState(() {
+                              _alwaysUseRecommended = !_alwaysUseRecommended;
+                            });
+                          },
+                          behavior: HitTestBehavior.opaque,
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                SizedBox(
+                                  height: 44,
+                                  child: Center(
+                                    child: AnimatedContainer(
+                                      duration:
+                                          const Duration(milliseconds: 200),
+                                      width: 22,
+                                      height: 22,
+                                      decoration: BoxDecoration(
+                                        color: _alwaysUseRecommended
+                                            ? const Color(
+                                                0xFFF59E0B) // Gold for recommended
+                                            : Colors.transparent,
+                                        borderRadius: BorderRadius.circular(6),
+                                        border: Border.all(
+                                          color: _alwaysUseRecommended
+                                              ? const Color(0xFFF59E0B)
+                                              : isDark
+                                                  ? Colors.white
+                                                      .withOpacity(0.3)
+                                                  : const Color(0xFFD1D5DB),
+                                          width: 2,
+                                        ),
+                                      ),
+                                      child: _alwaysUseRecommended
+                                          ? const Icon(
+                                              Icons.stars,
+                                              size: 14,
+                                              color: Colors.white,
+                                            )
+                                          : null,
+                                    ),
+                                  ),
                                 ),
-                              ),
-                              child: _alwaysUseRecommended
-                                  ? const Icon(
-                                      Icons.stars,
-                                      size: 14,
-                                      color: Colors.white,
-                                    )
-                                  : null,
+                                const SizedBox(width: 10),
+                                Flexible(
+                                  child: Text(
+                                    context.tr(TranslationKeys
+                                        .learningPathAlwaysUseRecommended),
+                                    style: AppFonts.inter(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w500,
+                                      color: isDark
+                                          ? Colors.white.withOpacity(0.7)
+                                          : const Color(0xFF4B5563),
+                                    ),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                         ),
-                        const SizedBox(width: 10),
-                        Flexible(
-                          child: Text(
-                            context.tr(TranslationKeys
-                                .learningPathAlwaysUseRecommended),
-                            style: AppFonts.inter(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w500,
-                              color: isDark
-                                  ? Colors.white.withOpacity(0.7)
-                                  : const Color(0xFF4B5563),
+
+                      // Remember choice checkbox (dynamic text based on selection)
+                      if (widget.showRememberOption &&
+                          !widget.isFromLearningPath)
+                        GestureDetector(
+                          onTap: () {
+                            setState(() {
+                              _rememberChoice = !_rememberChoice;
+                            });
+                          },
+                          behavior: HitTestBehavior.opaque,
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                SizedBox(
+                                  height: 44,
+                                  child: Center(
+                                    child: AnimatedContainer(
+                                      duration:
+                                          const Duration(milliseconds: 200),
+                                      width: 22,
+                                      height: 22,
+                                      decoration: BoxDecoration(
+                                        // Use gold color if selected mode is recommended
+                                        color: _rememberChoice
+                                            ? (_selectedMode ==
+                                                    widget.recommendedMode
+                                                ? const Color(
+                                                    0xFFF59E0B) // Gold for recommended
+                                                : AppTheme.primaryColor)
+                                            : Colors.transparent,
+                                        borderRadius: BorderRadius.circular(6),
+                                        border: Border.all(
+                                          color: _rememberChoice
+                                              ? (_selectedMode ==
+                                                      widget.recommendedMode
+                                                  ? const Color(0xFFF59E0B)
+                                                  : AppTheme.primaryColor)
+                                              : isDark
+                                                  ? Colors.white
+                                                      .withOpacity(0.3)
+                                                  : const Color(0xFFD1D5DB),
+                                          width: 2,
+                                        ),
+                                      ),
+                                      child: _rememberChoice
+                                          ? Icon(
+                                              _selectedMode ==
+                                                      widget.recommendedMode
+                                                  ? Icons.stars
+                                                  : Icons.check,
+                                              size: 14,
+                                              color: Colors.white,
+                                            )
+                                          : null,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 10),
+                                Flexible(
+                                  child: Text(
+                                    // Dynamic text based on whether selected mode is recommended
+                                    _selectedMode == widget.recommendedMode
+                                        ? context.tr(TranslationKeys
+                                            .modeSelectionAlwaysUseRecommended)
+                                        : context.tr(TranslationKeys
+                                            .modeSelectionRememberChoice),
+                                    style: AppFonts.inter(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w500,
+                                      color: isDark
+                                          ? Colors.white.withOpacity(0.7)
+                                          : const Color(0xFF4B5563),
+                                    ),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                ),
+                              ],
                             ),
-                            textAlign: TextAlign.center,
                           ),
                         ),
-                      ],
-                    ),
+                    ],
                   ),
                 ),
-
-              // Remember choice checkbox (dynamic text based on selection)
-              if (widget.showRememberOption && !widget.isFromLearningPath)
-                GestureDetector(
-                  onTap: () {
-                    setState(() {
-                      _rememberChoice = !_rememberChoice;
-                    });
-                  },
-                  behavior: HitTestBehavior.opaque,
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        SizedBox(
-                          height: 44,
-                          child: Center(
-                            child: AnimatedContainer(
-                              duration: const Duration(milliseconds: 200),
-                              width: 22,
-                              height: 22,
-                              decoration: BoxDecoration(
-                                // Use gold color if selected mode is recommended
-                                color: _rememberChoice
-                                    ? (_selectedMode == widget.recommendedMode
-                                        ? const Color(
-                                            0xFFF59E0B) // Gold for recommended
-                                        : AppTheme.primaryColor)
-                                    : Colors.transparent,
-                                borderRadius: BorderRadius.circular(6),
-                                border: Border.all(
-                                  color: _rememberChoice
-                                      ? (_selectedMode == widget.recommendedMode
-                                          ? const Color(0xFFF59E0B)
-                                          : AppTheme.primaryColor)
-                                      : isDark
-                                          ? Colors.white.withOpacity(0.3)
-                                          : const Color(0xFFD1D5DB),
-                                  width: 2,
-                                ),
-                              ),
-                              child: _rememberChoice
-                                  ? Icon(
-                                      _selectedMode == widget.recommendedMode
-                                          ? Icons.stars
-                                          : Icons.check,
-                                      size: 14,
-                                      color: Colors.white,
-                                    )
-                                  : null,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        Flexible(
-                          child: Text(
-                            // Dynamic text based on whether selected mode is recommended
-                            _selectedMode == widget.recommendedMode
-                                ? context.tr(TranslationKeys
-                                    .modeSelectionAlwaysUseRecommended)
-                                : context.tr(TranslationKeys
-                                    .modeSelectionRememberChoice),
-                            style: AppFonts.inter(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w500,
-                              color: isDark
-                                  ? Colors.white.withOpacity(0.7)
-                                  : const Color(0xFF4B5563),
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
+              ),
 
               const SizedBox(height: 16),
 
