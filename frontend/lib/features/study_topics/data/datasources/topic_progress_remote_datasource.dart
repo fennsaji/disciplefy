@@ -35,6 +35,7 @@ abstract class TopicProgressRemoteDataSource {
   Future<TopicProgressActionResponse> completeTopic(
     String topicId, {
     int timeSpentSeconds = 0,
+    String? generationMode,
   });
 
   /// Updates time spent on a topic without completing it.
@@ -87,11 +88,13 @@ class TopicProgressRemoteDataSourceImpl
   Future<TopicProgressActionResponse> completeTopic(
     String topicId, {
     int timeSpentSeconds = 0,
+    String? generationMode,
   }) async {
     return _executeProgressAction(
       'complete',
       topicId,
       timeSpentSeconds: timeSpentSeconds,
+      generationMode: generationMode,
     );
   }
 
@@ -111,6 +114,7 @@ class TopicProgressRemoteDataSourceImpl
     String action,
     String topicId, {
     int? timeSpentSeconds,
+    String? generationMode,
   }) async {
     try {
       _logDebug('Executing progress action: $action for topic: $topicId');
@@ -123,6 +127,10 @@ class TopicProgressRemoteDataSourceImpl
 
       if (timeSpentSeconds != null) {
         body['time_spent_seconds'] = timeSpentSeconds;
+      }
+
+      if (generationMode != null) {
+        body['generation_mode'] = generationMode;
       }
 
       final response = await _httpService.post(

@@ -233,4 +233,20 @@ class UserProfileService {
       },
     );
   }
+
+  /// Update user's learning path study mode preference
+  Future<Either<Failure, UserProfileEntity>>
+      updateLearningPathStudyModePreference(String? modeValue) async {
+    final currentUser = _authService.currentUser;
+    if (!_authService.isAuthenticated ||
+        currentUser == null ||
+        currentUser.isAnonymous) {
+      return const Left(AuthenticationFailure(
+        message:
+            'User must be authenticated to update learning path study mode preference',
+      ));
+    }
+
+    return await _apiService.updateLearningPathStudyModePreference(modeValue);
+  }
 }

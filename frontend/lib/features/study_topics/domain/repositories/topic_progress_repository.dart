@@ -48,12 +48,14 @@ abstract class TopicProgressRepository {
   ///
   /// [topicId] - The topic being completed
   /// [timeSpentSeconds] - Total time spent on this session
+  /// [generationMode] - Study mode used (quick/standard/deep/lectio) for XP bonus calculation
   ///
   /// Returns [Right] with completion result on success,
   /// [Left] with [Failure] on error.
   Future<Either<Failure, TopicCompletionResult>> completeTopic(
     String topicId, {
     int timeSpentSeconds = 0,
+    String? generationMode,
   });
 
   /// Updates time spent on a topic without completing it.

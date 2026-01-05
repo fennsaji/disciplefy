@@ -20,6 +20,7 @@ export interface LLMServiceConfig {
   readonly anthropicApiKey?: string
   readonly provider?: 'openai' | 'anthropic'
   readonly useMock: boolean
+  readonly supabaseClient?: any  // Optional Supabase client for security event logging
 }
 
 /**
@@ -41,6 +42,7 @@ export interface LLMGenerationParams {
   readonly language: string
   readonly tier?: string  // Optional: user subscription tier for model selection
   readonly studyMode?: StudyMode  // Optional: study mode for different experiences (default: 'standard')
+  readonly forceProvider?: 'openai' | 'anthropic'  // Optional: force specific provider (used for retry/fallback)
 }
 
 /**

@@ -12,6 +12,7 @@ class LearningPath extends Equatable {
   final int totalXp;
   final int estimatedDays;
   final String discipleLevel;
+  final String? recommendedMode;
   final bool isFeatured;
   final int topicsCount;
   final bool isEnrolled;
@@ -27,6 +28,7 @@ class LearningPath extends Equatable {
     required this.totalXp,
     required this.estimatedDays,
     required this.discipleLevel,
+    this.recommendedMode,
     this.isFeatured = false,
     this.topicsCount = 0,
     this.isEnrolled = false,
@@ -44,6 +46,7 @@ class LearningPath extends Equatable {
         totalXp,
         estimatedDays,
         discipleLevel,
+        recommendedMode,
         isFeatured,
         topicsCount,
         isEnrolled,
@@ -111,6 +114,7 @@ class LearningPathDetail extends LearningPath {
     required super.totalXp,
     required super.estimatedDays,
     required super.discipleLevel,
+    super.recommendedMode,
     super.isFeatured,
     super.topicsCount,
     super.isEnrolled,

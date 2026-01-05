@@ -433,6 +433,7 @@ export class OpenAIClient {
 
     const decoder = new TextDecoder()
     let totalChars = 0
+    let fullResponse = '' // For debugging
 
     try {
       while (true) {
@@ -447,18 +448,40 @@ export class OpenAIClient {
             const data = line.slice(6)
             if (data === '[DONE]') {
               console.log(`[OpenAI] Stream completed: ${totalChars} total characters`)
+              if (totalChars < 500) {
+                console.warn(`[OpenAI] ⚠️ Short response detected! Full content:\n${fullResponse}`)
+              }
               return
             }
 
             try {
               const parsed = JSON.parse(data)
+
+              // Check for content filter
+              const finishReason = parsed.choices?.[0]?.finish_reason
+              if (finishReason) {
+                console.log(`[OpenAI] Finish reason: ${finishReason}`)
+
+                if (finishReason === 'content_filter') {
+                  console.warn(`[OpenAI] ⚠️ Content filter triggered - will fallback to Anthropic`)
+                  throw new Error('CONTENT_FILTER: OpenAI content filter blocked this request - likely Biblical content with words like "sacrifice", "blood", etc.')
+                }
+              }
+
               const delta = parsed.choices?.[0]?.delta?.content
               if (delta) {
                 totalChars += delta.length
+                fullResponse += delta
                 yield delta
               }
-            } catch {
-              // Skip malformed JSON chunks
+            } catch (parseError) {
+              // Re-throw content filter errors
+              if (parseError instanceof Error && parseError.message.startsWith('CONTENT_FILTER:')) {
+                throw parseError
+              }
+
+              // Log malformed chunks for debugging
+              console.warn(`[OpenAI] Failed to parse chunk: ${data.substring(0, 100)}...`)
               continue
             }
           }
@@ -469,6 +492,9 @@ export class OpenAIClient {
     }
 
     console.log(`[OpenAI] Stream ended: ${totalChars} total characters`)
+    if (totalChars < 500) {
+      console.warn(`[OpenAI] ⚠️ Short response at stream end! Full content:\n${fullResponse}`)
+    }
   }
 }
 

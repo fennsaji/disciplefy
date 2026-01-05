@@ -1444,6 +1444,14 @@ class TranslationKeys {
   /// Badge label indicating the default study mode
   static const modeSelectionDefaultBadge = 'mode_selection.default_badge';
 
+  /// Badge label for recommended study mode based on input type
+  static const modeSelectionRecommendedBadge =
+      'mode_selection.recommended_badge';
+
+  /// Checkbox label for always using recommended mode
+  static const modeSelectionAlwaysUseRecommended =
+      'mode_selection.always_use_recommended';
+
   // Study Mode Names & Descriptions
   /// Name of the Quick study mode (3-minute read)
   static const studyModeQuickName = 'study_mode.quick.name';
@@ -1483,6 +1491,28 @@ class TranslationKeys {
   /// Subtitle for the "ask every time" settings option
   static const settingsAskEveryTimeSubtitle =
       'settings.ask_every_time_subtitle';
+
+  /// Settings option for learning path study mode preference
+  static const settingsLearningPathStudyModePreference =
+      'settings.learning_path_study_mode_preference';
+
+  /// Description for learning path study mode preference
+  static const settingsLearningPathStudyModeDescription =
+      'settings.learning_path_study_mode_description';
+
+  /// Settings option to use recommended mode
+  static const settingsUseRecommended = 'settings.use_recommended';
+
+  /// Subtitle for use recommended mode option
+  static const settingsUseRecommendedSubtitle =
+      'settings.use_recommended_subtitle';
+
+  /// Error message when updating preference fails
+  static const errorUpdatingPreference = 'settings.error_updating_preference';
+
+  /// Success message when preference is updated
+  static const preferenceUpdatedSuccessfully =
+      'settings.preference_updated_successfully';
 
   // Settings - Reflection Journal
   /// Settings label for reflection journal navigation option
@@ -1827,4 +1857,27 @@ class TranslationKeys {
 
   /// Loading text for prayer audio
   static const prayerModeLoading = 'prayer_mode.loading';
+
+  // Learning Path - Study Mode Selection
+  /// Badge shown on recommended study mode for a learning path
+  static const learningPathRecommendedModeBadge =
+      'learning_path.recommended_mode_badge';
+
+  /// Checkbox to always use recommended mode for learning paths
+  static const learningPathAlwaysUseRecommended =
+      'learning_path.always_use_recommended';
+
+  /// Subtitle for always use recommended checkbox
+  static const learningPathAlwaysUseRecommendedSubtitle =
+      'learning_path.always_use_recommended_subtitle';
+
+  /// Text showing best study mode for path
+  static const learningPathBestStudiedIn = 'learning_path.best_studied_in';
+
+  /// Bonus XP awarded message
+  static const learningPathBonusXpAwarded = 'learning_path.bonus_xp_awarded';
+
+  /// Completed in recommended mode message
+  static const learningPathCompletedInRecommended =
+      'learning_path.completed_in_recommended';
 }

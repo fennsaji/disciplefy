@@ -437,23 +437,45 @@ async function handleStudyGenerateV2(
         // Emit init event with expected total sections
         emit(createInitEvent('started', parser.getTotalSections()))
 
-        // Stream from LLM and parse sections
-        const llmStream = llmService.streamStudyGuide({
-          inputType: input_type,
-          inputValue: input_value,
-          topicDescription: topic_description,
-          language: targetLanguage,
-          tier: userPlan,
-          studyMode: study_mode
-        })
+        // Stream from LLM with retry on content filter
+        let forceProvider: 'openai' | 'anthropic' | undefined = undefined
+        let retryAttempted = false
 
-        for await (const chunk of llmStream) {
-          const newSections = parser.addChunk(chunk)
+        while (true) {
+          try {
+            const llmStream = llmService.streamStudyGuide({
+              inputType: input_type,
+              inputValue: input_value,
+              topicDescription: topic_description,
+              language: targetLanguage,
+              tier: userPlan,
+              studyMode: study_mode,
+              forceProvider
+            })
 
-          // Emit any newly complete sections
-          for (const section of newSections) {
-            console.log(`📤 [STUDY-V2] Emitting section: ${section.type}`)
-            emit(createSectionEvent(section, parser.getTotalSections()))
+            for await (const chunk of llmStream) {
+              const newSections = parser.addChunk(chunk)
+
+              // Emit any newly complete sections
+              for (const section of newSections) {
+                console.log(`📤 [STUDY-V2] Emitting section: ${section.type}`)
+                emit(createSectionEvent(section, parser.getTotalSections()))
+              }
+            }
+            break // Success - exit retry loop
+          } catch (streamError) {
+            const errorMsg = streamError instanceof Error ? streamError.message : String(streamError)
+            const isContentFilter = errorMsg.includes('CONTENT_FILTER')
+
+            if (isContentFilter && !retryAttempted) {
+              console.log('[STUDY-V2] 🔄 Content filter detected, resetting parser and retrying with Anthropic')
+              parser.reset()
+              forceProvider = 'anthropic'  // Force Anthropic on retry
+              retryAttempted = true
+              // Loop will retry with fallback provider
+            } else {
+              throw streamError // Re-throw non-content-filter errors or if already retried
+            }
           }
         }
 

@@ -45,6 +45,16 @@ import {
   parseVerseReferenceResponse,
   parseFullVerseResponse
 } from './llm-utils/response-parser.ts'
+import {
+  validateInputSecurity,
+  sanitizeInput,
+  determineAction
+} from './llm-utils/security-validator.ts'
+import {
+  logPromptInjectionAttempt,
+  logJailbreakAttempt,
+  logInputValidationFailure
+} from './llm-utils/security-logger.ts'
 
 // Re-export types for external use
 export type { LLMServiceConfig } from './llm-types.ts'
@@ -61,8 +71,10 @@ export class LLMService {
   private readonly availableProviders: Set<LLMProvider>
   private readonly openaiClient: OpenAIClient | null = null
   private readonly anthropicClient: AnthropicClient | null = null
+  private readonly supabaseClient: any | null = null
 
   constructor(private readonly config: LLMServiceConfig) {
+    this.supabaseClient = config.supabaseClient || null
     this.availableProviders = new Set()
     this.useMockData = config.useMock
 
@@ -157,9 +169,9 @@ export class LLMService {
 
     const languageConfig = getLanguageConfigOrDefault(params.language)
     const prompt = createStudyGuidePrompt(params, languageConfig)
-    const selectedProvider = this.selectOptimalProvider(params.language)
+    const selectedProvider = params.forceProvider || this.selectOptimalProvider(params.language)
 
-    console.log(`[LLM] Streaming with ${selectedProvider} API for language: ${languageConfig.name}`)
+    console.log(`[LLM] Streaming with ${selectedProvider} API for language: ${languageConfig.name}${params.forceProvider ? ' (forced)' : ''}`)
 
     try {
       if (selectedProvider === 'openai' && this.openaiClient) {
@@ -180,31 +192,17 @@ export class LLMService {
         throw new Error(`No streaming client available for provider: ${selectedProvider}`)
       }
     } catch (error) {
-      console.error(`[LLM] Streaming failed with ${selectedProvider}:`, error)
+      const errorMsg = error instanceof Error ? error.message : String(error)
+      const isContentFilter = errorMsg.includes('CONTENT_FILTER')
 
-      // Try fallback provider
-      const fallbackProvider = this.getFallbackProvider(selectedProvider)
-      if (fallbackProvider) {
-        console.log(`[LLM] Attempting streaming with fallback provider: ${fallbackProvider}`)
-
-        if (fallbackProvider === 'openai' && this.openaiClient) {
-          yield* this.openaiClient.streamStudyGuide(
-            prompt.systemMessage,
-            prompt.userMessage,
-            languageConfig,
-            params
-          )
-        } else if (fallbackProvider === 'anthropic' && this.anthropicClient) {
-          yield* this.anthropicClient.streamStudyGuide(
-            prompt.systemMessage,
-            prompt.userMessage,
-            languageConfig,
-            params
-          )
-        }
+      if (isContentFilter) {
+        console.warn(`[LLM] ⚠️ Content filter triggered by ${selectedProvider} - will retry with fallback`)
       } else {
-        throw error
+        console.error(`[LLM] Streaming failed with ${selectedProvider}:`, error)
       }
+
+      // Re-throw error to let caller handle parser reset and retry
+      throw error
     }
   }
 
@@ -331,6 +329,7 @@ export class LLMService {
   // ==================== Private Methods ====================
 
   private validateParams(params: LLMGenerationParams): void {
+    // Basic validation
     if (!params.inputType || !['scripture', 'topic', 'question'].includes(params.inputType)) {
       throw new Error('Invalid input type')
     }
@@ -342,6 +341,45 @@ export class LLMService {
     }
     if (!isLanguageSupported(params.language)) {
       throw new Error(`Unsupported language: "${params.language}". Supported: ${getSupportedLanguages().join(', ')}`)
+    }
+
+    // Security validation
+    const validation = validateInputSecurity(params.inputValue)
+
+    if (!validation.isValid) {
+      const action = determineAction(validation.riskScore)
+
+      // Log security event if Supabase client is available
+      if (this.supabaseClient) {
+        const hasPromptInjection = validation.violations.some(
+          v => v.type === 'prompt_injection' || v.type === 'instruction_override' || v.type === 'system_prompt_access'
+        )
+        const hasJailbreak = validation.violations.some(
+          v => v.type === 'jailbreak_attempt'
+        )
+
+        const metadata = {
+          inputLength: params.inputValue.length,
+          actionTaken: action
+        }
+
+        if (hasPromptInjection) {
+          logPromptInjectionAttempt(this.supabaseClient, validation, metadata)
+        } else if (hasJailbreak) {
+          logJailbreakAttempt(this.supabaseClient, validation, metadata)
+        } else {
+          logInputValidationFailure(this.supabaseClient, validation, metadata)
+        }
+      }
+
+      // Block high-risk requests
+      if (action === 'blocked') {
+        console.error(`[LLM] Security validation failed - BLOCKED (risk: ${validation.riskScore.toFixed(2)})`, validation.violations)
+        throw new Error('Input validation failed: potential security risk detected')
+      }
+
+      // Allow flagged requests but log them
+      console.warn(`[LLM] Security validation flagged (risk: ${validation.riskScore.toFixed(2)})`, validation.violations)
     }
   }
 

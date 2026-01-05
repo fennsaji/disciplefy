@@ -135,7 +135,10 @@ class _ReflectModeViewState extends State<ReflectModeView> {
       // Prayer - Prayer mode selection with dynamic question
       ReflectCardConfig(
         sectionTitle: context.tr(TranslationKeys.reflectModeSectionPrayer),
-        getContent: (guide) => guide.prayerPoints.map((p) => '• $p').join('\n'),
+        getContent: (guide) => guide.prayerPoints.isNotEmpty
+            ? guide
+                .prayerPoints.first // Take the complete prayer (first element)
+            : '',
         interactionType: ReflectionInteractionType.prayer,
         question: widget.studyGuide.prayerQuestion ??
             context.tr(TranslationKeys.reflectModePrayerFallback),
@@ -307,12 +310,11 @@ class _ReflectModeViewState extends State<ReflectModeView> {
                   widget.studyGuide.language, // Pass content language for TTS
               onInteractionComplete: _handleInteractionComplete,
               onContinue: _handleContinue,
+              // Show Previous button for all cards except the first one
+              onBack: _currentCardIndex > 0 ? _handleBack : null,
             ),
           ),
         ),
-
-        // Back navigation (only shown after first card)
-        if (_currentCardIndex > 0) _buildBackButton(context),
       ],
     );
   }
@@ -386,17 +388,6 @@ class _ReflectModeViewState extends State<ReflectModeView> {
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildBackButton(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
-      child: TextButton.icon(
-        onPressed: _handleBack,
-        icon: const Icon(Icons.arrow_back, size: 18),
-        label: Text(context.tr(TranslationKeys.reflectModePrevious)),
       ),
     );
   }
