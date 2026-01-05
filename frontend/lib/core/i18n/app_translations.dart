@@ -31,7 +31,7 @@ class AppTranslations {
       },
       'streaming': {
         'loading': 'Loading study guide...',
-        'sections': '{count}/6 sections',
+        'sections': '{count}/{total} sections',
       },
       'tts': {
         'listen': 'Listen',
@@ -414,6 +414,13 @@ class AppTranslations {
       'study_mode_preference_current': 'Current: {mode}',
       'ask_every_time': 'Ask Every Time',
       'ask_every_time_subtitle': 'Choose mode each time you start a study',
+      'learning_path_study_mode_preference': 'Learning Path Study Mode',
+      'learning_path_study_mode_description':
+          'Choose how you want to study learning path topics',
+      'use_recommended': 'Use Recommended',
+      'use_recommended_subtitle': 'Each path suggests the best study mode',
+      'error_updating_preference': 'Failed to update preference',
+      'preference_updated_successfully': 'Preference updated successfully',
       'reflection_journal': 'Reflection Journal',
       'reflection_journal_subtitle': 'View your past study reflections',
     },
@@ -1599,8 +1606,10 @@ class AppTranslations {
       'title': 'How would you like to study?',
       'subtitle': 'Choose a study mode based on your available time',
       'remember_choice': 'Remember my choice',
+      'always_use_recommended': 'Always use recommended',
       'start_button': 'Start {mode}',
       'default_badge': 'Default',
+      'recommended_badge': 'RECOMMENDED',
     },
     'study_mode': {
       'quick': {
@@ -1720,6 +1729,16 @@ class AppTranslations {
       'stop': 'Stop',
       'loading': 'Loading...',
     },
+    'learning_path': {
+      'recommended_mode_badge': 'RECOMMENDED FOR THIS PATH',
+      'always_use_recommended':
+          'Always use recommended mode for learning paths',
+      'always_use_recommended_subtitle':
+          'Skip this selection for all learning path topics',
+      'best_studied_in': 'Best studied in {mode} mode',
+      'bonus_xp_awarded': '+{xp} Bonus XP!',
+      'completed_in_recommended': '✨ Completed in recommended mode',
+    },
   };
 
   static const Map<String, dynamic> _hindiTranslations = {
@@ -1745,7 +1764,7 @@ class AppTranslations {
       },
       'streaming': {
         'loading': 'स्टडी गाइड लोड हो रही है...',
-        'sections': '{count}/6 सेक्शन',
+        'sections': '{count}/{total} सेक्शन',
       },
       'tts': {
         'listen': 'सुनें',
@@ -2117,6 +2136,14 @@ class AppTranslations {
       'study_mode_preference_current': 'वर्तमान: {mode}',
       'ask_every_time': 'हर बार पूछें',
       'ask_every_time_subtitle': 'हर बार अध्ययन शुरू करते समय मोड चुनें',
+      'learning_path_study_mode_preference': 'सीखने के पथ अध्ययन मोड',
+      'learning_path_study_mode_description':
+          'चुनें कि आप सीखने के पथ विषयों का अध्ययन कैसे करना चाहते हैं',
+      'use_recommended': 'अनुशंसित का उपयोग करें',
+      'use_recommended_subtitle':
+          'प्रत्येक पथ सर्वश्रेष्ठ अध्ययन मोड सुझाता है',
+      'error_updating_preference': 'प्राथमिकता अपडेट करने में विफल',
+      'preference_updated_successfully': 'प्राथमिकता सफलतापूर्वक अपडेट की गई',
       'reflection_journal': 'चिंतन डायरी',
       'reflection_journal_subtitle': 'अपने पिछले अध्ययन चिंतन देखें',
     },
@@ -3300,8 +3327,10 @@ class AppTranslations {
       'title': 'आप कैसे पढ़ना चाहते हैं?',
       'subtitle': 'अपने समय के अनुसार मोड चुनें',
       'remember_choice': 'मेरी पसंद याद रखें',
+      'always_use_recommended': 'हमेशा अनुशंसित का उपयोग करें',
       'start_button': '{mode} शुरू करें',
       'default_badge': 'डिफ़ॉल्ट',
+      'recommended_badge': 'अनुशंसित',
     },
     'study_mode': {
       'quick': {
@@ -3421,6 +3450,16 @@ class AppTranslations {
       'stop': 'बंद करें',
       'loading': 'लोड हो रहा है...',
     },
+    'learning_path': {
+      'recommended_mode_badge': 'इस पाठ के लिए अनुशंसित',
+      'always_use_recommended':
+          'सीखने के पथों के लिए हमेशा अनुशंसित मोड का उपयोग करें',
+      'always_use_recommended_subtitle':
+          'सभी सीखने के पथ विषयों के लिए यह चयन छोड़ें',
+      'best_studied_in': '{mode} मोड में सबसे अच्छा अध्ययन किया गया',
+      'bonus_xp_awarded': '+{xp} बोनस XP!',
+      'completed_in_recommended': '✨ अनुशंसित मोड में पूर्ण',
+    },
   };
 
   static const Map<String, dynamic> _malayalamTranslations = {
@@ -3446,7 +3485,7 @@ class AppTranslations {
       },
       'streaming': {
         'loading': 'സ്റ്റഡി ഗൈഡ് ലോഡ് ചെയ്യുന്നു...',
-        'sections': '{count}/6 സെക്ഷനുകൾ',
+        'sections': '{count}/{total} സെക്ഷനുകൾ',
       },
       'tts': {
         'listen': 'കേൾക്കുക',
@@ -3826,6 +3865,16 @@ class AppTranslations {
       'ask_every_time': 'എല്ലാ സമയവും ചോദിക്കുക',
       'ask_every_time_subtitle':
           'പഠനം ആരംഭിക്കുമ്പോൾ എല്ലാ സമയവും രീതി തിരഞ്ഞെടുക്കുക',
+      'learning_path_study_mode_preference': 'പാത പഠന രീതി',
+      'learning_path_study_mode_description':
+          'പാതയുടെ വിഷയങ്ങൾ എങ്ങനെ പഠിക്കണമെന്ന് തിരഞ്ഞെടുക്കുക',
+      'use_recommended': 'ശിഫാർസ്സ് ചെയ്ത രീതി ഉപയോഗിക്കുക',
+      'use_recommended_subtitle':
+          'ഓരോ പാതയും മികച്ച പഠന രീതി നിർദ്ദേശിക്കുന്നു',
+      'error_updating_preference':
+          'പ്രാതമ്യം അപ്‌ഡേറ്റ് ചെയ്യുന്നതിൽ പരാജയപ്പെട്ടു',
+      'preference_updated_successfully':
+          'പ്രാതമ്യം വിജയകരമായി അപ്‌ഡേറ്റ് ചെയ്തു',
       'reflection_journal': 'ചിന്തന ഡയറി',
       'reflection_journal_subtitle': 'നിങ്ങളുടെ മുൻകാല പഠന ചിന്തനങ്ങൾ കാണുക',
     },
@@ -5078,8 +5127,10 @@ class AppTranslations {
       'subtitle':
           'നിങ്ങളുടെ ലഭ്യമായ സമയത്തിന് അനുസരിച്ച് പഠന രീതി തിരഞ്ഞെടുക്കുക',
       'remember_choice': 'എന്റെ തേർച്ച ഓർക്കുക',
+      'always_use_recommended': 'എല്ലായ്പ്പോഴും ശിഫാർസ്സ് ഉപയോഗിക്കുക',
       'start_button': '{mode} ആരംഭിക്കുക',
       'default_badge': 'ഡിഫോൾട്ട്',
+      'recommended_badge': 'ശിഫാർസ്സ് ചെയ്യുന്നത്',
     },
     'study_mode': {
       'quick': {
@@ -5201,6 +5252,16 @@ class AppTranslations {
       'pause': 'താൽക്കാലികമായി നിർത്തുക',
       'stop': 'നിർത്തുക',
       'loading': 'ലോഡ് ചെയ്യുന്നു...',
+    },
+    'learning_path': {
+      'recommended_mode_badge': 'ഈ പാതയ്ക്ക് ശിഫാർസ്സ് ചെയ്യുന്നത്',
+      'always_use_recommended':
+          'പാതയ്ക്ക് എപ്പോഴും ശിഫാർസ്സ് ചെയ്ത മോഡ് ഉപയോഗിക്കുക',
+      'always_use_recommended_subtitle':
+          'എല്ലാ പാത വിഷയങ്ങൾക്കും ഈ തിരഞ്ഞെടുപ്പ് ഒഴിവാക്കുക',
+      'best_studied_in': '{mode} മോഡിൽ നന്നായി അധ്യയനം ചെയ്യുന്നു',
+      'bonus_xp_awarded': '+{xp} ബോണസ് XP!',
+      'completed_in_recommended': '✨ ശിഫാർസ്സ് ചെയ്ത മോഡിൽ പൂർത്തിയായി',
     },
   };
 }

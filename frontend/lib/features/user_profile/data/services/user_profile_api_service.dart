@@ -94,6 +94,13 @@ class UserProfileApiService {
     return _updateProfile({'default_study_mode': studyMode});
   }
 
+  /// Update user profile learning path study mode preference
+  Future<Either<Failure, UserProfileEntity>>
+      updateLearningPathStudyModePreference(
+          String? learningPathStudyMode) async {
+    return _updateProfile({'learning_path_study_mode': learningPathStudyMode});
+  }
+
   /// Update multiple profile fields
   Future<Either<Failure, UserProfileEntity>> updateProfile(
       Map<String, dynamic> updates) async {

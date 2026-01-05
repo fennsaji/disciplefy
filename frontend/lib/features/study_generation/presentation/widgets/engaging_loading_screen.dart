@@ -144,20 +144,21 @@ class _EngagingLoadingScreenState extends State<EngagingLoadingScreen>
 
     // Historical fact rotation timer (every 5 seconds, random fact)
     _factTimer = Timer.periodic(const Duration(seconds: 5), (timer) {
-      if (mounted) {
-        setState(() {
-          // Compute safe count dynamically from actual facts list each tick
-          // to handle race condition where timer fires before didChangeDependencies
-          final actualFacts = _getFacts(context);
-          final safeCount = actualFacts.isNotEmpty ? actualFacts.length : 1;
+      // ✅ FIX: Check mounted BEFORE accessing context
+      if (!mounted) return;
 
-          // Generate random index only if we have facts, otherwise use 0
-          _currentFactIndex = safeCount > 0 ? _random.nextInt(safeCount) : 0;
+      // Compute safe count dynamically from actual facts list each tick
+      // to handle race condition where timer fires before didChangeDependencies
+      final actualFacts = _getFacts(context);
+      final safeCount = actualFacts.isNotEmpty ? actualFacts.length : 1;
 
-          // Update cached count for consistency
-          _factsCount = actualFacts.length;
-        });
-      }
+      setState(() {
+        // Generate random index only if we have facts, otherwise use 0
+        _currentFactIndex = safeCount > 0 ? _random.nextInt(safeCount) : 0;
+
+        // Update cached count for consistency
+        _factsCount = actualFacts.length;
+      });
     });
   }
 

@@ -213,19 +213,21 @@ class _StudyTopicsScreenContentState extends State<_StudyTopicsScreenContent> {
 
     // Show mode selection sheet before navigating
     if (mounted) {
-      ModeSelectionSheet.show(
-        context: context,
-        onModeSelected: (mode, rememberChoice) {
-          // Save user's mode preference if they chose to remember
-          if (rememberChoice) {
-            sl<LanguagePreferenceService>().saveStudyModePreference(mode);
-          }
+      final result = await ModeSelectionSheet.show(context: context);
 
-          final encodedTopicId = Uri.encodeComponent(topicId);
-          context.go(
-              '/study-guide-v2?input=&type=topic&language=${widget.currentLanguage}&mode=${mode.name}&source=deepLink&topic_id=$encodedTopicId');
-        },
-      );
+      if (result != null && mounted) {
+        final mode = result['mode'] as StudyMode;
+        final rememberChoice = result['rememberChoice'] as bool;
+
+        // Save user's mode preference if they chose to remember
+        if (rememberChoice) {
+          sl<LanguagePreferenceService>().saveStudyModePreference(mode);
+        }
+
+        final encodedTopicId = Uri.encodeComponent(topicId);
+        context.go(
+            '/study-guide-v2?input=&type=topic&language=${widget.currentLanguage}&mode=${mode.name}&source=deepLink&topic_id=$encodedTopicId');
+      }
     }
   }
 
@@ -395,25 +397,16 @@ class _StudyTopicsScreenContentState extends State<_StudyTopicsScreenContent> {
     }
 
     // Show mode selection sheet before navigating
-    ModeSelectionSheet.show(
-      context: context,
-      onModeSelected: (mode, rememberChoice) async {
-        // Set navigation flag only when user actually selects a mode
-        _isNavigating = true;
-        await _navigateToStudyGuideWithMode(topic, mode, rememberChoice);
-      },
-    ).then((_) {
-      // Reset flag when sheet closes if it was dismissed without selection
-      // This prevents the flag from getting stuck
-      if (mounted && _isNavigating) {
-        // Delay slightly to avoid race condition with onModeSelected
-        Future.delayed(const Duration(milliseconds: 100), () {
-          if (mounted && _isNavigating) {
-            _isNavigating = false;
-          }
-        });
-      }
-    });
+    final result = await ModeSelectionSheet.show(context: context);
+
+    if (result != null && mounted) {
+      final mode = result['mode'] as StudyMode;
+      final rememberChoice = result['rememberChoice'] as bool;
+
+      // Set navigation flag only when user actually selects a mode
+      _isNavigating = true;
+      await _navigateToStudyGuideWithMode(topic, mode, rememberChoice);
+    }
   }
 
   /// Navigate to study guide with the selected mode

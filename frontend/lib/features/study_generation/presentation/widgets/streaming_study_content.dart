@@ -507,7 +507,7 @@ class StreamingStudyContent extends StatelessWidget {
 
                 const SizedBox(height: 20),
 
-                // Scripture for Meditation (summary contains scripture)
+                // 1. Scripture for Meditation (summary)
                 _buildLectioSection(
                   context,
                   title:
@@ -519,60 +519,173 @@ class StreamingStudyContent extends StatelessWidget {
 
                 const SizedBox(height: 24),
 
-                // LECTIO & MEDITATIO (interpretation)
+                // 2. Summary Question
+                if (content.summaryQuestion != null)
+                  _buildLectioSection(
+                    context,
+                    title: 'Reflection Prompt',
+                    content: content.summaryQuestion,
+                    index: 1,
+                    icon: Icons.psychology,
+                  ),
+
+                const SizedBox(height: 24),
+
+                // 3. Summary Insights
+                if (content.summaryInsights != null &&
+                    content.summaryInsights!.isNotEmpty)
+                  _buildLectioSection(
+                    context,
+                    title: 'Key Themes',
+                    content: content.summaryInsights!
+                        .map((insight) => '• $insight')
+                        .join('\n'),
+                    index: 2,
+                    icon: Icons.insights,
+                  ),
+
+                const SizedBox(height: 24),
+
+                // 4. LECTIO & MEDITATIO (interpretation)
                 _buildLectioSection(
                   context,
                   title: context.tr(TranslationKeys.lectioLectioMeditatio),
                   subtitle: context.tr(TranslationKeys.lectioReadMeditate),
                   content: content.interpretation,
-                  index: 1,
+                  index: 3,
                   icon: Icons.auto_stories,
                 ),
 
                 const SizedBox(height: 24),
 
-                // About Lectio Divina (context)
+                // 5. Interpretation Insights
+                if (content.interpretationInsights != null &&
+                    content.interpretationInsights!.isNotEmpty)
+                  _buildLectioSection(
+                    context,
+                    title: 'Theological Insights',
+                    content: content.interpretationInsights!
+                        .map((insight) => '• $insight')
+                        .join('\n'),
+                    index: 4,
+                    icon: Icons.auto_awesome,
+                  ),
+
+                const SizedBox(height: 24),
+
+                // 6. About Lectio Divina (context)
                 _buildLectioSection(
                   context,
                   title: context.tr(TranslationKeys.lectioAboutPractice),
                   content: content.context,
-                  index: 2,
+                  index: 5,
                   icon: Icons.info_outline,
                 ),
 
                 const SizedBox(height: 24),
 
-                // Focus Words (relatedVerses contains focus words)
+                // 7. Context Question
+                if (content.contextQuestion != null)
+                  _buildLectioSection(
+                    context,
+                    title: 'Connect to Today',
+                    content: content.contextQuestion,
+                    index: 6,
+                    icon: Icons.question_answer,
+                  ),
+
+                const SizedBox(height: 24),
+
+                // 8. Focus Words (relatedVerses)
                 _buildLectioSection(
                   context,
                   title: context.tr(TranslationKeys.lectioFocusWords),
-                  content: content.relatedVerses?.join('\n• '),
-                  index: 3,
+                  content: content.relatedVerses
+                      ?.map((verse) => '• $verse')
+                      .join('\n'),
+                  index: 7,
                   icon: Icons.highlight,
                 ),
 
                 const SizedBox(height: 24),
 
-                // ORATIO & CONTEMPLATIO (reflectionQuestions)
+                // 9. Related Verses Question
+                if (content.relatedVersesQuestion != null)
+                  _buildLectioSection(
+                    context,
+                    title: 'Verse Reflection',
+                    content: content.relatedVersesQuestion,
+                    index: 8,
+                    icon: Icons.format_quote,
+                  ),
+
+                const SizedBox(height: 24),
+
+                // 10. ORATIO & CONTEMPLATIO (reflectionQuestions)
                 _buildLectioSection(
                   context,
                   title: context.tr(TranslationKeys.lectioOratioContemplatio),
                   subtitle: context.tr(TranslationKeys.lectioPrayRest),
-                  content: content.reflectionQuestions?.join('\n\n'),
-                  index: 4,
+                  content: content.reflectionQuestions
+                      ?.asMap()
+                      .entries
+                      .map((e) => '${e.key + 1}. ${e.value}')
+                      .join('\n\n'),
+                  index: 9,
                   icon: Icons.self_improvement,
                 ),
 
                 const SizedBox(height: 24),
 
-                // Closing (prayerPoints)
+                // 11. Reflection Question
+                if (content.reflectionQuestion != null)
+                  _buildLectioSection(
+                    context,
+                    title: 'Personal Application',
+                    content: content.reflectionQuestion,
+                    index: 10,
+                    icon: Icons.lightbulb,
+                  ),
+
+                const SizedBox(height: 24),
+
+                // 12. Reflection Answers (Life Application)
+                if (content.reflectionAnswers != null &&
+                    content.reflectionAnswers!.isNotEmpty)
+                  _buildLectioSection(
+                    context,
+                    title: 'Living It Out',
+                    content: content.reflectionAnswers!
+                        .map((answer) => '• $answer')
+                        .join('\n'),
+                    index: 11,
+                    icon: Icons.check_circle_outline,
+                  ),
+
+                const SizedBox(height: 24),
+
+                // 13. Closing (prayerPoints)
                 _buildLectioSection(
                   context,
                   title: context.tr(TranslationKeys.lectioClosingBlessingEmoji),
-                  content: content.prayerPoints?.join('\n\n'),
-                  index: 5,
+                  content: content.prayerPoints
+                      ?.map((point) => '• $point')
+                      .join('\n'),
+                  index: 12,
                   icon: Icons.wb_sunny_outlined,
                 ),
+
+                const SizedBox(height: 24),
+
+                // 14. Prayer Question
+                if (content.prayerQuestion != null)
+                  _buildLectioSection(
+                    context,
+                    title: 'Prayer Invitation',
+                    content: content.prayerQuestion,
+                    index: 13,
+                    icon: Icons.favorite,
+                  ),
 
                 const SizedBox(height: 32),
               ],

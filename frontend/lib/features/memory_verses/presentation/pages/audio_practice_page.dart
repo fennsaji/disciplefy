@@ -238,7 +238,10 @@ class _AudioPracticePageState extends State<AudioPracticePage> {
       return;
     }
 
-    final originalWords = _normalizeText(currentVerse!.verseText).split(' ');
+    // Include reference at the end of verse text for memorization
+    final fullText =
+        '${currentVerse!.verseText} ${currentVerse!.verseReference}';
+    final originalWords = _normalizeText(fullText).split(' ');
     final recognizedWords = _normalizeText(_recognizedText).split(' ');
 
     // Use sequence alignment to handle word insertions/deletions/splits
@@ -914,7 +917,9 @@ class _AudioPracticePageState extends State<AudioPracticePage> {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  currentVerse?.verseText ?? '',
+                  currentVerse != null
+                      ? '${currentVerse!.verseText} ${currentVerse!.verseReference}'
+                      : '',
                   style: theme.textTheme.bodyMedium?.copyWith(
                     color: Colors.green.shade300,
                   ),

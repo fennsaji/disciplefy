@@ -253,6 +253,9 @@ class AuthStateProvider extends ChangeNotifier {
       if (kDebugMode) {
         print('📄 [AUTH STATE PROVIDER] Profile cached for user: $userId');
       }
+
+      // Notify listeners so UI rebuilds with updated profile
+      notifyListeners();
     }
   }
 

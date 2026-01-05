@@ -42,6 +42,7 @@ interface LearningPath {
   total_xp: number;
   estimated_days: number;
   disciple_level: string;
+  recommended_mode?: string;
   is_featured: boolean;
   topics_count: number;
   is_enrolled: boolean;
@@ -396,6 +397,7 @@ async function handleGetPathDetails(
     total_xp: row.total_xp,
     estimated_days: row.estimated_days,
     disciple_level: row.disciple_level,
+    recommended_mode: row.recommended_mode,
     is_featured: false,
     topics_count: row.topics?.length || 0,
     is_enrolled: row.is_enrolled,

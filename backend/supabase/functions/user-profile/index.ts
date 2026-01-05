@@ -35,6 +35,7 @@ interface UpdateProfileRequest {
   last_name?: string | null
   profile_picture?: string | null
   default_study_mode?: string | null
+  learning_path_study_mode?: string | null
 }
 
 // ============================================================================
@@ -111,11 +112,23 @@ function parseAndValidateUpdate(body: any): UpdateProfileRequest {
     if (body.default_study_mode === null || body.default_study_mode === '') {
       updateData.default_study_mode = null
     } else {
-      const validModes = ['quick', 'standard', 'deep', 'lectio']
+      const validModes = ['quick', 'standard', 'deep', 'lectio', 'recommended']
       if (!validModes.includes(body.default_study_mode)) {
-        throw new AppError('VALIDATION_ERROR', 'Invalid study mode. Must be one of: quick, standard, deep, lectio', 400)
+        throw new AppError('VALIDATION_ERROR', 'Invalid study mode. Must be one of: quick, standard, deep, lectio, recommended', 400)
       }
       updateData.default_study_mode = body.default_study_mode
+    }
+  }
+
+  if (body.learning_path_study_mode !== undefined) {
+    if (body.learning_path_study_mode === null || body.learning_path_study_mode === '') {
+      updateData.learning_path_study_mode = null
+    } else {
+      const validModes = ['ask', 'recommended', 'quick', 'standard', 'deep', 'lectio']
+      if (!validModes.includes(body.learning_path_study_mode)) {
+        throw new AppError('VALIDATION_ERROR', 'Invalid learning path study mode. Must be one of: ask, recommended, quick, standard, deep, lectio', 400)
+      }
+      updateData.learning_path_study_mode = body.learning_path_study_mode
     }
   }
 
@@ -175,11 +188,15 @@ async function upsertProfile(
   userId: string,
   updateData: UpdateProfileRequest
 ): Promise<UserProfile> {
+  // Separate profile fields from preference fields
+  const { learning_path_study_mode, ...profileFields } = updateData
+  
   const updateWithTimestamp = {
-    ...updateData,
+    ...profileFields,
     updated_at: new Date().toISOString(),
   }
 
+  // Update user_profiles table
   const { data: updatedProfile, error: updateError } = await services.supabaseServiceClient
     .from('user_profiles')
     .update(updateWithTimestamp)
@@ -204,11 +221,34 @@ async function upsertProfile(
       .single()
 
     if (error) throw new AppError('DATABASE_ERROR', error.message, 500)
-    return data
+  } else if (updateError) {
+    throw new AppError('DATABASE_ERROR', updateError.message, 500)
   }
 
-  if (updateError) throw new AppError('DATABASE_ERROR', updateError.message, 500)
-  return updatedProfile
+  // Update user_preferences table if learning_path_study_mode is provided
+  if (learning_path_study_mode !== undefined) {
+    const { error: prefError } = await services.supabaseServiceClient
+      .from('user_preferences')
+      .upsert({
+        user_id: userId,
+        learning_path_study_mode: learning_path_study_mode,
+        updated_at: new Date().toISOString(),
+      }, { onConflict: 'user_id' })
+
+    if (prefError) {
+      throw new AppError('DATABASE_ERROR', `Failed to update learning path study mode: ${prefError.message}`, 500)
+    }
+  }
+
+  // Return the updated profile (or newly created one)
+  const { data: finalProfile, error: finalError } = await services.supabaseServiceClient
+    .from('user_profiles')
+    .select('*')
+    .eq('id', userId)
+    .single()
+
+  if (finalError) throw new AppError('DATABASE_ERROR', finalError.message, 500)
+  return finalProfile
 }
 
 // ============================================================================
@@ -251,6 +291,14 @@ async function handleGetProfile(
     userProfile = profile
   }
 
+  // Fetch user preferences (learning_path_study_mode)
+  const { data: preferences } = await services.supabaseServiceClient
+    .from('user_preferences')
+    .select('learning_path_study_mode')
+    .eq('user_id', userId)
+    .single()
+
+  // Fetch auth user data
   const { data: { user }, error: userError } = await services.supabaseServiceClient.auth.admin.getUserById(userId)
   
   if (!userError && user) {
@@ -258,8 +306,14 @@ async function handleGetProfile(
     userProfile.phone = user.phone || null
   }
 
+  // Merge preferences into profile response
+  const profileWithPreferences = {
+    ...userProfile,
+    learning_path_study_mode: preferences?.learning_path_study_mode || null,
+  }
+
   return new Response(
-    JSON.stringify({ data: userProfile }),
+    JSON.stringify({ data: profileWithPreferences }),
     { status: 200, headers: { 'Content-Type': 'application/json' } }
   )
 }
@@ -273,8 +327,21 @@ async function handleUpdateProfile(
   const updateData = parseAndValidateUpdate(body)
   const profile = await upsertProfile(services, userId, updateData)
 
+  // Fetch user preferences to include in response
+  const { data: preferences } = await services.supabaseServiceClient
+    .from('user_preferences')
+    .select('learning_path_study_mode')
+    .eq('user_id', userId)
+    .single()
+
+  // Merge preferences into profile response
+  const profileWithPreferences = {
+    ...profile,
+    learning_path_study_mode: preferences?.learning_path_study_mode || null,
+  }
+
   return new Response(
-    JSON.stringify({ data: profile }),
+    JSON.stringify({ data: profileWithPreferences }),
     { status: 200, headers: { 'Content-Type': 'application/json' } }
   )
 }

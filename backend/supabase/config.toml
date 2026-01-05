@@ -345,8 +345,10 @@ inspector_port = 8083
 # The Deno major version to use.
 deno_version = 1
 
-# [edge_runtime.secrets]
-# secret_key = "env(SECRET_VALUE)"
+[edge_runtime.secrets]
+OPENAI_API_KEY = "env(OPENAI_API_KEY)"
+ANTHROPIC_API_KEY = "env(ANTHROPIC_API_KEY)"
+USE_MOCK = "env(USE_MOCK)"
 
 # Function-specific configurations
 [functions.verify-email]

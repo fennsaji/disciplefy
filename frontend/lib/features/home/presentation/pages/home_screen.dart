@@ -155,7 +155,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
   }
 
   /// Handle daily verse card tap to generate study guide
-  void _onDailyVerseCardTap() {
+  Future<void> _onDailyVerseCardTap() async {
     // Prevent multiple clicks during navigation
     if (_isNavigating) {
       return;
@@ -166,13 +166,38 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
     final currentState = dailyVerseBloc.state;
 
     if (currentState is DailyVerseLoaded || currentState is DailyVerseOffline) {
-      // Show mode selection sheet before navigating
-      ModeSelectionSheet.show(
-        context: context,
-        onModeSelected: (mode, rememberChoice) {
-          _navigateToDailyVerseStudy(currentState, mode, rememberChoice);
-        },
-      );
+      // Check if user has a saved study mode preference (raw string value)
+      final savedModeRaw =
+          await sl<LanguagePreferenceService>().getStudyModePreferenceRaw();
+
+      if (savedModeRaw == 'recommended') {
+        // ✅ FIX: "Use Recommended" - automatically select Deep Dive for scripture without showing sheet
+        debugPrint('✅ [HOME] Using recommended mode for scripture: Deep Dive');
+        _navigateToDailyVerseStudy(currentState, StudyMode.deep, false);
+      } else if (savedModeRaw != null) {
+        // User has a specific saved preference - use it directly without showing sheet
+        final savedMode = StudyModeExtension.fromString(savedModeRaw);
+        debugPrint('✅ [HOME] Using saved study mode: ${savedMode.name}');
+        _navigateToDailyVerseStudy(currentState, savedMode, false);
+      } else {
+        // No saved preference (null) - show mode selection sheet with Deep Dive as recommended for scripture
+        debugPrint(
+            '🔍 [HOME] No saved preference - showing mode selection sheet with Deep Dive recommended');
+        const recommendedMode = StudyMode.deep; // Scripture → Deep Dive
+        final result = await ModeSelectionSheet.show(
+          context: context,
+          recommendedMode: recommendedMode,
+        );
+        if (result != null && mounted) {
+          _navigateToDailyVerseStudy(
+            currentState,
+            result['mode'] as StudyMode,
+            result['rememberChoice'] as bool,
+            recommendedMode:
+                recommendedMode, // Pass recommended mode for preference logic
+          );
+        }
+      }
     } else {
       // Show error if verse is not loaded
       ScaffoldMessenger.of(context).showSnackBar(
@@ -188,13 +213,23 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
   void _navigateToDailyVerseStudy(
     DailyVerseState currentState,
     StudyMode mode,
-    bool rememberChoice,
-  ) {
+    bool rememberChoice, {
+    StudyMode? recommendedMode,
+  }) {
     _isNavigating = true;
 
     // Save user's mode preference if they chose to remember
     if (rememberChoice) {
-      sl<LanguagePreferenceService>().saveStudyModePreference(mode);
+      // ✅ FIX: If user selected the recommended mode, save "recommended" instead of specific mode
+      if (recommendedMode != null && mode == recommendedMode) {
+        debugPrint(
+            '✅ [HOME] Saving preference as "recommended" (selected mode matches recommended)');
+        sl<LanguagePreferenceService>()
+            .saveStudyModePreferenceRaw('recommended');
+      } else {
+        debugPrint('✅ [HOME] Saving preference as specific mode: ${mode.name}');
+        sl<LanguagePreferenceService>().saveStudyModePreference(mode);
+      }
     }
 
     String verseReference;
@@ -1039,19 +1074,21 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
     );
   }
 
-  void _navigateToStudyGuide(RecommendedGuideTopic topic) {
+  Future<void> _navigateToStudyGuide(RecommendedGuideTopic topic) async {
     // Prevent multiple clicks during navigation
     if (_isNavigating) {
       return;
     }
 
     // Show mode selection sheet before navigating
-    ModeSelectionSheet.show(
-      context: context,
-      onModeSelected: (mode, rememberChoice) {
-        _navigateToStudyGuideWithMode(topic, mode, rememberChoice);
-      },
-    );
+    final result = await ModeSelectionSheet.show(context: context);
+    if (result != null && mounted) {
+      _navigateToStudyGuideWithMode(
+        topic,
+        result['mode'] as StudyMode,
+        result['rememberChoice'] as bool,
+      );
+    }
   }
 
   /// Navigate to study guide with selected mode
