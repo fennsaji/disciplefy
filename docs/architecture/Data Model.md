@@ -9,9 +9,11 @@
 
 ```
 User (1) ←→ (0..*) StudyGuide
-User (1) ←→ (0..*) JeffReedSession  
+User (1) ←→ (0..*) JeffReedSession
 User (1) ←→ (0..*) Feedback
 User (1) ←→ (0..*) AdminLog
+User (1) ←→ (0..*) Subscription
+User (1) ←→ (0..*) Donation
 StudyGuide (1) ←→ (0..*) Feedback
 JeffReedSession (1) ←→ (0..*) Feedback
 ```
@@ -132,6 +134,121 @@ CREATE INDEX idx_donations_status ON donations(status);
 CREATE INDEX idx_donations_created_at ON donations(created_at DESC);
 ```
 
+### **💎 Subscriptions Table**
+```sql
+CREATE TABLE subscriptions (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+
+  -- Razorpay Integration
+  razorpay_subscription_id TEXT UNIQUE NOT NULL,
+  razorpay_plan_id TEXT NOT NULL,
+  razorpay_customer_id TEXT,
+
+  -- Subscription Details
+  status TEXT NOT NULL CHECK (status IN (
+    'created', 'authenticated', 'active', 'pending_cancellation',
+    'paused', 'cancelled', 'completed', 'expired'
+  )),
+  plan_type TEXT NOT NULL DEFAULT 'premium_monthly',
+
+  -- Billing Cycle Information
+  current_period_start TIMESTAMPTZ,
+  current_period_end TIMESTAMPTZ,
+  next_billing_at TIMESTAMPTZ,
+
+  -- Subscription Metadata
+  total_count INTEGER DEFAULT 12,
+  paid_count INTEGER DEFAULT 0,
+  remaining_count INTEGER DEFAULT 12,
+
+  -- Payment Details
+  amount_paise INTEGER NOT NULL CHECK (amount_paise > 0),
+  currency TEXT NOT NULL DEFAULT 'INR',
+
+  -- Cancellation Information
+  cancelled_at TIMESTAMPTZ,
+  cancel_at_cycle_end BOOLEAN DEFAULT false,
+  cancellation_reason TEXT,
+
+  -- Timestamps
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- Indexes
+CREATE INDEX idx_subscriptions_user_id ON subscriptions(user_id);
+CREATE INDEX idx_subscriptions_status ON subscriptions(status);
+CREATE INDEX idx_subscriptions_razorpay_id ON subscriptions(razorpay_subscription_id);
+CREATE INDEX idx_subscriptions_next_billing ON subscriptions(next_billing_at)
+  WHERE status = 'active';
+
+-- Unique constraint: Only one active subscription per user
+CREATE UNIQUE INDEX unique_active_subscription_per_user
+  ON subscriptions(user_id)
+  WHERE (status IN ('active', 'authenticated', 'pending_cancellation'));
+```
+
+**Subscription Relationship & Ownership:**
+- **Foreign Key**: `user_id` → `auth.users(id)` with CASCADE delete
+- **Ownership**: One-to-many (user can have multiple historical subscriptions)
+- **Active Constraint**: Only ONE active/authenticated/pending_cancellation subscription per user
+- **Razorpay Integration**: `razorpay_subscription_id` is UNIQUE across all subscriptions
+
+**Column Details:**
+- `user_id`: UUID foreign key to auth.users, NOT NULL, CASCADE on delete
+- `razorpay_subscription_id`: TEXT UNIQUE, Razorpay's subscription ID (format: `sub_xxxxx`)
+- `razorpay_plan_id`: TEXT, Razorpay plan identifier (e.g., `plan_premium_granted`, `plan_premium_monthly`)
+- `status`: TEXT with CHECK constraint, tracks subscription lifecycle state
+- `plan_type`: TEXT, semantic plan identifier (e.g., `premium`, `premium_monthly`, `standard`)
+- `current_period_start`: TIMESTAMPTZ, start of current billing cycle
+- `current_period_end`: TIMESTAMPTZ, end of current billing cycle
+- `amount_paise`: INTEGER with CHECK > 0, subscription amount in paise (₹1 = 100 paise)
+- `currency`: TEXT DEFAULT 'INR', three-letter currency code
+
+**Plan Type Semantics:**
+- **Pattern Matching**: Application code uses `plan_type LIKE 'premium%'` to identify premium subscriptions
+- **Flexible Values**: `plan_type` can be `premium`, `premium_monthly`, `premium_annual`, etc.
+- **Razorpay Plan ID**: Separate field for exact Razorpay plan identifier (e.g., `plan_premium_granted`)
+- **Admin Grants**: Use `plan_premium_granted` for manually granted premium access
+
+**Example: Admin Premium Grant**
+```sql
+-- From migration 20260104000005_make_fennsaji_admin_premium.sql
+INSERT INTO subscriptions (
+  user_id,
+  razorpay_subscription_id,
+  razorpay_plan_id,
+  status,
+  plan_type,
+  current_period_start,
+  current_period_end,
+  amount_paise,
+  currency
+)
+VALUES (
+  '<user-uuid>',
+  'sub_granted_admin_<random-uuid>',  -- Format: sub_granted_admin_[uuid]
+  'plan_premium_granted',              -- Special plan ID for grants
+  'active',                            -- Active status
+  'premium',                           -- Plan type for pattern matching
+  NOW(),                               -- Started now
+  NOW() + INTERVAL '100 years',        -- Effectively unlimited (multi-century)
+  1,                                   -- Minimal amount (1 paise) to satisfy constraint
+  'INR'                                -- Indian Rupees
+);
+```
+
+**Status Lifecycle:**
+1. `created` → Initial state after Razorpay subscription creation
+2. `authenticated` → User authorized recurring payments
+3. `active` → Currently active and billing
+4. `pending_cancellation` → Scheduled to cancel at cycle end, still active with premium access
+5. `paused` → Temporarily paused (payment failure or admin action)
+6. `cancelled` → Cancelled and ended (no longer active)
+7. `completed` → Reached total_count cycles
+8. `expired` → Grace period ended after cancellation
+
 ### **📊 AdminLog Table**
 ```sql
 CREATE TABLE admin_logs (
@@ -241,6 +358,8 @@ CREATE POLICY "Admins can view all study guides" ON study_guides
 - **User → StudyGuide**: One-to-many (user can have multiple study guides)
 - **User → JeffReedSession**: One-to-many (user can have multiple sessions)
 - **User → Feedback**: One-to-many (user can provide multiple feedback)
+- **User → Subscription**: One-to-many (user can have multiple historical subscriptions)
+- **User → Donation**: One-to-many (user can make multiple donations)
 - **StudyGuide → Feedback**: One-to-many (study guide can have multiple feedback)
 - **JeffReedSession → Feedback**: One-to-many (session can have multiple feedback)
 
@@ -249,6 +368,9 @@ CREATE POLICY "Admins can view all study guides" ON study_guides
 - JeffReedSession completion_status automatically set to true when step_4_completed_at is populated
 - Feedback must reference either a StudyGuide OR JeffReedSession, not both
 - Admin logs capture all administrative actions with IP tracking
+- **Subscriptions**: Only ONE active/authenticated/pending_cancellation subscription per user (enforced by unique partial index)
+- **Subscription Plan Types**: Application uses `plan_type LIKE 'premium%'` pattern matching for feature access
+- **Admin Grants**: Premium access can be manually granted with `plan_premium_granted` and 100-year expiration
 
 ## **5. 🚀 Performance Optimization**
 

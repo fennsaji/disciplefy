@@ -1719,8 +1719,8 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
 
   /// Show bottom sheet to change study mode preference
   Future<void> _showStudyModePreferenceSheet() async {
-    final currentMode =
-        await _languagePreferenceService.getStudyModePreference();
+    final currentModeRaw =
+        await _languagePreferenceService.getStudyModePreferenceRaw();
 
     if (!mounted) return;
 
@@ -1794,59 +1794,70 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
                 const SizedBox(height: 24),
 
                 // Mode options
-                _buildModeOption(
+                _buildModeOptionRaw(
                   context: context,
-                  mode: null,
+                  modeValue: null,
                   title: context
                       .tr(TranslationKeys.studyModePreferenceAskEveryTime),
                   subtitle: context.tr(
                       TranslationKeys.studyModePreferenceAskEveryTimeSubtitle),
                   icon: Icons.touch_app_outlined,
-                  currentMode: currentMode,
+                  currentModeRaw: currentModeRaw,
                   duration: null,
                 ),
                 const SizedBox(height: 12),
-                _buildModeOption(
+                _buildModeOptionRaw(
                   context: context,
-                  mode: StudyMode.quick,
+                  modeValue: 'recommended',
+                  title: context.tr(TranslationKeys.settingsUseRecommended),
+                  subtitle: context
+                      .tr(TranslationKeys.settingsUseRecommendedSubtitle),
+                  icon: Icons.stars,
+                  currentModeRaw: currentModeRaw,
+                  duration: null,
+                ),
+                const SizedBox(height: 12),
+                _buildModeOptionRaw(
+                  context: context,
+                  modeValue: 'quick',
                   title: context.tr(TranslationKeys.studyModeQuickName),
                   subtitle:
                       context.tr(TranslationKeys.studyModeQuickDescription),
                   icon: Icons.bolt,
-                  currentMode: currentMode,
+                  currentModeRaw: currentModeRaw,
                   duration: '3 min',
                 ),
                 const SizedBox(height: 12),
-                _buildModeOption(
+                _buildModeOptionRaw(
                   context: context,
-                  mode: StudyMode.standard,
+                  modeValue: 'standard',
                   title: context.tr(TranslationKeys.studyModeStandardName),
                   subtitle:
                       context.tr(TranslationKeys.studyModeStandardDescription),
                   icon: Icons.library_books,
-                  currentMode: currentMode,
+                  currentModeRaw: currentModeRaw,
                   duration: '10 min',
                 ),
                 const SizedBox(height: 12),
-                _buildModeOption(
+                _buildModeOptionRaw(
                   context: context,
-                  mode: StudyMode.deep,
+                  modeValue: 'deep',
                   title: context.tr(TranslationKeys.studyModeDeepName),
                   subtitle:
                       context.tr(TranslationKeys.studyModeDeepDescription),
                   icon: Icons.search,
-                  currentMode: currentMode,
+                  currentModeRaw: currentModeRaw,
                   duration: '25 min',
                 ),
                 const SizedBox(height: 12),
-                _buildModeOption(
+                _buildModeOptionRaw(
                   context: context,
-                  mode: StudyMode.lectio,
+                  modeValue: 'lectio',
                   title: context.tr(TranslationKeys.studyModeLectioName),
                   subtitle:
                       context.tr(TranslationKeys.studyModeLectioDescription),
                   icon: Icons.self_improvement,
-                  currentMode: currentMode,
+                  currentModeRaw: currentModeRaw,
                   duration: '15 min',
                 ),
               ],
@@ -2043,6 +2054,213 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
     );
   }
 
+  Widget _buildModeOptionRaw({
+    required BuildContext context,
+    required String? modeValue,
+    required String title,
+    required String subtitle,
+    required IconData icon,
+    required String? currentModeRaw,
+    required String? duration,
+  }) {
+    final isSelected = modeValue == currentModeRaw;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return GestureDetector(
+      onTap: () async {
+        // ✅ FIX: Update preference FIRST, then close sheet
+        try {
+          if (modeValue != null) {
+            await _languagePreferenceService
+                .saveStudyModePreferenceRaw(modeValue);
+          } else {
+            // Clear preference - save null
+            await _languagePreferenceService.clearStudyModePreference();
+          }
+
+          // Close sheet after save completes
+          if (!mounted) return;
+          Navigator.of(context).pop();
+
+          // Show confirmation
+          String confirmationMessage;
+          if (modeValue == null) {
+            confirmationMessage = 'Will ask for mode every time';
+          } else if (modeValue == 'recommended') {
+            confirmationMessage = 'Default mode set to Use Recommended';
+          } else {
+            confirmationMessage = 'Default mode set to $title';
+          }
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(confirmationMessage),
+              duration: const Duration(seconds: 2),
+            ),
+          );
+        } catch (e) {
+          // Close sheet even on error
+          if (mounted) {
+            Navigator.of(context).pop();
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Failed to update preference: $e'),
+                backgroundColor: Colors.red,
+                duration: const Duration(seconds: 3),
+              ),
+            );
+          }
+        }
+      },
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? isDark
+                  ? AppTheme.primaryColor.withOpacity(0.15)
+                  : const Color(0xFFF3F0FF)
+              : isDark
+                  ? Colors.white.withOpacity(0.05)
+                  : const Color(0xFFF9FAFB),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: isSelected
+                ? AppTheme.primaryColor
+                : isDark
+                    ? Colors.white.withOpacity(0.1)
+                    : const Color(0xFFE5E7EB),
+            width: isSelected ? 2 : 1,
+          ),
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: AppTheme.primaryColor.withOpacity(0.15),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
+                  ),
+                ]
+              : null,
+        ),
+        child: Row(
+          children: [
+            // Icon container
+            Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                color: isSelected
+                    ? AppTheme.primaryColor.withOpacity(0.15)
+                    : isDark
+                        ? Colors.white.withOpacity(0.1)
+                        : const Color(0xFFE5E7EB),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(
+                icon,
+                size: 24,
+                color: isSelected
+                    ? AppTheme.primaryColor
+                    : isDark
+                        ? Colors.white.withOpacity(0.7)
+                        : const Color(0xFF6B7280),
+              ),
+            ),
+            const SizedBox(width: 16),
+
+            // Text content
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: AppFonts.inter(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: isSelected
+                          ? AppTheme.primaryColor
+                          : isDark
+                              ? Colors.white
+                              : const Color(0xFF1F2937),
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    subtitle,
+                    style: AppFonts.inter(
+                      fontSize: 13,
+                      color: isDark
+                          ? Colors.white.withOpacity(0.6)
+                          : const Color(0xFF6B7280),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            // Duration badge (if provided)
+            if (duration != null) ...[
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
+                decoration: BoxDecoration(
+                  color: isSelected
+                      ? AppTheme.primaryColor
+                      : isDark
+                          ? Colors.white.withOpacity(0.1)
+                          : const Color(0xFFE5E7EB),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  duration,
+                  style: AppFonts.inter(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: isSelected
+                        ? Colors.white
+                        : isDark
+                            ? Colors.white.withOpacity(0.7)
+                            : const Color(0xFF4B5563),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+            ],
+
+            // Selection indicator
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              width: 24,
+              height: 24,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: isSelected ? AppTheme.primaryColor : Colors.transparent,
+                border: Border.all(
+                  color: isSelected
+                      ? AppTheme.primaryColor
+                      : isDark
+                          ? Colors.white.withOpacity(0.3)
+                          : const Color(0xFFD1D5DB),
+                  width: 2,
+                ),
+              ),
+              child: isSelected
+                  ? const Icon(
+                      Icons.check,
+                      size: 14,
+                      color: Colors.white,
+                    )
+                  : null,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Future<void> _generateStudyGuide() async {
     if (!_isInputValid) return;
 
@@ -2051,33 +2269,78 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
       return;
     }
 
-    // Check if user has a saved study mode preference
-    final savedMode = await _languagePreferenceService.getStudyModePreference();
+    // Determine input type for recommended mode logic
+    final inputType = _selectedMode == StudyInputMode.scripture
+        ? 'scripture'
+        : _selectedMode == StudyInputMode.topic
+            ? 'topic'
+            : 'question';
 
-    if (savedMode != null) {
-      // User has saved preference - use it directly without showing sheet
+    // Check if user has a saved study mode preference (including 'recommended')
+    final savedModeString =
+        await _languagePreferenceService.getStudyModePreferenceRaw();
+
+    if (savedModeString == 'recommended') {
+      // User wants recommended mode - determine based on input type
+      StudyMode recommendedMode;
+      switch (inputType) {
+        case 'scripture':
+          recommendedMode = StudyMode.deep; // Scripture → Deep Dive
+          break;
+        case 'topic':
+        case 'question':
+        default:
+          recommendedMode = StudyMode.standard; // Topic/Question → Standard
+          break;
+      }
+
+      if (kDebugMode) {
+        print(
+            '✅ [GENERATE_STUDY] Using recommended mode for $inputType: ${recommendedMode.displayName}');
+      }
+      _navigateToStudyGuide(recommendedMode, false, true);
+    } else if (savedModeString != null) {
+      // User has specific saved preference - use it directly
+      final savedMode = StudyModeExtension.fromString(savedModeString);
       if (kDebugMode) {
         print(
             '✅ [GENERATE_STUDY] Using saved study mode: ${savedMode.displayName}');
       }
-      _navigateToStudyGuide(savedMode, false);
+      _navigateToStudyGuide(savedMode, false, false);
     } else {
       // No saved preference - show mode selection sheet
       if (kDebugMode) {
         print(
             '🔍 [GENERATE_STUDY] No saved preference - showing mode selection sheet');
       }
-      ModeSelectionSheet.show(
+
+      final result = await ModeSelectionSheet.show(
         context: context,
-        onModeSelected: (mode, rememberChoice) {
-          _navigateToStudyGuide(mode, rememberChoice);
-        },
+        inputType: inputType,
       );
+      if (result != null && mounted) {
+        final selectedMode = result['mode'] as StudyMode;
+        final rememberChoice = result['rememberChoice'] as bool;
+
+        // Determine recommended mode for this input type
+        final recommendedMode =
+            inputType == 'scripture' ? StudyMode.deep : StudyMode.standard;
+
+        _navigateToStudyGuide(
+          selectedMode,
+          rememberChoice,
+          selectedMode == recommendedMode,
+        );
+      }
     }
   }
 
   /// Navigate to study guide with selected mode.
-  void _navigateToStudyGuide(StudyMode mode, bool rememberChoice) {
+  void _navigateToStudyGuide(
+    StudyMode mode,
+    bool rememberChoice,
+    bool isRecommendedMode,
+  ) {
     _isNavigating = true;
 
     final input = _inputController.text.trim();
@@ -2103,7 +2366,13 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
 
     // Save user's mode preference if they chose to remember
     if (rememberChoice) {
-      _languagePreferenceService.saveStudyModePreference(mode);
+      if (isRecommendedMode) {
+        // Save 'recommended' instead of specific mode when user selects recommended mode
+        _languagePreferenceService.saveStudyModePreferenceRaw('recommended');
+      } else {
+        // Save specific mode when user selects non-recommended mode
+        _languagePreferenceService.saveStudyModePreference(mode);
+      }
     }
 
     // Set flag to indicate navigation away (will trigger token refresh on return)

@@ -5,6 +5,7 @@ import '../models/app_language.dart';
 import '../router/router_guard.dart';
 import '../../features/auth/data/services/auth_service.dart';
 import '../../features/user_profile/data/services/user_profile_service.dart';
+import '../../features/user_profile/data/models/user_profile_model.dart';
 import '../../features/study_generation/domain/entities/study_mode.dart';
 import '../services/auth_state_provider.dart';
 import '../services/language_cache_coordinator.dart';
@@ -482,6 +483,56 @@ class LanguagePreferenceService {
     }
   }
 
+  /// Save study mode preference as raw string (including 'recommended')
+  Future<void> saveStudyModePreferenceRaw(String modeValue) async {
+    try {
+      // Save to local storage first (always)
+      await _prefs.setString(_studyModePreferenceKey, modeValue);
+      print(
+          '💾 [PREFERENCE_SERVICE] Study mode preference saved locally: $modeValue');
+
+      // For authenticated users, also save to database
+      if (_authStateProvider.isAuthenticated &&
+          !_authStateProvider.isAnonymous) {
+        final updateResult =
+            await _userProfileService.updateStudyModePreference(modeValue);
+
+        final dbUpdateSuccessful = updateResult.fold(
+          (failure) {
+            print(
+                '❌ [PREFERENCE_SERVICE] Failed to sync study mode to database: ${failure.message}');
+            return false;
+          },
+          (profile) {
+            print(
+                '✅ [PREFERENCE_SERVICE] Study mode synced to database: $modeValue');
+
+            // ✅ FIX: Update AuthStateProvider cache with new profile
+            final userId = _authStateProvider.userId;
+            if (userId != null) {
+              final profileMap = UserProfileModel.fromEntity(profile).toJson();
+              _authStateProvider.cacheProfile(userId, profileMap);
+              print('📄 [PREFERENCE_SERVICE] AuthStateProvider cache updated');
+            }
+
+            return true;
+          },
+        );
+
+        // If database update failed, log a warning but don't block user
+        // Local preference is still saved, so user experience is not disrupted
+        if (!dbUpdateSuccessful) {
+          print(
+              '⚠️ [PREFERENCE_SERVICE] Study mode saved locally but database sync failed');
+        }
+      }
+    } catch (e) {
+      print('❌ [PREFERENCE_SERVICE] Error saving study mode preference: $e');
+      // Re-throw to let caller handle the error
+      rethrow;
+    }
+  }
+
   /// Clear study mode preference (sets to "ask every time")
   Future<void> clearStudyModePreference() async {
     try {
@@ -503,6 +554,15 @@ class LanguagePreferenceService {
           },
           (profile) {
             print('✅ [PREFERENCE_SERVICE] Study mode cleared in database');
+
+            // ✅ FIX: Update AuthStateProvider cache with new profile
+            final userId = _authStateProvider.userId;
+            if (userId != null) {
+              final profileMap = UserProfileModel.fromEntity(profile).toJson();
+              _authStateProvider.cacheProfile(userId, profileMap);
+              print('📄 [PREFERENCE_SERVICE] AuthStateProvider cache updated');
+            }
+
             return true;
           },
         );
@@ -526,6 +586,46 @@ class LanguagePreferenceService {
 
   /// Get user's preferred study mode from local storage or database.
   /// Returns null if no preference is set (ask every time).
+  /// Get raw study mode preference as string (including 'recommended')
+  Future<String?> getStudyModePreferenceRaw() async {
+    try {
+      // For authenticated users, check database first
+      if (_authStateProvider.isAuthenticated &&
+          !_authStateProvider.isAnonymous) {
+        final profile = _authStateProvider.userProfile;
+        final dbMode = profile?['default_study_mode'] as String?;
+
+        if (dbMode != null) {
+          // Sync local storage with database value
+          await _prefs.setString(_studyModePreferenceKey, dbMode);
+          print(
+              '✅ [PREFERENCE_SERVICE] Study mode preference from DB: $dbMode');
+          return dbMode;
+        } else {
+          // ✅ FIX: When database is null, also clear local storage to stay in sync
+          await _prefs.remove(_studyModePreferenceKey);
+          print(
+              '✅ [PREFERENCE_SERVICE] Study mode preference from DB: null (cleared local storage)');
+          return null;
+        }
+      }
+
+      // Fallback to local storage (only for anonymous users)
+      final modeString = _prefs.getString(_studyModePreferenceKey);
+      if (modeString != null) {
+        print(
+            '✅ [PREFERENCE_SERVICE] Study mode preference from local: $modeString');
+        return modeString;
+      }
+
+      // Return null when no preference saved (means "ask every time")
+      return null;
+    } catch (e) {
+      print('Error getting study mode preference: $e');
+      return null;
+    }
+  }
+
   Future<StudyMode?> getStudyModePreference() async {
     try {
       // For authenticated users, check database first
@@ -533,25 +633,40 @@ class LanguagePreferenceService {
           !_authStateProvider.isAnonymous) {
         final dbModeResult = await _userProfileService.getStudyModePreference();
 
-        final dbMode = dbModeResult.fold(
+        return dbModeResult.fold(
           (failure) {
+            // Database call failed - fallback to local storage
             print(
                 '⚠️ [PREFERENCE_SERVICE] Database call failed: ${failure.message}');
+            final modeString = _prefs.getString(_studyModePreferenceKey);
+            if (modeString != null) {
+              final mode = StudyModeExtension.fromString(modeString);
+              print(
+                  '✅ [PREFERENCE_SERVICE] Study mode from local (DB failed): ${mode.displayName}');
+              return mode;
+            }
             return null;
           },
-          (mode) => mode,
+          (mode) async {
+            // Database call succeeded
+            if (mode != null) {
+              // Sync local storage with database value
+              await _prefs.setString(_studyModePreferenceKey, mode.name);
+              print(
+                  '✅ [PREFERENCE_SERVICE] Study mode from DB: ${mode.displayName}');
+              return mode;
+            } else {
+              // ✅ FIX: Database returned null - clear local storage to stay in sync
+              await _prefs.remove(_studyModePreferenceKey);
+              print(
+                  '✅ [PREFERENCE_SERVICE] Study mode from DB: null (cleared local storage)');
+              return null;
+            }
+          },
         );
-
-        if (dbMode != null) {
-          // Sync local storage with database value
-          await _prefs.setString(_studyModePreferenceKey, dbMode.name);
-          print(
-              '✅ [PREFERENCE_SERVICE] Study mode from DB: ${dbMode.displayName}');
-          return dbMode;
-        }
       }
 
-      // Fallback to local storage
+      // Fallback to local storage (only for anonymous users)
       final modeString = _prefs.getString(_studyModePreferenceKey);
       if (modeString != null) {
         final mode = StudyModeExtension.fromString(modeString);

@@ -8,9 +8,12 @@ import '../../../../core/extensions/translation_extension.dart';
 import '../../../../core/i18n/translation_keys.dart';
 import '../../../../core/router/app_routes.dart';
 import '../../../../core/services/language_preference_service.dart';
+import '../../../../core/services/auth_state_provider.dart';
 import '../../../../core/utils/category_utils.dart';
 import '../../../study_generation/domain/entities/study_mode.dart';
 import '../../../study_generation/presentation/widgets/mode_selection_sheet.dart';
+import '../../../user_profile/data/services/user_profile_service.dart';
+import '../../../user_profile/data/models/user_profile_model.dart';
 import '../../domain/entities/learning_path.dart';
 import '../bloc/learning_paths_bloc.dart';
 import '../bloc/learning_paths_event.dart';
@@ -81,13 +84,75 @@ class _LearningPathDetailPageState extends State<LearningPathDetailPage> {
           .add(EnrollInLearningPath(pathId: path.id));
     }
 
-    // Show mode selection sheet before navigating
-    ModeSelectionSheet.show(
-      context: context,
-      onModeSelected: (mode, rememberChoice) async {
-        await _navigateToTopicWithMode(topic, path, mode, rememberChoice);
-      },
-    );
+    // Get learning path study mode preference from Settings
+    final authProvider = sl<AuthStateProvider>();
+    final learningPathModePreference =
+        authProvider.userProfile?['learning_path_study_mode'] as String?;
+
+    StudyMode? selectedMode;
+
+    // Determine mode based on preference
+    if (learningPathModePreference == 'recommended') {
+      // Use path's recommended mode
+      selectedMode =
+          StudyModeExtension.fromString(path.recommendedMode ?? 'standard');
+      debugPrint(
+          '[LEARNING_PATH_DETAIL] Using recommended mode: ${selectedMode.name}');
+      await _navigateToTopicWithMode(topic, path, selectedMode, false);
+    } else if (learningPathModePreference != null &&
+        learningPathModePreference != 'ask') {
+      // Use specific mode from settings (quick, standard, deep, lectio)
+      selectedMode = StudyModeExtension.fromString(learningPathModePreference);
+      debugPrint(
+          '[LEARNING_PATH_DETAIL] Using specific mode from settings: ${selectedMode.name}');
+      await _navigateToTopicWithMode(topic, path, selectedMode, false);
+    } else {
+      // learningPathModePreference == null OR 'ask' → Show mode selection sheet
+      debugPrint(
+          '[LEARNING_PATH_DETAIL] Showing mode selection sheet with recommended mode');
+
+      final recommendedMode =
+          StudyModeExtension.fromString(path.recommendedMode ?? 'standard');
+
+      final result = await ModeSelectionSheet.show(
+        context: context,
+        recommendedMode: recommendedMode,
+        isFromLearningPath: true,
+        learningPathTitle: path.title,
+      );
+
+      if (result == null) return; // User cancelled
+
+      selectedMode = result['mode'] as StudyMode;
+
+      // Save "always use recommended" preference if checked
+      if (result['alwaysUseRecommended'] == true) {
+        final userProfileService = sl<UserProfileService>();
+        await userProfileService
+            .updateLearningPathStudyModePreference('recommended');
+
+        // Update cached profile
+        final userId = authProvider.userId;
+        if (userId != null) {
+          final currentProfile = authProvider.userProfile ?? {};
+          currentProfile['learning_path_study_mode'] = 'recommended';
+          authProvider.cacheProfile(userId, currentProfile);
+        }
+
+        debugPrint(
+            '[LEARNING_PATH_DETAIL] Saved "always use recommended" preference');
+      }
+
+      // Save general mode preference if "remember my choice" checked
+      if (result['rememberChoice'] == true) {
+        final languageService = sl<LanguagePreferenceService>();
+        await languageService.saveStudyModePreference(selectedMode);
+        debugPrint(
+            '[LEARNING_PATH_DETAIL] Saved general study mode preference: ${selectedMode.name}');
+      }
+
+      await _navigateToTopicWithMode(topic, path, selectedMode, false);
+    }
   }
 
   /// Navigate to topic with the selected study mode

@@ -78,11 +78,34 @@ export function createStudyGuideUserMessage(params: LLMGenerationParams, languag
   if (inputType === 'question') {
     specificInstructions = `
 QUESTION-SPECIFIC REQUIREMENTS:
-- Provide a direct, biblically grounded answer to the question
-- Support your answer with relevant scripture passages
-- Address common misconceptions if applicable
-- Include practical applications of the biblical teaching
+- BEGIN with a direct, biblically grounded answer to the question in the "summary" section
+- Support your answer with relevant scripture passages throughout
+- Address common misconceptions if applicable in the "interpretation" section
+- Include practical applications of the biblical teaching in "reflectionQuestions"
 - Maintain theological accuracy and pastoral sensitivity
+- The "summary" should immediately answer the question, not just introduce the topic
+- Use "interpretation" to provide deeper biblical support and theological reasoning
+`
+  } else if (inputType === 'scripture') {
+    specificInstructions = `
+SCRIPTURE-SPECIFIC REQUIREMENTS:
+- Focus on explaining the meaning and significance of the biblical passage
+- Provide the FULL SCRIPTURE TEXT in the "summary" section
+- Break down the passage verse-by-verse or section-by-section in "interpretation"
+- Explain historical and literary context in the "context" section
+- Connect the passage to broader biblical themes through "relatedVerses"
+- Apply the scripture's teaching to modern life in "reflectionQuestions"
+- Make the biblical text accessible and personally relevant
+`
+  } else if (inputType === 'topic') {
+    specificInstructions = `
+TOPIC-SPECIFIC REQUIREMENTS:
+- Provide comprehensive biblical teaching on the topic
+- Survey key scripture passages that address the topic
+- Organize content thematically in the "interpretation" section
+- Explain the biblical foundation of the topic with theological depth
+- Connect topic to practical Christian living in "reflectionQuestions"
+- Address how the topic relates to spiritual growth and discipleship
 `
   }
 
@@ -100,7 +123,7 @@ REQUIRED JSON OUTPUT FORMAT (include ALL fields, no exceptions):
   "context": "Historical and cultural background (1-2 paragraphs) for understanding",
   "relatedVerses": ["3-5 relevant Bible verses with references in ${languageConfig.name}"],
   "reflectionQuestions": ["4-6 practical application questions"],
-  "prayerPoints": ["3-4 prayer suggestions"],
+  "prayerPoints": ["A complete, first-person prayer (5-7 sentences) addressing God directly that users can pray along with or personalize. Start with addressing God (e.g., 'Heavenly Father', 'Lord', 'Father God') and end with 'Amen' or 'In Jesus' name, Amen'"],
   "summaryInsights": ["MANDATORY: 3-4 key resonance themes (10-15 words each)"],
   "interpretationInsights": ["MANDATORY: 3-4 key theological insights (10-15 words each)"],
   "reflectionAnswers": ["MANDATORY: 3-4 actionable life application responses (10-15 words each)"],
@@ -114,7 +137,15 @@ REQUIRED JSON OUTPUT FORMAT (include ALL fields, no exceptions):
 REQUIREMENT VERIFICATION:
 ✓ You MUST include summaryInsights array with 3-4 items
 ✓ You MUST include reflectionAnswers array with 3-4 items
-✓ Do NOT skip any of the 14 required fields above${specificInstructions}
+✓ Do NOT skip any of the 14 required fields above
+
+CRITICAL: PRAYER FORMAT REQUIREMENT
+- "prayerPoints" MUST contain a complete, first-person prayer (NOT bullet points)
+- The prayer should be 5-7 sentences addressing God directly (e.g., "Heavenly Father, I come before You...")
+- End the prayer with "Amen" or "In Jesus' name, Amen"
+- Users will listen to, read, or personalize this prayer during their study
+- Example structure: [Address God] + [Prayer requests based on study content] + [Closing]
+- MUST be output in ${languageConfig.name} language${specificInstructions}
 
 CRITICAL: SUMMARY CARD INSIGHTS
 Generate 3-4 brief, relatable themes that readers might resonate with from the summary:
@@ -224,14 +255,31 @@ function createQuickReadPrompt(params: LLMGenerationParams, languageConfig: Lang
   const verseReferenceExamples = getVerseReferenceExamples(params.language)
 
   let taskDescription: string
+  let inputSpecificGuidance = ''
+
   if (inputType === 'scripture') {
     taskDescription = `Create a QUICK 3-minute Bible study for: "${inputValue}"`
+    inputSpecificGuidance = `
+SCRIPTURE FOCUS (Quick Read):
+- Include the scripture passage text in "summary"
+- Explain the key insight from the passage in "interpretation"
+- Keep explanation brief and immediately applicable`
   } else if (inputType === 'topic') {
     taskDescription = topicDescription
       ? `Create a QUICK 3-minute Bible study on: "${inputValue}"\n\nContext: ${topicDescription}`
       : `Create a QUICK 3-minute Bible study on: "${inputValue}"`
+    inputSpecificGuidance = `
+TOPIC FOCUS (Quick Read):
+- Provide one key biblical principle about the topic in "summary"
+- Support with one main scripture in "interpretation"
+- Focus on immediate practical takeaway`
   } else {
     taskDescription = `Answer briefly and create a QUICK 3-minute study for: "${inputValue}"`
+    inputSpecificGuidance = `
+QUESTION FOCUS (Quick Read):
+- Provide a direct, concise answer to the question in "summary"
+- Support answer with one key scripture in "interpretation"
+- Keep response clear and immediately helpful`
   }
 
   const systemMessage = `You are a biblical scholar creating CONCISE Bible study guides for busy readers. Your responses must be valid JSON only.
@@ -258,6 +306,7 @@ JSON OUTPUT REQUIREMENTS:
 TONE: Direct, warm, encouraging, immediately actionable.`
 
   const userMessage = `TASK: ${taskDescription}
+${inputSpecificGuidance}
 
 CRITICAL: ALL 14 FIELDS BELOW ARE MANDATORY - DO NOT SKIP ANY FIELD
 
@@ -268,7 +317,7 @@ QUICK READ FORMAT - REQUIRED JSON OUTPUT (include ALL fields, no exceptions):
   "context": "Brief context (1-2 sentences) - keep minimal for quick reading",
   "relatedVerses": ["Include ONLY the single most relevant verse with reference in ${languageConfig.name}"],
   "reflectionQuestions": ["ONE practical reflection question for immediate application"],
-  "prayerPoints": ["ONE brief, focused prayer point"],
+  "prayerPoints": ["A brief, complete first-person prayer (2-3 sentences) addressing God directly. Start with addressing God and end with 'Amen'"],
   "summaryInsights": ["MANDATORY: 2-3 brief resonance themes (8-12 words each)"],
   "interpretationInsights": ["MANDATORY: 2-3 brief action points (8-12 words)"],
   "reflectionAnswers": ["MANDATORY: 2-3 brief action responses (8-12 words each)"],
@@ -289,6 +338,12 @@ CRITICAL RULES FOR QUICK READ:
 - "interpretation" must include the key verse text with its reference
 - Only ONE item in each array field
 - Focus on immediate practical takeaway
+
+CRITICAL: PRAYER FORMAT (Quick Read)
+- "prayerPoints" MUST contain ONE complete, brief first-person prayer (2-3 sentences)
+- Address God directly and close with "Amen"
+- Users will pray along with this prayer
+- MUST be output in ${languageConfig.name} language
 
 CRITICAL: SUMMARY CARD INSIGHTS (Quick Read)
 Generate 2-3 brief themes readers might resonate with:
@@ -341,14 +396,37 @@ function createDeepDivePrompt(params: LLMGenerationParams, languageConfig: Langu
   const verseReferenceExamples = getVerseReferenceExamples(params.language)
 
   let taskDescription: string
+  let inputSpecificGuidance = ''
+
   if (inputType === 'scripture') {
     taskDescription = `Create a COMPREHENSIVE Deep Dive Bible study for: "${inputValue}"`
+    inputSpecificGuidance = `
+SCRIPTURE FOCUS (Deep Dive):
+- Provide the FULL scripture text with verse-by-verse breakdown in "summary"
+- Include word studies (Greek/Hebrew) for key terms in the passage in "interpretation"
+- Analyze literary structure, grammar, and theological themes
+- Explore cross-references that illuminate the passage
+- Provide comprehensive application from the text`
   } else if (inputType === 'topic') {
     taskDescription = topicDescription
       ? `Create a COMPREHENSIVE Deep Dive Bible study on: "${inputValue}"\n\nContext: ${topicDescription}`
       : `Create a COMPREHENSIVE Deep Dive Bible study on: "${inputValue}"`
+    inputSpecificGuidance = `
+TOPIC FOCUS (Deep Dive):
+- Survey major scripture passages addressing the topic in "summary"
+- Provide theological exposition of biblical teaching on the topic in "interpretation"
+- Include doctrinal implications and systematic theology connections
+- Explore historical development of the topic in church history
+- Provide comprehensive application for Christian living`
   } else {
     taskDescription = `Provide a thorough answer and create a COMPREHENSIVE Deep Dive study for: "${inputValue}"`
+    inputSpecificGuidance = `
+QUESTION FOCUS (Deep Dive):
+- Provide a comprehensive, theologically robust answer to the question in "summary"
+- Support answer with detailed biblical exposition in "interpretation"
+- Address multiple perspectives and theological nuances
+- Include relevant cross-references and doctrinal connections
+- Provide practical implications of the biblical answer`
   }
 
   const systemMessage = `You are an expert biblical scholar creating IN-DEPTH Bible study guides for serious students. Your responses must be valid JSON only.
@@ -377,6 +455,7 @@ JSON OUTPUT REQUIREMENTS:
 TONE: Scholarly yet pastoral, thorough, illuminating.`
 
   const userMessage = `TASK: ${taskDescription}
+${inputSpecificGuidance}
 
 CRITICAL: ALL 14 FIELDS BELOW ARE MANDATORY - DO NOT SKIP ANY FIELD
 
@@ -387,7 +466,7 @@ DEEP DIVE FORMAT - REQUIRED JSON OUTPUT (include ALL fields, no exceptions):
   "context": "Extended historical, cultural, and literary context (3-4 paragraphs) including:\\n\\n**Cross-References:**\\n- Include 5-8 related passages with brief explanations of connections\\n- Show how other Scriptures illuminate this passage",
   "relatedVerses": ["5-8 relevant Bible verses with references in ${languageConfig.name} - include a brief note on each connection"],
   "reflectionQuestions": ["6-8 deep, thought-provoking questions including one journaling prompt at the end"],
-  "prayerPoints": ["4-5 comprehensive prayer suggestions for deep application"],
+  "prayerPoints": ["A comprehensive, first-person prayer (7-9 sentences) addressing God directly, incorporating the key theological themes from the study. Start with addressing God and end with 'In Jesus' name, Amen'"],
   "interpretationInsights": ["MANDATORY: 4-5 profound insights from word studies and doctrinal implications (12-18 words)"],
   "summaryInsights": ["MANDATORY: 4-5 profound resonance themes (12-18 words)"],
   "reflectionAnswers": ["MANDATORY: 4-5 transformative life application responses (12-18 words each)"],
@@ -409,6 +488,13 @@ CRITICAL CONTENT REQUIREMENTS FOR DEEP DIVE:
 - Each section should be substantially longer than standard study
 - Include scholarly insights while remaining accessible
 - Last item in "reflectionQuestions" should be a journaling prompt
+
+CRITICAL: PRAYER FORMAT (Deep Dive)
+- "prayerPoints" MUST contain a comprehensive, first-person prayer (7-9 sentences)
+- Incorporate key theological themes from the study in the prayer
+- Address God directly and close with "In Jesus' name, Amen"
+- Users will pray along with or personalize this prayer
+- MUST be output in ${languageConfig.name} language
 
 CRITICAL: INTERPRETATION INSIGHTS & CONTEXT QUESTION (Deep Dive)
 - MUST be output in ${languageConfig.name} language
@@ -462,14 +548,31 @@ function createLectioDivinaPrompt(params: LLMGenerationParams, languageConfig: L
   const verseReferenceExamples = getVerseReferenceExamples(params.language)
 
   let taskDescription: string
+  let inputSpecificGuidance = ''
+
   if (inputType === 'scripture') {
     taskDescription = `Create a Lectio Divina meditation guide for: "${inputValue}"`
+    inputSpecificGuidance = `
+SCRIPTURE FOCUS (Lectio Divina):
+- Provide the FULL scripture passage text for slow, meditative reading in "summary"
+- Guide the reader through contemplative reflection on the passage
+- Invite personal encounter with God through the text`
   } else if (inputType === 'topic') {
     taskDescription = topicDescription
       ? `Create a Lectio Divina meditation guide on: "${inputValue}"\n\nContext: ${topicDescription}`
       : `Create a Lectio Divina meditation guide on: "${inputValue}"`
+    inputSpecificGuidance = `
+TOPIC FOCUS (Lectio Divina):
+- Select a key scripture passage that addresses the topic for meditation in "summary"
+- Guide contemplative reflection on how God speaks through this passage about the topic
+- Invite listening prayer and personal response to God's word on this topic`
   } else {
     taskDescription = `Create a Lectio Divina meditation guide for: "${inputValue}"`
+    inputSpecificGuidance = `
+QUESTION FOCUS (Lectio Divina):
+- Select a scripture passage that addresses the question for meditation in "summary"
+- Guide contemplative listening for how God speaks to the question through His Word
+- Invite prayerful response and personal application of God's answer`
   }
 
   const systemMessage = `You are a spiritual director guiding readers through Lectio Divina, the ancient practice of divine reading. Your responses must be valid JSON only.
@@ -502,23 +605,25 @@ JSON OUTPUT REQUIREMENTS:
 TONE: Contemplative, gentle, inviting, spiritually nurturing.`
 
   const userMessage = `TASK: ${taskDescription}
+${inputSpecificGuidance}
 
 CRITICAL: ALL 14 FIELDS BELOW ARE MANDATORY - DO NOT SKIP ANY FIELD
+ABSOLUTELY REQUIRED: "summary" AND "interpretation" are BOTH mandatory and serve DIFFERENT purposes
 
 LECTIO DIVINA FORMAT - REQUIRED JSON OUTPUT (include ALL fields, no exceptions):
 {
-  "summary": "**Scripture for Meditation**\\n\\n[Reference in ${languageConfig.name}]\\n\\n[Complete scripture passage text]\\n\\n*Read this passage slowly 2-3 times, letting the words wash over you.*",
-  "interpretation": "**LECTIO (Read) & MEDITATIO (Meditate)**\\n\\nLECTIO: [Guidance for slow, attentive reading]\\n\\nMEDITATIO: [Guidance for pondering and meditation]\\n\\nAs you read again slowly, notice which word or phrase catches your attention. This is the Spirit inviting you to pause and receive.",
+  "summary": "**Scripture for Meditation**\\n\\n[Reference in ${languageConfig.name}]\\n\\n[Complete scripture passage text]\\n\\n*Read this passage slowly 2-3 times, letting the words wash over you.*\\n\\n**Focus Words for Meditation:** [List 5-7 significant words or phrases from the passage that invite deeper reflection]",
+  "interpretation": "**LECTIO (Read) & MEDITATIO (Meditate)**\\n\\nLECTIO: [Guidance for slow, attentive reading - NOT the scripture text itself]\\n\\nMEDITATIO: [Guidance for pondering and meditation - NOT the scripture text itself]\\n\\nAs you read again slowly, notice which word or phrase catches your attention. This is the Spirit inviting you to pause and receive.",
   "context": "**About Lectio Divina**\\n\\nLectio Divina (divine reading) is an ancient Christian practice dating back to the 3rd century. It invites us to move from reading about God to encountering God through His Word. There are four movements: Lectio (read), Meditatio (meditate), Oratio (pray), and Contemplatio (rest).\\n\\nApproach this time with an open heart, free from agenda. Let God speak to you through His Word.",
-  "relatedVerses": ["List 5-7 significant words or phrases from the passage for meditation - these are focus words that invite deeper reflection"],
+  "relatedVerses": ["Include 3-5 related Bible verse references that complement this meditation in ${languageConfig.name}"],
   "reflectionQuestions": ["**ORATIO (Pray)** - A prayer starter to respond to God based on the passage...", "What is God inviting you to in this Word?", "How might this passage shape your day?", "**CONTEMPLATIO (Rest)** - Rest in God's presence. Sit in silence for 2-3 minutes, simply being with God, letting go of words and thoughts."],
-  "prayerPoints": ["[Prayer template/starter that the reader can personalize]", "[A blessing to carry with you: A brief sending word]", "[One way to carry this Word into daily life]"],
+  "prayerPoints": ["A gentle, contemplative first-person prayer (3-4 sentences) that responds to the Scripture meditation. Format as a prayer template users can personalize and pray. Start with addressing God gently (e.g., 'Father', 'Loving God') and close with 'Amen'"],
   "interpretationInsights": ["MANDATORY: 2-3 contemplative insights for reflection (8-12 words)"],
   "summaryInsights": ["MANDATORY: 2-3 gentle resonance themes (8-12 words)"],
   "reflectionAnswers": ["MANDATORY: 2-3 gentle responses to God's invitation (8-12 words each)"],
   "contextQuestion": "Gentle yes/no question inviting personal reflection",
   "summaryQuestion": "Gentle question about what draws attention in the passage (8-12 words)",
-  "relatedVersesQuestion": "Inviting question about meditation focus words (8-12 words)",
+  "relatedVersesQuestion": "Inviting question about which related verse to meditate on (8-12 words)",
   "reflectionQuestion": "Contemplative question about God's invitation (8-12 words)",
   "prayerQuestion": "Gentle question encouraging prayer response (6-10 words)"
 }
@@ -529,12 +634,20 @@ REQUIREMENT VERIFICATION:
 ✓ Do NOT skip any of the 14 required fields above
 
 CRITICAL CONTENT REQUIREMENTS FOR LECTIO DIVINA:
-- "summary" must include the full scripture text formatted for slow reading
-- "interpretation" must guide through LECTIO and MEDITATIO movements
-- "relatedVerses" should be FOCUS WORDS/PHRASES from the passage for meditation (not other verses)
+- "summary": MUST include the ACTUAL SCRIPTURE TEXT (not guidance) formatted for slow reading, PLUS a list of 5-7 focus words/phrases for meditation at the end
+- "interpretation": MUST provide GUIDANCE for LECTIO and MEDITATIO movements (NOT the scripture text - that goes in "summary")
+- BOTH "summary" and "interpretation" are MANDATORY - they serve different purposes and cannot be combined
+- "relatedVerses" should be 3-5 related Bible verse REFERENCES (e.g., "Psalm 23:1", "John 14:27") that complement the meditation
 - "reflectionQuestions" must include ORATIO and CONTEMPLATIO movements
-- "prayerPoints" should include prayer template, blessing, and practice reminder
 - Use meditative, gentle, inviting language throughout
+
+CRITICAL: PRAYER FORMAT (Lectio Divina)
+- "prayerPoints" MUST contain a gentle, contemplative first-person prayer (3-4 sentences)
+- The prayer should respond to the Scripture meditation
+- Format as a prayer template users can personalize and pray along with
+- Address God gently (e.g., "Father", "Loving God") and close with "Amen"
+- Use contemplative, receptive language that invites personal response
+- MUST be output in ${languageConfig.name} language
 
 CRITICAL: INTERPRETATION INSIGHTS & CONTEXT QUESTION (Lectio Divina)
 - MUST be output in ${languageConfig.name} language

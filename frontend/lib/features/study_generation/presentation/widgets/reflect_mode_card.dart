@@ -62,6 +62,9 @@ class ReflectModeCard extends StatefulWidget {
   /// Callback when Continue is pressed
   final VoidCallback onContinue;
 
+  /// Callback when Back/Previous is pressed (optional)
+  final VoidCallback? onBack;
+
   /// Whether this card is currently active
   final bool isActive;
 
@@ -80,6 +83,7 @@ class ReflectModeCard extends StatefulWidget {
     this.sliderLabels,
     required this.onInteractionComplete,
     required this.onContinue,
+    this.onBack,
     this.isActive = true,
     this.contentLanguage,
   });
@@ -285,31 +289,55 @@ class _ReflectModeCardState extends State<ReflectModeCard>
               // Progress bar
               _buildProgressBar(context),
 
-              // Main content area
+              // ✅ FIX: Full height layout for verse selection and prayer, 50-50 for others
               Expanded(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Section title
-                      _buildSectionHeader(context),
+                child: widget.interactionType ==
+                            ReflectionInteractionType.verseSelection ||
+                        widget.interactionType ==
+                            ReflectionInteractionType.prayer
+                    ? SingleChildScrollView(
+                        padding: EdgeInsets.zero,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Section header only (no content duplication)
+                            Padding(
+                              padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+                              child: _buildSectionHeader(context),
+                            ),
+                            // Full height interaction area
+                            _buildInteractionArea(context),
+                          ],
+                        ),
+                      )
+                    : Column(
+                        children: [
+                          // Summary section (50% of space)
+                          Flexible(
+                            child: SingleChildScrollView(
+                              padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  // Section title
+                                  _buildSectionHeader(context),
+                                  const SizedBox(height: 16),
+                                  _buildSectionContent(context),
+                                ],
+                              ),
+                            ),
+                          ),
 
-                      // Section content (hide for verse selection and prayer to avoid duplication)
-                      if (widget.interactionType !=
-                              ReflectionInteractionType.verseSelection &&
-                          widget.interactionType !=
-                              ReflectionInteractionType.prayer) ...[
-                        const SizedBox(height: 16),
-                        _buildSectionContent(context),
-                      ],
-                    ],
-                  ),
-                ),
+                          // Question/Answer section (50% of space)
+                          Flexible(
+                            child: SingleChildScrollView(
+                              padding: EdgeInsets.zero,
+                              child: _buildInteractionArea(context),
+                            ),
+                          ),
+                        ],
+                      ),
               ),
-
-              // Interaction area
-              _buildInteractionArea(context),
 
               // Continue button
               _buildContinueButton(context),
@@ -465,12 +493,15 @@ class _ReflectModeCardState extends State<ReflectModeCard>
           ),
 
           // Question
-          Text(
-            widget.interactionQuestion,
-            style: AppFonts.poppins(
-              fontSize: 17,
-              fontWeight: FontWeight.w600,
-              color: Theme.of(context).colorScheme.onBackground,
+          SizedBox(
+            width: double.infinity,
+            child: Text(
+              widget.interactionQuestion,
+              style: AppFonts.poppins(
+                fontSize: 17,
+                fontWeight: FontWeight.w600,
+                color: Theme.of(context).colorScheme.onBackground,
+              ),
             ),
           ),
 
@@ -1004,29 +1035,54 @@ class _ReflectModeCardState extends State<ReflectModeCard>
   }
 
   Widget _buildReadSilentlyMode(BuildContext context, Color accentColor) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: accentColor.withOpacity(0.15),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        children: [
-          Icon(
-            Icons.timer_outlined,
-            color: accentColor,
+    return Column(
+      children: [
+        // Header with timer icon
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: accentColor.withOpacity(0.15),
+            borderRadius: BorderRadius.circular(12),
           ),
-          const SizedBox(width: 12),
-          Text(
-            context.tr(TranslationKeys.reflectModeTakeYourTime),
-            style: AppFonts.inter(
-              fontSize: 15,
-              fontWeight: FontWeight.w500,
-              color: accentColor,
+          child: Row(
+            children: [
+              Icon(
+                Icons.timer_outlined,
+                color: accentColor,
+              ),
+              const SizedBox(width: 12),
+              Text(
+                context.tr(TranslationKeys.reflectModeTakeYourTime),
+                style: AppFonts.inter(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w500,
+                  color: accentColor,
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 12),
+        // Prayer text display
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: accentColor.withOpacity(0.05),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: accentColor.withOpacity(0.15),
             ),
           ),
-        ],
-      ),
+          child: Text(
+            widget.sectionContent,
+            style: AppFonts.inter(
+              fontSize: 15,
+              height: 1.6,
+              color: Theme.of(context).colorScheme.onBackground,
+            ),
+          ),
+        ),
+      ],
     );
   }
 
@@ -1168,44 +1224,124 @@ class _ReflectModeCardState extends State<ReflectModeCard>
         ? _lightenColor(theme.colorScheme.primary, 0.10)
         : theme.colorScheme.primary;
     final isLastCard = widget.cardIndex == widget.totalCards - 1;
+    final showBackButton = widget.onBack != null;
 
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-      child: AnimatedOpacity(
-        duration: const Duration(milliseconds: 300),
-        opacity: _canProceed ? 1.0 : 0.5,
-        child: ElevatedButton(
-          onPressed: _canProceed ? widget.onContinue : null,
-          style: ElevatedButton.styleFrom(
-            backgroundColor: accentColor,
-            foregroundColor: Colors.white,
-            padding: const EdgeInsets.symmetric(vertical: 16),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-            elevation: _canProceed ? 4 : 0,
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                isLastCard
-                    ? context.tr(TranslationKeys.reflectModeComplete)
-                    : context.tr(TranslationKeys.reflectModeContinue),
-                style: AppFonts.inter(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
+      child: showBackButton
+          ? Row(
+              children: [
+                // Previous button
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: widget.onBack,
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: accentColor,
+                      side: BorderSide(color: accentColor, width: 2),
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(Icons.arrow_back, size: 20),
+                        const SizedBox(width: 8),
+                        Text(
+                          context.tr(TranslationKeys.reflectModePrevious),
+                          style: AppFonts.inter(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                // Continue/Complete button
+                Expanded(
+                  flex: 2,
+                  child: AnimatedOpacity(
+                    duration: const Duration(milliseconds: 300),
+                    opacity: _canProceed ? 1.0 : 0.5,
+                    child: ElevatedButton(
+                      onPressed: _canProceed ? widget.onContinue : null,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: accentColor,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        elevation: _canProceed ? 4 : 0,
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            isLastCard
+                                ? context
+                                    .tr(TranslationKeys.reflectModeComplete)
+                                : context
+                                    .tr(TranslationKeys.reflectModeContinue),
+                            style: AppFonts.inter(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Icon(
+                            isLastCard
+                                ? Icons.check_circle_outline
+                                : Icons.arrow_forward,
+                            size: 20,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            )
+          : AnimatedOpacity(
+              duration: const Duration(milliseconds: 300),
+              opacity: _canProceed ? 1.0 : 0.5,
+              child: ElevatedButton(
+                onPressed: _canProceed ? widget.onContinue : null,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: accentColor,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  elevation: _canProceed ? 4 : 0,
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      isLastCard
+                          ? context.tr(TranslationKeys.reflectModeComplete)
+                          : context.tr(TranslationKeys.reflectModeContinue),
+                      style: AppFonts.inter(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Icon(
+                      isLastCard
+                          ? Icons.check_circle_outline
+                          : Icons.arrow_forward,
+                      size: 20,
+                    ),
+                  ],
                 ),
               ),
-              const SizedBox(width: 8),
-              Icon(
-                isLastCard ? Icons.check_circle_outline : Icons.arrow_forward,
-                size: 20,
-              ),
-            ],
-          ),
-        ),
-      ),
+            ),
     );
   }
 }

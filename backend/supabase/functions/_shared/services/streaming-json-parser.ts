@@ -114,7 +114,7 @@ export class StreamingJsonParser {
 
   /**
    * Adds a new chunk to the buffer and checks for complete sections
-   * 
+   *
    * @param chunk - Raw text chunk from LLM stream
    * @returns Array of newly completed sections (may be empty)
    */
@@ -125,7 +125,7 @@ export class StreamingJsonParser {
 
   /**
    * Extracts any complete sections from the buffer
-   * 
+   *
    * @returns Array of newly completed sections
    */
   private extractCompleteSections(): ParsedSection[] {
@@ -133,18 +133,18 @@ export class StreamingJsonParser {
 
     for (let i = 0; i < SECTION_ORDER.length; i++) {
       const sectionType = SECTION_ORDER[i]
-      
+
       // Skip already emitted sections
       if (this.emittedSections.has(sectionType)) {
         continue
       }
 
       const extracted = this.tryExtractSection(sectionType)
-      
+
       if (extracted !== null) {
         this.emittedSections.add(sectionType)
         this.parsedData[sectionType] = extracted as any
-        
+
         newSections.push({
           type: sectionType,
           content: extracted,
@@ -367,27 +367,48 @@ export class StreamingJsonParser {
 
   /**
    * Attempts to parse the complete buffer as JSON (fallback)
-   * 
+   *
    * Used when streaming completes but some sections weren't detected
    */
-  tryParseComplete(): CompleteStudyGuide | null {
+  async tryParseComplete(): Promise<CompleteStudyGuide | null> {
     try {
       // Clean up the buffer to ensure valid JSON
       let cleanBuffer = this.buffer.trim()
-      
+
+      // Strip markdown code fences (from Anthropic responses)
+      if (cleanBuffer.startsWith('```json\n')) {
+        cleanBuffer = cleanBuffer.substring(8)
+      } else if (cleanBuffer.startsWith('```json')) {
+        cleanBuffer = cleanBuffer.substring(7)
+      } else if (cleanBuffer.startsWith('```\n')) {
+        cleanBuffer = cleanBuffer.substring(4)
+      } else if (cleanBuffer.startsWith('```')) {
+        cleanBuffer = cleanBuffer.substring(3)
+      }
+
+      if (cleanBuffer.endsWith('\n```')) {
+        cleanBuffer = cleanBuffer.substring(0, cleanBuffer.length - 4)
+      } else if (cleanBuffer.endsWith('```')) {
+        cleanBuffer = cleanBuffer.substring(0, cleanBuffer.length - 3)
+      }
+
+      cleanBuffer = cleanBuffer.trim()
+
       // Ensure it starts with { and ends with }
       if (!cleanBuffer.startsWith('{')) {
         const startIndex = cleanBuffer.indexOf('{')
         if (startIndex === -1) return null
         cleanBuffer = cleanBuffer.substring(startIndex)
       }
-      
+
       if (!cleanBuffer.endsWith('}')) {
         const endIndex = cleanBuffer.lastIndexOf('}')
         if (endIndex === -1) return null
         cleanBuffer = cleanBuffer.substring(0, endIndex + 1)
       }
 
+      // First attempt: parse the cleaned buffer directly
+      // LLM should return properly escaped JSON; additional escaping corrupts valid sequences
       const parsed = JSON.parse(cleanBuffer)
 
       // Validate required structure
@@ -438,8 +459,33 @@ export class StreamingJsonParser {
       }
 
       return null
-    } catch {
+    } catch (error) {
+      // Create deterministic fingerprint of buffer without exposing content
+      const bufferHash = await this.hashBuffer(this.buffer)
+
+      console.error('[Parser] ❌ JSON.parse() failed!')
+      console.error('[Parser] Error:', error instanceof Error ? error.message : String(error))
+      console.error('[Parser] Error stack:', error instanceof Error ? error.stack : 'N/A')
+      console.error('[Parser] Buffer length:', this.buffer.length, 'characters')
+      console.error('[Parser] Buffer fingerprint (SHA-256):', bufferHash)
       return null
+    }
+  }
+
+  /**
+   * Creates a SHA-256 hash fingerprint of the buffer for debugging
+   * without exposing sensitive content
+   */
+  private async hashBuffer(content: string): Promise<string> {
+    try {
+      const encoder = new TextEncoder()
+      const data = encoder.encode(content)
+      const hashBuffer = await crypto.subtle.digest('SHA-256', data)
+      const hashArray = Array.from(new Uint8Array(hashBuffer))
+      const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('')
+      return hashHex
+    } catch (error) {
+      return '[REDACTED]'
     }
   }
 

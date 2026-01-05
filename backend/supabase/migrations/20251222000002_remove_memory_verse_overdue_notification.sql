@@ -49,10 +49,10 @@ BEGIN
   LEFT JOIN (
     -- Get count of due verses per user
     SELECT
-      user_id as mv_user_id,
-      COUNT(*) FILTER (WHERE next_review_date <= CURRENT_DATE) as due_count
-    FROM memory_verses
-    GROUP BY user_id
+      mv.user_id as mv_user_id,
+      COUNT(*) FILTER (WHERE mv.next_review_date <= CURRENT_DATE) as due_count
+    FROM memory_verses mv
+    GROUP BY mv.user_id
   ) mv ON t.user_id = mv.mv_user_id
   WHERE p.memory_verse_reminder_enabled = true
     -- Only users who have at least one due verse

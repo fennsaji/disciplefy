@@ -122,7 +122,8 @@ async function initializeServiceContainer(): Promise<ServiceContainer> {
       openaiApiKey: config.openaiApiKey,
       anthropicApiKey: config.anthropicApiKey,
       provider: config.llmProvider,
-      useMock: config.useMock
+      useMock: config.useMock,
+      supabaseClient: supabaseServiceClient  // For security event logging
     }
     const llmService = new LLMService(llmConfig)
     
