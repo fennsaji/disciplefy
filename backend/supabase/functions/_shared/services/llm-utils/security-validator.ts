@@ -31,6 +31,7 @@ export type SecurityViolationType =
   | 'excessive_length'
   | 'special_character_attack'
   | 'inappropriate_content'
+  | 'rate_limit_exceeded'
 
 const MAX_INPUT_LENGTH = 10000 // 10k characters max
 
@@ -105,13 +106,13 @@ const JAILBREAK_PATTERNS = [
     description: 'Llama/Mistral instruction tag injection'
   },
   {
-    pattern: /<\|.*?\|>/g,
+    pattern: /<\|.*?\|>/,
     type: 'jailbreak_attempt' as SecurityViolationType,
     severity: 'high' as const,
     description: 'ChatML tag injection'
   },
   {
-    pattern: /\{\{.*?\}\}/g,
+    pattern: /\{\{.*?\}\}/,
     type: 'jailbreak_attempt' as SecurityViolationType,
     severity: 'medium' as const,
     description: 'Template injection attempt'

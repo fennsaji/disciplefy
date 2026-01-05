@@ -370,7 +370,7 @@ export class StreamingJsonParser {
    *
    * Used when streaming completes but some sections weren't detected
    */
-  tryParseComplete(): CompleteStudyGuide | null {
+  async tryParseComplete(): Promise<CompleteStudyGuide | null> {
     try {
       // Clean up the buffer to ensure valid JSON
       let cleanBuffer = this.buffer.trim()
@@ -468,12 +468,32 @@ export class StreamingJsonParser {
 
       return null
     } catch (error) {
+      // Create deterministic fingerprint of buffer without exposing content
+      const bufferHash = await this.hashBuffer(this.buffer)
+
       console.error('[Parser] ❌ JSON.parse() failed!')
       console.error('[Parser] Error:', error instanceof Error ? error.message : String(error))
       console.error('[Parser] Error stack:', error instanceof Error ? error.stack : 'N/A')
-      console.error('[Parser] Failed buffer (first 500 chars):', this.buffer.substring(0, 500))
-      console.error('[Parser] Failed buffer (last 200 chars):', this.buffer.substring(this.buffer.length - 200))
+      console.error('[Parser] Buffer length:', this.buffer.length, 'characters')
+      console.error('[Parser] Buffer fingerprint (SHA-256):', bufferHash)
       return null
+    }
+  }
+
+  /**
+   * Creates a SHA-256 hash fingerprint of the buffer for debugging
+   * without exposing sensitive content
+   */
+  private async hashBuffer(content: string): Promise<string> {
+    try {
+      const encoder = new TextEncoder()
+      const data = encoder.encode(content)
+      const hashBuffer = await crypto.subtle.digest('SHA-256', data)
+      const hashArray = Array.from(new Uint8Array(hashBuffer))
+      const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('')
+      return hashHex
+    } catch (error) {
+      return '[REDACTED]'
     }
   }
 
