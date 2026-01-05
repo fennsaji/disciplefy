@@ -449,7 +449,7 @@ export class OpenAIClient {
             if (data === '[DONE]') {
               console.log(`[OpenAI] Stream completed: ${totalChars} total characters`)
               if (totalChars < 500) {
-                console.warn(`[OpenAI] ⚠️ Short response detected! Full content:\n${fullResponse}`)
+                console.warn(`[OpenAI] ⚠️ Short response detected! Length: ${totalChars} characters`)
               }
               return
             }
@@ -493,7 +493,7 @@ export class OpenAIClient {
 
     console.log(`[OpenAI] Stream ended: ${totalChars} total characters`)
     if (totalChars < 500) {
-      console.warn(`[OpenAI] ⚠️ Short response at stream end! Full content:\n${fullResponse}`)
+      console.warn(`[OpenAI] ⚠️ Short response at stream end! Length: ${totalChars} characters`)
     }
   }
 }

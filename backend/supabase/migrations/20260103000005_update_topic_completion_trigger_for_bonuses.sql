@@ -32,10 +32,15 @@ BEGIN
       JOIN learning_paths lp ON lp.id = lpt.learning_path_id
       WHERE lpt.topic_id = NEW.topic_id
     LOOP
-      -- Get topic's base XP value
-      SELECT COALESCE(xp_value, 50) INTO v_topic_xp
+      -- Get topic's base XP value with robust NULL handling
+      SELECT xp_value INTO v_topic_xp
       FROM recommended_topics
       WHERE id = NEW.topic_id;
+
+      -- Default to 50 if row not found or xp_value is NULL
+      IF NOT FOUND OR v_topic_xp IS NULL THEN
+        v_topic_xp := 50;
+      END IF;
 
       -- Reset bonus for this iteration
       v_bonus_xp := 0;
@@ -88,29 +93,29 @@ BEGIN
       UPDATE user_learning_path_progress
       SET
         topics_completed = v_completed_in_path,
-        total_xp_earned = total_xp_earned + COALESCE(NEW.xp_earned, 0),
         current_topic_position = GREATEST(current_topic_position, v_path_position + 1),
         last_activity_at = NOW(),
         updated_at = NOW(),
         -- If path is now complete, check for completion bonus
-        completed_at = CASE 
-          WHEN v_completed_in_path >= v_total_topics THEN NOW() 
-          ELSE completed_at 
+        completed_at = CASE
+          WHEN v_completed_in_path >= v_total_topics THEN NOW()
+          ELSE completed_at
         END,
         completed_in_recommended_mode = CASE
           WHEN v_completed_in_path >= v_total_topics THEN (recommended_mode_streak >= v_total_topics)
           ELSE completed_in_recommended_mode
         END,
+        -- Compute total_xp_earned as single expression: base + NEW.xp_earned + conditional completion bonus
+        total_xp_earned = CASE
+          WHEN v_completed_in_path >= v_total_topics AND recommended_mode_streak >= v_total_topics
+          THEN total_xp_earned + COALESCE(NEW.xp_earned, 0) + FLOOR((total_xp_earned + COALESCE(NEW.xp_earned, 0)) * 0.5)
+          ELSE total_xp_earned + COALESCE(NEW.xp_earned, 0)
+        END,
         -- Award 50% completion bonus only if ALL topics done in recommended mode
         bonus_xp_awarded = CASE
           WHEN v_completed_in_path >= v_total_topics AND recommended_mode_streak >= v_total_topics
-          THEN bonus_xp_awarded + FLOOR(total_xp_earned * 0.5)
+          THEN bonus_xp_awarded + FLOOR((total_xp_earned + COALESCE(NEW.xp_earned, 0)) * 0.5)
           ELSE bonus_xp_awarded
-        END,
-        total_xp_earned = CASE
-          WHEN v_completed_in_path >= v_total_topics AND recommended_mode_streak >= v_total_topics
-          THEN total_xp_earned + FLOOR(total_xp_earned * 0.5)
-          ELSE total_xp_earned
         END
       WHERE user_id = NEW.user_id AND learning_path_id = v_path_id;
     END LOOP;

@@ -184,7 +184,7 @@ export async function logRateLimitAbuse(
     actionTaken: metadata.actionTaken,
     detectionDetails: {
       violations: [{
-        type: 'rate_limit_exceeded' as any,
+        type: 'rate_limit_exceeded',
         pattern: `${metadata.requestCount} requests in ${metadata.timeWindow}`,
         severity: 'medium' as const,
         description: 'Excessive requests in short time window'
@@ -218,7 +218,7 @@ export async function logContentPolicyViolation(
     actionTaken: metadata.actionTaken,
     detectionDetails: {
       violations: [{
-        type: 'inappropriate_content' as any,
+        type: 'inappropriate_content',
         pattern: metadata.violationType,
         severity: 'high' as const,
         description: 'Content policy violation detected'

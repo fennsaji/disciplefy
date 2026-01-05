@@ -33,10 +33,14 @@ DO $$
 DECLARE
   constraint_exists BOOLEAN;
 BEGIN
+  -- Check for CHECK constraint using pg_catalog (information_schema may not list CHECK constraints)
   SELECT EXISTS (
-    SELECT 1 FROM information_schema.constraint_column_usage
-    WHERE table_name = 'user_profiles'
-    AND constraint_name = 'user_profiles_default_study_mode_check'
+    SELECT 1
+    FROM pg_catalog.pg_constraint con
+    JOIN pg_catalog.pg_class rel ON rel.oid = con.conrelid
+    WHERE rel.relname = 'user_profiles'
+    AND con.conname = 'user_profiles_default_study_mode_check'
+    AND con.contype = 'c'
   ) INTO constraint_exists;
 
   IF NOT constraint_exists THEN

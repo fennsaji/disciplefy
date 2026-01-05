@@ -486,7 +486,7 @@ async function handleStudyGenerateV2(
           studyGuideData = parser.getCompleteStudyGuide()
         } else {
           // Try to parse the complete buffer as fallback
-          const fallbackData = parser.tryParseComplete()
+          const fallbackData = await parser.tryParseComplete()
           if (fallbackData) {
             studyGuideData = fallbackData
 
