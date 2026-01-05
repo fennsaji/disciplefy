@@ -155,68 +155,84 @@ class _ScriptureVerseSheetState extends State<ScriptureVerseSheet> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final screenHeight = MediaQuery.of(context).size.height;
 
     return Container(
       decoration: BoxDecoration(
         color: theme.colorScheme.surface,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
       ),
+      // ✅ FIX: Add max height constraint to allow scrolling for long verses
+      constraints: BoxConstraints(
+        maxHeight: screenHeight * 0.85, // Max 85% of screen height
+      ),
       child: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(20.0),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Handle bar
-              Center(
-                child: Container(
-                  width: 40,
-                  height: 4,
-                  margin: const EdgeInsets.only(bottom: 20),
-                  decoration: BoxDecoration(
-                    color: theme.colorScheme.onSurfaceVariant.withOpacity(0.4),
-                    borderRadius: BorderRadius.circular(2),
-                  ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Handle bar - fixed at top
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                margin: const EdgeInsets.only(top: 16, bottom: 20),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.onSurfaceVariant.withOpacity(0.4),
+                  borderRadius: BorderRadius.circular(2),
                 ),
               ),
+            ),
 
-              // Reference header
-              Row(
-                children: [
-                  Icon(
-                    Icons.menu_book_rounded,
-                    color: theme.colorScheme.primary,
-                    size: 24,
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      _localizedReference ?? widget.reference,
-                      style: theme.textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.w600,
-                        color: theme.colorScheme.primary,
-                      ),
+            // ✅ FIX: Scrollable content area
+            Flexible(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Reference header
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.menu_book_rounded,
+                          color: theme.colorScheme.primary,
+                          size: 24,
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            _localizedReference ?? widget.reference,
+                            style: theme.textTheme.titleLarge?.copyWith(
+                              fontWeight: FontWeight.w600,
+                              color: theme.colorScheme.primary,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
-                ],
+                    const SizedBox(height: 20),
+
+                    // Content area
+                    if (_isLoading)
+                      _buildLoadingState(theme)
+                    else if (_errorMessage != null)
+                      _buildErrorState(theme)
+                    else
+                      _buildVerseContent(theme),
+
+                    const SizedBox(height: 20),
+
+                    // Action buttons (only show when verse is loaded)
+                    if (!_isLoading && _verseText != null)
+                      _buildActionButtons(theme),
+
+                    const SizedBox(height: 20),
+                  ],
+                ),
               ),
-              const SizedBox(height: 20),
-
-              // Content area
-              if (_isLoading)
-                _buildLoadingState(theme)
-              else if (_errorMessage != null)
-                _buildErrorState(theme)
-              else
-                _buildVerseContent(theme),
-
-              const SizedBox(height: 20),
-
-              // Action buttons (only show when verse is loaded)
-              if (!_isLoading && _verseText != null) _buildActionButtons(theme),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

@@ -236,6 +236,9 @@ class _StudyGuideScreenV2ContentState
   bool _hasTriggeredNotificationPrompt = false;
   bool _isCompletionTrackingStarted = false;
 
+  // Reading completion card visibility
+  bool _showCompletionCard = true;
+
   // PDF export state
   bool _isExportingPdf = false;
 
@@ -649,6 +652,7 @@ class _StudyGuideScreenV2ContentState
     if (kDebugMode) {
       print('📊 [TOPIC_PROGRESS] Completing topic progress:');
       print('   Topic ID: $topicId');
+      print('   Study Mode: ${widget.studyMode.name}');
       print('   Time spent: $_timeSpentSeconds seconds');
     }
 
@@ -657,6 +661,7 @@ class _StudyGuideScreenV2ContentState
       final result = await repository.completeTopic(
         topicId,
         timeSpentSeconds: _timeSpentSeconds,
+        generationMode: widget.studyMode.name,
       );
 
       result.fold(
@@ -1315,20 +1320,19 @@ class _StudyGuideScreenV2ContentState
 
           SizedBox(height: isLargeScreen ? 32 : 24),
 
-          // Reading Completion Card
-          ReadingCompletionCard(
-            onReflect: () {
-              setState(() => _viewMode = StudyViewMode.reflect);
-            },
-            onMaybeLater: () {
-              // Scroll to Follow-up Chat section
-              _scrollController.animateTo(
-                _scrollController.position.maxScrollExtent,
-                duration: const Duration(milliseconds: 500),
-                curve: Curves.easeInOut,
-              );
-            },
-          ),
+          // Reading Completion Card (dismissible)
+          if (_showCompletionCard)
+            ReadingCompletionCard(
+              onReflect: () {
+                setState(() => _viewMode = StudyViewMode.reflect);
+              },
+              onMaybeLater: () {
+                // Simply dismiss the card
+                setState(() {
+                  _showCompletionCard = false;
+                });
+              },
+            ),
 
           SizedBox(height: isLargeScreen ? 32 : 24),
 

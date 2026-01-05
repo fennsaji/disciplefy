@@ -119,7 +119,6 @@ export class AnthropicClient {
       model: this.selectModel('en'),
       max_tokens: maxTokens,
       temperature,
-      top_p: 0.9,
       top_k: 250,
       system: systemMessage,
       messages: [{ role: 'user', content: userMessage }]
@@ -153,7 +152,6 @@ export class AnthropicClient {
       model,
       max_tokens: maxTokens,
       temperature: languageConfig.temperature,
-      top_p: 0.9,
       top_k: 250,
       system: systemMessage,
       messages: [{ role: 'user', content: userMessage }]
@@ -243,7 +241,6 @@ export class AnthropicClient {
       model,
       max_tokens: maxTokens,
       temperature: languageConfig.temperature,
-      top_p: 0.9,
       top_k: 250,
       system: systemMessage,
       messages: [{ role: 'user', content: userMessage }],
@@ -274,7 +271,10 @@ export class AnthropicClient {
 
     const decoder = new TextDecoder()
     let totalChars = 0
+    let fullResponse = '' // Track complete response for debugging
     let buffer = ''
+    let jsonStarted = false // Track if we've seen the opening {
+    let accumulatedChunks = '' // Accumulate first few chars to detect markdown
 
     try {
       while (true) {
@@ -302,7 +302,51 @@ export class AnthropicClient {
                 const delta = parsed.delta?.text
                 if (delta) {
                   totalChars += delta.length
-                  yield delta
+                  fullResponse += delta
+
+                  let cleanedDelta = delta
+
+                  // If we haven't seen JSON start yet, accumulate and check for markdown
+                  if (!jsonStarted) {
+                    accumulatedChunks += delta
+
+                    // Check if we have enough to detect markdown wrapper
+                    if (accumulatedChunks.length >= 10) {
+                      // Strip markdown wrapper from accumulated chunks
+                      let cleaned = accumulatedChunks
+
+                      // Remove opening markdown patterns
+                      cleaned = cleaned.replace(/^```json\s*/, '')
+                      cleaned = cleaned.replace(/^```\s*/, '')
+
+                      // Check if JSON has started
+                      if (cleaned.includes('{')) {
+                        jsonStarted = true
+
+                        // Yield everything up to and including the opening brace
+                        const braceIndex = cleaned.indexOf('{')
+                        const firstYield = cleaned.substring(0, braceIndex + 1)
+                        yield firstYield
+
+                        // If there's content after the brace, yield it too
+                        if (braceIndex + 1 < cleaned.length) {
+                          const secondYield = cleaned.substring(braceIndex + 1)
+                          yield secondYield
+                        }
+
+                        accumulatedChunks = '' // Clear accumulator
+                      }
+                    }
+                    continue // Don't yield yet, keep accumulating
+                  }
+
+                  // After JSON started, just strip closing markdown if present
+                  cleanedDelta = cleanedDelta.replace(/```\s*$/g, '')
+
+                  // Yield cleaned content
+                  if (cleanedDelta) {
+                    yield cleanedDelta
+                  }
                 }
               } else if (parsed.type === 'message_stop') {
                 console.log(`[Anthropic] Stream completed: ${totalChars} total characters`)

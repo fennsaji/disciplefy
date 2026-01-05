@@ -899,14 +899,39 @@ async function getNextTopicsFromLearningPath(
   }
   console.log(`[TOPICS_FOR_YOU] Path topics fetched: ${pathTopics.length}`);
 
-  // Get user's completed topic IDs
-  const { data: completedTopics } = await supabase
+  // Get user's completed topic IDs from BOTH user_topic_progress AND user_study_guides
+  // This ensures consistency with selectTopicForUser and selectTopicsForYou functions
+  
+  // Check user_topic_progress table
+  const { data: completedFromProgress } = await supabase
     .from('user_topic_progress')
     .select('topic_id')
     .eq('user_id', userId)
     .not('completed_at', 'is', null);
 
-  const completedTopicIds = new Set(completedTopics?.map((t) => t.topic_id) || []);
+  // Check user_study_guides table (primary source of completion tracking)
+  const { data: completedGuides } = await supabase
+    .from('user_study_guides')
+    .select('study_guide_id, study_guides!inner(topic_id, input_type, input_value)')
+    .eq('user_id', userId)
+    .not('completed_at', 'is', null);
+
+  // Combine topic IDs from both sources
+  const completedTopicIds = new Set<string>(
+    completedFromProgress?.map((t) => t.topic_id) || []
+  );
+
+  // Add topic IDs from completed study guides
+  if (completedGuides && completedGuides.length > 0) {
+    for (const guide of completedGuides) {
+      const studyGuide = guide.study_guides as any;
+      if (studyGuide?.topic_id) {
+        completedTopicIds.add(studyGuide.topic_id);
+      }
+    }
+  }
+
+  console.log(`[TOPICS_FOR_YOU] Found ${completedTopicIds.size} completed topics (${completedFromProgress?.length || 0} from progress, ${completedGuides?.length || 0} from study guides)`);
 
   // Filter to only uncompleted topics and map to LearningPathTopic format
   const uncompletedTopics: LearningPathTopic[] = [];

@@ -76,7 +76,9 @@ class _ProgressiveRevealPracticePageState
         final verse = state.verses.firstWhere((v) => v.id == widget.verseId);
         setState(() {
           currentVerse = verse;
-          _splitTextIntoChunks(verse.verseText);
+          // Include reference at the end of verse text for memorization
+          final fullText = '${verse.verseText} ${verse.verseReference}';
+          _splitTextIntoChunks(fullText);
         });
       } catch (e) {
         if (mounted) {
@@ -201,7 +203,10 @@ class _ProgressiveRevealPracticePageState
     revealTimer?.cancel();
 
     if (currentVerse != null) {
-      _splitTextIntoChunks(currentVerse!.verseText);
+      // Include reference at the end of verse text for memorization
+      final fullText =
+          '${currentVerse!.verseText} ${currentVerse!.verseReference}';
+      _splitTextIntoChunks(fullText);
     }
   }
 
