@@ -35,11 +35,13 @@ class TopicProgressRepositoryImpl implements TopicProgressRepository {
   Future<Either<Failure, TopicCompletionResult>> completeTopic(
     String topicId, {
     int timeSpentSeconds = 0,
+    String? generationMode,
   }) async {
     try {
       final response = await _remoteDataSource.completeTopic(
         topicId,
         timeSpentSeconds: timeSpentSeconds,
+        generationMode: generationMode,
       );
 
       return Right(TopicCompletionResult(

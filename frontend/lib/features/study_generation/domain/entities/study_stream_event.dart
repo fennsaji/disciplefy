@@ -218,8 +218,9 @@ class StreamingStudyGuideContent {
   double get progress =>
       totalSections > 0 ? sectionsLoaded / totalSections : 0.0;
 
-  /// Whether all required sections have been loaded (at least 6 core sections)
-  bool get isComplete => sectionsLoaded >= 6;
+  /// Whether all required sections have been loaded
+  /// Changed from hardcoded 6 to dynamic totalSections to support all study modes
+  bool get isComplete => sectionsLoaded >= totalSections;
 
   /// Create a copy with a new section added
   StreamingStudyGuideContent copyWithSection(StudyStreamSectionEvent section) {

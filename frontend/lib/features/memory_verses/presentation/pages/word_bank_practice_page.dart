@@ -94,7 +94,9 @@ class _WordBankPracticePageState extends State<WordBankPracticePage> {
         final verse = state.verses.firstWhere((v) => v.id == widget.verseId);
         setState(() {
           currentVerse = verse;
-          _initializeWordBank(verse.verseText);
+          // Include reference at the end of verse text for memorization
+          final fullText = '${verse.verseText} ${verse.verseReference}';
+          _initializeWordBank(fullText);
         });
       } catch (e) {
         if (mounted) {
@@ -278,7 +280,10 @@ class _WordBankPracticePageState extends State<WordBankPracticePage> {
   void _reset() {
     if (currentVerse != null) {
       setState(() {
-        _initializeWordBank(currentVerse!.verseText);
+        // Include reference at the end of verse text for memorization
+        final fullText =
+            '${currentVerse!.verseText} ${currentVerse!.verseReference}';
+        _initializeWordBank(fullText);
         hintsUsed = 0;
         isCompleted = false;
         showedAnswer = false;

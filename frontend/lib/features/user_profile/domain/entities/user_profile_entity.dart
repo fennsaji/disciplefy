@@ -9,6 +9,12 @@ class UserProfileEntity extends Equatable {
   /// User's default study mode preference (quick, standard, deep, lectio)
   final String? defaultStudyMode;
 
+  /// User's learning path study mode preference
+  /// - 'ask': Show mode selection sheet each time
+  /// - 'recommended': Use the path's recommended mode
+  /// - 'quick', 'standard', 'deep', 'lectio': Use specific mode for all learning path topics
+  final String? learningPathStudyMode;
+
   /// User's first name, null if not provided
   final String? firstName;
 
@@ -36,6 +42,7 @@ class UserProfileEntity extends Equatable {
     required this.languagePreference,
     required this.themePreference,
     this.defaultStudyMode,
+    this.learningPathStudyMode,
 
     /// User's first name, null if not provided
     this.firstName,
@@ -65,6 +72,7 @@ class UserProfileEntity extends Equatable {
     String? languagePreference,
     String? themePreference,
     String? defaultStudyMode,
+    String? learningPathStudyMode,
     String? firstName,
     String? lastName,
     String? profilePicture,
@@ -80,6 +88,8 @@ class UserProfileEntity extends Equatable {
       languagePreference: languagePreference ?? this.languagePreference,
       themePreference: themePreference ?? this.themePreference,
       defaultStudyMode: defaultStudyMode ?? this.defaultStudyMode,
+      learningPathStudyMode:
+          learningPathStudyMode ?? this.learningPathStudyMode,
       firstName: firstName ?? this.firstName,
       lastName: lastName ?? this.lastName,
       profilePicture: profilePicture ?? this.profilePicture,
@@ -131,6 +141,7 @@ class UserProfileEntity extends Equatable {
         languagePreference,
         themePreference,
         defaultStudyMode,
+        learningPathStudyMode,
         firstName,
         lastName,
         profilePicture,

@@ -9,6 +9,7 @@ import '../../../../core/theme/app_theme.dart';
 import '../../../../core/di/injection_container.dart';
 import '../../../../core/services/theme_service.dart';
 import '../../../../core/services/auth_state_provider.dart';
+import '../../../../core/services/language_preference_service.dart';
 import '../../../auth/presentation/bloc/auth_bloc.dart';
 import '../../../auth/presentation/bloc/auth_event.dart';
 import '../../../auth/presentation/bloc/auth_state.dart' as auth_states;
@@ -24,6 +25,7 @@ import '../../../home/presentation/bloc/home_event.dart';
 import '../../../study_topics/domain/repositories/learning_paths_repository.dart';
 import '../../../study_generation/domain/entities/study_mode.dart';
 import '../../../user_profile/data/services/user_profile_service.dart';
+import '../../../user_profile/data/models/user_profile_model.dart';
 
 /// Settings Screen with proper AuthBloc integration
 /// Handles both authenticated and anonymous users
@@ -465,6 +467,9 @@ class _SettingsScreenContent extends StatelessWidget {
                   ),
                   _buildDivider(),
                   _buildStudyModePreferenceTile(context, authProvider),
+                  _buildDivider(),
+                  _buildLearningPathStudyModePreferenceTile(
+                      context, authProvider),
                 ],
               ),
               const SizedBox(height: 24),
@@ -489,12 +494,18 @@ class _SettingsScreenContent extends StatelessWidget {
       BuildContext context, AuthStateProvider authProvider) {
     final defaultMode =
         authProvider.userProfile?['default_study_mode'] as String?;
-    final subtitle = defaultMode != null
-        ? context
-            .tr(TranslationKeys.settingsStudyModePreferenceCurrent)
-            .replaceAll(
-                '{mode}', _getStudyModeDisplayName(defaultMode, context))
-        : context.tr(TranslationKeys.settingsAskEveryTime);
+
+    // Handle different mode values for subtitle
+    String subtitle;
+    if (defaultMode == null) {
+      subtitle = context.tr(TranslationKeys.settingsAskEveryTime);
+    } else if (defaultMode == 'recommended') {
+      subtitle = context.tr(TranslationKeys.settingsUseRecommended);
+    } else {
+      subtitle = context
+          .tr(TranslationKeys.settingsStudyModePreferenceCurrent)
+          .replaceAll('{mode}', _getStudyModeDisplayName(defaultMode, context));
+    }
 
     return _buildSettingsTile(
       context: context,
@@ -507,6 +518,40 @@ class _SettingsScreenContent extends StatelessWidget {
         color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
       ),
       onTap: () => _showStudyModeBottomSheet(context, defaultMode),
+    );
+  }
+
+  /// Build learning path study mode preference tile
+  Widget _buildLearningPathStudyModePreferenceTile(
+      BuildContext context, AuthStateProvider authProvider) {
+    final learningPathMode =
+        authProvider.userProfile?['learning_path_study_mode'] as String?;
+
+    String subtitle;
+    if (learningPathMode == null || learningPathMode == 'ask') {
+      subtitle = context.tr(TranslationKeys.settingsAskEveryTime);
+    } else if (learningPathMode == 'recommended') {
+      subtitle = context.tr(TranslationKeys.settingsUseRecommended);
+    } else {
+      subtitle = context
+          .tr(TranslationKeys.settingsStudyModePreferenceCurrent)
+          .replaceAll(
+              '{mode}', _getStudyModeDisplayName(learningPathMode, context));
+    }
+
+    return _buildSettingsTile(
+      context: context,
+      icon: Icons.route_outlined,
+      title:
+          context.tr(TranslationKeys.settingsLearningPathStudyModePreference),
+      subtitle: subtitle,
+      trailing: Icon(
+        Icons.arrow_forward_ios,
+        size: 16,
+        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+      ),
+      onTap: () =>
+          _showLearningPathStudyModeBottomSheet(context, learningPathMode),
     );
   }
 
@@ -1286,6 +1331,17 @@ class _SettingsScreenContent extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 24),
+            // Option: Use Recommended
+            _buildStudyModeOption(
+              builderContext,
+              parentContext,
+              'recommended',
+              context.tr(TranslationKeys.settingsUseRecommended),
+              Icons.stars,
+              context.tr(TranslationKeys.settingsUseRecommendedSubtitle),
+              currentMode,
+            ),
+            const SizedBox(height: 12),
             // Ask every time option
             _buildStudyModeOption(
               builderContext,
@@ -1296,21 +1352,128 @@ class _SettingsScreenContent extends StatelessWidget {
               context.tr(TranslationKeys.settingsAskEveryTimeSubtitle),
               currentMode,
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 12),
+            // Divider
+            Divider(color: AppTheme.primaryColor.withOpacity(0.2), height: 24),
             // Study mode options
             ...StudyMode.values.map((mode) => Padding(
-                  padding: const EdgeInsets.only(bottom: 8),
+                  padding: const EdgeInsets.only(bottom: 12),
                   child: _buildStudyModeOption(
                     builderContext,
                     parentContext,
                     mode.value,
                     _getStudyModeTranslatedName(mode, context),
                     mode.iconData,
-                    '${mode.durationText} - ${_getStudyModeTranslatedDescription(mode, context)}',
+                    '${mode.durationText} • ${_getStudyModeTranslatedDescription(mode, context)}',
                     currentMode,
                   ),
                 )),
             const SizedBox(height: 24),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Show learning path study mode preference bottom sheet
+  void _showLearningPathStudyModeBottomSheet(
+      BuildContext context, String? currentMode) {
+    // Capture parent context for snackbars after sheet closes
+    final parentContext = context;
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (builderContext) => Container(
+        decoration: BoxDecoration(
+          color: Theme.of(builderContext).colorScheme.surface,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Handle
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: AppTheme.primaryColor.withOpacity(0.3),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            const SizedBox(height: 24),
+
+            // Title
+            Text(
+              context
+                  .tr(TranslationKeys.settingsLearningPathStudyModePreference),
+              style: AppFonts.inter(
+                fontSize: 20,
+                fontWeight: FontWeight.w700,
+                color: Theme.of(builderContext).colorScheme.onBackground,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              context
+                  .tr(TranslationKeys.settingsLearningPathStudyModeDescription),
+              style: AppFonts.inter(
+                fontSize: 14,
+                color: Theme.of(builderContext)
+                    .colorScheme
+                    .onSurface
+                    .withOpacity(0.6),
+              ),
+            ),
+            const SizedBox(height: 24),
+
+            // Option: Use Recommended
+            _buildLearningPathModeOption(
+              builderContext,
+              parentContext,
+              'recommended',
+              context.tr(TranslationKeys.settingsUseRecommended),
+              Icons.stars,
+              context.tr(TranslationKeys.settingsUseRecommendedSubtitle),
+              currentMode,
+            ),
+            const SizedBox(height: 12),
+
+            // Option: Always Ask
+            _buildLearningPathModeOption(
+              builderContext,
+              parentContext,
+              'ask',
+              context.tr(TranslationKeys.settingsAskEveryTime),
+              Icons.help_outline,
+              context.tr(TranslationKeys.settingsAskEveryTimeSubtitle),
+              currentMode,
+            ),
+            const SizedBox(height: 12),
+
+            // Divider
+            Divider(color: AppTheme.primaryColor.withOpacity(0.2), height: 24),
+
+            // Specific modes (Quick, Standard, Deep, Lectio)
+            ...StudyMode.values.map((mode) => Column(
+                  children: [
+                    _buildLearningPathModeOption(
+                      builderContext,
+                      parentContext,
+                      mode.value,
+                      _getStudyModeTranslatedName(mode, context),
+                      mode.iconData,
+                      '${mode.durationText} • ${_getStudyModeTranslatedDescription(mode, context)}',
+                      currentMode,
+                    ),
+                    const SizedBox(height: 12),
+                  ],
+                )),
           ],
         ),
       ),
@@ -1534,24 +1697,50 @@ class _SettingsScreenContent extends StatelessWidget {
       color: Colors.transparent,
       child: InkWell(
         onTap: () async {
-          // Use sheet context for Navigator.pop()
-          Navigator.of(sheetContext).pop();
-
           // Update user profile with new study mode preference
           try {
             final userProfileService = sl<UserProfileService>();
+            final authProvider = sl<AuthStateProvider>();
+            final languageService = sl<LanguagePreferenceService>();
+
             final result =
                 await userProfileService.updateStudyModePreference(value);
 
-            // Use parent context for snackbars after sheet closes
+            // Use parent context for result handling
             if (parentContext.mounted) {
               result.fold(
-                (failure) => _showSnackBar(
-                  parentContext,
-                  'Failed to update study mode preference: ${failure.message}',
-                  Theme.of(parentContext).colorScheme.error,
-                ),
-                (profile) {
+                (failure) {
+                  // Close sheet on failure
+                  if (sheetContext.mounted) {
+                    Navigator.of(sheetContext).pop();
+                  }
+                  _showSnackBar(
+                    parentContext,
+                    'Failed to update study mode preference: ${failure.message}',
+                    Theme.of(parentContext).colorScheme.error,
+                  );
+                },
+                (profile) async {
+                  // ✅ FIX: Update auth provider cache with new profile
+                  if (authProvider.userId != null) {
+                    final profileMap =
+                        UserProfileModel.fromEntity(profile).toJson();
+                    authProvider.cacheProfile(authProvider.userId!, profileMap);
+                  }
+
+                  // ✅ FIX: Sync local storage immediately (save or clear based on value)
+                  if (value != null) {
+                    await languageService.saveStudyModePreferenceRaw(value);
+                  } else {
+                    // Clear local storage when set to "Ask Every Time"
+                    await languageService.clearStudyModePreference();
+                  }
+
+                  // ✅ FIX: Close sheet AFTER cache is updated
+                  if (sheetContext.mounted) {
+                    Navigator.of(sheetContext).pop();
+                  }
+
                   _showSnackBar(
                     parentContext,
                     value == null
@@ -1563,11 +1752,182 @@ class _SettingsScreenContent extends StatelessWidget {
               );
             }
           } catch (e) {
+            // Close sheet even on error
+            if (sheetContext.mounted) {
+              Navigator.of(sheetContext).pop();
+            }
+
             // Use parent context for error snackbars
             if (parentContext.mounted) {
               _showSnackBar(
                 parentContext,
                 'Failed to update study mode preference: $e',
+                Theme.of(parentContext).colorScheme.error,
+              );
+            }
+          }
+        },
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          margin: const EdgeInsets.only(bottom: 8),
+          decoration: BoxDecoration(
+            gradient: isSelected
+                ? LinearGradient(
+                    colors: [
+                      AppTheme.primaryColor.withOpacity(0.1),
+                      AppTheme.secondaryPurple.withOpacity(0.05),
+                    ],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  )
+                : null,
+            color: isSelected ? null : Colors.transparent,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: isSelected ? AppTheme.primaryColor : Colors.transparent,
+              width: 2,
+            ),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 42,
+                height: 42,
+                decoration: BoxDecoration(
+                  gradient: isSelected ? AppTheme.primaryGradient : null,
+                  color: isSelected
+                      ? null
+                      : Theme.of(sheetContext)
+                          .colorScheme
+                          .onSurface
+                          .withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  icon,
+                  size: 20,
+                  color: isSelected
+                      ? Colors.white
+                      : Theme.of(sheetContext)
+                          .colorScheme
+                          .onSurface
+                          .withOpacity(0.6),
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      label,
+                      style: AppFonts.inter(
+                        fontSize: 15,
+                        fontWeight:
+                            isSelected ? FontWeight.w600 : FontWeight.w500,
+                        color: isSelected
+                            ? AppTheme.primaryColor
+                            : Theme.of(sheetContext).colorScheme.onBackground,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      subtitle,
+                      style: AppFonts.inter(
+                        fontSize: 13,
+                        color: Theme.of(sheetContext)
+                            .colorScheme
+                            .onSurface
+                            .withOpacity(0.6),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              if (isSelected)
+                Icon(
+                  Icons.check_circle,
+                  color: AppTheme.primaryColor,
+                  size: 24,
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Build learning path mode option tile
+  Widget _buildLearningPathModeOption(
+    BuildContext sheetContext,
+    BuildContext parentContext,
+    String value,
+    String label,
+    IconData icon,
+    String subtitle,
+    String? currentMode,
+  ) {
+    final isSelected = value == currentMode;
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () async {
+          // Update user profile with learning path study mode preference
+          try {
+            final userProfileService = sl<UserProfileService>();
+            final authProvider = sl<AuthStateProvider>();
+
+            final result = await userProfileService
+                .updateLearningPathStudyModePreference(value);
+
+            if (parentContext.mounted) {
+              result.fold(
+                (failure) {
+                  // Close sheet on failure
+                  if (sheetContext.mounted) {
+                    Navigator.of(sheetContext).pop();
+                  }
+                  _showSnackBar(
+                    parentContext,
+                    parentContext.tr(TranslationKeys.errorUpdatingPreference),
+                    Theme.of(parentContext).colorScheme.error,
+                  );
+                },
+                (profile) {
+                  // ✅ FIX: Update AuthStateProvider with new profile
+                  final userId = authProvider.userId;
+                  if (userId != null) {
+                    final profileMap =
+                        UserProfileModel.fromEntity(profile).toJson();
+                    authProvider.cacheProfile(userId, profileMap);
+                  }
+
+                  // ✅ FIX: Close sheet AFTER cache is updated
+                  if (sheetContext.mounted) {
+                    Navigator.of(sheetContext).pop();
+                  }
+
+                  _showSnackBar(
+                    parentContext,
+                    parentContext
+                        .tr(TranslationKeys.preferenceUpdatedSuccessfully),
+                    Colors.green,
+                  );
+                },
+              );
+            }
+          } catch (e) {
+            // Close sheet even on error
+            if (sheetContext.mounted) {
+              Navigator.of(sheetContext).pop();
+            }
+
+            if (parentContext.mounted) {
+              _showSnackBar(
+                parentContext,
+                parentContext.tr(TranslationKeys.errorUpdatingPreference),
                 Theme.of(parentContext).colorScheme.error,
               );
             }

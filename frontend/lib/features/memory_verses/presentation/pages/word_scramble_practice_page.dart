@@ -74,7 +74,9 @@ class _WordScramblePracticePageState extends State<WordScramblePracticePage> {
         final verse = state.verses.firstWhere((v) => v.id == widget.verseId);
         setState(() {
           currentVerse = verse;
-          _initializeScramble(verse.verseText);
+          // Include reference at the end of verse text for memorization
+          final fullText = '${verse.verseText} ${verse.verseReference}';
+          _initializeScramble(fullText);
         });
       } catch (e) {
         if (mounted) {
@@ -245,7 +247,10 @@ class _WordScramblePracticePageState extends State<WordScramblePracticePage> {
   void _reset() {
     if (currentVerse != null) {
       setState(() {
-        _initializeScramble(currentVerse!.verseText);
+        // Include reference at the end of verse text for memorization
+        final fullText =
+            '${currentVerse!.verseText} ${currentVerse!.verseReference}';
+        _initializeScramble(fullText);
         hintsUsed = 0;
         isCompleted = false;
         showCorrectAnswer = false;

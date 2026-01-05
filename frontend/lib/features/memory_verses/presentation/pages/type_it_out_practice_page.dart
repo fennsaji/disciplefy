@@ -81,7 +81,9 @@ class _TypeItOutPracticePageState extends State<TypeItOutPracticePage> {
         final verse = state.verses.firstWhere((v) => v.id == widget.verseId);
         setState(() {
           currentVerse = verse;
-          _initializeExpectedText(verse.verseText);
+          // Include reference at the end of verse text for memorization
+          final fullText = '${verse.verseText} ${verse.verseReference}';
+          _initializeExpectedText(fullText);
         });
       } catch (e) {
         if (mounted) {
