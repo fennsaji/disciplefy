@@ -1670,6 +1670,30 @@ class TranslationKeys {
   /// Section title for scripture passage in Lectio mode
   static const lectioScriptureForMeditation = 'lectio.scripture_for_meditation';
 
+  /// Section title for reflection prompt
+  static const lectioReflectionPrompt = 'lectio.reflection_prompt';
+
+  /// Section title for key themes
+  static const lectioKeyThemes = 'lectio.key_themes';
+
+  /// Section title for theological insights
+  static const lectioTheologicalInsights = 'lectio.theological_insights';
+
+  /// Section title for connect to today
+  static const lectioConnectToToday = 'lectio.connect_to_today';
+
+  /// Section title for verse reflection
+  static const lectioVerseReflection = 'lectio.verse_reflection';
+
+  /// Section title for personal application
+  static const lectioPersonalApplication = 'lectio.personal_application';
+
+  /// Section title for living it out
+  static const lectioLivingItOut = 'lectio.living_it_out';
+
+  /// Section title for prayer invitation
+  static const lectioPrayerInvitation = 'lectio.prayer_invitation';
+
   /// Section title for Lectio Meditatio (read and meditate)
   static const lectioLectioMeditatio = 'lectio.lectio_meditatio';
 

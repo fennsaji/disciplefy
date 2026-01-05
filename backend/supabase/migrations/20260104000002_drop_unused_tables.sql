@@ -1,6 +1,7 @@
 -- Migration: Drop unused tables identified in codebase analysis
 -- Date: 2026-01-04
--- Description: Removes 16 tables that have no code references (25% of application tables)
+-- Description: Removes 12 unused tables (revised from original 16)
+-- Preserved: receipt_counters, subscription_config, user_study_streaks, voice_usage_tracking
 
 BEGIN;
 
@@ -15,24 +16,27 @@ DROP TABLE IF EXISTS public.seasonal_topics CASCADE;
 DROP TABLE IF EXISTS public.memory_verse_collection_items CASCADE;
 DROP TABLE IF EXISTS public.memory_verse_collections CASCADE;
 
--- Drop Payment-related tables (4 tables)
+-- Drop Payment-related tables (3 tables)
+-- Note: receipt_counters PRESERVED (used by generate_receipt_number)
 DROP TABLE IF EXISTS public.otp_requests CASCADE;
 DROP TABLE IF EXISTS public.payment_method_usage_history CASCADE;
-DROP TABLE IF EXISTS public.receipt_counters CASCADE;
 DROP TABLE IF EXISTS public.saved_payment_methods CASCADE;
-
--- Drop Subscription configuration table (1 table)
-DROP TABLE IF EXISTS public.subscription_config CASCADE;
 
 -- Drop Analytics tables (2 tables)
 DROP TABLE IF EXISTS public.topic_engagement_metrics CASCADE;
 DROP TABLE IF EXISTS public.topic_scripture_references CASCADE;
 
--- Drop Streak/Usage tracking tables (2 tables)
-DROP TABLE IF EXISTS public.user_study_streaks CASCADE;
-DROP TABLE IF EXISTS public.voice_usage_tracking CASCADE;
-
 COMMIT;
 
--- Total tables dropped: 16
--- Note: llm_security_events table is KEPT and will be actively used for security logging
+-- ============================================================================
+-- SUMMARY
+-- ============================================================================
+-- Total tables dropped: 12
+--
+-- PRESERVED TABLES (4):
+--   - receipt_counters           → Used by generate_receipt_number()
+--   - subscription_config         → Used by subscription functions
+--   - user_study_streaks         → Used by study streak tracking
+--   - voice_usage_tracking       → Used by voice conversation quota system
+--
+-- ============================================================================
