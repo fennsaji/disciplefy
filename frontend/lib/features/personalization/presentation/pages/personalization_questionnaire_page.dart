@@ -343,7 +343,10 @@ class _SpiritualGoalsQuestion extends StatelessWidget {
                 ),
                 const SizedBox(width: 8),
                 Text(
-                  '${selected.length}/3 selected',
+                  context.tr(
+                    TranslationKeys.questionnaireSpiritualGoalsSelectionCounter,
+                    {'count': selected.length.toString()},
+                  ),
                   style: theme.textTheme.bodyMedium?.copyWith(
                     color: theme.colorScheme.primary,
                     fontWeight: FontWeight.w600,

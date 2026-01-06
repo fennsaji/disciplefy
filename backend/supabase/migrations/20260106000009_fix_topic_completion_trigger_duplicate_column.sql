@@ -22,6 +22,7 @@ DECLARE
   v_new_streak INTEGER;
   v_total_path_xp INTEGER;
   v_completion_bonus INTEGER := 0;
+  v_rows_affected INTEGER;
 BEGIN
   -- Only process on completion (when completed_at changes from NULL to non-NULL)
   IF OLD.completed_at IS NULL AND NEW.completed_at IS NOT NULL THEN
@@ -83,10 +84,46 @@ BEGIN
         AND utp.user_id = NEW.user_id
         AND utp.completed_at IS NOT NULL;
 
+      -- Ensure progress row exists before reading/updating
+      -- Use INSERT ON CONFLICT to create row with defaults if missing
+      INSERT INTO user_learning_path_progress (
+        user_id,
+        learning_path_id,
+        topics_completed,
+        current_topic_position,
+        recommended_mode_streak,
+        total_xp_earned,
+        bonus_xp_awarded,
+        completed_in_recommended_mode,
+        last_activity_at,
+        created_at,
+        updated_at
+      )
+      VALUES (
+        NEW.user_id,
+        v_path_id,
+        0,
+        0,
+        0,
+        0,
+        0,
+        FALSE,
+        NOW(),
+        NOW(),
+        NOW()
+      )
+      ON CONFLICT (user_id, learning_path_id) DO NOTHING;
+
       -- Get current total_xp_earned for completion bonus calculation
+      -- Row should exist after INSERT ON CONFLICT above, but check defensively
       SELECT COALESCE(total_xp_earned, 0) INTO v_total_path_xp
       FROM user_learning_path_progress
       WHERE user_id = NEW.user_id AND learning_path_id = v_path_id;
+
+      -- Defensive fallback if no row found
+      IF NOT FOUND THEN
+        v_total_path_xp := 0;
+      END IF;
 
       -- Calculate completion bonus (50% of total path XP if ALL topics in recommended mode)
       v_completion_bonus := 0;
@@ -94,9 +131,13 @@ BEGIN
         -- Path is complete - check if all topics were in recommended mode
         -- This is true if new streak (current + 1) equals total topics
         IF v_is_recommended_mode THEN
-          SELECT recommended_mode_streak + 1 INTO v_new_streak
-          FROM user_learning_path_progress
-          WHERE user_id = NEW.user_id AND learning_path_id = v_path_id;
+          -- Use COALESCE around entire subselect to handle missing rows
+          v_new_streak := COALESCE(
+            (SELECT recommended_mode_streak
+             FROM user_learning_path_progress
+             WHERE user_id = NEW.user_id AND learning_path_id = v_path_id),
+            0
+          ) + 1;
 
           IF v_new_streak >= v_total_topics THEN
             -- Calculate 50% bonus of (current total + new topic XP + new per-topic bonus)
@@ -106,6 +147,7 @@ BEGIN
       END IF;
 
       -- SINGLE UPDATE with all changes consolidated
+      -- Row should exist after INSERT ON CONFLICT, but check row count after UPDATE
       UPDATE user_learning_path_progress
       SET
         -- Topic progress tracking
@@ -140,6 +182,45 @@ BEGIN
         updated_at = NOW()
 
       WHERE user_id = NEW.user_id AND learning_path_id = v_path_id;
+
+      -- Check if UPDATE affected any rows
+      GET DIAGNOSTICS v_rows_affected = ROW_COUNT;
+
+      -- If zero rows were updated, atomically INSERT a new progress row
+      IF v_rows_affected = 0 THEN
+        INSERT INTO user_learning_path_progress (
+          user_id,
+          learning_path_id,
+          topics_completed,
+          current_topic_position,
+          recommended_mode_streak,
+          total_xp_earned,
+          bonus_xp_awarded,
+          completed_at,
+          completed_in_recommended_mode,
+          last_activity_at,
+          created_at,
+          updated_at
+        )
+        VALUES (
+          NEW.user_id,
+          v_path_id,
+          v_completed_in_path,
+          v_path_position + 1,
+          CASE WHEN v_is_recommended_mode THEN 1 ELSE 0 END,
+          COALESCE(NEW.xp_earned, 0) + v_bonus_xp + v_completion_bonus,
+          v_bonus_xp + v_completion_bonus,
+          CASE WHEN v_completed_in_path >= v_total_topics THEN NOW() ELSE NULL END,
+          CASE
+            WHEN v_completed_in_path >= v_total_topics AND v_is_recommended_mode
+            THEN 1 >= v_total_topics
+            ELSE FALSE
+          END,
+          NOW(),
+          NOW(),
+          NOW()
+        );
+      END IF;
     END LOOP;
   END IF;
 
@@ -162,4 +243,9 @@ Automatically calculates and awards bonus XP:
 - 50% completion bonus if ALL topics in path completed in recommended mode
 Tracks recommended_mode_streak and breaks it if non-recommended mode used.
 
-FIXED: Consolidated all column updates into single UPDATE to avoid duplicate column assignment error.';
+FIXED: Consolidated all column updates into single UPDATE to avoid duplicate column assignment error.
+FIXED 2026-01-07: Added INSERT ON CONFLICT to ensure progress row exists before UPDATE (prevents silent failures).
+FIXED 2026-01-07: Added COALESCE for recommended_mode_streak to handle NULL values defensively.
+FIXED 2026-01-07: Added NOT FOUND check after v_total_path_xp SELECT to default to 0 if row missing.
+FIXED 2026-01-07: Changed v_new_streak to use COALESCE around entire subselect for NULL safety.
+FIXED 2026-01-07: Added GET DIAGNOSTICS row count check after UPDATE with fallback INSERT if zero rows affected.';

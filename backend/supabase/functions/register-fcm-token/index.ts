@@ -113,11 +113,21 @@ async function handleRegisterToken(
 
   // Fetch existing preferences to preserve user's notification toggles
   // Use maybeSingle() to handle case where user doesn't have preferences yet
-  const { data: existingPrefs } = await services.supabaseServiceClient
+  const { data: existingPrefs, error: prefsError } = await services.supabaseServiceClient
     .from('user_notification_preferences')
     .select('daily_verse_enabled, recommended_topic_enabled')
     .eq('user_id', userId)
     .maybeSingle()
+
+  // Check for database errors when fetching preferences
+  if (prefsError) {
+    console.error('[register-fcm-token] Error fetching notification preferences:', prefsError)
+    throw new AppError(
+      'DATABASE_ERROR',
+      'Failed to fetch notification preferences',
+      500
+    )
+  }
 
   // Preserve existing values if request doesn't explicitly provide them
   // Only default to true when no existing record exists
@@ -151,7 +161,7 @@ async function handleRegisterToken(
   console.log('[Register Token] Token registered successfully')
 
   // Step 2: Upsert notification preferences in user_notification_preferences table
-  const { data: prefsData, error: prefsError } = await services.supabaseServiceClient
+  const { data: prefsData, error: prefsUpsertError } = await services.supabaseServiceClient
     .from('user_notification_preferences')
     .upsert({
       user_id: userId,
@@ -165,9 +175,9 @@ async function handleRegisterToken(
     .select()
     .single()
 
-  if (prefsError) {
-    console.error('[Register Token] Preferences upsert error:', prefsError)
-    throw new AppError('DATABASE_ERROR', prefsError.message, 500)
+  if (prefsUpsertError) {
+    console.error('[Register Token] Preferences upsert error:', prefsUpsertError)
+    throw new AppError('DATABASE_ERROR', prefsUpsertError.message, 500)
   }
 
   console.log('[Register Token] Token and preferences registered successfully')

@@ -16,6 +16,7 @@ import { createAuthenticatedFunction } from '../_shared/core/function-factory.ts
 import { AppError } from '../_shared/utils/error-handler.ts'
 import { ApiSuccessResponse, UserContext } from '../_shared/types/index.ts'
 import { ServiceContainer } from '../_shared/core/services.ts'
+import { getIntervalForReviewsSinceMastery } from '../_shared/memory-verse-intervals.ts'
 
 /**
  * Request payload structure
@@ -128,31 +129,7 @@ function calculateSM2(input: SM2Input): SM2Result {
         // Verse is MASTERED - use progressive spacing for efficient long-term retention
         // Progression: 3, 7, 14, 21, 30, 45, 60, 90, 120, 150, 180 (cap)
         const reviewsSinceMastery = newRepetitions - DAILY_REVIEW_PERIOD
-
-        if (reviewsSinceMastery === 1) {
-          newInterval = 3   // Day 15: Review in 3 days
-        } else if (reviewsSinceMastery === 2) {
-          newInterval = 7   // Day 16: Review in 1 week
-        } else if (reviewsSinceMastery === 3) {
-          newInterval = 14  // Day 17: Review in 2 weeks
-        } else if (reviewsSinceMastery === 4) {
-          newInterval = 21  // Day 18: Review in 3 weeks
-        } else if (reviewsSinceMastery === 5) {
-          newInterval = 30  // Day 19: Review in 1 month
-        } else if (reviewsSinceMastery === 6) {
-          newInterval = 45  // Day 20: Review in 1.5 months
-        } else if (reviewsSinceMastery === 7) {
-          newInterval = 60  // Day 21: Review in 2 months
-        } else if (reviewsSinceMastery === 8) {
-          newInterval = 90  // Day 22: Review in 3 months
-        } else if (reviewsSinceMastery === 9) {
-          newInterval = 120 // Day 23: Review in 4 months
-        } else if (reviewsSinceMastery === 10) {
-          newInterval = 150 // Day 24: Review in 5 months
-        } else {
-          // Day 25+: Review every 6 months (maximum interval)
-          newInterval = MAX_INTERVAL_DAYS
-        }
+        newInterval = getIntervalForReviewsSinceMastery(reviewsSinceMastery, MAX_INTERVAL_DAYS)
       } else {
         // Verse NOT mastered yet (quality 3-4) - increment by just 1 day
         // This keeps practice frequent until user achieves perfect recall

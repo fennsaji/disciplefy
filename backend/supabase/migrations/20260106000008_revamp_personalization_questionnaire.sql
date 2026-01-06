@@ -55,12 +55,28 @@ ALTER TABLE user_personalization
   ADD COLUMN scoring_results JSONB;
 
 -- ============================================================================
--- 4. ADD VALIDATION CONSTRAINT FOR SPIRITUAL GOALS (1-3 selections)
+-- 4. ADD VALIDATION CONSTRAINTS FOR SPIRITUAL GOALS (1-3 selections)
 -- ============================================================================
 
+-- Constraint 1: Array length (1-3 selections or empty)
 ALTER TABLE user_personalization
   ADD CONSTRAINT spiritual_goals_count_check
   CHECK (array_length(spiritual_goals, 1) BETWEEN 1 AND 3 OR spiritual_goals = '{}');
+
+-- Constraint 2: Valid values only (must be from allowed set)
+ALTER TABLE user_personalization
+  ADD CONSTRAINT spiritual_goals_values_check
+  CHECK (
+    spiritual_goals = '{}'::text[] OR
+    spiritual_goals <@ ARRAY[
+      'foundational_faith',
+      'spiritual_depth',
+      'relationships',
+      'apologetics',
+      'service',
+      'theology'
+    ]::text[]
+  );
 
 -- ============================================================================
 -- 5. CREATE INDEXES FOR PERFORMANCE

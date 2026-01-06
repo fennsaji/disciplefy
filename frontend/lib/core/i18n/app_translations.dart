@@ -456,6 +456,7 @@ class AppTranslations {
         'apologetics': 'Defending my faith and answering tough questions',
         'service': 'Serving others and sharing the Gospel',
         'theology': 'Exploring deep theological and philosophical questions',
+        'selection_counter': '{count}/3 selected',
       },
       'time_availability': {
         'title': 'How much time can you commit to daily Bible study?',
@@ -2216,6 +2217,7 @@ class AppTranslations {
             'अपने विश्वास की रक्षा करना और कठिन प्रश्नों का उत्तर देना',
         'service': 'दूसरों की सेवा करना और सुसमाचार साझा करना',
         'theology': 'गहरे धार्मिक और दार्शनिक प्रश्नों की खोज करना',
+        'selection_counter': '{count}/3 चुने गए',
       },
       'time_availability': {
         'title': 'आप दैनिक बाइबल अध्ययन के लिए कितना समय दे सकते हैं?',
@@ -3993,6 +3995,7 @@ class AppTranslations {
             'വിശ്വാസം സംരക്ഷിക്കലും കഠിന ചോദ്യങ്ങൾക്ക് ഉത്തരം നൽകലും',
         'service': 'മറ്റുള്ളവരെ സേവിക്കലും സുവിശേഷം പങ്കിടലും',
         'theology': 'ആഴത്തിലുള്ള ദൈവശാസ്ത്ര-ദാർശനിക ചോദ്യങ്ങൾ പര്യവേക്ഷണം',
+        'selection_counter': '{count}/3 തിരഞ്ഞെടുത്തു',
       },
       'time_availability': {
         'title': 'ദിവസേന ബൈബിൾ പഠനത്തിന് എത്ര സമയം നീക്കിവയ്ക്കാം?',
