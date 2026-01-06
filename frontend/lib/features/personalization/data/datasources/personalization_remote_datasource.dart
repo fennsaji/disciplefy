@@ -62,11 +62,14 @@ class PersonalizationRemoteDataSource {
     }
   }
 
-  /// Saves the user's questionnaire responses
+  /// Saves the user's questionnaire responses (6 questions)
   Future<Map<String, dynamic>> savePersonalization({
-    required String? faithJourney,
-    required List<String> seeking,
-    required String? timeCommitment,
+    required String? faithStage,
+    required List<String> spiritualGoals,
+    required String? timeAvailability,
+    required String? learningStyle,
+    required String? lifeStageFocus,
+    required String? biggestChallenge,
   }) async {
     try {
       final response = await _supabaseClient.functions.invoke(
@@ -74,9 +77,12 @@ class PersonalizationRemoteDataSource {
         body: {
           'action': 'save',
           'data': {
-            'faith_journey': faithJourney,
-            'seeking': seeking,
-            'time_commitment': timeCommitment,
+            'faith_stage': faithStage,
+            'spiritual_goals': spiritualGoals,
+            'time_availability': timeAvailability,
+            'learning_style': learningStyle,
+            'life_stage_focus': lifeStageFocus,
+            'biggest_challenge': biggestChallenge,
           },
         },
       );

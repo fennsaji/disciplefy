@@ -171,6 +171,7 @@ class _LearningPathDetailPageState extends State<LearningPathDetailPage> {
 
     final encodedTitle = Uri.encodeComponent(topic.title);
     final encodedDescription = Uri.encodeComponent(topic.description);
+    final encodedInputType = Uri.encodeComponent(topic.inputType);
     final topicIdParam =
         topic.topicId.isNotEmpty ? '&topic_id=${topic.topicId}' : '';
     final descriptionParam =
@@ -182,7 +183,7 @@ class _LearningPathDetailPageState extends State<LearningPathDetailPage> {
 
     // Use push and await the result - when user returns, refresh the data
     await context.push(
-      '${AppRoutes.studyGuideV2}?input=$encodedTitle&type=topic&language=$_currentLanguage&mode=${mode.name}&source=learningPath$topicIdParam$descriptionParam$pathIdParam',
+      '${AppRoutes.studyGuideV2}?input=$encodedTitle&type=$encodedInputType&language=$_currentLanguage&mode=${mode.name}&source=learningPath$topicIdParam$descriptionParam$pathIdParam',
     );
 
     // Refresh data when returning from the study guide - force refresh to bypass cache
@@ -801,11 +802,15 @@ class _LearningPathDetailPageState extends State<LearningPathDetailPage> {
 
     // Determine if topic is locked based on sequential progression
     // A topic is unlocked if:
+    // - Path allows non-sequential access (all topics unlocked), OR
     // - It's the first topic (index 0), OR
     // - It's already completed (can always revisit), OR
     // - The previous topic is completed (sequential unlock)
     final bool isLocked;
-    if (index == 0) {
+    if (path.allowNonSequentialAccess) {
+      // Path allows non-sequential access = all topics unlocked
+      isLocked = false;
+    } else if (index == 0) {
       // First topic is always unlocked
       isLocked = false;
     } else if (topic.isCompleted) {

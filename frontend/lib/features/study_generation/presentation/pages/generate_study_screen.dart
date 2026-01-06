@@ -10,6 +10,7 @@ import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widgets/keyboard_aware_scaffold.dart';
 import '../../../../core/extensions/translation_extension.dart';
 import '../../../../core/i18n/translation_keys.dart';
+import '../../../../core/router/app_routes.dart';
 import '../../../../core/utils/device_keyboard_handler.dart';
 import '../../../../core/services/language_preference_service.dart';
 import '../../../../core/models/app_language.dart';
@@ -908,7 +909,7 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
       color: Colors.transparent,
       child: InkWell(
         onTap: () {
-          context.go('/ai-discipler');
+          _handleVoiceBuddyTap(context);
         },
         borderRadius: BorderRadius.circular(12),
         child: Container(
