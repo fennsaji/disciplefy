@@ -5,11 +5,14 @@ abstract class PersonalizationRepository {
   /// Gets the user's personalization data
   Future<PersonalizationEntity> getPersonalization();
 
-  /// Saves the user's questionnaire responses
+  /// Saves the user's questionnaire responses (6 questions)
   Future<PersonalizationEntity> savePersonalization({
-    required String? faithJourney,
-    required List<String> seeking,
-    required String? timeCommitment,
+    required FaithStage? faithStage,
+    required List<SpiritualGoal> spiritualGoals,
+    required TimeAvailability? timeAvailability,
+    required LearningStyle? learningStyle,
+    required LifeStageFocus? lifeStageFocus,
+    required BiggestChallenge? biggestChallenge,
   });
 
   /// Marks the questionnaire as skipped

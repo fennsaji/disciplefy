@@ -13,6 +13,7 @@ class LearningPath extends Equatable {
   final int estimatedDays;
   final String discipleLevel;
   final String? recommendedMode;
+  final bool allowNonSequentialAccess;
   final bool isFeatured;
   final int topicsCount;
   final bool isEnrolled;
@@ -29,6 +30,7 @@ class LearningPath extends Equatable {
     required this.estimatedDays,
     required this.discipleLevel,
     this.recommendedMode,
+    this.allowNonSequentialAccess = false,
     this.isFeatured = false,
     this.topicsCount = 0,
     this.isEnrolled = false,
@@ -47,6 +49,7 @@ class LearningPath extends Equatable {
         estimatedDays,
         discipleLevel,
         recommendedMode,
+        allowNonSequentialAccess,
         isFeatured,
         topicsCount,
         isEnrolled,
@@ -68,6 +71,7 @@ class LearningPathTopic extends Equatable {
   final String title;
   final String description;
   final String category;
+  final String inputType; // 'topic', 'verse', or 'question'
   final int xpValue;
   final bool isCompleted;
   final bool isInProgress;
@@ -79,6 +83,7 @@ class LearningPathTopic extends Equatable {
     required this.title,
     required this.description,
     required this.category,
+    this.inputType = 'topic', // Default to 'topic' for backward compatibility
     required this.xpValue,
     this.isCompleted = false,
     this.isInProgress = false,
@@ -92,6 +97,7 @@ class LearningPathTopic extends Equatable {
         title,
         description,
         category,
+        inputType,
         xpValue,
         isCompleted,
         isInProgress,
@@ -115,6 +121,7 @@ class LearningPathDetail extends LearningPath {
     required super.estimatedDays,
     required super.discipleLevel,
     super.recommendedMode,
+    super.allowNonSequentialAccess,
     super.isFeatured,
     super.topicsCount,
     super.isEnrolled,

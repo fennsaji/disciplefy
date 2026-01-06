@@ -16,9 +16,12 @@ class PersonalizationBloc
       : _repository = repository ?? PersonalizationRepositoryImpl(),
         super(const PersonalizationInitial()) {
     on<LoadPersonalization>(_onLoadPersonalization);
-    on<SelectFaithJourney>(_onSelectFaithJourney);
-    on<ToggleSeeking>(_onToggleSeeking);
-    on<SelectTimeCommitment>(_onSelectTimeCommitment);
+    on<SelectFaithStage>(_onSelectFaithStage);
+    on<ToggleSpiritualGoal>(_onToggleSpiritualGoal);
+    on<SelectTimeAvailability>(_onSelectTimeAvailability);
+    on<SelectLearningStyle>(_onSelectLearningStyle);
+    on<SelectLifeStageFocus>(_onSelectLifeStageFocus);
+    on<SelectBiggestChallenge>(_onSelectBiggestChallenge);
     on<NextQuestion>(_onNextQuestion);
     on<PreviousQuestion>(_onPreviousQuestion);
     on<SubmitQuestionnaire>(_onSubmitQuestionnaire);
@@ -49,43 +52,104 @@ class PersonalizationBloc
     }
   }
 
-  void _onSelectFaithJourney(
-    SelectFaithJourney event,
+  // =========================================================================
+  // Question 1: Faith Stage
+  // =========================================================================
+
+  void _onSelectFaithStage(
+    SelectFaithStage event,
     Emitter<PersonalizationState> emit,
   ) {
     final currentState = state;
     if (currentState is QuestionnaireInProgress) {
-      emit(currentState.copyWith(faithJourney: event.faithJourney));
+      emit(currentState.copyWith(faithStage: event.faithStage));
     } else {
-      emit(QuestionnaireInProgress(faithJourney: event.faithJourney));
+      emit(QuestionnaireInProgress(faithStage: event.faithStage));
     }
   }
 
-  void _onToggleSeeking(
-    ToggleSeeking event,
+  // =========================================================================
+  // Question 2: Spiritual Goals (Multi-select, max 3)
+  // =========================================================================
+
+  void _onToggleSpiritualGoal(
+    ToggleSpiritualGoal event,
     Emitter<PersonalizationState> emit,
   ) {
     final currentState = state;
     if (currentState is QuestionnaireInProgress) {
-      final newSeeking = List<String>.from(currentState.seeking);
-      if (newSeeking.contains(event.seeking)) {
-        newSeeking.remove(event.seeking);
+      final newGoals = List<SpiritualGoal>.from(currentState.spiritualGoals);
+      if (newGoals.contains(event.goal)) {
+        newGoals.remove(event.goal);
       } else {
-        newSeeking.add(event.seeking);
+        // Only add if less than 3 already selected
+        if (newGoals.length < 3) {
+          newGoals.add(event.goal);
+        }
       }
-      emit(currentState.copyWith(seeking: newSeeking));
+      emit(currentState.copyWith(spiritualGoals: newGoals));
     }
   }
 
-  void _onSelectTimeCommitment(
-    SelectTimeCommitment event,
+  // =========================================================================
+  // Question 3: Time Availability
+  // =========================================================================
+
+  void _onSelectTimeAvailability(
+    SelectTimeAvailability event,
     Emitter<PersonalizationState> emit,
   ) {
     final currentState = state;
     if (currentState is QuestionnaireInProgress) {
-      emit(currentState.copyWith(timeCommitment: event.timeCommitment));
+      emit(currentState.copyWith(timeAvailability: event.timeAvailability));
     }
   }
+
+  // =========================================================================
+  // Question 4: Learning Style
+  // =========================================================================
+
+  void _onSelectLearningStyle(
+    SelectLearningStyle event,
+    Emitter<PersonalizationState> emit,
+  ) {
+    final currentState = state;
+    if (currentState is QuestionnaireInProgress) {
+      emit(currentState.copyWith(learningStyle: event.learningStyle));
+    }
+  }
+
+  // =========================================================================
+  // Question 5: Life Stage Focus
+  // =========================================================================
+
+  void _onSelectLifeStageFocus(
+    SelectLifeStageFocus event,
+    Emitter<PersonalizationState> emit,
+  ) {
+    final currentState = state;
+    if (currentState is QuestionnaireInProgress) {
+      emit(currentState.copyWith(lifeStageFocus: event.lifeStageFocus));
+    }
+  }
+
+  // =========================================================================
+  // Question 6: Biggest Challenge
+  // =========================================================================
+
+  void _onSelectBiggestChallenge(
+    SelectBiggestChallenge event,
+    Emitter<PersonalizationState> emit,
+  ) {
+    final currentState = state;
+    if (currentState is QuestionnaireInProgress) {
+      emit(currentState.copyWith(biggestChallenge: event.biggestChallenge));
+    }
+  }
+
+  // =========================================================================
+  // Navigation
+  // =========================================================================
 
   void _onNextQuestion(
     NextQuestion event,
@@ -93,7 +157,7 @@ class PersonalizationBloc
   ) {
     final currentState = state;
     if (currentState is QuestionnaireInProgress) {
-      if (currentState.currentQuestion < 2) {
+      if (currentState.currentQuestion < 5) {
         emit(currentState.copyWith(
           currentQuestion: currentState.currentQuestion + 1,
         ));
@@ -119,6 +183,10 @@ class PersonalizationBloc
     }
   }
 
+  // =========================================================================
+  // Submission
+  // =========================================================================
+
   Future<void> _onSubmitQuestionnaire(
     SubmitQuestionnaire event,
     Emitter<PersonalizationState> emit,
@@ -130,18 +198,25 @@ class PersonalizationBloc
 
     try {
       final personalization = await _repository.savePersonalization(
-        faithJourney: currentState.faithJourney,
-        seeking: currentState.seeking,
-        timeCommitment: currentState.timeCommitment,
+        faithStage: currentState.faithStage,
+        spiritualGoals: currentState.spiritualGoals,
+        timeAvailability: currentState.timeAvailability,
+        learningStyle: currentState.learningStyle,
+        lifeStageFocus: currentState.lifeStageFocus,
+        biggestChallenge: currentState.biggestChallenge,
       );
 
       Logger.info(
-        'Questionnaire submitted successfully',
+        'Questionnaire submitted successfully (6 questions)',
         tag: 'PERSONALIZATION',
         context: {
-          'faith_journey': currentState.faithJourney,
-          'seeking': currentState.seeking,
-          'time_commitment': currentState.timeCommitment,
+          'faith_stage': currentState.faithStage?.value,
+          'spiritual_goals':
+              currentState.spiritualGoals.map((g) => g.value).toList(),
+          'time_availability': currentState.timeAvailability?.value,
+          'learning_style': currentState.learningStyle?.value,
+          'life_stage_focus': currentState.lifeStageFocus?.value,
+          'biggest_challenge': currentState.biggestChallenge?.value,
         },
       );
 
