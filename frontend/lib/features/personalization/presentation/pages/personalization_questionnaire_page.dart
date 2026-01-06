@@ -10,7 +10,7 @@ import '../bloc/personalization_event.dart';
 import '../bloc/personalization_state.dart';
 import '../widgets/question_option_card.dart';
 
-/// Full-screen questionnaire page for personalization
+/// Full-screen questionnaire page for personalization (6 questions)
 class PersonalizationQuestionnairePage extends StatelessWidget {
   final VoidCallback? onComplete;
 
@@ -86,9 +86,9 @@ class _QuestionnaireContent extends StatelessWidget {
             body: SafeArea(
               child: Column(
                 children: [
-                  // Progress indicator
+                  // Progress indicator (1/6 to 6/6)
                   LinearProgressIndicator(
-                    value: (state.currentQuestion + 1) / 3,
+                    value: (state.currentQuestion + 1) / 6,
                     backgroundColor: theme.colorScheme.surfaceContainerHighest,
                   ),
                   Expanded(
@@ -155,9 +155,15 @@ class _QuestionnaireContent extends StatelessWidget {
       case 0:
         return context.tr(TranslationKeys.questionnaireYourJourney);
       case 1:
-        return context.tr(TranslationKeys.questionnaireWhatYouSeek);
+        return context.tr(TranslationKeys.questionnaireYourGoals);
       case 2:
         return context.tr(TranslationKeys.questionnaireYourTime);
+      case 3:
+        return context.tr(TranslationKeys.questionnaireYourStyle);
+      case 4:
+        return context.tr(TranslationKeys.questionnaireYourFocus);
+      case 5:
+        return context.tr(TranslationKeys.questionnaireYourChallenge);
       default:
         return context.tr(TranslationKeys.questionnairePersonalize);
     }
@@ -166,19 +172,34 @@ class _QuestionnaireContent extends StatelessWidget {
   Widget _buildQuestion(BuildContext context, QuestionnaireInProgress state) {
     switch (state.currentQuestion) {
       case 0:
-        return _FaithJourneyQuestion(
-          key: const ValueKey('faith'),
-          selected: state.faithJourney,
+        return _FaithStageQuestion(
+          key: const ValueKey('faith_stage'),
+          selected: state.faithStage,
         );
       case 1:
-        return _SeekingQuestion(
-          key: const ValueKey('seeking'),
-          selected: state.seeking,
+        return _SpiritualGoalsQuestion(
+          key: const ValueKey('spiritual_goals'),
+          selected: state.spiritualGoals,
         );
       case 2:
-        return _TimeCommitmentQuestion(
-          key: const ValueKey('time'),
-          selected: state.timeCommitment,
+        return _TimeAvailabilityQuestion(
+          key: const ValueKey('time_availability'),
+          selected: state.timeAvailability,
+        );
+      case 3:
+        return _LearningStyleQuestion(
+          key: const ValueKey('learning_style'),
+          selected: state.learningStyle,
+        );
+      case 4:
+        return _LifeStageFocusQuestion(
+          key: const ValueKey('life_stage_focus'),
+          selected: state.lifeStageFocus,
+        );
+      case 5:
+        return _BiggestChallengeQuestion(
+          key: const ValueKey('biggest_challenge'),
+          selected: state.biggestChallenge,
         );
       default:
         return const SizedBox.shrink();
@@ -213,10 +234,14 @@ class _QuestionnaireContent extends StatelessWidget {
   }
 }
 
-class _FaithJourneyQuestion extends StatelessWidget {
-  final String? selected;
+// ===========================================================================
+// Question 1: Faith Stage
+// ===========================================================================
 
-  const _FaithJourneyQuestion({super.key, this.selected});
+class _FaithStageQuestion extends StatelessWidget {
+  final FaithStage? selected;
+
+  const _FaithStageQuestion({super.key, this.selected});
 
   @override
   Widget build(BuildContext context) {
@@ -228,27 +253,27 @@ class _FaithJourneyQuestion extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            context.tr(TranslationKeys.questionnaireFaithTitle),
+            context.tr(TranslationKeys.questionnaireFaithStageTitle),
             style: theme.textTheme.headlineSmall?.copyWith(
               fontWeight: FontWeight.bold,
             ),
           ),
           const SizedBox(height: 8),
           Text(
-            context.tr(TranslationKeys.questionnaireFaithSubtitle),
+            context.tr(TranslationKeys.questionnaireFaithStageSubtitle),
             style: theme.textTheme.bodyMedium?.copyWith(
               color: theme.colorScheme.onSurfaceVariant,
             ),
           ),
           const SizedBox(height: 24),
-          for (final option in FaithJourney.values)
+          for (final option in FaithStage.values)
             QuestionOptionCard(
-              label: _getFaithLabel(context, option),
-              isSelected: selected == option.value,
+              label: option.label,
+              isSelected: selected == option,
               icon: _getIcon(option),
               onTap: () {
                 context.read<PersonalizationBloc>().add(
-                      SelectFaithJourney(option.value),
+                      SelectFaithStage(option),
                     );
               },
             ),
@@ -257,33 +282,26 @@ class _FaithJourneyQuestion extends StatelessWidget {
     );
   }
 
-  String _getFaithLabel(BuildContext context, FaithJourney option) {
+  IconData _getIcon(FaithStage option) {
     switch (option) {
-      case FaithJourney.newToFaith:
-        return context.tr(TranslationKeys.questionnaireFaithNew);
-      case FaithJourney.growing:
-        return context.tr(TranslationKeys.questionnaireFaithGrowing);
-      case FaithJourney.mature:
-        return context.tr(TranslationKeys.questionnaireFaithMature);
-    }
-  }
-
-  IconData _getIcon(FaithJourney option) {
-    switch (option) {
-      case FaithJourney.newToFaith:
+      case FaithStage.newBeliever:
         return Icons.eco_outlined;
-      case FaithJourney.growing:
+      case FaithStage.growingBeliever:
         return Icons.trending_up;
-      case FaithJourney.mature:
+      case FaithStage.committedDisciple:
         return Icons.psychology_outlined;
     }
   }
 }
 
-class _SeekingQuestion extends StatelessWidget {
-  final List<String> selected;
+// ===========================================================================
+// Question 2: Spiritual Goals (Multi-select, 1-3)
+// ===========================================================================
 
-  const _SeekingQuestion({super.key, required this.selected});
+class _SpiritualGoalsQuestion extends StatelessWidget {
+  final List<SpiritualGoal> selected;
+
+  const _SpiritualGoalsQuestion({super.key, required this.selected});
 
   @override
   Widget build(BuildContext context) {
@@ -295,27 +313,54 @@ class _SeekingQuestion extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            context.tr(TranslationKeys.questionnaireSeekingTitle),
+            context.tr(TranslationKeys.questionnaireSpiritualGoalsTitle),
             style: theme.textTheme.headlineSmall?.copyWith(
               fontWeight: FontWeight.bold,
             ),
           ),
           const SizedBox(height: 8),
           Text(
-            context.tr(TranslationKeys.questionnaireSeekingSubtitle),
+            context.tr(TranslationKeys.questionnaireSpiritualGoalsSubtitle),
             style: theme.textTheme.bodyMedium?.copyWith(
               color: theme.colorScheme.onSurfaceVariant,
             ),
           ),
-          const SizedBox(height: 24),
-          for (final option in SeekingType.values)
+          const SizedBox(height: 12),
+          // Selection counter
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: theme.colorScheme.primaryContainer.withValues(alpha: 0.5),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.check_circle_outline,
+                  size: 20,
+                  color: theme.colorScheme.primary,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  '${selected.length}/3 selected',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: theme.colorScheme.primary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+          for (final option in SpiritualGoal.values)
             MultiSelectOptionCard(
-              label: _getSeekingLabel(context, option),
-              isSelected: selected.contains(option.value),
+              label: option.label,
+              isSelected: selected.contains(option),
               icon: _getIcon(option),
               onTap: () {
                 context.read<PersonalizationBloc>().add(
-                      ToggleSeeking(option.value),
+                      ToggleSpiritualGoal(option),
                     );
               },
             ),
@@ -324,41 +369,32 @@ class _SeekingQuestion extends StatelessWidget {
     );
   }
 
-  String _getSeekingLabel(BuildContext context, SeekingType option) {
+  IconData _getIcon(SpiritualGoal option) {
     switch (option) {
-      case SeekingType.peace:
-        return context.tr(TranslationKeys.questionnaireSeekingPeace);
-      case SeekingType.guidance:
-        return context.tr(TranslationKeys.questionnaireSeekingGuidance);
-      case SeekingType.knowledge:
-        return context.tr(TranslationKeys.questionnaireSeekingKnowledge);
-      case SeekingType.relationships:
-        return context.tr(TranslationKeys.questionnaireSeekingRelationships);
-      case SeekingType.challenges:
-        return context.tr(TranslationKeys.questionnaireSeekingChallenges);
-    }
-  }
-
-  IconData _getIcon(SeekingType option) {
-    switch (option) {
-      case SeekingType.peace:
-        return Icons.spa_outlined;
-      case SeekingType.guidance:
-        return Icons.explore_outlined;
-      case SeekingType.knowledge:
+      case SpiritualGoal.foundationalFaith:
         return Icons.menu_book_outlined;
-      case SeekingType.relationships:
+      case SpiritualGoal.spiritualDepth:
+        return Icons.self_improvement_outlined;
+      case SpiritualGoal.relationships:
         return Icons.people_outlined;
-      case SeekingType.challenges:
-        return Icons.fitness_center_outlined;
+      case SpiritualGoal.apologetics:
+        return Icons.shield_outlined;
+      case SpiritualGoal.service:
+        return Icons.volunteer_activism_outlined;
+      case SpiritualGoal.theology:
+        return Icons.psychology_outlined;
     }
   }
 }
 
-class _TimeCommitmentQuestion extends StatelessWidget {
-  final String? selected;
+// ===========================================================================
+// Question 3: Time Availability
+// ===========================================================================
 
-  const _TimeCommitmentQuestion({super.key, this.selected});
+class _TimeAvailabilityQuestion extends StatelessWidget {
+  final TimeAvailability? selected;
+
+  const _TimeAvailabilityQuestion({super.key, this.selected});
 
   @override
   Widget build(BuildContext context) {
@@ -370,27 +406,27 @@ class _TimeCommitmentQuestion extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            context.tr(TranslationKeys.questionnaireTimeTitle),
+            context.tr(TranslationKeys.questionnaireTimeAvailabilityTitle),
             style: theme.textTheme.headlineSmall?.copyWith(
               fontWeight: FontWeight.bold,
             ),
           ),
           const SizedBox(height: 8),
           Text(
-            context.tr(TranslationKeys.questionnaireTimeSubtitle),
+            context.tr(TranslationKeys.questionnaireTimeAvailabilitySubtitle),
             style: theme.textTheme.bodyMedium?.copyWith(
               color: theme.colorScheme.onSurfaceVariant,
             ),
           ),
           const SizedBox(height: 24),
-          for (final option in TimeCommitment.values)
+          for (final option in TimeAvailability.values)
             QuestionOptionCard(
-              label: _getTimeLabel(context, option),
-              isSelected: selected == option.value,
+              label: option.label,
+              isSelected: selected == option,
               icon: _getIcon(option),
               onTap: () {
                 context.read<PersonalizationBloc>().add(
-                      SelectTimeCommitment(option.value),
+                      SelectTimeAvailability(option),
                     );
               },
             ),
@@ -399,25 +435,202 @@ class _TimeCommitmentQuestion extends StatelessWidget {
     );
   }
 
-  String _getTimeLabel(BuildContext context, TimeCommitment option) {
+  IconData _getIcon(TimeAvailability option) {
     switch (option) {
-      case TimeCommitment.fiveMin:
-        return context.tr(TranslationKeys.questionnaireTime5Min);
-      case TimeCommitment.fifteenMin:
-        return context.tr(TranslationKeys.questionnaireTime15Min);
-      case TimeCommitment.thirtyMin:
-        return context.tr(TranslationKeys.questionnaireTime30Min);
+      case TimeAvailability.fiveToTenMin:
+        return Icons.timer_outlined;
+      case TimeAvailability.tenToTwentyMin:
+        return Icons.schedule_outlined;
+      case TimeAvailability.twentyPlusMin:
+        return Icons.hourglass_bottom_outlined;
     }
   }
+}
 
-  IconData _getIcon(TimeCommitment option) {
+// ===========================================================================
+// Question 4: Learning Style
+// ===========================================================================
+
+class _LearningStyleQuestion extends StatelessWidget {
+  final LearningStyle? selected;
+
+  const _LearningStyleQuestion({super.key, this.selected});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            context.tr(TranslationKeys.questionnaireLearningStyleTitle),
+            style: theme.textTheme.headlineSmall?.copyWith(
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            context.tr(TranslationKeys.questionnaireLearningStyleSubtitle),
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+          const SizedBox(height: 24),
+          for (final option in LearningStyle.values)
+            QuestionOptionCard(
+              label: option.label,
+              isSelected: selected == option,
+              icon: _getIcon(option),
+              onTap: () {
+                context.read<PersonalizationBloc>().add(
+                      SelectLearningStyle(option),
+                    );
+              },
+            ),
+        ],
+      ),
+    );
+  }
+
+  IconData _getIcon(LearningStyle option) {
     switch (option) {
-      case TimeCommitment.fiveMin:
-        return Icons.timer_outlined;
-      case TimeCommitment.fifteenMin:
-        return Icons.schedule_outlined;
-      case TimeCommitment.thirtyMin:
-        return Icons.hourglass_bottom_outlined;
+      case LearningStyle.practicalApplication:
+        return Icons.build_outlined;
+      case LearningStyle.deepUnderstanding:
+        return Icons.school_outlined;
+      case LearningStyle.reflectionMeditation:
+        return Icons.self_improvement_outlined;
+      case LearningStyle.balancedApproach:
+        return Icons.balance_outlined;
+    }
+  }
+}
+
+// ===========================================================================
+// Question 5: Life Stage Focus
+// ===========================================================================
+
+class _LifeStageFocusQuestion extends StatelessWidget {
+  final LifeStageFocus? selected;
+
+  const _LifeStageFocusQuestion({super.key, this.selected});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            context.tr(TranslationKeys.questionnaireLifeStageFocusTitle),
+            style: theme.textTheme.headlineSmall?.copyWith(
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            context.tr(TranslationKeys.questionnaireLifeStageFocusSubtitle),
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+          const SizedBox(height: 24),
+          for (final option in LifeStageFocus.values)
+            QuestionOptionCard(
+              label: option.label,
+              isSelected: selected == option,
+              icon: _getIcon(option),
+              onTap: () {
+                context.read<PersonalizationBloc>().add(
+                      SelectLifeStageFocus(option),
+                    );
+              },
+            ),
+        ],
+      ),
+    );
+  }
+
+  IconData _getIcon(LifeStageFocus option) {
+    switch (option) {
+      case LifeStageFocus.personalFoundation:
+        return Icons.person_outlined;
+      case LifeStageFocus.familyRelationships:
+        return Icons.family_restroom_outlined;
+      case LifeStageFocus.communityImpact:
+        return Icons.public_outlined;
+      case LifeStageFocus.intellectualGrowth:
+        return Icons.psychology_outlined;
+    }
+  }
+}
+
+// ===========================================================================
+// Question 6: Biggest Challenge
+// ===========================================================================
+
+class _BiggestChallengeQuestion extends StatelessWidget {
+  final BiggestChallenge? selected;
+
+  const _BiggestChallengeQuestion({super.key, this.selected});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            context.tr(TranslationKeys.questionnaireBiggestChallengeTitle),
+            style: theme.textTheme.headlineSmall?.copyWith(
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            context.tr(TranslationKeys.questionnaireBiggestChallengeSubtitle),
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+          const SizedBox(height: 24),
+          for (final option in BiggestChallenge.values)
+            QuestionOptionCard(
+              label: option.label,
+              isSelected: selected == option,
+              icon: _getIcon(option),
+              onTap: () {
+                context.read<PersonalizationBloc>().add(
+                      SelectBiggestChallenge(option),
+                    );
+              },
+            ),
+        ],
+      ),
+    );
+  }
+
+  IconData _getIcon(BiggestChallenge option) {
+    switch (option) {
+      case BiggestChallenge.startingBasics:
+        return Icons.help_outline;
+      case BiggestChallenge.stayingConsistent:
+        return Icons.event_repeat;
+      case BiggestChallenge.handlingDoubts:
+        return Icons.live_help_outlined;
+      case BiggestChallenge.sharingFaith:
+        return Icons.share_outlined;
+      case BiggestChallenge.growingStagnant:
+        return Icons.trending_flat;
     }
   }
 }

@@ -358,10 +358,13 @@ class TranslationKeys {
   static const settingsContactUs = 'settings.contact_us';
   static const settingsContactUsSubtitle = 'settings.contact_us_subtitle';
 
-  // Personalization Questionnaire
+  // Personalization Questionnaire - Common
   static const questionnaireYourJourney = 'questionnaire.your_journey';
-  static const questionnaireWhatYouSeek = 'questionnaire.what_you_seek';
+  static const questionnaireYourGoals = 'questionnaire.your_goals';
   static const questionnaireYourTime = 'questionnaire.your_time';
+  static const questionnaireYourStyle = 'questionnaire.your_style';
+  static const questionnaireYourFocus = 'questionnaire.your_focus';
+  static const questionnaireYourChallenge = 'questionnaire.your_challenge';
   static const questionnairePersonalize = 'questionnaire.personalize';
   static const questionnaireSkip = 'questionnaire.skip';
   static const questionnaireContinue = 'questionnaire.continue';
@@ -371,31 +374,90 @@ class TranslationKeys {
   static const questionnaireSkipMessage = 'questionnaire.skip_message';
   static const questionnaireCancel = 'questionnaire.cancel';
 
-  // Question 1: Faith Journey
-  static const questionnaireFaithTitle = 'questionnaire.faith.title';
-  static const questionnaireFaithSubtitle = 'questionnaire.faith.subtitle';
-  static const questionnaireFaithNew = 'questionnaire.faith.new';
-  static const questionnaireFaithGrowing = 'questionnaire.faith.growing';
-  static const questionnaireFaithMature = 'questionnaire.faith.mature';
+  // Question 1: Faith Stage
+  static const questionnaireFaithStageTitle = 'questionnaire.faith_stage.title';
+  static const questionnaireFaithStageSubtitle =
+      'questionnaire.faith_stage.subtitle';
+  static const questionnaireFaithStageNewBeliever =
+      'questionnaire.faith_stage.new_believer';
+  static const questionnaireFaithStageGrowingBeliever =
+      'questionnaire.faith_stage.growing_believer';
+  static const questionnaireFaithStageCommittedDisciple =
+      'questionnaire.faith_stage.committed_disciple';
 
-  // Question 2: What You Seek
-  static const questionnaireSeekingTitle = 'questionnaire.seeking.title';
-  static const questionnaireSeekingSubtitle = 'questionnaire.seeking.subtitle';
-  static const questionnaireSeekingPeace = 'questionnaire.seeking.peace';
-  static const questionnaireSeekingGuidance = 'questionnaire.seeking.guidance';
-  static const questionnaireSeekingKnowledge =
-      'questionnaire.seeking.knowledge';
-  static const questionnaireSeekingRelationships =
-      'questionnaire.seeking.relationships';
-  static const questionnaireSeekingChallenges =
-      'questionnaire.seeking.challenges';
+  // Question 2: Spiritual Goals
+  static const questionnaireSpiritualGoalsTitle =
+      'questionnaire.spiritual_goals.title';
+  static const questionnaireSpiritualGoalsSubtitle =
+      'questionnaire.spiritual_goals.subtitle';
+  static const questionnaireSpiritualGoalsFoundationalFaith =
+      'questionnaire.spiritual_goals.foundational_faith';
+  static const questionnaireSpiritualGoalsSpiritualDepth =
+      'questionnaire.spiritual_goals.spiritual_depth';
+  static const questionnaireSpiritualGoalsRelationships =
+      'questionnaire.spiritual_goals.relationships';
+  static const questionnaireSpiritualGoalsApologetics =
+      'questionnaire.spiritual_goals.apologetics';
+  static const questionnaireSpiritualGoalsService =
+      'questionnaire.spiritual_goals.service';
+  static const questionnaireSpiritualGoalsTheology =
+      'questionnaire.spiritual_goals.theology';
 
-  // Question 3: Time Commitment
-  static const questionnaireTimeTitle = 'questionnaire.time.title';
-  static const questionnaireTimeSubtitle = 'questionnaire.time.subtitle';
-  static const questionnaireTime5Min = 'questionnaire.time.5min';
-  static const questionnaireTime15Min = 'questionnaire.time.15min';
-  static const questionnaireTime30Min = 'questionnaire.time.30min';
+  // Question 3: Time Availability
+  static const questionnaireTimeAvailabilityTitle =
+      'questionnaire.time_availability.title';
+  static const questionnaireTimeAvailabilitySubtitle =
+      'questionnaire.time_availability.subtitle';
+  static const questionnaireTimeAvailability5To10Min =
+      'questionnaire.time_availability.5_to_10_min';
+  static const questionnaireTimeAvailability10To20Min =
+      'questionnaire.time_availability.10_to_20_min';
+  static const questionnaireTimeAvailability20PlusMin =
+      'questionnaire.time_availability.20_plus_min';
+
+  // Question 4: Learning Style
+  static const questionnaireLearningStyleTitle =
+      'questionnaire.learning_style.title';
+  static const questionnaireLearningStyleSubtitle =
+      'questionnaire.learning_style.subtitle';
+  static const questionnaireLearningStylePracticalApplication =
+      'questionnaire.learning_style.practical_application';
+  static const questionnaireLearningStyleDeepUnderstanding =
+      'questionnaire.learning_style.deep_understanding';
+  static const questionnaireLearningStyleReflectionMeditation =
+      'questionnaire.learning_style.reflection_meditation';
+  static const questionnaireLearningStyleBalancedApproach =
+      'questionnaire.learning_style.balanced_approach';
+
+  // Question 5: Life Stage Focus
+  static const questionnaireLifeStageFocusTitle =
+      'questionnaire.life_stage_focus.title';
+  static const questionnaireLifeStageFocusSubtitle =
+      'questionnaire.life_stage_focus.subtitle';
+  static const questionnaireLifeStageFocusPersonalFoundation =
+      'questionnaire.life_stage_focus.personal_foundation';
+  static const questionnaireLifeStageFocusFamilyRelationships =
+      'questionnaire.life_stage_focus.family_relationships';
+  static const questionnaireLifeStageFocusCommunityImpact =
+      'questionnaire.life_stage_focus.community_impact';
+  static const questionnaireLifeStageFocusIntellectualGrowth =
+      'questionnaire.life_stage_focus.intellectual_growth';
+
+  // Question 6: Biggest Challenge
+  static const questionnaireBiggestChallengeTitle =
+      'questionnaire.biggest_challenge.title';
+  static const questionnaireBiggestChallengeSubtitle =
+      'questionnaire.biggest_challenge.subtitle';
+  static const questionnaireBiggestChallengeStartingBasics =
+      'questionnaire.biggest_challenge.starting_basics';
+  static const questionnaireBiggestChallengeStayingConsistent =
+      'questionnaire.biggest_challenge.staying_consistent';
+  static const questionnaireBiggestChallengeHandlingDoubts =
+      'questionnaire.biggest_challenge.handling_doubts';
+  static const questionnaireBiggestChallengeSharingFaith =
+      'questionnaire.biggest_challenge.sharing_faith';
+  static const questionnaireBiggestChallengeGrowingStagnant =
+      'questionnaire.biggest_challenge.growing_stagnant';
 
   // Saved Guides Screen
   static const savedGuidesTitle = 'saved_guides.title';
