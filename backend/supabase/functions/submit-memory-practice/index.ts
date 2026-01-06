@@ -18,6 +18,7 @@ import { createAuthenticatedFunction } from '../_shared/core/function-factory.ts
 import { AppError } from '../_shared/utils/error-handler.ts'
 import { ApiSuccessResponse, UserContext } from '../_shared/types/index.ts'
 import { ServiceContainer } from '../_shared/core/services.ts'
+import { getIntervalForReviewsSinceMastery } from '../_shared/memory-verse-intervals.ts'
 
 /**
  * Practice mode types (aligned with frontend)
@@ -108,9 +109,14 @@ interface SubmitPracticeResponse extends ApiSuccessResponse<SubmitPracticeData> 
 
 /**
  * Implements the SM-2 spaced repetition algorithm
+ * Modified for Bible verse memorization with daily cementing period
  */
 function calculateSM2(input: SM2Input): SM2Result {
   const { quality, easeFactor, interval, repetitions } = input
+
+  // Constants
+  const MAX_INTERVAL_DAYS = 180 // 6 months maximum
+  const DAILY_REVIEW_PERIOD = 14 // First 14 successful reviews are daily
 
   if (quality < 0 || quality > 5) {
     throw new AppError('VALIDATION_ERROR', 'quality_rating must be between 0 and 5', 400)
@@ -131,12 +137,29 @@ function calculateSM2(input: SM2Input): SM2Result {
   } else {
     // Successful recall
     newRepetitions = repetitions + 1
-    if (newRepetitions === 1) {
+
+    // NEW ALGORITHM: Daily reviews for first 2 weeks, then adaptive spacing
+    if (newRepetitions <= DAILY_REVIEW_PERIOD) {
+      // First 14 successful reviews: Daily review (cementing the verse in memory)
       newInterval = 1
-    } else if (newRepetitions === 2) {
-      newInterval = 6
     } else {
-      newInterval = Math.ceil(interval * newEaseFactor)
+      // After 14 reviews, check if verse is mastered (quality 5 = perfect recall)
+      if (quality === 5) {
+        // Verse is MASTERED - use progressive spacing for efficient long-term retention
+        // Progression: 3, 7, 14, 21, 30, 45, 60, 90, 120, 150, 180 (cap)
+        const reviewsSinceMastery = newRepetitions - DAILY_REVIEW_PERIOD
+        newInterval = getIntervalForReviewsSinceMastery(reviewsSinceMastery, MAX_INTERVAL_DAYS)
+      } else {
+        // Verse NOT mastered yet (quality 3-4) - increment by just 1 day
+        // This keeps practice frequent until user achieves perfect recall
+        // Progression: 1→2→3→4→5→6... (gradual increase)
+        newInterval = interval + 1
+      }
+    }
+
+    // Safety cap: Never exceed 6 months
+    if (newInterval > MAX_INTERVAL_DAYS) {
+      newInterval = MAX_INTERVAL_DAYS
     }
   }
 
