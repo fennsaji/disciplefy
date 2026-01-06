@@ -633,7 +633,7 @@ async function handleGetRecommendedPath(
             .from('user_learning_path_progress')
             .select('learning_path_id')
             .eq('user_id', userId)
-            .eq('completed_at', 'not.is.null');
+            .not('completed_at', 'is', null);
 
           if (completedError && completedError.code !== 'PGRST116') {
             console.error('[RECOMMENDED_PATH] Error fetching completed paths:', completedError);

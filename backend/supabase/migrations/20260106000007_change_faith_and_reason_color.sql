@@ -2,7 +2,7 @@
 -- Migration: Change Faith & Reason Color
 -- Date: 2026-01-07
 -- Description: Changes the color of "Faith & Reason" learning path from
---              purple (#7C3AED) to deep blue (#2563EB) to make it more
+--              purple (#7C3AED) to amber/orange (#F59E0B) to make it more
 --              distinctive and align with the wisdom/knowledge theme.
 -- ============================================================================
 

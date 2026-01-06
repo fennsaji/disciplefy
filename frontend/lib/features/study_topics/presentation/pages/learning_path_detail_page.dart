@@ -171,6 +171,7 @@ class _LearningPathDetailPageState extends State<LearningPathDetailPage> {
 
     final encodedTitle = Uri.encodeComponent(topic.title);
     final encodedDescription = Uri.encodeComponent(topic.description);
+    final encodedInputType = Uri.encodeComponent(topic.inputType);
     final topicIdParam =
         topic.topicId.isNotEmpty ? '&topic_id=${topic.topicId}' : '';
     final descriptionParam =
@@ -182,7 +183,7 @@ class _LearningPathDetailPageState extends State<LearningPathDetailPage> {
 
     // Use push and await the result - when user returns, refresh the data
     await context.push(
-      '${AppRoutes.studyGuideV2}?input=$encodedTitle&type=${topic.inputType}&language=$_currentLanguage&mode=${mode.name}&source=learningPath$topicIdParam$descriptionParam$pathIdParam',
+      '${AppRoutes.studyGuideV2}?input=$encodedTitle&type=$encodedInputType&language=$_currentLanguage&mode=${mode.name}&source=learningPath$topicIdParam$descriptionParam$pathIdParam',
     );
 
     // Refresh data when returning from the study guide - force refresh to bypass cache

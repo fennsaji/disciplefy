@@ -909,7 +909,7 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
       color: Colors.transparent,
       child: InkWell(
         onTap: () {
-          context.go(AppRoutes.voiceConversation);
+          _handleVoiceBuddyTap(context);
         },
         borderRadius: BorderRadius.circular(12),
         child: Container(

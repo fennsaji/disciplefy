@@ -402,6 +402,8 @@ class TranslationKeys {
       'questionnaire.spiritual_goals.service';
   static const questionnaireSpiritualGoalsTheology =
       'questionnaire.spiritual_goals.theology';
+  static const questionnaireSpiritualGoalsSelectionCounter =
+      'questionnaire.spiritual_goals.selection_counter';
 
   // Question 3: Time Availability
   static const questionnaireTimeAvailabilityTitle =

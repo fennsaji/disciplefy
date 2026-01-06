@@ -29,16 +29,29 @@ SECURITY DEFINER
 AS $function$
 BEGIN
     RETURN QUERY
-    WITH xp_data AS (
-        -- Total XP from topic progress + achievement XP
+    WITH study_streaks_agg AS (
+        -- Precompute achievement_xp per user to eliminate correlated subqueries
         SELECT
-            (COALESCE(SUM(utp.xp_earned), 0) +
-             COALESCE((SELECT uss.achievement_xp FROM user_study_streaks uss WHERE uss.user_id = p_user_id), 0))::BIGINT AS xp
-        FROM user_topic_progress utp
-        WHERE utp.user_id = p_user_id
+            user_id,
+            COALESCE(achievement_xp, 0) AS achievement_xp
+        FROM user_study_streaks
+    ),
+    xp_data AS (
+        -- Total XP from topic progress + achievement XP
+        -- Always returns exactly 1 row, even for users with no data
+        SELECT
+            (COALESCE(
+                (SELECT SUM(xp_earned) FROM user_topic_progress WHERE user_id = p_user_id),
+                0
+            ) +
+            COALESCE(
+                (SELECT achievement_xp FROM user_study_streaks WHERE user_id = p_user_id),
+                0
+            ))::BIGINT AS xp
     ),
     rank_data AS (
         -- Leaderboard rank based on topic XP + achievement XP
+        -- JOIN study_streaks_agg to avoid correlated subqueries
         SELECT r.rank
         FROM (
             SELECT
@@ -46,15 +59,16 @@ BEGIN
                 ROW_NUMBER() OVER (
                     ORDER BY (
                         COALESCE(SUM(utp.xp_earned), 0) +
-                        COALESCE((SELECT uss.achievement_xp FROM user_study_streaks uss WHERE uss.user_id = up.id), 0)
+                        COALESCE(ssa.achievement_xp, 0)
                     ) DESC
                 )::BIGINT AS rank
             FROM user_profiles up
             LEFT JOIN user_topic_progress utp ON up.id = utp.user_id
-            GROUP BY up.id
+            LEFT JOIN study_streaks_agg ssa ON ssa.user_id = up.id
+            GROUP BY up.id, ssa.achievement_xp
             HAVING (
                 COALESCE(SUM(utp.xp_earned), 0) +
-                COALESCE((SELECT uss.achievement_xp FROM user_study_streaks uss WHERE uss.user_id = up.id), 0)
+                COALESCE(ssa.achievement_xp, 0)
             ) >= 200
         ) r
         WHERE r.id = p_user_id
@@ -121,4 +135,6 @@ COMMENT ON FUNCTION public.get_user_gamification_stats IS
 'Returns comprehensive gamification statistics for a user.
 Updated 2026-01-06: Fixed to read study streaks from user_study_streaks table (no longer returns 0).
 Includes achievement XP in total XP calculation.
-Daily verse streaks are tracked via daily_verse_streaks table.';
+Daily verse streaks are tracked via daily_verse_streaks table.
+Updated 2026-01-07: Optimized rank calculation by precomputing achievement_xp in study_streaks_agg CTE,
+eliminating correlated subqueries for improved performance.';

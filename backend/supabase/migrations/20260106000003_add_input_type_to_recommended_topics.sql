@@ -15,10 +15,22 @@ BEGIN;
 ALTER TABLE recommended_topics
 ADD COLUMN IF NOT EXISTS input_type VARCHAR(20) DEFAULT 'topic';
 
--- Add check constraint to ensure only valid values
-ALTER TABLE recommended_topics
-ADD CONSTRAINT recommended_topics_input_type_check
-CHECK (input_type IN ('topic', 'verse', 'question'));
+-- Add check constraint to ensure only valid values (idempotent)
+DO $$
+BEGIN
+  -- Check if constraint already exists
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_constraint
+    WHERE conname = 'recommended_topics_input_type_check'
+      AND conrelid = 'recommended_topics'::regclass
+  ) THEN
+    -- Add constraint only if it doesn't exist
+    ALTER TABLE recommended_topics
+    ADD CONSTRAINT recommended_topics_input_type_check
+    CHECK (input_type IN ('topic', 'verse', 'question'));
+  END IF;
+END $$;
 
 -- ============================================================================
 -- 2. UPDATE THEOLOGICAL QUESTION TOPICS TO USE 'question' INPUT TYPE
