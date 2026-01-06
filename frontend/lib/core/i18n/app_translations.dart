@@ -426,8 +426,11 @@ class AppTranslations {
     },
     'questionnaire': {
       'your_journey': 'Your Journey',
-      'what_you_seek': 'What You Seek',
+      'your_goals': 'Your Goals',
       'your_time': 'Your Time',
+      'your_style': 'Your Style',
+      'your_focus': 'Your Focus',
+      'your_challenge': 'Your Challenge',
       'personalize': 'Personalize',
       'skip': 'Skip',
       'continue': 'Continue',
@@ -437,29 +440,54 @@ class AppTranslations {
       'skip_message':
           'You can always update your preferences later in Settings.',
       'cancel': 'Cancel',
-      'faith': {
+      'faith_stage': {
         'title': 'Where are you in your faith journey?',
-        'subtitle':
-            'This helps us recommend topics that match your spiritual growth.',
-        'new': 'New to Christianity',
-        'growing': 'Growing in faith',
-        'mature': 'Mature believer',
+        'subtitle': 'Help us understand where you are spiritually',
+        'new_believer': 'Just starting to explore Christianity',
+        'growing_believer': 'Growing in my relationship with Jesus',
+        'committed_disciple': 'Actively following and serving Jesus',
       },
-      'seeking': {
-        'title': 'What are you seeking right now?',
-        'subtitle': 'Select all that apply. You can change these anytime.',
-        'peace': 'Peace & comfort',
-        'guidance': 'Life guidance',
-        'knowledge': 'Deeper Bible knowledge',
-        'relationships': 'Strengthening relationships',
-        'challenges': 'Overcoming challenges',
+      'spiritual_goals': {
+        'title': 'What are you hoping to grow in?',
+        'subtitle': 'Choose up to 3 areas you want to develop',
+        'foundational_faith': 'Understanding Bible basics and core beliefs',
+        'spiritual_depth': 'Deepening my prayer life and spiritual disciplines',
+        'relationships': 'Strengthening my family and friendships',
+        'apologetics': 'Defending my faith and answering tough questions',
+        'service': 'Serving others and sharing the Gospel',
+        'theology': 'Exploring deep theological and philosophical questions',
       },
-      'time': {
-        'title': 'How much time can you dedicate?',
-        'subtitle': "We'll tailor study recommendations to fit your schedule.",
-        '5min': '5 minutes daily',
-        '15min': '15 minutes daily',
-        '30min': '30+ minutes daily',
+      'time_availability': {
+        'title': 'How much time can you commit to daily Bible study?',
+        'subtitle': "We'll match you with studies that fit your schedule",
+        '5_to_10_min': '5-10 minutes (quick sessions)',
+        '10_to_20_min': '10-20 minutes (balanced study)',
+        '20_plus_min': '20+ minutes (in-depth exploration)',
+      },
+      'learning_style': {
+        'title': 'How do you prefer to learn?',
+        'subtitle': 'This helps us match you with the right study approach',
+        'practical_application': 'Practical steps I can apply right away',
+        'deep_understanding': 'Detailed theological explanations',
+        'reflection_meditation': 'Prayerful meditation and reflection',
+        'balanced_approach': 'A mix of study, reflection, and action',
+      },
+      'life_stage_focus': {
+        'title': 'Which area of life is most important to you right now?',
+        'subtitle': 'Help us recommend relevant topics',
+        'personal_foundation': 'Building my personal relationship with God',
+        'family_relationships': 'Growing with my family and loved ones',
+        'community_impact': 'Making a difference in my community',
+        'intellectual_growth': 'Wrestling with big questions about faith',
+      },
+      'biggest_challenge': {
+        'title': "What's your biggest challenge in your faith journey?",
+        'subtitle': "We'll recommend studies to help you overcome this",
+        'starting_basics': "I'm new and don't know where to start",
+        'staying_consistent': 'Struggling to maintain daily spiritual habits',
+        'handling_doubts': 'Dealing with doubts and difficult questions',
+        'sharing_faith': 'Not confident in sharing my faith with others',
+        'growing_stagnant': 'Feeling stuck or spiritually dry',
       },
     },
     'saved_guides': {
@@ -1067,7 +1095,7 @@ class AppTranslations {
       'continue': 'Continue',
       'review': 'Review',
       'explore': 'Explore',
-      'topics': 'topics',
+      'topics': 'Topics',
       'days': 'days',
       'xp': 'XP',
       'progress': 'Progress',
@@ -2157,8 +2185,11 @@ class AppTranslations {
     },
     'questionnaire': {
       'your_journey': 'आपकी यात्रा',
-      'what_you_seek': 'आपकी तलाश',
+      'your_goals': 'आपके लक्ष्य',
       'your_time': 'आपका समय',
+      'your_style': 'आपकी शैली',
+      'your_focus': 'आपका फोकस',
+      'your_challenge': 'आपकी चुनौती',
       'personalize': 'निजीकृत करें',
       'skip': 'छोड़ें',
       'continue': 'आगे बढ़ें',
@@ -2167,28 +2198,61 @@ class AppTranslations {
       'skip_title': 'निजीकरण छोड़ें?',
       'skip_message': 'आप बाद में सेटिंग्स में बदलाव कर सकते हैं।',
       'cancel': 'रद्द करें',
-      'faith': {
+      'faith_stage': {
         'title': 'आप अपनी आस्था यात्रा में कहाँ हैं?',
-        'subtitle': 'इससे हम आपके लिए सही विषय सुझा सकते हैं।',
-        'new': 'ईसाई धर्म में नए',
-        'growing': 'विश्वास में बढ़ रहे',
-        'mature': 'परिपक्व विश्वासी',
+        'subtitle': 'हमें समझने में मदद करें कि आप आध्यात्मिक रूप से कहाँ हैं',
+        'new_believer': 'ईसाई धर्म का अन्वेषण शुरू कर रहा हूँ',
+        'growing_believer': 'यीशु के साथ अपने रिश्ते में बढ़ रहा हूँ',
+        'committed_disciple': 'सक्रिय रूप से यीशु का अनुसरण और सेवा कर रहा हूँ',
       },
-      'seeking': {
-        'title': 'आप अभी क्या खोज रहे हैं?',
-        'subtitle': 'सभी चुनें जो लागू हों। आप कभी भी बदल सकते हैं।',
-        'peace': 'शांति और सुकून',
-        'guidance': 'जीवन मार्गदर्शन',
-        'knowledge': 'बाइबल का गहरा ज्ञान',
-        'relationships': 'रिश्ते मजबूत करना',
-        'challenges': 'चुनौतियों पर विजय',
+      'spiritual_goals': {
+        'title': 'आप किन क्षेत्रों में बढ़ना चाहते हैं?',
+        'subtitle': 'अपने विकास के लिए 3 क्षेत्र तक चुनें',
+        'foundational_faith': 'बाइबल की बुनियादी बातें और मुख्य विश्वास समझना',
+        'spiritual_depth':
+            'अपनी प्रार्थना जीवन और आध्यात्मिक अनुशासन को गहरा करना',
+        'relationships': 'अपने परिवार और मित्रों के साथ संबंध मजबूत करना',
+        'apologetics':
+            'अपने विश्वास की रक्षा करना और कठिन प्रश्नों का उत्तर देना',
+        'service': 'दूसरों की सेवा करना और सुसमाचार साझा करना',
+        'theology': 'गहरे धार्मिक और दार्शनिक प्रश्नों की खोज करना',
       },
-      'time': {
-        'title': 'आप कितना समय दे सकते हैं?',
-        'subtitle': 'हम आपके समय के अनुसार अध्ययन सुझाएंगे।',
-        '5min': '5 मिनट रोज़',
-        '15min': '15 मिनट रोज़',
-        '30min': '30+ मिनट रोज़',
+      'time_availability': {
+        'title': 'आप दैनिक बाइबल अध्ययन के लिए कितना समय दे सकते हैं?',
+        'subtitle':
+            'हम आपको ऐसे अध्ययन से जोड़ेंगे जो आपके कार्यक्रम में फिट हों',
+        '5_to_10_min': '5-10 मिनट (त्वरित सत्र)',
+        '10_to_20_min': '10-20 मिनट (संतुलित अध्ययन)',
+        '20_plus_min': '20+ मिनट (गहन अन्वेषण)',
+      },
+      'learning_style': {
+        'title': 'आप सीखना कैसे पसंद करते हैं?',
+        'subtitle':
+            'यह हमें आपको सही अध्ययन दृष्टिकोण से मिलाने में मदद करता है',
+        'practical_application':
+            'व्यावहारिक कदम जिन्हें मैं तुरंत लागू कर सकता हूं',
+        'deep_understanding': 'विस्तृत धार्मिक व्याख्याएं',
+        'reflection_meditation': 'प्रार्थनापूर्ण ध्यान और चिंतन',
+        'balanced_approach': 'अध्ययन, चिंतन और कार्य का मिश्रण',
+      },
+      'life_stage_focus': {
+        'title': 'अभी आपके लिए जीवन का कौन सा क्षेत्र सबसे महत्वपूर्ण है?',
+        'subtitle': 'हमें प्रासंगिक विषय सुझाने में मदद करें',
+        'personal_foundation':
+            'ईश्वर के साथ अपने व्यक्तिगत संबंध को मजबूत करना',
+        'family_relationships': 'अपने परिवार और प्रियजनों के साथ बढ़ना',
+        'community_impact': 'अपने समुदाय में बदलाव लाना',
+        'intellectual_growth': 'विश्वास के बड़े प्रश्नों से जूझना',
+      },
+      'biggest_challenge': {
+        'title': 'आपकी आस्था यात्रा में सबसे बड़ी चुनौती क्या है?',
+        'subtitle': 'हम आपको इसे पार करने में मदद के लिए अध्ययन सुझाएंगे',
+        'starting_basics': 'मैं नया हूं और नहीं जानता कि कहां से शुरू करूं',
+        'staying_consistent': 'दैनिक आध्यात्मिक आदतों को बनाए रखने में संघर्ष',
+        'handling_doubts': 'संदेह और कठिन प्रश्नों से निपटना',
+        'sharing_faith':
+            'दूसरों के साथ अपना विश्वास साझा करने में आत्मविश्वास नहीं',
+        'growing_stagnant': 'फंसा हुआ या आध्यात्मिक रूप से सूखा महसूस करना',
       },
     },
     'saved_guides': {
@@ -3896,8 +3960,11 @@ class AppTranslations {
     },
     'questionnaire': {
       'your_journey': 'നിങ്ങളുടെ യാത്ര',
-      'what_you_seek': 'നിങ്ങളുടെ തേട്ടം',
+      'your_goals': 'നിങ്ങളുടെ ലക്ഷ്യങ്ങൾ',
       'your_time': 'നിങ്ങളുടെ സമയം',
+      'your_style': 'നിങ്ങളുടെ ശൈലി',
+      'your_focus': 'നിങ്ങളുടെ ശ്രദ്ധ',
+      'your_challenge': 'നിങ്ങളുടെ വെല്ലുവിളി',
       'personalize': 'വ്യക്തിഗതമാക്കുക',
       'skip': 'ഒഴിവാക്കുക',
       'continue': 'തുടരുക',
@@ -3906,28 +3973,62 @@ class AppTranslations {
       'skip_title': 'വ്യക്തിഗതമാക്കൽ ഒഴിവാക്കണോ?',
       'skip_message': 'സെറ്റിംഗ്സിൽ പിന്നീട് മാറ്റാം.',
       'cancel': 'റദ്ദാക്കുക',
-      'faith': {
+      'faith_stage': {
         'title': 'നിങ്ങൾ വിശ്വാസ യാത്രയിൽ എവിടെയാണ്?',
-        'subtitle': 'നിങ്ങൾക്ക് ശരിയായ വിഷയങ്ങൾ നിർദ്ദേശിക്കാൻ ഇത് സഹായിക്കും.',
-        'new': 'ക്രിസ്ത്യാനിത്വത്തിൽ പുതിയ',
-        'growing': 'വിശ്വാസത്തിൽ വളരുന്നു',
-        'mature': 'പക്വമായ വിശ്വാസി',
+        'subtitle': 'നിങ്ങൾ ആത്മീയമായി എവിടെയാണെന്ന് മനസ്സിലാക്കാൻ സഹായിക്കുക',
+        'new_believer': 'ക്രിസ്ത്യാനിത്വം അന്വേഷിക്കാൻ തുടങ്ങുന്നു',
+        'growing_believer': 'യേശുവുമായുള്ള ബന്ധത്തിൽ വളരുന്നു',
+        'committed_disciple':
+            'സജീവമായി യേശുവിനെ അനുസരിക്കുകയും സേവിക്കുകയും ചെയ്യുന്നു',
       },
-      'seeking': {
-        'title': 'നിങ്ങൾ ഇപ്പോൾ എന്താണ് തേടുന്നത്?',
-        'subtitle': 'ബാധകമായവ എല്ലാം തിരഞ്ഞെടുക്കുക. എപ്പോഴും മാറ്റാം.',
-        'peace': 'സമാധാനവും ആശ്വാസവും',
-        'guidance': 'ജീവിത മാർഗ്ഗനിർദ്ദേശം',
-        'knowledge': 'ബൈബിളിന്റെ ആഴമായ അറിവ്',
-        'relationships': 'ബന്ധങ്ങൾ ശക്തമാക്കൽ',
-        'challenges': 'വെല്ലുവിളികളെ മറികടക്കൽ',
+      'spiritual_goals': {
+        'title': 'നിങ്ങൾ ഏത് മേഖലകളിൽ വളരാൻ ആഗ്രഹിക്കുന്നു?',
+        'subtitle': 'വികസനത്തിനായി 3 മേഖലകൾ വരെ തിരഞ്ഞെടുക്കുക',
+        'foundational_faith':
+            'ബൈബിൾ അടിസ്ഥാനകാര്യങ്ങളും പ്രധാന വിശ്വാസങ്ങളും മനസ്സിലാക്കൽ',
+        'spiritual_depth':
+            'പ്രാർത്ഥന ജീവിതവും ആത്മീയ അച്ചടക്കങ്ങളും ആഴത്തിലാക്കൽ',
+        'relationships': 'കുടുംബവും സുഹൃത്തുക്കളുമായുള്ള ബന്ധം ശക്തമാക്കൽ',
+        'apologetics':
+            'വിശ്വാസം സംരക്ഷിക്കലും കഠിന ചോദ്യങ്ങൾക്ക് ഉത്തരം നൽകലും',
+        'service': 'മറ്റുള്ളവരെ സേവിക്കലും സുവിശേഷം പങ്കിടലും',
+        'theology': 'ആഴത്തിലുള്ള ദൈവശാസ്ത്ര-ദാർശനിക ചോദ്യങ്ങൾ പര്യവേക്ഷണം',
       },
-      'time': {
-        'title': 'എത്ര സമയം നീക്കിവയ്ക്കാൻ കഴിയും?',
-        'subtitle': 'നിങ്ങളുടെ സമയത്തിനനുസരിച്ച് പഠനം നിർദ്ദേശിക്കും.',
-        '5min': 'ദിവസവും 5 മിനിറ്റ്',
-        '15min': 'ദിവസവും 15 മിനിറ്റ്',
-        '30min': 'ദിവസവും 30+ മിനിറ്റ്',
+      'time_availability': {
+        'title': 'ദിവസേന ബൈബിൾ പഠനത്തിന് എത്ര സമയം നീക്കിവയ്ക്കാം?',
+        'subtitle':
+            'നിങ്ങളുടെ ഷെഡ്യൂളിൽ യോജിക്കുന്ന പഠനങ്ങളുമായി ഞങ്ങൾ നിങ്ങളെ ബന്ധിപ്പിക്കും',
+        '5_to_10_min': '5-10 മിനിറ്റ് (വേഗത്തിലുള്ള സെഷനുകൾ)',
+        '10_to_20_min': '10-20 മിനിറ്റ് (സന്തുലിത പഠനം)',
+        '20_plus_min': '20+ മിനിറ്റ് (ആഴത്തിലുള്ള പര്യവേക്ഷണം)',
+      },
+      'learning_style': {
+        'title': 'നിങ്ങൾ എങ്ങനെയാണ് പഠിക്കാൻ ഇഷ്ടപ്പെടുന്നത്?',
+        'subtitle':
+            'ശരിയായ പഠന സമീപനവുമായി നിങ്ങളെ ബന്ധിപ്പിക്കാൻ ഇത് സഹായിക്കുന്നു',
+        'practical_application': 'ഉടനെ പ്രയോഗിക്കാൻ കഴിയുന്ന പ്രായോഗിക നടപടികൾ',
+        'deep_understanding': 'വിശദമായ ദൈവശാസ്ത്ര വിശദീകരണങ്ങൾ',
+        'reflection_meditation': 'പ്രാർത്ഥനാപൂർണമായ ധ്യാനവും ചിന്തയും',
+        'balanced_approach': 'പഠനം, ചിന്ത, പ്രവർത്തനം എന്നിവയുടെ മിശ്രിതം',
+      },
+      'life_stage_focus': {
+        'title': 'ഇപ്പോൾ നിങ്ങൾക്ക് ഏറ്റവും പ്രധാനപ്പെട്ട ജീവിത മേഖല ഏതാണ്?',
+        'subtitle': 'പ്രസക്തമായ വിഷയങ്ങൾ നിർദ്ദേശിക്കാൻ സഹായിക്കുക',
+        'personal_foundation': 'ദൈവവുമായുള്ള വ്യക്തിപരമായ ബന്ധം വളർത്തൽ',
+        'family_relationships': 'കുടുംബവും പ്രിയപ്പെട്ടവരുമായി വളരൽ',
+        'community_impact': 'സമൂഹത്തിൽ മാറ്റമുണ്ടാക്കൽ',
+        'intellectual_growth':
+            'വിശ്വാസത്തെക്കുറിച്ചുള്ള വലിയ ചോദ്യങ്ങളുമായി പൊരുതൽ',
+      },
+      'biggest_challenge': {
+        'title': 'നിങ്ങളുടെ വിശ്വാസ യാത്രയിലെ ഏറ്റവും വലിയ വെല്ലുവിളി എന്താണ്?',
+        'subtitle': 'ഇത് മറികടക്കാൻ സഹായിക്കുന്ന പഠനങ്ങൾ ഞങ്ങൾ നിർദ്ദേശിക്കും',
+        'starting_basics':
+            'ഞാൻ പുതിയവനാണ്, എവിടെ നിന്ന് തുടങ്ങണമെന്ന് അറിയില്ല',
+        'staying_consistent': 'ദൈനംദിന ആത്മീയ ശീലങ്ങൾ നിലനിർത്താൻ പാടുപെടുന്നു',
+        'handling_doubts': 'സംശയങ്ങളും കഠിന ചോദ്യങ്ങളും കൈകാര്യം ചെയ്യൽ',
+        'sharing_faith': 'മറ്റുള്ളവരുമായി വിശ്വാസം പങ്കിടാൻ ആത്മവിശ്വാസമില്ല',
+        'growing_stagnant': 'കുടുങ്ങിയതോ ആത്മീയമായി വരണ്ടതോ ആയി അനുഭവപ്പെടൽ',
       },
     },
     'saved_guides': {

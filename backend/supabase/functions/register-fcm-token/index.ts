@@ -112,11 +112,12 @@ async function handleRegisterToken(
   const timezoneOffset = requestData.timezoneOffsetMinutes ?? 0
 
   // Fetch existing preferences to preserve user's notification toggles
+  // Use maybeSingle() to handle case where user doesn't have preferences yet
   const { data: existingPrefs } = await services.supabaseServiceClient
     .from('user_notification_preferences')
     .select('daily_verse_enabled, recommended_topic_enabled')
     .eq('user_id', userId)
-    .single()
+    .maybeSingle()
 
   // Preserve existing values if request doesn't explicitly provide them
   // Only default to true when no existing record exists
@@ -249,12 +250,13 @@ async function handleUpdatePreferences(
   console.log(`[Update Preferences] User: ${userId}, Fields: ${Object.keys(updateData).join(', ')}`)
 
   // Update preferences
+  // Use maybeSingle() to properly detect when user hasn't registered preferences yet
   const { data, error } = await services.supabaseServiceClient
     .from('user_notification_preferences')
     .update(updateData)
     .eq('user_id', userId)
     .select()
-    .single()
+    .maybeSingle()
 
   if (error) {
     console.error('[Update Preferences] Database error:', error)
@@ -303,13 +305,14 @@ async function handleGetPreferences(
   console.log(`[Get Preferences] User: ${userId}`)
 
   // Fetch notification preferences
+  // Use maybeSingle() to handle case where user hasn't registered preferences yet
   const { data: prefsData, error: prefsError } = await services.supabaseServiceClient
     .from('user_notification_preferences')
     .select('*')
     .eq('user_id', userId)
-    .single()
+    .maybeSingle()
 
-  if (prefsError && prefsError.code !== 'PGRST116') { // PGRST116 = not found
+  if (prefsError) {
     console.error('[Get Preferences] Database error:', prefsError)
     throw new AppError('DATABASE_ERROR', prefsError.message, 500)
   }

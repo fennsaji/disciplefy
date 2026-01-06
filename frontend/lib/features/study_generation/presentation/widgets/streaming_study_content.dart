@@ -777,7 +777,8 @@ class StreamingStudyContent extends StatelessWidget {
               Text(
                 context
                     .tr(TranslationKeys.studyGuideStreamingSections)
-                    .replaceAll('{count}', '${content.sectionsLoaded}'),
+                    .replaceAll('{count}', '${content.sectionsLoaded}')
+                    .replaceAll('{total}', '${content.totalSections}'),
                 style: AppFonts.inter(
                   fontSize: 12,
                   fontWeight: FontWeight.w600,

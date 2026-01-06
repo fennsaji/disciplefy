@@ -19,14 +19,20 @@ class PersonalizationRepositoryImpl implements PersonalizationRepository {
 
   @override
   Future<PersonalizationEntity> savePersonalization({
-    required String? faithJourney,
-    required List<String> seeking,
-    required String? timeCommitment,
+    required FaithStage? faithStage,
+    required List<SpiritualGoal> spiritualGoals,
+    required TimeAvailability? timeAvailability,
+    required LearningStyle? learningStyle,
+    required LifeStageFocus? lifeStageFocus,
+    required BiggestChallenge? biggestChallenge,
   }) async {
     final data = await _remoteDataSource.savePersonalization(
-      faithJourney: faithJourney,
-      seeking: seeking,
-      timeCommitment: timeCommitment,
+      faithStage: faithStage?.value,
+      spiritualGoals: spiritualGoals.map((g) => g.value).toList(),
+      timeAvailability: timeAvailability?.value,
+      learningStyle: learningStyle?.value,
+      lifeStageFocus: lifeStageFocus?.value,
+      biggestChallenge: biggestChallenge?.value,
     );
     return _mapToEntity(data);
   }
@@ -38,13 +44,22 @@ class PersonalizationRepositoryImpl implements PersonalizationRepository {
   }
 
   PersonalizationEntity _mapToEntity(Map<String, dynamic> data) {
+    // Parse spiritual goals from array of strings
+    final spiritualGoalsData = data['spiritual_goals'] as List<dynamic>?;
+    final spiritualGoalsList =
+        spiritualGoalsData?.map((e) => e.toString()).toList() ?? [];
+
     return PersonalizationEntity(
-      faithJourney: data['faith_journey'] as String?,
-      seeking: (data['seeking'] as List<dynamic>?)
-              ?.map((e) => e.toString())
-              .toList() ??
-          [],
-      timeCommitment: data['time_commitment'] as String?,
+      faithStage: FaithStage.fromValue(data['faith_stage'] as String?),
+      spiritualGoals: SpiritualGoal.listFromValues(spiritualGoalsList),
+      timeAvailability:
+          TimeAvailability.fromValue(data['time_availability'] as String?),
+      learningStyle: LearningStyle.fromValue(data['learning_style'] as String?),
+      lifeStageFocus:
+          LifeStageFocus.fromValue(data['life_stage_focus'] as String?),
+      biggestChallenge:
+          BiggestChallenge.fromValue(data['biggest_challenge'] as String?),
+      scoringResults: data['scoring_results'] as Map<String, dynamic>?,
       questionnaireCompleted: data['questionnaire_completed'] as bool? ?? false,
       questionnaireSkipped: data['questionnaire_skipped'] as bool? ?? false,
     );

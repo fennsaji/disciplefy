@@ -13,6 +13,11 @@ import { createFunction } from '../_shared/core/function-factory.ts';
 import { ServiceContainer } from '../_shared/core/services.ts';
 import { UserContext } from '../_shared/types/index.ts';
 import { AppError } from '../_shared/utils/error-handler.ts';
+import {
+  calculatePathScores,
+  type QuestionnaireResponses,
+  type LearningPath as ScoringLearningPath,
+} from '../_shared/personalization/scoring-algorithm.ts';
 
 // ============================================================================
 // Types
@@ -50,6 +55,7 @@ interface LearningPath {
 }
 
 interface LearningPathDetail extends LearningPath {
+  allow_non_sequential_access: boolean;
   topics_completed: number;
   enrolled_at: string | null;
   topics: LearningPathTopic[];
@@ -62,6 +68,7 @@ interface LearningPathTopic {
   title: string;
   description: string;
   category: string;
+  input_type: string;
   xp_value: number;
   is_completed: boolean;
   is_in_progress: boolean;
@@ -98,14 +105,9 @@ interface LearningPathRow {
   disciple_level: string;
   is_featured: boolean;
   is_active: boolean;
+  recommended_mode?: string;
+  display_order?: number;
 }
-
-// Maps faith journey stage to recommended learning path slugs
-const FAITH_JOURNEY_LEARNING_PATHS: Record<string, string[]> = {
-  new: ['new-believer-essentials', 'rooted-in-christ'],
-  growing: ['growing-in-discipleship', 'deepening-your-walk'],
-  mature: ['serving-and-mission', 'defending-your-faith', 'heart-for-the-world'],
-};
 
 // Default learning path slug for anonymous users or users without personalization
 const DEFAULT_FEATURED_PATH_SLUG = 'new-believer-essentials';
@@ -398,6 +400,7 @@ async function handleGetPathDetails(
     estimated_days: row.estimated_days,
     disciple_level: row.disciple_level,
     recommended_mode: row.recommended_mode,
+    allow_non_sequential_access: row.allow_non_sequential_access,
     is_featured: false,
     topics_count: row.topics?.length || 0,
     is_enrolled: row.is_enrolled,
@@ -411,6 +414,7 @@ async function handleGetPathDetails(
       title: topic.title as string,
       description: topic.description as string,
       category: topic.category as string,
+      input_type: topic.input_type as string,
       xp_value: topic.xp_value as number,
       is_completed: topic.is_completed as boolean,
       is_in_progress: topic.is_in_progress as boolean,
@@ -604,7 +608,7 @@ async function handleGetRecommendedPath(
       console.log('[RECOMMENDED_PATH] Checking for personalization...');
       const { data: personalization, error: persError } = await supabaseServiceClient
         .from('user_personalization')
-        .select('faith_journey, questionnaire_completed')
+        .select('faith_stage, spiritual_goals, time_availability, learning_style, life_stage_focus, biggest_challenge, questionnaire_completed')
         .eq('user_id', userId)
         .single();
 
@@ -612,51 +616,95 @@ async function handleGetRecommendedPath(
         console.error('[RECOMMENDED_PATH] Error fetching personalization:', persError);
       }
 
-      if (personalization?.questionnaire_completed && personalization?.faith_journey) {
-        console.log(`[RECOMMENDED_PATH] User has personalization, faith_journey: ${personalization.faith_journey}`);
-        const recommendedSlugs = FAITH_JOURNEY_LEARNING_PATHS[personalization.faith_journey] || [];
+      if (personalization?.questionnaire_completed && personalization?.faith_stage) {
+        console.log(`[RECOMMENDED_PATH] User has personalization, faith_stage: ${personalization.faith_stage}`);
 
-        for (const slug of recommendedSlugs) {
-          // Check if user hasn't completed this path
-          const { data: pathData, error: pathError } = await supabaseServiceClient
-            .from('learning_paths')
-            .select('*')
-            .eq('slug', slug)
-            .eq('is_active', true)
-            .single();
+        // Fetch all active learning paths for scoring
+        const { data: allPaths, error: pathsError } = await supabaseServiceClient
+          .from('learning_paths')
+          .select('id, slug, title, description, icon_name, color, total_xp, estimated_days, disciple_level, recommended_mode, is_featured, display_order')
+          .eq('is_active', true);
 
-          if (pathError || !pathData) continue;
-
-          // Check if user has completed this path
-          const { data: existingProgress } = await supabaseServiceClient
+        if (pathsError || !allPaths || allPaths.length === 0) {
+          console.error('[RECOMMENDED_PATH] Error fetching paths for scoring:', pathsError);
+        } else {
+          // Fetch user's completed paths
+          const { data: completedPaths, error: completedError } = await supabaseServiceClient
             .from('user_learning_path_progress')
-            .select('completed_at')
+            .select('learning_path_id')
             .eq('user_id', userId)
-            .eq('learning_path_id', pathData.id)
-            .single();
+            .eq('completed_at', 'not.is.null');
 
-          if (!existingProgress?.completed_at) {
-            console.log(`[RECOMMENDED_PATH] Found personalized path: ${pathData.title}`);
+          if (completedError && completedError.code !== 'PGRST116') {
+            console.error('[RECOMMENDED_PATH] Error fetching completed paths:', completedError);
+          }
 
-            const topicsCountNum = await getTopicsCount(supabaseServiceClient, pathData.id);
-            const localized = await getLocalizedTitleDescription(
-              supabaseServiceClient,
-              pathData.id,
-              language,
-              pathData.title,
-              pathData.description
-            );
+          const completedPathIds = (completedPaths || []).map((p) => p.learning_path_id);
 
-            const path = buildLearningPathResponse(
-              pathData,
-              topicsCountNum,
-              !!existingProgress,
-              0,
-              localized.title,
-              localized.description
-            );
+          // Build questionnaire responses object for scoring
+          const responses: QuestionnaireResponses = {
+            faith_stage: personalization.faith_stage as QuestionnaireResponses['faith_stage'],
+            spiritual_goals: personalization.spiritual_goals || [],
+            time_availability: personalization.time_availability as QuestionnaireResponses['time_availability'],
+            learning_style: personalization.learning_style as QuestionnaireResponses['learning_style'],
+            life_stage_focus: personalization.life_stage_focus as QuestionnaireResponses['life_stage_focus'],
+            biggest_challenge: personalization.biggest_challenge as QuestionnaireResponses['biggest_challenge'],
+          };
 
-            return createRecommendedPathResponse(path, 'personalized');
+          // Calculate scores using scoring algorithm
+          const scoredPaths = calculatePathScores(
+            responses,
+            allPaths as ScoringLearningPath[],
+            completedPathIds
+          );
+
+          // Get top recommendation (first in sorted list)
+          if (scoredPaths.length > 0) {
+            const topPath = scoredPaths[0];
+            console.log(`[RECOMMENDED_PATH] Found personalized path via scoring: ${topPath.pathTitle} (score: ${topPath.score})`);
+
+            // Fetch full path data for response
+            const { data: pathData, error: pathError } = await supabaseServiceClient
+              .from('learning_paths')
+              .select('*')
+              .eq('id', topPath.pathId)
+              .single();
+
+            if (pathError || !pathData) {
+              console.error('[RECOMMENDED_PATH] Error fetching recommended path data:', pathError);
+            } else {
+              const topicsCountNum = await getTopicsCount(supabaseServiceClient, pathData.id);
+              const localized = await getLocalizedTitleDescription(
+                supabaseServiceClient,
+                pathData.id,
+                language,
+                pathData.title,
+                pathData.description
+              );
+
+              // Check if user is enrolled
+              const { data: existingProgress } = await supabaseServiceClient
+                .from('user_learning_path_progress')
+                .select('topics_completed')
+                .eq('user_id', userId)
+                .eq('learning_path_id', pathData.id)
+                .single();
+
+              const progressPercentage = existingProgress && topicsCountNum > 0
+                ? Math.round((existingProgress.topics_completed / topicsCountNum) * 100)
+                : 0;
+
+              const path = buildLearningPathResponse(
+                pathData,
+                topicsCountNum,
+                !!existingProgress,
+                progressPercentage,
+                localized.title,
+                localized.description
+              );
+
+              return createRecommendedPathResponse(path, 'personalized');
+            }
           }
         }
       }

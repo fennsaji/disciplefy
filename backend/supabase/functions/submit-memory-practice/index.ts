@@ -108,9 +108,14 @@ interface SubmitPracticeResponse extends ApiSuccessResponse<SubmitPracticeData> 
 
 /**
  * Implements the SM-2 spaced repetition algorithm
+ * Modified for Bible verse memorization with daily cementing period
  */
 function calculateSM2(input: SM2Input): SM2Result {
   const { quality, easeFactor, interval, repetitions } = input
+
+  // Constants
+  const MAX_INTERVAL_DAYS = 180 // 6 months maximum
+  const DAILY_REVIEW_PERIOD = 14 // First 14 successful reviews are daily
 
   if (quality < 0 || quality > 5) {
     throw new AppError('VALIDATION_ERROR', 'quality_rating must be between 0 and 5', 400)
@@ -131,12 +136,53 @@ function calculateSM2(input: SM2Input): SM2Result {
   } else {
     // Successful recall
     newRepetitions = repetitions + 1
-    if (newRepetitions === 1) {
+
+    // NEW ALGORITHM: Daily reviews for first 2 weeks, then adaptive spacing
+    if (newRepetitions <= DAILY_REVIEW_PERIOD) {
+      // First 14 successful reviews: Daily review (cementing the verse in memory)
       newInterval = 1
-    } else if (newRepetitions === 2) {
-      newInterval = 6
     } else {
-      newInterval = Math.ceil(interval * newEaseFactor)
+      // After 14 reviews, check if verse is mastered (quality 5 = perfect recall)
+      if (quality === 5) {
+        // Verse is MASTERED - use progressive spacing for efficient long-term retention
+        // Progression: 3, 7, 14, 21, 30, 45, 60, 90, 120, 150, 180 (cap)
+        const reviewsSinceMastery = newRepetitions - DAILY_REVIEW_PERIOD
+
+        if (reviewsSinceMastery === 1) {
+          newInterval = 3   // Day 15: Review in 3 days
+        } else if (reviewsSinceMastery === 2) {
+          newInterval = 7   // Day 16: Review in 1 week
+        } else if (reviewsSinceMastery === 3) {
+          newInterval = 14  // Day 17: Review in 2 weeks
+        } else if (reviewsSinceMastery === 4) {
+          newInterval = 21  // Day 18: Review in 3 weeks
+        } else if (reviewsSinceMastery === 5) {
+          newInterval = 30  // Day 19: Review in 1 month
+        } else if (reviewsSinceMastery === 6) {
+          newInterval = 45  // Day 20: Review in 1.5 months
+        } else if (reviewsSinceMastery === 7) {
+          newInterval = 60  // Day 21: Review in 2 months
+        } else if (reviewsSinceMastery === 8) {
+          newInterval = 90  // Day 22: Review in 3 months
+        } else if (reviewsSinceMastery === 9) {
+          newInterval = 120 // Day 23: Review in 4 months
+        } else if (reviewsSinceMastery === 10) {
+          newInterval = 150 // Day 24: Review in 5 months
+        } else {
+          // Day 25+: Review every 6 months (maximum interval)
+          newInterval = MAX_INTERVAL_DAYS
+        }
+      } else {
+        // Verse NOT mastered yet (quality 3-4) - increment by just 1 day
+        // This keeps practice frequent until user achieves perfect recall
+        // Progression: 1→2→3→4→5→6... (gradual increase)
+        newInterval = interval + 1
+      }
+    }
+
+    // Safety cap: Never exceed 6 months
+    if (newInterval > MAX_INTERVAL_DAYS) {
+      newInterval = MAX_INTERVAL_DAYS
     }
   }
 

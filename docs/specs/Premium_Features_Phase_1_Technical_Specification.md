@@ -855,23 +855,62 @@ Analytics.logEvent('preview_converted', parameters: {
 
 ### SRS Algorithm
 
-**SM-2 Algorithm (SuperMemo 2):**
+**Modified SM-2 Algorithm (Optimized for Bible Verse Memorization):**
 
 ```
+Review Schedule (Quality-Based):
+
+Quality Rating (0-5):
+- 0: Complete blackout
+- 1: Incorrect response, correct answer seemed familiar
+- 2: Incorrect response, correct answer remembered
+- 3: Correct response, but required significant effort
+- 4: Correct response, after some hesitation
+- 5: Perfect recall
+
 Interval Calculation:
-- Again (forgot): interval = 1 day, easeFactor -= 0.2
-- Hard (difficult): interval = currentInterval * 1.2, easeFactor -= 0.15
-- Good (correct): interval = currentInterval * easeFactor
-- Easy (trivial): interval = currentInterval * easeFactor * 1.3, easeFactor += 0.15
+- Quality < 3 (failed recall):
+  * Reset to daily review (interval = 1 day)
+  * Reset repetitions to 0
+  * Continue ease factor calculation
+
+- Quality >= 3 (successful recall):
+  * Increment repetitions count
+  * First 14 successful reviews: Daily review (interval = 1 day)
+  * After mastery (15+ reviews): Progressive spacing
+    - Review 15: 3 days
+    - Review 16: 7 days
+    - Review 17: 14 days
+    - Review 18: 21 days
+    - Review 19: 30 days
+    - Review 20: 45 days
+    - Review 21: 60 days
+    - Review 22: 90 days
+    - Review 23: 120 days
+    - Review 24: 150 days
+    - Review 25+: 180 days (maximum cap)
+
+Ease Factor Calculation:
+- Formula: EF' = EF + (0.1 - (5 - q) * (0.08 + (5 - q) * 0.02))
+- Updated on every review regardless of success/failure
+- Used for difficulty tracking and UI display
 
 Initial Values:
 - easeFactor = 2.5 (difficulty multiplier)
 - interval = 1 day (first review)
+- repetitions = 0
 
 Constraints:
 - easeFactor >= 1.3 (minimum)
-- easeFactor <= 3.0 (maximum)
 - interval >= 1 day
+- interval <= 180 days (6 months maximum)
+- All verses reviewed at least every 6 months
+
+Rationale:
+- Daily reviews for first 2 weeks cement new verses in memory
+- Gradual spacing after mastery prevents forgetting
+- 6-month maximum ensures long-term retention
+- Failed reviews reset to daily for re-learning
 ```
 
 ### Data Model
