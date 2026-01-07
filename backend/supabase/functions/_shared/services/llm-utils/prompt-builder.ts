@@ -112,32 +112,47 @@ TOPIC-SPECIFIC REQUIREMENTS:
   // Language-specific verse reference examples
   const verseReferenceExamples = getVerseReferenceExamples(params.language)
 
+  // Language-specific content length requirements
+  const contentLengthGuidance = (params.language === 'hi' || params.language === 'ml')
+    ? `\n\nCRITICAL CONTENT LENGTH REQUIREMENTS FOR ${languageConfig.name.toUpperCase()}:
+- "summary": MINIMUM 4-5 sentences (not 2-3) - Provide comprehensive overview
+- "interpretation": MINIMUM 5-6 paragraphs (not 4-5) - Each paragraph should be 4-6 sentences
+- "context": MINIMUM 2-3 paragraphs (not 1-2) - Each paragraph should be 3-5 sentences
+- "reflectionQuestions": MINIMUM 5-6 questions (not 4-6)
+- "prayerPoints": MINIMUM 6-8 sentences (not 5-7)
+- ALL content must be substantial and thorough in ${languageConfig.name}
+- DO NOT provide shorter content for ${languageConfig.name} than you would for English
+- Ensure rich, detailed explanations that match or exceed English content length`
+    : ''
+
   return `TASK: ${taskDescription}
 
-CRITICAL: ALL 14 FIELDS BELOW ARE MANDATORY - DO NOT SKIP ANY FIELD
+CRITICAL: ALL 14 FIELDS BELOW ARE MANDATORY - DO NOT SKIP ANY FIELD${contentLengthGuidance}
 
 REQUIRED JSON OUTPUT FORMAT (include ALL fields, no exceptions):
 {
-  "summary": "Brief overview (2-3 sentences) capturing the main message${inputType === 'question' ? ' and answering the question' : ''}",
-  "interpretation": "Theological interpretation (4-5 paragraphs) explaining meaning and key teachings${inputType === 'question' ? ' with direct answer to the question' : ''}",
-  "context": "Historical and cultural background (1-2 paragraphs) for understanding",
-  "relatedVerses": ["3-5 relevant Bible verses with references in ${languageConfig.name}"],
-  "reflectionQuestions": ["4-6 practical application questions"],
-  "prayerPoints": ["A complete, first-person prayer (5-7 sentences) addressing God directly that users can pray along with or personalize. Start with addressing God (e.g., 'Heavenly Father', 'Lord', 'Father God') and end with 'Amen' or 'In Jesus' name, Amen'"],
-  "summaryInsights": ["MANDATORY: 3-4 key resonance themes (10-15 words each)"],
-  "interpretationInsights": ["MANDATORY: 3-4 key theological insights (10-15 words each)"],
-  "reflectionAnswers": ["MANDATORY: 3-4 actionable life application responses (10-15 words each)"],
+  "summary": "Brief overview (${(params.language === 'hi' || params.language === 'ml') ? '4-5 sentences' : '2-3 sentences'}) capturing the main message${inputType === 'question' ? ' and answering the question' : ''}",
+  "interpretation": "Theological interpretation (${(params.language === 'hi' || params.language === 'ml') ? '5-6 paragraphs, each 4-6 sentences' : '4-5 paragraphs'}) explaining meaning and key teachings${inputType === 'question' ? ' with direct answer to the question' : ''}",
+  "context": "Historical and cultural background (${(params.language === 'hi' || params.language === 'ml') ? '2-3 paragraphs, each 3-5 sentences' : '1-2 paragraphs'}) for understanding",
+  "relatedVerses": ["${(params.language === 'hi' || params.language === 'ml') ? '4-6' : '3-5'} relevant Bible verses with references in ${languageConfig.name}"],
+  "reflectionQuestions": ["${(params.language === 'hi' || params.language === 'ml') ? '5-7' : '4-6'} practical application questions"],
+  "prayerPoints": ["A complete, first-person prayer (${(params.language === 'hi' || params.language === 'ml') ? '6-8 sentences' : '5-7 sentences'}) addressing God directly that users can pray along with or personalize. Start with addressing God (e.g., 'Heavenly Father', 'Lord', 'Father God') and end with 'Amen' or 'In Jesus' name, Amen'"],
+  "summaryInsights": ["MANDATORY: ${(params.language === 'hi' || params.language === 'ml') ? '4-5' : '3-4'} key resonance themes (${(params.language === 'hi' || params.language === 'ml') ? '12-18' : '10-15'} words each)"],
+  "interpretationInsights": ["MANDATORY: ${(params.language === 'hi' || params.language === 'ml') ? '4-5' : '3-4'} key theological insights (${(params.language === 'hi' || params.language === 'ml') ? '12-18' : '10-15'} words each)"],
+  "reflectionAnswers": ["MANDATORY: ${(params.language === 'hi' || params.language === 'ml') ? '4-5' : '3-4'} actionable life application responses (${(params.language === 'hi' || params.language === 'ml') ? '12-18' : '10-15'} words each)"],
   "contextQuestion": "Yes/no question connecting historical context to modern life",
-  "summaryQuestion": "Engaging question about what resonates from the summary (8-12 words)",
-  "relatedVersesQuestion": "Question prompting verse selection or memorization (8-12 words)",
-  "reflectionQuestion": "Question connecting theological insights to daily life (8-12 words)",
-  "prayerQuestion": "Question inviting personal prayer response (6-10 words)"
+  "summaryQuestion": "Engaging question about what resonates from the summary (${(params.language === 'hi' || params.language === 'ml') ? '10-15' : '8-12'} words)",
+  "relatedVersesQuestion": "Question prompting verse selection or memorization (${(params.language === 'hi' || params.language === 'ml') ? '10-15' : '8-12'} words)",
+  "reflectionQuestion": "Question connecting theological insights to daily life (${(params.language === 'hi' || params.language === 'ml') ? '10-15' : '8-12'} words)",
+  "prayerQuestion": "Question inviting personal prayer response (${(params.language === 'hi' || params.language === 'ml') ? '8-12' : '6-10'} words)"
 }
 
 REQUIREMENT VERIFICATION:
-✓ You MUST include summaryInsights array with 3-4 items
-✓ You MUST include reflectionAnswers array with 3-4 items
+✓ You MUST include summaryInsights array with ${(params.language === 'hi' || params.language === 'ml') ? '4-5' : '3-4'} items
+✓ You MUST include reflectionAnswers array with ${(params.language === 'hi' || params.language === 'ml') ? '4-5' : '3-4'} items
+✓ You MUST include interpretationInsights array with ${(params.language === 'hi' || params.language === 'ml') ? '4-5' : '3-4'} items
 ✓ Do NOT skip any of the 14 required fields above
+${(params.language === 'hi' || params.language === 'ml') ? '✓ ENSURE ALL CONTENT IS COMPREHENSIVE AND DETAILED - DO NOT GENERATE SHORT CONTENT' : ''}
 
 CRITICAL: PRAYER FORMAT REQUIREMENT
 - "prayerPoints" MUST contain a complete, first-person prayer (NOT bullet points)
@@ -145,7 +160,14 @@ CRITICAL: PRAYER FORMAT REQUIREMENT
 - End the prayer with "Amen" or "In Jesus' name, Amen"
 - Users will listen to, read, or personalize this prayer during their study
 - Example structure: [Address God] + [Prayer requests based on study content] + [Closing]
-- MUST be output in ${languageConfig.name} language${specificInstructions}
+- MUST be output in ${languageConfig.name} language
+
+CRITICAL: PRAYER CLOSING LANGUAGE REQUIREMENT
+- For English: End with "In Jesus' name, Amen" or "Amen"
+- For Hindi: End with "येशु मसीह के नाम से, आमेन" (in Devanagari script) - NOT romanized Hinglish
+- For Malayalam: End with "യേശുക്രിസ്തുവിന്റെ നാമത്തിൽ, ആമേൻ" (in Malayalam script) - NOT romanized Manglish
+- DO NOT use romanized text (Hinglish/Manglish) for non-English prayers
+- The ENTIRE prayer including the closing MUST be in native script${specificInstructions}
 
 CRITICAL: SUMMARY CARD INSIGHTS
 Generate 3-4 brief, relatable themes that readers might resonate with from the summary:
@@ -345,6 +367,13 @@ CRITICAL: PRAYER FORMAT (Quick Read)
 - Users will pray along with this prayer
 - MUST be output in ${languageConfig.name} language
 
+CRITICAL: PRAYER CLOSING LANGUAGE REQUIREMENT (Quick Read)
+- For English: End with "Amen"
+- For Hindi: End with "आमेन" (in Devanagari script) - NOT romanized Hinglish
+- For Malayalam: End with "ആമേൻ" (in Malayalam script) - NOT romanized Manglish
+- DO NOT use romanized text (Hinglish/Manglish) for non-English prayers
+- The ENTIRE prayer including the closing MUST be in native script
+
 CRITICAL: SUMMARY CARD INSIGHTS (Quick Read)
 Generate 2-3 brief themes readers might resonate with:
 - MUST be output in ${languageConfig.name} language
@@ -495,6 +524,13 @@ CRITICAL: PRAYER FORMAT (Deep Dive)
 - Address God directly and close with "In Jesus' name, Amen"
 - Users will pray along with or personalize this prayer
 - MUST be output in ${languageConfig.name} language
+
+CRITICAL: PRAYER CLOSING LANGUAGE REQUIREMENT (Deep Dive)
+- For English: End with "In Jesus' name, Amen"
+- For Hindi: End with "येशु मसीह के नाम से, आमेन" (in Devanagari script) - NOT romanized Hinglish
+- For Malayalam: End with "യേശുക്രിസ്തുവിന്റെ നാമത്തിൽ, ആമേൻ" (in Malayalam script) - NOT romanized Manglish
+- DO NOT use romanized text (Hinglish/Manglish) for non-English prayers
+- The ENTIRE prayer including the closing MUST be in native script
 
 CRITICAL: INTERPRETATION INSIGHTS & CONTEXT QUESTION (Deep Dive)
 - MUST be output in ${languageConfig.name} language
@@ -648,6 +684,13 @@ CRITICAL: PRAYER FORMAT (Lectio Divina)
 - Address God gently (e.g., "Father", "Loving God") and close with "Amen"
 - Use contemplative, receptive language that invites personal response
 - MUST be output in ${languageConfig.name} language
+
+CRITICAL: PRAYER CLOSING LANGUAGE REQUIREMENT (Lectio Divina)
+- For English: End with "Amen"
+- For Hindi: End with "आमेन" (in Devanagari script) - NOT romanized Hinglish
+- For Malayalam: End with "ആമേൻ" (in Malayalam script) - NOT romanized Manglish
+- DO NOT use romanized text (Hinglish/Manglish) for non-English prayers
+- The ENTIRE prayer including the closing MUST be in native script
 
 CRITICAL: INTERPRETATION INSIGHTS & CONTEXT QUESTION (Lectio Divina)
 - MUST be output in ${languageConfig.name} language
@@ -870,8 +913,9 @@ export function estimateContentComplexity(inputValue: string, inputType: string)
 export function calculateOptimalTokens(params: LLMGenerationParams, languageConfig: LanguageConfig): number {
   const baseTokens = languageConfig.maxTokens
   const complexityFactor = estimateContentComplexity(params.inputValue, params.inputType)
-  const languageBonus = (params.language === 'hi' || params.language === 'ml') ? 500 : 0
-  
+  // Increased language bonus from 500 to 1000 to ensure adequate content length for Hindi/Malayalam
+  const languageBonus = (params.language === 'hi' || params.language === 'ml') ? 1000 : 0
+
   return Math.min(baseTokens + complexityFactor + languageBonus, 8000)
 }
 

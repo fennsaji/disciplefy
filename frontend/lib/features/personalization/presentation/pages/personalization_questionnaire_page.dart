@@ -268,7 +268,7 @@ class _FaithStageQuestion extends StatelessWidget {
           const SizedBox(height: 24),
           for (final option in FaithStage.values)
             QuestionOptionCard(
-              label: option.label,
+              label: context.tr(_getFaithStageTranslationKey(option)),
               isSelected: selected == option,
               icon: _getIcon(option),
               onTap: () {
@@ -280,6 +280,17 @@ class _FaithStageQuestion extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  String _getFaithStageTranslationKey(FaithStage option) {
+    switch (option) {
+      case FaithStage.newBeliever:
+        return TranslationKeys.questionnaireFaithStageNewBeliever;
+      case FaithStage.growingBeliever:
+        return TranslationKeys.questionnaireFaithStageGrowingBeliever;
+      case FaithStage.committedDisciple:
+        return TranslationKeys.questionnaireFaithStageCommittedDisciple;
+    }
   }
 
   IconData _getIcon(FaithStage option) {
@@ -358,7 +369,7 @@ class _SpiritualGoalsQuestion extends StatelessWidget {
           const SizedBox(height: 16),
           for (final option in SpiritualGoal.values)
             MultiSelectOptionCard(
-              label: option.label,
+              label: context.tr(_getSpiritualGoalTranslationKey(option)),
               isSelected: selected.contains(option),
               icon: _getIcon(option),
               onTap: () {
@@ -370,6 +381,23 @@ class _SpiritualGoalsQuestion extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  String _getSpiritualGoalTranslationKey(SpiritualGoal option) {
+    switch (option) {
+      case SpiritualGoal.foundationalFaith:
+        return TranslationKeys.questionnaireSpiritualGoalsFoundationalFaith;
+      case SpiritualGoal.spiritualDepth:
+        return TranslationKeys.questionnaireSpiritualGoalsSpiritualDepth;
+      case SpiritualGoal.relationships:
+        return TranslationKeys.questionnaireSpiritualGoalsRelationships;
+      case SpiritualGoal.apologetics:
+        return TranslationKeys.questionnaireSpiritualGoalsApologetics;
+      case SpiritualGoal.service:
+        return TranslationKeys.questionnaireSpiritualGoalsService;
+      case SpiritualGoal.theology:
+        return TranslationKeys.questionnaireSpiritualGoalsTheology;
+    }
   }
 
   IconData _getIcon(SpiritualGoal option) {
@@ -424,7 +452,7 @@ class _TimeAvailabilityQuestion extends StatelessWidget {
           const SizedBox(height: 24),
           for (final option in TimeAvailability.values)
             QuestionOptionCard(
-              label: option.label,
+              label: context.tr(_getTimeAvailabilityTranslationKey(option)),
               isSelected: selected == option,
               icon: _getIcon(option),
               onTap: () {
@@ -436,6 +464,17 @@ class _TimeAvailabilityQuestion extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  String _getTimeAvailabilityTranslationKey(TimeAvailability option) {
+    switch (option) {
+      case TimeAvailability.fiveToTenMin:
+        return TranslationKeys.questionnaireTimeAvailability5To10Min;
+      case TimeAvailability.tenToTwentyMin:
+        return TranslationKeys.questionnaireTimeAvailability10To20Min;
+      case TimeAvailability.twentyPlusMin:
+        return TranslationKeys.questionnaireTimeAvailability20PlusMin;
+    }
   }
 
   IconData _getIcon(TimeAvailability option) {
@@ -484,7 +523,7 @@ class _LearningStyleQuestion extends StatelessWidget {
           const SizedBox(height: 24),
           for (final option in LearningStyle.values)
             QuestionOptionCard(
-              label: option.label,
+              label: context.tr(_getLearningStyleTranslationKey(option)),
               isSelected: selected == option,
               icon: _getIcon(option),
               onTap: () {
@@ -496,6 +535,19 @@ class _LearningStyleQuestion extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  String _getLearningStyleTranslationKey(LearningStyle option) {
+    switch (option) {
+      case LearningStyle.practicalApplication:
+        return TranslationKeys.questionnaireLearningStylePracticalApplication;
+      case LearningStyle.deepUnderstanding:
+        return TranslationKeys.questionnaireLearningStyleDeepUnderstanding;
+      case LearningStyle.reflectionMeditation:
+        return TranslationKeys.questionnaireLearningStyleReflectionMeditation;
+      case LearningStyle.balancedApproach:
+        return TranslationKeys.questionnaireLearningStyleBalancedApproach;
+    }
   }
 
   IconData _getIcon(LearningStyle option) {
@@ -546,7 +598,7 @@ class _LifeStageFocusQuestion extends StatelessWidget {
           const SizedBox(height: 24),
           for (final option in LifeStageFocus.values)
             QuestionOptionCard(
-              label: option.label,
+              label: context.tr(_getLifeStageFocusTranslationKey(option)),
               isSelected: selected == option,
               icon: _getIcon(option),
               onTap: () {
@@ -558,6 +610,19 @@ class _LifeStageFocusQuestion extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  String _getLifeStageFocusTranslationKey(LifeStageFocus option) {
+    switch (option) {
+      case LifeStageFocus.personalFoundation:
+        return TranslationKeys.questionnaireLifeStageFocusPersonalFoundation;
+      case LifeStageFocus.familyRelationships:
+        return TranslationKeys.questionnaireLifeStageFocusFamilyRelationships;
+      case LifeStageFocus.communityImpact:
+        return TranslationKeys.questionnaireLifeStageFocusCommunityImpact;
+      case LifeStageFocus.intellectualGrowth:
+        return TranslationKeys.questionnaireLifeStageFocusIntellectualGrowth;
+    }
   }
 
   IconData _getIcon(LifeStageFocus option) {
@@ -608,7 +673,7 @@ class _BiggestChallengeQuestion extends StatelessWidget {
           const SizedBox(height: 24),
           for (final option in BiggestChallenge.values)
             QuestionOptionCard(
-              label: option.label,
+              label: context.tr(_getBiggestChallengeTranslationKey(option)),
               isSelected: selected == option,
               icon: _getIcon(option),
               onTap: () {
@@ -620,6 +685,21 @@ class _BiggestChallengeQuestion extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  String _getBiggestChallengeTranslationKey(BiggestChallenge option) {
+    switch (option) {
+      case BiggestChallenge.startingBasics:
+        return TranslationKeys.questionnaireBiggestChallengeStartingBasics;
+      case BiggestChallenge.stayingConsistent:
+        return TranslationKeys.questionnaireBiggestChallengeStayingConsistent;
+      case BiggestChallenge.handlingDoubts:
+        return TranslationKeys.questionnaireBiggestChallengeHandlingDoubts;
+      case BiggestChallenge.sharingFaith:
+        return TranslationKeys.questionnaireBiggestChallengeSharingFaith;
+      case BiggestChallenge.growingStagnant:
+        return TranslationKeys.questionnaireBiggestChallengeGrowingStagnant;
+    }
   }
 
   IconData _getIcon(BiggestChallenge option) {

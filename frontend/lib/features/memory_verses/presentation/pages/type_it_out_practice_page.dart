@@ -17,6 +17,19 @@ import '../bloc/memory_verse_state.dart';
 import '../utils/quality_calculator.dart';
 import '../widgets/timer_badge.dart';
 
+/// Helper class to store word alignment results
+class _WordMatch {
+  final String expected;
+  final String userWord;
+  final bool isCorrect;
+
+  _WordMatch({
+    required this.expected,
+    required this.userWord,
+    required this.isCorrect,
+  });
+}
+
 /// Type It Out practice mode for memory verses.
 ///
 /// Users type the entire verse from memory. For Hindi/Malayalam,
@@ -180,6 +193,9 @@ class _TypeItOutPracticePageState extends State<TypeItOutPracticePage> {
   void _submitPractice() {
     if (currentVerse == null) return;
 
+    // Generate word-by-word comparison for results page
+    final wordComparisons = _generateWordComparisons();
+
     // Auto-calculate quality and confidence
     final quality = QualityCalculator.calculateQuality(
       accuracy: accuracy ?? 0.0,
@@ -204,9 +220,131 @@ class _TypeItOutPracticePageState extends State<TypeItOutPracticePage> {
       showedAnswer: showedAnswer,
       qualityRating: quality,
       confidenceRating: confidence,
+      blankComparisons: wordComparisons,
     );
 
     GoRouter.of(context).goToPracticeResults(params);
+  }
+
+  /// Generate word-by-word comparison for the results page
+  /// Uses sequence alignment to properly detect missing, extra, and wrong words
+  List<BlankComparison> _generateWordComparisons() {
+    final userInput = _textController.text.trim();
+    final expectedWords =
+        expectedText.split(RegExp(r'\s+')).where((w) => w.isNotEmpty).toList();
+    final userWords =
+        userInput.split(RegExp(r'\s+')).where((w) => w.isNotEmpty).toList();
+
+    final comparisons = <BlankComparison>[];
+
+    // Use dynamic programming to find the best alignment between expected and user words
+    final alignment = _alignWordSequences(expectedWords, userWords);
+
+    for (final match in alignment) {
+      comparisons.add(BlankComparison(
+        expected: match.expected,
+        userInput: match.userWord,
+        isCorrect: match.isCorrect,
+      ));
+    }
+
+    return comparisons;
+  }
+
+  /// Align two word sequences to find missing, extra, and matching words
+  List<_WordMatch> _alignWordSequences(
+      List<String> expected, List<String> user) {
+    final matches = <_WordMatch>[];
+    int userIndex = 0;
+
+    for (int expectedIndex = 0;
+        expectedIndex < expected.length;
+        expectedIndex++) {
+      final expectedWord = expected[expectedIndex];
+
+      if (userIndex >= user.length) {
+        // User ran out of words - mark remaining as missing
+        matches.add(_WordMatch(
+          expected: expectedWord,
+          userWord: '(missing)',
+          isCorrect: false,
+        ));
+        continue;
+      }
+
+      final userWord = user[userIndex];
+
+      // Check if current user word matches current expected word
+      if (_isWordCorrect(expectedWord, userWord)) {
+        matches.add(_WordMatch(
+          expected: expectedWord,
+          userWord: userWord,
+          isCorrect: true,
+        ));
+        userIndex++;
+      } else {
+        // Current word doesn't match - check if user skipped this word
+        // Look ahead: does the current user word match the NEXT expected word?
+        final isNextWordMatch = expectedIndex + 1 < expected.length &&
+            _isWordCorrect(expected[expectedIndex + 1], userWord);
+
+        if (isNextWordMatch) {
+          // User likely skipped the current expected word
+          matches.add(_WordMatch(
+            expected: expectedWord,
+            userWord: '(missing)',
+            isCorrect: false,
+          ));
+          // Don't increment userIndex - we'll match this user word with the next expected word
+        } else {
+          // User typed a wrong word (substitution)
+          matches.add(_WordMatch(
+            expected: expectedWord,
+            userWord: userWord,
+            isCorrect: false,
+          ));
+          userIndex++;
+        }
+      }
+    }
+
+    // Handle extra words typed by user beyond expected length
+    while (userIndex < user.length) {
+      matches.add(_WordMatch(
+        expected: '(extra)',
+        userWord: user[userIndex],
+        isCorrect: false,
+      ));
+      userIndex++;
+    }
+
+    return matches;
+  }
+
+  /// Check if a single word matches (with transliteration support)
+  bool _isWordCorrect(String expected, String user) {
+    if (user == '(missing)') return false;
+    if (expected.isEmpty) return false;
+
+    // Normalize both words for comparison
+    final normalizedExpected = expected.toLowerCase().trim();
+    final normalizedUser = user.toLowerCase().trim();
+
+    // Remove punctuation
+    final expectedClean = normalizedExpected.replaceAll(RegExp(r'[^\w\s]'), '');
+    final userClean = normalizedUser.replaceAll(RegExp(r'[^\w\s]'), '');
+
+    // Exact match
+    if (expectedClean == userClean) return true;
+
+    // For non-English, use fuzzy matching (85%+ similarity)
+    if (detectedLanguage != 'en') {
+      final wordAccuracy =
+          TransliterationService.calculateAccuracy(userClean, expectedClean);
+      return wordAccuracy >= 85.0;
+    }
+
+    return false;
   }
 
   @override
