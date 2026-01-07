@@ -105,7 +105,10 @@ class _ClozeReviewPageState extends State<ClozeReviewPage> {
   void _initializeWordEntries() {
     if (currentVerse == null) return;
 
-    final words = currentVerse!.verseText.split(' ');
+    // Include reference at the end of verse text for memorization
+    final fullText =
+        '${currentVerse!.verseText} ${currentVerse!.verseReference}';
+    final words = fullText.split(' ');
     final blankInterval = _getBlankInterval();
     wordEntries = [];
 

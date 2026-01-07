@@ -242,6 +242,9 @@ class _StudyGuideScreenV2ContentState
   // PDF export state
   bool _isExportingPdf = false;
 
+  // Reflection completion state
+  bool _isCompletingReflection = false;
+
   // Scroll position preservation during streaming-to-complete transition
   double? _savedScrollPosition;
   bool _isTransitioningFromStreaming = false;
@@ -1381,6 +1384,7 @@ class _StudyGuideScreenV2ContentState
       },
       onComplete: _handleReflectionComplete,
       onExit: () => _handleBackNavigation(),
+      isCompletingReflection: _isCompletingReflection,
     );
   }
 
@@ -1397,6 +1401,10 @@ class _StudyGuideScreenV2ContentState
       );
       return;
     }
+
+    setState(() {
+      _isCompletingReflection = true;
+    });
 
     try {
       final reflectionsRepository = sl<ReflectionsRepository>();
@@ -1415,17 +1423,24 @@ class _StudyGuideScreenV2ContentState
         print('   Study mode: ${widget.studyMode.displayName}');
       }
 
+      setState(() {
+        _isCompletingReflection = false;
+        _viewMode = StudyViewMode.read;
+      });
+
       _showSnackBar(
         'Reflection saved! Time spent: ${timeSpent ~/ 60} minutes',
         Colors.green,
         icon: Icons.check_circle,
       );
-
-      setState(() => _viewMode = StudyViewMode.read);
     } catch (e) {
       if (kDebugMode) {
         print('❌ [REFLECTION] Error saving reflection: $e');
       }
+
+      setState(() {
+        _isCompletingReflection = false;
+      });
 
       _showSnackBar(
         'Failed to save reflection. Please try again.',
