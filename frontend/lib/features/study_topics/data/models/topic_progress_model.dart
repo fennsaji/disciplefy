@@ -63,6 +63,7 @@ class InProgressTopicModel extends InProgressTopic {
     super.positionInPath,
     super.totalTopicsInPath,
     super.topicsCompletedInPath,
+    super.recommendedMode,
   });
 
   /// Creates an InProgressTopicModel from JSON data.
@@ -80,6 +81,7 @@ class InProgressTopicModel extends InProgressTopic {
       positionInPath: json['position_in_path'] as int?,
       totalTopicsInPath: json['total_topics_in_path'] as int?,
       topicsCompletedInPath: json['topics_completed_in_path'] as int?,
+      recommendedMode: json['recommended_mode'] as String?,
     );
   }
 
@@ -98,6 +100,7 @@ class InProgressTopicModel extends InProgressTopic {
       'position_in_path': positionInPath,
       'total_topics_in_path': totalTopicsInPath,
       'topics_completed_in_path': topicsCompletedInPath,
+      'recommended_mode': recommendedMode,
     };
   }
 
@@ -116,6 +119,7 @@ class InProgressTopicModel extends InProgressTopic {
       positionInPath: positionInPath,
       totalTopicsInPath: totalTopicsInPath,
       topicsCompletedInPath: topicsCompletedInPath,
+      recommendedMode: recommendedMode,
     );
   }
 }

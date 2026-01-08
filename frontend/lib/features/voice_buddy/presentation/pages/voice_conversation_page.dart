@@ -197,12 +197,19 @@ class _VoiceConversationViewState extends State<_VoiceConversationView> {
   }
 
   PreferredSizeWidget _buildAppBar() {
+    final theme = Theme.of(context);
+
     return AppBar(
       leading: IconButton(
         icon: const Icon(Icons.arrow_back),
         onPressed: _handleBackNavigation,
       ),
-      title: Text(context.tr('voice_buddy.title')),
+      title: Text(
+        context.tr('voice_buddy.title'),
+        style: theme.appBarTheme.titleTextStyle?.copyWith(
+          color: theme.colorScheme.onSurface,
+        ),
+      ),
       actions: [
         // Settings/preferences
         IconButton(

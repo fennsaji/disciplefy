@@ -170,9 +170,12 @@ class AppTheme {
         appBarTheme: const AppBarTheme(
           elevation: 0,
           centerTitle: true,
+          backgroundColor: surfaceColor, // White background
+          foregroundColor: textPrimary, // Dark text/icons for contrast
           titleTextStyle: TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.w600,
+            color: textPrimary, // Dark text for readability
           ),
         ),
       );
