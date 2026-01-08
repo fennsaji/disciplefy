@@ -268,10 +268,6 @@ class _VoicePreferencesPageState extends State<VoicePreferencesPage> {
               final isSelected =
                   language.code == _preferences.preferredLanguage;
               return ListTile(
-                leading: Text(
-                  language.flag,
-                  style: const TextStyle(fontSize: 24),
-                ),
                 title: Text(
                   language.isDefault
                       ? context.tr('voice_buddy.settings.default_language')

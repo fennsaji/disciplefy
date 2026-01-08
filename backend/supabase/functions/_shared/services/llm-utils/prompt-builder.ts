@@ -113,17 +113,15 @@ TOPIC-SPECIFIC REQUIREMENTS:
   const verseReferenceExamples = getVerseReferenceExamples(params.language)
 
   // Language-specific content length requirements
-  const contentLengthGuidance = (params.language === 'hi' || params.language === 'ml')
-    ? `\n\nCRITICAL CONTENT LENGTH REQUIREMENTS FOR ${languageConfig.name.toUpperCase()}:
-- "summary": MINIMUM 4-5 sentences (not 2-3) - Provide comprehensive overview
-- "interpretation": MINIMUM 5-6 paragraphs (not 4-5) - Each paragraph should be 4-6 sentences
-- "context": MINIMUM 2-3 paragraphs (not 1-2) - Each paragraph should be 3-5 sentences
-- "reflectionQuestions": MINIMUM 5-6 questions (not 4-6)
-- "prayerPoints": MINIMUM 6-8 sentences (not 5-7)
-- ALL content must be substantial and thorough in ${languageConfig.name}
-- DO NOT provide shorter content for ${languageConfig.name} than you would for English
-- Ensure rich, detailed explanations that match or exceed English content length`
-    : ''
+  const contentLengthGuidance = `\n\nCRITICAL CONTENT LENGTH REQUIREMENTS FOR ${languageConfig.name.toUpperCase()}:
+- "summary": MINIMUM 4-5 sentences - Provide comprehensive overview with clear thesis
+- "interpretation": MINIMUM 5-6 paragraphs - Each paragraph should be 4-6 sentences with theological depth
+- "context": MINIMUM 2-3 paragraphs - Each paragraph should be 3-5 sentences covering historical, cultural, and literary context
+- "reflectionQuestions": MINIMUM 5-6 questions - Include varied question types (application, reflection, doctrinal)
+- "prayerPoints": MINIMUM 6-8 sentences - Create a complete, substantial first-person prayer
+- ALL content must be rich, detailed, and theologically substantive
+- DO NOT generate brief or superficial content - provide comprehensive biblical teaching
+- Ensure thorough explanations that demonstrate scholarly depth and pastoral care`
 
   return `TASK: ${taskDescription}
 
@@ -131,28 +129,28 @@ CRITICAL: ALL 14 FIELDS BELOW ARE MANDATORY - DO NOT SKIP ANY FIELD${contentLeng
 
 REQUIRED JSON OUTPUT FORMAT (include ALL fields, no exceptions):
 {
-  "summary": "Brief overview (${(params.language === 'hi' || params.language === 'ml') ? '4-5 sentences' : '2-3 sentences'}) capturing the main message${inputType === 'question' ? ' and answering the question' : ''}",
-  "interpretation": "Theological interpretation (${(params.language === 'hi' || params.language === 'ml') ? '5-6 paragraphs, each 4-6 sentences' : '4-5 paragraphs'}) explaining meaning and key teachings${inputType === 'question' ? ' with direct answer to the question' : ''}",
-  "context": "Historical and cultural background (${(params.language === 'hi' || params.language === 'ml') ? '2-3 paragraphs, each 3-5 sentences' : '1-2 paragraphs'}) for understanding",
-  "relatedVerses": ["${(params.language === 'hi' || params.language === 'ml') ? '4-6' : '3-5'} relevant Bible verses with references in ${languageConfig.name}"],
-  "reflectionQuestions": ["${(params.language === 'hi' || params.language === 'ml') ? '5-7' : '4-6'} practical application questions"],
-  "prayerPoints": ["A complete, first-person prayer (${(params.language === 'hi' || params.language === 'ml') ? '6-8 sentences' : '5-7 sentences'}) addressing God directly that users can pray along with or personalize. Start with addressing God (e.g., 'Heavenly Father', 'Lord', 'Father God') and end with 'Amen' or 'In Jesus' name, Amen'"],
-  "summaryInsights": ["MANDATORY: ${(params.language === 'hi' || params.language === 'ml') ? '4-5' : '3-4'} key resonance themes (${(params.language === 'hi' || params.language === 'ml') ? '12-18' : '10-15'} words each)"],
-  "interpretationInsights": ["MANDATORY: ${(params.language === 'hi' || params.language === 'ml') ? '4-5' : '3-4'} key theological insights (${(params.language === 'hi' || params.language === 'ml') ? '12-18' : '10-15'} words each)"],
-  "reflectionAnswers": ["MANDATORY: ${(params.language === 'hi' || params.language === 'ml') ? '4-5' : '3-4'} actionable life application responses (${(params.language === 'hi' || params.language === 'ml') ? '12-18' : '10-15'} words each)"],
+  "summary": "Comprehensive overview (MINIMUM 4-5 sentences) capturing the main message with clear thesis${inputType === 'question' ? ' and answering the question' : ''}",
+  "interpretation": "Theological interpretation (MINIMUM 5-6 paragraphs, each 4-6 sentences) explaining meaning and key teachings with depth${inputType === 'question' ? ' with direct answer to the question' : ''}",
+  "context": "Historical and cultural background (MINIMUM 2-3 paragraphs, each 3-5 sentences) providing comprehensive understanding",
+  "relatedVerses": ["MINIMUM 4-6 relevant Bible verses with references in ${languageConfig.name}"],
+  "reflectionQuestions": ["MINIMUM 5-6 practical application questions covering different aspects of life"],
+  "prayerPoints": ["A complete, first-person prayer (MINIMUM 6-8 sentences) addressing God directly that users can pray along with or personalize. Start with addressing God (e.g., 'Heavenly Father', 'Lord', 'Father God') and end with 'Amen' or 'In Jesus' name, Amen'"],
+  "summaryInsights": ["MANDATORY: 4-5 key resonance themes (12-18 words each)"],
+  "interpretationInsights": ["MANDATORY: 4-5 key theological insights (12-18 words each)"],
+  "reflectionAnswers": ["MANDATORY: 4-5 actionable life application responses (12-18 words each)"],
   "contextQuestion": "Yes/no question connecting historical context to modern life",
-  "summaryQuestion": "Engaging question about what resonates from the summary (${(params.language === 'hi' || params.language === 'ml') ? '10-15' : '8-12'} words)",
-  "relatedVersesQuestion": "Question prompting verse selection or memorization (${(params.language === 'hi' || params.language === 'ml') ? '10-15' : '8-12'} words)",
-  "reflectionQuestion": "Question connecting theological insights to daily life (${(params.language === 'hi' || params.language === 'ml') ? '10-15' : '8-12'} words)",
-  "prayerQuestion": "Question inviting personal prayer response (${(params.language === 'hi' || params.language === 'ml') ? '8-12' : '6-10'} words)"
+  "summaryQuestion": "Engaging question about what resonates from the summary (10-15 words)",
+  "relatedVersesQuestion": "Question prompting verse selection or memorization (10-15 words)",
+  "reflectionQuestion": "Question connecting theological insights to daily life (10-15 words)",
+  "prayerQuestion": "Question inviting personal prayer response (8-12 words)"
 }
 
 REQUIREMENT VERIFICATION:
-✓ You MUST include summaryInsights array with ${(params.language === 'hi' || params.language === 'ml') ? '4-5' : '3-4'} items
-✓ You MUST include reflectionAnswers array with ${(params.language === 'hi' || params.language === 'ml') ? '4-5' : '3-4'} items
-✓ You MUST include interpretationInsights array with ${(params.language === 'hi' || params.language === 'ml') ? '4-5' : '3-4'} items
+✓ You MUST include summaryInsights array with 4-5 items
+✓ You MUST include reflectionAnswers array with 4-5 items
+✓ You MUST include interpretationInsights array with 4-5 items
 ✓ Do NOT skip any of the 14 required fields above
-${(params.language === 'hi' || params.language === 'ml') ? '✓ ENSURE ALL CONTENT IS COMPREHENSIVE AND DETAILED - DO NOT GENERATE SHORT CONTENT' : ''}
+✓ ENSURE ALL CONTENT IS COMPREHENSIVE, DETAILED, AND THEOLOGICALLY SUBSTANTIVE - DO NOT GENERATE BRIEF OR SUPERFICIAL CONTENT
 
 CRITICAL: PRAYER FORMAT REQUIREMENT
 - "prayerPoints" MUST contain a complete, first-person prayer (NOT bullet points)
@@ -1295,10 +1293,10 @@ export function estimateContentComplexity(inputValue: string, inputType: string)
 export function calculateOptimalTokens(params: LLMGenerationParams, languageConfig: LanguageConfig): number {
   const baseTokens = languageConfig.maxTokens
   const complexityFactor = estimateContentComplexity(params.inputValue, params.inputType)
-  // Increased language bonus from 500 to 1000 to ensure adequate content length for Hindi/Malayalam
-  const languageBonus = (params.language === 'hi' || params.language === 'ml') ? 1000 : 0
+  // Universal content length bonus for all languages to ensure comprehensive output
+  const contentQualityBonus = 1000
 
-  return Math.min(baseTokens + complexityFactor + languageBonus, 8000)
+  return Math.min(baseTokens + complexityFactor + contentQualityBonus, 8000)
 }
 
 /**

@@ -121,6 +121,9 @@ class InProgressTopic extends Equatable {
   /// Number of topics completed in the learning path
   final int? topicsCompletedInPath;
 
+  /// Recommended study mode for this topic's learning path
+  final String? recommendedMode;
+
   /// Whether this topic is from a learning path
   bool get isFromLearningPath =>
       learningPathId != null && learningPathId!.isNotEmpty;
@@ -163,6 +166,7 @@ class InProgressTopic extends Equatable {
     this.positionInPath,
     this.totalTopicsInPath,
     this.topicsCompletedInPath,
+    this.recommendedMode,
   });
 
   @override
@@ -179,6 +183,7 @@ class InProgressTopic extends Equatable {
         positionInPath,
         totalTopicsInPath,
         topicsCompletedInPath,
+        recommendedMode,
       ];
 
   @override

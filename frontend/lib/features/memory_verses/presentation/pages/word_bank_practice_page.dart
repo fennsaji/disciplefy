@@ -357,8 +357,9 @@ class _WordBankPracticePageState extends State<WordBankPracticePage> {
   double _calculateAccuracy() {
     if (showedAnswer) return 0.0;
 
-    // Count only manually placed correct words (exclude hint-filled slots)
-    int manuallyCorrect = 0;
+    // Improved accuracy calculation with partial credit for misplaced words
+    // This is more fair than all-or-nothing scoring
+    double totalScore = 0.0;
     int manuallyPlaced = 0;
 
     for (int i = 0; i < correctWords.length; i++) {
@@ -366,15 +367,23 @@ class _WordBankPracticePageState extends State<WordBankPracticePage> {
       if (hintFilledSlots.contains(i)) continue;
 
       manuallyPlaced++;
-      if (placedWords[i] == correctWords[i]) {
-        manuallyCorrect++;
+      final placedWord = placedWords[i];
+      final correctWord = correctWords[i];
+
+      if (placedWord == correctWord) {
+        // Correct position: full credit (100%)
+        totalScore += 1.0;
+      } else if (placedWord != null && correctWords.contains(placedWord)) {
+        // Wrong position but word exists in verse: partial credit (50%)
+        totalScore += 0.5;
       }
+      // Missing or completely wrong word: no credit (0%)
     }
 
     // If all words were placed by hints, accuracy is 0%
     if (manuallyPlaced == 0) return 0.0;
 
-    return (manuallyCorrect / manuallyPlaced) * 100;
+    return (totalScore / manuallyPlaced) * 100;
   }
 
   @override

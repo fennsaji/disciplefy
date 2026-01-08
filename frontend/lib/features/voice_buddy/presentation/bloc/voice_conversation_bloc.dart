@@ -384,6 +384,12 @@ class VoiceConversationBloc
               // as SendTextMessage checks for empty/duplicate
               print(
                   '🎙️ [VOICE] FinalResult in continuous mode - sending message');
+
+              // IMPORTANT: Clear transcription BEFORE sending to prevent duplicate
+              // from _onSpeechStatusChanged when mic button is clicked again
+              _currentTranscription = '';
+              _currentConfidence = 0.0;
+
               add(SendTextMessage(text));
             } else {
               // In normal mode, stop listening and send
@@ -1238,7 +1244,16 @@ class VoiceConversationBloc
           state.status != VoiceConversationStatus.streaming) {
         print(
             '🎙️ [VOICE] Speech stopped with pending text - sending: $_currentTranscription');
-        add(SendTextMessage(_currentTranscription));
+
+        // Clear transcription before sending to prevent any future duplicates
+        final textToSend = _currentTranscription;
+        _currentTranscription = '';
+        _currentConfidence = 0.0;
+
+        add(SendTextMessage(textToSend));
+      } else if (_currentTranscription.isEmpty) {
+        print(
+            '🎙️ [VOICE] Speech stopped but no pending text (already sent or empty)');
       }
 
       // Stop VAD service

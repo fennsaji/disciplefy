@@ -337,12 +337,24 @@ class _ModeSelectionSheetState extends State<ModeSelectionSheet> {
                         ),
 
                       // Remember choice checkbox (dynamic text based on selection)
-                      if (widget.showRememberOption &&
-                          !widget.isFromLearningPath)
+                      if (widget.showRememberOption)
                         GestureDetector(
                           onTap: () {
                             setState(() {
-                              _rememberChoice = !_rememberChoice;
+                              if (widget.isFromLearningPath &&
+                                  widget.recommendedMode != null) {
+                                // For learning paths, toggle alwaysUseRecommended when on recommended mode
+                                if (_selectedMode == widget.recommendedMode) {
+                                  _alwaysUseRecommended =
+                                      !_alwaysUseRecommended;
+                                } else {
+                                  // If not on recommended mode, toggle rememberChoice
+                                  _rememberChoice = !_rememberChoice;
+                                }
+                              } else {
+                                // For non-learning path, always toggle rememberChoice
+                                _rememberChoice = !_rememberChoice;
+                              }
                             });
                           },
                           behavior: HitTestBehavior.opaque,
@@ -362,7 +374,11 @@ class _ModeSelectionSheetState extends State<ModeSelectionSheet> {
                                       height: 22,
                                       decoration: BoxDecoration(
                                         // Use gold color if selected mode is recommended
-                                        color: _rememberChoice
+                                        color: (widget.isFromLearningPath &&
+                                                    _selectedMode ==
+                                                        widget.recommendedMode
+                                                ? _alwaysUseRecommended
+                                                : _rememberChoice)
                                             ? (_selectedMode ==
                                                     widget.recommendedMode
                                                 ? const Color(
@@ -371,7 +387,11 @@ class _ModeSelectionSheetState extends State<ModeSelectionSheet> {
                                             : Colors.transparent,
                                         borderRadius: BorderRadius.circular(6),
                                         border: Border.all(
-                                          color: _rememberChoice
+                                          color: (widget.isFromLearningPath &&
+                                                      _selectedMode ==
+                                                          widget.recommendedMode
+                                                  ? _alwaysUseRecommended
+                                                  : _rememberChoice)
                                               ? (_selectedMode ==
                                                       widget.recommendedMode
                                                   ? const Color(0xFFF59E0B)
@@ -383,7 +403,11 @@ class _ModeSelectionSheetState extends State<ModeSelectionSheet> {
                                           width: 2,
                                         ),
                                       ),
-                                      child: _rememberChoice
+                                      child: (widget.isFromLearningPath &&
+                                                  _selectedMode ==
+                                                      widget.recommendedMode
+                                              ? _alwaysUseRecommended
+                                              : _rememberChoice)
                                           ? Icon(
                                               _selectedMode ==
                                                       widget.recommendedMode
