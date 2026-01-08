@@ -67,6 +67,11 @@ class MarkdownWithScripture extends StatelessWidget {
   MarkdownStyleSheet _buildStyleSheet(BuildContext context) {
     final theme = Theme.of(context);
     final baseStyle = textStyle ?? theme.textTheme.bodyLarge;
+    final linkColor = Color.lerp(
+      theme.colorScheme.primary,
+      Colors.white,
+      0.3, // tweak 0.25–0.4
+    )!;
 
     return MarkdownStyleSheet(
       p: baseStyle?.copyWith(
@@ -119,9 +124,9 @@ class MarkdownWithScripture extends StatelessWidget {
       ),
       // Style for scripture reference links
       a: baseStyle?.copyWith(
-        color: theme.colorScheme.primary,
+        color: linkColor,
         decoration: TextDecoration.underline,
-        decorationColor: theme.colorScheme.primary,
+        decorationColor: linkColor,
       ),
     );
   }
