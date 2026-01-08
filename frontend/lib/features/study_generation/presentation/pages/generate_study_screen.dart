@@ -31,6 +31,7 @@ import '../../../tokens/presentation/bloc/token_state.dart';
 import '../../../tokens/domain/entities/token_status.dart';
 import '../../../../core/router/app_router.dart';
 import '../../../subscription/presentation/widgets/upgrade_required_dialog.dart';
+import '../../data/repositories/token_cost_repository.dart';
 
 /// Generate Study Screen allowing users to input scripture reference or topic.
 ///
@@ -75,6 +76,16 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
   // Navigation service
   late final StudyNavigator _navigator;
 
+  // Token cost repository for fetching costs from backend
+  late final TokenCostRepository _tokenCostRepository;
+
+  // Track the saved study mode preference to show token costs
+  String?
+      _savedStudyModePreference; // null, 'ask_every_time', 'recommended', or specific mode
+
+  // Store the computed token cost for display (null = hide badge)
+  int? _displayTokenCost;
+
   // Suggestions are now loaded from translations to support multiple languages
   // See _getFilteredSuggestions() method for implementation
 
@@ -83,8 +94,10 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
     super.initState();
     _languagePreferenceService = GetIt.instance<LanguagePreferenceService>();
     _navigator = GetIt.instance<StudyNavigator>();
+    _tokenCostRepository = GetIt.instance<TokenCostRepository>();
     _inputController.addListener(_validateInput);
     _loadDefaultLanguage();
+    _loadSavedStudyModePreference();
 
     // Register app lifecycle observer to detect when returning from study guide
     WidgetsBinding.instance.addObserver(this);
@@ -115,6 +128,9 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
           }
           context.read<TokenBloc>().add(const GetTokenStatus());
         }
+
+        // Update token cost display after preferences are loaded
+        _updateTokenCostDisplay();
       }
     });
   }
@@ -143,6 +159,27 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
     } catch (e) {
       if (kDebugMode) {
         print('❌ [GENERATE STUDY] Error loading default language: $e');
+      }
+    }
+  }
+
+  /// Load the saved study mode preference to show appropriate token costs
+  Future<void> _loadSavedStudyModePreference() async {
+    try {
+      final savedMode =
+          await _languagePreferenceService.getStudyModePreferenceRaw();
+      if (mounted) {
+        setState(() {
+          _savedStudyModePreference = savedMode;
+        });
+        if (kDebugMode) {
+          print(
+              '✅ [GENERATE STUDY] Loaded saved study mode preference: $savedMode');
+        }
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('❌ [GENERATE STUDY] Error loading study mode preference: $e');
       }
     }
   }
@@ -279,14 +316,74 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
     return scripturePattern.hasMatch(text);
   }
 
-  /// Calculate tokens required for study generation based on language
-  int _getTokenCost() {
-    switch (_selectedLanguage) {
-      case StudyLanguage.english:
-        return 10; // English: 10 tokens
-      case StudyLanguage.hindi:
-      case StudyLanguage.malayalam:
-        return 20; // Hindi/Malayalam: 20 tokens
+  /// Get token cost based on saved study mode preference
+  /// Returns tuple: (tokenCost or null if hidden, always null for modeName)
+  Future<(int?, String?)> _getTokenCostForDisplay() async {
+    if (kDebugMode) {
+      print(
+          '🔍 [TOKEN_COST] _savedStudyModePreference: $_savedStudyModePreference');
+    }
+
+    // CRITICAL: If no preference or "ask every time", HIDE token cost badge
+    if (_savedStudyModePreference == null ||
+        _savedStudyModePreference == 'ask_every_time') {
+      if (kDebugMode) {
+        print('🔍 [TOKEN_COST] No default mode → hiding token badge');
+      }
+      return (null, null); // Hide badge entirely
+    }
+
+    String modeForCost;
+
+    // If "recommended", determine recommended mode based on input type
+    if (_savedStudyModePreference == 'recommended') {
+      final recommendedMode = _selectedMode == StudyInputMode.scripture
+          ? StudyMode.deep
+          : StudyMode.standard;
+      modeForCost = recommendedMode.value;
+    } else {
+      // Use the specific saved mode
+      modeForCost = _savedStudyModePreference!;
+    }
+
+    // Fetch token cost from backend repository
+    try {
+      final result = await _tokenCostRepository.getTokenCost(
+        _selectedLanguage.code,
+        modeForCost,
+      );
+
+      return result.fold(
+        (failure) {
+          if (kDebugMode) {
+            print('❌ [TOKEN_COST] Failed to fetch cost: ${failure.message}');
+          }
+          // Fallback already handled by repository
+          return (null, null); // Hide on error
+        },
+        (cost) {
+          if (kDebugMode) {
+            print('✅ [TOKEN_COST] Fetched cost: $cost for $modeForCost');
+          }
+          // NEVER return mode name - user doesn't want it
+          return (cost, null);
+        },
+      );
+    } catch (e) {
+      if (kDebugMode) {
+        print('❌ [TOKEN_COST] Error: $e');
+      }
+      return (null, null);
+    }
+  }
+
+  /// Update the displayed token cost (called when language or mode preference changes)
+  Future<void> _updateTokenCostDisplay() async {
+    final (cost, _) = await _getTokenCostForDisplay();
+    if (mounted) {
+      setState(() {
+        _displayTokenCost = cost;
+      });
     }
   }
 
@@ -1474,8 +1571,14 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
     final isLoading =
         state is StudyGenerationInProgress || _isGeneratingStudyGuide;
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final tokenCost = _getTokenCost();
+    final tokenCost =
+        _displayTokenCost; // Use state variable (null = hide badge)
     final isEnabled = _isInputValid && !isLoading;
+
+    if (kDebugMode) {
+      print(
+          '🔍 [GENERATE_BUTTON] tokenCost: $tokenCost, isEnabled: $isEnabled, isLoading: $isLoading');
+    }
 
     return Column(
       children: [
@@ -1604,7 +1707,8 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
                               textAlign: TextAlign.center,
                             ),
                           ),
-                          if (!isLoading) ...[
+                          // Only show token badge if cost is available AND not loading
+                          if (!isLoading && tokenCost != null) ...[
                             const SizedBox(width: 12),
                             Container(
                               padding: const EdgeInsets.symmetric(
@@ -1633,7 +1737,7 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
                                   ),
                                   const SizedBox(width: 4),
                                   Text(
-                                    '$tokenCost',
+                                    '$tokenCost', // Just the number, no mode name
                                     style: AppFonts.inter(
                                       fontSize: 13,
                                       fontWeight: FontWeight.w600,
@@ -1709,6 +1813,9 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
     setState(() {
       _selectedLanguage = language;
     });
+
+    // Update token cost display for new language
+    _updateTokenCostDisplay();
 
     if (kDebugMode) {
       print(
@@ -1891,6 +1998,11 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
         } else {
           // Clear preference - save null
           await _languagePreferenceService.clearStudyModePreference();
+        }
+
+        // Reload preference to update button token cost display
+        if (mounted) {
+          await _loadSavedStudyModePreference();
         }
 
         // Show confirmation
@@ -2077,6 +2189,13 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
           } else {
             // Clear preference - save null
             await _languagePreferenceService.clearStudyModePreference();
+          }
+
+          // Reload preference to update button token cost display
+          if (mounted) {
+            await _loadSavedStudyModePreference();
+            // Update token cost display for new mode preference
+            await _updateTokenCostDisplay();
           }
 
           // Close sheet after save completes
@@ -2302,7 +2421,7 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
       _navigateToStudyGuide(recommendedMode, false, true);
     } else if (savedModeString != null) {
       // User has specific saved preference - use it directly
-      final savedMode = StudyModeExtension.fromString(savedModeString);
+      final savedMode = studyModeFromString(savedModeString);
       if (kDebugMode) {
         print(
             '✅ [GENERATE_STUDY] Using saved study mode: ${savedMode.displayName}');
@@ -2317,6 +2436,7 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
 
       final result = await ModeSelectionSheet.show(
         context: context,
+        languageCode: _selectedLanguage.code,
         inputType: inputType,
       );
       if (result != null && mounted) {
@@ -2352,18 +2472,9 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
             : 'question';
     final languageCode = _selectedLanguage.code;
 
-    // Consume tokens immediately for UI feedback
-    if (_currentTokenStatus != null && !_currentTokenStatus!.isPremium) {
-      context.read<TokenBloc>().add(
-            ConsumeTokens(
-              tokensConsumed: _getTokenCost(),
-              operationType: 'study_generation',
-            ),
-          );
-    } else if (_currentTokenStatus == null) {
-      // If token status is null, trigger a refresh to get current status
-      context.read<TokenBloc>().add(const GetTokenStatus());
-    }
+    // Backend will handle actual token consumption
+    // UI feedback token consumption removed - backend API is single source of truth
+    // Token status will be refreshed after backend processes the request
 
     // Save user's mode preference if they chose to remember
     if (rememberChoice) {

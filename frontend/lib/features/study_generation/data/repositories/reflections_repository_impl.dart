@@ -91,7 +91,7 @@ class ReflectionsRepositoryImpl implements ReflectionsRepository {
     // Convert string mode keys to StudyMode enum
     final reflectionsByMode = <StudyMode, int>{};
     for (final entry in statsModel.reflectionsByMode.entries) {
-      final mode = StudyModeExtension.fromString(entry.key);
+      final mode = studyModeFromString(entry.key);
       reflectionsByMode[mode] = entry.value;
     }
 

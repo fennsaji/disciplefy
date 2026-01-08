@@ -227,6 +227,8 @@ class StudyGuideTTSService {
         return _getDeepModeTitles(language);
       case StudyMode.lectio:
         return _getLectioDivinaTitles(language);
+      case StudyMode.sermon:
+        return _getSermonModeTitles(language);
       case StudyMode.standard:
         return _getStandardModeTitles(language);
     }
@@ -378,6 +380,43 @@ class StudyGuideTTSService {
           StudyGuideSection.relatedVerses: 'Focus Words for Meditation',
           StudyGuideSection.discussionQuestions: 'Oratio - Prayer Reflection',
           StudyGuideSection.prayerPoints: 'Contemplatio - Rest in Silence',
+        };
+    }
+  }
+
+  /// Get Sermon Outline mode section titles (50-60 minute sermon).
+  Map<StudyGuideSection, String> _getSermonModeTitles(String language) {
+    switch (language.toLowerCase()) {
+      case 'hi':
+      case 'hindi':
+        return {
+          StudyGuideSection.summary: 'उपदेश थीसिस',
+          StudyGuideSection.interpretation: 'उपदेश मुख्य भाग',
+          StudyGuideSection.context: 'पृष्ठभूमि और संदर्भ',
+          StudyGuideSection.relatedVerses: 'समर्थन आयतें',
+          StudyGuideSection.discussionQuestions: 'चर्चा प्रश्न',
+          StudyGuideSection.prayerPoints: 'वेदी बुलावा / निमंत्रण',
+        };
+      case 'ml':
+      case 'malayalam':
+        return {
+          StudyGuideSection.summary: 'പ്രഭാഷണ തീസിസ്',
+          StudyGuideSection.interpretation: 'പ്രഭാഷണ മുഖ്യഭാഗം',
+          StudyGuideSection.context: 'പശ്ചാത്തലവും സന്ദർഭവും',
+          StudyGuideSection.relatedVerses: 'പിന്തുണ വാക്യങ്ങൾ',
+          StudyGuideSection.discussionQuestions: 'ചർച്ചാ ചോദ്യങ്ങൾ',
+          StudyGuideSection.prayerPoints: 'യാഗപീഠ ആഹ്വാനം / ക്ഷണം',
+        };
+      case 'en':
+      case 'english':
+      default:
+        return {
+          StudyGuideSection.summary: 'Sermon Thesis',
+          StudyGuideSection.interpretation: 'Sermon Body',
+          StudyGuideSection.context: 'Background & Context',
+          StudyGuideSection.relatedVerses: 'Supporting Verses',
+          StudyGuideSection.discussionQuestions: 'Discussion Questions',
+          StudyGuideSection.prayerPoints: 'Altar Call / Invitation',
         };
     }
   }

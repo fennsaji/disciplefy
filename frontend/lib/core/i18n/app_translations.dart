@@ -1661,6 +1661,11 @@ class AppTranslations {
         'description': 'Meditative reading with silence',
         'duration_label': '15-Minute Lectio',
       },
+      'sermon': {
+        'name': 'Sermon Outline',
+        'description': 'Full sermon with timing + illustrations (2x tokens)',
+        'duration_label': 'Sermon Outline • 50-60 min',
+      },
     },
     'study_mode_preference': {
       'title': 'Study Mode Preference',
@@ -1690,6 +1695,15 @@ class AppTranslations {
       'closing_blessing': 'Closing Blessing',
       'closing_blessing_emoji': '🌟 Closing Blessing',
       'duration_label': 'Lectio Divina • 15 Minutes',
+    },
+    'sermon': {
+      'thesis': 'Sermon Thesis',
+      'body': 'Sermon Body',
+      'context': 'Background & Context',
+      'supporting_verses': 'Supporting Verses',
+      'discussion_questions': 'Discussion Questions',
+      'altar_call': 'Altar Call / Invitation',
+      'duration_badge': 'Sermon Outline • 50-60 min',
     },
     'reflection_journal': {
       'title': 'Reflection Journal',
@@ -3427,6 +3441,11 @@ class AppTranslations {
         'description': 'चुपचाप ध्यान से पढ़ना',
         'duration_label': '15 मिनट की ध्यान पढ़ाई',
       },
+      'sermon': {
+        'name': 'उपदेश रूपरेखा',
+        'description': 'समय और उदाहरणों के साथ पूर्ण उपदेश (2x टोकन)',
+        'duration_label': 'उपदेश रूपरेखा • 50-60 मिनट',
+      },
     },
     'study_mode_preference': {
       'title': 'पढ़ाई मोड पसंद',
@@ -3455,6 +3474,15 @@ class AppTranslations {
       'closing_blessing': 'समापन आशीर्वाद',
       'closing_blessing_emoji': '🌟 समापन आशीर्वाद',
       'duration_label': 'लेक्टियो डिविना • 15 मिनट',
+    },
+    'sermon': {
+      'thesis': 'उपदेश थीसिस',
+      'body': 'उपदेश मुख्य भाग',
+      'context': 'पृष्ठभूमि और संदर्भ',
+      'supporting_verses': 'समर्थन आयतें',
+      'discussion_questions': 'चर्चा प्रश्न',
+      'altar_call': 'वेदी बुलावा / निमंत्रण',
+      'duration_badge': 'उपदेश रूपरेखा • 50-60 मिनट',
     },
     'reflection_journal': {
       'title': 'सोच की डायरी',
@@ -5273,6 +5301,11 @@ class AppTranslations {
         'description': 'മൌനത്തോടെ ധ്യാനപൂർവം വായന',
         'duration_label': '15 മിനിറ്റ് ധ്യാന വായന',
       },
+      'sermon': {
+        'name': 'പ്രഭാഷണ രൂപരേഖ',
+        'description': 'സമയവും ഉദാഹരണങ്ങളും ഉള്ള പൂർണ്ണ പ്രഭാഷണം (2x ടോക്കൺ)',
+        'duration_label': 'പ്രഭാഷണ രൂപരേഖ • 50-60 മിനിറ്റ്',
+      },
     },
     'study_mode_preference': {
       'title': 'പഠന രീതി മുൻഗണന',
@@ -5302,6 +5335,15 @@ class AppTranslations {
       'closing_blessing': 'സമാപന അനുഗ്രഹം',
       'closing_blessing_emoji': '🌟 സമാപന അനുഗ്രഹം',
       'duration_label': 'ലെക്‌ഷ്യോ ഡിവൈന • 15 മിനിറ്റ്',
+    },
+    'sermon': {
+      'thesis': 'പ്രഭാഷണ തീസിസ്',
+      'body': 'പ്രഭാഷണ മുഖ്യഭാഗം',
+      'context': 'പശ്ചാത്തലവും സന്ദർഭവും',
+      'supporting_verses': 'പിന്തുണ വാക്യങ്ങൾ',
+      'discussion_questions': 'ചർച്ചാ ചോദ്യങ്ങൾ',
+      'altar_call': 'യാഗപീഠ ആഹ്വാനം / ക്ഷണം',
+      'duration_badge': 'പ്രഭാഷണ രൂപരേഖ • 50-60 മിനിറ്റ്',
     },
     'reflection_journal': {
       'title': 'ചിന്തന ഡയറി',

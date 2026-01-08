@@ -94,15 +94,14 @@ class _LearningPathDetailPageState extends State<LearningPathDetailPage> {
     // Determine mode based on preference
     if (learningPathModePreference == 'recommended') {
       // Use path's recommended mode
-      selectedMode =
-          StudyModeExtension.fromString(path.recommendedMode ?? 'standard');
+      selectedMode = studyModeFromString(path.recommendedMode ?? 'standard');
       debugPrint(
           '[LEARNING_PATH_DETAIL] Using recommended mode: ${selectedMode.name}');
       await _navigateToTopicWithMode(topic, path, selectedMode, false);
     } else if (learningPathModePreference != null &&
         learningPathModePreference != 'ask') {
       // Use specific mode from settings (quick, standard, deep, lectio)
-      selectedMode = StudyModeExtension.fromString(learningPathModePreference);
+      selectedMode = studyModeFromString(learningPathModePreference);
       debugPrint(
           '[LEARNING_PATH_DETAIL] Using specific mode from settings: ${selectedMode.name}');
       await _navigateToTopicWithMode(topic, path, selectedMode, false);
@@ -112,10 +111,15 @@ class _LearningPathDetailPageState extends State<LearningPathDetailPage> {
           '[LEARNING_PATH_DETAIL] Showing mode selection sheet with recommended mode');
 
       final recommendedMode =
-          StudyModeExtension.fromString(path.recommendedMode ?? 'standard');
+          studyModeFromString(path.recommendedMode ?? 'standard');
+
+      // Get current language preference for token cost calculation
+      final selectedLanguage =
+          await sl<LanguagePreferenceService>().getSelectedLanguage();
 
       final result = await ModeSelectionSheet.show(
         context: context,
+        languageCode: selectedLanguage.code,
         recommendedMode: recommendedMode,
         isFromLearningPath: true,
         learningPathTitle: path.title,

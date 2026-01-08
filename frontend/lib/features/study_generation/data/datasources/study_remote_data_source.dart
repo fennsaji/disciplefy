@@ -180,9 +180,9 @@ class StudyRemoteDataSourceImpl implements StudyRemoteDataSource {
           final required = errorDetails?['required'] as int? ?? 0;
           final available = errorDetails?['available'] as int? ?? 0;
 
-          // If backend doesn't provide proper required tokens, calculate frontend
-          final actualRequiredTokens =
-              required > 0 ? required : _calculateTokenCost(language);
+          // If backend doesn't provide proper required tokens, use default fallback
+          // (Backend should always provide this value; this is just a safety fallback)
+          final actualRequiredTokens = required > 0 ? required : 10;
 
           throw InsufficientTokensException(
             message: error?['message'] as String? ?? 'Insufficient tokens',
@@ -227,25 +227,6 @@ class StudyRemoteDataSourceImpl implements StudyRemoteDataSource {
         code: 'GENERATION_FAILED',
         context: {'originalError': e.toString()},
       );
-    }
-  }
-
-  /// Calculates token cost for a given language
-  ///
-  /// This matches the backend logic: English costs 10 tokens,
-  /// Hindi and Malayalam cost 20 tokens each.
-  int _calculateTokenCost(String language) {
-    switch (language.toLowerCase()) {
-      case 'en':
-      case 'english':
-        return 10;
-      case 'hi':
-      case 'hindi':
-      case 'ml':
-      case 'malayalam':
-        return 20;
-      default:
-        return 10; // Default to English cost
     }
   }
 

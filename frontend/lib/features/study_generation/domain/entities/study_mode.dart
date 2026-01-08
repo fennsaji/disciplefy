@@ -23,6 +23,10 @@ enum StudyMode {
   /// Lectio Divina mode (15 minutes)
   /// 4 steps: Lectio (Read), Meditatio (Meditate), Oratio (Pray), Contemplatio (Rest)
   lectio,
+
+  /// Sermon Outline mode (50-60 minutes)
+  /// Sections: Sermon Thesis, Main Body (with timing), Altar Call, Supporting Verses
+  sermon,
 }
 
 /// Extension methods for [StudyMode] to provide display information and utilities.
@@ -38,6 +42,8 @@ extension StudyModeExtension on StudyMode {
         return 'Deep Dive';
       case StudyMode.lectio:
         return 'Lectio Divina';
+      case StudyMode.sermon:
+        return 'Sermon Outline';
     }
   }
 
@@ -52,6 +58,8 @@ extension StudyModeExtension on StudyMode {
         return 25;
       case StudyMode.lectio:
         return 15;
+      case StudyMode.sermon:
+        return 55; // 50-60 minute average
     }
   }
 
@@ -71,6 +79,8 @@ extension StudyModeExtension on StudyMode {
         return Icons.search;
       case StudyMode.lectio:
         return Icons.self_improvement;
+      case StudyMode.sermon:
+        return Icons.church;
     }
   }
 
@@ -85,6 +95,8 @@ extension StudyModeExtension on StudyMode {
         return '🔍';
       case StudyMode.lectio:
         return '🕯️';
+      case StudyMode.sermon:
+        return '⛪';
     }
   }
 
@@ -99,6 +111,8 @@ extension StudyModeExtension on StudyMode {
         return '+ Word studies + Extended context';
       case StudyMode.lectio:
         return 'Meditative reading with silence';
+      case StudyMode.sermon:
+        return 'Full sermon with timing + illustrations';
     }
   }
 
@@ -113,25 +127,31 @@ extension StudyModeExtension on StudyMode {
         return true;
       case StudyMode.lectio:
         return false; // Lectio has its own step-by-step format
+      case StudyMode.sermon:
+        return false; // Read-only mode for sermon outlines
     }
   }
 
   /// Returns the string value for API/database.
   String get value => name;
+}
 
-  /// Creates a StudyMode from a string value.
-  static StudyMode fromString(String? value) {
-    switch (value?.toLowerCase()) {
-      case 'quick':
-        return StudyMode.quick;
-      case 'deep':
-        return StudyMode.deep;
-      case 'lectio':
-        return StudyMode.lectio;
-      case 'standard':
-      default:
-        return StudyMode.standard;
-    }
+/// Creates a StudyMode from a string value.
+///
+/// This is a top-level function because Dart doesn't support static methods in extensions.
+StudyMode studyModeFromString(String? value) {
+  switch (value?.toLowerCase()) {
+    case 'quick':
+      return StudyMode.quick;
+    case 'deep':
+      return StudyMode.deep;
+    case 'lectio':
+      return StudyMode.lectio;
+    case 'sermon':
+      return StudyMode.sermon;
+    case 'standard':
+    default:
+      return StudyMode.standard;
   }
 }
 

@@ -112,9 +112,9 @@ function parseAndValidateUpdate(body: any): UpdateProfileRequest {
     if (body.default_study_mode === null || body.default_study_mode === '') {
       updateData.default_study_mode = null
     } else {
-      const validModes = ['quick', 'standard', 'deep', 'lectio', 'recommended']
+      const validModes = ['quick', 'standard', 'deep', 'lectio', 'sermon', 'recommended']
       if (!validModes.includes(body.default_study_mode)) {
-        throw new AppError('VALIDATION_ERROR', 'Invalid study mode. Must be one of: quick, standard, deep, lectio, recommended', 400)
+        throw new AppError('VALIDATION_ERROR', 'Invalid study mode. Must be one of: quick, standard, deep, lectio, sermon, recommended', 400)
       }
       updateData.default_study_mode = body.default_study_mode
     }
@@ -124,9 +124,9 @@ function parseAndValidateUpdate(body: any): UpdateProfileRequest {
     if (body.learning_path_study_mode === null || body.learning_path_study_mode === '') {
       updateData.learning_path_study_mode = null
     } else {
-      const validModes = ['ask', 'recommended', 'quick', 'standard', 'deep', 'lectio']
+      const validModes = ['ask', 'recommended', 'quick', 'standard', 'deep', 'lectio', 'sermon']
       if (!validModes.includes(body.learning_path_study_mode)) {
-        throw new AppError('VALIDATION_ERROR', 'Invalid learning path study mode. Must be one of: ask, recommended, quick, standard, deep, lectio', 400)
+        throw new AppError('VALIDATION_ERROR', 'Invalid learning path study mode. Must be one of: ask, recommended, quick, standard, deep, lectio, sermon', 400)
       }
       updateData.learning_path_study_mode = body.learning_path_study_mode
     }

@@ -304,7 +304,7 @@ function validateSaveRequest(data: unknown): asserts data is ReflectionSaveReque
   }
 
   // Validate study_mode
-  const validModes = ['quick', 'standard', 'deep', 'lectio']
+  const validModes = ['quick', 'standard', 'deep', 'lectio', 'sermon']
   if (!request.study_mode || typeof request.study_mode !== 'string') {
     throw new AppError('VALIDATION_ERROR', 'study_mode is required and must be a string', 400)
   }

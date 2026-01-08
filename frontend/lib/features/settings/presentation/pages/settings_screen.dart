@@ -572,6 +572,8 @@ class _SettingsScreenContent extends StatelessWidget {
           return context.tr(TranslationKeys.studyModeDeepName);
         case StudyMode.lectio:
           return context.tr(TranslationKeys.studyModeLectioName);
+        case StudyMode.sermon:
+          return context.tr(TranslationKeys.studyModeSermonName);
       }
     } catch (e) {
       return context.tr(TranslationKeys.studyModeStandardName);
@@ -589,6 +591,8 @@ class _SettingsScreenContent extends StatelessWidget {
         return context.tr(TranslationKeys.studyModeDeepName);
       case StudyMode.lectio:
         return context.tr(TranslationKeys.studyModeLectioName);
+      case StudyMode.sermon:
+        return context.tr(TranslationKeys.studyModeSermonName);
     }
   }
 
@@ -604,6 +608,8 @@ class _SettingsScreenContent extends StatelessWidget {
         return context.tr(TranslationKeys.studyModeDeepDescription);
       case StudyMode.lectio:
         return context.tr(TranslationKeys.studyModeLectioDescription);
+      case StudyMode.sermon:
+        return context.tr(TranslationKeys.studyModeSermonDescription);
     }
   }
 

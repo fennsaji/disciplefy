@@ -28,7 +28,7 @@ export interface StudyGuideContent {
 /**
  * Valid study modes
  */
-export type StudyMode = 'quick' | 'standard' | 'deep' | 'lectio'
+export type StudyMode = 'quick' | 'standard' | 'deep' | 'lectio' | 'sermon'
 
 /**
  * Study guide input parameters

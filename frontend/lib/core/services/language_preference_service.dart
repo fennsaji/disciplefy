@@ -640,7 +640,7 @@ class LanguagePreferenceService {
                 '⚠️ [PREFERENCE_SERVICE] Database call failed: ${failure.message}');
             final modeString = _prefs.getString(_studyModePreferenceKey);
             if (modeString != null) {
-              final mode = StudyModeExtension.fromString(modeString);
+              final mode = studyModeFromString(modeString);
               print(
                   '✅ [PREFERENCE_SERVICE] Study mode from local (DB failed): ${mode.displayName}');
               return mode;
@@ -669,7 +669,7 @@ class LanguagePreferenceService {
       // Fallback to local storage (only for anonymous users)
       final modeString = _prefs.getString(_studyModePreferenceKey);
       if (modeString != null) {
-        final mode = StudyModeExtension.fromString(modeString);
+        final mode = studyModeFromString(modeString);
         print(
             '✅ [PREFERENCE_SERVICE] Study mode from local: ${mode.displayName}');
         return mode;
