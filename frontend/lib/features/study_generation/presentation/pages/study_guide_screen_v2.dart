@@ -1476,6 +1476,9 @@ class _StudyGuideScreenV2ContentState
         print('   Study mode: ${widget.studyMode.displayName}');
       }
 
+      // Check if widget is still mounted before updating UI
+      if (!mounted) return;
+
       setState(() {
         _isCompletingReflection = false;
         _viewMode = StudyViewMode.read;
@@ -1490,6 +1493,9 @@ class _StudyGuideScreenV2ContentState
       if (kDebugMode) {
         print('❌ [REFLECTION] Error saving reflection: $e');
       }
+
+      // Check if widget is still mounted before updating UI
+      if (!mounted) return;
 
       setState(() {
         _isCompletingReflection = false;

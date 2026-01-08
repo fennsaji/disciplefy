@@ -147,6 +147,16 @@ BEGIN
     EXECUTE 'COMMENT ON CONSTRAINT user_profiles_default_study_mode_check ON public.user_profiles IS ' ||
             quote_literal('Validates default_study_mode is NULL or one of: quick, standard, deep, lectio, sermon, recommended');
 
+    -- user_personalization default_study_mode constraint comment
+    IF EXISTS (
+        SELECT 1 FROM information_schema.table_constraints
+        WHERE constraint_name = 'user_personalization_default_study_mode_check'
+        AND table_name = 'user_personalization'
+    ) THEN
+        EXECUTE 'COMMENT ON CONSTRAINT user_personalization_default_study_mode_check ON public.user_personalization IS ' ||
+                quote_literal('Validates default_study_mode is NULL or one of: quick, standard, deep, lectio, sermon, recommended');
+    END IF;
+
     -- user_profiles learning_path_study_mode constraint comment (if it was created)
     IF EXISTS (
         SELECT 1 FROM information_schema.table_constraints

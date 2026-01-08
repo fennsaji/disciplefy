@@ -15,14 +15,22 @@ DECLARE
   v_user_id UUID := auth.uid();
   v_prefs RECORD;
 BEGIN
+  -- Check if user is authenticated
+  IF v_user_id IS NULL THEN
+    RAISE EXCEPTION 'Authentication required: Cannot retrieve voice preferences for unauthenticated users'
+      USING ERRCODE = 'PGRST301',
+            HINT = 'User must be logged in to access voice preferences';
+  END IF;
+
   -- Get the user's voice preferences
   SELECT * INTO v_prefs
   FROM voice_preferences
   WHERE user_id = v_user_id;
 
-  -- If no preferences exist, return defaults WITH user_id
+  -- If no preferences exist, return defaults WITH user_id and consistent fields
   IF v_prefs IS NULL THEN
     RETURN jsonb_build_object(
+      'id', NULL,  -- FIXED: Added id field for consistency
       'user_id', v_user_id,  -- FIXED: Added user_id field
       'preferred_language', 'default',
       'auto_detect_language', true,
@@ -34,7 +42,9 @@ BEGIN
       'continuous_mode', true,
       'use_study_context', true,
       'cite_scripture_references', true,
-      'notify_daily_quota_reached', true
+      'notify_daily_quota_reached', true,
+      'created_at', NULL,  -- FIXED: Added created_at field for consistency
+      'updated_at', NULL   -- FIXED: Added updated_at field for consistency
     );
   END IF;
 

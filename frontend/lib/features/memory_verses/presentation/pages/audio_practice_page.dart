@@ -205,8 +205,8 @@ class _AudioPracticePageState extends State<AudioPracticePage> {
             setState(() => _soundLevel = level.clamp(0.0, 10.0));
           }
         },
-        // Increased to 8 seconds to allow natural pauses during longer verses
-        pauseFor: const Duration(seconds: 8),
+        // Allow 15 seconds of silence before stopping (natural pauses during recitation)
+        pauseFor: const Duration(seconds: 15),
         // Allow up to 2 minutes for very long verses or slow recitation
         listenFor: const Duration(seconds: 120),
       );
