@@ -184,8 +184,18 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
         debugPrint(
             '🔍 [HOME] No saved preference - showing mode selection sheet with Deep Dive recommended');
         const recommendedMode = StudyMode.deep; // Scripture → Deep Dive
-        final languageCode =
-            (currentState as dynamic).currentLanguage.code as String;
+
+        // Type-safe extraction of languageCode from state
+        final String languageCode;
+        if (currentState is DailyVerseLoaded) {
+          languageCode = currentState.currentLanguage.code;
+        } else if (currentState is DailyVerseOffline) {
+          languageCode = currentState.currentLanguage.code;
+        } else {
+          // Fallback (should never happen due to outer if check)
+          languageCode = 'en';
+        }
+
         final result = await ModeSelectionSheet.show(
           context: context,
           languageCode: languageCode,

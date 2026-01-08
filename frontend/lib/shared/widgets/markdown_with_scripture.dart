@@ -11,6 +11,26 @@ class MarkdownWithScripture extends StatelessWidget {
   final String data;
   final TextStyle? textStyle;
 
+  /// Creates a markdown renderer with clickable scripture references.
+  ///
+  /// The [data] parameter is required and contains the markdown text to render.
+  /// Scripture references in the format "Book Chapter:Verse" (e.g., "John 3:16")
+  /// are automatically converted to clickable links that open a bottom sheet
+  /// showing the verse content.
+  ///
+  /// The optional [textStyle] parameter allows customizing the base text style
+  /// for the rendered markdown. If not provided, defaults to theme.textTheme.bodyLarge.
+  ///
+  /// The [key] parameter is the standard widget key for identifying this widget
+  /// in the widget tree.
+  ///
+  /// Example:
+  /// ```dart
+  /// MarkdownWithScripture(
+  ///   data: 'Read **John 3:16** for more details',
+  ///   textStyle: TextStyle(fontSize: 16),
+  /// )
+  /// ```
   const MarkdownWithScripture({
     super.key,
     required this.data,
@@ -67,11 +87,9 @@ class MarkdownWithScripture extends StatelessWidget {
   MarkdownStyleSheet _buildStyleSheet(BuildContext context) {
     final theme = Theme.of(context);
     final baseStyle = textStyle ?? theme.textTheme.bodyLarge;
-    final linkColor = Color.lerp(
-      theme.colorScheme.primary,
-      Colors.white,
-      0.3, // tweak 0.25–0.4
-    )!;
+    // Use primary color directly for links - Material Design ensures proper contrast
+    // against theme backgrounds, meeting WCAG AA standards (4.5:1 ratio)
+    final linkColor = theme.colorScheme.primary;
 
     return MarkdownStyleSheet(
       p: baseStyle?.copyWith(

@@ -1290,6 +1290,9 @@ class TranslationKeys {
   static const practiceResultsPhrase = 'practice_results.phrase';
   static const practiceResultsYourAnswer = 'practice_results.your_answer';
   static const practiceResultsCorrectAnswer = 'practice_results.correct_answer';
+  static const practiceResultsExtraWord = 'practice_results.extra_word';
+  static const practiceResultsNote = 'practice_results.note';
+  static const practiceResultsNotInVerse = 'practice_results.not_in_verse';
 
   // Quality Rating Labels
   static const qualityPerfect = 'quality.perfect';

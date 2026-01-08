@@ -40,7 +40,37 @@ class TokenCostRepository {
       );
 
       if (response.data != null && response.data['success'] == true) {
-        final cost = response.data['data']['tokenCost'] as int;
+        // Defensive null/type checking for tokenCost
+        final data = response.data['data'];
+        if (data == null || !data.containsKey('tokenCost')) {
+          return Left(ServerFailure(
+            message: 'Invalid response: tokenCost field is missing',
+          ));
+        }
+
+        final tokenCostRaw = data['tokenCost'];
+        final int cost;
+
+        // Handle different types: int, num, or string
+        if (tokenCostRaw is int) {
+          cost = tokenCostRaw;
+        } else if (tokenCostRaw is num) {
+          cost = tokenCostRaw.toInt();
+        } else if (tokenCostRaw is String) {
+          final parsed = int.tryParse(tokenCostRaw);
+          if (parsed == null) {
+            return Left(ServerFailure(
+              message:
+                  'Invalid response: tokenCost is not a valid integer (value: "$tokenCostRaw")',
+            ));
+          }
+          cost = parsed;
+        } else {
+          return Left(ServerFailure(
+            message:
+                'Invalid response: tokenCost has unexpected type ${tokenCostRaw.runtimeType}',
+          ));
+        }
 
         // Cache the result
         _costCache[cacheKey] = CachedTokenCost(

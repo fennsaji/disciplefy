@@ -232,19 +232,22 @@ class BibleBooks {
       if (allAlternates[i].toLowerCase() == trimmed.toLowerCase()) {
         // Find which canonical list this alternate belongs to
         // and map to the appropriate canonical name
-        final alternate = allAlternates[i];
+        final matched = allAlternates[i];
+        final matchedLower = matched.toLowerCase();
 
-        // English alternates mapping
-        if (englishAbbreviations.contains(alternate)) {
-          return _mapEnglishAlternateToCanonical(alternate);
+        // English alternates mapping (case-insensitive check)
+        if (englishAbbreviations
+            .any((abbr) => abbr.toLowerCase() == matchedLower)) {
+          return _mapEnglishAlternateToCanonical(matched);
         }
-        // Hindi alternates mapping
-        if (hindiAlternates.contains(alternate)) {
-          return _mapHindiAlternateToCanonical(alternate);
+        // Hindi alternates mapping (case-insensitive check)
+        if (hindiAlternates.any((alt) => alt.toLowerCase() == matchedLower)) {
+          return _mapHindiAlternateToCanonical(matched);
         }
-        // Malayalam alternates mapping
-        if (malayalamAlternates.contains(alternate)) {
-          return _mapMalayalamAlternateToCanonical(alternate);
+        // Malayalam alternates mapping (case-insensitive check)
+        if (malayalamAlternates
+            .any((alt) => alt.toLowerCase() == matchedLower)) {
+          return _mapMalayalamAlternateToCanonical(matched);
         }
       }
     }
@@ -255,27 +258,101 @@ class BibleBooks {
 
   /// Map English abbreviations to canonical names
   static String _mapEnglishAlternateToCanonical(String abbr) {
-    // Common abbreviations to canonical mappings
+    // Comprehensive abbreviations to canonical mappings
+    // Covers all entries in englishAbbreviations list
     final Map<String, String> mapping = {
-      'Psalm': 'Psalms',
-      'Ps': 'Psalms',
-      'Psa': 'Psalms',
+      // Old Testament
+      'Gen': 'Genesis', 'Ge': 'Genesis', 'Gn': 'Genesis',
+      'Ex': 'Exodus', 'Exod': 'Exodus', 'Exo': 'Exodus',
+      'Lev': 'Leviticus', 'Le': 'Leviticus', 'Lv': 'Leviticus',
+      'Num': 'Numbers', 'Nu': 'Numbers', 'Nm': 'Numbers',
+      'Deut': 'Deuteronomy', 'Dt': 'Deuteronomy', 'De': 'Deuteronomy',
+      'Josh': 'Joshua', 'Jos': 'Joshua',
+      'Judg': 'Judges', 'Jdg': 'Judges', 'Jg': 'Judges',
+      'Ru': 'Ruth', 'Rth': 'Ruth',
+      '1 Sam': '1 Samuel', '1Sam': '1 Samuel', '1Sa': '1 Samuel',
+      '1 S': '1 Samuel',
+      '2 Sam': '2 Samuel', '2Sam': '2 Samuel', '2Sa': '2 Samuel',
+      '2 S': '2 Samuel',
+      '1 Kgs': '1 Kings', '1Kgs': '1 Kings', '1Ki': '1 Kings', '1 K': '1 Kings',
+      '2 Kgs': '2 Kings', '2Kgs': '2 Kings', '2Ki': '2 Kings', '2 K': '2 Kings',
+      '1 Chr': '1 Chronicles', '1Chr': '1 Chronicles', '1Ch': '1 Chronicles',
+      '2 Chr': '2 Chronicles', '2Chr': '2 Chronicles', '2Ch': '2 Chronicles',
+      'Neh': 'Nehemiah', 'Ne': 'Nehemiah',
+      'Est': 'Esther', 'Esth': 'Esther',
+      'Ps': 'Psalms', 'Psa': 'Psalms', 'Psalm': 'Psalms', 'Psalms': 'Psalms',
       'Pss': 'Psalms',
-      'Gen': 'Genesis',
-      'Ge': 'Genesis',
-      'Gn': 'Genesis',
-      'Ex': 'Exodus',
-      'Exod': 'Exodus',
-      'Exo': 'Exodus',
-      'Matt': 'Matthew',
-      'Mt': 'Matthew',
-      'Eph': 'Ephesians',
-      'Ep': 'Ephesians',
-      'Rev': 'Revelation',
-      'Re': 'Revelation',
-      'Rv': 'Revelation',
+      'Prov': 'Proverbs', 'Pr': 'Proverbs', 'Pro': 'Proverbs',
+      'Proverb': 'Proverbs',
+      'Eccl': 'Ecclesiastes', 'Ec': 'Ecclesiastes', 'Ecc': 'Ecclesiastes',
+      'Song': 'Song of Solomon', 'SoS': 'Song of Solomon',
+      'SS': 'Song of Solomon',
+      'Song of Songs': 'Song of Solomon',
+      'Isa': 'Isaiah', 'Is': 'Isaiah',
+      'Jer': 'Jeremiah', 'Je': 'Jeremiah', 'Jr': 'Jeremiah',
+      'Lam': 'Lamentations', 'La': 'Lamentations',
+      'Ezek': 'Ezekiel', 'Eze': 'Ezekiel', 'Ezk': 'Ezekiel',
+      'Dan': 'Daniel', 'Da': 'Daniel', 'Dn': 'Daniel',
+      'Hos': 'Hosea', 'Ho': 'Hosea',
+      'Joe': 'Joel', 'Jl': 'Joel',
+      'Am': 'Amos',
+      'Obad': 'Obadiah', 'Ob': 'Obadiah',
+      'Jon': 'Jonah', 'Jnh': 'Jonah',
+      'Mic': 'Micah', 'Mc': 'Micah',
+      'Nah': 'Nahum', 'Na': 'Nahum',
+      'Hab': 'Habakkuk', 'Hb': 'Habakkuk',
+      'Zeph': 'Zephaniah', 'Zep': 'Zephaniah', 'Zp': 'Zephaniah',
+      'Hag': 'Haggai', 'Hg': 'Haggai',
+      'Zech': 'Zechariah', 'Zec': 'Zechariah', 'Zc': 'Zechariah',
+      'Mal': 'Malachi', 'Ml': 'Malachi',
+      // New Testament
+      'Matt': 'Matthew', 'Mt': 'Matthew',
+      'The Gospel of Matthew': 'Matthew',
+      'Mk': 'Mark', 'Mr': 'Mark',
+      'The Gospel of Mark': 'Mark',
+      'Lk': 'Luke', 'Luk': 'Luke',
+      'The Gospel of Luke': 'Luke',
+      'Jn': 'John', 'Joh': 'John',
+      'The Gospel of John': 'John',
+      'Ac': 'Acts',
+      'Rom': 'Romans', 'Ro': 'Romans', 'Rm': 'Romans',
+      '1 Cor': '1 Corinthians', '1Cor': '1 Corinthians', '1Co': '1 Corinthians',
+      'First Corinthians': '1 Corinthians', '1st Corinthians': '1 Corinthians',
+      '2 Cor': '2 Corinthians', '2Cor': '2 Corinthians', '2Co': '2 Corinthians',
+      'Second Corinthians': '2 Corinthians', '2nd Corinthians': '2 Corinthians',
+      'Gal': 'Galatians', 'Ga': 'Galatians',
+      'Eph': 'Ephesians', 'Ep': 'Ephesians',
+      'Phil': 'Philippians', 'Php': 'Philippians', 'Pp': 'Philippians',
+      'Col': 'Colossians', 'Co': 'Colossians',
+      '1 Thess': '1 Thessalonians', '1Thess': '1 Thessalonians',
+      '1Th': '1 Thessalonians',
+      'First Thessalonians': '1 Thessalonians',
+      '1st Thessalonians': '1 Thessalonians',
+      '2 Thess': '2 Thessalonians', '2Thess': '2 Thessalonians',
+      '2Th': '2 Thessalonians',
+      'Second Thessalonians': '2 Thessalonians',
+      '2nd Thessalonians': '2 Thessalonians',
+      '1 Tim': '1 Timothy', '1Tim': '1 Timothy', '1Ti': '1 Timothy',
+      'First Timothy': '1 Timothy', '1st Timothy': '1 Timothy',
+      '2 Tim': '2 Timothy', '2Tim': '2 Timothy', '2Ti': '2 Timothy',
+      'Second Timothy': '2 Timothy', '2nd Timothy': '2 Timothy',
+      'Tit': 'Titus', 'Ti': 'Titus',
+      'Phlm': 'Philemon', 'Phm': 'Philemon', 'Pm': 'Philemon',
+      'Heb': 'Hebrews', 'He': 'Hebrews',
+      'Jas': 'James', 'Jm': 'James',
+      '1 Pet': '1 Peter', '1Pet': '1 Peter', '1Pe': '1 Peter', '1P': '1 Peter',
+      'First Peter': '1 Peter', '1st Peter': '1 Peter',
+      '2 Pet': '2 Peter', '2Pet': '2 Peter', '2Pe': '2 Peter', '2P': '2 Peter',
+      'Second Peter': '2 Peter', '2nd Peter': '2 Peter',
+      '1 Jn': '1 John', '1Jn': '1 John', '1Jo': '1 John',
+      'First John': '1 John', '1st John': '1 John',
+      '2 Jn': '2 John', '2Jn': '2 John', '2Jo': '2 John',
+      'Second John': '2 John', '2nd John': '2 John',
+      '3 Jn': '3 John', '3Jn': '3 John', '3Jo': '3 John',
+      'Third John': '3 John', '3rd John': '3 John',
+      'Jud': 'Jude',
+      'Rev': 'Revelation', 'Re': 'Revelation', 'Rv': 'Revelation',
       'Revelations': 'Revelation',
-      // Add more as needed
     };
 
     return mapping[abbr] ?? abbr;

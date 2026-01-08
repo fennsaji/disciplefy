@@ -453,7 +453,7 @@ class _PracticeResultsPageState extends State<PracticeResultsPage> {
               ),
               child: Text(
                 isExtraWord
-                    ? 'Extra Word'
+                    ? context.tr(TranslationKeys.practiceResultsExtraWord)
                     : '${context.tr(labelKey)} $blankNumber',
                 style: theme.textTheme.labelMedium?.copyWith(
                   color: isExtraWord
@@ -528,7 +528,7 @@ class _PracticeResultsPageState extends State<PracticeResultsPage> {
                 width: 80,
                 child: Text(
                   isExtraWord
-                      ? 'Note:'
+                      ? context.tr(TranslationKeys.practiceResultsNote)
                       : context
                           .tr(TranslationKeys.practiceResultsCorrectAnswer),
                   style: theme.textTheme.bodyMedium?.copyWith(
@@ -554,7 +554,7 @@ class _PracticeResultsPageState extends State<PracticeResultsPage> {
                   ),
                   child: Text(
                     isExtraWord
-                        ? 'This word was not in the verse'
+                        ? context.tr(TranslationKeys.practiceResultsNotInVerse)
                         : correctAnswerDisplay,
                     style: theme.textTheme.bodyLarge?.copyWith(
                       color: isExtraWord

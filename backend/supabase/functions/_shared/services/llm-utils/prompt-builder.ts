@@ -740,11 +740,31 @@ Output format: Start with { and end with } - nothing else.`
  * Generates content using the standard 14-field format for streaming compatibility.
  * AI selects format based on input type: Scripture → Expository, Topic → Topical.
  */
+
+/**
+ * Interface for sermon outline section headings in different languages
+ */
+interface SermonHeadings {
+  openingPrayer: string
+  introduction: string
+  point: string
+  mainTeaching: string
+  scriptureFoun: string
+  illustration: string
+  application: string
+  transition: string
+  conclusion: string
+  gospelRecap: string
+  theInvitation: string
+  responseOptions: string
+  closingPrayer: string
+}
+
 /**
  * Get language-specific sermon outline headings
  */
-function getSermonHeadings(language: string) {
-  const headings: Record<string, any> = {
+function getSermonHeadings(language: string): SermonHeadings {
+  const headings: Record<string, SermonHeadings> = {
     'en': {
       openingPrayer: 'Opening Prayer & Welcome',
       introduction: 'Introduction / Hook',

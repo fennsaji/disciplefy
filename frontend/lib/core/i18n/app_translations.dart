@@ -1402,6 +1402,9 @@ class AppTranslations {
       'phrase': 'Phrase',
       'your_answer': 'Your Answer:',
       'correct_answer': 'Correct Answer:',
+      'extra_word': 'Extra Word',
+      'note': 'Note:',
+      'not_in_verse': 'This word was not in the verse',
     },
     'quality': {
       'perfect': 'Perfect',
@@ -3182,6 +3185,9 @@ class AppTranslations {
       'phrase': 'वाक्यांश',
       'your_answer': 'आपका उत्तर:',
       'correct_answer': 'सही उत्तर:',
+      'extra_word': 'अतिरिक्त शब्द',
+      'note': 'नोट:',
+      'not_in_verse': 'यह शब्द वचन में नहीं था',
     },
     'quality': {
       'perfect': 'उत्तम',
@@ -5037,6 +5043,9 @@ class AppTranslations {
       'phrase': 'വാചകം',
       'your_answer': 'നിങ്ങളുടെ ഉത്തരം:',
       'correct_answer': 'ശരിയായ ഉത്തരം:',
+      'extra_word': 'അധിക വാക്ക്',
+      'note': 'കുറിപ്പ്:',
+      'not_in_verse': 'ഈ വാക്ക് വാക്യത്തിൽ ഉണ്ടായിരുന്നില്ല',
     },
     'quality': {
       'perfect': 'പൂർണ്ണം',

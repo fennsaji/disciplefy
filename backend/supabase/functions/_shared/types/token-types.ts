@@ -38,16 +38,18 @@ export interface TokenCostMultiplier {
  * - Standard (10 min): 1.0x - Baseline, moderate content
  * - Deep Dive (25 min): 1.5x - Extensive word studies, cross-references
  * - Lectio Divina (15 min): 1.2x - Contemplative + guided reflection
- * - Sermon (55 min): 2.0x for EN, 1.5x for HI/ML (special language-dependent pricing)
+ * - Sermon (55 min): 2.0x - Most comprehensive content, all languages
  *
- * Final costs: Quick=5/10, Standard=10/20, Deep=15/30, Lectio=12/24, Sermon=20/30 (EN/HI,ML)
+ * Multipliers are applied uniformly across languages.
+ * Varying final costs result from different base language costs (EN=10, HI/ML=15).
+ * Final costs: Quick=5/8, Standard=10/15, Deep=15/23, Lectio=12/18, Sermon=20/30 (EN/HI,ML)
  */
 export const MODE_MULTIPLIERS: TokenCostMultiplier = {
   quick: 0.5,      // Half cost - encourages quick studies
   standard: 1.0,   // Baseline - no change
   deep: 1.5,       // Premium content - 50% more
   lectio: 1.2,     // Moderate premium - 20% more
-  sermon: 2.0      // Most expensive - 2x (EN only; HI/ML use 1.5x via special logic)
+  sermon: 2.0      // Most expensive - 2x for all languages
 } as const
 
 /**
