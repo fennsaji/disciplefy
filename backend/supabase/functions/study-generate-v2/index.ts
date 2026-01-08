@@ -83,7 +83,7 @@ function parseRequestParams(req: Request): {
   }
 
   // Validate and default study mode
-  const validModes: StudyMode[] = ['quick', 'standard', 'deep', 'lectio']
+  const validModes: StudyMode[] = ['quick', 'standard', 'deep', 'lectio', 'sermon']
   const study_mode: StudyMode = mode && validModes.includes(mode) ? mode : 'standard'
 
   return { input_type, input_value, topic_description, language, study_mode }
@@ -277,10 +277,10 @@ async function handleStudyGenerateV2(
 
   const existingContent = await studyGuideRepository.findExistingContent(studyGuideInput, userContext)
 
-  // Get user plan and calculate token cost
+  // Get user plan and calculate token cost (with mode-based multiplier)
   const userPlan = await authService.getUserPlan(authReq)
   const targetLanguage = (language || 'en') as SupportedLanguage
-  const tokenCost = tokenService.calculateTokenCost(targetLanguage)
+  const tokenCost = tokenService.calculateTokenCost(targetLanguage, study_mode)
   const identifier = userContext.type === 'authenticated' ? userContext.userId! : userContext.sessionId!
 
   // Create SSE response stream

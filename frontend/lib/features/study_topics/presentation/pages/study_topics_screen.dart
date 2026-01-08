@@ -213,7 +213,10 @@ class _StudyTopicsScreenContentState extends State<_StudyTopicsScreenContent> {
 
     // Show mode selection sheet before navigating
     if (mounted) {
-      final result = await ModeSelectionSheet.show(context: context);
+      final result = await ModeSelectionSheet.show(
+        context: context,
+        languageCode: widget.currentLanguage,
+      );
 
       if (result != null && mounted) {
         final mode = result['mode'] as StudyMode;
@@ -397,7 +400,10 @@ class _StudyTopicsScreenContentState extends State<_StudyTopicsScreenContent> {
     }
 
     // Show mode selection sheet before navigating
-    final result = await ModeSelectionSheet.show(context: context);
+    final result = await ModeSelectionSheet.show(
+      context: context,
+      languageCode: widget.currentLanguage,
+    );
 
     if (result != null && mounted) {
       final mode = result['mode'] as StudyMode;

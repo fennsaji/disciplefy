@@ -255,6 +255,8 @@ export function createStudyGuidePrompt(params: LLMGenerationParams, languageConf
       return createDeepDivePrompt(params, languageConfig)
     case 'lectio':
       return createLectioDivinaPrompt(params, languageConfig)
+    case 'sermon':
+      return createSermonOutlinePrompt(params, languageConfig)
     case 'standard':
     default:
       return {
@@ -720,6 +722,366 @@ Generate 2-3 gentle responses to God's invitation from the meditation:
 
 CRITICAL: SCRIPTURE REFERENCE MUST BE IN ${languageConfig.name}
 ${verseReferenceExamples}
+
+CRITICAL JSON FORMATTING RULES:
+- Output ONLY valid JSON - no markdown, no extra text
+- Use proper JSON string escaping (\\n for newlines)
+- No trailing commas
+
+${languageExamples}
+
+Output format: Start with { and end with } - nothing else.`
+
+  return { systemMessage, userMessage }
+}
+
+/**
+ * Creates a Sermon Outline prompt (50-60 minute sermon).
+ * Generates content using the standard 14-field format for streaming compatibility.
+ * AI selects format based on input type: Scripture → Expository, Topic → Topical.
+ */
+/**
+ * Get language-specific sermon outline headings
+ */
+function getSermonHeadings(language: string) {
+  const headings: Record<string, any> = {
+    'en': {
+      openingPrayer: 'Opening Prayer & Welcome',
+      introduction: 'Introduction / Hook',
+      point: 'Point',
+      mainTeaching: 'Main Teaching',
+      scriptureFoun: 'Scripture Foundation',
+      illustration: 'Illustration',
+      application: 'Application',
+      transition: 'Transition',
+      conclusion: 'Conclusion',
+      gospelRecap: 'Gospel Recap',
+      theInvitation: 'The Invitation',
+      responseOptions: 'Response Options',
+      closingPrayer: 'Closing Prayer'
+    },
+    'hi': {
+      openingPrayer: 'प्रार्थना और स्वागत',
+      introduction: 'प्रस्तावना',
+      point: 'मुख्य बिंदु',
+      mainTeaching: 'मुख्य शिक्षा',
+      scriptureFoun: 'पवित्रशास्त्र आधार',
+      illustration: 'उदाहरण',
+      application: 'व्यावहारिक उपयोग',
+      transition: 'संक्रमण',
+      conclusion: 'निष्कर्ष',
+      gospelRecap: 'सुसमाचार सारांश',
+      theInvitation: 'निमंत्रण',
+      responseOptions: 'प्रतिक्रिया विकल्प',
+      closingPrayer: 'समापन प्रार्थना'
+    },
+    'ml': {
+      openingPrayer: 'പ്രാർത്ഥനയും സ്വാഗതവും',
+      introduction: 'ആമുഖം',
+      point: 'പ്രധാന പോയിന്റ്',
+      mainTeaching: 'പ്രധാന പഠനം',
+      scriptureFoun: 'തിരുവെഴുത്ത് അടിസ്ഥാനം',
+      illustration: 'ഉദാഹരണം',
+      application: 'പ്രയോഗം',
+      transition: 'പരിവർത്തനം',
+      conclusion: 'നിഗമനം',
+      gospelRecap: 'സുവിശേഷ സംഗ്രഹം',
+      theInvitation: 'ക്ഷണം',
+      responseOptions: 'പ്രതികരണ ഓപ്ഷനുകൾ',
+      closingPrayer: 'സമാപന പ്രാർത്ഥന'
+    }
+  }
+
+  return headings[language] || headings['en']
+}
+
+function createSermonOutlinePrompt(params: LLMGenerationParams, languageConfig: LanguageConfig): PromptPair {
+  const { inputType, inputValue, topicDescription } = params
+  const languageExamples = getLanguageExamples(params.language)
+  const verseReferenceExamples = getVerseReferenceExamples(params.language)
+  const headings = getSermonHeadings(params.language)
+
+  // Auto-select sermon format based on input type
+  const sermonFormat = inputType === 'scripture' ? 'EXPOSITORY' : 'TOPICAL'
+
+  let taskDescription: string
+  let inputSpecificGuidance = ''
+
+  if (inputType === 'scripture') {
+    taskDescription = `Create a ${sermonFormat} SERMON OUTLINE for: "${inputValue}"`
+    inputSpecificGuidance = `
+SCRIPTURE FOCUS (Expository Sermon):
+- Provide verse-by-verse exposition of the passage
+- Break down the scripture systematically
+- Explain original meaning and modern application
+- Structure: Introduction → Verse-by-Verse Exposition → Life Application → Altar Call`
+  } else if (inputType === 'topic') {
+    taskDescription = topicDescription
+      ? `Create a ${sermonFormat} SERMON OUTLINE on: "${inputValue}"\n\nContext: ${topicDescription}`
+      : `Create a ${sermonFormat} SERMON OUTLINE on: "${inputValue}"`
+    inputSpecificGuidance = `
+TOPIC FOCUS (Topical Sermon):
+- Develop 3 main points around the topic
+- Support each point with multiple scriptures
+- Provide illustrations for each point
+- Structure: Introduction → 3 Main Points (with sub-points) → Conclusion → Altar Call`
+  } else {
+    taskDescription = `Create a SERMON OUTLINE addressing: "${inputValue}"`
+    inputSpecificGuidance = `
+QUESTION FOCUS (Topical Sermon):
+- Answer the question through biblical teaching
+- Develop practical applications
+- Provide scriptural support
+- Structure: Introduction → Answer Development → Application → Altar Call`
+  }
+
+  const systemMessage = `You are an experienced preacher creating comprehensive sermon outlines for pastors and teachers. Your responses must be valid JSON only.
+
+STUDY MODE: SERMON OUTLINE (50-60 minutes)
+Provide a complete, preachable sermon outline with timing, illustrations, and altar call.
+
+THEOLOGICAL APPROACH:
+- Protestant theological alignment
+- Expository and/or topical preaching methods
+- Clear gospel presentation
+- Practical application for congregational transformation
+- Emphasis on biblical authority and Christ-centered message
+
+LANGUAGE REQUIREMENTS:
+- ${languageConfig.promptModifiers.languageInstruction}
+- ${languageConfig.promptModifiers.complexityInstruction}
+- Cultural Context: ${languageConfig.culturalContext}
+- Use clear, engaging preaching language suitable for oral delivery
+
+JSON OUTPUT REQUIREMENTS:
+- Output ONLY valid JSON - no extra text
+- Use proper JSON string escaping
+- Provide comprehensive sermon content
+
+TONE: Pastoral, authoritative, engaging, evangelistic, practical for preaching.`
+
+  // Build sermon outline template with localized headings
+  const sermonOutlineTemplate = `**COMPLETE SERMON OUTLINE** with timing, structure, and integrated Bible references:
+
+## ${headings.openingPrayer} (2-3 min)
+Brief welcome and opening prayer to prepare hearts
+
+## ${headings.introduction} (5 min)
+[Compelling story, current event, or question that connects to the topic]
+**${headings.transition}:** [Natural bridge connecting introduction to Point 1]
+
+## ${headings.point} 1: [Clear, Memorable Title] (15 min)
+
+**${headings.mainTeaching}:**
+[2-3 paragraphs explaining this point with theological depth]
+
+**${headings.scriptureFoun}:**
+- [Bible Reference 1] - [Brief explanation of how this verse supports the point]
+- [Bible Reference 2] - [Brief explanation]
+- [Additional references as needed]
+
+**${headings.illustration}:**
+[Detailed story, analogy, or real-life example that makes this point memorable and relatable - 1-2 paragraphs]
+
+**${headings.application}:**
+[Specific, practical ways listeners can apply this truth this week - 2-3 concrete action steps]
+
+**${headings.transition}:** [Smooth connection to Point 2]
+
+## ${headings.point} 2: [Clear, Memorable Title] (15 min)
+
+**${headings.mainTeaching}:**
+[2-3 paragraphs explaining this point]
+
+**${headings.scriptureFoun}:**
+- [Bible Reference 1] - [Explanation]
+- [Bible Reference 2] - [Explanation]
+- [Additional references as needed]
+
+**${headings.illustration}:**
+[Another detailed story/analogy that reinforces this point]
+
+**${headings.application}:**
+[Practical steps for applying this truth]
+
+**${headings.transition}:** [Bridge to Point 3]
+
+## ${headings.point} 3: [Clear, Memorable Title] (12 min)
+
+**${headings.mainTeaching}:**
+[2-3 paragraphs explaining the final point]
+
+**${headings.scriptureFoun}:**
+- [Bible Reference 1] - [Explanation]
+- [Bible Reference 2] - [Explanation]
+- [Additional references as needed]
+
+**${headings.illustration}:**
+[Final impactful story/example]
+
+**${headings.application}:**
+[Practical steps that build on previous points]
+
+## ${headings.conclusion} (5 min)
+[Powerful summary connecting all three points, reinforcing the sermon thesis, and preparing hearts for the altar call]`
+
+  const altarCallTemplate = `**COMPLETE ALTAR CALL / INVITATION TEMPLATE** (4-6 minutes)
+
+**${headings.gospelRecap}:**
+[Brief reminder of God's love, Christ's sacrifice, and the gospel message]
+
+**${headings.theInvitation}:**
+If you feel God calling you today to [specific response based on sermon topic - e.g., surrender your life to Christ, recommit your faith, seek forgiveness, take a step of obedience], I invite you to respond...
+
+**${headings.responseOptions}:**
+- Come forward to the altar for prayer
+- Raise your hand where you are seated
+- Meet with a pastor or prayer team after the service
+- [Additional contextually appropriate option]
+
+**${headings.closingPrayer}:**
+[Prayer for those responding, including petition, thanksgiving, and blessing]
+
+Amen.`
+
+  const userMessage = `TASK: ${taskDescription}
+${inputSpecificGuidance}
+
+CRITICAL: ALL 14 FIELDS BELOW ARE MANDATORY - DO NOT SKIP ANY FIELD
+
+CRITICAL: HEADING LANGUAGE REQUIREMENT - MANDATORY COMPLIANCE
+YOU MUST USE THESE EXACT HEADINGS (NOT ENGLISH TRANSLATIONS):
+✓ "${headings.openingPrayer}" (NOT "Opening Prayer & Welcome")
+✓ "${headings.introduction}" (NOT "Introduction / Hook")
+✓ "${headings.point}" (NOT "Point")
+✓ "${headings.mainTeaching}" (NOT "Main Teaching")
+✓ "${headings.scriptureFoun}" (NOT "Scripture Foundation")
+✓ "${headings.illustration}" (NOT "Illustration")
+✓ "${headings.application}" (NOT "Application")
+✓ "${headings.transition}" (NOT "Transition")
+✓ "${headings.conclusion}" (NOT "Conclusion")
+
+ABSOLUTE REQUIREMENT: Copy the headings EXACTLY as shown in the template below - these are NOT translations, these ARE the required text.
+
+SERMON OUTLINE FORMAT - REQUIRED JSON OUTPUT (include ALL fields, no exceptions):
+{
+  "summary": "Sermon thesis and introduction (3-4 sentences) - The main message and hook for the sermon",
+  "interpretation": "${sermonOutlineTemplate.replace(/\n/g, '\\n').replace(/"/g, '\\"')}",
+  "context": "Background and sermon context (2-3 paragraphs) - Historical, cultural, and textual background for the preacher's preparation",
+  "relatedVerses": ["5-7 additional supporting Bible verses with full references in ${languageConfig.name} (beyond those already integrated into the sermon points)"],
+  "reflectionQuestions": ["5-7 discussion questions for small groups or sermon follow-up that help apply the sermon"],
+  "prayerPoints": ["${altarCallTemplate.replace(/\n/g, '\\n').replace(/"/g, '\\"')}"],
+  "summaryInsights": ["MANDATORY: 3-4 key takeaways from the sermon (10-15 words each)"],
+  "interpretationInsights": ["MANDATORY: 3-4 main theological points (10-15 words each)"],
+  "reflectionAnswers": ["MANDATORY: 3-4 practical life applications (10-15 words each)"],
+  "contextQuestion": "Engaging yes/no question connecting biblical context to modern congregation",
+  "summaryQuestion": "Question about the sermon thesis (8-12 words)",
+  "relatedVersesQuestion": "Question encouraging scripture memorization or study (8-12 words)",
+  "reflectionQuestion": "Application question for congregational response (8-12 words)",
+  "prayerQuestion": "Question inviting prayer and commitment (6-10 words)"
+}
+
+REQUIREMENT VERIFICATION:
+✓ You MUST include summaryInsights array with 3-4 items
+✓ You MUST include reflectionAnswers array with 3-4 items
+✓ You MUST include interpretationInsights array with 3-4 items
+✓ Do NOT skip any of the 14 required fields above
+
+CRITICAL: SERMON TIMING REQUIREMENTS
+- **Total Duration**: 50-60 minutes
+- **Breakdown**:
+  - Opening/Welcome: 2-3 min
+  - Introduction/Hook: 5 min
+  - Point 1: 12-15 min (with illustration + application)
+  - Point 2: 12-15 min (with illustration + application)
+  - Point 3: 10-12 min (with illustration + application)
+  - Conclusion: 5 min
+  - Altar Call: 4-6 min
+- Mark each section with timing in parentheses: "## Point 1: [Title] (15 min)"
+- Ensure total adds up to 50-60 minutes
+
+CRITICAL: ILLUSTRATION REQUIREMENTS
+- Provide 2-3 **specific, engaging illustrations** (stories, analogies, real-life examples)
+- Place illustrations strategically: one per main point minimum
+- Format: "**Illustration:** [Detailed story/analogy that connects emotionally and clarifies the point]"
+- Illustrations should be culturally appropriate for ${languageConfig.name} context
+- Make them memorable, relatable, and sermon-enhancing
+
+CRITICAL: TRANSITION REQUIREMENTS
+- Provide smooth **transition phrases** between major sections
+- Format: "**Transition:** [Natural bridge statement connecting current point to next]"
+- Transitions should maintain sermon flow and listener engagement
+- Examples: "This leads us to consider...", "Building on this truth...", "Now we see how..."
+
+CRITICAL: BIBLE REFERENCE INTEGRATION
+- **EVERY sermon point (Point 1, 2, 3) MUST have a "Scripture Foundation" subsection**
+- Include 2-4 specific Bible verses PER POINT that directly support that point's teaching
+- Format: "**Scripture Foundation:**\\n- [Book Chapter:Verse] - [Brief explanation of how this verse supports this specific point]"
+- Do NOT just list verses - explain HOW each verse connects to and supports the point being made
+- Integrate verses naturally into the teaching, not as afterthoughts
+- Use verses from different parts of the Bible to show scriptural consistency
+- The "relatedVerses" field should contain ADDITIONAL verses beyond those already used in the sermon points
+- All Bible references must be in ${languageConfig.name} language and script
+
+CRITICAL: ALTAR CALL / INVITATION FORMAT
+- "prayerPoints" field MUST contain a **COMPLETE ALTAR CALL TEMPLATE**
+- Include:
+  1. Brief gospel recap (1-2 sentences)
+  2. Clear invitation statement with specific response
+  3. Multiple response options (come forward, raise hand, prayer, etc.)
+  4. Closing prayer for those responding
+- Make it evangelistic, clear, and culturally appropriate
+- Address God directly in closing prayer
+- End with "Amen"
+- MUST be output in ${languageConfig.name} language
+
+CRITICAL: PRAYER CLOSING LANGUAGE REQUIREMENT
+- For English: End with "In Jesus' name, Amen" or "Amen"
+- For Hindi: End with "येशु मसीह के नाम से, आमेन" (in Devanagari script) - NOT romanized Hinglish
+- For Malayalam: End with "യേശുക്രിസ്തുവിന്റെ നാമത്തിൽ, ആമേൻ" (in Malayalam script) - NOT romanized Manglish
+- DO NOT use romanized text (Hinglish/Manglish) for non-English prayers
+- The ENTIRE altar call including the closing MUST be in native script
+
+CRITICAL: SERMON FORMAT SELECTION
+- FOR SCRIPTURE INPUT: Use **EXPOSITORY** format (verse-by-verse exposition)
+  - Break down the passage systematically
+  - Explain original meaning + modern application
+  - Structure around textual flow
+- FOR TOPIC/QUESTION INPUT: Use **TOPICAL** format (3-point sermon)
+  - Develop 3 main points around the theme
+  - Support each point with multiple scriptures
+  - Logical progression of ideas
+
+CRITICAL: VERSE REFERENCES MUST BE IN ${languageConfig.name}
+${verseReferenceExamples}
+
+CRITICAL: USE THESE EXACT HEADINGS IN YOUR OUTPUT (DO NOT USE ENGLISH HEADINGS):
+- Section headings: "${headings.openingPrayer}", "${headings.introduction}", "${headings.point}", "${headings.conclusion}"
+- Subsection headings: "${headings.mainTeaching}", "${headings.scriptureFoun}", "${headings.illustration}", "${headings.application}", "${headings.transition}"
+- Altar call headings: "${headings.gospelRecap}", "${headings.theInvitation}", "${headings.responseOptions}", "${headings.closingPrayer}"
+
+EXAMPLE SERMON POINT STRUCTURE (showing correct ${languageConfig.name} headings - COPY THESE EXACTLY):
+
+## ${headings.point} 1: God's Love Is Active, Not Passive (15 min)
+
+**${headings.mainTeaching}:**
+Love is not merely a feeling we experience, but an active choice we make every day. The Greek word "agape" in the New Testament describes a self-sacrificial, unconditional love that seeks the best for others regardless of their response. This kind of love requires intentionality, effort, and a willingness to put others' needs before our own. When we understand that God first loved us in this active, sacrificial way, we are empowered to love others with the same quality of love.
+
+**${headings.scriptureFoun}:**
+- 1 John 4:19 - "We love because He first loved us" - This verse shows that God's active love toward us is the source and motivation for our love toward others
+- Romans 5:8 - "But God demonstrates His own love for us in this: While we were still sinners, Christ died for us" - God's love was demonstrated through action, not just words
+- 1 Corinthians 13:4-7 - This passage lists specific ACTIONS of love (patient, kind, does not envy, etc.), showing love is something we DO, not just feel
+
+**${headings.illustration}:**
+[Story about a parent waking up at 3 AM to care for a sick child - they don't "feel" like it, but they choose to act in love. Or story of someone serving in their community despite personal inconvenience, demonstrating active love]
+
+**${headings.application}:**
+- This week, identify one person who is difficult to love and perform one specific act of kindness for them
+- Practice "love as a verb" by doing something tangible for your spouse, child, or neighbor without being asked
+- Before making decisions, ask yourself: "What would love do in this situation?"
+
+**${headings.transition}:**
+If God's love is active and intentional, then it also must be...
 
 CRITICAL JSON FORMATTING RULES:
 - Output ONLY valid JSON - no markdown, no extra text

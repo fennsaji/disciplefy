@@ -1541,6 +1541,12 @@ class TranslationKeys {
   /// Description of the Lectio Divina study mode
   static const studyModeLectioDescription = 'study_mode.lectio.description';
 
+  /// Name of the Sermon Outline study mode (50-60 minute sermon)
+  static const studyModeSermonName = 'study_mode.sermon.name';
+
+  /// Description of the Sermon Outline study mode
+  static const studyModeSermonDescription = 'study_mode.sermon.description';
+
   // Settings - Study Mode Preference
   /// Settings label for study mode preference option
   static const settingsStudyModePreference = 'settings.study_mode_preference';
@@ -1730,6 +1736,9 @@ class TranslationKeys {
   /// Duration label for Lectio mode (e.g., "15 min")
   static const studyModeLectioDuration = 'study_mode.lectio.duration_label';
 
+  /// Duration label for Sermon mode (e.g., "50-60 min")
+  static const studyModeSermonDuration = 'study_mode.sermon.duration_label';
+
   // Lectio Divina Mode Sections
   /// Section title for scripture passage in Lectio mode
   static const lectioScriptureForMeditation = 'lectio.scripture_for_meditation';
@@ -1790,6 +1799,28 @@ class TranslationKeys {
 
   /// Duration label for Lectio mode (deprecated, use studyModeLectioDuration)
   static const lectioDurationLabel = 'lectio.duration_label';
+
+  // Sermon Outline Mode Sections
+  /// Section title for sermon thesis/introduction
+  static const sermonThesis = 'sermon.thesis';
+
+  /// Section title for main sermon body with timing breakdown
+  static const sermonBody = 'sermon.body';
+
+  /// Section title for sermon background and context
+  static const sermonContext = 'sermon.context';
+
+  /// Section title for supporting Bible verses
+  static const sermonSupportingVerses = 'sermon.supporting_verses';
+
+  /// Section title for small group discussion questions
+  static const sermonDiscussionQuestions = 'sermon.discussion_questions';
+
+  /// Section title for altar call/invitation template
+  static const sermonAltarCall = 'sermon.altar_call';
+
+  /// Badge label for sermon outline with duration
+  static const sermonDuration = 'sermon.duration_badge';
 
   // Reading Completion Card
   /// Title for reading completion prompt card

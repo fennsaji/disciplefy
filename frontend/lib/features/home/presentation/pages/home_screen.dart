@@ -176,7 +176,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
         _navigateToDailyVerseStudy(currentState, StudyMode.deep, false);
       } else if (savedModeRaw != null) {
         // User has a specific saved preference - use it directly without showing sheet
-        final savedMode = StudyModeExtension.fromString(savedModeRaw);
+        final savedMode = studyModeFromString(savedModeRaw);
         debugPrint('✅ [HOME] Using saved study mode: ${savedMode.name}');
         _navigateToDailyVerseStudy(currentState, savedMode, false);
       } else {
@@ -184,8 +184,11 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
         debugPrint(
             '🔍 [HOME] No saved preference - showing mode selection sheet with Deep Dive recommended');
         const recommendedMode = StudyMode.deep; // Scripture → Deep Dive
+        final languageCode =
+            (currentState as dynamic).currentLanguage.code as String;
         final result = await ModeSelectionSheet.show(
           context: context,
+          languageCode: languageCode,
           recommendedMode: recommendedMode,
         );
         if (result != null && mounted) {
@@ -1080,8 +1083,15 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
       return;
     }
 
+    // Get current language preference for token cost calculation
+    final selectedLanguage =
+        await sl<LanguagePreferenceService>().getSelectedLanguage();
+
     // Show mode selection sheet before navigating
-    final result = await ModeSelectionSheet.show(context: context);
+    final result = await ModeSelectionSheet.show(
+      context: context,
+      languageCode: selectedLanguage.code,
+    );
     if (result != null && mounted) {
       _navigateToStudyGuideWithMode(
         topic,

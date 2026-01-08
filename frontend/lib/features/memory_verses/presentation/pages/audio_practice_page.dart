@@ -144,8 +144,9 @@ class _AudioPracticePageState extends State<AudioPracticePage> {
     _timesPlayed++;
 
     final languageCode = _getLanguageCode();
+    // Speak verse text first, then reference at the end
     final textToSpeak =
-        '${currentVerse!.verseReference}. ${currentVerse!.verseText}';
+        '${currentVerse!.verseText}. ${currentVerse!.verseReference}';
 
     await _ttsService.speakWithSettings(
       text: textToSpeak,

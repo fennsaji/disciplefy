@@ -17,7 +17,7 @@ import { UserContext } from '../types/index.ts'
 /**
  * Valid study modes for reflections
  */
-export type StudyMode = 'quick' | 'standard' | 'deep' | 'lectio'
+export type StudyMode = 'quick' | 'standard' | 'deep' | 'lectio' | 'sermon'
 
 /**
  * Reflection response structure stored in JSONB
@@ -98,7 +98,7 @@ export class ReflectionsService {
     }
 
     // Validate study mode
-    const validModes: StudyMode[] = ['quick', 'standard', 'deep', 'lectio']
+    const validModes: StudyMode[] = ['quick', 'standard', 'deep', 'lectio', 'sermon']
     if (!validModes.includes(request.study_mode)) {
       throw new AppError(
         'VALIDATION_ERROR',
@@ -403,7 +403,8 @@ export class ReflectionsService {
       quick: 0,
       standard: 0,
       deep: 0,
-      lectio: 0
+      lectio: 0,
+      sermon: 0
     }
     
     reflections.forEach(r => {

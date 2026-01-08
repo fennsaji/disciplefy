@@ -1,10 +1,12 @@
 /**
  * Token System Type Definitions
- * 
+ *
  * Complete TypeScript interfaces for the token-based usage system.
  * These types align with the database schema and business logic from
  * the token system design document.
  */
+
+import type { StudyMode } from '../services/llm-types.ts'
 
 /**
  * User subscription plan types
@@ -17,8 +19,40 @@ export type UserPlan = 'free' | 'standard' | 'premium'
 export type SupportedLanguage = 'en' | 'hi' | 'ml'
 
 /**
+ * Mode-based token cost multipliers
+ * Applied to base language cost to support premium/expensive modes
+ */
+export interface TokenCostMultiplier {
+  readonly quick: number
+  readonly standard: number
+  readonly deep: number
+  readonly lectio: number
+  readonly sermon: number
+}
+
+/**
+ * Default mode multipliers for token costs
+ *
+ * Multipliers based on study duration and complexity:
+ * - Quick (3 min): 0.5x - Brief overview, minimal depth
+ * - Standard (10 min): 1.0x - Baseline, moderate content
+ * - Deep Dive (25 min): 1.5x - Extensive word studies, cross-references
+ * - Lectio Divina (15 min): 1.2x - Contemplative + guided reflection
+ * - Sermon (55 min): 2.0x for EN, 1.5x for HI/ML (special language-dependent pricing)
+ *
+ * Final costs: Quick=5/10, Standard=10/20, Deep=15/30, Lectio=12/24, Sermon=20/30 (EN/HI,ML)
+ */
+export const MODE_MULTIPLIERS: TokenCostMultiplier = {
+  quick: 0.5,      // Half cost - encourages quick studies
+  standard: 1.0,   // Baseline - no change
+  deep: 1.5,       // Premium content - 50% more
+  lectio: 1.2,     // Moderate premium - 20% more
+  sermon: 2.0      // Most expensive - 2x (EN only; HI/ML use 1.5x via special logic)
+} as const
+
+/**
  * User token balance information
- * 
+ *
  * Represents the current token state for a user, including
  * both daily allocation and purchased tokens.
  */
@@ -73,28 +107,35 @@ export interface TokenPurchaseResult {
 
 /**
  * Configuration for language-based token costs
- * 
+ *
  * Defines how many tokens each language costs for
- * study guide generation operations.
+ * study guide generation operations, including mode-based multipliers.
  */
 export interface TokenCostConfig {
   readonly costs: Record<SupportedLanguage, number>
+  readonly modeMultipliers: TokenCostMultiplier
   readonly defaultCost: number          // Fallback cost for unknown languages
 }
 
 /**
  * Default token cost configuration
- * 
+ *
  * Based on LLM complexity and language processing requirements:
- * - English: 10 tokens (simpler, well-supported)
- * - Hindi/Malayalam: 20 tokens (more complex, requires specialized models)
+ * - English: 10 tokens base (simpler, well-supported)
+ * - Hindi/Malayalam: 15 tokens base (moderate complexity, specialized models)
+ *
+ * Mode multipliers are applied uniformly across all languages:
+ * - Quick: 0.5x, Standard: 1.0x, Deep: 1.5x, Lectio: 1.2x, Sermon: 2.0x
+ * - Example costs: EN Quick=5, Standard=10, Sermon=20
+ *                  HI/ML Quick=8, Standard=15, Sermon=30
  */
 export const DEFAULT_TOKEN_COSTS: TokenCostConfig = {
   costs: {
     'en': 10,    // English
-    'hi': 20,    // Hindi
-    'ml': 20     // Malayalam
+    'hi': 15,    // Hindi (reduced from 20)
+    'ml': 15     // Malayalam (reduced from 20)
   },
+  modeMultipliers: MODE_MULTIPLIERS,
   defaultCost: 10 // Default to English cost
 } as const
 

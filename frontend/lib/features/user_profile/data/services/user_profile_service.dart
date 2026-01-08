@@ -229,7 +229,7 @@ class UserProfileService {
         if (modeString == null || modeString.isEmpty) {
           return const Right(null); // No preference saved - ask every time
         }
-        return Right(StudyModeExtension.fromString(modeString));
+        return Right(studyModeFromString(modeString));
       },
     );
   }

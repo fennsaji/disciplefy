@@ -97,7 +97,10 @@ async function handleStudyGenerate(req: Request, { authService, llmService, stud
       // Different user accessing cached content - CHARGE TOKENS
       const userPlan = await authService.getUserPlan(req)
       const targetLanguage = language || 'en'
-      const tokenCost = tokenService.calculateTokenCost(targetLanguage as SupportedLanguage)
+      const tokenCost = tokenService.calculateTokenCost(
+        targetLanguage as SupportedLanguage,
+        study_mode || 'standard'
+      )
       const identifier = userContext.type === 'authenticated' ? userContext.userId! : userContext.sessionId!
 
       let consumptionResult
@@ -180,7 +183,10 @@ async function handleStudyGenerate(req: Request, { authService, llmService, stud
   // 5. Determine user plan and calculate token cost
   const userPlan = await authService.getUserPlan(req)
   const targetLanguage = language || 'en'
-  const tokenCost = tokenService.calculateTokenCost(targetLanguage as SupportedLanguage)
+  const tokenCost = tokenService.calculateTokenCost(
+    targetLanguage as SupportedLanguage,
+    study_mode || 'standard'
+  )
   const identifier = userContext.type === 'authenticated' ? userContext.userId! : userContext.sessionId!
   
   // 6. Token consumption enforcement (only for new content generation)
