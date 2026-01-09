@@ -31,6 +31,10 @@ class LanguagePreferenceService {
   final StreamController<AppLanguage> _languageChangeController =
       StreamController<AppLanguage>.broadcast();
 
+  // Stream controller for study content language change notifications
+  final StreamController<AppLanguage> _studyContentLanguageChangeController =
+      StreamController<AppLanguage>.broadcast();
+
   // Caching to prevent excessive API calls
   String? _cachedUserId;
   bool? _cachedHasCompletedSelection;
@@ -50,12 +54,17 @@ class LanguagePreferenceService {
         _userProfileService = userProfileService,
         _cacheCoordinator = cacheCoordinator;
 
-  /// Stream of language preference changes
+  /// Stream of app language preference changes (UI language)
   Stream<AppLanguage> get languageChanges => _languageChangeController.stream;
+
+  /// Stream of study content language preference changes (study guides language)
+  Stream<AppLanguage> get studyContentLanguageChanges =>
+      _studyContentLanguageChangeController.stream;
 
   /// Dispose method to clean up resources
   void dispose() {
     _languageChangeController.close();
+    _studyContentLanguageChangeController.close();
   }
 
   /// Get the selected language preference with fallback logic
@@ -741,10 +750,17 @@ class LanguagePreferenceService {
             _studyContentLanguageKey, _defaultStudyLanguageValue);
         print(
             '💾 [STUDY_CONTENT_LANGUAGE] Study content language set to default (app language)');
+
+        // Notify listeners with current app language
+        final currentLanguage = await getSelectedLanguage();
+        _studyContentLanguageChangeController.add(currentLanguage);
       } else {
         await _prefs.setString(_studyContentLanguageKey, language.code);
         print(
             '💾 [STUDY_CONTENT_LANGUAGE] Study content language saved: ${language.displayName}');
+
+        // Notify listeners of the change
+        _studyContentLanguageChangeController.add(language);
       }
       print('ℹ️  [STUDY_CONTENT_LANGUAGE] App UI language remains unchanged');
     } catch (e) {
@@ -760,6 +776,10 @@ class LanguagePreferenceService {
           _studyContentLanguageKey, _defaultStudyLanguageValue);
       print(
           '💾 [STUDY_CONTENT_LANGUAGE] Study content language reset to default');
+
+      // Notify listeners with current app language
+      final currentLanguage = await getSelectedLanguage();
+      _studyContentLanguageChangeController.add(currentLanguage);
     } catch (e) {
       print('Error resetting study content language to default: $e');
       rethrow;
