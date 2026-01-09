@@ -76,8 +76,9 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
   bool _hasTriggeredDailyVersePrompt = false;
   bool _hasTriggeredStreakPrompt = false;
 
-  // Stream subscription for language changes (to be cancelled in dispose)
+  // Stream subscriptions for language changes (to be cancelled in dispose)
   StreamSubscription<AppLanguage>? _languageSubscription;
+  StreamSubscription<AppLanguage>? _studyContentLanguageSubscription;
 
   @override
   void initState() {
@@ -98,16 +99,18 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
     }
   }
 
-  /// Listen for app language preference changes from settings
+  /// Listen for app language and study content language preference changes
   /// When app language changes, study content language is reset to default,
   /// so we need to refresh the "For You" content to reflect the new app language.
+  /// When study content language changes (from Study Topics screen), we also refresh.
   void _setupLanguageChangeListener() {
     final languageService = sl<LanguagePreferenceService>();
 
-    // Cancel any existing subscription before creating a new one
+    // Cancel any existing subscriptions before creating new ones
     _languageSubscription?.cancel();
+    _studyContentLanguageSubscription?.cancel();
 
-    // Store the subscription to ensure proper cleanup
+    // Listen to app language changes (UI language)
     _languageSubscription =
         languageService.languageChanges.listen((newLanguage) {
       if (kDebugMode) {
@@ -123,6 +126,27 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
 
         if (kDebugMode) {
           print('[HOME] "For You" content refreshed after app language change');
+        }
+      }
+    });
+
+    // Listen to study content language changes (study guides language)
+    _studyContentLanguageSubscription =
+        languageService.studyContentLanguageChanges.listen((newLanguage) {
+      if (kDebugMode) {
+        print(
+            '[HOME] Study content language changed to: ${newLanguage.displayName}');
+      }
+
+      // Refresh the "For You" topics with the new study content language
+      if (mounted) {
+        final homeBloc = sl<HomeBloc>();
+        homeBloc.add(const LoadForYouTopics(forceRefresh: true));
+        homeBloc.add(const LoadActiveLearningPath(forceRefresh: true));
+
+        if (kDebugMode) {
+          print(
+              '[HOME] "For You" content refreshed after study content language change');
         }
       }
     });
@@ -329,6 +353,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
   @override
   void dispose() {
     _languageSubscription?.cancel();
+    _studyContentLanguageSubscription?.cancel();
     super.dispose();
   }
 
