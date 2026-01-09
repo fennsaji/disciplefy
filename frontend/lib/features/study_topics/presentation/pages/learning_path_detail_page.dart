@@ -53,7 +53,8 @@ class _LearningPathDetailPageState extends State<LearningPathDetailPage> {
 
   Future<void> _loadLanguageAndPathDetails() async {
     final languageService = sl<LanguagePreferenceService>();
-    final language = await languageService.getSelectedLanguage();
+    // Use study content language (not global app language)
+    final language = await languageService.getStudyContentLanguage();
     if (mounted) {
       setState(() {
         _currentLanguage = language.code;
@@ -113,9 +114,10 @@ class _LearningPathDetailPageState extends State<LearningPathDetailPage> {
       final recommendedMode =
           studyModeFromString(path.recommendedMode ?? 'standard');
 
-      // Get current language preference for token cost calculation
+      // Get study content language preference for token cost calculation
+      // Uses study content language (not app UI language)
       final selectedLanguage =
-          await sl<LanguagePreferenceService>().getSelectedLanguage();
+          await sl<LanguagePreferenceService>().getStudyContentLanguage();
 
       final result = await ModeSelectionSheet.show(
         context: context,

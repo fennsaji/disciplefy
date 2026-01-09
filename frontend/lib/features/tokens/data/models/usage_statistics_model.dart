@@ -94,7 +94,8 @@ class UsageStatisticsModel extends UsageStatistics {
       final breakdownData = json['feature_breakdown'];
       if (breakdownData is List) {
         featureBreakdown = breakdownData
-            .map((item) => FeatureBreakdownModel.fromJson(item as Map<String, dynamic>))
+            .map((item) =>
+                FeatureBreakdownModel.fromJson(item as Map<String, dynamic>))
             .toList();
       }
     }
@@ -105,7 +106,8 @@ class UsageStatisticsModel extends UsageStatistics {
       final breakdownData = json['language_breakdown'];
       if (breakdownData is List) {
         languageBreakdown = breakdownData
-            .map((item) => LanguageBreakdownModel.fromJson(item as Map<String, dynamic>))
+            .map((item) =>
+                LanguageBreakdownModel.fromJson(item as Map<String, dynamic>))
             .toList();
       }
     }
@@ -116,7 +118,8 @@ class UsageStatisticsModel extends UsageStatistics {
       final breakdownData = json['study_mode_breakdown'];
       if (breakdownData is List) {
         studyModeBreakdown = breakdownData
-            .map((item) => StudyModeBreakdownModel.fromJson(item as Map<String, dynamic>))
+            .map((item) =>
+                StudyModeBreakdownModel.fromJson(item as Map<String, dynamic>))
             .toList();
       }
     }

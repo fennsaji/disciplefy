@@ -79,6 +79,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
     super.initState();
     _loadDailyVerse();
     _loadSubscriptionStatus();
+    _setupLanguageChangeListener();
     // Fire initial topics load once; HomeBloc is a singleton via DI
     final homeBloc = sl<HomeBloc>();
     final current = homeBloc.state;
@@ -90,6 +91,31 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
     if (current is! HomeCombinedState || current.activeLearningPath == null) {
       homeBloc.add(const LoadActiveLearningPath());
     }
+  }
+
+  /// Listen for app language preference changes from settings
+  /// When app language changes, study content language is reset to default,
+  /// so we need to refresh the "For You" content to reflect the new app language.
+  void _setupLanguageChangeListener() {
+    final languageService = sl<LanguagePreferenceService>();
+
+    languageService.languageChanges.listen((newLanguage) {
+      if (kDebugMode) {
+        print('[HOME] App language changed to: ${newLanguage.displayName}');
+      }
+
+      // When app language changes, study content language is automatically reset to default
+      // Refresh the "For You" topics with the new language
+      if (mounted) {
+        final homeBloc = sl<HomeBloc>();
+        homeBloc.add(const LoadForYouTopics(forceRefresh: true));
+        homeBloc.add(const LoadActiveLearningPath(forceRefresh: true));
+
+        if (kDebugMode) {
+          print('[HOME] "For You" content refreshed after app language change');
+        }
+      }
+    });
   }
 
   /// Load subscription status for Standard plan banner
@@ -1093,9 +1119,10 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
       return;
     }
 
-    // Get current language preference for token cost calculation
+    // Get study content language preference for token cost calculation
+    // Uses study content language (not app UI language)
     final selectedLanguage =
-        await sl<LanguagePreferenceService>().getSelectedLanguage();
+        await sl<LanguagePreferenceService>().getStudyContentLanguage();
 
     // Show mode selection sheet before navigating
     final result = await ModeSelectionSheet.show(

@@ -203,6 +203,8 @@ class AppTranslations {
       'english': 'English',
       'hindi': 'हिन्दी',
       'malayalam': 'മലയാളം',
+      'default_language': 'Default',
+      'default_language_option': 'Default (App Language)',
       'enter_scripture': 'Enter Scripture Reference',
       'enter_topic': 'Enter Topic',
       'ask_question': 'Ask Your Question',
@@ -765,6 +767,12 @@ class AppTranslations {
       'no_topics_available': 'No study topics are available at the moment',
       'clear_filters': 'Clear Filters',
       'topics_found': '{count} topics found',
+      'content_language': 'Content Language',
+      'content_language_description':
+          'This only affects study content, not app UI',
+      'content_language_default': 'Default (App Language)',
+      'content_language_default_description':
+          'Use the same language as your app',
       'more_options_tooltip': 'More options',
     },
     'category_filter': {
@@ -921,7 +929,8 @@ class AppTranslations {
         'title': 'Usage History',
         'recent_activity': 'Recent Activity',
         'empty': 'No Usage History',
-        'empty_message': 'Your token usage will appear here once you start generating study guides',
+        'empty_message':
+            'Your token usage will appear here once you start generating study guides',
         'failed': 'Failed to Load Usage History',
         'retry': 'Retry',
         'daily': 'Daily',
@@ -2012,6 +2021,8 @@ class AppTranslations {
       'english': 'English',
       'hindi': 'हिन्दी',
       'malayalam': 'മലയാളം',
+      'default_language': 'डिफ़ॉल्ट',
+      'default_language_option': 'डिफ़ॉल्ट (ऐप भाषा)',
       'enter_scripture': 'आयत लिखें',
       'enter_topic': 'विषय लिखें',
       'ask_question': 'सवाल पूछें',
@@ -2576,6 +2587,12 @@ class AppTranslations {
       'no_topics_available': 'अभी कोई विषय नहीं है',
       'clear_filters': 'फ़िल्टर हटाएं',
       'topics_found': '{count} विषय मिले',
+      'content_language': 'सामग्री भाषा',
+      'content_language_description':
+          'यह केवल अध्ययन सामग्री को प्रभावित करता है, ऐप UI को नहीं',
+      'content_language_default': 'डिफ़ॉल्ट (ऐप भाषा)',
+      'content_language_default_description':
+          'अपने ऐप की समान भाषा का उपयोग करें',
       'more_options_tooltip': 'अधिक विकल्प',
     },
     'category_filter': {
@@ -2731,7 +2748,8 @@ class AppTranslations {
         'title': 'उपयोग हिस्ट्री',
         'recent_activity': 'हाल की गतिविधि',
         'empty': 'कोई उपयोग हिस्ट्री नहीं',
-        'empty_message': 'जब आप स्टडी गाइड बनाएंगे तो आपका टोकन उपयोग यहां दिखाई देगा',
+        'empty_message':
+            'जब आप स्टडी गाइड बनाएंगे तो आपका टोकन उपयोग यहां दिखाई देगा',
         'failed': 'उपयोग हिस्ट्री लोड करने में विफल',
         'retry': 'पुनः प्रयास करें',
         'daily': 'डेली',
@@ -3820,6 +3838,8 @@ class AppTranslations {
       'english': 'English',
       'hindi': 'हिन्दी',
       'malayalam': 'മലയാളം',
+      'default_language': 'സ്ഥിരസ്ഥിതി',
+      'default_language_option': 'സ്ഥിരസ്ഥിതി (ആപ്പ് ഭാഷ)',
       'enter_scripture': 'തിരുവെഴുത്ത് റഫറൻസ് നൽകുക',
       'enter_topic': 'വിഷയം നൽകുക',
       'ask_question': 'നിങ്ങളുടെ ചോദ്യം ചോദിക്കുക',
@@ -4400,6 +4420,12 @@ class AppTranslations {
       'no_topics_available': 'ഇപ്പോൾ പഠന വിഷയങ്ങളൊന്നും ലഭ്യമല്ല',
       'clear_filters': 'ഫിൽട്ടറുകൾ മായ്ക്കുക',
       'topics_found': '{count} വിഷയങ്ങൾ കണ്ടെത്തി',
+      'content_language': 'ഉള്ളടക്ക ഭാഷ',
+      'content_language_description':
+          'ഇത് പഠന ഉള്ളടക്കത്തെ മാത്രമേ ബാധിക്കൂ, ആപ്പ് UI-യെ അല്ല',
+      'content_language_default': 'സ്ഥിരസ്ഥിതി (ആപ്പ് ഭാഷ)',
+      'content_language_default_description':
+          'നിങ്ങളുടെ ആപ്പിന്റെ അതേ ഭാഷ ഉപയോഗിക്കുക',
       'more_options_tooltip': 'കൂടുതൽ ഓപ്ഷനുകൾ',
     },
     'category_filter': {

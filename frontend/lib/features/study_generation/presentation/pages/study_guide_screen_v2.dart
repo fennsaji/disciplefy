@@ -349,16 +349,18 @@ class _StudyGuideScreenV2ContentState
       return;
     }
 
-    // Get user's language preference if not specified in URL
+    // Get study content language preference if not specified in URL
+    // Uses study content language (not app UI language)
     String rawLanguageCode = widget.language ?? 'en';
     if (widget.language == null) {
       try {
         final languageService = sl<LanguagePreferenceService>();
-        final appLanguage = await languageService.getSelectedLanguage();
+        final appLanguage = await languageService.getStudyContentLanguage();
         rawLanguageCode = appLanguage.code;
       } catch (e) {
         if (kDebugMode) {
-          print('⚠️ [STUDY_GUIDE_V2] Failed to get language preference: $e');
+          print(
+              '⚠️ [STUDY_GUIDE_V2] Failed to get study content language preference: $e');
         }
       }
     }

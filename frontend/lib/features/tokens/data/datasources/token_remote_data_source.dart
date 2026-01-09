@@ -1114,8 +1114,7 @@ class TokenRemoteDataSourceImpl implements TokenRemoteDataSource {
           final data = responseData['data'] as Map<String, dynamic>;
           final historyList = data['history'] as List<dynamic>;
 
-          print(
-              '📊 [TOKEN_API] Retrieved ${historyList.length} usage records');
+          print('📊 [TOKEN_API] Retrieved ${historyList.length} usage records');
 
           return historyList
               .map((json) =>
@@ -1124,8 +1123,8 @@ class TokenRemoteDataSourceImpl implements TokenRemoteDataSource {
         } else {
           final error = responseData['error'] as Map<String, dynamic>?;
           throw ServerException(
-            message: error?['message'] as String? ??
-                'Failed to fetch usage history',
+            message:
+                error?['message'] as String? ?? 'Failed to fetch usage history',
             code: error?['code'] as String? ?? 'USAGE_HISTORY_ERROR',
           );
         }
@@ -1213,7 +1212,8 @@ class TokenRemoteDataSourceImpl implements TokenRemoteDataSource {
                 statisticsData as Map<String, dynamic>);
           } else {
             // Return empty statistics if no data available
-            print('📊 [TOKEN_API] No statistics data available, returning empty');
+            print(
+                '📊 [TOKEN_API] No statistics data available, returning empty');
             return UsageStatisticsModel.empty();
           }
         } else {

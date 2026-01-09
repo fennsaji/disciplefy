@@ -102,7 +102,8 @@ class UsageStatisticsCard extends StatelessWidget {
                     context: context,
                     icon: Icons.calculate,
                     label: context.tr('tokens.stats.avg_per_operation'),
-                    value: statistics.averageTokensPerOperation.toStringAsFixed(1),
+                    value:
+                        statistics.averageTokensPerOperation.toStringAsFixed(1),
                     color: Colors.orange,
                   ),
                 ),
@@ -112,7 +113,8 @@ class UsageStatisticsCard extends StatelessWidget {
                     context: context,
                     icon: Icons.shopping_bag,
                     label: context.tr('tokens.stats.purchased_percentage'),
-                    value: '${statistics.purchasedTokensPercentage.toStringAsFixed(0)}%',
+                    value:
+                        '${statistics.purchasedTokensPercentage.toStringAsFixed(0)}%',
                     color: Colors.green,
                   ),
                 ),
