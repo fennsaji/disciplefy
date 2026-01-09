@@ -296,6 +296,8 @@ class TranslationKeys {
   static const settingsTitle = 'settings.title';
   static const settingsAccount = 'settings.account';
   static const settingsSignInToSync = 'settings.sign_in_to_sync';
+  static const settingsSignInToSavePreferences =
+      'settings.sign_in_to_save_preferences';
   static const settingsSignIn = 'settings.sign_in';
   static const settingsMyPlan = 'settings.my_plan';
   static const settingsMyPlanSubtitle = 'settings.my_plan_subtitle';
@@ -517,6 +519,7 @@ class TranslationKeys {
       'study_topics.no_topics_available';
   static const studyTopicsClearFilters = 'study_topics.clear_filters';
   static const studyTopicsTopicsFound = 'study_topics.topics_found';
+  static const moreOptionsTooltip = 'study_topics.more_options_tooltip';
 
   // Token Management - Main
   static const tokenManagementTitle = 'tokens.management.title';

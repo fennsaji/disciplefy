@@ -142,6 +142,11 @@ export class TokenService {
         await this.logConsumptionAnalytics(identifier, userPlan, tokenCost, data, context)
       }
 
+      // Record detailed usage history for authenticated users
+      if (context?.userId) {
+        await this.recordUsageHistory(context.userId, tokenCost, data, context)
+      }
+
       return result
 
     } catch (error) {
@@ -446,7 +451,7 @@ export class TokenService {
 
   /**
    * Logs token consumption analytics
-   * 
+   *
    * @param identifier - User ID or session ID
    * @param userPlan - User's subscription plan
    * @param tokenCost - Number of tokens consumed
@@ -471,6 +476,52 @@ export class TokenService {
       },
       context
     )
+  }
+
+  /**
+   * Records detailed token usage history
+   *
+   * Stores comprehensive usage information including feature, operation type,
+   * study mode, language, and content details for analytics and user insights.
+   * Non-blocking - logs warnings but does not throw errors to prevent
+   * disrupting the main token consumption flow.
+   *
+   * @param userId - Authenticated user ID
+   * @param tokenCost - Number of tokens consumed
+   * @param consumptionData - Database result from token consumption
+   * @param context - Operation context with usage details
+   */
+  private async recordUsageHistory(
+    userId: string,
+    tokenCost: number,
+    consumptionData: DatabaseTokenResult,
+    context: Partial<TokenOperationContext>
+  ): Promise<void> {
+    try {
+      // Calculate token source breakdown (how many from daily vs purchased)
+      const dailyUsed = Math.min(tokenCost, consumptionData.available_tokens || 0)
+      const purchasedUsed = tokenCost - dailyUsed
+
+      // Call record_token_usage RPC function
+      await this.supabaseClient.rpc('record_token_usage', {
+        p_user_id: userId,
+        p_token_cost: tokenCost,
+        p_feature_name: context.featureName || 'unknown',
+        p_operation_type: context.operationType || 'token_consumption',
+        p_study_mode: context.studyMode || null,
+        p_language: context.language || 'en',
+        p_content_title: context.contentTitle || null,
+        p_content_reference: context.contentReference || null,
+        p_input_type: context.inputType || null,
+        p_user_plan: context.userPlan,
+        p_session_id: context.sessionId || null,
+        p_daily_tokens_used: dailyUsed,
+        p_purchased_tokens_used: purchasedUsed
+      })
+    } catch (error) {
+      // Non-blocking - log warning but don't throw error
+      console.warn('[TokenService] Failed to record usage history:', error)
+    }
   }
 
   /**

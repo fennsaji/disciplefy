@@ -114,6 +114,8 @@ class _ClickableScriptureTextState extends State<ClickableScriptureText> {
 
   /// Parse markdown formatting and build text spans with both markdown styling
   /// and clickable scripture references.
+  ///
+  /// Handles block-level markdown (headings, bullets) and inline markdown (bold, italic).
   List<InlineSpan> _buildTextSpans(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
@@ -123,13 +125,82 @@ class _ClickableScriptureTextState extends State<ClickableScriptureText> {
     final scriptureColor =
         isDark ? theme.colorScheme.tertiary : theme.colorScheme.primary;
 
-    // Parse markdown and scripture in the text
-    return _parseMarkdownAndScripture(
-      widget.text,
-      context,
-      baseStyle,
-      scriptureColor,
-    );
+    // Split text into lines to handle block-level markdown
+    final lines = widget.text.split('\n');
+    final List<InlineSpan> allSpans = [];
+
+    for (int i = 0; i < lines.length; i++) {
+      final line = lines[i];
+      final trimmedLine = line.trim();
+
+      // Skip empty lines
+      if (trimmedLine.isEmpty) {
+        if (i > 0) {
+          allSpans.add(const TextSpan(text: '\n'));
+        }
+        continue;
+      }
+
+      // Check if this is a heading (bold text on its own line)
+      final headingMatch = RegExp(r'^\*\*(.+?)\*\*$').firstMatch(trimmedLine);
+      if (headingMatch != null) {
+        // Heading style
+        final headingStyle = (baseStyle ?? const TextStyle()).copyWith(
+          fontWeight: FontWeight.bold,
+          fontSize: (baseStyle?.fontSize ?? 16) * 1.15,
+        );
+
+        if (i > 0) allSpans.add(const TextSpan(text: '\n\n'));
+
+        allSpans.addAll(_parseMarkdownAndScripture(
+          headingMatch.group(1)!,
+          context,
+          headingStyle,
+          scriptureColor,
+        ));
+
+        allSpans.add(const TextSpan(text: '\n'));
+        continue;
+      }
+
+      // Check if this is a bullet point (•, -, or * at start)
+      final bulletMatch = RegExp(r'^([•\-\*])\s+(.+)$').firstMatch(trimmedLine);
+      if (bulletMatch != null) {
+        // Bullet point style with indentation
+        if (i > 0) allSpans.add(const TextSpan(text: '\n'));
+
+        final bulletChar = bulletMatch.group(1) == '•' ? '•' : '•'; // Normalize to •
+        final bulletContent = bulletMatch.group(2)!;
+
+        // Add bullet with indentation
+        allSpans.add(TextSpan(
+          text: '  $bulletChar  ',
+          style: baseStyle?.copyWith(fontWeight: FontWeight.bold),
+        ));
+
+        // Parse the content after the bullet
+        allSpans.addAll(_parseMarkdownAndScripture(
+          bulletContent,
+          context,
+          baseStyle,
+          scriptureColor,
+        ));
+
+        continue;
+      }
+
+      // Regular line - parse inline markdown
+      if (i > 0) allSpans.add(const TextSpan(text: '\n'));
+
+      allSpans.addAll(_parseMarkdownAndScripture(
+        line,
+        context,
+        baseStyle,
+        scriptureColor,
+      ));
+    }
+
+    return allSpans;
   }
 
   /// Recursively parse markdown formatting and scripture references

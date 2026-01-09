@@ -1,6 +1,11 @@
 -- Migration: Add recommended_mode to Continue Learning
 -- Date: 2026-01-09
 -- Description: Updates get_in_progress_topics function to include recommended_mode from learning paths
+--
+-- Security:
+--   - Adds authorization check to prevent cross-user data access
+--   - Sets search_path to prevent search_path injection attacks
+--   - Uses SECURITY DEFINER with proper authorization guard
 
 BEGIN;
 
@@ -29,8 +34,19 @@ RETURNS TABLE(
   total_topics_in_path INTEGER,
   topics_completed_in_path INTEGER,
   recommended_mode TEXT
-) AS $$
+)
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path TO public, pg_temp
+AS $$
 BEGIN
+  -- Authorization check: ensure user can only access their own data
+  IF p_user_id != auth.uid() THEN
+    RAISE EXCEPTION 'Unauthorized: user can only access their own data'
+      USING ERRCODE = 'PGRST301',
+            HINT = 'Users can only query their own in-progress topics';
+  END IF;
+
   RETURN QUERY
   WITH in_progress AS (
     -- Get topics user has started but not completed
@@ -172,7 +188,7 @@ BEGIN
   ORDER BY c.topic_id, c.priority, c.updated_at DESC
   LIMIT p_limit;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$;
 
 -- Update function comment
 COMMENT ON FUNCTION get_in_progress_topics IS 'Returns in-progress topics for Continue Learning section, including learning path information, recommended study mode, and next topics to study from enrolled paths';

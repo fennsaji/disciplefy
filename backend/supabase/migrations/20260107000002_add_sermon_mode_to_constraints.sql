@@ -89,10 +89,11 @@ BEGIN
         ALTER TABLE public.user_personalization
         DROP CONSTRAINT IF EXISTS user_personalization_default_study_mode_check;
 
-        -- Add updated constraint with 'sermon'
+        -- Add updated constraint with 'sermon' and 'recommended', allowing NULL
+        -- Mirrors pattern from user_profiles.default_study_mode
         ALTER TABLE public.user_personalization
         ADD CONSTRAINT user_personalization_default_study_mode_check
-        CHECK (default_study_mode IN ('quick', 'standard', 'deep', 'lectio', 'sermon'));
+        CHECK (default_study_mode IS NULL OR default_study_mode IN ('quick', 'standard', 'deep', 'lectio', 'sermon', 'recommended'));
 
         RAISE NOTICE 'Updated user_personalization default_study_mode constraint';
     ELSE

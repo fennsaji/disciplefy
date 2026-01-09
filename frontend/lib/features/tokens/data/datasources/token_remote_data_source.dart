@@ -7,6 +7,8 @@ import '../models/purchase_history_model.dart';
 import '../models/purchase_statistics_model.dart' as stats;
 import '../models/payment_preferences_model.dart' as prefs;
 import '../models/saved_payment_method_model.dart';
+import '../models/token_usage_history_model.dart';
+import '../models/usage_statistics_model.dart';
 import '../../domain/entities/payment_order_response.dart';
 
 /// Abstract contract for remote token operations.
@@ -170,6 +172,45 @@ abstract class TokenRemoteDataSource {
     String? preferredWallet,
     bool? enableOneClickPurchase,
     String? defaultPaymentType,
+  });
+
+  /// Gets token usage history for the authenticated user.
+  ///
+  /// [limit] - Maximum number of records to return (1-100, default 20)
+  /// [offset] - Number of records to skip for pagination (default 0)
+  /// [startDate] - Optional start date for filtering records
+  /// [endDate] - Optional end date for filtering records
+  ///
+  /// Returns list of token usage history records ordered by created_at DESC
+  ///
+  /// Throws [NetworkException] if there's a network issue.
+  /// Throws [ServerException] if there's a server error.
+  /// Throws [AuthenticationException] if authentication fails.
+  Future<List<TokenUsageHistoryModel>> getUsageHistory({
+    int? limit,
+    int? offset,
+    DateTime? startDate,
+    DateTime? endDate,
+  });
+
+  /// Gets aggregated token usage statistics for the authenticated user.
+  ///
+  /// [startDate] - Optional start date for filtering statistics
+  /// [endDate] - Optional end date for filtering statistics
+  ///
+  /// Returns aggregated statistics including:
+  /// - Total tokens consumed
+  /// - Total operations performed
+  /// - Daily vs purchased token breakdown
+  /// - Most used feature, language, and study mode
+  /// - Breakdowns by feature, language, and study mode
+  ///
+  /// Throws [NetworkException] if there's a network issue.
+  /// Throws [ServerException] if there's a server error.
+  /// Throws [AuthenticationException] if authentication fails.
+  Future<UsageStatisticsModel> getUsageStatistics({
+    DateTime? startDate,
+    DateTime? endDate,
   });
 
   /// Legacy method - Purchases additional tokens for standard plan users.
@@ -1025,6 +1066,196 @@ class TokenRemoteDataSourceImpl implements TokenRemoteDataSource {
         message:
             'Unable to update payment preferences. Please try again later.',
         code: 'UPDATE_PREFERENCES_FAILED',
+        context: {'originalError': e.toString()},
+      );
+    }
+  }
+
+  @override
+  Future<List<TokenUsageHistoryModel>> getUsageHistory({
+    int? limit,
+    int? offset,
+    DateTime? startDate,
+    DateTime? endDate,
+  }) async {
+    try {
+      // Validate token before making authenticated request
+      await ApiAuthHelper.validateTokenForRequest();
+
+      // Use unified authentication helper
+      final headers = await ApiAuthHelper.getAuthHeaders();
+
+      print('📊 [TOKEN_API] Fetching usage history...');
+
+      // Build query parameters
+      final queryParams = <String, String>{
+        if (limit != null) 'limit': limit.toString(),
+        if (offset != null) 'offset': offset.toString(),
+        if (startDate != null) 'start_date': startDate.toIso8601String(),
+        if (endDate != null) 'end_date': endDate.toIso8601String(),
+      };
+
+      print('📊 [TOKEN_API] Query params: $queryParams');
+
+      // Call token-usage-history Edge Function
+      final response = await _supabaseClient.functions.invoke(
+        'token-usage-history',
+        method: HttpMethod.get,
+        headers: headers,
+        queryParameters: queryParams,
+      );
+
+      print('📊 [TOKEN_API] Usage history response status: ${response.status}');
+
+      if (response.status == 200 && response.data != null) {
+        final responseData = response.data as Map<String, dynamic>;
+
+        if (responseData['success'] == true) {
+          final data = responseData['data'] as Map<String, dynamic>;
+          final historyList = data['history'] as List<dynamic>;
+
+          print(
+              '📊 [TOKEN_API] Retrieved ${historyList.length} usage records');
+
+          return historyList
+              .map((json) =>
+                  TokenUsageHistoryModel.fromJson(json as Map<String, dynamic>))
+              .toList();
+        } else {
+          final error = responseData['error'] as Map<String, dynamic>?;
+          throw ServerException(
+            message: error?['message'] as String? ??
+                'Failed to fetch usage history',
+            code: error?['code'] as String? ?? 'USAGE_HISTORY_ERROR',
+          );
+        }
+      } else if (response.status == 401) {
+        throw const AuthenticationException(
+          message: 'Authentication required. Please sign in to continue.',
+          code: 'UNAUTHORIZED',
+        );
+      } else if (response.status >= 500) {
+        throw const ServerException(
+          message: 'Server error occurred. Please try again later.',
+          code: 'SERVER_ERROR',
+        );
+      } else {
+        throw const ServerException(
+          message: 'Failed to fetch usage history. Please try again later.',
+          code: 'USAGE_HISTORY_ERROR',
+        );
+      }
+    } on NetworkException {
+      rethrow;
+    } on ServerException {
+      rethrow;
+    } on AuthenticationException {
+      rethrow;
+    } on TokenValidationException {
+      throw const AuthenticationException(
+        message: 'Authentication token is invalid. Please sign in again.',
+        code: 'TOKEN_INVALID',
+      );
+    } catch (e) {
+      print('🚨 [TOKEN_API] Unexpected usage history error: $e');
+      throw ClientException(
+        message: 'Unable to fetch usage history. Please try again later.',
+        code: 'USAGE_HISTORY_FAILED',
+        context: {'originalError': e.toString()},
+      );
+    }
+  }
+
+  @override
+  Future<UsageStatisticsModel> getUsageStatistics({
+    DateTime? startDate,
+    DateTime? endDate,
+  }) async {
+    try {
+      // Validate token before making authenticated request
+      await ApiAuthHelper.validateTokenForRequest();
+
+      // Use unified authentication helper
+      final headers = await ApiAuthHelper.getAuthHeaders();
+
+      print('📊 [TOKEN_API] Fetching usage statistics...');
+
+      // Build query parameters
+      final queryParams = <String, String>{
+        'include_statistics': 'true',
+        if (startDate != null) 'start_date': startDate.toIso8601String(),
+        if (endDate != null) 'end_date': endDate.toIso8601String(),
+      };
+
+      print('📊 [TOKEN_API] Statistics query params: $queryParams');
+
+      // Call token-usage-history Edge Function with statistics flag
+      final response = await _supabaseClient.functions.invoke(
+        'token-usage-history',
+        method: HttpMethod.get,
+        headers: headers,
+        queryParameters: queryParams,
+      );
+
+      print(
+          '📊 [TOKEN_API] Usage statistics response status: ${response.status}');
+
+      if (response.status == 200 && response.data != null) {
+        final responseData = response.data as Map<String, dynamic>;
+
+        if (responseData['success'] == true) {
+          final data = responseData['data'] as Map<String, dynamic>;
+          final statisticsData = data['statistics'];
+
+          if (statisticsData != null) {
+            print('📊 [TOKEN_API] Statistics retrieved successfully');
+            return UsageStatisticsModel.fromJson(
+                statisticsData as Map<String, dynamic>);
+          } else {
+            // Return empty statistics if no data available
+            print('📊 [TOKEN_API] No statistics data available, returning empty');
+            return UsageStatisticsModel.empty();
+          }
+        } else {
+          final error = responseData['error'] as Map<String, dynamic>?;
+          throw ServerException(
+            message: error?['message'] as String? ??
+                'Failed to fetch usage statistics',
+            code: error?['code'] as String? ?? 'USAGE_STATISTICS_ERROR',
+          );
+        }
+      } else if (response.status == 401) {
+        throw const AuthenticationException(
+          message: 'Authentication required. Please sign in to continue.',
+          code: 'UNAUTHORIZED',
+        );
+      } else if (response.status >= 500) {
+        throw const ServerException(
+          message: 'Server error occurred. Please try again later.',
+          code: 'SERVER_ERROR',
+        );
+      } else {
+        throw const ServerException(
+          message: 'Failed to fetch usage statistics. Please try again later.',
+          code: 'USAGE_STATISTICS_ERROR',
+        );
+      }
+    } on NetworkException {
+      rethrow;
+    } on ServerException {
+      rethrow;
+    } on AuthenticationException {
+      rethrow;
+    } on TokenValidationException {
+      throw const AuthenticationException(
+        message: 'Authentication token is invalid. Please sign in again.',
+        code: 'TOKEN_INVALID',
+      );
+    } catch (e) {
+      print('🚨 [TOKEN_API] Unexpected usage statistics error: $e');
+      throw ClientException(
+        message: 'Unable to fetch usage statistics. Please try again later.',
+        code: 'USAGE_STATISTICS_FAILED',
         context: {'originalError': e.toString()},
       );
     }

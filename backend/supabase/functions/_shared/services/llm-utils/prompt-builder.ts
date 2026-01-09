@@ -115,7 +115,7 @@ TOPIC-SPECIFIC REQUIREMENTS:
   // Language-specific content length requirements
   const contentLengthGuidance = `\n\nCRITICAL CONTENT LENGTH REQUIREMENTS FOR ${languageConfig.name.toUpperCase()}:
 - "summary": MINIMUM 4-5 sentences - Provide comprehensive overview with clear thesis
-- "interpretation": MINIMUM 5-6 paragraphs - Each paragraph should be 4-6 sentences with theological depth
+- "interpretation": 4-5 theological sections with meaningful headings. Each section has 5-6 sentences  with theological depth.
 - "context": MINIMUM 2-3 paragraphs - Each paragraph should be 3-5 sentences covering historical, cultural, and literary context
 - "reflectionQuestions": MINIMUM 5-6 questions - Include varied question types (application, reflection, doctrinal)
 - "prayerPoints": MINIMUM 6-8 sentences - Create a complete, substantial first-person prayer
@@ -130,7 +130,7 @@ CRITICAL: ALL 14 FIELDS BELOW ARE MANDATORY - DO NOT SKIP ANY FIELD${contentLeng
 REQUIRED JSON OUTPUT FORMAT (include ALL fields, no exceptions):
 {
   "summary": "Comprehensive overview (MINIMUM 4-5 sentences) capturing the main message with clear thesis${inputType === 'question' ? ' and answering the question' : ''}",
-  "interpretation": "Theological interpretation (MINIMUM 5-6 paragraphs, each 4-6 sentences) explaining meaning and key teachings with depth${inputType === 'question' ? ' with direct answer to the question' : ''}",
+  "interpretation": "Theological interpretation with 4-5 sections. Each section has a meaningful theological heading and 5-6 bullet points:\\n\\n**[Meaningful Theological Heading 1]**\\n• First key insight or teaching point\\n• Second key insight with biblical support\\n• Third theological point\\n• Fourth point with practical connection\\n• Fifth point with deeper explanation\\n• Sixth point tying section together\\n\\n**[Meaningful Theological Heading 2]**\\n• First key insight\\n• Second insight\\n• Third insight\\n• Fourth insight\\n• Fifth insight\\n• Sixth insight\\n\\n[Continue for 4-5 total sections]\\n\\nUse bullet points (•) for all sentences to enhance readability. Headings should be descriptive (e.g., 'Understanding God's Grace', 'Biblical Examples of Faith', 'Application in Daily Life')${inputType === 'question' ? ' with direct answer to the question' : ''}",
   "context": "Historical and cultural background (MINIMUM 2-3 paragraphs, each 3-5 sentences) providing comprehensive understanding",
   "relatedVerses": ["MINIMUM 4-6 relevant Bible verses with references in ${languageConfig.name}"],
   "reflectionQuestions": ["MINIMUM 5-6 practical application questions covering different aspects of life"],
@@ -747,7 +747,7 @@ interface SermonHeadings {
   introduction: string
   point: string
   mainTeaching: string
-  scriptureFoun: string
+  scriptureFoundation: string
   illustration: string
   application: string
   transition: string
@@ -759,127 +759,68 @@ interface SermonHeadings {
 }
 
 /**
+ * Language-specific sermon outline headings
+ */
+export const SERMON_HEADINGS: Record<string, SermonHeadings> = {
+  'en': {
+    openingPrayer: 'Opening Prayer & Welcome',
+    introduction: 'Introduction / Hook',
+    point: 'Point',
+    mainTeaching: 'Main Teaching',
+    scriptureFoundation: 'Scripture Foundation',
+    illustration: 'Illustration',
+    application: 'Application',
+    transition: 'Transition',
+    conclusion: 'Conclusion',
+    gospelRecap: 'Gospel Recap',
+    theInvitation: 'The Invitation',
+    responseOptions: 'Response Options',
+    closingPrayer: 'Closing Prayer'
+  },
+  'hi': {
+    openingPrayer: 'प्रार्थना और स्वागत',
+    introduction: 'प्रस्तावना',
+    point: 'मुख्य बिंदु',
+    mainTeaching: 'मुख्य शिक्षा',
+    scriptureFoundation: 'पवित्रशास्त्र आधार',
+    illustration: 'उदाहरण',
+    application: 'व्यावहारिक उपयोग',
+    transition: 'संक्रमण',
+    conclusion: 'निष्कर्ष',
+    gospelRecap: 'सुसमाचार सारांश',
+    theInvitation: 'निमंत्रण',
+    responseOptions: 'प्रतिक्रिया विकल्प',
+    closingPrayer: 'समापन प्रार्थना'
+  },
+  'ml': {
+    openingPrayer: 'പ്രാർത്ഥനയും സ്വാഗതവും',
+    introduction: 'ആമുഖം',
+    point: 'പ്രധാന പോയിന്റ്',
+    mainTeaching: 'പ്രധാന പഠനം',
+    scriptureFoundation: 'തിരുവെഴുത്ത് അടിസ്ഥാനം',
+    illustration: 'ഉദാഹരണം',
+    application: 'പ്രയോഗം',
+    transition: 'പരിവർത്തനം',
+    conclusion: 'നിഗമനം',
+    gospelRecap: 'സുവിശേഷ സംഗ്രഹം',
+    theInvitation: 'ക്ഷണം',
+    responseOptions: 'പ്രതികരണ ഓപ്ഷനുകൾ',
+    closingPrayer: 'സമാപന പ്രാർത്ഥന'
+  }
+}
+
+/**
  * Get language-specific sermon outline headings
  */
 function getSermonHeadings(language: string): SermonHeadings {
-  const headings: Record<string, SermonHeadings> = {
-    'en': {
-      openingPrayer: 'Opening Prayer & Welcome',
-      introduction: 'Introduction / Hook',
-      point: 'Point',
-      mainTeaching: 'Main Teaching',
-      scriptureFoun: 'Scripture Foundation',
-      illustration: 'Illustration',
-      application: 'Application',
-      transition: 'Transition',
-      conclusion: 'Conclusion',
-      gospelRecap: 'Gospel Recap',
-      theInvitation: 'The Invitation',
-      responseOptions: 'Response Options',
-      closingPrayer: 'Closing Prayer'
-    },
-    'hi': {
-      openingPrayer: 'प्रार्थना और स्वागत',
-      introduction: 'प्रस्तावना',
-      point: 'मुख्य बिंदु',
-      mainTeaching: 'मुख्य शिक्षा',
-      scriptureFoun: 'पवित्रशास्त्र आधार',
-      illustration: 'उदाहरण',
-      application: 'व्यावहारिक उपयोग',
-      transition: 'संक्रमण',
-      conclusion: 'निष्कर्ष',
-      gospelRecap: 'सुसमाचार सारांश',
-      theInvitation: 'निमंत्रण',
-      responseOptions: 'प्रतिक्रिया विकल्प',
-      closingPrayer: 'समापन प्रार्थना'
-    },
-    'ml': {
-      openingPrayer: 'പ്രാർത്ഥനയും സ്വാഗതവും',
-      introduction: 'ആമുഖം',
-      point: 'പ്രധാന പോയിന്റ്',
-      mainTeaching: 'പ്രധാന പഠനം',
-      scriptureFoun: 'തിരുവെഴുത്ത് അടിസ്ഥാനം',
-      illustration: 'ഉദാഹരണം',
-      application: 'പ്രയോഗം',
-      transition: 'പരിവർത്തനം',
-      conclusion: 'നിഗമനം',
-      gospelRecap: 'സുവിശേഷ സംഗ്രഹം',
-      theInvitation: 'ക്ഷണം',
-      responseOptions: 'പ്രതികരണ ഓപ്ഷനുകൾ',
-      closingPrayer: 'സമാപന പ്രാർത്ഥന'
-    }
-  }
-
-  return headings[language] || headings['en']
+  return SERMON_HEADINGS[language] || SERMON_HEADINGS['en']
 }
 
-function createSermonOutlinePrompt(params: LLMGenerationParams, languageConfig: LanguageConfig): PromptPair {
-  const { inputType, inputValue, topicDescription } = params
-  const languageExamples = getLanguageExamples(params.language)
-  const verseReferenceExamples = getVerseReferenceExamples(params.language)
-  const headings = getSermonHeadings(params.language)
-
-  // Auto-select sermon format based on input type
-  const sermonFormat = inputType === 'scripture' ? 'EXPOSITORY' : 'TOPICAL'
-
-  let taskDescription: string
-  let inputSpecificGuidance = ''
-
-  if (inputType === 'scripture') {
-    taskDescription = `Create a ${sermonFormat} SERMON OUTLINE for: "${inputValue}"`
-    inputSpecificGuidance = `
-SCRIPTURE FOCUS (Expository Sermon):
-- Provide verse-by-verse exposition of the passage
-- Break down the scripture systematically
-- Explain original meaning and modern application
-- Structure: Introduction → Verse-by-Verse Exposition → Life Application → Altar Call`
-  } else if (inputType === 'topic') {
-    taskDescription = topicDescription
-      ? `Create a ${sermonFormat} SERMON OUTLINE on: "${inputValue}"\n\nContext: ${topicDescription}`
-      : `Create a ${sermonFormat} SERMON OUTLINE on: "${inputValue}"`
-    inputSpecificGuidance = `
-TOPIC FOCUS (Topical Sermon):
-- Develop 3 main points around the topic
-- Support each point with multiple scriptures
-- Provide illustrations for each point
-- Structure: Introduction → 3 Main Points (with sub-points) → Conclusion → Altar Call`
-  } else {
-    taskDescription = `Create a SERMON OUTLINE addressing: "${inputValue}"`
-    inputSpecificGuidance = `
-QUESTION FOCUS (Topical Sermon):
-- Answer the question through biblical teaching
-- Develop practical applications
-- Provide scriptural support
-- Structure: Introduction → Answer Development → Application → Altar Call`
-  }
-
-  const systemMessage = `You are an experienced preacher creating comprehensive sermon outlines for pastors and teachers. Your responses must be valid JSON only.
-
-STUDY MODE: SERMON OUTLINE (50-60 minutes)
-Provide a complete, preachable sermon outline with timing, illustrations, and altar call.
-
-THEOLOGICAL APPROACH:
-- Protestant theological alignment
-- Expository and/or topical preaching methods
-- Clear gospel presentation
-- Practical application for congregational transformation
-- Emphasis on biblical authority and Christ-centered message
-
-LANGUAGE REQUIREMENTS:
-- ${languageConfig.promptModifiers.languageInstruction}
-- ${languageConfig.promptModifiers.complexityInstruction}
-- Cultural Context: ${languageConfig.culturalContext}
-- Use clear, engaging preaching language suitable for oral delivery
-
-JSON OUTPUT REQUIREMENTS:
-- Output ONLY valid JSON - no extra text
-- Use proper JSON string escaping
-- Provide comprehensive sermon content
-
-TONE: Pastoral, authoritative, engaging, evangelistic, practical for preaching.`
-
-  // Build sermon outline template with localized headings
-  const sermonOutlineTemplate = `**COMPLETE SERMON OUTLINE** with timing, structure, and integrated Bible references:
+/**
+ * Build sermon outline template with localized headings
+ */
+function buildSermonOutlineTemplate(headings: SermonHeadings): string {
+  return `**COMPLETE SERMON OUTLINE** with timing, structure, and integrated Bible references:
 
 ## ${headings.openingPrayer} (2-3 min)
 Brief welcome and opening prayer to prepare hearts
@@ -893,7 +834,7 @@ Brief welcome and opening prayer to prepare hearts
 **${headings.mainTeaching}:**
 [2-3 paragraphs explaining this point with theological depth]
 
-**${headings.scriptureFoun}:**
+**${headings.scriptureFoundation}:**
 - [Bible Reference 1] - [Brief explanation of how this verse supports the point]
 - [Bible Reference 2] - [Brief explanation]
 - [Additional references as needed]
@@ -911,7 +852,7 @@ Brief welcome and opening prayer to prepare hearts
 **${headings.mainTeaching}:**
 [2-3 paragraphs explaining this point]
 
-**${headings.scriptureFoun}:**
+**${headings.scriptureFoundation}:**
 - [Bible Reference 1] - [Explanation]
 - [Bible Reference 2] - [Explanation]
 - [Additional references as needed]
@@ -929,7 +870,7 @@ Brief welcome and opening prayer to prepare hearts
 **${headings.mainTeaching}:**
 [2-3 paragraphs explaining the final point]
 
-**${headings.scriptureFoun}:**
+**${headings.scriptureFoundation}:**
 - [Bible Reference 1] - [Explanation]
 - [Bible Reference 2] - [Explanation]
 - [Additional references as needed]
@@ -942,8 +883,13 @@ Brief welcome and opening prayer to prepare hearts
 
 ## ${headings.conclusion} (5 min)
 [Powerful summary connecting all three points, reinforcing the sermon thesis, and preparing hearts for the altar call]`
+}
 
-  const altarCallTemplate = `**COMPLETE ALTAR CALL / INVITATION TEMPLATE** (4-6 minutes)
+/**
+ * Build altar call template with localized headings
+ */
+function buildAltarCallTemplate(headings: SermonHeadings): string {
+  return `**COMPLETE ALTAR CALL / INVITATION TEMPLATE** (4-6 minutes)
 
 **${headings.gospelRecap}:**
 [Brief reminder of God's love, Christ's sacrifice, and the gospel message]
@@ -961,11 +907,45 @@ If you feel God calling you today to [specific response based on sermon topic - 
 [Prayer for those responding, including petition, thanksgiving, and blessing]
 
 Amen.`
+}
 
-  const userMessage = `TASK: ${taskDescription}
-${inputSpecificGuidance}
+/**
+ * Build example sermon point structure
+ */
+function buildExampleSermonPoint(headings: SermonHeadings, languageConfig: LanguageConfig): string {
+  return `## ${headings.point} 1: God's Love Is Active, Not Passive (15 min)
 
-CRITICAL: ALL 14 FIELDS BELOW ARE MANDATORY - DO NOT SKIP ANY FIELD
+**${headings.mainTeaching}:**
+Love is not merely a feeling we experience, but an active choice we make every day. The Greek word "agape" in the New Testament describes a self-sacrificial, unconditional love that seeks the best for others regardless of their response. This kind of love requires intentionality, effort, and a willingness to put others' needs before our own. When we understand that God first loved us in this active, sacrificial way, we are empowered to love others with the same quality of love.
+
+**${headings.scriptureFoundation}:**
+- 1 John 4:19 - "We love because He first loved us" - This verse shows that God's active love toward us is the source and motivation for our love toward others
+- Romans 5:8 - "But God demonstrates His own love for us in this: While we were still sinners, Christ died for us" - God's love was demonstrated through action, not just words
+- 1 Corinthians 13:4-7 - This passage lists specific ACTIONS of love (patient, kind, does not envy, etc.), showing love is something we DO, not just feel
+
+**${headings.illustration}:**
+[Story about a parent waking up at 3 AM to care for a sick child - they don't "feel" like it, but they choose to act in love. Or story of someone serving in their community despite personal inconvenience, demonstrating active love]
+
+**${headings.application}:**
+- This week, identify one person who is difficult to love and perform one specific act of kindness for them
+- Practice "love as a verb" by doing something tangible for your spouse, child, or neighbor without being asked
+- Before making decisions, ask yourself: "What would love do in this situation?"
+
+**${headings.transition}:**
+If God's love is active and intentional, then it also must be...`
+}
+
+/**
+ * Build sermon field requirements section
+ */
+function buildSermonFieldRequirements(
+  languageConfig: LanguageConfig,
+  verseReferenceExamples: string,
+  headings: SermonHeadings,
+  sermonOutlineTemplate: string,
+  altarCallTemplate: string
+): string {
+  return `CRITICAL: ALL 14 FIELDS BELOW ARE MANDATORY - DO NOT SKIP ANY FIELD
 
 CRITICAL: HEADING LANGUAGE REQUIREMENT - MANDATORY COMPLIANCE
 YOU MUST USE THESE EXACT HEADINGS (NOT ENGLISH TRANSLATIONS):
@@ -973,7 +953,7 @@ YOU MUST USE THESE EXACT HEADINGS (NOT ENGLISH TRANSLATIONS):
 ✓ "${headings.introduction}" (NOT "Introduction / Hook")
 ✓ "${headings.point}" (NOT "Point")
 ✓ "${headings.mainTeaching}" (NOT "Main Teaching")
-✓ "${headings.scriptureFoun}" (NOT "Scripture Foundation")
+✓ "${headings.scriptureFoundation}" (NOT "Scripture Foundation")
 ✓ "${headings.illustration}" (NOT "Illustration")
 ✓ "${headings.application}" (NOT "Application")
 ✓ "${headings.transition}" (NOT "Transition")
@@ -1075,31 +1055,107 @@ ${verseReferenceExamples}
 
 CRITICAL: USE THESE EXACT HEADINGS IN YOUR OUTPUT (DO NOT USE ENGLISH HEADINGS):
 - Section headings: "${headings.openingPrayer}", "${headings.introduction}", "${headings.point}", "${headings.conclusion}"
-- Subsection headings: "${headings.mainTeaching}", "${headings.scriptureFoun}", "${headings.illustration}", "${headings.application}", "${headings.transition}"
-- Altar call headings: "${headings.gospelRecap}", "${headings.theInvitation}", "${headings.responseOptions}", "${headings.closingPrayer}"
+- Subsection headings: "${headings.mainTeaching}", "${headings.scriptureFoundation}", "${headings.illustration}", "${headings.application}", "${headings.transition}"
+- Altar call headings: "${headings.gospelRecap}", "${headings.theInvitation}", "${headings.responseOptions}", "${headings.closingPrayer}"`
+}
+
+/**
+ * Build task description and input-specific guidance
+ */
+function buildTaskDescription(params: LLMGenerationParams, sermonFormat: string): { taskDescription: string; inputSpecificGuidance: string } {
+  const { inputType, inputValue, topicDescription } = params
+
+  if (inputType === 'scripture') {
+    return {
+      taskDescription: `Create a ${sermonFormat} SERMON OUTLINE for: "${inputValue}"`,
+      inputSpecificGuidance: `
+SCRIPTURE FOCUS (Expository Sermon):
+- Provide verse-by-verse exposition of the passage
+- Break down the scripture systematically
+- Explain original meaning and modern application
+- Structure: Introduction → Verse-by-Verse Exposition → Life Application → Altar Call`
+    }
+  }
+
+  if (inputType === 'topic') {
+    return {
+      taskDescription: topicDescription
+        ? `Create a ${sermonFormat} SERMON OUTLINE on: "${inputValue}"\n\nContext: ${topicDescription}`
+        : `Create a ${sermonFormat} SERMON OUTLINE on: "${inputValue}"`,
+      inputSpecificGuidance: `
+TOPIC FOCUS (Topical Sermon):
+- Develop 3 main points around the topic
+- Support each point with multiple scriptures
+- Provide illustrations for each point
+- Structure: Introduction → 3 Main Points (with sub-points) → Conclusion → Altar Call`
+    }
+  }
+
+  return {
+    taskDescription: `Create a SERMON OUTLINE addressing: "${inputValue}"`,
+    inputSpecificGuidance: `
+QUESTION FOCUS (Topical Sermon):
+- Answer the question through biblical teaching
+- Develop practical applications
+- Provide scriptural support
+- Structure: Introduction → Answer Development → Application → Altar Call`
+  }
+}
+
+/**
+ * Build sermon system message
+ */
+function buildSermonSystemMessage(languageConfig: LanguageConfig): string {
+  return `You are an experienced preacher creating comprehensive sermon outlines for pastors and teachers. Your responses must be valid JSON only.
+
+STUDY MODE: SERMON OUTLINE (50-60 minutes)
+Provide a complete, preachable sermon outline with timing, illustrations, and altar call.
+
+THEOLOGICAL APPROACH:
+- Protestant theological alignment
+- Expository and/or topical preaching methods
+- Clear gospel presentation
+- Practical application for congregational transformation
+- Emphasis on biblical authority and Christ-centered message
+
+LANGUAGE REQUIREMENTS:
+- ${languageConfig.promptModifiers.languageInstruction}
+- ${languageConfig.promptModifiers.complexityInstruction}
+- Cultural Context: ${languageConfig.culturalContext}
+- Use clear, engaging preaching language suitable for oral delivery
+
+JSON OUTPUT REQUIREMENTS:
+- Output ONLY valid JSON - no extra text
+- Use proper JSON string escaping
+- Provide comprehensive sermon content
+
+TONE: Pastoral, authoritative, engaging, evangelistic, practical for preaching.`
+}
+
+/**
+ * Build sermon user message
+ */
+function buildSermonUserMessage(
+  taskDescription: string,
+  inputSpecificGuidance: string,
+  languageConfig: LanguageConfig,
+  verseReferenceExamples: string,
+  headings: SermonHeadings,
+  sermonOutlineTemplate: string,
+  altarCallTemplate: string,
+  languageExamples: string
+): string {
+  const fieldRequirements = buildSermonFieldRequirements(languageConfig, verseReferenceExamples, headings, sermonOutlineTemplate, altarCallTemplate)
+  const examplePoint = buildExampleSermonPoint(headings, languageConfig)
+
+  return `TASK: ${taskDescription}
+${inputSpecificGuidance}
+
+${fieldRequirements}
 
 EXAMPLE SERMON POINT STRUCTURE (showing correct ${languageConfig.name} headings - COPY THESE EXACTLY):
 
-## ${headings.point} 1: God's Love Is Active, Not Passive (15 min)
-
-**${headings.mainTeaching}:**
-Love is not merely a feeling we experience, but an active choice we make every day. The Greek word "agape" in the New Testament describes a self-sacrificial, unconditional love that seeks the best for others regardless of their response. This kind of love requires intentionality, effort, and a willingness to put others' needs before our own. When we understand that God first loved us in this active, sacrificial way, we are empowered to love others with the same quality of love.
-
-**${headings.scriptureFoun}:**
-- 1 John 4:19 - "We love because He first loved us" - This verse shows that God's active love toward us is the source and motivation for our love toward others
-- Romans 5:8 - "But God demonstrates His own love for us in this: While we were still sinners, Christ died for us" - God's love was demonstrated through action, not just words
-- 1 Corinthians 13:4-7 - This passage lists specific ACTIONS of love (patient, kind, does not envy, etc.), showing love is something we DO, not just feel
-
-**${headings.illustration}:**
-[Story about a parent waking up at 3 AM to care for a sick child - they don't "feel" like it, but they choose to act in love. Or story of someone serving in their community despite personal inconvenience, demonstrating active love]
-
-**${headings.application}:**
-- This week, identify one person who is difficult to love and perform one specific act of kindness for them
-- Practice "love as a verb" by doing something tangible for your spouse, child, or neighbor without being asked
-- Before making decisions, ask yourself: "What would love do in this situation?"
-
-**${headings.transition}:**
-If God's love is active and intentional, then it also must be...
+${examplePoint}
 
 CRITICAL JSON FORMATTING RULES:
 - Output ONLY valid JSON - no markdown, no extra text
@@ -1109,6 +1165,31 @@ CRITICAL JSON FORMATTING RULES:
 ${languageExamples}
 
 Output format: Start with { and end with } - nothing else.`
+}
+
+/**
+ * Create sermon outline prompt with all required components
+ */
+function createSermonOutlinePrompt(params: LLMGenerationParams, languageConfig: LanguageConfig): PromptPair {
+  const languageExamples = getLanguageExamples(params.language)
+  const verseReferenceExamples = getVerseReferenceExamples(params.language)
+  const headings = getSermonHeadings(params.language)
+  const sermonFormat = params.inputType === 'scripture' ? 'EXPOSITORY' : 'TOPICAL'
+
+  const { taskDescription, inputSpecificGuidance } = buildTaskDescription(params, sermonFormat)
+  const sermonOutlineTemplate = buildSermonOutlineTemplate(headings)
+  const altarCallTemplate = buildAltarCallTemplate(headings)
+  const systemMessage = buildSermonSystemMessage(languageConfig)
+  const userMessage = buildSermonUserMessage(
+    taskDescription,
+    inputSpecificGuidance,
+    languageConfig,
+    verseReferenceExamples,
+    headings,
+    sermonOutlineTemplate,
+    altarCallTemplate,
+    languageExamples
+  )
 
   return { systemMessage, userMessage }
 }

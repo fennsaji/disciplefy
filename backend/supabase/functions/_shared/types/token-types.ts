@@ -324,17 +324,25 @@ export interface TokenValidationResult {
 
 /**
  * Token operation context
- * 
+ *
  * Context information for token operations, used for
  * analytics and audit logging.
  */
 export interface TokenOperationContext {
   readonly userId?: string             // For authenticated users
-  readonly sessionId?: string          // For anonymous users  
+  readonly sessionId?: string          // For anonymous users
   readonly userPlan: UserPlan
   readonly operation: 'consume' | 'purchase' | 'check'
   readonly language?: SupportedLanguage
   readonly ipAddress?: string
   readonly userAgent?: string
   readonly timestamp: Date
+
+  // Usage history context (added for detailed consumption tracking)
+  readonly featureName?: string        // 'study_generate', 'continue_learning', 'study_followup'
+  readonly operationType?: string      // 'study_generation', 'follow_up_question'
+  readonly studyMode?: StudyMode       // 'quick', 'standard', 'deep', 'lectio', 'sermon'
+  readonly contentTitle?: string       // User-friendly title (e.g., 'John 3:16 Study')
+  readonly contentReference?: string   // Scripture ref, topic name, or question text
+  readonly inputType?: 'scripture' | 'topic' | 'question'  // Type of user input
 }

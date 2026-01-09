@@ -5,6 +5,8 @@ import '../entities/token_status.dart';
 import '../entities/purchase_history.dart';
 import '../entities/purchase_statistics.dart';
 import '../entities/payment_order_response.dart';
+import '../entities/token_usage_history.dart';
+import '../entities/usage_statistics.dart';
 
 /// Abstract repository for token-related operations.
 abstract class TokenRepository {
@@ -57,4 +59,37 @@ abstract class TokenRepository {
   /// Returns [PurchaseStatistics] with aggregated data on success.
   /// Returns [Failure] on error (network, server, authentication, etc.).
   Future<Either<Failure, PurchaseStatistics>> getPurchaseStatistics();
+
+  /// Gets token usage history for the authenticated user.
+  ///
+  /// [limit] - Maximum number of records to return (1-100, default 20)
+  /// [offset] - Number of records to skip for pagination (default 0)
+  /// [startDate] - Optional start date for filtering records
+  /// [endDate] - Optional end date for filtering records
+  ///
+  /// Returns list of [TokenUsageHistory] records ordered by created_at DESC on success.
+  /// Returns [Failure] on error (network, server, authentication, etc.).
+  Future<Either<Failure, List<TokenUsageHistory>>> getUsageHistory({
+    int? limit,
+    int? offset,
+    DateTime? startDate,
+    DateTime? endDate,
+  });
+
+  /// Gets aggregated token usage statistics for the authenticated user.
+  ///
+  /// [startDate] - Optional start date for filtering statistics
+  /// [endDate] - Optional end date for filtering statistics
+  ///
+  /// Returns [UsageStatistics] with aggregated data including:
+  /// - Total tokens consumed and operations performed
+  /// - Daily vs purchased token breakdown
+  /// - Most used feature, language, and study mode
+  /// - Breakdowns by feature, language, and study mode
+  ///
+  /// Returns [Failure] on error (network, server, authentication, etc.).
+  Future<Either<Failure, UsageStatistics>> getUsageStatistics({
+    DateTime? startDate,
+    DateTime? endDate,
+  });
 }

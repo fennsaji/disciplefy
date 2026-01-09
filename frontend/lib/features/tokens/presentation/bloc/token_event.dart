@@ -235,3 +235,47 @@ class GetPurchaseStatistics extends TokenEvent {
 class RefreshPurchaseHistory extends TokenEvent {
   const RefreshPurchaseHistory();
 }
+
+/// Event to fetch token usage history for the authenticated user
+///
+/// Loads detailed usage records with optional pagination and date filtering
+/// Shows where and how tokens were consumed (feature, mode, language, etc.)
+class GetUsageHistory extends TokenEvent {
+  final int? limit;
+  final int? offset;
+  final DateTime? startDate;
+  final DateTime? endDate;
+
+  const GetUsageHistory({
+    this.limit,
+    this.offset,
+    this.startDate,
+    this.endDate,
+  });
+
+  @override
+  List<Object?> get props => [limit, offset, startDate, endDate];
+}
+
+/// Event to fetch aggregated usage statistics for the authenticated user
+///
+/// Loads statistical data including total tokens consumed, breakdowns by feature/language/mode
+class GetUsageStatistics extends TokenEvent {
+  final DateTime? startDate;
+  final DateTime? endDate;
+
+  const GetUsageStatistics({
+    this.startDate,
+    this.endDate,
+  });
+
+  @override
+  List<Object?> get props => [startDate, endDate];
+}
+
+/// Event to refresh usage history from the server
+///
+/// Forces a fresh API call for latest usage data
+class RefreshUsageHistory extends TokenEvent {
+  const RefreshUsageHistory();
+}

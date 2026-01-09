@@ -17,6 +17,8 @@ import '../domain/usecases/confirm_payment.dart';
 import '../domain/usecases/create_payment_order.dart';
 import '../domain/usecases/get_purchase_history.dart';
 import '../domain/usecases/get_purchase_statistics.dart';
+import '../domain/usecases/get_usage_history.dart';
+import '../domain/usecases/get_usage_statistics.dart';
 import '../presentation/bloc/token_bloc.dart';
 
 /// Register all token-related dependencies
@@ -49,6 +51,8 @@ void registerTokenDependencies(GetIt sl) {
   sl.registerLazySingleton(() => CreatePaymentOrder(sl<TokenRepository>()));
   sl.registerLazySingleton(() => GetPurchaseHistory(sl<TokenRepository>()));
   sl.registerLazySingleton(() => GetPurchaseStatistics(sl<TokenRepository>()));
+  sl.registerLazySingleton(() => GetUsageHistory(sl<TokenRepository>()));
+  sl.registerLazySingleton(() => GetUsageStatistics(sl<TokenRepository>()));
 
   //! Payment Method Use Cases
   sl.registerLazySingleton(
@@ -79,5 +83,7 @@ void registerTokenDependencies(GetIt sl) {
         createPaymentOrder: sl<CreatePaymentOrder>(),
         getPurchaseHistory: sl<GetPurchaseHistory>(),
         getPurchaseStatistics: sl<GetPurchaseStatistics>(),
+        getUsageHistory: sl<GetUsageHistory>(),
+        getUsageStatistics: sl<GetUsageStatistics>(),
       ));
 }

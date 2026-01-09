@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:get_it/get_it.dart';
 
 import '../../../../core/constants/app_fonts.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/extensions/translation_extension.dart';
 import '../../../../core/i18n/translation_keys.dart';
+import '../../../../core/di/injection_container.dart';
 import '../../domain/entities/study_mode.dart';
 import '../../data/repositories/token_cost_repository.dart';
 
@@ -117,7 +117,7 @@ class _ModeSelectionSheetState extends State<ModeSelectionSheet> {
   void initState() {
     super.initState();
     _selectedMode = widget.initialMode;
-    _tokenCostRepository = GetIt.instance<TokenCostRepository>();
+    _tokenCostRepository = sl<TokenCostRepository>();
     _loadTokenCosts();
   }
 
