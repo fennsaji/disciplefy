@@ -353,17 +353,17 @@ class _ClozeReviewPageState extends State<ClozeReviewPage> {
 /// Difficulty levels for cloze deletion practice.
 ///
 /// Determines the frequency of blanks in the verse:
-/// - [easy]: Every 7th word is a blank (easiest, fewer blanks)
-/// - [medium]: Every 5th word is a blank (moderate difficulty)
-/// - [hard]: Every 3rd word is a blank (hardest, most blanks)
+/// - [easy]: Every 5th word is a blank (easiest, fewer blanks)
+/// - [medium]: Every 3rd word is a blank (moderate difficulty)
+/// - [hard]: Every 2nd word is a blank (hardest, most blanks)
 enum ClozeDifficulty {
-  /// Easy difficulty: Every 7th word becomes a blank
+  /// Easy difficulty: Every 5th word becomes a blank
   easy,
 
-  /// Medium difficulty: Every 5th word becomes a blank
+  /// Medium difficulty: Every 3rd word becomes a blank
   medium,
 
-  /// Hard difficulty: Every 3rd word becomes a blank
+  /// Hard difficulty: Every 2nd word becomes a blank
   hard
 }
 

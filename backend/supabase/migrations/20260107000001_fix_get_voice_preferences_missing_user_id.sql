@@ -4,12 +4,16 @@
 -- Description: Adds missing user_id field to the default preferences object
 --              when no voice preferences exist for a user.
 --              This fixes the "Unable to fetch voice preferences" error.
+--
+-- Security: Sets search_path to prevent search_path injection attacks
+--           Uses fully qualified table references (public.voice_preferences)
 -- ============================================================================
 
 CREATE OR REPLACE FUNCTION get_voice_preferences()
 RETURNS jsonb
 LANGUAGE plpgsql
 SECURITY DEFINER
+SET search_path TO public, pg_temp
 AS $$
 DECLARE
   v_user_id UUID := auth.uid();
@@ -22,9 +26,9 @@ BEGIN
             HINT = 'User must be logged in to access voice preferences';
   END IF;
 
-  -- Get the user's voice preferences
+  -- Get the user's voice preferences (fully qualified table reference)
   SELECT * INTO v_prefs
-  FROM voice_preferences
+  FROM public.voice_preferences
   WHERE user_id = v_user_id;
 
   -- If no preferences exist, return defaults WITH user_id and consistent fields

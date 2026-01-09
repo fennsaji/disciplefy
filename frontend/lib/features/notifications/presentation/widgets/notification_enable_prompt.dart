@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../domain/entities/notification_preferences.dart';
 import '../bloc/notification_bloc.dart';
 import '../bloc/notification_event.dart';
 import '../bloc/notification_state.dart';
@@ -157,13 +158,32 @@ class NotificationPromptConfig {
 }
 
 /// Shows a notification enable prompt bottom sheet
-/// Returns true if user enabled, false if declined, null if already shown before
+/// Returns true if user enabled, false if declined, null if already shown or already enabled
 Future<bool?> showNotificationEnablePrompt({
   required BuildContext context,
   required NotificationPromptType type,
   String languageCode = 'en',
   bool forceShow = false,
 }) async {
+  // Check if the notification is already enabled in user preferences
+  if (!forceShow && context.mounted) {
+    final bloc = context.read<NotificationBloc>();
+    final currentState = bloc.state;
+
+    if (currentState is NotificationPreferencesLoaded ||
+        currentState is NotificationPreferencesUpdated) {
+      final preferences = currentState is NotificationPreferencesLoaded
+          ? currentState.preferences
+          : (currentState as NotificationPreferencesUpdated).preferences;
+
+      // Check if the specific notification type is already enabled
+      final isAlreadyEnabled = _isNotificationEnabled(type, preferences);
+      if (isAlreadyEnabled) {
+        return null; // Already enabled, no need to show prompt
+      }
+    }
+  }
+
   // Check if we've already shown this prompt
   final prefs = await SharedPreferences.getInstance();
   final config = NotificationPromptConfig.getConfig(type, languageCode);
@@ -190,6 +210,23 @@ Future<bool?> showNotificationEnablePrompt({
       onInteraction: markAsShown,
     ),
   );
+}
+
+/// Helper function to check if a specific notification type is already enabled
+bool _isNotificationEnabled(
+    NotificationPromptType type, NotificationPreferences preferences) {
+  switch (type) {
+    case NotificationPromptType.dailyVerse:
+      return preferences.dailyVerseEnabled;
+    case NotificationPromptType.recommendedTopic:
+      return preferences.recommendedTopicEnabled;
+    case NotificationPromptType.streakReminder:
+      return preferences.streakReminderEnabled;
+    case NotificationPromptType.streakMilestone:
+      return preferences.streakMilestoneEnabled;
+    case NotificationPromptType.memoryVerseReminder:
+      return preferences.memoryVerseReminderEnabled;
+  }
 }
 
 class _NotificationEnableSheet extends StatelessWidget {

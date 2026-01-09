@@ -15,6 +15,8 @@ import { createAuthenticatedFunction } from "../_shared/core/function-factory.ts
 import { ServiceContainer } from "../_shared/core/services.ts";
 import { UserContext } from "../_shared/types/index.ts";
 import { AppError } from "../_shared/utils/error-handler.ts";
+import type { SupportedLanguage } from "../_shared/services/llm-config/language-configs.ts";
+import { generateCorrelationId } from "../_shared/utils/correlation-id.ts";
 
 // ============================================================================
 // Types
@@ -61,9 +63,49 @@ interface LocalizedInProgressTopic {
 // Configuration
 // ============================================================================
 
-const DEFAULT_LANGUAGE = "en";
+const DEFAULT_LANGUAGE: SupportedLanguage = "en";
 const DEFAULT_LIMIT = 5;
 const MAX_LIMIT = 10;
+const MIN_LIMIT = 1;
+const ALLOWED_LANGUAGES: readonly SupportedLanguage[] = ["en", "hi", "ml"] as const;
+
+// ============================================================================
+// Input Validation
+// ============================================================================
+
+/**
+ * Validates and sanitizes language code input
+ */
+function validateLanguage(languageInput: string | null): SupportedLanguage {
+  if (!languageInput || typeof languageInput !== "string") {
+    return DEFAULT_LANGUAGE;
+  }
+
+  const normalized = languageInput.trim().toLowerCase();
+
+  if (ALLOWED_LANGUAGES.includes(normalized as SupportedLanguage)) {
+    return normalized as SupportedLanguage;
+  }
+
+  return DEFAULT_LANGUAGE;
+}
+
+/**
+ * Validates and sanitizes limit parameter
+ */
+function validateLimit(limitInput: string | null): number {
+  if (!limitInput) {
+    return DEFAULT_LIMIT;
+  }
+
+  const parsed = parseInt(limitInput, 10);
+
+  if (Number.isNaN(parsed) || !Number.isFinite(parsed)) {
+    return DEFAULT_LIMIT;
+  }
+
+  return Math.max(MIN_LIMIT, Math.min(parsed, MAX_LIMIT));
+}
 
 // ============================================================================
 // Helper Functions
@@ -144,12 +186,10 @@ async function handleContinueLearning(
 
   const userId = userContext.userId!;
 
-  // Parse query parameters
+  // Parse and validate query parameters
   const url = new URL(req.url);
-  const language = url.searchParams.get("language") || DEFAULT_LANGUAGE;
-  const parsedLimit = parseInt(url.searchParams.get("limit") || "");
-  const limitParam = Number.isNaN(parsedLimit) ? DEFAULT_LIMIT : parsedLimit;
-  const limit = Math.max(1, Math.min(limitParam, MAX_LIMIT));
+  const validatedLanguage = validateLanguage(url.searchParams.get("language"));
+  const validatedLimit = validateLimit(url.searchParams.get("limit"));
 
   // Get in-progress topics using the database function
   const { data: inProgressTopics, error } = await services.supabaseServiceClient
@@ -157,19 +197,43 @@ async function handleContinueLearning(
       "get_in_progress_topics",
       {
         p_user_id: userId,
-        p_limit: limit,
+        p_limit: validatedLimit,
       },
     );
 
   if (error) {
+    const correlationId = generateCorrelationId();
+
+    // Log sanitized error (no sensitive details exposed to console)
     console.error(
-      "[continue-learning] Error fetching in-progress topics:",
-      error,
+      "[continue-learning] Database query failed",
+      {
+        operation: "fetch-in-progress-topics",
+        correlationId,
+        userId: userId.substring(0, 8) + "...", // Partial ID for correlation only
+      }
     );
+
+    // Internal structured log for debugging (not exposed to client)
+    // Full error details stored server-side for support team
+    await services.analyticsLogger.logEvent(
+      "database_error",
+      {
+        operation: "continue-learning:fetch-in-progress-topics",
+        correlationId,
+        userId,
+        errorCode: error.code,
+        // error.message and error.details logged server-side only
+      },
+      req.headers.get("x-forwarded-for"),
+    );
+
+    // Return generic error to client without exposing DB internals
+    // Client sees: "Failed to fetch in-progress topics. Reference: <correlationId>"
     throw new AppError(
       "DATABASE_ERROR",
-      `Failed to fetch in-progress topics: ${error.message}`,
-      500,
+      `Failed to fetch in-progress topics. Reference: ${correlationId}`,
+      500
     );
   }
 
@@ -194,7 +258,7 @@ async function handleContinueLearning(
     const localized = await getLocalizedContent(
       services,
       topic.topic_id,
-      language,
+      validatedLanguage,
       topic.topic_title,
       topic.topic_description,
     );
@@ -203,7 +267,7 @@ async function handleContinueLearning(
     const localizedPathName = await getLocalizedLearningPathName(
       services,
       topic.learning_path_id,
-      language,
+      validatedLanguage,
       topic.learning_path_name,
     );
 
@@ -230,7 +294,7 @@ async function handleContinueLearning(
     {
       user_id: userId,
       topics_count: localizedTopics.length,
-      language,
+      language: validatedLanguage,
     },
     req.headers.get("x-forwarded-for"),
   );

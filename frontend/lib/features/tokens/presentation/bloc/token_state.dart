@@ -2,6 +2,8 @@ import 'package:equatable/equatable.dart';
 import '../../domain/entities/token_status.dart';
 import '../../domain/entities/purchase_history.dart';
 import '../../domain/entities/purchase_statistics.dart';
+import '../../domain/entities/token_usage_history.dart';
+import '../../domain/entities/usage_statistics.dart';
 import '../../../../core/error/failures.dart' as failures;
 import '../../../../core/error/token_failures.dart';
 
@@ -483,6 +485,133 @@ class PurchaseHistoryError extends TokenState {
   final String? operation; // Which operation failed
 
   const PurchaseHistoryError({
+    required this.failure,
+    this.operation,
+  });
+
+  @override
+  List<Object?> get props => [failure, operation];
+
+  /// Get user-friendly error message
+  String get errorMessage {
+    switch (failure.runtimeType) {
+      case failures.NetworkFailure:
+        return 'Network error. Please check your connection and try again.';
+      case failures.ServerFailure:
+        return 'Server error occurred. Please try again later.';
+      case failures.AuthenticationFailure:
+        return 'Authentication error. Please log in and try again.';
+      default:
+        return failure.message;
+    }
+  }
+}
+
+/// State when usage history is being loaded from the server
+///
+/// Shows loading indicators for token usage records
+class UsageHistoryLoading extends TokenState {
+  const UsageHistoryLoading();
+}
+
+/// State when usage history has been successfully loaded
+///
+/// Contains the token usage history records for the user
+class UsageHistoryLoaded extends TokenState {
+  final List<TokenUsageHistory> usageHistory;
+  final UsageStatistics? statistics;
+  final DateTime lastUpdated;
+  final bool hasMore; // For pagination
+
+  const UsageHistoryLoaded({
+    required this.usageHistory,
+    this.statistics,
+    required this.lastUpdated,
+    this.hasMore = false,
+  });
+
+  @override
+  List<Object?> get props => [usageHistory, statistics, lastUpdated, hasMore];
+
+  /// Create a copy with updated fields
+  UsageHistoryLoaded copyWith({
+    List<TokenUsageHistory>? usageHistory,
+    UsageStatistics? statistics,
+    DateTime? lastUpdated,
+    bool? hasMore,
+  }) {
+    return UsageHistoryLoaded(
+      usageHistory: usageHistory ?? this.usageHistory,
+      statistics: statistics ?? this.statistics,
+      lastUpdated: lastUpdated ?? this.lastUpdated,
+      hasMore: hasMore ?? this.hasMore,
+    );
+  }
+
+  /// Check if usage history is empty
+  bool get isEmpty => usageHistory.isEmpty;
+
+  /// Get total number of usage records
+  int get totalRecords => usageHistory.length;
+
+  /// Get most recent usage record
+  TokenUsageHistory? get mostRecentUsage {
+    if (usageHistory.isEmpty) return null;
+    return usageHistory.first; // Assuming list is sorted by date descending
+  }
+
+  /// Append more records for pagination
+  UsageHistoryLoaded appendRecords(List<TokenUsageHistory> newRecords, bool hasMore) {
+    return copyWith(
+      usageHistory: [...usageHistory, ...newRecords],
+      lastUpdated: DateTime.now(),
+      hasMore: hasMore,
+    );
+  }
+}
+
+/// State when usage statistics are being loaded
+///
+/// Shows loading indicators for aggregated usage data
+class UsageStatisticsLoading extends TokenState {
+  const UsageStatisticsLoading();
+}
+
+/// State when usage statistics have been successfully loaded
+///
+/// Contains aggregated token usage data for the user
+class UsageStatisticsLoaded extends TokenState {
+  final UsageStatistics statistics;
+  final DateTime lastUpdated;
+
+  const UsageStatisticsLoaded({
+    required this.statistics,
+    required this.lastUpdated,
+  });
+
+  @override
+  List<Object?> get props => [statistics, lastUpdated];
+
+  /// Create a copy with updated fields
+  UsageStatisticsLoaded copyWith({
+    UsageStatistics? statistics,
+    DateTime? lastUpdated,
+  }) {
+    return UsageStatisticsLoaded(
+      statistics: statistics ?? this.statistics,
+      lastUpdated: lastUpdated ?? this.lastUpdated,
+    );
+  }
+}
+
+/// State when an error occurs in usage history operations
+///
+/// Contains error information for usage history-related failures
+class UsageHistoryError extends TokenState {
+  final failures.Failure failure;
+  final String? operation; // Which operation failed
+
+  const UsageHistoryError({
     required this.failure,
     this.operation,
   });

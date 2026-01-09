@@ -652,7 +652,7 @@ class StudyTopicsAppBar extends StatelessWidget implements PreferredSizeWidget {
               Icons.more_vert,
               color: Theme.of(context).colorScheme.onSurface,
             ),
-            tooltip: 'More options',
+            tooltip: context.tr(TranslationKeys.moreOptionsTooltip),
             onSelected: (value) {
               if (value == 'language') {
                 _showLanguageSelector(context);
@@ -735,8 +735,30 @@ class StudyTopicsAppBar extends StatelessWidget implements PreferredSizeWidget {
 
   /// Show learning path study mode preference bottom sheet
   void _showStudyModeSelector(BuildContext context) {
-    // Get current learning path mode preference
+    // Get auth provider and check if user is anonymous
     final authProvider = sl<AuthStateProvider>();
+
+    // Guard against anonymous users - preferences are only saved for signed-in users
+    if (authProvider.isAnonymous) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            context.tr(TranslationKeys.settingsSignInToSavePreferences),
+          ),
+          backgroundColor: Theme.of(context).colorScheme.primary,
+          action: SnackBarAction(
+            label: context.tr(TranslationKeys.settingsSignIn),
+            textColor: Colors.white,
+            onPressed: () {
+              AppRouter.router.goToLogin();
+            },
+          ),
+        ),
+      );
+      return; // Exit early without showing the sheet
+    }
+
+    // Get current learning path mode preference
     final currentMode =
         authProvider.userProfile?['learning_path_study_mode'] as String?;
 
@@ -935,9 +957,13 @@ class StudyTopicsAppBar extends StatelessWidget implements PreferredSizeWidget {
                   }
 
                   ScaffoldMessenger.of(parentContext).showSnackBar(
-                    const SnackBar(
-                      content: Text('Preference updated successfully'),
-                      backgroundColor: Colors.green,
+                    SnackBar(
+                      content: Text(
+                        parentContext
+                            .tr(TranslationKeys.preferenceUpdatedSuccessfully),
+                      ),
+                      backgroundColor:
+                          Theme.of(parentContext).colorScheme.primary,
                     ),
                   );
                 },

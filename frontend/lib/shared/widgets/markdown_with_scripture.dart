@@ -52,10 +52,31 @@ class MarkdownWithScripture extends StatelessWidget {
     });
   }
 
+  /// Converts bullet character (•) to markdown bullet syntax (-)
+  /// flutter_markdown only recognizes -, *, or + as bullet markers
+  String _convertBulletsToMarkdown(String text) {
+    // Split by lines to process each line
+    final lines = text.split('\n');
+    final convertedLines = lines.map((line) {
+      // Match lines starting with • (with optional whitespace before)
+      final bulletMatch = RegExp(r'^(\s*)•\s+(.+)$').firstMatch(line);
+      if (bulletMatch != null) {
+        final indent = bulletMatch.group(1) ?? '';
+        final content = bulletMatch.group(2) ?? '';
+        // Convert to markdown bullet format
+        return '$indent- $content';
+      }
+      return line;
+    }).toList();
+
+    return convertedLines.join('\n');
+  }
+
   @override
   Widget build(BuildContext context) {
-    // Process the data to convert scripture references to clickable markdown links
-    final processedData = _convertScriptureReferencesToLinks(data);
+    // Process the data: convert bullets to markdown format, then convert scripture references to links
+    final withMarkdownBullets = _convertBulletsToMarkdown(data);
+    final processedData = _convertScriptureReferencesToLinks(withMarkdownBullets);
 
     return MarkdownBody(
       data: processedData,

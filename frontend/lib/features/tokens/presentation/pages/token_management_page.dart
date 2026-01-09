@@ -64,8 +64,9 @@ class _TokenManagementPageState extends State<TokenManagementPage>
     // This ensures we always have the latest subscription status
     if (ModalRoute.of(context)?.isCurrent == true) {
       debugPrint(
-          '[TokenManagement] Page became visible - refreshing subscription status');
+          '[TokenManagement] Page became visible - refreshing subscription and token status');
       context.read<SubscriptionBloc>().add(const RefreshSubscription());
+      context.read<TokenBloc>().add(const RefreshTokenStatus());
     }
   }
 
@@ -599,6 +600,8 @@ class _TokenManagementPageState extends State<TokenManagementPage>
                     : _upgradeToPremium,
                 onViewHistory: () =>
                     context.push('/token-management/purchase-history'),
+                onViewUsageHistory: () =>
+                    context.push('/token-management/usage-history'),
               ),
 
               const SizedBox(height: 24),
