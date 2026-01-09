@@ -561,7 +561,8 @@ class UsageHistoryLoaded extends TokenState {
   }
 
   /// Append more records for pagination
-  UsageHistoryLoaded appendRecords(List<TokenUsageHistory> newRecords, bool hasMore) {
+  UsageHistoryLoaded appendRecords(
+      List<TokenUsageHistory> newRecords, bool hasMore) {
     return copyWith(
       usageHistory: [...usageHistory, ...newRecords],
       lastUpdated: DateTime.now(),

@@ -123,8 +123,7 @@ class _TokenUsageHistoryPageState extends State<TokenUsageHistoryPage> {
           .read<TokenBloc>()
           .stream
           .where((state) =>
-              state is UsageStatisticsLoaded ||
-              state is UsageHistoryError)
+              state is UsageStatisticsLoaded || state is UsageHistoryError)
           .first
           .timeout(const Duration(seconds: 10)),
     ]).catchError((_) {
@@ -345,8 +344,8 @@ class _TokenUsageHistoryPageState extends State<TokenUsageHistoryPage> {
                           }
                           return null;
                         },
-                        childCount:
-                            state.usageHistory.length + (_isLoadingMore ? 1 : 0),
+                        childCount: state.usageHistory.length +
+                            (_isLoadingMore ? 1 : 0),
                       ),
                     );
                   } else if (state is UsageHistoryLoading) {

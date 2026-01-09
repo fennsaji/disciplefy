@@ -19,6 +19,7 @@ class LanguagePreferenceService {
   static const String _hasCompletedLanguageSelectionKey =
       'has_completed_language_selection';
   static const String _studyModePreferenceKey = 'user_study_mode_preference';
+  static const String _studyContentLanguageKey = 'study_content_language';
 
   final SharedPreferences _prefs;
   final AuthService _authService;
@@ -191,6 +192,12 @@ class LanguagePreferenceService {
         // FIX: Notify router guard to update its session cache immediately
         RouterGuard.markLanguageSelectionCompleted();
       }
+
+      // Reset study content language to default when app language changes
+      // This ensures study content follows the new app language automatically
+      await setStudyContentLanguageToDefault();
+      print(
+          '🔄 [STUDY_CONTENT_LANGUAGE] Reset to default after app language change');
 
       // Notify listeners of the language change
       _languageChangeController.add(language);
@@ -681,5 +688,99 @@ class LanguagePreferenceService {
       print('Error getting study mode preference: $e');
       return null;
     }
+  }
+
+  // ============================================================================
+  // STUDY CONTENT LANGUAGE PREFERENCES
+  // ============================================================================
+
+  static const String _defaultStudyLanguageValue = 'default';
+
+  /// Get the study content language preference (for study topics and generated guides).
+  /// If set to "default" or not set, returns the global app language.
+  /// This language ONLY affects:
+  /// - Study topics content language
+  /// - Generated study guides from learning paths
+  /// It does NOT affect the app UI language.
+  Future<AppLanguage> getStudyContentLanguage() async {
+    try {
+      // Check for study-specific language preference first
+      final studyLanguageCode = _prefs.getString(_studyContentLanguageKey);
+
+      // If set to "default" or not set, use app language
+      if (studyLanguageCode == null ||
+          studyLanguageCode == _defaultStudyLanguageValue) {
+        final appLanguage = await getSelectedLanguage();
+        print(
+            '✅ [STUDY_CONTENT_LANGUAGE] Using app language (default): ${appLanguage.displayName}');
+        return appLanguage;
+      }
+
+      // Use the specific study content language
+      final language = AppLanguage.fromCode(studyLanguageCode);
+      print(
+          '✅ [STUDY_CONTENT_LANGUAGE] Using study-specific language: ${language.displayName}');
+      return language;
+    } catch (e) {
+      print('Error getting study content language: $e');
+      return AppLanguage.english;
+    }
+  }
+
+  /// Save study content language preference (DOES NOT affect app UI language).
+  /// Pass null or use setStudyContentLanguageToDefault() to reset to default (app language).
+  /// This only changes the language for:
+  /// - Study topics content
+  /// - Generated study guides
+  /// The app UI remains in the user's global language preference.
+  Future<void> saveStudyContentLanguage(AppLanguage? language) async {
+    try {
+      if (language == null) {
+        // Setting to default (use app language)
+        await _prefs.setString(
+            _studyContentLanguageKey, _defaultStudyLanguageValue);
+        print(
+            '💾 [STUDY_CONTENT_LANGUAGE] Study content language set to default (app language)');
+      } else {
+        await _prefs.setString(_studyContentLanguageKey, language.code);
+        print(
+            '💾 [STUDY_CONTENT_LANGUAGE] Study content language saved: ${language.displayName}');
+      }
+      print('ℹ️  [STUDY_CONTENT_LANGUAGE] App UI language remains unchanged');
+    } catch (e) {
+      print('Error saving study content language: $e');
+      rethrow;
+    }
+  }
+
+  /// Set study content language to default (will use app language).
+  Future<void> setStudyContentLanguageToDefault() async {
+    try {
+      await _prefs.setString(
+          _studyContentLanguageKey, _defaultStudyLanguageValue);
+      print(
+          '💾 [STUDY_CONTENT_LANGUAGE] Study content language reset to default');
+    } catch (e) {
+      print('Error resetting study content language to default: $e');
+      rethrow;
+    }
+  }
+
+  /// Check if study content language is set to default (follows app language).
+  Future<bool> isStudyContentLanguageDefault() async {
+    try {
+      final studyLanguageCode = _prefs.getString(_studyContentLanguageKey);
+      return studyLanguageCode == null ||
+          studyLanguageCode == _defaultStudyLanguageValue;
+    } catch (e) {
+      print('Error checking if study content language is default: $e');
+      return true; // Default to true on error
+    }
+  }
+
+  /// Clear study content language preference (will fallback to app language).
+  /// @deprecated Use setStudyContentLanguageToDefault() instead for clarity
+  Future<void> clearStudyContentLanguage() async {
+    await setStudyContentLanguageToDefault();
   }
 }

@@ -145,10 +145,10 @@ function extractQueryParams(req: Request): {
 async function handleTokenUsageHistory(
   req: Request,
   { supabaseServiceClient, authService }: ServiceContainer,
-  userContext: UserContext
+  userContext: UserContext | undefined
 ): Promise<Response> {
   // Only authenticated users can access usage history
-  if (!userContext.userId) {
+  if (!userContext || !userContext.userId) {
     throw new AppError(
       'AUTHENTICATION_REQUIRED',
       'Usage history is only available for authenticated users',

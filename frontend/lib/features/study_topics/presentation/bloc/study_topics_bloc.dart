@@ -68,20 +68,20 @@ class StudyTopicsBloc extends Bloc<StudyTopicsEvent, StudyTopicsState> {
     await _withAsyncGuard(emit, () async {
       await _loadCategoriesInternal(forceRefresh: event.forceRefresh);
 
-      // Get user's preferred language
+      // Get study content language preference (not app UI language)
       String languageCode = 'en'; // Default fallback
       try {
         final appLanguage =
-            await _languagePreferenceService.getSelectedLanguage();
+            await _languagePreferenceService.getStudyContentLanguage();
         languageCode = appLanguage.code;
       } catch (e) {
         if (kDebugMode) {
           print(
-              '⚠️ [STUDY_TOPICS_BLOC] Failed to get language preference, using default: $e');
+              '⚠️ [STUDY_TOPICS_BLOC] Failed to get study content language preference, using default: $e');
         }
       }
 
-      // Initialize or update filter with user's language preference
+      // Initialize or update filter with study content language preference
       _currentFilter =
           (event.initialFilter ?? const StudyTopicsFilter()).copyWith(
         language: languageCode,
@@ -288,20 +288,20 @@ class StudyTopicsBloc extends Bloc<StudyTopicsEvent, StudyTopicsState> {
 
   /// Load categories from repository (internal implementation)
   Future<void> _loadCategoriesInternal({required bool forceRefresh}) async {
-    // Get the user's preferred language
+    // Get study content language preference (not app UI language)
     String languageCode = 'en'; // Default fallback
     try {
       final appLanguage =
-          await _languagePreferenceService.getSelectedLanguage();
+          await _languagePreferenceService.getStudyContentLanguage();
       languageCode = appLanguage.code;
     } catch (e) {
       if (kDebugMode) {
         print(
-            '⚠️ [STUDY_TOPICS_BLOC] Failed to get language preference for categories, using default: $e');
+            '⚠️ [STUDY_TOPICS_BLOC] Failed to get study content language preference for categories, using default: $e');
       }
     }
 
-    // Fetch categories in user's preferred language for localized filter chips
+    // Fetch categories in study content language for localized filter chips
     final categoriesResult = await _repository.getCategories(
       language: languageCode,
       forceRefresh: forceRefresh,

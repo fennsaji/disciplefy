@@ -76,7 +76,8 @@ class MarkdownWithScripture extends StatelessWidget {
   Widget build(BuildContext context) {
     // Process the data: convert bullets to markdown format, then convert scripture references to links
     final withMarkdownBullets = _convertBulletsToMarkdown(data);
-    final processedData = _convertScriptureReferencesToLinks(withMarkdownBullets);
+    final processedData =
+        _convertScriptureReferencesToLinks(withMarkdownBullets);
 
     return MarkdownBody(
       data: processedData,

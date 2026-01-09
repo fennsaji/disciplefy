@@ -51,6 +51,7 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
 
   StudyInputMode _selectedMode = StudyInputMode.scripture;
   StudyLanguage _selectedLanguage = StudyLanguage.english;
+  bool _isLanguageDefault = true; // Track if using default (app language)
   bool _isInputValid = false;
   bool _isGeneratingStudyGuide = false;
   String? _validationError;
@@ -98,6 +99,7 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
     _inputController.addListener(_validateInput);
     _loadDefaultLanguage();
     _loadSavedStudyModePreference();
+    _setupLanguageChangeListener();
 
     // Register app lifecycle observer to detect when returning from study guide
     WidgetsBinding.instance.addObserver(this);
@@ -141,6 +143,10 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
       final getDefaultStudyLanguage = GetIt.instance<GetDefaultStudyLanguage>();
       final result = await getDefaultStudyLanguage(NoParams());
 
+      // Check if study content language is set to default
+      final isDefault =
+          await _languagePreferenceService.isStudyContentLanguageDefault();
+
       result.fold(
         (failure) {
           if (kDebugMode) {
@@ -152,7 +158,12 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
           if (mounted) {
             setState(() {
               _selectedLanguage = language;
+              _isLanguageDefault = isDefault;
             });
+            if (kDebugMode) {
+              print(
+                  '✅ [GENERATE STUDY] Loaded language: ${language.code}, isDefault: $isDefault');
+            }
           }
         },
       );
@@ -161,6 +172,32 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
         print('❌ [GENERATE STUDY] Error loading default language: $e');
       }
     }
+  }
+
+  /// Listen for app language preference changes from settings
+  /// When app language changes, study content language is reset to default,
+  /// so we need to refresh the language selection to reflect the new app language.
+  void _setupLanguageChangeListener() {
+    if (kDebugMode) {
+      print('[GENERATE_STUDY] Setting up language change listener');
+    }
+
+    _languagePreferenceService.languageChanges.listen((newLanguage) async {
+      if (kDebugMode) {
+        print(
+            '[GENERATE_STUDY] App language changed to: ${newLanguage.displayName}');
+      }
+
+      // When app language changes, study content language is automatically reset to default
+      // Reload the language to reflect the new default
+      if (mounted) {
+        await _loadDefaultLanguage();
+        if (kDebugMode) {
+          print(
+              '[GENERATE_STUDY] Language refreshed after app language change');
+        }
+      }
+    });
   }
 
   /// Load the saved study mode preference to show appropriate token costs
@@ -912,8 +949,11 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
   Widget _buildCompactLanguageSelector() {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    String getLanguageLabel(StudyLanguage lang) {
-      switch (lang) {
+    String getLanguageLabel() {
+      if (_isLanguageDefault) {
+        return context.tr(TranslationKeys.generateStudyDefaultLanguage);
+      }
+      switch (_selectedLanguage) {
         case StudyLanguage.english:
           return 'EN';
         case StudyLanguage.hindi:
@@ -934,8 +974,8 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
           color: AppTheme.primaryColor.withOpacity(0.3),
         ),
       ),
-      child: PopupMenuButton<StudyLanguage>(
-        initialValue: _selectedLanguage,
+      child: PopupMenuButton<StudyLanguage?>(
+        initialValue: _isLanguageDefault ? null : _selectedLanguage,
         onSelected: _switchLanguage,
         offset: const Offset(0, 40),
         color: Theme.of(context).scaffoldBackgroundColor,
@@ -943,6 +983,9 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
           borderRadius: BorderRadius.circular(12),
         ),
         itemBuilder: (context) => [
+          _buildLanguageMenuItem(null,
+              context.tr(TranslationKeys.generateStudyDefaultLanguageOption)),
+          const PopupMenuDivider(),
           _buildLanguageMenuItem(StudyLanguage.english, 'English'),
           _buildLanguageMenuItem(StudyLanguage.hindi, 'हिन्दी'),
           _buildLanguageMenuItem(StudyLanguage.malayalam, 'മലയാളം'),
@@ -951,7 +994,7 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              getLanguageLabel(_selectedLanguage),
+              getLanguageLabel(),
               style: AppFonts.inter(
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
@@ -970,12 +1013,14 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
     );
   }
 
-  PopupMenuItem<StudyLanguage> _buildLanguageMenuItem(
-    StudyLanguage language,
+  PopupMenuItem<StudyLanguage?> _buildLanguageMenuItem(
+    StudyLanguage? language,
     String label,
   ) {
-    final isSelected = _selectedLanguage == language;
-    return PopupMenuItem<StudyLanguage>(
+    final isSelected = language == null
+        ? _isLanguageDefault
+        : (!_isLanguageDefault && _selectedLanguage == language);
+    return PopupMenuItem<StudyLanguage?>(
       value: language,
       child: Row(
         children: [
@@ -1134,30 +1179,47 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
                   : AppTheme.primaryColor.withOpacity(0.15),
             ),
           ),
-          child: Row(
+          child: Column(
             children: [
-              Expanded(
-                child: _LanguageToggleButton(
-                  label: context.tr(TranslationKeys.generateStudyEnglish),
-                  isSelected: _selectedLanguage == StudyLanguage.english,
-                  onTap: () async =>
-                      await _switchLanguage(StudyLanguage.english),
-                ),
+              // Default option (full width)
+              _LanguageToggleButton(
+                label: context
+                    .tr(TranslationKeys.generateStudyDefaultLanguageOption),
+                isSelected: _isLanguageDefault,
+                onTap: () async => await _switchLanguage(null),
               ),
-              Expanded(
-                child: _LanguageToggleButton(
-                  label: context.tr(TranslationKeys.generateStudyHindi),
-                  isSelected: _selectedLanguage == StudyLanguage.hindi,
-                  onTap: () async => await _switchLanguage(StudyLanguage.hindi),
-                ),
-              ),
-              Expanded(
-                child: _LanguageToggleButton(
-                  label: context.tr(TranslationKeys.generateStudyMalayalam),
-                  isSelected: _selectedLanguage == StudyLanguage.malayalam,
-                  onTap: () async =>
-                      await _switchLanguage(StudyLanguage.malayalam),
-                ),
+              const SizedBox(height: 4),
+              // Specific languages row
+              Row(
+                children: [
+                  Expanded(
+                    child: _LanguageToggleButton(
+                      label: context.tr(TranslationKeys.generateStudyEnglish),
+                      isSelected: !_isLanguageDefault &&
+                          _selectedLanguage == StudyLanguage.english,
+                      onTap: () async =>
+                          await _switchLanguage(StudyLanguage.english),
+                    ),
+                  ),
+                  Expanded(
+                    child: _LanguageToggleButton(
+                      label: context.tr(TranslationKeys.generateStudyHindi),
+                      isSelected: !_isLanguageDefault &&
+                          _selectedLanguage == StudyLanguage.hindi,
+                      onTap: () async =>
+                          await _switchLanguage(StudyLanguage.hindi),
+                    ),
+                  ),
+                  Expanded(
+                    child: _LanguageToggleButton(
+                      label: context.tr(TranslationKeys.generateStudyMalayalam),
+                      isSelected: !_isLanguageDefault &&
+                          _selectedLanguage == StudyLanguage.malayalam,
+                      onTap: () async =>
+                          await _switchLanguage(StudyLanguage.malayalam),
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
@@ -1803,23 +1865,51 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
     _inputFocusNode.requestFocus();
   }
 
-  Future<void> _switchLanguage(StudyLanguage language) async {
+  Future<void> _switchLanguage(StudyLanguage? language) async {
     if (kDebugMode) {
       print(
-          '🔄 [GENERATE STUDY] User switching content language to: ${language.code}');
+          '🔄 [GENERATE STUDY] User switching content language to: ${language?.code ?? "default"}');
     }
 
-    // Update local state only - this affects content generation language, not UI language
-    setState(() {
-      _selectedLanguage = language;
-    });
+    // If language is null, user selected "Default"
+    if (language == null) {
+      // Set to default (use app language)
+      await _languagePreferenceService.saveStudyContentLanguage(null);
+
+      // Load the app language to update UI
+      final appLanguage =
+          await _languagePreferenceService.getSelectedLanguage();
+      final studyLanguage = appLanguage.toStudyLanguage();
+
+      setState(() {
+        _selectedLanguage = studyLanguage;
+        _isLanguageDefault = true;
+      });
+
+      if (kDebugMode) {
+        print(
+            '✅ [GENERATE STUDY] Set to default - using app language: ${appLanguage.code}');
+      }
+    } else {
+      // User selected a specific language
+      final appLanguage = language.toAppLanguage();
+      await _languagePreferenceService.saveStudyContentLanguage(appLanguage);
+
+      setState(() {
+        _selectedLanguage = language;
+        _isLanguageDefault = false;
+      });
+
+      if (kDebugMode) {
+        print(
+            '✅ [GENERATE STUDY] Content generation language saved: ${language.code}');
+      }
+    }
 
     // Update token cost display for new language
     _updateTokenCostDisplay();
 
     if (kDebugMode) {
-      print(
-          '✅ [GENERATE STUDY] Content generation language updated: ${language.code}');
       print(
           'ℹ️  [GENERATE STUDY] Note: This does not change the app UI language');
     }

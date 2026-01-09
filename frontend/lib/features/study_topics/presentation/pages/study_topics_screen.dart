@@ -66,33 +66,23 @@ class _StudyTopicsScreenState extends State<StudyTopicsScreen> {
   }
 
   /// Listen for language preference changes from settings
+  /// When app language changes, study content language is reset to default,
+  /// so we need to refresh the content to reflect the new app language.
   void _setupLanguageChangeListener() {
     debugPrint('[STUDY_TOPICS] Setting up language change listener');
-    _languageSubscription = _languageService.languageChanges.listen(
-      (AppLanguage newLanguage) {
+
+    _languageService.languageChanges.listen((newLanguage) async {
+      debugPrint(
+          '[STUDY_TOPICS] App language changed to: ${newLanguage.displayName}');
+
+      // When app language changes, study content language is automatically reset to default
+      // Reload content with the new language
+      if (mounted) {
+        await _loadLanguageAndInitialize();
         debugPrint(
-            '[STUDY_TOPICS] Language change received: ${newLanguage.code}, current: $_currentLanguage');
-        Logger.info(
-          'Study Topics: Language changed to ${newLanguage.code}, refreshing content',
-          tag: 'STUDY_TOPICS',
-        );
-        if (mounted && newLanguage.code != _currentLanguage) {
-          debugPrint(
-              '[STUDY_TOPICS] Refreshing content for language: ${newLanguage.code}');
-          setState(() {
-            _currentLanguage = newLanguage.code;
-          });
-          // Refresh all content with new language
-          _continueLearningBloc
-              .add(RefreshContinueLearning(language: newLanguage.code));
-          _learningPathsBloc
-              .add(RefreshLearningPaths(language: newLanguage.code));
-        } else {
-          debugPrint(
-              '[STUDY_TOPICS] Skipping refresh - mounted: $mounted, same language: ${newLanguage.code == _currentLanguage}');
-        }
-      },
-    );
+            '[STUDY_TOPICS] Content refreshed after app language change');
+      }
+    });
   }
 
   Future<void> _loadLanguageAndInitialize() async {
@@ -104,7 +94,8 @@ class _StudyTopicsScreenState extends State<StudyTopicsScreen> {
       });
     }
 
-    final language = await _languageService.getSelectedLanguage();
+    // Use study content language (not global app language)
+    final language = await _languageService.getStudyContentLanguage();
     if (mounted) {
       setState(() {
         _currentLanguage = language.code;
@@ -258,7 +249,27 @@ class _StudyTopicsScreenContentState extends State<_StudyTopicsScreenContent> {
   }
 
   PreferredSizeWidget _buildAppBar(BuildContext context) {
-    return const StudyTopicsAppBar();
+    return StudyTopicsAppBar(
+      onLanguageChange: _handleStudyLanguageChange,
+    );
+  }
+
+  /// Handle study content language change and refresh content
+  Future<void> _handleStudyLanguageChange() async {
+    if (!mounted) return;
+
+    final languageService = sl<LanguagePreferenceService>();
+    final newLanguage = await languageService.getStudyContentLanguage();
+
+    if (mounted) {
+      // Refresh all content with new language using BLoC from context
+      context
+          .read<ContinueLearningBloc>()
+          .add(RefreshContinueLearning(language: newLanguage.code));
+      context
+          .read<LearningPathsBloc>()
+          .add(RefreshLearningPaths(language: newLanguage.code));
+    }
   }
 
   Widget _buildBody(BuildContext context) {
@@ -619,7 +630,9 @@ class _StudyTopicsScreenContentState extends State<_StudyTopicsScreenContent> {
 
 /// App bar widget for the Study Topics screen.
 class StudyTopicsAppBar extends StatelessWidget implements PreferredSizeWidget {
-  const StudyTopicsAppBar({super.key});
+  final VoidCallback? onLanguageChange;
+
+  const StudyTopicsAppBar({super.key, this.onLanguageChange});
 
   @override
   Widget build(BuildContext context) {
@@ -655,7 +668,7 @@ class StudyTopicsAppBar extends StatelessWidget implements PreferredSizeWidget {
             tooltip: context.tr(TranslationKeys.moreOptionsTooltip),
             onSelected: (value) {
               if (value == 'language') {
-                _showLanguageSelector(context);
+                _showLanguageSelector(context, onLanguageChange);
               } else if (value == 'study_mode') {
                 _showStudyModeSelector(context);
               }
@@ -667,7 +680,8 @@ class StudyTopicsAppBar extends StatelessWidget implements PreferredSizeWidget {
                   children: [
                     const Icon(Icons.language),
                     const SizedBox(width: 12),
-                    Text(context.tr(TranslationKeys.settingsContentLanguage)),
+                    Text(
+                        context.tr(TranslationKeys.studyTopicsContentLanguage)),
                   ],
                 ),
               ),
@@ -689,11 +703,15 @@ class StudyTopicsAppBar extends StatelessWidget implements PreferredSizeWidget {
     );
   }
 
-  /// Show language selection bottom sheet
-  Future<void> _showLanguageSelector(BuildContext context) async {
+  /// Show language selection bottom sheet for study content only
+  /// This DOES NOT change the app UI language
+  Future<void> _showLanguageSelector(
+      BuildContext context, VoidCallback? onLanguageChange) async {
     final theme = Theme.of(context);
     final languageService = sl<LanguagePreferenceService>();
-    final currentLanguage = await languageService.getSelectedLanguage();
+    final currentLanguage = await languageService.getStudyContentLanguage();
+    final isDefault = await languageService.isStudyContentLanguageDefault();
+    final appLanguage = await languageService.getSelectedLanguage();
 
     if (!context.mounted) return;
 
@@ -705,24 +723,68 @@ class StudyTopicsAppBar extends StatelessWidget implements PreferredSizeWidget {
           children: [
             Padding(
               padding: const EdgeInsets.all(16),
-              child: Text(
-                context.tr(TranslationKeys.settingsContentLanguage),
-                style: theme.textTheme.titleMedium,
+              child: Column(
+                children: [
+                  Text(
+                    context.tr(TranslationKeys.studyTopicsContentLanguage),
+                    style: theme.textTheme.titleMedium,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    context.tr(
+                        TranslationKeys.studyTopicsContentLanguageDescription),
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurface.withOpacity(0.6),
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
               ),
             ),
+            // Default option
+            ListTile(
+              title: Text(context
+                  .tr(TranslationKeys.studyTopicsContentLanguageDefault)),
+              subtitle: Text(
+                '${context.tr(TranslationKeys.studyTopicsContentLanguageDefaultDescription)} (${appLanguage.displayName})',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurface.withOpacity(0.6),
+                ),
+              ),
+              trailing: isDefault
+                  ? Icon(Icons.check, color: theme.colorScheme.primary)
+                  : null,
+              onTap: () async {
+                // Set to default (use app language)
+                await languageService.saveStudyContentLanguage(null);
+
+                if (sheetContext.mounted) {
+                  Navigator.pop(sheetContext);
+                }
+
+                // Notify parent to refresh content
+                onLanguageChange?.call();
+              },
+            ),
+            const Divider(height: 1),
+            // Specific language options
             ...AppLanguage.values.map((language) {
-              final isSelected = language == currentLanguage;
+              final isSelected = !isDefault && language == currentLanguage;
               return ListTile(
                 title: Text(language.displayName),
                 trailing: isSelected
                     ? Icon(Icons.check, color: theme.colorScheme.primary)
                     : null,
                 onTap: () async {
-                  // Save the new language preference
-                  await languageService.saveLanguagePreference(language);
+                  // Save study content language (does NOT affect app UI)
+                  await languageService.saveStudyContentLanguage(language);
+
                   if (sheetContext.mounted) {
                     Navigator.pop(sheetContext);
                   }
+
+                  // Notify parent to refresh content
+                  onLanguageChange?.call();
                 },
               );
             }),

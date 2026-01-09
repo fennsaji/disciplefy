@@ -246,7 +246,6 @@ class _DetailChip extends StatelessWidget {
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
           color: color.withOpacity(0.3),
-          width: 1,
         ),
       ),
       child: Row(

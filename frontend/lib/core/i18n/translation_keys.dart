@@ -162,6 +162,9 @@ class TranslationKeys {
   static const generateStudyEnglish = 'generate_study.english';
   static const generateStudyHindi = 'generate_study.hindi';
   static const generateStudyMalayalam = 'generate_study.malayalam';
+  static const generateStudyDefaultLanguage = 'generate_study.default_language';
+  static const generateStudyDefaultLanguageOption =
+      'generate_study.default_language_option';
   static const generateStudyEnterScripture = 'generate_study.enter_scripture';
   static const generateStudyEnterTopic = 'generate_study.enter_topic';
   static const generateStudyAskQuestion = 'generate_study.ask_question';
@@ -519,6 +522,13 @@ class TranslationKeys {
       'study_topics.no_topics_available';
   static const studyTopicsClearFilters = 'study_topics.clear_filters';
   static const studyTopicsTopicsFound = 'study_topics.topics_found';
+  static const studyTopicsContentLanguage = 'study_topics.content_language';
+  static const studyTopicsContentLanguageDescription =
+      'study_topics.content_language_description';
+  static const studyTopicsContentLanguageDefault =
+      'study_topics.content_language_default';
+  static const studyTopicsContentLanguageDefaultDescription =
+      'study_topics.content_language_default_description';
   static const moreOptionsTooltip = 'study_topics.more_options_tooltip';
 
   // Token Management - Main

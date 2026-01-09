@@ -169,7 +169,8 @@ class _ClickableScriptureTextState extends State<ClickableScriptureText> {
         // Bullet point style with indentation
         if (i > 0) allSpans.add(const TextSpan(text: '\n'));
 
-        final bulletChar = bulletMatch.group(1) == '•' ? '•' : '•'; // Normalize to •
+        final bulletChar =
+            bulletMatch.group(1) == '•' ? '•' : '•'; // Normalize to •
         final bulletContent = bulletMatch.group(2)!;
 
         // Add bullet with indentation
