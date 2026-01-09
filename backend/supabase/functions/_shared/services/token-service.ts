@@ -498,9 +498,11 @@ export class TokenService {
     context: Partial<TokenOperationContext>
   ): Promise<void> {
     try {
-      // Calculate token source breakdown (how many from daily vs purchased)
-      const dailyUsed = Math.min(tokenCost, consumptionData.available_tokens || 0)
-      const purchasedUsed = tokenCost - dailyUsed
+      // Use the token breakdown provided by the database function
+      // (daily_tokens_used and purchased_tokens_used are calculated correctly
+      // by consume_user_tokens based on pre-consumption balances)
+      const dailyUsed = consumptionData.daily_tokens_used
+      const purchasedUsed = consumptionData.purchased_tokens_used
 
       // Call record_token_usage RPC function
       await this.supabaseClient.rpc('record_token_usage', {

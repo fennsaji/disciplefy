@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/router/app_routes.dart';
 import '../../../../core/constants/app_fonts.dart';
+import '../../../../core/constants/study_mode_preferences.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/di/injection_container.dart';
 import '../../../../core/services/theme_service.dart';
@@ -497,14 +498,15 @@ class _SettingsScreenContent extends StatelessWidget {
 
     // Handle different mode values for subtitle
     String subtitle;
-    if (defaultMode == null) {
+    if (StudyModePreferences.isGeneralAskEveryTime(defaultMode)) {
       subtitle = context.tr(TranslationKeys.settingsAskEveryTime);
-    } else if (defaultMode == 'recommended') {
+    } else if (StudyModePreferences.isRecommended(defaultMode)) {
       subtitle = context.tr(TranslationKeys.settingsUseRecommended);
     } else {
       subtitle = context
           .tr(TranslationKeys.settingsStudyModePreferenceCurrent)
-          .replaceAll('{mode}', _getStudyModeDisplayName(defaultMode, context));
+          .replaceAll(
+              '{mode}', _getStudyModeDisplayName(defaultMode!, context));
     }
 
     return _buildSettingsTile(
@@ -528,15 +530,15 @@ class _SettingsScreenContent extends StatelessWidget {
         authProvider.userProfile?['learning_path_study_mode'] as String?;
 
     String subtitle;
-    if (learningPathMode == null || learningPathMode == 'ask') {
+    if (StudyModePreferences.isLearningPathAskEveryTime(learningPathMode)) {
       subtitle = context.tr(TranslationKeys.settingsAskEveryTime);
-    } else if (learningPathMode == 'recommended') {
+    } else if (StudyModePreferences.isRecommended(learningPathMode)) {
       subtitle = context.tr(TranslationKeys.settingsUseRecommended);
     } else {
       subtitle = context
           .tr(TranslationKeys.settingsStudyModePreferenceCurrent)
           .replaceAll(
-              '{mode}', _getStudyModeDisplayName(learningPathMode, context));
+              '{mode}', _getStudyModeDisplayName(learningPathMode!, context));
     }
 
     return _buildSettingsTile(
@@ -1341,7 +1343,7 @@ class _SettingsScreenContent extends StatelessWidget {
             _buildStudyModeOption(
               builderContext,
               parentContext,
-              'recommended',
+              StudyModePreferences.recommended,
               context.tr(TranslationKeys.settingsUseRecommended),
               Icons.stars,
               context.tr(TranslationKeys.settingsUseRecommendedSubtitle),
@@ -1442,7 +1444,7 @@ class _SettingsScreenContent extends StatelessWidget {
             _buildLearningPathModeOption(
               builderContext,
               parentContext,
-              'recommended',
+              StudyModePreferences.recommended,
               context.tr(TranslationKeys.settingsUseRecommended),
               Icons.stars,
               context.tr(TranslationKeys.settingsUseRecommendedSubtitle),
@@ -1454,7 +1456,7 @@ class _SettingsScreenContent extends StatelessWidget {
             _buildLearningPathModeOption(
               builderContext,
               parentContext,
-              'ask',
+              StudyModePreferences.learningPathAskEveryTime,
               context.tr(TranslationKeys.settingsAskEveryTime),
               Icons.help_outline,
               context.tr(TranslationKeys.settingsAskEveryTimeSubtitle),

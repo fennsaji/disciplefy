@@ -29,6 +29,7 @@ class FeatureBreakdown extends Equatable {
       default:
         return featureName
             .split('_')
+            .where((word) => word.isNotEmpty)
             .map((word) => word[0].toUpperCase() + word.substring(1))
             .join(' ');
     }
@@ -204,6 +205,7 @@ class UsageStatistics extends Equatable {
       default:
         return mostUsedFeature!
             .split('_')
+            .where((word) => word.isNotEmpty)
             .map((word) => word[0].toUpperCase() + word.substring(1))
             .join(' ');
     }

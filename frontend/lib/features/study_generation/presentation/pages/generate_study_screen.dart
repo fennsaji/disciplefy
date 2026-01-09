@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_fonts.dart';
+import '../../../../core/constants/study_mode_preferences.dart';
 import 'package:get_it/get_it.dart';
 
 import '../../../../core/theme/app_theme.dart';
@@ -74,6 +75,9 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
   // Language preference service for database integration
   late final LanguagePreferenceService _languagePreferenceService;
 
+  // Stream subscription for language changes (to be cancelled in dispose)
+  StreamSubscription<AppLanguage>? _languageChangeSubscription;
+
   // Navigation service
   late final StudyNavigator _navigator;
 
@@ -82,7 +86,7 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
 
   // Track the saved study mode preference to show token costs
   String?
-      _savedStudyModePreference; // null, 'ask_every_time', 'recommended', or specific mode
+      _savedStudyModePreference; // null (ask every time), 'recommended', or specific mode
 
   // Store the computed token cost for display (null = hide badge)
   int? _displayTokenCost;
@@ -182,7 +186,12 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
       print('[GENERATE_STUDY] Setting up language change listener');
     }
 
-    _languagePreferenceService.languageChanges.listen((newLanguage) async {
+    // Cancel any existing subscription before creating a new one
+    _languageChangeSubscription?.cancel();
+
+    // Store the subscription to ensure proper cleanup
+    _languageChangeSubscription =
+        _languagePreferenceService.languageChanges.listen((newLanguage) async {
       if (kDebugMode) {
         print(
             '[GENERATE_STUDY] App language changed to: ${newLanguage.displayName}');
@@ -271,6 +280,7 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
     // Remove app lifecycle observer
     WidgetsBinding.instance.removeObserver(this);
     _generationTimeoutTimer?.cancel();
+    _languageChangeSubscription?.cancel();
     _inputController.dispose();
     _inputFocusNode.dispose();
     super.dispose();
@@ -361,11 +371,11 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
           '🔍 [TOKEN_COST] _savedStudyModePreference: $_savedStudyModePreference');
     }
 
-    // CRITICAL: If no preference or "ask every time", HIDE token cost badge
-    if (_savedStudyModePreference == null ||
-        _savedStudyModePreference == 'ask_every_time') {
+    // CRITICAL: If no preference (ask every time), HIDE token cost badge
+    if (StudyModePreferences.isGeneralAskEveryTime(_savedStudyModePreference)) {
       if (kDebugMode) {
-        print('🔍 [TOKEN_COST] No default mode → hiding token badge');
+        print(
+            '🔍 [TOKEN_COST] No default mode (ask every time) → hiding token badge');
       }
       return (null, null); // Hide badge entirely
     }
@@ -373,7 +383,7 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
     String modeForCost;
 
     // If "recommended", determine recommended mode based on input type
-    if (_savedStudyModePreference == 'recommended') {
+    if (StudyModePreferences.isRecommended(_savedStudyModePreference)) {
       final recommendedMode = _selectedMode == StudyInputMode.scripture
           ? StudyMode.deep
           : StudyMode.standard;
@@ -1863,6 +1873,10 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
       _isInputValid = false;
     });
     _inputFocusNode.requestFocus();
+
+    // Update token cost display when input mode changes
+    // (recommended mode calculation depends on _selectedMode)
+    _updateTokenCostDisplay();
   }
 
   Future<void> _switchLanguage(StudyLanguage? language) async {
@@ -2294,9 +2308,9 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
 
           // Show confirmation
           String confirmationMessage;
-          if (modeValue == null) {
+          if (StudyModePreferences.isGeneralAskEveryTime(modeValue)) {
             confirmationMessage = 'Will ask for mode every time';
-          } else if (modeValue == 'recommended') {
+          } else if (StudyModePreferences.isRecommended(modeValue)) {
             confirmationMessage = 'Default mode set to Use Recommended';
           } else {
             confirmationMessage = 'Default mode set to $title';
@@ -2490,7 +2504,7 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
     final savedModeString =
         await _languagePreferenceService.getStudyModePreferenceRaw();
 
-    if (savedModeString == 'recommended') {
+    if (StudyModePreferences.isRecommended(savedModeString)) {
       // User wants recommended mode - determine based on input type
       StudyMode recommendedMode;
       switch (inputType) {

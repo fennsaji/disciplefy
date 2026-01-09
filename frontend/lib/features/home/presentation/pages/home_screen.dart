@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_fonts.dart';
+import '../../../../core/constants/study_mode_preferences.dart';
 import '../../../../core/animations/app_animations.dart';
 
 import '../../../../core/theme/app_theme.dart';
@@ -12,6 +13,7 @@ import '../../../../core/di/injection_container.dart';
 import '../../../../core/router/app_router.dart';
 import '../../../../core/services/auth_state_provider.dart';
 import '../../../../core/services/language_preference_service.dart';
+import '../../../../core/models/app_language.dart';
 import '../../../../core/widgets/auth_protected_screen.dart';
 import '../../../../core/extensions/translation_extension.dart';
 import '../../../../core/i18n/translation_keys.dart';
@@ -74,6 +76,9 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
   bool _hasTriggeredDailyVersePrompt = false;
   bool _hasTriggeredStreakPrompt = false;
 
+  // Stream subscription for language changes (to be cancelled in dispose)
+  StreamSubscription<AppLanguage>? _languageSubscription;
+
   @override
   void initState() {
     super.initState();
@@ -99,7 +104,12 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
   void _setupLanguageChangeListener() {
     final languageService = sl<LanguagePreferenceService>();
 
-    languageService.languageChanges.listen((newLanguage) {
+    // Cancel any existing subscription before creating a new one
+    _languageSubscription?.cancel();
+
+    // Store the subscription to ensure proper cleanup
+    _languageSubscription =
+        languageService.languageChanges.listen((newLanguage) {
       if (kDebugMode) {
         print('[HOME] App language changed to: ${newLanguage.displayName}');
       }
@@ -196,7 +206,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
       final savedModeRaw =
           await sl<LanguagePreferenceService>().getStudyModePreferenceRaw();
 
-      if (savedModeRaw == 'recommended') {
+      if (StudyModePreferences.isRecommended(savedModeRaw)) {
         // ✅ FIX: "Use Recommended" - automatically select Deep Dive for scripture without showing sheet
         debugPrint('✅ [HOME] Using recommended mode for scripture: Deep Dive');
         _navigateToDailyVerseStudy(currentState, StudyMode.deep, false);
@@ -314,6 +324,12 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
       case VerseLanguage.malayalam:
         return 'ml';
     }
+  }
+
+  @override
+  void dispose() {
+    _languageSubscription?.cancel();
+    super.dispose();
   }
 
   @override

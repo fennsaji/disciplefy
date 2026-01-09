@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_fonts.dart';
+import '../../../../core/constants/study_mode_preferences.dart';
 
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/di/injection_container.dart';
@@ -71,7 +72,12 @@ class _StudyTopicsScreenState extends State<StudyTopicsScreen> {
   void _setupLanguageChangeListener() {
     debugPrint('[STUDY_TOPICS] Setting up language change listener');
 
-    _languageService.languageChanges.listen((newLanguage) async {
+    // Cancel any existing subscription before creating a new one
+    _languageSubscription?.cancel();
+
+    // Store the subscription to ensure proper cleanup
+    _languageSubscription =
+        _languageService.languageChanges.listen((newLanguage) async {
       debugPrint(
           '[STUDY_TOPICS] App language changed to: ${newLanguage.displayName}');
 
@@ -453,11 +459,11 @@ class _StudyTopicsScreenContentState extends State<_StudyTopicsScreenContent> {
     // If user selected "always use recommended" and topic has a recommended mode, use it directly
     debugPrint('🔍 Checking auto-use recommended conditions:');
     debugPrint(
-        '   - savedModeRaw == "recommended": ${savedModeRaw == 'recommended'}');
+        '   - savedModeRaw == "recommended": ${StudyModePreferences.isRecommended(savedModeRaw)}');
     debugPrint('   - topic.isFromLearningPath: ${topic.isFromLearningPath}');
     debugPrint('   - recommendedMode != null: ${recommendedMode != null}');
 
-    if (savedModeRaw == 'recommended' &&
+    if (StudyModePreferences.isRecommended(savedModeRaw) &&
         topic.isFromLearningPath &&
         recommendedMode != null) {
       debugPrint(
@@ -468,11 +474,11 @@ class _StudyTopicsScreenContentState extends State<_StudyTopicsScreenContent> {
       return;
     }
 
-    // If user has a specific saved mode preference (not "recommended"), use it
-    if (savedModeRaw != null &&
-        savedModeRaw != 'recommended' &&
-        savedModeRaw != 'ask') {
-      final savedMode = _parseStudyMode(savedModeRaw);
+    // If user has a specific saved mode preference (not "ask every time" or "recommended"), use it
+    if (StudyModePreferences.isSpecificMode(savedModeRaw,
+        isLearningPath: topic.isFromLearningPath)) {
+      final savedMode = _parseStudyMode(
+          savedModeRaw!); // Safe: isSpecificMode guarantees non-null
       if (savedMode != null) {
         debugPrint(
             '✅ [CONTINUE_LEARNING] Using saved mode preference: ${savedMode.displayName}');
@@ -505,14 +511,15 @@ class _StudyTopicsScreenContentState extends State<_StudyTopicsScreenContent> {
         if (alwaysUseRecommended) {
           final userProfileService = sl<UserProfileService>();
           final authProvider = sl<AuthStateProvider>();
-          await userProfileService
-              .updateLearningPathStudyModePreference('recommended');
+          await userProfileService.updateLearningPathStudyModePreference(
+              StudyModePreferences.recommended);
 
           // Update cache
           final userId = authProvider.userId;
           if (userId != null) {
             final currentProfile = authProvider.userProfile ?? {};
-            currentProfile['learning_path_study_mode'] = 'recommended';
+            currentProfile['learning_path_study_mode'] =
+                StudyModePreferences.recommended;
             authProvider.cacheProfile(userId, currentProfile);
           }
           debugPrint(
@@ -539,7 +546,8 @@ class _StudyTopicsScreenContentState extends State<_StudyTopicsScreenContent> {
         if (rememberChoice) {
           await languageService.saveStudyModePreference(mode);
         } else if (alwaysUseRecommended) {
-          await languageService.saveStudyModePreferenceRaw('recommended');
+          await languageService
+              .saveStudyModePreferenceRaw(StudyModePreferences.recommended);
         }
       }
 
