@@ -154,15 +154,37 @@ class UsageStatisticsModel extends UsageStatistics {
       'most_used_feature': mostUsedFeature,
       'most_used_language': mostUsedLanguage,
       'most_used_mode': mostUsedMode,
-      'feature_breakdown': featureBreakdown
-          .map((fb) => (fb as FeatureBreakdownModel).toJson())
-          .toList(),
-      'language_breakdown': languageBreakdown
-          .map((lb) => (lb as LanguageBreakdownModel).toJson())
-          .toList(),
-      'study_mode_breakdown': studyModeBreakdown
-          .map((smb) => (smb as StudyModeBreakdownModel).toJson())
-          .toList(),
+      'feature_breakdown': featureBreakdown.map((fb) {
+        if (fb is FeatureBreakdownModel) {
+          return fb.toJson();
+        }
+        // Build map from entity's public fields
+        return {
+          'feature_name': fb.featureName,
+          'token_count': fb.tokenCount,
+          'operation_count': fb.operationCount,
+        };
+      }).toList(),
+      'language_breakdown': languageBreakdown.map((lb) {
+        if (lb is LanguageBreakdownModel) {
+          return lb.toJson();
+        }
+        // Build map from entity's public fields
+        return {
+          'language': lb.language,
+          'token_count': lb.tokenCount,
+        };
+      }).toList(),
+      'study_mode_breakdown': studyModeBreakdown.map((smb) {
+        if (smb is StudyModeBreakdownModel) {
+          return smb.toJson();
+        }
+        // Build map from entity's public fields
+        return {
+          'study_mode': smb.studyMode,
+          'token_count': smb.tokenCount,
+        };
+      }).toList(),
       'first_usage_date': firstUsageDate?.toIso8601String(),
       'last_usage_date': lastUsageDate?.toIso8601String(),
     };

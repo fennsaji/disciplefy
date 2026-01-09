@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -24,6 +26,7 @@ class _TokenUsageHistoryPageState extends State<TokenUsageHistoryPage> {
   int _currentOffset = 0;
   bool _isLoadingMore = false;
   bool _hasTriggeredStatistics = false;
+  StreamSubscription<TokenState>? _usageHistorySubscription;
 
   @override
   void initState() {
@@ -40,6 +43,7 @@ class _TokenUsageHistoryPageState extends State<TokenUsageHistoryPage> {
   void dispose() {
     _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
+    _usageHistorySubscription?.cancel();
     super.dispose();
   }
 
@@ -86,8 +90,12 @@ class _TokenUsageHistoryPageState extends State<TokenUsageHistoryPage> {
       _hasTriggeredStatistics = false;
     }
 
+    // Cancel any existing subscription
+    await _usageHistorySubscription?.cancel();
+
     // Listen to BLoC state changes and trigger statistics when usage history loads
-    final subscription = context.read<TokenBloc>().stream.listen((state) {
+    _usageHistorySubscription =
+        context.read<TokenBloc>().stream.listen((state) {
       if (state is UsageHistoryLoaded &&
           mounted &&
           !_hasTriggeredStatistics &&
@@ -97,12 +105,17 @@ class _TokenUsageHistoryPageState extends State<TokenUsageHistoryPage> {
         debugPrint(
             '📊 [USAGE_HISTORY_PAGE] Usage history loaded, triggering statistics (one-time)');
         context.read<TokenBloc>().add(const GetUsageStatistics());
+
+        // Cancel subscription immediately after triggering statistics
+        _usageHistorySubscription?.cancel();
+        _usageHistorySubscription = null;
       }
     });
 
-    // Clean up subscription after a reasonable timeout
+    // Clean up subscription after a reasonable timeout as a safety measure
     Future.delayed(const Duration(seconds: 10), () {
-      subscription.cancel();
+      _usageHistorySubscription?.cancel();
+      _usageHistorySubscription = null;
     });
   }
 

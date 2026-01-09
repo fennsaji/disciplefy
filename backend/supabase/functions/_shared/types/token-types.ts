@@ -260,6 +260,8 @@ export interface DatabaseTokenResult {
   readonly available_tokens: number
   readonly purchased_tokens: number
   readonly daily_limit: number
+  readonly daily_tokens_used: number
+  readonly purchased_tokens_used: number
   readonly error_message?: string
 }
 

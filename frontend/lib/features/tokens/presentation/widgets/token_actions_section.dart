@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../core/constants/app_fonts.dart';
+import '../../../../core/theme/app_theme.dart';
 
 import '../../domain/entities/token_status.dart';
 import '../../../../core/extensions/translation_extension.dart';
@@ -114,14 +115,15 @@ class TokenActionsSection extends StatelessWidget {
                 width: double.infinity,
                 child: OutlinedButton.icon(
                   onPressed: onViewUsageHistory,
-                  icon: Icon(Icons.history, color: Colors.teal),
+                  icon: const Icon(Icons.history,
+                      color: AppTheme.usageHistoryColor),
                   label:
                       Text(context.tr('tokens.management.view_usage_history')),
                   style: OutlinedButton.styleFrom(
-                    foregroundColor: Colors.teal,
+                    foregroundColor: AppTheme.usageHistoryColor,
                     minimumSize: const Size(double.infinity, 48),
                     side: BorderSide(
-                      color: Colors.teal.withOpacity(0.5),
+                      color: AppTheme.usageHistoryColor.withOpacity(0.5),
                     ),
                   ),
                 ),
