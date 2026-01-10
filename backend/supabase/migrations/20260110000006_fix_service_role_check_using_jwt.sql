@@ -54,7 +54,7 @@ BEGIN
 
   -- SECURITY: Verify caller is authorized to access this user's data
   -- Allow service_role (Edge Functions) OR authenticated user accessing own data
-  IF jwt_role <> 'service_role' AND (auth.uid() IS NULL OR auth.uid() <> p_user_id) THEN
+  IF jwt_role IS DISTINCT FROM 'service_role' AND (auth.uid() IS NULL OR auth.uid() <> p_user_id) THEN
     RAISE EXCEPTION 'Not authorized to access token usage history for this user'
       USING ERRCODE = 'insufficient_privilege';
   END IF;
@@ -153,7 +153,7 @@ BEGIN
 
   -- SECURITY: Verify caller is authorized to access this user's data
   -- Allow service_role (Edge Functions) OR authenticated user accessing own data
-  IF jwt_role <> 'service_role' AND (auth.uid() IS NULL OR auth.uid() <> p_user_id) THEN
+  IF jwt_role IS DISTINCT FROM 'service_role' AND (auth.uid() IS NULL OR auth.uid() <> p_user_id) THEN
     RAISE EXCEPTION 'Not authorized to access token usage statistics for this user'
       USING ERRCODE = 'insufficient_privilege';
   END IF;

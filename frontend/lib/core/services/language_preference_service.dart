@@ -657,9 +657,14 @@ class LanguagePreferenceService {
             final modeString = _prefs.getString(_studyModePreferenceKey);
             if (modeString != null) {
               final mode = studyModeFromString(modeString);
-              print(
-                  '✅ [PREFERENCE_SERVICE] Study mode from local (DB failed): ${mode.displayName}');
-              return mode;
+              if (mode != null) {
+                print(
+                    '✅ [PREFERENCE_SERVICE] Study mode from local (DB failed): ${mode.displayName}');
+                return mode;
+              } else {
+                print(
+                    '⚠️ [PREFERENCE_SERVICE] Invalid study mode string: $modeString');
+              }
             }
             return null;
           },
@@ -686,9 +691,14 @@ class LanguagePreferenceService {
       final modeString = _prefs.getString(_studyModePreferenceKey);
       if (modeString != null) {
         final mode = studyModeFromString(modeString);
-        print(
-            '✅ [PREFERENCE_SERVICE] Study mode from local: ${mode.displayName}');
-        return mode;
+        if (mode != null) {
+          print(
+              '✅ [PREFERENCE_SERVICE] Study mode from local: ${mode.displayName}');
+          return mode;
+        } else {
+          print(
+              '⚠️ [PREFERENCE_SERVICE] Invalid study mode string: $modeString');
+        }
       }
 
       // Return null when no preference saved (means "ask every time")

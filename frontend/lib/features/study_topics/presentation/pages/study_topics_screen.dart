@@ -818,7 +818,7 @@ class StudyTopicsAppBar extends StatelessWidget implements PreferredSizeWidget {
           backgroundColor: Theme.of(context).colorScheme.primary,
           action: SnackBarAction(
             label: context.tr(TranslationKeys.settingsSignIn),
-            textColor: Colors.white,
+            textColor: Theme.of(context).colorScheme.onPrimary,
             onPressed: () {
               AppRouter.router.goToLogin();
             },

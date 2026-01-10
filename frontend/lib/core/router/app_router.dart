@@ -662,7 +662,8 @@ class AppRouter {
               sl<StudyNavigator>().parseNavigationSource(sourceString);
 
           // Parse study mode (default to standard)
-          final studyMode = studyModeFromString(modeString ?? 'standard');
+          final studyMode =
+              studyModeFromString(modeString) ?? StudyMode.standard;
 
           return slideRightTransitionPage(
             child: StudyGuideScreenV2(

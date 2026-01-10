@@ -237,8 +237,36 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
       } else if (savedModeRaw != null) {
         // User has a specific saved preference - use it directly without showing sheet
         final savedMode = studyModeFromString(savedModeRaw);
-        debugPrint('✅ [HOME] Using saved study mode: ${savedMode.name}');
-        _navigateToDailyVerseStudy(currentState, savedMode, false);
+        if (savedMode != null) {
+          debugPrint('✅ [HOME] Using saved study mode: ${savedMode.name}');
+          _navigateToDailyVerseStudy(currentState, savedMode, false);
+        } else {
+          // Invalid mode string - fallback to mode selection sheet
+          debugPrint(
+              '⚠️ [HOME] Invalid study mode string: $savedModeRaw - showing mode selection sheet');
+          const recommendedMode = StudyMode.deep;
+          final String languageCode;
+          if (currentState is DailyVerseLoaded) {
+            languageCode = currentState.currentLanguage.code;
+          } else if (currentState is DailyVerseOffline) {
+            languageCode = currentState.currentLanguage.code;
+          } else {
+            languageCode = 'en';
+          }
+          final result = await ModeSelectionSheet.show(
+            context: context,
+            languageCode: languageCode,
+            recommendedMode: recommendedMode,
+          );
+          if (result != null && mounted) {
+            _navigateToDailyVerseStudy(
+              currentState,
+              result['mode'] as StudyMode,
+              result['rememberChoice'] as bool,
+              recommendedMode: recommendedMode,
+            );
+          }
+        }
       } else {
         // No saved preference (null) - show mode selection sheet with Deep Dive as recommended for scripture
         debugPrint(

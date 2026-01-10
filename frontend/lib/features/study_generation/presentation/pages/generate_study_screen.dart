@@ -2526,11 +2526,28 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
     } else if (savedModeString != null) {
       // User has specific saved preference - use it directly
       final savedMode = studyModeFromString(savedModeString);
-      if (kDebugMode) {
-        print(
-            '✅ [GENERATE_STUDY] Using saved study mode: ${savedMode.displayName}');
+      if (savedMode != null) {
+        if (kDebugMode) {
+          print(
+              '✅ [GENERATE_STUDY] Using saved study mode: ${savedMode.displayName}');
+        }
+        _navigateToStudyGuide(savedMode, false, false);
+      } else {
+        // Invalid mode string - show mode selection sheet
+        if (kDebugMode) {
+          print(
+              '⚠️ [GENERATE_STUDY] Invalid study mode string: $savedModeString - showing mode selection sheet');
+        }
+        final result = await ModeSelectionSheet.show(
+          context: context,
+          languageCode: _selectedLanguage.code,
+        );
+        if (result != null && mounted) {
+          final selectedMode = result['mode'] as StudyMode;
+          final rememberChoice = result['rememberChoice'] as bool;
+          _navigateToStudyGuide(selectedMode, rememberChoice, false);
+        }
       }
-      _navigateToStudyGuide(savedMode, false, false);
     } else {
       // No saved preference - show mode selection sheet
       if (kDebugMode) {
