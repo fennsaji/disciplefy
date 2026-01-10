@@ -71,6 +71,9 @@ class ReflectModeCard extends StatefulWidget {
   /// Language of the content (for TTS)
   final String? contentLanguage;
 
+  /// Whether the reflection is currently being saved (loading state)
+  final bool isCompletingReflection;
+
   const ReflectModeCard({
     super.key,
     required this.cardIndex,
@@ -86,6 +89,7 @@ class ReflectModeCard extends StatefulWidget {
     this.onBack,
     this.isActive = true,
     this.contentLanguage,
+    this.isCompletingReflection = false,
   });
 
   @override
@@ -1265,9 +1269,13 @@ class _ReflectModeCardState extends State<ReflectModeCard>
                   flex: 2,
                   child: AnimatedOpacity(
                     duration: const Duration(milliseconds: 300),
-                    opacity: _canProceed ? 1.0 : 0.5,
+                    opacity: (_canProceed && !widget.isCompletingReflection)
+                        ? 1.0
+                        : 0.5,
                     child: ElevatedButton(
-                      onPressed: _canProceed ? widget.onContinue : null,
+                      onPressed: (_canProceed && !widget.isCompletingReflection)
+                          ? widget.onContinue
+                          : null,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: accentColor,
                         foregroundColor: Colors.white,
@@ -1275,9 +1283,78 @@ class _ReflectModeCardState extends State<ReflectModeCard>
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        elevation: _canProceed ? 4 : 0,
+                        elevation:
+                            (_canProceed && !widget.isCompletingReflection)
+                                ? 4
+                                : 0,
                       ),
-                      child: Row(
+                      child: widget.isCompletingReflection
+                          ? const SizedBox(
+                              height: 20,
+                              width: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor:
+                                    AlwaysStoppedAnimation<Color>(Colors.white),
+                              ),
+                            )
+                          : Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text(
+                                  isLastCard
+                                      ? context.tr(
+                                          TranslationKeys.reflectModeComplete)
+                                      : context.tr(
+                                          TranslationKeys.reflectModeContinue),
+                                  style: AppFonts.inter(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Icon(
+                                  isLastCard
+                                      ? Icons.check_circle_outline
+                                      : Icons.arrow_forward,
+                                  size: 20,
+                                ),
+                              ],
+                            ),
+                    ),
+                  ),
+                ),
+              ],
+            )
+          : AnimatedOpacity(
+              duration: const Duration(milliseconds: 300),
+              opacity:
+                  (_canProceed && !widget.isCompletingReflection) ? 1.0 : 0.5,
+              child: ElevatedButton(
+                onPressed: (_canProceed && !widget.isCompletingReflection)
+                    ? widget.onContinue
+                    : null,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: accentColor,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  elevation:
+                      (_canProceed && !widget.isCompletingReflection) ? 4 : 0,
+                ),
+                child: widget.isCompletingReflection
+                    ? const SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor:
+                              AlwaysStoppedAnimation<Color>(Colors.white),
+                        ),
+                      )
+                    : Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Text(
@@ -1300,46 +1377,6 @@ class _ReflectModeCardState extends State<ReflectModeCard>
                           ),
                         ],
                       ),
-                    ),
-                  ),
-                ),
-              ],
-            )
-          : AnimatedOpacity(
-              duration: const Duration(milliseconds: 300),
-              opacity: _canProceed ? 1.0 : 0.5,
-              child: ElevatedButton(
-                onPressed: _canProceed ? widget.onContinue : null,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: accentColor,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  elevation: _canProceed ? 4 : 0,
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      isLastCard
-                          ? context.tr(TranslationKeys.reflectModeComplete)
-                          : context.tr(TranslationKeys.reflectModeContinue),
-                      style: AppFonts.inter(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Icon(
-                      isLastCard
-                          ? Icons.check_circle_outline
-                          : Icons.arrow_forward,
-                      size: 20,
-                    ),
-                  ],
-                ),
               ),
             ),
     );

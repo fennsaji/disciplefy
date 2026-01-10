@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_fonts.dart';
+import '../../../../core/constants/study_mode_preferences.dart';
 
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/di/injection_container.dart';
@@ -15,6 +16,8 @@ import '../../../../core/services/language_preference_service.dart';
 import '../../../../core/utils/logger.dart';
 import '../../../../core/services/auth_state_provider.dart';
 import '../../../home/presentation/bloc/home_bloc.dart';
+import '../../../user_profile/data/services/user_profile_service.dart';
+import '../../../user_profile/data/models/user_profile_model.dart';
 import '../../../study_generation/domain/entities/study_mode.dart';
 import '../../../study_generation/presentation/widgets/mode_selection_sheet.dart';
 import '../../domain/entities/learning_path.dart';
@@ -64,33 +67,28 @@ class _StudyTopicsScreenState extends State<StudyTopicsScreen> {
   }
 
   /// Listen for language preference changes from settings
+  /// When app language changes, study content language is reset to default,
+  /// so we need to refresh the content to reflect the new app language.
   void _setupLanguageChangeListener() {
     debugPrint('[STUDY_TOPICS] Setting up language change listener');
-    _languageSubscription = _languageService.languageChanges.listen(
-      (AppLanguage newLanguage) {
+
+    // Cancel any existing subscription before creating a new one
+    _languageSubscription?.cancel();
+
+    // Store the subscription to ensure proper cleanup
+    _languageSubscription =
+        _languageService.languageChanges.listen((newLanguage) async {
+      debugPrint(
+          '[STUDY_TOPICS] App language changed to: ${newLanguage.displayName}');
+
+      // When app language changes, study content language is automatically reset to default
+      // Reload content with the new language
+      if (mounted) {
+        await _loadLanguageAndInitialize();
         debugPrint(
-            '[STUDY_TOPICS] Language change received: ${newLanguage.code}, current: $_currentLanguage');
-        Logger.info(
-          'Study Topics: Language changed to ${newLanguage.code}, refreshing content',
-          tag: 'STUDY_TOPICS',
-        );
-        if (mounted && newLanguage.code != _currentLanguage) {
-          debugPrint(
-              '[STUDY_TOPICS] Refreshing content for language: ${newLanguage.code}');
-          setState(() {
-            _currentLanguage = newLanguage.code;
-          });
-          // Refresh all content with new language
-          _continueLearningBloc
-              .add(RefreshContinueLearning(language: newLanguage.code));
-          _learningPathsBloc
-              .add(RefreshLearningPaths(language: newLanguage.code));
-        } else {
-          debugPrint(
-              '[STUDY_TOPICS] Skipping refresh - mounted: $mounted, same language: ${newLanguage.code == _currentLanguage}');
-        }
-      },
-    );
+            '[STUDY_TOPICS] Content refreshed after app language change');
+      }
+    });
   }
 
   Future<void> _loadLanguageAndInitialize() async {
@@ -102,7 +100,8 @@ class _StudyTopicsScreenState extends State<StudyTopicsScreen> {
       });
     }
 
-    final language = await _languageService.getSelectedLanguage();
+    // Use study content language (not global app language)
+    final language = await _languageService.getStudyContentLanguage();
     if (mounted) {
       setState(() {
         _currentLanguage = language.code;
@@ -213,7 +212,10 @@ class _StudyTopicsScreenContentState extends State<_StudyTopicsScreenContent> {
 
     // Show mode selection sheet before navigating
     if (mounted) {
-      final result = await ModeSelectionSheet.show(context: context);
+      final result = await ModeSelectionSheet.show(
+        context: context,
+        languageCode: widget.currentLanguage,
+      );
 
       if (result != null && mounted) {
         final mode = result['mode'] as StudyMode;
@@ -253,7 +255,27 @@ class _StudyTopicsScreenContentState extends State<_StudyTopicsScreenContent> {
   }
 
   PreferredSizeWidget _buildAppBar(BuildContext context) {
-    return const StudyTopicsAppBar();
+    return StudyTopicsAppBar(
+      onLanguageChange: _handleStudyLanguageChange,
+    );
+  }
+
+  /// Handle study content language change and refresh content
+  Future<void> _handleStudyLanguageChange() async {
+    if (!mounted) return;
+
+    final languageService = sl<LanguagePreferenceService>();
+    final newLanguage = await languageService.getStudyContentLanguage();
+
+    if (mounted) {
+      // Refresh all content with new language using BLoC from context
+      context
+          .read<ContinueLearningBloc>()
+          .add(RefreshContinueLearning(language: newLanguage.code));
+      context
+          .read<LearningPathsBloc>()
+          .add(RefreshLearningPaths(language: newLanguage.code));
+    }
   }
 
   Widget _buildBody(BuildContext context) {
@@ -396,16 +418,160 @@ class _StudyTopicsScreenContentState extends State<_StudyTopicsScreenContent> {
       return;
     }
 
-    // Show mode selection sheet before navigating
-    final result = await ModeSelectionSheet.show(context: context);
+    debugPrint('🔍 [CONTINUE_LEARNING] Starting navigation...');
+    debugPrint('🔍 Topic: ${topic.title}');
+    debugPrint('🔍 Is from learning path: ${topic.isFromLearningPath}');
+    debugPrint('🔍 Learning path name: ${topic.learningPathName}');
+    debugPrint('🔍 Recommended mode raw: ${topic.recommendedMode}');
+
+    // Parse recommended mode from topic if it's from a learning path
+    StudyMode? recommendedMode;
+    if (topic.recommendedMode != null) {
+      recommendedMode = _parseStudyMode(topic.recommendedMode!);
+      if (recommendedMode == null) {
+        debugPrint(
+            '⚠️ Invalid recommended mode: ${topic.recommendedMode}, defaulting to null');
+      } else {
+        debugPrint('✅ Parsed recommended mode: ${recommendedMode.displayName}');
+      }
+    }
+
+    // Check if user has a saved study mode preference
+    // For learning path topics, check learning_path_study_mode
+    // For general topics, check default_study_mode
+    String? savedModeRaw;
+
+    if (topic.isFromLearningPath) {
+      // Check learning path specific preference
+      final authProvider = sl<AuthStateProvider>();
+      savedModeRaw =
+          authProvider.userProfile?['learning_path_study_mode'] as String?;
+      debugPrint(
+          '🔍 [CONTINUE_LEARNING] Learning path mode preference: "$savedModeRaw"');
+    } else {
+      // Check general preference for non-learning-path topics
+      final languageService = sl<LanguagePreferenceService>();
+      savedModeRaw = await languageService.getStudyModePreferenceRaw();
+      debugPrint(
+          '🔍 [CONTINUE_LEARNING] General mode preference: "$savedModeRaw"');
+    }
+
+    // If user selected "always use recommended" and topic has a recommended mode, use it directly
+    debugPrint('🔍 Checking auto-use recommended conditions:');
+    debugPrint(
+        '   - savedModeRaw == "recommended": ${StudyModePreferences.isRecommended(savedModeRaw)}');
+    debugPrint('   - topic.isFromLearningPath: ${topic.isFromLearningPath}');
+    debugPrint('   - recommendedMode != null: ${recommendedMode != null}');
+
+    if (StudyModePreferences.isRecommended(savedModeRaw) &&
+        topic.isFromLearningPath &&
+        recommendedMode != null) {
+      debugPrint(
+          '✅ [CONTINUE_LEARNING] Auto-using recommended mode: ${recommendedMode.displayName}');
+      _isNavigating = true;
+      await _navigateToStudyGuideWithMode(
+          topic, recommendedMode, false); // No need to save again
+      return;
+    }
+
+    // If user has a specific saved mode preference (not "ask every time" or "recommended"), use it
+    if (StudyModePreferences.isSpecificMode(savedModeRaw,
+        isLearningPath: topic.isFromLearningPath)) {
+      final savedMode = _parseStudyMode(
+          savedModeRaw!); // Safe: isSpecificMode guarantees non-null
+      if (savedMode != null) {
+        debugPrint(
+            '✅ [CONTINUE_LEARNING] Using saved mode preference: ${savedMode.displayName}');
+        _isNavigating = true;
+        await _navigateToStudyGuideWithMode(
+            topic, savedMode, false); // No need to save again
+        return;
+      }
+    }
+
+    // No saved preference or couldn't parse - show mode selection sheet
+    debugPrint('📋 [CONTINUE_LEARNING] Showing mode selection sheet');
+    final result = await ModeSelectionSheet.show(
+      context: context,
+      languageCode: widget.currentLanguage,
+      recommendedMode: recommendedMode,
+      isFromLearningPath: topic.isFromLearningPath,
+      learningPathTitle: topic.learningPathName,
+    );
 
     if (result != null && mounted) {
       final mode = result['mode'] as StudyMode;
-      final rememberChoice = result['rememberChoice'] as bool;
+      final rememberChoice = result['rememberChoice'] as bool? ?? false;
+      final alwaysUseRecommended =
+          result['alwaysUseRecommended'] as bool? ?? false;
+
+      // Save preference if user checked a checkbox
+      if (topic.isFromLearningPath) {
+        // For learning path topics, save to learning_path_study_mode field
+        if (alwaysUseRecommended) {
+          final userProfileService = sl<UserProfileService>();
+          final authProvider = sl<AuthStateProvider>();
+          await userProfileService.updateLearningPathStudyModePreference(
+              StudyModePreferences.recommended);
+
+          // Update cache
+          final userId = authProvider.userId;
+          if (userId != null) {
+            final currentProfile = authProvider.userProfile ?? {};
+            currentProfile['learning_path_study_mode'] =
+                StudyModePreferences.recommended;
+            authProvider.cacheProfile(userId, currentProfile);
+          }
+          debugPrint(
+              '[CONTINUE_LEARNING] Saved "always use recommended" to learning path preference');
+        } else if (rememberChoice) {
+          final userProfileService = sl<UserProfileService>();
+          final authProvider = sl<AuthStateProvider>();
+          await userProfileService
+              .updateLearningPathStudyModePreference(mode.value);
+
+          // Update cache
+          final userId = authProvider.userId;
+          if (userId != null) {
+            final currentProfile = authProvider.userProfile ?? {};
+            currentProfile['learning_path_study_mode'] = mode.value;
+            authProvider.cacheProfile(userId, currentProfile);
+          }
+          debugPrint(
+              '[CONTINUE_LEARNING] Saved "${mode.displayName}" to learning path preference');
+        }
+      } else {
+        // For general topics, save to default_study_mode field
+        final languageService = sl<LanguagePreferenceService>();
+        if (rememberChoice) {
+          await languageService.saveStudyModePreference(mode);
+        } else if (alwaysUseRecommended) {
+          await languageService
+              .saveStudyModePreferenceRaw(StudyModePreferences.recommended);
+        }
+      }
 
       // Set navigation flag only when user actually selects a mode
       _isNavigating = true;
-      await _navigateToStudyGuideWithMode(topic, mode, rememberChoice);
+      await _navigateToStudyGuideWithMode(topic, mode, false);
+    }
+  }
+
+  /// Parse study mode string to StudyMode enum
+  StudyMode? _parseStudyMode(String modeString) {
+    switch (modeString.toLowerCase()) {
+      case 'quick':
+        return StudyMode.quick;
+      case 'standard':
+        return StudyMode.standard;
+      case 'deep':
+        return StudyMode.deep;
+      case 'lectio':
+        return StudyMode.lectio;
+      case 'sermon':
+        return StudyMode.sermon;
+      default:
+        return null;
     }
   }
 
@@ -413,10 +579,10 @@ class _StudyTopicsScreenContentState extends State<_StudyTopicsScreenContent> {
   Future<void> _navigateToStudyGuideWithMode(
     InProgressTopic topic,
     StudyMode mode,
-    bool rememberChoice,
+    bool savePreference,
   ) async {
-    // Save user's mode preference if they chose to remember
-    if (rememberChoice) {
+    // Save user's mode preference if they chose to remember or always use recommended
+    if (savePreference) {
       sl<LanguagePreferenceService>().saveStudyModePreference(mode);
     }
 
@@ -472,7 +638,9 @@ class _StudyTopicsScreenContentState extends State<_StudyTopicsScreenContent> {
 
 /// App bar widget for the Study Topics screen.
 class StudyTopicsAppBar extends StatelessWidget implements PreferredSizeWidget {
-  const StudyTopicsAppBar({super.key});
+  final VoidCallback? onLanguageChange;
+
+  const StudyTopicsAppBar({super.key, this.onLanguageChange});
 
   @override
   Widget build(BuildContext context) {
@@ -483,6 +651,13 @@ class StudyTopicsAppBar extends StatelessWidget implements PreferredSizeWidget {
         elevation: 0,
         scrolledUnderElevation: 0,
         automaticallyImplyLeading: false,
+        // Move leaderboard icon to the left side
+        leading: IconButton(
+          icon: const Icon(Icons.emoji_events_outlined),
+          tooltip: context.tr(TranslationKeys.leaderboardTooltip),
+          onPressed: () => AppRouter.router.goToLeaderboard(),
+          color: Theme.of(context).colorScheme.onSurface,
+        ),
         title: Text(
           context.tr(TranslationKeys.studyTopicsTitle),
           style: AppFonts.inter(
@@ -491,15 +666,482 @@ class StudyTopicsAppBar extends StatelessWidget implements PreferredSizeWidget {
             color: Theme.of(context).colorScheme.onSurface,
           ),
         ),
+        // Add 3-dot menu to the right side
         actions: [
-          IconButton(
-            icon: const Icon(Icons.emoji_events_outlined),
-            tooltip: context.tr(TranslationKeys.leaderboardTooltip),
-            onPressed: () => AppRouter.router.goToLeaderboard(),
-            color: Theme.of(context).colorScheme.onSurface,
+          PopupMenuButton<String>(
+            icon: Icon(
+              Icons.more_vert,
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
+            tooltip: context.tr(TranslationKeys.moreOptionsTooltip),
+            onSelected: (value) {
+              if (value == 'language') {
+                _showLanguageSelector(context, onLanguageChange);
+              } else if (value == 'study_mode') {
+                _showStudyModeSelector(context);
+              }
+            },
+            itemBuilder: (BuildContext context) => [
+              PopupMenuItem<String>(
+                value: 'language',
+                child: Row(
+                  children: [
+                    const Icon(Icons.language),
+                    const SizedBox(width: 12),
+                    Text(
+                        context.tr(TranslationKeys.studyTopicsContentLanguage)),
+                  ],
+                ),
+              ),
+              PopupMenuItem<String>(
+                value: 'study_mode',
+                child: Row(
+                  children: [
+                    const Icon(Icons.auto_awesome),
+                    const SizedBox(width: 12),
+                    Text(context.tr(TranslationKeys.studyModePreferenceTitle)),
+                  ],
+                ),
+              ),
+            ],
           ),
           const SizedBox(width: 8),
         ],
+      ),
+    );
+  }
+
+  /// Show language selection bottom sheet for study content only
+  /// This DOES NOT change the app UI language
+  Future<void> _showLanguageSelector(
+      BuildContext context, VoidCallback? onLanguageChange) async {
+    final theme = Theme.of(context);
+    final languageService = sl<LanguagePreferenceService>();
+    final currentLanguage = await languageService.getStudyContentLanguage();
+    final isDefault = await languageService.isStudyContentLanguageDefault();
+    final appLanguage = await languageService.getSelectedLanguage();
+
+    if (!context.mounted) return;
+
+    await showModalBottomSheet(
+      context: context,
+      builder: (sheetContext) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                children: [
+                  Text(
+                    context.tr(TranslationKeys.studyTopicsContentLanguage),
+                    style: theme.textTheme.titleMedium,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    context.tr(
+                        TranslationKeys.studyTopicsContentLanguageDescription),
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurface.withOpacity(0.6),
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+              ),
+            ),
+            // Default option
+            ListTile(
+              title: Text(context
+                  .tr(TranslationKeys.studyTopicsContentLanguageDefault)),
+              subtitle: Text(
+                '${context.tr(TranslationKeys.studyTopicsContentLanguageDefaultDescription)} (${appLanguage.displayName})',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurface.withOpacity(0.6),
+                ),
+              ),
+              trailing: isDefault
+                  ? Icon(Icons.check, color: theme.colorScheme.primary)
+                  : null,
+              onTap: () async {
+                // Set to default (use app language)
+                await languageService.saveStudyContentLanguage(null);
+
+                if (sheetContext.mounted) {
+                  Navigator.pop(sheetContext);
+                }
+
+                // Notify parent to refresh content
+                onLanguageChange?.call();
+              },
+            ),
+            const Divider(height: 1),
+            // Specific language options
+            ...AppLanguage.values.map((language) {
+              final isSelected = !isDefault && language == currentLanguage;
+              return ListTile(
+                title: Text(language.displayName),
+                trailing: isSelected
+                    ? Icon(Icons.check, color: theme.colorScheme.primary)
+                    : null,
+                onTap: () async {
+                  // Save study content language (does NOT affect app UI)
+                  await languageService.saveStudyContentLanguage(language);
+
+                  if (sheetContext.mounted) {
+                    Navigator.pop(sheetContext);
+                  }
+
+                  // Notify parent to refresh content
+                  onLanguageChange?.call();
+                },
+              );
+            }),
+            const SizedBox(height: 16),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Show learning path study mode preference bottom sheet
+  void _showStudyModeSelector(BuildContext context) {
+    // Get auth provider and check if user is anonymous
+    final authProvider = sl<AuthStateProvider>();
+
+    // Guard against anonymous users - preferences are only saved for signed-in users
+    if (authProvider.isAnonymous) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            context.tr(TranslationKeys.settingsSignInToSavePreferences),
+          ),
+          backgroundColor: Theme.of(context).colorScheme.primary,
+          action: SnackBarAction(
+            label: context.tr(TranslationKeys.settingsSignIn),
+            textColor: Theme.of(context).colorScheme.onPrimary,
+            onPressed: () {
+              AppRouter.router.goToLogin();
+            },
+          ),
+        ),
+      );
+      return; // Exit early without showing the sheet
+    }
+
+    // Get current learning path mode preference
+    final currentMode =
+        authProvider.userProfile?['learning_path_study_mode'] as String?;
+
+    // Capture parent context for snackbars after sheet closes
+    final parentContext = context;
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (builderContext) => Container(
+        decoration: BoxDecoration(
+          color: Theme.of(builderContext).colorScheme.surface,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        padding: const EdgeInsets.all(24),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Handle
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: AppTheme.primaryColor.withOpacity(0.3),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 24),
+
+              // Title
+              Text(
+                context.tr(
+                    TranslationKeys.settingsLearningPathStudyModePreference),
+                style: AppFonts.inter(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w700,
+                  color: Theme.of(builderContext).colorScheme.onBackground,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                context.tr(
+                    TranslationKeys.settingsLearningPathStudyModeDescription),
+                style: AppFonts.inter(
+                  fontSize: 14,
+                  color: Theme.of(builderContext)
+                      .colorScheme
+                      .onSurface
+                      .withOpacity(0.6),
+                ),
+              ),
+              const SizedBox(height: 24),
+
+              // Option: Use Recommended
+              _buildLearningPathModeOption(
+                builderContext,
+                parentContext,
+                'recommended',
+                context.tr(TranslationKeys.settingsUseRecommended),
+                Icons.stars,
+                context.tr(TranslationKeys.settingsUseRecommendedSubtitle),
+                currentMode,
+              ),
+              const SizedBox(height: 12),
+
+              // Option: Always Ask
+              _buildLearningPathModeOption(
+                builderContext,
+                parentContext,
+                'ask',
+                context.tr(TranslationKeys.settingsAskEveryTime),
+                Icons.help_outline,
+                context.tr(TranslationKeys.settingsAskEveryTimeSubtitle),
+                currentMode,
+              ),
+              const SizedBox(height: 12),
+
+              // Divider
+              Divider(
+                  color: AppTheme.primaryColor.withOpacity(0.2), height: 24),
+
+              // Specific modes (Quick, Standard, Deep, Lectio, Sermon)
+              ...StudyMode.values.map((mode) => Column(
+                    children: [
+                      _buildLearningPathModeOption(
+                        builderContext,
+                        parentContext,
+                        mode.value,
+                        _getStudyModeTranslatedName(mode, context),
+                        mode.iconData,
+                        '${mode.durationText} • ${_getStudyModeTranslatedDescription(mode, context)}',
+                        currentMode,
+                      ),
+                      const SizedBox(height: 12),
+                    ],
+                  )),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Get translated display name for study mode enum
+  String _getStudyModeTranslatedName(StudyMode mode, BuildContext context) {
+    switch (mode) {
+      case StudyMode.quick:
+        return context.tr(TranslationKeys.studyModeQuickName);
+      case StudyMode.standard:
+        return context.tr(TranslationKeys.studyModeStandardName);
+      case StudyMode.deep:
+        return context.tr(TranslationKeys.studyModeDeepName);
+      case StudyMode.lectio:
+        return context.tr(TranslationKeys.studyModeLectioName);
+      case StudyMode.sermon:
+        return context.tr(TranslationKeys.studyModeSermonName);
+    }
+  }
+
+  /// Get translated description for study mode enum
+  String _getStudyModeTranslatedDescription(
+      StudyMode mode, BuildContext context) {
+    switch (mode) {
+      case StudyMode.quick:
+        return context.tr(TranslationKeys.studyModeQuickDescription);
+      case StudyMode.standard:
+        return context.tr(TranslationKeys.studyModeStandardDescription);
+      case StudyMode.deep:
+        return context.tr(TranslationKeys.studyModeDeepDescription);
+      case StudyMode.lectio:
+        return context.tr(TranslationKeys.studyModeLectioDescription);
+      case StudyMode.sermon:
+        return context.tr(TranslationKeys.studyModeSermonDescription);
+    }
+  }
+
+  /// Build learning path mode option tile
+  Widget _buildLearningPathModeOption(
+    BuildContext sheetContext,
+    BuildContext parentContext,
+    String value,
+    String label,
+    IconData icon,
+    String subtitle,
+    String? currentMode,
+  ) {
+    final isSelected = value == currentMode;
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () async {
+          // Update user profile with learning path study mode preference
+          try {
+            final userProfileService = sl<UserProfileService>();
+            final authProvider = sl<AuthStateProvider>();
+
+            final result = await userProfileService
+                .updateLearningPathStudyModePreference(value);
+
+            if (parentContext.mounted) {
+              result.fold(
+                (failure) {
+                  // Close sheet on failure
+                  if (sheetContext.mounted) {
+                    Navigator.of(sheetContext).pop();
+                  }
+                  ScaffoldMessenger.of(parentContext).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        parentContext
+                            .tr(TranslationKeys.errorUpdatingPreference),
+                      ),
+                      backgroundColor:
+                          Theme.of(parentContext).colorScheme.error,
+                    ),
+                  );
+                },
+                (profile) {
+                  // Update AuthStateProvider cache with new profile
+                  final userId = authProvider.userId;
+                  if (userId != null) {
+                    final profileMap =
+                        UserProfileModel.fromEntity(profile).toJson();
+                    authProvider.cacheProfile(userId, profileMap);
+                  }
+
+                  // Close sheet AFTER cache is updated
+                  if (sheetContext.mounted) {
+                    Navigator.of(sheetContext).pop();
+                  }
+
+                  ScaffoldMessenger.of(parentContext).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        parentContext
+                            .tr(TranslationKeys.preferenceUpdatedSuccessfully),
+                      ),
+                      backgroundColor:
+                          Theme.of(parentContext).colorScheme.primary,
+                    ),
+                  );
+                },
+              );
+            }
+          } catch (e) {
+            // Close sheet even on error
+            if (sheetContext.mounted) {
+              Navigator.of(sheetContext).pop();
+            }
+
+            if (parentContext.mounted) {
+              ScaffoldMessenger.of(parentContext).showSnackBar(
+                SnackBar(
+                  content: Text(
+                    parentContext.tr(TranslationKeys.errorUpdatingPreference),
+                  ),
+                  backgroundColor: Theme.of(parentContext).colorScheme.error,
+                ),
+              );
+            }
+          }
+        },
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          margin: const EdgeInsets.only(bottom: 8),
+          decoration: BoxDecoration(
+            gradient: isSelected
+                ? LinearGradient(
+                    colors: [
+                      AppTheme.primaryColor.withOpacity(0.1),
+                      AppTheme.secondaryPurple.withOpacity(0.05),
+                    ],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  )
+                : null,
+            color: isSelected ? null : Colors.transparent,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: isSelected ? AppTheme.primaryColor : Colors.transparent,
+              width: 2,
+            ),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 42,
+                height: 42,
+                decoration: BoxDecoration(
+                  color: isSelected
+                      ? AppTheme.primaryColor.withOpacity(0.15)
+                      : Theme.of(sheetContext)
+                          .colorScheme
+                          .onSurface
+                          .withOpacity(0.08),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(
+                  icon,
+                  size: 22,
+                  color: isSelected
+                      ? AppTheme.primaryColor
+                      : Theme.of(sheetContext)
+                          .colorScheme
+                          .onSurface
+                          .withOpacity(0.6),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      label,
+                      style: AppFonts.inter(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                        color: isSelected
+                            ? AppTheme.primaryColor
+                            : Theme.of(sheetContext).colorScheme.onSurface,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      subtitle,
+                      style: AppFonts.inter(
+                        fontSize: 13,
+                        color: Theme.of(sheetContext)
+                            .colorScheme
+                            .onSurface
+                            .withOpacity(0.6),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              if (isSelected)
+                Icon(
+                  Icons.check_circle,
+                  color: AppTheme.primaryColor,
+                  size: 22,
+                ),
+            ],
+          ),
+        ),
       ),
     );
   }

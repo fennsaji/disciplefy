@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:get_it/get_it.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/constants/bible_books.dart';
 import '../../core/extensions/translation_extension.dart';
 import '../../core/i18n/translation_keys.dart';
 import '../../core/router/app_routes.dart';
@@ -71,9 +72,12 @@ class _ScriptureVerseSheetState extends State<ScriptureVerseSheet> {
     final appLanguage = await languageService.getSelectedLanguage();
     final langCode = appLanguage.code;
 
+    // Normalize book name to canonical form (e.g., "Psalm" -> "Psalms")
+    final normalizedBook = BibleBooks.normalizeBookName(parsed.book);
+
     // Fetch the verse text
     final result = await fetchVerseText(
-      book: parsed.book,
+      book: normalizedBook,
       chapter: parsed.chapter,
       verseStart: parsed.verseStart,
       verseEnd: parsed.verseEnd,

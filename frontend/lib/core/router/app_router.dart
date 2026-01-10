@@ -30,6 +30,7 @@ import '../../features/notifications/presentation/pages/notification_settings_sc
 import '../../features/study_topics/presentation/pages/study_topics_screen.dart';
 import '../../features/tokens/presentation/pages/token_management_page.dart';
 import '../../features/tokens/presentation/pages/purchase_history_page.dart';
+import '../../features/tokens/presentation/pages/token_usage_history_page.dart';
 import '../../features/subscription/presentation/pages/premium_upgrade_page.dart';
 import '../../features/subscription/presentation/pages/standard_upgrade_page.dart';
 import '../../features/subscription/presentation/pages/subscription_management_page.dart';
@@ -218,6 +219,11 @@ class AppRouter {
         path: AppRoutes.purchaseHistory,
         name: 'purchase_history',
         builder: (context, state) => const PurchaseHistoryPage(),
+      ),
+      GoRoute(
+        path: AppRoutes.usageHistory,
+        name: 'usage_history',
+        builder: (context, state) => const TokenUsageHistoryPage(),
       ),
       GoRoute(
         path: AppRoutes.premiumUpgrade,
@@ -657,7 +663,7 @@ class AppRouter {
 
           // Parse study mode (default to standard)
           final studyMode =
-              StudyModeExtension.fromString(modeString ?? 'standard');
+              studyModeFromString(modeString) ?? StudyMode.standard;
 
           return slideRightTransitionPage(
             child: StudyGuideScreenV2(

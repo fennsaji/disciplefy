@@ -30,6 +30,51 @@ interface StudyGenerationRequest {
 }
 
 /**
+ * Generates a user-friendly content title for usage history
+ *
+ * @param inputType - Type of input (scripture, topic, question)
+ * @param inputValue - The actual input value
+ * @param topicDescription - Optional topic description
+ * @returns Formatted title for display
+ */
+function generateContentTitle(
+  inputType: string,
+  inputValue: string,
+  topicDescription?: string
+): string {
+  switch (inputType) {
+    case 'scripture':
+      return `${inputValue} Study`
+    case 'topic':
+      return topicDescription || inputValue
+    case 'question':
+      return inputValue.length > 50 ? inputValue.substring(0, 47) + '...' : inputValue
+    default:
+      return inputValue
+  }
+}
+
+/**
+ * Generates a content reference for usage history
+ *
+ * @param inputType - Type of input (scripture, topic, question)
+ * @param inputValue - The actual input value
+ * @returns Formatted reference string
+ */
+function generateContentReference(inputType: string, inputValue: string): string {
+  switch (inputType) {
+    case 'scripture':
+      return inputValue
+    case 'topic':
+      return `Topic: ${inputValue}`
+    case 'question':
+      return `Q: ${inputValue.substring(0, 100)}`
+    default:
+      return inputValue
+  }
+}
+
+/**
  * Study guide generation handler
  * 
  * This handler demonstrates the new secure pattern:
@@ -97,7 +142,10 @@ async function handleStudyGenerate(req: Request, { authService, llmService, stud
       // Different user accessing cached content - CHARGE TOKENS
       const userPlan = await authService.getUserPlan(req)
       const targetLanguage = language || 'en'
-      const tokenCost = tokenService.calculateTokenCost(targetLanguage as SupportedLanguage)
+      const tokenCost = tokenService.calculateTokenCost(
+        targetLanguage as SupportedLanguage,
+        study_mode || 'standard'
+      )
       const identifier = userContext.type === 'authenticated' ? userContext.userId! : userContext.sessionId!
 
       let consumptionResult
@@ -136,7 +184,14 @@ async function handleStudyGenerate(req: Request, { authService, llmService, stud
             language: targetLanguage as SupportedLanguage,
             ipAddress: req.headers.get('x-forwarded-for') || undefined,
             userAgent: req.headers.get('user-agent') || undefined,
-            timestamp: new Date()
+            timestamp: new Date(),
+            // Usage history context
+            featureName: 'study_generate',
+            operationType: 'study_generation',
+            studyMode: study_mode || 'standard',
+            contentTitle: generateContentTitle(input_type, input_value, topic_description),
+            contentReference: generateContentReference(input_type, input_value),
+            inputType: input_type
           }
         )
 
@@ -180,7 +235,10 @@ async function handleStudyGenerate(req: Request, { authService, llmService, stud
   // 5. Determine user plan and calculate token cost
   const userPlan = await authService.getUserPlan(req)
   const targetLanguage = language || 'en'
-  const tokenCost = tokenService.calculateTokenCost(targetLanguage as SupportedLanguage)
+  const tokenCost = tokenService.calculateTokenCost(
+    targetLanguage as SupportedLanguage,
+    study_mode || 'standard'
+  )
   const identifier = userContext.type === 'authenticated' ? userContext.userId! : userContext.sessionId!
   
   // 6. Token consumption enforcement (only for new content generation)
@@ -210,7 +268,14 @@ async function handleStudyGenerate(req: Request, { authService, llmService, stud
         language: targetLanguage as SupportedLanguage,
         ipAddress: req.headers.get('x-forwarded-for') || undefined,
         userAgent: req.headers.get('user-agent') || undefined,
-        timestamp: new Date()
+        timestamp: new Date(),
+        // Usage history context
+        featureName: 'study_generate',
+        operationType: 'study_generation',
+        studyMode: study_mode || 'standard',
+        contentTitle: generateContentTitle(input_type, input_value, topic_description),
+        contentReference: generateContentReference(input_type, input_value),
+        inputType: input_type
       }
     )
   }

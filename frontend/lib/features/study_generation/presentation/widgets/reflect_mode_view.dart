@@ -46,12 +46,16 @@ class ReflectModeView extends StatefulWidget {
   /// Callback when exiting reflect mode.
   final VoidCallback onExit;
 
+  /// Whether the reflection is currently being saved.
+  final bool isCompletingReflection;
+
   const ReflectModeView({
     super.key,
     required this.studyGuide,
     required this.onSwitchToRead,
     required this.onComplete,
     required this.onExit,
+    this.isCompletingReflection = false,
   });
 
   @override
@@ -135,10 +139,7 @@ class _ReflectModeViewState extends State<ReflectModeView> {
       // Prayer - Prayer mode selection with dynamic question
       ReflectCardConfig(
         sectionTitle: context.tr(TranslationKeys.reflectModeSectionPrayer),
-        getContent: (guide) => guide.prayerPoints.isNotEmpty
-            ? guide
-                .prayerPoints.first // Take the complete prayer (first element)
-            : '',
+        getContent: (guide) => guide.prayerPoints.join('\n'),
         interactionType: ReflectionInteractionType.prayer,
         question: widget.studyGuide.prayerQuestion ??
             context.tr(TranslationKeys.reflectModePrayerFallback),
@@ -312,6 +313,7 @@ class _ReflectModeViewState extends State<ReflectModeView> {
               onContinue: _handleContinue,
               // Show Previous button for all cards except the first one
               onBack: _currentCardIndex > 0 ? _handleBack : null,
+              isCompletingReflection: widget.isCompletingReflection,
             ),
           ),
         ),

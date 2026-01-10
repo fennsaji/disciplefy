@@ -149,19 +149,21 @@ class VoiceConversationBloc
     // Resolve the language code
     String languageCode = preferences.preferredLanguage;
 
-    // If 'default' is selected, get the user's app language preference
+    // If 'default' is selected, get the study content language preference
+    // Voice buddy discusses study content, so use study content language (not app UI language)
     if (languageCode == 'default') {
       try {
         final appLanguage =
-            await _languagePreferenceService.getSelectedLanguage();
-        // Convert app language code to voice language code
+            await _languagePreferenceService.getStudyContentLanguage();
+        // Convert study content language code to voice language code
         languageCode = _appLanguageToVoiceCode(appLanguage.code);
         print(
-            '🎙️ [VOICE] Resolved default language to: $languageCode (from app language: ${appLanguage.code})');
+            '🎙️ [VOICE] Resolved default language to: $languageCode (from study content language: ${appLanguage.code})');
       } catch (e) {
-        // Fallback to English if unable to get app language
+        // Fallback to English if unable to get study content language
         languageCode = 'en-US';
-        print('🎙️ [VOICE] Failed to get app language, using en-US: $e');
+        print(
+            '🎙️ [VOICE] Failed to get study content language, using en-US: $e');
       }
     }
 
@@ -384,6 +386,12 @@ class VoiceConversationBloc
               // as SendTextMessage checks for empty/duplicate
               print(
                   '🎙️ [VOICE] FinalResult in continuous mode - sending message');
+
+              // IMPORTANT: Clear transcription BEFORE sending to prevent duplicate
+              // from _onSpeechStatusChanged when mic button is clicked again
+              _currentTranscription = '';
+              _currentConfidence = 0.0;
+
               add(SendTextMessage(text));
             } else {
               // In normal mode, stop listening and send
@@ -1238,7 +1246,16 @@ class VoiceConversationBloc
           state.status != VoiceConversationStatus.streaming) {
         print(
             '🎙️ [VOICE] Speech stopped with pending text - sending: $_currentTranscription');
-        add(SendTextMessage(_currentTranscription));
+
+        // Clear transcription before sending to prevent any future duplicates
+        final textToSend = _currentTranscription;
+        _currentTranscription = '';
+        _currentConfidence = 0.0;
+
+        add(SendTextMessage(textToSend));
+      } else if (_currentTranscription.isEmpty) {
+        print(
+            '🎙️ [VOICE] Speech stopped but no pending text (already sent or empty)');
       }
 
       // Stop VAD service

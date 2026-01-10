@@ -10,6 +10,8 @@ import '../../domain/entities/token_status.dart';
 import '../../domain/entities/purchase_history.dart';
 import '../../domain/entities/purchase_statistics.dart';
 import '../../domain/entities/payment_order_response.dart';
+import '../../domain/entities/token_usage_history.dart';
+import '../../domain/entities/usage_statistics.dart';
 import '../../domain/usecases/get_token_status.dart' as get_token_status;
 import '../../domain/usecases/create_payment_order.dart'
     as create_payment_order;
@@ -18,6 +20,9 @@ import '../../domain/usecases/get_purchase_history.dart'
     as get_purchase_history;
 import '../../domain/usecases/get_purchase_statistics.dart'
     as get_purchase_statistics;
+import '../../domain/usecases/get_usage_history.dart' as get_usage_history;
+import '../../domain/usecases/get_usage_statistics.dart'
+    as get_usage_statistics;
 import '../../../../core/error/failures.dart' as failures;
 import '../../../../core/error/token_failures.dart';
 import '../../../../core/error/cache_failure.dart';
@@ -40,6 +45,8 @@ class TokenBloc extends Bloc<TokenEvent, TokenState> {
   final confirm_payment.ConfirmPayment _confirmPayment;
   final get_purchase_history.GetPurchaseHistory _getPurchaseHistory;
   final get_purchase_statistics.GetPurchaseStatistics _getPurchaseStatistics;
+  final get_usage_history.GetUsageHistory _getUsageHistory;
+  final get_usage_statistics.GetUsageStatistics _getUsageStatistics;
 
   // Token status cache with timestamp
   TokenStatus? _cachedTokenStatus;
@@ -56,11 +63,15 @@ class TokenBloc extends Bloc<TokenEvent, TokenState> {
     required get_purchase_history.GetPurchaseHistory getPurchaseHistory,
     required get_purchase_statistics.GetPurchaseStatistics
         getPurchaseStatistics,
+    required get_usage_history.GetUsageHistory getUsageHistory,
+    required get_usage_statistics.GetUsageStatistics getUsageStatistics,
   })  : _getTokenStatus = getTokenStatus,
         _createPaymentOrder = createPaymentOrder,
         _confirmPayment = confirmPayment,
         _getPurchaseHistory = getPurchaseHistory,
         _getPurchaseStatistics = getPurchaseStatistics,
+        _getUsageHistory = getUsageHistory,
+        _getUsageStatistics = getUsageStatistics,
         super(const TokenInitial()) {
     // Register event handlers
     on<GetTokenStatus>(_onGetTokenStatus);
@@ -80,6 +91,9 @@ class TokenBloc extends Bloc<TokenEvent, TokenState> {
     on<GetPurchaseHistory>(_onGetPurchaseHistory);
     on<GetPurchaseStatistics>(_onGetPurchaseStatistics);
     on<RefreshPurchaseHistory>(_onRefreshPurchaseHistory);
+    on<GetUsageHistory>(_onGetUsageHistory);
+    on<GetUsageStatistics>(_onGetUsageStatistics);
+    on<RefreshUsageHistory>(_onRefreshUsageHistory);
 
     // Start auto-refresh timer
     _startAutoRefreshTimer();
@@ -771,6 +785,156 @@ class TokenBloc extends Bloc<TokenEvent, TokenState> {
     debugPrint(
         '🔄 [TOKEN_BLOC] RefreshPurchaseHistory - loading fresh data from offset 0');
     add(const GetPurchaseHistory(limit: 20, offset: 0));
+  }
+
+  /// Handles fetching usage history
+  Future<void> _onGetUsageHistory(
+    GetUsageHistory event,
+    Emitter<TokenState> emit,
+  ) async {
+    final offset = event.offset ?? 0;
+    final limit = event.limit ?? 20;
+
+    debugPrint(
+        '📊 [TOKEN_BLOC] GetUsageHistory called - offset: $offset, limit: $limit');
+    debugPrint('📊 [TOKEN_BLOC] Current state: ${state.runtimeType}');
+
+    // Only show loading if this is the first load (offset = 0)
+    if (offset == 0) {
+      debugPrint('📊 [TOKEN_BLOC] Emitting UsageHistoryLoading (offset = 0)');
+      emit(const UsageHistoryLoading());
+    } else {
+      debugPrint(
+          '📊 [TOKEN_BLOC] Skipping loading state (offset > 0, pagination)');
+    }
+
+    final params = get_usage_history.GetUsageHistoryParams(
+      limit: event.limit,
+      offset: event.offset,
+      startDate: event.startDate,
+      endDate: event.endDate,
+    );
+
+    final result = await _getUsageHistory(params);
+
+    result.fold(
+      (failure) {
+        debugPrint(
+            '❌ [TOKEN_BLOC] Usage history fetch failed: ${failure.message}');
+        emit(UsageHistoryError(
+          failure: failure,
+          operation: 'fetch_usage_history',
+        ));
+      },
+      (newRecords) {
+        debugPrint(
+            '📊 [TOKEN_BLOC] Received ${newRecords.length} new usage records from API');
+        debugPrint(
+            '📊 [TOKEN_BLOC] Checking pagination condition: offset=$offset > 0 = ${offset > 0}');
+        debugPrint(
+            '📊 [TOKEN_BLOC] Current state is UsageHistoryLoaded: ${state is UsageHistoryLoaded}');
+
+        // Determine if there are more records (hasMore flag for pagination)
+        final hasMore = newRecords.length == limit;
+
+        // If this is pagination (offset > 0), accumulate with existing data
+        if (offset > 0 && state is UsageHistoryLoaded) {
+          final currentState = state as UsageHistoryLoaded;
+
+          debugPrint(
+              '🔄 [TOKEN_BLOC] Pagination: Adding ${newRecords.length} records to existing ${currentState.usageHistory.length}');
+
+          // Use the appendRecords method from UsageHistoryLoaded state
+          emit(currentState.appendRecords(newRecords, hasMore));
+        } else {
+          // First load or refresh - replace data
+          final reason = offset == 0
+              ? 'Initial load'
+              : (state is! UsageHistoryLoaded
+                  ? 'State not UsageHistoryLoaded'
+                  : 'Unknown');
+          debugPrint(
+              '🔄 [TOKEN_BLOC] Initial/Refresh load ($reason): ${newRecords.length} records');
+          emit(UsageHistoryLoaded(
+            usageHistory: newRecords,
+            lastUpdated: DateTime.now(),
+            hasMore: hasMore,
+          ));
+        }
+      },
+    );
+  }
+
+  /// Handles fetching usage statistics
+  Future<void> _onGetUsageStatistics(
+    GetUsageStatistics event,
+    Emitter<TokenState> emit,
+  ) async {
+    debugPrint('📊 [TOKEN_BLOC] GetUsageStatistics called');
+    debugPrint(
+        '📊 [TOKEN_BLOC] Current state before statistics fetch: ${state.runtimeType}');
+
+    // Check if we currently have usage history loaded
+    final currentState = state;
+    List<TokenUsageHistory>? existingHistory;
+    bool hasMore = false;
+
+    if (currentState is UsageHistoryLoaded) {
+      existingHistory = currentState.usageHistory;
+      hasMore = currentState.hasMore;
+      debugPrint(
+          '📊 [TOKEN_BLOC] Found existing usage history with ${existingHistory.length} items');
+    }
+
+    emit(const UsageStatisticsLoading());
+
+    final params = get_usage_statistics.GetUsageStatisticsParams(
+      startDate: event.startDate,
+      endDate: event.endDate,
+    );
+
+    final result = await _getUsageStatistics(params);
+
+    result.fold(
+      (failure) => emit(UsageHistoryError(
+        failure: failure,
+        operation: 'fetch_usage_statistics',
+      )),
+      (statistics) {
+        debugPrint('📊 [TOKEN_BLOC] Usage statistics loaded successfully');
+
+        // If we had existing usage history, preserve it with the new statistics
+        if (existingHistory != null && existingHistory.isNotEmpty) {
+          debugPrint(
+              '📊 [TOKEN_BLOC] Preserving ${existingHistory.length} existing records with new statistics');
+          emit(UsageHistoryLoaded(
+            usageHistory: existingHistory,
+            statistics: statistics,
+            lastUpdated: DateTime.now(),
+            hasMore: hasMore,
+          ));
+        } else {
+          // No existing history, emit statistics only
+          debugPrint(
+              '📊 [TOKEN_BLOC] No existing records to preserve, emitting statistics only');
+          emit(UsageStatisticsLoaded(
+            statistics: statistics,
+            lastUpdated: DateTime.now(),
+          ));
+        }
+      },
+    );
+  }
+
+  /// Handles refreshing usage history
+  Future<void> _onRefreshUsageHistory(
+    RefreshUsageHistory event,
+    Emitter<TokenState> emit,
+  ) async {
+    // Get fresh usage history (statistics will be auto-loaded after completion)
+    debugPrint(
+        '🔄 [TOKEN_BLOC] RefreshUsageHistory - loading fresh data from offset 0');
+    add(const GetUsageHistory(limit: 20, offset: 0));
   }
 
   /// Updates the token status cache
