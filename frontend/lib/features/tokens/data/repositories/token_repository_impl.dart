@@ -8,6 +8,8 @@ import '../../domain/entities/token_status.dart';
 import '../../domain/entities/purchase_history.dart';
 import '../../domain/entities/purchase_statistics.dart';
 import '../../domain/entities/payment_order_response.dart';
+import '../../domain/entities/token_usage_history.dart';
+import '../../domain/entities/usage_statistics.dart';
 import '../../domain/repositories/token_repository.dart';
 import '../datasources/token_remote_data_source.dart';
 
@@ -214,6 +216,44 @@ class TokenRepositoryImpl implements TokenRepository {
         return purchaseStatisticsModel.toEntity();
       },
       'purchase statistics fetch',
+    );
+  }
+
+  @override
+  Future<Either<Failure, List<TokenUsageHistory>>> getUsageHistory({
+    int? limit,
+    int? offset,
+    DateTime? startDate,
+    DateTime? endDate,
+  }) async {
+    return _execute<List<TokenUsageHistory>>(
+      () async {
+        final usageHistoryModels = await _remoteDataSource.getUsageHistory(
+          limit: limit,
+          offset: offset,
+          startDate: startDate,
+          endDate: endDate,
+        );
+        return usageHistoryModels;
+      },
+      'usage history fetch',
+    );
+  }
+
+  @override
+  Future<Either<Failure, UsageStatistics>> getUsageStatistics({
+    DateTime? startDate,
+    DateTime? endDate,
+  }) async {
+    return _execute<UsageStatistics>(
+      () async {
+        final usageStatisticsModel = await _remoteDataSource.getUsageStatistics(
+          startDate: startDate,
+          endDate: endDate,
+        );
+        return usageStatisticsModel;
+      },
+      'usage statistics fetch',
     );
   }
 }

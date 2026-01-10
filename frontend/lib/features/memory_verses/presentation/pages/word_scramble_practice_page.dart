@@ -262,15 +262,26 @@ class _WordScramblePracticePageState extends State<WordScramblePracticePage> {
   void _submitPractice() {
     if (currentVerse == null) return;
 
-    // Calculate accuracy based on correctly placed phrases
-    int correctlyPlaced = 0;
+    // Calculate accuracy with improved algorithm that gives partial credit
+    // for misplaced phrases (more fair than all-or-nothing scoring)
+    double totalScore = 0.0;
+
     for (int i = 0; i < correctPhrases.length; i++) {
-      if (placedPhrases[i] == correctPhrases[i]) {
-        correctlyPlaced++;
+      final placedPhrase = placedPhrases[i];
+      final correctPhrase = correctPhrases[i];
+
+      if (placedPhrase == correctPhrase) {
+        // Correct position: full credit (100%)
+        totalScore += 1.0;
+      } else if (placedPhrase != null &&
+          correctPhrases.contains(placedPhrase)) {
+        // Wrong position but phrase exists in verse: partial credit (50%)
+        totalScore += 0.5;
       }
+      // Missing or completely wrong phrase: no credit (0%)
     }
 
-    double accuracy = (correctlyPlaced / correctPhrases.length) * 100;
+    double accuracy = (totalScore / correctPhrases.length) * 100;
 
     // If user showed the answer, accuracy is 0
     if (showCorrectAnswer) {
@@ -412,10 +423,12 @@ class _WordScramblePracticePageState extends State<WordScramblePracticePage> {
               const Divider(height: 1),
 
               // Verse construction area (drop targets)
+              // Gets all remaining space - main work area
               Expanded(
                 child: Container(
                   padding: const EdgeInsets.all(16.0),
                   child: SingleChildScrollView(
+                    physics: const AlwaysScrollableScrollPhysics(),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: List.generate(
@@ -434,7 +447,6 @@ class _WordScramblePracticePageState extends State<WordScramblePracticePage> {
               const Divider(height: 1),
 
               // Available phrases area (drag sources)
-              // Show minimized version when empty, expanded when has phrases
               if (availablePhrases.isEmpty)
                 Container(
                   padding: const EdgeInsets.symmetric(
@@ -470,6 +482,7 @@ class _WordScramblePracticePageState extends State<WordScramblePracticePage> {
                         const SizedBox(height: 12),
                         Expanded(
                           child: SingleChildScrollView(
+                            physics: const AlwaysScrollableScrollPhysics(),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.stretch,
                               children:
@@ -640,40 +653,9 @@ class _WordScramblePracticePageState extends State<WordScramblePracticePage> {
   Widget _buildDraggablePhrase(String phrase) {
     final theme = Theme.of(context);
 
-    return Draggable<String>(
-      key: ValueKey('draggable_$phrase'),
-      data: phrase,
-      feedback: Material(
-        elevation: 4,
-        borderRadius: BorderRadius.circular(12),
-        child: Container(
-          constraints: const BoxConstraints(maxWidth: 300),
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          decoration: BoxDecoration(
-            color: theme.colorScheme.primary,
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Text(
-            phrase,
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: Colors.white,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ),
-      ),
-      childWhenDragging: Opacity(
-        opacity: 0.3,
-        child: _buildPhraseChip(phrase, theme),
-      ),
-      child: _buildPhraseChip(phrase, theme),
-    );
-  }
-
-  Widget _buildPhraseChip(String phrase, ThemeData theme) {
+    // Make only the drag handle draggable, rest of the chip is scrollable
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
         color: theme.colorScheme.secondaryContainer,
         borderRadius: BorderRadius.circular(12),
@@ -681,11 +663,76 @@ class _WordScramblePracticePageState extends State<WordScramblePracticePage> {
           color: theme.colorScheme.secondary,
         ),
       ),
-      child: Text(
-        phrase,
-        style: theme.textTheme.bodyMedium?.copyWith(
-          fontWeight: FontWeight.w500,
-        ),
+      child: Row(
+        children: [
+          // Only the drag handle is draggable
+          Draggable<String>(
+            key: ValueKey('draggable_$phrase'),
+            data: phrase,
+            feedback: Material(
+              elevation: 4,
+              borderRadius: BorderRadius.circular(12),
+              child: Container(
+                constraints: const BoxConstraints(maxWidth: 300),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.primary,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  phrase,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+            ),
+            childWhenDragging: Opacity(
+              opacity: 0.3,
+              child: Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                child: Icon(
+                  Icons.drag_indicator,
+                  size: 24,
+                  color: theme.colorScheme.onSecondaryContainer.withAlpha(
+                    (0.5 * 255).round(),
+                  ),
+                ),
+              ),
+            ),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+              decoration: BoxDecoration(
+                color:
+                    theme.colorScheme.secondary.withAlpha((0.1 * 255).round()),
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(12),
+                  bottomLeft: Radius.circular(12),
+                ),
+              ),
+              child: Icon(
+                Icons.drag_indicator,
+                size: 24,
+                color: theme.colorScheme.onSecondaryContainer,
+              ),
+            ),
+          ),
+          // The text area is not draggable - allows scrolling
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              child: Text(
+                phrase,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

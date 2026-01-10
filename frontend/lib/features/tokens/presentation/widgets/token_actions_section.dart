@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../core/constants/app_fonts.dart';
+import '../../../../core/theme/app_theme.dart';
 
 import '../../domain/entities/token_status.dart';
 import '../../../../core/extensions/translation_extension.dart';
@@ -10,6 +11,7 @@ class TokenActionsSection extends StatelessWidget {
   final VoidCallback onPurchase;
   final VoidCallback onUpgrade;
   final VoidCallback? onViewHistory;
+  final VoidCallback? onViewUsageHistory;
 
   const TokenActionsSection({
     super.key,
@@ -17,6 +19,7 @@ class TokenActionsSection extends StatelessWidget {
     required this.onPurchase,
     required this.onUpgrade,
     this.onViewHistory,
+    this.onViewUsageHistory,
   });
 
   @override
@@ -89,7 +92,7 @@ class TokenActionsSection extends StatelessWidget {
                 width: double.infinity,
                 child: OutlinedButton.icon(
                   onPressed: onViewHistory,
-                  icon: Icon(Icons.history,
+                  icon: Icon(Icons.receipt_long,
                       color: Theme.of(context).colorScheme.onSurface),
                   label: Text(context.tr('tokens.management.view_history')),
                   style: OutlinedButton.styleFrom(
@@ -100,6 +103,27 @@ class TokenActionsSection extends StatelessWidget {
                           .colorScheme
                           .onSurface
                           .withOpacity(0.5),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+            // Usage History button (always show if callback provided)
+            if (onViewUsageHistory != null) ...[
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: onViewUsageHistory,
+                  icon: const Icon(Icons.history,
+                      color: AppTheme.usageHistoryColor),
+                  label:
+                      Text(context.tr('tokens.management.view_usage_history')),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppTheme.usageHistoryColor,
+                    minimumSize: const Size(double.infinity, 48),
+                    side: BorderSide(
+                      color: AppTheme.usageHistoryColor.withOpacity(0.5),
                     ),
                   ),
                 ),

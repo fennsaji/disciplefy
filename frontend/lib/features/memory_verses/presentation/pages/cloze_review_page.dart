@@ -16,6 +16,7 @@ import '../bloc/memory_verse_event.dart';
 import '../bloc/memory_verse_state.dart';
 import '../utils/quality_calculator.dart';
 import '../widgets/timer_badge.dart';
+import 'cloze_models.dart';
 
 /// Cloze deletion practice mode with progressive difficulty.
 ///
@@ -105,7 +106,10 @@ class _ClozeReviewPageState extends State<ClozeReviewPage> {
   void _initializeWordEntries() {
     if (currentVerse == null) return;
 
-    final words = currentVerse!.verseText.split(' ');
+    // Only tokenize verseText for cloze blanks (exclude reference)
+    // The reference is displayed separately in the UI
+    final verseText = currentVerse!.verseText;
+    final words = verseText.split(' ');
     final blankInterval = _getBlankInterval();
     wordEntries = [];
 
@@ -345,26 +349,6 @@ class _ClozeReviewPageState extends State<ClozeReviewPage> {
       ),
     ).withAuthProtection();
   }
-}
-
-/// Difficulty levels for cloze deletion
-enum ClozeDifficulty { easy, medium, hard }
-
-/// Word entry with blank status
-class WordEntry {
-  final int index;
-  final String word;
-  final bool isBlank;
-  String userInput;
-  bool? isCorrect;
-
-  WordEntry({
-    required this.index,
-    required this.word,
-    required this.isBlank,
-    required this.userInput,
-    this.isCorrect,
-  });
 }
 
 /// Cloze verse view with blanks

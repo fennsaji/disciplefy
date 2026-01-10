@@ -4,7 +4,9 @@ import '../../../../core/constants/app_fonts.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/extensions/translation_extension.dart';
 import '../../../../core/i18n/translation_keys.dart';
+import '../../../../core/di/injection_container.dart';
 import '../../domain/entities/study_mode.dart';
+import '../../data/repositories/token_cost_repository.dart';
 
 /// Bottom sheet for selecting study mode before generating a study guide.
 ///
@@ -30,6 +32,9 @@ class ModeSelectionSheet extends StatefulWidget {
   /// Title of the learning path (for context in UI).
   final String? learningPathTitle;
 
+  /// Language code for token cost calculation (en, hi, ml)
+  final String languageCode;
+
   const ModeSelectionSheet({
     super.key,
     this.initialMode = StudyMode.standard,
@@ -37,6 +42,7 @@ class ModeSelectionSheet extends StatefulWidget {
     this.recommendedMode,
     this.isFromLearningPath = false,
     this.learningPathTitle,
+    required this.languageCode,
   });
 
   /// Shows the mode selection sheet as a modal bottom sheet.
@@ -49,6 +55,7 @@ class ModeSelectionSheet extends StatefulWidget {
   /// - 'question' → Standard
   static Future<Map<String, dynamic>?> show({
     required BuildContext context,
+    required String languageCode,
     StudyMode initialMode = StudyMode.standard,
     bool showRememberOption = true,
     StudyMode? recommendedMode,
@@ -70,6 +77,7 @@ class ModeSelectionSheet extends StatefulWidget {
         recommendedMode: effectiveRecommendedMode,
         isFromLearningPath: isFromLearningPath,
         learningPathTitle: learningPathTitle,
+        languageCode: languageCode,
       ),
     );
   }
@@ -99,10 +107,62 @@ class _ModeSelectionSheetState extends State<ModeSelectionSheet> {
   bool _rememberChoice = false;
   bool _alwaysUseRecommended = false;
 
+  // Token costs for each mode (fetched from backend)
+  final Map<StudyMode, int> _tokenCosts = {};
+  bool _isLoadingCosts = true;
+
+  late final TokenCostRepository _tokenCostRepository;
+
   @override
   void initState() {
     super.initState();
     _selectedMode = widget.initialMode;
+    _tokenCostRepository = sl<TokenCostRepository>();
+    _loadTokenCosts();
+  }
+
+  /// Load token costs for all study modes from backend API
+  /// Repository handles fallback logic internally
+  Future<void> _loadTokenCosts() async {
+    try {
+      // Use the selected language for token cost calculation
+      final languageCode = widget.languageCode;
+
+      // Fetch costs for all modes from backend via repository
+      // Repository will use fallback if API fails
+      for (final mode in StudyMode.values) {
+        final result = await _tokenCostRepository.getTokenCost(
+          languageCode,
+          mode.value,
+        );
+
+        result.fold(
+          (failure) {
+            // Repository fallback failed - don't show cost for this mode
+            print(
+                '⚠️ [MODE_SELECTION] Failed to get cost for ${mode.name}: ${failure.message}');
+            // Don't set cost - badge won't be shown
+          },
+          (cost) {
+            _tokenCosts[mode] = cost;
+          },
+        );
+      }
+
+      if (mounted) {
+        setState(() {
+          _isLoadingCosts = false;
+        });
+      }
+    } catch (e) {
+      print('❌ [MODE_SELECTION] Error loading token costs: $e');
+      // Don't set costs - badges won't be shown
+      if (mounted) {
+        setState(() {
+          _isLoadingCosts = false;
+        });
+      }
+    }
   }
 
   @override
@@ -195,6 +255,7 @@ class _ModeSelectionSheetState extends State<ModeSelectionSheet> {
                                       .learningPathRecommendedModeBadge)
                                   : context.tr(TranslationKeys
                                       .modeSelectionRecommendedBadge),
+                              tokenCost: _tokenCosts[mode], // Pass token cost
                               onTap: () {
                                 setState(() {
                                   _selectedMode = mode;
@@ -276,12 +337,24 @@ class _ModeSelectionSheetState extends State<ModeSelectionSheet> {
                         ),
 
                       // Remember choice checkbox (dynamic text based on selection)
-                      if (widget.showRememberOption &&
-                          !widget.isFromLearningPath)
+                      if (widget.showRememberOption)
                         GestureDetector(
                           onTap: () {
                             setState(() {
-                              _rememberChoice = !_rememberChoice;
+                              if (widget.isFromLearningPath &&
+                                  widget.recommendedMode != null) {
+                                // For learning paths, toggle alwaysUseRecommended when on recommended mode
+                                if (_selectedMode == widget.recommendedMode) {
+                                  _alwaysUseRecommended =
+                                      !_alwaysUseRecommended;
+                                } else {
+                                  // If not on recommended mode, toggle rememberChoice
+                                  _rememberChoice = !_rememberChoice;
+                                }
+                              } else {
+                                // For non-learning path, always toggle rememberChoice
+                                _rememberChoice = !_rememberChoice;
+                              }
                             });
                           },
                           behavior: HitTestBehavior.opaque,
@@ -301,7 +374,11 @@ class _ModeSelectionSheetState extends State<ModeSelectionSheet> {
                                       height: 22,
                                       decoration: BoxDecoration(
                                         // Use gold color if selected mode is recommended
-                                        color: _rememberChoice
+                                        color: (widget.isFromLearningPath &&
+                                                    _selectedMode ==
+                                                        widget.recommendedMode
+                                                ? _alwaysUseRecommended
+                                                : _rememberChoice)
                                             ? (_selectedMode ==
                                                     widget.recommendedMode
                                                 ? const Color(
@@ -310,7 +387,11 @@ class _ModeSelectionSheetState extends State<ModeSelectionSheet> {
                                             : Colors.transparent,
                                         borderRadius: BorderRadius.circular(6),
                                         border: Border.all(
-                                          color: _rememberChoice
+                                          color: (widget.isFromLearningPath &&
+                                                      _selectedMode ==
+                                                          widget.recommendedMode
+                                                  ? _alwaysUseRecommended
+                                                  : _rememberChoice)
                                               ? (_selectedMode ==
                                                       widget.recommendedMode
                                                   ? const Color(0xFFF59E0B)
@@ -322,7 +403,11 @@ class _ModeSelectionSheetState extends State<ModeSelectionSheet> {
                                           width: 2,
                                         ),
                                       ),
-                                      child: _rememberChoice
+                                      child: (widget.isFromLearningPath &&
+                                                  _selectedMode ==
+                                                      widget.recommendedMode
+                                              ? _alwaysUseRecommended
+                                              : _rememberChoice)
                                           ? Icon(
                                               _selectedMode ==
                                                       widget.recommendedMode
@@ -456,6 +541,8 @@ class _ModeSelectionSheetState extends State<ModeSelectionSheet> {
         return context.tr(TranslationKeys.studyModeDeepName);
       case StudyMode.lectio:
         return context.tr(TranslationKeys.studyModeLectioName);
+      case StudyMode.sermon:
+        return context.tr(TranslationKeys.studyModeSermonName);
     }
   }
 
@@ -471,6 +558,8 @@ class _ModeSelectionSheetState extends State<ModeSelectionSheet> {
         return context.tr(TranslationKeys.studyModeDeepDescription);
       case StudyMode.lectio:
         return context.tr(TranslationKeys.studyModeLectioDescription);
+      case StudyMode.sermon:
+        return context.tr(TranslationKeys.studyModeSermonDescription);
     }
   }
 }
@@ -484,6 +573,7 @@ class _ModeOptionCard extends StatelessWidget {
   final String translatedDescription;
   final String recommendedBadgeText;
   final VoidCallback onTap;
+  final int? tokenCost; // Token cost for this mode
 
   const _ModeOptionCard({
     required this.mode,
@@ -493,6 +583,7 @@ class _ModeOptionCard extends StatelessWidget {
     required this.translatedDescription,
     required this.recommendedBadgeText,
     required this.onTap,
+    this.tokenCost,
   });
 
   @override
@@ -645,32 +736,85 @@ class _ModeOptionCard extends StatelessWidget {
               ),
             ),
 
-            // Duration badge
-            Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 12,
-                vertical: 6,
-              ),
-              decoration: BoxDecoration(
-                color: isSelected
-                    ? AppTheme.primaryColor
-                    : isDark
-                        ? Colors.white.withOpacity(0.1)
-                        : const Color(0xFFE5E7EB),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Text(
-                mode.durationText,
-                style: AppFonts.inter(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: isSelected
-                      ? Colors.white
-                      : isDark
-                          ? Colors.white.withOpacity(0.7)
-                          : const Color(0xFF4B5563),
+            // Duration and token cost badges
+            Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                // Duration badge
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: isSelected
+                        ? AppTheme.primaryColor
+                        : isDark
+                            ? Colors.white.withOpacity(0.1)
+                            : const Color(0xFFE5E7EB),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    mode.durationText,
+                    style: AppFonts.inter(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: isSelected
+                          ? Colors.white
+                          : isDark
+                              ? Colors.white.withOpacity(0.7)
+                              : const Color(0xFF4B5563),
+                    ),
+                  ),
                 ),
-              ),
+
+                // Token cost badge (for all modes)
+                if (tokenCost != null) ...[
+                  const SizedBox(height: 6),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: isSelected
+                          ? AppTheme.primaryColor.withOpacity(0.2)
+                          : isDark
+                              ? Colors.white.withOpacity(0.1)
+                              : const Color(0xFFF3F4F6),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.token,
+                          size: 12,
+                          color: isSelected
+                              ? AppTheme.primaryColor
+                              : isDark
+                                  ? Colors.white.withOpacity(0.7)
+                                  : const Color(0xFF6B7280),
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          '$tokenCost',
+                          style: AppFonts.inter(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            color: isSelected
+                                ? AppTheme.primaryColor
+                                : isDark
+                                    ? Colors.white.withOpacity(0.7)
+                                    : const Color(0xFF6B7280),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ],
             ),
 
             const SizedBox(width: 8),

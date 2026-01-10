@@ -76,7 +76,7 @@ class ReflectionModel {
     return ReflectionSession(
       id: id,
       studyGuideId: studyGuideId,
-      studyMode: StudyModeExtension.fromString(studyMode),
+      studyMode: studyModeFromString(studyMode) ?? StudyMode.standard,
       responses: _parseResponses(),
       timeSpentSeconds: timeSpentSeconds,
       completedAt: completedAt,

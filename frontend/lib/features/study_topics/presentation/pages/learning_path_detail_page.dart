@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/constants/app_fonts.dart';
+import '../../../../core/constants/study_mode_preferences.dart';
 import '../../../../core/di/injection_container.dart';
 import '../../../../core/extensions/translation_extension.dart';
 import '../../../../core/i18n/translation_keys.dart';
@@ -53,7 +54,8 @@ class _LearningPathDetailPageState extends State<LearningPathDetailPage> {
 
   Future<void> _loadLanguageAndPathDetails() async {
     final languageService = sl<LanguagePreferenceService>();
-    final language = await languageService.getSelectedLanguage();
+    // Use study content language (not global app language)
+    final language = await languageService.getStudyContentLanguage();
     if (mounted) {
       setState(() {
         _currentLanguage = language.code;
@@ -92,30 +94,37 @@ class _LearningPathDetailPageState extends State<LearningPathDetailPage> {
     StudyMode? selectedMode;
 
     // Determine mode based on preference
-    if (learningPathModePreference == 'recommended') {
+    if (StudyModePreferences.isRecommended(learningPathModePreference)) {
       // Use path's recommended mode
       selectedMode =
-          StudyModeExtension.fromString(path.recommendedMode ?? 'standard');
+          studyModeFromString(path.recommendedMode) ?? StudyMode.standard;
       debugPrint(
           '[LEARNING_PATH_DETAIL] Using recommended mode: ${selectedMode.name}');
       await _navigateToTopicWithMode(topic, path, selectedMode, false);
-    } else if (learningPathModePreference != null &&
-        learningPathModePreference != 'ask') {
+    } else if (StudyModePreferences.isSpecificMode(learningPathModePreference,
+        isLearningPath: true)) {
       // Use specific mode from settings (quick, standard, deep, lectio)
-      selectedMode = StudyModeExtension.fromString(learningPathModePreference);
+      selectedMode =
+          studyModeFromString(learningPathModePreference) ?? StudyMode.standard;
       debugPrint(
           '[LEARNING_PATH_DETAIL] Using specific mode from settings: ${selectedMode.name}');
       await _navigateToTopicWithMode(topic, path, selectedMode, false);
     } else {
-      // learningPathModePreference == null OR 'ask' → Show mode selection sheet
+      // learningPathModePreference is null or 'ask' → Show mode selection sheet
       debugPrint(
           '[LEARNING_PATH_DETAIL] Showing mode selection sheet with recommended mode');
 
       final recommendedMode =
-          StudyModeExtension.fromString(path.recommendedMode ?? 'standard');
+          studyModeFromString(path.recommendedMode) ?? StudyMode.standard;
+
+      // Get study content language preference for token cost calculation
+      // Uses study content language (not app UI language)
+      final selectedLanguage =
+          await sl<LanguagePreferenceService>().getStudyContentLanguage();
 
       final result = await ModeSelectionSheet.show(
         context: context,
+        languageCode: selectedLanguage.code,
         recommendedMode: recommendedMode,
         isFromLearningPath: true,
         learningPathTitle: path.title,

@@ -485,7 +485,14 @@ async function handleStudyFollowUp(
         operation: 'consume',
         language: targetLanguage,
         ipAddress: req.headers.get('x-forwarded-for') || undefined,
-        timestamp: new Date()
+        timestamp: new Date(),
+        // Usage history context
+        featureName: 'study_followup',
+        operationType: 'follow_up_question',
+        studyMode: undefined, // Study mode not available in follow-up context
+        contentTitle: question.length > 50 ? question.substring(0, 47) + '...' : question,
+        contentReference: `Q: ${question.substring(0, 100)}`,
+        inputType: 'question'
       }
     )
 

@@ -425,12 +425,17 @@ class _PracticeResultsPageState extends State<PracticeResultsPage> {
       correctAnswerDisplay = comparison.expected;
     }
 
+    // Check if this is an extra word typed by user
+    final isExtraWord = comparison.expected == '(extra)';
+
     // Use appropriate label based on practice mode
     final labelKey = params.practiceMode == 'word_bank'
         ? TranslationKeys.practiceResultsWord
         : params.practiceMode == 'word_scramble'
             ? TranslationKeys.practiceResultsPhrase
-            : TranslationKeys.practiceResultsBlank;
+            : params.practiceMode == 'type_it_out'
+                ? TranslationKeys.practiceResultsWord
+                : TranslationKeys.practiceResultsBlank;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -441,13 +446,19 @@ class _PracticeResultsPageState extends State<PracticeResultsPage> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               decoration: BoxDecoration(
-                color: theme.colorScheme.primaryContainer,
+                color: isExtraWord
+                    ? Colors.orange.withAlpha((0.2 * 255).round())
+                    : theme.colorScheme.primaryContainer,
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Text(
-                '${context.tr(labelKey)} $blankNumber',
+                isExtraWord
+                    ? context.tr(TranslationKeys.practiceResultsExtraWord)
+                    : '${context.tr(labelKey)} $blankNumber',
                 style: theme.textTheme.labelMedium?.copyWith(
-                  color: theme.colorScheme.onPrimaryContainer,
+                  color: isExtraWord
+                      ? Colors.orange.shade800
+                      : theme.colorScheme.onPrimaryContainer,
                   fontWeight: FontWeight.bold,
                 ),
               ),
@@ -497,6 +508,9 @@ class _PracticeResultsPageState extends State<PracticeResultsPage> {
                     color:
                         isCorrect ? Colors.green.shade700 : Colors.red.shade700,
                     fontWeight: FontWeight.w600,
+                    fontStyle: comparison.userInput == '(missing)'
+                        ? FontStyle.italic
+                        : null,
                   ),
                 ),
               ),
@@ -513,7 +527,10 @@ class _PracticeResultsPageState extends State<PracticeResultsPage> {
               SizedBox(
                 width: 80,
                 child: Text(
-                  context.tr(TranslationKeys.practiceResultsCorrectAnswer),
+                  isExtraWord
+                      ? context.tr(TranslationKeys.practiceResultsNote)
+                      : context
+                          .tr(TranslationKeys.practiceResultsCorrectAnswer),
                   style: theme.textTheme.bodyMedium?.copyWith(
                     color: theme.colorScheme.onSurfaceVariant,
                     fontWeight: FontWeight.w500,
@@ -525,17 +542,26 @@ class _PracticeResultsPageState extends State<PracticeResultsPage> {
                   padding:
                       const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                   decoration: BoxDecoration(
-                    color: Colors.green.withAlpha((0.1 * 255).round()),
+                    color: isExtraWord
+                        ? Colors.orange.withAlpha((0.1 * 255).round())
+                        : Colors.green.withAlpha((0.1 * 255).round()),
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(
-                      color: Colors.green.withAlpha((0.3 * 255).round()),
+                      color: isExtraWord
+                          ? Colors.orange.withAlpha((0.3 * 255).round())
+                          : Colors.green.withAlpha((0.3 * 255).round()),
                     ),
                   ),
                   child: Text(
-                    correctAnswerDisplay,
+                    isExtraWord
+                        ? context.tr(TranslationKeys.practiceResultsNotInVerse)
+                        : correctAnswerDisplay,
                     style: theme.textTheme.bodyLarge?.copyWith(
-                      color: Colors.green.shade700,
+                      color: isExtraWord
+                          ? Colors.orange.shade800
+                          : Colors.green.shade700,
                       fontWeight: FontWeight.w600,
+                      fontStyle: isExtraWord ? FontStyle.italic : null,
                     ),
                   ),
                 ),

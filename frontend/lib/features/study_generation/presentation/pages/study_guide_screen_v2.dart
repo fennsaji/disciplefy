@@ -6,9 +6,12 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_fonts.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:flutter_markdown/flutter_markdown.dart';
 
 import '../../../../core/theme/app_theme.dart';
 import '../../../../shared/widgets/clickable_scripture_text.dart';
+import '../../../../shared/widgets/scripture_verse_sheet.dart';
+import '../../../../shared/widgets/markdown_with_scripture.dart';
 import '../../../../core/error/failures.dart';
 import '../../../../core/error/token_failures.dart';
 import '../../../../core/di/injection_container.dart';
@@ -69,6 +72,56 @@ String _cleanDuplicateTitle(String content, String title) {
   }
 
   return content;
+}
+
+/// Converts scripture references in text to markdown links for tap handling
+/// Uses the same regex pattern as ClickableScriptureText to detect references
+String _convertScriptureReferencesToLinks(String text) {
+  // Use the same scripture pattern from ClickableScriptureText
+  final scripturePattern = RegExp(
+    r'('
+    r'(?:\d\s?)?' // Optional number prefix
+    r'(?:'
+    // English book names
+    r'[A-Z][a-z]{2,}(?:\s(?:of\s)?[A-Z][a-z]+)?'
+    r'|'
+    // Hindi multi-word book names
+    r'भजन संहिता|प्रेरितों के काम|श्रेष्ठगीत'
+    r'|'
+    // Hindi single-word book names
+    r'(?:उत्पत्ति|निर्गमन|लैव्यव्यवस्था|गिनती|व्यवस्थाविवरण|'
+    r'यहोशू|न्यायियों|रूत|शमूएल|राजा|इतिहास|एज्रा|नहेम्याह|एस्तेर|अय्यूब|'
+    r'भजन|नीतिवचन|सभोपदेशक|यशायाह|यिर्मयाह|विलापगीत|यहेजकेल|दानिय्येल|'
+    r'होशे|योएल|आमोस|ओबद्याह|योना|मीका|नहूम|हबक्कूक|सपन्याह|हाग्गै|जकर्याह|मलाकी|'
+    r'मत्ती|मरकुस|लूका|यूहन्ना|प्रेरितों|रोमियों|कुरिन्थियों|गलातियों|इफिसियों|'
+    r'फिलिप्पियों|कुलुस्सियों|थिस्सलुनीकियों|तीमुथियुस|तीतुस|फिलेमोन|इब्रानियों|'
+    r'याकूब|पतरस|यहूदा|प्रकाशितवाक्य)'
+    r'|'
+    // Malayalam multi-word book names
+    r'അപ്പൊസ്തലന്മാരുടെ പ്രവൃത്തികൾ|ഉത്തമഗീതം'
+    r'|'
+    // Malayalam single-word book names
+    r'(?:ഉല്പത്തി|പുറപ്പാട്|ലേവ്യപുസ്തകം|സംഖ്യ|ആവർത്തനം|'
+    r'യോശുവ|ന്യായാധിപന്മാർ|രൂത്ത്|ശമൂവേൽ|രാജാക്കന്മാർ|ദിനവൃത്താന്തം|'
+    r'എസ്രാ|നെഹെമ്യാവ്|എസ്ഥേർ|ഇയ്യോബ്|സങ്കീർത്തനങ്ങൾ|സദൃശ്യവാക്യങ്ങൾ|'
+    r'സഭാപ്രസംഗി|യെശയ്യാവ്|യിരെമ്യാവ്|വിലാപങ്ങൾ|യെഹെസ്കേൽ|ദാനിയേൽ|'
+    r'ഹോശേയ|യോവേൽ|ആമോസ്|ഓബദ്യാവ്|യോനാ|മീഖാ|നഹൂം|ഹബക്കൂക്ക്|സെഫന്യാവ്|'
+    r'ഹഗ്ഗായി|സെഖര്യാവ്|മലാഖി|മത്തായി|മർക്കൊസ്|ലൂക്കൊസ്|യോഹന്നാൻ|'
+    r'റോമർ|കൊരിന്ത്യർ|ഗലാത്യർ|എഫെസ്യർ|ഫിലിപ്പിയർ|കൊലൊസ്സ്യർ|'
+    r'തെസ്സലൊനീക്യർ|തിമൊഥെയൊസ്|തീത്തൊസ്|ഫിലേമോൻ|എബ്രായർ|യാക്കോബ്|'
+    r'പത്രൊസ്|യൂദാ|വെളിപ്പാട്)'
+    r')'
+    r')'
+    r'\s+(\d+)(?::(\d+)(?:-(\d+))?)?', // Matches chapter:verse patterns
+    unicode: true,
+  );
+
+  // Replace scripture references with markdown links
+  return text.replaceAllMapped(scripturePattern, (match) {
+    final reference = match.group(0)!;
+    // Use a custom URL scheme to identify scripture references
+    return '[$reference](scripture://$reference)';
+  });
 }
 
 /// Lightens a color for better contrast in dark mode
@@ -242,6 +295,9 @@ class _StudyGuideScreenV2ContentState
   // PDF export state
   bool _isExportingPdf = false;
 
+  // Reflection completion state
+  bool _isCompletingReflection = false;
+
   // Scroll position preservation during streaming-to-complete transition
   double? _savedScrollPosition;
   bool _isTransitioningFromStreaming = false;
@@ -293,16 +349,18 @@ class _StudyGuideScreenV2ContentState
       return;
     }
 
-    // Get user's language preference if not specified in URL
+    // Get study content language preference if not specified in URL
+    // Uses study content language (not app UI language)
     String rawLanguageCode = widget.language ?? 'en';
     if (widget.language == null) {
       try {
         final languageService = sl<LanguagePreferenceService>();
-        final appLanguage = await languageService.getSelectedLanguage();
+        final appLanguage = await languageService.getStudyContentLanguage();
         rawLanguageCode = appLanguage.code;
       } catch (e) {
         if (kDebugMode) {
-          print('⚠️ [STUDY_GUIDE_V2] Failed to get language preference: $e');
+          print(
+              '⚠️ [STUDY_GUIDE_V2] Failed to get study content language preference: $e');
         }
       }
     }
@@ -1381,6 +1439,7 @@ class _StudyGuideScreenV2ContentState
       },
       onComplete: _handleReflectionComplete,
       onExit: () => _handleBackNavigation(),
+      isCompletingReflection: _isCompletingReflection,
     );
   }
 
@@ -1397,6 +1456,10 @@ class _StudyGuideScreenV2ContentState
       );
       return;
     }
+
+    setState(() {
+      _isCompletingReflection = true;
+    });
 
     try {
       final reflectionsRepository = sl<ReflectionsRepository>();
@@ -1415,17 +1478,30 @@ class _StudyGuideScreenV2ContentState
         print('   Study mode: ${widget.studyMode.displayName}');
       }
 
+      // Check if widget is still mounted before updating UI
+      if (!mounted) return;
+
+      setState(() {
+        _isCompletingReflection = false;
+        _viewMode = StudyViewMode.read;
+      });
+
       _showSnackBar(
         'Reflection saved! Time spent: ${timeSpent ~/ 60} minutes',
         Colors.green,
         icon: Icons.check_circle,
       );
-
-      setState(() => _viewMode = StudyViewMode.read);
     } catch (e) {
       if (kDebugMode) {
         print('❌ [REFLECTION] Error saving reflection: $e');
       }
+
+      // Check if widget is still mounted before updating UI
+      if (!mounted) return;
+
+      setState(() {
+        _isCompletingReflection = false;
+      });
 
       _showSnackBar(
         'Failed to save reflection. Please try again.',
@@ -1495,6 +1571,8 @@ class _StudyGuideScreenV2ContentState
       StudyMode.quick => _buildQuickModeStudyContent(),
       StudyMode.deep => _buildDeepModeStudyContent(),
       StudyMode.lectio => _buildLectioDivinaStudyContent(),
+      StudyMode.sermon =>
+        _buildStandardModeStudyContent(), // Sermon uses standard 6-section layout
       StudyMode.standard => _buildStandardModeStudyContent(),
     };
   }
@@ -2702,10 +2780,10 @@ class _StudySection extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 16),
-          // Section Content with clickable scripture references
-          ClickableScriptureText(
-            text: _cleanDuplicateTitle(content, title),
-            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+          // Section Content with markdown formatting AND clickable scripture
+          MarkdownWithScripture(
+            data: _cleanDuplicateTitle(content, title),
+            textStyle: Theme.of(context).textTheme.bodyLarge?.copyWith(
                   color: Theme.of(context).colorScheme.onBackground,
                   height: 1.6,
                 ),
@@ -2865,9 +2943,9 @@ class _QuickStudySection extends StatelessWidget {
           ),
           const SizedBox(height: 10),
           // Content
-          ClickableScriptureText(
-            text: _cleanDuplicateTitle(content, title),
-            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+          MarkdownWithScripture(
+            data: _cleanDuplicateTitle(content, title),
+            textStyle: Theme.of(context).textTheme.bodyLarge?.copyWith(
                   fontWeight: isHighlight ? FontWeight.w500 : FontWeight.w400,
                   color: Theme.of(context).colorScheme.onBackground,
                   height: 1.6,
@@ -3011,9 +3089,9 @@ class _LectioStudySection extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           // Content with meditative typography
-          ClickableScriptureText(
-            text: _cleanDuplicateTitle(content, title),
-            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+          MarkdownWithScripture(
+            data: _cleanDuplicateTitle(content, title),
+            textStyle: Theme.of(context).textTheme.bodyLarge?.copyWith(
                   fontWeight: FontWeight.w400,
                   color: Theme.of(context).colorScheme.onBackground,
                   height: 1.7, // Extra line height for meditative reading

@@ -29,8 +29,9 @@ export interface LLMServiceConfig {
  * - standard: 10 min read - full 6-section guide (default)
  * - deep: 25 min read - extended with word studies and cross-references
  * - lectio: 15 min - Lectio Divina meditative format
+ * - sermon: 50-60 min - Full sermon outline with timing and illustrations
  */
-export type StudyMode = 'quick' | 'standard' | 'deep' | 'lectio'
+export type StudyMode = 'quick' | 'standard' | 'deep' | 'lectio' | 'sermon'
 
 /**
  * Parameters for LLM study guide generation.

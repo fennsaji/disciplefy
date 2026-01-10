@@ -12,6 +12,7 @@
 import { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import type { PostgrestError } from 'https://esm.sh/@supabase/supabase-js@2'
 import { AppError } from '../utils/error-handler.ts'
+import type { StudyMode } from './llm-types.ts'
 import {
   UserPlan,
   SupportedLanguage,
@@ -141,6 +142,11 @@ export class TokenService {
         await this.logConsumptionAnalytics(identifier, userPlan, tokenCost, data, context)
       }
 
+      // Record detailed usage history for authenticated users
+      if (context?.userId) {
+        await this.recordUsageHistory(context.userId, tokenCost, data, context)
+      }
+
       return result
 
     } catch (error) {
@@ -259,23 +265,35 @@ export class TokenService {
   }
 
   /**
-   * Calculates token cost for a language
-   * 
+   * Calculates token cost for a language and study mode
+   *
    * Returns the number of tokens required for generating content
    * in the specified language based on complexity and model requirements.
-   * 
+   *
+   * Special pricing for sermon mode:
+   * - English: 20 tokens (2x base cost of 10)
+   * - Hindi/Malayalam: 30 tokens (1.5x base cost of 20)
+   * - All other modes: base language cost (EN: 10, HI/ML: 20)
+   *
    * @param language - Target language code
+   * @param mode - Study mode (default: 'standard')
    * @returns Number of tokens required
    */
-  calculateTokenCost(language: SupportedLanguage | string): number {
+  calculateTokenCost(
+    language: SupportedLanguage | string,
+    mode: StudyMode = 'standard'
+  ): number {
     const languageCode = language as SupportedLanguage
-    
-    if (languageCode in this.config.tokenCosts.costs) {
-      return this.config.tokenCosts.costs[languageCode]
-    }
-    
-    // Return default cost for unknown languages
-    return this.config.tokenCosts.defaultCost
+
+    // Get base language cost
+    const baseCost = languageCode in this.config.tokenCosts.costs
+      ? this.config.tokenCosts.costs[languageCode]
+      : this.config.tokenCosts.defaultCost
+
+    // Apply mode multiplier uniformly across all languages
+    // Quick: 0.5x, Standard: 1.0x, Deep: 1.5x, Lectio: 1.2x, Sermon: 2.0x
+    const multiplier = this.config.tokenCosts.modeMultipliers[mode] || 1.0
+    return Math.round(baseCost * multiplier)
   }
 
   /**
@@ -433,7 +451,7 @@ export class TokenService {
 
   /**
    * Logs token consumption analytics
-   * 
+   *
    * @param identifier - User ID or session ID
    * @param userPlan - User's subscription plan
    * @param tokenCost - Number of tokens consumed
@@ -458,6 +476,54 @@ export class TokenService {
       },
       context
     )
+  }
+
+  /**
+   * Records detailed token usage history
+   *
+   * Stores comprehensive usage information including feature, operation type,
+   * study mode, language, and content details for analytics and user insights.
+   * Non-blocking - logs warnings but does not throw errors to prevent
+   * disrupting the main token consumption flow.
+   *
+   * @param userId - Authenticated user ID
+   * @param tokenCost - Number of tokens consumed
+   * @param consumptionData - Database result from token consumption
+   * @param context - Operation context with usage details
+   */
+  private async recordUsageHistory(
+    userId: string,
+    tokenCost: number,
+    consumptionData: DatabaseTokenResult,
+    context: Partial<TokenOperationContext>
+  ): Promise<void> {
+    try {
+      // Use the token breakdown provided by the database function
+      // (daily_tokens_used and purchased_tokens_used are calculated correctly
+      // by consume_user_tokens based on pre-consumption balances)
+      const dailyUsed = consumptionData.daily_tokens_used
+      const purchasedUsed = consumptionData.purchased_tokens_used
+
+      // Call record_token_usage RPC function
+      await this.supabaseClient.rpc('record_token_usage', {
+        p_user_id: userId,
+        p_token_cost: tokenCost,
+        p_feature_name: context.featureName || 'unknown',
+        p_operation_type: context.operationType || 'token_consumption',
+        p_study_mode: context.studyMode || null,
+        p_language: context.language || 'en',
+        p_content_title: context.contentTitle || null,
+        p_content_reference: context.contentReference || null,
+        p_input_type: context.inputType || null,
+        p_user_plan: context.userPlan,
+        p_session_id: context.sessionId || null,
+        p_daily_tokens_used: dailyUsed,
+        p_purchased_tokens_used: purchasedUsed
+      })
+    } catch (error) {
+      // Non-blocking - log warning but don't throw error
+      console.warn('[TokenService] Failed to record usage history:', error)
+    }
   }
 
   /**

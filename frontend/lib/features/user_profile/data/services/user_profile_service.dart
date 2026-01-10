@@ -229,7 +229,12 @@ class UserProfileService {
         if (modeString == null || modeString.isEmpty) {
           return const Right(null); // No preference saved - ask every time
         }
-        return Right(StudyModeExtension.fromString(modeString));
+        final mode = studyModeFromString(modeString);
+        if (mode == null) {
+          print(
+              '⚠️ [USER_PROFILE_SERVICE] Invalid study mode string: $modeString');
+        }
+        return Right(mode);
       },
     );
   }
