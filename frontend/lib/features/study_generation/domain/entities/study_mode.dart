@@ -138,20 +138,33 @@ extension StudyModeExtension on StudyMode {
 
 /// Creates a StudyMode from a string value.
 ///
+/// Returns null for:
+/// - 'recommended' sentinel (use StudyModePreferences.recommended instead)
+/// - Unknown/invalid values
+/// - Null input
+///
 /// This is a top-level function because Dart doesn't support static methods in extensions.
-StudyMode studyModeFromString(String? value) {
-  switch (value?.toLowerCase()) {
+StudyMode? studyModeFromString(String? value) {
+  if (value == null) return null;
+
+  switch (value.toLowerCase()) {
     case 'quick':
       return StudyMode.quick;
+    case 'standard':
+      return StudyMode.standard;
     case 'deep':
       return StudyMode.deep;
     case 'lectio':
       return StudyMode.lectio;
     case 'sermon':
       return StudyMode.sermon;
-    case 'standard':
+    case 'recommended':
+      // Explicitly reject 'recommended' sentinel - caller should handle this
+      // using StudyModePreferences.recommended instead
+      return null;
     default:
-      return StudyMode.standard;
+      // Unknown value - return null instead of defaulting to standard
+      return null;
   }
 }
 
