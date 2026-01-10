@@ -1,783 +1,478 @@
 /**
- * LLM Prompt Builder Module
- * 
- * Centralizes all prompt construction logic for different LLM use cases.
- * Provides type-safe prompt generation for study guides, daily verses, and follow-ups.
+ * REFINED LLM Prompt Builder Module
+ *
+ * Optimized for:
+ * - Reduced redundancy through shared blocks
+ * - Clearer instruction hierarchy
+ * - Stronger theological guardrails
+ * - Improved JSON compliance
+ * - Better long-context performance
  */
 
-import type { LLMGenerationParams, LanguageConfig, StudyMode } from '../llm-types.ts'
-import { getLanguageExamples, getLanguageConfigOrDefault, type SupportedLanguage } from '../llm-config/language-configs.ts'
+import type { LLMGenerationParams, LanguageConfig } from '../llm-types.ts'
+import { getLanguageExamples, type SupportedLanguage } from '../llm-config/language-configs.ts'
 
-/**
- * Prompt pair containing system and user messages
- */
 export interface PromptPair {
   systemMessage: string
   userMessage: string
 }
 
+// ============================================================================
+// SHARED FOUNDATIONAL BLOCKS (Reused Across All Modes)
+// ============================================================================
+
 /**
- * Creates the system message for study guide generation.
- * 
- * @param languageConfig - Language-specific configuration
- * @returns System message string
+ * Core theological guardrails - non-negotiable across all study modes
+ * Enforces Protestant orthodoxy, sola Scriptura, and Christ-centered hermeneutics
  */
-export function createStudyGuideSystemMessage(languageConfig: LanguageConfig): string {
-  return `You are a biblical scholar creating Bible study guides. Your responses must be valid JSON only.
+const THEOLOGICAL_FOUNDATION = `
+═══════════════════════════════════════════════════════════════════════════
+THEOLOGICAL FRAMEWORK - NON-NEGOTIABLE CONSTRAINTS
+═══════════════════════════════════════════════════════════════════════════
 
-THEOLOGICAL APPROACH:
-- Protestant theological alignment
-- Biblical accuracy and Christ-centered interpretation
-- Practical spiritual application
+DOCTRINAL ORTHODOXY (Protestant Evangelical):
+✓ Sola Scriptura: Scripture ALONE as final authority (no tradition, papal authority, or extra-biblical revelation as co-equal)
+✓ Sola Fide: Salvation by grace ALONE through faith ALONE in Christ ALONE
+✓ Penal Substitutionary Atonement: Christ bore God's wrath for sinners on the cross
+✓ Biblical Inerrancy: Scripture is without error in original manuscripts
+✓ Triune God: One God in three persons (Father, Son, Holy Spirit)
 
-LANGUAGE REQUIREMENTS:
-- ${languageConfig.promptModifiers.languageInstruction}
-- ${languageConfig.promptModifiers.complexityInstruction}
-- Cultural Context: ${languageConfig.culturalContext}
-- Use simple vocabulary accessible to common people
+HERMENEUTICAL METHOD (Historical-Grammatical):
+✓ Authorial Intent: Interpret according to what the original author meant to original audience
+✓ Grammatical-Historical Context: Consider grammar, history, culture, literary genre
+✓ Scripture Interprets Scripture: Use clear passages to illuminate difficult ones
+✓ Christocentric Reading: All Scripture ultimately points to and finds fulfillment in Jesus Christ
+✓ REJECT: Allegorical speculation, eisegesis (reading into text), prosperity gospel, word-faith theology
 
-JSON OUTPUT REQUIREMENTS:
-- Output ONLY valid JSON - no extra text before or after
-- Use proper JSON string escaping for any quotes or special characters
-- Keep sentences clear and well-structured
-- Ensure proper JSON structure with no trailing commas
-- Use standard JSON formatting with proper escaping
+GOSPEL CLARITY (Essential for Salvation):
+✓ Human Condition: All have sinned and fall short of God's glory (Romans 3:23)
+✓ God's Holiness: God's wrath against sin requires satisfaction (Romans 6:23)
+✓ Christ's Work: Jesus lived sinlessly, died substitutionally, rose bodily (1 Cor 15:3-4)
+✓ Saving Faith: Repentance from sin + faith in Christ alone (not works, not rituals)
+✓ REJECT: Works-based salvation, decisional regeneration without repentance, universalism
 
-TONE: Pastoral, warm, encouraging, practical for daily spiritual growth.`
+DOCTRINAL PROHIBITIONS (NEVER Teach):
+✗ Prosperity gospel (health/wealth as entitlement)
+✗ Word-faith theology ("name it and claim it")
+✗ Liberal theology (Scripture as merely human wisdom)
+✗ Universalism (all paths lead to God)
+✗ Works-righteousness (salvation earned by human merit)
+✗ Extra-biblical revelation as authoritative (dreams, visions, "God told me")
+`.trim()
+
+/**
+ * JSON output enforcement - highest priority for system stability
+ * Front-loaded to prevent truncation under token pressure
+ */
+const JSON_OUTPUT_RULES = `
+═══════════════════════════════════════════════════════════════════════════
+JSON OUTPUT REQUIREMENTS - ABSOLUTE PRIORITY
+═══════════════════════════════════════════════════════════════════════════
+
+MANDATORY FORMAT:
+1. Output MUST start with { and end with } - NOTHING else before or after
+2. NO markdown code blocks (no \`\`\`json)
+3. NO explanatory text outside JSON
+4. NO trailing commas in arrays or objects
+5. Use proper JSON string escaping: \\n for newlines, \\" for quotes, \\\\ for backslashes
+
+VALIDATION CHECKPOINT:
+Before generating output, verify:
+✓ Is first character { ?
+✓ Is last character } ?
+✓ Are all strings properly escaped?
+✓ Are all commas correctly placed (no trailing commas)?
+✓ Are all required fields present?
+
+IF YOU VIOLATE JSON FORMAT, THE ENTIRE GENERATION WILL FAIL.
+`.trim()
+
+/**
+ * Language enforcement block with native script requirements
+ */
+function createLanguageBlock(languageConfig: LanguageConfig, language: string): string {
+  return `
+═══════════════════════════════════════════════════════════════════════════
+LANGUAGE REQUIREMENTS - STRICT ENFORCEMENT
+═══════════════════════════════════════════════════════════════════════════
+
+PRIMARY LANGUAGE: ${languageConfig.name}
+${languageConfig.promptModifiers.languageInstruction}
+${languageConfig.promptModifiers.complexityInstruction}
+Cultural Context: ${languageConfig.culturalContext}
+
+NATIVE SCRIPT ENFORCEMENT:
+${language === 'hi' ? `
+✓ ALL Hindi content MUST be in Devanagari script
+✗ NO romanized Hinglish (e.g., "Prabhu" is FORBIDDEN - use "प्रभु")
+✓ Prayer closing: "येशु मसीह के नाम से, आमेन" (NOT "Yeshu Masih ke naam se, Amen")
+` : language === 'ml' ? `
+✓ ALL Malayalam content MUST be in Malayalam script
+✗ NO romanized Manglish (e.g., "Karthaav" is FORBIDDEN - use "കർത്താവ്")
+✓ Prayer closing: "യേശുക്രിസ്തുവിന്റെ നാമത്തിൽ, ആമേൻ" (NOT romanized)
+` : `
+✓ Use clear, accessible English (avoid unnecessary theological jargon)
+✓ Prayer closing: "In Jesus' name, Amen" or "Amen"
+`}
+
+VOCABULARY: Simple, accessible to all education levels while maintaining theological precision.
+`.trim()
 }
 
 /**
- * Creates the user message for study guide generation.
- * 
- * @param params - Generation parameters
- * @param languageConfig - Language-specific configuration
- * @returns User message string
+ * Verse reference formatting examples by language
  */
-export function createStudyGuideUserMessage(params: LLMGenerationParams, languageConfig: LanguageConfig): string {
+function createVerseReferenceBlock(language: string): string {
+  const examples = {
+    en: 'Examples: "John 3:16", "Romans 8:28", "Psalm 23:1"',
+    hi: 'उदाहरण: "यूहन्ना 3:16", "रोमियों 8:28", "भजन संहिता 23:1" - पुस्तक नाम हिंदी में (English में नहीं)',
+    ml: 'ഉദാഹരണം: "യോഹന്നാൻ 3:16", "റോമർ 8:28", "സങ്കീർത്തനങ്ങൾ 23:1" - പുസ്തക നാമങ്ങൾ മലയാളത്തിൽ'
+  }
+
+  return `
+VERSE REFERENCE FORMAT:
+${examples[language as SupportedLanguage] || examples.en}
+✓ ALL verse references MUST use ${language === 'hi' ? 'Devanagari script' : language === 'ml' ? 'Malayalam script' : 'English'} book names
+`.trim()
+}
+
+/**
+ * Prayer format requirements (universal structure, language-specific closing)
+ */
+function createPrayerFormatBlock(languageConfig: LanguageConfig, language: string, sentenceCount: string = '6-8'): string {
+  const closings = {
+    en: 'In Jesus\' name, Amen',
+    hi: 'येशु मसीह के नाम से, आमेन',
+    ml: 'യേശുക്രിസ്തുവിന്റെ നാമത്തിൽ, ആമേൻ'
+  }
+
+  return `
+PRAYER FORMAT REQUIREMENTS:
+1. Structure: [Address God] → [Prayer content based on study] → [Closing]
+2. Length: ${sentenceCount} complete sentences
+3. Person: First-person ("I"/"we"), addressing God directly
+4. Tone: Reverent, personal, aligned with study content
+5. Closing: "${closings[language as SupportedLanguage] || closings.en}"
+6. Language: ENTIRE prayer in ${languageConfig.name} (including closing)
+`.trim()
+}
+
+// ============================================================================
+// MODE-SPECIFIC PROMPT BUILDERS
+// ============================================================================
+
+/**
+ * STANDARD MODE (10 minutes)
+ * Balanced depth for daily devotional use
+ */
+function createStandardModePrompt(params: LLMGenerationParams, languageConfig: LanguageConfig): PromptPair {
   const { inputType, inputValue, topicDescription } = params
   const languageExamples = getLanguageExamples(params.language)
 
-  // Create type-specific task description
-  let taskDescription: string
-  if (inputType === 'scripture') {
-    taskDescription = `Create a Bible study guide for the scripture reference: "${inputValue}"`
-  } else if (inputType === 'topic') {
-    if (topicDescription) {
-      taskDescription = `Create a Bible study guide for the topic: "${inputValue}"\n\nTopic Context: ${topicDescription}`
-    } else {
-      taskDescription = `Create a Bible study guide for the topic: "${inputValue}"`
-    }
-  } else if (inputType === 'question') {
-    taskDescription = `Answer the biblical/theological question and create a comprehensive study guide: "${inputValue}"`
-  } else {
-    taskDescription = `Create a Bible study guide for: "${inputValue}"`
-  }
+  // Task description based on input type
+  const taskDescription = inputType === 'scripture'
+    ? `Create a Bible study guide for: "${inputValue}"`
+    : inputType === 'topic'
+    ? `Create a Bible study guide on: "${inputValue}"${topicDescription ? `\\n\\nContext: ${topicDescription}` : ''}`
+    : `Answer the question and create a study guide: "${inputValue}"`
 
-  // Create input-specific instructions
-  let specificInstructions = ''
-  if (inputType === 'question') {
-    specificInstructions = `
-QUESTION-SPECIFIC REQUIREMENTS:
-- BEGIN with a direct, biblically grounded answer to the question in the "summary" section
-- Support your answer with relevant scripture passages throughout
-- Address common misconceptions if applicable in the "interpretation" section
-- Include practical applications of the biblical teaching in "reflectionQuestions"
-- Maintain theological accuracy and pastoral sensitivity
-- The "summary" should immediately answer the question, not just introduce the topic
-- Use "interpretation" to provide deeper biblical support and theological reasoning
-`
-  } else if (inputType === 'scripture') {
-    specificInstructions = `
-SCRIPTURE-SPECIFIC REQUIREMENTS:
-- Focus on explaining the meaning and significance of the biblical passage
-- Provide the FULL SCRIPTURE TEXT in the "summary" section
-- Break down the passage verse-by-verse or section-by-section in "interpretation"
-- Explain historical and literary context in the "context" section
-- Connect the passage to broader biblical themes through "relatedVerses"
-- Apply the scripture's teaching to modern life in "reflectionQuestions"
-- Make the biblical text accessible and personally relevant
-`
-  } else if (inputType === 'topic') {
-    specificInstructions = `
-TOPIC-SPECIFIC REQUIREMENTS:
-- Provide comprehensive biblical teaching on the topic
-- Survey key scripture passages that address the topic
-- Organize content thematically in the "interpretation" section
-- Explain the biblical foundation of the topic with theological depth
-- Connect topic to practical Christian living in "reflectionQuestions"
-- Address how the topic relates to spiritual growth and discipleship
-`
-  }
+  const systemMessage = `You are a biblical scholar creating Bible study guides.
 
-  // Language-specific verse reference examples
-  const verseReferenceExamples = getVerseReferenceExamples(params.language)
+${THEOLOGICAL_FOUNDATION}
 
-  // Language-specific content length requirements
-  const contentLengthGuidance = `\n\nCRITICAL CONTENT LENGTH REQUIREMENTS FOR ${languageConfig.name.toUpperCase()}:
-- "summary": MINIMUM 4-5 sentences - Provide comprehensive overview with clear thesis
-- "interpretation": 4-5 paragraphs with theological depth. Each paragraph should be 5-6 sentences flowing naturally.
-- "context": MINIMUM 2-3 paragraphs - Each paragraph should be 3-5 sentences covering historical, cultural, and literary context
-- "reflectionQuestions": MINIMUM 5-6 questions - Include varied question types (application, reflection, doctrinal)
-- "prayerPoints": MINIMUM 6-8 sentences - Create a complete, substantial first-person prayer
-- ALL content must be rich, detailed, and theologically substantive
-- DO NOT generate brief or superficial content - provide comprehensive biblical teaching
-- Ensure thorough explanations that demonstrate scholarly depth and pastoral care`
+${JSON_OUTPUT_RULES}
 
-  return `TASK: ${taskDescription}
+${createLanguageBlock(languageConfig, params.language)}
 
-CRITICAL: ALL 14 FIELDS BELOW ARE MANDATORY - DO NOT SKIP ANY FIELD${contentLengthGuidance}
+STUDY MODE: STANDARD (10 minutes)
+Tone: Pastoral, warm, encouraging, practical for daily spiritual growth.`
 
-REQUIRED JSON OUTPUT FORMAT (include ALL fields, no exceptions):
+  const userMessage = `${taskDescription}
+
+${createVerseReferenceBlock(params.language)}
+
+═══════════════════════════════════════════════════════════════════════════
+CONTENT STRUCTURE - ALL 14 FIELDS MANDATORY
+═══════════════════════════════════════════════════════════════════════════
+
 {
-  "summary": "Comprehensive overview (MINIMUM 4-5 sentences) capturing the main message with clear thesis${inputType === 'question' ? ' and answering the question' : ''}",
-  "interpretation": "Theological interpretation with 4-5 rich paragraphs (MINIMUM 5-6 sentences each). Each paragraph should flow naturally and explore different theological aspects with depth and biblical support. Write in continuous prose format without headings or bullet points. Ensure comprehensive biblical teaching covering theological truths, scriptural context, and practical implications${inputType === 'question' ? ' with direct answer to the question' : ''}",
-  "context": "Historical and cultural background (MINIMUM 2-3 paragraphs, each 3-5 sentences) providing comprehensive understanding",
-  "relatedVerses": ["MINIMUM 4-6 relevant Bible verses with references in ${languageConfig.name}"],
-  "reflectionQuestions": ["MINIMUM 5-6 practical application questions covering different aspects of life"],
-  "prayerPoints": ["A complete, first-person prayer (MINIMUM 6-8 sentences) addressing God directly that users can pray along with or personalize. Start with addressing God (e.g., 'Heavenly Father', 'Lord', 'Father God') and end with 'Amen' or 'In Jesus' name, Amen'"],
-  "summaryInsights": ["MANDATORY: 4-5 key resonance themes (12-18 words each)"],
-  "interpretationInsights": ["MANDATORY: 4-5 key theological insights (12-18 words each)"],
-  "reflectionAnswers": ["MANDATORY: 4-5 actionable life application responses (12-18 words each)"],
-  "contextQuestion": "Yes/no question connecting historical context to modern life",
-  "summaryQuestion": "Engaging question about what resonates from the summary (10-15 words)",
-  "relatedVersesQuestion": "Question prompting verse selection or memorization (10-15 words)",
-  "reflectionQuestion": "Question connecting theological insights to daily life (10-15 words)",
-  "prayerQuestion": "Question inviting personal prayer response (8-12 words)"
+  "summary": "Overview in 4-5 sentences covering main message",
+  "interpretation": "Theological teaching in 4-5 paragraphs. Each paragraph 5-6 sentences. Continuous prose WITHOUT headings/bullets.",
+  "context": "Historical/cultural background in 2-3 paragraphs (3-5 sentences each)",
+  "relatedVerses": ["4-6 Bible verses with references in ${languageConfig.name}"],
+  "reflectionQuestions": ["5-6 application questions"],
+  "prayerPoints": ["Complete first-person prayer (6-8 sentences)"],
+  "summaryInsights": ["4-5 resonance themes (12-18 words each)"],
+  "interpretationInsights": ["4-5 theological insights (12-18 words each)"],
+  "reflectionAnswers": ["4-5 life applications (12-18 words each)"],
+  "contextQuestion": "Yes/no question connecting context to modern life",
+  "summaryQuestion": "Question about summary (10-15 words)",
+  "relatedVersesQuestion": "Verse study question (10-15 words)",
+  "reflectionQuestion": "Application question (10-15 words)",
+  "prayerQuestion": "Prayer invitation (8-12 words)"
 }
 
-REQUIREMENT VERIFICATION:
-✓ You MUST include summaryInsights array with 4-5 items
-✓ You MUST include reflectionAnswers array with 4-5 items
-✓ You MUST include interpretationInsights array with 4-5 items
-✓ Do NOT skip any of the 14 required fields above
-✓ ENSURE ALL CONTENT IS COMPREHENSIVE, DETAILED, AND THEOLOGICALLY SUBSTANTIVE - DO NOT GENERATE BRIEF OR SUPERFICIAL CONTENT
+${createPrayerFormatBlock(languageConfig, params.language, '6-8')}
 
-CRITICAL: PRAYER FORMAT REQUIREMENT
-- "prayerPoints" MUST contain a complete, first-person prayer (NOT bullet points)
-- The prayer should be 5-7 sentences addressing God directly (e.g., "Heavenly Father, I come before You...")
-- End the prayer with "Amen" or "In Jesus' name, Amen"
-- Users will listen to, read, or personalize this prayer during their study
-- Example structure: [Address God] + [Prayer requests based on study content] + [Closing]
-- MUST be output in ${languageConfig.name} language
+CRITICAL FORMATTING RULES:
+✓ "interpretation": 4-5 FLOWING PARAGRAPHS (5-6 sentences each) - NO bullet points, NO bracketed headings
+✓ Write in continuous narrative prose
+✓ Each paragraph explores one theological aspect with depth
 
-CRITICAL: PRAYER CLOSING LANGUAGE REQUIREMENT
-- For English: End with "In Jesus' name, Amen" or "Amen"
-- For Hindi: End with "येशु मसीह के नाम से, आमेन" (in Devanagari script) - NOT romanized Hinglish
-- For Malayalam: End with "യേശുക്രിസ്തുവിന്റെ നാമത്തിൽ, ആമേൻ" (in Malayalam script) - NOT romanized Manglish
-- DO NOT use romanized text (Hinglish/Manglish) for non-English prayers
-- The ENTIRE prayer including the closing MUST be in native script${specificInstructions}
-
-CRITICAL: SUMMARY CARD INSIGHTS
-Generate 3-4 brief, relatable themes that readers might resonate with from the summary:
-- MUST be output in ${languageConfig.name} language
-- Each insight should be 10-15 words maximum
-- Focus on emotional/spiritual resonance (strength, comfort, challenge, hope, conviction)
-- Make them personal and action-oriented
-- English examples (TRANSLATE to ${languageConfig.name}): "Finding courage to face uncertainty", "Experiencing God's peace in chaos"
-- CRITICAL: Output these insights in ${languageConfig.name}
-
-CRITICAL: INTERPRETATION INSIGHTS & CONTEXT QUESTION
-- MUST be output in ${languageConfig.name} language
-- "interpretationInsights" must extract 3-4 distinct, actionable insights from the interpretation
-- Each insight should be concise (10-15 words), theologically sound, and personally applicable
-- Insights should represent different aspects: God's character, human response, practical application, doctrinal truth
-- "contextQuestion" must be yes/no format, connecting the biblical situation to modern experience
-- English example for context question (TRANSLATE to ${languageConfig.name}): "Have you ever felt pressure to conform like the early Christians?"
-- CRITICAL: Output these insights and question in ${languageConfig.name}
-
-CRITICAL: REFLECTION CARD QUESTIONS
-Generate contextually appropriate questions for each reflection card interaction:
-1. "summaryQuestion": Ask what aspect of the summary resonates most with the reader
-   - Example: "क्या इस सारांश में आपको सबसे प्रभावशाली लगा?" (What impacted you most in this summary?)
-   - Should be warm, inviting, and encourage personal connection with the summary
-
-2. "relatedVersesQuestion": Encourage verse selection for further study or memorization
-   - Example: "कौन सी आयत आप याद रखना चाहेंगे?" (Which verse would you like to memorize?)
-   - Should inspire scripture engagement and memory
-
-3. "reflectionQuestion": Connect the theological teachings to daily life application
-   - Example: "आज आप इसे अपने जीवन में कैसे लागू करेंगे?" (How will you apply this today?)
-   - Should bridge biblical truth to practical modern living
-
-4. "prayerQuestion": Invite personal prayer based on the study content
-   - Example: "आप इस अध्ययन के लिए कैसे प्रार्थना करना चाहेंगे?" (How would you like to pray about this study?)
-   - Should be warm and encourage authentic prayer response
-
-All reflection questions must be:
-- In the study guide's language (Hindi/Malayalam/English)
-- Contextually relevant to the actual content studied
-- Open-ended to encourage thoughtful reflection
-- 6-12 words maximum for clarity and readability
-
-CRITICAL: REFLECTION ANSWERS
-Generate 3-4 actionable life application responses that complement "reflectionQuestion":
-- MUST be output in ${languageConfig.name} language
-- Each answer should be practical, specific, and immediately applicable (10-15 words)
-- Focus on different life domains: relationships, habits, mindset shifts, spiritual practices
-- Make them concrete actions readers can take today based on the study content
-- English examples (TRANSLATE to ${languageConfig.name}): "Practicing forgiveness in my relationships", "Setting aside time for daily prayer", "Choosing gratitude in difficult circumstances"
-- CRITICAL: Output these answers in ${languageConfig.name}
-
-CRITICAL: RELATED VERSES LANGUAGE REQUIREMENT
-- ALL verse references in "relatedVerses" MUST be in ${languageConfig.name}
-- Book names must be in ${languageConfig.name} script/language
-${verseReferenceExamples}
-
-CRITICAL JSON FORMATTING RULES:
-- Output ONLY valid JSON - no markdown, no extra text before or after
-- Use proper JSON string escaping for quotes and special characters
-- Keep content natural and readable while ensuring valid JSON
-- Use standard JSON formatting with proper escaping
-- No trailing commas in arrays or objects
+VERIFICATION BEFORE OUTPUT:
+✓ Does "interpretation" have 4-5 full paragraphs (NOT bullet lists)?
+✓ Is each paragraph 5-6 complete sentences?
+✓ Are all 14 fields present?
+✓ Does prayer have 6-8 sentences and correct closing?
+✓ Are all verse references in ${languageConfig.name}?
 
 ${languageExamples}
 
-Output format: Start with { and end with } - nothing else.`
-}
-
-/**
- * Creates an enhanced prompt for study guide generation.
- * Routes to mode-specific prompts based on studyMode parameter.
- *
- * @param params - Generation parameters (includes studyMode)
- * @param languageConfig - Language-specific configuration
- * @returns Prompt pair with system and user messages
- */
-export function createStudyGuidePrompt(params: LLMGenerationParams, languageConfig: LanguageConfig): PromptPair {
-  const studyMode = params.studyMode || 'standard'
-
-  switch (studyMode) {
-    case 'quick':
-      return createQuickReadPrompt(params, languageConfig)
-    case 'deep':
-      return createDeepDivePrompt(params, languageConfig)
-    case 'lectio':
-      return createLectioDivinaPrompt(params, languageConfig)
-    case 'sermon':
-      return createSermonOutlinePrompt(params, languageConfig)
-    case 'standard':
-    default:
-      return {
-        systemMessage: createStudyGuideSystemMessage(languageConfig),
-        userMessage: createStudyGuideUserMessage(params, languageConfig)
-      }
-  }
-}
-
-// ==================== Mode-Specific Prompts ====================
-
-/**
- * Creates a Quick Read prompt (3-minute study).
- * Generates condensed content using the standard 6-section format for streaming compatibility.
- * Sections are adapted for brevity: key insight, key verse, single reflection, brief prayer.
- */
-function createQuickReadPrompt(params: LLMGenerationParams, languageConfig: LanguageConfig): PromptPair {
-  const { inputType, inputValue, topicDescription } = params
-  const languageExamples = getLanguageExamples(params.language)
-  const verseReferenceExamples = getVerseReferenceExamples(params.language)
-
-  let taskDescription: string
-  let inputSpecificGuidance = ''
-
-  if (inputType === 'scripture') {
-    taskDescription = `Create a QUICK 3-minute Bible study for: "${inputValue}"`
-    inputSpecificGuidance = `
-SCRIPTURE FOCUS (Quick Read):
-- Include the scripture passage text in "summary"
-- Explain the key insight from the passage in "interpretation"
-- Keep explanation brief and immediately applicable`
-  } else if (inputType === 'topic') {
-    taskDescription = topicDescription
-      ? `Create a QUICK 3-minute Bible study on: "${inputValue}"\n\nContext: ${topicDescription}`
-      : `Create a QUICK 3-minute Bible study on: "${inputValue}"`
-    inputSpecificGuidance = `
-TOPIC FOCUS (Quick Read):
-- Provide one key biblical principle about the topic in "summary"
-- Support with one main scripture in "interpretation"
-- Focus on immediate practical takeaway`
-  } else {
-    taskDescription = `Answer briefly and create a QUICK 3-minute study for: "${inputValue}"`
-    inputSpecificGuidance = `
-QUESTION FOCUS (Quick Read):
-- Provide a direct, concise answer to the question in "summary"
-- Support answer with one key scripture in "interpretation"
-- Keep response clear and immediately helpful`
-  }
-
-  const systemMessage = `You are a biblical scholar creating CONCISE Bible study guides for busy readers. Your responses must be valid JSON only.
-
-STUDY MODE: QUICK READ (3 minutes)
-Focus on delivering ONE powerful insight that readers can apply immediately.
-
-THEOLOGICAL APPROACH:
-- Protestant theological alignment
-- Biblical accuracy and Christ-centered interpretation
-- Immediately practical spiritual application
-
-LANGUAGE REQUIREMENTS:
-- ${languageConfig.promptModifiers.languageInstruction}
-- ${languageConfig.promptModifiers.complexityInstruction}
-- Cultural Context: ${languageConfig.culturalContext}
-- Use simple, accessible vocabulary
-
-JSON OUTPUT REQUIREMENTS:
-- Output ONLY valid JSON - no extra text
-- Use proper JSON string escaping
-- Keep content brief and impactful
-
-TONE: Direct, warm, encouraging, immediately actionable.`
-
-  const userMessage = `TASK: ${taskDescription}
-${inputSpecificGuidance}
-
-CRITICAL: ALL 14 FIELDS BELOW ARE MANDATORY - DO NOT SKIP ANY FIELD
-
-QUICK READ FORMAT - REQUIRED JSON OUTPUT (include ALL fields, no exceptions):
-{
-  "summary": "ONE powerful key insight in 2-3 sentences - the main takeaway",
-  "interpretation": "Key verse with brief explanation: [Reference]: [Verse text]. [1-2 sentence explanation]",
-  "context": "Brief context (1-2 sentences) - keep minimal for quick reading",
-  "relatedVerses": ["Include ONLY the single most relevant verse with reference in ${languageConfig.name}"],
-  "reflectionQuestions": ["ONE practical reflection question for immediate application"],
-  "prayerPoints": ["A brief, complete first-person prayer (2-3 sentences) addressing God directly. Start with addressing God and end with 'Amen'"],
-  "summaryInsights": ["MANDATORY: 2-3 brief resonance themes (8-12 words each)"],
-  "interpretationInsights": ["MANDATORY: 2-3 brief action points (8-12 words)"],
-  "reflectionAnswers": ["MANDATORY: 2-3 brief action responses (8-12 words each)"],
-  "contextQuestion": "Simple yes/no question for daily life",
-  "summaryQuestion": "Brief question about what resonates (6-10 words)",
-  "relatedVersesQuestion": "Simple question about verse memorization (6-10 words)",
-  "reflectionQuestion": "Quick application question for daily life (6-10 words)",
-  "prayerQuestion": "Inviting prayer question (5-8 words)"
-}
-
-REQUIREMENT VERIFICATION:
-✓ You MUST include summaryInsights array with 2-3 items
-✓ You MUST include reflectionAnswers array with 2-3 items
-✓ Do NOT skip any of the 14 required fields above
-
-CRITICAL RULES FOR QUICK READ:
-- Keep EVERYTHING concise - this is a 3-minute study
-- "interpretation" must include the key verse text with its reference
-- Only ONE item in each array field
-- Focus on immediate practical takeaway
-
-CRITICAL: PRAYER FORMAT (Quick Read)
-- "prayerPoints" MUST contain ONE complete, brief first-person prayer (2-3 sentences)
-- Address God directly and close with "Amen"
-- Users will pray along with this prayer
-- MUST be output in ${languageConfig.name} language
-
-CRITICAL: PRAYER CLOSING LANGUAGE REQUIREMENT (Quick Read)
-- For English: End with "Amen"
-- For Hindi: End with "आमेन" (in Devanagari script) - NOT romanized Hinglish
-- For Malayalam: End with "ആമേൻ" (in Malayalam script) - NOT romanized Manglish
-- DO NOT use romanized text (Hinglish/Manglish) for non-English prayers
-- The ENTIRE prayer including the closing MUST be in native script
-
-CRITICAL: SUMMARY CARD INSIGHTS (Quick Read)
-Generate 2-3 brief themes readers might resonate with:
-- MUST be output in ${languageConfig.name} language
-- Each insight 8-12 words maximum
-- Focus on immediate application (strength, comfort, encouragement)
-- English examples (TRANSLATE to ${languageConfig.name}): "Finding daily strength", "Experiencing peace today"
-- CRITICAL: Output these insights in ${languageConfig.name}
-
-CRITICAL: INTERPRETATION INSIGHTS & CONTEXT QUESTION (Quick Read)
-- MUST be output in ${languageConfig.name} language
-- "interpretationInsights" must extract 2-3 brief, actionable points from the interpretation
-- Each insight should be concise (8-12 words) and immediately applicable
-- Insights should be simple and direct for quick daily application
-- "contextQuestion" must be yes/no format, simple and relatable to daily life
-- English example for context question (TRANSLATE to ${languageConfig.name}): "Do you face similar pressures in your daily life?"
-- CRITICAL: Output these insights and question in ${languageConfig.name}
-
-CRITICAL: REFLECTION ANSWERS (Quick Read)
-Generate 2-3 brief action responses for immediate daily application:
-- MUST be output in ${languageConfig.name} language
-- Each answer should be simple, concrete, and doable today (8-12 words)
-- Focus on immediate actions: attitude shifts, quick habits, simple choices
-- English examples (TRANSLATE to ${languageConfig.name}): "Choosing patience today", "Pausing to pray before reacting"
-- CRITICAL: Output these answers in ${languageConfig.name}
-
-CRITICAL: VERSE REFERENCE MUST BE IN ${languageConfig.name}
-${verseReferenceExamples}
-
-CRITICAL JSON FORMATTING RULES:
-- Output ONLY valid JSON - no markdown, no extra text
-- Use proper JSON string escaping
-- No trailing commas
-
-${languageExamples}
-
-Output format: Start with { and end with } - nothing else.`
+OUTPUT: Valid JSON starting with { and ending with }`
 
   return { systemMessage, userMessage }
 }
 
 /**
- * Creates a Deep Dive prompt (25-minute study).
- * Generates extended content using the standard 6-section format for streaming compatibility.
- * Word studies and cross-references are embedded in the interpretation and context sections.
+ * QUICK READ MODE (3 minutes)
+ * Concise for busy schedules
+ */
+function createQuickReadPrompt(params: LLMGenerationParams, languageConfig: LanguageConfig): PromptPair {
+  const taskDescription = `Create a 3-MINUTE quick study for: "${params.inputValue}"`
+
+  const systemMessage = `You are a biblical scholar creating CONCISE but SUBSTANTIAL Bible studies for busy readers.
+
+${THEOLOGICAL_FOUNDATION}
+
+${JSON_OUTPUT_RULES}
+
+${createLanguageBlock(languageConfig, params.language)}
+
+STUDY MODE: QUICK READ (3 minutes = 600-750 words)
+Reading speed: 200-250 words/minute
+Tone: Direct, warm, immediately actionable, theologically sound.`
+
+  const userMessage = `${taskDescription}
+
+${createVerseReferenceBlock(params.language)}
+
+CONTENT STRUCTURE (ALL 14 FIELDS MANDATORY - 3-minute reading time):
+{
+  "summary": "Main message in 3-4 sentences capturing core truth and practical relevance",
+  "interpretation": "Theological explanation in 2 flowing paragraphs (3-4 sentences each). Explain meaning and how it points to Christ. Total: 6-8 sentences of continuous prose WITHOUT headings or bullet points.",
+  "context": "Historical and cultural background in 1-2 paragraphs (2-3 sentences each). Explain original setting and modern relevance.",
+  "relatedVerses": ["3-4 supporting Bible verses with references in ${languageConfig.name}"],
+  "reflectionQuestions": ["3-4 practical application questions"],
+  "prayerPoints": ["Complete first-person prayer (4-5 sentences) addressing the study's main themes"],
+  "summaryInsights": ["3-4 key themes (10-15 words each)"],
+  "interpretationInsights": ["3-4 theological insights (10-15 words each)"],
+  "reflectionAnswers": ["3-4 life applications (10-15 words each)"],
+  "contextQuestion": "Yes/no question connecting biblical context to modern life",
+  "summaryQuestion": "Brief question (6-10 words)",
+  "relatedVersesQuestion": "Verse question (6-10 words)",
+  "reflectionQuestion": "Application question (6-10 words)",
+  "prayerQuestion": "Prayer prompt (5-8 words)"
+}
+
+${createPrayerFormatBlock(languageConfig, params.language, '4-5')}
+
+CONTENT LENGTH REQUIREMENTS FOR 3-MINUTE READ (600-750 words total):
+✓ Summary: 3-4 sentences (50-60 words)
+✓ Interpretation: 2 paragraphs × 3-4 sentences = 6-8 sentences (120-160 words) - MAIN CONTENT
+✓ Context: 1-2 paragraphs × 2-3 sentences = 4-6 sentences (80-120 words)
+✓ Prayer: 4-5 sentences (60-80 words)
+✓ Related Verses: 3-4 verses (with references)
+✓ Questions: 3-4 questions each for reflection
+✓ Insights: 3-4 items per array (10-15 words each)
+
+CRITICAL FORMATTING:
+✓ "interpretation" MUST be 2 flowing paragraphs (NO headings, NO bullets)
+✓ Each paragraph 3-4 complete sentences
+✓ Continuous narrative prose explaining theology clearly and concisely
+✓ Focus on ONE central truth with enough depth for 3-minute read
+
+VERIFICATION BEFORE OUTPUT:
+✓ Does "interpretation" have exactly 2 full paragraphs (6-8 sentences total)?
+✓ Is each paragraph 3-4 complete sentences of continuous prose?
+✓ Does "context" have 1-2 paragraphs (4-6 sentences total)?
+✓ Does "summary" have 3-4 sentences?
+✓ Does prayer have 4-5 sentences with correct closing?
+✓ Are there 3-4 related verses in ${languageConfig.name}?
+✓ Are there 3-4 reflection questions?
+✓ Are all 14 fields present?
+✓ Is total content approximately 600-750 words (3-minute read)?
+
+OUTPUT: Valid JSON starting with { and ending with }`
+
+  return { systemMessage, userMessage }
+}
+
+/**
+ * DEEP DIVE MODE (25 minutes)
+ * Scholarly depth for serious students
  */
 function createDeepDivePrompt(params: LLMGenerationParams, languageConfig: LanguageConfig): PromptPair {
   const { inputType, inputValue, topicDescription } = params
-  const languageExamples = getLanguageExamples(params.language)
-  const verseReferenceExamples = getVerseReferenceExamples(params.language)
 
-  let taskDescription: string
-  let inputSpecificGuidance = ''
+  const taskDescription = inputType === 'scripture'
+    ? `Create a DEEP DIVE study for: "${inputValue}"`
+    : `Create a COMPREHENSIVE study on: "${inputValue}"${topicDescription ? `\\n\\nContext: ${topicDescription}` : ''}`
 
-  if (inputType === 'scripture') {
-    taskDescription = `Create a COMPREHENSIVE Deep Dive Bible study for: "${inputValue}"`
-    inputSpecificGuidance = `
-SCRIPTURE FOCUS (Deep Dive):
-- Provide the FULL scripture text with verse-by-verse breakdown in "summary"
-- Include word studies (Greek/Hebrew) for key terms in the passage in "interpretation"
-- Analyze literary structure, grammar, and theological themes
-- Explore cross-references that illuminate the passage
-- Provide comprehensive application from the text`
-  } else if (inputType === 'topic') {
-    taskDescription = topicDescription
-      ? `Create a COMPREHENSIVE Deep Dive Bible study on: "${inputValue}"\n\nContext: ${topicDescription}`
-      : `Create a COMPREHENSIVE Deep Dive Bible study on: "${inputValue}"`
-    inputSpecificGuidance = `
-TOPIC FOCUS (Deep Dive):
-- Survey major scripture passages addressing the topic in "summary"
-- Provide theological exposition of biblical teaching on the topic in "interpretation"
-- Include doctrinal implications and systematic theology connections
-- Explore historical development of the topic in church history
-- Provide comprehensive application for Christian living`
-  } else {
-    taskDescription = `Provide a thorough answer and create a COMPREHENSIVE Deep Dive study for: "${inputValue}"`
-    inputSpecificGuidance = `
-QUESTION FOCUS (Deep Dive):
-- Provide a comprehensive, theologically robust answer to the question in "summary"
-- Support answer with detailed biblical exposition in "interpretation"
-- Address multiple perspectives and theological nuances
-- Include relevant cross-references and doctrinal connections
-- Provide practical implications of the biblical answer`
-  }
+  const systemMessage = `You are an expert biblical scholar creating IN-DEPTH studies for serious students.
 
-  const systemMessage = `You are an expert biblical scholar creating IN-DEPTH Bible study guides for serious students. Your responses must be valid JSON only.
+${THEOLOGICAL_FOUNDATION}
+
+${JSON_OUTPUT_RULES}
+
+${createLanguageBlock(languageConfig, params.language)}
 
 STUDY MODE: DEEP DIVE (25 minutes)
-Provide scholarly depth while maintaining accessibility.
+Scholarly depth with accessibility. Include original language insights, systematic theology, church history.
+Tone: Scholarly yet pastoral, thorough, illuminating.`
 
-THEOLOGICAL APPROACH:
-- Protestant theological alignment
-- Biblical accuracy with original language insights
-- Historical-grammatical hermeneutics
-- Christ-centered interpretation
-- Thorough practical application
+  const userMessage = `${taskDescription}
 
-LANGUAGE REQUIREMENTS:
-- ${languageConfig.promptModifiers.languageInstruction}
-- ${languageConfig.promptModifiers.complexityInstruction}
-- Cultural Context: ${languageConfig.culturalContext}
-- Balance scholarly depth with clarity
+${createVerseReferenceBlock(params.language)}
 
-JSON OUTPUT REQUIREMENTS:
-- Output ONLY valid JSON - no extra text
-- Use proper JSON string escaping
-- Provide comprehensive content
+═══════════════════════════════════════════════════════════════════════════
+DEEP DIVE STRUCTURE - EXTENSIVE CONTENT REQUIRED
+═══════════════════════════════════════════════════════════════════════════
 
-TONE: Scholarly yet pastoral, thorough, illuminating.`
+INTERPRETATION SECTION (1500-2000 words MINIMUM):
 
-  const userMessage = `TASK: ${taskDescription}
-${inputSpecificGuidance}
+**Theological Exposition (6-8 paragraphs):**
+Paragraph 1: Introduce main theological themes (5-7 sentences)
+Paragraph 2: First major concept with biblical support (5-7 sentences)
+Paragraph 3: Second major concept (5-7 sentences)
+Paragraph 4: Third major concept (5-7 sentences)
+Paragraph 5: Connect to broader biblical theology (5-7 sentences)
+Paragraph 6: Address theological tensions (5-7 sentences)
+Paragraphs 7-8: Synthesize and apply (5-7 sentences each)
 
-CRITICAL: ALL 14 FIELDS BELOW ARE MANDATORY - DO NOT SKIP ANY FIELD
+**Word Studies (2-3 key words):**
+For EACH word: Greek/Hebrew with transliteration, root meaning, biblical usage, theological significance (3-4 sentences per word)
 
-DEEP DIVE FORMAT - REQUIRED JSON OUTPUT (include ALL fields, no exceptions):
+**Doctrinal Implications (3-4 paragraphs):**
+Paragraph 1: Systematic theology connections (5-6 sentences)
+Paragraph 2: Church history perspective (5-6 sentences)
+Paragraph 3: Contemporary application (5-6 sentences)
+Paragraph 4: Practical implications (5-6 sentences)
+
+CONTEXT SECTION (800-1000 words MINIMUM):
+
+**Historical Context (2-3 paragraphs, 5-6 sentences each)**
+**Literary Context (2 paragraphs, 5-6 sentences each)**
+**Cross-References (5-8 passages with 2-3 sentence explanations each)**
+
+JSON STRUCTURE:
 {
-  "summary": "Comprehensive overview (4-5 FULL sentences) with key themes and scholarly insights",
-  "interpretation": "EXTENSIVE theological interpretation (MINIMUM 1500-2000 words total) structured as follows:\\n\\n**Theological Exposition (6-8 substantial paragraphs):**\\n- Paragraph 1: Introduce the passage's main theological themes (5-7 sentences)\\n- Paragraph 2: Develop first major theological concept with biblical support (5-7 sentences)\\n- Paragraph 3: Develop second major theological concept (5-7 sentences)\\n- Paragraph 4: Develop third major theological concept (5-7 sentences)\\n- Paragraph 5: Connect themes to broader biblical theology (5-7 sentences)\\n- Paragraph 6: Address theological tensions or questions (5-7 sentences)\\n- Paragraphs 7-8: Synthesize and apply theological insights (5-7 sentences each)\\n\\n**Word Studies (2-3 key words):**\\n- For EACH word provide: Original language (Greek/Hebrew with transliteration), root meaning, usage in other biblical passages, theological significance (3-4 sentences per word)\\n\\n**Doctrinal Implications (3-4 rich paragraphs):**\\n- Paragraph 1: Systematic theology connections (how this passage relates to core Christian doctrines - 5-6 sentences)\\n- Paragraph 2: Church history perspective (how this has been understood historically - 5-6 sentences)\\n- Paragraph 3: Contemporary application (how these doctrines apply today - 5-6 sentences)\\n- Paragraph 4: Practical theological implications for Christian living (5-6 sentences)",
-  "context": "DETAILED historical, cultural, and literary context (MINIMUM 800-1000 words total):\\n\\n**Historical Context (2-3 paragraphs):**\\n- Paragraph 1: Historical setting and background (5-6 sentences)\\n- Paragraph 2: Cultural customs and practices relevant to the passage (5-6 sentences)\\n- Paragraph 3: Political and social dynamics of the time (5-6 sentences)\\n\\n**Literary Context (2 paragraphs):**\\n- Paragraph 1: How this passage fits within the book's structure and flow (5-6 sentences)\\n- Paragraph 2: Literary genre, techniques, and authorial intent (5-6 sentences)\\n\\n**Cross-References (5-8 passages with detailed explanations):**\\n- For EACH cross-reference: Cite the passage, quote key portion, explain connection to main passage (2-3 sentences per reference)\\n- Show thematic, theological, or narrative connections\\n- Demonstrate how other Scriptures illuminate this passage",
-  "relatedVerses": ["5-8 relevant Bible verses with full references in ${languageConfig.name} - include 2-3 sentences explaining each connection"],
-  "reflectionQuestions": ["6-8 deep, thought-provoking questions including one journaling prompt at the end"],
-  "prayerPoints": ["A comprehensive, first-person prayer (7-9 FULL sentences minimum) addressing God directly, incorporating the key theological themes from the study. Start with addressing God and end with 'In Jesus' name, Amen'"],
-  "interpretationInsights": ["MANDATORY: 4-5 profound insights from word studies and doctrinal implications (12-18 words)"],
-  "summaryInsights": ["MANDATORY: 4-5 profound resonance themes (12-18 words)"],
-  "reflectionAnswers": ["MANDATORY: 4-5 transformative life application responses (12-18 words each)"],
-  "contextQuestion": "Nuanced yes/no question connecting biblical context to contemporary issues",
-  "summaryQuestion": "Thoughtful question about the comprehensive summary (10-15 words)",
-  "relatedVersesQuestion": "Question encouraging verse study and cross-reference exploration (10-15 words)",
-  "reflectionQuestion": "Deep application question connecting theology to life transformation (10-15 words)",
-  "prayerQuestion": "Contemplative question inviting extended prayer response (8-12 words)"
+  "summary": "Comprehensive overview (4-5 sentences) with scholarly insights",
+  "interpretation": "[COMPLETE exposition as structured above]",
+  "context": "[COMPLETE context as structured above]",
+  "relatedVerses": ["5-8 verses with 2-3 sentence explanations"],
+  "reflectionQuestions": ["6-8 deep questions + 1 journaling prompt"],
+  "prayerPoints": ["Comprehensive prayer (7-9 sentences)"],
+  "summaryInsights": ["4-5 profound themes (12-18 words each)"],
+  "interpretationInsights": ["4-5 theological insights (12-18 words each)"],
+  "reflectionAnswers": ["4-5 transformative applications (12-18 words each)"],
+  "contextQuestion": "Nuanced yes/no question",
+  "summaryQuestion": "Thoughtful question (10-15 words)",
+  "relatedVersesQuestion": "Cross-reference question (10-15 words)",
+  "reflectionQuestion": "Deep application question (10-15 words)",
+  "prayerQuestion": "Contemplative question (8-12 words)"
 }
 
-REQUIREMENT VERIFICATION:
-✓ You MUST include summaryInsights array with 4-5 items
-✓ You MUST include reflectionAnswers array with 4-5 items
-✓ Do NOT skip any of the 14 required fields above
+${createPrayerFormatBlock(languageConfig, params.language, '7-9')}
 
-CRITICAL CONTENT REQUIREMENTS FOR DEEP DIVE (25-MINUTE STUDY):
-- "interpretation" MUST be 1500-2000 words minimum with:
-  * 6-8 FULL paragraphs of theological exposition (5-7 sentences each)
-  * 2-3 detailed word studies (3-4 sentences per word, including transliteration, root meaning, biblical usage, theological significance)
-  * 3-4 FULL paragraphs of doctrinal implications (5-6 sentences each covering systematic theology, church history, contemporary application)
-- "context" MUST be 800-1000 words minimum with:
-  * 2-3 FULL paragraphs on historical context (5-6 sentences each)
-  * 2 FULL paragraphs on literary context (5-6 sentences each)
-  * 5-8 cross-references with detailed explanations (2-3 sentences per reference)
-- This is a DEEP DIVE study - content must be SUBSTANTIALLY longer and MORE DETAILED than standard study
-- Include scholarly depth (word studies, church history, systematic theology) while remaining accessible
-- Last item in "reflectionQuestions" should be a journaling prompt
-- DO NOT generate short, superficial content - users expect 25 minutes of in-depth study material
+FINAL VERIFICATION:
+✓ Is "interpretation" 1500-2000 words with 6-8 paragraphs + word studies + doctrinal implications?
+✓ Is "context" 800-1000 words with historical + literary + cross-references?
+✓ Are ALL paragraphs 5-7 sentences (not 1-2 sentences)?
+✓ Would this realistically take 25 minutes to study?
+IF ANY ANSWER IS "NO" - EXPAND SUBSTANTIALLY.
 
-CRITICAL: PRAYER FORMAT (Deep Dive)
-- "prayerPoints" MUST contain a comprehensive, first-person prayer (7-9 sentences)
-- Incorporate key theological themes from the study in the prayer
-- Address God directly and close with "In Jesus' name, Amen"
-- Users will pray along with or personalize this prayer
-- MUST be output in ${languageConfig.name} language
-
-CRITICAL: PRAYER CLOSING LANGUAGE REQUIREMENT (Deep Dive)
-- For English: End with "In Jesus' name, Amen"
-- For Hindi: End with "येशु मसीह के नाम से, आमेन" (in Devanagari script) - NOT romanized Hinglish
-- For Malayalam: End with "യേശുക്രിസ്തുവിന്റെ നാമത്തിൽ, ആമേൻ" (in Malayalam script) - NOT romanized Manglish
-- DO NOT use romanized text (Hinglish/Manglish) for non-English prayers
-- The ENTIRE prayer including the closing MUST be in native script
-
-CRITICAL: INTERPRETATION INSIGHTS & CONTEXT QUESTION (Deep Dive)
-- MUST be output in ${languageConfig.name} language
-- "interpretationInsights" must extract 4-5 profound theological insights from word studies and doctrinal content
-- Each insight should be substantial (12-18 words), theologically rich, and intellectually engaging
-- Insights should reflect the scholarly depth of Deep Dive mode (original language insights, doctrinal implications)
-- "contextQuestion" must be yes/no format, nuanced and connecting ancient context to contemporary issues
-- English example for context question (TRANSLATE to ${languageConfig.name}): "Have you experienced the tension between cultural expectations and biblical faithfulness?"
-- CRITICAL: Output these insights and question in ${languageConfig.name}
-
-CRITICAL: SUMMARY CARD INSIGHTS (Deep Dive)
-Generate 4-5 profound themes readers might resonate with from the comprehensive summary:
-- MUST be output in ${languageConfig.name} language
-- Each insight should be substantial (12-18 words), theologically rich, and emotionally resonant
-- Focus on deep spiritual formation (transformation, conviction, theological understanding, spiritual maturity)
-- Make them intellectually engaging yet personally applicable
-- English examples (TRANSLATE to ${languageConfig.name}): "Understanding God's sovereignty through historical redemption", "Experiencing transformation through doctrinal truth applied to daily life"
-- CRITICAL: Output these insights in ${languageConfig.name}
-
-CRITICAL: REFLECTION ANSWERS (Deep Dive)
-Generate 4-5 transformative life application responses from the study:
-- MUST be output in ${languageConfig.name} language
-- Each answer should be substantial, theologically grounded, and transformative (12-18 words)
-- Focus on character transformation, doctrinal convictions lived out, spiritual disciplines, kingdom priorities
-- English examples (TRANSLATE to ${languageConfig.name}): "Cultivating daily dependence on God through morning prayer and meditation", "Reordering priorities to reflect kingdom values over worldly success"
-- CRITICAL: Output these answers in ${languageConfig.name}
-
-CRITICAL: ALL VERSE REFERENCES MUST BE IN ${languageConfig.name}
-${verseReferenceExamples}
-
-FINAL VERIFICATION BEFORE GENERATING:
-✓ Is "interpretation" section 1500-2000 words with 6-8 full paragraphs + word studies + doctrinal implications?
-✓ Is "context" section 800-1000 words with 2-3 historical + 2 literary paragraphs + detailed cross-references?
-✓ Are ALL paragraphs 5-7 sentences each (not 1-2 sentences)?
-✓ Are word studies detailed with transliteration, meaning, biblical usage, theological significance?
-✓ Are doctrinal implications covering systematic theology, church history, and contemporary application?
-✓ Would this study realistically take 25 minutes to read and reflect upon?
-✓ If ANY answer is "NO" - go back and expand that section substantially
-
-CRITICAL JSON FORMATTING RULES:
-- Output ONLY valid JSON - no markdown, no extra text
-- Use proper JSON string escaping (\\n for newlines)
-- No trailing commas
-
-${languageExamples}
-
-Output format: Start with { and end with } - nothing else.`
+OUTPUT: Valid JSON starting with { and ending with }`
 
   return { systemMessage, userMessage }
 }
 
 /**
- * Creates a Lectio Divina prompt (15-minute meditative study).
- * Generates content using the standard 6-section format for streaming compatibility.
- * Maps Lectio Divina movements to standard sections for meditation guidance.
+ * LECTIO DIVINA MODE (15 minutes)
+ * Contemplative meditative study
  */
 function createLectioDivinaPrompt(params: LLMGenerationParams, languageConfig: LanguageConfig): PromptPair {
   const { inputType, inputValue, topicDescription } = params
-  const languageExamples = getLanguageExamples(params.language)
-  const verseReferenceExamples = getVerseReferenceExamples(params.language)
 
-  let taskDescription: string
-  let inputSpecificGuidance = ''
+  const taskDescription = inputType === 'scripture'
+    ? `Create a Lectio Divina meditation guide for: "${inputValue}"`
+    : inputType === 'topic'
+    ? `Create a Lectio Divina meditation guide on: "${inputValue}"${topicDescription ? `\\n\\nContext: ${topicDescription}` : ''}`
+    : `Create a Lectio Divina meditation guide for: "${inputValue}"`
 
-  if (inputType === 'scripture') {
-    taskDescription = `Create a Lectio Divina meditation guide for: "${inputValue}"`
-    inputSpecificGuidance = `
-SCRIPTURE FOCUS (Lectio Divina):
-- Provide the FULL scripture passage text for slow, meditative reading in "summary"
-- Guide the reader through contemplative reflection on the passage
-- Invite personal encounter with God through the text`
-  } else if (inputType === 'topic') {
-    taskDescription = topicDescription
-      ? `Create a Lectio Divina meditation guide on: "${inputValue}"\n\nContext: ${topicDescription}`
-      : `Create a Lectio Divina meditation guide on: "${inputValue}"`
-    inputSpecificGuidance = `
-TOPIC FOCUS (Lectio Divina):
-- Select a key scripture passage that addresses the topic for meditation in "summary"
-- Guide contemplative reflection on how God speaks through this passage about the topic
-- Invite listening prayer and personal response to God's word on this topic`
-  } else {
-    taskDescription = `Create a Lectio Divina meditation guide for: "${inputValue}"`
-    inputSpecificGuidance = `
-QUESTION FOCUS (Lectio Divina):
-- Select a scripture passage that addresses the question for meditation in "summary"
-- Guide contemplative listening for how God speaks to the question through His Word
-- Invite prayerful response and personal application of God's answer`
-  }
+  const systemMessage = `You are a spiritual director guiding Lectio Divina (sacred reading).
 
-  const systemMessage = `You are a spiritual director guiding readers through Lectio Divina, the ancient practice of divine reading. Your responses must be valid JSON only.
+${THEOLOGICAL_FOUNDATION}
+
+${JSON_OUTPUT_RULES}
+
+${createLanguageBlock(languageConfig, params.language)}
 
 STUDY MODE: LECTIO DIVINA (15 minutes)
-Guide the reader through the four movements of sacred reading.
+Four movements: LECTIO (read) → MEDITATIO (meditate) → ORATIO (pray) → CONTEMPLATIO (rest).
+Tone: Contemplative, gentle, inviting, spiritually nurturing. Focus on personal encounter with God through Scripture.`
 
-LECTIO DIVINA MOVEMENTS:
-1. LECTIO (Read) - Slow, attentive reading of Scripture
-2. MEDITATIO (Meditate) - Pondering words/phrases that resonate
-3. ORATIO (Pray) - Responding to God in prayer
-4. CONTEMPLATIO (Rest) - Silent rest in God's presence
+  const userMessage = `${taskDescription}
 
-THEOLOGICAL APPROACH:
-- Contemplative Christian tradition
-- Focus on personal encounter with God through Scripture
-- Christ-centered, Spirit-led meditation
-- Emphasis on listening and receiving
+${createVerseReferenceBlock(params.language)}
 
-LANGUAGE REQUIREMENTS:
-- ${languageConfig.promptModifiers.languageInstruction}
-- ${languageConfig.promptModifiers.complexityInstruction}
-- Cultural Context: ${languageConfig.culturalContext}
-- Use gentle, inviting, meditative language
+═══════════════════════════════════════════════════════════════════════════
+LECTIO DIVINA STRUCTURE - ALL 14 FIELDS MANDATORY
+═══════════════════════════════════════════════════════════════════════════
 
-JSON OUTPUT REQUIREMENTS:
-- Output ONLY valid JSON - no extra text
-- Use proper JSON string escaping
-
-TONE: Contemplative, gentle, inviting, spiritually nurturing.`
-
-  const userMessage = `TASK: ${taskDescription}
-${inputSpecificGuidance}
-
-CRITICAL: ALL 14 FIELDS BELOW ARE MANDATORY - DO NOT SKIP ANY FIELD
-ABSOLUTELY REQUIRED: "summary" AND "interpretation" are BOTH mandatory and serve DIFFERENT purposes
-
-LECTIO DIVINA FORMAT - REQUIRED JSON OUTPUT (include ALL fields, no exceptions):
 {
-  "summary": "**Scripture for Meditation**\\n\\n[Reference in ${languageConfig.name}]\\n\\n[Complete scripture passage text]\\n\\n*Read this passage slowly 2-3 times, letting the words wash over you.*\\n\\n**Focus Words for Meditation:** [List 5-7 significant words or phrases from the passage that invite deeper reflection]",
-  "interpretation": "**LECTIO (Read) & MEDITATIO (Meditate)**\\n\\nLECTIO: [Guidance for slow, attentive reading - NOT the scripture text itself]\\n\\nMEDITATIO: [Guidance for pondering and meditation - NOT the scripture text itself]\\n\\nAs you read again slowly, notice which word or phrase catches your attention. This is the Spirit inviting you to pause and receive.",
-  "context": "**About Lectio Divina**\\n\\nLectio Divina (divine reading) is an ancient Christian practice dating back to the 3rd century. It invites us to move from reading about God to encountering God through His Word. There are four movements: Lectio (read), Meditatio (meditate), Oratio (pray), and Contemplatio (rest).\\n\\nApproach this time with an open heart, free from agenda. Let God speak to you through His Word.",
-  "relatedVerses": ["Include 3-5 related Bible verse references that complement this meditation in ${languageConfig.name}"],
-  "reflectionQuestions": ["**ORATIO (Pray)** - A prayer starter to respond to God based on the passage...", "What is God inviting you to in this Word?", "How might this passage shape your day?", "**CONTEMPLATIO (Rest)** - Rest in God's presence. Sit in silence for 2-3 minutes, simply being with God, letting go of words and thoughts."],
-  "prayerPoints": ["A gentle, contemplative first-person prayer (3-4 sentences) that responds to the Scripture meditation. Format as a prayer template users can personalize and pray. Start with addressing God gently (e.g., 'Father', 'Loving God') and close with 'Amen'"],
-  "interpretationInsights": ["MANDATORY: 2-3 contemplative insights for reflection (8-12 words)"],
-  "summaryInsights": ["MANDATORY: 2-3 gentle resonance themes (8-12 words)"],
-  "reflectionAnswers": ["MANDATORY: 2-3 gentle responses to God's invitation (8-12 words each)"],
+  "summary": "**Scripture for Meditation**\\n\\n[Reference]\\n\\n[FULL passage text]\\n\\n*Read slowly 2-3 times, letting words wash over you.*\\n\\n**Focus Words:** [5-7 significant words/phrases for meditation]",
+  "interpretation": "**LECTIO (Read) & MEDITATIO (Meditate)**\\n\\nLECTIO: [Guidance for slow reading - NOT scripture text]\\n\\nMEDITATIO: [Guidance for pondering - NOT scripture text]\\n\\nNotice which word catches your attention. This is the Spirit inviting you to pause.",
+  "context": "**About Lectio Divina**\\n\\nLectio Divina (divine reading) is an ancient Christian practice (3rd century). Moves from reading about God to encountering God. Four movements: Lectio, Meditatio, Oratio, Contemplatio. Approach with open heart, free from agenda.",
+  "relatedVerses": ["3-5 related Bible verses in ${languageConfig.name}"],
+  "reflectionQuestions": ["**ORATIO (Pray)** - Prayer starter responding to passage...", "What is God inviting you to?", "How might this shape your day?", "**CONTEMPLATIO (Rest)** - Sit in silence 2-3 minutes with God."],
+  "prayerPoints": ["Gentle contemplative first-person prayer (3-4 sentences). Address God gently, close with Amen"],
+  "summaryInsights": ["2-3 gentle resonance themes (8-12 words each)"],
+  "interpretationInsights": ["2-3 contemplative insights (8-12 words each)"],
+  "reflectionAnswers": ["2-3 gentle responses to God's invitation (8-12 words each)"],
   "contextQuestion": "Gentle yes/no question inviting personal reflection",
-  "summaryQuestion": "Gentle question about what draws attention in the passage (8-12 words)",
-  "relatedVersesQuestion": "Inviting question about which related verse to meditate on (8-12 words)",
+  "summaryQuestion": "Gentle question about what draws attention (8-12 words)",
+  "relatedVersesQuestion": "Question about which verse to meditate on (8-12 words)",
   "reflectionQuestion": "Contemplative question about God's invitation (8-12 words)",
-  "prayerQuestion": "Gentle question encouraging prayer response (6-10 words)"
+  "prayerQuestion": "Gentle question encouraging prayer (6-10 words)"
 }
 
-REQUIREMENT VERIFICATION:
-✓ You MUST include summaryInsights array with 2-3 items
-✓ You MUST include reflectionAnswers array with 2-3 items
-✓ Do NOT skip any of the 14 required fields above
+${createPrayerFormatBlock(languageConfig, params.language, '3-4')}
 
-CRITICAL CONTENT REQUIREMENTS FOR LECTIO DIVINA:
-- "summary": MUST include the ACTUAL SCRIPTURE TEXT (not guidance) formatted for slow reading, PLUS a list of 5-7 focus words/phrases for meditation at the end
-- "interpretation": MUST provide GUIDANCE for LECTIO and MEDITATIO movements (NOT the scripture text - that goes in "summary")
-- BOTH "summary" and "interpretation" are MANDATORY - they serve different purposes and cannot be combined
-- "relatedVerses" should be 3-5 related Bible verse REFERENCES (e.g., "Psalm 23:1", "John 14:27") that complement the meditation
-- "reflectionQuestions" must include ORATIO and CONTEMPLATIO movements
-- Use meditative, gentle, inviting language throughout
+CRITICAL CONTENT REQUIREMENTS:
+✓ "summary": ACTUAL SCRIPTURE TEXT formatted for slow reading + 5-7 focus words at end
+✓ "interpretation": GUIDANCE for LECTIO/MEDITATIO (not scripture - that's in summary)
+✓ Both fields MANDATORY - serve different purposes
+✓ Use meditative, gentle, inviting language throughout
 
-CRITICAL: PRAYER FORMAT (Lectio Divina)
-- "prayerPoints" MUST contain a gentle, contemplative first-person prayer (3-4 sentences)
-- The prayer should respond to the Scripture meditation
-- Format as a prayer template users can personalize and pray along with
-- Address God gently (e.g., "Father", "Loving God") and close with "Amen"
-- Use contemplative, receptive language that invites personal response
-- MUST be output in ${languageConfig.name} language
+VERIFICATION:
+✓ Does "summary" include full scripture text?
+✓ Does "summary" end with 5-7 focus words list?
+✓ Does "interpretation" provide meditation guidance (not scripture)?
+✓ Are all 14 fields present?
+✓ Is prayer 3-4 sentences with correct closing?
 
-CRITICAL: PRAYER CLOSING LANGUAGE REQUIREMENT (Lectio Divina)
-- For English: End with "Amen"
-- For Hindi: End with "आमेन" (in Devanagari script) - NOT romanized Hinglish
-- For Malayalam: End with "ആമേൻ" (in Malayalam script) - NOT romanized Manglish
-- DO NOT use romanized text (Hinglish/Manglish) for non-English prayers
-- The ENTIRE prayer including the closing MUST be in native script
-
-CRITICAL: INTERPRETATION INSIGHTS & CONTEXT QUESTION (Lectio Divina)
-- MUST be output in ${languageConfig.name} language
-- "interpretationInsights" must extract 2-3 gentle, contemplative insights from the meditation
-- Each insight should be brief (8-12 words), spiritually nurturing, and invitation-focused
-- Insights should reflect the contemplative nature of Lectio Divina (listening, receiving, resting)
-- "contextQuestion" must be yes/no format, gentle and inviting personal reflection on God's presence
-- English example for context question (TRANSLATE to ${languageConfig.name}): "Have you felt God inviting you to slow down and listen?"
-- CRITICAL: Output these insights and question in ${languageConfig.name}
-
-CRITICAL: SUMMARY CARD INSIGHTS (Lectio Divina)
-Generate 2-3 gentle themes readers might resonate with from the Scripture meditation:
-- MUST be output in ${languageConfig.name} language
-- Each insight should be brief (8-12 words), spiritually nurturing, and invitation-focused
-- Focus on contemplative receptivity (listening to God, resting in His presence, receiving His love)
-- Make them gentle and encouraging, reflecting the meditative nature of Lectio Divina
-- English examples (TRANSLATE to ${languageConfig.name}): "Resting in God's loving presence", "Receiving God's word as gift today"
-- CRITICAL: Output these insights in ${languageConfig.name}
-
-CRITICAL: REFLECTION ANSWERS (Lectio Divina)
-Generate 2-3 gentle responses to God's invitation from the meditation:
-- MUST be output in ${languageConfig.name} language
-- Each answer should be contemplative, receptive, and invitation-focused (8-12 words)
-- Focus on spiritual receptivity: listening, resting, receiving, surrendering, abiding
-- English examples (TRANSLATE to ${languageConfig.name}): "Sitting in silence with God daily", "Letting go of control and trusting"
-- CRITICAL: Output these answers in ${languageConfig.name}
-
-CRITICAL: SCRIPTURE REFERENCE MUST BE IN ${languageConfig.name}
-${verseReferenceExamples}
-
-CRITICAL JSON FORMATTING RULES:
-- Output ONLY valid JSON - no markdown, no extra text
-- Use proper JSON string escaping (\\n for newlines)
-- No trailing commas
-
-${languageExamples}
-
-Output format: Start with { and end with } - nothing else.`
+OUTPUT: Valid JSON starting with { and ending with }`
 
   return { systemMessage, userMessage }
 }
 
 /**
- * Creates a Sermon Outline prompt (50-60 minute sermon).
- * Generates content using the standard 14-field format for streaming compatibility.
- * AI selects format based on input type: Scripture → Expository, Topic → Topical.
+ * SERMON OUTLINE MODE (50-60 minutes)
+ * Complete preachable sermon outline
  */
 
-/**
- * Interface for sermon outline section headings in different languages
- */
-interface SermonHeadings {
-  openingPrayer: string
-  introduction: string
-  point: string
-  mainTeaching: string
-  scriptureFoundation: string
-  illustration: string
-  application: string
-  transition: string
-  conclusion: string
-  gospelRecap: string
-  theInvitation: string
-  responseOptions: string
-  closingPrayer: string
-}
-
-/**
- * Language-specific sermon outline headings
- */
-export const SERMON_HEADINGS: Record<string, SermonHeadings> = {
+// Sermon headings by language
+const SERMON_HEADINGS: Record<string, Record<string, string>> = {
   'en': {
     openingPrayer: 'Opening Prayer & Welcome',
     introduction: 'Introduction / Hook',
@@ -825,573 +520,372 @@ export const SERMON_HEADINGS: Record<string, SermonHeadings> = {
   }
 }
 
-/**
- * Get language-specific sermon outline headings
- */
-function getSermonHeadings(language: string): SermonHeadings {
+function getSermonHeadings(language: string): Record<string, string> {
   return SERMON_HEADINGS[language] || SERMON_HEADINGS['en']
 }
 
-/**
- * Build sermon outline template with localized headings
- */
-function buildSermonOutlineTemplate(headings: SermonHeadings): string {
-  return `**SERMON OUTLINE FORMAT** - Concise notes with key points (NOT full speech):
+function createSermonOutlinePrompt(params: LLMGenerationParams, languageConfig: LanguageConfig): PromptPair {
+  const { inputType, inputValue, topicDescription } = params
+  const headings = getSermonHeadings(params.language)
 
-## ${headings.openingPrayer} (2-3 min)
-• Welcome and brief opening prayer
+  const sermonFormat = inputType === 'scripture' ? 'EXPOSITORY' : 'TOPICAL (3-Point)'
+
+  const taskDescription = inputType === 'scripture'
+    ? `Create an ${sermonFormat} sermon outline for: "${inputValue}"`
+    : inputType === 'topic'
+    ? `Create a ${sermonFormat} sermon outline on: "${inputValue}"${topicDescription ? `\\n\\nContext: ${topicDescription}` : ''}`
+    : `Create a sermon outline addressing: "${inputValue}"`
+
+  const systemMessage = `You are an experienced preacher creating sermon outlines for pastors.
+
+${THEOLOGICAL_FOUNDATION}
+
+${JSON_OUTPUT_RULES}
+
+${createLanguageBlock(languageConfig, params.language)}
+
+STUDY MODE: SERMON OUTLINE (50-60 minutes)
+Complete preachable outline with timing, illustrations, altar call.
+Tone: Clear, engaging, suitable for oral delivery.`
+
+  // Build sermon outline template
+  const outlineTemplate = `**SERMON OUTLINE FORMAT** - Detailed preacher's notes (NOT full speech):
 
 ## ${headings.introduction} (5 min)
-• Hook: [Attention-grabbing question, story, or current event - 1 sentence]
-• Bridge: [How this connects to the topic - 1 sentence]
-**${headings.transition}:** [Brief bridge to Point 1]
+• Hook: [Compelling attention-grabber - story, question, or statistic that draws people in]
+• Bridge: [Connect the hook to today's scripture/topic - explain why this matters to their lives]
+• Preview: [Brief overview of the 3 main points they'll hear today]
+**${headings.transition}:** [Clear bridge sentence connecting introduction to Point 1]
 
 ## ${headings.point} 1: [Clear, Memorable Title] (15 min)
 
 **${headings.mainTeaching}:**
-• [Key theological concept #1 - one sentence]
-• [Key theological concept #2 - one sentence]
-• [Key theological concept #3 - one sentence]
-• [Supporting explanation - brief note, 1-2 sentences]
+[Write 2-3 cohesive paragraphs (8-12 sentences total) explaining the main theological teaching. Start with the foundational truth and define key terms. Build the explanation progressively, showing biblical basis and connecting to the redemptive story of Christ. Address common misconceptions and provide orthodox teaching. Deepen understanding by connecting to systematic theology. Make it substantial enough for the preacher to teach from for several minutes.]
 
 **${headings.scriptureFoundation}:**
-• [Bible Reference 1] - [How it supports this point - 1 sentence]
-• [Bible Reference 2] - [How it supports this point - 1 sentence]
-• [Bible Reference 3 if needed]
+• [Bible Reference 1] - [Provide context: who wrote, to whom, when, why. Explain original meaning in 2-3 sentences. Show how it supports this point in 1-2 sentences.]
+• [Bible Reference 2] - [Explain the verse's context and meaning. Show word studies or Greek/Hebrew insights if helpful. Connect to point in 3-4 sentences total.]
+• [Bible Reference 3] - [Cross-reference showing same truth elsewhere in Scripture. Explain context and application. 3-4 sentences.]
 
 **${headings.illustration}:**
-• [Brief illustration idea/example - 2-3 sentences max]
-• [Key takeaway from illustration - 1 sentence]
+• Setup: [Describe the illustration setting - who, what, when, where. 2-3 sentences.]
+• Key Details: [Walk through the illustration step-by-step. Make it vivid and relatable. 3-4 sentences.]
+• The Point: [Connect illustration directly to the theological truth being taught. 1-2 sentences.]
+• Emotional Impact: [Help them feel the weight of this truth. What does it mean for their lives? 1-2 sentences.]
 
 **${headings.application}:**
-• [Practical action step #1]
-• [Practical action step #2]
-• [Practical action step #3]
+• [Specific action step #1 - Not just "pray more" but HOW to pray, WHEN to pray, WHAT to pray about. 2-3 sentences with practical details.]
+• [Specific action step #2 - Concrete behavior change. Give examples of what this looks like in daily life. 2-3 sentences.]
+• [Specific action step #3 - Relational application. How does this change how we treat others? Specific scenarios. 2-3 sentences.]
+• [Heart-level application - Internal transformation. How should this change their thinking/desires/affections? 2-3 sentences.]
 
-**${headings.transition}:** [Bridge to Point 2 - 1 sentence]
+**${headings.transition}:** [Clear, compelling bridge sentence showing how Point 1 leads naturally to Point 2]
 
 ## ${headings.point} 2: [Clear, Memorable Title] (15 min)
-
-**${headings.mainTeaching}:**
-• [Key concept #1 - one sentence]
-• [Key concept #2 - one sentence]
-• [Key concept #3 - one sentence]
-• [Supporting note - 1-2 sentences]
-
-**${headings.scriptureFoundation}:**
-• [Bible Reference 1] - [Support explanation - 1 sentence]
-• [Bible Reference 2] - [Support explanation - 1 sentence]
-• [Bible Reference 3 if needed]
-
-**${headings.illustration}:**
-• [Illustration idea - 2-3 sentences max]
-• [Takeaway - 1 sentence]
-
-**${headings.application}:**
-• [Action step #1]
-• [Action step #2]
-• [Action step #3]
-
-**${headings.transition}:** [Bridge to Point 3 - 1 sentence]
+[Use SAME DETAILED STRUCTURE as Point 1 above - Main Teaching as 2-3 paragraphs (8-12 sentences), 3-5 Scripture Foundation verses with full explanations, detailed Illustration outline, 3-5 specific Application points]
 
 ## ${headings.point} 3: [Clear, Memorable Title] (12 min)
-
-**${headings.mainTeaching}:**
-• [Key concept #1 - one sentence]
-• [Key concept #2 - one sentence]
-• [Key concept #3 - one sentence]
-• [Supporting note - 1-2 sentences]
-
-**${headings.scriptureFoundation}:**
-• [Bible Reference 1] - [Support explanation - 1 sentence]
-• [Bible Reference 2] - [Support explanation - 1 sentence]
-• [Bible Reference 3 if needed]
-
-**${headings.illustration}:**
-• [Illustration idea - 2-3 sentences max]
-• [Takeaway - 1 sentence]
-
-**${headings.application}:**
-• [Action step #1]
-• [Action step #2]
-• [Action step #3]
+[Use SAME DETAILED STRUCTURE as Point 1 above - Main Teaching as 2-3 paragraphs (8-12 sentences), 3-5 Scripture Foundation verses with full explanations, detailed Illustration outline, 3-5 specific Application points]
 
 ## ${headings.conclusion} (5 min)
-• [Summary of Point 1 - 1 sentence]
-• [Summary of Point 2 - 1 sentence]
-• [Summary of Point 3 - 1 sentence]
-• [Final challenge/encouragement - 1-2 sentences]`
-}
+• [Summary of Point 1 - Restate main truth with fresh language]
+• [Summary of Point 2 - Connect to Point 1, build momentum]
+• [Summary of Point 3 - Bring all points together in gospel clarity]
+• [Final exhortation - Compelling call to respond. Make it urgent and gracious. 2-3 sentences.]`
 
-/**
- * Build altar call template with localized headings
- */
-function buildAltarCallTemplate(headings: SermonHeadings): string {
-  return `**COMPLETE ALTAR CALL / INVITATION TEMPLATE** (4-6 minutes)
+  // Build altar call template
+  const altarCallTemplate = `**ALTAR CALL / INVITATION** (4-6 min)
 
 **${headings.gospelRecap}:**
-[Brief reminder of God's love, Christ's sacrifice, and the gospel message]
+[Brief gospel reminder]
 
 **${headings.theInvitation}:**
-If you feel God calling you today to [specific response based on sermon topic - e.g., surrender your life to Christ, recommit your faith, seek forgiveness, take a step of obedience], I invite you to respond...
+If you feel God calling you to [specific response], I invite you to respond...
 
 **${headings.responseOptions}:**
-- Come forward to the altar for prayer
-- Raise your hand where you are seated
-- Meet with a pastor or prayer team after the service
-- [Additional contextually appropriate option]
+• Come forward for prayer
+• Raise your hand
+• Meet with pastor after service
 
 **${headings.closingPrayer}:**
-[Prayer for those responding, including petition, thanksgiving, and blessing]
+[Prayer for those responding]
 
 Amen.`
-}
 
-/**
- * Build example sermon point structure
- */
-function buildExampleSermonPoint(headings: SermonHeadings, languageConfig: LanguageConfig): string {
-  return `## ${headings.point} 1: God's Love Is Active, Not Passive (15 min)
+  const userMessage = `${taskDescription}
 
-**${headings.mainTeaching}:**
-• Love is an active choice, not just a feeling we experience
-• Greek "agape" = self-sacrificial, unconditional love seeking others' best
-• Requires intentionality, effort, and putting others' needs first
-• God's active love empowers us to love others the same way
+${createVerseReferenceBlock(params.language)}
 
-**${headings.scriptureFoundation}:**
-• 1 John 4:19 - God's active love is the source and motivation for our love
-• Romans 5:8 - God demonstrated love through action (Christ's death), not just words
-• 1 Corinthians 13:4-7 - Love described as specific ACTIONS (patient, kind, etc.)
+═══════════════════════════════════════════════════════════════════════════
+SERMON STRUCTURE - ALL 14 FIELDS MANDATORY
+═══════════════════════════════════════════════════════════════════════════
 
-**${headings.illustration}:**
-• Parent waking at 3 AM for sick child - doesn't "feel" like it, but chooses love
-• Someone serving community despite personal inconvenience
-• Love is demonstrated through sacrifice and action, not just emotion
+TIMING BREAKDOWN (50-60 minutes total):
+Introduction: 5 min | Point 1: 15 min | Point 2: 15 min | Point 3: 12 min | Conclusion: 5 min | Altar Call: 4-6 min
 
-**${headings.application}:**
-• Identify one difficult person and perform specific act of kindness this week
-• Practice "love as verb" - do something tangible without being asked
-• Decision filter: "What would active love do in this situation?"
-
-**${headings.transition}:**
-If God's love is active and intentional, then it also must be...`
-}
-
-/**
- * Build sermon field requirements section
- */
-function buildSermonFieldRequirements(
-  languageConfig: LanguageConfig,
-  verseReferenceExamples: string,
-  headings: SermonHeadings,
-  sermonOutlineTemplate: string,
-  altarCallTemplate: string
-): string {
-  return `CRITICAL: ALL 14 FIELDS BELOW ARE MANDATORY - DO NOT SKIP ANY FIELD
-
-CRITICAL: HEADING LANGUAGE REQUIREMENT - MANDATORY COMPLIANCE
-YOU MUST USE THESE EXACT HEADINGS (NOT ENGLISH TRANSLATIONS):
-✓ "${headings.openingPrayer}" (NOT "Opening Prayer & Welcome")
-✓ "${headings.introduction}" (NOT "Introduction / Hook")
-✓ "${headings.point}" (NOT "Point")
-✓ "${headings.mainTeaching}" (NOT "Main Teaching")
-✓ "${headings.scriptureFoundation}" (NOT "Scripture Foundation")
-✓ "${headings.illustration}" (NOT "Illustration")
-✓ "${headings.application}" (NOT "Application")
-✓ "${headings.transition}" (NOT "Transition")
-✓ "${headings.conclusion}" (NOT "Conclusion")
-
-ABSOLUTE REQUIREMENT: Copy the headings EXACTLY as shown in the template below - these are NOT translations, these ARE the required text.
-
-SERMON OUTLINE FORMAT - REQUIRED JSON OUTPUT (include ALL fields, no exceptions):
 {
-  "summary": "Sermon thesis and introduction (3-4 sentences) - The main message and hook for the sermon",
-  "interpretation": "${sermonOutlineTemplate.replace(/\n/g, '\\n').replace(/"/g, '\\"')}",
-  "context": "Background and sermon context (2-3 paragraphs) - Historical, cultural, and textual background for the preacher's preparation",
-  "relatedVerses": ["5-7 additional supporting Bible verses with full references in ${languageConfig.name} (beyond those already integrated into the sermon points)"],
-  "reflectionQuestions": ["5-7 discussion questions for small groups or sermon follow-up that help apply the sermon"],
-  "prayerPoints": ["${altarCallTemplate.replace(/\n/g, '\\n').replace(/"/g, '\\"')}"],
-  "summaryInsights": ["MANDATORY: 3-4 key takeaways from the sermon (10-15 words each)"],
-  "interpretationInsights": ["MANDATORY: 3-4 main theological points (10-15 words each)"],
-  "reflectionAnswers": ["MANDATORY: 3-4 practical life applications (10-15 words each)"],
-  "contextQuestion": "Engaging yes/no question connecting biblical context to modern congregation",
-  "summaryQuestion": "Question about the sermon thesis (8-12 words)",
-  "relatedVersesQuestion": "Question encouraging scripture memorization or study (8-12 words)",
-  "reflectionQuestion": "Application question for congregational response (8-12 words)",
-  "prayerQuestion": "Question inviting prayer and commitment (6-10 words)"
+  "summary": "Sermon thesis and hook (3-4 sentences)",
+  "interpretation": "[Complete sermon outline following template above]",
+  "context": "Background for preparation (2-3 paragraphs) - historical/cultural/textual context",
+  "relatedVerses": ["5-7 additional supporting verses in ${languageConfig.name}"],
+  "reflectionQuestions": ["5-7 discussion questions for small groups"],
+  "prayerPoints": ["[Complete altar call following template above]"],
+  "summaryInsights": ["3-4 key takeaways (10-15 words each)"],
+  "interpretationInsights": ["3-4 main theological points (10-15 words each)"],
+  "reflectionAnswers": ["3-4 practical applications (10-15 words each)"],
+  "contextQuestion": "Yes/no connecting biblical context to modern life",
+  "summaryQuestion": "Question about sermon thesis (8-12 words)",
+  "relatedVersesQuestion": "Question encouraging scripture study (8-12 words)",
+  "reflectionQuestion": "Application question (8-12 words)",
+  "prayerQuestion": "Question inviting commitment (6-10 words)"
 }
 
-REQUIREMENT VERIFICATION:
-✓ You MUST include summaryInsights array with 3-4 items
-✓ You MUST include reflectionAnswers array with 3-4 items
-✓ You MUST include interpretationInsights array with 3-4 items
-✓ Do NOT skip any of the 14 required fields above
+CRITICAL: USE EXACT HEADINGS (DO NOT TRANSLATE):
+✓ "${headings.introduction}"
+✓ "${headings.point}"
+✓ "${headings.mainTeaching}"
+✓ "${headings.scriptureFoundation}"
+✓ "${headings.illustration}"
+✓ "${headings.application}"
+✓ "${headings.transition}"
+✓ "${headings.conclusion}"
 
-CRITICAL: SERMON TIMING REQUIREMENTS
-- **Total Duration**: 50-60 minutes
-- **Breakdown**:
-  - Opening/Welcome: 2-3 min
-  - Introduction/Hook: 5 min
-  - Point 1: 12-15 min (with illustration + application)
-  - Point 2: 12-15 min (with illustration + application)
-  - Point 3: 10-12 min (with illustration + application)
-  - Conclusion: 5 min
-  - Altar Call: 4-6 min
-- Mark each section with timing in parentheses: "## Point 1: [Title] (15 min)"
-- Ensure total adds up to 50-60 minutes
+ALTAR CALL HEADINGS:
+✓ "${headings.gospelRecap}"
+✓ "${headings.theInvitation}"
+✓ "${headings.responseOptions}"
+✓ "${headings.closingPrayer}"
 
-CRITICAL: SERMON OUTLINE FORMAT - NOT A SPEECH
-- This is a PREACHER'S OUTLINE with concise notes, NOT a fully-written speech
-- Use BULLET POINTS for key concepts (one sentence each)
-- Keep explanations brief (1-2 sentences max per point)
-- Provide IDEAS and KEY NOTES that preacher can expand during delivery
-- Avoid lengthy paragraphs or fully-written narratives
+FORMAT REQUIREMENTS (DETAILED PREACHER'S OUTLINE):
+✓ OUTLINE format with bullet points for most sections - EXCEPT Main Teaching which is paragraphs
+✓ Main Teaching: 2-3 cohesive PARAGRAPHS (8-12 sentences total) - NOT bullet points
+✓ Scripture Foundation: 3-5 verses PER POINT with DETAILED explanations (3-4 sentences per verse explaining context, meaning, application)
+✓ Illustration: DETAILED outline of illustration (5-7 sentences: setup, key details, connection to point, emotional impact)
+✓ Application: 3-5 specific, practical application points (2-3 sentences each showing HOW to apply)
+✓ Transitions: ONE clear sentence bridging to next section
+✓ REMEMBER: This outline must support 50-60 minutes of preaching - provide SUBSTANTIAL content
 
-CRITICAL: ILLUSTRATION REQUIREMENTS
-- Provide **brief illustration ideas** (2-3 sentences maximum per illustration)
-- One illustration per main point minimum
-- Format: Bullet points with brief description of illustration concept and takeaway
-- Illustrations should be culturally appropriate for ${languageConfig.name} context
-- Suggest engaging ideas without writing full stories
+SERMON FORMAT:
+${inputType === 'scripture' ? `
+EXPOSITORY: Verse-by-verse exposition
+• Break down passage systematically
+• Explain original meaning + modern application
+• Structure around textual flow` : `
+TOPICAL: 3-point sermon
+• Develop 3 main points around theme
+• Support each with multiple scriptures
+• Logical progression of ideas`}
 
-CRITICAL: TRANSITION REQUIREMENTS
-- Provide smooth **transition phrases** between major sections (ONE sentence each)
-- Format: "**Transition:** [Brief bridge statement - 1 sentence]"
-- Keep transitions concise and natural
-- Examples: "This leads us to...", "Building on this truth...", "Now we see..."
+ALTAR CALL REQUIREMENTS:
+✓ "prayerPoints" contains COMPLETE altar call template
+✓ Gospel recap (1-2 sentences)
+✓ Clear invitation with specific response
+✓ Multiple response options
+✓ Closing prayer for respondents
+✓ End with Amen
+✓ ENTIRE altar call in ${languageConfig.name}
 
-CRITICAL: BIBLE REFERENCE INTEGRATION
-- **EVERY sermon point (Point 1, 2, 3) MUST have a "Scripture Foundation" subsection**
-- Include 2-4 specific Bible verses PER POINT that directly support that point's teaching
-- Format: Bullet points with "• [Book Chapter:Verse] - [ONE sentence explaining how this supports the point]"
-- Keep explanations concise (ONE sentence per verse)
-- Do NOT just list verses - briefly explain connection to the point
-- Use verses from different parts of the Bible to show scriptural consistency
-- The "relatedVerses" field should contain ADDITIONAL verses beyond those already used in the sermon points
-- All Bible references must be in ${languageConfig.name} language and script
+${createPrayerFormatBlock(languageConfig, params.language, 'varies')}
 
-CRITICAL: ALTAR CALL / INVITATION FORMAT
-- "prayerPoints" field MUST contain a **COMPLETE ALTAR CALL TEMPLATE**
-- Include:
-  1. Brief gospel recap (1-2 sentences)
-  2. Clear invitation statement with specific response
-  3. Multiple response options (come forward, raise hand, prayer, etc.)
-  4. Closing prayer for those responding
-- Make it evangelistic, clear, and culturally appropriate
-- Address God directly in closing prayer
-- End with "Amen"
-- MUST be output in ${languageConfig.name} language
+VERIFICATION:
+✓ Is "interpretation" an OUTLINE (not full speech)?
+✓ Are headings EXACT matches (not English)?
+✓ Does each Main Teaching section have 2-3 cohesive PARAGRAPHS (8-12 sentences)?
+✓ Does each point have Scripture Foundation subsection with DETAILED verse explanations (3-4 sentences per verse)?
+✓ Does each Illustration have detailed outline (5-7 sentences)?
+✓ Does each Application have 3-5 specific practical points?
+✓ Is there ENOUGH detail to support 50-60 minutes of preaching?
+✓ Does "prayerPoints" contain complete altar call?
+✓ Does timing total 50-60 minutes?
+✓ Are all 14 fields present?
 
-CRITICAL: PRAYER CLOSING LANGUAGE REQUIREMENT
-- For English: End with "In Jesus' name, Amen" or "Amen"
-- For Hindi: End with "येशु मसीह के नाम से, आमेन" (in Devanagari script) - NOT romanized Hinglish
-- For Malayalam: End with "യേശുക്രിസ്തുവിന്റെ നാമത്തിൽ, ആമേൻ" (in Malayalam script) - NOT romanized Manglish
-- DO NOT use romanized text (Hinglish/Manglish) for non-English prayers
-- The ENTIRE altar call including the closing MUST be in native script
+OUTPUT: Valid JSON starting with { and ending with }`
 
-CRITICAL: SERMON FORMAT SELECTION
-- FOR SCRIPTURE INPUT: Use **EXPOSITORY** format (verse-by-verse exposition)
-  - Break down the passage systematically
-  - Explain original meaning + modern application
-  - Structure around textual flow
-- FOR TOPIC/QUESTION INPUT: Use **TOPICAL** format (3-point sermon)
-  - Develop 3 main points around the theme
-  - Support each point with multiple scriptures
-  - Logical progression of ideas
-
-CRITICAL: VERSE REFERENCES MUST BE IN ${languageConfig.name}
-${verseReferenceExamples}
-
-CRITICAL: USE THESE EXACT HEADINGS IN YOUR OUTPUT (DO NOT USE ENGLISH HEADINGS):
-- Section headings: "${headings.openingPrayer}", "${headings.introduction}", "${headings.point}", "${headings.conclusion}"
-- Subsection headings: "${headings.mainTeaching}", "${headings.scriptureFoundation}", "${headings.illustration}", "${headings.application}", "${headings.transition}"
-- Altar call headings: "${headings.gospelRecap}", "${headings.theInvitation}", "${headings.responseOptions}", "${headings.closingPrayer}"`
+  return { systemMessage, userMessage }
 }
 
 /**
- * Build task description and input-specific guidance
+ * Main prompt router - dispatches to appropriate mode
  */
-function buildTaskDescription(params: LLMGenerationParams, sermonFormat: string): { taskDescription: string; inputSpecificGuidance: string } {
-  const { inputType, inputValue, topicDescription } = params
+export function createStudyGuidePrompt(params: LLMGenerationParams, languageConfig: LanguageConfig): PromptPair {
+  const studyMode = params.studyMode || 'standard'
 
-  if (inputType === 'scripture') {
-    return {
-      taskDescription: `Create a ${sermonFormat} SERMON OUTLINE for: "${inputValue}"`,
-      inputSpecificGuidance: `
-SCRIPTURE FOCUS (Expository Sermon):
-- Provide verse-by-verse exposition of the passage
-- Break down the scripture systematically
-- Explain original meaning and modern application
-- Structure: Introduction → Verse-by-Verse Exposition → Life Application → Altar Call`
-    }
-  }
-
-  if (inputType === 'topic') {
-    return {
-      taskDescription: topicDescription
-        ? `Create a ${sermonFormat} SERMON OUTLINE on: "${inputValue}"\n\nContext: ${topicDescription}`
-        : `Create a ${sermonFormat} SERMON OUTLINE on: "${inputValue}"`,
-      inputSpecificGuidance: `
-TOPIC FOCUS (Topical Sermon):
-- Develop 3 main points around the topic
-- Support each point with multiple scriptures
-- Provide illustrations for each point
-- Structure: Introduction → 3 Main Points (with sub-points) → Conclusion → Altar Call`
-    }
-  }
-
-  return {
-    taskDescription: `Create a SERMON OUTLINE addressing: "${inputValue}"`,
-    inputSpecificGuidance: `
-QUESTION FOCUS (Topical Sermon):
-- Answer the question through biblical teaching
-- Develop practical applications
-- Provide scriptural support
-- Structure: Introduction → Answer Development → Application → Altar Call`
+  switch (studyMode) {
+    case 'quick':
+      return createQuickReadPrompt(params, languageConfig)
+    case 'deep':
+      return createDeepDivePrompt(params, languageConfig)
+    case 'lectio':
+      return createLectioDivinaPrompt(params, languageConfig)
+    case 'sermon':
+      return createSermonOutlinePrompt(params, languageConfig)
+    case 'standard':
+    default:
+      return createStandardModePrompt(params, languageConfig)
   }
 }
 
+// ============================================================================
+// DAILY VERSE GENERATION FUNCTIONS
+// ============================================================================
+
 /**
- * Build sermon system message
+ * Creates prompt for generating a daily verse reference only.
+ * Used by daily verse notification system.
  */
-function buildSermonSystemMessage(languageConfig: LanguageConfig): string {
-  return `You are an experienced preacher creating comprehensive sermon outlines for pastors and teachers. Your responses must be valid JSON only.
+export function createVerseReferencePrompt(
+  excludeReferences: string[],
+  language: string
+): PromptPair {
+  const excludeList = excludeReferences.length > 0
+    ? `\n\nEXCLUDE these recently used references:\n${excludeReferences.map(ref => `- ${ref}`).join('\n')}`
+    : ''
 
-STUDY MODE: SERMON OUTLINE (50-60 minutes)
-Provide a complete, preachable sermon outline with timing, illustrations, and altar call.
+  const languageInstructions = language === 'hi'
+    ? 'Hindi translations MUST use Devanagari script (e.g., "यूहन्ना 3:16" NOT "Yuhanna 3:16")'
+    : language === 'ml'
+    ? 'Malayalam translations MUST use Malayalam script (e.g., "യോഹന്നാൻ 3:16" NOT "Yohannan 3:16")'
+    : 'English translations should use standard book names'
 
-THEOLOGICAL APPROACH:
-- Protestant theological alignment
-- Expository and/or topical preaching methods
-- Clear gospel presentation
-- Practical application for congregational transformation
-- Emphasis on biblical authority and Christ-centered message
+  const systemMessage = `
+${THEOLOGICAL_FOUNDATION}
+
+${JSON_OUTPUT_RULES}
+
+═══════════════════════════════════════════════════════════════════════════
+DAILY VERSE REFERENCE SELECTION - SPECIFIC REQUIREMENTS
+═══════════════════════════════════════════════════════════════════════════
+
+TASK: Select ONE meaningful, encouraging Bible verse reference for daily inspiration.
+
+SELECTION CRITERIA:
+✓ Choose verses that are encouraging, uplifting, or practically applicable to daily life
+✓ Prefer well-known verses that resonate across denominations
+✓ Avoid overly complex theological passages or obscure references
+✓ Ensure the verse can stand alone without extensive context
+✓ Do NOT repeat any of the excluded references provided${excludeList}
 
 LANGUAGE REQUIREMENTS:
-- ${languageConfig.promptModifiers.languageInstruction}
-- ${languageConfig.promptModifiers.complexityInstruction}
-- Cultural Context: ${languageConfig.culturalContext}
-- Use clear, engaging preaching language suitable for oral delivery
+${languageInstructions}
+${getVerseReferenceExamples(language)}
 
-JSON OUTPUT REQUIREMENTS:
-- Output ONLY valid JSON - no extra text
-- Use proper JSON string escaping
-- Provide comprehensive sermon content
-
-TONE: Pastoral, authoritative, engaging, evangelistic, practical for preaching.`
-}
-
-/**
- * Build sermon user message
- */
-function buildSermonUserMessage(
-  taskDescription: string,
-  inputSpecificGuidance: string,
-  languageConfig: LanguageConfig,
-  verseReferenceExamples: string,
-  headings: SermonHeadings,
-  sermonOutlineTemplate: string,
-  altarCallTemplate: string,
-  languageExamples: string
-): string {
-  const fieldRequirements = buildSermonFieldRequirements(languageConfig, verseReferenceExamples, headings, sermonOutlineTemplate, altarCallTemplate)
-  const examplePoint = buildExampleSermonPoint(headings, languageConfig)
-
-  return `TASK: ${taskDescription}
-${inputSpecificGuidance}
-
-${fieldRequirements}
-
-EXAMPLE SERMON POINT STRUCTURE (showing correct ${languageConfig.name} headings - COPY THESE EXACTLY):
-
-${examplePoint}
-
-CRITICAL JSON FORMATTING RULES:
-- Output ONLY valid JSON - no markdown, no extra text
-- Use proper JSON string escaping (\\n for newlines)
-- No trailing commas
-
-${languageExamples}
-
-Output format: Start with { and end with } - nothing else.`
-}
-
-/**
- * Create sermon outline prompt with all required components
- */
-function createSermonOutlinePrompt(params: LLMGenerationParams, languageConfig: LanguageConfig): PromptPair {
-  const languageExamples = getLanguageExamples(params.language)
-  const verseReferenceExamples = getVerseReferenceExamples(params.language)
-  const headings = getSermonHeadings(params.language)
-  const sermonFormat = params.inputType === 'scripture' ? 'EXPOSITORY' : 'TOPICAL'
-
-  const { taskDescription, inputSpecificGuidance } = buildTaskDescription(params, sermonFormat)
-  const sermonOutlineTemplate = buildSermonOutlineTemplate(headings)
-  const altarCallTemplate = buildAltarCallTemplate(headings)
-  const systemMessage = buildSermonSystemMessage(languageConfig)
-  const userMessage = buildSermonUserMessage(
-    taskDescription,
-    inputSpecificGuidance,
-    languageConfig,
-    verseReferenceExamples,
-    headings,
-    sermonOutlineTemplate,
-    altarCallTemplate,
-    languageExamples
-  )
-
-  return { systemMessage, userMessage }
-}
-
-/**
- * Creates a simplified prompt for generating only a Bible verse reference.
- * 
- * @param excludeReferences - List of recently used references to avoid
- * @param language - Target language for cultural context
- * @returns Prompt pair for reference generation
- */
-export function createVerseReferencePrompt(excludeReferences: string[], language: string): PromptPair {
-  const excludeList = excludeReferences.length > 0
-    ? ` Avoid these recently used verses: ${excludeReferences.join(', ')}.`
-    : ''
-
-  const languageConfig = getLanguageConfigOrDefault(language)
-
-  const systemMessage = `You are a biblical scholar selecting inspiring Bible verses for daily spiritual encouragement.
-
-Your task is to select ONE meaningful Bible verse reference. The actual verse text will be fetched from an authentic Bible API.
-
-OUTPUT REQUIREMENTS:
-- Return ONLY valid JSON with the exact structure specified
-- No markdown formatting, no code blocks, no extra text
-- Use proper JSON string escaping
-
-LANGUAGE CONTEXT: ${languageConfig.culturalContext}`
-
-  const userMessage = `Select one meaningful Bible verse reference for daily spiritual encouragement.${excludeList}
-
-VERSE SELECTION CRITERIA:
-- Choose verses that offer comfort, strength, hope, faith, peace, or guidance
-- Focus on well-known, doctrinally sound verses
-- Prefer single verses (not multi-verse passages) for clarity
-- Ensure the verse is self-contained and understandable alone
-
-VERSE THEME SUGGESTIONS (optional examples for inspiration - you may choose any appropriate verse):
-- **God's Love & Grace**: John 3:16, Romans 8:38-39, Ephesians 2:8-9, 1 John 4:19
-- **Strength & Courage**: Philippians 4:13, Joshua 1:9, Isaiah 41:10, 2 Timothy 1:7
-- **Peace & Comfort**: Psalm 23:1, Matthew 11:28, John 14:27, Philippians 4:6-7
-- **Hope & Faith**: Jeremiah 29:11, Hebrews 11:1, Romans 15:13, Proverbs 3:5-6
-- **Guidance & Wisdom**: Psalm 119:105, Proverbs 3:5-6, James 1:5, Psalm 32:8
-- **Provision & Protection**: Philippians 4:19, Psalm 91:1-2, Matthew 6:33, Psalm 46:1
-- **Or any other doctrinally sound, encouraging verse from Scripture**
-
-Return in this EXACT JSON format (no other text, no markdown):
+OUTPUT FORMAT (strict JSON):
 {
-  "reference": "Book Chapter:Verse (in English, e.g., John 3:16)",
+  "reference": "English reference (e.g., John 3:16)",
   "referenceTranslations": {
-    "en": "English book name with reference (e.g., John 3:16)",
-    "hi": "Hindi book name in Devanagari (e.g., यूहन्ना 3:16)",
-    "ml": "Malayalam book name in Malayalam script (e.g., യോഹന്നാൻ 3:16)"
+    "en": "English format",
+    "hi": "हिंदी प्रारूप (Devanagari only)",
+    "ml": "മലയാളം ഫോർമാറ്റ് (Malayalam script only)"
   }
-}`
+}
+
+VALIDATION CHECKLIST:
+✓ Is the JSON properly formatted (no markdown blocks)?
+✓ Are all three language translations provided?
+✓ Are Hindi and Malayalam in native scripts (NOT romanized)?
+✓ Is the verse reference valid and complete?
+✓ Does the verse avoid recently used references?
+`.trim()
+
+  const userMessage = 'Select an encouraging Bible verse reference for today\'s daily inspiration. Output only valid JSON.'
 
   return { systemMessage, userMessage }
 }
 
 /**
- * Creates a full prompt for daily verse generation with translations.
- * Used as fallback when Bible API is unavailable.
- * 
- * @param excludeReferences - Verses to avoid
- * @param language - Target language for cultural context
- * @returns Prompt pair for full verse generation
+ * Creates prompt for generating a complete daily verse with full text.
+ * Used as fallback when Bible API fails.
  */
-export function createFullVersePrompt(excludeReferences: string[], language: string): PromptPair {
+export function createFullVersePrompt(
+  excludeReferences: string[],
+  language: string
+): PromptPair {
   const excludeList = excludeReferences.length > 0
-    ? ` Avoid these recently used verses: ${excludeReferences.join(', ')}.`
+    ? `\n\nEXCLUDE these recently used references:\n${excludeReferences.map(ref => `- ${ref}`).join('\n')}`
     : ''
 
-  const languageConfig = getLanguageConfigOrDefault(language)
+  const languageInstructions = language === 'hi'
+    ? `
+Hindi Requirements:
+✓ Reference: "यूहन्ना 3:16" (Devanagari script)
+✓ Verse text: Must be in Devanagari script
+✗ NO romanized Hinglish (e.g., "Yeshu" → use "येशु")
+`
+    : language === 'ml'
+    ? `
+Malayalam Requirements:
+✓ Reference: "യോഹന്നാൻ 3:16" (Malayalam script)
+✓ Verse text: Must be in Malayalam script
+✗ NO romanized Manglish (e.g., "Yeshu" → use "യേശു")
+`
+    : `
+English Requirements:
+✓ Use clear, accessible English
+✓ Standard Bible translations (NIV, ESV style)
+`
 
-  const systemMessage = `You are an expert biblical translator and theologian with deep knowledge of:
-- English Standard Version (ESV) Bible translation principles
-- Hindi biblical translation conventions (formal equivalence tradition)
-- Malayalam biblical translation conventions (formal equivalence tradition)
-- Original Greek (New Testament) and Hebrew (Old Testament) Scripture
-- Christian theological terminology across all three languages
+  const systemMessage = `
+${THEOLOGICAL_FOUNDATION}
 
-Your task is to select ONE inspiring Bible verse and provide HIGHLY ACCURATE translations that match the style and terminology of established Bible translations.
+${JSON_OUTPUT_RULES}
 
-CRITICAL TRANSLATION PRINCIPLES:
-1. **Formal Equivalence**: Translate word-for-word while maintaining natural grammar
-2. **Theological Precision**: Use correct theological terms (e.g., "grace" = अनुग्रह/കൃപ, "salvation" = उद्धार/രക്ഷ)
-3. **Consistency**: Use standard biblical terminology, not modern paraphrases
-4. **Reverent Language**: Maintain formal, reverent tone in all languages
-5. **Scripture Integrity**: Preserve the exact meaning and structure of the original text
+═══════════════════════════════════════════════════════════════════════════
+DAILY VERSE GENERATION - COMPLETE TEXT
+═══════════════════════════════════════════════════════════════════════════
 
-OUTPUT REQUIREMENTS:
-- Return ONLY valid JSON with the exact structure specified
-- No markdown formatting, no code blocks, no extra text
-- Use proper JSON string escaping for any quotes within verse text
-- ALL translations must be theologically accurate and match established Bible translation styles
+TASK: Generate ONE complete Bible verse with reference and full text in all three languages.
 
-LANGUAGE CONTEXT: ${languageConfig.culturalContext}
-COMPLEXITY: ${languageConfig.promptModifiers.complexityInstruction}`
+SELECTION CRITERIA:
+✓ Choose verses that are encouraging, uplifting, or practically applicable
+✓ Prefer well-known verses (John 3:16, Philippians 4:13, Romans 8:28, Proverbs 3:5-6, etc.)
+✓ Ensure verse is meaningful when read alone without additional context
+✓ Do NOT repeat any of the excluded references provided${excludeList}
 
-  const userMessage = `Select one meaningful Bible verse for daily spiritual encouragement.${excludeList}
+TRANSLATION ACCURACY:
+✓ English: Use standard Bible translation style (NIV/ESV equivalent)
+✓ Hindi: Accurate Devanagari translation from standard Hindi Bibles
+✓ Malayalam: Accurate Malayalam script translation from standard Malayalam Bibles
+✓ Maintain theological accuracy across all languages
 
-VERSE SELECTION CRITERIA:
-- Choose verses that offer comfort, strength, hope, faith, peace, or guidance
-- Focus on well-known, doctrinally sound verses
-- Prefer single verses (not multi-verse passages) for clarity
-- Ensure the verse is self-contained and understandable alone
+LANGUAGE REQUIREMENTS:
+${languageInstructions}
+${getVerseReferenceExamples(language)}
 
-TRANSLATION QUALITY REQUIREMENTS:
-
-**English (ESV Style)**:
-- Use formal English with "his/him" pronouns for God
-- Follow ESV translation conventions (formal equivalence)
-- Avoid modern paraphrases or casual language
-
-**Hindi (हिन्दी - Formal Bible Translation Style)**:
-- Use traditional biblical Hindi with Devanagari script
-- Follow formal equivalence translation principles
-- Use established theological terms: परमेश्वर (God), प्रभु (Lord), यीशु मसीह (Jesus Christ)
-
-**Malayalam (മലയാളം - Formal Bible Translation Style)**:
-- Use traditional biblical Malayalam script
-- Follow formal equivalence translation principles
-- Use established theological terms: ദൈവം (God), കർത്താവ് (Lord), യേശുക്രിസ്തു (Jesus Christ)
-
-Return in this EXACT JSON format (no other text, no markdown):
+OUTPUT FORMAT (strict JSON):
 {
-  "reference": "Book Chapter:Verse (in English, e.g., John 3:16)",
+  "reference": "English reference (e.g., John 3:16)",
   "referenceTranslations": {
-    "en": "English book name with reference (e.g., John 3:16)",
-    "hi": "Hindi book name in Devanagari (e.g., यूहन्ना 3:16)",
-    "ml": "Malayalam book name in Malayalam script (e.g., യോഹന്നാൻ 3:16)"
+    "en": "English format (John 3:16)",
+    "hi": "हिंदी प्रारूप (यूहन्ना 3:16)",
+    "ml": "മലയാളം ഫോർമാറ്റ് (യോഹന്നാൻ 3:16)"
   },
   "translations": {
-    "esv": "English verse text in ESV formal style",
-    "hindi": "Hindi translation in Devanagari - formal biblical style",
-    "malayalam": "Malayalam translation in Malayalam script - formal biblical style"
+    "en": "For God so loved the world that he gave his one and only Son...",
+    "hi": "क्योंकि परमेश्वर ने जगत से ऐसा प्रेम रखा कि उसने अपना एकलौता पुत्र दे दिया...",
+    "ml": "ദൈവം ലോകത്തെ ഇത്രമേൽ സ്നേഹിച്ചു, താൻ തന്റെ ഏകജാതനായ പുത്രനെ നൽകുവാൻ..."
   }
-}`
+}
+
+VALIDATION CHECKLIST:
+✓ Is the JSON properly formatted (no markdown blocks)?
+✓ Are reference translations in native scripts?
+✓ Are verse translations in native scripts?
+✓ Is the verse text accurate and meaningful?
+✓ Does it avoid recently used references?
+`.trim()
+
+  const userMessage = 'Generate a complete daily Bible verse with full text in all three languages. Output only valid JSON.'
 
   return { systemMessage, userMessage }
 }
 
-/**
- * Estimates content complexity to adjust token requirements.
- * 
- * @param inputValue - Input text to analyze
- * @param inputType - Type of input (scripture or topic)
- * @returns Token adjustment factor
- */
+// ============================================================================
+// HELPER FUNCTIONS (Preserved from original)
+// ============================================================================
+
 export function estimateContentComplexity(inputValue: string, inputType: string): number {
   const inputLength = inputValue.length
-  
+
   if (inputType === 'scripture') {
     return inputLength < 20 ? 0 : 500
   } else {
@@ -1399,11 +893,11 @@ export function estimateContentComplexity(inputValue: string, inputType: string)
       'theology', 'doctrine', 'hermeneutics', 'exegesis',
       'eschatology', 'soteriology', 'pneumatology'
     ]
-    
-    const hasComplexTerms = complexityIndicators.some(term => 
+
+    const hasComplexTerms = complexityIndicators.some(term =>
       inputValue.toLowerCase().includes(term)
     )
-    
+
     if (hasComplexTerms || inputLength > 100) {
       return 1000
     } else if (inputLength > 50) {
@@ -1414,40 +908,23 @@ export function estimateContentComplexity(inputValue: string, inputType: string)
   }
 }
 
-/**
- * Calculates optimal token count based on input complexity and language.
- * 
- * @param params - Generation parameters
- * @param languageConfig - Language-specific configuration
- * @returns Optimal token count
- */
 export function calculateOptimalTokens(params: LLMGenerationParams, languageConfig: LanguageConfig): number {
   const baseTokens = languageConfig.maxTokens
   const complexityFactor = estimateContentComplexity(params.inputValue, params.inputType)
-  // Universal content length bonus for all languages to ensure comprehensive output
   const contentQualityBonus = 1000
 
   return Math.min(baseTokens + complexityFactor + contentQualityBonus, 8000)
 }
 
 /**
- * Verse reference examples for each supported language.
- * Used to guide LLM on correct book name formatting.
- */
-const verseReferenceExamplesMap: Record<SupportedLanguage, string> = {
-  en: `- Example format: "John 3:16", "Romans 8:28", "Philippians 4:13", "Jeremiah 29:11"`,
-  hi: `- उदाहरण प्रारूप: "यूहन्ना 3:16", "रोमियों 8:28", "फिलिप्पियों 4:13", "यिर्मयाह 29:11"
-- पुस्तक नाम हिंदी में होने चाहिए (English में नहीं)`,
-  ml: `- ഉദാഹരണ ഫോർമാറ്റ്: "യോഹന്നാൻ 3:16", "റോമർ 8:28", "ഫിലിപ്പിയർ 4:13", "യിരെമ്യാവ് 29:11"
-- പുസ്തക നാമങ്ങൾ മലയാളത്തിൽ ആയിരിക്കണം (English അല്ല)`
-}
-
-/**
- * Gets language-specific verse reference examples.
- * 
- * @param language - Language code
- * @returns Verse reference examples string
+ * Verse reference examples for each language
  */
 export function getVerseReferenceExamples(language: string): string {
-  return verseReferenceExamplesMap[language as SupportedLanguage] || verseReferenceExamplesMap.en
+  const examples: Record<SupportedLanguage, string> = {
+    en: '- Example format: "John 3:16", "Romans 8:28", "Philippians 4:13"',
+    hi: '- उदाहरण प्रारूप: "यूहन्ना 3:16", "रोमियों 8:28", "फिलिप्पियों 4:13"\\n- पुस्तक नाम हिंदी में होने चाहिए',
+    ml: '- ഉദാഹരണ ഫോർമാറ്റ്: "യോഹന്നാൻ 3:16", "റോമർ 8:28", "ഫിലിപ്പിയർ 4:13"\\n- പുസ്തക നാമങ്ങൾ മലയാളത്തിൽ'
+  }
+
+  return examples[language as SupportedLanguage] || examples.en
 }
