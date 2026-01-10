@@ -115,7 +115,7 @@ TOPIC-SPECIFIC REQUIREMENTS:
   // Language-specific content length requirements
   const contentLengthGuidance = `\n\nCRITICAL CONTENT LENGTH REQUIREMENTS FOR ${languageConfig.name.toUpperCase()}:
 - "summary": MINIMUM 4-5 sentences - Provide comprehensive overview with clear thesis
-- "interpretation": 4-5 theological sections with meaningful headings. Each section has 5-6 sentences  with theological depth.
+- "interpretation": 4-5 paragraphs with theological depth. Each paragraph should be 5-6 sentences flowing naturally.
 - "context": MINIMUM 2-3 paragraphs - Each paragraph should be 3-5 sentences covering historical, cultural, and literary context
 - "reflectionQuestions": MINIMUM 5-6 questions - Include varied question types (application, reflection, doctrinal)
 - "prayerPoints": MINIMUM 6-8 sentences - Create a complete, substantial first-person prayer
@@ -130,7 +130,7 @@ CRITICAL: ALL 14 FIELDS BELOW ARE MANDATORY - DO NOT SKIP ANY FIELD${contentLeng
 REQUIRED JSON OUTPUT FORMAT (include ALL fields, no exceptions):
 {
   "summary": "Comprehensive overview (MINIMUM 4-5 sentences) capturing the main message with clear thesis${inputType === 'question' ? ' and answering the question' : ''}",
-  "interpretation": "Theological interpretation with 4-5 sections. Each section has a meaningful theological heading and 5-6 bullet points:\\n\\n**[Meaningful Theological Heading 1]**\\n• First key insight or teaching point\\n• Second key insight with biblical support\\n• Third theological point\\n• Fourth point with practical connection\\n• Fifth point with deeper explanation\\n• Sixth point tying section together\\n\\n**[Meaningful Theological Heading 2]**\\n• First key insight\\n• Second insight\\n• Third insight\\n• Fourth insight\\n• Fifth insight\\n• Sixth insight\\n\\n[Continue for 4-5 total sections]\\n\\nUse bullet points (•) for all sentences to enhance readability. Headings should be descriptive (e.g., 'Understanding God's Grace', 'Biblical Examples of Faith', 'Application in Daily Life')${inputType === 'question' ? ' with direct answer to the question' : ''}",
+  "interpretation": "Theological interpretation with 4-5 rich paragraphs (MINIMUM 5-6 sentences each). Each paragraph should flow naturally and explore different theological aspects with depth and biblical support. Write in continuous prose format without headings or bullet points. Ensure comprehensive biblical teaching covering theological truths, scriptural context, and practical implications${inputType === 'question' ? ' with direct answer to the question' : ''}",
   "context": "Historical and cultural background (MINIMUM 2-3 paragraphs, each 3-5 sentences) providing comprehensive understanding",
   "relatedVerses": ["MINIMUM 4-6 relevant Bible verses with references in ${languageConfig.name}"],
   "reflectionQuestions": ["MINIMUM 5-6 practical application questions covering different aspects of life"],
@@ -490,12 +490,12 @@ CRITICAL: ALL 14 FIELDS BELOW ARE MANDATORY - DO NOT SKIP ANY FIELD
 
 DEEP DIVE FORMAT - REQUIRED JSON OUTPUT (include ALL fields, no exceptions):
 {
-  "summary": "Comprehensive overview (4-5 sentences) with key themes and scholarly insights",
-  "interpretation": "In-depth theological interpretation (6-8 paragraphs) including:\\n\\n**Word Studies:**\\n- Include 2-3 Greek/Hebrew words with transliterations and meanings\\n- Explain theological significance of key terms\\n\\n**Doctrinal Implications:**\\n- Explore theological depth and application",
-  "context": "Extended historical, cultural, and literary context (3-4 paragraphs) including:\\n\\n**Cross-References:**\\n- Include 5-8 related passages with brief explanations of connections\\n- Show how other Scriptures illuminate this passage",
-  "relatedVerses": ["5-8 relevant Bible verses with references in ${languageConfig.name} - include a brief note on each connection"],
+  "summary": "Comprehensive overview (4-5 FULL sentences) with key themes and scholarly insights",
+  "interpretation": "EXTENSIVE theological interpretation (MINIMUM 1500-2000 words total) structured as follows:\\n\\n**Theological Exposition (6-8 substantial paragraphs):**\\n- Paragraph 1: Introduce the passage's main theological themes (5-7 sentences)\\n- Paragraph 2: Develop first major theological concept with biblical support (5-7 sentences)\\n- Paragraph 3: Develop second major theological concept (5-7 sentences)\\n- Paragraph 4: Develop third major theological concept (5-7 sentences)\\n- Paragraph 5: Connect themes to broader biblical theology (5-7 sentences)\\n- Paragraph 6: Address theological tensions or questions (5-7 sentences)\\n- Paragraphs 7-8: Synthesize and apply theological insights (5-7 sentences each)\\n\\n**Word Studies (2-3 key words):**\\n- For EACH word provide: Original language (Greek/Hebrew with transliteration), root meaning, usage in other biblical passages, theological significance (3-4 sentences per word)\\n\\n**Doctrinal Implications (3-4 rich paragraphs):**\\n- Paragraph 1: Systematic theology connections (how this passage relates to core Christian doctrines - 5-6 sentences)\\n- Paragraph 2: Church history perspective (how this has been understood historically - 5-6 sentences)\\n- Paragraph 3: Contemporary application (how these doctrines apply today - 5-6 sentences)\\n- Paragraph 4: Practical theological implications for Christian living (5-6 sentences)",
+  "context": "DETAILED historical, cultural, and literary context (MINIMUM 800-1000 words total):\\n\\n**Historical Context (2-3 paragraphs):**\\n- Paragraph 1: Historical setting and background (5-6 sentences)\\n- Paragraph 2: Cultural customs and practices relevant to the passage (5-6 sentences)\\n- Paragraph 3: Political and social dynamics of the time (5-6 sentences)\\n\\n**Literary Context (2 paragraphs):**\\n- Paragraph 1: How this passage fits within the book's structure and flow (5-6 sentences)\\n- Paragraph 2: Literary genre, techniques, and authorial intent (5-6 sentences)\\n\\n**Cross-References (5-8 passages with detailed explanations):**\\n- For EACH cross-reference: Cite the passage, quote key portion, explain connection to main passage (2-3 sentences per reference)\\n- Show thematic, theological, or narrative connections\\n- Demonstrate how other Scriptures illuminate this passage",
+  "relatedVerses": ["5-8 relevant Bible verses with full references in ${languageConfig.name} - include 2-3 sentences explaining each connection"],
   "reflectionQuestions": ["6-8 deep, thought-provoking questions including one journaling prompt at the end"],
-  "prayerPoints": ["A comprehensive, first-person prayer (7-9 sentences) addressing God directly, incorporating the key theological themes from the study. Start with addressing God and end with 'In Jesus' name, Amen'"],
+  "prayerPoints": ["A comprehensive, first-person prayer (7-9 FULL sentences minimum) addressing God directly, incorporating the key theological themes from the study. Start with addressing God and end with 'In Jesus' name, Amen'"],
   "interpretationInsights": ["MANDATORY: 4-5 profound insights from word studies and doctrinal implications (12-18 words)"],
   "summaryInsights": ["MANDATORY: 4-5 profound resonance themes (12-18 words)"],
   "reflectionAnswers": ["MANDATORY: 4-5 transformative life application responses (12-18 words each)"],
@@ -511,12 +511,19 @@ REQUIREMENT VERIFICATION:
 ✓ You MUST include reflectionAnswers array with 4-5 items
 ✓ Do NOT skip any of the 14 required fields above
 
-CRITICAL CONTENT REQUIREMENTS FOR DEEP DIVE:
-- "interpretation" MUST include word study section with Greek/Hebrew terms
-- "context" MUST include cross-reference connections
-- Each section should be substantially longer than standard study
-- Include scholarly insights while remaining accessible
+CRITICAL CONTENT REQUIREMENTS FOR DEEP DIVE (25-MINUTE STUDY):
+- "interpretation" MUST be 1500-2000 words minimum with:
+  * 6-8 FULL paragraphs of theological exposition (5-7 sentences each)
+  * 2-3 detailed word studies (3-4 sentences per word, including transliteration, root meaning, biblical usage, theological significance)
+  * 3-4 FULL paragraphs of doctrinal implications (5-6 sentences each covering systematic theology, church history, contemporary application)
+- "context" MUST be 800-1000 words minimum with:
+  * 2-3 FULL paragraphs on historical context (5-6 sentences each)
+  * 2 FULL paragraphs on literary context (5-6 sentences each)
+  * 5-8 cross-references with detailed explanations (2-3 sentences per reference)
+- This is a DEEP DIVE study - content must be SUBSTANTIALLY longer and MORE DETAILED than standard study
+- Include scholarly depth (word studies, church history, systematic theology) while remaining accessible
 - Last item in "reflectionQuestions" should be a journaling prompt
+- DO NOT generate short, superficial content - users expect 25 minutes of in-depth study material
 
 CRITICAL: PRAYER FORMAT (Deep Dive)
 - "prayerPoints" MUST contain a comprehensive, first-person prayer (7-9 sentences)
@@ -560,6 +567,15 @@ Generate 4-5 transformative life application responses from the study:
 
 CRITICAL: ALL VERSE REFERENCES MUST BE IN ${languageConfig.name}
 ${verseReferenceExamples}
+
+FINAL VERIFICATION BEFORE GENERATING:
+✓ Is "interpretation" section 1500-2000 words with 6-8 full paragraphs + word studies + doctrinal implications?
+✓ Is "context" section 800-1000 words with 2-3 historical + 2 literary paragraphs + detailed cross-references?
+✓ Are ALL paragraphs 5-7 sentences each (not 1-2 sentences)?
+✓ Are word studies detailed with transliteration, meaning, biblical usage, theological significance?
+✓ Are doctrinal implications covering systematic theology, church history, and contemporary application?
+✓ Would this study realistically take 25 minutes to read and reflect upon?
+✓ If ANY answer is "NO" - go back and expand that section substantially
 
 CRITICAL JSON FORMATTING RULES:
 - Output ONLY valid JSON - no markdown, no extra text
@@ -820,69 +836,91 @@ function getSermonHeadings(language: string): SermonHeadings {
  * Build sermon outline template with localized headings
  */
 function buildSermonOutlineTemplate(headings: SermonHeadings): string {
-  return `**COMPLETE SERMON OUTLINE** with timing, structure, and integrated Bible references:
+  return `**SERMON OUTLINE FORMAT** - Concise notes with key points (NOT full speech):
 
 ## ${headings.openingPrayer} (2-3 min)
-Brief welcome and opening prayer to prepare hearts
+• Welcome and brief opening prayer
 
 ## ${headings.introduction} (5 min)
-[Compelling story, current event, or question that connects to the topic]
-**${headings.transition}:** [Natural bridge connecting introduction to Point 1]
+• Hook: [Attention-grabbing question, story, or current event - 1 sentence]
+• Bridge: [How this connects to the topic - 1 sentence]
+**${headings.transition}:** [Brief bridge to Point 1]
 
 ## ${headings.point} 1: [Clear, Memorable Title] (15 min)
 
 **${headings.mainTeaching}:**
-[2-3 paragraphs explaining this point with theological depth]
+• [Key theological concept #1 - one sentence]
+• [Key theological concept #2 - one sentence]
+• [Key theological concept #3 - one sentence]
+• [Supporting explanation - brief note, 1-2 sentences]
 
 **${headings.scriptureFoundation}:**
-- [Bible Reference 1] - [Brief explanation of how this verse supports the point]
-- [Bible Reference 2] - [Brief explanation]
-- [Additional references as needed]
+• [Bible Reference 1] - [How it supports this point - 1 sentence]
+• [Bible Reference 2] - [How it supports this point - 1 sentence]
+• [Bible Reference 3 if needed]
 
 **${headings.illustration}:**
-[Detailed story, analogy, or real-life example that makes this point memorable and relatable - 1-2 paragraphs]
+• [Brief illustration idea/example - 2-3 sentences max]
+• [Key takeaway from illustration - 1 sentence]
 
 **${headings.application}:**
-[Specific, practical ways listeners can apply this truth this week - 2-3 concrete action steps]
+• [Practical action step #1]
+• [Practical action step #2]
+• [Practical action step #3]
 
-**${headings.transition}:** [Smooth connection to Point 2]
+**${headings.transition}:** [Bridge to Point 2 - 1 sentence]
 
 ## ${headings.point} 2: [Clear, Memorable Title] (15 min)
 
 **${headings.mainTeaching}:**
-[2-3 paragraphs explaining this point]
+• [Key concept #1 - one sentence]
+• [Key concept #2 - one sentence]
+• [Key concept #3 - one sentence]
+• [Supporting note - 1-2 sentences]
 
 **${headings.scriptureFoundation}:**
-- [Bible Reference 1] - [Explanation]
-- [Bible Reference 2] - [Explanation]
-- [Additional references as needed]
+• [Bible Reference 1] - [Support explanation - 1 sentence]
+• [Bible Reference 2] - [Support explanation - 1 sentence]
+• [Bible Reference 3 if needed]
 
 **${headings.illustration}:**
-[Another detailed story/analogy that reinforces this point]
+• [Illustration idea - 2-3 sentences max]
+• [Takeaway - 1 sentence]
 
 **${headings.application}:**
-[Practical steps for applying this truth]
+• [Action step #1]
+• [Action step #2]
+• [Action step #3]
 
-**${headings.transition}:** [Bridge to Point 3]
+**${headings.transition}:** [Bridge to Point 3 - 1 sentence]
 
 ## ${headings.point} 3: [Clear, Memorable Title] (12 min)
 
 **${headings.mainTeaching}:**
-[2-3 paragraphs explaining the final point]
+• [Key concept #1 - one sentence]
+• [Key concept #2 - one sentence]
+• [Key concept #3 - one sentence]
+• [Supporting note - 1-2 sentences]
 
 **${headings.scriptureFoundation}:**
-- [Bible Reference 1] - [Explanation]
-- [Bible Reference 2] - [Explanation]
-- [Additional references as needed]
+• [Bible Reference 1] - [Support explanation - 1 sentence]
+• [Bible Reference 2] - [Support explanation - 1 sentence]
+• [Bible Reference 3 if needed]
 
 **${headings.illustration}:**
-[Final impactful story/example]
+• [Illustration idea - 2-3 sentences max]
+• [Takeaway - 1 sentence]
 
 **${headings.application}:**
-[Practical steps that build on previous points]
+• [Action step #1]
+• [Action step #2]
+• [Action step #3]
 
 ## ${headings.conclusion} (5 min)
-[Powerful summary connecting all three points, reinforcing the sermon thesis, and preparing hearts for the altar call]`
+• [Summary of Point 1 - 1 sentence]
+• [Summary of Point 2 - 1 sentence]
+• [Summary of Point 3 - 1 sentence]
+• [Final challenge/encouragement - 1-2 sentences]`
 }
 
 /**
@@ -916,20 +954,25 @@ function buildExampleSermonPoint(headings: SermonHeadings, languageConfig: Langu
   return `## ${headings.point} 1: God's Love Is Active, Not Passive (15 min)
 
 **${headings.mainTeaching}:**
-Love is not merely a feeling we experience, but an active choice we make every day. The Greek word "agape" in the New Testament describes a self-sacrificial, unconditional love that seeks the best for others regardless of their response. This kind of love requires intentionality, effort, and a willingness to put others' needs before our own. When we understand that God first loved us in this active, sacrificial way, we are empowered to love others with the same quality of love.
+• Love is an active choice, not just a feeling we experience
+• Greek "agape" = self-sacrificial, unconditional love seeking others' best
+• Requires intentionality, effort, and putting others' needs first
+• God's active love empowers us to love others the same way
 
 **${headings.scriptureFoundation}:**
-- 1 John 4:19 - "We love because He first loved us" - This verse shows that God's active love toward us is the source and motivation for our love toward others
-- Romans 5:8 - "But God demonstrates His own love for us in this: While we were still sinners, Christ died for us" - God's love was demonstrated through action, not just words
-- 1 Corinthians 13:4-7 - This passage lists specific ACTIONS of love (patient, kind, does not envy, etc.), showing love is something we DO, not just feel
+• 1 John 4:19 - God's active love is the source and motivation for our love
+• Romans 5:8 - God demonstrated love through action (Christ's death), not just words
+• 1 Corinthians 13:4-7 - Love described as specific ACTIONS (patient, kind, etc.)
 
 **${headings.illustration}:**
-[Story about a parent waking up at 3 AM to care for a sick child - they don't "feel" like it, but they choose to act in love. Or story of someone serving in their community despite personal inconvenience, demonstrating active love]
+• Parent waking at 3 AM for sick child - doesn't "feel" like it, but chooses love
+• Someone serving community despite personal inconvenience
+• Love is demonstrated through sacrifice and action, not just emotion
 
 **${headings.application}:**
-- This week, identify one person who is difficult to love and perform one specific act of kindness for them
-- Practice "love as a verb" by doing something tangible for your spouse, child, or neighbor without being asked
-- Before making decisions, ask yourself: "What would love do in this situation?"
+• Identify one difficult person and perform specific act of kindness this week
+• Practice "love as verb" - do something tangible without being asked
+• Decision filter: "What would active love do in this situation?"
 
 **${headings.transition}:**
 If God's love is active and intentional, then it also must be...`
@@ -998,25 +1041,32 @@ CRITICAL: SERMON TIMING REQUIREMENTS
 - Mark each section with timing in parentheses: "## Point 1: [Title] (15 min)"
 - Ensure total adds up to 50-60 minutes
 
+CRITICAL: SERMON OUTLINE FORMAT - NOT A SPEECH
+- This is a PREACHER'S OUTLINE with concise notes, NOT a fully-written speech
+- Use BULLET POINTS for key concepts (one sentence each)
+- Keep explanations brief (1-2 sentences max per point)
+- Provide IDEAS and KEY NOTES that preacher can expand during delivery
+- Avoid lengthy paragraphs or fully-written narratives
+
 CRITICAL: ILLUSTRATION REQUIREMENTS
-- Provide 2-3 **specific, engaging illustrations** (stories, analogies, real-life examples)
-- Place illustrations strategically: one per main point minimum
-- Format: "**Illustration:** [Detailed story/analogy that connects emotionally and clarifies the point]"
+- Provide **brief illustration ideas** (2-3 sentences maximum per illustration)
+- One illustration per main point minimum
+- Format: Bullet points with brief description of illustration concept and takeaway
 - Illustrations should be culturally appropriate for ${languageConfig.name} context
-- Make them memorable, relatable, and sermon-enhancing
+- Suggest engaging ideas without writing full stories
 
 CRITICAL: TRANSITION REQUIREMENTS
-- Provide smooth **transition phrases** between major sections
-- Format: "**Transition:** [Natural bridge statement connecting current point to next]"
-- Transitions should maintain sermon flow and listener engagement
-- Examples: "This leads us to consider...", "Building on this truth...", "Now we see how..."
+- Provide smooth **transition phrases** between major sections (ONE sentence each)
+- Format: "**Transition:** [Brief bridge statement - 1 sentence]"
+- Keep transitions concise and natural
+- Examples: "This leads us to...", "Building on this truth...", "Now we see..."
 
 CRITICAL: BIBLE REFERENCE INTEGRATION
 - **EVERY sermon point (Point 1, 2, 3) MUST have a "Scripture Foundation" subsection**
 - Include 2-4 specific Bible verses PER POINT that directly support that point's teaching
-- Format: "**Scripture Foundation:**\\n- [Book Chapter:Verse] - [Brief explanation of how this verse supports this specific point]"
-- Do NOT just list verses - explain HOW each verse connects to and supports the point being made
-- Integrate verses naturally into the teaching, not as afterthoughts
+- Format: Bullet points with "• [Book Chapter:Verse] - [ONE sentence explaining how this supports the point]"
+- Keep explanations concise (ONE sentence per verse)
+- Do NOT just list verses - briefly explain connection to the point
 - Use verses from different parts of the Bible to show scriptural consistency
 - The "relatedVerses" field should contain ADDITIONAL verses beyond those already used in the sermon points
 - All Bible references must be in ${languageConfig.name} language and script

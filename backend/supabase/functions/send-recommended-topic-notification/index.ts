@@ -152,8 +152,13 @@ async function handleRecommendedTopicNotification(
   }
 
   // Step 4: Filter out users who already received notification today
+  // Check BOTH 'continue_learning' and 'recommended_topic' since unified selector sends one or the other
   const userIds = authenticatedUsers.map(u => u.user_id)
-  const alreadySentUserIds = await notificationHelper.getAlreadySentUserIds(userIds, 'recommended_topic')
+  const [alreadySentRecommended, alreadySentContinue] = await Promise.all([
+    notificationHelper.getAlreadySentUserIds(userIds, 'recommended_topic'),
+    notificationHelper.getAlreadySentUserIds(userIds, 'continue_learning'),
+  ])
+  const alreadySentUserIds = new Set([...alreadySentRecommended, ...alreadySentContinue])
   const usersToNotify = authenticatedUsers.filter(u => !alreadySentUserIds.has(u.user_id))
 
   console.log(`[RecommendedTopic] ${usersToNotify.length} users need notification (${alreadySentUserIds.size} already received)`)
