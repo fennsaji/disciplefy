@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:shimmer/shimmer.dart';
 
 import '../../../../core/constants/app_fonts.dart';
 import '../../../../core/extensions/translation_extension.dart';
 import '../../../../core/i18n/translation_keys.dart';
 import '../../../../shared/widgets/clickable_scripture_text.dart';
+import '../../../../shared/widgets/scripture_verse_sheet.dart';
+import '../../../../shared/widgets/markdown_with_scripture.dart';
 import '../../domain/entities/study_mode.dart';
 import '../../domain/entities/study_stream_event.dart';
 
@@ -38,6 +41,56 @@ String _cleanDuplicateTitle(String content, String title) {
   }
 
   return content;
+}
+
+/// Converts scripture references in text to markdown links for tap handling
+/// Uses the same regex pattern as ClickableScriptureText to detect references
+String _convertScriptureReferencesToLinks(String text) {
+  // Use the same scripture pattern from ClickableScriptureText
+  final scripturePattern = RegExp(
+    r'('
+    r'(?:\d\s?)?' // Optional number prefix
+    r'(?:'
+    // English book names
+    r'[A-Z][a-z]{2,}(?:\s(?:of\s)?[A-Z][a-z]+)?'
+    r'|'
+    // Hindi multi-word book names
+    r'भजन संहिता|प्रेरितों के काम|श्रेष्ठगीत'
+    r'|'
+    // Hindi single-word book names
+    r'(?:उत्पत्ति|निर्गमन|लैव्यव्यवस्था|गिनती|व्यवस्थाविवरण|'
+    r'यहोशू|न्यायियों|रूत|शमूएल|राजा|इतिहास|एज्रा|नहेम्याह|एस्तेर|अय्यूब|'
+    r'भजन|नीतिवचन|सभोपदेशक|यशायाह|यिर्मयाह|विलापगीत|यहेजकेल|दानिय्येल|'
+    r'होशे|योएल|आमोस|ओबद्याह|योना|मीका|नहूम|हबक्कूक|सपन्याह|हाग्गै|जकर्याह|मलाकी|'
+    r'मत्ती|मरकुस|लूका|यूहन्ना|प्रेरितों|रोमियों|कुरिन्थियों|गलातियों|इफिसियों|'
+    r'फिलिप्पियों|कुलुस्सियों|थिस्सलुनीकियों|तीमुथियुस|तीतुस|फिलेमोन|इब्रानियों|'
+    r'याकूब|पतरस|यहूदा|प्रकाशितवाक्य)'
+    r'|'
+    // Malayalam multi-word book names
+    r'അപ്പൊസ്തലന്മാരുടെ പ്രവൃത്തികൾ|ഉത്തമഗീതം'
+    r'|'
+    // Malayalam single-word book names
+    r'(?:ഉല്പത്തി|പുറപ്പാട്|ലേവ്യപുസ്തകം|സംഖ്യ|ആവർത്തനം|'
+    r'യോശുവ|ന്യായാധിപന്മാർ|രൂത്ത്|ശമൂവേൽ|രാജാക്കന്മാർ|ദിനവൃത്താന്തം|'
+    r'എസ്രാ|നെഹെമ്യാവ്|എസ്ഥേർ|ഇയ്യോബ്|സങ്കീർത്തനങ്ങൾ|സദൃശ്യവാക്യങ്ങൾ|'
+    r'സഭാപ്രസംഗി|യെശയ്യാവ്|യിരെമ്യാവ്|വിലാപങ്ങൾ|യെഹെസ്കേൽ|ദാനിയേൽ|'
+    r'ഹോശേയ|യോവേൽ|ആമോസ്|ഓബദ്യാവ്|യോനാ|മീഖാ|നഹൂം|ഹബക്കൂക്ക്|സെഫന്യാവ്|'
+    r'ഹഗ്ഗായി|സെഖര്യാവ്|മലാഖി|മത്തായി|മർക്കൊസ്|ലൂക്കൊസ്|യോഹന്നാൻ|'
+    r'റോമർ|കൊരിന്ത്യർ|ഗലാത്യർ|എഫെസ്യർ|ഫിലിപ്പിയർ|കൊലൊസ്സ്യർ|'
+    r'തെസ്സലൊനീക്യർ|തിമൊഥെയൊസ്|തീത്തൊസ്|ഫിലേമോൻ|എബ്രായർ|യാക്കോബ്|'
+    r'പത്രൊസ്|യൂദാ|വെളിപ്പാട്)'
+    r')'
+    r')'
+    r'\s+(\d+)(?::(\d+)(?:-(\d+))?)?', // Matches chapter:verse patterns
+    unicode: true,
+  );
+
+  // Replace scripture references with markdown links
+  return text.replaceAllMapped(scripturePattern, (match) {
+    final reference = match.group(0)!;
+    // Use a custom URL scheme to identify scripture references
+    return '[$reference](scripture://$reference)';
+  });
 }
 
 /// Widget for displaying streaming study guide content with progressive rendering.
@@ -99,6 +152,7 @@ class StreamingStudyContent extends StatelessWidget {
       StudyMode.quick => _buildQuickModeContent(context),
       StudyMode.deep => _buildDeepModeContent(context),
       StudyMode.lectio => _buildLectioDivinaContent(context),
+      StudyMode.sermon => _buildSermonModeContent(context),
       StudyMode.standard => _buildStandardModeContent(context),
     };
   }
@@ -756,6 +810,274 @@ class StreamingStudyContent extends StatelessWidget {
     );
   }
 
+  /// Sermon mode layout - 50-60 minute sermon outline with timing & illustrations
+  Widget _buildSermonModeContent(BuildContext context) {
+    final screenHeight = MediaQuery.of(context).size.height;
+    final isLargeScreen = screenHeight > 700;
+    final theme = Theme.of(context);
+
+    return Column(
+      children: [
+        // Progress indicator
+        if (!content.isComplete && !isPartial) _buildProgressBar(context),
+
+        // Main content
+        Expanded(
+          child: SingleChildScrollView(
+            controller: scrollController,
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SizedBox(height: isLargeScreen ? 24 : 16),
+
+                // Sermon badge
+                _buildSermonBadge(context),
+                const SizedBox(height: 16),
+
+                // Topic/Scripture title
+                _buildTopicTitle(context),
+
+                SizedBox(height: isLargeScreen ? 24 : 20),
+
+                // Sermon Thesis (from summary)
+                _buildSection(
+                  context,
+                  title: context.tr(TranslationKeys.sermonThesis),
+                  icon: Icons.lightbulb_outline,
+                  content: content.summary,
+                  index: 0,
+                ),
+
+                const SizedBox(height: 24),
+
+                // Main Sermon Body (from interpretation) - with timing
+                _buildSection(
+                  context,
+                  title: context.tr(TranslationKeys.sermonBody),
+                  icon: Icons.menu_book,
+                  content: content.interpretation,
+                  index: 1,
+                ),
+
+                const SizedBox(height: 24),
+
+                // Background/Context
+                _buildSection(
+                  context,
+                  title: context.tr(TranslationKeys.sermonContext),
+                  icon: Icons.history_edu,
+                  content: content.context,
+                  index: 2,
+                ),
+
+                const SizedBox(height: 24),
+
+                // Supporting Verses (from relatedVerses)
+                if (content.relatedVerses != null &&
+                    content.relatedVerses!.isNotEmpty)
+                  _buildVersesList(
+                    context,
+                    title: context.tr(TranslationKeys.sermonSupportingVerses),
+                    verses: content.relatedVerses!,
+                    icon: Icons.bookmark_border,
+                  ),
+
+                const SizedBox(height: 24),
+
+                // Discussion Questions (from reflectionQuestions)
+                if (content.reflectionQuestions != null &&
+                    content.reflectionQuestions!.isNotEmpty)
+                  _buildQuestionsList(
+                    context,
+                    title:
+                        context.tr(TranslationKeys.sermonDiscussionQuestions),
+                    questions: content.reflectionQuestions!,
+                    icon: Icons.question_answer,
+                  ),
+
+                const SizedBox(height: 24),
+
+                // ALTAR CALL - Special highlighted section (from prayerPoints)
+                if (content.prayerPoints != null &&
+                    content.prayerPoints!.isNotEmpty)
+                  _buildAltarCallSection(
+                    context,
+                    content: content.prayerPoints!.join('\n\n'),
+                  ),
+
+                SizedBox(height: isLargeScreen ? 32 : 24),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// Build sermon badge with icon and duration
+  Widget _buildSermonBadge(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.primaryContainer,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Text(
+            '⛪',
+            style: TextStyle(fontSize: 20),
+          ),
+          const SizedBox(width: 8),
+          Text(
+            context.tr(TranslationKeys.sermonDuration),
+            style: AppFonts.inter(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: theme.colorScheme.onPrimaryContainer,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Build verses list section
+  Widget _buildVersesList(
+    BuildContext context, {
+    required String title,
+    required List<String> verses,
+    required IconData icon,
+  }) {
+    return _buildSection(
+      context,
+      title: title,
+      icon: icon,
+      content: verses.map((v) => '• $v').join('\n\n'),
+      index: 3,
+    );
+  }
+
+  /// Build questions list section
+  Widget _buildQuestionsList(
+    BuildContext context, {
+    required String title,
+    required List<String> questions,
+    required IconData icon,
+  }) {
+    return _buildSection(
+      context,
+      title: title,
+      icon: icon,
+      content: questions.map((q) => '• $q').join('\n\n'),
+      index: 4,
+    );
+  }
+
+  /// Build altar call section with special gradient styling
+  Widget _buildAltarCallSection(BuildContext context,
+      {required String content}) {
+    final theme = Theme.of(context);
+    final primaryColor = theme.colorScheme.primary;
+
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            theme.colorScheme.primaryContainer,
+            theme.colorScheme.secondaryContainer,
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: primaryColor.withOpacity(0.15),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header
+          Row(
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: primaryColor.withOpacity(0.15),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  Icons.volunteer_activism,
+                  color: primaryColor,
+                  size: 24,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  context.tr(TranslationKeys.sermonAltarCall),
+                  style: AppFonts.inter(
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                    color: theme.colorScheme.onPrimaryContainer,
+                  ),
+                ),
+              ),
+              // Copy button
+              IconButton(
+                onPressed: () {
+                  Clipboard.setData(ClipboardData(text: content));
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        context.tr(TranslationKeys.studyGuideCopiedToClipboard),
+                        style: AppFonts.inter(color: Colors.white),
+                      ),
+                      backgroundColor: primaryColor,
+                      behavior: SnackBarBehavior.floating,
+                      duration: const Duration(seconds: 2),
+                    ),
+                  );
+                },
+                icon: Icon(
+                  Icons.copy,
+                  color: primaryColor,
+                  size: 20,
+                ),
+                constraints: const BoxConstraints(
+                  minWidth: 44,
+                  minHeight: 44,
+                ),
+                padding: const EdgeInsets.all(8),
+                tooltip: 'Copy Altar Call',
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          // Content with markdown formatting AND clickable scripture
+          MarkdownWithScripture(
+            data: content,
+            textStyle: AppFonts.inter(
+              fontSize: 16,
+              height: 1.7,
+              color: theme.colorScheme.onPrimaryContainer,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   /// Build the progress bar showing streaming progress
   Widget _buildProgressBar(BuildContext context) {
     return Container(
@@ -1019,10 +1341,10 @@ class _StreamingSectionState extends State<_StreamingSection>
                 ],
               ),
               const SizedBox(height: 16),
-              // Section Content with clickable scripture references
-              ClickableScriptureText(
-                text: _cleanDuplicateTitle(widget.content, widget.title),
-                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+              // Section Content with markdown formatting AND clickable scripture
+              MarkdownWithScripture(
+                data: _cleanDuplicateTitle(widget.content, widget.title),
+                textStyle: Theme.of(context).textTheme.bodyLarge?.copyWith(
                       color: Theme.of(context).colorScheme.onBackground,
                       height: 1.6,
                     ),
@@ -1270,10 +1592,10 @@ class _QuickSectionState extends State<_QuickSection>
                 ],
               ),
               const SizedBox(height: 10),
-              // Content
-              ClickableScriptureText(
-                text: _cleanDuplicateTitle(widget.content, widget.title),
-                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+              // Content with markdown formatting AND clickable scripture
+              MarkdownWithScripture(
+                data: _cleanDuplicateTitle(widget.content, widget.title),
+                textStyle: Theme.of(context).textTheme.bodyLarge?.copyWith(
                       fontWeight: widget.isHighlight
                           ? FontWeight.w500
                           : FontWeight.w400,
@@ -1531,10 +1853,10 @@ class _LectioSectionState extends State<_LectioSection>
                 ),
               ),
               const SizedBox(height: 16),
-              // Content with meditative typography
-              ClickableScriptureText(
-                text: _cleanDuplicateTitle(widget.content, widget.title),
-                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+              // Content with meditative typography and markdown formatting
+              MarkdownWithScripture(
+                data: _cleanDuplicateTitle(widget.content, widget.title),
+                textStyle: Theme.of(context).textTheme.bodyLarge?.copyWith(
                       fontWeight: FontWeight.w400,
                       color: Theme.of(context).colorScheme.onBackground,
                       height: 1.7, // Extra line height for meditative reading

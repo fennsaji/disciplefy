@@ -1,10 +1,12 @@
 /**
  * Token System Type Definitions
- * 
+ *
  * Complete TypeScript interfaces for the token-based usage system.
  * These types align with the database schema and business logic from
  * the token system design document.
  */
+
+import type { StudyMode } from '../services/llm-types.ts'
 
 /**
  * User subscription plan types
@@ -17,8 +19,42 @@ export type UserPlan = 'free' | 'standard' | 'premium'
 export type SupportedLanguage = 'en' | 'hi' | 'ml'
 
 /**
+ * Mode-based token cost multipliers
+ * Applied to base language cost to support premium/expensive modes
+ */
+export interface TokenCostMultiplier {
+  readonly quick: number
+  readonly standard: number
+  readonly deep: number
+  readonly lectio: number
+  readonly sermon: number
+}
+
+/**
+ * Default mode multipliers for token costs
+ *
+ * Multipliers based on study duration and complexity:
+ * - Quick (3 min): 0.5x - Brief overview, minimal depth
+ * - Standard (10 min): 1.0x - Baseline, moderate content
+ * - Deep Dive (25 min): 1.5x - Extensive word studies, cross-references
+ * - Lectio Divina (15 min): 1.2x - Contemplative + guided reflection
+ * - Sermon (55 min): 2.0x - Most comprehensive content, all languages
+ *
+ * Multipliers are applied uniformly across languages.
+ * Varying final costs result from different base language costs (EN=10, HI/ML=15).
+ * Final costs: Quick=5/8, Standard=10/15, Deep=15/23, Lectio=12/18, Sermon=20/30 (EN/HI,ML)
+ */
+export const MODE_MULTIPLIERS: TokenCostMultiplier = {
+  quick: 0.5,      // Half cost - encourages quick studies
+  standard: 1.0,   // Baseline - no change
+  deep: 1.5,       // Premium content - 50% more
+  lectio: 1.2,     // Moderate premium - 20% more
+  sermon: 2.0      // Most expensive - 2x for all languages
+} as const
+
+/**
  * User token balance information
- * 
+ *
  * Represents the current token state for a user, including
  * both daily allocation and purchased tokens.
  */
@@ -73,28 +109,35 @@ export interface TokenPurchaseResult {
 
 /**
  * Configuration for language-based token costs
- * 
+ *
  * Defines how many tokens each language costs for
- * study guide generation operations.
+ * study guide generation operations, including mode-based multipliers.
  */
 export interface TokenCostConfig {
   readonly costs: Record<SupportedLanguage, number>
+  readonly modeMultipliers: TokenCostMultiplier
   readonly defaultCost: number          // Fallback cost for unknown languages
 }
 
 /**
  * Default token cost configuration
- * 
+ *
  * Based on LLM complexity and language processing requirements:
- * - English: 10 tokens (simpler, well-supported)
- * - Hindi/Malayalam: 20 tokens (more complex, requires specialized models)
+ * - English: 10 tokens base (simpler, well-supported)
+ * - Hindi/Malayalam: 15 tokens base (moderate complexity, specialized models)
+ *
+ * Mode multipliers are applied uniformly across all languages:
+ * - Quick: 0.5x, Standard: 1.0x, Deep: 1.5x, Lectio: 1.2x, Sermon: 2.0x
+ * - Example costs: EN Quick=5, Standard=10, Sermon=20
+ *                  HI/ML Quick=8, Standard=15, Sermon=30
  */
 export const DEFAULT_TOKEN_COSTS: TokenCostConfig = {
   costs: {
     'en': 10,    // English
-    'hi': 20,    // Hindi
-    'ml': 20     // Malayalam
+    'hi': 15,    // Hindi (reduced from 20)
+    'ml': 15     // Malayalam (reduced from 20)
   },
+  modeMultipliers: MODE_MULTIPLIERS,
   defaultCost: 10 // Default to English cost
 } as const
 
@@ -217,6 +260,8 @@ export interface DatabaseTokenResult {
   readonly available_tokens: number
   readonly purchased_tokens: number
   readonly daily_limit: number
+  readonly daily_tokens_used: number
+  readonly purchased_tokens_used: number
   readonly error_message?: string
 }
 
@@ -281,17 +326,25 @@ export interface TokenValidationResult {
 
 /**
  * Token operation context
- * 
+ *
  * Context information for token operations, used for
  * analytics and audit logging.
  */
 export interface TokenOperationContext {
   readonly userId?: string             // For authenticated users
-  readonly sessionId?: string          // For anonymous users  
+  readonly sessionId?: string          // For anonymous users
   readonly userPlan: UserPlan
   readonly operation: 'consume' | 'purchase' | 'check'
   readonly language?: SupportedLanguage
   readonly ipAddress?: string
   readonly userAgent?: string
   readonly timestamp: Date
+
+  // Usage history context (added for detailed consumption tracking)
+  readonly featureName?: string        // 'study_generate', 'continue_learning', 'study_followup'
+  readonly operationType?: string      // 'study_generation', 'follow_up_question'
+  readonly studyMode?: StudyMode       // 'quick', 'standard', 'deep', 'lectio', 'sermon'
+  readonly contentTitle?: string       // User-friendly title (e.g., 'John 3:16 Study')
+  readonly contentReference?: string   // Scripture ref, topic name, or question text
+  readonly inputType?: 'scripture' | 'topic' | 'question'  // Type of user input
 }

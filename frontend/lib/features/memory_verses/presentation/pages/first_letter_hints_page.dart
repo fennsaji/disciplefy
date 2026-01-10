@@ -93,7 +93,10 @@ class _FirstLetterHintsPageState extends State<FirstLetterHintsPage> {
   void _initializeHintWords() {
     if (currentVerse == null) return;
 
-    final words = currentVerse!.verseText.split(' ');
+    // Include reference at the end of verse text for memorization
+    final fullText =
+        '${currentVerse!.verseText} ${currentVerse!.verseReference}';
+    final words = fullText.split(' ');
     hintWords = words.map((word) {
       final firstLetter = word.isNotEmpty ? word[0] : '';
       final hint = firstLetter + '_' * (word.length - 1);

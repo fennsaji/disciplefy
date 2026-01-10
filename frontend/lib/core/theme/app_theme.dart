@@ -31,6 +31,8 @@ class AppTheme {
   static const Color errorColor = Color(0xFFEF4444); // Red
   static const Color warningColor = Color(0xFFF59E0B); // Amber
   static const Color successColor = Color(0xFF10B981); // Emerald
+  static const Color usageHistoryColor =
+      Color(0xFF14B8A6); // Teal-500 (WCAG AA)
   static const Color surfaceColor = Color(0xFFFFFFFF); // White
   static const Color onSurfaceVariant = Color(0xFF6B7280); // Gray text
 
@@ -170,9 +172,12 @@ class AppTheme {
         appBarTheme: const AppBarTheme(
           elevation: 0,
           centerTitle: true,
+          backgroundColor: surfaceColor, // White background
+          foregroundColor: textPrimary, // Dark text/icons for contrast
           titleTextStyle: TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.w600,
+            color: textPrimary, // Dark text for readability
           ),
         ),
       );

@@ -162,6 +162,9 @@ class TranslationKeys {
   static const generateStudyEnglish = 'generate_study.english';
   static const generateStudyHindi = 'generate_study.hindi';
   static const generateStudyMalayalam = 'generate_study.malayalam';
+  static const generateStudyDefaultLanguage = 'generate_study.default_language';
+  static const generateStudyDefaultLanguageOption =
+      'generate_study.default_language_option';
   static const generateStudyEnterScripture = 'generate_study.enter_scripture';
   static const generateStudyEnterTopic = 'generate_study.enter_topic';
   static const generateStudyAskQuestion = 'generate_study.ask_question';
@@ -296,6 +299,8 @@ class TranslationKeys {
   static const settingsTitle = 'settings.title';
   static const settingsAccount = 'settings.account';
   static const settingsSignInToSync = 'settings.sign_in_to_sync';
+  static const settingsSignInToSavePreferences =
+      'settings.sign_in_to_save_preferences';
   static const settingsSignIn = 'settings.sign_in';
   static const settingsMyPlan = 'settings.my_plan';
   static const settingsMyPlanSubtitle = 'settings.my_plan_subtitle';
@@ -517,6 +522,14 @@ class TranslationKeys {
       'study_topics.no_topics_available';
   static const studyTopicsClearFilters = 'study_topics.clear_filters';
   static const studyTopicsTopicsFound = 'study_topics.topics_found';
+  static const studyTopicsContentLanguage = 'study_topics.content_language';
+  static const studyTopicsContentLanguageDescription =
+      'study_topics.content_language_description';
+  static const studyTopicsContentLanguageDefault =
+      'study_topics.content_language_default';
+  static const studyTopicsContentLanguageDefaultDescription =
+      'study_topics.content_language_default_description';
+  static const moreOptionsTooltip = 'study_topics.more_options_tooltip';
 
   // Token Management - Main
   static const tokenManagementTitle = 'tokens.management.title';
@@ -1290,6 +1303,9 @@ class TranslationKeys {
   static const practiceResultsPhrase = 'practice_results.phrase';
   static const practiceResultsYourAnswer = 'practice_results.your_answer';
   static const practiceResultsCorrectAnswer = 'practice_results.correct_answer';
+  static const practiceResultsExtraWord = 'practice_results.extra_word';
+  static const practiceResultsNote = 'practice_results.note';
+  static const practiceResultsNotInVerse = 'practice_results.not_in_verse';
 
   // Quality Rating Labels
   static const qualityPerfect = 'quality.perfect';
@@ -1541,6 +1557,12 @@ class TranslationKeys {
   /// Description of the Lectio Divina study mode
   static const studyModeLectioDescription = 'study_mode.lectio.description';
 
+  /// Name of the Sermon Outline study mode (50-60 minute sermon)
+  static const studyModeSermonName = 'study_mode.sermon.name';
+
+  /// Description of the Sermon Outline study mode
+  static const studyModeSermonDescription = 'study_mode.sermon.description';
+
   // Settings - Study Mode Preference
   /// Settings label for study mode preference option
   static const settingsStudyModePreference = 'settings.study_mode_preference';
@@ -1730,6 +1752,9 @@ class TranslationKeys {
   /// Duration label for Lectio mode (e.g., "15 min")
   static const studyModeLectioDuration = 'study_mode.lectio.duration_label';
 
+  /// Duration label for Sermon mode (e.g., "50-60 min")
+  static const studyModeSermonDuration = 'study_mode.sermon.duration_label';
+
   // Lectio Divina Mode Sections
   /// Section title for scripture passage in Lectio mode
   static const lectioScriptureForMeditation = 'lectio.scripture_for_meditation';
@@ -1790,6 +1815,28 @@ class TranslationKeys {
 
   /// Duration label for Lectio mode (deprecated, use studyModeLectioDuration)
   static const lectioDurationLabel = 'lectio.duration_label';
+
+  // Sermon Outline Mode Sections
+  /// Section title for sermon thesis/introduction
+  static const sermonThesis = 'sermon.thesis';
+
+  /// Section title for main sermon body with timing breakdown
+  static const sermonBody = 'sermon.body';
+
+  /// Section title for sermon background and context
+  static const sermonContext = 'sermon.context';
+
+  /// Section title for supporting Bible verses
+  static const sermonSupportingVerses = 'sermon.supporting_verses';
+
+  /// Section title for small group discussion questions
+  static const sermonDiscussionQuestions = 'sermon.discussion_questions';
+
+  /// Section title for altar call/invitation template
+  static const sermonAltarCall = 'sermon.altar_call';
+
+  /// Badge label for sermon outline with duration
+  static const sermonDuration = 'sermon.duration_badge';
 
   // Reading Completion Card
   /// Title for reading completion prompt card

@@ -156,14 +156,14 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
     LoadRecommendedTopics event,
     Emitter<HomeState> emit,
   ) async {
-    // Get the user's preferred language
+    // Get study content language preference (not app UI language)
     String? languageCode;
     try {
       final appLanguage =
-          await _languagePreferenceService.getSelectedLanguage();
+          await _languagePreferenceService.getStudyContentLanguage();
       languageCode = appLanguage.code;
     } catch (e) {
-      // Fall back to default language if getting language preference fails
+      // Fall back to default language if getting study content language fails
       languageCode = 'en';
     }
 
@@ -189,14 +189,14 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
     LoadForYouTopics event,
     Emitter<HomeState> emit,
   ) async {
-    // Get the user's preferred language
+    // Get study content language preference (not app UI language)
     String? languageCode;
     try {
       final appLanguage =
-          await _languagePreferenceService.getSelectedLanguage();
+          await _languagePreferenceService.getStudyContentLanguage();
       languageCode = appLanguage.code;
     } catch (e) {
-      // Fall back to default language if getting language preference fails
+      // Fall back to default language if getting study content language fails
       languageCode = 'en';
     }
 
@@ -282,15 +282,15 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
       // Set loading state
       emit(currentState.copyWith(isLoadingActivePath: true));
 
-      // Get the user's preferred language
+      // Get study content language preference (not app UI language)
       String languageCode = 'en';
       try {
         final appLanguage =
-            await _languagePreferenceService.getSelectedLanguage();
+            await _languagePreferenceService.getStudyContentLanguage();
         languageCode = appLanguage.code;
       } catch (e) {
         Logger.warning(
-          'Failed to get language preference, using default',
+          'Failed to get study content language preference, using default',
           tag: 'HOME_BLOC',
         );
       }

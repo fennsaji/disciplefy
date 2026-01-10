@@ -7,6 +7,7 @@ import '../../presentation/pages/generate_study_screen.dart';
 import '../mappers/app_language_mapper.dart';
 
 /// Use case for getting the default language for study generation from unified preference service
+/// Uses study content language (not app UI language)
 class GetDefaultStudyLanguage implements UseCase<StudyLanguage, NoParams> {
   final LanguagePreferenceService _languagePreferenceService;
 
@@ -16,7 +17,7 @@ class GetDefaultStudyLanguage implements UseCase<StudyLanguage, NoParams> {
   Future<Either<Failure, StudyLanguage>> call(NoParams params) async {
     try {
       final appLanguage =
-          await _languagePreferenceService.getSelectedLanguage();
+          await _languagePreferenceService.getStudyContentLanguage();
       return Right(appLanguage.toStudyLanguage());
     } catch (e) {
       // Return English as fallback

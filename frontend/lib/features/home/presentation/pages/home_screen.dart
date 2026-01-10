@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_fonts.dart';
+import '../../../../core/constants/study_mode_preferences.dart';
 import '../../../../core/animations/app_animations.dart';
 
 import '../../../../core/theme/app_theme.dart';
@@ -12,6 +13,7 @@ import '../../../../core/di/injection_container.dart';
 import '../../../../core/router/app_router.dart';
 import '../../../../core/services/auth_state_provider.dart';
 import '../../../../core/services/language_preference_service.dart';
+import '../../../../core/models/app_language.dart';
 import '../../../../core/widgets/auth_protected_screen.dart';
 import '../../../../core/extensions/translation_extension.dart';
 import '../../../../core/i18n/translation_keys.dart';
@@ -74,11 +76,16 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
   bool _hasTriggeredDailyVersePrompt = false;
   bool _hasTriggeredStreakPrompt = false;
 
+  // Stream subscriptions for language changes (to be cancelled in dispose)
+  StreamSubscription<AppLanguage>? _languageSubscription;
+  StreamSubscription<AppLanguage>? _studyContentLanguageSubscription;
+
   @override
   void initState() {
     super.initState();
     _loadDailyVerse();
     _loadSubscriptionStatus();
+    _setupLanguageChangeListener();
     // Fire initial topics load once; HomeBloc is a singleton via DI
     final homeBloc = sl<HomeBloc>();
     final current = homeBloc.state;
@@ -90,6 +97,59 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
     if (current is! HomeCombinedState || current.activeLearningPath == null) {
       homeBloc.add(const LoadActiveLearningPath());
     }
+  }
+
+  /// Listen for app language and study content language preference changes
+  /// When app language changes, study content language is reset to default,
+  /// so we need to refresh the "For You" content to reflect the new app language.
+  /// When study content language changes (from Study Topics screen), we also refresh.
+  void _setupLanguageChangeListener() {
+    final languageService = sl<LanguagePreferenceService>();
+
+    // Cancel any existing subscriptions before creating new ones
+    _languageSubscription?.cancel();
+    _studyContentLanguageSubscription?.cancel();
+
+    // Listen to app language changes (UI language)
+    _languageSubscription =
+        languageService.languageChanges.listen((newLanguage) {
+      if (kDebugMode) {
+        print('[HOME] App language changed to: ${newLanguage.displayName}');
+      }
+
+      // When app language changes, study content language is automatically reset to default
+      // Refresh the "For You" topics with the new language
+      if (mounted) {
+        final homeBloc = sl<HomeBloc>();
+        homeBloc.add(const LoadForYouTopics(forceRefresh: true));
+        homeBloc.add(const LoadActiveLearningPath(forceRefresh: true));
+
+        if (kDebugMode) {
+          print('[HOME] "For You" content refreshed after app language change');
+        }
+      }
+    });
+
+    // Listen to study content language changes (study guides language)
+    _studyContentLanguageSubscription =
+        languageService.studyContentLanguageChanges.listen((newLanguage) {
+      if (kDebugMode) {
+        print(
+            '[HOME] Study content language changed to: ${newLanguage.displayName}');
+      }
+
+      // Refresh the "For You" topics with the new study content language
+      if (mounted) {
+        final homeBloc = sl<HomeBloc>();
+        homeBloc.add(const LoadForYouTopics(forceRefresh: true));
+        homeBloc.add(const LoadActiveLearningPath(forceRefresh: true));
+
+        if (kDebugMode) {
+          print(
+              '[HOME] "For You" content refreshed after study content language change');
+        }
+      }
+    });
   }
 
   /// Load subscription status for Standard plan banner
@@ -170,22 +230,63 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
       final savedModeRaw =
           await sl<LanguagePreferenceService>().getStudyModePreferenceRaw();
 
-      if (savedModeRaw == 'recommended') {
+      if (StudyModePreferences.isRecommended(savedModeRaw)) {
         // ✅ FIX: "Use Recommended" - automatically select Deep Dive for scripture without showing sheet
         debugPrint('✅ [HOME] Using recommended mode for scripture: Deep Dive');
         _navigateToDailyVerseStudy(currentState, StudyMode.deep, false);
       } else if (savedModeRaw != null) {
         // User has a specific saved preference - use it directly without showing sheet
-        final savedMode = StudyModeExtension.fromString(savedModeRaw);
-        debugPrint('✅ [HOME] Using saved study mode: ${savedMode.name}');
-        _navigateToDailyVerseStudy(currentState, savedMode, false);
+        final savedMode = studyModeFromString(savedModeRaw);
+        if (savedMode != null) {
+          debugPrint('✅ [HOME] Using saved study mode: ${savedMode.name}');
+          _navigateToDailyVerseStudy(currentState, savedMode, false);
+        } else {
+          // Invalid mode string - fallback to mode selection sheet
+          debugPrint(
+              '⚠️ [HOME] Invalid study mode string: $savedModeRaw - showing mode selection sheet');
+          const recommendedMode = StudyMode.deep;
+          final String languageCode;
+          if (currentState is DailyVerseLoaded) {
+            languageCode = currentState.currentLanguage.code;
+          } else if (currentState is DailyVerseOffline) {
+            languageCode = currentState.currentLanguage.code;
+          } else {
+            languageCode = 'en';
+          }
+          final result = await ModeSelectionSheet.show(
+            context: context,
+            languageCode: languageCode,
+            recommendedMode: recommendedMode,
+          );
+          if (result != null && mounted) {
+            _navigateToDailyVerseStudy(
+              currentState,
+              result['mode'] as StudyMode,
+              result['rememberChoice'] as bool,
+              recommendedMode: recommendedMode,
+            );
+          }
+        }
       } else {
         // No saved preference (null) - show mode selection sheet with Deep Dive as recommended for scripture
         debugPrint(
             '🔍 [HOME] No saved preference - showing mode selection sheet with Deep Dive recommended');
         const recommendedMode = StudyMode.deep; // Scripture → Deep Dive
+
+        // Type-safe extraction of languageCode from state
+        final String languageCode;
+        if (currentState is DailyVerseLoaded) {
+          languageCode = currentState.currentLanguage.code;
+        } else if (currentState is DailyVerseOffline) {
+          languageCode = currentState.currentLanguage.code;
+        } else {
+          // Fallback (should never happen due to outer if check)
+          languageCode = 'en';
+        }
+
         final result = await ModeSelectionSheet.show(
           context: context,
+          languageCode: languageCode,
           recommendedMode: recommendedMode,
         );
         if (result != null && mounted) {
@@ -275,6 +376,13 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
       case VerseLanguage.malayalam:
         return 'ml';
     }
+  }
+
+  @override
+  void dispose() {
+    _languageSubscription?.cancel();
+    _studyContentLanguageSubscription?.cancel();
+    super.dispose();
   }
 
   @override
@@ -1080,8 +1188,16 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
       return;
     }
 
+    // Get study content language preference for token cost calculation
+    // Uses study content language (not app UI language)
+    final selectedLanguage =
+        await sl<LanguagePreferenceService>().getStudyContentLanguage();
+
     // Show mode selection sheet before navigating
-    final result = await ModeSelectionSheet.show(context: context);
+    final result = await ModeSelectionSheet.show(
+      context: context,
+      languageCode: selectedLanguage.code,
+    );
     if (result != null && mounted) {
       _navigateToStudyGuideWithMode(
         topic,

@@ -144,8 +144,9 @@ class _AudioPracticePageState extends State<AudioPracticePage> {
     _timesPlayed++;
 
     final languageCode = _getLanguageCode();
+    // Speak verse text first, then reference at the end
     final textToSpeak =
-        '${currentVerse!.verseReference}. ${currentVerse!.verseText}';
+        '${currentVerse!.verseText}. ${currentVerse!.verseReference}';
 
     await _ttsService.speakWithSettings(
       text: textToSpeak,
@@ -204,7 +205,10 @@ class _AudioPracticePageState extends State<AudioPracticePage> {
             setState(() => _soundLevel = level.clamp(0.0, 10.0));
           }
         },
-        pauseFor: const Duration(seconds: 3),
+        // Allow 15 seconds of silence before stopping (natural pauses during recitation)
+        pauseFor: const Duration(seconds: 15),
+        // Allow up to 2 minutes for very long verses or slow recitation
+        listenFor: const Duration(seconds: 120),
       );
     } catch (e) {
       if (mounted) {
