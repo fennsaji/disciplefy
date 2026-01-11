@@ -47,12 +47,9 @@ function calculateTimezoneOffsetRange(currentHour: number): { offsetRangeMin: nu
   return { offsetRangeMin, offsetRangeMax }
 }
 
-async function fetchEligibleUsersWithTimezone(
-  supabase: ServiceContainer['supabaseServiceClient'],
-  offsetRangeMin: number,
-  offsetRangeMax: number
-): Promise<RecommendedTopicUser[]> {
-  // Fetch all tokens
+async function getUserTokensPage(
+  supabase: ServiceContainer['supabaseServiceClient']
+): Promise<Array<{ user_id: string; fcm_token: string }>> {
   const { data: tokens, error: tokensError } = await supabase
     .from('user_notification_tokens')
     .select('user_id, fcm_token')
@@ -61,9 +58,14 @@ async function fetchEligibleUsersWithTimezone(
     throw new AppError('DATABASE_ERROR', `Failed to fetch tokens: ${tokensError.message}`, 500)
   }
 
-  // Handle wrap-around case
-  let preferences: Array<{ user_id: string; timezone_offset_minutes: number }>
+  return tokens || []
+}
 
+async function fetchPreferencesInOffsetRange(
+  supabase: ServiceContainer['supabaseServiceClient'],
+  offsetRangeMin: number,
+  offsetRangeMax: number
+): Promise<Array<{ user_id: string; timezone_offset_minutes: number }>> {
   if (offsetRangeMin > offsetRangeMax) {
     const [result1, result2] = await Promise.all([
       supabase
@@ -85,213 +87,258 @@ async function fetchEligibleUsersWithTimezone(
       throw new AppError('DATABASE_ERROR', `Failed to fetch preferences: ${(result1.error || result2.error)!.message}`, 500)
     }
 
-    preferences = [...(result1.data || []), ...(result2.data || [])]
-  } else {
-    const { data, error } = await supabase
-      .from('user_notification_preferences')
-      .select('user_id, timezone_offset_minutes, recommended_topic_enabled')
-      .eq('recommended_topic_enabled', true)
-      .gte('timezone_offset_minutes', offsetRangeMin)
-      .lte('timezone_offset_minutes', offsetRangeMax)
-
-    if (error) {
-      throw new AppError('DATABASE_ERROR', `Failed to fetch preferences: ${error.message}`, 500)
-    }
-
-    preferences = data || []
+    return [...(result1.data || []), ...(result2.data || [])]
   }
 
-  // Manual join: match tokens with preferences
+  const { data, error } = await supabase
+    .from('user_notification_preferences')
+    .select('user_id, timezone_offset_minutes, recommended_topic_enabled')
+    .eq('recommended_topic_enabled', true)
+    .gte('timezone_offset_minutes', offsetRangeMin)
+    .lte('timezone_offset_minutes', offsetRangeMax)
+
+  if (error) {
+    throw new AppError('DATABASE_ERROR', `Failed to fetch preferences: ${error.message}`, 500)
+  }
+
+  return data || []
+}
+
+function enrichUsersWithTimezone(
+  tokens: Array<{ user_id: string; fcm_token: string }>,
+  preferences: Array<{ user_id: string; timezone_offset_minutes: number }>
+): RecommendedTopicUser[] {
   const prefsMap = new Map(preferences.map(p => [p.user_id, p]))
-  return tokens?.filter((t: { user_id: string; fcm_token: string }) => prefsMap.has(t.user_id))
-    .map((t: { user_id: string; fcm_token: string }) => ({
+  return tokens
+    .filter(t => prefsMap.has(t.user_id))
+    .map(t => ({
       user_id: t.user_id,
       fcm_token: t.fcm_token,
       timezone_offset_minutes: prefsMap.get(t.user_id)!.timezone_offset_minutes
-    })) || []
+    }))
 }
 
-// ============================================================================
-// Main Handler
-// ============================================================================
+/**
+ * Fetches users eligible for recommended topic notifications within specified timezone offset range.
+ * Returns users with FCM tokens who have enabled recommended topic notifications.
+ *
+ * @param supabase - Supabase service client for database operations
+ * @param offsetRangeMin - Minimum timezone offset in minutes (UTC-12 = -720)
+ * @param offsetRangeMax - Maximum timezone offset in minutes (UTC+14 = +840)
+ * @returns Array of users with FCM tokens and timezone offsets
+ */
+async function fetchEligibleUsersWithTimezone(
+  supabase: ServiceContainer['supabaseServiceClient'],
+  offsetRangeMin: number,
+  offsetRangeMax: number
+): Promise<RecommendedTopicUser[]> {
+  const tokens = await getUserTokensPage(supabase)
+  const preferences = await fetchPreferencesInOffsetRange(supabase, offsetRangeMin, offsetRangeMax)
+  return enrichUsersWithTimezone(tokens, preferences)
+}
 
-async function handleRecommendedTopicNotification(
-  req: Request,
-  services: ServiceContainer
-): Promise<Response> {
-  const notificationHelper = createNotificationHelper()
-
-  // Verify cron authentication
-  notificationHelper.verifyCronSecret(req)
-
-  console.log('[RecommendedTopic] Starting notification process...')
-
-  const supabase = services.supabaseServiceClient
-  const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
-  const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-
-  // Step 1: Calculate timezone offset range
-  const currentHour = new Date().getUTCHours()
-  const { offsetRangeMin, offsetRangeMax } = calculateTimezoneOffsetRange(currentHour)
-  console.log(`[RecommendedTopic] UTC hour: ${currentHour}, offset range: ${offsetRangeMin} to ${offsetRangeMax}`)
-
-  // Step 2: Fetch eligible users
-  const allUsers = await fetchEligibleUsersWithTimezone(supabase, offsetRangeMin, offsetRangeMax)
-
-  if (allUsers.length === 0) {
-    return notificationHelper.createSuccessResponse('No eligible users', { sentCount: 0 })
-  }
-
-  console.log(`[RecommendedTopic] Found ${allUsers.length} users with tokens`)
-
-  // Step 3: Filter out anonymous users
-  const authenticatedUsers = await notificationHelper.filterAnonymousUsers(supabase, allUsers)
-
-  if (authenticatedUsers.length === 0) {
-    return notificationHelper.createSuccessResponse('No authenticated users eligible', { sentCount: 0 })
-  }
-
-  // Step 4: Filter out users who already received notification today
-  // Check BOTH 'continue_learning' and 'recommended_topic' since unified selector sends one or the other
+async function computeUsersToNotify(
+  notificationHelper: ReturnType<typeof createNotificationHelper>,
+  authenticatedUsers: RecommendedTopicUser[]
+): Promise<RecommendedTopicUser[]> {
   const userIds = authenticatedUsers.map(u => u.user_id)
   const [alreadySentRecommended, alreadySentContinue] = await Promise.all([
     notificationHelper.getAlreadySentUserIds(userIds, 'recommended_topic'),
     notificationHelper.getAlreadySentUserIds(userIds, 'continue_learning'),
   ])
   const alreadySentUserIds = new Set([...alreadySentRecommended, ...alreadySentContinue])
-  const usersToNotify = authenticatedUsers.filter(u => !alreadySentUserIds.has(u.user_id))
+  return authenticatedUsers.filter(u => !alreadySentUserIds.has(u.user_id))
+}
 
-  console.log(`[RecommendedTopic] ${usersToNotify.length} users need notification (${alreadySentUserIds.size} already received)`)
-
-  if (usersToNotify.length === 0) {
-    return notificationHelper.createSuccessResponse('All users already received notification today', { sentCount: 0 })
+function buildNotificationData(
+  notification: { type: string; topicId: string; topicTitle: string; topicDescription: string; guideId?: string; timeSpent?: number },
+  language: string
+): Record<string, string> {
+  const data: Record<string, string> = {
+    type: notification.type,
+    topic_id: notification.topicId,
+    topic_title: notification.topicTitle,
+    topic_description: notification.topicDescription,
+    language,
   }
 
-  // Step 5: Get user language preferences
-  const languageMap = await notificationHelper.getUserLanguagePreferences(
-    supabase,
-    usersToNotify.map(u => u.user_id)
-  )
+  if (notification.type === 'continue_learning' && notification.guideId) {
+    data.guide_id = notification.guideId
+    data.time_spent = notification.timeSpent?.toString() || '0'
+  }
 
-  // Step 6: Send notifications with topic selection (custom batch logic due to per-user topic selection)
-  const fcmService = new FCMService()
-  let successCount = 0
-  let failureCount = 0
-  let topicSelectionFailures = 0
-  const uniqueTopicIds = new Set<string>()
-  let continueLearningCount = 0
-  let forYouCount = 0
+  return data
+}
+
+async function sendSingleNotification(
+  user: RecommendedTopicUser,
+  language: string,
+  fcmService: FCMService,
+  supabaseUrl: string,
+  serviceRoleKey: string
+): Promise<{ success: boolean; topicSelectionFailed?: boolean; topicId?: string; notificationType?: string }> {
+  try {
+    const notificationResult = await selectNotificationForUser(supabaseUrl, serviceRoleKey, user.user_id, language)
+
+    if (!notificationResult.success || !notificationResult.notification) {
+      console.error(`[RecommendedTopic] Notification selection failed for user ${user.user_id}:`, notificationResult.error)
+      return { success: false, topicSelectionFailed: true }
+    }
+
+    const notification = notificationResult.notification
+    const notificationData = buildNotificationData(notification, language)
+
+    const result = await fcmService.sendNotification({
+      token: user.fcm_token,
+      notification: { title: notification.title, body: notification.body },
+      data: notificationData,
+      android: { priority: 'high' },
+      apns: {
+        headers: { 'apns-priority': '10' },
+        payload: { aps: { sound: 'default', badge: 1 } },
+      },
+    })
+
+    await logNotification(supabaseUrl, serviceRoleKey, {
+      userId: user.user_id,
+      notificationType: notification.type === 'continue_learning' ? 'continue_learning' : 'recommended_topic',
+      title: notification.title,
+      body: notification.body,
+      topicId: notification.topicId || undefined,
+      language,
+      deliveryStatus: result.success ? 'sent' : 'failed',
+      fcmMessageId: result.messageId,
+      errorMessage: result.error,
+    })
+
+    return { success: result.success, topicId: notification.topicId, notificationType: notification.type }
+  } catch (error) {
+    console.error(`[RecommendedTopic] Error for user ${user.user_id}:`, error)
+    return { success: false }
+  }
+}
+
+interface NotificationStats {
+  successCount: number
+  failureCount: number
+  topicSelectionFailures: number
+  uniqueTopicIds: Set<string>
+  continueLearningCount: number
+  forYouCount: number
+}
+
+async function sendNotificationBatch(
+  users: RecommendedTopicUser[],
+  languageMap: Map<string, string>,
+  fcmService: FCMService,
+  supabaseUrl: string,
+  serviceRoleKey: string
+): Promise<NotificationStats> {
+  const stats: NotificationStats = {
+    successCount: 0,
+    failureCount: 0,
+    topicSelectionFailures: 0,
+    uniqueTopicIds: new Set<string>(),
+    continueLearningCount: 0,
+    forYouCount: 0,
+  }
+
   const BATCH_SIZE = 10
 
-  for (let i = 0; i < usersToNotify.length; i += BATCH_SIZE) {
-    const batch = usersToNotify.slice(i, i + BATCH_SIZE)
-
+  for (let i = 0; i < users.length; i += BATCH_SIZE) {
+    const batch = users.slice(i, i + BATCH_SIZE)
     const results = await Promise.allSettled(
-      batch.map(async (user) => {
-        try {
-          const language = languageMap.get(user.user_id) || 'en'
-
-          // Use unified selector to get either Continue Learning or For You notification
-          const notificationResult = await selectNotificationForUser(
-            SUPABASE_URL,
-            SUPABASE_SERVICE_ROLE_KEY,
-            user.user_id,
-            language
-          )
-
-          if (!notificationResult.success || !notificationResult.notification) {
-            console.error(`[RecommendedTopic] Notification selection failed for user ${user.user_id}:`, notificationResult.error)
-            return { success: false, topicSelectionFailed: true }
-          }
-
-          const notification = notificationResult.notification
-
-          // Build FCM notification data based on notification type
-          const notificationData: Record<string, string> = {
-            type: notification.type,
-            topic_id: notification.topicId,
-            topic_title: notification.topicTitle,
-            topic_description: notification.topicDescription,
-            language,
-          }
-
-          // Add guide_id for Continue Learning notifications
-          if (notification.type === 'continue_learning' && notification.guideId) {
-            notificationData.guide_id = notification.guideId
-            notificationData.time_spent = notification.timeSpent?.toString() || '0'
-          }
-
-          const result = await fcmService.sendNotification({
-            token: user.fcm_token,
-            notification: {
-              title: notification.title,
-              body: notification.body
-            },
-            data: notificationData,
-            android: { priority: 'high' },
-            apns: {
-              headers: { 'apns-priority': '10' },
-              payload: { aps: { sound: 'default', badge: 1 } },
-            },
-          })
-
-          await logNotification(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
-            userId: user.user_id,
-            notificationType: notification.type === 'continue_learning' ? 'continue_learning' : 'recommended_topic',
-            title: notification.title,
-            body: notification.body,
-            topicId: notification.topicId || undefined,
-            language,
-            deliveryStatus: result.success ? 'sent' : 'failed',
-            fcmMessageId: result.messageId,
-            errorMessage: result.error,
-          })
-
-          return { success: result.success, topicId: notification.topicId, notificationType: notification.type }
-        } catch (error) {
-          console.error(`[RecommendedTopic] Error for user ${user.user_id}:`, error)
-          return { success: false }
-        }
-      })
+      batch.map(user => sendSingleNotification(user, languageMap.get(user.user_id) || 'en', fcmService, supabaseUrl, serviceRoleKey))
     )
 
-    results.forEach((result) => {
+    results.forEach(result => {
       if (result.status === 'fulfilled') {
-        const value = result.value as { success: boolean; topicSelectionFailed?: boolean; topicId?: string; notificationType?: string }
+        const value = result.value
         if (value.topicSelectionFailed) {
-          topicSelectionFailures++
-          failureCount++
+          stats.topicSelectionFailures++
+          stats.failureCount++
         } else if (value.success) {
-          successCount++
-          if (value.topicId) uniqueTopicIds.add(value.topicId)
-
-          // Track notification type statistics
-          if (value.notificationType === 'continue_learning') {
-            continueLearningCount++
-          } else if (value.notificationType === 'for_you') {
-            forYouCount++
-          }
+          stats.successCount++
+          if (value.topicId) stats.uniqueTopicIds.add(value.topicId)
+          if (value.notificationType === 'continue_learning') stats.continueLearningCount++
+          else if (value.notificationType === 'for_you') stats.forYouCount++
         } else {
-          failureCount++
+          stats.failureCount++
         }
       } else {
-        failureCount++
+        stats.failureCount++
       }
     })
 
-    console.log(`[RecommendedTopic] Batch ${Math.floor(i / BATCH_SIZE) + 1} complete: ${successCount} sent, ${failureCount} failed`)
+    console.log(`[RecommendedTopic] Batch ${Math.floor(i / BATCH_SIZE) + 1} complete: ${stats.successCount} sent, ${stats.failureCount} failed`)
   }
 
-  console.log(`[RecommendedTopic] Complete: ${successCount} sent (${continueLearningCount} Continue Learning, ${forYouCount} For You), ${failureCount} failed`)
+  return stats
+}
+
+async function prepareUserNotifications(
+  supabase: ServiceContainer['supabaseServiceClient'],
+  notificationHelper: ReturnType<typeof createNotificationHelper>,
+  offsetRangeMin: number,
+  offsetRangeMax: number
+): Promise<{ usersToNotify: RecommendedTopicUser[]; languageMap: Map<string, string> } | Response> {
+  const allUsers = await fetchEligibleUsersWithTimezone(supabase, offsetRangeMin, offsetRangeMax)
+  if (allUsers.length === 0) return notificationHelper.createSuccessResponse('No eligible users', { sentCount: 0 })
+  console.log(`[RecommendedTopic] Found ${allUsers.length} users with tokens`)
+
+  const authenticatedUsers = await notificationHelper.filterAnonymousUsers(supabase, allUsers)
+  if (authenticatedUsers.length === 0) return notificationHelper.createSuccessResponse('No authenticated users eligible', { sentCount: 0 })
+
+  const usersToNotify = await computeUsersToNotify(notificationHelper, authenticatedUsers)
+  console.log(`[RecommendedTopic] ${usersToNotify.length} users need notification`)
+  if (usersToNotify.length === 0) return notificationHelper.createSuccessResponse('All users already received notification today', { sentCount: 0 })
+
+  const languageMap = await notificationHelper.getUserLanguagePreferences(supabase, usersToNotify.map(u => u.user_id))
+  return { usersToNotify, languageMap }
+}
+
+function isResponse(value: unknown): value is Response {
+  return value instanceof Response
+}
+
+// ============================================================================
+// Main Handler
+// ============================================================================
+
+/**
+ * Handles sending recommended topic push notifications to eligible users at 8 AM in their timezone.
+ * Uses unified notification selector to send either "Continue Learning" or "For You" notifications.
+ *
+ * @param req - HTTP request with cron secret for authentication
+ * @param services - Service container with Supabase client and dependencies
+ * @returns Response with notification statistics (success/failure counts, notification types)
+ */
+async function handleRecommendedTopicNotification(req: Request, services: ServiceContainer): Promise<Response> {
+  const notificationHelper = createNotificationHelper()
+  notificationHelper.verifyCronSecret(req)
+  console.log('[RecommendedTopic] Starting notification process...')
+
+  const { offsetRangeMin, offsetRangeMax } = calculateTimezoneOffsetRange(new Date().getUTCHours())
+  console.log(`[RecommendedTopic] Offset range: ${offsetRangeMin} to ${offsetRangeMax}`)
+
+  const result = await prepareUserNotifications(services.supabaseServiceClient, notificationHelper, offsetRangeMin, offsetRangeMax)
+  if (isResponse(result)) return result
+
+  const { usersToNotify, languageMap } = result
+  const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
+  const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+  const stats = await sendNotificationBatch(usersToNotify, languageMap, new FCMService(), SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
+
+  console.log(`[RecommendedTopic] Complete: ${stats.successCount} sent (${stats.continueLearningCount} Continue, ${stats.forYouCount} ForYou)`)
 
   return notificationHelper.createSuccessResponse('Unified notifications sent (Continue Learning + For You)', {
     totalEligible: usersToNotify.length,
-    successCount,
-    failureCount,
-    topicSelectionFailures,
-    uniqueTopicsSent: uniqueTopicIds.size,
-    continueLearningCount,
-    forYouCount,
+    successCount: stats.successCount,
+    failureCount: stats.failureCount,
+    topicSelectionFailures: stats.topicSelectionFailures,
+    uniqueTopicsSent: stats.uniqueTopicIds.size,
+    continueLearningCount: stats.continueLearningCount,
+    forYouCount: stats.forYouCount,
   })
 }
 
