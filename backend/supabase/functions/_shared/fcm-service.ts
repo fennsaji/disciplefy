@@ -6,6 +6,7 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
 import { formatError, formatFCMError } from './utils/error-formatter.ts';
+import type { NotificationType } from './services/notification-helper-service.ts';
 
 // ============================================================================
 // Configuration Constants
@@ -349,7 +350,7 @@ export async function logNotification(
   supabaseKey: string,
   log: {
     userId: string;
-    notificationType: 'daily_verse' | 'recommended_topic' | 'continue_learning' | 'streak_reminder' | 'streak_milestone' | 'streak_lost' | 'memory_verse_reminder' | 'memory_verse_overdue';
+    notificationType: NotificationType;
     title: string;
     body: string;
     topicId?: string;
@@ -426,7 +427,7 @@ export async function getBatchNotificationStatus(
   supabaseUrl: string,
   supabaseKey: string,
   userIds: string[],
-  notificationType: 'daily_verse' | 'recommended_topic' | 'streak_reminder' | 'streak_milestone' | 'streak_lost' | 'memory_verse_reminder' | 'memory_verse_overdue'
+  notificationType: NotificationType
 ): Promise<Set<string>> {
   const supabase = createClient(supabaseUrl, supabaseKey);
 

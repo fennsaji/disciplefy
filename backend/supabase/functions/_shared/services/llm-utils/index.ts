@@ -18,8 +18,6 @@ export {
 export type { VerseReferenceResponse } from './response-parser.ts'
 
 export {
-  createStudyGuideSystemMessage,
-  createStudyGuideUserMessage,
   createStudyGuidePrompt,
   createVerseReferencePrompt,
   createFullVersePrompt,

@@ -171,6 +171,9 @@ class StudyGuideScreenV2 extends StatelessWidget {
   /// Study mode (quick, standard, deep, lectio)
   final StudyMode studyMode;
 
+  /// Existing guide data from saved/recent guides (skips generation if provided)
+  final Map<String, dynamic>? existingGuideData;
+
   const StudyGuideScreenV2({
     super.key,
     this.topicId,
@@ -180,6 +183,7 @@ class StudyGuideScreenV2 extends StatelessWidget {
     this.language,
     this.navigationSource = StudyNavigationSource.home,
     this.studyMode = StudyMode.standard,
+    this.existingGuideData,
   });
 
   @override
@@ -193,6 +197,7 @@ class StudyGuideScreenV2 extends StatelessWidget {
           language: language,
           navigationSource: navigationSource,
           studyMode: studyMode,
+          existingGuideData: existingGuideData,
         ),
       );
 }
@@ -205,6 +210,7 @@ class _StudyGuideScreenV2Content extends StatefulWidget {
   final String? language;
   final StudyNavigationSource navigationSource;
   final StudyMode studyMode;
+  final Map<String, dynamic>? existingGuideData;
 
   const _StudyGuideScreenV2Content({
     this.topicId,
@@ -214,6 +220,7 @@ class _StudyGuideScreenV2Content extends StatefulWidget {
     this.language,
     required this.navigationSource,
     required this.studyMode,
+    this.existingGuideData,
   });
 
   @override
@@ -327,6 +334,12 @@ class _StudyGuideScreenV2ContentState
 
   /// Initialize study guide generation from query parameters
   Future<void> _initializeStudyGuide() async {
+    // If existing guide data is provided (from saved/recent guides), skip generation
+    if (widget.existingGuideData != null) {
+      _loadExistingGuide(widget.existingGuideData!);
+      return;
+    }
+
     // Note: widget.topicId is available for future features (tracking, analytics)
     // Currently, we use widget.input (topic_title) for study guide generation
     // since the API requires the actual topic text, not the database ID.
@@ -394,6 +407,68 @@ class _StudyGuideScreenV2ContentState
           language: normalizedLanguageCode,
           studyMode: widget.studyMode,
         ));
+  }
+
+  /// Load existing study guide from provided data (skips generation)
+  void _loadExistingGuide(Map<String, dynamic> guideData) {
+    try {
+      // Extract data from the map
+      final id = guideData['id'] as String;
+      final inputType = guideData['type'] as String? ?? 'topic';
+      final input = guideData['verse_reference'] ??
+          guideData['topic_name'] ??
+          guideData['title'] ??
+          'Study Guide';
+      final summary = guideData['summary'] as String?;
+      final interpretation = guideData['interpretation'] as String?;
+      final context = guideData['context'] as String?;
+      final relatedVerses =
+          (guideData['related_verses'] as List<dynamic>?)?.cast<String>();
+      final reflectionQuestions =
+          (guideData['reflection_questions'] as List<dynamic>?)?.cast<String>();
+      final prayerPoints =
+          (guideData['prayer_points'] as List<dynamic>?)?.cast<String>();
+      final isSaved = guideData['is_saved'] as bool? ?? false;
+      final personalNotes = guideData['personal_notes'] as String?;
+      final language = widget.language ?? 'en';
+
+      // Create StudyGuide entity
+      final studyGuide = StudyGuide(
+        id: id,
+        input: input,
+        inputType: inputType,
+        language: language,
+        summary: summary ?? '',
+        interpretation: interpretation ?? '',
+        context: context ?? '',
+        relatedVerses: relatedVerses ?? [],
+        reflectionQuestions: reflectionQuestions ?? [],
+        prayerPoints: prayerPoints ?? [],
+        personalNotes: personalNotes,
+        isSaved: isSaved,
+        createdAt: DateTime.now(),
+      );
+
+      if (kDebugMode) {
+        print('✅ [STUDY_GUIDE_V2] Loaded existing guide: $input');
+      }
+
+      setState(() {
+        _currentStudyGuide = studyGuide;
+        _isLoading = false;
+        _isSaved = isSaved;
+        if (personalNotes != null && personalNotes.isNotEmpty) {
+          _notesController.text = personalNotes;
+          _loadedNotes = personalNotes;
+          _notesLoaded = true;
+        }
+      });
+    } catch (e) {
+      if (kDebugMode) {
+        print('❌ [STUDY_GUIDE_V2] Failed to load existing guide: $e');
+      }
+      _showError('Failed to load study guide. Please try again.');
+    }
   }
 
   /// Start tracking topic progress when user opens a study guide from a topic.
@@ -1571,8 +1646,7 @@ class _StudyGuideScreenV2ContentState
       StudyMode.quick => _buildQuickModeStudyContent(),
       StudyMode.deep => _buildDeepModeStudyContent(),
       StudyMode.lectio => _buildLectioDivinaStudyContent(),
-      StudyMode.sermon =>
-        _buildStandardModeStudyContent(), // Sermon uses standard 6-section layout
+      StudyMode.sermon => _buildSermonModeStudyContent(),
       StudyMode.standard => _buildStandardModeStudyContent(),
     };
   }
@@ -1655,6 +1729,85 @@ class _StudyGuideScreenV2ContentState
                   .entries
                   .map((entry) => '• ${entry.value}')
                   .join('\n'),
+              isBeingRead: isReading && currentSection == 5,
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  /// Sermon mode - specialized sermon preparation layout matching streaming version
+  Widget _buildSermonModeStudyContent() {
+    final ttsService = sl<StudyGuideTTSService>();
+
+    return ValueListenableBuilder<StudyGuideTtsState>(
+      valueListenable: ttsService.state,
+      builder: (context, ttsState, child) {
+        final isReading = ttsState.status == TtsStatus.playing;
+        final currentSection = ttsState.currentSectionIndex;
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Sermon Thesis (index 0) - from summary
+            _StudySection(
+              title: context.tr(TranslationKeys.sermonThesis),
+              icon: Icons.lightbulb_outline,
+              content: _currentStudyGuide!.summary,
+              isBeingRead: isReading && currentSection == 0,
+            ),
+
+            const SizedBox(height: 24),
+
+            // Main Sermon Body (index 1) - from interpretation
+            _StudySection(
+              title: context.tr(TranslationKeys.sermonBody),
+              icon: Icons.menu_book,
+              content: _currentStudyGuide!.interpretation,
+              isBeingRead: isReading && currentSection == 1,
+            ),
+
+            const SizedBox(height: 24),
+
+            // Background/Context (index 2)
+            _StudySection(
+              title: context.tr(TranslationKeys.sermonContext),
+              icon: Icons.history_edu,
+              content: _currentStudyGuide!.context,
+              isBeingRead: isReading && currentSection == 2,
+            ),
+
+            const SizedBox(height: 24),
+
+            // Supporting Verses (index 3) - from relatedVerses
+            _StudySection(
+              title: context.tr(TranslationKeys.sermonSupportingVerses),
+              icon: Icons.bookmark_border,
+              content: _currentStudyGuide!.relatedVerses.join('\n\n'),
+              isBeingRead: isReading && currentSection == 3,
+            ),
+
+            const SizedBox(height: 24),
+
+            // Discussion Questions (index 4) - from reflectionQuestions
+            _StudySection(
+              title: context.tr(TranslationKeys.sermonDiscussionQuestions),
+              icon: Icons.question_answer,
+              content: _currentStudyGuide!.reflectionQuestions
+                  .asMap()
+                  .entries
+                  .map((entry) => '${entry.key + 1}. ${entry.value}')
+                  .join('\n\n'),
+              isBeingRead: isReading && currentSection == 4,
+            ),
+
+            const SizedBox(height: 24),
+
+            // Altar Call (index 5) - from prayerPoints with special styling
+            _buildAltarCallSection(
+              context,
+              content: _currentStudyGuide!.prayerPoints.join('\n\n'),
               isBeingRead: isReading && currentSection == 5,
             ),
           ],
@@ -1962,6 +2115,110 @@ class _StudyGuideScreenV2ContentState
               fontSize: 12,
               fontWeight: FontWeight.w600,
               color: accentColor,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Build altar call section with special gradient styling matching streaming version
+  Widget _buildAltarCallSection(
+    BuildContext context, {
+    required String content,
+    bool isBeingRead = false,
+  }) {
+    final theme = Theme.of(context);
+    final primaryColor = theme.colorScheme.primary;
+
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            theme.colorScheme.primaryContainer,
+            theme.colorScheme.secondaryContainer,
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: primaryColor.withOpacity(0.15),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header
+          Row(
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: primaryColor.withOpacity(0.15),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  Icons.volunteer_activism,
+                  color: primaryColor,
+                  size: 24,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  context.tr(TranslationKeys.sermonAltarCall),
+                  style: AppFonts.inter(
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                    color: theme.colorScheme.onPrimaryContainer,
+                  ),
+                ),
+              ),
+              // Copy button
+              IconButton(
+                onPressed: () {
+                  Clipboard.setData(ClipboardData(text: content));
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        context.tr(TranslationKeys.studyGuideCopiedToClipboard),
+                        style: AppFonts.inter(color: Colors.white),
+                      ),
+                      backgroundColor: primaryColor,
+                      behavior: SnackBarBehavior.floating,
+                      duration: const Duration(seconds: 2),
+                    ),
+                  );
+                },
+                icon: Icon(
+                  Icons.copy,
+                  color: primaryColor,
+                  size: 20,
+                ),
+                constraints: const BoxConstraints(
+                  minWidth: 44,
+                  minHeight: 44,
+                ),
+                padding: const EdgeInsets.all(8),
+                tooltip: 'Copy Altar Call',
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          // Content with markdown formatting
+          MarkdownWithScripture(
+            data: content,
+            textStyle: AppFonts.inter(
+              fontSize: 16,
+              height: 1.7,
+              color: theme.colorScheme.onPrimaryContainer,
             ),
           ),
         ],

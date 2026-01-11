@@ -24,6 +24,7 @@ class SavedGuideModelAdapter extends TypeAdapter<SavedGuideModel> {
       createdAt: fields[4] as DateTime,
       lastAccessedAt: fields[5] as DateTime,
       isSaved: fields[6] as bool,
+      studyMode: fields[23] as String?,
       verseReference: fields[7] as String?,
       topicName: fields[8] as String?,
       summary: fields[9] as String?,
@@ -46,7 +47,7 @@ class SavedGuideModelAdapter extends TypeAdapter<SavedGuideModel> {
   @override
   void write(BinaryWriter writer, SavedGuideModel obj) {
     writer
-      ..writeByte(23)
+      ..writeByte(24)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -81,6 +82,8 @@ class SavedGuideModelAdapter extends TypeAdapter<SavedGuideModel> {
       ..write(obj.summaryInsights)
       ..writeByte(22)
       ..write(obj.reflectionAnswers)
+      ..writeByte(23)
+      ..write(obj.studyMode)
       ..writeByte(3)
       ..write(obj.typeString)
       ..writeByte(4)
@@ -119,6 +122,7 @@ SavedGuideModel _$SavedGuideModelFromJson(Map<String, dynamic> json) =>
       createdAt: DateTime.parse(json['createdAt'] as String),
       lastAccessedAt: DateTime.parse(json['lastAccessedAt'] as String),
       isSaved: json['isSaved'] as bool,
+      studyMode: json['studyMode'] as String?,
       verseReference: json['verseReference'] as String?,
       topicName: json['topicName'] as String?,
       summary: json['summary'] as String?,
@@ -168,6 +172,7 @@ Map<String, dynamic> _$SavedGuideModelToJson(SavedGuideModel instance) =>
       'prayerQuestion': instance.prayerQuestion,
       'summaryInsights': instance.summaryInsights,
       'reflectionAnswers': instance.reflectionAnswers,
+      'studyMode': instance.studyMode,
       'type': instance.typeString,
       'createdAt': instance.createdAt.toIso8601String(),
       'lastAccessedAt': instance.lastAccessedAt.toIso8601String(),

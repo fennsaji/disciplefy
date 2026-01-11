@@ -31,6 +31,7 @@ class SavedGuideEntity extends Equatable {
   final String content;
 
   final GuideType type;
+  final String? studyMode; // quick, standard, deep, lectio, sermon
   final DateTime createdAt;
   final DateTime lastAccessedAt;
   final bool isSaved;
@@ -45,6 +46,7 @@ class SavedGuideEntity extends Equatable {
     required this.createdAt,
     required this.lastAccessedAt,
     required this.isSaved,
+    this.studyMode,
     this.verseReference,
     this.topicName,
     this.summary,
@@ -68,6 +70,7 @@ class SavedGuideEntity extends Equatable {
     String? title,
     String? content,
     GuideType? type,
+    String? studyMode,
     DateTime? createdAt,
     DateTime? lastAccessedAt,
     bool? isSaved,
@@ -93,6 +96,7 @@ class SavedGuideEntity extends Equatable {
         title: title ?? this.title,
         content: content ?? this.content,
         type: type ?? this.type,
+        studyMode: studyMode ?? this.studyMode,
         createdAt: createdAt ?? this.createdAt,
         lastAccessedAt: lastAccessedAt ?? this.lastAccessedAt,
         isSaved: isSaved ?? this.isSaved,
@@ -131,6 +135,46 @@ class SavedGuideEntity extends Equatable {
         return 'Bible Verse Study';
       case GuideType.topic:
         return 'Topic Study';
+    }
+  }
+
+  /// Returns the display name for the study mode
+  String? get studyModeDisplay {
+    if (studyMode == null) return null;
+
+    switch (studyMode) {
+      case 'quick':
+        return 'Quick Read';
+      case 'standard':
+        return 'Standard Study';
+      case 'deep':
+        return 'Deep Dive';
+      case 'lectio':
+        return 'Lectio Divina';
+      case 'sermon':
+        return 'Sermon Outline';
+      default:
+        return null;
+    }
+  }
+
+  /// Returns the duration badge text for the study mode
+  String? get studyModeDuration {
+    if (studyMode == null) return null;
+
+    switch (studyMode) {
+      case 'quick':
+        return '3 min';
+      case 'standard':
+        return '10 min';
+      case 'deep':
+        return '25 min';
+      case 'lectio':
+        return '15 min';
+      case 'sermon':
+        return '55 min';
+      default:
+        return null;
     }
   }
 
@@ -173,6 +217,7 @@ class SavedGuideEntity extends Equatable {
         title,
         content,
         type,
+        studyMode,
         createdAt,
         lastAccessedAt,
         isSaved,
