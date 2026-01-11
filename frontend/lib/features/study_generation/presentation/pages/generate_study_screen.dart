@@ -2005,72 +2005,96 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
                 ),
                 const SizedBox(height: 24),
 
-                // Mode options
-                _buildModeOptionRaw(
-                  context: context,
-                  modeValue: null,
-                  title: context
-                      .tr(TranslationKeys.studyModePreferenceAskEveryTime),
-                  subtitle: context.tr(
-                      TranslationKeys.studyModePreferenceAskEveryTimeSubtitle),
-                  icon: Icons.touch_app_outlined,
-                  currentModeRaw: currentModeRaw,
-                  duration: null,
-                ),
-                const SizedBox(height: 12),
-                _buildModeOptionRaw(
-                  context: context,
-                  modeValue: 'recommended',
-                  title: context.tr(TranslationKeys.settingsUseRecommended),
-                  subtitle: context
-                      .tr(TranslationKeys.settingsUseRecommendedSubtitle),
-                  icon: Icons.stars,
-                  currentModeRaw: currentModeRaw,
-                  duration: null,
-                ),
-                const SizedBox(height: 12),
-                _buildModeOptionRaw(
-                  context: context,
-                  modeValue: 'quick',
-                  title: context.tr(TranslationKeys.studyModeQuickName),
-                  subtitle:
-                      context.tr(TranslationKeys.studyModeQuickDescription),
-                  icon: Icons.bolt,
-                  currentModeRaw: currentModeRaw,
-                  duration: '3 min',
-                ),
-                const SizedBox(height: 12),
-                _buildModeOptionRaw(
-                  context: context,
-                  modeValue: 'standard',
-                  title: context.tr(TranslationKeys.studyModeStandardName),
-                  subtitle:
-                      context.tr(TranslationKeys.studyModeStandardDescription),
-                  icon: Icons.library_books,
-                  currentModeRaw: currentModeRaw,
-                  duration: '10 min',
-                ),
-                const SizedBox(height: 12),
-                _buildModeOptionRaw(
-                  context: context,
-                  modeValue: 'deep',
-                  title: context.tr(TranslationKeys.studyModeDeepName),
-                  subtitle:
-                      context.tr(TranslationKeys.studyModeDeepDescription),
-                  icon: Icons.search,
-                  currentModeRaw: currentModeRaw,
-                  duration: '25 min',
-                ),
-                const SizedBox(height: 12),
-                _buildModeOptionRaw(
-                  context: context,
-                  modeValue: 'lectio',
-                  title: context.tr(TranslationKeys.studyModeLectioName),
-                  subtitle:
-                      context.tr(TranslationKeys.studyModeLectioDescription),
-                  icon: Icons.self_improvement,
-                  currentModeRaw: currentModeRaw,
-                  duration: '15 min',
+                // Scrollable mode options
+                Flexible(
+                  child: SingleChildScrollView(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        _buildModeOptionRaw(
+                          context: context,
+                          modeValue: null,
+                          title: context.tr(
+                              TranslationKeys.studyModePreferenceAskEveryTime),
+                          subtitle: context.tr(TranslationKeys
+                              .studyModePreferenceAskEveryTimeSubtitle),
+                          icon: Icons.touch_app_outlined,
+                          currentModeRaw: currentModeRaw,
+                          duration: null,
+                        ),
+                        const SizedBox(height: 12),
+                        _buildModeOptionRaw(
+                          context: context,
+                          modeValue: 'recommended',
+                          title: context
+                              .tr(TranslationKeys.settingsUseRecommended),
+                          subtitle: context.tr(
+                              TranslationKeys.settingsUseRecommendedSubtitle),
+                          icon: Icons.stars,
+                          currentModeRaw: currentModeRaw,
+                          duration: null,
+                        ),
+                        const SizedBox(height: 12),
+                        _buildModeOptionRaw(
+                          context: context,
+                          modeValue: 'quick',
+                          title: context.tr(TranslationKeys.studyModeQuickName),
+                          subtitle: context
+                              .tr(TranslationKeys.studyModeQuickDescription),
+                          icon: Icons.bolt,
+                          currentModeRaw: currentModeRaw,
+                          duration: '3 min',
+                        ),
+                        const SizedBox(height: 12),
+                        _buildModeOptionRaw(
+                          context: context,
+                          modeValue: 'standard',
+                          title:
+                              context.tr(TranslationKeys.studyModeStandardName),
+                          subtitle: context
+                              .tr(TranslationKeys.studyModeStandardDescription),
+                          icon: Icons.library_books,
+                          currentModeRaw: currentModeRaw,
+                          duration: '10 min',
+                        ),
+                        const SizedBox(height: 12),
+                        _buildModeOptionRaw(
+                          context: context,
+                          modeValue: 'deep',
+                          title: context.tr(TranslationKeys.studyModeDeepName),
+                          subtitle: context
+                              .tr(TranslationKeys.studyModeDeepDescription),
+                          icon: Icons.search,
+                          currentModeRaw: currentModeRaw,
+                          duration: '25 min',
+                        ),
+                        const SizedBox(height: 12),
+                        _buildModeOptionRaw(
+                          context: context,
+                          modeValue: 'lectio',
+                          title:
+                              context.tr(TranslationKeys.studyModeLectioName),
+                          subtitle: context
+                              .tr(TranslationKeys.studyModeLectioDescription),
+                          icon: Icons.self_improvement,
+                          currentModeRaw: currentModeRaw,
+                          duration: '15 min',
+                        ),
+                        const SizedBox(height: 12),
+                        _buildModeOptionRaw(
+                          context: context,
+                          modeValue: 'sermon',
+                          title:
+                              context.tr(TranslationKeys.studyModeSermonName),
+                          subtitle: context
+                              .tr(TranslationKeys.studyModeSermonDescription),
+                          icon: Icons.church,
+                          currentModeRaw: currentModeRaw,
+                          duration: '55 min',
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
               ],
             ),
