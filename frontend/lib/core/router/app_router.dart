@@ -7,9 +7,7 @@ import '../../features/onboarding/presentation/pages/onboarding_screen.dart';
 import '../../features/onboarding/presentation/pages/language_selection_screen.dart';
 import '../../features/onboarding/presentation/pages/onboarding_language_page.dart';
 import '../../features/onboarding/presentation/pages/onboarding_purpose_page.dart';
-import '../../features/study_generation/presentation/pages/study_guide_screen.dart';
 import '../../features/study_generation/presentation/pages/study_guide_screen_v2.dart';
-import '../../features/study_generation/domain/entities/study_guide.dart';
 import '../../features/study_generation/domain/entities/study_mode.dart';
 import '../../features/auth/presentation/pages/login_screen.dart';
 import '../../features/auth/presentation/pages/phone_number_input_screen.dart';
@@ -613,30 +611,65 @@ class AppRouter {
       ),
 
       // Full Screen Routes (outside shell)
+      // Study Guide Screen - Unified route using V2 implementation
+      // Supports both query parameters and extra data for backward compatibility
       GoRoute(
         path: AppRoutes.studyGuide,
         name: 'study_guide',
         pageBuilder: (context, state) {
-          // Handle different types of navigation data
-          StudyGuide? studyGuide;
-          Map<String, dynamic>? routeExtra;
-
-          // Parse navigation source from query parameters
+          // Parse query parameters (for v2-style navigation)
+          final topicId = state.uri.queryParameters['topic_id'];
+          String? input = state.uri.queryParameters['input'];
+          String? type = state.uri.queryParameters['type'];
+          final description = state.uri.queryParameters['description'];
+          String? language = state.uri.queryParameters['language'];
           final sourceString = state.uri.queryParameters['source'];
+          final modeString = state.uri.queryParameters['mode'];
+
+          // Handle extra data (for saved/recent guides with existing content)
+          Map<String, dynamic>? existingGuideData;
+          if (state.extra is Map<String, dynamic>) {
+            final extraData = state.extra as Map<String, dynamic>;
+            final studyGuideData =
+                extraData['study_guide'] as Map<String, dynamic>?;
+
+            if (studyGuideData != null) {
+              existingGuideData = studyGuideData;
+
+              // Extract data from study_guide map for parameters
+              input ??= studyGuideData['verse_reference'] ??
+                  studyGuideData['topic_name'] ??
+                  studyGuideData['title'];
+              type ??= studyGuideData['type'];
+              language ??= 'en'; // Default language
+
+              // Extract study mode if available
+              final guideMode = studyGuideData['study_mode'] as String?;
+              if (guideMode != null && modeString == null) {
+                // Use the saved study mode
+              }
+            }
+          }
+
+          // Parse navigation source
           final navigationSource =
               sl<StudyNavigator>().parseNavigationSource(sourceString);
 
-          if (state.extra is StudyGuide) {
-            studyGuide = state.extra as StudyGuide;
-          } else if (state.extra is Map<String, dynamic>) {
-            routeExtra = state.extra as Map<String, dynamic>;
-          }
+          // Parse study mode (default to standard)
+          final studyMode = studyModeFromString(
+                  modeString ?? existingGuideData?['study_mode']) ??
+              StudyMode.standard;
 
           return slideRightTransitionPage(
-            child: StudyGuideScreen(
-              studyGuide: studyGuide,
-              routeExtra: routeExtra,
+            child: StudyGuideScreenV2(
+              topicId: topicId,
+              input: input,
+              type: type,
+              description: description,
+              language: language,
               navigationSource: navigationSource,
+              studyMode: studyMode,
+              existingGuideData: existingGuideData,
             ),
             state: state,
           );
@@ -703,8 +736,6 @@ extension AppRouterExtension on GoRouter {
   // void goToOnboardingPurpose() => go(AppRoutes.onboardingPurpose);
   void goToHome() => go(AppRoutes.home);
   void goToGenerateStudy() => go(AppRoutes.generateStudy);
-  void goToStudyGuide(StudyGuide studyGuide) =>
-      go(AppRoutes.studyGuide, extra: studyGuide);
   void goToStudyGuideWithExtra(Map<String, dynamic> extra) =>
       go(AppRoutes.studyGuide, extra: extra);
   void goToSettings() => go(AppRoutes.settings);

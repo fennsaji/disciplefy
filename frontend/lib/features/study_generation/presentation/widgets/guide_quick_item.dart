@@ -122,6 +122,44 @@ class GuideQuickItem extends StatelessWidget {
                           ),
                         ],
                       ),
+
+                      // Study mode badge
+                      if (guide.studyModeDisplay != null) ...[
+                        const SizedBox(height: 6),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: AppTheme.successColor.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                guide.studyModeDisplay!,
+                                style: AppFonts.inter(
+                                  fontSize: 9,
+                                  fontWeight: FontWeight.w600,
+                                  color: AppTheme.successColor,
+                                ),
+                              ),
+                              if (guide.studyModeDuration != null) ...[
+                                const SizedBox(width: 3),
+                                Text(
+                                  '• ${guide.studyModeDuration}',
+                                  style: AppFonts.inter(
+                                    fontSize: 8,
+                                    fontWeight: FontWeight.w500,
+                                    color:
+                                        AppTheme.successColor.withOpacity(0.8),
+                                  ),
+                                ),
+                              ],
+                            ],
+                          ),
+                        ),
+                      ],
                     ],
                   ),
                 ),
