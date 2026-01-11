@@ -78,6 +78,10 @@ class SavedGuideModel extends SavedGuideEntity {
   @HiveField(22)
   final List<String>? reflectionAnswers;
 
+  @HiveField(23)
+  @override
+  final String? studyMode;
+
   @HiveField(3)
   @JsonKey(name: 'type')
   final String typeString;
@@ -110,6 +114,7 @@ class SavedGuideModel extends SavedGuideEntity {
     required this.createdAt,
     required this.lastAccessedAt,
     required this.isSaved,
+    this.studyMode,
     this.verseReference,
     this.topicName,
     this.summary,
@@ -131,6 +136,7 @@ class SavedGuideModel extends SavedGuideEntity {
           title: title,
           content: content,
           type: typeString == 'verse' ? GuideType.verse : GuideType.topic,
+          studyMode: studyMode,
           createdAt: createdAt,
           lastAccessedAt: lastAccessedAt,
           isSaved: isSaved,
@@ -163,6 +169,7 @@ class SavedGuideModel extends SavedGuideEntity {
         title: entity.title,
         content: entity.content,
         typeString: entity.type == GuideType.verse ? 'verse' : 'topic',
+        studyMode: entity.studyMode,
         createdAt: entity.createdAt,
         lastAccessedAt: entity.lastAccessedAt,
         isSaved: entity.isSaved,
@@ -226,6 +233,9 @@ class SavedGuideModel extends SavedGuideEntity {
         contentData['reflectionQuestion'] as String? ?? '';
     final prayerQuestion = contentData['prayerQuestion'] as String? ?? '';
 
+    // Extract study mode from API response (it's nested in the input object)
+    final studyMode = inputData['study_mode'] as String?;
+
     return SavedGuideModel(
       id: json['id'] as String,
       title: inputValue,
@@ -236,6 +246,7 @@ class SavedGuideModel extends SavedGuideEntity {
               ? interpretation
               : 'Study Guide Content'),
       typeString: inputType,
+      studyMode: studyMode,
       createdAt: DateTime.parse(json['createdAt'] as String),
       lastAccessedAt: DateTime.parse(json['updatedAt'] as String),
       isSaved: json['isSaved'] as bool? ?? false,
@@ -270,6 +281,7 @@ class SavedGuideModel extends SavedGuideEntity {
         title: title,
         content: content,
         type: typeString == 'verse' ? GuideType.verse : GuideType.topic,
+        studyMode: studyMode,
         createdAt: createdAt,
         lastAccessedAt: lastAccessedAt,
         isSaved: isSaved,
@@ -311,6 +323,7 @@ class SavedGuideModel extends SavedGuideEntity {
     String? reflectionQuestion,
     String? prayerQuestion,
     GuideType? type,
+    String? studyMode,
     DateTime? createdAt,
     DateTime? lastAccessedAt,
     bool? isSaved,
@@ -324,6 +337,7 @@ class SavedGuideModel extends SavedGuideEntity {
         typeString: type != null
             ? (type == GuideType.verse ? 'verse' : 'topic')
             : typeString,
+        studyMode: studyMode ?? this.studyMode,
         createdAt: createdAt ?? this.createdAt,
         lastAccessedAt: lastAccessedAt ?? this.lastAccessedAt,
         isSaved: isSaved ?? this.isSaved,

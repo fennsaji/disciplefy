@@ -18,6 +18,7 @@ import { AppError } from '../utils/error-handler.ts'
 export type NotificationType =
   | 'daily_verse'
   | 'recommended_topic'
+  | 'continue_learning'
   | 'streak_reminder'
   | 'streak_milestone'
   | 'streak_lost'
