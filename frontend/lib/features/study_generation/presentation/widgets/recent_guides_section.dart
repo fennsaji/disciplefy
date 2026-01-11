@@ -314,6 +314,7 @@ class _RecentGuidesSectionState extends State<RecentGuidesSection> {
         'title': guide.displayTitle,
         'content': guide.content,
         'type': guide.type.name,
+        'study_mode': guide.studyMode,
         'verse_reference': guide.verseReference,
         'topic_name': guide.topicName,
         'is_saved': guide.isSaved,

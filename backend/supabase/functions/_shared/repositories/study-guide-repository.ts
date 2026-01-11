@@ -373,6 +373,7 @@ export class StudyGuideRepository {
           input_type,
           input_value,
           input_value_hash,
+          study_mode,
           language,
           summary,
           interpretation,
