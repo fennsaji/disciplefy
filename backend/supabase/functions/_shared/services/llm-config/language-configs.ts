@@ -15,17 +15,26 @@ export type SupportedLanguage = 'en' | 'hi' | 'ml'
 /**
  * Language configurations map
  */
+// v3.3: All languages now prefer Anthropic (Claude Sonnet 4.5) for better length compliance
+// v3.4: Added language-specific word count targets for Malayalam (adjusted to 70% due to token inefficiency)
 const languageConfigs: Map<SupportedLanguage, LanguageConfig> = new Map([
   ['en', {
     name: 'English',
-    modelPreference: 'openai' as LLMProvider,
+    modelPreference: 'anthropic' as LLMProvider,  // v3.3: Changed from openai to anthropic
     maxTokens: 3000,
     temperature: 0.3,
     promptModifiers: {
       languageInstruction: 'Output only in clear, accessible English',
       complexityInstruction: 'Use clear, pastoral language appropriate for all education levels'
     },
-    culturalContext: 'Western Christian context with Protestant theological emphasis'
+    culturalContext: 'Western Christian context with Protestant theological emphasis',
+    wordCountTargets: {
+      quick: { min: 600, max: 750, display: '600-750' },
+      standard: { min: 2000, max: 2500, display: '2000-2500' },
+      deep: { min: 5000, max: 6000, display: '5000-6000' },
+      lectio: { min: 3000, max: 3500, display: '3000-3500' },
+      sermon: { min: 9000, max: 11000, display: '9000-11000' }
+    }
   }],
   ['hi', {
     name: 'Hindi',
@@ -36,7 +45,14 @@ const languageConfigs: Map<SupportedLanguage, LanguageConfig> = new Map([
       languageInstruction: 'Output only in simple, everyday Hindi (avoid complex Sanskrit words, use common spoken Hindi)',
       complexityInstruction: 'Use easy level language that common people can easily understand'
     },
-    culturalContext: 'Indian Christian context with cultural sensitivity to local traditions and practices'
+    culturalContext: 'Indian Christian context with cultural sensitivity to local traditions and practices',
+    wordCountTargets: {
+      quick: { min: 500, max: 600, display: '500-600' },
+      standard: { min: 2000, max: 2500, display: '2000-2500' },
+      deep: { min: 5000, max: 6000, display: '5000-6000' },
+      lectio: { min: 3000, max: 3500, display: '3000-3500' },
+      sermon: { min: 9000, max: 11000, display: '9000-11000' }
+    }
   }],
   ['ml', {
     name: 'Malayalam',
@@ -47,7 +63,16 @@ const languageConfigs: Map<SupportedLanguage, LanguageConfig> = new Map([
       languageInstruction: 'Output only in simple, everyday Malayalam (avoid complex literary words, use common spoken Malayalam)',
       complexityInstruction: 'Use simple vocabulary accessible to Malayalam speakers across Kerala'
     },
-    culturalContext: 'Kerala Christian context with awareness of the strong Protestant Christian heritage in the region'
+    culturalContext: 'Kerala Christian context with awareness of the strong Protestant Christian heritage in the region',
+    // v3.4: Malayalam adjusted targets (70% of English due to 7-8x token inefficiency)
+    // Malayalam script requires significantly more tokens per word than English/Hindi
+    wordCountTargets: {
+      quick: { min: 400, max: 500, display: '400-500' },           // 75% of English
+      standard: { min: 1500, max: 1800, display: '1500-1800' },    // 70% of English
+      deep: { min: 3500, max: 4200, display: '3500-4200' },        // 70% of English
+      lectio: { min: 2200, max: 2600, display: '2200-2600' },      // 70% of English
+      sermon: { min: 4000, max: 5000, display: '4000-5000' }       // 45% of English
+    }
   }]
 ])
 

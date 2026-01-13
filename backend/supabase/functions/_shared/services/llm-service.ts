@@ -111,6 +111,7 @@ export class LLMService {
     }
 
     // Set primary provider
+    // v3.3: Prefer Anthropic (Claude Sonnet 4.5) by default for better length compliance
     if (config.provider && this.availableProviders.has(config.provider)) {
       this.provider = config.provider
     } else {
