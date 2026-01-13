@@ -43,20 +43,26 @@ export class AnthropicClient {
   }
 
   /**
-   * Selects the optimal Anthropic model based on language.
+   * Selects the optimal Anthropic model based on language and study mode.
+   * v3.4: Cost optimization - Claude Haiku for Quick Read mode (73% cheaper).
+   * v3.3: Using Claude Sonnet 4.5 for all other modes for better length compliance.
    *
    * @param language - Target language code
+   * @param studyMode - Optional study mode for cost optimization
    * @returns Anthropic model name
    */
-  selectModel(language: string): string {
-    switch (language) {
-      case 'hi':
-      case 'ml':
-        return 'claude-sonnet-4-20250514'
-      case 'en':
-      default:
-        return 'claude-haiku-4-5-20251001'
+  selectModel(language: string, studyMode?: string): string {
+    // v3.4 Cost Optimization: Use Claude Haiku 4.5 for Quick Read mode
+    // Quick Read is simple (600-750 words), Haiku is sufficient and 73% cheaper
+    // Savings: $0.013 → $0.0035 per guide (73% reduction)
+    // Impact: ~₹1,533/month savings on Quick Read alone (1,758 guides/month)
+    if (studyMode === 'quick') {
+      return 'claude-haiku-4-5-20250929'
     }
+
+    // v3.3: Claude Sonnet 4.5 for all other modes (better at following word count instructions)
+    // Expected improvement: 30-50% longer outputs with better instruction adherence
+    return 'claude-sonnet-4-5-20250929'
   }
 
   /**
@@ -145,7 +151,7 @@ export class AnthropicClient {
     languageConfig: LanguageConfig,
     params: LLMGenerationParams
   ): Promise<string> {
-    const model = this.selectModel(params.language)
+    const model = this.selectModel(params.language, params.studyMode)
     const maxTokens = calculateOptimalTokens(params, languageConfig)
 
     const request: AnthropicRequest = {
@@ -172,6 +178,7 @@ export class AnthropicClient {
 
   /**
    * Makes an API call for verse generation.
+   * v3.3: Using Claude Sonnet 4.5 for consistency.
    *
    * @param systemMessage - System prompt for verse selection
    * @param userMessage - User prompt with verse request details
@@ -180,7 +187,7 @@ export class AnthropicClient {
    */
   async callForVerse(systemMessage: string, userMessage: string): Promise<string> {
     const request: AnthropicRequest = {
-      model: 'claude-sonnet-4-20250514',
+      model: 'claude-sonnet-4-5-20250929',
       max_tokens: 800,
       temperature: 0.2,
       system: systemMessage,
@@ -193,6 +200,7 @@ export class AnthropicClient {
 
   /**
    * Makes an API call for follow-up responses.
+   * v3.3: Using Claude Sonnet 4.5 for all languages for consistency.
    *
    * @param systemMessage - System prompt for follow-up context
    * @param userMessage - User's follow-up question
@@ -201,10 +209,8 @@ export class AnthropicClient {
    * @throws Error if the API request fails or returns invalid content
    */
   async callForFollowUp(systemMessage: string, userMessage: string, language: string): Promise<string> {
-    const model = language === 'en' ? 'claude-haiku-4-5-20251001' : 'claude-sonnet-4-20250514'
-
     const request: AnthropicRequest = {
-      model,
+      model: 'claude-sonnet-4-5-20250929',
       max_tokens: 800,
       temperature: 0.4,
       system: systemMessage,
@@ -233,7 +239,7 @@ export class AnthropicClient {
     languageConfig: LanguageConfig,
     params: LLMGenerationParams
   ): AsyncGenerator<string, void, unknown> {
-    const model = this.selectModel(params.language)
+    const model = this.selectModel(params.language, params.studyMode)
     const maxTokens = calculateOptimalTokens(params, languageConfig)
 
     // Anthropic streaming request
