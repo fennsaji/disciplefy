@@ -42,8 +42,19 @@ echo ""
 # Function to check if directory has changes since last push
 has_changes_since_push() {
     local dir="$1"
-    local upstream=$(git rev-parse --abbrev-ref @{upstream} 2>/dev/null || echo "origin/$branch")
-    git diff --name-only "$upstream"..HEAD | grep -q "^$dir/" 2>/dev/null
+    local upstream=$(git rev-parse --abbrev-ref @{upstream} 2>/dev/null || echo "")
+
+    # If no upstream exists (new branch), assume there are changes
+    if [ -z "$upstream" ]; then
+        return 0  # true - has changes
+    fi
+
+    # Check if upstream branch exists on remote
+    if ! git rev-parse --verify "$upstream" >/dev/null 2>&1; then
+        return 0  # true - has changes (new branch)
+    fi
+
+    git diff --name-only "$upstream"..HEAD 2>/dev/null | grep -q "^$dir/" 2>/dev/null
 }
 
 # Enhanced Backend Validation
