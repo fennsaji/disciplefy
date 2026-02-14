@@ -1,0 +1,600 @@
+'use client'
+
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import { TranslationEditor } from '@/components/ui/translation-editor'
+import { TagsInput } from '@/components/ui/tags-input'
+import { createTopic, listLearningPaths } from '@/lib/api/admin'
+import type { CreateTopicRequest, InputType, LearningPath } from '@/types/admin'
+
+type TabType = 'basic' | 'type-xp' | 'translations' | 'learning-paths'
+
+const CATEGORIES = [
+  'Theology',
+  'Biblical Studies',
+  'Spiritual Disciplines',
+  'Christian Living',
+  'Worship',
+  'Prayer',
+  'Evangelism',
+  'Discipleship',
+  'Church History',
+  'Ethics',
+  'Apologetics',
+  'Leadership',
+]
+
+const COMMON_TAGS = [
+  'beginner',
+  'intermediate',
+  'advanced',
+  'devotional',
+  'theological',
+  'practical',
+  'scripture',
+  'doctrine',
+  'spiritual-growth',
+  'ministry',
+  'faith',
+  'grace',
+]
+
+export default function CreateTopicPage() {
+  const router = useRouter()
+  const [activeTab, setActiveTab] = useState<TabType>('basic')
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [errors, setErrors] = useState<Record<string, string>>({})
+
+  // Learning paths state
+  const [learningPaths, setLearningPaths] = useState<LearningPath[]>([])
+  const [selectedPaths, setSelectedPaths] = useState<Set<string>>(new Set())
+  const [isLoadingPaths, setIsLoadingPaths] = useState(false)
+
+  // Form state
+  const [formData, setFormData] = useState<CreateTopicRequest>({
+    title: '',
+    description: '',
+    category: 'Theology',
+    input_type: 'topic',
+    input_value: '',
+    xp_value: 50,
+    tags: [],
+    is_active: true,
+    translations: {
+      en: { title: '', description: '' },
+    },
+  })
+
+  // Load learning paths
+  useEffect(() => {
+    loadLearningPaths()
+  }, [])
+
+  const loadLearningPaths = async () => {
+    setIsLoadingPaths(true)
+    try {
+      const response = await listLearningPaths()
+      setLearningPaths(response.learning_paths || [])
+    } catch (error) {
+      console.error('Failed to load learning paths:', error)
+    } finally {
+      setIsLoadingPaths(false)
+    }
+  }
+
+  const togglePath = (pathId: string) => {
+    const newSelected = new Set(selectedPaths)
+    if (newSelected.has(pathId)) {
+      newSelected.delete(pathId)
+    } else {
+      newSelected.add(pathId)
+    }
+    setSelectedPaths(newSelected)
+  }
+
+  const validateForm = (): boolean => {
+    const newErrors: Record<string, string> = {}
+
+    if (!formData.title) newErrors.title = 'Title is required'
+    if (!formData.description) newErrors.description = 'Description is required'
+    if (!formData.input_value) newErrors.input_value = 'Input value is required'
+    if (formData.xp_value !== undefined && formData.xp_value < 1)
+      newErrors.xp_value = 'XP value must be at least 1'
+
+    setErrors(newErrors)
+    return Object.keys(newErrors).length === 0
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+
+    if (!validateForm()) {
+      return
+    }
+
+    setIsSubmitting(true)
+    try {
+      const createdTopic = await createTopic(formData)
+
+      // Link topic to selected learning paths
+      if (selectedPaths.size > 0 && createdTopic.topic?.id) {
+        const topicId = createdTopic.topic.id
+        const linkPromises = Array.from(selectedPaths).map(async (pathId) => {
+          try {
+            await fetch('/api/admin/path-topics', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                learning_path_id: pathId,
+                topic_id: topicId,
+              }),
+            })
+          } catch (err) {
+            console.error(`Failed to link topic to path ${pathId}:`, err)
+          }
+        })
+
+        await Promise.all(linkPromises)
+      }
+
+      router.push('/topics')
+    } catch (error) {
+      console.error('Failed to create topic:', error)
+      setErrors({ submit: 'Failed to create topic. Please try again.' })
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50 p-6 dark:bg-gray-900">
+      <div className="mx-auto max-w-4xl">
+        {/* Header */}
+        <div className="mb-6">
+          <button
+            onClick={() => router.push('/topics')}
+            className="mb-4 flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100"
+          >
+            <svg
+              className="h-4 w-4"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M15 19l-7-7 7-7"
+              />
+            </svg>
+            Back to Topics
+          </button>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Create Study Topic</h1>
+        </div>
+
+        {/* Form Container */}
+        <div className="overflow-hidden rounded-lg bg-white shadow dark:bg-gray-800 dark:shadow-gray-900">
+          {/* Tabs */}
+          <div className="border-b border-gray-200 bg-gray-50 px-6 dark:border-gray-700 dark:bg-gray-800">
+            <nav className="flex gap-4">
+              {[
+                { id: 'basic', label: 'Basic Info' },
+                { id: 'type-xp', label: 'Type & XP' },
+                { id: 'translations', label: 'Translations' },
+                { id: 'learning-paths', label: 'Learning Paths' },
+              ].map((tab) => (
+                <button
+                  key={tab.id}
+                  type="button"
+                  onClick={() => setActiveTab(tab.id as TabType)}
+                  className={`border-b-2 px-4 py-3 text-sm font-medium transition-colors ${
+                    activeTab === tab.id
+                      ? 'border-primary text-primary'
+                      : 'border-transparent text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100'
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </nav>
+          </div>
+
+          {/* Form */}
+          <form onSubmit={handleSubmit}>
+            <div className="p-6">
+              {/* Basic Info Tab */}
+              {activeTab === 'basic' && (
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                      Title <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.title}
+                      onChange={(e) =>
+                        setFormData({ ...formData, title: e.target.value })
+                      }
+                      className="mt-1 w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-900 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 dark:placeholder-gray-400"
+                      placeholder="The Trinity"
+                    />
+                    {errors.title && (
+                      <p className="mt-1 text-xs text-red-600 dark:text-red-400">{errors.title}</p>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                      Description <span className="text-red-500">*</span>
+                    </label>
+                    <textarea
+                      value={formData.description}
+                      onChange={(e) =>
+                        setFormData({ ...formData, description: e.target.value })
+                      }
+                      rows={4}
+                      className="mt-1 w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-900 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 dark:placeholder-gray-400"
+                      placeholder="Explore the nature of God as Father, Son, and Holy Spirit..."
+                    />
+                    {errors.description && (
+                      <p className="mt-1 text-xs text-red-600 dark:text-red-400">{errors.description}</p>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                      Category
+                    </label>
+                    <select
+                      value={formData.category}
+                      onChange={(e) =>
+                        setFormData({ ...formData, category: e.target.value })
+                      }
+                      className="mt-1 w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-900 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
+                    >
+                      {CATEGORIES.map((category) => (
+                        <option key={category} value={category}>
+                          {category}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+              )}
+
+              {/* Type & XP Tab */}
+              {activeTab === 'type-xp' && (
+                <div className="space-y-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                      Input Type
+                    </label>
+                    <div className="mt-2 space-y-2">
+                      <label className="flex cursor-pointer items-start gap-3 rounded-lg border-2 border-gray-200 p-4 hover:border-gray-300 dark:border-gray-700 dark:hover:border-gray-600">
+                        <input
+                          type="radio"
+                          name="input-type"
+                          value="topic"
+                          checked={formData.input_type === 'topic'}
+                          onChange={(e) =>
+                            setFormData({
+                              ...formData,
+                              input_type: e.target.value as InputType,
+                            })
+                          }
+                          className="mt-1 h-4 w-4 text-primary focus:ring-primary dark:bg-gray-700 dark:border-gray-600"
+                        />
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                            <span className="text-xl">📖</span>
+                            <span className="font-medium text-gray-900 dark:text-gray-100">Topic</span>
+                          </div>
+                          <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
+                            A theological concept or biblical theme to explore
+                          </p>
+                        </div>
+                      </label>
+
+                      <label className="flex cursor-pointer items-start gap-3 rounded-lg border-2 border-gray-200 p-4 hover:border-gray-300 dark:border-gray-700 dark:hover:border-gray-600">
+                        <input
+                          type="radio"
+                          name="input-type"
+                          value="verse"
+                          checked={formData.input_type === 'verse'}
+                          onChange={(e) =>
+                            setFormData({
+                              ...formData,
+                              input_type: e.target.value as InputType,
+                            })
+                          }
+                          className="mt-1 h-4 w-4 text-primary focus:ring-primary dark:bg-gray-700 dark:border-gray-600"
+                        />
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                            <span className="text-xl">📜</span>
+                            <span className="font-medium text-gray-900 dark:text-gray-100">Verse</span>
+                          </div>
+                          <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
+                            A specific scripture reference or passage
+                          </p>
+                        </div>
+                      </label>
+
+                      <label className="flex cursor-pointer items-start gap-3 rounded-lg border-2 border-gray-200 p-4 hover:border-gray-300 dark:border-gray-700 dark:hover:border-gray-600">
+                        <input
+                          type="radio"
+                          name="input-type"
+                          value="question"
+                          checked={formData.input_type === 'question'}
+                          onChange={(e) =>
+                            setFormData({
+                              ...formData,
+                              input_type: e.target.value as InputType,
+                            })
+                          }
+                          className="mt-1 h-4 w-4 text-primary focus:ring-primary dark:bg-gray-700 dark:border-gray-600"
+                        />
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                            <span className="text-xl">❓</span>
+                            <span className="font-medium text-gray-900 dark:text-gray-100">Question</span>
+                          </div>
+                          <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
+                            A theological question or inquiry to answer
+                          </p>
+                        </div>
+                      </label>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                      Input Value <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.input_value}
+                      onChange={(e) =>
+                        setFormData({ ...formData, input_value: e.target.value })
+                      }
+                      className="mt-1 w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-900 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 dark:placeholder-gray-400"
+                      placeholder={
+                        formData.input_type === 'topic'
+                          ? 'The Trinity'
+                          : formData.input_type === 'verse'
+                            ? 'John 3:16'
+                            : 'What is salvation by grace?'
+                      }
+                    />
+                    <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                      {formData.input_type === 'topic'
+                        ? 'The topic keyword or concept'
+                        : formData.input_type === 'verse'
+                          ? 'Scripture reference (e.g., John 3:16, Romans 8:28-39)'
+                          : 'The question to be answered'}
+                    </p>
+                    {errors.input_value && (
+                      <p className="mt-1 text-xs text-red-600 dark:text-red-400">{errors.input_value}</p>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                      XP Value
+                    </label>
+                    <input
+                      type="number"
+                      min="1"
+                      value={formData.xp_value}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          xp_value: parseInt(e.target.value) || 1,
+                        })
+                      }
+                      className="mt-1 w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-900 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
+                    />
+                    <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                      Experience points earned upon completion (typically 25-100 XP)
+                    </p>
+                    {errors.xp_value && (
+                      <p className="mt-1 text-xs text-red-600 dark:text-red-400">{errors.xp_value}</p>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                      Tags
+                    </label>
+                    <div className="mt-1">
+                      <TagsInput
+                        tags={formData.tags || []}
+                        onChange={(tags) => setFormData({ ...formData, tags })}
+                        placeholder="Add tags..."
+                        suggestions={COMMON_TAGS}
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={formData.is_active}
+                        onChange={(e) =>
+                          setFormData({ ...formData, is_active: e.target.checked })
+                        }
+                        className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary dark:border-gray-600 dark:bg-gray-700"
+                      />
+                      <span className="text-sm text-gray-700 dark:text-gray-300">Active</span>
+                    </label>
+                    <p className="ml-6 mt-1 text-xs text-gray-500 dark:text-gray-400">
+                      Only active topics can be added to learning paths
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* Translations Tab */}
+              {activeTab === 'translations' && (
+                <div>
+                  <TranslationEditor
+                    translations={formData.translations || {}}
+                    onChange={(translations) =>
+                      setFormData({ ...formData, translations })
+                    }
+                  />
+                </div>
+              )}
+
+              {/* Learning Paths Tab */}
+              {activeTab === 'learning-paths' && (
+                <div className="space-y-4">
+                  <div>
+                    <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                      Link to Learning Paths
+                    </h3>
+                    <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
+                      Select which learning paths this topic should be added to (optional)
+                    </p>
+                  </div>
+
+                  {isLoadingPaths ? (
+                    <div className="flex items-center justify-center py-12">
+                      <div className="text-center">
+                        <div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
+                        <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">Loading learning paths...</p>
+                      </div>
+                    </div>
+                  ) : learningPaths.length === 0 ? (
+                    <div className="rounded-lg border-2 border-dashed border-gray-300 p-12 text-center dark:border-gray-700">
+                      <svg
+                        className="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                        />
+                      </svg>
+                      <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">No learning paths available</p>
+                      <button
+                        type="button"
+                        onClick={() => window.open('/learning-paths/create', '_blank')}
+                        className="mt-4 text-sm text-primary hover:text-primary-dark"
+                      >
+                        Create a learning path
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      {/* Select All */}
+                      <div className="rounded-lg border border-gray-200 bg-gray-50 p-3 dark:border-gray-700 dark:bg-gray-700">
+                        <label className="flex items-center gap-2 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={selectedPaths.size === learningPaths.length}
+                            onChange={() => {
+                              if (selectedPaths.size === learningPaths.length) {
+                                setSelectedPaths(new Set())
+                              } else {
+                                setSelectedPaths(new Set(learningPaths.map(p => p.id)))
+                              }
+                            }}
+                            className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary dark:border-gray-600 dark:bg-gray-600"
+                          />
+                          <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                            Select All ({selectedPaths.size} of {learningPaths.length} selected)
+                          </span>
+                        </label>
+                      </div>
+
+                      {/* Learning Paths List */}
+                      <div className="max-h-96 space-y-2 overflow-y-auto rounded-lg border border-gray-200 dark:border-gray-700">
+                        {learningPaths.map((path) => (
+                          <label
+                            key={path.id}
+                            className="flex cursor-pointer items-center gap-3 p-4 hover:bg-gray-50 transition-colors dark:hover:bg-gray-700"
+                          >
+                            <input
+                              type="checkbox"
+                              checked={selectedPaths.has(path.id)}
+                              onChange={() => togglePath(path.id)}
+                              className="h-5 w-5 rounded border-gray-300 text-primary focus:ring-primary dark:border-gray-600 dark:bg-gray-600"
+                            />
+                            <div
+                              className="flex h-10 w-10 items-center justify-center rounded-lg text-xl"
+                              style={{ backgroundColor: `${path.color}20` }}
+                            >
+                              📚
+                            </div>
+                            <div className="flex-1">
+                              <p className="font-medium text-gray-900 dark:text-gray-100">{path.title}</p>
+                              <div className="mt-1 flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400">
+                                <span>{path.slug}</span>
+                                <span>•</span>
+                                <span>{path.topics_count || 0} topics</span>
+                                {!path.is_active && (
+                                  <>
+                                    <span>•</span>
+                                    <span className="text-gray-400 dark:text-gray-500">Inactive</span>
+                                  </>
+                                )}
+                              </div>
+                            </div>
+                          </label>
+                        ))}
+                      </div>
+
+                      {selectedPaths.size > 0 && (
+                        <div className="rounded-lg bg-blue-50 p-3 dark:bg-blue-900/20">
+                          <p className="text-sm text-blue-800 dark:text-blue-300">
+                            This topic will be added to {selectedPaths.size} learning path
+                            {selectedPaths.size !== 1 ? 's' : ''} after creation.
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Error Message */}
+              {errors.submit && (
+                <div className="mt-4 rounded-lg bg-red-50 p-4 dark:bg-red-900/20">
+                  <p className="text-sm text-red-800 dark:text-red-300">{errors.submit}</p>
+                </div>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="border-t border-gray-200 bg-gray-50 px-6 py-4 dark:border-gray-700 dark:bg-gray-800">
+              <div className="flex justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => router.push('/topics')}
+                  disabled={isSubmitting}
+                  className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-dark disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {isSubmitting ? 'Creating...' : 'Create Topic'}
+                </button>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  )
+}
