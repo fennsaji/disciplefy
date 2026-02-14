@@ -15,7 +15,7 @@ class PricingCard extends StatelessWidget {
   final String price;
   final String? originalPrice;
   final String priceSubtext;
-  final String tokenInfo;
+  final String? tokenInfo;
   final String? promotionalText;
   final String? badge;
   final Color? badgeColor;
@@ -32,7 +32,7 @@ class PricingCard extends StatelessWidget {
     required this.price,
     this.originalPrice,
     required this.priceSubtext,
-    required this.tokenInfo,
+    this.tokenInfo,
     this.promotionalText,
     this.badge,
     this.badgeColor,
@@ -183,26 +183,27 @@ class PricingCard extends StatelessWidget {
           _buildPriceSection(context),
           const SizedBox(height: 8),
 
-          // Token info
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(
-              color: isPremium
-                  ? AppTheme.successColor.withOpacity(0.1)
-                  : AppTheme.primaryColor.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Text(
-              tokenInfo,
-              style: AppFonts.inter(
-                fontSize: 13,
-                fontWeight: FontWeight.w500,
-                color:
-                    isPremium ? AppTheme.successColor : AppTheme.primaryColor,
+          // Token info (only show if provided)
+          if (tokenInfo != null)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: isPremium
+                    ? AppTheme.successColor.withOpacity(0.1)
+                    : AppTheme.primaryColor.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(20),
               ),
-              textAlign: TextAlign.center,
+              child: Text(
+                tokenInfo!,
+                style: AppFonts.inter(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                  color:
+                      isPremium ? AppTheme.successColor : AppTheme.primaryColor,
+                ),
+                textAlign: TextAlign.center,
+              ),
             ),
-          ),
 
           // Promotional text
           if (promotionalText != null) ...[

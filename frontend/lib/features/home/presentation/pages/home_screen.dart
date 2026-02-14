@@ -9,10 +9,12 @@ import '../../../../core/animations/app_animations.dart';
 
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/utils/category_utils.dart';
+import '../../../../core/utils/logger.dart';
 import '../../../../core/di/injection_container.dart';
 import '../../../../core/router/app_router.dart';
 import '../../../../core/services/auth_state_provider.dart';
 import '../../../../core/services/language_preference_service.dart';
+import '../../../../core/services/system_config_service.dart';
 import '../../../../core/models/app_language.dart';
 import '../../../../core/widgets/auth_protected_screen.dart';
 import '../../../../core/extensions/translation_extension.dart';
@@ -29,13 +31,18 @@ import '../../../auth/presentation/widgets/email_verification_banner.dart';
 import '../../../subscription/presentation/bloc/subscription_bloc.dart';
 import '../../../subscription/presentation/bloc/subscription_event.dart';
 import '../../../subscription/presentation/bloc/subscription_state.dart';
+import '../../../subscription/presentation/bloc/usage_stats_bloc.dart';
+import '../../../subscription/presentation/bloc/usage_stats_event.dart';
+import '../../../subscription/presentation/bloc/usage_stats_state.dart';
 import '../../../subscription/presentation/widgets/standard_subscription_banner.dart';
 import '../../../subscription/presentation/widgets/standard_subscription_sheet.dart';
 import '../../../subscription/presentation/widgets/upgrade_required_dialog.dart';
+import '../../../subscription/presentation/services/usage_threshold_service.dart';
 import '../../../tokens/presentation/bloc/token_bloc.dart';
 import '../../../tokens/presentation/bloc/token_state.dart';
 import '../../../tokens/domain/entities/token_status.dart';
 
+import '../widgets/usage_meter_widget.dart';
 import '../bloc/home_bloc.dart';
 import '../bloc/home_event.dart';
 import '../bloc/home_state.dart';
@@ -80,11 +87,21 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
   StreamSubscription<AppLanguage>? _languageSubscription;
   StreamSubscription<AppLanguage>? _studyContentLanguageSubscription;
 
+  // Usage stats bloc for soft paywall system
+  late final UsageStatsBloc _usageStatsBloc;
+  late final UsageThresholdService _usageThresholdService;
+
+  // Track last checked date for threshold reset (format: "2026-01-18")
+  String? _lastCheckedDate;
+
   @override
   void initState() {
     super.initState();
+    _usageStatsBloc = sl<UsageStatsBloc>();
+    _usageThresholdService = sl<UsageThresholdService>();
     _loadDailyVerse();
     _loadSubscriptionStatus();
+    _loadUsageStats();
     _setupLanguageChangeListener();
     // Fire initial topics load once; HomeBloc is a singleton via DI
     final homeBloc = sl<HomeBloc>();
@@ -156,6 +173,11 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
   void _loadSubscriptionStatus() {
     final subscriptionBloc = sl<SubscriptionBloc>();
     subscriptionBloc.add(LoadSubscriptionStatus());
+  }
+
+  /// Fetch usage statistics for soft paywall system
+  void _loadUsageStats() {
+    _usageStatsBloc.add(const FetchUsageStats());
   }
 
   /// Shows the Daily Verse notification prompt if not already shown
@@ -382,6 +404,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
   void dispose() {
     _languageSubscription?.cancel();
     _studyContentLanguageSubscription?.cancel();
+    _usageStatsBloc.close();
     super.dispose();
   }
 
@@ -390,128 +413,157 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
     final screenHeight = MediaQuery.of(context).size.height;
     final isLargeScreen = screenHeight > 700;
 
-    return BlocListener<DailyVerseBloc, DailyVerseState>(
-      bloc: sl<DailyVerseBloc>(),
+    return BlocListener<UsageStatsBloc, UsageStatsState>(
+      bloc: _usageStatsBloc,
       listener: (context, state) {
-        // Trigger notification prompts when daily verse loads successfully
-        if (state is DailyVerseLoaded) {
-          final languageCode = _getLanguageCode(state.currentLanguage);
-          _showDailyVerseNotificationPrompt(languageCode);
-
-          // Also check for streak and show streak notification prompt
-          final streak = state.streak;
-          if (streak != null && streak.currentStreak > 0) {
-            _showStreakNotificationPrompt(languageCode, streak.currentStreak);
-          }
+        // Check and show soft paywall when usage stats load or update
+        if (state is UsageStatsLoaded) {
+          _checkUsageThreshold(context, state.usageStats);
         }
       },
-      child: ListenableBuilder(
-        listenable: sl<AuthStateProvider>(),
-        builder: (context, _) {
-          final authProvider = sl<AuthStateProvider>();
-          final currentUserName = authProvider.currentUserName;
+      child: BlocListener<DailyVerseBloc, DailyVerseState>(
+        bloc: sl<DailyVerseBloc>(),
+        listener: (context, state) {
+          // Trigger notification prompts when daily verse loads successfully
+          if (state is DailyVerseLoaded) {
+            final languageCode = _getLanguageCode(state.currentLanguage);
+            _showDailyVerseNotificationPrompt(languageCode);
 
-          if (kDebugMode) {
-            print(
-                '👤 [HOME] User loaded via AuthStateProvider: $currentUserName');
-            print('👤 [HOME] Auth state: ${authProvider.debugInfo}');
+            // Also check for streak and show streak notification prompt
+            final streak = state.streak;
+            if (streak != null && streak.currentStreak > 0) {
+              _showStreakNotificationPrompt(languageCode, streak.currentStreak);
+            }
           }
+        },
+        child: ListenableBuilder(
+          listenable: sl<AuthStateProvider>(),
+          builder: (context, _) {
+            final authProvider = sl<AuthStateProvider>();
+            final currentUserName = authProvider.currentUserName;
 
-          return Scaffold(
-            backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-            body: SafeArea(
-              child: Column(
-                children: [
-                  // Main content
-                  Expanded(
-                    child: SingleChildScrollView(
-                      padding: const EdgeInsets.symmetric(horizontal: 24),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          SizedBox(height: isLargeScreen ? 32 : 24),
+            if (kDebugMode) {
+              print(
+                  '👤 [HOME] User loaded via AuthStateProvider: $currentUserName');
+              print('👤 [HOME] Auth state: ${authProvider.debugInfo}');
+            }
 
-                          // App Header with Logo
-                          _buildAppHeader(),
+            return Scaffold(
+              backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+              body: SafeArea(
+                child: Column(
+                  children: [
+                    // Main content
+                    Expanded(
+                      child: SingleChildScrollView(
+                        padding: const EdgeInsets.symmetric(horizontal: 24),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            SizedBox(height: isLargeScreen ? 32 : 24),
 
-                          SizedBox(height: isLargeScreen ? 32 : 24),
+                            // App Header with Logo
+                            _buildAppHeader(),
 
-                          // Welcome Message
-                          _buildWelcomeMessage(currentUserName),
+                            SizedBox(height: isLargeScreen ? 32 : 24),
 
-                          SizedBox(height: isLargeScreen ? 16 : 12),
+                            // Welcome Message
+                            _buildWelcomeMessage(currentUserName),
 
-                          // Email Verification Banner (shown for unverified email users)
-                          BlocProvider.value(
-                            value: sl<AuthBloc>(),
-                            child: const EmailVerificationBanner(),
-                          ),
+                            SizedBox(height: isLargeScreen ? 16 : 12),
 
-                          // Standard Subscription Banner (shown when trial ending/ended)
-                          BlocBuilder<SubscriptionBloc, SubscriptionState>(
-                            bloc: sl<SubscriptionBloc>(),
-                            builder: (context, state) {
-                              if (state is UserSubscriptionStatusLoaded &&
-                                  state.subscriptionStatus
-                                      .shouldShowSubscriptionBanner) {
-                                return Padding(
-                                  padding: EdgeInsets.only(
-                                      top: isLargeScreen ? 16 : 12),
-                                  child: StandardSubscriptionBannerCompact(
-                                    status: state.subscriptionStatus,
-                                    onSubscribe: () =>
-                                        _showStandardSubscriptionSheet(context),
-                                  ),
-                                );
-                              }
-                              return const SizedBox.shrink();
-                            },
-                          ),
+                            // Email Verification Banner (shown for unverified email users)
+                            BlocProvider.value(
+                              value: sl<AuthBloc>(),
+                              child: const EmailVerificationBanner(),
+                            ),
 
-                          SizedBox(height: isLargeScreen ? 16 : 12),
+                            // Standard Subscription Banner (shown when trial ending/ended)
+                            BlocBuilder<SubscriptionBloc, SubscriptionState>(
+                              bloc: sl<SubscriptionBloc>(),
+                              builder: (context, state) {
+                                if (state is UserSubscriptionStatusLoaded &&
+                                    state.subscriptionStatus
+                                        .shouldShowSubscriptionBanner) {
+                                  return Padding(
+                                    padding: EdgeInsets.only(
+                                        top: isLargeScreen ? 16 : 12),
+                                    child: StandardSubscriptionBannerCompact(
+                                      status: state.subscriptionStatus,
+                                      onSubscribe: () =>
+                                          _showStandardSubscriptionSheet(
+                                              context),
+                                    ),
+                                  );
+                                }
+                                return const SizedBox.shrink();
+                              },
+                            ),
 
-                          // Daily Verse Card with click functionality
-                          DailyVerseCard(
-                            margin: EdgeInsets.zero,
-                            onTap: _onDailyVerseCardTap,
-                          ),
+                            SizedBox(height: isLargeScreen ? 16 : 12),
 
-                          SizedBox(height: isLargeScreen ? 24 : 20),
+                            // Daily Verse Card with click functionality - only show if feature is enabled
+                            if (_isDailyVerseFeatureEnabled()) ...[
+                              DailyVerseCard(
+                                margin: EdgeInsets.zero,
+                                onTap: _onDailyVerseCardTap,
+                              ),
+                              SizedBox(height: isLargeScreen ? 24 : 20),
+                            ],
 
-                          // Generate Study Guide Button
-                          _buildGenerateStudyButton(),
+                            // Usage Meter (only for free users)
+                            _buildUsageMeter(),
 
-                          SizedBox(height: isLargeScreen ? 32 : 24),
+                            SizedBox(height: isLargeScreen ? 16 : 12),
 
-                          // Resume Last Study (conditional)
-                          if (_hasResumeableStudy) ...[
-                            _buildResumeStudyBanner(),
+                            // Generate Study Guide Button - hide if all study modes and AI Discipler are disabled
+                            if (!_shouldHideGenerateButton()) ...[
+                              _buildGenerateStudyButton(),
+                              SizedBox(height: isLargeScreen ? 32 : 24),
+                            ],
+
+                            // Resume Last Study (conditional)
+                            if (_hasResumeableStudy) ...[
+                              _buildResumeStudyBanner(),
+                              SizedBox(height: isLargeScreen ? 32 : 24),
+                            ],
+
+                            // Recommended Study Topics
+                            _buildRecommendedTopics(),
+
                             SizedBox(height: isLargeScreen ? 32 : 24),
                           ],
-
-                          // Recommended Study Topics
-                          _buildRecommendedTopics(),
-
-                          SizedBox(height: isLargeScreen ? 32 : 24),
-                        ],
+                        ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-          ).withHomeProtection();
-        },
+            ).withHomeProtection();
+          },
+        ),
       ),
     );
   }
 
   Widget _buildAppHeader() {
+    // Check if memory_verses feature is enabled
+    final tokenBloc = sl<TokenBloc>();
+    final tokenState = tokenBloc.state;
+    String userPlan = 'free';
+    if (tokenState is TokenLoaded) {
+      userPlan = tokenState.tokenStatus.userPlan.name;
+    }
+
+    final systemConfigService = sl<SystemConfigService>();
+    final showMemoryVerses =
+        systemConfigService.isFeatureEnabled('memory_verses', userPlan);
+
     return Row(
       children: [
         _buildLogoWidget(),
         const Spacer(),
-        _buildMemoryVersesIconButton(),
+        if (showMemoryVerses) _buildMemoryVersesIconButton(),
         _buildSettingsButton(),
       ],
     );
@@ -529,20 +581,70 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
     );
   }
 
-  /// Handles tap on Memory Verses button - checks plan and shows upgrade dialog for free users
+  /// Checks if Daily Verse feature is enabled based on feature flags and user's plan
+  bool _isDailyVerseFeatureEnabled() {
+    final tokenBloc = sl<TokenBloc>();
+    final tokenState = tokenBloc.state;
+
+    String userPlan = 'free';
+    if (tokenState is TokenLoaded) {
+      userPlan = tokenState.tokenStatus.userPlan.name;
+    }
+
+    final systemConfigService = sl<SystemConfigService>();
+    return systemConfigService.isFeatureEnabled('daily_verse', userPlan);
+  }
+
+  /// Checks if Generate Study Guide button should be hidden
+  /// Returns true if ALL study modes AND AI Discipler are disabled
+  bool _shouldHideGenerateButton() {
+    final tokenBloc = sl<TokenBloc>();
+    final tokenState = tokenBloc.state;
+
+    String userPlan = 'free';
+    if (tokenState is TokenLoaded) {
+      userPlan = tokenState.tokenStatus.userPlan.name;
+    }
+
+    final systemConfigService = sl<SystemConfigService>();
+
+    // Check all study modes
+    final studyModes = [
+      'quick_read_mode',
+      'standard_study_mode',
+      'deep_dive_mode',
+      'lectio_divina_mode',
+      'sermon_outline_mode',
+    ];
+
+    // Check if ALL study modes are disabled
+    final allStudyModesDisabled = studyModes.every(
+      (mode) => !systemConfigService.isFeatureEnabled(mode, userPlan),
+    );
+
+    // Check if AI Discipler is disabled
+    final aiDisciplerDisabled =
+        !systemConfigService.isFeatureEnabled('ai_discipler', userPlan);
+
+    // Hide if both ALL study modes are disabled AND AI Discipler is disabled
+    return allStudyModesDisabled && aiDisciplerDisabled;
+  }
+
+  /// Handles tap on Memory Verses button - checks feature flag and shows upgrade dialog if disabled
   void _handleMemoryVersesTap() {
     // Get user plan from TokenBloc (more reliable as it's loaded early)
     final tokenBloc = sl<TokenBloc>();
     final tokenState = tokenBloc.state;
 
-    UserPlan? userPlan;
+    String userPlan = 'free';
     if (tokenState is TokenLoaded) {
-      userPlan = tokenState.tokenStatus.userPlan;
+      userPlan = tokenState.tokenStatus.userPlan.name;
     }
 
-    // Only allow Standard or Premium users
+    // Check if memory_verses feature is enabled for user's plan
+    final systemConfigService = sl<SystemConfigService>();
     final bool hasAccess =
-        userPlan == UserPlan.standard || userPlan == UserPlan.premium;
+        systemConfigService.isFeatureEnabled('memory_verses', userPlan);
 
     if (!hasAccess) {
       UpgradeRequiredDialog.show(
@@ -555,7 +657,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
       return;
     }
 
-    // User is on Standard or Premium plan - proceed to Memory Verses
+    // User has access - proceed to Memory Verses
     context.go('/memory-verses');
   }
 
@@ -634,6 +736,72 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
           ),
         ],
       );
+
+  /// Build usage meter widget (shows token usage for free users)
+  Widget _buildUsageMeter() {
+    return BlocBuilder<UsageStatsBloc, UsageStatsState>(
+      bloc: _usageStatsBloc,
+      builder: (context, state) {
+        // Only show for loaded state
+        if (state is! UsageStatsLoaded) {
+          return const SizedBox.shrink();
+        }
+
+        final usageStats = state.usageStats;
+
+        // Only show usage meter for free users
+        final isFree = usageStats.currentPlan == 'free';
+        if (!isFree) {
+          return const SizedBox.shrink();
+        }
+
+        // For free plan, show daily token usage
+        final tokensUsed = usageStats.tokensUsed;
+        final tokensTotal = usageStats.tokensTotal;
+
+        return UsageMeterWidget(
+          tokensUsed: tokensUsed,
+          tokensTotal: tokensTotal,
+          onUpgrade: () => context.go('/pricing'),
+        );
+      },
+    );
+  }
+
+  /// Check usage threshold and show soft paywall if needed
+  void _checkUsageThreshold(BuildContext context, dynamic usageStats) {
+    // Use post-frame callback to avoid showing dialog during build
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted) return;
+
+      // Reset threshold tracking if new day (daily token limits reset daily)
+      final currentDate =
+          usageStats.monthYear as String; // Format: "2026-01-18"
+      if (_lastCheckedDate != currentDate) {
+        _usageThresholdService.reset();
+        _lastCheckedDate = currentDate;
+        Logger.info(
+          'Reset threshold tracking for new day',
+          tag: 'HOME_USAGE_THRESHOLD',
+          context: {'date': currentDate},
+        );
+      }
+
+      final showed = await _usageThresholdService.checkAndShowThreshold(
+        context: context,
+        tokensUsed: usageStats.tokensUsed,
+        tokensTotal: usageStats.tokensTotal,
+        streakDays: usageStats.streakDays,
+      );
+
+      if (showed) {
+        Logger.info(
+          'Soft paywall shown at ${usageStats.percentage}% usage',
+          tag: 'HOME_USAGE_THRESHOLD',
+        );
+      }
+    });
+  }
 
   Widget _buildGenerateStudyButton() {
     return Container(

@@ -265,7 +265,7 @@ class SubscriptionEligibilityChecked extends SubscriptionState {
   /// Get user-friendly eligibility message
   String get eligibilityMessage {
     if (canSubscribe) {
-      return 'You can upgrade to premium for ₹100/month';
+      return 'You can upgrade to premium for ₹499/month';
     } else if (reason != null) {
       return reason!;
     } else {

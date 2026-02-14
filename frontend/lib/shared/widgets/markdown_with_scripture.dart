@@ -79,7 +79,12 @@ class MarkdownWithScripture extends StatelessWidget {
     final processedData =
         _convertScriptureReferencesToLinks(withMarkdownBullets);
 
+    // Create a unique key based on content and theme to force rebuilds when colors change
+    final linkColor = Theme.of(context).colorScheme.primary.withOpacity(0.7);
+    final uniqueKey = ValueKey('${data.hashCode}-${linkColor.value}');
+
     return MarkdownBody(
+      key: uniqueKey,
       data: processedData,
       selectable: true,
       extensionSet:
@@ -109,9 +114,9 @@ class MarkdownWithScripture extends StatelessWidget {
   MarkdownStyleSheet _buildStyleSheet(BuildContext context) {
     final theme = Theme.of(context);
     final baseStyle = textStyle ?? theme.textTheme.bodyLarge;
-    // Use primary color directly for links - Material Design ensures proper contrast
-    // against theme backgrounds, meeting WCAG AA standards (4.5:1 ratio)
-    final linkColor = theme.colorScheme.primary;
+    // Use primary color with 70% opacity for better readability
+    // Matches study guide title styling for consistency
+    final linkColor = theme.colorScheme.primary.withOpacity(0.7);
 
     return MarkdownStyleSheet(
       p: baseStyle?.copyWith(

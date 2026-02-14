@@ -76,6 +76,7 @@ class VoiceConversationBloc
     on<ReceiveStreamChunk>(_onReceiveStreamChunk);
     on<StreamCompleted>(_onStreamCompleted);
     on<StreamError>(_onStreamError);
+    on<MonthlyLimitExceeded>(_onMonthlyLimitExceeded);
     on<PlayResponse>(_onPlayResponse);
     on<StopPlayback>(_onStopPlayback);
     on<CheckQuota>(_onCheckQuota);
@@ -737,6 +738,30 @@ class VoiceConversationBloc
                     jsonData['message'] as String? ?? 'Quota exceeded';
                 add(StreamError(errorMsg));
                 return;
+              case 'monthly_conversation_limit_exceeded':
+                // Handle monthly conversation limit exceeded
+                final conversationsUsed =
+                    jsonData['conversations_used'] as int? ?? 0;
+                final limit = jsonData['limit'] as int? ?? 0;
+                final remaining = jsonData['remaining'] as int? ?? 0;
+                final tier = jsonData['tier'] as String? ?? 'free';
+                final month = jsonData['month'] as String? ?? '';
+                final message = jsonData['message'] as String? ??
+                    'Monthly conversation limit exceeded';
+
+                print(
+                    '🎙️ [VOICE] Monthly limit exceeded: $conversationsUsed/$limit for $tier tier in $month');
+
+                // Dispatch MonthlyLimitExceeded event
+                add(MonthlyLimitExceeded(
+                  conversationsUsed: conversationsUsed,
+                  limit: limit,
+                  remaining: remaining,
+                  tier: tier,
+                  month: month,
+                  message: message,
+                ));
+                return;
             }
           } catch (e) {
             print('Error parsing SSE data: $e');
@@ -923,6 +948,38 @@ class VoiceConversationBloc
       errorMessage: event.message,
       streamingResponse: '',
       isPlaying: false,
+    ));
+  }
+
+  void _onMonthlyLimitExceeded(
+    MonthlyLimitExceeded event,
+    Emitter<VoiceConversationState> emit,
+  ) {
+    // Cancel any streaming TTS
+    if (_streamingTTSStarted) {
+      _ttsService.cancelStreaming();
+      _streamingTTSStarted = false;
+      _streamingSentenceBuffer = '';
+    }
+
+    // Emit the specific monthly limit exceeded state
+    emit(VoiceConversationMonthlyLimitExceeded(
+      conversationsUsed: event.conversationsUsed,
+      limit: event.limit,
+      remaining: event.remaining,
+      tier: event.tier,
+      month: event.month,
+      message: event.message,
+      quota: state.quota,
+      languageCode: state.languageCode,
+      conversationHistory: state.conversationHistory,
+      showTranscription: state.showTranscription,
+      autoPlayResponse: state.autoPlayResponse,
+      autoDetectLanguage: state.autoDetectLanguage,
+      notifyDailyQuotaReached: state.notifyDailyQuotaReached,
+      speakingRate: state.speakingRate,
+      pitch: state.pitch,
+      voiceGender: state.voiceGender,
     ));
   }
 

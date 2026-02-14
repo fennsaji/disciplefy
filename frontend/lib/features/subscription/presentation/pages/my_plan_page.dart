@@ -1538,6 +1538,8 @@ class _MyPlanPageState extends State<MyPlanPage> {
         return Colors.grey[600]!;
       case UserPlan.standard:
         return const Color(0xFF6A4FB6);
+      case UserPlan.plus:
+        return Colors.purple[600]!;
       case UserPlan.premium:
         return Colors.amber[700]!;
     }
@@ -1549,8 +1551,10 @@ class _MyPlanPageState extends State<MyPlanPage> {
         return Icons.person;
       case UserPlan.standard:
         return Icons.auto_awesome;
-      case UserPlan.premium:
+      case UserPlan.plus:
         return Icons.workspace_premium;
+      case UserPlan.premium:
+        return Icons.star;
     }
   }
 
@@ -1570,6 +1574,14 @@ class _MyPlanPageState extends State<MyPlanPage> {
           context.tr(TranslationKeys.pricingStandardFeature3),
           context.tr(TranslationKeys.pricingStandardFeature4),
           context.tr(TranslationKeys.pricingStandardFeature5),
+        ];
+      case UserPlan.plus:
+        return [
+          '50 Daily Tokens + Purchase More',
+          'All Study Modes',
+          '10 Follow-ups per Guide',
+          '10 AI Discipler Conversations/Month',
+          'All Practice Modes (3/day per verse)',
         ];
       case UserPlan.premium:
         return [

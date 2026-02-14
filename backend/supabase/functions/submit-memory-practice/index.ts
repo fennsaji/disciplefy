@@ -19,6 +19,7 @@ import { AppError } from '../_shared/utils/error-handler.ts'
 import { ApiSuccessResponse, UserContext } from '../_shared/types/index.ts'
 import { ServiceContainer } from '../_shared/core/services.ts'
 import { getIntervalForReviewsSinceMastery } from '../_shared/memory-verse-intervals.ts'
+import { PracticeModeUnlockService } from '../_shared/services/practice-mode-unlock-service.ts'
 
 /**
  * Practice mode types (aligned with frontend)
@@ -629,6 +630,114 @@ async function handleSubmitMemoryPractice(
     throw new AppError('NOT_FOUND', 'Memory verse not found', 404)
   }
 
+  // ========== NEW: Check practice mode unlock status ==========
+  // Get user's subscription tier
+  const { data: subscription } = await services.supabaseServiceClient
+    .from('user_subscriptions')
+    .select('tier')
+    .eq('user_id', userContext.userId)
+    .eq('status', 'active')
+    .maybeSingle()
+
+  const userTier = subscription?.tier || 'free'
+
+  // Initialize unlock service
+  const unlockService = new PracticeModeUnlockService(services.supabaseServiceClient)
+
+  // 1. Check if mode is available in user's tier (tier-lock check)
+  const tierAvailability = unlockService.checkModeTierAvailability(userTier, body.practice_mode)
+
+  if (!tierAvailability.available) {
+    console.log(`[SubmitPractice] Mode ${body.practice_mode} is tier-locked for ${userTier} user`)
+
+    // Return tier-locked error
+    return new Response(
+      JSON.stringify({
+        success: false,
+        error: {
+          code: 'PRACTICE_MODE_TIER_LOCKED',
+          message: unlockService.getTierLockedMessage(body.practice_mode, userTier),
+          mode: body.practice_mode,
+          tier: userTier,
+          available_modes: tierAvailability.availableModes,
+          required_tier: unlockService.getRecommendedUpgradeTier(userTier)
+        }
+      }),
+      {
+        status: 403,
+        headers: { 'Content-Type': 'application/json' }
+      }
+    )
+  }
+
+  // 2. Check daily unlock status for this mode
+  try {
+    const unlockStatus = await unlockService.getModeUnlockStatus(
+      userContext.userId,
+      body.memory_verse_id,
+      body.practice_mode,
+      userTier
+    )
+
+    // If mode is already unlocked, allow practice (unlimited attempts)
+    if (unlockStatus.status === 'unlocked') {
+      console.log(`[SubmitPractice] Mode ${body.practice_mode} already unlocked for verse ${body.memory_verse_id}`)
+      // Continue to SM-2 calculation below
+    }
+    // If mode can be unlocked, unlock it now
+    else if (unlockStatus.status === 'can_unlock') {
+      console.log(`[SubmitPractice] Unlocking mode ${body.practice_mode} for verse ${body.memory_verse_id}`)
+
+      // Unlock mode (fire-and-forget, non-blocking)
+      unlockService.unlockMode(
+        userContext.userId,
+        body.memory_verse_id,
+        body.practice_mode,
+        userTier
+      ).catch(err => {
+        console.error('[SubmitPractice] Failed to unlock mode (non-critical):', err)
+        // Don't block practice submission - mode will unlock on retry
+      })
+
+      // Continue to SM-2 calculation below
+    }
+    // If unlock limit reached, return error
+    else if (unlockStatus.status === 'unlock_limit_reached') {
+      console.log(`[SubmitPractice] Unlock limit reached for verse ${body.memory_verse_id}`)
+
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: {
+            code: 'PRACTICE_UNLOCK_LIMIT_EXCEEDED',
+            message: unlockService.getUnlockLimitMessage(
+              unlockStatus.unlockedModes,
+              unlockStatus.unlockLimit || 1,
+              userTier
+            ),
+            details: {
+              unlocked_modes: unlockStatus.unlockedModes,
+              unlocked_count: unlockStatus.unlockedModes.length,
+              unlock_limit: unlockStatus.unlockLimit,
+              unlock_slots_remaining: 0,
+              tier: userTier,
+              verse_id: body.memory_verse_id,
+              date: new Date().toISOString().split('T')[0]
+            }
+          }
+        }),
+        {
+          status: 403,
+          headers: { 'Content-Type': 'application/json' }
+        }
+      )
+    }
+  } catch (error) {
+    console.error('[SubmitPractice] Unlock status check failed (fail-open):', error)
+    // Continue with practice submission (fail-open pattern for non-critical error)
+  }
+  // ========== END NEW CODE ==========
+
   // Calculate new SM-2 state
   const sm2Result = calculateSM2({
     quality: body.quality_rating,
@@ -810,9 +919,24 @@ async function handleSubmitMemoryPractice(
     data: responseData
   }
 
+  // Log usage for profitability tracking (non-LLM feature)
+  try {
+    await services.usageLoggingService.logMemoryPractice(
+      userContext.userId,
+      userTier,
+      body.practice_mode,
+      body.memory_verse_id,
+      isSuccessfulPractice,
+      body.quality_rating
+    )
+  } catch (usageLogError) {
+    console.error('Usage logging failed:', usageLogError)
+    // Don't fail the request if usage logging fails
+  }
+
   return new Response(JSON.stringify(response), {
     status: 200,
-    headers: { 
+    headers: {
       'Content-Type': 'application/json'
     }
   })

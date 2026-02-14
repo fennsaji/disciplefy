@@ -24,6 +24,9 @@ import { VoiceQuotaService } from '../services/voice-quota-service.ts'
 import { SecurityValidator } from '../utils/security-validator.ts'
 import { AppError } from '../utils/error-handler.ts'
 import { DailyVerseService } from '../../daily-verse/daily-verse-service.ts'
+import { UsageLoggingService } from '../services/usage-logging-service.ts'
+import { CostTrackingService } from '../services/cost-tracking-service.ts'
+import { RateLimitService } from '../services/rate-limit-service.ts'
 import { config } from './config.ts'
 
 /**
@@ -57,6 +60,9 @@ export interface ServiceContainer {
   readonly dailyVerseService: DailyVerseService
   readonly voiceStreamingService: VoiceStreamingService
   readonly voiceQuotaService: VoiceQuotaService
+  readonly usageLoggingService: UsageLoggingService
+  readonly costTrackingService: CostTrackingService
+  readonly rateLimitService: RateLimitService
   readonly serviceRoleClient: SupabaseClient // Alias for compatibility
 }
 
@@ -99,20 +105,10 @@ async function initializeServiceContainer(): Promise<ServiceContainer> {
       }
     )
 
-    // Test database connection
-    const { error: testError } = await supabaseServiceClient
-      .from('study_guides')
-      .select('count')
-      .limit(1)
-    
-    if (testError) {
-      console.error('[Services] Database connection test failed:', testError)
-      throw new AppError(
-        'DATABASE_ERROR',
-        'Failed to connect to database',
-        500
-      )
-    }
+    // OPTIMIZATION: Skip database connection test during boot to prevent worker timeout
+    // The database connection will be tested implicitly on first actual query
+    // If database is down, functions will fail gracefully with proper error messages
+    console.log('[Services] Skipping database connection test (lazy validation on first query)')
 
     // Initialize services with dependency injection
     const authService = new AuthService(config.supabaseUrl, config.supabaseAnonKey, supabaseServiceClient)
@@ -146,6 +142,11 @@ async function initializeServiceContainer(): Promise<ServiceContainer> {
     })
     const voiceQuotaService = new VoiceQuotaService(supabaseServiceClient)
 
+    // Initialize usage tracking services
+    const usageLoggingService = new UsageLoggingService(config.supabaseUrl, config.supabaseServiceKey)
+    const costTrackingService = new CostTrackingService()
+    const rateLimitService = new RateLimitService(config.supabaseUrl, config.supabaseServiceKey)
+
     // Test LLM service initialization
     try {
       // This will validate API keys and throw if misconfigured
@@ -174,6 +175,9 @@ async function initializeServiceContainer(): Promise<ServiceContainer> {
       dailyVerseService,
       voiceStreamingService,
       voiceQuotaService,
+      usageLoggingService,
+      costTrackingService,
+      rateLimitService,
       serviceRoleClient: supabaseServiceClient // Alias for compatibility
     }
 

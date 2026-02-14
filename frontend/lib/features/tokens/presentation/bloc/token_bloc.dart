@@ -4,6 +4,7 @@ import 'package:dartz/dartz.dart';
 import 'package:flutter/foundation.dart';
 
 import '../../../../core/di/injection_container.dart';
+import '../../../../core/constants/plan_constants.dart';
 import '../../../auth/presentation/bloc/auth_bloc.dart';
 import '../../../auth/presentation/bloc/auth_state.dart' as auth_state;
 import '../../domain/entities/token_status.dart';
@@ -184,11 +185,12 @@ class TokenBloc extends Bloc<TokenEvent, TokenState> {
   TokenStatus _createGuestTokenStatus() {
     final now = DateTime.now();
     final nextReset = DateTime(now.year, now.month, now.day + 1);
+    final freePlanLimit = PlanConstants.getDailyLimit(UserPlan.free);
     return TokenStatus(
-      availableTokens: 20,
+      availableTokens: freePlanLimit,
       purchasedTokens: 0,
-      totalTokens: 20,
-      dailyLimit: 20,
+      totalTokens: freePlanLimit,
+      dailyLimit: freePlanLimit,
       totalConsumedToday: 0,
       userPlan: UserPlan.free,
       lastReset: now,
@@ -197,7 +199,7 @@ class TokenBloc extends Bloc<TokenEvent, TokenState> {
       isPremium: false,
       unlimitedUsage: false,
       canPurchaseTokens: false,
-      planDescription: 'Guest user with 20 tokens daily. Sign in to get more!',
+      planDescription: PlanConstants.getDescription(UserPlan.free),
     );
   }
 
@@ -356,9 +358,7 @@ class TokenBloc extends Bloc<TokenEvent, TokenState> {
 
     final upgradedPlan =
         event.targetPlan == 'premium' ? UserPlan.premium : UserPlan.standard;
-    final newDailyLimit = upgradedPlan == UserPlan.premium
-        ? 0
-        : (upgradedPlan == UserPlan.standard ? 100 : 50);
+    final newDailyLimit = PlanConstants.getDailyLimit(upgradedPlan);
 
     final updatedTokenStatus = _cachedTokenStatus!.copyWith(
       availableTokens: upgradedPlan == UserPlan.premium ? 0 : newDailyLimit,
@@ -369,7 +369,7 @@ class TokenBloc extends Bloc<TokenEvent, TokenState> {
       userPlan: upgradedPlan,
       isPremium: upgradedPlan == UserPlan.premium,
       unlimitedUsage: upgradedPlan == UserPlan.premium,
-      canPurchaseTokens: upgradedPlan == UserPlan.standard,
+      canPurchaseTokens: PlanConstants.canPurchaseTokens(upgradedPlan),
     );
 
     _updateCache(updatedTokenStatus);

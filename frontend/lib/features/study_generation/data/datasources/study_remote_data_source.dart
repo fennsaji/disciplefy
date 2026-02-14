@@ -278,6 +278,8 @@ class StudyRemoteDataSourceImpl implements StudyRemoteDataSource {
       interpretation:
           content['interpretation'] as String? ?? 'No interpretation available',
       context: content['context'] as String? ?? 'No context available',
+      passage: content['passage']
+          as String?, // Optional: LLM-generated Scripture passage for Standard mode
       relatedVerses: (content['relatedVerses'] as List<dynamic>?)
               ?.map((e) => e.toString())
               .toList() ??

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/constants/app_fonts.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 
 import '../../../../core/extensions/translation_extension.dart';
 import '../../../../core/i18n/translation_keys.dart';
@@ -14,7 +15,7 @@ import '../../domain/entities/subscription.dart';
 /// Standard Upgrade Page
 ///
 /// Presents Standard subscription benefits and allows users to upgrade
-/// to Standard plan for ₹50/month with 100 daily tokens and core features.
+/// to Standard plan for ₹79/month with 20 daily tokens and core features.
 class StandardUpgradePage extends StatefulWidget {
   const StandardUpgradePage({super.key});
 
@@ -560,10 +561,53 @@ class _StandardUpgradePageState extends State<StandardUpgradePage>
     return ElevatedButton(
       onPressed: isLoading
           ? null
-          : () {
-              context
-                  .read<SubscriptionBloc>()
-                  .add(const CreateStandardSubscription());
+          : () async {
+              // Retrieve promo code and plan price from Hive
+              String? promoCode;
+              int? planPrice;
+              try {
+                Box box;
+                if (Hive.isBoxOpen('app_settings')) {
+                  box = Hive.box('app_settings');
+                } else {
+                  box = await Hive.openBox('app_settings');
+                }
+                promoCode = box.get('pending_promo_code') as String?;
+                planPrice = box.get('selected_plan_price') as int?;
+
+                if (promoCode != null) {
+                  print('💰 [UPGRADE] Retrieved promo code: $promoCode');
+                  // Clear after retrieval to prevent reuse
+                  await box.delete('pending_promo_code');
+                }
+
+                if (planPrice != null) {
+                  print('💵 [UPGRADE] Plan price: ₹${planPrice / 100}');
+                }
+              } catch (e) {
+                print('⚠️ [UPGRADE] Failed to retrieve promo/price: $e');
+              }
+
+              // Check if plan is free (₹0)
+              if (planPrice != null && planPrice == 0) {
+                print('🎁 [UPGRADE] Free plan detected, activating directly');
+
+                if (context.mounted) {
+                  context.read<SubscriptionBloc>().add(
+                        ActivateFreeSubscription(
+                          planCode: 'standard',
+                          promoCode: promoCode,
+                        ),
+                      );
+                }
+              } else {
+                // Regular paid subscription flow
+                if (context.mounted) {
+                  context
+                      .read<SubscriptionBloc>()
+                      .add(CreateStandardSubscription(promoCode: promoCode));
+                }
+              }
             },
       style: ElevatedButton.styleFrom(
         backgroundColor: _standardPurple,

@@ -92,6 +92,13 @@
   <link rel="manifest" href="manifest.json">
   
   <style>
+    /* Force scripture reference link colors - Override flutter_markdown */
+    a, a:link, a:visited, a:active {
+      color: rgba(79, 70, 229, 0.7) !important;
+      text-decoration: underline !important;
+      text-decoration-color: rgba(79, 70, 229, 0.7) !important;
+    }
+
     /* Splash Screen Styles */
     #splash-screen {
       position: fixed;

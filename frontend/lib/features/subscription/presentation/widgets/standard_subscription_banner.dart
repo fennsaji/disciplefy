@@ -222,7 +222,7 @@ class StandardSubscriptionBanner extends StatelessWidget {
 
     // New user without trial (signed up after March 31)
     if (status.isNewUserWithoutTrial) {
-      return 'Get 100 tokens daily for just \u20b950/month';
+      return 'Get 20 tokens daily for just \u20b950/month';
     }
 
     // Needs subscription

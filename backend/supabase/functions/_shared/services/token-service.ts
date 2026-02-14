@@ -549,7 +549,7 @@ export class TokenService {
    * @throws AppError for invalid plans
    */
   private validateUserPlan(userPlan: UserPlan): void {
-    if (!['free', 'standard', 'premium'].includes(userPlan)) {
+    if (!['free', 'standard', 'plus', 'premium'].includes(userPlan)) {
       throw new AppError(
         'VALIDATION_ERROR',
         'Invalid user plan provided',

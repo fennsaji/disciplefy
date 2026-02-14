@@ -9,10 +9,24 @@ import '../models/payment_preferences_model.dart' as prefs;
 import '../models/saved_payment_method_model.dart';
 import '../models/token_usage_history_model.dart';
 import '../models/usage_statistics_model.dart';
+import '../models/token_pricing_model.dart';
 import '../../domain/entities/payment_order_response.dart';
 
 /// Abstract contract for remote token operations.
 abstract class TokenRemoteDataSource {
+  /// Fetches current token pricing configuration from backend
+  ///
+  /// [region] - Region code (default: 'IN' for India)
+  ///
+  /// Returns current token pricing including:
+  /// - Exchange rate (tokens per rupee)
+  /// - Available token packages with discounts
+  /// - Effective date of pricing
+  ///
+  /// Throws [NetworkException] if there's a network issue.
+  /// Throws [ServerException] if there's a server error.
+  Future<TokenPricingModel> getTokenPricing({String? region});
+
   /// Fetches current token status for the authenticated user.
   ///
   /// Throws [NetworkException] if there's a network issue.
@@ -238,6 +252,62 @@ class TokenRemoteDataSourceImpl implements TokenRemoteDataSource {
   TokenRemoteDataSourceImpl({
     required SupabaseClient supabaseClient,
   }) : _supabaseClient = supabaseClient;
+
+  @override
+  Future<TokenPricingModel> getTokenPricing({String? region}) async {
+    try {
+      print('💰 [TOKEN_API] Fetching token pricing...');
+
+      final queryParams = <String, String>{};
+      if (region != null) {
+        queryParams['region'] = region;
+      }
+
+      // Call get-token-pricing Edge Function
+      final response = await _supabaseClient.functions.invoke(
+        'get-token-pricing',
+        method: HttpMethod.get,
+        queryParameters: queryParams,
+      );
+
+      print('💰 [TOKEN_API] Pricing response status: ${response.status}');
+      print('💰 [TOKEN_API] Pricing response data: ${response.data}');
+
+      if (response.status == 200 && response.data != null) {
+        final responseData = response.data as Map<String, dynamic>;
+
+        if (responseData['success'] == true) {
+          return TokenPricingModel.fromJson(responseData);
+        } else {
+          throw ServerException(
+            message: 'Failed to fetch token pricing',
+            code: 'TOKEN_PRICING_ERROR',
+          );
+        }
+      } else if (response.status >= 500) {
+        throw const ServerException(
+          message: 'Server error occurred. Please try again later.',
+          code: 'SERVER_ERROR',
+        );
+      } else {
+        throw const ServerException(
+          message: 'Failed to fetch token pricing. Please try again later.',
+          code: 'TOKEN_PRICING_ERROR',
+        );
+      }
+    } on NetworkException {
+      rethrow;
+    } on ServerException {
+      rethrow;
+    } catch (e) {
+      print('🚨 [TOKEN_API] Unexpected pricing error: $e');
+      throw ClientException(
+        message: 'Unable to fetch token pricing. Please try again later.',
+        code: 'TOKEN_PRICING_FAILED',
+        context: {'originalError': e.toString()},
+      );
+    }
+  }
 
   @override
   Future<TokenStatusModel> getTokenStatus() async {

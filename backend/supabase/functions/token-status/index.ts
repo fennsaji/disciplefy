@@ -9,6 +9,7 @@
 import { createFunction } from '../_shared/core/function-factory.ts'
 import { ServiceContainer } from '../_shared/core/services.ts'
 import { AppError } from '../_shared/utils/error-handler.ts'
+import { DEFAULT_PLAN_CONFIGS, type UserPlan } from '../_shared/types/token-types.ts'
 
 /**
  * Token status response interface
@@ -95,22 +96,24 @@ async function handleTokenStatus(req: Request, services: ServiceContainer): Prom
 }
 
 /**
- * Gets human-readable plan description
- * 
+ * Gets human-readable plan description dynamically from config
+ *
+ * Uses DEFAULT_PLAN_CONFIGS as the single source of truth for plan details.
+ * This ensures descriptions stay in sync with actual token limits.
+ *
  * @param userPlan - User's subscription plan
- * @returns Descriptive text for the plan
+ * @returns Descriptive text for the plan with accurate token limits
  */
 function getPlanDescription(userPlan: string): string {
-  switch (userPlan) {
-    case 'free':
-      return 'Anonymous users with 20 tokens daily'
-    case 'standard':
-      return 'Authenticated users with 100 tokens daily + purchase option'
-    case 'premium':
-      return 'Unlimited access for admin and subscription users'
-    default:
-      return 'Unknown plan'
+  // Validate plan exists in config
+  if (!(userPlan in DEFAULT_PLAN_CONFIGS)) {
+    return 'Unknown plan'
   }
+
+  const planConfig = DEFAULT_PLAN_CONFIGS[userPlan as UserPlan]
+
+  // Return the description directly from config (already includes token counts)
+  return planConfig.description
 }
 
 /**

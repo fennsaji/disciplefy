@@ -25,6 +25,9 @@ class StudyGuide extends Equatable {
   /// Historical and literary context of the passage.
   final String context;
 
+  /// Scripture passage for meditation and reading (multi-verse passage).
+  final String? passage;
+
   /// List of related Bible verses for further study.
   final List<String> relatedVerses;
 
@@ -98,6 +101,7 @@ class StudyGuide extends Equatable {
     required this.summary,
     required this.interpretation,
     required this.context,
+    this.passage,
     required this.relatedVerses,
     required this.reflectionQuestions,
     required this.prayerPoints,
@@ -129,6 +133,7 @@ class StudyGuide extends Equatable {
     String? summary,
     String? interpretation,
     String? context,
+    String? passage,
     List<String>? relatedVerses,
     List<String>? reflectionQuestions,
     List<String>? prayerPoints,
@@ -155,6 +160,7 @@ class StudyGuide extends Equatable {
         summary: summary ?? this.summary,
         interpretation: interpretation ?? this.interpretation,
         context: context ?? this.context,
+        passage: passage ?? this.passage,
         relatedVerses: relatedVerses ?? this.relatedVerses,
         reflectionQuestions: reflectionQuestions ?? this.reflectionQuestions,
         prayerPoints: prayerPoints ?? this.prayerPoints,
@@ -232,6 +238,7 @@ class StudyGuide extends Equatable {
         summary,
         interpretation,
         context,
+        passage,
         relatedVerses,
         reflectionQuestions,
         prayerPoints,

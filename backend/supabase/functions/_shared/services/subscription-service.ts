@@ -572,7 +572,7 @@ export class SubscriptionService {
     }
 
     // Get plan configuration based on plan type
-    const planConfig = getPlanConfig(options.planType as PlanType)
+    const planConfig = await getPlanConfig(options.planType as PlanType)
     const planId = planConfig.planId || this.config.planId
 
     if (!planId) {

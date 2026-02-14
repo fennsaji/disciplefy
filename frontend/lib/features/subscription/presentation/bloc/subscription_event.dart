@@ -20,8 +20,14 @@ class GetActiveSubscription extends SubscriptionEvent {
 /// Event to create a new premium subscription
 ///
 /// Creates a Razorpay subscription and returns authorization URL
+/// [promoCode] - Optional promotional code for discount
 class CreateSubscription extends SubscriptionEvent {
-  const CreateSubscription();
+  final String? promoCode;
+
+  const CreateSubscription({this.promoCode});
+
+  @override
+  List<Object?> get props => [promoCode];
 }
 
 /// Event to cancel the user's active subscription
@@ -175,10 +181,28 @@ class LoadSubscriptionStatus extends SubscriptionEvent {
 
 /// Event to create a new Standard subscription
 ///
-/// Creates a Razorpay subscription for Standard plan (₹50/month)
+/// Creates a Razorpay subscription for Standard plan (₹79/month)
 /// Only allowed after trial period ends
 class CreateStandardSubscription extends SubscriptionEvent {
-  const CreateStandardSubscription();
+  final String? promoCode;
+
+  const CreateStandardSubscription({this.promoCode});
+
+  @override
+  List<Object?> get props => [promoCode];
+}
+
+/// Event to create a new Plus subscription
+///
+/// Creates a Razorpay subscription for Plus plan (₹149/month)
+/// Provides enhanced features between Standard and Premium tiers
+class CreatePlusSubscription extends SubscriptionEvent {
+  final String? promoCode;
+
+  const CreatePlusSubscription({this.promoCode});
+
+  @override
+  List<Object?> get props => [promoCode];
 }
 
 /// Event to refresh subscription invoices from the server
@@ -194,4 +218,21 @@ class RefreshSubscriptionInvoices extends SubscriptionEvent {
 /// and haven't used their trial yet
 class StartPremiumTrial extends SubscriptionEvent {
   const StartPremiumTrial();
+}
+
+/// Event to activate a free subscription (₹0 plans)
+///
+/// Skips Razorpay payment flow and directly activates subscription
+/// Used for Free tier or plans with 100% discount via promo code
+class ActivateFreeSubscription extends SubscriptionEvent {
+  final String planCode;
+  final String? promoCode;
+
+  const ActivateFreeSubscription({
+    required this.planCode,
+    this.promoCode,
+  });
+
+  @override
+  List<Object?> get props => [planCode, promoCode];
 }

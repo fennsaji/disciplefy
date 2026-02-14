@@ -13,6 +13,7 @@ import { createFunction } from '../_shared/core/function-factory.ts';
 import { ServiceContainer } from '../_shared/core/services.ts';
 import { UserContext } from '../_shared/types/index.ts';
 import { AppError } from '../_shared/utils/error-handler.ts';
+import { isFeatureEnabledForPlan } from '../_shared/services/feature-flag-service.ts';
 import {
   calculatePathScores,
   type QuestionnaireResponses,
@@ -78,7 +79,6 @@ interface EnrollmentResult {
   id: string;
   learning_path_id: string;
   enrolled_at: string;
-  started_at: string;
 }
 
 interface RecommendedPathResult {
@@ -216,6 +216,26 @@ async function handleLearningPaths(
 ): Promise<Response> {
   const url = new URL(req.url);
   const pathSegments = url.pathname.split('/').filter(Boolean);
+
+  // Feature flag validation - Check if learning_paths is enabled for user's plan
+  const userPlan = userContext?.userId
+    ? await services.authService.getUserPlan(req)
+    : 'free';
+
+  console.log(`👤 [LearningPaths] User plan: ${userPlan}`);
+
+  const hasLearningPathsAccess = await isFeatureEnabledForPlan('learning_paths', userPlan);
+
+  if (!hasLearningPathsAccess) {
+    console.warn(`⛔ [LearningPaths] Feature access denied: learning_paths not available for plan ${userPlan}`);
+    throw new AppError(
+      'FEATURE_NOT_AVAILABLE',
+      `Learning Paths are not available for your current plan (${userPlan}). Please upgrade to access this feature.`,
+      403
+    );
+  }
+
+  console.log(`✅ [LearningPaths] Feature access granted: learning_paths available for plan ${userPlan}`);
 
   // Determine the action based on URL pattern and method
   // /learning-paths -> list paths
@@ -464,8 +484,8 @@ async function handleEnroll(
     throw new AppError('VALIDATION_ERROR', 'pathId is required', 400);
   }
 
-  // Call the database function
-  const { data, error } = await supabaseServiceClient.rpc('enroll_in_learning_path', {
+  // Call the database function (returns progress_id UUID)
+  const { data: progressId, error } = await supabaseServiceClient.rpc('enroll_in_learning_path', {
     p_user_id: userContext.userId,
     p_learning_path_id: pathId,
   });
@@ -480,11 +500,26 @@ async function handleEnroll(
     throw new AppError('DATABASE_ERROR', 'Failed to enroll in learning path', 500);
   }
 
+  if (!progressId) {
+    throw new AppError('DATABASE_ERROR', 'Failed to create enrollment record', 500);
+  }
+
+  // Fetch the enrollment details
+  const { data: enrollmentDetails, error: fetchError } = await supabaseServiceClient
+    .from('user_learning_path_progress')
+    .select('id, learning_path_id, enrolled_at')
+    .eq('id', progressId)
+    .single();
+
+  if (fetchError || !enrollmentDetails) {
+    console.error('Error fetching enrollment details:', fetchError);
+    throw new AppError('DATABASE_ERROR', 'Failed to fetch enrollment details', 500);
+  }
+
   const result: EnrollmentResult = {
-    id: data.id,
-    learning_path_id: data.learning_path_id,
-    enrolled_at: data.enrolled_at,
-    started_at: data.started_at,
+    id: enrollmentDetails.id,
+    learning_path_id: enrollmentDetails.learning_path_id,
+    enrolled_at: enrollmentDetails.enrolled_at,
   };
 
   return new Response(
@@ -561,7 +596,7 @@ async function handleGetRecommendedPath(
         `)
         .eq('user_id', userId)
         .is('completed_at', null)
-        .not('started_at', 'is', null)
+        .not('enrolled_at', 'is', null)
         .order('last_activity_at', { ascending: false })
         .limit(1);
 

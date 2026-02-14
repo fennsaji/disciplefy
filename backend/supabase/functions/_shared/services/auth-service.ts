@@ -300,7 +300,7 @@ export class AuthService {
    * Fetches the user's active subscription from the database
    *
    * Returns a valid subscription if:
-   * - Status is 'active', 'authenticated', or 'pending_cancellation'
+   * - Status is 'active', 'trial', 'authenticated', or 'pending_cancellation'
    * - Status is 'cancelled' but still within the billing period
    *
    * @param userId - User ID to fetch subscription for
@@ -308,23 +308,36 @@ export class AuthService {
    */
   private async getActiveSubscription(userId: string): Promise<Subscription | null> {
     if (!this.supabaseServiceClient) {
+      console.log('[AuthService] getActiveSubscription - no service client')
       return null
     }
 
+    console.log('[AuthService] getActiveSubscription - querying for userId:', userId)
+
+    // Query subscription - each user has exactly ONE subscription record (enforced by unique constraint)
+    // No need for .limit(1) or .order() since uniqueness is guaranteed at database level
+    // NOW INCLUDES 'trial' status for users in trial period
     const { data: subscription, error } = await this.supabaseServiceClient
       .from('subscriptions')
       .select('status, plan_type, current_period_end, cancel_at_cycle_end')
       .eq('user_id', userId)
-      .in('status', ['active', 'authenticated', 'pending_cancellation', 'cancelled'])
-      .order('created_at', { ascending: false })
+      .in('status', ['trial', 'active', 'authenticated', 'pending_cancellation', 'cancelled'])
       .maybeSingle()
 
+    console.log('[AuthService] getActiveSubscription - query result:', {
+      error: error?.message,
+      subscription,
+      hasData: !!subscription
+    })
+
     if (error || !subscription) {
+      console.log('[AuthService] getActiveSubscription - returning null (error or no data)')
       return null
     }
 
     // Validate subscription is currently active
     const isActive =
+      subscription.status === 'trial' ||  // NEW: Trial subscriptions are active
       subscription.status === 'active' ||
       subscription.status === 'authenticated' ||
       subscription.status === 'pending_cancellation' ||
@@ -334,6 +347,7 @@ export class AuthService {
        subscription.current_period_end &&
        new Date(subscription.current_period_end) > new Date())
 
+    console.log('[AuthService] getActiveSubscription - isActive:', isActive)
     return isActive ? subscription : null
   }
 
@@ -341,8 +355,10 @@ export class AuthService {
    * Maps a subscription's plan_type to a UserPlan tier
    *
    * - 'premium*' → 'premium' (unlimited access)
-   * - 'standard*' → 'standard' (limited quota)
-   * - fallback → 'standard'
+   * - 'plus*' → 'plus' (50 tokens/day)
+   * - 'standard*' → 'standard' (20 tokens/day)
+   * - 'free*' → 'free' (8 tokens/day)
+   * - fallback → 'standard' (default)
    *
    * @param subscription - Active subscription to map
    * @returns UserPlan tier based on subscription plan_type
@@ -351,8 +367,14 @@ export class AuthService {
     if (subscription.plan_type?.startsWith('premium')) {
       return 'premium'
     }
+    if (subscription.plan_type?.startsWith('plus')) {
+      return 'plus'
+    }
     if (subscription.plan_type?.startsWith('standard')) {
       return 'standard'
+    }
+    if (subscription.plan_type?.startsWith('free')) {
+      return 'free'
     }
     return 'standard'
   }
@@ -360,81 +382,74 @@ export class AuthService {
   /**
    * Determines the user's subscription plan based on context and profile
    *
-   * This method implements the user plan logic for the token system:
-   * - Anonymous users → 'free' plan (20 tokens daily)
+   * This method implements the SIMPLIFIED user plan logic for the token system:
+   * - Anonymous users → 'free' plan (8 tokens/day)
    * - Admin users (user_profiles.is_admin = true) → 'premium' plan (unlimited)
-   * - Premium subscription users → 'premium' plan (unlimited)
-   * - Standard subscription users → 'standard' plan (100 tokens daily)
+   * - Active subscription users → Plan from subscription record (premium/plus/standard/trial/free)
    * - Premium trial active → 'premium' plan (7-day trial for new users)
-   * - Trial active (before March 31, 2025) → 'standard' plan
-   * - Trial eligible + in grace period (April 1-7) → 'standard' plan
-   * - Trial eligible + after grace period → 'free' plan (trial expired)
-   * - New users (signed up after March 31) → 'free' plan
+   * - Default fallback → 'free' plan
+   *
+   * NOTE: Trial users now have subscription records with status='trial' in the database.
+   * This eliminates the need for complex time-based trial period checks.
+   *
+   * Daily token limits are defined in DEFAULT_PLAN_CONFIGS (token-types.ts):
+   * - free: 8 tokens/day
+   * - standard: 20 tokens/day
+   * - plus: 50 tokens/day
+   * - premium: unlimited
    *
    * @param req - HTTP request to get user context from
    * @returns Promise resolving to user's subscription plan
    */
   async getUserPlan(req: Request): Promise<UserPlan> {
-    // Import trial/grace period helpers
-    const {
-      isStandardTrialActive,
-      isInGracePeriod,
-      wasEligibleForTrial,
-      isInPremiumTrial
-    } = await import('../config/subscription-config.ts')
+    // Import Premium trial helper
+    const { isInPremiumTrial } = await import('../config/subscription-config.ts')
 
     try {
       const userContext = await this.getUserContext(req)
+      console.log('[AuthService] getUserPlan - userContext:', { type: userContext.type, userId: userContext.userId })
 
-      // Anonymous users always get free plan
+      // 1. Anonymous users always get free plan
       if (userContext.type === 'anonymous') {
+        console.log('[AuthService] getUserPlan - returning free (anonymous)')
         return 'free'
       }
 
-      // Must be authenticated with valid userId
+      // 2. Must be authenticated with valid userId
       if (userContext.type !== 'authenticated' || !userContext.userId) {
+        console.log('[AuthService] getUserPlan - returning free (not authenticated)')
         return 'free'
       }
 
-      // Admin users get premium access
-      if (await this.isAdminUser(userContext.userId)) {
+      // 3. Admin users get premium access
+      const isAdmin = await this.isAdminUser(userContext.userId)
+      console.log('[AuthService] getUserPlan - isAdmin:', isAdmin)
+      if (isAdmin) {
+        console.log('[AuthService] getUserPlan - returning premium (admin)')
         return 'premium'
       }
 
-      // Check for active subscription (premium or standard)
+      // 4. Check for subscription in database (now includes trial subscriptions!)
       const subscription = await this.getActiveSubscription(userContext.userId)
+      console.log('[AuthService] getUserPlan - subscription:', subscription)
       if (subscription) {
-        return this.mapSubscriptionToPlan(subscription)
+        const plan = this.mapSubscriptionToPlan(subscription)
+        console.log('[AuthService] getUserPlan - mapped plan:', plan, 'from plan_type:', subscription.plan_type, 'status:', subscription.status)
+        return plan
       }
 
-      // Check for active Premium trial (7-day trial for new users after April 1st)
+      // 5. Check for active Premium trial (7-day trial for new users)
       const premiumTrialEndAt = await this.getPremiumTrialEndDate(userContext.userId)
+      console.log('[AuthService] getUserPlan - premiumTrialEndAt:', premiumTrialEndAt)
       if (isInPremiumTrial(premiumTrialEndAt)) {
+        console.log('[AuthService] getUserPlan - returning premium (7-day trial)')
         return 'premium'
       }
 
-      // No active subscription or Premium trial - check Standard trial eligibility
-
-      // 1. Standard trial is still active (before March 31, 2025) - all get standard
-      if (isStandardTrialActive()) {
-        return 'standard'
-      }
-
-      // 2. Get user creation date for trial eligibility check
-      const userCreatedAt = await this.getUserCreatedAt(userContext.userId)
-      const wasTrialEligible = wasEligibleForTrial(userCreatedAt)
-
-      // 3. User was eligible for Standard trial (signed up before March 31)
-      if (wasTrialEligible) {
-        // Check if in grace period (April 1-7, 2025)
-        if (isInGracePeriod()) {
-          return 'standard'
-        }
-        // Grace period ended, no subscription - downgrade to free
-        return 'free'
-      }
-
-      // 4. New user (signed up after March 31, 2025) - free plan
+      // 6. Default fallback: Users without subscription get free plan
+      // NOTE: This should rarely happen as all users should have a subscription record now
+      // (either trial during global trial period, or free after trial expires)
+      console.log('[AuthService] getUserPlan - returning free (no subscription found - this should be rare)')
       return 'free'
 
     } catch (error) {

@@ -115,6 +115,7 @@ import '../../features/study_topics/presentation/bloc/leaderboard_bloc.dart';
 import '../services/theme_service.dart';
 import '../services/locale_service.dart';
 import '../services/auth_state_provider.dart';
+import '../services/system_config_service.dart';
 import '../services/language_preference_service.dart';
 import '../services/language_cache_coordinator.dart';
 import '../services/http_service.dart';
@@ -169,6 +170,11 @@ import '../../features/subscription/domain/usecases/get_active_subscription.dart
 import '../../features/subscription/domain/usecases/get_subscription_history.dart';
 import '../../features/subscription/domain/usecases/get_invoices.dart';
 import '../../features/subscription/presentation/bloc/subscription_bloc.dart';
+import '../../features/subscription/data/datasources/usage_stats_remote_data_source.dart';
+import '../../features/subscription/data/repositories/usage_stats_repository_impl.dart';
+import '../../features/subscription/domain/repositories/usage_stats_repository.dart';
+import '../../features/subscription/presentation/services/usage_threshold_service.dart';
+import '../../features/subscription/presentation/bloc/usage_stats_bloc.dart';
 import '../../features/memory_verses/data/datasources/memory_verse_local_datasource.dart';
 import '../../features/memory_verses/data/datasources/memory_verse_remote_datasource.dart';
 import '../../features/memory_verses/data/repositories/memory_verse_repository_impl.dart';
@@ -243,6 +249,9 @@ Future<void> initializeDependencies() async {
 
   // Register ThemeService
   sl.registerLazySingleton(() => ThemeService());
+
+  // Register SystemConfigService (for maintenance mode, feature flags, app version)
+  sl.registerLazySingleton(() => SystemConfigService());
 
   // Register LocaleService (requires LanguagePreferenceService - registered later)
   // Note: LocaleService is registered after LanguagePreferenceService below
@@ -780,6 +789,27 @@ Future<void> initializeDependencies() async {
         getSubscriptionHistory: sl(),
         getSubscriptionInvoices: sl(),
         subscriptionRepository: sl(),
+      ));
+
+  //! Usage Stats (Soft Paywall System)
+  sl.registerLazySingleton<UsageStatsRemoteDataSource>(
+    () => UsageStatsRemoteDataSourceImpl(
+      supabaseClient: sl(),
+    ),
+  );
+
+  sl.registerLazySingleton<UsageStatsRepository>(
+    () => UsageStatsRepositoryImpl(
+      remoteDataSource: sl(),
+    ),
+  );
+
+  sl.registerLazySingleton<UsageThresholdService>(
+    () => UsageThresholdService(),
+  );
+
+  sl.registerFactory(() => UsageStatsBloc(
+        repository: sl(),
       ));
 
   //! Follow Up Chat

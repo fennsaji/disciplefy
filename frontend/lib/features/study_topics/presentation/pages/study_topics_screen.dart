@@ -13,12 +13,14 @@ import '../../../../core/extensions/translation_extension.dart';
 import '../../../../core/i18n/translation_keys.dart';
 import '../../../../core/models/app_language.dart';
 import '../../../../core/services/language_preference_service.dart';
+import '../../../../core/services/system_config_service.dart';
 import '../../../../core/utils/logger.dart';
 import '../../../../core/services/auth_state_provider.dart';
 import '../../../home/presentation/bloc/home_bloc.dart';
 import '../../../user_profile/data/services/user_profile_service.dart';
 import '../../../user_profile/data/models/user_profile_model.dart';
 import '../../../study_generation/domain/entities/study_mode.dart';
+import '../../../subscription/domain/repositories/subscription_repository.dart';
 import '../../../study_generation/presentation/widgets/mode_selection_sheet.dart';
 import '../../domain/entities/learning_path.dart';
 import '../../domain/entities/topic_progress.dart';
@@ -53,7 +55,12 @@ class _StudyTopicsScreenState extends State<StudyTopicsScreen> {
   late ContinueLearningBloc _continueLearningBloc;
   late LearningPathsBloc _learningPathsBloc;
   late LanguagePreferenceService _languageService;
+  late SystemConfigService _systemConfigService;
+  late SubscriptionRepository _subscriptionRepository;
   StreamSubscription<AppLanguage>? _languageSubscription;
+  String _userPlan = 'free';
+  bool _isLearningPathsFeatureEnabled = true; // Default to true until checked
+  bool _isLeaderboardFeatureEnabled = true; // Default to true until checked
 
   @override
   void initState() {
@@ -62,8 +69,70 @@ class _StudyTopicsScreenState extends State<StudyTopicsScreen> {
     _continueLearningBloc = sl<ContinueLearningBloc>();
     _learningPathsBloc = sl<LearningPathsBloc>();
     _languageService = sl<LanguagePreferenceService>();
+    _systemConfigService = sl<SystemConfigService>();
+    _subscriptionRepository = sl<SubscriptionRepository>();
     _loadLanguageAndInitialize();
     _setupLanguageChangeListener();
+    _checkLearningPathsFeatureAccess();
+  }
+
+  /// Checks if Learning Paths and Leaderboard features are enabled based on feature flags and user's plan
+  Future<void> _checkLearningPathsFeatureAccess() async {
+    try {
+      // Get user's current subscription plan
+      final result = await _subscriptionRepository.getSubscriptionStatus();
+
+      result.fold(
+        (failure) {
+          debugPrint(
+              '⚠️ [STUDY_TOPICS] Failed to get subscription: ${failure.message}');
+          _userPlan = 'free'; // Default to free on error
+        },
+        (subscription) {
+          _userPlan = subscription.currentPlan;
+          debugPrint('👤 [STUDY_TOPICS] User plan: $_userPlan');
+        },
+      );
+
+      // Check if learning_paths feature is enabled for this plan
+      final isLearningPathsEnabled =
+          _systemConfigService.isFeatureEnabled('learning_paths', _userPlan);
+
+      // Check if leaderboard feature is enabled for this plan
+      final isLeaderboardEnabled =
+          _systemConfigService.isFeatureEnabled('leaderboard', _userPlan);
+
+      if (mounted) {
+        setState(() {
+          _isLearningPathsFeatureEnabled = isLearningPathsEnabled;
+          _isLeaderboardFeatureEnabled = isLeaderboardEnabled;
+        });
+      }
+
+      if (!isLearningPathsEnabled) {
+        debugPrint(
+            '⛔ [STUDY_TOPICS] Learning Paths not available for plan $_userPlan');
+      } else {
+        debugPrint(
+            '✅ [STUDY_TOPICS] Learning Paths enabled for plan $_userPlan');
+      }
+
+      if (!isLeaderboardEnabled) {
+        debugPrint(
+            '⛔ [STUDY_TOPICS] Leaderboard not available for plan $_userPlan');
+      } else {
+        debugPrint('✅ [STUDY_TOPICS] Leaderboard enabled for plan $_userPlan');
+      }
+    } catch (e) {
+      debugPrint('❌ [STUDY_TOPICS] Error checking feature access: $e');
+      // Default to enabled on error to avoid breaking existing users
+      if (mounted) {
+        setState(() {
+          _isLearningPathsFeatureEnabled = true;
+          _isLeaderboardFeatureEnabled = true;
+        });
+      }
+    }
   }
 
   /// Listen for language preference changes from settings
@@ -161,6 +230,8 @@ class _StudyTopicsScreenState extends State<StudyTopicsScreen> {
           currentLanguage: _currentLanguage,
           languageLoaded: _languageLoaded,
           dataLoadingStarted: _dataLoadingStarted,
+          isLearningPathsFeatureEnabled: _isLearningPathsFeatureEnabled,
+          isLeaderboardFeatureEnabled: _isLeaderboardFeatureEnabled,
         ),
       );
 }
@@ -178,11 +249,19 @@ class _StudyTopicsScreenContent extends StatefulWidget {
   /// Whether BLoC events have been dispatched and data loading has started
   final bool dataLoadingStarted;
 
+  /// Whether learning paths feature is enabled for user's plan
+  final bool isLearningPathsFeatureEnabled;
+
+  /// Whether leaderboard feature is enabled for user's plan
+  final bool isLeaderboardFeatureEnabled;
+
   const _StudyTopicsScreenContent({
     this.topicId,
     required this.currentLanguage,
     required this.languageLoaded,
     required this.dataLoadingStarted,
+    required this.isLearningPathsFeatureEnabled,
+    required this.isLeaderboardFeatureEnabled,
   });
 
   @override
@@ -257,6 +336,7 @@ class _StudyTopicsScreenContentState extends State<_StudyTopicsScreenContent> {
   PreferredSizeWidget _buildAppBar(BuildContext context) {
     return StudyTopicsAppBar(
       onLanguageChange: _handleStudyLanguageChange,
+      showLeaderboard: widget.isLeaderboardFeatureEnabled,
     );
   }
 
@@ -327,18 +407,20 @@ class _StudyTopicsScreenContentState extends State<_StudyTopicsScreenContent> {
         if (!isGuest) const SizedBox(height: 24),
 
         // Section 2: Learning Paths (Curated Learning Journeys)
-        // Show loading state if initial loading hasn't completed
-        if (showInitialLoading)
-          _buildLearningPathsLoadingState(context)
-        else
-          LearningPathsSection(
-            onPathTap: _navigateToLearningPath,
-            onRetry: () => context
-                .read<LearningPathsBloc>()
-                .add(RefreshLearningPaths(language: widget.currentLanguage)),
-          ),
-
-        const SizedBox(height: 24),
+        // Only show if learning_paths feature is enabled for user's plan
+        if (widget.isLearningPathsFeatureEnabled) ...[
+          // Show loading state if initial loading hasn't completed
+          if (showInitialLoading)
+            _buildLearningPathsLoadingState(context)
+          else
+            LearningPathsSection(
+              onPathTap: _navigateToLearningPath,
+              onRetry: () => context
+                  .read<LearningPathsBloc>()
+                  .add(RefreshLearningPaths(language: widget.currentLanguage)),
+            ),
+          const SizedBox(height: 24),
+        ],
       ],
     );
   }
@@ -639,8 +721,13 @@ class _StudyTopicsScreenContentState extends State<_StudyTopicsScreenContent> {
 /// App bar widget for the Study Topics screen.
 class StudyTopicsAppBar extends StatelessWidget implements PreferredSizeWidget {
   final VoidCallback? onLanguageChange;
+  final bool showLeaderboard;
 
-  const StudyTopicsAppBar({super.key, this.onLanguageChange});
+  const StudyTopicsAppBar({
+    super.key,
+    this.onLanguageChange,
+    this.showLeaderboard = true,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -651,13 +738,15 @@ class StudyTopicsAppBar extends StatelessWidget implements PreferredSizeWidget {
         elevation: 0,
         scrolledUnderElevation: 0,
         automaticallyImplyLeading: false,
-        // Move leaderboard icon to the left side
-        leading: IconButton(
-          icon: const Icon(Icons.emoji_events_outlined),
-          tooltip: context.tr(TranslationKeys.leaderboardTooltip),
-          onPressed: () => AppRouter.router.goToLeaderboard(),
-          color: Theme.of(context).colorScheme.onSurface,
-        ),
+        // Move leaderboard icon to the left side - only show if feature is enabled
+        leading: showLeaderboard
+            ? IconButton(
+                icon: const Icon(Icons.emoji_events_outlined),
+                tooltip: context.tr(TranslationKeys.leaderboardTooltip),
+                onPressed: () => AppRouter.router.goToLeaderboard(),
+                color: Theme.of(context).colorScheme.onSurface,
+              )
+            : null,
         title: Text(
           context.tr(TranslationKeys.studyTopicsTitle),
           style: AppFonts.inter(

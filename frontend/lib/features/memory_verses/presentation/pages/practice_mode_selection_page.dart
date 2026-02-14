@@ -51,6 +51,14 @@ class _PracticeModeSelectionPageState extends State<PracticeModeSelectionPage> {
   /// Map of mode type to stats from database
   final Map<PracticeModeType, PracticeModeEntity> _modeStatsMap = {};
 
+  // TODO: Fetch actual user subscription tier from Supabase
+  // For now, hardcode as 'free' for demonstration
+  final String _userTier = 'free'; // Can be: free, standard, plus, premium
+
+  // TODO: Fetch actual unlocked modes for today from backend
+  // For now, empty list means no modes unlocked yet
+  final List<String> _unlockedModesToday = [];
+
   @override
   void initState() {
     super.initState();
@@ -193,6 +201,39 @@ class _PracticeModeSelectionPageState extends State<PracticeModeSelectionPage> {
     }
   }
 
+  /// Check if a mode is tier-locked based on user's subscription
+  bool _isModeTierLocked(PracticeModeType modeType) {
+    // Free tier can only access flip_card and type_it_out
+    if (_userTier == 'free') {
+      return modeType != PracticeModeType.flipCard &&
+          modeType != PracticeModeType.typeItOut;
+    }
+    // All other tiers (standard, plus, premium) have access to all modes
+    return false;
+  }
+
+  /// Check if a mode has reached daily unlock limit
+  bool _isModeUnlockLimitReached(PracticeModeType modeType) {
+    // Premium tier has unlimited unlocks
+    if (_userTier == 'premium') {
+      return false;
+    }
+
+    // Check tier-based unlock limits
+    int unlockLimit = 1; // free
+    if (_userTier == 'standard') unlockLimit = 2;
+    if (_userTier == 'plus') unlockLimit = 3;
+
+    // If mode is already unlocked today, it's not limited
+    final modeSlug = modeType.toJson();
+    if (_unlockedModesToday.contains(modeSlug)) {
+      return false;
+    }
+
+    // If user has reached their daily unlock limit, mode is locked
+    return _unlockedModesToday.length >= unlockLimit;
+  }
+
   List<PracticeModeEntity> _filterModes() {
     if (selectedFilter == DifficultyFilter.all) {
       return availableModes;
@@ -245,6 +286,29 @@ class _PracticeModeSelectionPageState extends State<PracticeModeSelectionPage> {
         context.push('/memory-verses/practice/type-it-out/${widget.verseId}');
         break;
     }
+  }
+
+  /// Get user-friendly mode name for display
+  String _getModeName(String modeSlug) {
+    const modeNames = {
+      'flip_card': 'Flip Card',
+      'type_it_out': 'Type It Out',
+      'cloze': 'Cloze',
+      'first_letter': 'First Letter',
+      'progressive': 'Progressive',
+      'word_scramble': 'Word Scramble',
+      'word_bank': 'Word Bank',
+      'audio': 'Audio',
+    };
+    return modeNames[modeSlug] ?? modeSlug;
+  }
+
+  /// Get unlock limit based on tier
+  int _getUnlockLimit() {
+    if (_userTier == 'premium') return -1; // Unlimited
+    if (_userTier == 'plus') return 3;
+    if (_userTier == 'standard') return 2;
+    return 1; // free
   }
 
   /// Get translated difficulty filter label
@@ -331,6 +395,10 @@ class _PracticeModeSelectionPageState extends State<PracticeModeSelectionPage> {
                 ),
               ),
 
+              // Daily Unlocked Modes Indicator
+              if (!_isLoading && !_hasError)
+                _buildUnlockedModesIndicator(theme),
+
               // Difficulty Filter
               Padding(
                 padding: const EdgeInsets.all(16.0),
@@ -412,12 +480,18 @@ class _PracticeModeSelectionPageState extends State<PracticeModeSelectionPage> {
                               final mode = filteredModes[index];
                               final isRecommended =
                                   mode.modeType == recommendedMode;
+                              final isTierLocked =
+                                  _isModeTierLocked(mode.modeType);
+                              final isUnlockLimitReached =
+                                  _isModeUnlockLimitReached(mode.modeType);
 
                               return PracticeModeCard(
                                 mode: mode,
                                 isRecommended: isRecommended,
                                 isFirstRecommended:
                                     isRecommended && _isFirstRecommendation,
+                                isTierLocked: isTierLocked,
+                                isUnlockLimitReached: isUnlockLimitReached,
                                 onTap: () => _selectMode(mode.modeType),
                               );
                             },
@@ -428,6 +502,252 @@ class _PracticeModeSelectionPageState extends State<PracticeModeSelectionPage> {
         ),
       ),
     ).withAuthProtection();
+  }
+
+  /// Build the daily unlocked modes indicator widget
+  Widget _buildUnlockedModesIndicator(ThemeData theme) {
+    final unlockLimit = _getUnlockLimit();
+    final unlockedCount = _unlockedModesToday.length;
+    final isPremium = _userTier == 'premium';
+
+    // Premium users don't need this indicator (all modes always unlocked)
+    if (isPremium) {
+      return Container(
+        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              Colors.amber.shade600,
+              Colors.amber.shade400,
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.white.withAlpha((0.3 * 255).round()),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.star,
+                color: Colors.white,
+                size: 20,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                'Premium: All modes unlocked',
+                style: theme.textTheme.titleSmall?.copyWith(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+            const Icon(
+              Icons.check_circle,
+              color: Colors.white,
+              size: 20,
+            ),
+          ],
+        ),
+      );
+    }
+
+    // For non-premium users, show unlock progress
+    final slotsRemaining = unlockLimit - unlockedCount;
+    final progressColor = slotsRemaining > 0 ? Colors.blue : Colors.orange;
+    final progressValue = unlockLimit > 0 ? unlockedCount / unlockLimit : 0.0;
+
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: progressColor.withAlpha((0.3 * 255).round()),
+          width: 1.5,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header with icon and count
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: progressColor.withAlpha((0.15 * 255).round()),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(
+                  slotsRemaining > 0 ? Icons.lock_open : Icons.lock_clock,
+                  color: progressColor,
+                  size: 18,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Unlocked Modes Today',
+                      style: theme.textTheme.labelMedium?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      '$unlockedCount / $unlockLimit modes',
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        color: progressColor,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              // Progress indicator
+              SizedBox(
+                width: 40,
+                height: 40,
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    CircularProgressIndicator(
+                      value: progressValue,
+                      backgroundColor:
+                          progressColor.withAlpha((0.2 * 255).round()),
+                      color: progressColor,
+                      strokeWidth: 3,
+                    ),
+                    Text(
+                      slotsRemaining > 0 ? '$slotsRemaining' : '✓',
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        color: progressColor,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+
+          // Show unlocked modes if any
+          if (unlockedCount > 0) ...[
+            const SizedBox(height: 12),
+            const Divider(height: 1),
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: _unlockedModesToday.map((modeSlug) {
+                return Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: Colors.green.withAlpha((0.1 * 255).round()),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: Colors.green.withAlpha((0.3 * 255).round()),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(
+                        Icons.check_circle,
+                        color: Colors.green,
+                        size: 14,
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        _getModeName(modeSlug),
+                        style: theme.textTheme.labelMedium?.copyWith(
+                          color: Colors.green.shade700,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }).toList(),
+            ),
+          ],
+
+          // Message about remaining slots
+          if (slotsRemaining > 0) ...[
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: Colors.blue.withAlpha((0.08 * 255).round()),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.info_outline,
+                    color: Colors.blue.shade700,
+                    size: 16,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      slotsRemaining == unlockLimit
+                          ? 'Choose ${unlockLimit == 1 ? 'a' : 'up to $unlockLimit'} mode${unlockLimit > 1 ? 's' : ''} to practice today'
+                          : 'You can unlock $slotsRemaining more mode${slotsRemaining > 1 ? 's' : ''} today',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: Colors.blue.shade900,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ] else ...[
+            // Daily limit reached message
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: Colors.orange.withAlpha((0.08 * 255).round()),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.schedule,
+                    color: Colors.orange.shade700,
+                    size: 16,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Daily limit reached. Practice with unlocked modes or upgrade for more!',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: Colors.orange.shade900,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
   }
 }
 

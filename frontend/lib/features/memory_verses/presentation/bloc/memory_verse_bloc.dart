@@ -130,6 +130,8 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
     on<SelectPracticeModeEvent>(_onSelectPracticeMode);
     on<SubmitPracticeSessionEvent>(_onSubmitPracticeSession);
     on<LoadPracticeModeStatsEvent>(_onLoadPracticeModeStats);
+    on<PracticeModeTierLockedEvent>(_onPracticeModeTierLocked);
+    on<PracticeUnlockLimitExceededEvent>(_onPracticeUnlockLimitExceeded);
     on<LoadMemoryStreakEvent>(_onLoadMemoryStreak);
     on<UseStreakFreezeEvent>(_onUseStreakFreeze);
     on<CheckStreakMilestoneEvent>(_onCheckStreakMilestone);
@@ -756,6 +758,38 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
             print(
                 '❌ [BLOC] Submit practice session failed: ${failure.message}');
           }
+
+          // Check for practice mode restriction errors
+          if (failure.code == 'PRACTICE_MODE_TIER_LOCKED') {
+            // Extract error details from failure message
+            // Backend returns: { code, message, mode, tier, available_modes, required_tier }
+            if (kDebugMode) {
+              print('🔒 [BLOC] Practice mode tier-locked: ${failure.code}');
+            }
+            // Emit tier-locked state - UI will show upgrade dialog
+            // Note: We need error details from the API response
+            emit(MemoryVerseError(
+              message: failure.message,
+              code: failure.code,
+            ));
+            return;
+          }
+
+          if (failure.code == 'PRACTICE_UNLOCK_LIMIT_EXCEEDED') {
+            // Extract error details from failure message
+            // Backend returns: { code, message, details: { unlocked_modes, unlocked_count, unlock_limit, etc. } }
+            if (kDebugMode) {
+              print('⚠️ [BLOC] Daily unlock limit exceeded: ${failure.code}');
+            }
+            // Emit unlock-limit state - UI will show upgrade dialog
+            emit(MemoryVerseError(
+              message: failure.message,
+              code: failure.code,
+            ));
+            return;
+          }
+
+          // Generic error for other failures
           emit(MemoryVerseError(
             message: failure.message,
             code: failure.code,
@@ -845,6 +879,52 @@ class MemoryVerseBloc extends Bloc<MemoryVerseEvent, MemoryVerseState> {
         code: 'UNEXPECTED_ERROR',
       ));
     }
+  }
+
+  /// Handles PracticeModeTierLockedEvent.
+  ///
+  /// Emits state when user attempts to practice with a mode not available in their tier.
+  /// Triggers upgrade dialog in UI.
+  Future<void> _onPracticeModeTierLocked(
+    PracticeModeTierLockedEvent event,
+    Emitter<MemoryVerseState> emit,
+  ) async {
+    if (kDebugMode) {
+      print(
+          '🔒 [BLOC] Practice mode tier-locked: ${event.mode} (current tier: ${event.currentTier})');
+    }
+
+    emit(MemoryVersePracticeModeTierLocked(
+      mode: event.mode,
+      currentTier: event.currentTier,
+      availableModes: event.availableModes,
+      requiredTier: event.requiredTier,
+      message: event.message,
+    ));
+  }
+
+  /// Handles PracticeUnlockLimitExceededEvent.
+  ///
+  /// Emits state when user exceeds daily unlock limit for a verse.
+  /// Triggers upgrade dialog in UI showing unlocked modes and upgrade options.
+  Future<void> _onPracticeUnlockLimitExceeded(
+    PracticeUnlockLimitExceededEvent event,
+    Emitter<MemoryVerseState> emit,
+  ) async {
+    if (kDebugMode) {
+      print(
+          '⚠️ [BLOC] Daily unlock limit exceeded: ${event.unlockedCount}/${event.limit} modes unlocked (verse: ${event.verseId})');
+    }
+
+    emit(MemoryVerseUnlockLimitExceeded(
+      unlockedModes: event.unlockedModes,
+      unlockedCount: event.unlockedCount,
+      limit: event.limit,
+      tier: event.tier,
+      verseId: event.verseId,
+      date: event.date,
+      message: event.message,
+    ));
   }
 
   /// Handles LoadMemoryStreakEvent.
