@@ -1,0 +1,492 @@
+'use client'
+
+import { useState } from 'react'
+import { useRouter } from 'next/navigation'
+import type { LearningPath } from '@/types/admin'
+
+type ImportStage = 'upload' | 'preview' | 'importing' | 'complete'
+type ConflictResolution = 'skip' | 'overwrite' | 'create_new'
+
+interface ImportResult {
+  success: number
+  failed: number
+  skipped: number
+  errors: Array<{ path: string; error: string }>
+}
+
+interface ParsedExport {
+  version: string
+  exportDate: string
+  type: string
+  count: number
+  data: LearningPath[]
+}
+
+export default function ImportLearningPathsPage() {
+  const router = useRouter()
+  const [stage, setStage] = useState<ImportStage>('upload')
+  const [parsedData, setParsedData] = useState<ParsedExport | null>(null)
+  const [conflictResolution, setConflictResolution] = useState<ConflictResolution>('skip')
+  const [importResult, setImportResult] = useState<ImportResult | null>(null)
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    const reader = new FileReader()
+    reader.onload = (event) => {
+      try {
+        const json = JSON.parse(event.target?.result as string)
+
+        // Validate JSON structure
+        if (!json.version || !json.type || json.type !== 'learning-paths' || !Array.isArray(json.data)) {
+          alert('Invalid export file format. Please use a valid learning paths export file.')
+          return
+        }
+
+        setParsedData(json)
+        setStage('preview')
+      } catch (err) {
+        alert('Failed to parse JSON file. Please check the file format.')
+        console.error(err)
+      }
+    }
+    reader.readAsText(file)
+  }
+
+  const handleImport = async () => {
+    if (!parsedData) return
+
+    setStage('importing')
+    const result: ImportResult = {
+      success: 0,
+      failed: 0,
+      skipped: 0,
+      errors: [],
+    }
+
+    for (const path of parsedData.data) {
+      try {
+        // Check if path already exists
+        const existingResponse = await fetch(`/api/admin/learning-paths/${path.id}`)
+        const exists = existingResponse.ok
+
+        if (exists) {
+          if (conflictResolution === 'skip') {
+            result.skipped++
+            continue
+          } else if (conflictResolution === 'overwrite') {
+            // Update existing path
+            const response = await fetch(`/api/admin/learning-paths/${path.id}`, {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(path),
+            })
+
+            if (!response.ok) throw new Error('Failed to update path')
+            result.success++
+          } else {
+            // Create with new ID (backend will generate new ID)
+            const { id, ...pathWithoutId } = path
+            const response = await fetch('/api/admin/learning-paths', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(pathWithoutId),
+            })
+
+            if (!response.ok) throw new Error('Failed to create path')
+            result.success++
+          }
+        } else {
+          // Create new path
+          const response = await fetch('/api/admin/learning-paths', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(path),
+          })
+
+          if (!response.ok) throw new Error('Failed to create path')
+          result.success++
+        }
+      } catch (err) {
+        result.failed++
+        result.errors.push({
+          path: path.title || path.id,
+          error: err instanceof Error ? err.message : 'Unknown error',
+        })
+      }
+    }
+
+    setImportResult(result)
+    setStage('complete')
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50 p-6 dark:bg-gray-900">
+      <div className="mx-auto max-w-6xl">
+        {/* Header */}
+        <div className="mb-6">
+          <button
+            onClick={() => router.push('/learning-paths')}
+            className="mb-4 flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100"
+          >
+            <svg
+              className="h-4 w-4"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M15 19l-7-7 7-7"
+              />
+            </svg>
+            Back to Learning Paths
+          </button>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+            Import Learning Paths
+          </h1>
+          <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
+            Import learning paths from a JSON export file
+          </p>
+        </div>
+
+        {/* Upload Stage */}
+        {stage === 'upload' && (
+          <div className="rounded-lg bg-white p-8 shadow dark:bg-gray-800 dark:shadow-gray-900">
+            <div className="text-center">
+              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 dark:bg-primary/20">
+                <svg
+                  className="h-8 w-8 text-primary"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+                  />
+                </svg>
+              </div>
+              <h2 className="mt-4 text-lg font-semibold text-gray-900 dark:text-gray-100">
+                Upload Export File
+              </h2>
+              <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+                Select a JSON file exported from the learning paths export feature
+              </p>
+              <div className="mt-6">
+                <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg bg-primary px-6 py-3 text-sm font-medium text-white hover:bg-primary-dark">
+                  <svg
+                    className="h-5 w-5"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                    />
+                  </svg>
+                  Choose JSON File
+                  <input
+                    type="file"
+                    accept=".json"
+                    onChange={handleFileUpload}
+                    className="hidden"
+                  />
+                </label>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Preview Stage */}
+        {stage === 'preview' && parsedData && (
+          <div className="space-y-6">
+            {/* File Info */}
+            <div className="rounded-lg bg-white p-6 shadow dark:bg-gray-800 dark:shadow-gray-900">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">File Information</h2>
+              <dl className="mt-4 grid grid-cols-2 gap-4 text-sm">
+                <div>
+                  <dt className="font-medium text-gray-500 dark:text-gray-400">Export Version</dt>
+                  <dd className="mt-1 text-gray-900 dark:text-gray-100">{parsedData.version}</dd>
+                </div>
+                <div>
+                  <dt className="font-medium text-gray-500 dark:text-gray-400">Export Date</dt>
+                  <dd className="mt-1 text-gray-900 dark:text-gray-100">
+                    {new Date(parsedData.exportDate).toLocaleDateString()}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="font-medium text-gray-500 dark:text-gray-400">Type</dt>
+                  <dd className="mt-1 text-gray-900 dark:text-gray-100">{parsedData.type}</dd>
+                </div>
+                <div>
+                  <dt className="font-medium text-gray-500 dark:text-gray-400">Learning Paths</dt>
+                  <dd className="mt-1 text-gray-900 dark:text-gray-100">{parsedData.count}</dd>
+                </div>
+              </dl>
+            </div>
+
+            {/* Conflict Resolution */}
+            <div className="rounded-lg bg-white p-6 shadow dark:bg-gray-800 dark:shadow-gray-900">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                Conflict Resolution
+              </h2>
+              <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+                How should existing learning paths be handled?
+              </p>
+              <div className="mt-4 space-y-3">
+                <label className="flex items-start gap-3 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="conflict"
+                    value="skip"
+                    checked={conflictResolution === 'skip'}
+                    onChange={(e) => setConflictResolution(e.target.value as ConflictResolution)}
+                    className="mt-1 h-4 w-4 text-primary focus:ring-primary dark:bg-gray-600 dark:border-gray-600"
+                  />
+                  <div>
+                    <div className="font-medium text-gray-900 dark:text-gray-100">Skip Existing</div>
+                    <div className="text-sm text-gray-600 dark:text-gray-400">
+                      Don't import learning paths that already exist
+                    </div>
+                  </div>
+                </label>
+                <label className="flex items-start gap-3 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="conflict"
+                    value="overwrite"
+                    checked={conflictResolution === 'overwrite'}
+                    onChange={(e) => setConflictResolution(e.target.value as ConflictResolution)}
+                    className="mt-1 h-4 w-4 text-primary focus:ring-primary dark:bg-gray-600 dark:border-gray-600"
+                  />
+                  <div>
+                    <div className="font-medium text-gray-900 dark:text-gray-100">Overwrite Existing</div>
+                    <div className="text-sm text-gray-600 dark:text-gray-400">
+                      Replace existing learning paths with imported data
+                    </div>
+                  </div>
+                </label>
+                <label className="flex items-start gap-3 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="conflict"
+                    value="create_new"
+                    checked={conflictResolution === 'create_new'}
+                    onChange={(e) => setConflictResolution(e.target.value as ConflictResolution)}
+                    className="mt-1 h-4 w-4 text-primary focus:ring-primary dark:bg-gray-600 dark:border-gray-600"
+                  />
+                  <div>
+                    <div className="font-medium text-gray-900 dark:text-gray-100">Create as New</div>
+                    <div className="text-sm text-gray-600 dark:text-gray-400">
+                      Create duplicates with new IDs (keeps existing paths unchanged)
+                    </div>
+                  </div>
+                </label>
+              </div>
+            </div>
+
+            {/* Preview List */}
+            <div className="rounded-lg bg-white shadow dark:bg-gray-800 dark:shadow-gray-900">
+              <div className="border-b border-gray-200 p-6 dark:border-gray-700">
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                  Learning Paths to Import ({parsedData.count})
+                </h2>
+              </div>
+              <div className="divide-y divide-gray-200 dark:divide-gray-700">
+                {parsedData.data.map((path) => (
+                  <div key={path.id} className="p-4">
+                    <div className="flex items-center gap-4">
+                      <div
+                        className="flex h-10 w-10 items-center justify-center rounded-lg text-xl"
+                        style={{ backgroundColor: `${path.color}20` }}
+                      >
+                        📚
+                      </div>
+                      <div className="flex-1">
+                        <p className="font-medium text-gray-900 dark:text-gray-100">{path.title}</p>
+                        <div className="mt-1 flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400">
+                          <span>{path.slug}</span>
+                          <span>•</span>
+                          <span>{path.topics_count || 0} topics</span>
+                          <span>•</span>
+                          <span className={path.is_active ? 'text-green-600 dark:text-green-400' : 'text-gray-400'}>
+                            {path.is_active ? 'Active' : 'Inactive'}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => {
+                  setParsedData(null)
+                  setStage('upload')
+                }}
+                className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleImport}
+                className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-dark"
+              >
+                <svg
+                  className="h-5 w-5"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"
+                  />
+                </svg>
+                Start Import
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Importing Stage */}
+        {stage === 'importing' && (
+          <div className="rounded-lg bg-white p-12 text-center shadow dark:bg-gray-800 dark:shadow-gray-900">
+            <div className="mx-auto h-16 w-16 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
+            <p className="mt-4 text-lg font-medium text-gray-900 dark:text-gray-100">Importing Learning Paths...</p>
+            <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">This may take a few moments</p>
+          </div>
+        )}
+
+        {/* Complete Stage */}
+        {stage === 'complete' && importResult && (
+          <div className="space-y-6">
+            {/* Results Summary */}
+            <div className="rounded-lg bg-white p-6 shadow dark:bg-gray-800 dark:shadow-gray-900">
+              <div className="flex items-center gap-3">
+                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/30">
+                  <svg
+                    className="h-6 w-6 text-green-600 dark:text-green-400"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M5 13l4 4L19 7"
+                    />
+                  </svg>
+                </div>
+                <div>
+                  <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Import Complete</h2>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    {importResult.success} succeeded, {importResult.failed} failed, {importResult.skipped} skipped
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-6 grid grid-cols-3 gap-4">
+                <div className="rounded-lg bg-green-50 p-4 text-center dark:bg-green-900/30">
+                  <div className="text-2xl font-bold text-green-600 dark:text-green-400">{importResult.success}</div>
+                  <div className="mt-1 text-sm text-green-700 dark:text-green-300">Successful</div>
+                </div>
+                <div className="rounded-lg bg-red-50 p-4 text-center dark:bg-red-900/30">
+                  <div className="text-2xl font-bold text-red-600 dark:text-red-400">{importResult.failed}</div>
+                  <div className="mt-1 text-sm text-red-700 dark:text-red-300">Failed</div>
+                </div>
+                <div className="rounded-lg bg-gray-50 p-4 text-center dark:bg-gray-700">
+                  <div className="text-2xl font-bold text-gray-600 dark:text-gray-300">{importResult.skipped}</div>
+                  <div className="mt-1 text-sm text-gray-700 dark:text-gray-400">Skipped</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Errors */}
+            {importResult.errors.length > 0 && (
+              <div className="rounded-lg bg-white p-6 shadow dark:bg-gray-800 dark:shadow-gray-900">
+                <h3 className="font-semibold text-gray-900 dark:text-gray-100">Errors</h3>
+                <div className="mt-4 space-y-2">
+                  {importResult.errors.map((error, index) => (
+                    <div
+                      key={index}
+                      className="rounded-lg border border-red-200 bg-red-50 p-3 dark:border-red-900/30 dark:bg-red-900/20"
+                    >
+                      <p className="text-sm font-medium text-red-900 dark:text-red-300">{error.path}</p>
+                      <p className="mt-1 text-sm text-red-700 dark:text-red-400">{error.error}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Actions */}
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => {
+                  setParsedData(null)
+                  setImportResult(null)
+                  setStage('upload')
+                }}
+                className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
+              >
+                Import More
+              </button>
+              <button
+                onClick={() => router.push('/learning-paths')}
+                className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-dark"
+              >
+                Back to Learning Paths
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Info Card */}
+        {stage === 'upload' && (
+          <div className="mt-6 rounded-lg border border-blue-200 bg-blue-50 p-4 dark:border-blue-900/30 dark:bg-blue-900/20">
+            <div className="flex gap-3">
+              <svg
+                className="h-5 w-5 text-blue-600 dark:text-blue-400"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+              <div className="flex-1">
+                <p className="text-sm font-medium text-blue-900 dark:text-blue-300">Import Information</p>
+                <ul className="mt-2 space-y-1 text-sm text-blue-800 dark:text-blue-400">
+                  <li>• Only JSON files exported from this system are supported</li>
+                  <li>• Choose how to handle conflicts with existing learning paths</li>
+                  <li>• All related topics and translations will be imported</li>
+                  <li>• Large imports may take several minutes to complete</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
