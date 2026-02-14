@@ -23,9 +23,10 @@ import { createFunction } from '../_shared/core/function-factory.ts'
 import { ServiceContainer } from '../_shared/core/services.ts'
 import { AppError } from '../_shared/utils/error-handler.ts'
 import { ApiSuccessResponse, UserContext } from '../_shared/types/index.ts'
-import { 
-  ReflectionsService, 
-  StudyReflection, 
+import { isFeatureEnabledForPlan } from '../_shared/services/feature-flag-service.ts'
+import {
+  ReflectionsService,
+  StudyReflection,
   ReflectionSaveRequest,
   ReflectionListResponse,
   StudyMode
@@ -75,6 +76,24 @@ async function handleReflections(
       401
     )
   }
+
+  // Get user's subscription plan
+  const userPlan = await services.authService.getUserPlan(req)
+  console.log(`👤 [Reflections] User plan: ${userPlan}`)
+
+  // Feature flag validation - Check if reflections is enabled for user's plan
+  const hasReflectionsAccess = await isFeatureEnabledForPlan('reflections', userPlan)
+
+  if (!hasReflectionsAccess) {
+    console.warn(`⛔ [Reflections] Feature access denied: reflections not available for plan ${userPlan}`)
+    throw new AppError(
+      'FEATURE_NOT_AVAILABLE',
+      `Reflections are not available for your current plan (${userPlan}). Please upgrade to Standard, Plus, or Premium to access this feature.`,
+      403
+    )
+  }
+
+  console.log(`✅ [Reflections] Feature access granted: reflections available for plan ${userPlan}`)
 
   // Route to appropriate handler based on HTTP method
   switch (req.method) {

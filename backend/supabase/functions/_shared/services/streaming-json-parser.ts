@@ -4,21 +4,22 @@
  * Parses incremental JSON chunks from LLM streaming responses and
  * emits complete sections as they become available.
  *
- * The parser expects JSON in this order:
+ * The parser expects JSON in this order (matching prompt templates):
  * 1. summary (string) - Required
- * 2. interpretation (string) - Required
- * 3. context (string) - Required
- * 4. relatedVerses (array of strings) - Required
- * 5. reflectionQuestions (array of strings) - Required
- * 6. prayerPoints (array of strings) - Required
- * 7. interpretationInsights (array of strings) - Optional
+ * 2. context (string) - Required
+ * 3. passage (string) - Required (Bible reference only)
+ * 4. interpretation (string) - Required
+ * 5. relatedVerses (array of strings) - Required
+ * 6. reflectionQuestions (array of strings) - Required
+ * 7. prayerPoints (array of strings) - Required
  * 8. summaryInsights (array of strings) - Optional
- * 9. reflectionAnswers (array of strings) - Optional
- * 10. contextQuestion (string) - Optional
- * 11. summaryQuestion (string) - Optional
- * 12. relatedVersesQuestion (string) - Optional
- * 13. reflectionQuestion (string) - Optional
- * 14. prayerQuestion (string) - Optional
+ * 9. interpretationInsights (array of strings) - Optional
+ * 10. reflectionAnswers (array of strings) - Optional
+ * 11. contextQuestion (string) - Optional
+ * 12. summaryQuestion (string) - Optional
+ * 13. relatedVersesQuestion (string) - Optional
+ * 14. reflectionQuestion (string) - Optional
+ * 15. prayerQuestion (string) - Optional
  */
 
 /**
@@ -28,6 +29,7 @@ export type SectionType =
   | 'summary'
   | 'interpretation'
   | 'context'
+  | 'passage'
   | 'relatedVerses'
   | 'reflectionQuestions'
   | 'prayerPoints'
@@ -56,6 +58,7 @@ export interface CompleteStudyGuide {
   summary: string
   interpretation: string
   context: string
+  passage?: string  // LLM-generated Scripture passage (3-8 verses) for Standard mode
   relatedVerses: string[]
   reflectionQuestions: string[]
   prayerPoints: string[]
@@ -70,17 +73,20 @@ export interface CompleteStudyGuide {
 }
 
 /**
- * Section order for parsing (matches LLM output order)
+ * Section order for parsing (MUST match LLM generation order for optimal streaming)
+ * Order: Summary → Context → Passage → Interpretation → Related Verses → Questions → Prayer → Insights
+ * This order matches the JSON structure in all prompt templates to minimize buffering delays
  */
 const SECTION_ORDER: SectionType[] = [
   'summary',
-  'interpretation',
   'context',
+  'passage',
+  'interpretation',
   'relatedVerses',
   'reflectionQuestions',
   'prayerPoints',
-  'interpretationInsights',
   'summaryInsights',
+  'interpretationInsights',
   'reflectionAnswers',
   'contextQuestion',
   'summaryQuestion',
@@ -96,6 +102,7 @@ const REQUIRED_SECTIONS: SectionType[] = [
   'summary',
   'interpretation',
   'context',
+  'passage',
   'relatedVerses',
   'reflectionQuestions',
   'prayerPoints'
@@ -173,7 +180,23 @@ export class StreamingJsonParser {
     ].includes(sectionType)
 
     if (isArrayType) {
-      return this.tryExtractArray(sectionType)
+      // First try to extract as array
+      const arrayResult = this.tryExtractArray(sectionType)
+      if (arrayResult !== null) {
+        return arrayResult
+      }
+
+      // FALLBACK: If array extraction fails, try extracting as string
+      // This handles cases where LLM generates a string instead of array
+      // (e.g., prayerPoints as a single prayer text)
+      const stringResult = this.tryExtractString(sectionType)
+      if (stringResult !== null) {
+        console.log(`[Parser] ⚠️  Extracted ${sectionType} as string, converting to array`)
+        // Convert string to single-element array
+        return [stringResult]
+      }
+
+      return null
     } else {
       return this.tryExtractString(sectionType)
     }
@@ -307,7 +330,15 @@ export class StreamingJsonParser {
    * (Optional sections like interpretationInsights and contextQuestion are not required)
    */
   isComplete(): boolean {
-    return REQUIRED_SECTIONS.every(section => this.emittedSections.has(section))
+    const complete = REQUIRED_SECTIONS.every(section => this.emittedSections.has(section))
+
+    if (!complete) {
+      const missingSections = REQUIRED_SECTIONS.filter(section => !this.emittedSections.has(section))
+      console.warn('[Parser] ⚠️  isComplete() = false. Missing required sections:', missingSections)
+      console.log('[Parser] Emitted sections:', Array.from(this.emittedSections))
+    }
+
+    return complete
   }
 
   /**
@@ -337,6 +368,9 @@ export class StreamingJsonParser {
     }
 
     // Add optional fields if present
+    if (this.parsedData.passage) {
+      result.passage = this.parsedData.passage
+    }
     if (this.parsedData.interpretationInsights) {
       result.interpretationInsights = this.parsedData.interpretationInsights
     }
@@ -430,6 +464,9 @@ export class StreamingJsonParser {
         }
 
         // Add optional fields if present and valid
+        if (typeof parsed.passage === 'string') {
+          result.passage = parsed.passage
+        }
         if (Array.isArray(parsed.interpretationInsights)) {
           result.interpretationInsights = parsed.interpretationInsights
         }

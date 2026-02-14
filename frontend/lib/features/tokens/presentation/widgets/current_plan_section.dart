@@ -200,8 +200,10 @@ class CurrentPlanSection extends StatelessWidget {
         return Icons.person;
       case UserPlan.standard:
         return Icons.auto_awesome;
-      case UserPlan.premium:
+      case UserPlan.plus:
         return Icons.workspace_premium;
+      case UserPlan.premium:
+        return Icons.star;
     }
   }
 
@@ -211,6 +213,8 @@ class CurrentPlanSection extends StatelessWidget {
         return Colors.grey[600]!;
       case UserPlan.standard:
         return const Color(0xFF6A4FB6);
+      case UserPlan.plus:
+        return Colors.purple[600]!;
       case UserPlan.premium:
         return Colors.amber[700]!;
     }
@@ -222,6 +226,8 @@ class CurrentPlanSection extends StatelessWidget {
         return context.tr('tokens.plans.free_description');
       case UserPlan.standard:
         return context.tr('tokens.plans.standard_description');
+      case UserPlan.plus:
+        return context.tr('tokens.plans.plus_description');
       case UserPlan.premium:
         return context.tr('tokens.plans.premium_description');
     }

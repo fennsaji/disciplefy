@@ -14,6 +14,7 @@ import '../widgets/conversation_bubble.dart';
 import '../../../../shared/widgets/scripture_verse_sheet.dart';
 import '../widgets/language_selector.dart' show VoiceLanguage;
 import '../widgets/voice_button.dart';
+import '../widgets/monthly_limit_exceeded_dialog.dart';
 import '../../../gamification/presentation/bloc/gamification_bloc.dart';
 import '../../../gamification/presentation/bloc/gamification_event.dart';
 
@@ -159,6 +160,17 @@ class _VoiceConversationViewState extends State<_VoiceConversationView> {
         appBar: _buildAppBar(),
         body: BlocConsumer<VoiceConversationBloc, VoiceConversationState>(
           listener: (context, state) {
+            // Show monthly limit exceeded dialog
+            if (state is VoiceConversationMonthlyLimitExceeded) {
+              MonthlyLimitExceededDialog.show(
+                context,
+                conversationsUsed: state.conversationsUsed,
+                limit: state.limit,
+                tier: state.tier,
+                month: state.month,
+              );
+            }
+
             // Show error snackbar
             if (state.status == VoiceConversationStatus.error &&
                 state.errorMessage != null) {

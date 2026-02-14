@@ -5,7 +5,7 @@ import 'package:equatable/equatable.dart';
 /// as well as Premium trial information for new users.
 ///
 /// This is used to determine:
-/// - Current plan (free, standard, premium)
+/// - Current plan (free, standard, plus, premium)
 /// - Whether the Standard trial is active (before March 31, 2025)
 /// - Whether user is in grace period (April 1-7, 2025)
 /// - Whether user was eligible for trial (signed up before March 31)
@@ -13,7 +13,7 @@ import 'package:equatable/equatable.dart';
 /// - Whether user needs to subscribe
 /// - Premium trial status (7-day trial for new users after April 1st)
 class UserSubscriptionStatus extends Equatable {
-  /// Current effective plan: 'free', 'standard', or 'premium'
+  /// Current effective plan: 'free', 'standard', 'plus', or 'premium'
   final String currentPlan;
 
   /// Whether the Standard plan trial period is still active (before March 31)
@@ -25,7 +25,7 @@ class UserSubscriptionStatus extends Equatable {
   /// Whether user has an active subscription
   final bool hasSubscription;
 
-  /// The plan type of the active subscription ('standard' or 'premium')
+  /// The plan type of the active subscription ('standard', 'plus', or 'premium')
   final String? subscriptionPlanType;
 
   /// The status of the active subscription
@@ -94,6 +94,9 @@ class UserSubscriptionStatus extends Equatable {
   /// Whether the user is on the standard plan
   bool get isStandardPlan => currentPlan == 'standard';
 
+  /// Whether the user is on the plus plan
+  bool get isPlusPlan => currentPlan == 'plus';
+
   /// Whether the user is on the premium plan
   bool get isPremiumPlan => currentPlan == 'premium';
 
@@ -158,6 +161,8 @@ class UserSubscriptionStatus extends Equatable {
         return 'Premium trial: $premiumTrialDaysRemaining days left';
       }
       return 'You have Premium access';
+    } else if (isPlusPlan) {
+      return 'Plus subscription active';
     } else if (isStandardPlan) {
       if (hasSubscription) {
         return 'Standard subscription active';

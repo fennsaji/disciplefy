@@ -6,16 +6,118 @@ import '../../../../core/constants/app_fonts.dart';
 import '../../../../core/extensions/translation_extension.dart';
 import '../../../../core/i18n/translation_keys.dart';
 import '../../../../core/router/app_routes.dart';
+import '../../../../core/services/platform_detection_service.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/utils/logger.dart';
+import '../../data/datasources/subscription_remote_data_source.dart';
+import '../../data/models/subscription_v2_models.dart';
 import '../widgets/pricing_card.dart';
+import '../widgets/promo_code_input.dart';
 
 /// Public Pricing Page
 ///
-/// Displays subscription tiers and pricing for Razorpay verification.
+/// Displays subscription tiers and pricing dynamically fetched from database.
+/// Supports multi-provider pricing (Razorpay, Google Play, Apple App Store)
+/// and promotional code integration.
 /// This page is accessible without authentication.
-class PricingPage extends StatelessWidget {
-  const PricingPage({super.key});
+class PricingPage extends StatefulWidget {
+  final PlatformDetectionService platformService;
+  final SubscriptionRemoteDataSource dataSource;
+
+  const PricingPage({
+    super.key,
+    required this.platformService,
+    required this.dataSource,
+  });
+
+  @override
+  State<PricingPage> createState() => _PricingPageState();
+}
+
+class _PricingPageState extends State<PricingPage> {
+  bool _isLoading = true;
+  String? _errorMessage;
+  List<SubscriptionPlanModel> _plans = [];
+  PromotionalCampaignModel? _appliedPromo;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchPlans();
+  }
+
+  Future<void> _fetchPlans({String? promoCode}) async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      final provider = widget.platformService.getPreferredProvider();
+      final providerString = widget.platformService.providerToString(provider);
+
+      final response = await widget.dataSource.getPlans(
+        provider: providerString,
+        region: 'IN',
+        promoCode: promoCode,
+      );
+
+      setState(() {
+        _plans = response.plans;
+        if (response.promotionalCampaign != null) {
+          _appliedPromo = response.promotionalCampaign;
+        }
+        _isLoading = false;
+      });
+    } catch (e) {
+      Logger.error(
+        'Failed to fetch pricing plans',
+        tag: 'PRICING',
+        error: e,
+      );
+      setState(() {
+        _errorMessage = 'Failed to load pricing plans. Please try again.';
+        _isLoading = false;
+      });
+    }
+  }
+
+  Future<PromotionalCampaignModel?> _validatePromoCode(String code) async {
+    try {
+      final provider = widget.platformService.getPreferredProvider();
+      final providerString = widget.platformService.providerToString(provider);
+
+      final response = await widget.dataSource.validatePromoCode(
+        promoCode: code,
+        provider: providerString,
+      );
+
+      if (response.valid && response.campaign != null) {
+        return response.campaign!.toPromotionalCampaignModel();
+      }
+      return null;
+    } catch (e) {
+      Logger.error(
+        'Failed to validate promo code',
+        tag: 'PRICING',
+        error: e,
+      );
+      return null;
+    }
+  }
+
+  void _handlePromoApplied(PromotionalCampaignModel campaign) {
+    // Refetch plans with the promo code applied
+    _fetchPlans(promoCode: campaign.code);
+  }
+
+  void _handlePromoRemoved() {
+    // Refetch plans without promo code
+    setState(() {
+      _appliedPromo = null;
+    });
+    _fetchPlans();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -44,26 +146,104 @@ class PricingPage extends StatelessWidget {
           },
         ),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24.0),
+      body: _buildBody(context, isWideScreen),
+    );
+  }
+
+  Widget _buildBody(BuildContext context, bool isWideScreen) {
+    if (_isLoading) {
+      return Center(
         child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // Header
-            _buildHeader(context),
-            const SizedBox(height: 32),
-
-            // Pricing Cards
-            if (isWideScreen)
-              _buildWideLayoutCards(context)
-            else
-              _buildMobileLayoutCards(context),
-
-            const SizedBox(height: 32),
-
-            // Footer info
-            _buildFooterInfo(context),
+            const CircularProgressIndicator(),
+            const SizedBox(height: 16),
+            Text(
+              'Loading pricing plans...',
+              style: AppFonts.inter(
+                fontSize: 14,
+                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+              ),
+            ),
           ],
         ),
+      );
+    }
+
+    if (_errorMessage != null) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.error_outline,
+                size: 64,
+                color: AppTheme.errorColor,
+              ),
+              const SizedBox(height: 16),
+              Text(
+                _errorMessage!,
+                style: AppFonts.inter(
+                  fontSize: 16,
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 24),
+              ElevatedButton(
+                onPressed: _fetchPlans,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.primaryColor,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 32,
+                    vertical: 16,
+                  ),
+                ),
+                child: Text(
+                  'Retry',
+                  style: AppFonts.inter(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(24.0),
+      child: Column(
+        children: [
+          // Header
+          _buildHeader(context),
+          const SizedBox(height: 32),
+
+          // Promo Code Input
+          PromoCodeInput(
+            onPromoApplied: _handlePromoApplied,
+            onPromoRemoved: _handlePromoRemoved,
+            onValidate: _validatePromoCode,
+            initialPromo: _appliedPromo,
+          ),
+          const SizedBox(height: 32),
+
+          // Pricing Cards
+          if (isWideScreen)
+            _buildWideLayoutCards(context)
+          else
+            _buildMobileLayoutCards(context),
+
+          const SizedBox(height: 32),
+
+          // Footer info
+          _buildFooterInfo(context),
+        ],
       ),
     );
   }
@@ -90,30 +270,343 @@ class PricingPage extends StatelessWidget {
   }
 
   Widget _buildWideLayoutCards(BuildContext context) {
+    if (_plans.isEmpty) {
+      return Center(
+        child: Text(
+          'No pricing plans available',
+          style: AppFonts.inter(
+            fontSize: 14,
+            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+          ),
+        ),
+      );
+    }
+
     return IntrinsicHeight(
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Expanded(child: _buildFreePlanCard(context)),
-          const SizedBox(width: 16),
-          Expanded(child: _buildStandardPlanCard(context)),
-          const SizedBox(width: 16),
-          Expanded(child: _buildPremiumPlanCard(context)),
-        ],
+        children: _plans.map((plan) {
+          final isLast = plan == _plans.last;
+          return Expanded(
+            child: Padding(
+              padding: EdgeInsets.only(right: isLast ? 0 : 12),
+              child: _buildDynamicPlanCard(context, plan),
+            ),
+          );
+        }).toList(),
       ),
     );
   }
 
   Widget _buildMobileLayoutCards(BuildContext context) {
+    if (_plans.isEmpty) {
+      return Center(
+        child: Text(
+          'No pricing plans available',
+          style: AppFonts.inter(
+            fontSize: 14,
+            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+          ),
+        ),
+      );
+    }
+
     return Column(
-      children: [
-        _buildFreePlanCard(context, isMobile: true),
-        const SizedBox(height: 16),
-        _buildStandardPlanCard(context, isMobile: true),
-        const SizedBox(height: 16),
-        _buildPremiumPlanCard(context, isMobile: true),
-      ],
+      children: _plans.map((plan) {
+        final isLast = plan == _plans.last;
+        return Padding(
+          padding: EdgeInsets.only(bottom: isLast ? 0 : 16),
+          child: _buildDynamicPlanCard(context, plan, isMobile: true),
+        );
+      }).toList(),
     );
+  }
+
+  Widget _buildDynamicPlanCard(
+    BuildContext context,
+    SubscriptionPlanModel plan, {
+    bool isMobile = false,
+  }) {
+    // Extract features from plan.features JSON
+    final features = _extractFeatures(plan.features);
+
+    // Determine badge and styling based on tier
+    String? badge;
+    Color? badgeColor;
+    bool isHighlighted = false;
+    bool isPremium = false;
+
+    switch (plan.tier) {
+      case 1: // Standard
+        badge = context.tr(TranslationKeys.pricingMostPopular);
+        isHighlighted = true;
+        break;
+      case 2: // Plus
+        badge = 'Recommended';
+        badgeColor = const Color(0xFFFF9800); // Orange
+        break;
+      case 3: // Premium
+        badge = context.tr(TranslationKeys.pricingBestValue);
+        badgeColor = AppTheme.successColor;
+        isPremium = true;
+        break;
+    }
+
+    // Format pricing
+    final price = plan.displayPrice.toStringAsFixed(0);
+    final originalPrice = plan.hasDiscount
+        ? plan.pricing.basePriceFormatted.toStringAsFixed(0)
+        : null;
+
+    // Get token info from features
+    final dailyTokens = plan.features['daily_tokens'] as int?;
+    final tokenInfo = dailyTokens != null
+        ? dailyTokens == -1
+            ? context.tr(TranslationKeys.pricingUnlimitedTokens)
+            : '$dailyTokens ${context.tr(TranslationKeys.pricingTokensDaily)}'
+        : null;
+
+    // Promotional text if discount is applied
+    final promotionalText = plan.hasDiscount
+        ? context.tr(TranslationKeys.pricingLimitedTimeOffer)
+        : null;
+
+    return PricingCard(
+      planName: plan.planName,
+      price: price,
+      originalPrice: originalPrice,
+      priceSubtext: context.tr(TranslationKeys.pricingPerMonth),
+      tokenInfo: tokenInfo,
+      promotionalText: promotionalText,
+      badge: badge,
+      badgeColor: badgeColor,
+      features: features,
+      buttonText: context.tr(TranslationKeys.pricingGetStarted),
+      onPressed: isPremium
+          ? () => _handlePremiumPlanPress(context)
+          : () => _handlePlanPress(context, plan),
+      isHighlighted: isHighlighted,
+      isPremium: isPremium,
+      isMobile: isMobile,
+    );
+  }
+
+  List<String> _extractFeatures(Map<String, dynamic> featuresJson) {
+    final features = <String>[];
+
+    // Extract daily tokens with mode restrictions
+    final dailyTokens = featuresJson['daily_tokens'] as int?;
+    final followUps = featuresJson['followups'] as int?;
+    final studyModes = featuresJson['study_modes'] as List?;
+
+    if (dailyTokens != null) {
+      if (dailyTokens == -1) {
+        features.add('Unlimited AI tokens (all study modes)');
+      } else if (dailyTokens == 8) {
+        // Free plan - Quick Read only
+        features.add('$dailyTokens AI tokens daily (Quick Read only)');
+      } else {
+        features.add('$dailyTokens AI tokens daily (all study modes)');
+      }
+    }
+
+    // Daily verse notifications (all plans)
+    features.add('Daily verse notifications');
+
+    // Learning paths & study topics (all plans)
+    features.add('Learning paths & Study topics');
+
+    // Token purchase option (all plans except Premium)
+    if (dailyTokens != -1) {
+      features.add('Purchase additional tokens (4 tokens/₹1)');
+    }
+
+    // Extract follow-ups per study guide
+    if (followUps != null && followUps > 0) {
+      if (followUps == -1) {
+        features.add('Unlimited follow-ups per study guide');
+      } else {
+        features.add('$followUps follow-ups per study guide');
+      }
+    }
+
+    // Extract AI Discipler conversations
+    final aiDiscipler = featuresJson['ai_discipler'] as int?;
+    if (aiDiscipler != null) {
+      if (aiDiscipler == -1) {
+        features.add('Unlimited AI Discipler conversations');
+      } else {
+        features.add('$aiDiscipler AI Discipler conversations/month');
+      }
+    }
+
+    // Extract memory verses
+    final memoryVerses = featuresJson['memory_verses'] as int?;
+    if (memoryVerses != null) {
+      if (memoryVerses == -1) {
+        features.add('Unlimited active memory verses');
+      } else {
+        features.add('$memoryVerses active memory verses');
+      }
+    }
+
+    // Extract practice modes with specific mode names
+    final practiceModes = featuresJson['practice_modes'] as int?;
+    final practiceLimit = featuresJson['practice_limit'] as int?;
+
+    if (practiceModes != null) {
+      if (dailyTokens == 8) {
+        // Free plan - only 2 modes
+        features.add('2 practice modes (Flip Card, Type It Out)');
+      } else if (practiceModes == 8) {
+        features.add('All 8 practice modes');
+      }
+    }
+
+    // Extract practice sessions limit
+    if (practiceLimit != null) {
+      if (practiceLimit == -1) {
+        features.add('Unlimited practice sessions per verse');
+      } else {
+        features.add(
+            '$practiceLimit practice session${practiceLimit > 1 ? 's' : ''} per verse per day');
+      }
+    }
+
+    // Study guide history (Standard and above)
+    if (dailyTokens != null && dailyTokens > 8) {
+      features.add('Study guide history');
+    }
+
+    // Add fallback if no features extracted
+    if (features.isEmpty) {
+      features.add('Basic Bible study features');
+    }
+
+    return features;
+  }
+
+  Future<void> _handlePremiumPlanPress(BuildContext context) async {
+    // Save pending premium upgrade flag for post-login redirect
+    try {
+      Box box;
+      if (Hive.isBoxOpen('app_settings')) {
+        box = Hive.box('app_settings');
+      } else {
+        box = await Hive.openBox('app_settings');
+      }
+      await box.put('pending_premium_upgrade', true);
+
+      // Save promo code if one is applied
+      if (_appliedPromo != null) {
+        await box.put('pending_promo_code', _appliedPromo!.code);
+        print('💰 [PRICING] Saved promo code: ${_appliedPromo!.code}');
+      }
+
+      if (context.mounted) {
+        context.go(AppRoutes.login);
+      }
+    } on HiveError catch (e) {
+      Logger.error(
+        'Hive error saving premium upgrade flag',
+        tag: 'PRICING',
+        error: e,
+      );
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Failed to save preference. Please try again.'),
+            duration: Duration(seconds: 2),
+          ),
+        );
+        context.go(AppRoutes.login);
+      }
+    } catch (e) {
+      Logger.error(
+        'Unexpected error saving premium upgrade flag',
+        tag: 'PRICING',
+        error: e,
+      );
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Failed to save preference. Please try again.'),
+            duration: Duration(seconds: 2),
+          ),
+        );
+        context.go(AppRoutes.login);
+      }
+    }
+  }
+
+  Future<void> _handlePlanPress(
+    BuildContext context,
+    SubscriptionPlanModel plan,
+  ) async {
+    try {
+      Box box;
+      if (Hive.isBoxOpen('app_settings')) {
+        box = Hive.box('app_settings');
+      } else {
+        box = await Hive.openBox('app_settings');
+      }
+
+      // Store selected plan details
+      await box.put('pending_plan_upgrade', true);
+      await box.put('selected_plan_code', plan.planCode);
+      await box.put('selected_plan_price', plan.displayPriceMinor);
+
+      // Save promo code if applied
+      if (_appliedPromo != null) {
+        await box.put('pending_promo_code', _appliedPromo!.code);
+        print('💰 [PRICING] Saved promo code: ${_appliedPromo!.code}');
+      }
+
+      print(
+          '📦 [PRICING] Saved plan selection: ${plan.planCode} (₹${plan.displayPriceMinor / 100})');
+
+      if (context.mounted) {
+        context.go(AppRoutes.login);
+      }
+    } catch (e) {
+      Logger.error('Failed to save plan selection', tag: 'PRICING', error: e);
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Failed to save preference. Please try again.'),
+            duration: Duration(seconds: 2),
+          ),
+        );
+        context.go(AppRoutes.login);
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    // Clear promo code if user navigates away without subscribing
+    _clearPromoCodeFromHive();
+    super.dispose();
+  }
+
+  Future<void> _clearPromoCodeFromHive() async {
+    try {
+      Box box;
+      if (Hive.isBoxOpen('app_settings')) {
+        box = Hive.box('app_settings');
+      } else {
+        box = await Hive.openBox('app_settings');
+      }
+
+      // Clear all pending flags
+      await box.delete('pending_promo_code');
+      await box.delete('pending_plan_upgrade');
+      await box.delete('selected_plan_code');
+      await box.delete('selected_plan_price');
+      await box.delete('pending_premium_upgrade'); // Legacy flag
+    } catch (e) {
+      Logger.error('Failed to clear plan selection', tag: 'PRICING', error: e);
+    }
   }
 
   Widget _buildFreePlanCard(BuildContext context, {bool isMobile = false}) {
@@ -153,6 +646,28 @@ class PricingPage extends StatelessWidget {
       buttonText: context.tr(TranslationKeys.pricingGetStarted),
       onPressed: () => context.go(AppRoutes.login),
       isHighlighted: true,
+      isMobile: isMobile,
+    );
+  }
+
+  Widget _buildPlusPlanCard(BuildContext context, {bool isMobile = false}) {
+    return PricingCard(
+      planName: 'Plus',
+      price: '149',
+      priceSubtext: context.tr(TranslationKeys.pricingPerMonth),
+      tokenInfo: '50 ${context.tr(TranslationKeys.pricingTokensDaily)}',
+      badge: 'Recommended',
+      badgeColor: const Color(0xFFFF9800), // Orange
+      features: [
+        '50 daily tokens (all study modes)',
+        '10 follow-ups per study guide',
+        '10 AI Discipler conversations/month',
+        '10 active memory verses',
+        'All 8 practice modes',
+        '3 practice sessions per verse per day',
+      ],
+      buttonText: context.tr(TranslationKeys.pricingGetStarted),
+      onPressed: () => context.go(AppRoutes.login),
       isMobile: isMobile,
     );
   }

@@ -18,6 +18,8 @@ class PracticeModeCard extends StatelessWidget {
   final bool isRecommended;
   final bool isFirstRecommended;
   final VoidCallback onTap;
+  final bool isTierLocked;
+  final bool isUnlockLimitReached;
 
   const PracticeModeCard({
     super.key,
@@ -25,11 +27,14 @@ class PracticeModeCard extends StatelessWidget {
     this.isRecommended = false,
     this.isFirstRecommended = false,
     required this.onTap,
+    this.isTierLocked = false,
+    this.isUnlockLimitReached = false,
   });
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isLocked = isTierLocked || isUnlockLimitReached;
 
     return Card(
       elevation: isRecommended ? 8 : 2,
@@ -45,160 +50,205 @@ class PracticeModeCard extends StatelessWidget {
               )
             : BorderSide.none,
       ),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
-        child: Padding(
-          padding: const EdgeInsets.all(12.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Header with icon and proficiency/favorite indicators
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      child: Stack(
+        children: [
+          InkWell(
+            onTap: onTap,
+            borderRadius: BorderRadius.circular(16),
+            child: Padding(
+              padding: const EdgeInsets.all(12.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Mode icon with optional proficiency overlay
-                  Stack(
-                    clipBehavior: Clip.none,
+                  // Header with icon and proficiency/favorite indicators
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: _getDifficultyColor()
-                              .withAlpha((0.1 * 255).round()),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Icon(
-                          mode.icon,
-                          color: _getDifficultyColor(),
-                          size: 24,
-                        ),
+                      // Mode icon with optional proficiency overlay
+                      Stack(
+                        clipBehavior: Clip.none,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: _getDifficultyColor()
+                                  .withAlpha((0.1 * 255).round()),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Icon(
+                              mode.icon,
+                              color: _getDifficultyColor(),
+                              size: 24,
+                            ),
+                          ),
+                          // Proficiency/Mastery badge overlay
+                          if (mode.isMastered)
+                            Positioned(
+                              right: -4,
+                              bottom: -4,
+                              child: Container(
+                                padding: const EdgeInsets.all(2),
+                                decoration: BoxDecoration(
+                                  color: Colors.amber,
+                                  shape: BoxShape.circle,
+                                  border: Border.all(
+                                    color: theme.colorScheme.surface,
+                                    width: 1.5,
+                                  ),
+                                ),
+                                child: const Icon(
+                                  Icons.star,
+                                  color: Colors.white,
+                                  size: 12,
+                                ),
+                              ),
+                            )
+                          else if (mode.isProficient)
+                            Positioned(
+                              right: -4,
+                              bottom: -4,
+                              child: Container(
+                                padding: const EdgeInsets.all(2),
+                                decoration: BoxDecoration(
+                                  color: Colors.green,
+                                  shape: BoxShape.circle,
+                                  border: Border.all(
+                                    color: theme.colorScheme.surface,
+                                    width: 1.5,
+                                  ),
+                                ),
+                                child: const Icon(
+                                  Icons.check,
+                                  color: Colors.white,
+                                  size: 12,
+                                ),
+                              ),
+                            ),
+                        ],
                       ),
-                      // Proficiency/Mastery badge overlay
-                      if (mode.isMastered)
-                        Positioned(
-                          right: -4,
-                          bottom: -4,
-                          child: Container(
-                            padding: const EdgeInsets.all(2),
-                            decoration: BoxDecoration(
-                              color: Colors.amber,
-                              shape: BoxShape.circle,
-                              border: Border.all(
-                                color: theme.colorScheme.surface,
-                                width: 1.5,
-                              ),
-                            ),
-                            child: const Icon(
-                              Icons.star,
-                              color: Colors.white,
-                              size: 12,
-                            ),
-                          ),
-                        )
-                      else if (mode.isProficient)
-                        Positioned(
-                          right: -4,
-                          bottom: -4,
-                          child: Container(
-                            padding: const EdgeInsets.all(2),
-                            decoration: BoxDecoration(
-                              color: Colors.green,
-                              shape: BoxShape.circle,
-                              border: Border.all(
-                                color: theme.colorScheme.surface,
-                                width: 1.5,
-                              ),
-                            ),
-                            child: const Icon(
-                              Icons.check,
-                              color: Colors.white,
-                              size: 12,
-                            ),
-                          ),
+                      // Favorite indicator
+                      if (mode.isFavorite)
+                        const Icon(
+                          Icons.favorite,
+                          color: Colors.red,
+                          size: 20,
                         ),
                     ],
                   ),
-                  // Favorite indicator
-                  if (mode.isFavorite)
-                    const Icon(
-                      Icons.favorite,
-                      color: Colors.red,
-                      size: 20,
+                  const SizedBox(height: 8),
+
+                  // Mode name
+                  Text(
+                    _getModeName(context, mode.modeType),
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
                     ),
-                ],
-              ),
-              const SizedBox(height: 8),
-
-              // Mode name
-              Text(
-                _getModeName(context, mode.modeType),
-                style: theme.textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-              const SizedBox(height: 2),
-
-              // Description with flexible spacing
-              Text(
-                _getModeDescription(context, mode.modeType),
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-              const SizedBox(height: 6),
-
-              // Stats and badges
-              Wrap(
-                spacing: 6,
-                runSpacing: 4,
-                children: [
-                  // Success rate or proficiency badge
-                  if (mode.timesPracticed > 0) _SuccessBadge(mode: mode),
-                  // Difficulty badge
-                  _DifficultyBadge(difficulty: mode.difficulty),
-                ],
-              ),
-
-              // Recommended badge
-              if (isRecommended) ...[
-                const SizedBox(height: 6),
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
-                  decoration: BoxDecoration(
-                    color: theme.colorScheme.primary,
-                    borderRadius: BorderRadius.circular(4),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
+                  const SizedBox(height: 2),
+
+                  // Description with flexible spacing
+                  Text(
+                    _getModeDescription(context, mode.modeType),
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 6),
+
+                  // Stats and badges
+                  Wrap(
+                    spacing: 6,
+                    runSpacing: 4,
                     children: [
-                      const Icon(
-                        Icons.star,
-                        color: Colors.white,
-                        size: 14,
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        context.tr(isFirstRecommended
-                            ? TranslationKeys.practiceSelectionMasterThisFirst
-                            : TranslationKeys.practiceSelectionMasterThisNext),
-                        style: theme.textTheme.labelSmall?.copyWith(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
+                      // Success rate or proficiency badge
+                      if (mode.timesPracticed > 0) _SuccessBadge(mode: mode),
+                      // Difficulty badge
+                      _DifficultyBadge(difficulty: mode.difficulty),
                     ],
                   ),
-                ),
-              ],
-            ],
+
+                  // Recommended badge
+                  if (isRecommended) ...[
+                    const SizedBox(height: 6),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 6, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.primary,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(
+                            Icons.star,
+                            color: Colors.white,
+                            size: 14,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            context.tr(isFirstRecommended
+                                ? TranslationKeys
+                                    .practiceSelectionMasterThisFirst
+                                : TranslationKeys
+                                    .practiceSelectionMasterThisNext),
+                            style: theme.textTheme.labelSmall?.copyWith(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
           ),
-        ),
+          // Lock overlay for tier-locked or unlock-limit modes
+          if (isLocked)
+            Positioned.fill(
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.black.withAlpha((0.7 * 255).round()),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      isTierLocked ? Icons.lock : Icons.lock_clock,
+                      color: Colors.white,
+                      size: 40,
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      isTierLocked ? 'Upgrade Required' : 'Daily Limit Reached',
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      isTierLocked
+                          ? 'Tap to see plans'
+                          : 'Choose unlocked modes',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: Colors.white70,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+        ],
       ),
     );
   }

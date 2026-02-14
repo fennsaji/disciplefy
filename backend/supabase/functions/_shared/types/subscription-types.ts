@@ -234,7 +234,7 @@ export interface DatabaseActiveSubscriptionResult {
  * Database result from get_user_plan_with_subscription function
  */
 export interface DatabaseUserPlanResult {
-  readonly user_plan: 'free' | 'standard' | 'premium'
+  readonly user_plan: 'free' | 'standard' | 'plus' | 'premium'
 }
 
 /**
@@ -262,7 +262,7 @@ export const DEFAULT_SUBSCRIPTION_CONFIG: SubscriptionServiceConfig = {
 /**
  * Subscription plan type
  */
-export type SubscriptionPlanType = 'standard' | 'premium'
+export type SubscriptionPlanType = 'standard' | 'plus' | 'premium'
 
 /**
  * Subscription creation options

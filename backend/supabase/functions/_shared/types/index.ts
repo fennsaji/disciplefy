@@ -36,12 +36,13 @@ export interface AuthContext {
 
 /**
  * Study guide content for caching.
- * All 14 fields are required to ensure complete study guide generation.
+ * All 15 fields are required to ensure complete study guide generation.
  */
 export interface StudyGuideContent {
   readonly summary: string
   readonly interpretation: string
   readonly context: string
+  readonly passage?: string | null  // LLM-generated Scripture passage (3-8 verses with full text) for meditation in Standard mode
   readonly relatedVerses: readonly string[]
   readonly reflectionQuestions: readonly string[]
   readonly prayerPoints: readonly string[]

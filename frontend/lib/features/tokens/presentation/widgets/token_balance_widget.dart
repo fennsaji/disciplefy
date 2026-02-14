@@ -357,6 +357,8 @@ Color _getPlanColor(UserPlan plan) {
       return Colors.grey[600]!;
     case UserPlan.standard:
       return Colors.blue[600]!;
+    case UserPlan.plus:
+      return Colors.purple[600]!;
     case UserPlan.premium:
       return Colors.amber[700]!;
   }

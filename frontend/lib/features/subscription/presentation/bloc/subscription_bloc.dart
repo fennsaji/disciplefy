@@ -79,9 +79,11 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
     on<SubscriptionExpired>(_onSubscriptionExpired);
     on<LoadSubscriptionStatus>(_onLoadSubscriptionStatus);
     on<CreateStandardSubscription>(_onCreateStandardSubscription);
+    on<CreatePlusSubscription>(_onCreatePlusSubscription);
     on<GetSubscriptionInvoices>(_onGetSubscriptionInvoices);
     on<RefreshSubscriptionInvoices>(_onRefreshSubscriptionInvoices);
     on<StartPremiumTrial>(_onStartPremiumTrial);
+    on<ActivateFreeSubscription>(_onActivateFreeSubscription);
 
     // Start auto-refresh timer for active subscriptions
     _startAutoRefreshTimer();
@@ -134,7 +136,13 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
   ) async {
     emit(const SubscriptionLoading(operation: 'creating'));
 
-    final result = await _createSubscription(NoParams());
+    // Use V2 API with promo code
+    final result = await _subscriptionRepository.createSubscriptionV2(
+      planCode: 'premium',
+      provider: 'razorpay',
+      region: 'IN',
+      promoCode: event.promoCode,
+    );
 
     result.fold(
       (failure) => emit(SubscriptionError(
@@ -142,7 +150,18 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
         operation: 'creating',
         previousSubscription: _cachedSubscription,
       )),
-      (createResult) {
+      (v2Result) {
+        // Convert V2 response to legacy format for compatibility
+        final createResult = CreateSubscriptionResult(
+          success: v2Result.success,
+          subscriptionId: v2Result.subscriptionId,
+          razorpaySubscriptionId: v2Result.providerSubscriptionId,
+          authorizationUrl: v2Result.authorizationUrl ?? '',
+          amountRupees: 0.0, // Will be populated after payment confirmation
+          status: SubscriptionStatus.created,
+          message: 'Subscription created successfully',
+        );
+
         // Emit subscription created state with authorization URL
         emit(SubscriptionCreated(
           result: createResult,
@@ -414,7 +433,13 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
           operation: 'creating standard subscription'));
     }
 
-    final result = await _subscriptionRepository.createStandardSubscription();
+    // Use V2 API with promo code
+    final result = await _subscriptionRepository.createSubscriptionV2(
+      planCode: 'standard',
+      provider: 'razorpay',
+      region: 'IN',
+      promoCode: event.promoCode,
+    );
 
     result.fold(
       (failure) {
@@ -432,7 +457,92 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
           ));
         }
       },
-      (createResult) {
+      (v2Result) {
+        // Convert V2 response to legacy format for compatibility
+        final createResult = CreateSubscriptionResult(
+          success: v2Result.success,
+          subscriptionId: v2Result.subscriptionId,
+          razorpaySubscriptionId: v2Result.providerSubscriptionId,
+          authorizationUrl: v2Result.authorizationUrl ?? '',
+          amountRupees: 0.0, // Will be populated after payment confirmation
+          status: SubscriptionStatus.created,
+          message: 'Standard subscription created successfully',
+        );
+
+        if (currentStatus != null) {
+          emit(UserSubscriptionStatusLoaded(
+            subscriptionStatus: currentStatus,
+            lastUpdated: DateTime.now(),
+            authorizationUrl: createResult.authorizationUrl,
+          ));
+        } else {
+          emit(SubscriptionCreated(
+            result: createResult,
+            createdAt: DateTime.now(),
+          ));
+        }
+      },
+    );
+  }
+
+  /// Handles creating a Plus subscription
+  Future<void> _onCreatePlusSubscription(
+    CreatePlusSubscription event,
+    Emitter<SubscriptionState> emit,
+  ) async {
+    // Preserve current status if available
+    UserSubscriptionStatus? currentStatus;
+    if (state is UserSubscriptionStatusLoaded) {
+      currentStatus =
+          (state as UserSubscriptionStatusLoaded).subscriptionStatus;
+    }
+
+    if (currentStatus != null) {
+      emit(UserSubscriptionStatusLoaded(
+        subscriptionStatus: currentStatus,
+        lastUpdated: DateTime.now(),
+        isLoading: true,
+      ));
+    } else {
+      emit(const SubscriptionLoading(operation: 'creating plus subscription'));
+    }
+
+    // Use V2 API with promo code
+    final result = await _subscriptionRepository.createSubscriptionV2(
+      planCode: 'plus',
+      provider: 'razorpay',
+      region: 'IN',
+      promoCode: event.promoCode,
+    );
+
+    result.fold(
+      (failure) {
+        final errorMessage = _getErrorMessage(failure);
+        if (currentStatus != null) {
+          emit(UserSubscriptionStatusLoaded(
+            subscriptionStatus: currentStatus,
+            lastUpdated: DateTime.now(),
+            errorMessage: errorMessage,
+          ));
+        } else {
+          emit(SubscriptionError(
+            failure: failure,
+            operation: 'creating plus subscription',
+          ));
+        }
+      },
+      (v2Result) {
+        // Convert V2 response to legacy format for compatibility
+        final createResult = CreateSubscriptionResult(
+          success: v2Result.success,
+          subscriptionId: v2Result.subscriptionId,
+          razorpaySubscriptionId: v2Result.providerSubscriptionId,
+          authorizationUrl: v2Result.authorizationUrl ?? '',
+          amountRupees: 0.0, // Will be populated after payment confirmation
+          status: SubscriptionStatus.created,
+          message: 'Plus subscription created successfully',
+        );
+
         if (currentStatus != null) {
           emit(UserSubscriptionStatusLoaded(
             subscriptionStatus: currentStatus,
@@ -662,6 +772,62 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
     } else {
       return 'An unexpected error occurred. Please try again.';
     }
+  }
+
+  /// Handles activating a free subscription (₹0 plans)
+  ///
+  /// Directly activates subscription for Free tier or plans with 100% discount
+  /// Skips Razorpay payment flow since amount is ₹0
+  Future<void> _onActivateFreeSubscription(
+    ActivateFreeSubscription event,
+    Emitter<SubscriptionState> emit,
+  ) async {
+    emit(const SubscriptionLoading(operation: 'activating_free_subscription'));
+
+    // Call V2 API which will detect ₹0 and activate directly
+    final result = await _subscriptionRepository.createSubscriptionV2(
+      planCode: event.planCode,
+      provider: 'razorpay',
+      region: 'IN',
+      promoCode: event.promoCode,
+    );
+
+    result.fold(
+      (failure) => emit(SubscriptionError(
+        failure: failure,
+        operation: 'activating_free_subscription',
+        previousSubscription: _cachedSubscription,
+      )),
+      (v2Result) {
+        // Convert V2 response to legacy format for compatibility
+        // For ₹0 plans, status should be 'active' and no authorization URL
+        final createResult = CreateSubscriptionResult(
+          success: v2Result.success,
+          subscriptionId: v2Result.subscriptionId,
+          razorpaySubscriptionId: v2Result.providerSubscriptionId,
+          authorizationUrl:
+              '', // No payment authorization needed for free plans
+          amountRupees: 0.0,
+          status: SubscriptionStatus.active, // Already active for free plans
+          message: 'Free subscription activated successfully',
+        );
+
+        emit(SubscriptionCreated(
+          result: createResult,
+          createdAt: DateTime.now(),
+        ));
+
+        print(
+            '✅ [BLOC] Free subscription activated: ${v2Result.subscriptionId}');
+
+        // Refresh to update UI
+        Future.delayed(const Duration(seconds: 1), () {
+          if (!isClosed) {
+            add(const RefreshSubscription());
+          }
+        });
+      },
+    );
   }
 
   // ========== Auto-Refresh Timer ==========

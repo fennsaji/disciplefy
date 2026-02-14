@@ -5,6 +5,10 @@ import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/animations/app_animations.dart';
+import '../../../core/di/injection_container.dart';
+import '../../../core/services/system_config_service.dart';
+import '../../../features/tokens/presentation/bloc/token_bloc.dart';
+import '../../../features/tokens/presentation/bloc/token_state.dart';
 import 'bottom_nav.dart' as bottom_nav;
 
 /// Main App Shell with Bottom Navigation
@@ -126,15 +130,18 @@ class _AppShellState extends State<AppShell>
   }
 
   void _onTabChange(int index) {
+    // Map the visible tab index to the actual branch index
+    final branchIndex = _mapTabIndexToBranchIndex(index);
+
     // Ignore if already on this tab and not waiting for anything
-    if (index == widget.navigationShell.currentIndex &&
+    if (branchIndex == widget.navigationShell.currentIndex &&
         _pendingTabIndex == null &&
         _waitingForIndex == null) {
       return;
     }
 
     // Allow interrupting ongoing animation or loading with new tab selection
-    _pendingTabIndex = index;
+    _pendingTabIndex = branchIndex;
 
     // If currently showing loading indicator (animation is dismissed),
     // directly trigger navigation to the new tab
@@ -154,6 +161,82 @@ class _AppShellState extends State<AppShell>
     if (_animController.status != AnimationStatus.reverse) {
       _animController.reverse();
     }
+  }
+
+  /// Maps visible tab index to actual router branch index
+  /// Handles cases where Generate tab (branch 1) or Topics tab (branch 2) are hidden
+  int _mapTabIndexToBranchIndex(int tabIndex) {
+    final tabs = _getFilteredTabs();
+
+    // Determine which tabs are visible
+    final hasHome = tabs.any((tab) => tab.label == 'Home');
+    final hasGenerate = tabs.any((tab) => tab.label == 'Generate');
+    final hasTopics = tabs.any((tab) => tab.label == 'Topics');
+
+    // Case 1: All tabs visible - 1:1 mapping
+    if (tabs.length == 3) {
+      return tabIndex; // Home→0, Generate→1, Topics→2
+    }
+
+    // Case 2: Only Home visible
+    if (tabs.length == 1) {
+      return 0; // Home→0
+    }
+
+    // Case 3: Two tabs visible - determine which combination
+    if (hasHome && hasGenerate && !hasTopics) {
+      // Home + Generate visible, Topics hidden
+      return tabIndex; // Home→0, Generate→1
+    }
+
+    if (hasHome && !hasGenerate && hasTopics) {
+      // Home + Topics visible, Generate hidden
+      return tabIndex == 0 ? 0 : 2; // Home→0, Topics→2
+    }
+
+    // Fallback to home
+    return 0;
+  }
+
+  /// Maps router branch index to visible tab index
+  /// Handles cases where Generate tab (branch 1) or Topics tab (branch 2) are hidden
+  int _mapBranchIndexToTabIndex(int branchIndex) {
+    final tabs = _getFilteredTabs();
+
+    // Determine which tabs are visible
+    final hasHome = tabs.any((tab) => tab.label == 'Home');
+    final hasGenerate = tabs.any((tab) => tab.label == 'Generate');
+    final hasTopics = tabs.any((tab) => tab.label == 'Topics');
+
+    // Case 1: All tabs visible - 1:1 mapping
+    if (tabs.length == 3) {
+      return branchIndex; // 0→Home(0), 1→Generate(1), 2→Topics(2)
+    }
+
+    // Case 2: Only Home visible
+    if (tabs.length == 1) {
+      return 0; // Always map to Home
+    }
+
+    // Case 3: Two tabs visible - determine which combination
+    if (hasHome && hasGenerate && !hasTopics) {
+      // Home + Generate visible, Topics hidden
+      if (branchIndex == 0) return 0; // Home→0
+      if (branchIndex == 1) return 1; // Generate→1
+      // If navigating to hidden Topics (branch 2), redirect to Home
+      return 0;
+    }
+
+    if (hasHome && !hasGenerate && hasTopics) {
+      // Home + Topics visible, Generate hidden
+      if (branchIndex == 0) return 0; // Home→0
+      if (branchIndex == 2) return 1; // Topics→1
+      // If navigating to hidden Generate (branch 1), redirect to Home
+      return 0;
+    }
+
+    // Fallback to home
+    return 0;
   }
 
   @override
@@ -231,8 +314,8 @@ class _AppShellState extends State<AppShell>
           ],
         ),
         bottomNavigationBar: bottom_nav.DisciplefyBottomNav(
-          currentIndex: currentIndex,
-          tabs: bottom_nav.DisciplefyBottomNav.defaultTabs,
+          currentIndex: _mapBranchIndexToTabIndex(currentIndex),
+          tabs: _getFilteredTabs(),
           onTap: _onTabChange,
         ),
       ),
@@ -247,6 +330,67 @@ class _AppShellState extends State<AppShell>
       // Exit the app if already on home tab
       SystemNavigator.pop();
     }
+  }
+
+  /// Get filtered tabs list based on feature flags
+  /// - Hides Generate tab if all study modes and AI Discipler are disabled
+  /// - Hides Topics tab if learning_paths feature is disabled
+  List<bottom_nav.NavTab> _getFilteredTabs() {
+    final tokenBloc = sl<TokenBloc>();
+    final tokenState = tokenBloc.state;
+
+    String userPlan = 'free';
+    if (tokenState is TokenLoaded) {
+      userPlan = tokenState.tokenStatus.userPlan.name;
+    }
+
+    final systemConfigService = sl<SystemConfigService>();
+
+    // Check all study modes
+    final studyModes = [
+      'quick_read_mode',
+      'standard_study_mode',
+      'deep_dive_mode',
+      'lectio_divina_mode',
+      'sermon_outline_mode',
+    ];
+
+    // Check if ALL study modes are disabled
+    final allStudyModesDisabled = studyModes.every(
+      (mode) => !systemConfigService.isFeatureEnabled(mode, userPlan),
+    );
+
+    // Check if AI Discipler is disabled
+    final aiDisciplerDisabled =
+        !systemConfigService.isFeatureEnabled('ai_discipler', userPlan);
+
+    // Check if learning paths is disabled
+    final learningPathsDisabled =
+        !systemConfigService.isFeatureEnabled('learning_paths', userPlan);
+
+    // Hide Generate tab if both ALL study modes are disabled AND AI Discipler is disabled
+    final shouldHideGenerate = allStudyModesDisabled && aiDisciplerDisabled;
+
+    // Hide Topics tab if learning_paths feature is disabled
+    final shouldHideTopics = learningPathsDisabled;
+
+    // Build filtered tabs list
+    final filteredTabs = <bottom_nav.NavTab>[];
+
+    // Always include Home tab
+    filteredTabs.add(bottom_nav.DisciplefyBottomNav.defaultTabs[0]);
+
+    // Conditionally add Generate tab
+    if (!shouldHideGenerate) {
+      filteredTabs.add(bottom_nav.DisciplefyBottomNav.defaultTabs[1]);
+    }
+
+    // Conditionally add Topics tab
+    if (!shouldHideTopics) {
+      filteredTabs.add(bottom_nav.DisciplefyBottomNav.defaultTabs[2]);
+    }
+
+    return filteredTabs;
   }
 }
 

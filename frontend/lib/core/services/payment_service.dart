@@ -1,19 +1,20 @@
-import 'package:razorpay_flutter/razorpay_flutter.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/services.dart';
 import '../constants/payment_constants.dart';
+import '../models/payment_responses.dart';
 
-// Conditional imports for web platform
+// Conditional imports for web and mobile platforms
 import 'payment_service_stub.dart'
     if (dart.library.html) 'payment_service_web.dart';
+import 'payment_service_mobile_stub.dart'
+    if (dart.library.io) 'payment_service_mobile.dart';
 
 class PaymentService {
   static final PaymentService _instance = PaymentService._internal();
   factory PaymentService() => _instance;
   PaymentService._internal();
 
-  Razorpay? _razorpay;
   bool _isWebPlatform = kIsWeb;
+  PaymentServiceMobile? _mobileService;
 
   // Callbacks
   Function(PaymentSuccessResponse)? _onPaymentSuccess;
@@ -26,28 +27,27 @@ class PaymentService {
         '[PaymentService] Platform: ${_isWebPlatform ? "WEB" : "MOBILE"}');
 
     if (_isWebPlatform) {
-      // Skip Razorpay initialization on web - use web-based payment flow
+      // Skip mobile service initialization on web
       debugPrint(
-          '[PaymentService] ✅ Web platform detected - skipping native plugin initialization');
+          '[PaymentService] ✅ Web platform detected - skipping mobile plugin initialization');
       debugPrint('[PaymentService] Web payment flow will be used when needed');
       return;
     }
 
     try {
-      _razorpay = Razorpay();
-      _razorpay?.on(Razorpay.EVENT_PAYMENT_SUCCESS, _handlePaymentSuccess);
-      _razorpay?.on(Razorpay.EVENT_PAYMENT_ERROR, _handlePaymentError);
-      _razorpay?.on(Razorpay.EVENT_EXTERNAL_WALLET, _handleExternalWallet);
-      debugPrint('[PaymentService] Razorpay initialized successfully');
+      _mobileService = PaymentServiceMobile();
+      _mobileService!.initialize();
+      debugPrint(
+          '[PaymentService] Mobile payment service initialized successfully');
     } catch (e) {
-      debugPrint('[PaymentService] Failed to initialize Razorpay: $e');
-      // Mark as web platform if initialization fails (common on web)
+      debugPrint('[PaymentService] Failed to initialize mobile service: $e');
+      // Mark as web platform if initialization fails
       _isWebPlatform = true;
     }
   }
 
   void dispose() {
-    _razorpay?.clear();
+    _mobileService?.dispose();
   }
 
   Future<void> openCheckout({
@@ -102,24 +102,27 @@ class PaymentService {
       debugPrint('[PaymentService] Key: ${options['key']}');
       debugPrint('[PaymentService] Amount (paise): ${options['amount']}');
       debugPrint('[PaymentService] Methods enabled: ${options['method']}');
-      debugPrint('[PaymentService] External wallets: ${options['external']}');
-      debugPrint('[PaymentService] Config: ${options['config']}');
 
       if (_isWebPlatform) {
         await _openWebCheckout(options);
-      } else if (_razorpay != null) {
-        _razorpay!.open(options);
+      } else if (_mobileService != null) {
+        _mobileService!.openCheckout(
+          options: options,
+          onSuccess: _handlePaymentSuccess,
+          onError: _handlePaymentError,
+          onExternalWallet:
+              onExternalWallet != null ? _handleExternalWallet : null,
+        );
       } else {
-        throw Exception('Razorpay not initialized');
+        throw Exception('Payment service not initialized');
       }
     } catch (e) {
-      debugPrint('Error opening Razorpay checkout: $e');
+      debugPrint('[PaymentService] Error opening checkout: $e');
       if (_onPaymentError != null) {
         // Create a mock failure response for initialization errors
         final mockError = PaymentFailureResponse(
           1, // code
           'Failed to initialize payment: ${e.toString()}', // message
-          null, // data
         );
         _onPaymentError!(mockError);
       }
@@ -127,7 +130,7 @@ class PaymentService {
   }
 
   void _handlePaymentSuccess(PaymentSuccessResponse response) {
-    debugPrint('Payment successful: ${response.paymentId}');
+    debugPrint('[PaymentService] Payment successful: ${response.paymentId}');
     if (_onPaymentSuccess != null) {
       _onPaymentSuccess!(response);
     }
@@ -135,7 +138,8 @@ class PaymentService {
   }
 
   void _handlePaymentError(PaymentFailureResponse response) {
-    debugPrint('Payment failed: ${response.code} - ${response.message}');
+    debugPrint(
+        '[PaymentService] Payment failed: ${response.code} - ${response.message}');
     if (_onPaymentError != null) {
       _onPaymentError!(response);
     }
@@ -143,7 +147,8 @@ class PaymentService {
   }
 
   void _handleExternalWallet(ExternalWalletResponse response) {
-    debugPrint('External wallet selected: ${response.walletName}');
+    debugPrint(
+        '[PaymentService] External wallet selected: ${response.walletName}');
     if (_onExternalWallet != null) {
       _onExternalWallet!(response);
     }
@@ -211,7 +216,6 @@ class PaymentService {
           final paymentFailureResponse = PaymentFailureResponse(
             0, // User cancelled
             'Payment was cancelled by user',
-            null,
           );
           _handlePaymentError(paymentFailureResponse);
         })
@@ -248,7 +252,7 @@ class PaymentService {
       debugPrint('[PaymentService] Calling rzp.open()...');
 
       // Add a delay to ensure DOM is ready
-      await Future.delayed(Duration(milliseconds: 100));
+      await Future.delayed(const Duration(milliseconds: 100));
 
       rzp.callMethod('open');
       debugPrint('[PaymentService] ✅ rzp.open() method called successfully');
@@ -271,7 +275,6 @@ class PaymentService {
       final paymentFailureResponse = PaymentFailureResponse(
         1,
         'Web checkout failed: ${e.toString()}',
-        null,
       );
       _handlePaymentError(paymentFailureResponse);
     }

@@ -38,7 +38,7 @@ async function handleCreateStandardSubscription(
     await services.rateLimiter.enforceRateLimit(userId, 'authenticated')
 
     // 3. Check if trial is still active (allow subscription during grace period)
-    if (isStandardTrialActive() && !isInGracePeriod()) {
+    if (await isStandardTrialActive() && !await isInGracePeriod()) {
       throw new AppError(
         'TRIAL_STILL_ACTIVE',
         'Standard plan is currently free. Subscription will be required after March 31st, 2025.',
@@ -81,7 +81,7 @@ async function handleCreateStandardSubscription(
     // 7. Create Standard subscription
     console.log(`[CreateStandardSubscription] Creating subscription for user ${userId}`)
 
-    const planConfig = getPlanConfig('standard')
+    const planConfig = await getPlanConfig('standard')
 
     const { subscription, shortUrl } = await subscriptionService.createSubscription({
       userId,

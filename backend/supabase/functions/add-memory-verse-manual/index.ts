@@ -16,6 +16,7 @@ import { createAuthenticatedFunction } from '../_shared/core/function-factory.ts
 import { AppError } from '../_shared/utils/error-handler.ts'
 import { ApiSuccessResponse, UserContext } from '../_shared/types/index.ts'
 import { ServiceContainer } from '../_shared/core/services.ts'
+import { isFeatureEnabledForPlan } from '../_shared/services/feature-flag-service.ts'
 
 /**
  * Request payload structure
@@ -133,6 +134,23 @@ async function handleAddMemoryVerseManual(
   if (!userContext || userContext.type !== 'authenticated' || !userContext.userId) {
     throw new AppError('AUTHENTICATION_ERROR', 'Authentication required to save memory verses', 401)
   }
+
+  // Feature flag validation - Check if memory_verses is enabled for user's plan
+  const userPlan = await services.authService.getUserPlan(req)
+  console.log(`👤 [AddMemoryVerse] User plan: ${userPlan}`)
+
+  const hasMemoryVersesAccess = await isFeatureEnabledForPlan('memory_verses', userPlan)
+
+  if (!hasMemoryVersesAccess) {
+    console.warn(`⛔ [AddMemoryVerse] Feature access denied: memory_verses not available for plan ${userPlan}`)
+    throw new AppError(
+      'FEATURE_NOT_AVAILABLE',
+      `Memory Verses are not available for your current plan (${userPlan}). Please upgrade to access this feature.`,
+      403
+    )
+  }
+
+  console.log(`✅ [AddMemoryVerse] Feature access granted: memory_verses available for plan ${userPlan}`)
 
   // Parse request body
   let body: AddManualVerseRequest

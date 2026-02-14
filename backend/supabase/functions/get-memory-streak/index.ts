@@ -20,7 +20,26 @@ import { ApiSuccessResponse, UserContext } from '../_shared/types/index.ts'
 import { ServiceContainer } from '../_shared/core/services.ts'
 
 /**
- * Memory streak structure
+ * Database function output structure (with out_ prefix to avoid SQL ambiguity)
+ */
+interface MemoryStreakDbResult {
+  readonly out_user_id: string
+  readonly out_current_streak: number
+  readonly out_longest_streak: number
+  readonly out_last_practice_date: string | null
+  readonly out_total_practice_days: number
+  readonly out_freeze_days_available: number
+  readonly out_freeze_days_used: number
+  readonly out_milestone_10_date: string | null
+  readonly out_milestone_30_date: string | null
+  readonly out_milestone_100_date: string | null
+  readonly out_milestone_365_date: string | null
+  readonly out_created_at: string
+  readonly out_updated_at: string
+}
+
+/**
+ * API response structure (without out_ prefix for clean API)
  */
 interface MemoryStreak {
   readonly user_id: string
@@ -73,20 +92,35 @@ async function handleGetMemoryStreak(
     throw new AppError('DATABASE_ERROR', 'No streak data returned', 500)
   }
 
-  // Cast to typed streak data
-  const streakData = rpcData as MemoryStreak
+  // Cast to typed streak data from database function
+  const streakData = rpcData as MemoryStreakDbResult
 
   // Log analytics event
   await services.analyticsLogger.logEvent('memory_streak_fetched', {
     user_id: userContext.userId,
-    current_streak: streakData.current_streak,
-    longest_streak: streakData.longest_streak,
-    freeze_days_available: streakData.freeze_days_available
+    current_streak: streakData.out_current_streak,
+    longest_streak: streakData.out_longest_streak,
+    freeze_days_available: streakData.out_freeze_days_available
   }, req.headers.get('x-forwarded-for'))
 
+  // Map database function output to API response format (remove out_ prefix)
   const response: GetMemoryStreakResponse = {
     success: true,
-    data: streakData
+    data: {
+      user_id: streakData.out_user_id,
+      current_streak: streakData.out_current_streak,
+      longest_streak: streakData.out_longest_streak,
+      last_practice_date: streakData.out_last_practice_date,
+      total_practice_days: streakData.out_total_practice_days,
+      freeze_days_available: streakData.out_freeze_days_available,
+      freeze_days_used: streakData.out_freeze_days_used,
+      milestone_10_date: streakData.out_milestone_10_date,
+      milestone_30_date: streakData.out_milestone_30_date,
+      milestone_100_date: streakData.out_milestone_100_date,
+      milestone_365_date: streakData.out_milestone_365_date,
+      created_at: streakData.out_created_at,
+      updated_at: streakData.out_updated_at
+    }
   }
 
   return new Response(JSON.stringify(response), {

@@ -14,6 +14,7 @@ import '../../../../core/i18n/translation_keys.dart';
 import '../../../../core/router/app_routes.dart';
 import '../../../../core/utils/device_keyboard_handler.dart';
 import '../../../../core/services/language_preference_service.dart';
+import '../../../../core/services/system_config_service.dart';
 import '../../../../core/models/app_language.dart';
 import '../../../../core/error/failures.dart';
 import '../../domain/mappers/app_language_mapper.dart';
@@ -75,6 +76,9 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
   // Language preference service for database integration
   late final LanguagePreferenceService _languagePreferenceService;
 
+  // System config service for feature flags
+  late final SystemConfigService _systemConfigService;
+
   // Stream subscription for language changes (to be cancelled in dispose)
   StreamSubscription<AppLanguage>? _languageChangeSubscription;
 
@@ -98,6 +102,7 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
   void initState() {
     super.initState();
     _languagePreferenceService = GetIt.instance<LanguagePreferenceService>();
+    _systemConfigService = GetIt.instance<SystemConfigService>();
     _navigator = GetIt.instance<StudyNavigator>();
     _tokenCostRepository = GetIt.instance<TokenCostRepository>();
     _inputController.addListener(_validateInput);
@@ -770,10 +775,11 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
                     if (!isKeyboardVisible) ...[
                       const SizedBox(height: 24),
 
-                      // Compact AI Discipler option
-                      _buildCompactAiDisciplerButton(context),
-
-                      const SizedBox(height: 32),
+                      // Compact AI Discipler option - only show if ai_discipler feature is enabled
+                      if (_isAiDisciplerFeatureEnabled()) ...[
+                        _buildCompactAiDisciplerButton(context),
+                        const SizedBox(height: 32),
+                      ],
 
                       // Recent Studies (has "View All" link built-in)
                       const RecentGuidesSection(),
@@ -1061,7 +1067,7 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
       color: Colors.transparent,
       child: InkWell(
         onTap: () {
-          _handleVoiceBuddyTap(context);
+          _handleAiDisciplerTap(context);
         },
         borderRadius: BorderRadius.circular(12),
         child: Container(
@@ -1426,7 +1432,7 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          onTap: () => _handleVoiceBuddyTap(context),
+          onTap: () => _handleAiDisciplerTap(context),
           borderRadius: BorderRadius.circular(20),
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
@@ -1533,13 +1539,29 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
     );
   }
 
-  /// Handles tap on Voice Buddy button - checks plan and shows upgrade dialog for free users
-  void _handleVoiceBuddyTap(BuildContext context) {
+  /// Checks if AI Discipler feature is enabled based on feature flags and user's plan
+  bool _isAiDisciplerFeatureEnabled() {
+    // Get user's current plan
+    final userPlan = _currentTokenStatus?.userPlan.name ?? 'free';
+
+    // Check if ai_discipler feature is enabled for this plan
+    final isEnabled =
+        _systemConfigService.isFeatureEnabled('ai_discipler', userPlan);
+
+    if (kDebugMode && !isEnabled) {
+      print('🚫 [AI DISCIPLER] Feature disabled for plan: $userPlan');
+    }
+
+    return isEnabled;
+  }
+
+  /// Handles tap on AI Discipler button - checks plan and shows upgrade dialog for free users
+  void _handleAiDisciplerTap(BuildContext context) {
     if (kDebugMode) {
-      print('🎤 [VOICE BUDDY] Button tapped');
-      print('🎤 [VOICE BUDDY] _currentTokenStatus: $_currentTokenStatus');
+      print('🎤 [AI DISCIPLER] Button tapped');
+      print('🎤 [AI DISCIPLER] _currentTokenStatus: $_currentTokenStatus');
       if (_currentTokenStatus != null) {
-        print('🎤 [VOICE BUDDY] userPlan: ${_currentTokenStatus!.userPlan}');
+        print('🎤 [AI DISCIPLER] userPlan: ${_currentTokenStatus!.userPlan}');
       }
     }
 
@@ -1547,7 +1569,7 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
     if (_currentTokenStatus == null) {
       // Token status not loaded yet - trigger refresh and wait
       if (kDebugMode) {
-        print('🎤 [VOICE BUDDY] Token status is null - triggering refresh');
+        print('🎤 [AI DISCIPLER] Token status is null - triggering refresh');
       }
       context.read<TokenBloc>().add(const GetTokenStatus());
       // Show a loading indicator or snackbar to inform the user
@@ -1563,12 +1585,13 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
     // Check if user is on free plan
     if (_currentTokenStatus!.userPlan == UserPlan.free) {
       if (kDebugMode) {
-        print('🎤 [VOICE BUDDY] User is on FREE plan - showing upgrade dialog');
+        print(
+            '🎤 [AI DISCIPLER] User is on FREE plan - showing upgrade dialog');
       }
       // Show upgrade required dialog
       UpgradeRequiredDialog.show(
         context,
-        featureName: 'AI Voice Discipler',
+        featureName: 'AI Discipler',
         featureIcon: Icons.mic_rounded,
         featureDescription:
             'Have voice conversations with your AI Discipler to discuss scripture, ask questions, and deepen your understanding of the Bible.',
@@ -1576,10 +1599,10 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
       return;
     }
 
-    // User is on Standard or Premium plan - proceed to Voice Buddy
+    // User is on Plus or Premium plan - proceed to AI Discipler voice conversation
     if (kDebugMode) {
       print(
-          '🎤 [VOICE BUDDY] User is on ${_currentTokenStatus!.userPlan} plan - navigating to voice conversation');
+          '🎤 [AI DISCIPLER] User is on ${_currentTokenStatus!.userPlan} plan - navigating to voice conversation');
     }
     GoRouter.of(context).goToVoiceConversation();
   }
@@ -2066,7 +2089,7 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
                               .tr(TranslationKeys.studyModeDeepDescription),
                           icon: Icons.search,
                           currentModeRaw: currentModeRaw,
-                          duration: '25 min',
+                          duration: '15 min',
                         ),
                         const SizedBox(height: 12),
                         _buildModeOptionRaw(
@@ -2078,7 +2101,7 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
                               .tr(TranslationKeys.studyModeLectioDescription),
                           icon: Icons.self_improvement,
                           currentModeRaw: currentModeRaw,
-                          duration: '15 min',
+                          duration: '10 min',
                         ),
                         const SizedBox(height: 12),
                         _buildModeOptionRaw(

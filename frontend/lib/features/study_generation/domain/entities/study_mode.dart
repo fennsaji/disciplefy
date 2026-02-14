@@ -5,8 +5,8 @@ import 'package:flutter/material.dart';
 /// Each mode offers a different depth and duration of study experience:
 /// - [quick]: 3-minute condensed study with key insight and one reflection
 /// - [standard]: 10-minute full study with all 6 sections (default)
-/// - [deep]: 25-minute extended study with word studies and cross-references
-/// - [lectio]: 15-minute meditative Lectio Divina format with silence timers
+/// - [deep]: 15-minute extended study with word studies and cross-references
+/// - [lectio]: 10-minute meditative Lectio Divina format with silence timers
 enum StudyMode {
   /// Quick Read mode (3 minutes)
   /// Sections: Key Insight, Key Verse, Quick Reflection
@@ -16,11 +16,11 @@ enum StudyMode {
   /// Sections: Summary, Interpretation, Context, Related Verses, Reflection Questions, Prayer Points
   standard,
 
-  /// Deep Dive mode (25 minutes)
+  /// Deep Dive mode (15 minutes)
   /// Standard sections plus: Word Study, Historical Context, Cross References, Journal Prompt
   deep,
 
-  /// Lectio Divina mode (15 minutes)
+  /// Lectio Divina mode (10 minutes)
   /// 4 steps: Lectio (Read), Meditatio (Meditate), Oratio (Pray), Contemplatio (Rest)
   lectio,
 
@@ -55,9 +55,9 @@ extension StudyModeExtension on StudyMode {
       case StudyMode.standard:
         return 10;
       case StudyMode.deep:
-        return 25;
-      case StudyMode.lectio:
         return 15;
+      case StudyMode.lectio:
+        return 10;
       case StudyMode.sermon:
         return 55; // 50-60 minute average
     }

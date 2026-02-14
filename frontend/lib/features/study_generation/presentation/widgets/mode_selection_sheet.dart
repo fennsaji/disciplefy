@@ -5,6 +5,8 @@ import '../../../../core/theme/app_theme.dart';
 import '../../../../core/extensions/translation_extension.dart';
 import '../../../../core/i18n/translation_keys.dart';
 import '../../../../core/di/injection_container.dart';
+import '../../../../core/services/system_config_service.dart';
+import '../../../subscription/domain/repositories/subscription_repository.dart';
 import '../../domain/entities/study_mode.dart';
 import '../../data/repositories/token_cost_repository.dart';
 
@@ -112,13 +114,92 @@ class _ModeSelectionSheetState extends State<ModeSelectionSheet> {
   bool _isLoadingCosts = true;
 
   late final TokenCostRepository _tokenCostRepository;
+  late final SystemConfigService _systemConfigService;
+  late final SubscriptionRepository _subscriptionRepository;
+
+  // Available modes filtered by feature flags
+  List<StudyMode> _availableModes = [];
+  String _userPlan = 'free';
+  bool _isLoadingFeatureFlags = true;
 
   @override
   void initState() {
     super.initState();
     _selectedMode = widget.initialMode;
     _tokenCostRepository = sl<TokenCostRepository>();
+    _systemConfigService = sl<SystemConfigService>();
+    _subscriptionRepository = sl<SubscriptionRepository>();
+    _loadUserPlanAndFeatureFlags();
     _loadTokenCosts();
+  }
+
+  /// Load user's plan and filter available modes based on feature flags
+  Future<void> _loadUserPlanAndFeatureFlags() async {
+    try {
+      // Get user's current subscription plan
+      final result = await _subscriptionRepository.getSubscriptionStatus();
+
+      result.fold(
+        (failure) {
+          print(
+              '⚠️ [MODE_SELECTION] Failed to get subscription: ${failure.message}');
+          _userPlan = 'free'; // Default to free on error
+        },
+        (subscription) {
+          _userPlan = subscription.currentPlan;
+          print('👤 [MODE_SELECTION] User plan: $_userPlan');
+        },
+      );
+
+      // Map StudyMode to feature flag keys
+      final modeFeatureMap = {
+        StudyMode.quick: 'quick_read_mode',
+        StudyMode.standard: 'standard_study_mode',
+        StudyMode.deep: 'deep_dive_mode',
+        StudyMode.lectio: 'lectio_divina_mode',
+        StudyMode.sermon: 'sermon_outline_mode',
+      };
+
+      // Filter modes based on feature flags
+      _availableModes = StudyMode.values.where((mode) {
+        final featureKey = modeFeatureMap[mode];
+        if (featureKey == null) return true; // Allow unknown modes
+
+        final isEnabled =
+            _systemConfigService.isFeatureEnabled(featureKey, _userPlan);
+        if (!isEnabled) {
+          print(
+              '⛔ [MODE_SELECTION] Mode ${mode.name} ($featureKey) not available for plan $_userPlan');
+        }
+        return isEnabled;
+      }).toList();
+
+      print(
+          '✅ [MODE_SELECTION] Available modes: ${_availableModes.map((m) => m.name).join(", ")}');
+
+      // If selected mode is not available, switch to first available mode
+      if (!_availableModes.contains(_selectedMode) &&
+          _availableModes.isNotEmpty) {
+        _selectedMode = _availableModes.first;
+        print(
+            'ℹ️ [MODE_SELECTION] Switching to ${_selectedMode.name} (originally selected mode not available)');
+      }
+
+      if (mounted) {
+        setState(() {
+          _isLoadingFeatureFlags = false;
+        });
+      }
+    } catch (e) {
+      print('❌ [MODE_SELECTION] Error loading feature flags: $e');
+      // On error, show all modes (fail open)
+      _availableModes = StudyMode.values;
+      if (mounted) {
+        setState(() {
+          _isLoadingFeatureFlags = false;
+        });
+      }
+    }
   }
 
   /// Load token costs for all study modes from backend API
@@ -238,31 +319,40 @@ class _ModeSelectionSheetState extends State<ModeSelectionSheet> {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      // Mode options
-                      ...StudyMode.values.map((mode) => Padding(
-                            padding: const EdgeInsets.only(bottom: 12),
-                            child: _ModeOptionCard(
-                              mode: mode,
-                              isSelected: _selectedMode == mode,
-                              isRecommended: mode == widget.recommendedMode,
-                              translatedName:
-                                  _getStudyModeTranslatedName(mode, context),
-                              translatedDescription:
-                                  _getStudyModeTranslatedDescription(
-                                      mode, context),
-                              recommendedBadgeText: widget.isFromLearningPath
-                                  ? context.tr(TranslationKeys
-                                      .learningPathRecommendedModeBadge)
-                                  : context.tr(TranslationKeys
-                                      .modeSelectionRecommendedBadge),
-                              tokenCost: _tokenCosts[mode], // Pass token cost
-                              onTap: () {
-                                setState(() {
-                                  _selectedMode = mode;
-                                });
-                              },
-                            ),
-                          )),
+                      // Loading indicator while checking feature flags
+                      if (_isLoadingFeatureFlags)
+                        const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 32),
+                          child: Center(
+                            child: CircularProgressIndicator(),
+                          ),
+                        )
+                      // Mode options (filtered by feature flags)
+                      else
+                        ..._availableModes.map((mode) => Padding(
+                              padding: const EdgeInsets.only(bottom: 12),
+                              child: _ModeOptionCard(
+                                mode: mode,
+                                isSelected: _selectedMode == mode,
+                                isRecommended: mode == widget.recommendedMode,
+                                translatedName:
+                                    _getStudyModeTranslatedName(mode, context),
+                                translatedDescription:
+                                    _getStudyModeTranslatedDescription(
+                                        mode, context),
+                                recommendedBadgeText: widget.isFromLearningPath
+                                    ? context.tr(TranslationKeys
+                                        .learningPathRecommendedModeBadge)
+                                    : context.tr(TranslationKeys
+                                        .modeSelectionRecommendedBadge),
+                                tokenCost: _tokenCosts[mode], // Pass token cost
+                                onTap: () {
+                                  setState(() {
+                                    _selectedMode = mode;
+                                  });
+                                },
+                              ),
+                            )),
 
                       const SizedBox(height: 8),
 

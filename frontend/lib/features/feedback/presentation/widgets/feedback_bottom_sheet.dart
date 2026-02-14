@@ -184,21 +184,25 @@ class _FeedbackBottomSheetState extends State<FeedbackBottomSheet> {
                   child: Text(
                       context.tr(TranslationKeys.feedbackCategoryGeneral))),
               DropdownMenuItem(
-                  value: 'content',
+                  value: 'bug_report',
                   child: Text(
-                      context.tr(TranslationKeys.feedbackCategoryContent))),
+                      context.tr(TranslationKeys.feedbackCategoryBugReport))),
               DropdownMenuItem(
-                  value: 'usability',
-                  child: Text(
-                      context.tr(TranslationKeys.feedbackCategoryUsability))),
+                  value: 'feature_request',
+                  child: Text(context
+                      .tr(TranslationKeys.feedbackCategoryFeatureRequest))),
               DropdownMenuItem(
-                  value: 'technical',
-                  child: Text(
-                      context.tr(TranslationKeys.feedbackCategoryTechnical))),
+                  value: 'content_feedback',
+                  child: Text(context
+                      .tr(TranslationKeys.feedbackCategoryContentFeedback))),
               DropdownMenuItem(
-                  value: 'suggestion',
+                  value: 'study_guide',
                   child: Text(
-                      context.tr(TranslationKeys.feedbackCategorySuggestion))),
+                      context.tr(TranslationKeys.feedbackCategoryStudyGuide))),
+              DropdownMenuItem(
+                  value: 'memory_verse',
+                  child: Text(
+                      context.tr(TranslationKeys.feedbackCategoryMemoryVerse))),
             ],
           ),
         ),

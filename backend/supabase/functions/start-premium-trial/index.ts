@@ -118,7 +118,7 @@ async function handleStartPremiumTrial(
     }
 
     // Check if user signed up after April 1st, 2025
-    if (!canStartPremiumTrial(userCreatedAt)) {
+    if (!await canStartPremiumTrial(userCreatedAt)) {
       throw new AppError(
         'NOT_ELIGIBLE',
         'Premium trial is only available for users who signed up after April 1st, 2025.',
@@ -128,7 +128,7 @@ async function handleStartPremiumTrial(
 
     // 6. Start the Premium trial
     const trialStartedAt = new Date()
-    const trialEndAt = calculatePremiumTrialEndDate(trialStartedAt)
+    const trialEndAt = await calculatePremiumTrialEndDate(trialStartedAt)
 
     console.log(`[StartPremiumTrial] Starting trial for user ${userId}`)
     console.log(`[StartPremiumTrial] Trial period: ${trialStartedAt.toISOString()} to ${trialEndAt.toISOString()}`)

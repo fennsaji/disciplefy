@@ -70,13 +70,22 @@ abstract class SubscriptionRepository {
 
   /// Creates a new Standard subscription for the authenticated user.
   ///
-  /// Creates a Razorpay subscription for Standard plan (₹50/month)
+  /// Creates a Razorpay subscription for Standard plan (₹79/month)
   /// and returns authorization URL for the user to complete payment setup.
   ///
   /// Returns [CreateSubscriptionResult] with subscription details and payment URL on success.
   /// Returns [Failure] on error (network, server, authentication, validation, etc.).
   Future<Either<Failure, CreateSubscriptionResult>>
       createStandardSubscription();
+
+  /// Creates a new Plus subscription for the authenticated user.
+  ///
+  /// Creates a Razorpay subscription for Plus plan (₹149/month)
+  /// and returns authorization URL for the user to complete payment setup.
+  ///
+  /// Returns [CreateSubscriptionResult] with subscription details and payment URL on success.
+  /// Returns [Failure] on error (network, server, authentication, validation, etc.).
+  Future<Either<Failure, CreateSubscriptionResult>> createPlusSubscription();
 
   /// Starts a 7-day Premium trial for eligible users.
   ///
@@ -86,6 +95,24 @@ abstract class SubscriptionRepository {
   /// Returns [StartPremiumTrialResult] with trial details on success.
   /// Returns [Failure] on error (network, server, authentication, not eligible, etc.).
   Future<Either<Failure, StartPremiumTrialResult>> startPremiumTrial();
+
+  /// Creates a subscription using unified V2 API (supports multiple providers).
+  ///
+  /// [planCode] - Plan identifier: 'standard', 'plus', or 'premium'
+  /// [provider] - Payment provider: 'razorpay', 'google_play', 'apple_appstore'
+  /// [region] - Region code (default: 'IN')
+  /// [promoCode] - Optional promotional code for discount
+  /// [receipt] - Purchase receipt for IAP (Google Play/Apple App Store)
+  ///
+  /// Returns [CreateSubscriptionV2Result] with subscription details and payment URL on success.
+  /// Returns [Failure] on error (network, server, authentication, validation, etc.).
+  Future<Either<Failure, CreateSubscriptionV2Result>> createSubscriptionV2({
+    required String planCode,
+    required String provider,
+    String? region,
+    String? promoCode,
+    String? receipt,
+  });
 }
 
 /// Result of starting a Premium trial
@@ -100,5 +127,22 @@ class StartPremiumTrialResult {
     required this.trialEndAt,
     required this.daysRemaining,
     required this.message,
+  });
+}
+
+/// Result from creating subscription via V2 API
+class CreateSubscriptionV2Result {
+  final bool success;
+  final String subscriptionId;
+  final String providerSubscriptionId;
+  final String? authorizationUrl;
+  final String status;
+
+  const CreateSubscriptionV2Result({
+    required this.success,
+    required this.subscriptionId,
+    required this.providerSubscriptionId,
+    this.authorizationUrl,
+    required this.status,
   });
 }

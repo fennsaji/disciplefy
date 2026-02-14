@@ -111,11 +111,19 @@ site_url = "http://localhost:59641"
 # A list of *exact* URLs that auth providers are permitted to redirect to post authentication.
 # FIXED: OAuth redirect URLs for proper PKCE flow - after auth, redirect to Flutter app
 additional_redirect_urls = [
+  # Flutter Web App URLs (port 59641)
   "http://localhost:59641",  # Flutter web app (development)
   "http://localhost:59641/",  # Flutter web app with trailing slash
+
+  "http://localhost:3000/auth/callback",  # Admin web OAuth callback - REQUIRED!
+  "http://localhost:3000",  # Admin web base URL - REQUIRED!
+
+  # Production URLs
   "https://www.disciplefy.in", # Production Flutter app
   "https://www.disciplefy.in/", # Production Flutter app with trailing slash
-  "com.disciplefy.bible_study_app://auth/callback",  # Mobile deep link
+
+  # Mobile deep link
+  "com.disciplefy.bible_study_app://auth/callback",
 ]
 # How long tokens are valid for, in seconds. Defaults to 3600 (1 hour), maximum 604,800 (1 week).
 # EXTENDED: Set to maximum 7 days for longer session persistence

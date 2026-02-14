@@ -1,6 +1,7 @@
 import 'package:dartz/dartz.dart';
 import '../../../../core/error/failures.dart';
 import '../../../../core/usecases/usecase.dart';
+import '../constants/feedback_constants.dart';
 import '../entities/feedback_entity.dart';
 import '../repositories/feedback_repository.dart';
 
@@ -25,7 +26,7 @@ class SubmitFeedbackParams {
   factory SubmitFeedbackParams.general({
     required bool wasHelpful,
     required String message,
-    String category = 'general',
+    String category = FeedbackCategories.general,
     required UserContextEntity userContext,
   }) =>
       SubmitFeedbackParams(
@@ -42,7 +43,7 @@ class SubmitFeedbackParams {
     required String studyGuideId,
     required bool wasHelpful,
     String? message,
-    String category = 'content',
+    String category = FeedbackCategories.contentFeedback,
     required UserContextEntity userContext,
   }) =>
       SubmitFeedbackParams(
@@ -64,7 +65,7 @@ class SubmitFeedbackParams {
         feedback: FeedbackEntity(
           wasHelpful: false,
           message: message,
-          category: 'technical',
+          category: FeedbackCategories.bugReport,
           userContext: userContext,
         ),
       );

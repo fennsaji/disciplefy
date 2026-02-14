@@ -412,14 +412,14 @@ class TokenPurchaseValidator {
   }
 
   /// Token pricing configuration
-  static const int tokensPerRupee = 10; // 10 tokens = ₹1
+  static const int tokensPerRupee = 4; // 4 tokens = ₹1
   static const int paisePerRupee = 100; // 100 paise = ₹1
 
   /// Validate token to amount conversion with precise pricing calculation
   static ValidationResult validateTokenAmountConversion(
       int tokenAmount, double amount) {
     // Calculate expected amount using precise arithmetic
-    // Price per token in paise: 100 paise / 10 tokens = 10 paise per token
+    // Price per token in paise: 100 paise / 4 tokens = 25 paise per token
     const pricePerTokenPaise = paisePerRupee ~/ tokensPerRupee;
 
     // Calculate total cost in paise, then convert to rupees

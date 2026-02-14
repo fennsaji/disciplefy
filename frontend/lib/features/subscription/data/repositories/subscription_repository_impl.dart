@@ -169,6 +169,19 @@ class SubscriptionRepositoryImpl implements SubscriptionRepository {
   }
 
   @override
+  Future<Either<Failure, CreateSubscriptionResult>>
+      createPlusSubscription() async {
+    return _execute<CreateSubscriptionResult>(
+      () async {
+        final response = await _remoteDataSource.createPlusSubscription();
+        // Model already extends entity, so we can return it directly
+        return response;
+      },
+      'plus subscription creation',
+    );
+  }
+
+  @override
   Future<Either<Failure, StartPremiumTrialResult>> startPremiumTrial() async {
     return _execute<StartPremiumTrialResult>(
       () async {
@@ -181,6 +194,36 @@ class SubscriptionRepositoryImpl implements SubscriptionRepository {
         );
       },
       'premium trial start',
+    );
+  }
+
+  @override
+  Future<Either<Failure, CreateSubscriptionV2Result>> createSubscriptionV2({
+    required String planCode,
+    required String provider,
+    String? region,
+    String? promoCode,
+    String? receipt,
+  }) async {
+    return _execute<CreateSubscriptionV2Result>(
+      () async {
+        final response = await _remoteDataSource.createSubscriptionV2(
+          planCode: planCode,
+          provider: provider,
+          region: region,
+          promoCode: promoCode,
+          receipt: receipt,
+        );
+
+        return CreateSubscriptionV2Result(
+          success: response.success,
+          subscriptionId: response.subscriptionId,
+          providerSubscriptionId: response.providerSubscriptionId,
+          authorizationUrl: response.authorizationUrl,
+          status: response.status,
+        );
+      },
+      'subscription creation v2',
     );
   }
 }

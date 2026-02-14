@@ -8,9 +8,10 @@
  * - Streaming support
  */
 
-import type { OpenAIRequest, OpenAIResponse, LanguageConfig, LLMGenerationParams } from '../llm-types.ts'
+import type { OpenAIRequest, OpenAIResponse, LanguageConfig, LLMGenerationParams, LLMUsageMetadata, LLMResponseWithUsage } from '../llm-types.ts'
 import { calculateOptimalTokens } from '../llm-utils/prompt-builder.ts'
 import { studyGuideSchema } from '../llm-utils/study-guide-schema.ts'
+import { CostTrackingService } from '../cost-tracking-service.ts'
 
 /**
  * OpenAI API configuration
@@ -37,12 +38,31 @@ export interface OpenAICallOptions {
 export class OpenAIClient {
   private readonly apiKey: string
   private readonly baseUrl = 'https://api.openai.com/v1/chat/completions'
+  private readonly costTracker = new CostTrackingService()
 
   constructor(config: OpenAIClientConfig) {
     if (!config.apiKey || !config.apiKey.startsWith('sk-')) {
       throw new Error('Invalid OpenAI API key format')
     }
     this.apiKey = config.apiKey
+  }
+
+  /**
+   * Extracts usage metadata from OpenAI API response
+   */
+  private extractUsage(data: OpenAIResponse, model: string): LLMUsageMetadata {
+    const inputTokens = data.usage.prompt_tokens
+    const outputTokens = data.usage.completion_tokens
+    const cost = this.costTracker.calculateCost('openai', model, inputTokens, outputTokens)
+
+    return {
+      provider: 'openai',
+      model,
+      inputTokens,
+      outputTokens,
+      totalTokens: inputTokens + outputTokens,
+      costUsd: cost.totalCost
+    }
   }
 
   /**
@@ -62,11 +82,11 @@ export class OpenAIClient {
 
   /**
    * Makes a standard (non-streaming) API call to OpenAI.
-   * 
+   *
    * @param options - Call options
-   * @returns Response content string
+   * @returns Response content with usage metadata
    */
-  async call(options: OpenAICallOptions): Promise<string> {
+  async call(options: OpenAICallOptions): Promise<LLMResponseWithUsage<string>> {
     const {
       systemMessage,
       userMessage,
@@ -75,8 +95,9 @@ export class OpenAIClient {
       jsonMode = false
     } = options
 
+    const model = 'gpt-4o-mini-2024-07-18'
     const request: OpenAIRequest = {
-      model: 'gpt-4o-mini-2024-07-18',
+      model,
       messages: [
         { role: 'system', content: systemMessage },
         { role: 'user', content: userMessage }
@@ -103,7 +124,7 @@ export class OpenAIClient {
     }
 
     const data: OpenAIResponse = await response.json()
-    
+
     if (!data.choices || data.choices.length === 0) {
       throw new Error('OpenAI API returned no choices')
     }
@@ -113,25 +134,28 @@ export class OpenAIClient {
       throw new Error('OpenAI API returned empty content')
     }
 
-    console.log(`[OpenAI] Usage: ${data.usage.total_tokens} tokens`)
-    return content
+    const usage = this.extractUsage(data, model)
+    console.log(`[OpenAI] Usage: ${usage.totalTokens} tokens (cost: $${usage.costUsd.toFixed(4)})`)
+
+    return { content, usage }
   }
 
   /**
    * Makes an API call for study guide generation with optimized parameters.
-   * 
+   *
    * @param systemMessage - System prompt
    * @param userMessage - User prompt
    * @param languageConfig - Language-specific configuration
    * @param params - Generation parameters
-   * @returns Response content string
+   * @returns Response content with usage metadata
    */
   async callForStudyGuide(
     systemMessage: string,
     userMessage: string,
     languageConfig: LanguageConfig,
-    params: LLMGenerationParams
-  ): Promise<string> {
+    params: LLMGenerationParams,
+    useSchema: boolean = true
+  ): Promise<LLMResponseWithUsage<string>> {
     const model = this.selectModel(params.language, params.tier)
     const maxTokens = calculateOptimalTokens(params, languageConfig)
 
@@ -145,9 +169,11 @@ export class OpenAIClient {
       max_tokens: maxTokens,
       presence_penalty: 0.1,
       frequency_penalty: 0.1,
-      response_format: {
+      response_format: useSchema ? {
         type: 'json_schema',
         json_schema: studyGuideSchema
+      } : {
+        type: 'json_object'
       }
     }
 
@@ -166,7 +192,7 @@ export class OpenAIClient {
     }
 
     const data: OpenAIResponse = await response.json()
-    
+
     if (!data.choices || data.choices.length === 0) {
       throw new Error('OpenAI API returned no choices')
     }
@@ -176,20 +202,23 @@ export class OpenAIClient {
       throw new Error('OpenAI API returned empty content')
     }
 
-    console.log(`[OpenAI] Study guide usage: ${data.usage.total_tokens} tokens`)
-    return content
+    const usage = this.extractUsage(data, model)
+    console.log(`[OpenAI] Study guide usage: ${usage.totalTokens} tokens (cost: $${usage.costUsd.toFixed(4)})`)
+
+    return { content, usage }
   }
 
   /**
    * Makes an API call for verse generation.
-   * 
+   *
    * @param systemMessage - System prompt
    * @param userMessage - User prompt
-   * @returns Response content string
+   * @returns Response content with usage metadata
    */
-  async callForVerse(systemMessage: string, userMessage: string): Promise<string> {
+  async callForVerse(systemMessage: string, userMessage: string): Promise<LLMResponseWithUsage<string>> {
+    const model = 'gpt-4o-mini-2024-07-18'
     const request: OpenAIRequest = {
-      model: 'gpt-4o-mini-2024-07-18',
+      model,
       messages: [
         { role: 'system', content: systemMessage },
         { role: 'user', content: userMessage }
@@ -214,7 +243,7 @@ export class OpenAIClient {
     }
 
     const data: OpenAIResponse = await response.json()
-    
+
     if (!data.choices || data.choices.length === 0) {
       throw new Error('OpenAI API returned no choices')
     }
@@ -224,19 +253,21 @@ export class OpenAIClient {
       throw new Error('OpenAI API returned empty content')
     }
 
-    return content
+    const usage = this.extractUsage(data, model)
+    return { content, usage }
   }
 
   /**
    * Makes an API call for follow-up responses.
-   * 
+   *
    * @param systemMessage - System prompt
    * @param userMessage - User prompt
-   * @returns Response content string
+   * @returns Response content with usage metadata
    */
-  async callForFollowUp(systemMessage: string, userMessage: string): Promise<string> {
+  async callForFollowUp(systemMessage: string, userMessage: string): Promise<LLMResponseWithUsage<string>> {
+    const model = 'gpt-4o-mini-2024-07-18'
     const request: OpenAIRequest = {
-      model: 'gpt-4o-mini-2024-07-18',
+      model,
       messages: [
         { role: 'system', content: systemMessage },
         { role: 'user', content: userMessage }
@@ -262,7 +293,7 @@ export class OpenAIClient {
     }
 
     const data: OpenAIResponse = await response.json()
-    
+
     if (!data.choices || data.choices.length === 0) {
       throw new Error('OpenAI API returned no choices')
     }
@@ -272,7 +303,8 @@ export class OpenAIClient {
       throw new Error('OpenAI API returned empty content')
     }
 
-    return content
+    const usage = this.extractUsage(data, model)
+    return { content, usage }
   }
 
   /**
@@ -318,7 +350,8 @@ export class OpenAIClient {
 
       if (!response.ok) {
         console.warn('[OpenAI] Streaming failed, falling back to standard mode')
-        return this.callForStudyGuide(systemMessage, userMessage, languageConfig, params)
+        const fallbackResult = await this.callForStudyGuide(systemMessage, userMessage, languageConfig, params)
+        return fallbackResult.content
       }
 
       const reader = response.body?.getReader()
@@ -368,7 +401,8 @@ export class OpenAIClient {
     } catch (error) {
       console.warn('[OpenAI] Streaming error, falling back to standard mode:',
         error instanceof Error ? error.message : String(error))
-      return this.callForStudyGuide(systemMessage, userMessage, languageConfig, params)
+      const fallbackResult = await this.callForStudyGuide(systemMessage, userMessage, languageConfig, params)
+      return fallbackResult.content
     }
   }
 
@@ -382,14 +416,17 @@ export class OpenAIClient {
    * @param userMessage - User prompt
    * @param languageConfig - Language configuration
    * @param params - Generation parameters
+   * @param useSchema - Whether to enforce complete study guide schema (default: true). Set to false for multi-pass prompts that define partial JSON structures.
    * @yields Raw text chunks from the LLM stream
+   * @returns Usage metadata from the LLM API
    */
   async *streamStudyGuide(
     systemMessage: string,
     userMessage: string,
     languageConfig: LanguageConfig,
-    params: LLMGenerationParams
-  ): AsyncGenerator<string, void, unknown> {
+    params: LLMGenerationParams,
+    useSchema: boolean = true
+  ): AsyncGenerator<string, LLMUsageMetadata, unknown> {
     const model = this.selectModel(params.language, params.tier)
     const maxTokens = calculateOptimalTokens(params, languageConfig)
 
@@ -403,10 +440,16 @@ export class OpenAIClient {
       max_tokens: maxTokens,
       presence_penalty: 0.1,
       frequency_penalty: 0.1,
-      response_format: {
-        type: 'json_schema',
-        json_schema: studyGuideSchema
-      },
+      // Only enforce complete schema for single-pass generation
+      // Multi-pass prompts define their own partial JSON structure
+      ...(useSchema ? {
+        response_format: {
+          type: 'json_schema',
+          json_schema: studyGuideSchema
+        }
+      } : {
+        response_format: { type: 'json_object' as const }
+      }),
       stream: true
     }
 
@@ -434,6 +477,7 @@ export class OpenAIClient {
     const decoder = new TextDecoder()
     let totalChars = 0
     let fullResponse = '' // For debugging
+    let usageData: LLMUsageMetadata | null = null
 
     try {
       while (true) {
@@ -451,11 +495,33 @@ export class OpenAIClient {
               if (totalChars < 500) {
                 console.warn(`[OpenAI] ⚠️ Short response detected! Length: ${totalChars} characters`)
               }
-              return
+
+              // Return usage metadata if captured, otherwise estimate
+              if (usageData) {
+                console.log(`[OpenAI] Usage: ${usageData.totalTokens} tokens (cost: $${usageData.costUsd.toFixed(4)})`)
+                return usageData
+              } else {
+                // Fallback: estimate tokens if usage not provided
+                console.warn(`[OpenAI] ⚠️ No usage data from streaming, estimating...`)
+                const estimatedTokens = Math.ceil(totalChars / 4)
+                return {
+                  provider: 'openai',
+                  model,
+                  inputTokens: estimatedTokens * 0.3, // Rough estimate
+                  outputTokens: estimatedTokens * 0.7,
+                  totalTokens: estimatedTokens,
+                  costUsd: 0 // Can't calculate accurately without real token counts
+                }
+              }
             }
 
             try {
               const parsed = JSON.parse(data)
+
+              // Capture usage data if present (OpenAI sends this in final chunk before [DONE])
+              if (parsed.usage) {
+                usageData = this.extractUsage(parsed as OpenAIResponse, model)
+              }
 
               // Check for content filter
               const finishReason = parsed.choices?.[0]?.finish_reason
@@ -494,6 +560,21 @@ export class OpenAIClient {
     console.log(`[OpenAI] Stream ended: ${totalChars} total characters`)
     if (totalChars < 500) {
       console.warn(`[OpenAI] ⚠️ Short response at stream end! Length: ${totalChars} characters`)
+    }
+
+    // Return usage or estimate if not captured during stream
+    if (usageData) {
+      return usageData
+    } else {
+      const estimatedTokens = Math.ceil(totalChars / 4)
+      return {
+        provider: 'openai',
+        model,
+        inputTokens: estimatedTokens * 0.3,
+        outputTokens: estimatedTokens * 0.7,
+        totalTokens: estimatedTokens,
+        costUsd: 0
+      }
     }
   }
 }
