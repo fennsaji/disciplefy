@@ -17,6 +17,8 @@ import '../../../../core/services/language_preference_service.dart';
 import '../../../../core/services/system_config_service.dart';
 import '../../../../core/models/app_language.dart';
 import '../../../../core/widgets/auth_protected_screen.dart';
+import '../../../../core/widgets/locked_feature_wrapper.dart';
+import '../../../../core/widgets/upgrade_dialog.dart';
 import '../../../../core/extensions/translation_extension.dart';
 import '../../../../core/i18n/translation_keys.dart';
 import '../../domain/entities/recommended_guide_topic.dart';
@@ -502,14 +504,20 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
 
                             SizedBox(height: isLargeScreen ? 16 : 12),
 
-                            // Daily Verse Card with click functionality - only show if feature is enabled
-                            if (_isDailyVerseFeatureEnabled()) ...[
-                              DailyVerseCard(
-                                margin: EdgeInsets.zero,
-                                onTap: _onDailyVerseCardTap,
+                            // Daily Verse Card with click functionality and lock support
+                            LockedFeatureWrapper(
+                              featureKey: 'daily_verse',
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  DailyVerseCard(
+                                    margin: EdgeInsets.zero,
+                                    onTap: _onDailyVerseCardTap,
+                                  ),
+                                  SizedBox(height: isLargeScreen ? 24 : 20),
+                                ],
                               ),
-                              SizedBox(height: isLargeScreen ? 24 : 20),
-                            ],
+                            ),
 
                             // Usage Meter (only for free users)
                             _buildUsageMeter(),
@@ -547,7 +555,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
   }
 
   Widget _buildAppHeader() {
-    // Check if memory_verses feature is enabled
+    // Check if memory_verses feature should be visible (respects display_mode)
     final tokenBloc = sl<TokenBloc>();
     final tokenState = tokenBloc.state;
     String userPlan = 'free';
@@ -557,7 +565,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
 
     final systemConfigService = sl<SystemConfigService>();
     final showMemoryVerses =
-        systemConfigService.isFeatureEnabled('memory_verses', userPlan);
+        !systemConfigService.shouldHideFeature('memory_verses', userPlan);
 
     return Row(
       children: [
@@ -579,20 +587,6 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
       ),
       tooltip: context.tr(TranslationKeys.homeMemoryVerses),
     );
-  }
-
-  /// Checks if Daily Verse feature is enabled based on feature flags and user's plan
-  bool _isDailyVerseFeatureEnabled() {
-    final tokenBloc = sl<TokenBloc>();
-    final tokenState = tokenBloc.state;
-
-    String userPlan = 'free';
-    if (tokenState is TokenLoaded) {
-      userPlan = tokenState.tokenStatus.userPlan.name;
-    }
-
-    final systemConfigService = sl<SystemConfigService>();
-    return systemConfigService.isFeatureEnabled('daily_verse', userPlan);
   }
 
   /// Checks if Generate Study Guide button should be hidden
@@ -617,22 +611,22 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
       'sermon_outline_mode',
     ];
 
-    // Check if ALL study modes are disabled
+    // Check if ALL study modes should be hidden (respects display_mode)
     final allStudyModesDisabled = studyModes.every(
-      (mode) => !systemConfigService.isFeatureEnabled(mode, userPlan),
+      (mode) => systemConfigService.shouldHideFeature(mode, userPlan),
     );
 
-    // Check if AI Discipler is disabled
+    // Check if AI Discipler should be hidden (respects display_mode)
     final aiDisciplerDisabled =
-        !systemConfigService.isFeatureEnabled('ai_discipler', userPlan);
+        systemConfigService.shouldHideFeature('ai_discipler', userPlan);
 
-    // Hide if both ALL study modes are disabled AND AI Discipler is disabled
+    // Hide if both ALL study modes should be hidden AND AI Discipler should be hidden
     return allStudyModesDisabled && aiDisciplerDisabled;
   }
 
   /// Handles tap on Memory Verses button - checks feature flag and shows upgrade dialog if disabled
   void _handleMemoryVersesTap() {
-    // Get user plan from TokenBloc (more reliable as it's loaded early)
+    // Check if user has access to Memory Verses feature
     final tokenBloc = sl<TokenBloc>();
     final tokenState = tokenBloc.state;
 
@@ -641,23 +635,32 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
       userPlan = tokenState.tokenStatus.userPlan.name;
     }
 
-    // Check if memory_verses feature is enabled for user's plan
     final systemConfigService = sl<SystemConfigService>();
-    final bool hasAccess =
+    final hasAccess =
         systemConfigService.isFeatureEnabled('memory_verses', userPlan);
 
     if (!hasAccess) {
-      UpgradeRequiredDialog.show(
-        context,
-        featureName: 'Memory Verses',
-        featureIcon: Icons.psychology_outlined,
-        featureDescription:
-            'Memorize Bible verses using proven spaced repetition techniques. Track your progress and strengthen your faith through scripture memorization.',
+      // Show upgrade dialog
+      final requiredPlans =
+          systemConfigService.getRequiredPlans('memory_verses');
+      final upgradePlan =
+          systemConfigService.getUpgradePlan('memory_verses', userPlan);
+
+      showModalBottomSheet(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: Colors.transparent,
+        builder: (context) => UpgradeDialog(
+          featureKey: 'memory_verses',
+          currentPlan: userPlan,
+          requiredPlans: requiredPlans,
+          upgradePlan: upgradePlan,
+        ),
       );
       return;
     }
 
-    // User has access - proceed to Memory Verses
+    // User has access - navigate to Memory Verses
     context.go('/memory-verses');
   }
 
@@ -995,13 +998,22 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
               ],
             ),
             const SizedBox(height: 16),
-            // Show Learning Path card if available (for all user types)
+            // Show Learning Path card if available with lock support
             if (homeState.activeLearningPath != null)
-              LearningPathCard(
-                path: homeState.activeLearningPath!,
-                compact: false,
-                onTap: () =>
-                    _navigateToLearningPath(homeState.activeLearningPath!.id),
+              LockedFeatureWrapper(
+                featureKey: 'learning_paths',
+                child: LearningPathCard(
+                  path: homeState.activeLearningPath!,
+                  compact: false,
+                  onTap: () =>
+                      _navigateToLearningPath(homeState.activeLearningPath!.id),
+                ),
+              )
+            // Check if learning_paths is locked even when no data
+            else if (_isLearningPathsLocked())
+              LockedFeatureWrapper(
+                featureKey: 'learning_paths',
+                child: _buildPlaceholderLearningPathCard(),
               )
             // Fallback to topics grid only if no learning path is available
             else if (homeState.topicsError != null)
@@ -1422,6 +1434,95 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
         });
       }
     });
+  }
+
+  /// Check if learning_paths feature is locked for current user
+  bool _isLearningPathsLocked() {
+    final tokenBloc = sl<TokenBloc>();
+    final tokenState = tokenBloc.state;
+
+    String userPlan = 'free';
+    if (tokenState is TokenLoaded) {
+      userPlan = tokenState.tokenStatus.userPlan.name;
+    }
+
+    final systemConfigService = sl<SystemConfigService>();
+    return systemConfigService.isFeatureLocked('learning_paths', userPlan);
+  }
+
+  /// Build a placeholder learning path card to show with lock overlay
+  Widget _buildPlaceholderLearningPathCard() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF1F2937) : Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color:
+              isDark ? Colors.white.withOpacity(0.1) : const Color(0xFFE5E7EB),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: AppTheme.primaryColor.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(
+                  Icons.route_outlined,
+                  color: AppTheme.primaryColor,
+                  size: 22,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      context.tr(TranslationKeys.learningPathsTitle),
+                      style: AppFonts.inter(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: isDark ? Colors.white : const Color(0xFF1F2937),
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      context.tr(TranslationKeys.learningPathsSubtitle),
+                      style: AppFonts.inter(
+                        fontSize: 12,
+                        color: isDark
+                            ? Colors.white.withOpacity(0.6)
+                            : const Color(0xFF6B7280),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Text(
+            'Unlock structured learning journeys designed to deepen your faith and biblical understanding.',
+            style: AppFonts.inter(
+              fontSize: 13,
+              color: isDark
+                  ? Colors.white.withOpacity(0.7)
+                  : const Color(0xFF6B7280),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 

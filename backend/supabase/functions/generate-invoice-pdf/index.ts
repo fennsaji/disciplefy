@@ -13,7 +13,7 @@ import { createAuthenticatedFunction } from '../_shared/core/function-factory.ts
 import { ServiceContainer } from '../_shared/core/services.ts'
 import { UserContext } from '../_shared/types/index.ts'
 import { AppError } from '../_shared/utils/error-handler.ts'
-import { PDFDocument, rgb, StandardFonts } from 'https://cdn.skypack.dev/pdf-lib@^1.17.1?dts'
+import { PDFDocument, rgb, StandardFonts } from 'pdf-lib'
 
 // ============================================================================
 // Types
@@ -671,11 +671,6 @@ async function handleGenerateInvoicePDF(
       featureName: 'invoice_pdf_generation',
       operationType: 'read',
       tokensConsumed: 0,
-      llmProvider: null,
-      llmModel: null,
-      llmInputTokens: null,
-      llmOutputTokens: null,
-      llmCostUsd: null,
       requestMetadata: {
         invoice_id,
         invoice_number: invoiceData.invoice_number,

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/router/app_routes.dart';
+import '../../../../core/services/pricing_service.dart';
+import '../../../../core/di/injection_container.dart';
 
 /// Dialog shown when user exceeds their monthly voice conversation limit.
 /// Displays current usage, upgrade options, and navigation to pricing page.
@@ -41,6 +43,7 @@ class MonthlyLimitExceededDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final pricingService = sl<PricingService>();
 
     return AlertDialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -106,19 +109,19 @@ class MonthlyLimitExceededDialog extends StatelessWidget {
               context,
               'Standard',
               '3 conversations/month',
-              '₹79/month',
+              pricingService.getFormattedPricePerMonth('standard'),
             ),
             _buildPlanOption(
               context,
               'Plus',
               '10 conversations/month',
-              '₹149/month',
+              pricingService.getFormattedPricePerMonth('plus'),
             ),
             _buildPlanOption(
               context,
               'Premium',
               'Unlimited conversations',
-              '₹499/month',
+              pricingService.getFormattedPricePerMonth('premium'),
             ),
           ],
         ),

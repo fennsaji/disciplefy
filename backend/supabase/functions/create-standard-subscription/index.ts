@@ -12,6 +12,7 @@ import { AppError } from '../_shared/utils/error-handler.ts'
 import { SubscriptionService } from '../_shared/services/subscription-service.ts'
 import { isStandardTrialActive, isInGracePeriod, getPlanConfig } from '../_shared/config/subscription-config.ts'
 import type { CreateSubscriptionResponse } from '../_shared/types/subscription-types.ts'
+import { checkMaintenanceMode } from '../_shared/middleware/maintenance-middleware.ts'
 
 /**
  * Main Standard subscription creation handler
@@ -20,6 +21,9 @@ async function handleCreateStandardSubscription(
   req: Request,
   services: ServiceContainer
 ): Promise<Response> {
+  // Check maintenance mode FIRST
+  await checkMaintenanceMode(req, services)
+
   try {
     // 1. Authenticate user
     const userContext = await services.authService.getUserContext(req)

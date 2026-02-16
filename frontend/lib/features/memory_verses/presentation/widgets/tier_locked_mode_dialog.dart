@@ -1,9 +1,14 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/di/injection_container.dart';
 import '../../../../core/router/app_routes.dart';
+import '../../../../core/services/system_config_service.dart';
+import '../../../../core/services/pricing_service.dart';
+import '../../models/memory_verse_config.dart';
 
 /// Dialog shown when user attempts to use a practice mode not available in their tier.
 /// Displays tier restriction info and upgrade options.
+/// Now uses dynamic config from database instead of hardcoded values.
 class TierLockedModeDialog extends StatelessWidget {
   final String mode;
   final String currentTier;
@@ -144,28 +149,11 @@ class TierLockedModeDialog extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             const Text(
-              'Unlock all 8 practice modes with:',
+              'Unlock advanced practice modes with:',
               style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 8),
-            _buildPlanOption(
-              context,
-              'Standard',
-              'All 8 practice modes + 2 unlocks per verse per day',
-              '₹79/month',
-            ),
-            _buildPlanOption(
-              context,
-              'Plus',
-              'All 8 practice modes + 3 unlocks per verse per day',
-              '₹149/month',
-            ),
-            _buildPlanOption(
-              context,
-              'Premium',
-              'All modes unlocked automatically + unlimited practice',
-              '₹499/month',
-            ),
+            ..._buildDynamicPlanOptions(context),
           ],
         ),
       ),
@@ -188,6 +176,72 @@ class TierLockedModeDialog extends StatelessWidget {
         ),
       ],
     );
+  }
+
+  /// Build plan options dynamically from system config
+  List<Widget> _buildDynamicPlanOptions(BuildContext context) {
+    try {
+      final systemConfig = sl<SystemConfigService>();
+      final memoryConfig = systemConfig.config?.memoryVerseConfig;
+
+      if (memoryConfig == null) {
+        // Fallback to database pricing if config not available
+        final pricingService = sl<PricingService>();
+        return [
+          _buildPlanOption(
+            context,
+            'Standard',
+            'All 8 practice modes + 2 unlocks per verse per day',
+            pricingService.getFormattedPricePerMonth('standard'),
+          ),
+          _buildPlanOption(
+            context,
+            'Plus',
+            'All 8 practice modes + 3 unlocks per verse per day',
+            pricingService.getFormattedPricePerMonth('plus'),
+          ),
+          _buildPlanOption(
+            context,
+            'Premium',
+            'All modes unlocked automatically + unlimited practice',
+            pricingService.getFormattedPricePerMonth('premium'),
+          ),
+        ];
+      }
+
+      final tierComparison = memoryConfig.getTierComparison();
+
+      // Filter out free tier and current tier
+      final upgradeTiers = tierComparison
+          .where((t) => t.tier != 'free' && t.tier != currentTier.toLowerCase())
+          .toList();
+
+      final pricingService = sl<PricingService>();
+
+      return upgradeTiers.map((tier) {
+        final modeCount = tier.modeCount;
+        final unlockText = tier.unlockLimitText;
+        final price = pricingService.getFormattedPricePerMonth(tier.tier);
+
+        return _buildPlanOption(
+          context,
+          tier.tierName,
+          'All $modeCount practice modes + $unlockText',
+          price,
+        );
+      }).toList();
+    } catch (e) {
+      // Fallback on error
+      final pricingService = sl<PricingService>();
+      return [
+        _buildPlanOption(
+          context,
+          'Standard',
+          'All 8 practice modes + 2 unlocks per verse per day',
+          pricingService.getFormattedPricePerMonth('standard'),
+        ),
+      ];
+    }
   }
 
   Widget _buildPlanOption(

@@ -26,6 +26,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { corsHeaders } from '../_shared/utils/cors.ts'
 import { PaymentProviderFactory } from '../_shared/services/payment-providers/provider-factory.ts'
 import { ProviderType } from '../_shared/services/payment-providers/base-provider.ts'
+import { validateAndProcessReceipt } from '../_shared/services/receipt-validation-service.ts'
 
 interface CreateSubscriptionRequest {
   plan_code: string
@@ -366,13 +367,85 @@ serve(async (req) => {
       authorizationUrl = providerResponse.short_url
 
     } else if (provider === 'google_play' || provider === 'apple_appstore') {
-      // IAP: Validate receipt
-      if (!paymentProvider) {
+      // IAP: Validate receipt using new validation service
+      console.log('[create-subscription-v2] Processing IAP receipt for provider:', provider)
+
+      try {
+        // Get product_id from plan providers table
+        const { data: productData, error: productError } = await supabase
+          .from('subscription_plan_providers')
+          .select('product_id')
+          .eq('plan_id', planData.id)
+          .eq('provider', provider)
+          .eq('region', region)
+          .single()
+
+        if (productError || !productData?.product_id) {
+          console.error('[create-subscription-v2] Product ID fetch error:', productError)
+          return new Response(
+            JSON.stringify({
+              success: false,
+              error: 'Product configuration not found',
+              code: 'PRODUCT_NOT_FOUND'
+            }),
+            {
+              status: 404,
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+            }
+          )
+        }
+
+        // Validate receipt and create subscription
+        const validationResult = await validateAndProcessReceipt(supabase, {
+          provider: provider as 'google_play' | 'apple_appstore',
+          receiptData: receipt!,
+          productId: productData.product_id,
+          userId: user.id,
+          planCode: plan_code,
+          environment: 'production' // TODO: Add environment detection
+        })
+
+        if (!validationResult.success || !validationResult.isValid) {
+          return new Response(
+            JSON.stringify({
+              success: false,
+              error: validationResult.error || 'Invalid purchase receipt',
+              code: 'INVALID_RECEIPT'
+            }),
+            {
+              status: 400,
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+            }
+          )
+        }
+
+        // Receipt validation service already created the subscription
+        // Return success response
+        console.log('[create-subscription-v2] IAP subscription created:', validationResult.subscriptionId)
+
+        return new Response(
+          JSON.stringify({
+            success: true,
+            subscription_id: validationResult.subscriptionId,
+            provider_subscription_id: validationResult.transactionId,
+            receipt_id: validationResult.receiptId,
+            status: 'active',
+            expiry_date: validationResult.expiryDate?.toISOString(),
+            auto_renewing: validationResult.autoRenewing,
+            message: 'IAP subscription activated successfully'
+          }),
+          {
+            status: 201,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          }
+        )
+      } catch (iapError) {
+        console.error('[create-subscription-v2] IAP validation error:', iapError)
         return new Response(
           JSON.stringify({
             success: false,
-            error: 'Payment provider not initialized',
-            code: 'PROVIDER_ERROR'
+            error: iapError instanceof Error ? iapError.message : 'Receipt validation failed',
+            code: 'IAP_VALIDATION_ERROR'
           }),
           {
             status: 500,
@@ -380,26 +453,6 @@ serve(async (req) => {
           }
         )
       }
-
-      const platform = provider === 'google_play' ? 'android' : 'ios'
-      const receiptValidation = await paymentProvider.validateReceipt!(receipt!, platform)
-
-      if (!receiptValidation.valid) {
-        return new Response(
-          JSON.stringify({
-            success: false,
-            error: 'Invalid purchase receipt',
-            code: 'INVALID_RECEIPT'
-          }),
-          {
-            status: 400,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-          }
-        )
-      }
-
-      providerResponse = receiptValidation
-      subscriptionStatus = 'active' // IAP subscriptions are immediately active
     }
 
     // Store subscription in database

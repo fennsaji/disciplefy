@@ -14,8 +14,12 @@ import '../../../../core/i18n/translation_keys.dart';
 import '../../../../core/models/app_language.dart';
 import '../../../../core/services/language_preference_service.dart';
 import '../../../../core/services/system_config_service.dart';
+import '../../../../core/widgets/locked_feature_wrapper.dart';
+import '../../../../core/widgets/upgrade_dialog.dart';
 import '../../../../core/utils/logger.dart';
 import '../../../../core/services/auth_state_provider.dart';
+import '../../../tokens/presentation/bloc/token_bloc.dart';
+import '../../../tokens/presentation/bloc/token_state.dart';
 import '../../../home/presentation/bloc/home_bloc.dart';
 import '../../../user_profile/data/services/user_profile_service.dart';
 import '../../../user_profile/data/models/user_profile_model.dart';
@@ -94,34 +98,36 @@ class _StudyTopicsScreenState extends State<StudyTopicsScreen> {
         },
       );
 
-      // Check if learning_paths feature is enabled for this plan
-      final isLearningPathsEnabled =
-          _systemConfigService.isFeatureEnabled('learning_paths', _userPlan);
+      // Check if learning_paths should be hidden (not just disabled)
+      // We show features with lock overlays unless they're explicitly hidden
+      final shouldHideLearningPaths =
+          _systemConfigService.shouldHideFeature('learning_paths', _userPlan);
 
-      // Check if leaderboard feature is enabled for this plan
-      final isLeaderboardEnabled =
-          _systemConfigService.isFeatureEnabled('leaderboard', _userPlan);
+      // Check if leaderboard should be hidden (not just disabled)
+      final shouldHideLeaderboard =
+          _systemConfigService.shouldHideFeature('leaderboard', _userPlan);
 
       if (mounted) {
         setState(() {
-          _isLearningPathsFeatureEnabled = isLearningPathsEnabled;
-          _isLeaderboardFeatureEnabled = isLeaderboardEnabled;
+          // Show features unless explicitly hidden
+          _isLearningPathsFeatureEnabled = !shouldHideLearningPaths;
+          _isLeaderboardFeatureEnabled = !shouldHideLeaderboard;
         });
       }
 
-      if (!isLearningPathsEnabled) {
+      if (shouldHideLearningPaths) {
         debugPrint(
-            '⛔ [STUDY_TOPICS] Learning Paths not available for plan $_userPlan');
+            '🙈 [STUDY_TOPICS] Learning Paths hidden for plan $_userPlan');
       } else {
         debugPrint(
-            '✅ [STUDY_TOPICS] Learning Paths enabled for plan $_userPlan');
+            '👀 [STUDY_TOPICS] Learning Paths visible for plan $_userPlan (may be locked)');
       }
 
-      if (!isLeaderboardEnabled) {
-        debugPrint(
-            '⛔ [STUDY_TOPICS] Leaderboard not available for plan $_userPlan');
+      if (shouldHideLeaderboard) {
+        debugPrint('🙈 [STUDY_TOPICS] Leaderboard hidden for plan $_userPlan');
       } else {
-        debugPrint('✅ [STUDY_TOPICS] Leaderboard enabled for plan $_userPlan');
+        debugPrint(
+            '👀 [STUDY_TOPICS] Leaderboard visible for plan $_userPlan (may be locked)');
       }
     } catch (e) {
       debugPrint('❌ [STUDY_TOPICS] Error checking feature access: $e');
@@ -407,20 +413,25 @@ class _StudyTopicsScreenContentState extends State<_StudyTopicsScreenContent> {
         if (!isGuest) const SizedBox(height: 24),
 
         // Section 2: Learning Paths (Curated Learning Journeys)
-        // Only show if learning_paths feature is enabled for user's plan
-        if (widget.isLearningPathsFeatureEnabled) ...[
-          // Show loading state if initial loading hasn't completed
-          if (showInitialLoading)
-            _buildLearningPathsLoadingState(context)
-          else
-            LearningPathsSection(
-              onPathTap: _navigateToLearningPath,
-              onRetry: () => context
-                  .read<LearningPathsBloc>()
-                  .add(RefreshLearningPaths(language: widget.currentLanguage)),
-            ),
-          const SizedBox(height: 24),
-        ],
+        // Wrapped with LockedFeatureWrapper to support lock overlay
+        LockedFeatureWrapper(
+          featureKey: 'learning_paths',
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Show loading state if initial loading hasn't completed
+              if (showInitialLoading)
+                _buildLearningPathsLoadingState(context)
+              else
+                LearningPathsSection(
+                  onPathTap: _navigateToLearningPath,
+                  onRetry: () => context.read<LearningPathsBloc>().add(
+                      RefreshLearningPaths(language: widget.currentLanguage)),
+                ),
+              const SizedBox(height: 24),
+            ],
+          ),
+        ),
       ],
     );
   }
@@ -743,7 +754,7 @@ class StudyTopicsAppBar extends StatelessWidget implements PreferredSizeWidget {
             ? IconButton(
                 icon: const Icon(Icons.emoji_events_outlined),
                 tooltip: context.tr(TranslationKeys.leaderboardTooltip),
-                onPressed: () => AppRouter.router.goToLeaderboard(),
+                onPressed: () => _handleLeaderboardTap(context),
                 color: Theme.of(context).colorScheme.onSurface,
               )
             : null,
@@ -1233,6 +1244,45 @@ class StudyTopicsAppBar extends StatelessWidget implements PreferredSizeWidget {
         ),
       ),
     );
+  }
+
+  /// Handle leaderboard icon tap - check access and show upgrade dialog if needed
+  void _handleLeaderboardTap(BuildContext context) {
+    // Check if user has access to leaderboard feature
+    final tokenBloc = sl<TokenBloc>();
+    final tokenState = tokenBloc.state;
+
+    String userPlan = 'free';
+    if (tokenState is TokenLoaded) {
+      userPlan = tokenState.tokenStatus.userPlan.name;
+    }
+
+    final systemConfigService = sl<SystemConfigService>();
+    final hasAccess =
+        systemConfigService.isFeatureEnabled('leaderboard', userPlan);
+
+    if (!hasAccess) {
+      // Show upgrade dialog
+      final requiredPlans = systemConfigService.getRequiredPlans('leaderboard');
+      final upgradePlan =
+          systemConfigService.getUpgradePlan('leaderboard', userPlan);
+
+      showModalBottomSheet(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: Colors.transparent,
+        builder: (context) => UpgradeDialog(
+          featureKey: 'leaderboard',
+          currentPlan: userPlan,
+          requiredPlans: requiredPlans,
+          upgradePlan: upgradePlan,
+        ),
+      );
+      return;
+    }
+
+    // User has access - navigate to leaderboard
+    AppRouter.router.goToLeaderboard();
   }
 
   @override

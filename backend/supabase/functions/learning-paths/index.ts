@@ -13,7 +13,8 @@ import { createFunction } from '../_shared/core/function-factory.ts';
 import { ServiceContainer } from '../_shared/core/services.ts';
 import { UserContext } from '../_shared/types/index.ts';
 import { AppError } from '../_shared/utils/error-handler.ts';
-import { isFeatureEnabledForPlan } from '../_shared/services/feature-flag-service.ts';
+import { checkFeatureAccess } from '../_shared/middleware/feature-access-middleware.ts';
+import { checkMaintenanceMode } from '../_shared/middleware/maintenance-middleware.ts';
 import {
   calculatePathScores,
   type QuestionnaireResponses,
@@ -214,28 +215,21 @@ async function handleLearningPaths(
   services: ServiceContainer,
   userContext?: UserContext
 ): Promise<Response> {
+  // Check maintenance mode FIRST
+  await checkMaintenanceMode(req, services)
+
   const url = new URL(req.url);
   const pathSegments = url.pathname.split('/').filter(Boolean);
 
-  // Feature flag validation - Check if learning_paths is enabled for user's plan
+  // NOTE: We do NOT check feature access here for read operations (viewing paths)
+  // This allows users to see learning paths with lock overlays in the frontend
+  // Feature access is only checked for write operations (enrollment) below
+
   const userPlan = userContext?.userId
     ? await services.authService.getUserPlan(req)
     : 'free';
 
   console.log(`👤 [LearningPaths] User plan: ${userPlan}`);
-
-  const hasLearningPathsAccess = await isFeatureEnabledForPlan('learning_paths', userPlan);
-
-  if (!hasLearningPathsAccess) {
-    console.warn(`⛔ [LearningPaths] Feature access denied: learning_paths not available for plan ${userPlan}`);
-    throw new AppError(
-      'FEATURE_NOT_AVAILABLE',
-      `Learning Paths are not available for your current plan (${userPlan}). Please upgrade to access this feature.`,
-      403
-    );
-  }
-
-  console.log(`✅ [LearningPaths] Feature access granted: learning_paths available for plan ${userPlan}`);
 
   // Determine the action based on URL pattern and method
   // /learning-paths -> list paths
@@ -466,6 +460,15 @@ async function handleEnroll(
   if (!userContext || userContext.type !== 'authenticated') {
     throw new AppError('UNAUTHORIZED', 'Authentication required to enroll', 401);
   }
+
+  if (!userContext.userId) {
+    throw new AppError('UNAUTHORIZED', 'Invalid user context', 401);
+  }
+
+  // Check feature access for WRITE operations (enrollment)
+  const userPlan = await services.authService.getUserPlan(req);
+  await checkFeatureAccess(userContext.userId, userPlan, 'learning_paths');
+  console.log(`✅ [LearningPaths] Feature access granted for enrollment: learning_paths available for plan ${userPlan}`);
 
   const { supabaseServiceClient } = services;
 

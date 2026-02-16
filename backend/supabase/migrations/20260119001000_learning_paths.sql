@@ -74,13 +74,6 @@ CREATE POLICY "Service role can manage all topic progress" ON user_topic_progres
   USING (true)
   WITH CHECK (true);
 
--- Add xp_value column to recommended_topics if it doesn't exist
-ALTER TABLE recommended_topics
-ADD COLUMN IF NOT EXISTS xp_value INTEGER DEFAULT 50;
-
--- Update existing topics to have default XP value
-UPDATE recommended_topics SET xp_value = 50 WHERE xp_value IS NULL OR xp_value = 0;
-
 -- Add comments for documentation
 COMMENT ON TABLE user_topic_progress IS 'Tracks user progress on study topics including start time, completion, time spent, and XP earned';
 COMMENT ON COLUMN user_topic_progress.started_at IS 'When the user first opened this topic';
@@ -196,46 +189,6 @@ CREATE INDEX IF NOT EXISTS idx_user_learning_path_progress_active ON user_learni
 
 COMMENT ON TABLE user_learning_path_progress IS 'Tracks user enrollment and completion progress through learning paths';
 COMMENT ON COLUMN user_learning_path_progress.current_topic_position IS 'Zero-based position of next topic to study';
-
-
--- -----------------------------------------------------
--- Modify: user_preferences (add learning_path_study_mode)
--- -----------------------------------------------------
--- Add study mode preference specific to learning path topics
--- NOTE: Skipped if user_preferences table doesn't exist (it may be created in a future migration)
-
-DO $$
-BEGIN
-  -- First check if the table exists
-  IF EXISTS (
-    SELECT 1 FROM information_schema.tables
-    WHERE table_schema = 'public' AND table_name = 'user_preferences'
-  ) THEN
-    -- Then check if the column already exists
-    IF NOT EXISTS (
-      SELECT 1 FROM information_schema.columns
-      WHERE table_schema = 'public' AND table_name = 'user_preferences' AND column_name = 'learning_path_study_mode'
-    ) THEN
-      ALTER TABLE user_preferences
-      ADD COLUMN learning_path_study_mode TEXT
-      CHECK (learning_path_study_mode IN ('ask', 'recommended', 'quick', 'standard', 'deep', 'lectio'));
-
-      COMMENT ON COLUMN user_preferences.learning_path_study_mode IS
-      'Study mode preference for learning path topics:
-      - ask: Show mode selection sheet each time (default if null)
-      - recommended: Always use the path''s recommended mode
-      - quick: Always use Quick mode for all learning path topics
-      - standard: Always use Standard mode for all learning path topics
-      - deep: Always use Deep mode for all learning path topics
-      - lectio: Always use Lectio mode for all learning path topics
-
-      Note: This is separate from study_mode_preference (custom guides vs learning paths)';
-    END IF;
-  ELSE
-    RAISE NOTICE 'Skipping user_preferences.learning_path_study_mode: table does not exist yet';
-  END IF;
-END $$;
-
 
 -- =====================================================
 -- SECTION 2: FUNCTIONS

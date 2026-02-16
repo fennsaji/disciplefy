@@ -15,6 +15,7 @@ import { AppError } from '../_shared/utils/error-handler.ts'
 import { ApiSuccessResponse } from '../_shared/types/index.ts'
 import { ServiceContainer } from '../_shared/core/services.ts'
 import { fetchWithTimeout } from '../_shared/services/bible-api-service.ts'
+import { checkMaintenanceMode } from '../_shared/middleware/maintenance-middleware.ts'
 
 /**
  * Request payload structure
@@ -246,8 +247,10 @@ function buildVerseUrl(bibleId: string, verseId: string): string {
  */
 async function handleFetchVerse(
   req: Request,
-  _services: ServiceContainer
+  services: ServiceContainer
 ): Promise<Response> {
+  // Check maintenance mode FIRST
+  await checkMaintenanceMode(req, services)
 
   // Parse and validate request body
   const body = await req.json() as FetchVerseRequest

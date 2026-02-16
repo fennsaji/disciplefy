@@ -23,6 +23,7 @@ import '../../../../core/extensions/translation_extension.dart';
 import '../../../../core/i18n/translation_keys.dart';
 import '../../../../core/services/language_preference_service.dart';
 import '../../../../core/services/system_config_service.dart';
+import '../../../../core/widgets/locked_feature_wrapper.dart';
 import '../../domain/entities/study_guide.dart';
 import '../../../tokens/presentation/bloc/token_bloc.dart';
 import '../../../tokens/presentation/bloc/token_state.dart';
@@ -951,6 +952,48 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
     return systemConfigService.isFeatureEnabled('study_chat', userPlan);
   }
 
+  /// Checks if Study Chat feature should be visible (not hidden)
+  bool _shouldShowStudyChat() {
+    final tokenBloc = sl<TokenBloc>();
+    final tokenState = tokenBloc.state;
+
+    String userPlan = 'free';
+    if (tokenState is TokenLoaded) {
+      userPlan = tokenState.tokenStatus.userPlan.name;
+    }
+
+    final systemConfigService = sl<SystemConfigService>();
+    return !systemConfigService.shouldHideFeature('study_chat', userPlan);
+  }
+
+  /// Checks if Reflections feature should be visible (not hidden)
+  bool _shouldShowReflections() {
+    final tokenBloc = sl<TokenBloc>();
+    final tokenState = tokenBloc.state;
+
+    String userPlan = 'free';
+    if (tokenState is TokenLoaded) {
+      userPlan = tokenState.tokenStatus.userPlan.name;
+    }
+
+    final systemConfigService = sl<SystemConfigService>();
+    return !systemConfigService.shouldHideFeature('reflections', userPlan);
+  }
+
+  /// Checks if Reflections feature is locked for current user
+  bool _isReflectionsLocked() {
+    final tokenBloc = sl<TokenBloc>();
+    final tokenState = tokenBloc.state;
+
+    String userPlan = 'free';
+    if (tokenState is TokenLoaded) {
+      userPlan = tokenState.tokenStatus.userPlan.name;
+    }
+
+    final systemConfigService = sl<SystemConfigService>();
+    return systemConfigService.isFeatureLocked('reflections', userPlan);
+  }
+
   /// Check if both completion conditions are met and mark complete if so
   void _checkCompletionConditions() {
     if (_completionMarked || _currentStudyGuide == null) return;
@@ -1689,49 +1732,62 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
 
           SizedBox(height: isLargeScreen ? 32 : 24),
 
-          // Reading Completion Card (dismissible)
-          if (_showCompletionCard)
-            ReadingCompletionCard(
-              onReflect: () {
-                setState(() => _viewMode = StudyViewMode.reflect);
-              },
-              onMaybeLater: () {
-                // Simply dismiss the card
-                setState(() {
-                  _showCompletionCard = false;
-                });
-              },
+          // Reading Completion Card (dismissible) - respect reflections feature access
+          if (_showCompletionCard && _shouldShowReflections())
+            LockedFeatureWrapper(
+              featureKey: 'reflections',
+              showLockOverlay: _isReflectionsLocked(),
+              child: ReadingCompletionCard(
+                onReflect: () {
+                  // Only proceed if not locked
+                  if (!_isReflectionsLocked()) {
+                    setState(() => _viewMode = StudyViewMode.reflect);
+                  }
+                },
+                onMaybeLater: () {
+                  // Simply dismiss the card
+                  setState(() {
+                    _showCompletionCard = false;
+                  });
+                },
+              ),
             ),
 
           SizedBox(height: isLargeScreen ? 32 : 24),
 
-          // Follow-up Chat Section - only show if study_chat feature is enabled
-          if (_isStudyChatFeatureEnabled()) ...[
-            Container(
-              key: _followUpChatKey,
-              child: BlocProvider(
-                create: (context) {
-                  final bloc = sl<FollowUpChatBloc>();
-                  bloc.add(StartConversationEvent(
-                    studyGuideId: _currentStudyGuide!.id,
-                    studyGuideTitle: _getDisplayTitle(),
-                  ));
-                  return bloc;
-                },
-                child: FollowUpChatWidget(
-                  studyGuideId: _currentStudyGuide!.id,
-                  studyGuideTitle: _getDisplayTitle(),
-                  isExpanded: _isChatExpanded,
-                  onToggleExpanded: () {
-                    setState(() {
-                      _isChatExpanded = !_isChatExpanded;
-                    });
-                  },
+          // Follow-up Chat Section - with lock support for study_chat feature
+          LockedFeatureWrapper(
+            featureKey: 'study_chat',
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  key: _followUpChatKey,
+                  child: BlocProvider(
+                    create: (context) {
+                      final bloc = sl<FollowUpChatBloc>();
+                      bloc.add(StartConversationEvent(
+                        studyGuideId: _currentStudyGuide!.id,
+                        studyGuideTitle: _getDisplayTitle(),
+                      ));
+                      return bloc;
+                    },
+                    child: FollowUpChatWidget(
+                      studyGuideId: _currentStudyGuide!.id,
+                      studyGuideTitle: _getDisplayTitle(),
+                      isExpanded: _isChatExpanded,
+                      onToggleExpanded: () {
+                        setState(() {
+                          _isChatExpanded = !_isChatExpanded;
+                        });
+                      },
+                    ),
+                  ),
                 ),
-              ),
+                SizedBox(height: isLargeScreen ? 32 : 24),
+              ],
             ),
-            SizedBox(height: isLargeScreen ? 32 : 24),
-          ],
+          ),
 
           // Notes Section
           _buildNotesSection(),
@@ -2635,9 +2691,10 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
       ),
       child: Row(
         children: [
-          // Listen Button (Left) - only show if voice_buddy feature is enabled
-          if (_isVoiceBuddyFeatureEnabled()) ...[
-            Expanded(
+          // Listen Button (Left) - with lock support for voice_buddy feature
+          Expanded(
+            child: LockedFeatureWrapper(
+              featureKey: 'voice_buddy',
               child: SizedBox(
                 height: 56,
                 child: ValueListenableBuilder<StudyGuideTtsState>(
@@ -2770,11 +2827,11 @@ class _StudyGuideScreenV2ContentState extends State<_StudyGuideScreenV2Content>
                 ),
               ),
             ),
-          ], // End voice_buddy feature check
-          // Ask AI Button (Right) - only show if ai_discipler feature is enabled
-          if (_isAiDisciplerFeatureEnabled()) ...[
-            // Add spacing only if Listen button is also shown
-            if (_isVoiceBuddyFeatureEnabled()) const SizedBox(width: 16),
+          ),
+          // Ask AI Button (Right) - only show if ai_discipler is enabled and study_chat is not hidden
+          if (_isAiDisciplerFeatureEnabled() && _shouldShowStudyChat()) ...[
+            // Add spacing (Listen button is always shown with lock support)
+            const SizedBox(width: 16),
             Expanded(
               child: SizedBox(
                 height: 56,

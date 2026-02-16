@@ -2,6 +2,8 @@ import 'package:equatable/equatable.dart';
 import '../../domain/entities/subscription.dart';
 import '../../domain/entities/user_subscription_status.dart';
 import '../../../../core/error/failures.dart';
+import '../../../../core/services/pricing_service.dart';
+import '../../../../core/di/injection_container.dart';
 
 /// Subscription BLoC States
 ///
@@ -265,7 +267,7 @@ class SubscriptionEligibilityChecked extends SubscriptionState {
   /// Get user-friendly eligibility message
   String get eligibilityMessage {
     if (canSubscribe) {
-      return 'You can upgrade to premium for ₹499/month';
+      return 'You can upgrade to premium for ${sl<PricingService>().getFormattedPricePerMonth('premium')}';
     } else if (reason != null) {
       return reason!;
     } else {

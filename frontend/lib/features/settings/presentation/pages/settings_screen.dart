@@ -10,6 +10,7 @@ import '../../../../core/theme/app_theme.dart';
 import '../../../../core/di/injection_container.dart';
 import '../../../../core/services/theme_service.dart';
 import '../../../../core/services/auth_state_provider.dart';
+import '../../../../core/widgets/locked_feature_wrapper.dart';
 import '../../../../core/services/language_preference_service.dart';
 import '../../../../core/services/system_config_service.dart';
 import '../../../auth/presentation/bloc/auth_bloc.dart';
@@ -193,21 +194,24 @@ class _SettingsScreenContent extends StatelessWidget {
                     if (!authProvider.isAnonymous) ...[
                       _buildDivider(),
                       // My Progress - gamification stats dashboard
-                      _buildSettingsTile(
-                        context: context,
-                        icon: Icons.emoji_events_outlined,
-                        title: context.tr(TranslationKeys.gamificationTitle),
-                        subtitle:
-                            context.tr(TranslationKeys.gamificationSubtitle),
-                        trailing: Icon(
-                          Icons.arrow_forward_ios,
-                          size: 16,
-                          color: Theme.of(context)
-                              .colorScheme
-                              .onSurface
-                              .withOpacity(0.6),
+                      LockedFeatureWrapper(
+                        featureKey: 'achievements',
+                        child: _buildSettingsTile(
+                          context: context,
+                          icon: Icons.emoji_events_outlined,
+                          title: context.tr(TranslationKeys.gamificationTitle),
+                          subtitle:
+                              context.tr(TranslationKeys.gamificationSubtitle),
+                          trailing: Icon(
+                            Icons.arrow_forward_ios,
+                            size: 16,
+                            color: Theme.of(context)
+                                .colorScheme
+                                .onSurface
+                                .withOpacity(0.6),
+                          ),
+                          onTap: () => context.push(AppRoutes.statsDashboard),
                         ),
-                        onTap: () => context.push(AppRoutes.statsDashboard),
                       ),
                       // Reflection Journal - view past reflections (feature flag controlled)
                       Builder(builder: (builderContext) {
@@ -219,35 +223,38 @@ class _SettingsScreenContent extends StatelessWidget {
                           userPlan = tokenState.tokenStatus.userPlan.name;
                         }
 
-                        // Check if reflections feature is enabled
+                        // Check if reflections feature should be shown (respects display_mode)
                         final systemConfigService = sl<SystemConfigService>();
-                        final isReflectionsEnabled = systemConfigService
-                            .isFeatureEnabled('reflections', userPlan);
+                        final showReflections = !systemConfigService
+                            .shouldHideFeature('reflections', userPlan);
 
-                        if (!isReflectionsEnabled) {
+                        if (!showReflections) {
                           return const SizedBox.shrink();
                         }
 
                         return Column(
                           children: [
                             _buildDivider(),
-                            _buildSettingsTile(
-                              context: builderContext,
-                              icon: Icons.edit_note_outlined,
-                              title: builderContext.tr(
-                                  TranslationKeys.settingsReflectionJournal),
-                              subtitle: builderContext.tr(TranslationKeys
-                                  .settingsReflectionJournalSubtitle),
-                              trailing: Icon(
-                                Icons.arrow_forward_ios,
-                                size: 16,
-                                color: Theme.of(builderContext)
-                                    .colorScheme
-                                    .onSurface
-                                    .withOpacity(0.6),
+                            LockedFeatureWrapper(
+                              featureKey: 'reflections',
+                              child: _buildSettingsTile(
+                                context: builderContext,
+                                icon: Icons.edit_note_outlined,
+                                title: builderContext.tr(
+                                    TranslationKeys.settingsReflectionJournal),
+                                subtitle: builderContext.tr(TranslationKeys
+                                    .settingsReflectionJournalSubtitle),
+                                trailing: Icon(
+                                  Icons.arrow_forward_ios,
+                                  size: 16,
+                                  color: Theme.of(builderContext)
+                                      .colorScheme
+                                      .onSurface
+                                      .withOpacity(0.6),
+                                ),
+                                onTap: () => builderContext
+                                    .push(AppRoutes.reflectionJournal),
                               ),
-                              onTap: () => builderContext
-                                  .push(AppRoutes.reflectionJournal),
                             ),
                           ],
                         );

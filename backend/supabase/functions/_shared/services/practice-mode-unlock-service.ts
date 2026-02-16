@@ -1,4 +1,5 @@
 import { SupabaseClient } from '@supabase/supabase-js'
+import { MemoryVerseConfigService } from './memory-verse-config-service.ts'
 
 /**
  * Status returned by mode unlock check
@@ -28,43 +29,33 @@ export interface UnlockModeResult {
 
 /**
  * Service for managing tier-based practice mode unlock limits
+ * Now uses database-driven configuration via MemoryVerseConfigService
  */
 export class PracticeModeUnlockService {
-  // Free tier can only choose from these two modes
-  private static readonly FREE_TIER_MODES = ['flip_card', 'type_it_out']
+  private memoryVerseConfigService: MemoryVerseConfigService
 
-  // All valid practice modes
-  private static readonly ALL_MODES = [
-    'flip_card',
-    'type_it_out',
-    'cloze',
-    'first_letter',
-    'progressive',
-    'word_scramble',
-    'word_bank',
-    'audio',
-  ]
-
-  // Tier-based unlock limits per verse per day
-  private static readonly UNLOCK_LIMITS: Record<string, number> = {
-    free: 1,
-    standard: 2,
-    plus: 3,
-    premium: -1, // Unlimited
+  constructor(
+    private supabaseClient: SupabaseClient,
+    memoryVerseConfigService?: MemoryVerseConfigService
+  ) {
+    // Allow injecting config service for testing, otherwise create new instance
+    this.memoryVerseConfigService =
+      memoryVerseConfigService || new MemoryVerseConfigService(supabaseClient)
   }
-
-  constructor(private supabaseClient: SupabaseClient) {}
 
   /**
    * Check if a mode is available in the user's tier pool
    * (not related to unlock limit, just tier availability)
    */
-  checkModeTierAvailability(tier: string, mode: string): {
+  async checkModeTierAvailability(
+    tier: string,
+    mode: string
+  ): Promise<{
     available: boolean
     reason: 'available' | 'tier_locked'
     availableModes: string[]
-  } {
-    const availableModes = this.getAvailableModesForTier(tier)
+  }> {
+    const availableModes = await this.getAvailableModesForTier(tier)
     const available = availableModes.includes(mode)
 
     return {
@@ -75,20 +66,17 @@ export class PracticeModeUnlockService {
   }
 
   /**
-   * Get available mode pool based on tier
+   * Get available mode pool based on tier (from database config)
    */
-  getAvailableModesForTier(tier: string): string[] {
-    if (tier === 'free') {
-      return PracticeModeUnlockService.FREE_TIER_MODES
-    }
-    return PracticeModeUnlockService.ALL_MODES
+  async getAvailableModesForTier(tier: string): Promise<string[]> {
+    return await this.memoryVerseConfigService.getAvailableModes(tier)
   }
 
   /**
-   * Get unlock limit based on tier
+   * Get unlock limit based on tier (from database config)
    */
-  getUnlockLimit(tier: string): number {
-    return PracticeModeUnlockService.UNLOCK_LIMITS[tier] || PracticeModeUnlockService.UNLOCK_LIMITS.free
+  async getUnlockLimit(tier: string): Promise<number> {
+    return await this.memoryVerseConfigService.getUnlockLimit(tier)
   }
 
   /**
@@ -226,36 +214,32 @@ export class PracticeModeUnlockService {
 
   /**
    * Get unlock limit details for all tiers (for upgrade dialog)
+   * Now uses database config instead of hardcoded values
    */
-  static getAllTierLimits(): Array<{
-    tier: string
-    tierName: string
-    unlockLimit: number
-    unlockLimitText: string
-    price: string
-  }> {
-    return [
-      {
-        tier: 'standard',
-        tierName: 'Standard',
-        unlockLimit: 2,
-        unlockLimitText: '2 modes per verse per day',
-        price: '₹79/month',
-      },
-      {
-        tier: 'plus',
-        tierName: 'Plus',
-        unlockLimit: 3,
-        unlockLimitText: '3 modes per verse per day',
-        price: '₹149/month',
-      },
-      {
-        tier: 'premium',
-        tierName: 'Premium',
-        unlockLimit: -1,
-        unlockLimitText: 'All modes unlocked',
-        price: '₹499/month',
-      },
-    ]
+  async getAllTierLimits(): Promise<
+    Array<{
+      tier: string
+      tierName: string
+      unlockLimit: number
+      unlockLimitText: string
+      price: string
+    }>
+  > {
+    const comparison = await this.memoryVerseConfigService.getTierComparison()
+
+    return comparison
+      .filter((tier) => tier.tier !== 'free') // Exclude free tier from upgrade options
+      .map((tier) => ({
+        tier: tier.tier,
+        tierName: tier.tierName,
+        unlockLimit: tier.unlockLimit,
+        unlockLimitText: tier.unlockLimitText,
+        price:
+          tier.tier === 'standard'
+            ? '₹79/month'
+            : tier.tier === 'plus'
+              ? '₹149/month'
+              : '₹499/month',
+      }))
   }
 }

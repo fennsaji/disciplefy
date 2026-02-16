@@ -56,6 +56,7 @@ export async function GET(request: NextRequest) {
       category: flag.metadata?.category || 'features',
       enabled: flag.is_enabled,
       enabled_for_plans: flag.enabled_for_plans || [],
+      display_mode: flag.display_mode || 'hide',
       rollout_percentage: flag.rollout_percentage,
       metadata: flag.metadata
     }))
@@ -186,12 +187,21 @@ export async function PATCH(request: NextRequest) {
       description,
       is_enabled,
       enabled_for_plans,
+      display_mode,
       rollout_percentage
     } = body
 
     if (!flag_id) {
       return NextResponse.json(
         { error: 'flag_id is required' },
+        { status: 400 }
+      )
+    }
+
+    // Validate display_mode if provided
+    if (display_mode && !['hide', 'lock'].includes(display_mode)) {
+      return NextResponse.json(
+        { error: 'display_mode must be "hide" or "lock"' },
         { status: 400 }
       )
     }
@@ -214,7 +224,7 @@ export async function PATCH(request: NextRequest) {
     )
     const { data: profile } = await supabaseAdmin
       .from('user_profiles')
-      .select('is_admin, email')
+      .select('is_admin')
       .eq('id', user.id)
       .single()
 
@@ -228,13 +238,14 @@ export async function PATCH(request: NextRequest) {
     // Build update object (only include provided fields)
     const updateData: any = {
       updated_at: new Date().toISOString(),
-      updated_by: profile.email
+      updated_by: user.email  // user.email comes from auth.users, not user_profiles
     }
 
     if (feature_name !== undefined) updateData.feature_name = feature_name
     if (description !== undefined) updateData.description = description
     if (is_enabled !== undefined) updateData.is_enabled = is_enabled
     if (enabled_for_plans !== undefined) updateData.enabled_for_plans = enabled_for_plans
+    if (display_mode !== undefined) updateData.display_mode = display_mode
     if (rollout_percentage !== undefined) updateData.rollout_percentage = rollout_percentage
 
     // Update feature flag in database

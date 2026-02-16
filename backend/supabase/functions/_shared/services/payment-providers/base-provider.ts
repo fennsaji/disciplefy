@@ -133,7 +133,7 @@ export abstract class PaymentProvider {
    * @param signature - Signature from webhook headers
    * @returns true if signature is valid
    */
-  verifyWebhookSignature?(payload: string, signature: string): boolean
+  verifyWebhookSignature?(payload: string, signature: string): Promise<boolean>
 
   /**
    * Validate receipt from in-app purchase (optional, for IAP only)

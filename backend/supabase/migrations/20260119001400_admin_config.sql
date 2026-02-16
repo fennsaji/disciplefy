@@ -134,51 +134,11 @@ BEGIN
   RAISE NOTICE 'Play Store reviewer account setup complete for %', v_email;
 END $$;
 
--- =====================================================
--- PART 3: SYSTEM CONFIGURATION
--- =====================================================
-
--- Create system_config table if not exists (for feature flags, settings)
-CREATE TABLE IF NOT EXISTS system_config (
-  key TEXT PRIMARY KEY,
-  value TEXT NOT NULL,
-  description TEXT,
-  created_at TIMESTAMPTZ DEFAULT NOW(),
-  updated_at TIMESTAMPTZ DEFAULT NOW()
-);
-
--- Enable RLS on system_config
-ALTER TABLE system_config ENABLE ROW LEVEL SECURITY;
-
--- Policy: Public read access
-CREATE POLICY "Allow public read access to system config"
-  ON system_config
-  FOR SELECT
-  TO public
-  USING (true);
-
--- Policy: Only service role can write
-CREATE POLICY "Only service role can modify system config"
-  ON system_config
-  FOR ALL
-  TO service_role
-  USING (true)
-  WITH CHECK (true);
-
--- Insert default system configuration
-INSERT INTO system_config (key, value, description) VALUES
-  ('app_version', '1.0.0', 'Current application version'),
-  ('maintenance_mode', 'false', 'Enable maintenance mode (true/false)'),
-  ('trial_period_days', '7', 'Free trial period in days'),
-  ('max_free_guides_per_day', '3', 'Maximum free study guides per day'),
-  ('feature_voice_buddy', 'true', 'Enable voice conversation feature'),
-  ('feature_learning_paths', 'true', 'Enable learning paths feature'),
-  ('feature_memory_verses', 'true', 'Enable memory verses feature'),
-  ('admin_emails', 'fennsaji@gmail.com', 'Comma-separated list of admin emails (server-side only)')
-ON CONFLICT (key) DO NOTHING;
+-- NOTE: system_config table and entries moved to 20260214000001_system_config_features.sql
+--       for better logical separation
 
 -- =====================================================
--- PART 4: ADMIN ACTIONS AUDIT TRAIL
+-- PART 3: ADMIN ACTIONS AUDIT TRAIL
 -- =====================================================
 
 -- Create admin_actions table for tracking administrative actions
@@ -234,25 +194,17 @@ COMMENT ON COLUMN admin_actions.target_user_id IS 'User ID or identifier affecte
 COMMENT ON COLUMN admin_actions.details IS 'JSON object containing action-specific details';
 
 -- =====================================================
--- PART 5: COMMENTS AND DOCUMENTATION
--- =====================================================
-
-COMMENT ON TABLE system_config IS
-  'System-wide configuration and feature flags.
-   Used for maintenance mode, versioning, and feature toggles.';
-
--- =====================================================
 -- MIGRATION COMPLETE
 -- =====================================================
 
 COMMIT;
 
--- Verification queries
+-- Verification queries (system_config removed - created in later migration)
 SELECT
   'Migration 0015 Complete' as status,
   (SELECT COUNT(*) FROM user_profiles WHERE is_admin = TRUE) as admin_count,
   (SELECT COUNT(*) FROM subscriptions WHERE metadata->>'granted' = 'true') as granted_subscriptions,
-  (SELECT COUNT(*) FROM system_config) as config_entries;
+  (SELECT COUNT(*) FROM admin_actions) as admin_actions_count;
 
 -- Display admin users
 SELECT

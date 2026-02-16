@@ -14,6 +14,8 @@ import { RequestValidator } from '../_shared/utils/request-validator.ts'
 import { AppError } from '../_shared/utils/error-handler.ts'
 import { StudyGuideInput } from '../_shared/types/index.ts'
 import { SupportedLanguage } from '../_shared/types/token-types.ts'
+import { checkMaintenanceMode } from '../_shared/middleware/maintenance-middleware.ts'
+import { checkFeatureAccess } from '../_shared/middleware/feature-access-middleware.ts'
 
 /**
  * Request payload for study guide generation
@@ -82,8 +84,12 @@ function generateContentReference(inputType: string, inputValue: string): string
  * 2. Validate request body (no client-provided user context)
  * 3. Use injected services for business logic
  */
-async function handleStudyGenerate(req: Request, { authService, llmService, studyGuideRepository, tokenService, analyticsLogger, securityValidator, usageLoggingService, costTrackingService }: ServiceContainer): Promise<Response> {
+async function handleStudyGenerate(req: Request, services: ServiceContainer): Promise<Response> {
+  // 0. Check maintenance mode FIRST (blocks non-admin users during maintenance)
+  await checkMaintenanceMode(req, services)
+
   // 1. Get user context SECURELY from the new AuthService
+  const { authService, llmService, studyGuideRepository, tokenService, analyticsLogger, securityValidator, usageLoggingService, costTrackingService } = services
   const userContext = await authService.getUserContext(req)
 
   // 2. Validate request body and parse data
@@ -250,6 +256,25 @@ async function handleStudyGenerate(req: Request, { authService, llmService, stud
   
   // 5. Determine user plan and calculate token cost
   const userPlan = await authService.getUserPlan(req)
+
+  // 5a. Validate access to advanced study modes
+  const userId = userContext.userId!
+  const requestedMode = study_mode || 'standard'
+
+  // Map study modes to feature keys
+  const studyModeFeatures: Record<string, string> = {
+    'deep': 'deep_dive_mode',
+    'lectio': 'lectio_divina_mode',
+    'sermon': 'sermon_outline_mode'
+  }
+
+  // Check if advanced mode requires feature access
+  if (requestedMode in studyModeFeatures) {
+    const featureKey = studyModeFeatures[requestedMode]
+    await checkFeatureAccess(userId, userPlan, featureKey)
+    console.log(`✅ [StudyGenerate] Advanced mode '${requestedMode}' validated for user ${userId}`)
+  }
+
   const targetLanguage = language || 'en'
   const tokenCost = tokenService.calculateTokenCost(
     targetLanguage as SupportedLanguage,

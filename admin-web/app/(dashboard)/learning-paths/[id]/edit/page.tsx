@@ -320,8 +320,8 @@ export default function EditLearningPathPage({ params }: PageProps) {
                   </label>
                   <div className="mt-2">
                     <IconColorPicker
-                      selectedIcon={formData.icon_name}
-                      selectedColor={formData.color}
+                      selectedIcon={formData.icon_name ?? ''}
+                      selectedColor={formData.color ?? ''}
                       onIconChange={(icon) =>
                         setFormData({ ...formData, icon_name: icon })
                       }
@@ -343,7 +343,7 @@ export default function EditLearningPathPage({ params }: PageProps) {
                       className="flex h-12 w-12 items-center justify-center rounded-lg text-2xl"
                       style={{ backgroundColor: formData.color }}
                     >
-                      {ICON_MAP[formData.icon_name] || '📚'}
+                      {formData.icon_name ? ICON_MAP[formData.icon_name] || '📚' : '📚'}
                     </div>
                     <div>
                       <p className="font-semibold text-gray-900 dark:text-gray-100">{formData.title}</p>
@@ -425,7 +425,7 @@ export default function EditLearningPathPage({ params }: PageProps) {
                   </label>
                   <div className="mt-2">
                     <StudyModeSelector
-                      selectedMode={formData.recommended_mode}
+                      selectedMode={formData.recommended_mode ?? 'standard'}
                       onChange={(mode) =>
                         setFormData({ ...formData, recommended_mode: mode as StudyMode })
                       }

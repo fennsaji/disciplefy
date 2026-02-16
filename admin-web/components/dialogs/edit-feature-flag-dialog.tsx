@@ -22,6 +22,7 @@ export default function EditFeatureFlagDialog({
     description: '',
     is_enabled: true,
     enabled_for_plans: [] as string[],
+    display_mode: 'hide' as 'hide' | 'lock',
     rollout_percentage: 100
   })
 
@@ -32,6 +33,7 @@ export default function EditFeatureFlagDialog({
         description: flag.description || '',
         is_enabled: flag.enabled ?? true,
         enabled_for_plans: flag.enabled_for_plans || [],
+        display_mode: (flag.display_mode || 'hide') as 'hide' | 'lock',
         rollout_percentage: flag.rollout_percentage ?? 100
       })
     }
@@ -165,6 +167,75 @@ export default function EditFeatureFlagDialog({
             </p>
           </div>
 
+          {/* Display Mode for Restricted Users */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+              Display Mode for Restricted Users
+            </label>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {/* Hide Option */}
+              <label
+                className={`flex items-start gap-3 p-4 border-2 rounded-lg cursor-pointer transition-all ${
+                  formData.display_mode === 'hide'
+                    ? 'border-primary bg-primary/5 dark:bg-primary/10 ring-2 ring-primary/20'
+                    : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500'
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="display_mode"
+                  checked={formData.display_mode === 'hide'}
+                  onChange={() => setFormData({ ...formData, display_mode: 'hide' })}
+                  className="mt-1 w-4 h-4 text-primary border-gray-300 focus:ring-primary"
+                />
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-xl">🚫</span>
+                    <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                      Hide from users
+                    </span>
+                  </div>
+                  <p className="text-xs text-gray-600 dark:text-gray-400">
+                    Feature is completely hidden from users without plan access. They won't know it exists.
+                  </p>
+                </div>
+              </label>
+
+              {/* Lock Option */}
+              <label
+                className={`flex items-start gap-3 p-4 border-2 rounded-lg cursor-pointer transition-all ${
+                  formData.display_mode === 'lock'
+                    ? 'border-primary bg-primary/5 dark:bg-primary/10 ring-2 ring-primary/20'
+                    : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500'
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="display_mode"
+                  checked={formData.display_mode === 'lock'}
+                  onChange={() => setFormData({ ...formData, display_mode: 'lock' })}
+                  className="mt-1 w-4 h-4 text-primary border-gray-300 focus:ring-primary"
+                />
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-xl">🔒</span>
+                    <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                      Show with lock icon
+                    </span>
+                  </div>
+                  <p className="text-xs text-gray-600 dark:text-gray-400">
+                    Feature is shown with a lock icon. Users see upgrade prompt when clicked. <strong className="text-primary">Drives conversions!</strong>
+                  </p>
+                </div>
+              </label>
+            </div>
+            <div className="mt-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-3">
+              <p className="text-xs text-yellow-800 dark:text-yellow-200">
+                💡 <strong>Tip:</strong> Premium features should use <strong>"Show with lock"</strong> mode to create awareness and encourage upgrades. Use "Hide" only for experimental or incomplete features.
+              </p>
+            </div>
+          </div>
+
           {/* Rollout Percentage */}
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -194,6 +265,15 @@ export default function EditFeatureFlagDialog({
             <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
               <p className="text-xs text-blue-800 dark:text-blue-200">
                 📁 <strong>Category:</strong> <code className="bg-blue-100 dark:bg-blue-800 px-2 py-0.5 rounded">{flag.category}</code>
+              </p>
+            </div>
+          )}
+
+          {/* Warning for lock mode with disabled feature */}
+          {!formData.is_enabled && formData.display_mode === 'lock' && (
+            <div className="bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-lg p-3">
+              <p className="text-xs text-orange-800 dark:text-orange-200">
+                ⚠️ <strong>Warning:</strong> Lock mode has no effect when feature is disabled. Disabled features are always hidden from all users. Consider enabling the feature or changing display mode to "Hide".
               </p>
             </div>
           )}

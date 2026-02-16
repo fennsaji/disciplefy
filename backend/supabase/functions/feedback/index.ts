@@ -8,6 +8,7 @@
 import { createSimpleFunction } from '../_shared/core/function-factory.ts'
 import { ServiceContainer } from '../_shared/core/services.ts'
 import { AppError } from '../_shared/utils/error-handler.ts'
+import { checkMaintenanceMode } from '../_shared/middleware/maintenance-middleware.ts'
 
 interface FeedbackRequest {
   readonly study_guide_id?: string
@@ -299,6 +300,9 @@ async function handleFeedback(
   req: Request,
   services: ServiceContainer
 ): Promise<Response> {
+  // Check maintenance mode FIRST
+  await checkMaintenanceMode(req, services)
+
   const requestBody = await req.json() as FeedbackRequest
 
   // Validate required fields

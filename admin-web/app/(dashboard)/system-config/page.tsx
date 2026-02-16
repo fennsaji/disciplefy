@@ -8,9 +8,15 @@ import SubscriptionConfigTable from '@/components/tables/subscription-config-tab
 import EditSystemConfigDialog from '@/components/dialogs/edit-system-config-dialog'
 import EditSubscriptionConfigDialog from '@/components/dialogs/edit-subscription-config-dialog'
 import EditFeatureFlagDialog from '@/components/dialogs/edit-feature-flag-dialog'
+import UnlockLimitsEditor from '@/components/system-config/unlock-limits-editor'
+import VerseQuotaEditor from '@/components/system-config/verse-quota-editor'
+import GamificationEditor from '@/components/system-config/gamification-editor'
+import PracticeModesEditor from '@/components/system-config/practice-modes-editor'
+import SpacedRepetitionEditor from '@/components/system-config/spaced-repetition-editor'
+import PricingEditor from '@/components/system-config/pricing-editor'
 
 type TabType = 'system-config' | 'subscription-config' | 'feature-flags'
-type SystemConfigSection = 'token_system' | 'voice_features' | 'maintenance_mode' | 'app_version' | 'trial_config'
+type SystemConfigSection = 'token_system' | 'voice_features' | 'maintenance_mode' | 'app_version' | 'trial_config' | 'memory_verses'
 
 export default function SystemConfigPage() {
   const [activeTab, setActiveTab] = useState<TabType>('system-config')
@@ -20,6 +26,7 @@ export default function SystemConfigPage() {
   const [selectedSubscriptionConfig, setSelectedSubscriptionConfig] = useState<any>(null)
   const [editFeatureFlagOpen, setEditFeatureFlagOpen] = useState(false)
   const [selectedFeatureFlag, setSelectedFeatureFlag] = useState<any>(null)
+  const [isEditingPricing, setIsEditingPricing] = useState(false)
   const queryClient = useQueryClient()
 
   // Fetch System Config
@@ -59,6 +66,32 @@ export default function SystemConfigPage() {
       return res.json()
     },
     enabled: activeTab === 'feature-flags'
+  })
+
+  // Fetch Memory Verse Config
+  const { data: memoryVerseData, isLoading: memoryVerseLoading } = useQuery({
+    queryKey: ['memory-verse-config'],
+    queryFn: async () => {
+      const res = await fetch('/api/admin/system-config/memory-verses', {
+        credentials: 'include'
+      })
+      if (!res.ok) throw new Error('Failed to fetch memory verse config')
+      return res.json()
+    },
+    enabled: activeTab === 'system-config'
+  })
+
+  // Fetch Pricing Data
+  const { data: pricingData, isLoading: pricingLoading } = useQuery({
+    queryKey: ['pricing-data'],
+    queryFn: async () => {
+      const res = await fetch('/api/admin/system/pricing', {
+        credentials: 'include'
+      })
+      if (!res.ok) throw new Error('Failed to fetch pricing data')
+      return res.json()
+    },
+    enabled: activeTab === 'system-config'
   })
 
   // Update System Config
@@ -415,13 +448,10 @@ export default function SystemConfigPage() {
                     {config.trial_config?.premium_trial_days || 7} days
                   </span>
                 </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-xs text-gray-600 dark:text-gray-400">Start Date:</span>
-                  <span className="text-sm font-mono font-semibold text-gray-900 dark:text-gray-100">
-                    {config.trial_config?.premium_trial_start_date
-                      ? new Date(config.trial_config.premium_trial_start_date).toLocaleDateString()
-                      : 'Not set'}
-                  </span>
+                <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
+                  <p className="text-xs text-gray-500 dark:text-gray-400 italic">
+                    ✨ On-demand trial: Offered when user clicks "Subscribe to Premium"
+                  </p>
                 </div>
               </div>
             </div>
@@ -439,6 +469,125 @@ export default function SystemConfigPage() {
           </div>
         </div>
 
+        {/* Memory Verses Configuration */}
+        <div className="bg-white dark:bg-gray-900 rounded-lg shadow p-6">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                📿 Memory Verses Configuration
+              </h3>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                Configure practice mode unlocks, verse quotas, and gamification for memory verse feature
+              </p>
+            </div>
+          </div>
+
+          {memoryVerseLoading ? (
+            <div className="text-center py-8">
+              <p className="text-gray-500 dark:text-gray-400">Loading memory verse configuration...</p>
+            </div>
+          ) : memoryVerseData?.data ? (
+            <div className="space-y-6">
+              {/* Practice Mode Unlock Limits */}
+              <UnlockLimitsEditor
+                initialLimits={{
+                  free: parseInt(memoryVerseData.data.unlockLimits['free_practice_unlock_limit']?.value || '1'),
+                  standard: parseInt(memoryVerseData.data.unlockLimits['standard_practice_unlock_limit']?.value || '2'),
+                  plus: parseInt(memoryVerseData.data.unlockLimits['plus_practice_unlock_limit']?.value || '3'),
+                  premium: parseInt(memoryVerseData.data.unlockLimits['premium_practice_unlock_limit']?.value || '-1'),
+                }}
+                onSave={async (limits) => {
+                  queryClient.invalidateQueries({ queryKey: ['memory-verse-config'] })
+                }}
+              />
+
+              {/* Memory Verse Quotas */}
+              <VerseQuotaEditor
+                initialQuotas={{
+                  free: parseInt(memoryVerseData.data.verseLimits['free_memory_verses_limit']?.value || '3'),
+                  standard: parseInt(memoryVerseData.data.verseLimits['standard_memory_verses_limit']?.value || '5'),
+                  plus: parseInt(memoryVerseData.data.verseLimits['plus_memory_verses_limit']?.value || '10'),
+                  premium: parseInt(memoryVerseData.data.verseLimits['premium_memory_verses_limit']?.value || '-1'),
+                }}
+                onSave={async (quotas) => {
+                  queryClient.invalidateQueries({ queryKey: ['memory-verse-config'] })
+                }}
+              />
+
+              {/* Gamification Settings */}
+              <GamificationEditor
+                initialSettings={{
+                  masteryThreshold: parseInt(memoryVerseData.data.gamification['memory_verse_mastery_threshold']?.value || '5'),
+                  xpPerReview: parseInt(memoryVerseData.data.gamification['memory_verse_xp_per_review']?.value || '10'),
+                  xpMasteryBonus: parseInt(memoryVerseData.data.gamification['memory_verse_xp_mastery_bonus']?.value || '50'),
+                }}
+                onSave={async (settings) => {
+                  queryClient.invalidateQueries({ queryKey: ['memory-verse-config'] })
+                }}
+              />
+
+              {/* Practice Mode Availability */}
+              <PracticeModesEditor
+                initialModes={{
+                  free: memoryVerseData.data.practiceModes['free_available_practice_modes']?.value
+                    ? JSON.parse(memoryVerseData.data.practiceModes['free_available_practice_modes'].value)
+                    : ['flip_card', 'type_it_out'],
+                  paid: memoryVerseData.data.practiceModes['paid_available_practice_modes']?.value
+                    ? JSON.parse(memoryVerseData.data.practiceModes['paid_available_practice_modes'].value)
+                    : ['flip_card', 'type_it_out', 'cloze_practice', 'first_letter', 'progressive_reveal', 'word_scramble', 'word_bank', 'audio_practice'],
+                }}
+                onSave={async (modes) => {
+                  queryClient.invalidateQueries({ queryKey: ['memory-verse-config'] })
+                }}
+              />
+
+              {/* Spaced Repetition Settings */}
+              <SpacedRepetitionEditor
+                initialSettings={{
+                  initialEaseFactor: parseFloat(memoryVerseData.data.spacedRepetition['memory_verse_initial_ease_factor']?.value || '2.5'),
+                  initialIntervalDays: parseInt(memoryVerseData.data.spacedRepetition['memory_verse_initial_interval_days']?.value || '1'),
+                  minEaseFactor: parseFloat(memoryVerseData.data.spacedRepetition['memory_verse_min_ease_factor']?.value || '1.3'),
+                  maxIntervalDays: parseInt(memoryVerseData.data.spacedRepetition['memory_verse_max_interval_days']?.value || '365'),
+                }}
+                onSave={async (settings) => {
+                  queryClient.invalidateQueries({ queryKey: ['memory-verse-config'] })
+                }}
+              />
+            </div>
+          ) : (
+            <div className="text-center py-8">
+              <p className="text-gray-500 dark:text-gray-400">Failed to load memory verse configuration</p>
+            </div>
+          )}
+        </div>
+
+        {/* Subscription Pricing Configuration */}
+        <div>
+          {pricingData?.data ? (
+            <PricingEditor
+              initialPricing={pricingData.data}
+              isEditing={isEditingPricing}
+              onEditStart={() => setIsEditingPricing(true)}
+              onCancel={() => setIsEditingPricing(false)}
+              onSaveComplete={() => {
+                queryClient.invalidateQueries({ queryKey: ['pricing-data'] })
+              }}
+            />
+          ) : pricingLoading ? (
+            <div className="bg-white dark:bg-gray-900 rounded-lg shadow p-6">
+              <div className="text-center py-8">
+                <p className="text-gray-500 dark:text-gray-400">Loading pricing data...</p>
+              </div>
+            </div>
+          ) : (
+            <div className="bg-white dark:bg-gray-900 rounded-lg shadow p-6">
+              <div className="text-center py-8">
+                <p className="text-gray-500 dark:text-gray-400">Failed to load pricing data</p>
+              </div>
+            </div>
+          )}
+        </div>
+
         <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
           <p className="text-sm text-green-800 dark:text-green-200">
             ✅ <strong>Database-Driven Configuration:</strong> All system configurations are stored in the database and can be edited via the admin panel.
@@ -448,6 +597,8 @@ export default function SystemConfigPage() {
             <li><strong>Token System:</strong> <code className="bg-green-100 dark:bg-green-800 px-1 rounded">subscription_plans.features.daily_tokens</code></li>
             <li><strong>Voice Conversations:</strong> <code className="bg-green-100 dark:bg-green-800 px-1 rounded">subscription_plans.features.voice_conversations_monthly</code></li>
             <li><strong>Maintenance, Versions & Trials:</strong> <code className="bg-green-100 dark:bg-green-800 px-1 rounded">system_config</code> table</li>
+            <li><strong>Memory Verses:</strong> <code className="bg-green-100 dark:bg-green-800 px-1 rounded">system_config</code> table (practice unlock limits, verse quotas, gamification)</li>
+            <li><strong>Subscription Pricing:</strong> <code className="bg-green-100 dark:bg-green-800 px-1 rounded">subscription_plan_providers</code> table (pricing for all plans and providers)</li>
           </ul>
         </div>
       </div>

@@ -355,18 +355,18 @@ class _AppShellState extends State<AppShell>
       'sermon_outline_mode',
     ];
 
-    // Check if ALL study modes are disabled
+    // Check if ALL study modes should be hidden (respects display_mode)
     final allStudyModesDisabled = studyModes.every(
-      (mode) => !systemConfigService.isFeatureEnabled(mode, userPlan),
+      (mode) => systemConfigService.shouldHideFeature(mode, userPlan),
     );
 
-    // Check if AI Discipler is disabled
+    // Check if AI Discipler should be hidden (respects display_mode)
     final aiDisciplerDisabled =
-        !systemConfigService.isFeatureEnabled('ai_discipler', userPlan);
+        systemConfigService.shouldHideFeature('ai_discipler', userPlan);
 
-    // Check if learning paths is disabled
+    // Check if learning paths should be hidden (respects display_mode)
     final learningPathsDisabled =
-        !systemConfigService.isFeatureEnabled('learning_paths', userPlan);
+        systemConfigService.shouldHideFeature('learning_paths', userPlan);
 
     // Hide Generate tab if both ALL study modes are disabled AND AI Discipler is disabled
     final shouldHideGenerate = allStudyModesDisabled && aiDisciplerDisabled;

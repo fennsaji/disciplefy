@@ -9,6 +9,7 @@ import 'package:get_it/get_it.dart';
 
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widgets/keyboard_aware_scaffold.dart';
+import '../../../../core/widgets/locked_feature_wrapper.dart';
 import '../../../../core/extensions/translation_extension.dart';
 import '../../../../core/i18n/translation_keys.dart';
 import '../../../../core/router/app_routes.dart';
@@ -775,9 +776,12 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
                     if (!isKeyboardVisible) ...[
                       const SizedBox(height: 24),
 
-                      // Compact AI Discipler option - only show if ai_discipler feature is enabled
+                      // Compact AI Discipler option - only show if ai_discipler feature is visible (respects display_mode)
                       if (_isAiDisciplerFeatureEnabled()) ...[
-                        _buildCompactAiDisciplerButton(context),
+                        LockedFeatureWrapper(
+                          featureKey: 'ai_discipler',
+                          child: _buildCompactAiDisciplerButton(context),
+                        ),
                         const SizedBox(height: 32),
                       ],
 
@@ -1539,71 +1543,29 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
     );
   }
 
-  /// Checks if AI Discipler feature is enabled based on feature flags and user's plan
+  /// Checks if AI Discipler feature should be visible (respects display_mode)
+  /// Returns true if feature should be shown (either with access or with lock overlay)
   bool _isAiDisciplerFeatureEnabled() {
     // Get user's current plan
     final userPlan = _currentTokenStatus?.userPlan.name ?? 'free';
 
-    // Check if ai_discipler feature is enabled for this plan
-    final isEnabled =
-        _systemConfigService.isFeatureEnabled('ai_discipler', userPlan);
+    // Check if ai_discipler feature should be visible (respects display_mode='lock' vs 'hide')
+    // shouldHideFeature returns true only if display_mode='hide' or feature is disabled
+    final shouldShow =
+        !_systemConfigService.shouldHideFeature('ai_discipler', userPlan);
 
-    if (kDebugMode && !isEnabled) {
-      print('🚫 [AI DISCIPLER] Feature disabled for plan: $userPlan');
+    if (kDebugMode && !shouldShow) {
+      print('🚫 [AI DISCIPLER] Feature hidden for plan: $userPlan');
     }
 
-    return isEnabled;
+    return shouldShow;
   }
 
-  /// Handles tap on AI Discipler button - checks plan and shows upgrade dialog for free users
+  /// Handles tap on AI Discipler button
+  /// Button is wrapped with LockedFeatureWrapper which handles access control
   void _handleAiDisciplerTap(BuildContext context) {
-    if (kDebugMode) {
-      print('🎤 [AI DISCIPLER] Button tapped');
-      print('🎤 [AI DISCIPLER] _currentTokenStatus: $_currentTokenStatus');
-      if (_currentTokenStatus != null) {
-        print('🎤 [AI DISCIPLER] userPlan: ${_currentTokenStatus!.userPlan}');
-      }
-    }
-
-    // Block access until token status is loaded
-    if (_currentTokenStatus == null) {
-      // Token status not loaded yet - trigger refresh and wait
-      if (kDebugMode) {
-        print('🎤 [AI DISCIPLER] Token status is null - triggering refresh');
-      }
-      context.read<TokenBloc>().add(const GetTokenStatus());
-      // Show a loading indicator or snackbar to inform the user
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Loading... Please try again.'),
-          duration: Duration(seconds: 1),
-        ),
-      );
-      return;
-    }
-
-    // Check if user is on free plan
-    if (_currentTokenStatus!.userPlan == UserPlan.free) {
-      if (kDebugMode) {
-        print(
-            '🎤 [AI DISCIPLER] User is on FREE plan - showing upgrade dialog');
-      }
-      // Show upgrade required dialog
-      UpgradeRequiredDialog.show(
-        context,
-        featureName: 'AI Discipler',
-        featureIcon: Icons.mic_rounded,
-        featureDescription:
-            'Have voice conversations with your AI Discipler to discuss scripture, ask questions, and deepen your understanding of the Bible.',
-      );
-      return;
-    }
-
-    // User is on Plus or Premium plan - proceed to AI Discipler voice conversation
-    if (kDebugMode) {
-      print(
-          '🎤 [AI DISCIPLER] User is on ${_currentTokenStatus!.userPlan} plan - navigating to voice conversation');
-    }
+    // LockedFeatureWrapper handles access control and shows upgrade dialog if needed
+    // If user reaches here, they have access - just navigate to voice conversation
     GoRouter.of(context).goToVoiceConversation();
   }
 

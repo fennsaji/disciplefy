@@ -119,6 +119,7 @@ export class UsageLoggingService {
       user_login: 0.0, // No direct revenue
       admin_operation: 0.0, // Administrative
       continue_learning: 0.0, // Read operation, no direct revenue
+      invoice_pdf_generation: 0.0, // Document generation, no direct revenue
     };
 
     return multipliers[featureName] || 1.0;

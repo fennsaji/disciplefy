@@ -27,6 +27,7 @@ import { CostTrackingContext } from '../_shared/services/llm-types.ts'
 import { getCorsHeaders } from '../_shared/utils/cors.ts'
 import { getUsageLoggingService } from '../_shared/services/usage-logging-service.ts'
 import { isFeatureEnabledForPlan } from '../_shared/services/feature-flag-service.ts'
+import { checkMaintenanceMode } from '../_shared/middleware/maintenance-middleware.ts'
 import {
   StreamingJsonParser,
   createInitEvent,
@@ -509,15 +510,20 @@ async function streamAndParseSermonPass4WithEmission(
  */
 async function handleStudyGenerateV2(
   req: Request,
-  {
+  services: ServiceContainer
+): Promise<Response> {
+  // Check maintenance mode FIRST
+  await checkMaintenanceMode(req, services)
+
+  const {
     authService,
     llmService,
     studyGuideRepository,
     tokenService,
     analyticsLogger,
     securityValidator
-  }: ServiceContainer
-): Promise<Response> {
+  } = services
+
   console.log('🚀 [STUDY-V2] Starting streaming study guide generation')
 
   const corsHeaders = getCorsHeaders(req.headers.get('origin'))

@@ -8,6 +8,8 @@ import '../../../../core/theme/app_theme.dart';
 import '../../../../core/extensions/translation_extension.dart';
 import '../../../../core/i18n/translation_keys.dart';
 import '../../../../core/router/app_routes.dart';
+import '../../../../core/services/pricing_service.dart';
+import '../../../../core/di/injection_container.dart';
 import '../bloc/subscription_bloc.dart';
 import '../bloc/subscription_event.dart';
 import '../bloc/subscription_state.dart';
@@ -429,7 +431,7 @@ class _SubscriptionManagementPageState
                   ),
                   const SizedBox(height: 12),
                   Text(
-                    'After ${_formatTrialDate(trialEndDate)}, you can continue using Standard features for just ₹79/month. We\'ll remind you before the trial ends.',
+                    'After ${_formatTrialDate(trialEndDate)}, you can continue using Standard features for just ${sl<PricingService>().getFormattedPricePerMonth('standard')}. We\'ll remind you before the trial ends.',
                     style: AppFonts.inter(
                       fontSize: 14,
                       color: Theme.of(context)

@@ -7,6 +7,7 @@
  */
 
 import { getTrialConfig } from '../services/system-config-service.ts'
+import { getPlanConfigFromDB } from '../services/plan-config-db-service.ts'
 
 /**
  * Plan type identifier
@@ -128,9 +129,34 @@ export const PREMIUM_TRIAL_DAYS = 7
  * @returns Plan configuration with dynamic trial dates
  */
 export async function getPlanConfig(planType: PlanType): Promise<PlanConfig> {
+  try {
+    // Try to fetch from database first
+    const dbConfig = await getPlanConfigFromDB(planType)
+
+    if (dbConfig && dbConfig.pricing.razorpay) {
+      const trialConfig = await getDynamicTrialConfig()
+
+      // Return database-driven config
+      return {
+        planId: dbConfig.pricing.razorpay.planId,
+        price: dbConfig.pricing.razorpay.price,
+        pricePaise: dbConfig.pricing.razorpay.pricePaise,
+        currency: dbConfig.pricing.razorpay.currency,
+        interval: dbConfig.interval,
+        name: dbConfig.planName,
+        trialEndDate: planType === 'standard' ? trialConfig.standardTrialEndDate : null,
+        trialStartDate: planType === 'premium' ? trialConfig.premiumTrialStartDate : undefined,
+        trialDurationDays: planType === 'premium' ? trialConfig.premiumTrialDays : undefined,
+      }
+    }
+  } catch (error) {
+    console.error(`[getPlanConfig] Database fetch failed for ${planType}, using fallback:`, error)
+  }
+
+  // Fallback to hardcoded values if database fetch fails
   const trialConfig = await getDynamicTrialConfig()
 
-  const configs: Record<PlanType, PlanConfig> = {
+  const fallbackConfigs: Record<PlanType, PlanConfig> = {
     standard: {
       planId: Deno.env.get('RAZORPAY_STANDARD_PLAN_ID') || '',
       price: 79,
@@ -138,7 +164,7 @@ export async function getPlanConfig(planType: PlanType): Promise<PlanConfig> {
       currency: 'INR',
       interval: 'monthly',
       name: 'Standard Monthly',
-      trialEndDate: trialConfig.standardTrialEndDate, // From database
+      trialEndDate: trialConfig.standardTrialEndDate,
     },
     plus: {
       planId: Deno.env.get('RAZORPAY_PLUS_PLAN_ID') || '',
@@ -147,7 +173,7 @@ export async function getPlanConfig(planType: PlanType): Promise<PlanConfig> {
       currency: 'INR',
       interval: 'monthly',
       name: 'Plus Monthly',
-      trialEndDate: null, // No trial for Plus
+      trialEndDate: null,
     },
     premium: {
       planId: Deno.env.get('RAZORPAY_PREMIUM_PLAN_ID') || '',
@@ -157,12 +183,12 @@ export async function getPlanConfig(planType: PlanType): Promise<PlanConfig> {
       interval: 'monthly',
       name: 'Premium Monthly',
       trialEndDate: null,
-      trialStartDate: trialConfig.premiumTrialStartDate, // From database
-      trialDurationDays: trialConfig.premiumTrialDays, // From database
+      trialStartDate: trialConfig.premiumTrialStartDate,
+      trialDurationDays: trialConfig.premiumTrialDays,
     },
   }
 
-  return configs[planType]
+  return fallbackConfigs[planType]
 }
 
 /**
@@ -261,25 +287,35 @@ export async function wasEligibleForTrial(userCreatedAt: Date): Promise<boolean>
 
 /**
  * Check if Premium trial feature is currently available
- * Now async to fetch from database
  *
- * @returns true if current date is after Premium trial start date
+ * UPDATED: Premium trials are now always available (on-demand model).
+ * Trial is offered when user clicks "Subscribe to Premium".
+ * No date restrictions.
+ *
+ * @returns always true (Premium trials available to all users)
  */
 export async function isPremiumTrialAvailable(): Promise<boolean> {
-  const config = await getDynamicTrialConfig()
-  return new Date() >= config.premiumTrialStartDate
+  // Premium trials now available on-demand - no date restriction
+  return true
 }
 
 /**
  * Check if a user is eligible to start a Premium trial
- * Now async to fetch from database
  *
- * @param userCreatedAt - User's account creation date
- * @returns true if user can start Premium trial
+ * UPDATED: Premium trials are now available to ALL users (no date restriction).
+ * This function is DEPRECATED - use database check instead:
+ * `SELECT premium_trial_start_at FROM user_profiles WHERE user_id = $1`
+ * User is eligible if premium_trial_start_at IS NULL (hasn't used trial yet)
+ *
+ * @deprecated Use database query to check if user has already used trial
+ * @param _userCreatedAt - Unused (kept for backward compatibility)
+ * @returns always true (all users can try Premium)
  */
-export async function canStartPremiumTrial(userCreatedAt: Date): Promise<boolean> {
-  const config = await getDynamicTrialConfig()
-  return userCreatedAt >= config.premiumTrialStartDate
+export async function canStartPremiumTrial(_userCreatedAt: Date): Promise<boolean> {
+  // Premium trials now available to all users - no signup date restriction
+  // Actual eligibility check happens in start-premium-trial function:
+  // Check if user has already started a trial (premium_trial_start_at IS NULL)
+  return true
 }
 
 /**

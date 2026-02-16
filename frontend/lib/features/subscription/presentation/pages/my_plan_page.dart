@@ -7,6 +7,8 @@ import '../../../../core/theme/app_theme.dart';
 import '../../../../core/extensions/translation_extension.dart';
 import '../../../../core/i18n/translation_keys.dart';
 import '../../../../core/router/app_routes.dart';
+import '../../../../core/services/pricing_service.dart';
+import '../../../../core/di/injection_container.dart';
 import '../bloc/subscription_bloc.dart';
 import '../bloc/subscription_event.dart';
 import '../bloc/subscription_state.dart';
@@ -1136,7 +1138,8 @@ class _MyPlanPageState extends State<MyPlanPage> {
           const SizedBox(height: 12),
           _buildActionButton(
             label: context.tr(TranslationKeys.myPlanUpgradeToStandard),
-            sublabel: '\u20b950/month',
+            sublabel:
+                sl<PricingService>().getFormattedPricePerMonth('standard'),
             icon: Icons.auto_awesome,
             color: Colors.teal[600]!,
             isLoading: isCreatingSubscription,
@@ -1230,7 +1233,8 @@ class _MyPlanPageState extends State<MyPlanPage> {
         else if (userPlan == UserPlan.free) ...[
           _buildActionButton(
             label: context.tr(TranslationKeys.myPlanUpgradeToStandard),
-            sublabel: '\u20b950/month',
+            sublabel:
+                sl<PricingService>().getFormattedPricePerMonth('standard'),
             icon: Icons.auto_awesome,
             color: const Color(0xFF6A4FB6),
             isLoading: isCreatingSubscription,
