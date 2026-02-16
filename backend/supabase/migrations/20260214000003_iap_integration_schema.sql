@@ -309,12 +309,4 @@ COMMENT ON FUNCTION get_active_iap_subscription IS 'Get the active IAP subscript
 -- ============================================================================
 -- Migration Complete
 -- ============================================================================
-
--- Add migration metadata
-INSERT INTO public.schema_version (version, description, applied_at)
-VALUES (
-  '20260214000001',
-  'IAP Integration Schema - Tables, indexes, RLS policies, and functions',
-  NOW()
-)
-ON CONFLICT (version) DO NOTHING;
+-- Migration tracking removed: Supabase handles this automatically via supabase_migrations.schema_migrations

@@ -26,10 +26,10 @@ DECLARE
 BEGIN
     -- Test free plan user creation
     SELECT * INTO result FROM get_or_create_user_tokens('test_free_user', 'free');
-    
+
     -- Verify free plan limits
-    ASSERT result.daily_limit = 20, 'Free plan should have 20 token daily limit';
-    ASSERT result.available_tokens = 20, 'New free user should start with 20 tokens';
+    ASSERT result.daily_limit = 8, 'Free plan should have 8 token daily limit';
+    ASSERT result.available_tokens = 8, 'New free user should start with 8 tokens';
     ASSERT result.purchased_tokens = 0, 'New user should have 0 purchased tokens';
     ASSERT result.user_plan = 'free', 'Plan should be set to free';
     
@@ -44,10 +44,10 @@ DECLARE
 BEGIN
     -- Test standard plan user creation
     SELECT * INTO result FROM get_or_create_user_tokens('test_standard_user', 'standard');
-    
+
     -- Verify standard plan limits
-    ASSERT result.daily_limit = 100, 'Standard plan should have 100 token daily limit';
-    ASSERT result.available_tokens = 100, 'New standard user should start with 100 tokens';
+    ASSERT result.daily_limit = 20, 'Standard plan should have 20 token daily limit';
+    ASSERT result.available_tokens = 20, 'New standard user should start with 20 tokens';
     ASSERT result.purchased_tokens = 0, 'New user should have 0 purchased tokens';
     ASSERT result.user_plan = 'standard', 'Plan should be set to standard';
     
@@ -82,15 +82,15 @@ DO $$
 DECLARE
     result RECORD;
 BEGIN
-    -- Consume 10 tokens from standard user
-    SELECT * INTO result FROM consume_user_tokens('test_standard_user', 'standard', 10);
-    
+    -- Consume 5 tokens from standard user
+    SELECT * INTO result FROM consume_user_tokens('test_standard_user', 'standard', 5);
+
     -- Verify consumption
     ASSERT result.success = true, 'Token consumption should succeed';
-    ASSERT result.available_tokens = 90, 'Should have 90 tokens remaining';
+    ASSERT result.available_tokens = 15, 'Should have 15 tokens remaining';
     ASSERT result.purchased_tokens = 0, 'Purchased tokens should remain 0';
     ASSERT result.error_message = '', 'No error message expected';
-    
+
     RAISE NOTICE 'TEST 2.1 PASSED: Basic token consumption works correctly';
 END $$;
 
@@ -100,7 +100,7 @@ DO $$
 DECLARE
     result RECORD;
 BEGIN
-    -- Try to consume more tokens than available (90 + 0 = 90 available, requesting 100)
+    -- Try to consume more tokens than available (15 + 0 = 15 available, requesting 100)
     SELECT * INTO result FROM consume_user_tokens('test_standard_user', 'standard', 100);
     
     -- Verify rejection
@@ -155,18 +155,18 @@ DECLARE
     result RECORD;
     token_info RECORD;
 BEGIN
-    -- First get current state (should be 90 daily + 50 purchased = 140 total)
+    -- First get current state (should be 15 daily + 50 purchased = 65 total)
     SELECT * INTO token_info FROM get_or_create_user_tokens('test_standard_user', 'standard');
     RAISE NOTICE 'Before consumption: daily=%, purchased=%', token_info.available_tokens, token_info.purchased_tokens;
-    
+
     -- Consume 30 tokens (should come from purchased tokens first)
     SELECT * INTO result FROM consume_user_tokens('test_standard_user', 'standard', 30);
-    
+
     -- Verify purchased tokens were consumed first
     ASSERT result.success = true, 'Token consumption should succeed';
-    ASSERT result.available_tokens = 90, 'Daily tokens should remain unchanged';
+    ASSERT result.available_tokens = 15, 'Daily tokens should remain unchanged';
     ASSERT result.purchased_tokens = 20, 'Purchased tokens should reduce from 50 to 20';
-    
+
     RAISE NOTICE 'TEST 3.2 PASSED: Purchased tokens consumed with correct priority';
 END $$;
 
@@ -176,14 +176,14 @@ DO $$
 DECLARE
     result RECORD;
 BEGIN
-    -- Consume 40 tokens (20 purchased + 20 daily)
-    SELECT * INTO result FROM consume_user_tokens('test_standard_user', 'standard', 40);
-    
+    -- Consume 35 tokens (20 purchased + 15 daily)
+    SELECT * INTO result FROM consume_user_tokens('test_standard_user', 'standard', 35);
+
     -- Verify mixed consumption
     ASSERT result.success = true, 'Mixed token consumption should succeed';
-    ASSERT result.available_tokens = 70, 'Daily tokens should reduce from 90 to 70';
+    ASSERT result.available_tokens = 0, 'Daily tokens should reduce from 15 to 0';
     ASSERT result.purchased_tokens = 0, 'All purchased tokens should be consumed';
-    
+
     RAISE NOTICE 'TEST 3.3 PASSED: Mixed token consumption works correctly';
 END $$;
 
@@ -207,9 +207,9 @@ BEGIN
     
     -- Now get tokens (should trigger reset)
     SELECT * INTO result FROM get_or_create_user_tokens('test_standard_user', 'standard');
-    
+
     -- Verify reset occurred
-    ASSERT result.available_tokens = 100, 'Daily tokens should reset to 100';
+    ASSERT result.available_tokens = 20, 'Daily tokens should reset to 20';
     ASSERT result.total_consumed_today = 0, 'Daily consumption should reset to 0';
     ASSERT result.last_reset = CURRENT_DATE, 'Reset date should be today';
     ASSERT result.purchased_tokens = 25, 'Purchased tokens should persist across reset';

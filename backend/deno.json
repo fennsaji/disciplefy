@@ -13,6 +13,6 @@
     "@supabase/supabase-js": "https://esm.sh/@supabase/supabase-js@2",
     "@types/node": "npm:@types/node@^20.0.0",
     "razorpay": "npm:razorpay@2.9.2",
-    "pdf-lib": "https://cdn.skypack.dev/pdf-lib@^1.17.1?dts"
+    "pdf-lib": "https://esm.sh/pdf-lib@1.17.1"
   }
 }

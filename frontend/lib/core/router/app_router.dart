@@ -565,7 +565,7 @@ class AppRouter {
         name: 'stats_dashboard',
         parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) => LockedFeatureWrapper(
-          featureKey: 'achievements',
+          featureKey: 'leaderboard',
           child: BlocProvider.value(
             value: sl<GamificationBloc>(),
             child: const StatsDashboardPage(),

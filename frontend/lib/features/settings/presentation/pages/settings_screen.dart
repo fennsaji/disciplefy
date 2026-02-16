@@ -195,7 +195,7 @@ class _SettingsScreenContent extends StatelessWidget {
                       _buildDivider(),
                       // My Progress - gamification stats dashboard
                       LockedFeatureWrapper(
-                        featureKey: 'achievements',
+                        featureKey: 'leaderboard',
                         child: _buildSettingsTile(
                           context: context,
                           icon: Icons.emoji_events_outlined,
