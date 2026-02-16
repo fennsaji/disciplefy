@@ -1147,7 +1147,7 @@ VALUES
   ('aaa00000-0000-0000-0000-000000000002', '555e8400-e29b-41d4-a716-446655440004', 7, false),  -- Meditation on God''s Word
   ('aaa00000-0000-0000-0000-000000000002', '222e8400-e29b-41d4-a716-446655440006', 8, true),   -- Living a Holy Life (Milestone)
   ('aaa00000-0000-0000-0000-000000000002', '555e8400-e29b-41d4-a716-446655440006', 9, false),  -- How to Study the Bible
-  ('aaa00000-0000-0000-0000-000000000002', '555e8400-e29b-41d4-a716-446655440007', 10, true)   -- Hearing God's Voice (Milestone)
+  ('aaa00000-0000-0000-0000-000000000002', '555e8400-e29b-41d4-a716-446655440007', 10, true)   -- Discerning God's Will (Milestone)
 ON CONFLICT (learning_path_id, topic_id) DO NOTHING;
 
 -- Translations for Path 2
