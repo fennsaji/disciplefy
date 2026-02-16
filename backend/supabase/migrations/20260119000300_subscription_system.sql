@@ -135,7 +135,7 @@ CREATE TABLE IF NOT EXISTS public.subscriptions (
   provider_customer_id TEXT,
 
   -- Subscription Plan Reference
-  plan_id UUID REFERENCES subscription_plans(id),
+  plan_id UUID NOT NULL REFERENCES subscription_plans(id) ON DELETE RESTRICT,
 
   -- Subscription Status
   status TEXT NOT NULL CHECK (status IN (
@@ -182,7 +182,25 @@ CREATE TABLE IF NOT EXISTS public.subscriptions (
 
   -- Timestamps
   created_at TIMESTAMPTZ DEFAULT NOW(),
-  updated_at TIMESTAMPTZ DEFAULT NOW()
+  updated_at TIMESTAMPTZ DEFAULT NOW(),
+
+  -- Constraints
+  CONSTRAINT valid_plan_type CHECK (
+    plan_type IN (
+      'free_tier', 'free_monthly',
+      'standard_trial', 'standard_monthly', 'standard_yearly',
+      'plus_monthly', 'plus_yearly',
+      'premium_monthly', 'premium_yearly', 'premium_admin'
+    )
+  ),
+  CONSTRAINT valid_billing_period CHECK (
+    current_period_end IS NULL OR
+    current_period_start IS NULL OR
+    current_period_end > current_period_start
+  ),
+  CONSTRAINT cancelled_must_have_timestamp CHECK (
+    status != 'cancelled' OR cancelled_at IS NOT NULL
+  )
 );
 
 -- Unique constraint on provider subscription IDs
@@ -365,18 +383,10 @@ COMMENT ON TABLE public.promotional_redemptions IS 'Audit trail of all promotion
 COMMENT ON COLUMN public.promotional_redemptions.discount_amount_minor IS 'Actual discount applied in smallest currency unit';
 
 -- =====================================================
--- PART 2: MODIFY EXISTING SUBSCRIPTIONS TABLE
+-- PART 2: ADD COLUMN COMMENTS (columns defined in CREATE TABLE above)
 -- =====================================================
 
--- Add new columns for multi-provider support (legacy migration - may not be needed for fresh installs)
-ALTER TABLE public.subscriptions
-  ADD COLUMN IF NOT EXISTS plan_id UUID REFERENCES public.subscription_plans(id),
-  ADD COLUMN IF NOT EXISTS provider TEXT CHECK (provider IN ('trial', 'system', 'razorpay', 'google_play', 'apple_appstore')),
-  ADD COLUMN IF NOT EXISTS provider_subscription_id TEXT,
-  ADD COLUMN IF NOT EXISTS provider_metadata JSONB,
-  ADD COLUMN IF NOT EXISTS promotional_campaign_id UUID REFERENCES public.promotional_campaigns(id),
-  ADD COLUMN IF NOT EXISTS discounted_price_minor INTEGER;
-
+-- Column comments for subscriptions table
 COMMENT ON COLUMN public.subscriptions.plan_id IS 'Reference to subscription_plans table';
 COMMENT ON COLUMN public.subscriptions.provider IS 'Payment provider used for this subscription';
 COMMENT ON COLUMN public.subscriptions.provider_subscription_id IS 'External subscription ID from payment provider';
@@ -762,54 +772,6 @@ WHERE s.id = ip.id;
 UPDATE subscriptions
 SET plan_id = (SELECT id FROM subscription_plans WHERE plan_code = 'free' LIMIT 1)
 WHERE plan_id IS NULL;
-
--- Make plan_id NOT NULL
-ALTER TABLE subscriptions
-  ALTER COLUMN plan_id SET NOT NULL;
-
--- Add plan_type validation constraint
-ALTER TABLE subscriptions
-  DROP CONSTRAINT IF EXISTS valid_plan_type;
-
-ALTER TABLE subscriptions
-  ADD CONSTRAINT valid_plan_type
-  CHECK (
-    plan_type IN (
-      'free_tier', 'free_monthly',
-      'standard_trial', 'standard_monthly', 'standard_yearly',
-      'plus_monthly', 'plus_yearly',
-      'premium_monthly', 'premium_yearly', 'premium_admin'
-    )
-  );
-
--- Add ON DELETE RESTRICT to plan_id foreign key
-ALTER TABLE subscriptions
-  DROP CONSTRAINT IF EXISTS subscriptions_plan_id_fkey;
-
-ALTER TABLE subscriptions
-  ADD CONSTRAINT subscriptions_plan_id_fkey
-    FOREIGN KEY (plan_id) REFERENCES subscription_plans(id)
-    ON DELETE RESTRICT;
-
--- Add billing period validation
-ALTER TABLE subscriptions
-  DROP CONSTRAINT IF EXISTS valid_billing_period;
-
-ALTER TABLE subscriptions
-  ADD CONSTRAINT valid_billing_period
-  CHECK (
-    current_period_end IS NULL OR
-    current_period_start IS NULL OR
-    current_period_end > current_period_start
-  );
-
--- Add cancelled timestamp validation
-ALTER TABLE subscriptions
-  DROP CONSTRAINT IF EXISTS cancelled_must_have_timestamp;
-
-ALTER TABLE subscriptions
-  ADD CONSTRAINT cancelled_must_have_timestamp
-  CHECK (status != 'cancelled' OR cancelled_at IS NOT NULL);
 
 -- Status transition validation function
 CREATE OR REPLACE FUNCTION validate_subscription_status()
@@ -1709,6 +1671,76 @@ CREATE INDEX IF NOT EXISTS idx_subscription_plans_plan_code ON subscription_plan
 CREATE INDEX IF NOT EXISTS idx_subscription_plan_providers_provider ON subscription_plan_providers(provider);
 CREATE INDEX IF NOT EXISTS idx_subscription_plan_providers_plan_provider
 ON subscription_plan_providers(plan_id, provider);
+
+-- =====================================================
+-- PART 13: SCHEMA CLEANUP (2026-02-14)
+-- =====================================================
+-- Remove conflicting fields that duplicate feature flag functionality
+-- Feature flags control ACCESS, subscription quotas control LIMITS
+
+-- Remove conflicting and unused fields from features JSONB column
+UPDATE subscription_plans
+SET
+  features = features - 'ai_discipler' - 'followups',
+  updated_at = NOW()
+WHERE
+  features ? 'ai_discipler' OR features ? 'followups';
+
+-- Drop unused top-level columns if they exist
+DO $$
+BEGIN
+  -- Check and drop daily_unlocked_modes column
+  IF EXISTS (
+    SELECT 1
+    FROM information_schema.columns
+    WHERE table_schema = 'public'
+    AND table_name = 'subscription_plans'
+    AND column_name = 'daily_unlocked_modes'
+  ) THEN
+    ALTER TABLE subscription_plans DROP COLUMN daily_unlocked_modes;
+    RAISE NOTICE 'Dropped column: daily_unlocked_modes';
+  END IF;
+
+  -- Check and drop voice_minutes_monthly column
+  IF EXISTS (
+    SELECT 1
+    FROM information_schema.columns
+    WHERE table_schema = 'public'
+    AND table_name = 'subscription_plans'
+    AND column_name = 'voice_minutes_monthly'
+  ) THEN
+    ALTER TABLE subscription_plans DROP COLUMN voice_minutes_monthly;
+    RAISE NOTICE 'Dropped column: voice_minutes_monthly';
+  END IF;
+END $$;
+
+-- Add comment documenting the cleaned schema
+COMMENT ON COLUMN subscription_plans.features IS
+  'JSONB containing usage quotas/limits only. Access control is handled by feature_flags table.
+   Valid keys: daily_tokens, voice_conversations_monthly, memory_verses, practice_modes, practice_limit, study_modes';
+
+-- Verify cleanup
+DO $$
+DECLARE
+  plan_record RECORD;
+  has_removed_fields BOOLEAN := FALSE;
+BEGIN
+  -- Check if any plan still has the removed fields
+  FOR plan_record IN
+    SELECT plan_code, features
+    FROM subscription_plans
+  LOOP
+    IF plan_record.features ? 'ai_discipler' OR plan_record.features ? 'followups' THEN
+      RAISE WARNING 'Plan % still contains removed fields', plan_record.plan_code;
+      has_removed_fields := TRUE;
+    END IF;
+  END LOOP;
+
+  IF NOT has_removed_fields THEN
+    RAISE NOTICE '✅ Schema cleanup successful: All conflicting fields removed';
+    RAISE NOTICE '✅ Remaining quota fields: daily_tokens, voice_conversations_monthly, memory_verses, practice_modes, practice_limit, study_modes';
+  END IF;
+END $$;
 
 COMMIT;
 

@@ -30,6 +30,7 @@ export interface FeatureFlag {
   isEnabled: boolean
   enabledForPlans: string[] // ['free', 'standard', 'plus', 'premium']
   rolloutPercentage: number // 0-100 (for future A/B testing)
+  displayMode: 'hide' | 'lock' // How feature appears when user lacks access
   metadata: Record<string, any>
 }
 
@@ -108,6 +109,7 @@ async function fetchFeatureFlagsFromDB(): Promise<FeatureFlag[]> {
     isEnabled: row.is_enabled,
     enabledForPlans: row.enabled_for_plans || [],
     rolloutPercentage: row.rollout_percentage || 100,
+    displayMode: (row.display_mode || 'hide') as 'hide' | 'lock', // Default to 'hide' for backward compatibility
     metadata: row.metadata || {},
   }))
 

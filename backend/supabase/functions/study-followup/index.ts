@@ -18,6 +18,7 @@ import { UserContext } from '../_shared/types/index.ts'
 import { getCorsHeaders } from '../_shared/utils/cors.ts'
 import { isFeatureEnabledForPlan } from '../_shared/services/feature-flag-service.ts'
 import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { checkMaintenanceMode } from '../_shared/middleware/maintenance-middleware.ts'
 
 /**
  * Request payload for follow-up questions
@@ -239,8 +240,14 @@ function buildLLMContext(
  */
 async function handleStudyFollowUp(
   req: Request,
-  { llmService, tokenService, analyticsLogger, securityValidator, authService, supabaseServiceClient, usageLoggingService, costTrackingService }: ServiceContainer
+  services: ServiceContainer
 ): Promise<Response> {
+  // Check maintenance mode FIRST
+  await checkMaintenanceMode(req, services)
+
+  // Destructure services
+  const { llmService, tokenService, analyticsLogger, securityValidator, authService, supabaseServiceClient, usageLoggingService, costTrackingService } = services
+
   console.log('🚀 [FOLLOW-UP] Starting follow-up question handler')
 
   const corsHeaders = getCorsHeaders(req.headers.get('origin'))

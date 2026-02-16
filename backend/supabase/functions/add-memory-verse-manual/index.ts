@@ -16,7 +16,7 @@ import { createAuthenticatedFunction } from '../_shared/core/function-factory.ts
 import { AppError } from '../_shared/utils/error-handler.ts'
 import { ApiSuccessResponse, UserContext } from '../_shared/types/index.ts'
 import { ServiceContainer } from '../_shared/core/services.ts'
-import { isFeatureEnabledForPlan } from '../_shared/services/feature-flag-service.ts'
+import { checkFeatureAccess } from '../_shared/middleware/feature-access-middleware.ts'
 
 /**
  * Request payload structure
@@ -139,17 +139,9 @@ async function handleAddMemoryVerseManual(
   const userPlan = await services.authService.getUserPlan(req)
   console.log(`👤 [AddMemoryVerse] User plan: ${userPlan}`)
 
-  const hasMemoryVersesAccess = await isFeatureEnabledForPlan('memory_verses', userPlan)
-
-  if (!hasMemoryVersesAccess) {
-    console.warn(`⛔ [AddMemoryVerse] Feature access denied: memory_verses not available for plan ${userPlan}`)
-    throw new AppError(
-      'FEATURE_NOT_AVAILABLE',
-      `Memory Verses are not available for your current plan (${userPlan}). Please upgrade to access this feature.`,
-      403
-    )
-  }
-
+  // Validate feature access using middleware
+  const userId = userContext.userId!
+  await checkFeatureAccess(userId, userPlan, 'memory_verses')
   console.log(`✅ [AddMemoryVerse] Feature access granted: memory_verses available for plan ${userPlan}`)
 
   // Parse request body
@@ -178,6 +170,13 @@ async function handleAddMemoryVerseManual(
     throw new AppError('CONFLICT', 'This verse is already in your memory deck', 409)
   }
 
+  // Get SM-2 initial state from database config
+  const memoryConfig = await services.memoryVerseConfigService.getMemoryVerseConfig()
+  const initialEaseFactor = memoryConfig.spacedRepetition.initialEaseFactor
+  const initialIntervalDays = memoryConfig.spacedRepetition.initialIntervalDays
+
+  console.log(`[AddMemoryVerse] Using SM-2 initial state from config: ease=${initialEaseFactor}, interval=${initialIntervalDays}`)
+
   // Add verse to memory_verses table with SM-2 initial state
   const now = new Date().toISOString()
   const { data: memoryVerse, error: insertError } = await services.supabaseServiceClient
@@ -189,9 +188,9 @@ async function handleAddMemoryVerseManual(
       language: language,
       source_type: 'manual',
       source_id: null, // No source_id for manual entries
-      // SM-2 initial state
-      ease_factor: 2.5,
-      interval_days: 1,
+      // SM-2 initial state from database config
+      ease_factor: initialEaseFactor,
+      interval_days: initialIntervalDays,
       repetitions: 0,
       next_review_date: now, // Available for immediate review
       added_date: now,

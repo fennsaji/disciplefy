@@ -22,6 +22,7 @@ import { StreamMessage } from '../_shared/services/voice-streaming-service.ts'
 import { BibleBookNormalizer } from '../_shared/utils/bible-book-normalizer.ts'
 import { VoiceConversationLimitService } from '../_shared/services/voice-conversation-limit-service.ts'
 import { isFeatureEnabledForPlan } from '../_shared/services/feature-flag-service.ts'
+import { checkMaintenanceMode } from '../_shared/middleware/maintenance-middleware.ts'
 
 /**
  * Request payload for voice conversation
@@ -128,6 +129,9 @@ async function handleVoiceConversation(
   services: ServiceContainer,
   userContext?: UserContext
 ): Promise<Response> {
+  // Check maintenance mode FIRST
+  await checkMaintenanceMode(req, services)
+
   const startTime = Date.now()
   const corsHeaders = {
     'Access-Control-Allow-Origin': req.headers.get('origin') || '*',

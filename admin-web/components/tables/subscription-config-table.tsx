@@ -13,9 +13,7 @@ interface SubscriptionConfig {
   features: {
     daily_tokens: number
     voice_conversations_monthly: number
-    memory_verses: number
     practice_modes: number
-    practice_limit: number
     study_modes: string[]
     [key: string]: any
   }
@@ -68,9 +66,6 @@ export default function SubscriptionConfigTable({
               Voice Conversations
             </th>
             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-              Memory Verses
-            </th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
               Active Users
             </th>
             <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
@@ -109,11 +104,6 @@ export default function SubscriptionConfigTable({
               <td className="px-6 py-4 whitespace-nowrap">
                 <div className="text-sm font-medium text-gray-900 dark:text-gray-100">
                   {config.features.voice_conversations_monthly === -1 ? '∞ Unlimited' : `${config.features.voice_conversations_monthly}/month`}
-                </div>
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap">
-                <div className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                  {config.features.memory_verses === -1 ? '∞ Unlimited' : `${config.features.memory_verses} verses`}
                 </div>
               </td>
               <td className="px-6 py-4 whitespace-nowrap">

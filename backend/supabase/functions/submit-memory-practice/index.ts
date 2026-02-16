@@ -20,6 +20,7 @@ import { ApiSuccessResponse, UserContext } from '../_shared/types/index.ts'
 import { ServiceContainer } from '../_shared/core/services.ts'
 import { getIntervalForReviewsSinceMastery } from '../_shared/memory-verse-intervals.ts'
 import { PracticeModeUnlockService } from '../_shared/services/practice-mode-unlock-service.ts'
+import { checkFeatureAccess } from '../_shared/middleware/feature-access-middleware.ts'
 
 /**
  * Practice mode types (aligned with frontend)
@@ -112,11 +113,11 @@ interface SubmitPracticeResponse extends ApiSuccessResponse<SubmitPracticeData> 
  * Implements the SM-2 spaced repetition algorithm
  * Modified for Bible verse memorization with daily cementing period
  */
-function calculateSM2(input: SM2Input): SM2Result {
+function calculateSM2(input: SM2Input, minEaseFactor: number = 1.3, maxIntervalDays: number = 180): SM2Result {
   const { quality, easeFactor, interval, repetitions } = input
 
-  // Constants
-  const MAX_INTERVAL_DAYS = 180 // 6 months maximum
+  // Constants - now using config parameters
+  const MAX_INTERVAL_DAYS = maxIntervalDays
   const DAILY_REVIEW_PERIOD = 14 // First 14 successful reviews are daily
 
   if (quality < 0 || quality > 5) {
@@ -125,7 +126,7 @@ function calculateSM2(input: SM2Input): SM2Result {
 
   // Calculate new ease factor
   let newEaseFactor = easeFactor + (0.1 - (5 - quality) * (0.08 + (5 - quality) * 0.02))
-  if (newEaseFactor < 1.3) newEaseFactor = 1.3
+  if (newEaseFactor < minEaseFactor) newEaseFactor = minEaseFactor
   newEaseFactor = Math.round(newEaseFactor * 100) / 100
 
   let newInterval: number
@@ -564,6 +565,10 @@ async function handleSubmitMemoryPractice(
     throw new AppError('AUTHENTICATION_ERROR', 'Authentication required to submit practice', 401)
   }
 
+  // Validate feature access for memory verses
+  const userPlan = await services.authService.getUserPlan(req)
+  await checkFeatureAccess(userContext.userId, userPlan, 'memory_verses')
+
   // Parse request body
   let body: SubmitPracticeRequest
   try {
@@ -645,7 +650,7 @@ async function handleSubmitMemoryPractice(
   const unlockService = new PracticeModeUnlockService(services.supabaseServiceClient)
 
   // 1. Check if mode is available in user's tier (tier-lock check)
-  const tierAvailability = unlockService.checkModeTierAvailability(userTier, body.practice_mode)
+  const tierAvailability = await unlockService.checkModeTierAvailability(userTier, body.practice_mode)
 
   if (!tierAvailability.available) {
     console.log(`[SubmitPractice] Mode ${body.practice_mode} is tier-locked for ${userTier} user`)
@@ -738,13 +743,20 @@ async function handleSubmitMemoryPractice(
   }
   // ========== END NEW CODE ==========
 
-  // Calculate new SM-2 state
+  // Get SM-2 algorithm parameters from database config
+  const memoryConfig = await services.memoryVerseConfigService.getMemoryVerseConfig()
+  const minEaseFactor = memoryConfig.spacedRepetition.minEaseFactor
+  const maxIntervalDays = memoryConfig.spacedRepetition.maxIntervalDays
+
+  console.log(`[SubmitPractice] Using SM-2 config: minEase=${minEaseFactor}, maxInterval=${maxIntervalDays}`)
+
+  // Calculate new SM-2 state using database config
   const sm2Result = calculateSM2({
     quality: body.quality_rating,
     easeFactor: memoryVerse.ease_factor,
     interval: memoryVerse.interval_days,
     repetitions: memoryVerse.repetitions
-  })
+  }, minEaseFactor, maxIntervalDays)
 
   // Determine if this is a perfect recall
   const isPerfectRecall = body.quality_rating === 5

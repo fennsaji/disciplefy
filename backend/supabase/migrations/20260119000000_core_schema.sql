@@ -167,27 +167,24 @@ CREATE TABLE user_personalization (
   updated_at TIMESTAMPTZ DEFAULT NOW(),
 
   -- One personalization record per user
-  CONSTRAINT unique_user_personalization UNIQUE(user_id)
+  CONSTRAINT unique_user_personalization UNIQUE(user_id),
+
+  -- Validation constraints for spiritual goals (1-3 selections or empty)
+  CONSTRAINT spiritual_goals_count_check
+    CHECK (array_length(spiritual_goals, 1) BETWEEN 1 AND 3 OR spiritual_goals = '{}'),
+  CONSTRAINT spiritual_goals_values_check
+    CHECK (
+      spiritual_goals = '{}'::text[] OR
+      spiritual_goals <@ ARRAY[
+        'foundational_faith',
+        'spiritual_depth',
+        'relationships',
+        'apologetics',
+        'service',
+        'theology'
+      ]::text[]
+    )
 );
-
--- Validation constraints for spiritual goals (1-3 selections or empty)
-ALTER TABLE user_personalization
-  ADD CONSTRAINT spiritual_goals_count_check
-  CHECK (array_length(spiritual_goals, 1) BETWEEN 1 AND 3 OR spiritual_goals = '{}');
-
-ALTER TABLE user_personalization
-  ADD CONSTRAINT spiritual_goals_values_check
-  CHECK (
-    spiritual_goals = '{}'::text[] OR
-    spiritual_goals <@ ARRAY[
-      'foundational_faith',
-      'spiritual_depth',
-      'relationships',
-      'apologetics',
-      'service',
-      'theology'
-    ]::text[]
-  );
 
 -- Indexes for performance
 CREATE INDEX IF NOT EXISTS idx_user_personalization_user_id

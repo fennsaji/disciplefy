@@ -38,6 +38,7 @@ import 'core/services/theme_service.dart';
 import 'core/services/locale_service.dart';
 import 'core/services/auth_state_provider.dart';
 import 'core/services/system_config_service.dart';
+import 'core/services/pricing_service.dart';
 import 'core/utils/version_checker.dart';
 import 'core/services/auth_session_validator.dart';
 import 'core/services/notification_service.dart';
@@ -208,6 +209,11 @@ void main() async {
     if (kDebugMode) print('🔧 [MAIN] Initializing system config service...');
     await sl<SystemConfigService>().initialize();
     if (kDebugMode) print('✅ [MAIN] System config service completed');
+
+    // Initialize pricing service (dynamic subscription pricing from database)
+    if (kDebugMode) print('🔧 [MAIN] Initializing pricing service...');
+    await sl<PricingService>().initialize();
+    if (kDebugMode) print('✅ [MAIN] Pricing service completed');
 
     // Check app version requirements
     if (kDebugMode) print('🔧 [MAIN] Checking app version...');

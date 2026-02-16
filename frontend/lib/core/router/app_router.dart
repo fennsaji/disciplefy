@@ -72,6 +72,7 @@ import '../../features/personalization/presentation/pages/personalization_questi
 import '../../features/study_topics/presentation/pages/learning_path_detail_page.dart';
 import '../../features/study_topics/presentation/pages/leaderboard_page.dart';
 import '../../features/study_topics/presentation/bloc/learning_paths_bloc.dart';
+import '../widgets/locked_feature_wrapper.dart';
 import '../../features/study_topics/presentation/bloc/leaderboard_bloc.dart';
 import '../../features/gamification/presentation/pages/stats_dashboard_page.dart';
 import '../../features/gamification/presentation/bloc/gamification_bloc.dart';
@@ -306,9 +307,12 @@ class AppRouter {
         path: AppRoutes.memoryVerses,
         name: 'memory_verses',
         pageBuilder: (context, state) => slideRightTransitionPage(
-          child: BlocProvider(
-            create: (context) => sl<MemoryVerseBloc>(),
-            child: const MemoryVersesHomePage(),
+          child: LockedFeatureWrapper(
+            featureKey: 'memory_verses',
+            child: BlocProvider(
+              create: (context) => sl<MemoryVerseBloc>(),
+              child: const MemoryVersesHomePage(),
+            ),
           ),
           state: state,
         ),
@@ -487,10 +491,13 @@ class AppRouter {
               extra['conversationType'] as ConversationType? ??
                   ConversationType.general;
 
-          return VoiceConversationPage(
-            studyGuideId: studyGuideId,
-            relatedScripture: relatedScripture,
-            conversationType: conversationType,
+          return LockedFeatureWrapper(
+            featureKey: 'ai_discipler',
+            child: VoiceConversationPage(
+              studyGuideId: studyGuideId,
+              relatedScripture: relatedScripture,
+              conversationType: conversationType,
+            ),
           );
         },
       ),
@@ -528,9 +535,12 @@ class AppRouter {
         builder: (context, state) {
           final pathId = state.pathParameters['pathId'] ?? '';
           final source = state.uri.queryParameters['source'];
-          return BlocProvider(
-            create: (context) => sl<LearningPathsBloc>(),
-            child: LearningPathDetailPage(pathId: pathId, source: source),
+          return LockedFeatureWrapper(
+            featureKey: 'learning_paths',
+            child: BlocProvider(
+              create: (context) => sl<LearningPathsBloc>(),
+              child: LearningPathDetailPage(pathId: pathId, source: source),
+            ),
           );
         },
       ),
@@ -540,9 +550,12 @@ class AppRouter {
         path: AppRoutes.leaderboard,
         name: 'leaderboard',
         parentNavigatorKey: rootNavigatorKey,
-        builder: (context, state) => BlocProvider(
-          create: (context) => sl<LeaderboardBloc>(),
-          child: const LeaderboardPage(),
+        builder: (context, state) => LockedFeatureWrapper(
+          featureKey: 'leaderboard',
+          child: BlocProvider(
+            create: (context) => sl<LeaderboardBloc>(),
+            child: const LeaderboardPage(),
+          ),
         ),
       ),
 
@@ -551,9 +564,12 @@ class AppRouter {
         path: AppRoutes.statsDashboard,
         name: 'stats_dashboard',
         parentNavigatorKey: rootNavigatorKey,
-        builder: (context, state) => BlocProvider.value(
-          value: sl<GamificationBloc>(),
-          child: const StatsDashboardPage(),
+        builder: (context, state) => LockedFeatureWrapper(
+          featureKey: 'achievements',
+          child: BlocProvider.value(
+            value: sl<GamificationBloc>(),
+            child: const StatsDashboardPage(),
+          ),
         ),
       ),
 
@@ -563,7 +579,10 @@ class AppRouter {
         name: 'reflection_journal',
         parentNavigatorKey: rootNavigatorKey,
         pageBuilder: (context, state) => slideRightTransitionPage(
-          child: const ReflectionJournalScreen(),
+          child: LockedFeatureWrapper(
+            featureKey: 'reflections',
+            child: const ReflectionJournalScreen(),
+          ),
           state: state,
         ),
       ),

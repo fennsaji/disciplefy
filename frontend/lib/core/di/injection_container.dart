@@ -116,6 +116,9 @@ import '../services/theme_service.dart';
 import '../services/locale_service.dart';
 import '../services/auth_state_provider.dart';
 import '../services/system_config_service.dart';
+import '../services/pricing_service.dart';
+import '../services/iap_service.dart';
+import '../services/platform_payment_provider_service.dart';
 import '../services/language_preference_service.dart';
 import '../services/language_cache_coordinator.dart';
 import '../services/http_service.dart';
@@ -252,6 +255,12 @@ Future<void> initializeDependencies() async {
 
   // Register SystemConfigService (for maintenance mode, feature flags, app version)
   sl.registerLazySingleton(() => SystemConfigService());
+
+  // Register PricingService (for dynamic subscription pricing from database)
+  sl.registerLazySingleton(() => PricingService());
+
+  // Register IAPService (for in-app purchases on mobile)
+  sl.registerLazySingleton(() => IAPService());
 
   // Register LocaleService (requires LanguagePreferenceService - registered later)
   // Note: LocaleService is registered after LanguagePreferenceService below
@@ -789,6 +798,8 @@ Future<void> initializeDependencies() async {
         getSubscriptionHistory: sl(),
         getSubscriptionInvoices: sl(),
         subscriptionRepository: sl(),
+        pricingService: sl(),
+        iapService: sl(),
       ));
 
   //! Usage Stats (Soft Paywall System)

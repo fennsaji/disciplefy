@@ -107,7 +107,7 @@ async function fetchSystemConfigFromDB(): Promise<SystemConfig> {
   // Transform database rows into config map
   const configMap = new Map<string, string>()
   data?.forEach((row: any) => {
-    configMap.set(row.config_key, row.config_value)
+    configMap.set(row.key, row.value)
   })
 
   // Parse and construct SystemConfig object

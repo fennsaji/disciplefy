@@ -1,6 +1,8 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:dartz/dartz.dart';
+import 'package:in_app_purchase/in_app_purchase.dart';
 
 import '../../domain/entities/subscription.dart';
 import '../../domain/entities/user_subscription_status.dart';
@@ -15,6 +17,9 @@ import '../../domain/usecases/get_subscription_history.dart'
 import '../../domain/usecases/get_invoices.dart' as get_invoices;
 import '../../../../core/error/failures.dart';
 import '../../../../core/usecases/usecase.dart';
+import '../../../../core/services/iap_service.dart';
+import '../../../../core/services/pricing_service.dart';
+import '../../../../core/services/platform_payment_provider_service.dart';
 
 import 'subscription_event.dart';
 import 'subscription_state.dart';
@@ -35,6 +40,8 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
   final get_subscription_history.GetSubscriptionHistory _getSubscriptionHistory;
   final get_invoices.GetInvoices _getSubscriptionInvoices;
   final SubscriptionRepository _subscriptionRepository;
+  final IAPService? _iapService; // Optional - only for mobile platforms
+  final PricingService _pricingService;
 
   // Subscription cache with timestamp
   Subscription? _cachedSubscription;
@@ -44,6 +51,10 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
   // User subscription status cache
   UserSubscriptionStatus? _cachedSubscriptionStatus;
   DateTime? _lastStatusCacheUpdate;
+
+  // IAP purchase tracking
+  String? _pendingPurchasePlanCode;
+  String? _pendingPurchasePromoCode;
 
   static const Duration _cacheValidityDuration = Duration(minutes: 10);
   static const Duration _autoRefreshInterval = Duration(minutes: 15);
@@ -58,6 +69,8 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
         getSubscriptionHistory,
     required get_invoices.GetInvoices getSubscriptionInvoices,
     required SubscriptionRepository subscriptionRepository,
+    required PricingService pricingService,
+    IAPService? iapService, // Optional - only for mobile platforms
   })  : _getActiveSubscription = getActiveSubscription,
         _createSubscription = createSubscription,
         _cancelSubscription = cancelSubscription,
@@ -65,6 +78,8 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
         _getSubscriptionHistory = getSubscriptionHistory,
         _getSubscriptionInvoices = getSubscriptionInvoices,
         _subscriptionRepository = subscriptionRepository,
+        _pricingService = pricingService,
+        _iapService = iapService,
         super(const SubscriptionInitial()) {
     // Register event handlers
     on<GetActiveSubscription>(_onGetActiveSubscription);
@@ -84,6 +99,13 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
     on<RefreshSubscriptionInvoices>(_onRefreshSubscriptionInvoices);
     on<StartPremiumTrial>(_onStartPremiumTrial);
     on<ActivateFreeSubscription>(_onActivateFreeSubscription);
+
+    // Internal IAP event handlers
+    on<IAPPurchaseCompleted>(_onIAPPurchaseCompleted);
+    on<IAPPurchaseError>(_onIAPPurchaseError);
+
+    // Set up IAP callbacks if service is available
+    _setupIAPCallbacks();
 
     // Start auto-refresh timer for active subscriptions
     _startAutoRefreshTimer();
@@ -134,48 +156,11 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
     CreateSubscription event,
     Emitter<SubscriptionState> emit,
   ) async {
-    emit(const SubscriptionLoading(operation: 'creating'));
-
-    // Use V2 API with promo code
-    final result = await _subscriptionRepository.createSubscriptionV2(
+    await _createSubscriptionForPlan(
       planCode: 'premium',
-      provider: 'razorpay',
-      region: 'IN',
       promoCode: event.promoCode,
-    );
-
-    result.fold(
-      (failure) => emit(SubscriptionError(
-        failure: failure,
-        operation: 'creating',
-        previousSubscription: _cachedSubscription,
-      )),
-      (v2Result) {
-        // Convert V2 response to legacy format for compatibility
-        final createResult = CreateSubscriptionResult(
-          success: v2Result.success,
-          subscriptionId: v2Result.subscriptionId,
-          razorpaySubscriptionId: v2Result.providerSubscriptionId,
-          authorizationUrl: v2Result.authorizationUrl ?? '',
-          amountRupees: 0.0, // Will be populated after payment confirmation
-          status: SubscriptionStatus.created,
-          message: 'Subscription created successfully',
-        );
-
-        // Emit subscription created state with authorization URL
-        emit(SubscriptionCreated(
-          result: createResult,
-          createdAt: DateTime.now(),
-        ));
-
-        // Automatically trigger a refresh after a short delay
-        // to get the updated subscription status
-        Future.delayed(const Duration(seconds: 2), () {
-          if (!isClosed) {
-            add(const RefreshSubscription());
-          }
-        });
-      },
+      operation: 'creating',
+      emit: emit,
     );
   }
 
@@ -415,73 +400,12 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
     CreateStandardSubscription event,
     Emitter<SubscriptionState> emit,
   ) async {
-    // Preserve current status if available
-    UserSubscriptionStatus? currentStatus;
-    if (state is UserSubscriptionStatusLoaded) {
-      currentStatus =
-          (state as UserSubscriptionStatusLoaded).subscriptionStatus;
-    }
-
-    if (currentStatus != null) {
-      emit(UserSubscriptionStatusLoaded(
-        subscriptionStatus: currentStatus,
-        lastUpdated: DateTime.now(),
-        isLoading: true,
-      ));
-    } else {
-      emit(const SubscriptionLoading(
-          operation: 'creating standard subscription'));
-    }
-
-    // Use V2 API with promo code
-    final result = await _subscriptionRepository.createSubscriptionV2(
+    await _createSubscriptionWithStatusPreservation(
       planCode: 'standard',
-      provider: 'razorpay',
-      region: 'IN',
+      planName: 'Standard',
       promoCode: event.promoCode,
-    );
-
-    result.fold(
-      (failure) {
-        final errorMessage = _getErrorMessage(failure);
-        if (currentStatus != null) {
-          emit(UserSubscriptionStatusLoaded(
-            subscriptionStatus: currentStatus,
-            lastUpdated: DateTime.now(),
-            errorMessage: errorMessage,
-          ));
-        } else {
-          emit(SubscriptionError(
-            failure: failure,
-            operation: 'creating standard subscription',
-          ));
-        }
-      },
-      (v2Result) {
-        // Convert V2 response to legacy format for compatibility
-        final createResult = CreateSubscriptionResult(
-          success: v2Result.success,
-          subscriptionId: v2Result.subscriptionId,
-          razorpaySubscriptionId: v2Result.providerSubscriptionId,
-          authorizationUrl: v2Result.authorizationUrl ?? '',
-          amountRupees: 0.0, // Will be populated after payment confirmation
-          status: SubscriptionStatus.created,
-          message: 'Standard subscription created successfully',
-        );
-
-        if (currentStatus != null) {
-          emit(UserSubscriptionStatusLoaded(
-            subscriptionStatus: currentStatus,
-            lastUpdated: DateTime.now(),
-            authorizationUrl: createResult.authorizationUrl,
-          ));
-        } else {
-          emit(SubscriptionCreated(
-            result: createResult,
-            createdAt: DateTime.now(),
-          ));
-        }
-      },
+      operation: 'creating standard subscription',
+      emit: emit,
     );
   }
 
@@ -490,72 +414,12 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
     CreatePlusSubscription event,
     Emitter<SubscriptionState> emit,
   ) async {
-    // Preserve current status if available
-    UserSubscriptionStatus? currentStatus;
-    if (state is UserSubscriptionStatusLoaded) {
-      currentStatus =
-          (state as UserSubscriptionStatusLoaded).subscriptionStatus;
-    }
-
-    if (currentStatus != null) {
-      emit(UserSubscriptionStatusLoaded(
-        subscriptionStatus: currentStatus,
-        lastUpdated: DateTime.now(),
-        isLoading: true,
-      ));
-    } else {
-      emit(const SubscriptionLoading(operation: 'creating plus subscription'));
-    }
-
-    // Use V2 API with promo code
-    final result = await _subscriptionRepository.createSubscriptionV2(
+    await _createSubscriptionWithStatusPreservation(
       planCode: 'plus',
-      provider: 'razorpay',
-      region: 'IN',
+      planName: 'Plus',
       promoCode: event.promoCode,
-    );
-
-    result.fold(
-      (failure) {
-        final errorMessage = _getErrorMessage(failure);
-        if (currentStatus != null) {
-          emit(UserSubscriptionStatusLoaded(
-            subscriptionStatus: currentStatus,
-            lastUpdated: DateTime.now(),
-            errorMessage: errorMessage,
-          ));
-        } else {
-          emit(SubscriptionError(
-            failure: failure,
-            operation: 'creating plus subscription',
-          ));
-        }
-      },
-      (v2Result) {
-        // Convert V2 response to legacy format for compatibility
-        final createResult = CreateSubscriptionResult(
-          success: v2Result.success,
-          subscriptionId: v2Result.subscriptionId,
-          razorpaySubscriptionId: v2Result.providerSubscriptionId,
-          authorizationUrl: v2Result.authorizationUrl ?? '',
-          amountRupees: 0.0, // Will be populated after payment confirmation
-          status: SubscriptionStatus.created,
-          message: 'Plus subscription created successfully',
-        );
-
-        if (currentStatus != null) {
-          emit(UserSubscriptionStatusLoaded(
-            subscriptionStatus: currentStatus,
-            lastUpdated: DateTime.now(),
-            authorizationUrl: createResult.authorizationUrl,
-          ));
-        } else {
-          emit(SubscriptionCreated(
-            result: createResult,
-            createdAt: DateTime.now(),
-          ));
-        }
-      },
+      operation: 'creating plus subscription',
+      emit: emit,
     );
   }
 
@@ -830,6 +694,111 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
     );
   }
 
+  // ========== IAP Event Handlers ==========
+
+  /// Handle IAP purchase completed event
+  Future<void> _onIAPPurchaseCompleted(
+    IAPPurchaseCompleted event,
+    Emitter<SubscriptionState> emit,
+  ) async {
+    final purchase = event.purchaseDetails;
+
+    if (_pendingPurchasePlanCode == null) {
+      debugPrint(
+          '⚠️ [BLOC] Purchase completed but no pending plan code - ignoring');
+      return;
+    }
+
+    debugPrint(
+        '✅ [BLOC] IAP Purchase successful, validating receipt with backend');
+
+    try {
+      final receiptData = _iapService!.getReceiptData(purchase);
+      final provider = PlatformPaymentProviderService.getProvider();
+
+      // Call backend to validate receipt and create subscription
+      final result = await _subscriptionRepository.createSubscriptionV2(
+        planCode: _pendingPurchasePlanCode!,
+        provider: provider,
+        region: 'IN', // Region is handled by backend based on receipt
+        receipt: receiptData,
+        promoCode: _pendingPurchasePromoCode,
+      );
+
+      result.fold(
+        (failure) {
+          debugPrint('❌ [BLOC] Receipt validation failed: $failure');
+          emit(SubscriptionError(
+            failure: failure,
+            operation: 'creating IAP subscription',
+            previousSubscription: _cachedSubscription,
+          ));
+        },
+        (v2Result) {
+          debugPrint(
+              '✅ [BLOC] Receipt validated, subscription created: ${v2Result.subscriptionId}');
+
+          final createResult = CreateSubscriptionResult(
+            success: v2Result.success,
+            subscriptionId: v2Result.subscriptionId,
+            razorpaySubscriptionId:
+                v2Result.providerSubscriptionId, // Actually IAP transaction ID
+            authorizationUrl:
+                '', // No authorization URL needed for IAP (payment already done)
+            amountRupees: 0.0,
+            status: SubscriptionStatus
+                .active, // IAP subscriptions are immediately active after validation
+            message: 'Subscription activated successfully',
+          );
+
+          emit(SubscriptionCreated(
+            result: createResult,
+            createdAt: DateTime.now(),
+          ));
+
+          // Clear pending purchase tracking
+          _pendingPurchasePlanCode = null;
+          _pendingPurchasePromoCode = null;
+
+          // Refresh subscription status
+          Future.delayed(const Duration(seconds: 1), () {
+            if (!isClosed) {
+              add(const RefreshSubscription());
+            }
+          });
+        },
+      );
+    } catch (e) {
+      debugPrint('❌ [BLOC] IAP purchase handling error: $e');
+      emit(SubscriptionError(
+        failure: ServerFailure(message: 'Failed to process purchase: $e'),
+        operation: 'creating IAP subscription',
+        previousSubscription: _cachedSubscription,
+      ));
+    }
+  }
+
+  /// Handle IAP purchase error event
+  Future<void> _onIAPPurchaseError(
+    IAPPurchaseError event,
+    Emitter<SubscriptionState> emit,
+  ) async {
+    debugPrint('❌ [BLOC] IAP Purchase error: ${event.error}');
+
+    // Clear pending purchase tracking
+    _pendingPurchasePlanCode = null;
+    _pendingPurchasePromoCode = null;
+
+    emit(SubscriptionError(
+      failure: ClientFailure(
+        code: 'IAP_PURCHASE_FAILED',
+        message: event.error,
+      ),
+      operation: 'creating IAP subscription',
+      previousSubscription: _cachedSubscription,
+    ));
+  }
+
   // ========== Auto-Refresh Timer ==========
 
   /// Start timer for automatic subscription status refresh
@@ -841,5 +810,277 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
         add(const RefreshSubscription());
       }
     });
+  }
+
+  // ========== Subscription Creation Helpers (DRY) ==========
+
+  /// Create subscription for a plan (routes to IAP or Razorpay based on platform)
+  Future<void> _createSubscriptionForPlan({
+    required String planCode,
+    required String? promoCode,
+    required String operation,
+    required Emitter<SubscriptionState> emit,
+  }) async {
+    emit(SubscriptionLoading(operation: operation));
+
+    // Check if this is an IAP platform (Android/iOS)
+    if (PlatformPaymentProviderService.isIAPPlatform()) {
+      debugPrint('🛒 [BLOC] IAP platform detected for $planCode');
+
+      try {
+        await _initiateIAPPurchase(planCode, promoCode);
+        emit(const SubscriptionLoading(operation: 'processing IAP purchase'));
+      } catch (e) {
+        emit(SubscriptionError(
+          failure: ClientFailure(
+            code: 'IAP_INIT_FAILED',
+            message: 'Failed to start purchase: $e',
+          ),
+          operation: operation,
+          previousSubscription: _cachedSubscription,
+        ));
+      }
+      return; // Exit early - callbacks will handle completion
+    }
+
+    // Web platform - use Razorpay flow
+    debugPrint('🌐 [BLOC] Web platform for $planCode');
+
+    final result = await _subscriptionRepository.createSubscriptionV2(
+      planCode: planCode,
+      provider: 'razorpay',
+      region: 'IN',
+      promoCode: promoCode,
+    );
+
+    result.fold(
+      (failure) => emit(SubscriptionError(
+        failure: failure,
+        operation: operation,
+        previousSubscription: _cachedSubscription,
+      )),
+      (v2Result) {
+        final createResult = CreateSubscriptionResult(
+          success: v2Result.success,
+          subscriptionId: v2Result.subscriptionId,
+          razorpaySubscriptionId: v2Result.providerSubscriptionId,
+          authorizationUrl: v2Result.authorizationUrl ?? '',
+          amountRupees: 0.0,
+          status: SubscriptionStatus.created,
+          message: 'Subscription created successfully',
+        );
+
+        emit(SubscriptionCreated(
+          result: createResult,
+          createdAt: DateTime.now(),
+        ));
+
+        Future.delayed(const Duration(seconds: 2), () {
+          if (!isClosed) add(const RefreshSubscription());
+        });
+      },
+    );
+  }
+
+  /// Create subscription with status preservation (for Standard/Plus with UserSubscriptionStatusLoaded state)
+  Future<void> _createSubscriptionWithStatusPreservation({
+    required String planCode,
+    required String planName,
+    required String? promoCode,
+    required String operation,
+    required Emitter<SubscriptionState> emit,
+  }) async {
+    // Preserve current status if available
+    UserSubscriptionStatus? currentStatus;
+    if (state is UserSubscriptionStatusLoaded) {
+      currentStatus =
+          (state as UserSubscriptionStatusLoaded).subscriptionStatus;
+    }
+
+    if (currentStatus != null) {
+      emit(UserSubscriptionStatusLoaded(
+        subscriptionStatus: currentStatus,
+        lastUpdated: DateTime.now(),
+        isLoading: true,
+      ));
+    } else {
+      emit(SubscriptionLoading(operation: operation));
+    }
+
+    // Check if this is an IAP platform (Android/iOS)
+    if (PlatformPaymentProviderService.isIAPPlatform()) {
+      debugPrint('🛒 [BLOC] IAP platform for $planCode');
+
+      try {
+        await _initiateIAPPurchase(planCode, promoCode);
+
+        if (currentStatus != null) {
+          emit(UserSubscriptionStatusLoaded(
+            subscriptionStatus: currentStatus,
+            lastUpdated: DateTime.now(),
+            isLoading: true,
+          ));
+        } else {
+          emit(const SubscriptionLoading(operation: 'processing IAP purchase'));
+        }
+      } catch (e) {
+        final errorMessage = 'Failed to start purchase: $e';
+        if (currentStatus != null) {
+          emit(UserSubscriptionStatusLoaded(
+            subscriptionStatus: currentStatus,
+            lastUpdated: DateTime.now(),
+            errorMessage: errorMessage,
+          ));
+        } else {
+          emit(SubscriptionError(
+            failure: ClientFailure(
+              code: 'IAP_INIT_FAILED',
+              message: errorMessage,
+            ),
+            operation: operation,
+          ));
+        }
+      }
+      return; // Exit early
+    }
+
+    // Web platform - Razorpay flow
+    debugPrint('🌐 [BLOC] Web platform for $planCode');
+
+    final result = await _subscriptionRepository.createSubscriptionV2(
+      planCode: planCode,
+      provider: 'razorpay',
+      region: 'IN',
+      promoCode: promoCode,
+    );
+
+    result.fold(
+      (failure) {
+        final errorMessage = _getErrorMessage(failure);
+        if (currentStatus != null) {
+          emit(UserSubscriptionStatusLoaded(
+            subscriptionStatus: currentStatus,
+            lastUpdated: DateTime.now(),
+            errorMessage: errorMessage,
+          ));
+        } else {
+          emit(SubscriptionError(
+            failure: failure,
+            operation: operation,
+          ));
+        }
+      },
+      (v2Result) {
+        final createResult = CreateSubscriptionResult(
+          success: v2Result.success,
+          subscriptionId: v2Result.subscriptionId,
+          razorpaySubscriptionId: v2Result.providerSubscriptionId,
+          authorizationUrl: v2Result.authorizationUrl ?? '',
+          amountRupees: 0.0,
+          status: SubscriptionStatus.created,
+          message: '$planName subscription created successfully',
+        );
+
+        if (currentStatus != null) {
+          emit(UserSubscriptionStatusLoaded(
+            subscriptionStatus: currentStatus,
+            lastUpdated: DateTime.now(),
+            authorizationUrl: createResult.authorizationUrl,
+          ));
+        } else {
+          emit(SubscriptionCreated(
+            result: createResult,
+            createdAt: DateTime.now(),
+          ));
+        }
+      },
+    );
+  }
+
+  // ========== IAP Integration ==========
+
+  /// Set up IAP service callbacks for mobile platforms
+  void _setupIAPCallbacks() {
+    if (_iapService == null) {
+      debugPrint('🛒 [BLOC] IAP Service not available (web platform)');
+      return;
+    }
+
+    debugPrint('🛒 [BLOC] Setting up IAP callbacks');
+
+    // Handle purchase updates (success/failure)
+    _iapService!.onPurchaseUpdate = (PurchaseDetails purchase) {
+      debugPrint(
+          '🛒 [BLOC] IAP Purchase update: ${purchase.productID}, status: ${purchase.status}');
+
+      if (purchase.status == PurchaseStatus.purchased ||
+          purchase.status == PurchaseStatus.restored) {
+        // Add event instead of calling method directly
+        add(IAPPurchaseCompleted(purchase));
+      }
+    };
+
+    // Handle purchase errors
+    _iapService!.onPurchaseError = (String error) {
+      debugPrint('🛒 [BLOC] IAP Purchase error: $error');
+      // Add event instead of calling method directly
+      add(IAPPurchaseError(error));
+    };
+  }
+
+  /// Initiate IAP purchase flow (for mobile platforms)
+  Future<void> _initiateIAPPurchase(
+    String planCode,
+    String? promoCode,
+  ) async {
+    if (_iapService == null) {
+      throw Exception('IAP Service not available');
+    }
+
+    debugPrint('🛒 [BLOC] Initiating IAP purchase for plan: $planCode');
+
+    // Track pending purchase
+    _pendingPurchasePlanCode = planCode;
+    _pendingPurchasePromoCode = promoCode;
+
+    try {
+      // Get product ID from pricing service
+      final provider = PlatformPaymentProviderService.getProvider();
+      final productId = _pricingService.getProductId(
+        planCode,
+        provider: provider,
+      );
+
+      if (productId == null) {
+        throw Exception(
+            'Product ID not configured for plan $planCode on provider $provider');
+      }
+
+      debugPrint('🛒 [BLOC] Fetching product from store: $productId');
+
+      // Fetch products from store
+      final products = await _iapService!.getProducts({productId});
+
+      if (products.isEmpty) {
+        throw Exception('Product not found in store: $productId');
+      }
+
+      final product = products.first;
+      debugPrint(
+          '🛒 [BLOC] Product found: ${product.title} - ${product.price}');
+
+      // Initiate purchase
+      await _iapService!.purchaseProduct(product);
+
+      debugPrint('✅ [BLOC] Purchase initiated successfully');
+    } catch (e) {
+      debugPrint('❌ [BLOC] Failed to initiate IAP purchase: $e');
+
+      // Clear pending purchase
+      _pendingPurchasePlanCode = null;
+      _pendingPurchasePromoCode = null;
+
+      throw Exception('Failed to initiate purchase: $e');
+    }
   }
 }

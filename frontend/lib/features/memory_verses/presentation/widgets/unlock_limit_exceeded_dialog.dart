@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/di/injection_container.dart';
 import '../../../../core/router/app_routes.dart';
+import '../../../../core/services/system_config_service.dart';
+import '../../../../core/services/pricing_service.dart';
 
 /// Dialog shown when user exceeds their daily practice mode unlock limit for a verse.
 /// Displays unlocked modes, remaining slots, and upgrade options.
+/// Now uses dynamic config from database instead of hardcoded values.
 class UnlockLimitExceededDialog extends StatelessWidget {
   final List<String> unlockedModes;
   final int unlockedCount;
@@ -146,27 +150,7 @@ class UnlockLimitExceededDialog extends StatelessWidget {
               style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 8),
-            _buildPlanOption(
-              context,
-              'Standard',
-              '2 modes per verse per day',
-              '₹79/month',
-              tier == 'free',
-            ),
-            _buildPlanOption(
-              context,
-              'Plus',
-              '3 modes per verse per day',
-              '₹149/month',
-              tier == 'free' || tier == 'standard',
-            ),
-            _buildPlanOption(
-              context,
-              'Premium',
-              'All modes unlocked',
-              '₹499/month',
-              true,
-            ),
+            ..._buildDynamicPlanOptions(context),
             const SizedBox(height: 8),
             Container(
               padding: const EdgeInsets.all(12),
@@ -210,6 +194,74 @@ class UnlockLimitExceededDialog extends StatelessWidget {
         ),
       ],
     );
+  }
+
+  /// Build plan options dynamically from system config
+  List<Widget> _buildDynamicPlanOptions(BuildContext context) {
+    try {
+      final systemConfig = sl<SystemConfigService>();
+      final memoryConfig = systemConfig.config?.memoryVerseConfig;
+
+      if (memoryConfig == null) {
+        // Fallback to database pricing if config not available
+        final pricingService = sl<PricingService>();
+        return [
+          _buildPlanOption(
+              context,
+              'Standard',
+              '2 modes per verse per day',
+              pricingService.getFormattedPricePerMonth('standard'),
+              tier == 'free'),
+          _buildPlanOption(
+              context,
+              'Plus',
+              '3 modes per verse per day',
+              pricingService.getFormattedPricePerMonth('plus'),
+              tier == 'free' || tier == 'standard'),
+          _buildPlanOption(context, 'Premium', 'All modes unlocked',
+              pricingService.getFormattedPricePerMonth('premium'), true),
+        ];
+      }
+
+      final tierComparison = memoryConfig.getTierComparison();
+      final currentTierLower = tier.toLowerCase();
+
+      return tierComparison
+          .where((t) => t.tier != 'free') // Exclude free tier from upgrades
+          .map((tierInfo) {
+        final isUpgrade = _shouldShowAsUpgrade(currentTierLower, tierInfo.tier);
+        final price = _getPriceForTier(tierInfo.tier);
+
+        return _buildPlanOption(
+          context,
+          tierInfo.tierName,
+          tierInfo.unlockLimitText,
+          price,
+          isUpgrade,
+        );
+      }).toList();
+    } catch (e) {
+      // Fallback on error
+      final pricingService = sl<PricingService>();
+      return [
+        _buildPlanOption(context, 'Standard', '2 modes per verse per day',
+            pricingService.getFormattedPricePerMonth('standard'), true),
+      ];
+    }
+  }
+
+  /// Check if tier should be shown as upgrade option
+  bool _shouldShowAsUpgrade(String currentTier, String targetTier) {
+    const tierOrder = ['free', 'standard', 'plus', 'premium'];
+    final currentIndex = tierOrder.indexOf(currentTier);
+    final targetIndex = tierOrder.indexOf(targetTier);
+    return targetIndex > currentIndex;
+  }
+
+  /// Get pricing for tier
+  String _getPriceForTier(String tier) {
+    final pricingService = sl<PricingService>();
+    return pricingService.getFormattedPricePerMonth(tier);
   }
 
   Widget _buildPlanOption(

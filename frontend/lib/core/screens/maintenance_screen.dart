@@ -121,7 +121,7 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> {
                       ),
                     ),
                     child: Text(
-                      widget.configService.maintenanceMessage,
+                      widget.configService.maintenanceModeMessage,
                       style: theme.textTheme.bodyLarge?.copyWith(
                         color: colorScheme.onSurface,
                         height: 1.5,

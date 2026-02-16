@@ -6,6 +6,7 @@ import '../../../../core/extensions/translation_extension.dart';
 import '../../../../core/i18n/translation_keys.dart';
 import '../../../../core/di/injection_container.dart';
 import '../../../../core/services/system_config_service.dart';
+import '../../../../core/widgets/upgrade_dialog.dart';
 import '../../../subscription/domain/repositories/subscription_repository.dart';
 import '../../domain/entities/study_mode.dart';
 import '../../data/repositories/token_cost_repository.dart';
@@ -117,8 +118,10 @@ class _ModeSelectionSheetState extends State<ModeSelectionSheet> {
   late final SystemConfigService _systemConfigService;
   late final SubscriptionRepository _subscriptionRepository;
 
-  // Available modes filtered by feature flags
+  // All modes (no longer filtering)
   List<StudyMode> _availableModes = [];
+  // Track which modes are locked (for lock overlay display)
+  Map<StudyMode, bool> _lockedModes = {};
   String _userPlan = 'free';
   bool _isLoadingFeatureFlags = true;
 
@@ -160,29 +163,58 @@ class _ModeSelectionSheetState extends State<ModeSelectionSheet> {
         StudyMode.sermon: 'sermon_outline_mode',
       };
 
-      // Filter modes based on feature flags
-      _availableModes = StudyMode.values.where((mode) {
-        final featureKey = modeFeatureMap[mode];
-        if (featureKey == null) return true; // Allow unknown modes
+      // Check each mode for lock/hide status
+      _availableModes = [];
+      _lockedModes = {};
 
-        final isEnabled =
-            _systemConfigService.isFeatureEnabled(featureKey, _userPlan);
-        if (!isEnabled) {
-          print(
-              '⛔ [MODE_SELECTION] Mode ${mode.name} ($featureKey) not available for plan $_userPlan');
+      for (final mode in StudyMode.values) {
+        final featureKey = modeFeatureMap[mode];
+        if (featureKey == null) {
+          // Unknown mode - show it
+          _availableModes.add(mode);
+          _lockedModes[mode] = false;
+          continue;
         }
-        return isEnabled;
-      }).toList();
+
+        final shouldHide =
+            _systemConfigService.shouldHideFeature(featureKey, _userPlan);
+        final isLocked =
+            _systemConfigService.isFeatureLocked(featureKey, _userPlan);
+
+        if (shouldHide) {
+          // Hide mode completely (display_mode='hide')
+          print(
+              '🙈 [MODE_SELECTION] Mode ${mode.name} ($featureKey) hidden for plan $_userPlan');
+          continue; // Skip this mode
+        }
+
+        // Show mode (either unlocked or locked)
+        _availableModes.add(mode);
+        _lockedModes[mode] = isLocked;
+
+        if (isLocked) {
+          print(
+              '🔒 [MODE_SELECTION] Mode ${mode.name} ($featureKey) locked for plan $_userPlan');
+        }
+      }
 
       print(
           '✅ [MODE_SELECTION] Available modes: ${_availableModes.map((m) => m.name).join(", ")}');
+      print(
+          '🔒 [MODE_SELECTION] Locked modes: ${_lockedModes.entries.where((e) => e.value).map((e) => e.key.name).join(", ")}');
 
-      // If selected mode is not available, switch to first available mode
-      if (!_availableModes.contains(_selectedMode) &&
-          _availableModes.isNotEmpty) {
-        _selectedMode = _availableModes.first;
+      // If selected mode is locked or hidden, switch to first unlocked mode
+      if (_lockedModes[_selectedMode] == true ||
+          !_availableModes.contains(_selectedMode)) {
+        final firstUnlockedMode = _availableModes.firstWhere(
+          (mode) => _lockedModes[mode] != true,
+          orElse: () => _availableModes.isNotEmpty
+              ? _availableModes.first
+              : StudyMode.standard,
+        );
+        _selectedMode = firstUnlockedMode;
         print(
-            'ℹ️ [MODE_SELECTION] Switching to ${_selectedMode.name} (originally selected mode not available)');
+            'ℹ️ [MODE_SELECTION] Switching to ${_selectedMode.name} (originally selected mode not accessible)');
       }
 
       if (mounted) {
@@ -244,6 +276,37 @@ class _ModeSelectionSheetState extends State<ModeSelectionSheet> {
         });
       }
     }
+  }
+
+  /// Show upgrade dialog for locked study mode
+  void _showUpgradeDialogForMode(StudyMode mode) {
+    // Map mode to feature key
+    final modeFeatureMap = {
+      StudyMode.quick: 'quick_read_mode',
+      StudyMode.standard: 'standard_study_mode',
+      StudyMode.deep: 'deep_dive_mode',
+      StudyMode.lectio: 'lectio_divina_mode',
+      StudyMode.sermon: 'sermon_outline_mode',
+    };
+
+    final featureKey = modeFeatureMap[mode];
+    if (featureKey == null) return;
+
+    final requiredPlans = _systemConfigService.getRequiredPlans(featureKey);
+    final upgradePlan =
+        _systemConfigService.getUpgradePlan(featureKey, _userPlan);
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => UpgradeDialog(
+        featureKey: featureKey,
+        currentPlan: _userPlan,
+        requiredPlans: requiredPlans,
+        upgradePlan: upgradePlan,
+      ),
+    );
   }
 
   @override
@@ -327,32 +390,42 @@ class _ModeSelectionSheetState extends State<ModeSelectionSheet> {
                             child: CircularProgressIndicator(),
                           ),
                         )
-                      // Mode options (filtered by feature flags)
+                      // Mode options (with lock support)
                       else
-                        ..._availableModes.map((mode) => Padding(
-                              padding: const EdgeInsets.only(bottom: 12),
-                              child: _ModeOptionCard(
-                                mode: mode,
-                                isSelected: _selectedMode == mode,
-                                isRecommended: mode == widget.recommendedMode,
-                                translatedName:
-                                    _getStudyModeTranslatedName(mode, context),
-                                translatedDescription:
-                                    _getStudyModeTranslatedDescription(
-                                        mode, context),
-                                recommendedBadgeText: widget.isFromLearningPath
-                                    ? context.tr(TranslationKeys
-                                        .learningPathRecommendedModeBadge)
-                                    : context.tr(TranslationKeys
-                                        .modeSelectionRecommendedBadge),
-                                tokenCost: _tokenCosts[mode], // Pass token cost
-                                onTap: () {
+                        ..._availableModes.map((mode) {
+                          final isLocked = _lockedModes[mode] ?? false;
+                          return Padding(
+                            padding: const EdgeInsets.only(bottom: 12),
+                            child: _ModeOptionCard(
+                              mode: mode,
+                              isSelected: _selectedMode == mode,
+                              isRecommended: mode == widget.recommendedMode,
+                              isLocked: isLocked,
+                              translatedName:
+                                  _getStudyModeTranslatedName(mode, context),
+                              translatedDescription:
+                                  _getStudyModeTranslatedDescription(
+                                      mode, context),
+                              recommendedBadgeText: widget.isFromLearningPath
+                                  ? context.tr(TranslationKeys
+                                      .learningPathRecommendedModeBadge)
+                                  : context.tr(TranslationKeys
+                                      .modeSelectionRecommendedBadge),
+                              tokenCost: _tokenCosts[mode],
+                              onTap: () {
+                                if (isLocked) {
+                                  // Show upgrade dialog for locked modes
+                                  _showUpgradeDialogForMode(mode);
+                                } else {
+                                  // Select unlocked mode
                                   setState(() {
                                     _selectedMode = mode;
                                   });
-                                },
-                              ),
-                            )),
+                                }
+                              },
+                            ),
+                          );
+                        }),
 
                       const SizedBox(height: 8),
 
@@ -589,6 +662,7 @@ class _ModeOptionCard extends StatelessWidget {
   final StudyMode mode;
   final bool isSelected;
   final bool isRecommended;
+  final bool isLocked; // Whether this mode is locked for the user's plan
   final String translatedName;
   final String translatedDescription;
   final String recommendedBadgeText;
@@ -599,6 +673,7 @@ class _ModeOptionCard extends StatelessWidget {
     required this.mode,
     required this.isSelected,
     this.isRecommended = false,
+    this.isLocked = false,
     required this.translatedName,
     required this.translatedDescription,
     required this.recommendedBadgeText,
@@ -612,259 +687,304 @@ class _ModeOptionCard extends StatelessWidget {
 
     return GestureDetector(
       onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: isSelected
-              ? isDark
-                  ? AppTheme.primaryColor.withOpacity(0.15)
-                  : const Color(0xFFF3F0FF)
-              : isDark
-                  ? Colors.white.withOpacity(0.05)
-                  : const Color(0xFFF9FAFB),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
+      child: Opacity(
+        opacity: isLocked ? 0.7 : 1.0,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
             color: isSelected
-                ? AppTheme.primaryColor
-                : isDark
-                    ? Colors.white.withOpacity(0.1)
-                    : const Color(0xFFE5E7EB),
-            width: isSelected ? 2 : 1,
-          ),
-          boxShadow: isSelected
-              ? [
-                  BoxShadow(
-                    color: AppTheme.primaryColor.withOpacity(0.15),
-                    blurRadius: 12,
-                    offset: const Offset(0, 4),
-                  ),
-                ]
-              : null,
-        ),
-        child: Row(
-          children: [
-            // Icon container
-            Container(
-              width: 48,
-              height: 48,
-              decoration: BoxDecoration(
-                color: isSelected
+                ? isDark
                     ? AppTheme.primaryColor.withOpacity(0.15)
-                    : isDark
-                        ? Colors.white.withOpacity(0.1)
-                        : const Color(0xFFE5E7EB),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Icon(
-                mode.iconData,
-                size: 24,
-                color: isSelected
-                    ? AppTheme.primaryColor
-                    : isDark
-                        ? Colors.white.withOpacity(0.7)
-                        : const Color(0xFF6B7280),
-              ),
+                    : const Color(0xFFF3F0FF)
+                : isDark
+                    ? Colors.white.withOpacity(0.05)
+                    : const Color(0xFFF9FAFB),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: isLocked
+                  ? Colors.orange.withOpacity(0.5)
+                  : isSelected
+                      ? AppTheme.primaryColor
+                      : isDark
+                          ? Colors.white.withOpacity(0.1)
+                          : const Color(0xFFE5E7EB),
+              width: isLocked ? 2 : (isSelected ? 2 : 1),
             ),
-            const SizedBox(width: 16),
-
-            // Text content
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          translatedName,
-                          style: AppFonts.inter(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: isSelected
-                                ? AppTheme.primaryColor
-                                : isDark
-                                    ? Colors.white
-                                    : const Color(0xFF1F2937),
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                      if (isRecommended) ...[
-                        const SizedBox(width: 8),
-                        Tooltip(
-                          message: recommendedBadgeText,
-                          child: Container(
-                            padding: const EdgeInsets.all(6),
-                            decoration: BoxDecoration(
-                              color: isDark
-                                  ? const Color(
-                                      0xFF4A3B1F) // Dark gold/amber for dark theme
-                                  : const Color(
-                                      0xFFFFFBF0), // Light gold for light theme
-                              borderRadius: BorderRadius.circular(8),
-                              boxShadow: [
-                                BoxShadow(
-                                  color:
-                                      const Color(0xFFF59E0B).withOpacity(0.2),
-                                  blurRadius: 4,
-                                  offset: const Offset(0, 2),
-                                ),
-                              ],
-                            ),
-                            child: Icon(
-                              Icons.stars,
-                              size: 16,
-                              color: isDark
-                                  ? const Color(
-                                      0xFFFBBF24) // Brighter gold for dark theme
-                                  : const Color(
-                                      0xFFF59E0B), // Standard gold for light theme
-                            ),
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
-                  // Show recommended badge text below mode name
-                  if (isRecommended) ...[
-                    const SizedBox(height: 4),
-                    Text(
-                      recommendedBadgeText,
-                      style: AppFonts.inter(
-                        fontSize: 10,
-                        fontWeight: FontWeight.w700,
-                        color: isDark
-                            ? const Color(
-                                0xFFFBBF24) // Brighter gold for dark theme
-                            : const Color(
-                                0xFFF59E0B), // Standard gold for light theme
-                      ),
+            boxShadow: isSelected && !isLocked
+                ? [
+                    BoxShadow(
+                      color: AppTheme.primaryColor.withOpacity(0.15),
+                      blurRadius: 12,
+                      offset: const Offset(0, 4),
                     ),
-                  ],
-                  const SizedBox(height: 4),
-                  Text(
-                    translatedDescription,
-                    style: AppFonts.inter(
-                      fontSize: 13,
-                      color: isDark
-                          ? Colors.white.withOpacity(0.6)
-                          : const Color(0xFF6B7280),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            // Duration and token cost badges
-            Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                // Duration badge
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    color: isSelected
-                        ? AppTheme.primaryColor
-                        : isDark
-                            ? Colors.white.withOpacity(0.1)
-                            : const Color(0xFFE5E7EB),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Text(
-                    mode.durationText,
-                    style: AppFonts.inter(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: isSelected
-                          ? Colors.white
-                          : isDark
-                              ? Colors.white.withOpacity(0.7)
-                              : const Color(0xFF4B5563),
-                    ),
-                  ),
+                  ]
+                : null,
+          ),
+          child: Row(
+            children: [
+              // Icon container
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: isSelected
+                      ? AppTheme.primaryColor.withOpacity(0.15)
+                      : isDark
+                          ? Colors.white.withOpacity(0.1)
+                          : const Color(0xFFE5E7EB),
+                  borderRadius: BorderRadius.circular(12),
                 ),
-
-                // Token cost badge (for all modes)
-                if (tokenCost != null) ...[
-                  const SizedBox(height: 6),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: isSelected
-                          ? AppTheme.primaryColor.withOpacity(0.2)
-                          : isDark
-                              ? Colors.white.withOpacity(0.1)
-                              : const Color(0xFFF3F4F6),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.token,
-                          size: 12,
-                          color: isSelected
-                              ? AppTheme.primaryColor
-                              : isDark
-                                  ? Colors.white.withOpacity(0.7)
-                                  : const Color(0xFF6B7280),
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          '$tokenCost',
-                          style: AppFonts.inter(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w600,
-                            color: isSelected
-                                ? AppTheme.primaryColor
-                                : isDark
-                                    ? Colors.white.withOpacity(0.7)
-                                    : const Color(0xFF6B7280),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ],
-            ),
-
-            const SizedBox(width: 8),
-
-            // Selection indicator
-            AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
-              width: 24,
-              height: 24,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: isSelected ? AppTheme.primaryColor : Colors.transparent,
-                border: Border.all(
+                child: Icon(
+                  mode.iconData,
+                  size: 24,
                   color: isSelected
                       ? AppTheme.primaryColor
                       : isDark
-                          ? Colors.white.withOpacity(0.3)
-                          : const Color(0xFFD1D5DB),
-                  width: 2,
+                          ? Colors.white.withOpacity(0.7)
+                          : const Color(0xFF6B7280),
                 ),
               ),
-              child: isSelected
-                  ? const Icon(
-                      Icons.check,
-                      size: 14,
-                      color: Colors.white,
-                    )
-                  : null,
-            ),
-          ],
+              const SizedBox(width: 16),
+
+              // Text content
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            translatedName,
+                            style: AppFonts.inter(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              color: isSelected
+                                  ? AppTheme.primaryColor
+                                  : isDark
+                                      ? Colors.white
+                                      : const Color(0xFF1F2937),
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        if (isRecommended) ...[
+                          const SizedBox(width: 8),
+                          Tooltip(
+                            message: recommendedBadgeText,
+                            child: Container(
+                              padding: const EdgeInsets.all(6),
+                              decoration: BoxDecoration(
+                                color: isDark
+                                    ? const Color(
+                                        0xFF4A3B1F) // Dark gold/amber for dark theme
+                                    : const Color(
+                                        0xFFFFFBF0), // Light gold for light theme
+                                borderRadius: BorderRadius.circular(8),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: const Color(0xFFF59E0B)
+                                        .withOpacity(0.2),
+                                    blurRadius: 4,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ],
+                              ),
+                              child: Icon(
+                                Icons.stars,
+                                size: 16,
+                                color: isDark
+                                    ? const Color(
+                                        0xFFFBBF24) // Brighter gold for dark theme
+                                    : const Color(
+                                        0xFFF59E0B), // Standard gold for light theme
+                              ),
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                    // Show recommended badge text below mode name
+                    if (isRecommended) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        recommendedBadgeText,
+                        style: AppFonts.inter(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w700,
+                          color: isDark
+                              ? const Color(
+                                  0xFFFBBF24) // Brighter gold for dark theme
+                              : const Color(
+                                  0xFFF59E0B), // Standard gold for light theme
+                        ),
+                      ),
+                    ],
+                    const SizedBox(height: 4),
+                    Text(
+                      translatedDescription,
+                      style: AppFonts.inter(
+                        fontSize: 13,
+                        color: isDark
+                            ? Colors.white.withOpacity(0.6)
+                            : const Color(0xFF6B7280),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              // Show lock badge if locked, otherwise show duration and token cost
+              if (isLocked)
+                // Locked badge
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 10,
+                  ),
+                  decoration: BoxDecoration(
+                    color: isDark
+                        ? Colors.orange.withOpacity(0.15)
+                        : Colors.orange.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: Colors.orange,
+                      width: 1.5,
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(
+                        Icons.lock_rounded,
+                        size: 16,
+                        color: Colors.orange,
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        'Locked',
+                        style: AppFonts.inter(
+                          fontSize: 13,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.orange,
+                        ),
+                      ),
+                    ],
+                  ),
+                )
+              else
+                // Duration and token cost badges
+                Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    // Duration badge
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: isSelected
+                            ? AppTheme.primaryColor
+                            : isDark
+                                ? Colors.white.withOpacity(0.1)
+                                : const Color(0xFFE5E7EB),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        mode.durationText,
+                        style: AppFonts.inter(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: isSelected
+                              ? Colors.white
+                              : isDark
+                                  ? Colors.white.withOpacity(0.7)
+                                  : const Color(0xFF4B5563),
+                        ),
+                      ),
+                    ),
+
+                    // Token cost badge (for all modes)
+                    if (tokenCost != null) ...[
+                      const SizedBox(height: 6),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: isSelected
+                              ? AppTheme.primaryColor.withOpacity(0.2)
+                              : isDark
+                                  ? Colors.white.withOpacity(0.1)
+                                  : const Color(0xFFF3F4F6),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.token,
+                              size: 12,
+                              color: isSelected
+                                  ? AppTheme.primaryColor
+                                  : isDark
+                                      ? Colors.white.withOpacity(0.7)
+                                      : const Color(0xFF6B7280),
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              '$tokenCost',
+                              style: AppFonts.inter(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                                color: isSelected
+                                    ? AppTheme.primaryColor
+                                    : isDark
+                                        ? Colors.white.withOpacity(0.7)
+                                        : const Color(0xFF6B7280),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+
+              const SizedBox(width: 8),
+
+              // Selection indicator
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                width: 24,
+                height: 24,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color:
+                      isSelected ? AppTheme.primaryColor : Colors.transparent,
+                  border: Border.all(
+                    color: isSelected
+                        ? AppTheme.primaryColor
+                        : isDark
+                            ? Colors.white.withOpacity(0.3)
+                            : const Color(0xFFD1D5DB),
+                    width: 2,
+                  ),
+                ),
+                child: isSelected
+                    ? const Icon(
+                        Icons.check,
+                        size: 14,
+                        color: Colors.white,
+                      )
+                    : null,
+              ),
+            ],
+          ),
         ),
       ),
     );

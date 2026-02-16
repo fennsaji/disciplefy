@@ -19,7 +19,8 @@ export type FeatureName =
   | 'token_purchase'
   | 'user_login'
   | 'admin_operation'
-  | 'continue_learning';
+  | 'continue_learning'
+  | 'invoice_pdf_generation';
 
 export type OperationType = 'create' | 'read' | 'update' | 'delete' | 'consume';
 

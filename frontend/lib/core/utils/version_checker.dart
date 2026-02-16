@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../services/system_config_service.dart';
+import '../router/app_router.dart';
 
 /// Version Checker Utility
 ///
@@ -47,7 +48,8 @@ class VersionChecker {
       }
 
       // Get minimum required version for platform
-      final minVersion = configService.getMinVersionForPlatform(platform);
+      final minVersion =
+          configService.config?.versionControl.minVersion[platform] ?? '1.0.0';
 
       debugPrint(
           '[VersionChecker] Current: $currentVersion, Min required: $minVersion, Platform: $platform');
@@ -216,13 +218,10 @@ class VersionChecker {
 
   /// Get navigation context for showing dialogs
   static BuildContext? _getNavigationContext() {
-    // Try to get context from root navigator
-    // This assumes AppRouter.rootNavigatorKey is accessible
-    // If not, we need to store a global key reference
     try {
-      // Import AppRouter and use its navigator key
-      // For now, returning null - will be fixed during integration
-      return null;
+      // Use AppRouter's root navigator key to get context
+      final navigatorState = AppRouter.rootNavigatorKey.currentState;
+      return navigatorState?.context;
     } catch (e) {
       debugPrint('[VersionChecker] Error getting context: $e');
       return null;

@@ -10,6 +10,7 @@ import { createFunction } from '../_shared/core/function-factory.ts'
 import { ServiceContainer } from '../_shared/core/services.ts'
 import { AppError } from '../_shared/utils/error-handler.ts'
 import { DEFAULT_PLAN_CONFIGS, type UserPlan } from '../_shared/types/token-types.ts'
+import { checkMaintenanceMode } from '../_shared/middleware/maintenance-middleware.ts'
 
 /**
  * Token status response interface
@@ -43,6 +44,9 @@ interface TokenStatusResponse {
  * 4. Returns formatted status with plan information
  */
 async function handleTokenStatus(req: Request, services: ServiceContainer): Promise<Response> {
+  // Check maintenance mode FIRST
+  await checkMaintenanceMode(req, services)
+
   const { authService, tokenService } = services
   // 1. Get user context SECURELY from AuthService
   const userContext = await authService.getUserContext(req)

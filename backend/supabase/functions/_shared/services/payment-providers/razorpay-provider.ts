@@ -9,7 +9,7 @@
  */
 
 import Razorpay from 'npm:razorpay'
-import { createHmac } from 'node:crypto'
+import { generateHmacSha256 } from '../../utils/crypto-utils.ts'
 import {
   PaymentProvider,
   ProviderType,
@@ -322,7 +322,7 @@ export class RazorpayProvider extends PaymentProvider {
    * @param signature - X-Razorpay-Signature header value
    * @returns true if signature is valid
    */
-  override verifyWebhookSignature(payload: string, signature: string): boolean {
+  override async verifyWebhookSignature(payload: string, signature: string): Promise<boolean> {
     const webhookSecret = Deno.env.get('RAZORPAY_WEBHOOK_SECRET')
 
     if (!webhookSecret) {
@@ -331,10 +331,8 @@ export class RazorpayProvider extends PaymentProvider {
     }
 
     try {
-      // Generate expected signature
-      const expectedSignature = createHmac('sha256', webhookSecret)
-        .update(payload)
-        .digest('hex')
+      // Generate expected signature using Web Crypto API
+      const expectedSignature = await generateHmacSha256(webhookSecret, payload)
 
       // Constant-time comparison to prevent timing attacks
       const isValid = signature === expectedSignature

@@ -8,7 +8,7 @@
 import { createSimpleFunction } from '../_shared/core/function-factory.ts'
 import { ServiceContainer } from '../_shared/core/services.ts'
 import { AppError } from '../_shared/utils/error-handler.ts'
-import { createHmac } from 'node:crypto'
+import { generateHmacSha256 } from '../_shared/utils/crypto-utils.ts'
 import type { RazorpaySubscriptionWebhook } from '../_shared/types/subscription-types.ts'
 
 /**
@@ -69,7 +69,7 @@ async function handleRazorpayWebhook(req: Request, services: ServiceContainer): 
   const body = await req.text()
 
   // Verify webhook signature
-  const isValidSignature = verifyWebhookSignature(body, signature)
+  const isValidSignature = await verifyWebhookSignature(body, signature)
   if (!isValidSignature) {
     console.error('[Webhook] Invalid signature received')
     throw new AppError(
@@ -220,16 +220,14 @@ function timingSafeEqual(a: string, b: string): boolean {
  * where attackers could determine the correct signature by measuring
  * comparison time differences
  */
-function verifyWebhookSignature(body: string, signature: string): boolean {
+async function verifyWebhookSignature(body: string, signature: string): Promise<boolean> {
   const webhookSecret = Deno.env.get('RAZORPAY_WEBHOOK_SECRET')
   if (!webhookSecret) {
     console.error('[Webhook] RAZORPAY_WEBHOOK_SECRET not configured')
     return false
   }
 
-  const expectedSignature = createHmac('sha256', webhookSecret)
-    .update(body)
-    .digest('hex')
+  const expectedSignature = await generateHmacSha256(webhookSecret, body)
 
   // CRITICAL: Use constant-time comparison to prevent timing attacks
   return timingSafeEqual(signature, expectedSignature)

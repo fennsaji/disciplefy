@@ -9,6 +9,7 @@ import { createSimpleFunction } from '../_shared/core/function-factory.ts'
 import { AppError } from '../_shared/utils/error-handler.ts'
 import { ApiSuccessResponse } from '../_shared/types/index.ts'
 import { ServiceContainer } from '../_shared/core/services.ts'
+import { checkMaintenanceMode } from '../_shared/middleware/maintenance-middleware.ts'
 
 /**
  * API response structure for categories
@@ -71,6 +72,9 @@ async function logAccessEvent(
  * Main handler for topics categories
  */
 async function handleTopicsCategories(req: Request, services: ServiceContainer): Promise<Response> {
+  // Check maintenance mode FIRST
+  await checkMaintenanceMode(req, services)
+
   try {
     // Parse query parameters and fetch categories
     const queryParams = parseQueryParameters(req.url)

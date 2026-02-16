@@ -23,7 +23,8 @@ import { createFunction } from '../_shared/core/function-factory.ts'
 import { ServiceContainer } from '../_shared/core/services.ts'
 import { AppError } from '../_shared/utils/error-handler.ts'
 import { ApiSuccessResponse, UserContext } from '../_shared/types/index.ts'
-import { isFeatureEnabledForPlan } from '../_shared/services/feature-flag-service.ts'
+import { checkFeatureAccess } from '../_shared/middleware/feature-access-middleware.ts'
+import { checkMaintenanceMode } from '../_shared/middleware/maintenance-middleware.ts'
 import {
   ReflectionsService,
   StudyReflection,
@@ -68,6 +69,9 @@ async function handleReflections(
   services: ServiceContainer,
   userContext: UserContext
 ): Promise<Response> {
+  // Check maintenance mode FIRST
+  await checkMaintenanceMode(req, services)
+
   // Ensure user is authenticated
   if (userContext.type !== 'authenticated') {
     throw new AppError(
@@ -82,17 +86,8 @@ async function handleReflections(
   console.log(`👤 [Reflections] User plan: ${userPlan}`)
 
   // Feature flag validation - Check if reflections is enabled for user's plan
-  const hasReflectionsAccess = await isFeatureEnabledForPlan('reflections', userPlan)
-
-  if (!hasReflectionsAccess) {
-    console.warn(`⛔ [Reflections] Feature access denied: reflections not available for plan ${userPlan}`)
-    throw new AppError(
-      'FEATURE_NOT_AVAILABLE',
-      `Reflections are not available for your current plan (${userPlan}). Please upgrade to Standard, Plus, or Premium to access this feature.`,
-      403
-    )
-  }
-
+  const userId = userContext.userId!
+  await checkFeatureAccess(userId, userPlan, 'reflections')
   console.log(`✅ [Reflections] Feature access granted: reflections available for plan ${userPlan}`)
 
   // Route to appropriate handler based on HTTP method

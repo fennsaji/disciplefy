@@ -3,10 +3,12 @@ import 'package:go_router/go_router.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 
 import '../../../../core/constants/app_fonts.dart';
+import '../../../../core/di/injection_container.dart';
 import '../../../../core/extensions/translation_extension.dart';
 import '../../../../core/i18n/translation_keys.dart';
 import '../../../../core/router/app_routes.dart';
 import '../../../../core/services/platform_detection_service.dart';
+import '../../../../core/services/system_config_service.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/utils/logger.dart';
 import '../../data/datasources/subscription_remote_data_source.dart';
@@ -327,8 +329,8 @@ class _PricingPageState extends State<PricingPage> {
     SubscriptionPlanModel plan, {
     bool isMobile = false,
   }) {
-    // Extract features from plan.features JSON
-    final features = _extractFeatures(plan.features);
+    // Extract features from plan.features JSON and SystemConfigService
+    final features = _extractFeatures(plan.features, plan.planCode);
 
     // Determine badge and styling based on tier
     String? badge;
@@ -391,7 +393,8 @@ class _PricingPageState extends State<PricingPage> {
     );
   }
 
-  List<String> _extractFeatures(Map<String, dynamic> featuresJson) {
+  List<String> _extractFeatures(
+      Map<String, dynamic> featuresJson, String planCode) {
     final features = <String>[];
 
     // Extract daily tokens with mode restrictions
@@ -440,19 +443,56 @@ class _PricingPageState extends State<PricingPage> {
       }
     }
 
-    // Extract memory verses
-    final memoryVerses = featuresJson['memory_verses'] as int?;
-    if (memoryVerses != null) {
-      if (memoryVerses == -1) {
+    // Get memory verses from SystemConfigService (single source of truth)
+    try {
+      final systemConfig = sl<SystemConfigService>();
+      final memoryConfig = systemConfig.config?.memoryVerseConfig;
+
+      if (memoryConfig != null) {
+        final tierLower = planCode.toLowerCase();
+        int? memoryVerses;
+
+        // Get limit based on tier
+        switch (tierLower) {
+          case 'free':
+            memoryVerses = memoryConfig.verseLimits['free'];
+            break;
+          case 'standard':
+            memoryVerses = memoryConfig.verseLimits['standard'];
+            break;
+          case 'plus':
+            memoryVerses = memoryConfig.verseLimits['plus'];
+            break;
+          case 'premium':
+            memoryVerses = memoryConfig.verseLimits['premium'];
+            break;
+        }
+
+        if (memoryVerses != null) {
+          if (memoryVerses == -1) {
+            features.add('Unlimited active memory verses');
+          } else {
+            features.add('$memoryVerses active memory verses');
+          }
+        }
+      }
+    } catch (e) {
+      Logger.error('Failed to get memory verse limits from system config',
+          tag: 'PRICING', error: e);
+      // Fallback to hardcoded values if config not available
+      if (planCode.toLowerCase() == 'free') {
+        features.add('3 active memory verses');
+      } else if (planCode.toLowerCase() == 'standard') {
+        features.add('5 active memory verses');
+      } else if (planCode.toLowerCase() == 'plus') {
+        features.add('10 active memory verses');
+      } else if (planCode.toLowerCase() == 'premium') {
         features.add('Unlimited active memory verses');
-      } else {
-        features.add('$memoryVerses active memory verses');
       }
     }
 
     // Extract practice modes with specific mode names
     final practiceModes = featuresJson['practice_modes'] as int?;
-    final practiceLimit = featuresJson['practice_limit'] as int?;
 
     if (practiceModes != null) {
       if (dailyTokens == 8) {
@@ -463,13 +503,52 @@ class _PricingPageState extends State<PricingPage> {
       }
     }
 
-    // Extract practice sessions limit
-    if (practiceLimit != null) {
-      if (practiceLimit == -1) {
+    // Get practice unlock limit from SystemConfigService (single source of truth)
+    try {
+      final systemConfig = sl<SystemConfigService>();
+      final memoryConfig = systemConfig.config?.memoryVerseConfig;
+
+      if (memoryConfig != null) {
+        final tierLower = planCode.toLowerCase();
+        int? practiceLimit;
+
+        // Get limit based on tier
+        switch (tierLower) {
+          case 'free':
+            practiceLimit = memoryConfig.unlockLimits['free'];
+            break;
+          case 'standard':
+            practiceLimit = memoryConfig.unlockLimits['standard'];
+            break;
+          case 'plus':
+            practiceLimit = memoryConfig.unlockLimits['plus'];
+            break;
+          case 'premium':
+            practiceLimit = memoryConfig.unlockLimits['premium'];
+            break;
+        }
+
+        if (practiceLimit != null) {
+          if (practiceLimit == -1) {
+            features.add('Unlimited practice sessions per verse');
+          } else {
+            features.add(
+                '$practiceLimit practice session${practiceLimit > 1 ? 's' : ''} per verse per day');
+          }
+        }
+      }
+    } catch (e) {
+      Logger.error('Failed to get practice unlock limits from system config',
+          tag: 'PRICING', error: e);
+      // Fallback to hardcoded values if config not available
+      if (planCode.toLowerCase() == 'free') {
+        features.add('1 practice session per verse per day');
+      } else if (planCode.toLowerCase() == 'standard') {
+        features.add('2 practice sessions per verse per day');
+      } else if (planCode.toLowerCase() == 'plus') {
+        features.add('3 practice sessions per verse per day');
+      } else if (planCode.toLowerCase() == 'premium') {
         features.add('Unlimited practice sessions per verse');
-      } else {
-        features.add(
-            '$practiceLimit practice session${practiceLimit > 1 ? 's' : ''} per verse per day');
       }
     }
 

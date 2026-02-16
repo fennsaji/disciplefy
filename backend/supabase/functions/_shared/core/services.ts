@@ -27,6 +27,7 @@ import { DailyVerseService } from '../../daily-verse/daily-verse-service.ts'
 import { UsageLoggingService } from '../services/usage-logging-service.ts'
 import { CostTrackingService } from '../services/cost-tracking-service.ts'
 import { RateLimitService } from '../services/rate-limit-service.ts'
+import { MemoryVerseConfigService } from '../services/memory-verse-config-service.ts'
 import { config } from './config.ts'
 
 /**
@@ -63,6 +64,7 @@ export interface ServiceContainer {
   readonly usageLoggingService: UsageLoggingService
   readonly costTrackingService: CostTrackingService
   readonly rateLimitService: RateLimitService
+  readonly memoryVerseConfigService: MemoryVerseConfigService
   readonly serviceRoleClient: SupabaseClient // Alias for compatibility
 }
 
@@ -146,6 +148,7 @@ async function initializeServiceContainer(): Promise<ServiceContainer> {
     const usageLoggingService = new UsageLoggingService(config.supabaseUrl, config.supabaseServiceKey)
     const costTrackingService = new CostTrackingService()
     const rateLimitService = new RateLimitService(config.supabaseUrl, config.supabaseServiceKey)
+    const memoryVerseConfigService = new MemoryVerseConfigService(supabaseServiceClient)
 
     // Test LLM service initialization
     try {
@@ -178,6 +181,7 @@ async function initializeServiceContainer(): Promise<ServiceContainer> {
       usageLoggingService,
       costTrackingService,
       rateLimitService,
+      memoryVerseConfigService,
       serviceRoleClient: supabaseServiceClient // Alias for compatibility
     }
 

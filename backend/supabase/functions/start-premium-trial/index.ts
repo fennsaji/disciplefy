@@ -2,16 +2,20 @@
  * Start Premium Trial Edge Function
  *
  * Allows eligible users to start a 7-day Premium trial.
- * Eligibility: User must have signed up after April 1st, 2025
- * and not have already used their trial.
+ *
+ * UPDATED: Premium trials are now available ON-DEMAND to ALL users.
+ * No date restrictions or signup date requirements.
+ *
+ * Eligibility:
+ * - User must NOT have already used their Premium trial
+ * - User must NOT currently have Premium access (subscription or active trial)
  */
 
 import { createSimpleFunction } from '../_shared/core/function-factory.ts'
 import { ServiceContainer } from '../_shared/core/services.ts'
 import { AppError } from '../_shared/utils/error-handler.ts'
+import { checkMaintenanceMode } from '../_shared/middleware/maintenance-middleware.ts'
 import {
-  isPremiumTrialAvailable,
-  canStartPremiumTrial,
   calculatePremiumTrialEndDate,
   PREMIUM_TRIAL_DAYS
 } from '../_shared/config/subscription-config.ts'
@@ -34,6 +38,9 @@ async function handleStartPremiumTrial(
   req: Request,
   services: ServiceContainer
 ): Promise<Response> {
+  // Check maintenance mode FIRST
+  await checkMaintenanceMode(req, services)
+
   try {
     // 1. Authenticate user
     const userContext = await services.authService.getUserContext(req)
@@ -51,16 +58,7 @@ async function handleStartPremiumTrial(
     // 2. Rate limiting (prevent spam)
     await services.rateLimiter.enforceRateLimit(userId, 'authenticated')
 
-    // 3. Check if Premium trial feature is available (after April 1st, 2025)
-    if (!isPremiumTrialAvailable()) {
-      throw new AppError(
-        'TRIAL_NOT_AVAILABLE',
-        'Premium trial is not available yet. It will be available from April 1st, 2025.',
-        400
-      )
-    }
-
-    // 4. Check if user already has active subscription
+    // 3. Check if user already has active subscription
     const userPlan = await services.authService.getUserPlan(req)
 
     if (userPlan === 'premium') {
@@ -71,18 +69,18 @@ async function handleStartPremiumTrial(
       )
     }
 
-    // 5. Get user creation date and check eligibility
+    // 4. Check eligibility: Has user already used their trial?
     const { data: userProfile } = await services.supabaseServiceClient
       .from('user_profiles')
-      .select('created_at, has_used_premium_trial, premium_trial_end_at')
+      .select('has_used_premium_trial, premium_trial_end_at, premium_trial_started_at')
       .eq('id', userId)
       .maybeSingle()
 
     // Check if user has already used their trial
-    if (userProfile?.has_used_premium_trial) {
+    if (userProfile?.has_used_premium_trial || userProfile?.premium_trial_started_at) {
       throw new AppError(
         'TRIAL_ALREADY_USED',
-        'You have already used your Premium trial.',
+        'You have already used your Premium trial. Upgrade to Premium to continue enjoying these features!',
         400
       )
     }
@@ -99,34 +97,7 @@ async function handleStartPremiumTrial(
       }
     }
 
-    // Get user creation date (from auth.users if not in profile)
-    let userCreatedAt: Date
-
-    if (userProfile?.created_at) {
-      userCreatedAt = new Date(userProfile.created_at)
-    } else {
-      // Fallback: get from auth.users via RPC
-      const { data: authCreatedAt } = await services.supabaseServiceClient
-        .rpc('get_user_created_at', { p_user_id: userId })
-
-      if (authCreatedAt) {
-        userCreatedAt = new Date(authCreatedAt)
-      } else {
-        // Default to now if we can't determine (will fail eligibility check)
-        userCreatedAt = new Date()
-      }
-    }
-
-    // Check if user signed up after April 1st, 2025
-    if (!await canStartPremiumTrial(userCreatedAt)) {
-      throw new AppError(
-        'NOT_ELIGIBLE',
-        'Premium trial is only available for users who signed up after April 1st, 2025.',
-        400
-      )
-    }
-
-    // 6. Start the Premium trial
+    // 5. Start the Premium trial
     const trialStartedAt = new Date()
     const trialEndAt = await calculatePremiumTrialEndDate(trialStartedAt)
 
@@ -155,7 +126,7 @@ async function handleStartPremiumTrial(
       )
     }
 
-    // 7. Log success
+    // 6. Log success
     await services.analyticsLogger.logEvent(
       'premium_trial_started',
       {
@@ -166,13 +137,13 @@ async function handleStartPremiumTrial(
       }
     )
 
-    // 8. Build response
+    // 7. Build response
     const response: StartPremiumTrialResponse = {
       success: true,
       trial_started_at: trialStartedAt.toISOString(),
       trial_end_at: trialEndAt.toISOString(),
       days_remaining: PREMIUM_TRIAL_DAYS,
-      message: `Your ${PREMIUM_TRIAL_DAYS}-day Premium trial has started! Enjoy unlimited access to all features.`
+      message: `Your ${PREMIUM_TRIAL_DAYS}-day Premium trial has started! Enjoy unlimited access to all Premium features.`
     }
 
     return new Response(

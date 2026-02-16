@@ -15,19 +15,64 @@
 BEGIN;
 
 -- ============================================================================
--- 1. Extend system_config Table
+-- 1. Create system_config Table
 -- ============================================================================
 
--- Add columns for enhanced config management (existing table uses 'key' and 'value')
-ALTER TABLE public.system_config
-  ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT true,
-  ADD COLUMN IF NOT EXISTS metadata JSONB DEFAULT '{}'::jsonb;
+-- Create system_config table with all columns
+CREATE TABLE IF NOT EXISTS public.system_config (
+  key TEXT PRIMARY KEY,
+  value TEXT NOT NULL,
+  description TEXT,
+  is_active BOOLEAN DEFAULT true,
+  metadata JSONB DEFAULT '{}'::jsonb,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Enable RLS on system_config
+ALTER TABLE public.system_config ENABLE ROW LEVEL SECURITY;
+
+-- Policy: Public read access for active configs
+CREATE POLICY "Allow public read access to system config"
+  ON public.system_config
+  FOR SELECT
+  TO public
+  USING (is_active = true);
+
+-- Policy: Only service role can write
+CREATE POLICY "Only service role can modify system config"
+  ON public.system_config
+  FOR ALL
+  TO service_role
+  USING (true)
+  WITH CHECK (true);
 
 -- Create index for active configs
 CREATE INDEX IF NOT EXISTS idx_system_config_active ON public.system_config(key) WHERE is_active = true;
 
+-- Add table comment
+COMMENT ON TABLE public.system_config IS
+  'System-wide configuration and feature flags.
+   Used for maintenance mode, versioning, and feature toggles.';
+
 -- ============================================================================
--- 2. Insert System Configuration Entries
+-- 2. Insert Legacy System Configuration Entries
+-- ============================================================================
+
+-- Insert legacy configuration entries (from admin_config migration)
+INSERT INTO public.system_config (key, value, description, is_active) VALUES
+  ('app_version', '1.0.0', 'Current application version', true),
+  ('maintenance_mode', 'false', '[DEPRECATED] Use maintenance_mode_enabled instead', false),
+  ('trial_period_days', '7', '[DEPRECATED] Use premium_trial_days instead', false),
+  ('max_free_guides_per_day', '3', '[DEPRECATED] Daily limits moved to subscription_plans', false),
+  ('feature_voice_buddy', 'true', '[DEPRECATED] Use feature_flags table instead', false),
+  ('feature_learning_paths', 'true', '[DEPRECATED] Use feature_flags table instead', false),
+  ('feature_memory_verses', 'true', '[DEPRECATED] Use feature_flags table instead', false),
+  ('admin_emails', 'fennsaji@gmail.com', 'Comma-separated list of admin emails (server-side only)', true)
+ON CONFLICT (key) DO NOTHING;
+
+-- ============================================================================
+-- 3. Insert New System Configuration Entries
 -- ============================================================================
 
 -- Maintenance Mode Configuration
@@ -65,77 +110,42 @@ ON CONFLICT (key) DO UPDATE SET
   is_active = EXCLUDED.is_active,
   metadata = EXCLUDED.metadata;
 
--- ============================================================================
--- 3. Create Feature Flags Table
--- ============================================================================
-
-CREATE TABLE IF NOT EXISTS public.feature_flags (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  feature_key TEXT UNIQUE NOT NULL,
-  feature_name TEXT NOT NULL,
-  description TEXT,
-  is_enabled BOOLEAN DEFAULT false,
-  rollout_percentage INTEGER DEFAULT 100 CHECK (rollout_percentage >= 0 AND rollout_percentage <= 100),
-  enabled_for_plans TEXT[] DEFAULT ARRAY[]::TEXT[], -- Plans that have access: ['free', 'standard', 'plus', 'premium']
-  metadata JSONB DEFAULT '{}'::jsonb,
-  created_at TIMESTAMPTZ DEFAULT NOW(),
-  updated_at TIMESTAMPTZ DEFAULT NOW(),
-  updated_by TEXT -- Admin email who made the last change
-);
-
--- Create indexes for efficient queries
-CREATE INDEX IF NOT EXISTS idx_feature_flags_enabled ON public.feature_flags(is_enabled) WHERE is_enabled = true;
-CREATE INDEX IF NOT EXISTS idx_feature_flags_key ON public.feature_flags(feature_key);
-
--- ============================================================================
--- 4. Insert Feature Flags
--- ============================================================================
-
-INSERT INTO public.feature_flags (feature_key, feature_name, description, is_enabled, enabled_for_plans, rollout_percentage, metadata)
+-- Memory Verse System Configuration
+INSERT INTO public.system_config (key, value, description, is_active, metadata)
 VALUES
-  -- Core Features
-  ('voice_buddy', 'Voice Buddy', 'AI-powered voice conversation feature for Bible study', true, ARRAY['premium', 'plus'], 100, '{"min_app_version": "1.0.0", "requires_subscription": true, "category": "premium_features"}'::jsonb),
-  ('learning_paths', 'Learning Paths', 'Curated learning journey feature with progressive study paths', true, ARRAY['free', 'standard', 'plus', 'premium'], 100, '{"min_app_version": "1.0.0", "category": "core_features"}'::jsonb),
-  ('memory_verses', 'Memory Verses', 'Spaced repetition memorization system for scripture verses', true, ARRAY['free', 'standard', 'plus', 'premium'], 100, '{"min_app_version": "1.0.0", "category": "core_features"}'::jsonb),
-  ('ai_discipler', 'AI Discipler', 'Follow-up conversation feature for deeper discipleship', true, ARRAY['standard', 'plus', 'premium'], 100, '{"min_app_version": "1.0.0", "requires_subscription": true, "category": "premium_features"}'::jsonb),
-  ('reflections', 'Reflections', 'Personal reflection journaling and insight tracking', true, ARRAY['standard', 'plus', 'premium'], 100, '{"min_app_version": "1.0.0", "requires_subscription": true, "category": "premium_features"}'::jsonb),
+  -- Practice Mode Unlock Limits (per verse per day by tier)
+  ('free_practice_unlock_limit', '1', 'Number of practice modes Free users can unlock per verse per day', true, '{"category": "memory_verses", "tier": "free"}'::jsonb),
+  ('standard_practice_unlock_limit', '2', 'Number of practice modes Standard users can unlock per verse per day', true, '{"category": "memory_verses", "tier": "standard"}'::jsonb),
+  ('plus_practice_unlock_limit', '3', 'Number of practice modes Plus users can unlock per verse per day', true, '{"category": "memory_verses", "tier": "plus"}'::jsonb),
+  ('premium_practice_unlock_limit', '-1', 'Number of practice modes Premium users can unlock per verse per day (-1 = unlimited)', true, '{"category": "memory_verses", "tier": "premium"}'::jsonb),
 
-  -- Study Modes
-  ('quick_read_mode', 'Quick Read Mode', '3-minute condensed study with key insight and reflection (⚡ Quick Read)', true, ARRAY['free', 'standard', 'plus', 'premium'], 100, '{"min_app_version": "1.0.0", "duration_minutes": 3, "category": "study_modes"}'::jsonb),
-  ('standard_study_mode', 'Standard Study Mode', '10-minute full study with all 6 sections (📖 Standard Study)', true, ARRAY['free', 'standard', 'plus', 'premium'], 100, '{"min_app_version": "1.0.0", "duration_minutes": 10, "category": "study_modes"}'::jsonb),
-  ('deep_dive_mode', 'Deep Dive Mode', '15-minute extended study with word studies and cross-references (🔍 Deep Dive)', true, ARRAY['standard', 'plus', 'premium'], 100, '{"min_app_version": "1.0.0", "duration_minutes": 15, "requires_subscription": true, "category": "study_modes"}'::jsonb),
-  ('lectio_divina_mode', 'Lectio Divina Mode', '10-minute meditative Lectio Divina format with silence timers (🕯️ Lectio Divina)', true, ARRAY['standard', 'plus', 'premium'], 100, '{"min_app_version": "1.0.0", "duration_minutes": 10, "requires_subscription": true, "category": "study_modes"}'::jsonb),
-  ('sermon_outline_mode', 'Sermon Outline Mode', '50-60 minute full sermon with timing and illustrations (⛪ Sermon Outline)', true, ARRAY['plus', 'premium'], 100, '{"min_app_version": "1.0.0", "duration_minutes": 55, "requires_subscription": true, "category": "study_modes"}'::jsonb),
+  -- Memory Verse Limits (total active verses by tier)
+  ('free_memory_verses_limit', '3', 'Maximum number of memory verses Free users can have active at once', true, '{"category": "memory_verses", "tier": "free"}'::jsonb),
+  ('standard_memory_verses_limit', '5', 'Maximum number of memory verses Standard users can have active at once', true, '{"category": "memory_verses", "tier": "standard"}'::jsonb),
+  ('plus_memory_verses_limit', '10', 'Maximum number of memory verses Plus users can have active at once', true, '{"category": "memory_verses", "tier": "plus"}'::jsonb),
+  ('premium_memory_verses_limit', '-1', 'Maximum number of memory verses Premium users can have active at once (-1 = unlimited)', true, '{"category": "memory_verses", "tier": "premium"}'::jsonb),
 
-  -- Additional Features
-  ('daily_verse', 'Daily Verse', 'Daily verse delivery with multilingual support and caching', true, ARRAY['free', 'standard', 'plus', 'premium'], 100, '{"min_app_version": "1.0.0", "category": "engagement_features"}'::jsonb),
-  ('leaderboard', 'Leaderboard & Gamification', 'Study streaks, achievements, XP system, and global leaderboards', true, ARRAY['free', 'standard', 'plus', 'premium'], 100, '{"min_app_version": "1.0.0", "category": "engagement_features"}'::jsonb)
-ON CONFLICT (feature_key) DO NOTHING;
+  -- Practice Mode Availability (JSON arrays of available mode names)
+  ('free_available_practice_modes', '["flip_card", "type_it_out"]', 'Practice modes available to Free tier users', true, '{"category": "memory_verses", "tier": "free", "type": "array"}'::jsonb),
+  ('paid_available_practice_modes', '["flip_card", "type_it_out", "cloze", "first_letter", "progressive", "word_scramble", "word_bank", "audio"]', 'Practice modes available to Standard/Plus/Premium users', true, '{"category": "memory_verses", "tier": "paid", "type": "array"}'::jsonb),
 
--- ============================================================================
--- 5. Enable RLS on feature_flags
--- ============================================================================
+  -- Spaced Repetition Configuration
+  ('memory_verse_initial_ease_factor', '2.5', 'Initial ease factor for new memory verses (spaced repetition algorithm)', true, '{"category": "memory_verses", "algorithm": "sm2"}'::jsonb),
+  ('memory_verse_initial_interval_days', '1', 'Initial review interval in days for new memory verses', true, '{"category": "memory_verses", "algorithm": "sm2"}'::jsonb),
+  ('memory_verse_min_ease_factor', '1.3', 'Minimum ease factor allowed (prevents interval from becoming too short)', true, '{"category": "memory_verses", "algorithm": "sm2"}'::jsonb),
+  ('memory_verse_max_interval_days', '365', 'Maximum review interval in days (1 year)', true, '{"category": "memory_verses", "algorithm": "sm2"}'::jsonb),
 
-ALTER TABLE public.feature_flags ENABLE ROW LEVEL SECURITY;
-
--- Public read access for enabled features (anyone can see what features are enabled)
-CREATE POLICY "Feature flags are viewable by everyone"
-  ON public.feature_flags FOR SELECT
-  USING (is_enabled = true);
-
--- Admin write access (only admins can modify feature flags)
-CREATE POLICY "Feature flags are editable by admins"
-  ON public.feature_flags FOR ALL
-  USING (
-    EXISTS (
-      SELECT 1 FROM public.user_profiles
-      WHERE user_profiles.id = auth.uid()
-      AND user_profiles.is_admin = true
-    )
-  );
+  -- Gamification & Engagement
+  ('memory_verse_mastery_threshold', '5', 'Number of consecutive correct reviews to mark verse as mastered', true, '{"category": "memory_verses", "gamification": true}'::jsonb),
+  ('memory_verse_xp_per_review', '10', 'XP points awarded per successful verse review', true, '{"category": "memory_verses", "gamification": true}'::jsonb),
+  ('memory_verse_xp_mastery_bonus', '50', 'Bonus XP points awarded when verse reaches mastered status', true, '{"category": "memory_verses", "gamification": true}'::jsonb)
+ON CONFLICT (key) DO UPDATE SET
+  description = EXCLUDED.description,
+  is_active = EXCLUDED.is_active,
+  metadata = EXCLUDED.metadata;
 
 -- ============================================================================
--- 6. Database Functions for Config Access
+-- 4. Database Functions for System Config Access
 -- ============================================================================
 
 -- Function: Check if maintenance mode is enabled
@@ -154,41 +164,6 @@ BEGIN
   AND is_active = true;
 
   RETURN COALESCE(mode_enabled, false);
-END;
-$$;
-
--- Function: Check if a feature is enabled for a specific user based on their plan
-CREATE OR REPLACE FUNCTION public.is_feature_enabled_for_user(
-  p_feature_key TEXT,
-  p_user_id UUID
-)
-RETURNS BOOLEAN
-LANGUAGE plpgsql
-SECURITY DEFINER
-AS $$
-DECLARE
-  v_is_enabled BOOLEAN;
-  v_user_plan TEXT;
-BEGIN
-  -- Get user's current active subscription plan
-  SELECT COALESCE(s.plan_type, 'free')
-  INTO v_user_plan
-  FROM public.subscriptions s
-  WHERE s.user_id = p_user_id
-  AND s.status IN ('active', 'trial', 'pending_cancellation')
-  ORDER BY s.created_at DESC
-  LIMIT 1;
-
-  -- If no subscription found, default to free plan
-  v_user_plan := COALESCE(v_user_plan, 'free');
-
-  -- Check if feature is enabled globally AND user's plan has access
-  SELECT f.is_enabled AND (v_user_plan = ANY(f.enabled_for_plans))
-  INTO v_is_enabled
-  FROM public.feature_flags f
-  WHERE f.feature_key = p_feature_key;
-
-  RETURN COALESCE(v_is_enabled, false);
 END;
 $$;
 
@@ -212,27 +187,51 @@ END;
 $$;
 
 -- ============================================================================
--- 7. Grant Permissions
+-- 5. Grant Permissions
 -- ============================================================================
 
 -- Grant execute permissions on functions to authenticated and anonymous users
 GRANT EXECUTE ON FUNCTION public.is_maintenance_mode_enabled() TO authenticated, anon;
-GRANT EXECUTE ON FUNCTION public.is_feature_enabled_for_user(TEXT, UUID) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.get_system_configs() TO authenticated, anon;
 
 -- ============================================================================
--- 8. Add Comments for Documentation
+-- 6. Add Comments for Documentation
 -- ============================================================================
 
-COMMENT ON TABLE public.feature_flags IS 'Dynamic feature toggles for gradual rollout and plan-based access control. Enables/disables features without deployment.';
-COMMENT ON COLUMN public.feature_flags.rollout_percentage IS 'Percentage of users who can see this feature (0-100). Used for gradual rollout. Currently unused but available for future A/B testing.';
-COMMENT ON COLUMN public.feature_flags.enabled_for_plans IS 'Array of plan types that have access to this feature (free, standard, plus, premium)';
-
 COMMENT ON FUNCTION public.is_maintenance_mode_enabled() IS 'Check if app is currently in maintenance mode. Returns true if maintenance_mode_enabled config is true.';
-COMMENT ON FUNCTION public.is_feature_enabled_for_user(TEXT, UUID) IS 'Check if a specific feature is enabled for a user based on their subscription plan and the feature global enable status.';
 COMMENT ON FUNCTION public.get_system_configs() IS 'Retrieve all active system configuration entries. Used for backend caching to avoid repeated database queries.';
 
 COMMENT ON COLUMN public.system_config.is_active IS 'Whether this config entry is currently active. Inactive entries are ignored by get_system_configs().';
 COMMENT ON COLUMN public.system_config.metadata IS 'Additional metadata for the config entry (JSON). Can store update timestamps, original values, etc.';
+
+-- ============================================================================
+-- 7. Remove Premium Trial Start Date Restriction (2026-02-15)
+-- ============================================================================
+-- CHANGE: Premium trials are now available on-demand (user-initiated)
+-- instead of being date-gated. The trial is offered when user clicks
+-- "Subscribe to Premium" - no date restrictions.
+
+-- Deactivate premium_trial_start_date (no longer used)
+UPDATE public.system_config
+SET
+  is_active = false,
+  description = '[DEPRECATED] Premium trial start date - Premium trials are now available on-demand, not date-gated',
+  metadata = jsonb_set(
+    COALESCE(metadata, '{}'::jsonb),
+    '{deprecated}',
+    'true'::jsonb
+  )
+WHERE key = 'premium_trial_start_date';
+
+-- Update premium_trial_days description for clarity
+UPDATE public.system_config
+SET description = 'Premium trial duration in days (offered when user clicks "Subscribe to Premium")'
+WHERE key = 'premium_trial_days';
+
+-- Log the change
+DO $$
+BEGIN
+  RAISE NOTICE 'Premium trial model updated: Date restrictions removed, trials now on-demand';
+END $$;
 
 COMMIT;

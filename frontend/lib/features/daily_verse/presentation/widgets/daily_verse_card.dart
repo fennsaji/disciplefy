@@ -16,7 +16,8 @@ import '../../../memory_verses/presentation/bloc/memory_verse_state.dart';
 import '../../../tokens/presentation/bloc/token_bloc.dart';
 import '../../../tokens/presentation/bloc/token_state.dart';
 import '../../../tokens/domain/entities/token_status.dart';
-import '../../../subscription/presentation/widgets/upgrade_required_dialog.dart';
+import '../../../../core/widgets/upgrade_dialog.dart';
+import '../../../../core/services/system_config_service.dart';
 import '../bloc/daily_verse_bloc.dart';
 import '../bloc/daily_verse_event.dart';
 import '../bloc/daily_verse_state.dart';
@@ -621,22 +622,33 @@ class DailyVerseCard extends StatelessWidget {
     final tokenBloc = sl<TokenBloc>();
     final tokenState = tokenBloc.state;
 
-    UserPlan? userPlan;
+    String userPlan = 'free';
     if (tokenState is TokenLoaded) {
-      userPlan = tokenState.tokenStatus.userPlan;
+      userPlan = tokenState.tokenStatus.userPlan.name;
     }
 
-    // Only allow Standard or Premium users
-    final bool hasAccess =
-        userPlan == UserPlan.standard || userPlan == UserPlan.premium;
+    // Check if user has access to memory_verses feature
+    final systemConfigService = sl<SystemConfigService>();
+    final hasAccess =
+        systemConfigService.isFeatureEnabled('memory_verses', userPlan);
 
     if (!hasAccess) {
-      UpgradeRequiredDialog.show(
-        context,
-        featureName: 'Memory Verses',
-        featureIcon: Icons.psychology_outlined,
-        featureDescription:
-            'Memorize Bible verses using proven spaced repetition techniques. Track your progress and strengthen your faith through scripture memorization.',
+      // Show new upgrade dialog
+      final requiredPlans =
+          systemConfigService.getRequiredPlans('memory_verses');
+      final upgradePlan =
+          systemConfigService.getUpgradePlan('memory_verses', userPlan);
+
+      showModalBottomSheet(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: Colors.transparent,
+        builder: (context) => UpgradeDialog(
+          featureKey: 'memory_verses',
+          currentPlan: userPlan,
+          requiredPlans: requiredPlans,
+          upgradePlan: upgradePlan,
+        ),
       );
       return;
     }

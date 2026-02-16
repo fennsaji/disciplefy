@@ -214,8 +214,11 @@ class RefreshSubscriptionInvoices extends SubscriptionEvent {
 
 /// Event to start a 7-day Premium trial
 ///
-/// Only available for new users who signed up after April 1st, 2025
-/// and haven't used their trial yet
+/// UPDATED: Premium trial is now available ON-DEMAND to ALL users.
+/// Offered when user clicks "Subscribe to Premium" or "Try Premium".
+/// No date restrictions - available immediately.
+///
+/// Eligibility: User must NOT have already used their Premium trial
 class StartPremiumTrial extends SubscriptionEvent {
   const StartPremiumTrial();
 }
@@ -235,4 +238,31 @@ class ActivateFreeSubscription extends SubscriptionEvent {
 
   @override
   List<Object?> get props => [planCode, promoCode];
+}
+
+/// Internal event: IAP purchase completed successfully
+///
+/// INTERNAL USE ONLY - DO NOT USE DIRECTLY
+/// Triggered by IAP service callback when purchase is successful
+/// Validates receipt with backend and creates subscription
+class IAPPurchaseCompleted extends SubscriptionEvent {
+  final dynamic purchaseDetails;
+
+  const IAPPurchaseCompleted(this.purchaseDetails);
+
+  @override
+  List<Object?> get props => [purchaseDetails];
+}
+
+/// Internal event: IAP purchase failed
+///
+/// INTERNAL USE ONLY - DO NOT USE DIRECTLY
+/// Triggered by IAP service callback when purchase encounters an error
+class IAPPurchaseError extends SubscriptionEvent {
+  final String error;
+
+  const IAPPurchaseError(this.error);
+
+  @override
+  List<Object?> get props => [error];
 }
