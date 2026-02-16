@@ -6,7 +6,7 @@
  * - Health check endpoints
  * - System status endpoints
  *
- * Usage:
+ * Usage (from Edge Functions):
  * ```typescript
  * import { checkMaintenanceMode } from '../_shared/middleware/maintenance-middleware.ts'
  *
@@ -14,6 +14,13 @@
  *   await checkMaintenanceMode(req, services)
  *   // ... rest of function logic
  * }
+ * ```
+ *
+ * Usage (from within _shared directory):
+ * ```typescript
+ * import { checkMaintenanceMode } from './middleware/maintenance-middleware.ts'
+ * // or from parent _shared:
+ * import { checkMaintenanceMode } from '../middleware/maintenance-middleware.ts'
  * ```
  *
  * When maintenance mode is active, throws 'MAINTENANCE_MODE' error

@@ -125,7 +125,6 @@ flutter:
 
   assets:
     - assets/images/
-    - assets/fonts/
 
   # Bundled fonts for faster loading (no network fetch)
   fonts:
