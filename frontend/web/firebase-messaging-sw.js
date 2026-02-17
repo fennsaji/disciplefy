@@ -16,12 +16,12 @@ try {
 importScripts('https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js');
 importScripts('https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging-compat.js');
 
-// Initialize Firebase in the service worker
-// Note: These values will be replaced with actual Firebase config
-// Run 'flutterfire configure' to generate firebase_options.dart
-// Then update these values accordingly
-const firebaseConfig = {
-  apiKey: "AIzaSyDfCd9JuqJKvi3Dq2pD87ZXe6bhVYWoSmc",
+// ⚠️ SECURITY: Firebase config is now injected at runtime
+// The main Flutter app will post the config to this service worker
+// This prevents hardcoding API keys in the codebase
+//
+// Fallback config for local development (non-sensitive values only)
+let firebaseConfig = {
   authDomain: "disciplefy---bible-study.firebaseapp.com",
   projectId: "disciplefy---bible-study",
   storageBucket: "disciplefy---bible-study.firebasestorage.app",
@@ -29,6 +29,19 @@ const firebaseConfig = {
   appId: "1:16888340359:web:36ad4ae0d1ef1adf8e3d22",
   measurementId: "G-TY0KDPH5TS"
 };
+
+// Listen for config from main app
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'FIREBASE_CONFIG') {
+    console.log('[FCM SW] 🔧 Received Firebase config from main app');
+    firebaseConfig = event.data.config;
+    // Re-initialize Firebase with the new config
+    if (typeof firebase !== 'undefined') {
+      firebase.initializeApp(firebaseConfig);
+      console.log('[FCM SW] ✅ Firebase re-initialized with runtime config');
+    }
+  }
+});
 
 // Initialize Firebase
 firebase.initializeApp(firebaseConfig);

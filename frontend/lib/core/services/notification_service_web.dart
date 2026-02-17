@@ -197,10 +197,56 @@ class NotificationServiceWeb {
             print('[FCM Web] 📊 Scope: ${registration.scope}');
             print('[FCM Web] 📊 Active: ${registration.active != null}');
           }
+
+          // 🔒 SECURITY: Send Firebase config to service worker at runtime
+          // This prevents hardcoding API keys in the service worker file
+          await _sendFirebaseConfigToServiceWorker(registration);
         }
       }
     } catch (e) {
       print('[FCM Web] ⚠️  Service worker check error: $e');
+    }
+  }
+
+  /// Send Firebase configuration to the service worker at runtime
+  /// This prevents hardcoding API keys in the codebase
+  Future<void> _sendFirebaseConfigToServiceWorker(
+      html.ServiceWorkerRegistration registration) async {
+    try {
+      // Get Firebase config from environment (passed via --dart-define)
+      const firebaseApiKey = String.fromEnvironment('FIREBASE_API_KEY');
+
+      if (firebaseApiKey.isEmpty) {
+        print('[FCM Web] ⚠️  Firebase API key not provided via --dart-define');
+        print('[FCM Web] ⚠️  Service worker will use fallback config');
+        return;
+      }
+
+      final firebaseConfig = {
+        'apiKey': firebaseApiKey,
+        'authDomain': const String.fromEnvironment('FIREBASE_AUTH_DOMAIN',
+            defaultValue: 'disciplefy---bible-study.firebaseapp.com'),
+        'projectId': const String.fromEnvironment('FIREBASE_PROJECT_ID',
+            defaultValue: 'disciplefy---bible-study'),
+        'storageBucket': const String.fromEnvironment('FIREBASE_STORAGE_BUCKET',
+            defaultValue: 'disciplefy---bible-study.firebasestorage.app'),
+        'messagingSenderId': const String.fromEnvironment(
+            'FIREBASE_MESSAGING_SENDER_ID',
+            defaultValue: '16888340359'),
+        'appId': const String.fromEnvironment('FIREBASE_APP_ID',
+            defaultValue: '1:16888340359:web:36ad4ae0d1ef1adf8e3d22'),
+        'measurementId': const String.fromEnvironment('FIREBASE_MEASUREMENT_ID',
+            defaultValue: 'G-TY0KDPH5TS'),
+      };
+
+      print('[FCM Web] 🔧 Sending Firebase config to service worker...');
+      registration.active?.postMessage({
+        'type': 'FIREBASE_CONFIG',
+        'config': firebaseConfig,
+      });
+      print('[FCM Web] ✅ Firebase config sent to service worker');
+    } catch (e) {
+      print('[FCM Web] ❌ Failed to send Firebase config to service worker: $e');
     }
   }
 
