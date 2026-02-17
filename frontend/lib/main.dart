@@ -56,10 +56,8 @@ import 'core/services/android_hybrid_storage.dart';
 // Use --dart-define to pass Firebase config for different environments
 // Example: flutter run --dart-define=FIREBASE_API_KEY=your_key_here
 
-const firebaseApiKey = String.fromEnvironment(
-  'FIREBASE_API_KEY',
-  defaultValue: 'AIzaSyDfCd9JuqJKvi3Dq2pD87ZXe6bhVYWoSmc',
-);
+// ⚠️ SECURITY: Never commit API keys! Must be provided via --dart-define
+const firebaseApiKey = String.fromEnvironment('FIREBASE_API_KEY');
 const firebaseAuthDomain = String.fromEnvironment(
   'FIREBASE_AUTH_DOMAIN',
   defaultValue: 'disciplefy---bible-study.firebaseapp.com',
