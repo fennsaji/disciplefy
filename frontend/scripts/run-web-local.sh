@@ -86,6 +86,7 @@ echo -e "  SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY:0:20}..." # Show only first 20
 echo -e "  GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}"
 echo -e "  APP_URL: ${APP_URL}"
 echo -e "  FLUTTER_ENV: ${FLUTTER_ENV}"
+echo -e "  FIREBASE_API_KEY: ${FIREBASE_API_KEY:0:20}..." # Show only first 20 chars for security
 echo -e "  WEB_OAUTH_REDIRECT_URL: http://localhost:59641/auth/callback"
 echo -e ""
 
@@ -98,6 +99,13 @@ flutter run -d chrome \
   --dart-define=APP_URL="$APP_URL" \
   --dart-define=FLUTTER_ENV="$FLUTTER_ENV" \
   --dart-define=GOOGLE_CLOUD_TTS_API_KEY="$GOOGLE_CLOUD_TTS_API_KEY" \
+  --dart-define=FIREBASE_API_KEY="$FIREBASE_API_KEY" \
+  --dart-define=FIREBASE_AUTH_DOMAIN="$FIREBASE_AUTH_DOMAIN" \
+  --dart-define=FIREBASE_PROJECT_ID="$FIREBASE_PROJECT_ID" \
+  --dart-define=FIREBASE_STORAGE_BUCKET="$FIREBASE_STORAGE_BUCKET" \
+  --dart-define=FIREBASE_MESSAGING_SENDER_ID="$FIREBASE_MESSAGING_SENDER_ID" \
+  --dart-define=FIREBASE_APP_ID="$FIREBASE_APP_ID" \
+  --dart-define=FIREBASE_MEASUREMENT_ID="$FIREBASE_MEASUREMENT_ID" \
   --dart-define=WEB_OAUTH_REDIRECT_URL="http://localhost:59641/auth/callback"
 
 echo -e "${GREEN}✅ Flutter development session ended${NC}"
