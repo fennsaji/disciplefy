@@ -168,6 +168,15 @@ export interface AnthropicResponse {
 export type LLMProvider = 'openai' | 'anthropic'
 
 /**
+ * Word count target for a specific study mode.
+ */
+export interface WordCountTarget {
+  readonly min: number
+  readonly max: number
+  readonly display: string  // Display format like "1500-1800"
+}
+
+/**
  * Language-specific configuration for LLM generation.
  */
 export interface LanguageConfig {
@@ -180,4 +189,11 @@ export interface LanguageConfig {
     readonly complexityInstruction: string
   }
   readonly culturalContext: string
+  readonly wordCountTargets?: {
+    readonly quick?: WordCountTarget
+    readonly standard?: WordCountTarget
+    readonly deep?: WordCountTarget
+    readonly lectio?: WordCountTarget
+    readonly sermon?: WordCountTarget
+  }
 }
