@@ -129,6 +129,8 @@ export interface UpdateSubscriptionRequest {
   reason?: string
   // Extended fields for full subscription editing
   new_status?: SubscriptionStatus
+  new_start_date?: string
+  new_end_date?: string
   current_period_end?: string
   next_billing_at?: string
   plan_name?: string
@@ -275,7 +277,7 @@ export interface TogglePromoCodeResponse {
 
 export type DifficultyLevel = 'beginner' | 'intermediate' | 'advanced'
 export type DiscipleLevel = 'seeker' | 'follower' | 'disciple' | 'leader'
-export type StudyMode = 'quick' | 'standard' | 'deep' | 'lectio' | 'sermon'
+export type StudyMode = 'quick' | 'standard' | 'deep' | 'lectio' | 'sermon' | 'recommended'
 export type LanguageCode = 'en' | 'hi' | 'ml'
 
 export interface LearningPath {
@@ -393,7 +395,7 @@ export interface ToggleLearningPathRequest {
 // Recommended Topics Types
 // ============================================================================
 
-export type InputType = 'topic' | 'verse' | 'question'
+export type InputType = 'topic' | 'verse' | 'question' | 'passage' | 'scripture'
 
 export interface RecommendedTopic {
   id: string
@@ -425,6 +427,8 @@ export interface RecommendedTopicWithDetails extends RecommendedTopic {
     learning_path_title: string
     position: number
   }>
+  learning_paths?: string[]
+  learning_path_ids?: string[]
 }
 
 export interface ListTopicsRequest {
@@ -574,7 +578,7 @@ export interface ToggleMilestoneResponse {
 // ============================================================================
 
 export interface StudyGenerationRequest {
-  input_type: 'scripture' | 'topic' | 'question'
+  input_type: InputType
   input_value: string
   topic_description?: string
   language: LanguageCode
@@ -601,22 +605,33 @@ export interface StudyGuideContent {
   context?: string
   interpretation?: string
   passage?: string | null
-  relatedVerses?: Array<{ reference: string; text: string }>
+  relatedVerses?: Array<{ reference: string; text: string }> | string[]
+  related_verses?: Array<{ reference: string; text: string }> | string[]
   reflectionQuestions?: string[]
+  reflection_questions?: string[]
   prayerPoints?: string[]
+  prayer_points?: string[]
   interpretationInsights?: string[]
+  interpretation_insights?: string[]
   summaryInsights?: string[]
+  summary_insights?: string[]
   reflectionAnswers?: string[]
+  reflection_answers?: string[]
   contextQuestion?: string
+  context_question?: string
   summaryQuestion?: string
+  summary_question?: string
   relatedVersesQuestion?: string
+  related_verses_question?: string
   reflectionQuestion?: string
+  reflection_question?: string
   prayerQuestion?: string
+  prayer_question?: string
 }
 
 export interface StudyGuide {
   id: string
-  input_type: 'scripture' | 'topic' | 'question'
+  input_type: InputType
   input_value: string
   input_value_display: string
   language: LanguageCode
@@ -624,8 +639,26 @@ export interface StudyGuide {
   content: StudyGuideContent
   creator_user_id?: string
   creator_session_id?: string
+  creator_name?: string
+  title?: string
+  summary?: string
   created_at: string
   updated_at: string
+  // Snake-case flat fields (legacy / direct DB mapping)
+  passage?: string | null
+  context?: string
+  interpretation?: string
+  related_verses?: any[]
+  reflection_questions?: string[]
+  prayer_points?: string[]
+  interpretation_insights?: string[]
+  summary_insights?: string[]
+  reflection_answers?: string[]
+  context_question?: string
+  summary_question?: string
+  related_verses_question?: string
+  reflection_question?: string
+  prayer_question?: string
 }
 
 export interface LoadStudyGuideResponse {
@@ -651,7 +684,7 @@ export interface UpdateStudyGuideResponse {
 
 export interface StudyGuideListItem {
   id: string
-  input_type: 'scripture' | 'topic' | 'question'
+  input_type: InputType
   input_value: string
   language: LanguageCode
   study_mode: StudyMode
