@@ -179,27 +179,33 @@ export async function POST(request: NextRequest) {
       const isAdmin = adminUsersMap[user.id] || false
 
       // Map subscriptions to match frontend expectations
+      // Note: subscription_plans is returned as an array by Supabase joins
       let userSubscriptions = subscriptions
         ?.filter(s => s.user_id === user.id)
-        .map(sub => ({
-          id: sub.id,
-          user_id: sub.user_id,
-          tier: sub.subscription_plans?.plan_code, // Get plan_code from JOIN
-          subscription_plan: sub.subscription_plans?.plan_code, // Use plan_code from JOIN
-          plan_type: sub.plan_type,
-          status: sub.status,
-          start_date: sub.current_period_start, // Map current_period_start to start_date
-          end_date: sub.current_period_end, // Map current_period_end to end_date
-          current_period_start: sub.current_period_start,
-          current_period_end: sub.current_period_end,
-          subscription_plans: sub.subscription_plans ? {
-            plan_name: sub.subscription_plans.plan_name,
-            plan_code: sub.subscription_plans.plan_code,
-            tier: sub.subscription_plans.tier,
-            price_inr: 0, // Not available in new schema
-            billing_cycle: 'monthly' // Default value
-          } : null
-        })) || []
+        .map(sub => {
+          const plan = Array.isArray(sub.subscription_plans)
+            ? sub.subscription_plans[0]
+            : sub.subscription_plans
+          return {
+            id: sub.id,
+            user_id: sub.user_id,
+            tier: plan?.plan_code, // Get plan_code from JOIN
+            subscription_plan: plan?.plan_code, // Use plan_code from JOIN
+            plan_type: sub.plan_type,
+            status: sub.status,
+            start_date: sub.current_period_start, // Map current_period_start to start_date
+            end_date: sub.current_period_end, // Map current_period_end to end_date
+            current_period_start: sub.current_period_start,
+            current_period_end: sub.current_period_end,
+            subscription_plans: plan ? {
+              plan_name: plan.plan_name,
+              plan_code: plan.plan_code,
+              tier: plan.tier,
+              price_inr: 0, // Not available in new schema
+              billing_cycle: 'monthly' // Default value
+            } : null
+          }
+        }) || []
 
       // For admin users WITHOUT a subscription, create a virtual "Premium (Admin)" subscription
       if (isAdmin && userSubscriptions.length === 0) {
