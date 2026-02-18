@@ -5,7 +5,7 @@
  * Credentials are stored encrypted in the database and cached for performance.
  */
 
-import { SupabaseClient } from '@supabase/supabase-js'
+import { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 export type IAPProvider = 'google_play' | 'apple_appstore'
 export type IAPEnvironment = 'sandbox' | 'production'

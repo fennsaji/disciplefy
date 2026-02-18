@@ -5,7 +5,7 @@
  * Documentation: https://developer.apple.com/documentation/appstorereceipts/verifyreceipt
  */
 
-import { SupabaseClient } from '@supabase/supabase-js'
+import { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { getIAPConfig } from './iap-config-service.ts'
 
 export interface AppleReceiptData {
