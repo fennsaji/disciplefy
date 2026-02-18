@@ -1,0 +1,164 @@
+name: Admin Web Production Deployment
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'admin-web/**'
+      - '.github/workflows/admin-web-deploy.yml'
+  workflow_dispatch:
+    inputs:
+      deploy_to_vercel:
+        description: 'Deploy to Vercel Production'
+        required: false
+        default: true
+        type: boolean
+
+concurrency:
+  group: admin-web-deploy-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  validate:
+    name: Validate Admin Web Code
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    defaults:
+      run:
+        working-directory: ./admin-web
+
+    steps:
+      - name: 🔄 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 📦 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: admin-web/package-lock.json
+
+      - name: 📦 Install dependencies
+        run: npm ci
+
+      - name: 🔍 Type check
+        run: npm run type-check
+
+      - name: 🔍 Lint
+        run: npm run lint
+
+      - name: ✅ Validation summary
+        run: |
+          echo "🎉 Admin web validation completed successfully!"
+          echo "✅ Dependencies installed"
+          echo "✅ Type check passed"
+          echo "✅ Lint passed"
+
+  build-and-deploy:
+    name: Build and Deploy to Vercel Production
+    runs-on: ubuntu-latest
+    needs: validate
+    timeout-minutes: 15
+    environment: production
+
+    defaults:
+      run:
+        working-directory: ./admin-web
+
+    outputs:
+      deployment-url: ${{ steps.deploy.outputs.deployment-url }}
+
+    steps:
+      - name: 🔄 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 📦 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: admin-web/package-lock.json
+
+      - name: 🔧 Install Vercel CLI
+        run: npm install -g vercel@latest
+
+      - name: 📦 Install dependencies
+        run: npm ci
+
+      - name: 📝 Create production environment file
+        run: |
+          cat > .env.local << EOF
+          NEXT_PUBLIC_SUPABASE_URL=https://${{ secrets.SUPABASE_PROJECT_REF }}.supabase.co
+          NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY=${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          RAZORPAY_KEY_ID=${{ secrets.RAZORPAY_KEY_ID }}
+          RAZORPAY_KEY_SECRET=${{ secrets.RAZORPAY_KEY_SECRET }}
+          NODE_ENV=production
+          EOF
+          echo "✅ Production environment file created"
+
+      - name: 🔗 Link Vercel project
+        if: ${{ github.event.inputs.deploy_to_vercel != 'false' }}
+        run: |
+          vercel link \
+            --token ${{ secrets.VERCEL_TOKEN }} \
+            --scope ${{ secrets.VERCEL_ORG_ID }} \
+            --project ${{ secrets.VERCEL_ADMIN_PROJECT_ID }} \
+            --yes
+          echo "✅ Vercel project linked"
+
+      - name: 🏗️ Build with Vercel
+        if: ${{ github.event.inputs.deploy_to_vercel != 'false' }}
+        run: |
+          vercel build \
+            --token ${{ secrets.VERCEL_TOKEN }} \
+            --prod
+          echo "✅ Build completed"
+
+      - name: 🚀 Deploy to Vercel Production
+        id: deploy
+        if: ${{ github.event.inputs.deploy_to_vercel != 'false' }}
+        run: |
+          VERCEL_URL=$(vercel deploy \
+            --token ${{ secrets.VERCEL_TOKEN }} \
+            --prebuilt \
+            --prod)
+          echo "deployment-url=$VERCEL_URL" >> $GITHUB_OUTPUT
+          echo "✅ Deployed to production: $VERCEL_URL"
+
+      - name: 🧹 Security cleanup
+        if: always()
+        run: |
+          rm -f .env.local
+          echo "✅ Cleanup completed"
+
+      - name: 📊 Deployment summary
+        run: |
+          echo "🎉 Admin web production deployment completed!"
+          if [ "${{ github.event.inputs.deploy_to_vercel }}" != "false" ]; then
+            echo "🌐 Production URL: ${{ steps.deploy.outputs.deployment-url }}"
+          else
+            echo "⏭️ Vercel deployment skipped"
+          fi
+          echo "📋 Configuration:"
+          echo "   • Environment: production"
+          echo "   • Supabase: ${{ secrets.SUPABASE_PROJECT_REF }}.supabase.co"
+          echo "   • Logging: Disabled"
+
+  notify:
+    name: Notify Deployment Status
+    runs-on: ubuntu-latest
+    needs: [validate, build-and-deploy]
+    if: always()
+
+    steps:
+      - name: 📢 Deployment notification
+        run: |
+          if [ "${{ needs.build-and-deploy.result }}" = "success" ]; then
+            echo "🎉 Admin web production deployment was successful!"
+            echo "🌐 URL: ${{ needs.build-and-deploy.outputs.deployment-url }}"
+          else
+            echo "❌ Admin web production deployment failed. Check the logs above."
+            exit 1
+          fi
