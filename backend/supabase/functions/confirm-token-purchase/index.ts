@@ -8,10 +8,11 @@
 import { createSimpleFunction } from '../_shared/core/function-factory.ts'
 import { ServiceContainer } from '../_shared/core/services.ts'
 import { AppError } from '../_shared/utils/error-handler.ts'
-import { createHmac } from 'node:crypto'
+import { generateHmacSha256 } from '../_shared/utils/crypto-utils.ts'
 import type { UserContext } from '../_shared/types/index.ts'
 import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import type { TokenService } from '../_shared/services/token-service.ts'
+import { checkMaintenanceMode } from '../_shared/middleware/maintenance-middleware.ts'
 
 interface ConfirmPurchaseRequest {
   order_id: string
@@ -43,6 +44,9 @@ interface AuthService {
  * Handle payment confirmation with signature verification - main orchestrator
  */
 async function handleConfirmPurchase(req: Request, services: ServiceContainer): Promise<Response> {
+  // Check maintenance mode FIRST
+  await checkMaintenanceMode(req, services)
+
   let requestData: ConfirmPurchaseRequest | null = null
   let userContext: UserContext | null = null
   
@@ -171,7 +175,7 @@ async function parseAndValidateRequest(req: Request): Promise<ConfirmPurchaseReq
  * Verify Razorpay payment signature
  */
 async function verifySignature(requestData: ConfirmPurchaseRequest): Promise<void> {
-  const isValidSignature = verifyPaymentSignature({
+  const isValidSignature = await verifyPaymentSignature({
     orderId: requestData.order_id,
     paymentId: requestData.payment_id,
     signature: requestData.signature
@@ -466,7 +470,7 @@ function buildResponse(data: Record<string, unknown>): Response {
 /**
  * Verify Razorpay payment signature
  */
-function verifyPaymentSignature({
+async function verifyPaymentSignature({
   orderId,
   paymentId,
   signature
@@ -474,18 +478,16 @@ function verifyPaymentSignature({
   orderId: string
   paymentId: string
   signature: string
-}): boolean {
+}): Promise<boolean> {
   const keySecret = Deno.env.get('RAZORPAY_KEY_SECRET')
   if (!keySecret) {
     console.error('[Security] RAZORPAY_KEY_SECRET not configured')
     return false
   }
-  
+
   const body = `${orderId}|${paymentId}`
-  const expectedSignature = createHmac('sha256', keySecret)
-    .update(body)
-    .digest('hex')
-  
+  const expectedSignature = await generateHmacSha256(keySecret, body)
+
   return signature === expectedSignature
 }
 

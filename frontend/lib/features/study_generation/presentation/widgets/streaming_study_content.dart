@@ -193,24 +193,36 @@ class StreamingStudyContent extends StatelessWidget {
 
                 const SizedBox(height: 24),
 
-                // Interpretation Section
-                _buildSection(
-                  context,
-                  title: context.tr(TranslationKeys.studyGuideInterpretation),
-                  icon: Icons.lightbulb_outline,
-                  content: content.interpretation,
-                  index: 1,
-                ),
-
-                const SizedBox(height: 24),
-
-                // Context Section
+                // Context Section (moved up for better streaming UX)
                 _buildSection(
                   context,
                   title: context.tr(TranslationKeys.studyGuideContext),
                   icon: Icons.history_edu,
                   content: content.context,
-                  index: 2,
+                  index: 1,
+                ),
+
+                const SizedBox(height: 24),
+
+                // Passage Reading Section (meditation passage)
+                if (content.passage != null)
+                  _buildSection(
+                    context,
+                    title: context.tr(TranslationKeys.studyGuidePassageReading),
+                    icon: Icons.auto_stories,
+                    content: content.passage,
+                    index: 2,
+                  ),
+
+                if (content.passage != null) const SizedBox(height: 24),
+
+                // Interpretation Section (moved down after context)
+                _buildSection(
+                  context,
+                  title: context.tr(TranslationKeys.studyGuideInterpretation),
+                  icon: Icons.lightbulb_outline,
+                  content: content.interpretation,
+                  index: 3,
                 ),
 
                 const SizedBox(height: 24),
@@ -221,7 +233,7 @@ class StreamingStudyContent extends StatelessWidget {
                   title: context.tr(TranslationKeys.studyGuideRelatedVerses),
                   icon: Icons.menu_book,
                   content: content.relatedVerses?.join('\n\n'),
-                  index: 3,
+                  index: 4,
                 ),
 
                 const SizedBox(height: 24),
@@ -237,7 +249,7 @@ class StreamingStudyContent extends StatelessWidget {
                       .entries
                       .map((entry) => '${entry.key + 1}. ${entry.value}')
                       .join('\n\n'),
-                  index: 4,
+                  index: 5,
                 ),
 
                 const SizedBox(height: 24),
@@ -252,7 +264,7 @@ class StreamingStudyContent extends StatelessWidget {
                       .entries
                       .map((entry) => '• ${entry.value}')
                       .join('\n'),
-                  index: 5,
+                  index: 6,
                 ),
 
                 SizedBox(height: isLargeScreen ? 32 : 24),
@@ -297,36 +309,76 @@ class StreamingStudyContent extends StatelessWidget {
 
                 const SizedBox(height: 16),
 
-                // Key Verse Card (interpretation contains verse)
+                // Context (historical/cultural background)
                 _buildQuickSection(
                   context,
-                  title: context.tr(TranslationKeys.studyGuideKeyVerse),
-                  content: content.interpretation,
+                  title: context.tr(TranslationKeys.studyGuideContext),
+                  content: content.context,
                   index: 1,
                 ),
 
                 const SizedBox(height: 16),
 
-                // Quick Reflection (single question)
+                // Passage Reading (meditation passage)
+                if (content.passage != null)
+                  _buildQuickSection(
+                    context,
+                    title: context.tr(TranslationKeys.studyGuidePassageReading),
+                    content: content.passage,
+                    index: 2,
+                  ),
+
+                if (content.passage != null) const SizedBox(height: 16),
+
+                // Key Verse Card (interpretation contains verse)
                 _buildQuickSection(
                   context,
-                  title: context.tr(TranslationKeys.studyGuideQuickReflection),
-                  content: content.reflectionQuestions?.isNotEmpty == true
-                      ? content.reflectionQuestions!.first
-                      : null,
+                  title: context.tr(TranslationKeys.studyGuideKeyVerse),
+                  content: content.interpretation,
+                  index: 3,
+                ),
+
+                const SizedBox(height: 16),
+
+                // Related Verses
+                _buildQuickSection(
+                  context,
+                  title: context.tr(TranslationKeys.studyGuideRelatedVerses),
+                  content: content.relatedVerses?.join('\n\n'),
                   index: 4,
                 ),
 
                 const SizedBox(height: 16),
 
-                // Brief Prayer
+                // Quick Reflection (all questions)
                 _buildQuickSection(
                   context,
-                  title: context.tr(TranslationKeys.studyGuideBriefPrayer),
-                  content: content.prayerPoints?.isNotEmpty == true
-                      ? content.prayerPoints!.first
+                  title:
+                      context.tr(TranslationKeys.studyGuideDiscussionQuestions),
+                  content: content.reflectionQuestions?.isNotEmpty == true
+                      ? content.reflectionQuestions!
+                          .asMap()
+                          .entries
+                          .map((e) => '${e.key + 1}. ${e.value}')
+                          .join('\n\n')
                       : null,
                   index: 5,
+                ),
+
+                const SizedBox(height: 16),
+
+                // Brief Prayer (all prayer points)
+                _buildQuickSection(
+                  context,
+                  title: context.tr(TranslationKeys.studyGuidePrayerPoints),
+                  content: content.prayerPoints?.isNotEmpty == true
+                      ? content.prayerPoints!
+                          .asMap()
+                          .entries
+                          .map((e) => '• ${e.value}')
+                          .join('\n')
+                      : null,
+                  index: 6,
                 ),
 
                 const SizedBox(height: 24),
@@ -436,26 +488,38 @@ class StreamingStudyContent extends StatelessWidget {
 
                 const SizedBox(height: 28),
 
-                // In-Depth Interpretation with Word Studies (interpretation)
-                _buildSection(
-                  context,
-                  title: context
-                      .tr(TranslationKeys.studyGuideInDepthInterpretation),
-                  icon: Icons.lightbulb_outline,
-                  content: content.interpretation,
-                  index: 1,
-                ),
-
-                const SizedBox(height: 28),
-
-                // Extended Context with Cross-References (context)
+                // Extended Context with Cross-References (moved up)
                 _buildSection(
                   context,
                   title:
                       context.tr(TranslationKeys.studyGuideHistoricalContext),
                   icon: Icons.history_edu,
                   content: content.context,
-                  index: 2,
+                  index: 1,
+                ),
+
+                const SizedBox(height: 28),
+
+                // Passage Reading Section (meditation passage)
+                if (content.passage != null)
+                  _buildSection(
+                    context,
+                    title: context.tr(TranslationKeys.studyGuidePassageReading),
+                    icon: Icons.auto_stories,
+                    content: content.passage,
+                    index: 2,
+                  ),
+
+                if (content.passage != null) const SizedBox(height: 28),
+
+                // In-Depth Interpretation with Word Studies (moved down)
+                _buildSection(
+                  context,
+                  title: context
+                      .tr(TranslationKeys.studyGuideInDepthInterpretation),
+                  icon: Icons.lightbulb_outline,
+                  content: content.interpretation,
+                  index: 3,
                 ),
 
                 const SizedBox(height: 28),
@@ -467,7 +531,7 @@ class StreamingStudyContent extends StatelessWidget {
                       .tr(TranslationKeys.studyGuideScriptureConnections),
                   icon: Icons.menu_book,
                   content: content.relatedVerses?.join('\n\n'),
-                  index: 3,
+                  index: 4,
                 ),
 
                 const SizedBox(height: 28),
@@ -482,7 +546,7 @@ class StreamingStudyContent extends StatelessWidget {
                       .entries
                       .map((entry) => '${entry.key + 1}. ${entry.value}')
                       .join('\n\n'),
-                  index: 4,
+                  index: 5,
                 ),
 
                 const SizedBox(height: 28),
@@ -573,34 +637,30 @@ class StreamingStudyContent extends StatelessWidget {
 
                 const SizedBox(height: 24),
 
-                // 2. Summary Question
-                if (content.summaryQuestion != null)
-                  _buildLectioSection(
-                    context,
-                    title: context.tr(TranslationKeys.lectioReflectionPrompt),
-                    content: content.summaryQuestion,
-                    index: 1,
-                    icon: Icons.psychology,
-                  ),
+                // 2. About Lectio Divina (context) - MOVED UP for better streaming UX
+                _buildLectioSection(
+                  context,
+                  title: context.tr(TranslationKeys.lectioAboutPractice),
+                  content: content.context,
+                  index: 1,
+                  icon: Icons.info_outline,
+                ),
 
                 const SizedBox(height: 24),
 
-                // 3. Summary Insights
-                if (content.summaryInsights != null &&
-                    content.summaryInsights!.isNotEmpty)
+                // Passage Reading (meditation passage)
+                if (content.passage != null)
                   _buildLectioSection(
                     context,
-                    title: context.tr(TranslationKeys.lectioKeyThemes),
-                    content: content.summaryInsights!
-                        .map((insight) => '• $insight')
-                        .join('\n'),
+                    title: context.tr(TranslationKeys.studyGuidePassageReading),
+                    content: content.passage,
                     index: 2,
-                    icon: Icons.insights,
+                    icon: Icons.auto_stories,
                   ),
 
-                const SizedBox(height: 24),
+                if (content.passage != null) const SizedBox(height: 24),
 
-                // 4. LECTIO & MEDITATIO (interpretation)
+                // 3. LECTIO & MEDITATIO (interpretation) - Now at index 3
                 _buildLectioSection(
                   context,
                   title: context.tr(TranslationKeys.lectioLectioMeditatio),
@@ -612,71 +672,20 @@ class StreamingStudyContent extends StatelessWidget {
 
                 const SizedBox(height: 24),
 
-                // 5. Interpretation Insights
-                if (content.interpretationInsights != null &&
-                    content.interpretationInsights!.isNotEmpty)
-                  _buildLectioSection(
-                    context,
-                    title:
-                        context.tr(TranslationKeys.lectioTheologicalInsights),
-                    content: content.interpretationInsights!
-                        .map((insight) => '• $insight')
-                        .join('\n'),
-                    index: 4,
-                    icon: Icons.auto_awesome,
-                  ),
-
-                const SizedBox(height: 24),
-
-                // 6. About Lectio Divina (context)
-                _buildLectioSection(
-                  context,
-                  title: context.tr(TranslationKeys.lectioAboutPractice),
-                  content: content.context,
-                  index: 5,
-                  icon: Icons.info_outline,
-                ),
-
-                const SizedBox(height: 24),
-
-                // 7. Context Question
-                if (content.contextQuestion != null)
-                  _buildLectioSection(
-                    context,
-                    title: context.tr(TranslationKeys.lectioConnectToToday),
-                    content: content.contextQuestion,
-                    index: 6,
-                    icon: Icons.question_answer,
-                  ),
-
-                const SizedBox(height: 24),
-
-                // 8. Focus Words (relatedVerses)
+                // 4. Focus Words (relatedVerses) - Now at index 4
                 _buildLectioSection(
                   context,
                   title: context.tr(TranslationKeys.lectioFocusWords),
                   content: content.relatedVerses
                       ?.map((verse) => '• $verse')
                       .join('\n'),
-                  index: 7,
+                  index: 4,
                   icon: Icons.highlight,
                 ),
 
                 const SizedBox(height: 24),
 
-                // 9. Related Verses Question
-                if (content.relatedVersesQuestion != null)
-                  _buildLectioSection(
-                    context,
-                    title: context.tr(TranslationKeys.lectioVerseReflection),
-                    content: content.relatedVersesQuestion,
-                    index: 8,
-                    icon: Icons.format_quote,
-                  ),
-
-                const SizedBox(height: 24),
-
-                // 10. ORATIO & CONTEMPLATIO (reflectionQuestions)
+                // 5. ORATIO & CONTEMPLATIO (reflectionQuestions) - Now at index 5
                 _buildLectioSection(
                   context,
                   title: context.tr(TranslationKeys.lectioOratioContemplatio),
@@ -686,26 +695,114 @@ class StreamingStudyContent extends StatelessWidget {
                       .entries
                       .map((e) => '${e.key + 1}. ${e.value}')
                       .join('\n\n'),
-                  index: 9,
+                  index: 5,
                   icon: Icons.self_improvement,
                 ),
 
                 const SizedBox(height: 24),
 
-                // 11. Reflection Question
+                // 6. Closing (prayerPoints) - Now at index 6
+                _buildLectioSection(
+                  context,
+                  title: context.tr(TranslationKeys.lectioClosingBlessingEmoji),
+                  content: content.prayerPoints
+                      ?.map((point) => '• $point')
+                      .join('\n'),
+                  index: 6,
+                  icon: Icons.wb_sunny_outlined,
+                ),
+
+                const SizedBox(height: 24),
+
+                // Optional sections (index 7+) - Dynamic order based on backend emission
+
+                // Summary Question
+                if (content.summaryQuestion != null)
+                  _buildLectioSection(
+                    context,
+                    title: context.tr(TranslationKeys.lectioReflectionPrompt),
+                    content: content.summaryQuestion,
+                    index: 7,
+                    icon: Icons.psychology,
+                  ),
+
+                if (content.summaryQuestion != null) const SizedBox(height: 24),
+
+                // Summary Insights
+                if (content.summaryInsights != null &&
+                    content.summaryInsights!.isNotEmpty)
+                  _buildLectioSection(
+                    context,
+                    title: context.tr(TranslationKeys.lectioKeyThemes),
+                    content: content.summaryInsights!
+                        .map((insight) => '• $insight')
+                        .join('\n'),
+                    index: 8,
+                    icon: Icons.insights,
+                  ),
+
+                if (content.summaryInsights != null &&
+                    content.summaryInsights!.isNotEmpty)
+                  const SizedBox(height: 24),
+
+                // Interpretation Insights
+                if (content.interpretationInsights != null &&
+                    content.interpretationInsights!.isNotEmpty)
+                  _buildLectioSection(
+                    context,
+                    title:
+                        context.tr(TranslationKeys.lectioTheologicalInsights),
+                    content: content.interpretationInsights!
+                        .map((insight) => '• $insight')
+                        .join('\n'),
+                    index: 9,
+                    icon: Icons.auto_awesome,
+                  ),
+
+                if (content.interpretationInsights != null &&
+                    content.interpretationInsights!.isNotEmpty)
+                  const SizedBox(height: 24),
+
+                // Context Question
+                if (content.contextQuestion != null)
+                  _buildLectioSection(
+                    context,
+                    title: context.tr(TranslationKeys.lectioConnectToToday),
+                    content: content.contextQuestion,
+                    index: 9,
+                    icon: Icons.question_answer,
+                  ),
+
+                if (content.contextQuestion != null) const SizedBox(height: 24),
+
+                // Related Verses Question
+                if (content.relatedVersesQuestion != null)
+                  _buildLectioSection(
+                    context,
+                    title: context.tr(TranslationKeys.lectioVerseReflection),
+                    content: content.relatedVersesQuestion,
+                    index: 10,
+                    icon: Icons.format_quote,
+                  ),
+
+                if (content.relatedVersesQuestion != null)
+                  const SizedBox(height: 24),
+
+                // Reflection Question
                 if (content.reflectionQuestion != null)
                   _buildLectioSection(
                     context,
                     title:
                         context.tr(TranslationKeys.lectioPersonalApplication),
                     content: content.reflectionQuestion,
-                    index: 10,
+                    index: 11,
                     icon: Icons.lightbulb,
                   ),
 
-                const SizedBox(height: 24),
+                if (content.reflectionQuestion != null)
+                  const SizedBox(height: 24),
 
-                // 12. Reflection Answers (Life Application)
+                // Reflection Answers (Life Application)
                 if (content.reflectionAnswers != null &&
                     content.reflectionAnswers!.isNotEmpty)
                   _buildLectioSection(
@@ -714,26 +811,15 @@ class StreamingStudyContent extends StatelessWidget {
                     content: content.reflectionAnswers!
                         .map((answer) => '• $answer')
                         .join('\n'),
-                    index: 11,
+                    index: 12,
                     icon: Icons.check_circle_outline,
                   ),
 
-                const SizedBox(height: 24),
+                if (content.reflectionAnswers != null &&
+                    content.reflectionAnswers!.isNotEmpty)
+                  const SizedBox(height: 24),
 
-                // 13. Closing (prayerPoints)
-                _buildLectioSection(
-                  context,
-                  title: context.tr(TranslationKeys.lectioClosingBlessingEmoji),
-                  content: content.prayerPoints
-                      ?.map((point) => '• $point')
-                      .join('\n'),
-                  index: 12,
-                  icon: Icons.wb_sunny_outlined,
-                ),
-
-                const SizedBox(height: 24),
-
-                // 14. Prayer Question
+                // Prayer Question
                 if (content.prayerQuestion != null)
                   _buildLectioSection(
                     context,
@@ -851,24 +937,36 @@ class StreamingStudyContent extends StatelessWidget {
 
                 const SizedBox(height: 24),
 
-                // Main Sermon Body (from interpretation) - with timing
-                _buildSection(
-                  context,
-                  title: context.tr(TranslationKeys.sermonBody),
-                  icon: Icons.menu_book,
-                  content: content.interpretation,
-                  index: 1,
-                ),
-
-                const SizedBox(height: 24),
-
-                // Background/Context
+                // Background/Context (moved up)
                 _buildSection(
                   context,
                   title: context.tr(TranslationKeys.sermonContext),
                   icon: Icons.history_edu,
                   content: content.context,
-                  index: 2,
+                  index: 1,
+                ),
+
+                const SizedBox(height: 24),
+
+                // Passage Reading (meditation passage)
+                if (content.passage != null)
+                  _buildSection(
+                    context,
+                    title: context.tr(TranslationKeys.studyGuidePassageReading),
+                    icon: Icons.auto_stories,
+                    content: content.passage,
+                    index: 2,
+                  ),
+
+                if (content.passage != null) const SizedBox(height: 24),
+
+                // Main Sermon Body (from interpretation) - moved down
+                _buildSection(
+                  context,
+                  title: context.tr(TranslationKeys.sermonBody),
+                  icon: Icons.menu_book,
+                  content: content.interpretation,
+                  index: 3,
                 ),
 
                 const SizedBox(height: 24),

@@ -1,10 +1,10 @@
 import 'dart:convert';
-import 'package:flutter/foundation.dart';
 
 import '../../../../core/config/app_config.dart';
 import '../../../../core/error/exceptions.dart';
 import '../../../../core/services/http_service.dart';
 import '../models/topic_progress_model.dart';
+import '../../../../core/utils/logger.dart';
 
 /// Remote data source for topic progress API operations.
 ///
@@ -210,8 +210,6 @@ class TopicProgressRemoteDataSourceImpl
   }
 
   void _logDebug(String message) {
-    if (kDebugMode) {
-      debugPrint('[TopicProgress] $message');
-    }
+    Logger.debug('[TopicProgress] $message');
   }
 }

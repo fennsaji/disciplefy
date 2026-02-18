@@ -6,6 +6,7 @@ import '../../../../core/i18n/translation_keys.dart';
 import '../../../../shared/widgets/clickable_scripture_text.dart';
 import '../../../voice_buddy/data/services/tts_service.dart';
 import '../../domain/entities/reflection_response.dart';
+import '../../../../core/utils/logger.dart';
 
 /// Lightens a color for better contrast in dark mode
 Color _lightenColor(Color color, [double amount = 0.2]) {
@@ -193,9 +194,9 @@ class _ReflectModeCardState extends State<ReflectModeCard>
       languageCode = '${locale.languageCode}-${locale.countryCode}';
     }
 
-    debugPrint('🔊 [TTS] Speaking prayer with language: $languageCode');
-    debugPrint('🔊 [TTS] Content language: ${widget.contentLanguage}');
-    debugPrint(
+    Logger.debug('🔊 [TTS] Speaking prayer with language: $languageCode');
+    Logger.debug('🔊 [TTS] Content language: ${widget.contentLanguage}');
+    Logger.debug(
         '🔊 [TTS] Content length: ${widget.sectionContent.length} characters');
 
     try {
@@ -220,7 +221,7 @@ class _ReflectModeCardState extends State<ReflectModeCard>
         _isTtsPlaying = true;
       });
     } catch (e) {
-      debugPrint('🔊 [TTS ERROR] $e');
+      Logger.debug('🔊 [TTS ERROR] $e');
       setState(() {
         _isTtsLoading = false;
         _isTtsPlaying = false;

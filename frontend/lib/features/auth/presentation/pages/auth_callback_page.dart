@@ -8,6 +8,7 @@ import '../bloc/auth_bloc.dart';
 import '../bloc/auth_event.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../bloc/auth_state.dart' as auth_states;
+import '../../../../core/utils/logger.dart';
 
 /// OAuth callback handler page
 /// Processes authorization codes from OAuth providers (Google, Apple)
@@ -55,33 +56,35 @@ class _AuthCallbackPageState extends State<AuthCallbackPage> {
 
     // INFO: With native Supabase PKCE flow, this Flutter callback route should NOT be reached
     // If we're here, it means either: 1) Fallback from error, 2) Legacy OAuth flow, or 3) Misconfiguration
-    print(
+    Logger.debug(
         'ℹ️ [AUTH CALLBACK] Flutter callback page reached - checking for session...');
-    print('ℹ️ [AUTH CALLBACK] Native PKCE should bypass this route entirely');
+    Logger.debug(
+        'ℹ️ [AUTH CALLBACK] Native PKCE should bypass this route entirely');
 
     // Instead of processing custom callbacks, just check session and redirect
     _checkSupabaseSessionAndRedirect();
   }
 
   void _checkSupabaseSessionAndRedirect() async {
-    print('🔍 [AUTH CALLBACK] 🔍 Checking Supabase session for PKCE flow...');
-    print(
+    Logger.warning(
+        '🔍 [AUTH CALLBACK] 🔍 Checking Supabase session for PKCE flow...');
+    Logger.warning(
         '🔍 [AUTH CALLBACK] ⚠️ WARNING: This Flutter callback should NOT be reached with corrected PKCE');
-    print(
+    Logger.warning(
         '🔍 [AUTH CALLBACK] ⚠️ Expected: Google → 127.0.0.1:54321/auth/v1/callback → Supabase handles natively');
-    print(
+    Logger.warning(
         '🔍 [AUTH CALLBACK] ⚠️ Actual: Google → localhost:59641/auth/callback → Flutter app (INCORRECT)');
 
     // For corrected PKCE flow, session should already be established by Supabase
     final session = Supabase.instance.client.auth.currentSession;
 
     if (session != null) {
-      print(
+      Logger.debug(
           '🔍 [AUTH CALLBACK] ✅ Session found despite incorrect callback routing');
-      print('🔍 [AUTH CALLBACK] - User: ${session.user.email}');
-      print(
+      Logger.debug('🔍 [AUTH CALLBACK] - User: ${session.user.email}');
+      Logger.debug(
           '🔍 [AUTH CALLBACK] - Provider: ${session.user.appMetadata['provider'] ?? 'unknown'}');
-      print(
+      Logger.debug(
           '🔍 [AUTH CALLBACK] - This suggests OAuth worked but configuration needs fixing');
 
       // Session exists, trigger authentication success
@@ -90,22 +93,23 @@ class _AuthCallbackPageState extends State<AuthCallbackPage> {
       // Check if user needs language selection before redirecting
       _checkLanguageSelectionAndRedirect();
     } else {
-      print('🔍 [AUTH CALLBACK] ❌ No session found - PKCE flow failed');
-      print('🔍 [AUTH CALLBACK] ❌ This indicates configuration issues:');
-      print('🔍 [AUTH CALLBACK] ❌ 1. Google OAuth redirect URI mismatch');
-      print(
+      Logger.error('🔍 [AUTH CALLBACK] ❌ No session found - PKCE flow failed');
+      Logger.debug('🔍 [AUTH CALLBACK] ❌ This indicates configuration issues:');
+      Logger.error(
+          '🔍 [AUTH CALLBACK] ❌ 1. Google OAuth redirect URI mismatch');
+      Logger.error(
           '🔍 [AUTH CALLBACK] ❌ 2. Supabase config.toml not updated correctly');
-      print(
+      Logger.error(
           '🔍 [AUTH CALLBACK] ❌ 3. Supabase server not running on 127.0.0.1:54321');
 
       // Wait briefly to see if session gets established
-      print(
+      Logger.debug(
           '🔍 [AUTH CALLBACK] ⏳ Waiting 3 seconds for delayed session establishment...');
       await Future.delayed(const Duration(seconds: 3));
 
       final laterSession = Supabase.instance.client.auth.currentSession;
       if (laterSession != null) {
-        print(
+        Logger.debug(
             '🔍 [AUTH CALLBACK] ✅ Session established after delay - proceeding');
         context.read<AuthBloc>().add(const SessionCheckRequested());
         Future.delayed(const Duration(milliseconds: 500), () {
@@ -164,33 +168,37 @@ class _AuthCallbackPageState extends State<AuthCallbackPage> {
       BlocListener<AuthBloc, auth_states.AuthState>(
         listener: (context, state) {
           final timestamp = DateTime.now().millisecondsSinceEpoch;
-          print('🔍 [AUTH CALLBACK] 📊 State change detected at: $timestamp');
-          print('🔍 [AUTH CALLBACK] 📊 State type: ${state.runtimeType}');
+          Logger.debug(
+              '🔍 [AUTH CALLBACK] 📊 State change detected at: $timestamp');
+          Logger.debug(
+              '🔍 [AUTH CALLBACK] 📊 State type: ${state.runtimeType}');
 
           if (state is auth_states.AuthenticatedState) {
             // Success - navigate to home
-            print(
+            Logger.debug(
                 '🔍 [AUTH CALLBACK] ✅ Authentication successful, navigating to home...');
-            print(
+            Logger.debug(
                 '🔍 [AUTH CALLBACK] - User: ${state.user.email ?? "Anonymous"}');
-            print('🔍 [AUTH CALLBACK] - User ID: ${state.user.id}');
-            print('🔍 [AUTH CALLBACK] - Is Anonymous: ${state.isAnonymous}');
-            print('🔍 [AUTH CALLBACK] - Timestamp: $timestamp');
+            Logger.debug('🔍 [AUTH CALLBACK] - User ID: ${state.user.id}');
+            Logger.debug(
+                '🔍 [AUTH CALLBACK] - Is Anonymous: ${state.isAnonymous}');
+            Logger.debug('🔍 [AUTH CALLBACK] - Timestamp: $timestamp');
 
             // Add a small delay to ensure storage operations complete
-            print(
+            Logger.debug(
                 '🔍 [AUTH CALLBACK] ⏱️ Adding 100ms delay for storage completion...');
             Future.delayed(const Duration(milliseconds: 100), () {
-              print('🔍 [AUTH CALLBACK] - About to call context.go("/")');
+              Logger.debug(
+                  '🔍 [AUTH CALLBACK] - About to call context.go("/")');
               // Clear any URL fragments and navigate to home
               // This ensures OAuth callback properly redirects regardless of preserved fragments
               context.go('/');
-              print(
+              Logger.debug(
                   '🔍 [AUTH CALLBACK] - context.go("/") completed at: ${DateTime.now().millisecondsSinceEpoch}');
             });
           } else if (state is auth_states.AuthErrorState) {
             // Error - show message and redirect to login
-            print(
+            Logger.error(
                 '🔍 [AUTH CALLBACK] ❌ Authentication failed: ${state.message}');
             _showErrorAndRedirect(state.message);
           }
@@ -354,7 +362,7 @@ class _AuthCallbackPageState extends State<AuthCallbackPage> {
         }
       });
     } catch (e) {
-      print('Error checking language selection: $e');
+      Logger.debug('Error checking language selection: $e');
       // Fallback to home on error
       Future.delayed(const Duration(milliseconds: 500), () {
         if (mounted) {

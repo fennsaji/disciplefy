@@ -1,6 +1,7 @@
 import 'package:dartz/dartz.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/error/failures.dart';
+import '../../../../core/utils/logger.dart';
 
 /// Repository for fetching token costs from backend
 class TokenCostRepository {
@@ -86,7 +87,7 @@ class TokenCostRepository {
       }
     } catch (e) {
       // No fallback - backend API is single source of truth
-      print('❌ [TOKEN_COST] API failed for $language:$mode - Error: $e');
+      Logger.error('❌ [TOKEN_COST] API failed for $language:$mode - Error: $e');
       return Left(ServerFailure(
         message: 'Unable to fetch token cost from backend',
       ));

@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import '../utils/logger.dart';
 
 /// Application configuration based on environment
 /// References: Technical Architecture Document, Security Design Plan
@@ -208,26 +209,26 @@ class AppConfig {
     }
 
     if (isDevelopment) {
-      print('✅ Configuration validation passed');
+      Logger.info('✅ Configuration validation passed');
     }
   }
 
   static void logConfiguration() {
     if (isDevelopment) {
-      print('🔧 App Configuration:');
-      print(
+      Logger.debug('🔧 App Configuration:');
+      Logger.debug(
           '  - Environment: $environment (${isDevelopment ? "Development" : "Production"})');
-      print('  - FLUTTER_ENV: $_flutterEnv');
-      print('  - Supabase URL: $supabaseUrl');
-      print('  - Google Client ID: $googleClientId');
-      print(
+      Logger.debug('  - FLUTTER_ENV: $_flutterEnv');
+      Logger.debug('  - Supabase URL: $supabaseUrl');
+      Logger.debug('  - Google Client ID: $googleClientId');
+      Logger.error(
           '  - Google OAuth: ${isOAuthConfigValid ? "✅ Configured" : "❌ Missing"}');
-      print('  - Platform: ${kIsWeb ? "Web" : "Mobile"}');
+      Logger.debug('  - Platform: ${kIsWeb ? "Web" : "Mobile"}');
       if (kIsWeb) {
-        print('  - Configured OAuth Redirect: $webOAuthRedirectUrl');
+        Logger.debug('  - Configured OAuth Redirect: $webOAuthRedirectUrl');
       }
-      print('  - Auth Redirect URL: $authRedirectUrl');
-      print('  - Package Name: $packageName');
+      Logger.debug('  - Auth Redirect URL: $authRedirectUrl');
+      Logger.debug('  - Package Name: $packageName');
     }
   }
 }

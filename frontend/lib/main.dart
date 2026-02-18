@@ -37,6 +37,9 @@ import 'core/utils/web_splash_controller.dart';
 import 'core/services/theme_service.dart';
 import 'core/services/locale_service.dart';
 import 'core/services/auth_state_provider.dart';
+import 'core/services/system_config_service.dart';
+import 'core/services/pricing_service.dart';
+import 'core/utils/version_checker.dart';
 import 'core/services/auth_session_validator.dart';
 import 'core/services/notification_service.dart';
 import 'core/services/notification_service_web_stub.dart'
@@ -46,6 +49,7 @@ import 'core/utils/keyboard_animation_sync.dart';
 import 'core/utils/custom_viewport_handler.dart';
 import 'core/utils/keyboard_performance_monitor.dart';
 import 'core/services/android_hybrid_storage.dart';
+import 'core/utils/logger.dart';
 
 // ============================================================================
 // Firebase Configuration (Environment Variables)
@@ -53,10 +57,8 @@ import 'core/services/android_hybrid_storage.dart';
 // Use --dart-define to pass Firebase config for different environments
 // Example: flutter run --dart-define=FIREBASE_API_KEY=your_key_here
 
-const firebaseApiKey = String.fromEnvironment(
-  'FIREBASE_API_KEY',
-  defaultValue: 'AIzaSyDfCd9JuqJKvi3Dq2pD87ZXe6bhVYWoSmc',
-);
+// ⚠️ SECURITY: Never commit API keys! Must be provided via --dart-define
+const firebaseApiKey = String.fromEnvironment('FIREBASE_API_KEY');
 const firebaseAuthDomain = String.fromEnvironment(
   'FIREBASE_AUTH_DOMAIN',
   defaultValue: 'disciplefy---bible-study.firebaseapp.com',
@@ -111,7 +113,7 @@ void main() async {
 
     // Initialize Firebase for push notifications
     try {
-      if (kDebugMode) print('🔧 [MAIN] Initializing Firebase...');
+      if (kDebugMode) Logger.debug('🔧 [MAIN] Initializing Firebase...');
 
       if (kIsWeb) {
         // Initialize Firebase for web with environment-based configuration
@@ -137,11 +139,14 @@ void main() async {
         );
       }
 
-      if (kDebugMode) print('✅ [MAIN] Firebase initialized successfully');
+      if (kDebugMode) {
+        Logger.debug('✅ [MAIN] Firebase initialized successfully');
+      }
     } catch (e) {
       if (kDebugMode) {
-        print('⚠️  [MAIN] Firebase initialization error: $e');
-        print('   For mobile: Run "flutterfire configure" to set up Firebase');
+        Logger.error('⚠️  [MAIN] Firebase initialization error: $e');
+        Logger.debug(
+            '   For mobile: Run "flutterfire configure" to set up Firebase');
       }
     }
 
@@ -155,9 +160,7 @@ void main() async {
         anonKey: AppConfig.supabaseAnonKey,
         debug: kDebugMode,
       );
-      if (kDebugMode) {
-        print('✅ [MAIN] Supabase initialized with default web storage');
-      }
+      Logger.info('✅ [MAIN] Supabase initialized with default web storage');
     } else {
       // Android/iOS: Use hybrid storage to protect against Keystore clearing
       await Supabase.initialize(
@@ -168,39 +171,56 @@ void main() async {
           localStorage: await AndroidHybridStorage.create(),
         ),
       );
-      if (kDebugMode) {
-        print('✅ [MAIN] Supabase initialized with Android hybrid storage');
-      }
+      Logger.info('✅ [MAIN] Supabase initialized with Android hybrid storage');
     }
 
     // Initialize dependency injection
-    if (kDebugMode) print('🔧 [MAIN] Initializing dependency injection...');
+    if (kDebugMode) {
+      Logger.debug('🔧 [MAIN] Initializing dependency injection...');
+    }
     await initializeDependencies();
-    if (kDebugMode) print('✅ [MAIN] Dependency injection completed');
+    if (kDebugMode) Logger.debug('✅ [MAIN] Dependency injection completed');
 
     // Initialize daily verse cache service
-    if (kDebugMode) {
-      print('🔧 [MAIN] Initializing daily verse cache service...');
-    }
+    Logger.debug('🔧 [MAIN] Initializing daily verse cache service...');
     await sl<DailyVerseCacheInterface>().initialize();
-    if (kDebugMode) print('✅ [MAIN] Daily verse cache service completed');
+    if (kDebugMode) {
+      Logger.debug('✅ [MAIN] Daily verse cache service completed');
+    }
 
     // Initialize memory verse local datasource
-    if (kDebugMode) {
-      print('🔧 [MAIN] Initializing memory verse local datasource...');
-    }
+    Logger.debug('🔧 [MAIN] Initializing memory verse local datasource...');
     await sl<MemoryVerseLocalDataSource>().initialize();
-    if (kDebugMode) print('✅ [MAIN] Memory verse local datasource completed');
+    if (kDebugMode) {
+      Logger.debug('✅ [MAIN] Memory verse local datasource completed');
+    }
 
     // Initialize theme service
-    if (kDebugMode) print('🔧 [MAIN] Initializing theme service...');
+    if (kDebugMode) Logger.debug('🔧 [MAIN] Initializing theme service...');
     await sl<ThemeService>().initialize();
-    if (kDebugMode) print('✅ [MAIN] Theme service completed');
+    if (kDebugMode) Logger.debug('✅ [MAIN] Theme service completed');
 
     // Initialize locale service
-    if (kDebugMode) print('🔧 [MAIN] Initializing locale service...');
+    if (kDebugMode) Logger.debug('🔧 [MAIN] Initializing locale service...');
     await sl<LocaleService>().initialize();
-    if (kDebugMode) print('✅ [MAIN] Locale service completed');
+    if (kDebugMode) Logger.debug('✅ [MAIN] Locale service completed');
+
+    // Initialize system config service (maintenance mode, feature flags, version control)
+    if (kDebugMode) {
+      Logger.debug('🔧 [MAIN] Initializing system config service...');
+    }
+    await sl<SystemConfigService>().initialize();
+    if (kDebugMode) Logger.debug('✅ [MAIN] System config service completed');
+
+    // Initialize pricing service (dynamic subscription pricing from database)
+    if (kDebugMode) Logger.debug('🔧 [MAIN] Initializing pricing service...');
+    await sl<PricingService>().initialize();
+    if (kDebugMode) Logger.debug('✅ [MAIN] Pricing service completed');
+
+    // Check app version requirements
+    if (kDebugMode) Logger.debug('🔧 [MAIN] Checking app version...');
+    await VersionChecker.checkVersion(sl<SystemConfigService>());
+    if (kDebugMode) Logger.debug('✅ [MAIN] Version check completed');
 
     // Initialize Phase 2 & 3 keyboard shadow fixes (mobile only)
     if (!kIsWeb) {
@@ -214,14 +234,12 @@ void main() async {
       }
     }
 
-    if (kDebugMode) {
-      print('🎉 [MAIN] All initialization completed, starting app...');
-    }
+    Logger.debug('🎉 [MAIN] All initialization completed, starting app...');
     runApp(const DisciplefyBibleStudyApp());
   } catch (e, stackTrace) {
     if (kDebugMode) {
-      print('🚨 [MAIN] Initialization error: $e');
-      print('🚨 [MAIN] Stack trace: $stackTrace');
+      Logger.error('🚨 [MAIN] Initialization error: $e');
+      Logger.debug('🚨 [MAIN] Stack trace: $stackTrace');
     }
     runApp(const ErrorApp());
   }
@@ -279,13 +297,12 @@ class _DisciplefyBibleStudyAppState extends State<DisciplefyBibleStudyApp> {
 
       await _notificationService!.initialize();
 
-      if (kDebugMode) {
-        print('✅ [MAIN] NotificationService initialized successfully');
-      }
+      Logger.warning('✅ [MAIN] NotificationService initialized successfully');
     } catch (e) {
       if (kDebugMode) {
-        print('⚠️  [MAIN] NotificationService initialization failed: $e');
-        print('   This is expected if Firebase is not configured yet');
+        Logger.debug(
+            '⚠️  [MAIN] NotificationService initialization failed: $e');
+        Logger.debug('   This is expected if Firebase is not configured yet');
       }
     }
   }
@@ -300,13 +317,13 @@ class _DisciplefyBibleStudyAppState extends State<DisciplefyBibleStudyApp> {
 
       await _notificationServiceWeb!.initialize();
 
-      if (kDebugMode) {
-        print('✅ [MAIN] Web NotificationService initialized successfully');
-      }
+      Logger.warning(
+          '✅ [MAIN] Web NotificationService initialized successfully');
     } catch (e) {
       if (kDebugMode) {
-        print('⚠️  [MAIN] Web NotificationService initialization failed: $e');
-        print('   This is expected if Firebase is not configured yet');
+        Logger.debug(
+            '⚠️  [MAIN] Web NotificationService initialization failed: $e');
+        Logger.debug('   This is expected if Firebase is not configured yet');
       }
     }
   }
@@ -318,17 +335,14 @@ class _DisciplefyBibleStudyAppState extends State<DisciplefyBibleStudyApp> {
     // Use the router's root navigator key which is always available
     final navigatorState = AppRouter.rootNavigatorKey.currentState;
     if (navigatorState == null) {
-      if (kDebugMode) {
-        print('⚠️ [MAIN] Cannot show achievement dialog - no navigator state');
-      }
+      Logger.warning(
+          '⚠️ [MAIN] Cannot show achievement dialog - no navigator state');
       return;
     }
 
     final navigatorContext = navigatorState.context;
-    if (kDebugMode) {
-      print(
-          '🏆 [MAIN] Showing achievement unlock dialog: ${result.achievementName}');
-    }
+    Logger.debug(
+        '🏆 [MAIN] Showing achievement unlock dialog: ${result.achievementName}');
 
     showDialog(
       context: navigatorContext,
@@ -392,10 +406,8 @@ class _DisciplefyBibleStudyAppState extends State<DisciplefyBibleStudyApp> {
           // Fetch token status when user becomes authenticated
           // This ensures Memory Verses and other features have plan info
           if (state is auth_states.AuthenticatedState) {
-            if (kDebugMode) {
-              print(
-                  '🪙 [MAIN] Auth state changed to authenticated - fetching token status');
-            }
+            Logger.debug(
+                '🪙 [MAIN] Auth state changed to authenticated - fetching token status');
             context.read<TokenBloc>().add(const GetTokenStatus());
           }
         },

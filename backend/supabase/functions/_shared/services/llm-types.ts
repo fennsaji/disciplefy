@@ -168,6 +168,15 @@ export interface AnthropicResponse {
 export type LLMProvider = 'openai' | 'anthropic'
 
 /**
+ * Word count target for a specific study mode.
+ */
+export interface WordCountTarget {
+  readonly min: number
+  readonly max: number
+  readonly display: string  // Display format like "1500-1800"
+}
+
+/**
  * Language-specific configuration for LLM generation.
  */
 export interface LanguageConfig {
@@ -180,4 +189,75 @@ export interface LanguageConfig {
     readonly complexityInstruction: string
   }
   readonly culturalContext: string
+  readonly wordCountTargets?: {
+    readonly quick?: WordCountTarget
+    readonly standard?: WordCountTarget
+    readonly deep?: WordCountTarget
+    readonly lectio?: WordCountTarget
+    readonly sermon?: WordCountTarget
+  }
+}
+
+/**
+ * Prompt pair for multi-pass generation.
+ * Contains system and user messages for a single LLM call.
+ */
+export interface PromptPair {
+  readonly systemMessage: string
+  readonly userMessage: string
+}
+
+/**
+ * Token usage metadata from LLM API response
+ */
+export interface LLMUsageMetadata {
+  provider: 'openai' | 'anthropic'
+  model: string
+  inputTokens: number
+  outputTokens: number
+  totalTokens: number
+  costUsd: number  // Calculated using CostTrackingService
+}
+
+/**
+ * Wrapper for LLM responses that includes usage metadata
+ */
+export interface LLMResponseWithUsage<T = string> {
+  content: T
+  usage: LLMUsageMetadata
+}
+
+/**
+ * Cost tracking context for multi-pass operations
+ * Accumulates token usage across multiple LLM calls
+ */
+export class CostTrackingContext {
+  private calls: LLMUsageMetadata[] = []
+
+  addCall(usage: LLMUsageMetadata): void {
+    this.calls.push(usage)
+  }
+
+  getAggregate(): LLMUsageMetadata {
+    const totalInput = this.calls.reduce((sum, call) => sum + call.inputTokens, 0)
+    const totalOutput = this.calls.reduce((sum, call) => sum + call.outputTokens, 0)
+    const totalCost = this.calls.reduce((sum, call) => sum + call.costUsd, 0)
+
+    return {
+      provider: this.calls[0]?.provider || 'openai',
+      model: this.calls[0]?.model || 'unknown',
+      inputTokens: totalInput,
+      outputTokens: totalOutput,
+      totalTokens: totalInput + totalOutput,
+      costUsd: totalCost
+    }
+  }
+
+  getCalls(): LLMUsageMetadata[] {
+    return [...this.calls]
+  }
+
+  reset(): void {
+    this.calls = []
+  }
 }

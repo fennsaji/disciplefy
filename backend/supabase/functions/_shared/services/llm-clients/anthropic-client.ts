@@ -7,8 +7,9 @@
  * - Follow-up responses
  */
 
-import type { AnthropicRequest, AnthropicResponse, LanguageConfig, LLMGenerationParams } from '../llm-types.ts'
+import type { AnthropicRequest, AnthropicResponse, LanguageConfig, LLMGenerationParams, LLMUsageMetadata, LLMResponseWithUsage } from '../llm-types.ts'
 import { calculateOptimalTokens } from '../llm-utils/prompt-builder.ts'
+import { CostTrackingService } from '../cost-tracking-service.ts'
 
 /**
  * Anthropic API configuration
@@ -34,6 +35,7 @@ export class AnthropicClient {
   private readonly apiKey: string
   private readonly baseUrl = 'https://api.anthropic.com/v1/messages'
   private readonly apiVersion = '2023-06-01'
+  private readonly costTracker = new CostTrackingService()
 
   constructor(config: AnthropicClientConfig) {
     if (!config.apiKey || !config.apiKey.startsWith('sk-ant-')) {
@@ -43,20 +45,44 @@ export class AnthropicClient {
   }
 
   /**
-   * Selects the optimal Anthropic model based on language.
+   * Extracts usage metadata from Anthropic API response
+   */
+  private extractUsage(data: AnthropicResponse, model: string): LLMUsageMetadata {
+    const inputTokens = data.usage.input_tokens
+    const outputTokens = data.usage.output_tokens
+    const cost = this.costTracker.calculateCost('anthropic', model, inputTokens, outputTokens)
+
+    return {
+      provider: 'anthropic',
+      model,
+      inputTokens,
+      outputTokens,
+      totalTokens: inputTokens + outputTokens,
+      costUsd: cost.totalCost
+    }
+  }
+
+  /**
+   * Selects the optimal Anthropic model based on language and study mode.
+   * v3.4: Cost optimization - Claude Haiku for Quick Read mode (73% cheaper).
+   * v3.3: Using Claude Sonnet 4.5 for all other modes for better length compliance.
    *
    * @param language - Target language code
+   * @param studyMode - Optional study mode for cost optimization
    * @returns Anthropic model name
    */
-  selectModel(language: string): string {
-    switch (language) {
-      case 'hi':
-      case 'ml':
-        return 'claude-sonnet-4-20250514'
-      case 'en':
-      default:
-        return 'claude-haiku-4-5-20251001'
+  selectModel(language: string, studyMode?: string): string {
+    // v3.4 Cost Optimization: Use Claude Haiku 4.5 for Quick Read mode
+    // Quick Read is simple (600-750 words), Haiku is sufficient and 73% cheaper
+    // Savings: $0.013 → $0.0035 per guide (73% reduction)
+    // Impact: ~₹1,533/month savings on Quick Read alone (1,758 guides/month)
+    if (studyMode === 'quick') {
+      return 'claude-haiku-4-5-20251001'
     }
+
+    // v3.3: Claude Sonnet 4.5 for all other modes (better at following word count instructions)
+    // Expected improvement: 30-50% longer outputs with better instruction adherence
+    return 'claude-sonnet-4-5-20250929'
   }
 
   /**
@@ -109,14 +135,15 @@ export class AnthropicClient {
    * Makes an API call to Anthropic.
    *
    * @param options - Call options including system/user messages and parameters
-   * @returns Response content string
+   * @returns Response content with usage metadata
    * @throws Error if the API request fails or returns invalid content
    */
-  async call(options: AnthropicCallOptions): Promise<string> {
+  async call(options: AnthropicCallOptions): Promise<LLMResponseWithUsage<string>> {
     const { systemMessage, userMessage, temperature = 0.3, maxTokens = 3000 } = options
 
+    const model = this.selectModel('en')
     const request: AnthropicRequest = {
-      model: this.selectModel('en'),
+      model,
       max_tokens: maxTokens,
       temperature,
       top_k: 250,
@@ -125,8 +152,11 @@ export class AnthropicClient {
     }
 
     const data = await this.makeRequest(request)
-    console.log(`[Anthropic] Usage: ${data.usage.input_tokens + data.usage.output_tokens} tokens`)
-    return this.parseResponse(data)
+    const content = this.parseResponse(data)
+    const usage = this.extractUsage(data, model)
+    console.log(`[Anthropic] Usage: ${usage.totalTokens} tokens (cost: $${usage.costUsd.toFixed(4)})`)
+
+    return { content, usage }
   }
 
   /**
@@ -136,7 +166,7 @@ export class AnthropicClient {
    * @param userMessage - User prompt with scripture/topic details
    * @param languageConfig - Language-specific configuration for token limits
    * @param params - Generation parameters including language
-   * @returns Response content string with generated study guide
+   * @returns Response content with usage metadata
    * @throws Error if the API request fails or returns invalid content
    */
   async callForStudyGuide(
@@ -144,8 +174,8 @@ export class AnthropicClient {
     userMessage: string,
     languageConfig: LanguageConfig,
     params: LLMGenerationParams
-  ): Promise<string> {
-    const model = this.selectModel(params.language)
+  ): Promise<LLMResponseWithUsage<string>> {
+    const model = this.selectModel(params.language, params.studyMode)
     const maxTokens = calculateOptimalTokens(params, languageConfig)
 
     const request: AnthropicRequest = {
@@ -166,21 +196,26 @@ export class AnthropicClient {
     })
 
     const data = await this.makeRequest(request)
-    console.log(`[Anthropic] Study guide usage: ${data.usage.input_tokens + data.usage.output_tokens} tokens`)
-    return this.parseResponse(data)
+    const content = this.parseResponse(data)
+    const usage = this.extractUsage(data, model)
+    console.log(`[Anthropic] Study guide usage: ${usage.totalTokens} tokens (cost: $${usage.costUsd.toFixed(4)})`)
+
+    return { content, usage }
   }
 
   /**
    * Makes an API call for verse generation.
+   * v3.3: Using Claude Sonnet 4.5 for consistency.
    *
    * @param systemMessage - System prompt for verse selection
    * @param userMessage - User prompt with verse request details
-   * @returns Response content string with generated verse content
+   * @returns Response content with usage metadata
    * @throws Error if the API request fails or returns invalid content
    */
-  async callForVerse(systemMessage: string, userMessage: string): Promise<string> {
+  async callForVerse(systemMessage: string, userMessage: string): Promise<LLMResponseWithUsage<string>> {
+    const model = 'claude-sonnet-4-5-20250929'
     const request: AnthropicRequest = {
-      model: 'claude-sonnet-4-20250514',
+      model,
       max_tokens: 800,
       temperature: 0.2,
       system: systemMessage,
@@ -188,21 +223,24 @@ export class AnthropicClient {
     }
 
     const data = await this.makeRequest(request)
-    return this.parseResponse(data)
+    const content = this.parseResponse(data)
+    const usage = this.extractUsage(data, model)
+
+    return { content, usage }
   }
 
   /**
    * Makes an API call for follow-up responses.
+   * v3.3: Using Claude Sonnet 4.5 for all languages for consistency.
    *
    * @param systemMessage - System prompt for follow-up context
    * @param userMessage - User's follow-up question
    * @param language - Target language code ('en', 'hi', 'ml')
-   * @returns Response content string with follow-up answer
+   * @returns Response content with usage metadata
    * @throws Error if the API request fails or returns invalid content
    */
-  async callForFollowUp(systemMessage: string, userMessage: string, language: string): Promise<string> {
-    const model = language === 'en' ? 'claude-haiku-4-5-20251001' : 'claude-sonnet-4-20250514'
-
+  async callForFollowUp(systemMessage: string, userMessage: string, language: string): Promise<LLMResponseWithUsage<string>> {
+    const model = 'claude-sonnet-4-5-20250929'
     const request: AnthropicRequest = {
       model,
       max_tokens: 800,
@@ -212,7 +250,10 @@ export class AnthropicClient {
     }
 
     const data = await this.makeRequest(request)
-    return this.parseResponse(data)
+    const content = this.parseResponse(data)
+    const usage = this.extractUsage(data, model)
+
+    return { content, usage }
   }
 
   /**
@@ -226,14 +267,15 @@ export class AnthropicClient {
    * @param languageConfig - Language configuration
    * @param params - Generation parameters
    * @yields Raw text chunks from the LLM stream
+   * @returns Usage metadata from the LLM API
    */
   async *streamStudyGuide(
     systemMessage: string,
     userMessage: string,
     languageConfig: LanguageConfig,
     params: LLMGenerationParams
-  ): AsyncGenerator<string, void, unknown> {
-    const model = this.selectModel(params.language)
+  ): AsyncGenerator<string, LLMUsageMetadata, unknown> {
+    const model = this.selectModel(params.language, params.studyMode)
     const maxTokens = calculateOptimalTokens(params, languageConfig)
 
     // Anthropic streaming request
@@ -275,6 +317,7 @@ export class AnthropicClient {
     let buffer = ''
     let jsonStarted = false // Track if we've seen the opening {
     let accumulatedChunks = '' // Accumulate first few chars to detect markdown
+    let usageData: LLMUsageMetadata | null = null
 
     try {
       while (true) {
@@ -350,7 +393,46 @@ export class AnthropicClient {
                 }
               } else if (parsed.type === 'message_stop') {
                 console.log(`[Anthropic] Stream completed: ${totalChars} total characters`)
-                return
+
+                // Return usage metadata if captured, otherwise estimate
+                if (usageData) {
+                  console.log(`[Anthropic] Usage: ${usageData.totalTokens} tokens (cost: $${usageData.costUsd.toFixed(4)})`)
+                  return usageData
+                } else {
+                  // Fallback: estimate if usage not captured
+                  console.warn(`[Anthropic] ⚠️ No usage data from streaming, estimating...`)
+                  const estimatedTokens = Math.ceil(totalChars / 4)
+                  return {
+                    provider: 'anthropic',
+                    model,
+                    inputTokens: estimatedTokens * 0.3,
+                    outputTokens: estimatedTokens * 0.7,
+                    totalTokens: estimatedTokens,
+                    costUsd: 0
+                  }
+                }
+              } else if (parsed.type === 'message_start') {
+                // Anthropic sends usage in message_start event
+                if (parsed.message?.usage) {
+                  const inputTokens = parsed.message.usage.input_tokens || 0
+                  const outputTokens = parsed.message.usage.output_tokens || 0
+                  if (inputTokens > 0 || outputTokens > 0) {
+                    usageData = this.extractUsage({
+                      content: [],
+                      usage: { input_tokens: inputTokens, output_tokens: outputTokens },
+                      stop_reason: 'end_turn'
+                    } as AnthropicResponse, model)
+                  }
+                }
+              } else if (parsed.type === 'message_delta') {
+                // Anthropic sends final usage in message_delta event
+                if (parsed.usage) {
+                  usageData = this.extractUsage({
+                    content: [],
+                    usage: parsed.usage,
+                    stop_reason: 'end_turn'
+                  } as AnthropicResponse, model)
+                }
               } else if (parsed.type === 'error') {
                 throw new Error(`Anthropic stream error: ${parsed.error?.message || 'Unknown error'}`)
               }
@@ -369,6 +451,21 @@ export class AnthropicClient {
     }
 
     console.log(`[Anthropic] Stream ended: ${totalChars} total characters`)
+
+    // Return usage or estimate if not captured during stream
+    if (usageData) {
+      return usageData
+    } else {
+      const estimatedTokens = Math.ceil(totalChars / 4)
+      return {
+        provider: 'anthropic',
+        model,
+        inputTokens: estimatedTokens * 0.3,
+        outputTokens: estimatedTokens * 0.7,
+        totalTokens: estimatedTokens,
+        costUsd: 0
+      }
+    }
   }
 }
 

@@ -17,6 +17,7 @@ import 'package:go_router/go_router.dart';
 import 'notification_token_manager_web.dart';
 import 'notification_message_handler_web.dart';
 import 'notification_permission_handler_web.dart';
+import '../utils/logger.dart';
 
 /// Web-specific implementation of notification service
 /// Orchestrates modular components for clean separation of concerns
@@ -61,29 +62,29 @@ class NotificationServiceWeb {
 
   /// Initialize Firebase Messaging for web
   Future<void> initialize() async {
-    print(
+    Logger.debug(
         '[FCM Web] 🔍 Initialize called - checking if already initialized...');
-    print('[FCM Web] 📊 Current _isInitialized value: $_isInitialized');
+    Logger.debug('[FCM Web] 📊 Current _isInitialized value: $_isInitialized');
 
     if (_isInitialized) {
-      print('[FCM Web] ⚠️  Already initialized - skipping');
+      Logger.warning('[FCM Web] ⚠️  Already initialized - skipping');
       return;
     }
 
     try {
-      print('[FCM Web] 🚀 Starting initialization...');
+      Logger.debug('[FCM Web] 🚀 Starting initialization...');
 
       // Get Firebase Messaging instance
       try {
-        print('[FCM Web] 📱 Getting Firebase Messaging instance...');
+        Logger.debug('[FCM Web] 📱 Getting Firebase Messaging instance...');
         _firebaseMessaging = FirebaseMessaging.instance;
-        print('[FCM Web] ✅ Firebase Messaging instance obtained');
+        Logger.error('[FCM Web] ✅ Firebase Messaging instance obtained');
       } catch (e) {
-        print('[FCM Web] ❌ Firebase instance error: $e');
+        Logger.debug('[FCM Web] ❌ Firebase instance error: $e');
         // Firebase may already be initialized in JS, continue anyway
       }
 
-      print(
+      Logger.debug(
           '[FCM Web] 🔄 After Firebase instance - continuing to initialization...');
 
       // Initialize modular components
@@ -93,62 +94,62 @@ class NotificationServiceWeb {
       await _checkServiceWorkerStatus();
 
       // Request permission using permission handler
-      print('[FCM Web] 📋 Requesting notification permission...');
+      Logger.debug('[FCM Web] 📋 Requesting notification permission...');
       bool hasPermission = false;
       try {
         hasPermission = await _permissionHandler!.requestPermissions();
       } catch (e, stackTrace) {
-        print('[FCM Web] ❌ Permission request failed with error: $e');
-        print('[FCM Web] Stack trace: $stackTrace');
-        print(
+        Logger.error('[FCM Web] ❌ Permission request failed with error: $e');
+        Logger.debug('[FCM Web] Stack trace: $stackTrace');
+        Logger.warning(
             '[FCM Web] ⚠️  This is likely a service worker or browser compatibility issue');
         return;
       }
 
       if (!hasPermission) {
-        print('[FCM Web] ❌ Notification permission denied by user');
+        Logger.error('[FCM Web] ❌ Notification permission denied by user');
         return;
       }
-      print('[FCM Web] ✅ Notification permission granted');
+      Logger.debug('[FCM Web] ✅ Notification permission granted');
 
       // Get FCM token using token manager
-      print('[FCM Web] 🔑 Getting FCM token...');
+      Logger.debug('[FCM Web] 🔑 Getting FCM token...');
       final token = await _tokenManager!.getFCMToken();
 
       if (token != null) {
-        print('[FCM Web] ✅ FCM Token obtained successfully');
+        Logger.error('[FCM Web] ✅ FCM Token obtained successfully');
       } else {
-        print(
+        Logger.error(
             '[FCM Web] ❌ Failed to get FCM token - notifications will NOT work');
       }
 
       // Set up token refresh listener
-      print('[FCM Web] 🔄 Setting up token refresh listener...');
+      Logger.debug('[FCM Web] 🔄 Setting up token refresh listener...');
       _tokenManager!.setupTokenRefreshListener(() async {
         await _tokenManager!.registerTokenWithBackend();
       });
 
       // Set up message listeners using message handler
-      print('[FCM Web] 📡 Setting up message listeners...');
+      Logger.debug('[FCM Web] 📡 Setting up message listeners...');
       _messageHandler!.setupForegroundMessageListener();
       _messageHandler!.setupServiceWorkerMessageListener();
 
       // Register token with backend if obtained
       if (token != null) {
-        print('[FCM Web] 📤 Registering token with backend...');
+        Logger.debug('[FCM Web] 📤 Registering token with backend...');
         await _tokenManager!.registerTokenWithBackend();
       }
 
       // Listen to auth state changes
-      print('[FCM Web] 👤 Setting up auth state listener...');
+      Logger.debug('[FCM Web] 👤 Setting up auth state listener...');
       _setupAuthStateListener();
 
       _isInitialized = true;
-      print('[FCM Web] ✅ Initialization complete');
+      Logger.debug('[FCM Web] ✅ Initialization complete');
       _printInitializationSummary();
     } catch (e, stackTrace) {
-      print('[FCM Web] ❌ Initialization error: $e');
-      print('[FCM Web] Stack trace: $stackTrace');
+      Logger.error('[FCM Web] ❌ Initialization error: $e');
+      Logger.debug('[FCM Web] Stack trace: $stackTrace');
       rethrow;
     }
   }
@@ -159,7 +160,7 @@ class NotificationServiceWeb {
 
   /// Initialize all modular components
   void _initializeModules() {
-    print('[FCM Web] 🔧 Initializing modular components...');
+    Logger.debug('[FCM Web] 🔧 Initializing modular components...');
 
     _tokenManager = NotificationTokenManagerWeb(
       supabaseClient: _supabaseClient,
@@ -175,45 +176,94 @@ class NotificationServiceWeb {
       firebaseMessaging: _firebaseMessaging!,
     );
 
-    print('[FCM Web] ✅ All modules initialized');
+    Logger.debug('[FCM Web] ✅ All modules initialized');
   }
 
   /// Check service worker availability and status
   Future<void> _checkServiceWorkerStatus() async {
-    print('[FCM Web] 🔍 Checking service worker status...');
+    Logger.debug('[FCM Web] 🔍 Checking service worker status...');
     try {
       if (kIsWeb) {
         final serviceWorkerSupported =
             html.window.navigator.serviceWorker != null;
 
         if (!serviceWorkerSupported) {
-          print('[FCM Web] ❌ Service Worker not supported in this browser');
+          Logger.error(
+              '[FCM Web] ❌ Service Worker not supported in this browser');
         } else {
           // Wait for service worker to be ready
           final registration = await html.window.navigator.serviceWorker!.ready;
 
           if (kDebugMode) {
-            print('[FCM Web] ✅ Service worker ready');
-            print('[FCM Web] 📊 Scope: ${registration.scope}');
-            print('[FCM Web] 📊 Active: ${registration.active != null}');
+            Logger.debug('[FCM Web] ✅ Service worker ready');
+            Logger.debug('[FCM Web] 📊 Scope: ${registration.scope}');
+            Logger.debug('[FCM Web] 📊 Active: ${registration.active != null}');
           }
+
+          // 🔒 SECURITY: Send Firebase config to service worker at runtime
+          // This prevents hardcoding API keys in the service worker file
+          await _sendFirebaseConfigToServiceWorker(registration);
         }
       }
     } catch (e) {
-      print('[FCM Web] ⚠️  Service worker check error: $e');
+      Logger.error('[FCM Web] ⚠️  Service worker check error: $e');
+    }
+  }
+
+  /// Send Firebase configuration to the service worker at runtime
+  /// This prevents hardcoding API keys in the codebase
+  Future<void> _sendFirebaseConfigToServiceWorker(
+      html.ServiceWorkerRegistration registration) async {
+    try {
+      // Get Firebase config from environment (passed via --dart-define)
+      const firebaseApiKey = String.fromEnvironment('FIREBASE_API_KEY');
+
+      if (firebaseApiKey.isEmpty) {
+        Logger.warning(
+            '[FCM Web] ⚠️  Firebase API key not provided via --dart-define');
+        Logger.debug('[FCM Web] ⚠️  Service worker will use fallback config');
+        return;
+      }
+
+      final firebaseConfig = {
+        'apiKey': firebaseApiKey,
+        'authDomain': const String.fromEnvironment('FIREBASE_AUTH_DOMAIN',
+            defaultValue: 'disciplefy---bible-study.firebaseapp.com'),
+        'projectId': const String.fromEnvironment('FIREBASE_PROJECT_ID',
+            defaultValue: 'disciplefy---bible-study'),
+        'storageBucket': const String.fromEnvironment('FIREBASE_STORAGE_BUCKET',
+            defaultValue: 'disciplefy---bible-study.firebasestorage.app'),
+        'messagingSenderId': const String.fromEnvironment(
+            'FIREBASE_MESSAGING_SENDER_ID',
+            defaultValue: '16888340359'),
+        'appId': const String.fromEnvironment('FIREBASE_APP_ID',
+            defaultValue: '1:16888340359:web:36ad4ae0d1ef1adf8e3d22'),
+        'measurementId': const String.fromEnvironment('FIREBASE_MEASUREMENT_ID',
+            defaultValue: 'G-TY0KDPH5TS'),
+      };
+
+      Logger.debug('[FCM Web] 🔧 Sending Firebase config to service worker...');
+      registration.active?.postMessage({
+        'type': 'FIREBASE_CONFIG',
+        'config': firebaseConfig,
+      });
+      Logger.error('[FCM Web] ✅ Firebase config sent to service worker');
+    } catch (e) {
+      Logger.debug(
+          '[FCM Web] ❌ Failed to send Firebase config to service worker: $e');
     }
   }
 
   /// Print initialization summary
   void _printInitializationSummary() {
-    print('[FCM Web] 📊 Initialization Summary:');
-    print('[FCM Web]    - Permission: granted');
-    print(
+    Logger.debug('[FCM Web] 📊 Initialization Summary:');
+    Logger.debug('[FCM Web]    - Permission: granted');
+    Logger.debug(
         '[FCM Web]    - FCM Token: ${fcmToken != null ? 'obtained' : 'MISSING'}');
-    print('[FCM Web]    - Foreground listener: active');
-    print('[FCM Web]    - Service worker listener: active');
-    print('[FCM Web]    - Token refresh listener: active');
-    print('[FCM Web]    - Auth listener: active');
+    Logger.debug('[FCM Web]    - Foreground listener: active');
+    Logger.debug('[FCM Web]    - Service worker listener: active');
+    Logger.debug('[FCM Web]    - Token refresh listener: active');
+    Logger.debug('[FCM Web]    - Auth listener: active');
   }
 
   // ============================================================================
@@ -222,7 +272,7 @@ class NotificationServiceWeb {
 
   /// Set up listener for auth state changes
   void _setupAuthStateListener() {
-    if (kDebugMode) print('[FCM Web] Setting up auth state listener...');
+    if (kDebugMode) Logger.debug('[FCM Web] Setting up auth state listener...');
 
     _authStateSubscription = _supabaseClient.auth.onAuthStateChange.listen(
       (authState) {
@@ -230,15 +280,14 @@ class NotificationServiceWeb {
         final session = authState.session;
 
         if (kDebugMode) {
-          print('[FCM Web] Auth state changed: $event');
-          print('[FCM Web] User authenticated: ${session?.user.id ?? 'null'}');
+          Logger.debug('[FCM Web] Auth state changed: $event');
+          Logger.debug(
+              '[FCM Web] User authenticated: ${session?.user.id ?? 'null'}');
         }
 
         // Register token when user signs in
         if (event == AuthChangeEvent.signedIn && session != null) {
-          if (kDebugMode) {
-            print('[FCM Web] User signed in, registering FCM token...');
-          }
+          Logger.debug('[FCM Web] User signed in, registering FCM token...');
           _tokenManager?.registerTokenWithBackend();
         }
 
@@ -246,8 +295,8 @@ class NotificationServiceWeb {
         if (event == AuthChangeEvent.signedOut ||
             event == AuthChangeEvent.tokenRefreshed && session == null) {
           if (kDebugMode) {
-            print('[FCM Web] User signed out or session expired');
-            print('[FCM Web] Unregistering FCM token from backend...');
+            Logger.debug('[FCM Web] User signed out or session expired');
+            Logger.debug('[FCM Web] Unregistering FCM token from backend...');
           }
           _tokenManager?.unregisterTokenFromBackend();
         }
@@ -262,9 +311,7 @@ class NotificationServiceWeb {
   /// Request notification permissions from the browser
   Future<bool> requestPermissions() async {
     if (_permissionHandler == null) {
-      if (kDebugMode) {
-        print('[FCM Web] ❌ Permission handler not initialized');
-      }
+      Logger.error('[FCM Web] ❌ Permission handler not initialized');
       return false;
     }
     return await _permissionHandler!.requestPermissions();
@@ -273,9 +320,7 @@ class NotificationServiceWeb {
   /// Delete the FCM token and unregister from backend
   Future<void> deleteToken() async {
     if (_tokenManager == null) {
-      if (kDebugMode) {
-        print('[FCM Web] ❌ Token manager not initialized');
-      }
+      Logger.error('[FCM Web] ❌ Token manager not initialized');
       return;
     }
     await _tokenManager!.deleteToken();

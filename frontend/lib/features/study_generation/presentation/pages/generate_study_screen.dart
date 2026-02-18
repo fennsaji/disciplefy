@@ -9,11 +9,13 @@ import 'package:get_it/get_it.dart';
 
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widgets/keyboard_aware_scaffold.dart';
+import '../../../../core/widgets/locked_feature_wrapper.dart';
 import '../../../../core/extensions/translation_extension.dart';
 import '../../../../core/i18n/translation_keys.dart';
 import '../../../../core/router/app_routes.dart';
 import '../../../../core/utils/device_keyboard_handler.dart';
 import '../../../../core/services/language_preference_service.dart';
+import '../../../../core/services/system_config_service.dart';
 import '../../../../core/models/app_language.dart';
 import '../../../../core/error/failures.dart';
 import '../../domain/mappers/app_language_mapper.dart';
@@ -33,6 +35,7 @@ import '../../../tokens/domain/entities/token_status.dart';
 import '../../../../core/router/app_router.dart';
 import '../../../subscription/presentation/widgets/upgrade_required_dialog.dart';
 import '../../data/repositories/token_cost_repository.dart';
+import '../../../../core/utils/logger.dart';
 
 /// Generate Study Screen allowing users to input scripture reference or topic.
 ///
@@ -75,6 +78,9 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
   // Language preference service for database integration
   late final LanguagePreferenceService _languagePreferenceService;
 
+  // System config service for feature flags
+  late final SystemConfigService _systemConfigService;
+
   // Stream subscription for language changes (to be cancelled in dispose)
   StreamSubscription<AppLanguage>? _languageChangeSubscription;
 
@@ -98,6 +104,7 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
   void initState() {
     super.initState();
     _languagePreferenceService = GetIt.instance<LanguagePreferenceService>();
+    _systemConfigService = GetIt.instance<SystemConfigService>();
     _navigator = GetIt.instance<StudyNavigator>();
     _tokenCostRepository = GetIt.instance<TokenCostRepository>();
     _inputController.addListener(_validateInput);
@@ -113,25 +120,19 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
       if (mounted) {
         // First, check if token status is already loaded in the bloc
         final currentState = context.read<TokenBloc>().state;
-        if (kDebugMode) {
-          print(
-              '🔄 [GENERATE_STUDY] initState - current bloc state: ${currentState.runtimeType}');
-        }
+        Logger.info(
+            '🔄 [GENERATE_STUDY] initState - current bloc state: ${currentState.runtimeType}');
 
         if (currentState is TokenLoaded) {
           // Token already loaded - use it directly
-          if (kDebugMode) {
-            print(
-                '✅ [GENERATE_STUDY] Token already loaded on init: ${currentState.tokenStatus.userPlan}');
-          }
+          Logger.info(
+              '✅ [GENERATE_STUDY] Token already loaded on init: ${currentState.tokenStatus.userPlan}');
           setState(() {
             _currentTokenStatus = currentState.tokenStatus;
           });
         } else {
           // Token not loaded - request it
-          if (kDebugMode) {
-            print('🔄 [GENERATE_STUDY] Token not loaded - requesting...');
-          }
+          Logger.debug('🔄 [GENERATE_STUDY] Token not loaded - requesting...');
           context.read<TokenBloc>().add(const GetTokenStatus());
         }
 
@@ -153,10 +154,8 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
 
       result.fold(
         (failure) {
-          if (kDebugMode) {
-            print(
-                '❌ [GENERATE STUDY] Failed to load default language: ${failure.message}');
-          }
+          Logger.error(
+              '❌ [GENERATE STUDY] Failed to load default language: ${failure.message}');
         },
         (language) {
           if (mounted) {
@@ -164,17 +163,13 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
               _selectedLanguage = language;
               _isLanguageDefault = isDefault;
             });
-            if (kDebugMode) {
-              print(
-                  '✅ [GENERATE STUDY] Loaded language: ${language.code}, isDefault: $isDefault');
-            }
+            Logger.info(
+                '✅ [GENERATE STUDY] Loaded language: ${language.code}, isDefault: $isDefault');
           }
         },
       );
     } catch (e) {
-      if (kDebugMode) {
-        print('❌ [GENERATE STUDY] Error loading default language: $e');
-      }
+      Logger.error('❌ [GENERATE STUDY] Error loading default language: $e');
     }
   }
 
@@ -182,9 +177,7 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
   /// When app language changes, study content language is reset to default,
   /// so we need to refresh the language selection to reflect the new app language.
   void _setupLanguageChangeListener() {
-    if (kDebugMode) {
-      print('[GENERATE_STUDY] Setting up language change listener');
-    }
+    Logger.debug('[GENERATE_STUDY] Setting up language change listener');
 
     // Cancel any existing subscription before creating a new one
     _languageChangeSubscription?.cancel();
@@ -192,19 +185,15 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
     // Store the subscription to ensure proper cleanup
     _languageChangeSubscription =
         _languagePreferenceService.languageChanges.listen((newLanguage) async {
-      if (kDebugMode) {
-        print(
-            '[GENERATE_STUDY] App language changed to: ${newLanguage.displayName}');
-      }
+      Logger.debug(
+          '[GENERATE_STUDY] App language changed to: ${newLanguage.displayName}');
 
       // When app language changes, study content language is automatically reset to default
       // Reload the language to reflect the new default
       if (mounted) {
         await _loadDefaultLanguage();
-        if (kDebugMode) {
-          print(
-              '[GENERATE_STUDY] Language refreshed after app language change');
-        }
+        Logger.debug(
+            '[GENERATE_STUDY] Language refreshed after app language change');
       }
     });
   }
@@ -218,25 +207,20 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
         setState(() {
           _savedStudyModePreference = savedMode;
         });
-        if (kDebugMode) {
-          print(
-              '✅ [GENERATE STUDY] Loaded saved study mode preference: $savedMode');
-        }
+        Logger.error(
+            '✅ [GENERATE STUDY] Loaded saved study mode preference: $savedMode');
       }
     } catch (e) {
-      if (kDebugMode) {
-        print('❌ [GENERATE STUDY] Error loading study mode preference: $e');
-      }
+      Logger.debug(
+          '❌ [GENERATE STUDY] Error loading study mode preference: $e');
     }
   }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    if (kDebugMode) {
-      print(
-          '🔄 [DEBUG] didChangeDependencies called, _hasNavigatedAway: $_hasNavigatedAway, mounted: $mounted');
-    }
+    Logger.debug(
+        '🔄 [DEBUG] didChangeDependencies called, _hasNavigatedAway: $_hasNavigatedAway, mounted: $mounted');
     // Always refresh tokens when dependencies change and we don't have current status
     // This handles the case where user returns from navigation and token state is stale
     if (mounted &&
@@ -244,25 +228,19 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
         !_isRefreshingTokens) {
       _hasNavigatedAway = false; // Reset the flag
       _isRefreshingTokens = true; // Prevent multiple simultaneous refreshes
-      if (kDebugMode) {
-        print(
-            '✅ [DEBUG] Triggering token refresh from didChangeDependencies (hasNavigatedAway OR null status)');
-      }
+      Logger.info(
+          '✅ [DEBUG] Triggering token refresh from didChangeDependencies (hasNavigatedAway OR null status)');
       // Use a short delay to ensure the context is ready
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
-          if (kDebugMode) {
-            print(
-                '🔄 [DEBUG] Executing GetTokenStatus from didChangeDependencies');
-          }
+          Logger.debug(
+              '🔄 [DEBUG] Executing GetTokenStatus from didChangeDependencies');
           context.read<TokenBloc>().add(const GetTokenStatus());
         }
       });
     } else {
-      if (kDebugMode) {
-        print(
-            '❌ [DEBUG] Not triggering token refresh - conditions not met (isRefreshing: $_isRefreshingTokens)');
-      }
+      Logger.error(
+          '❌ [DEBUG] Not triggering token refresh - conditions not met (isRefreshing: $_isRefreshingTokens)');
     }
   }
 
@@ -299,7 +277,7 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
     // Set timeout to reset loading state after 30 seconds
     _generationTimeoutTimer = Timer(const Duration(seconds: 30), () {
       if (mounted && _isGeneratingStudyGuide) {
-        debugPrint(
+        Logger.debug(
             '⏱️ [GENERATE_STUDY] Study generation timeout - resetting loading state');
         _resetLoadingState();
         ScaffoldMessenger.of(context).hideCurrentSnackBar();
@@ -366,17 +344,13 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
   /// Get token cost based on saved study mode preference
   /// Returns tuple: (tokenCost or null if hidden, always null for modeName)
   Future<(int?, String?)> _getTokenCostForDisplay() async {
-    if (kDebugMode) {
-      print(
-          '🔍 [TOKEN_COST] _savedStudyModePreference: $_savedStudyModePreference');
-    }
+    Logger.debug(
+        '🔍 [TOKEN_COST] _savedStudyModePreference: $_savedStudyModePreference');
 
     // CRITICAL: If no preference (ask every time), HIDE token cost badge
     if (StudyModePreferences.isGeneralAskEveryTime(_savedStudyModePreference)) {
-      if (kDebugMode) {
-        print(
-            '🔍 [TOKEN_COST] No default mode (ask every time) → hiding token badge');
-      }
+      Logger.debug(
+          '🔍 [TOKEN_COST] No default mode (ask every time) → hiding token badge');
       return (null, null); // Hide badge entirely
     }
 
@@ -402,24 +376,19 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
 
       return result.fold(
         (failure) {
-          if (kDebugMode) {
-            print('❌ [TOKEN_COST] Failed to fetch cost: ${failure.message}');
-          }
+          Logger.error(
+              '❌ [TOKEN_COST] Failed to fetch cost: ${failure.message}');
           // Fallback already handled by repository
           return (null, null); // Hide on error
         },
         (cost) {
-          if (kDebugMode) {
-            print('✅ [TOKEN_COST] Fetched cost: $cost for $modeForCost');
-          }
+          Logger.debug('✅ [TOKEN_COST] Fetched cost: $cost for $modeForCost');
           // NEVER return mode name - user doesn't want it
           return (cost, null);
         },
       );
     } catch (e) {
-      if (kDebugMode) {
-        print('❌ [TOKEN_COST] Error: $e');
-      }
+      Logger.error('❌ [TOKEN_COST] Error: $e');
       return (null, null);
     }
   }
@@ -438,10 +407,8 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
   void _navigateToTokenManagement() {
     // Set flag to indicate navigation away (will trigger token refresh on return)
     _hasNavigatedAway = true;
-    if (kDebugMode) {
-      print(
-          '🚀 [DEBUG] Navigating to token management, _hasNavigatedAway set to true');
-    }
+    Logger.debug(
+        '🚀 [DEBUG] Navigating to token management, _hasNavigatedAway set to true');
     context.go('/token-management');
   }
 
@@ -501,15 +468,11 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
         !_isRefreshingTokens) {
       _hasNavigatedAway = false; // Reset the navigation flag
       _isRefreshingTokens = true; // Prevent multiple simultaneous refreshes
-      if (kDebugMode) {
-        print(
-            '✅ [DEBUG] Triggering token refresh from build method (hasNavigatedAway OR null status)');
-      }
+      Logger.info(
+          '✅ [DEBUG] Triggering token refresh from build method (hasNavigatedAway OR null status)');
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
-          if (kDebugMode) {
-            print('🔄 [DEBUG] Executing GetTokenStatus from build method');
-          }
+          Logger.debug('🔄 [DEBUG] Executing GetTokenStatus from build method');
           context.read<TokenBloc>().add(const GetTokenStatus());
         }
       });
@@ -520,7 +483,7 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
         DeviceKeyboardHandler.needsCustomKeyboardHandling;
 
     if (kDebugMode && useAdvancedKeyboardHandling) {
-      print(
+      Logger.debug(
           '🔧 [GENERATE STUDY] Using KeyboardAwareScaffold for: ${DeviceKeyboardHandler.deviceManufacturer}');
     }
 
@@ -633,7 +596,7 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
             if (state is StudyGenerationSuccess) {
               // Study guide generated successfully - navigate and reset state
               if (!_isNavigating) {
-                debugPrint(
+                Logger.debug(
                     '✅ [GENERATE_STUDY] Study guide generated - navigating to study guide screen');
                 _isNavigating = true;
                 _resetLoadingState();
@@ -656,7 +619,7 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
             // Handle failure state
             if (state is StudyGenerationFailure) {
               // Generation failed - reset state and show error
-              debugPrint(
+              Logger.debug(
                   '❌ [GENERATE_STUDY] Study guide generation failed: ${state.failure.message}');
               _resetLoadingState();
 
@@ -683,7 +646,7 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
             if (state is StudyInitial) {
               // Clear loading state when returning to initial state
               if (!_isNavigating) {
-                debugPrint(
+                Logger.debug(
                     '🔄 [GENERATE_STUDY] Returned to initial state - clearing loader');
                 _resetLoadingState();
               }
@@ -692,34 +655,24 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
         ),
         BlocListener<TokenBloc, TokenState>(
           listener: (context, state) {
-            if (kDebugMode) {
-              print(
-                  '🎯 [GENERATE_STUDY] TokenBloc state changed: ${state.runtimeType}');
-            }
+            Logger.debug(
+                '🎯 [GENERATE_STUDY] TokenBloc state changed: ${state.runtimeType}');
             if (state is TokenLoaded) {
-              if (kDebugMode) {
-                print(
-                    '💰 [GENERATE_STUDY] Token loaded - totalTokens: ${state.tokenStatus.totalTokens}, userPlan: ${state.tokenStatus.userPlan}, isPremium: ${state.tokenStatus.isPremium}');
-              }
+              Logger.debug(
+                  '💰 [GENERATE_STUDY] Token loaded - totalTokens: ${state.tokenStatus.totalTokens}, userPlan: ${state.tokenStatus.userPlan}, isPremium: ${state.tokenStatus.isPremium}');
               setState(() {
                 _currentTokenStatus = state.tokenStatus;
                 _isRefreshingTokens =
                     false; // Reset refresh flag when tokens load
               });
             } else if (state is TokenLoading) {
-              if (kDebugMode) {
-                print('⏳ [GENERATE_STUDY] Token loading...');
-              }
+              Logger.error('⏳ [GENERATE_STUDY] Token loading...');
             } else if (state is TokenError) {
-              if (kDebugMode) {
-                print(
-                    '❌ [GENERATE_STUDY] Token error: ${state.failure.message}');
-              }
+              Logger.error(
+                  '❌ [GENERATE_STUDY] Token error: ${state.failure.message}');
               if (state.previousTokenStatus != null) {
-                if (kDebugMode) {
-                  print(
-                      '❌ [GENERATE_STUDY] Using previous status - totalTokens: ${state.previousTokenStatus!.totalTokens}');
-                }
+                Logger.error(
+                    '❌ [GENERATE_STUDY] Using previous status - totalTokens: ${state.previousTokenStatus!.totalTokens}');
                 setState(() {
                   _currentTokenStatus = state.previousTokenStatus;
                   _isRefreshingTokens =
@@ -770,10 +723,14 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
                     if (!isKeyboardVisible) ...[
                       const SizedBox(height: 24),
 
-                      // Compact AI Discipler option
-                      _buildCompactAiDisciplerButton(context),
-
-                      const SizedBox(height: 32),
+                      // Compact AI Discipler option - only show if ai_discipler feature is visible (respects display_mode)
+                      if (_isAiDisciplerFeatureEnabled()) ...[
+                        LockedFeatureWrapper(
+                          featureKey: 'ai_discipler',
+                          child: _buildCompactAiDisciplerButton(context),
+                        ),
+                        const SizedBox(height: 32),
+                      ],
 
                       // Recent Studies (has "View All" link built-in)
                       const RecentGuidesSection(),
@@ -1061,7 +1018,7 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
       color: Colors.transparent,
       child: InkWell(
         onTap: () {
-          _handleVoiceBuddyTap(context);
+          _handleAiDisciplerTap(context);
         },
         borderRadius: BorderRadius.circular(12),
         child: Container(
@@ -1426,7 +1383,7 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          onTap: () => _handleVoiceBuddyTap(context),
+          onTap: () => _handleAiDisciplerTap(context),
           borderRadius: BorderRadius.circular(20),
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
@@ -1533,54 +1490,29 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
     );
   }
 
-  /// Handles tap on Voice Buddy button - checks plan and shows upgrade dialog for free users
-  void _handleVoiceBuddyTap(BuildContext context) {
-    if (kDebugMode) {
-      print('🎤 [VOICE BUDDY] Button tapped');
-      print('🎤 [VOICE BUDDY] _currentTokenStatus: $_currentTokenStatus');
-      if (_currentTokenStatus != null) {
-        print('🎤 [VOICE BUDDY] userPlan: ${_currentTokenStatus!.userPlan}');
-      }
+  /// Checks if AI Discipler feature should be visible (respects display_mode)
+  /// Returns true if feature should be shown (either with access or with lock overlay)
+  bool _isAiDisciplerFeatureEnabled() {
+    // Get user's current plan
+    final userPlan = _currentTokenStatus?.userPlan.name ?? 'free';
+
+    // Check if ai_discipler feature should be visible (respects display_mode='lock' vs 'hide')
+    // shouldHideFeature returns true only if display_mode='hide' or feature is disabled
+    final shouldShow =
+        !_systemConfigService.shouldHideFeature('ai_discipler', userPlan);
+
+    if (kDebugMode && !shouldShow) {
+      Logger.debug('🚫 [AI DISCIPLER] Feature hidden for plan: $userPlan');
     }
 
-    // Block access until token status is loaded
-    if (_currentTokenStatus == null) {
-      // Token status not loaded yet - trigger refresh and wait
-      if (kDebugMode) {
-        print('🎤 [VOICE BUDDY] Token status is null - triggering refresh');
-      }
-      context.read<TokenBloc>().add(const GetTokenStatus());
-      // Show a loading indicator or snackbar to inform the user
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Loading... Please try again.'),
-          duration: Duration(seconds: 1),
-        ),
-      );
-      return;
-    }
+    return shouldShow;
+  }
 
-    // Check if user is on free plan
-    if (_currentTokenStatus!.userPlan == UserPlan.free) {
-      if (kDebugMode) {
-        print('🎤 [VOICE BUDDY] User is on FREE plan - showing upgrade dialog');
-      }
-      // Show upgrade required dialog
-      UpgradeRequiredDialog.show(
-        context,
-        featureName: 'AI Voice Discipler',
-        featureIcon: Icons.mic_rounded,
-        featureDescription:
-            'Have voice conversations with your AI Discipler to discuss scripture, ask questions, and deepen your understanding of the Bible.',
-      );
-      return;
-    }
-
-    // User is on Standard or Premium plan - proceed to Voice Buddy
-    if (kDebugMode) {
-      print(
-          '🎤 [VOICE BUDDY] User is on ${_currentTokenStatus!.userPlan} plan - navigating to voice conversation');
-    }
+  /// Handles tap on AI Discipler button
+  /// Button is wrapped with LockedFeatureWrapper which handles access control
+  void _handleAiDisciplerTap(BuildContext context) {
+    // LockedFeatureWrapper handles access control and shows upgrade dialog if needed
+    // If user reaches here, they have access - just navigate to voice conversation
     GoRouter.of(context).goToVoiceConversation();
   }
 
@@ -1647,10 +1579,8 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
         _displayTokenCost; // Use state variable (null = hide badge)
     final isEnabled = _isInputValid && !isLoading;
 
-    if (kDebugMode) {
-      print(
-          '🔍 [GENERATE_BUTTON] tokenCost: $tokenCost, isEnabled: $isEnabled, isLoading: $isLoading');
-    }
+    Logger.debug(
+        '🔍 [GENERATE_BUTTON] tokenCost: $tokenCost, isEnabled: $isEnabled, isLoading: $isLoading');
 
     return Column(
       children: [
@@ -1880,10 +1810,8 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
   }
 
   Future<void> _switchLanguage(StudyLanguage? language) async {
-    if (kDebugMode) {
-      print(
-          '🔄 [GENERATE STUDY] User switching content language to: ${language?.code ?? "default"}');
-    }
+    Logger.debug(
+        '🔄 [GENERATE STUDY] User switching content language to: ${language?.code ?? "default"}');
 
     // If language is null, user selected "Default"
     if (language == null) {
@@ -1900,10 +1828,8 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
         _isLanguageDefault = true;
       });
 
-      if (kDebugMode) {
-        print(
-            '✅ [GENERATE STUDY] Set to default - using app language: ${appLanguage.code}');
-      }
+      Logger.info(
+          '✅ [GENERATE STUDY] Set to default - using app language: ${appLanguage.code}');
     } else {
       // User selected a specific language
       final appLanguage = language.toAppLanguage();
@@ -1914,19 +1840,15 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
         _isLanguageDefault = false;
       });
 
-      if (kDebugMode) {
-        print(
-            '✅ [GENERATE STUDY] Content generation language saved: ${language.code}');
-      }
+      Logger.info(
+          '✅ [GENERATE STUDY] Content generation language saved: ${language.code}');
     }
 
     // Update token cost display for new language
     _updateTokenCostDisplay();
 
-    if (kDebugMode) {
-      print(
-          'ℹ️  [GENERATE STUDY] Note: This does not change the app UI language');
-    }
+    Logger.debug(
+        'ℹ️  [GENERATE STUDY] Note: This does not change the app UI language');
   }
 
   /// Show bottom sheet to change study mode preference
@@ -2066,7 +1988,7 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
                               .tr(TranslationKeys.studyModeDeepDescription),
                           icon: Icons.search,
                           currentModeRaw: currentModeRaw,
-                          duration: '25 min',
+                          duration: '15 min',
                         ),
                         const SizedBox(height: 12),
                         _buildModeOptionRaw(
@@ -2078,7 +2000,7 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
                               .tr(TranslationKeys.studyModeLectioDescription),
                           icon: Icons.self_improvement,
                           currentModeRaw: currentModeRaw,
-                          duration: '15 min',
+                          duration: '10 min',
                         ),
                         const SizedBox(height: 12),
                         _buildModeOptionRaw(
@@ -2542,26 +2464,20 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
           break;
       }
 
-      if (kDebugMode) {
-        print(
-            '✅ [GENERATE_STUDY] Using recommended mode for $inputType: ${recommendedMode.displayName}');
-      }
+      Logger.info(
+          '✅ [GENERATE_STUDY] Using recommended mode for $inputType: ${recommendedMode.displayName}');
       _navigateToStudyGuide(recommendedMode, false, true);
     } else if (savedModeString != null) {
       // User has specific saved preference - use it directly
       final savedMode = studyModeFromString(savedModeString);
       if (savedMode != null) {
-        if (kDebugMode) {
-          print(
-              '✅ [GENERATE_STUDY] Using saved study mode: ${savedMode.displayName}');
-        }
+        Logger.info(
+            '✅ [GENERATE_STUDY] Using saved study mode: ${savedMode.displayName}');
         _navigateToStudyGuide(savedMode, false, false);
       } else {
         // Invalid mode string - show mode selection sheet
-        if (kDebugMode) {
-          print(
-              '⚠️ [GENERATE_STUDY] Invalid study mode string: $savedModeString - showing mode selection sheet');
-        }
+        Logger.warning(
+            '⚠️ [GENERATE_STUDY] Invalid study mode string: $savedModeString - showing mode selection sheet');
         final result = await ModeSelectionSheet.show(
           context: context,
           languageCode: _selectedLanguage.code,
@@ -2574,10 +2490,8 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
       }
     } else {
       // No saved preference - show mode selection sheet
-      if (kDebugMode) {
-        print(
-            '🔍 [GENERATE_STUDY] No saved preference - showing mode selection sheet');
-      }
+      Logger.debug(
+          '🔍 [GENERATE_STUDY] No saved preference - showing mode selection sheet');
 
       final result = await ModeSelectionSheet.show(
         context: context,
@@ -2637,7 +2551,7 @@ class _GenerateStudyScreenState extends State<GenerateStudyScreen>
 
     final encodedInput = Uri.encodeComponent(input);
 
-    debugPrint(
+    Logger.debug(
         '🔍 [GENERATE_STUDY] Navigating to study guide V2 for $inputType: $input with mode: ${mode.name}');
 
     // Navigate to study guide V2 with mode parameter

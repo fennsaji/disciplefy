@@ -1,104 +1,137 @@
 /**
- * Get Token Pricing Packages Endpoint
+ * Get Token Pricing Edge Function
  *
- * Public endpoint that returns all active token pricing packages
- * with discount information for display in frontend.
+ * Returns current token pricing configuration and available packages.
+ * This endpoint provides dynamic pricing that can be updated without
+ * redeploying the frontend application.
  *
- * Security: Public endpoint (no authentication required)
- * Rate Limiting: Applied via standard middleware
+ * Query Parameters:
+ * - region: Region code (default: IN)
  *
- * @returns Array of pricing packages with token amounts and prices
+ * Returns:
+ * - tokensPerRupee: Current exchange rate (e.g., 4)
+ * - packages: Array of available token packages with pricing
+ * - effectiveFrom: When current pricing became active
  */
 
+import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { corsHeaders } from '../_shared/utils/cors.ts'
 
-interface PricingPackage {
-  token_amount: number
-  base_price_rupees: number
-  discounted_price_rupees: number
+interface TokenPackage {
+  id: number
+  tokens: number
+  rupees: number // Will be converted from DECIMAL to INTEGER
   discount_percentage: number
   is_popular: boolean
+  sort_order: number
 }
 
-/**
- * Main request handler
- */
-Deno.serve(async (req) => {
+interface TokenPricingConfig {
+  tokens_per_rupee: number
+  effective_from: string
+}
+
+serve(async (req) => {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
-    return new Response(null, { status: 200, headers: corsHeaders })
+    return new Response('ok', { headers: corsHeaders })
   }
 
   try {
-    // Only allow GET requests
-    if (req.method !== 'GET') {
-      return new Response(
-        JSON.stringify({ error: 'Method not allowed' }),
-        {
-          status: 405,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        }
-      )
-    }
+    // Parse query parameters
+    const url = new URL(req.url)
+    const region = url.searchParams.get('region') || 'IN'
 
-    // Validate required environment variables
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')
-    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')
+    console.log('[get-token-pricing] Request:', { region })
 
-    if (!supabaseUrl || !supabaseAnonKey) {
-      const missingVars = []
-      if (!supabaseUrl) missingVars.push('SUPABASE_URL')
-      if (!supabaseAnonKey) missingVars.push('SUPABASE_ANON_KEY')
+    // Initialize Supabase client
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+    const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
-      console.error(`[GetTokenPricing] Missing required environment variables: ${missingVars.join(', ')}`)
-      throw new Error(`Configuration error: Missing required environment variables: ${missingVars.join(', ')}`)
-    }
+    // Fetch current pricing configuration
+    const { data: pricingData, error: pricingError } = await supabase
+      .rpc('get_current_token_pricing', { p_region: region })
+      .single()
 
-    // Create Supabase client (anonymous access is fine for public pricing)
-    const supabaseClient = createClient(supabaseUrl, supabaseAnonKey)
-
-    // Fetch all active pricing packages
-    const { data, error } = await supabaseClient
-      .rpc('get_all_token_pricing_packages')
-      .returns<PricingPackage[]>()
-
-    if (error) {
-      console.error('[GetTokenPricing] Error fetching pricing packages:', error)
-      return new Response(
-        JSON.stringify({
-          error: 'Failed to fetch pricing packages',
-          details: error.message
-        }),
-        {
-          status: 500,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        }
-      )
-    }
-
-    // Return pricing packages
-    return new Response(
-      JSON.stringify({
+    if (pricingError) {
+      console.error('[get-token-pricing] Pricing fetch error:', pricingError)
+      // Use fallback values if database query fails
+      const fallbackResponse = {
         success: true,
-        packages: data || []
-      }),
+        tokensPerRupee: 2,
+        packages: [
+          { tokens: 20, rupees: 10, discount: 0, isPopular: false },
+          { tokens: 50, rupees: 22, discount: 10, isPopular: false },
+          { tokens: 100, rupees: 40, discount: 20, isPopular: true },
+          { tokens: 200, rupees: 75, discount: 25, isPopular: false },
+          { tokens: 400, rupees: 140, discount: 30, isPopular: false },
+          { tokens: 1000, rupees: 300, discount: 40, isPopular: false }
+        ],
+        effectiveFrom: new Date().toISOString(),
+        source: 'fallback'
+      }
+
+      return new Response(
+        JSON.stringify(fallbackResponse),
+        {
+          status: 200,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      )
+    }
+
+    const pricing = pricingData as TokenPricingConfig
+
+    // Fetch available token packages
+    const { data: packagesData, error: packagesError } = await supabase
+      .rpc('get_token_packages', { p_region: region })
+
+    if (packagesError) {
+      console.error('[get-token-pricing] Packages fetch error:', packagesError)
+      throw new Error('Failed to fetch token packages')
+    }
+
+    const packages = (packagesData as TokenPackage[]).map(pkg => ({
+      tokens: pkg.tokens,
+      rupees: Math.round(pkg.rupees), // Convert DECIMAL to INTEGER for frontend
+      discount: pkg.discount_percentage,
+      isPopular: pkg.is_popular
+    }))
+
+    // Build response
+    const response = {
+      success: true,
+      tokensPerRupee: pricing.tokens_per_rupee,
+      packages: packages,
+      effectiveFrom: pricing.effective_from,
+      region: region
+    }
+
+    console.log('[get-token-pricing] Returning pricing:', {
+      tokensPerRupee: pricing.tokens_per_rupee,
+      packageCount: packages.length
+    })
+
+    return new Response(
+      JSON.stringify(response),
       {
         status: 200,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       }
     )
-
   } catch (error) {
-    console.error('[GetTokenPricing] Unexpected error:', error)
+    console.error('[get-token-pricing] Error:', error)
+
     return new Response(
       JSON.stringify({
-        error: 'Internal server error',
-        message: error instanceof Error ? error.message : 'Unknown error'
+        success: false,
+        error: error instanceof Error ? error.message : 'Internal server error'
       }),
       {
         status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       }
     )
   }

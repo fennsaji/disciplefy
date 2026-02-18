@@ -283,6 +283,81 @@ class LoadPracticeModeStatsEvent extends MemoryVerseEvent {
   const LoadPracticeModeStatsEvent();
 }
 
+/// Event triggered when practice mode is tier-locked.
+///
+/// Fires when backend returns PRACTICE_MODE_TIER_LOCKED error code.
+/// Emits MemoryVersePracticeModeTierLocked state to show upgrade dialog.
+///
+/// **Parameters:**
+/// - [mode] - The locked practice mode
+/// - [currentTier] - User's current subscription tier
+/// - [availableModes] - List of modes available in user's tier
+/// - [requiredTier] - Minimum tier required to access this mode
+/// - [message] - User-friendly error message from backend
+class PracticeModeTierLockedEvent extends MemoryVerseEvent {
+  final String mode;
+  final String currentTier;
+  final List<String> availableModes;
+  final String requiredTier;
+  final String message;
+
+  const PracticeModeTierLockedEvent({
+    required this.mode,
+    required this.currentTier,
+    required this.availableModes,
+    required this.requiredTier,
+    required this.message,
+  });
+
+  @override
+  List<Object?> get props =>
+      [mode, currentTier, availableModes, requiredTier, message];
+}
+
+/// Event triggered when daily unlock limit is exceeded.
+///
+/// Fires when backend returns PRACTICE_UNLOCK_LIMIT_EXCEEDED error code.
+/// Emits MemoryVerseUnlockLimitExceeded state to show upgrade dialog.
+///
+/// **Parameters:**
+/// - [unlockedModes] - List of modes already unlocked today for this verse
+/// - [unlockedCount] - Number of modes unlocked
+/// - [limit] - Maximum unlocked modes allowed per verse per day
+/// - [tier] - User's current subscription tier
+/// - [verseId] - UUID of the memory verse
+/// - [date] - Current date (YYYY-MM-DD)
+/// - [message] - User-friendly error message from backend
+class PracticeUnlockLimitExceededEvent extends MemoryVerseEvent {
+  final List<String> unlockedModes;
+  final int unlockedCount;
+  final int limit;
+  final String tier;
+  final String verseId;
+  final String date;
+  final String message;
+
+  const PracticeUnlockLimitExceededEvent({
+    required this.unlockedModes,
+    required this.unlockedCount,
+    required this.limit,
+    required this.tier,
+    required this.verseId,
+    required this.date,
+    required this.message,
+  });
+
+  @override
+  List<Object?> get props => [
+        unlockedModes,
+        unlockedCount,
+        limit,
+        tier,
+        verseId,
+        date,
+        message,
+      ];
+}
+
 // =============================================================================
 // STREAK EVENTS
 // =============================================================================

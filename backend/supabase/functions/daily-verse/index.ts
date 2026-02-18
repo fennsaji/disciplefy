@@ -11,6 +11,7 @@ import { createSimpleFunction } from '../_shared/core/function-factory.ts'
 import { AppError } from '../_shared/utils/error-handler.ts'
 import { ApiSuccessResponse } from '../_shared/types/index.ts'
 import { ServiceContainer } from '../_shared/core/services.ts'
+import { checkMaintenanceMode } from '../_shared/middleware/maintenance-middleware.ts'
 
 /**
  * Daily verse data structure
@@ -42,6 +43,9 @@ interface DailyVerseApiResponse extends ApiSuccessResponse<DailyVerseData> {}
  * Main handler for daily verse
  */
 async function handleDailyVerse(req: Request, services: ServiceContainer): Promise<Response> {
+  // Check maintenance mode FIRST
+  await checkMaintenanceMode(req, services)
+
   // Parse query parameters
   const url = new URL(req.url)
   const requestDate = url.searchParams.get('date')

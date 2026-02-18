@@ -150,4 +150,50 @@ enum VoiceConversationStatus {
   playing,
   error,
   quotaExceeded,
+  monthlyLimitExceeded,
+}
+
+/// Specific state when monthly conversation limit is exceeded.
+/// Contains detailed information about the limit for display in UI.
+class VoiceConversationMonthlyLimitExceeded extends VoiceConversationState {
+  final int conversationsUsed;
+  final int limit;
+  final int remaining;
+  final String tier;
+  final String month;
+  final String message;
+
+  const VoiceConversationMonthlyLimitExceeded({
+    required this.conversationsUsed,
+    required this.limit,
+    required this.remaining,
+    required this.tier,
+    required this.month,
+    required this.message,
+    // Pass through other state properties
+    super.quota,
+    super.languageCode,
+    super.conversationHistory,
+    super.showTranscription,
+    super.autoPlayResponse,
+    super.autoDetectLanguage,
+    super.notifyDailyQuotaReached,
+    super.speakingRate,
+    super.pitch,
+    super.voiceGender,
+  }) : super(
+          status: VoiceConversationStatus.monthlyLimitExceeded,
+          errorMessage: message,
+        );
+
+  @override
+  List<Object?> get props => [
+        ...super.props,
+        conversationsUsed,
+        limit,
+        remaining,
+        tier,
+        month,
+        message,
+      ];
 }

@@ -3,6 +3,7 @@ import 'package:dartz/dartz.dart';
 import '../../../../core/error/failures.dart';
 import '../entities/memory_verse_entity.dart';
 import '../repositories/memory_verse_repository.dart';
+import '../../../../core/utils/logger.dart';
 
 /// Use case for submitting a review for a memory verse.
 ///
@@ -33,8 +34,8 @@ import '../repositories/memory_verse_repository.dart';
 /// result.fold(
 ///   (failure) => print('Error: ${failure.message}'),
 ///   (updatedVerse) {
-///     print('Next review: ${updatedVerse.nextReviewDate}');
-///     print('New interval: ${updatedVerse.intervalDays} days');
+///     Logger.debug('Next review: ${updatedVerse.nextReviewDate}');
+///     Logger.debug('New interval: ${updatedVerse.intervalDays} days');
 ///   },
 /// );
 /// ```

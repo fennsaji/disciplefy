@@ -8,8 +8,10 @@ import '../../domain/entities/auth_params.dart';
 import '../../domain/exceptions/auth_exceptions.dart' as auth_exceptions;
 import '../../domain/utils/auth_validator.dart';
 import '../../../user_profile/data/services/user_profile_api_service.dart';
+import '../../../../core/config/app_config.dart';
 import 'auth_storage_service.dart';
 import 'oauth_service.dart';
+import '../../../../core/utils/logger.dart';
 
 /// Core authentication service that orchestrates auth operations
 /// Handles Supabase integration, anonymous sessions, and user state management
@@ -57,9 +59,7 @@ class AuthenticationService {
       // Handle validation errors - propagate critical ones, handle recoverable ones
       final errorMessage = validationResult.errorMessage!;
 
-      if (kDebugMode) {
-        print('🔐 [AUTH] Authentication validation error: $errorMessage');
-      }
+      Logger.error('🔐 [AUTH] Authentication validation error: $errorMessage');
 
       // For storage-related errors, this is critical and should not be masked
       if (errorMessage.contains('storage') ||
@@ -89,10 +89,8 @@ class AuthenticationService {
 
     // Guard against null expiresAt
     if (session.expiresAt == null) {
-      if (kDebugMode) {
-        print(
-            '🔐 [TOKEN VALIDATION] ⚠️ Session expiresAt is null, treating as invalid');
-      }
+      Logger.warning(
+          '🔐 [TOKEN VALIDATION] ⚠️ Session expiresAt is null, treating as invalid');
       return false;
     }
 
@@ -108,12 +106,12 @@ class AuthenticationService {
     final isValid = expiresAt.isAfter(fiveMinutesFromNowUtc);
 
     if (kDebugMode) {
-      print('🔐 [TOKEN VALIDATION] Current time (UTC): $currentTimeUtc');
-      print('🔐 [TOKEN VALIDATION] Token expires at (UTC): $expiresAt');
-      print('🔐 [TOKEN VALIDATION] Token valid: $isValid');
+      Logger.debug('🔐 [TOKEN VALIDATION] Current time (UTC): $currentTimeUtc');
+      Logger.debug('🔐 [TOKEN VALIDATION] Token expires at (UTC): $expiresAt');
+      Logger.debug('🔐 [TOKEN VALIDATION] Token valid: $isValid');
       if (!isValid) {
         final timeUntilExpiry = expiresAt.difference(currentTimeUtc);
-        print(
+        Logger.warning(
             '🔐 [TOKEN VALIDATION] ⚠️ Token expires in: ${timeUntilExpiry.inMinutes} minutes');
       }
     }
@@ -126,15 +124,11 @@ class AuthenticationService {
   /// Automatically updates stored session data with new expiration
   Future<bool> refreshToken() async {
     try {
-      if (kDebugMode) {
-        print('🔐 [TOKEN REFRESH] 🔄 Starting token refresh...');
-      }
+      Logger.debug('🔐 [TOKEN REFRESH] 🔄 Starting token refresh...');
 
       final session = _supabase.auth.currentSession;
       if (session == null) {
-        if (kDebugMode) {
-          print('🔐 [TOKEN REFRESH] ❌ No active session to refresh');
-        }
+        Logger.error('🔐 [TOKEN REFRESH] ❌ No active session to refresh');
         return false;
       }
 
@@ -143,9 +137,8 @@ class AuthenticationService {
       final newSession = response.session;
 
       if (newSession == null) {
-        if (kDebugMode) {
-          print('🔐 [TOKEN REFRESH] ❌ Token refresh failed - no new session');
-        }
+        Logger.error(
+            '🔐 [TOKEN REFRESH] ❌ Token refresh failed - no new session');
         return false;
       }
 
@@ -154,8 +147,8 @@ class AuthenticationService {
           newSession.expiresAt! * 1000,
           isUtc: true,
         );
-        print('🔐 [TOKEN REFRESH] ✅ Token refreshed successfully');
-        print('🔐 [TOKEN REFRESH] New expiration: $newExpiresAt');
+        Logger.debug('🔐 [TOKEN REFRESH] ✅ Token refreshed successfully');
+        Logger.debug('🔐 [TOKEN REFRESH] New expiration: $newExpiresAt');
       }
 
       // Update stored session data with new expiration
@@ -195,16 +188,12 @@ class AuthenticationService {
           );
         }
 
-        if (kDebugMode) {
-          print('🔐 [TOKEN REFRESH] ✅ Stored updated session data');
-        }
+        Logger.debug('🔐 [TOKEN REFRESH] ✅ Stored updated session data');
       }
 
       return true;
     } catch (e) {
-      if (kDebugMode) {
-        print('🔐 [TOKEN REFRESH] ❌ Error during token refresh: $e');
-      }
+      Logger.error('🔐 [TOKEN REFRESH] ❌ Error during token refresh: $e');
       return false;
     }
   }
@@ -216,31 +205,23 @@ class AuthenticationService {
     // Check if token is currently valid
     final isValid = await isTokenValid();
     if (isValid) {
-      if (kDebugMode) {
-        print('🔐 [TOKEN VALIDATION] ✅ Token is valid, no refresh needed');
-      }
+      Logger.debug('🔐 [TOKEN VALIDATION] ✅ Token is valid, no refresh needed');
       return true;
     }
 
     // Token is expiring soon or expired - attempt refresh
-    if (kDebugMode) {
-      print(
-          '🔐 [TOKEN VALIDATION] ⚠️ Token expiring soon, attempting refresh...');
-    }
+    Logger.warning(
+        '🔐 [TOKEN VALIDATION] ⚠️ Token expiring soon, attempting refresh...');
 
     final refreshed = await refreshToken();
     if (refreshed) {
-      if (kDebugMode) {
-        print('🔐 [TOKEN VALIDATION] ✅ Token successfully refreshed');
-      }
+      Logger.debug('🔐 [TOKEN VALIDATION] ✅ Token successfully refreshed');
       return true;
     }
 
     // Refresh failed - user needs to re-authenticate
-    if (kDebugMode) {
-      print(
-          '🔐 [TOKEN VALIDATION] ❌ Token refresh failed - re-authentication required');
-    }
+    Logger.error(
+        '🔐 [TOKEN VALIDATION] ❌ Token refresh failed - re-authentication required');
     return false;
   }
 
@@ -248,14 +229,14 @@ class AuthenticationService {
   /// FIXED: Updated for corrected backend configuration
   Future<bool> signInWithGoogle() async {
     try {
-      print('🔐 [AUTH SERVICE] 🚀 Initiating Google OAuth PKCE flow...');
-      print(
+      Logger.debug('🔐 [AUTH SERVICE] 🚀 Initiating Google OAuth PKCE flow...');
+      Logger.debug(
           '🔐 [AUTH SERVICE] - Backend: OAuth redirects to Supabase auth endpoints');
 
       final success = await _oauthService.signInWithGoogle();
 
       if (success) {
-        print(
+        Logger.debug(
             '🔐 [AUTH SERVICE] ✅ Google OAuth PKCE flow initiated successfully');
 
         // For corrected PKCE flow, check if session was established
@@ -263,12 +244,20 @@ class AuthenticationService {
             await _oauthService.checkOAuthSessionEstablished();
 
         if (sessionEstablished && currentUser != null) {
-          print('🔐 [AUTH SERVICE] ✅ Google OAuth PKCE session established');
+          Logger.debug(
+              '🔐 [AUTH SERVICE] ✅ Google OAuth PKCE session established');
 
           // SECURITY FIX: Extract session expiration and generate device fingerprint
           final session = _supabase.auth.currentSession!;
           final expiresAt = _extractSessionExpiration(session);
           final deviceId = await _generateDeviceFingerprint();
+
+          // Warn if session token is unexpectedly the anon key (indicates OAuth callback failure)
+          final isAnonKey = session.accessToken == AppConfig.supabaseAnonKey;
+          if (isAnonKey) {
+            Logger.warning(
+                '🚨 [AUTH SERVICE] CRITICAL: OAuth session contains anon key - OAuth callback may not have completed properly.');
+          }
 
           // Store authentication state after successful OAuth
           await _storageService.storeAuthData(
@@ -285,16 +274,16 @@ class AuthenticationService {
 
           return true;
         } else {
-          print(
+          Logger.warning(
               '🔐 [AUTH SERVICE] ⚠️ Google OAuth PKCE session not established');
           return false;
         }
       } else {
-        print('🔐 [AUTH SERVICE] ❌ Google OAuth PKCE initiation failed');
+        Logger.error('🔐 [AUTH SERVICE] ❌ Google OAuth PKCE initiation failed');
         return false;
       }
     } catch (e) {
-      print('🔐 [AUTH SERVICE] ❌ Google OAuth PKCE Error: $e');
+      Logger.error('🔐 [AUTH SERVICE] ❌ Google OAuth PKCE Error: $e');
 
       // Enhanced error handling for PKCE-specific issues
       if (e.toString().contains('redirect_uri_mismatch')) {
@@ -336,9 +325,9 @@ class AuthenticationService {
       );
 
       if (success && currentUser != null) {
-        print(
+        Logger.debug(
             '🔍 [DEBUG] Current user after session recovery: ${currentUser?.id}');
-        print(
+        Logger.debug(
             '🔍 [DEBUG] Current user isAnonymous: ${currentUser?.isAnonymous}');
 
         // SECURITY FIX: Extract session expiration and generate device fingerprint
@@ -347,7 +336,7 @@ class AuthenticationService {
         final deviceId = await _generateDeviceFingerprint();
 
         // Store authentication state
-        print('🔍 [DEBUG] About to store auth data...');
+        Logger.debug('🔍 [DEBUG] About to store auth data...');
         await _storageService.storeAuthData(
           AuthDataStorageParams.google(
             accessToken: session.accessToken,
@@ -356,16 +345,16 @@ class AuthenticationService {
             deviceId: deviceId,
           ),
         );
-        print('🔍 [DEBUG] Auth data storage completed');
+        Logger.debug('🔍 [DEBUG] Auth data storage completed');
 
         // Verify what was stored
         final storedUserType = await _storageService.getUserType();
         final storedUserId = await _storageService.getUserId();
         final storedOnboarding = await _storageService.isOnboardingCompleted();
-        print('🔍 [DEBUG] Storage verification:');
-        print('🔍 [DEBUG] - Stored user type: $storedUserType');
-        print('🔍 [DEBUG] - Stored user ID: $storedUserId');
-        print('🔍 [DEBUG] - Onboarding completed: $storedOnboarding');
+        Logger.debug('🔍 [DEBUG] Storage verification:');
+        Logger.debug('🔍 [DEBUG] - Stored user type: $storedUserType');
+        Logger.debug('🔍 [DEBUG] - Stored user ID: $storedUserId');
+        Logger.debug('🔍 [DEBUG] - Onboarding completed: $storedOnboarding');
 
         // Extract and sync OAuth profile data
         await _syncOAuthProfileData();
@@ -376,9 +365,7 @@ class AuthenticationService {
             'OAuth callback processing failed');
       }
     } catch (e) {
-      if (kDebugMode) {
-        print('Google OAuth Callback Error: $e');
-      }
+      Logger.debug('Google OAuth Callback Error: $e');
       rethrow;
     }
   }
@@ -413,8 +400,8 @@ class AuthenticationService {
   /// Sign in anonymously using Supabase + custom backend session
   Future<bool> signInAnonymously() async {
     try {
-      print('🔍 [DEBUG] signInAnonymously called');
-      print('🔍 [DEBUG] Stack trace: ${StackTrace.current}');
+      Logger.debug('🔍 [DEBUG] signInAnonymously called');
+      Logger.debug('🔍 [DEBUG] Stack trace: ${StackTrace.current}');
 
       // Step 1: Create a proper Supabase anonymous user first
       final response = await _supabase.auth.signInAnonymously();
@@ -425,8 +412,8 @@ class AuthenticationService {
             'Failed to create Supabase anonymous user');
       }
 
-      print('🔍 [DEBUG] Supabase anonymous user created: ${user.id}');
-      print(
+      Logger.debug('🔍 [DEBUG] Supabase anonymous user created: ${user.id}');
+      Logger.debug(
           '🔍 [DEBUG] Anonymous user JWT token available: ${response.session?.accessToken != null}');
 
       // SECURITY FIX: Extract session expiration and generate device fingerprint
@@ -444,14 +431,10 @@ class AuthenticationService {
         ),
       );
 
-      if (kDebugMode) {
-        print('🔍 [DEBUG] Anonymous sign-in completed successfully');
-      }
+      Logger.debug('🔍 [DEBUG] Anonymous sign-in completed successfully');
       return true;
     } catch (e) {
-      if (kDebugMode) {
-        print('Anonymous Sign-In Error: $e');
-      }
+      Logger.debug('Anonymous Sign-In Error: $e');
       rethrow;
     }
   }
@@ -466,9 +449,7 @@ class AuthenticationService {
     required String fullName,
   }) async {
     try {
-      if (kDebugMode) {
-        print('🔐 [EMAIL AUTH] 🚀 Initiating email sign up for: $email');
-      }
+      Logger.debug('🔐 [EMAIL AUTH] 🚀 Initiating email sign up for: $email');
 
       final response = await _supabase.auth.signUp(
         email: email,
@@ -486,8 +467,9 @@ class AuthenticationService {
       }
 
       if (kDebugMode) {
-        print('🔐 [EMAIL AUTH] ✅ User created: ${user.id}');
-        print('🔐 [EMAIL AUTH] Session available: ${response.session != null}');
+        Logger.debug('🔐 [EMAIL AUTH] ✅ User created: ${user.id}');
+        Logger.debug(
+            '🔐 [EMAIL AUTH] Session available: ${response.session != null}');
       }
 
       // Since we disabled email confirmation, session should be available immediately
@@ -508,16 +490,12 @@ class AuthenticationService {
         // Sync profile data to backend
         await _syncEmailProfileData(fullName);
 
-        if (kDebugMode) {
-          print('🔐 [EMAIL AUTH] ✅ Email sign up completed successfully');
-        }
+        Logger.debug('🔐 [EMAIL AUTH] ✅ Email sign up completed successfully');
       }
 
       return true;
     } on AuthException catch (e) {
-      if (kDebugMode) {
-        print('🔐 [EMAIL AUTH] ❌ Supabase AuthException: ${e.message}');
-      }
+      Logger.error('🔐 [EMAIL AUTH] ❌ Supabase AuthException: ${e.message}');
       if (e.message.contains('already registered') ||
           e.message.contains('User already registered')) {
         throw const auth_exceptions.EmailAlreadyExistsException();
@@ -527,9 +505,7 @@ class AuthenticationService {
       }
       throw auth_exceptions.AuthenticationFailedException(e.message);
     } catch (e) {
-      if (kDebugMode) {
-        print('🔐 [EMAIL AUTH] ❌ Email Sign-Up Error: $e');
-      }
+      Logger.error('🔐 [EMAIL AUTH] ❌ Email Sign-Up Error: $e');
       if (e is auth_exceptions.AuthException) rethrow;
       throw auth_exceptions.AuthenticationFailedException(e.toString());
     }
@@ -543,9 +519,7 @@ class AuthenticationService {
     required String password,
   }) async {
     try {
-      if (kDebugMode) {
-        print('🔐 [EMAIL AUTH] 🚀 Initiating email sign in for: $email');
-      }
+      Logger.debug('🔐 [EMAIL AUTH] 🚀 Initiating email sign in for: $email');
 
       final response = await _supabase.auth.signInWithPassword(
         email: email,
@@ -559,9 +533,7 @@ class AuthenticationService {
         throw const auth_exceptions.InvalidCredentialsException();
       }
 
-      if (kDebugMode) {
-        print('🔐 [EMAIL AUTH] ✅ User signed in: ${user.id}');
-      }
+      Logger.debug('🔐 [EMAIL AUTH] ✅ User signed in: ${user.id}');
 
       final expiresAt = _extractSessionExpiration(session);
       final deviceId = await _generateDeviceFingerprint();
@@ -575,15 +547,11 @@ class AuthenticationService {
         ),
       );
 
-      if (kDebugMode) {
-        print('🔐 [EMAIL AUTH] ✅ Email sign in completed successfully');
-      }
+      Logger.debug('🔐 [EMAIL AUTH] ✅ Email sign in completed successfully');
 
       return true;
     } on AuthException catch (e) {
-      if (kDebugMode) {
-        print('🔐 [EMAIL AUTH] ❌ Supabase AuthException: ${e.message}');
-      }
+      Logger.error('🔐 [EMAIL AUTH] ❌ Supabase AuthException: ${e.message}');
       if (e.message.contains('Invalid login credentials')) {
         throw const auth_exceptions.InvalidCredentialsException();
       }
@@ -593,9 +561,7 @@ class AuthenticationService {
       }
       throw auth_exceptions.AuthenticationFailedException(e.message);
     } catch (e) {
-      if (kDebugMode) {
-        print('🔐 [EMAIL AUTH] ❌ Email Sign-In Error: $e');
-      }
+      Logger.error('🔐 [EMAIL AUTH] ❌ Email Sign-In Error: $e');
       if (e is auth_exceptions.AuthException) rethrow;
       throw auth_exceptions.AuthenticationFailedException(e.toString());
     }
@@ -606,19 +572,14 @@ class AuthenticationService {
   /// Sends a password reset link to the specified email address.
   Future<void> sendPasswordResetEmail(String email) async {
     try {
-      if (kDebugMode) {
-        print('🔐 [EMAIL AUTH] 🚀 Sending password reset email to: $email');
-      }
+      Logger.debug(
+          '🔐 [EMAIL AUTH] 🚀 Sending password reset email to: $email');
 
       await _supabase.auth.resetPasswordForEmail(email);
 
-      if (kDebugMode) {
-        print('🔐 [EMAIL AUTH] ✅ Password reset email sent');
-      }
+      Logger.error('🔐 [EMAIL AUTH] ✅ Password reset email sent');
     } catch (e) {
-      if (kDebugMode) {
-        print('🔐 [EMAIL AUTH] ❌ Password Reset Error: $e');
-      }
+      Logger.debug('🔐 [EMAIL AUTH] ❌ Password Reset Error: $e');
       throw auth_exceptions.AuthenticationFailedException(
           'Failed to send password reset email. Please try again.');
     }
@@ -660,16 +621,12 @@ class AuthenticationService {
       // Only allow for email provider users
       final provider = user.appMetadata['provider'] as String?;
       if (provider != 'email') {
-        if (kDebugMode) {
-          print('🔐 [EMAIL AUTH] ℹ️ Not an email auth user, skipping');
-        }
+        Logger.debug('🔐 [EMAIL AUTH] ℹ️ Not an email auth user, skipping');
         return;
       }
 
-      if (kDebugMode) {
-        print(
-            '🔐 [EMAIL AUTH] 📧 Resending verification email to: ${user.email}');
-      }
+      Logger.debug(
+          '🔐 [EMAIL AUTH] 📧 Resending verification email to: ${user.email}');
 
       // Call our custom Edge Function instead of Supabase's resend
       // This is because Supabase auto-confirms users when enable_confirmations=false
@@ -685,21 +642,15 @@ class AuthenticationService {
 
       // Check if already verified
       if (response.data?['already_verified'] == true) {
-        if (kDebugMode) {
-          print('🔐 [EMAIL AUTH] ℹ️ Email already verified');
-        }
+        Logger.debug('🔐 [EMAIL AUTH] ℹ️ Email already verified');
         return;
       }
 
-      if (kDebugMode) {
-        print('🔐 [EMAIL AUTH] ✅ Verification email sent');
-      }
+      Logger.debug('🔐 [EMAIL AUTH] ✅ Verification email sent');
     } on auth_exceptions.AuthException {
       rethrow;
     } catch (e) {
-      if (kDebugMode) {
-        print('🔐 [EMAIL AUTH] ❌ Resend verification error: $e');
-      }
+      Logger.error('🔐 [EMAIL AUTH] ❌ Resend verification error: $e');
       throw auth_exceptions.AuthenticationFailedException(
           'Failed to resend verification email. Please try again.');
     }
@@ -732,15 +683,12 @@ class AuthenticationService {
 
       final isVerified = response?['email_verified'] == true;
 
-      if (kDebugMode) {
-        print('🔐 [EMAIL VERIFY] Profile email_verified status: $isVerified');
-      }
+      Logger.debug(
+          '🔐 [EMAIL VERIFY] Profile email_verified status: $isVerified');
 
       return isVerified;
     } catch (e) {
-      if (kDebugMode) {
-        print('🔐 [EMAIL VERIFY] ⚠️ Status check failed: $e');
-      }
+      Logger.error('🔐 [EMAIL VERIFY] ⚠️ Status check failed: $e');
       return false;
     }
   }
@@ -760,19 +708,14 @@ class AuthenticationService {
         if (currentUser!.email != null) 'email': currentUser!.email,
       };
 
-      if (kDebugMode) {
-        print('🔐 [EMAIL AUTH] 📤 Syncing profile data: $profileData');
-      }
+      Logger.debug('🔐 [EMAIL AUTH] 📤 Syncing profile data: $profileData');
 
       await _profileApiService.syncOAuthProfile(profileData);
 
-      if (kDebugMode) {
-        print('🔐 [EMAIL AUTH] ✅ Profile data synced');
-      }
+      Logger.error('🔐 [EMAIL AUTH] ✅ Profile data synced');
     } catch (e) {
-      if (kDebugMode) {
-        print('🔐 [EMAIL AUTH] ⚠️ Profile sync failed (non-blocking): $e');
-      }
+      Logger.warning(
+          '🔐 [EMAIL AUTH] ⚠️ Profile sync failed (non-blocking): $e');
       // Don't throw - profile sync is best-effort
     }
   }
@@ -789,9 +732,7 @@ class AuthenticationService {
       // Clear stored auth data - only secure storage (use ClearUserDataUseCase for comprehensive cleanup)
       await _storageService.clearSecureStorage();
     } catch (e) {
-      if (kDebugMode) {
-        print('Sign-Out Error: $e');
-      }
+      Logger.debug('Sign-Out Error: $e');
       rethrow;
     }
   }
@@ -807,9 +748,7 @@ class AuthenticationService {
       // Sign out after profile deletion
       await signOut();
     } catch (e) {
-      if (kDebugMode) {
-        print('Delete Account Error: $e');
-      }
+      Logger.debug('Delete Account Error: $e');
       rethrow;
     }
   }
@@ -831,43 +770,42 @@ class AuthenticationService {
   /// Extract OAuth profile data from current user and sync to backend
   Future<void> _syncOAuthProfileData() async {
     if (kDebugMode) {
-      print('🔐 [PROFILE SYNC] 🚀 _syncOAuthProfileData() called');
-      print('🔐 [PROFILE SYNC] Current user: ${currentUser?.id}');
-      print('🔐 [PROFILE SYNC] User email: ${currentUser?.email}');
-      print('🔐 [PROFILE SYNC] Is anonymous: ${currentUser?.isAnonymous}');
-      print('🔐 [PROFILE SYNC] App metadata: ${currentUser?.appMetadata}');
-      print('🔐 [PROFILE SYNC] User metadata: ${currentUser?.userMetadata}');
+      Logger.debug('🔐 [PROFILE SYNC] 🚀 _syncOAuthProfileData() called');
+      Logger.debug('🔐 [PROFILE SYNC] Current user: ${currentUser?.id}');
+      Logger.debug('🔐 [PROFILE SYNC] User email: ${currentUser?.email}');
+      Logger.debug(
+          '🔐 [PROFILE SYNC] Is anonymous: ${currentUser?.isAnonymous}');
+      Logger.debug(
+          '🔐 [PROFILE SYNC] App metadata: ${currentUser?.appMetadata}');
+      Logger.debug(
+          '🔐 [PROFILE SYNC] User metadata: ${currentUser?.userMetadata}');
     }
 
     if (currentUser == null) {
-      if (kDebugMode) {
-        print('🔐 [PROFILE SYNC] ⚠️ No current user, skipping profile sync');
-      }
+      Logger.warning(
+          '🔐 [PROFILE SYNC] ⚠️ No current user, skipping profile sync');
       return;
     }
 
     if (currentUser!.isAnonymous) {
-      if (kDebugMode) {
-        print(
-            '🔐 [PROFILE SYNC] ℹ️ User is anonymous, skipping OAuth profile sync');
-      }
+      Logger.debug(
+          '🔐 [PROFILE SYNC] ℹ️ User is anonymous, skipping OAuth profile sync');
       return;
     }
 
     try {
       if (kDebugMode) {
-        print('🔐 [PROFILE SYNC] ✅ Starting OAuth profile data extraction...');
-        print('🔐 [PROFILE SYNC] User ID: ${currentUser!.id}');
-        print(
+        Logger.debug(
+            '🔐 [PROFILE SYNC] ✅ Starting OAuth profile data extraction...');
+        Logger.debug('🔐 [PROFILE SYNC] User ID: ${currentUser!.id}');
+        Logger.debug(
             '🔐 [PROFILE SYNC] User metadata raw: ${currentUser!.userMetadata}');
       }
 
       final userMetadata = currentUser!.userMetadata ?? {};
       if (userMetadata.isEmpty) {
-        if (kDebugMode) {
-          print(
-              '🔐 [PROFILE SYNC] ℹ️ No user metadata available, skipping sync');
-        }
+        Logger.debug(
+            '🔐 [PROFILE SYNC] ℹ️ No user metadata available, skipping sync');
         return;
       }
 
@@ -922,45 +860,35 @@ class AuthenticationService {
       }
 
       if (profileData.isNotEmpty) {
-        if (kDebugMode) {
-          print('🔐 [PROFILE SYNC] 📤 Syncing profile data: $profileData');
-        }
+        Logger.debug('🔐 [PROFILE SYNC] 📤 Syncing profile data: $profileData');
 
         // Sync profile data to backend
-        if (kDebugMode) {
-          print('🔐 [PROFILE SYNC] 📤 Making API call to sync profile data...');
-        }
+        Logger.debug(
+            '🔐 [PROFILE SYNC] 📤 Making API call to sync profile data...');
 
         final result = await _profileApiService.syncOAuthProfile(profileData);
 
-        if (kDebugMode) {
-          print('🔐 [PROFILE SYNC] 📊 API response: $result');
-        }
+        Logger.error('🔐 [PROFILE SYNC] 📊 API response: $result');
 
         result.fold(
           (failure) {
-            if (kDebugMode) {
-              print('🔐 [PROFILE SYNC] ❌ API call failed: ${failure.message}');
-            }
+            Logger.debug(
+                '🔐 [PROFILE SYNC] ❌ API call failed: ${failure.message}');
           },
           (profile) {
             if (kDebugMode) {
-              print(
+              Logger.debug(
                   '🔐 [PROFILE SYNC] ✅ Profile data sync completed successfully');
-              print(
+              Logger.debug(
                   '🔐 [PROFILE SYNC] Updated profile: firstName=${profile.firstName}, lastName=${profile.lastName}');
             }
           },
         );
       } else {
-        if (kDebugMode) {
-          print('🔐 [PROFILE SYNC] ℹ️ No profile data to sync');
-        }
+        Logger.error('🔐 [PROFILE SYNC] ℹ️ No profile data to sync');
       }
     } catch (e) {
-      if (kDebugMode) {
-        print('🔐 [PROFILE SYNC] ❌ Error syncing profile data: $e');
-      }
+      Logger.debug('🔐 [PROFILE SYNC] ❌ Error syncing profile data: $e');
       // Don't throw the error to avoid breaking the auth flow
       // Profile sync is a best-effort operation
     }
@@ -969,7 +897,7 @@ class AuthenticationService {
   /// Manual test method for OAuth profile sync (DEBUG ONLY)
   Future<void> testOAuthProfileSync() async {
     if (kDebugMode) {
-      print('🔐 [PROFILE SYNC TEST] 🧪 Manual test triggered');
+      Logger.debug('🔐 [PROFILE SYNC TEST] 🧪 Manual test triggered');
       await _syncOAuthProfileData();
     }
   }
@@ -1022,9 +950,8 @@ class AuthenticationService {
       final digest = sha256.convert(bytes);
       return digest.toString();
     } catch (e) {
-      if (kDebugMode) {
-        print('🔐 [DEVICE FINGERPRINT] ⚠️ Error generating fingerprint: $e');
-      }
+      Logger.error(
+          '🔐 [DEVICE FINGERPRINT] ⚠️ Error generating fingerprint: $e');
       // Return a fallback identifier
       return 'fallback_${DateTime.now().millisecondsSinceEpoch}';
     }

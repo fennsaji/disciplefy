@@ -13,12 +13,18 @@ import '../../../../core/extensions/translation_extension.dart';
 import '../../../../core/i18n/translation_keys.dart';
 import '../../../../core/models/app_language.dart';
 import '../../../../core/services/language_preference_service.dart';
+import '../../../../core/services/system_config_service.dart';
+import '../../../../core/widgets/locked_feature_wrapper.dart';
+import '../../../../core/widgets/upgrade_dialog.dart';
 import '../../../../core/utils/logger.dart';
 import '../../../../core/services/auth_state_provider.dart';
+import '../../../tokens/presentation/bloc/token_bloc.dart';
+import '../../../tokens/presentation/bloc/token_state.dart';
 import '../../../home/presentation/bloc/home_bloc.dart';
 import '../../../user_profile/data/services/user_profile_service.dart';
 import '../../../user_profile/data/models/user_profile_model.dart';
 import '../../../study_generation/domain/entities/study_mode.dart';
+import '../../../subscription/domain/repositories/subscription_repository.dart';
 import '../../../study_generation/presentation/widgets/mode_selection_sheet.dart';
 import '../../domain/entities/learning_path.dart';
 import '../../domain/entities/topic_progress.dart';
@@ -53,7 +59,12 @@ class _StudyTopicsScreenState extends State<StudyTopicsScreen> {
   late ContinueLearningBloc _continueLearningBloc;
   late LearningPathsBloc _learningPathsBloc;
   late LanguagePreferenceService _languageService;
+  late SystemConfigService _systemConfigService;
+  late SubscriptionRepository _subscriptionRepository;
   StreamSubscription<AppLanguage>? _languageSubscription;
+  String _userPlan = 'free';
+  bool _isLearningPathsFeatureEnabled = true; // Default to true until checked
+  bool _isLeaderboardFeatureEnabled = true; // Default to true until checked
 
   @override
   void initState() {
@@ -62,15 +73,80 @@ class _StudyTopicsScreenState extends State<StudyTopicsScreen> {
     _continueLearningBloc = sl<ContinueLearningBloc>();
     _learningPathsBloc = sl<LearningPathsBloc>();
     _languageService = sl<LanguagePreferenceService>();
+    _systemConfigService = sl<SystemConfigService>();
+    _subscriptionRepository = sl<SubscriptionRepository>();
     _loadLanguageAndInitialize();
     _setupLanguageChangeListener();
+    _checkLearningPathsFeatureAccess();
+  }
+
+  /// Checks if Learning Paths and Leaderboard features are enabled based on feature flags and user's plan
+  Future<void> _checkLearningPathsFeatureAccess() async {
+    try {
+      // Get user's current subscription plan
+      final result = await _subscriptionRepository.getSubscriptionStatus();
+
+      result.fold(
+        (failure) {
+          Logger.debug(
+              '⚠️ [STUDY_TOPICS] Failed to get subscription: ${failure.message}');
+          _userPlan = 'free'; // Default to free on error
+        },
+        (subscription) {
+          _userPlan = subscription.currentPlan;
+          Logger.debug('👤 [STUDY_TOPICS] User plan: $_userPlan');
+        },
+      );
+
+      // Check if learning_paths should be hidden (not just disabled)
+      // We show features with lock overlays unless they're explicitly hidden
+      final shouldHideLearningPaths =
+          _systemConfigService.shouldHideFeature('learning_paths', _userPlan);
+
+      // Check if leaderboard should be hidden (not just disabled)
+      final shouldHideLeaderboard =
+          _systemConfigService.shouldHideFeature('leaderboard', _userPlan);
+
+      if (mounted) {
+        setState(() {
+          // Show features unless explicitly hidden
+          _isLearningPathsFeatureEnabled = !shouldHideLearningPaths;
+          _isLeaderboardFeatureEnabled = !shouldHideLeaderboard;
+        });
+      }
+
+      if (shouldHideLearningPaths) {
+        Logger.debug(
+            '🙈 [STUDY_TOPICS] Learning Paths hidden for plan $_userPlan');
+      } else {
+        Logger.debug(
+            '👀 [STUDY_TOPICS] Learning Paths visible for plan $_userPlan (may be locked)');
+      }
+
+      if (shouldHideLeaderboard) {
+        Logger.debug(
+            '🙈 [STUDY_TOPICS] Leaderboard hidden for plan $_userPlan');
+      } else {
+        Logger.debug(
+            '👀 [STUDY_TOPICS] Leaderboard visible for plan $_userPlan (may be locked)');
+      }
+    } catch (e) {
+      Logger.debug('❌ [STUDY_TOPICS] Error checking feature access: $e');
+      // Default to enabled on error to avoid breaking existing users
+      if (mounted) {
+        setState(() {
+          _isLearningPathsFeatureEnabled = true;
+          _isLeaderboardFeatureEnabled = true;
+        });
+      }
+    }
   }
 
   /// Listen for language preference changes from settings
   /// When app language changes, study content language is reset to default,
   /// so we need to refresh the content to reflect the new app language.
   void _setupLanguageChangeListener() {
-    debugPrint('[STUDY_TOPICS] Setting up language change listener');
+    Logger.debug('[STUDY_TOPICS] Setting up language change listener');
 
     // Cancel any existing subscription before creating a new one
     _languageSubscription?.cancel();
@@ -78,14 +154,14 @@ class _StudyTopicsScreenState extends State<StudyTopicsScreen> {
     // Store the subscription to ensure proper cleanup
     _languageSubscription =
         _languageService.languageChanges.listen((newLanguage) async {
-      debugPrint(
+      Logger.debug(
           '[STUDY_TOPICS] App language changed to: ${newLanguage.displayName}');
 
       // When app language changes, study content language is automatically reset to default
       // Reload content with the new language
       if (mounted) {
         await _loadLanguageAndInitialize();
-        debugPrint(
+        Logger.debug(
             '[STUDY_TOPICS] Content refreshed after app language change');
       }
     });
@@ -161,6 +237,8 @@ class _StudyTopicsScreenState extends State<StudyTopicsScreen> {
           currentLanguage: _currentLanguage,
           languageLoaded: _languageLoaded,
           dataLoadingStarted: _dataLoadingStarted,
+          isLearningPathsFeatureEnabled: _isLearningPathsFeatureEnabled,
+          isLeaderboardFeatureEnabled: _isLeaderboardFeatureEnabled,
         ),
       );
 }
@@ -178,11 +256,19 @@ class _StudyTopicsScreenContent extends StatefulWidget {
   /// Whether BLoC events have been dispatched and data loading has started
   final bool dataLoadingStarted;
 
+  /// Whether learning paths feature is enabled for user's plan
+  final bool isLearningPathsFeatureEnabled;
+
+  /// Whether leaderboard feature is enabled for user's plan
+  final bool isLeaderboardFeatureEnabled;
+
   const _StudyTopicsScreenContent({
     this.topicId,
     required this.currentLanguage,
     required this.languageLoaded,
     required this.dataLoadingStarted,
+    required this.isLearningPathsFeatureEnabled,
+    required this.isLeaderboardFeatureEnabled,
   });
 
   @override
@@ -208,7 +294,7 @@ class _StudyTopicsScreenContentState extends State<_StudyTopicsScreenContent> {
 
   /// Handle deep link to specific topic (e.g., from notification)
   void _handleTopicDeepLink(String topicId) async {
-    debugPrint('[StudyTopics] Deep link detected for topic ID: $topicId');
+    Logger.debug('[StudyTopics] Deep link detected for topic ID: $topicId');
 
     // Show mode selection sheet before navigating
     if (mounted) {
@@ -257,6 +343,7 @@ class _StudyTopicsScreenContentState extends State<_StudyTopicsScreenContent> {
   PreferredSizeWidget _buildAppBar(BuildContext context) {
     return StudyTopicsAppBar(
       onLanguageChange: _handleStudyLanguageChange,
+      showLeaderboard: widget.isLeaderboardFeatureEnabled,
     );
   }
 
@@ -327,18 +414,25 @@ class _StudyTopicsScreenContentState extends State<_StudyTopicsScreenContent> {
         if (!isGuest) const SizedBox(height: 24),
 
         // Section 2: Learning Paths (Curated Learning Journeys)
-        // Show loading state if initial loading hasn't completed
-        if (showInitialLoading)
-          _buildLearningPathsLoadingState(context)
-        else
-          LearningPathsSection(
-            onPathTap: _navigateToLearningPath,
-            onRetry: () => context
-                .read<LearningPathsBloc>()
-                .add(RefreshLearningPaths(language: widget.currentLanguage)),
+        // Wrapped with LockedFeatureWrapper to support lock overlay
+        LockedFeatureWrapper(
+          featureKey: 'learning_paths',
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Show loading state if initial loading hasn't completed
+              if (showInitialLoading)
+                _buildLearningPathsLoadingState(context)
+              else
+                LearningPathsSection(
+                  onPathTap: _navigateToLearningPath,
+                  onRetry: () => context.read<LearningPathsBloc>().add(
+                      RefreshLearningPaths(language: widget.currentLanguage)),
+                ),
+              const SizedBox(height: 24),
+            ],
           ),
-
-        const SizedBox(height: 24),
+        ),
       ],
     );
   }
@@ -418,21 +512,22 @@ class _StudyTopicsScreenContentState extends State<_StudyTopicsScreenContent> {
       return;
     }
 
-    debugPrint('🔍 [CONTINUE_LEARNING] Starting navigation...');
-    debugPrint('🔍 Topic: ${topic.title}');
-    debugPrint('🔍 Is from learning path: ${topic.isFromLearningPath}');
-    debugPrint('🔍 Learning path name: ${topic.learningPathName}');
-    debugPrint('🔍 Recommended mode raw: ${topic.recommendedMode}');
+    Logger.debug('🔍 [CONTINUE_LEARNING] Starting navigation...');
+    Logger.debug('🔍 Topic: ${topic.title}');
+    Logger.debug('🔍 Is from learning path: ${topic.isFromLearningPath}');
+    Logger.debug('🔍 Learning path name: ${topic.learningPathName}');
+    Logger.debug('🔍 Recommended mode raw: ${topic.recommendedMode}');
 
     // Parse recommended mode from topic if it's from a learning path
     StudyMode? recommendedMode;
     if (topic.recommendedMode != null) {
       recommendedMode = _parseStudyMode(topic.recommendedMode!);
       if (recommendedMode == null) {
-        debugPrint(
+        Logger.debug(
             '⚠️ Invalid recommended mode: ${topic.recommendedMode}, defaulting to null');
       } else {
-        debugPrint('✅ Parsed recommended mode: ${recommendedMode.displayName}');
+        Logger.debug(
+            '✅ Parsed recommended mode: ${recommendedMode.displayName}');
       }
     }
 
@@ -446,27 +541,27 @@ class _StudyTopicsScreenContentState extends State<_StudyTopicsScreenContent> {
       final authProvider = sl<AuthStateProvider>();
       savedModeRaw =
           authProvider.userProfile?['learning_path_study_mode'] as String?;
-      debugPrint(
+      Logger.debug(
           '🔍 [CONTINUE_LEARNING] Learning path mode preference: "$savedModeRaw"');
     } else {
       // Check general preference for non-learning-path topics
       final languageService = sl<LanguagePreferenceService>();
       savedModeRaw = await languageService.getStudyModePreferenceRaw();
-      debugPrint(
+      Logger.debug(
           '🔍 [CONTINUE_LEARNING] General mode preference: "$savedModeRaw"');
     }
 
     // If user selected "always use recommended" and topic has a recommended mode, use it directly
-    debugPrint('🔍 Checking auto-use recommended conditions:');
-    debugPrint(
+    Logger.debug('🔍 Checking auto-use recommended conditions:');
+    Logger.debug(
         '   - savedModeRaw == "recommended": ${StudyModePreferences.isRecommended(savedModeRaw)}');
-    debugPrint('   - topic.isFromLearningPath: ${topic.isFromLearningPath}');
-    debugPrint('   - recommendedMode != null: ${recommendedMode != null}');
+    Logger.debug('   - topic.isFromLearningPath: ${topic.isFromLearningPath}');
+    Logger.debug('   - recommendedMode != null: ${recommendedMode != null}');
 
     if (StudyModePreferences.isRecommended(savedModeRaw) &&
         topic.isFromLearningPath &&
         recommendedMode != null) {
-      debugPrint(
+      Logger.debug(
           '✅ [CONTINUE_LEARNING] Auto-using recommended mode: ${recommendedMode.displayName}');
       _isNavigating = true;
       await _navigateToStudyGuideWithMode(
@@ -480,7 +575,7 @@ class _StudyTopicsScreenContentState extends State<_StudyTopicsScreenContent> {
       final savedMode = _parseStudyMode(
           savedModeRaw!); // Safe: isSpecificMode guarantees non-null
       if (savedMode != null) {
-        debugPrint(
+        Logger.debug(
             '✅ [CONTINUE_LEARNING] Using saved mode preference: ${savedMode.displayName}');
         _isNavigating = true;
         await _navigateToStudyGuideWithMode(
@@ -490,7 +585,7 @@ class _StudyTopicsScreenContentState extends State<_StudyTopicsScreenContent> {
     }
 
     // No saved preference or couldn't parse - show mode selection sheet
-    debugPrint('📋 [CONTINUE_LEARNING] Showing mode selection sheet');
+    Logger.debug('📋 [CONTINUE_LEARNING] Showing mode selection sheet');
     final result = await ModeSelectionSheet.show(
       context: context,
       languageCode: widget.currentLanguage,
@@ -522,7 +617,7 @@ class _StudyTopicsScreenContentState extends State<_StudyTopicsScreenContent> {
                 StudyModePreferences.recommended;
             authProvider.cacheProfile(userId, currentProfile);
           }
-          debugPrint(
+          Logger.debug(
               '[CONTINUE_LEARNING] Saved "always use recommended" to learning path preference');
         } else if (rememberChoice) {
           final userProfileService = sl<UserProfileService>();
@@ -537,7 +632,7 @@ class _StudyTopicsScreenContentState extends State<_StudyTopicsScreenContent> {
             currentProfile['learning_path_study_mode'] = mode.value;
             authProvider.cacheProfile(userId, currentProfile);
           }
-          debugPrint(
+          Logger.debug(
               '[CONTINUE_LEARNING] Saved "${mode.displayName}" to learning path preference');
         }
       } else {
@@ -598,7 +693,7 @@ class _StudyTopicsScreenContentState extends State<_StudyTopicsScreenContent> {
     final pathIdParam =
         topic.learningPathId != null ? '&path_id=${topic.learningPathId}' : '';
 
-    debugPrint(
+    Logger.debug(
         '[CONTINUE_LEARNING] Navigating to study guide V2 for topic: ${topic.title} with mode: ${mode.name}');
 
     // Use push() and await - when user returns, refresh the data
@@ -622,7 +717,7 @@ class _StudyTopicsScreenContentState extends State<_StudyTopicsScreenContent> {
     if (_isNavigating) return;
     _isNavigating = true;
 
-    debugPrint(
+    Logger.debug(
         '[STUDY_TOPICS] Navigating to learning path: ${path.title} (ID: ${path.id})');
 
     // Use context.go() to properly update the browser URL
@@ -639,8 +734,13 @@ class _StudyTopicsScreenContentState extends State<_StudyTopicsScreenContent> {
 /// App bar widget for the Study Topics screen.
 class StudyTopicsAppBar extends StatelessWidget implements PreferredSizeWidget {
   final VoidCallback? onLanguageChange;
+  final bool showLeaderboard;
 
-  const StudyTopicsAppBar({super.key, this.onLanguageChange});
+  const StudyTopicsAppBar({
+    super.key,
+    this.onLanguageChange,
+    this.showLeaderboard = true,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -651,13 +751,15 @@ class StudyTopicsAppBar extends StatelessWidget implements PreferredSizeWidget {
         elevation: 0,
         scrolledUnderElevation: 0,
         automaticallyImplyLeading: false,
-        // Move leaderboard icon to the left side
-        leading: IconButton(
-          icon: const Icon(Icons.emoji_events_outlined),
-          tooltip: context.tr(TranslationKeys.leaderboardTooltip),
-          onPressed: () => AppRouter.router.goToLeaderboard(),
-          color: Theme.of(context).colorScheme.onSurface,
-        ),
+        // Move leaderboard icon to the left side - only show if feature is enabled
+        leading: showLeaderboard
+            ? IconButton(
+                icon: const Icon(Icons.emoji_events_outlined),
+                tooltip: context.tr(TranslationKeys.leaderboardTooltip),
+                onPressed: () => _handleLeaderboardTap(context),
+                color: Theme.of(context).colorScheme.onSurface,
+              )
+            : null,
         title: Text(
           context.tr(TranslationKeys.studyTopicsTitle),
           style: AppFonts.inter(
@@ -1144,6 +1246,45 @@ class StudyTopicsAppBar extends StatelessWidget implements PreferredSizeWidget {
         ),
       ),
     );
+  }
+
+  /// Handle leaderboard icon tap - check access and show upgrade dialog if needed
+  void _handleLeaderboardTap(BuildContext context) {
+    // Check if user has access to leaderboard feature
+    final tokenBloc = sl<TokenBloc>();
+    final tokenState = tokenBloc.state;
+
+    String userPlan = 'free';
+    if (tokenState is TokenLoaded) {
+      userPlan = tokenState.tokenStatus.userPlan.name;
+    }
+
+    final systemConfigService = sl<SystemConfigService>();
+    final hasAccess =
+        systemConfigService.isFeatureEnabled('leaderboard', userPlan);
+
+    if (!hasAccess) {
+      // Show upgrade dialog
+      final requiredPlans = systemConfigService.getRequiredPlans('leaderboard');
+      final upgradePlan =
+          systemConfigService.getUpgradePlan('leaderboard', userPlan);
+
+      showModalBottomSheet(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: Colors.transparent,
+        builder: (context) => UpgradeDialog(
+          featureKey: 'leaderboard',
+          currentPlan: userPlan,
+          requiredPlans: requiredPlans,
+          upgradePlan: upgradePlan,
+        ),
+      );
+      return;
+    }
+
+    // User has access - navigate to leaderboard
+    AppRouter.router.goToLeaderboard();
   }
 
   @override

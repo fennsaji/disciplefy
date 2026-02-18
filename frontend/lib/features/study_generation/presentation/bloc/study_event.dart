@@ -206,14 +206,19 @@ class MarkStudyGuideCompleteRequested extends StudyEvent {
   /// Whether the user scrolled to the bottom of the study guide.
   final bool scrolledToBottom;
 
+  /// When true, bypasses auto-completion conditions (user tapped Complete Study manually).
+  final bool isManual;
+
   const MarkStudyGuideCompleteRequested({
     required this.guideId,
     required this.timeSpentSeconds,
     required this.scrolledToBottom,
+    this.isManual = false,
   });
 
   @override
-  List<Object?> get props => [guideId, timeSpentSeconds, scrolledToBottom];
+  List<Object?> get props =>
+      [guideId, timeSpentSeconds, scrolledToBottom, isManual];
 }
 
 // ==================== Streaming Events ====================
@@ -238,17 +243,24 @@ class GenerateStudyGuideStreamingRequested extends StudyEvent {
   /// Study mode for different study experiences.
   final StudyMode studyMode;
 
+  /// Optional pending study ID for tracking background generation.
+  /// If provided, the backend will create a DB record immediately
+  /// with 'generating' status, allowing the frontend to check
+  /// completion status even if the user navigates away.
+  final String? pendingStudyId;
+
   const GenerateStudyGuideStreamingRequested({
     required this.input,
     required this.inputType,
     this.topicDescription,
     required this.language,
     this.studyMode = StudyMode.standard,
+    this.pendingStudyId,
   });
 
   @override
   List<Object?> get props =>
-      [input, inputType, topicDescription, language, studyMode];
+      [input, inputType, topicDescription, language, studyMode, pendingStudyId];
 }
 
 /// Internal event when a streaming section is received.

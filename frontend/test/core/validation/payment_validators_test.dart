@@ -478,53 +478,54 @@ void main() {
 
     group('validateTokenAmountConversion', () {
       test('should validate correct token to amount conversion', () {
-        // 10 tokens = ₹1, so 100 tokens = ₹10
+        // 4 tokens = ₹1, so 100 tokens = ₹25
         expect(
-            TokenPurchaseValidator.validateTokenAmountConversion(100, 10.0)
+            TokenPurchaseValidator.validateTokenAmountConversion(100, 25.0)
                 .isValid,
             true);
         expect(
-            TokenPurchaseValidator.validateTokenAmountConversion(50, 5.0)
+            TokenPurchaseValidator.validateTokenAmountConversion(50, 12.5)
                 .isValid,
             true);
         expect(
-            TokenPurchaseValidator.validateTokenAmountConversion(10, 1.0)
+            TokenPurchaseValidator.validateTokenAmountConversion(4, 1.0)
                 .isValid,
             true);
       });
 
       test('should allow small floating point differences', () {
-        // Should accept tiny differences due to floating point arithmetic
+        // Should accept tiny differences due to floating point arithmetic (4 tokens = ₹1)
         expect(
-            TokenPurchaseValidator.validateTokenAmountConversion(100, 10.001)
+            TokenPurchaseValidator.validateTokenAmountConversion(100, 25.001)
                 .isValid,
             true);
         expect(
-            TokenPurchaseValidator.validateTokenAmountConversion(100, 9.999)
+            TokenPurchaseValidator.validateTokenAmountConversion(100, 24.999)
                 .isValid,
             true);
       });
 
       test('should reject incorrect conversions', () {
+        // 100 tokens should be ₹25, not ₹15
         final result =
             TokenPurchaseValidator.validateTokenAmountConversion(100, 15.0);
         expect(result.isValid, false);
         expect(result.errorCode, 'AMOUNT_MISMATCH');
         expect(result.errorDetails!['token_amount'], 100);
         expect(result.errorDetails!['provided_amount'], 15.0);
-        expect(result.errorDetails!['expected_amount'], 10.0);
+        expect(result.errorDetails!['expected_amount'], 25.0);
       });
 
       test('should handle edge cases correctly', () {
-        // Test minimum token purchase (10 tokens = ₹1)
+        // Test minimum token purchase (4 tokens = ₹1)
         expect(
-            TokenPurchaseValidator.validateTokenAmountConversion(10, 1.0)
+            TokenPurchaseValidator.validateTokenAmountConversion(4, 1.0)
                 .isValid,
             true);
 
-        // Test maximum token purchase (9999 tokens = ₹999.90)
+        // Test maximum token purchase (9999 tokens = ₹2499.75)
         expect(
-            TokenPurchaseValidator.validateTokenAmountConversion(9999, 999.90)
+            TokenPurchaseValidator.validateTokenAmountConversion(9999, 2499.75)
                 .isValid,
             true);
       });

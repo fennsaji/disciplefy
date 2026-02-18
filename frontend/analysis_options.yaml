@@ -9,7 +9,8 @@ analyzer:
     missing_return: error
     todo: ignore
     # Development overrides - ignore warnings and info for pre-commit
-    avoid_print: ignore
+    # CRITICAL: Enforce no print statements - use Logger instead
+    avoid_print: warning
     constant_identifier_names: ignore
     unused_element: ignore
     deprecated_member_use: ignore
@@ -48,9 +49,10 @@ linter:
     
     # Pub (disabled for development - not critical)
     # sort_pub_dependencies: true
-    
-    # Additional quality rules (avoid_print disabled for development logging)
-    # avoid_print: true
+
+    # Additional quality rules
+    # CRITICAL: Enforce use of Logger instead of print statements
+    avoid_print: true
     prefer_single_quotes: true
     always_declare_return_types: true
     avoid_empty_else: true

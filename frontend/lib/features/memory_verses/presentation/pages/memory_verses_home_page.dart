@@ -10,10 +10,10 @@ import '../../../../core/extensions/translation_extension.dart';
 import '../../../../core/i18n/translation_keys.dart';
 import '../../../../core/router/app_router.dart';
 import '../../../../core/widgets/auth_protected_screen.dart';
+import '../widgets/verse_limit_exceeded_dialog.dart';
 import '../../../../core/di/injection_container.dart';
 import '../../../tokens/presentation/bloc/token_bloc.dart';
 import '../../../tokens/presentation/bloc/token_state.dart';
-import '../../../tokens/domain/entities/token_status.dart';
 import '../../../subscription/presentation/widgets/upgrade_required_dialog.dart';
 import '../../../daily_verse/domain/entities/daily_verse_entity.dart';
 import '../../../daily_verse/presentation/bloc/daily_verse_bloc.dart';
@@ -50,7 +50,6 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
   DueVersesLoaded? _lastLoadedState;
   VerseLanguage? _selectedLanguageFilter;
   bool _hasTriggeredMemoryVersePrompt = false;
-  bool _isAccessDenied = false;
   StreamSubscription<TokenState>? _tokenSubscription;
   MemoryStreakEntity? _memoryStreak;
   DailyGoalEntity? _dailyGoal;
@@ -69,66 +68,8 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
 
   /// Checks if user has access to Memory Verses (Standard+ only)
   void _checkPlanAccess() {
-    // Use the singleton TokenBloc instance which is shared across the app
-    // This ensures we get the token status that was fetched on auth
-    final tokenBloc = sl<TokenBloc>();
-    final currentState = tokenBloc.state;
-
-    // If already loaded, verify access immediately
-    if (currentState is TokenLoaded || currentState is TokenError) {
-      _verifyAccess(currentState);
-      return;
-    }
-
-    // Subscribe to stream and wait for TokenLoaded or TokenError
-    _tokenSubscription = tokenBloc.stream
-        .where((state) => state is TokenLoaded || state is TokenError)
-        .timeout(
-          const Duration(seconds: 5),
-          onTimeout: (sink) => sink.add(currentState),
-        )
-        .first
-        .asStream()
-        .listen((state) {
-      if (mounted) {
-        _verifyAccess(state);
-      }
-    });
-  }
-
-  /// Verifies if user has access based on token state
-  void _verifyAccess(TokenState tokenState) {
-    UserPlan? userPlan;
-    if (tokenState is TokenLoaded) {
-      userPlan = tokenState.tokenStatus.userPlan;
-    }
-
-    // Block free users - Memory Verses requires Standard or Premium
-    final bool hasAccess =
-        userPlan == UserPlan.standard || userPlan == UserPlan.premium;
-
-    if (!hasAccess) {
-      setState(() => _isAccessDenied = true);
-      // Show upgrade dialog and redirect after dismissal
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!mounted) return;
-        UpgradeRequiredDialog.show(
-          context,
-          featureName: context.tr(TranslationKeys.memoryHomeTitle),
-          featureIcon: Icons.psychology_outlined,
-          featureDescription:
-              context.tr(TranslationKeys.memoryHomeFeatureDescription),
-        ).then((_) {
-          // Navigate back after dialog is dismissed
-          if (mounted) {
-            GoRouter.of(context).goToHome();
-          }
-        });
-      });
-      return;
-    }
-
-    // User has access - load verses
+    // Route is already protected by LockedFeatureWrapper in app_router.dart
+    // If user reaches this page, they have access - just load verses
     _loadVerses();
   }
 
@@ -171,14 +112,7 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
 
   @override
   Widget build(BuildContext context) {
-    // Show empty scaffold while redirecting free users
-    if (_isAccessDenied) {
-      return Scaffold(
-        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-        body: const SizedBox.shrink(),
-      );
-    }
-
+    // Route is protected by LockedFeatureWrapper - no need for access checks here
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, result) {
@@ -308,17 +242,28 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
                   .read<MemoryVerseBloc>()
                   .add(const LoadMemoryStreakEvent());
             } else if (state is MemoryVerseError) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(state.message),
-                  backgroundColor: Colors.red,
-                  action: SnackBarAction(
-                    label: context.tr(TranslationKeys.commonRetry),
-                    textColor: Colors.white,
-                    onPressed: _loadVerses,
+              if (state.code == 'VERSE_LIMIT_EXCEEDED') {
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  if (mounted) {
+                    VerseLimitExceededDialog.show(
+                      context,
+                      currentTier: _getCurrentPlan(),
+                    );
+                  }
+                });
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(state.message),
+                    backgroundColor: Colors.red,
+                    action: SnackBarAction(
+                      label: context.tr(TranslationKeys.commonRetry),
+                      textColor: Colors.white,
+                      onPressed: _loadVerses,
+                    ),
                   ),
-                ),
-              );
+                );
+              }
             } else if (state is VerseAdded) {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
@@ -857,6 +802,18 @@ class _MemoryVersesHomePageState extends State<MemoryVersesHomePage> {
         ),
       ),
     );
+  }
+
+  /// Returns the user's current plan from TokenBloc state, defaulting to 'standard'
+  /// (safe default for VERSE_LIMIT_EXCEEDED since free users can't reach this error)
+  String _getCurrentPlan() {
+    try {
+      final tokenState = context.read<TokenBloc>().state;
+      if (tokenState is TokenLoaded) {
+        return tokenState.tokenStatus.userPlan.name;
+      }
+    } catch (_) {}
+    return 'standard';
   }
 
   void _showAddVerseOptions(BuildContext context) {

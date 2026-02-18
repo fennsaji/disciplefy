@@ -1,19 +1,21 @@
-import 'package:razorpay_flutter/razorpay_flutter.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/services.dart';
 import '../constants/payment_constants.dart';
+import '../models/payment_responses.dart';
 
-// Conditional imports for web platform
+// Conditional imports for web and mobile platforms
 import 'payment_service_stub.dart'
     if (dart.library.html) 'payment_service_web.dart';
+import 'payment_service_mobile_stub.dart'
+    if (dart.library.io) 'payment_service_mobile.dart';
+import '../utils/logger.dart';
 
 class PaymentService {
   static final PaymentService _instance = PaymentService._internal();
   factory PaymentService() => _instance;
   PaymentService._internal();
 
-  Razorpay? _razorpay;
   bool _isWebPlatform = kIsWeb;
+  PaymentServiceMobile? _mobileService;
 
   // Callbacks
   Function(PaymentSuccessResponse)? _onPaymentSuccess;
@@ -21,33 +23,33 @@ class PaymentService {
   Function(ExternalWalletResponse)? _onExternalWallet;
 
   void initialize() {
-    debugPrint('[PaymentService] 🚀 INITIALIZING PAYMENT SERVICE');
-    debugPrint(
+    Logger.debug('[PaymentService] 🚀 INITIALIZING PAYMENT SERVICE');
+    Logger.debug(
         '[PaymentService] Platform: ${_isWebPlatform ? "WEB" : "MOBILE"}');
 
     if (_isWebPlatform) {
-      // Skip Razorpay initialization on web - use web-based payment flow
-      debugPrint(
-          '[PaymentService] ✅ Web platform detected - skipping native plugin initialization');
-      debugPrint('[PaymentService] Web payment flow will be used when needed');
+      // Skip mobile service initialization on web
+      Logger.debug(
+          '[PaymentService] ✅ Web platform detected - skipping mobile plugin initialization');
+      Logger.debug(
+          '[PaymentService] Web payment flow will be used when needed');
       return;
     }
 
     try {
-      _razorpay = Razorpay();
-      _razorpay?.on(Razorpay.EVENT_PAYMENT_SUCCESS, _handlePaymentSuccess);
-      _razorpay?.on(Razorpay.EVENT_PAYMENT_ERROR, _handlePaymentError);
-      _razorpay?.on(Razorpay.EVENT_EXTERNAL_WALLET, _handleExternalWallet);
-      debugPrint('[PaymentService] Razorpay initialized successfully');
+      _mobileService = PaymentServiceMobile();
+      _mobileService!.initialize();
+      Logger.debug(
+          '[PaymentService] Mobile payment service initialized successfully');
     } catch (e) {
-      debugPrint('[PaymentService] Failed to initialize Razorpay: $e');
-      // Mark as web platform if initialization fails (common on web)
+      Logger.debug('[PaymentService] Failed to initialize mobile service: $e');
+      // Mark as web platform if initialization fails
       _isWebPlatform = true;
     }
   }
 
   void dispose() {
-    _razorpay?.clear();
+    _mobileService?.dispose();
   }
 
   Future<void> openCheckout({
@@ -62,14 +64,14 @@ class PaymentService {
     String? keyId, // Add keyId parameter to use from API response
   }) async {
     try {
-      debugPrint('[PaymentService] 🎯🎯🎯 OPEN CHECKOUT CALLED! 🎯🎯🎯');
-      debugPrint('[PaymentService] Order ID: $orderId');
-      debugPrint('[PaymentService] Amount: ₹$amount');
-      debugPrint('[PaymentService] Description: $description');
-      debugPrint('[PaymentService] User Email: $userEmail');
-      debugPrint(
+      Logger.debug('[PaymentService] 🎯🎯🎯 OPEN CHECKOUT CALLED! 🎯🎯🎯');
+      Logger.debug('[PaymentService] Order ID: $orderId');
+      Logger.debug('[PaymentService] Amount: ₹$amount');
+      Logger.debug('[PaymentService] Description: $description');
+      Logger.debug('[PaymentService] User Email: $userEmail');
+      Logger.debug(
           '[PaymentService] Key ID: ${keyId ?? PaymentConstants.razorpayKeyId}');
-      debugPrint(
+      Logger.debug(
           '[PaymentService] Platform: ${_isWebPlatform ? "WEB" : "MOBILE"}');
 
       // Store callbacks
@@ -98,28 +100,31 @@ class PaymentService {
         'theme': PaymentConstants.razorpayTheme,
       };
 
-      debugPrint('[PaymentService] 📋 PAYMENT OPTIONS CONFIGURED:');
-      debugPrint('[PaymentService] Key: ${options['key']}');
-      debugPrint('[PaymentService] Amount (paise): ${options['amount']}');
-      debugPrint('[PaymentService] Methods enabled: ${options['method']}');
-      debugPrint('[PaymentService] External wallets: ${options['external']}');
-      debugPrint('[PaymentService] Config: ${options['config']}');
+      Logger.debug('[PaymentService] 📋 PAYMENT OPTIONS CONFIGURED:');
+      Logger.debug('[PaymentService] Key: ${options['key']}');
+      Logger.debug('[PaymentService] Amount (paise): ${options['amount']}');
+      Logger.debug('[PaymentService] Methods enabled: ${options['method']}');
 
       if (_isWebPlatform) {
         await _openWebCheckout(options);
-      } else if (_razorpay != null) {
-        _razorpay!.open(options);
+      } else if (_mobileService != null) {
+        _mobileService!.openCheckout(
+          options: options,
+          onSuccess: _handlePaymentSuccess,
+          onError: _handlePaymentError,
+          onExternalWallet:
+              onExternalWallet != null ? _handleExternalWallet : null,
+        );
       } else {
-        throw Exception('Razorpay not initialized');
+        throw Exception('Payment service not initialized');
       }
     } catch (e) {
-      debugPrint('Error opening Razorpay checkout: $e');
+      Logger.debug('[PaymentService] Error opening checkout: $e');
       if (_onPaymentError != null) {
         // Create a mock failure response for initialization errors
         final mockError = PaymentFailureResponse(
           1, // code
           'Failed to initialize payment: ${e.toString()}', // message
-          null, // data
         );
         _onPaymentError!(mockError);
       }
@@ -127,7 +132,7 @@ class PaymentService {
   }
 
   void _handlePaymentSuccess(PaymentSuccessResponse response) {
-    debugPrint('Payment successful: ${response.paymentId}');
+    Logger.debug('[PaymentService] Payment successful: ${response.paymentId}');
     if (_onPaymentSuccess != null) {
       _onPaymentSuccess!(response);
     }
@@ -135,7 +140,8 @@ class PaymentService {
   }
 
   void _handlePaymentError(PaymentFailureResponse response) {
-    debugPrint('Payment failed: ${response.code} - ${response.message}');
+    Logger.debug(
+        '[PaymentService] Payment failed: ${response.code} - ${response.message}');
     if (_onPaymentError != null) {
       _onPaymentError!(response);
     }
@@ -143,7 +149,8 @@ class PaymentService {
   }
 
   void _handleExternalWallet(ExternalWalletResponse response) {
-    debugPrint('External wallet selected: ${response.walletName}');
+    Logger.debug(
+        '[PaymentService] External wallet selected: ${response.walletName}');
     if (_onExternalWallet != null) {
       _onExternalWallet!(response);
     }
@@ -159,28 +166,28 @@ class PaymentService {
   /// Web-specific Razorpay checkout using JavaScript integration
   Future<void> _openWebCheckout(Map<String, dynamic> options) async {
     try {
-      debugPrint(
+      Logger.debug(
           '[PaymentService] ===========================================');
-      debugPrint('[PaymentService] STARTING WEB CHECKOUT PROCESS');
-      debugPrint(
+      Logger.debug('[PaymentService] STARTING WEB CHECKOUT PROCESS');
+      Logger.debug(
           '[PaymentService] ===========================================');
-      debugPrint(
+      Logger.debug(
           '[PaymentService] Opening web checkout with options: $options');
-      debugPrint(
+      Logger.debug(
           '[PaymentService] Browser platform: ${kIsWeb ? "Web" : "Mobile"}');
 
       // Load Razorpay script if not already loaded
-      debugPrint('[PaymentService] Step 1: Loading Razorpay script...');
+      Logger.debug('[PaymentService] Step 1: Loading Razorpay script...');
       await _loadRazorpayScript();
-      debugPrint(
+      Logger.debug(
           '[PaymentService] Step 1: ✅ Razorpay script loaded successfully');
 
       // Add web-specific handlers
-      debugPrint('[PaymentService] Step 2: Setting up payment handlers...');
+      Logger.debug('[PaymentService] Step 2: Setting up payment handlers...');
       options['handler'] = PaymentServiceWeb.allowInterop((response) {
-        debugPrint(
+        Logger.debug(
             '[PaymentService] ✅ WEB PAYMENT SUCCESS CALLBACK TRIGGERED!');
-        debugPrint('[PaymentService] Success response: $response');
+        Logger.debug('[PaymentService] Success response: $response');
         try {
           // Convert JsObject to Map for proper access
           final responseMap = {
@@ -188,7 +195,7 @@ class PaymentService {
             'razorpay_order_id': response['razorpay_order_id'],
             'razorpay_signature': response['razorpay_signature'],
           };
-          debugPrint('[PaymentService] Converted response map: $responseMap');
+          Logger.debug('[PaymentService] Converted response map: $responseMap');
 
           // Create PaymentSuccessResponse with extracted values
           final paymentSuccessResponse = PaymentSuccessResponse(
@@ -197,36 +204,35 @@ class PaymentService {
             responseMap['razorpay_signature'],
             responseMap, // Pass the converted map
           );
-          debugPrint('[PaymentService] Calling _handlePaymentSuccess...');
+          Logger.debug('[PaymentService] Calling _handlePaymentSuccess...');
           _handlePaymentSuccess(paymentSuccessResponse);
         } catch (handlerError) {
-          debugPrint(
+          Logger.debug(
               '[PaymentService] ❌ Error in success handler: $handlerError');
         }
       });
 
       options['modal'] = {
         'ondismiss': PaymentServiceWeb.allowInterop(() {
-          debugPrint('[PaymentService] ❌ WEB PAYMENT DISMISSED BY USER');
+          Logger.debug('[PaymentService] ❌ WEB PAYMENT DISMISSED BY USER');
           final paymentFailureResponse = PaymentFailureResponse(
             0, // User cancelled
             'Payment was cancelled by user',
-            null,
           );
           _handlePaymentError(paymentFailureResponse);
         })
       };
-      debugPrint('[PaymentService] Step 2: ✅ Payment handlers configured');
+      Logger.debug('[PaymentService] Step 2: ✅ Payment handlers configured');
 
       // Create and open Razorpay checkout
-      debugPrint('[PaymentService] Step 3: Creating Razorpay checkout...');
-      debugPrint('[PaymentService] Converting options to JS object...');
+      Logger.debug('[PaymentService] Step 3: Creating Razorpay checkout...');
+      Logger.debug('[PaymentService] Converting options to JS object...');
       final jsOptions = PaymentServiceWeb.jsify(options);
-      debugPrint(
+      Logger.debug(
           '[PaymentService] ✅ Options converted to JS object successfully');
 
-      debugPrint('[PaymentService] Step 4: Creating Razorpay instance...');
-      debugPrint(
+      Logger.debug('[PaymentService] Step 4: Creating Razorpay instance...');
+      Logger.debug(
           '[PaymentService] Checking if Razorpay exists: ${PaymentServiceWeb.hasProperty('Razorpay')}');
 
       if (!PaymentServiceWeb.hasProperty('Razorpay')) {
@@ -234,44 +240,43 @@ class PaymentService {
       }
 
       final razorpayConstructor = PaymentServiceWeb.getRazorpayConstructor();
-      debugPrint(
+      Logger.debug(
           '[PaymentService] Razorpay constructor type: ${razorpayConstructor.runtimeType}');
-      debugPrint(
+      Logger.debug(
           '[PaymentService] Creating Razorpay instance with jsOptions...');
 
       final rzp = PaymentServiceWeb.createRazorpayInstance(
           razorpayConstructor, jsOptions);
-      debugPrint(
+      Logger.debug(
           '[PaymentService] ✅ Razorpay instance created successfully: $rzp');
 
-      debugPrint('[PaymentService] Step 5: Opening Razorpay checkout...');
-      debugPrint('[PaymentService] Calling rzp.open()...');
+      Logger.debug('[PaymentService] Step 5: Opening Razorpay checkout...');
+      Logger.debug('[PaymentService] Calling rzp.open()...');
 
       // Add a delay to ensure DOM is ready
-      await Future.delayed(Duration(milliseconds: 100));
+      await Future.delayed(const Duration(milliseconds: 100));
 
       rzp.callMethod('open');
-      debugPrint('[PaymentService] ✅ rzp.open() method called successfully');
-      debugPrint(
+      Logger.debug('[PaymentService] ✅ rzp.open() method called successfully');
+      Logger.debug(
           '[PaymentService] ===========================================');
-      debugPrint('[PaymentService] RAZORPAY CHECKOUT SHOULD NOW BE VISIBLE!');
-      debugPrint(
+      Logger.debug('[PaymentService] RAZORPAY CHECKOUT SHOULD NOW BE VISIBLE!');
+      Logger.debug(
           '[PaymentService] If you don\'t see the payment modal, check:');
-      debugPrint('[PaymentService] 1. Browser console for JavaScript errors');
-      debugPrint('[PaymentService] 2. Popup blockers');
-      debugPrint('[PaymentService] 3. Network requests to Razorpay');
-      debugPrint(
+      Logger.debug('[PaymentService] 1. Browser console for JavaScript errors');
+      Logger.debug('[PaymentService] 2. Popup blockers');
+      Logger.debug('[PaymentService] 3. Network requests to Razorpay');
+      Logger.debug(
           '[PaymentService] ===========================================');
     } catch (e, stackTrace) {
-      debugPrint('[PaymentService] ❌❌❌ CRITICAL ERROR IN WEB CHECKOUT ❌❌❌');
-      debugPrint('[PaymentService] Error: $e');
-      debugPrint('[PaymentService] Stack trace: $stackTrace');
-      debugPrint('[PaymentService] ❌❌❌ END CRITICAL ERROR ❌❌❌');
+      Logger.debug('[PaymentService] ❌❌❌ CRITICAL ERROR IN WEB CHECKOUT ❌❌❌');
+      Logger.debug('[PaymentService] Error: $e');
+      Logger.debug('[PaymentService] Stack trace: $stackTrace');
+      Logger.debug('[PaymentService] ❌❌❌ END CRITICAL ERROR ❌❌❌');
 
       final paymentFailureResponse = PaymentFailureResponse(
         1,
         'Web checkout failed: ${e.toString()}',
-        null,
       );
       _handlePaymentError(paymentFailureResponse);
     }

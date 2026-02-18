@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../domain/entities/user_subscription_status.dart';
+import '../../../../core/services/pricing_service.dart';
+import '../../../../core/di/injection_container.dart';
 
 /// Bottom sheet for Standard subscription showing benefits and subscribe button.
 /// Opens Razorpay hosted checkout when user taps subscribe.
@@ -155,7 +157,7 @@ class StandardSubscriptionSheet extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
                       Text(
-                        '\u20b950',
+                        sl<PricingService>().getFormattedPrice('standard'),
                         style: theme.textTheme.displaySmall?.copyWith(
                           fontWeight: FontWeight.bold,
                           color: const Color(0xFF6A4FB6),

@@ -4,6 +4,7 @@ import '../../../../core/error/exceptions.dart';
 import '../../../../core/services/api_auth_helper.dart';
 import '../models/voice_conversation_model.dart';
 import '../models/voice_preferences_model.dart';
+import '../../../../core/utils/logger.dart';
 
 /// Abstract contract for remote voice buddy operations.
 abstract class VoiceBuddyRemoteDataSource {
@@ -73,11 +74,11 @@ class VoiceBuddyRemoteDataSourceImpl implements VoiceBuddyRemoteDataSource {
     try {
       await ApiAuthHelper.validateTokenForRequest();
 
-      print('🎙️ [VOICE_API] Fetching voice preferences...');
+      Logger.debug('🎙️ [VOICE_API] Fetching voice preferences...');
 
       final response = await _supabaseClient.rpc('get_voice_preferences');
 
-      print('🎙️ [VOICE_API] Preferences response: $response');
+      Logger.debug('🎙️ [VOICE_API] Preferences response: $response');
 
       if (response != null) {
         return VoicePreferencesModel.fromJson(response as Map<String, dynamic>);
@@ -99,7 +100,7 @@ class VoiceBuddyRemoteDataSourceImpl implements VoiceBuddyRemoteDataSource {
         code: 'TOKEN_INVALID',
       );
     } catch (e) {
-      print('🚨 [VOICE_API] Unexpected preferences error: $e');
+      Logger.error('🚨 [VOICE_API] Unexpected preferences error: $e');
       throw ClientException(
         message: 'Unable to fetch voice preferences. Please try again later.',
         code: 'VOICE_PREFERENCES_FAILED',
@@ -114,7 +115,7 @@ class VoiceBuddyRemoteDataSourceImpl implements VoiceBuddyRemoteDataSource {
     try {
       await ApiAuthHelper.validateTokenForRequest();
 
-      print('🎙️ [VOICE_API] Updating voice preferences...');
+      Logger.debug('🎙️ [VOICE_API] Updating voice preferences...');
 
       final user = _supabaseClient.auth.currentUser;
       if (user == null) {
@@ -138,7 +139,7 @@ class VoiceBuddyRemoteDataSourceImpl implements VoiceBuddyRemoteDataSource {
           .select()
           .single();
 
-      print('🎙️ [VOICE_API] Updated preferences: $response');
+      Logger.debug('🎙️ [VOICE_API] Updated preferences: $response');
 
       return VoicePreferencesModel.fromJson(response);
     } on NetworkException {
@@ -153,7 +154,7 @@ class VoiceBuddyRemoteDataSourceImpl implements VoiceBuddyRemoteDataSource {
         code: 'TOKEN_INVALID',
       );
     } catch (e) {
-      print('🚨 [VOICE_API] Unexpected update preferences error: $e');
+      Logger.error('🚨 [VOICE_API] Unexpected update preferences error: $e');
       throw ClientException(
         message: 'Unable to update voice preferences. Please try again later.',
         code: 'UPDATE_PREFERENCES_FAILED',
@@ -167,7 +168,8 @@ class VoiceBuddyRemoteDataSourceImpl implements VoiceBuddyRemoteDataSource {
     try {
       await ApiAuthHelper.validateTokenForRequest();
 
-      print('🎙️ [VOICE_API] Resetting voice preferences to defaults...');
+      Logger.debug(
+          '🎙️ [VOICE_API] Resetting voice preferences to defaults...');
 
       final user = _supabaseClient.auth.currentUser;
       if (user == null) {
@@ -186,7 +188,7 @@ class VoiceBuddyRemoteDataSourceImpl implements VoiceBuddyRemoteDataSource {
       // Get default preferences via RPC
       final response = await _supabaseClient.rpc('get_voice_preferences');
 
-      print('🎙️ [VOICE_API] Reset preferences: $response');
+      Logger.debug('🎙️ [VOICE_API] Reset preferences: $response');
 
       if (response != null) {
         return VoicePreferencesModel.fromJson(response as Map<String, dynamic>);
@@ -208,7 +210,7 @@ class VoiceBuddyRemoteDataSourceImpl implements VoiceBuddyRemoteDataSource {
         code: 'TOKEN_INVALID',
       );
     } catch (e) {
-      print('🚨 [VOICE_API] Unexpected reset preferences error: $e');
+      Logger.error('🚨 [VOICE_API] Unexpected reset preferences error: $e');
       throw ClientException(
         message: 'Unable to reset voice preferences. Please try again later.',
         code: 'RESET_PREFERENCES_FAILED',
@@ -222,11 +224,11 @@ class VoiceBuddyRemoteDataSourceImpl implements VoiceBuddyRemoteDataSource {
     try {
       await ApiAuthHelper.validateTokenForRequest();
 
-      print('🎙️ [VOICE_API] Checking voice quota...');
+      Logger.debug('🎙️ [VOICE_API] Checking voice quota...');
 
       final response = await _supabaseClient.rpc('check_voice_quota');
 
-      print('🎙️ [VOICE_API] Quota response: $response');
+      Logger.debug('🎙️ [VOICE_API] Quota response: $response');
 
       if (response != null) {
         return VoiceQuotaModel.fromJson(response as Map<String, dynamic>);
@@ -248,7 +250,7 @@ class VoiceBuddyRemoteDataSourceImpl implements VoiceBuddyRemoteDataSource {
         code: 'TOKEN_INVALID',
       );
     } catch (e) {
-      print('🚨 [VOICE_API] Unexpected quota check error: $e');
+      Logger.error('🚨 [VOICE_API] Unexpected quota check error: $e');
       throw ClientException(
         message: 'Unable to check voice quota. Please try again later.',
         code: 'QUOTA_CHECK_FAILED',
@@ -267,7 +269,7 @@ class VoiceBuddyRemoteDataSourceImpl implements VoiceBuddyRemoteDataSource {
     try {
       await ApiAuthHelper.validateTokenForRequest();
 
-      print('🎙️ [VOICE_API] Starting conversation...');
+      Logger.debug('🎙️ [VOICE_API] Starting conversation...');
 
       final user = _supabaseClient.auth.currentUser;
       if (user == null) {
@@ -277,8 +279,9 @@ class VoiceBuddyRemoteDataSourceImpl implements VoiceBuddyRemoteDataSource {
         );
       }
 
-      // First increment voice usage
-      await _supabaseClient.rpc('increment_voice_usage');
+      // Note: quota is NOT incremented here. The voice-conversation edge function
+      // atomically checks and increments the counter on the first message, ensuring
+      // server-side enforcement that cannot be bypassed by direct API calls.
 
       // Create conversation
       final sessionId = '${user.id}_${DateTime.now().millisecondsSinceEpoch}';
@@ -303,7 +306,7 @@ class VoiceBuddyRemoteDataSourceImpl implements VoiceBuddyRemoteDataSource {
           .select()
           .single();
 
-      print('🎙️ [VOICE_API] Started conversation: ${response['id']}');
+      Logger.debug('🎙️ [VOICE_API] Started conversation: ${response['id']}');
 
       return VoiceConversationModel.fromJson(response);
     } on NetworkException {
@@ -318,7 +321,7 @@ class VoiceBuddyRemoteDataSourceImpl implements VoiceBuddyRemoteDataSource {
         code: 'TOKEN_INVALID',
       );
     } catch (e) {
-      print('🚨 [VOICE_API] Unexpected start conversation error: $e');
+      Logger.error('🚨 [VOICE_API] Unexpected start conversation error: $e');
       throw ClientException(
         message: 'Unable to start conversation. Please try again later.',
         code: 'START_CONVERSATION_FAILED',
@@ -335,7 +338,7 @@ class VoiceBuddyRemoteDataSourceImpl implements VoiceBuddyRemoteDataSource {
     try {
       await ApiAuthHelper.validateTokenForRequest();
 
-      print('🎙️ [VOICE_API] Fetching conversation history...');
+      Logger.debug('🎙️ [VOICE_API] Fetching conversation history...');
 
       final response = await _supabaseClient.rpc(
         'get_voice_conversation_history',
@@ -345,7 +348,7 @@ class VoiceBuddyRemoteDataSourceImpl implements VoiceBuddyRemoteDataSource {
         },
       );
 
-      print(
+      Logger.debug(
           '🎙️ [VOICE_API] History response: ${(response as List?)?.length ?? 0} conversations');
 
       if (response is List) {
@@ -368,7 +371,7 @@ class VoiceBuddyRemoteDataSourceImpl implements VoiceBuddyRemoteDataSource {
         code: 'TOKEN_INVALID',
       );
     } catch (e) {
-      print('🚨 [VOICE_API] Unexpected conversation history error: $e');
+      Logger.error('🚨 [VOICE_API] Unexpected conversation history error: $e');
       throw ClientException(
         message:
             'Unable to fetch conversation history. Please try again later.',
@@ -384,7 +387,7 @@ class VoiceBuddyRemoteDataSourceImpl implements VoiceBuddyRemoteDataSource {
     try {
       await ApiAuthHelper.validateTokenForRequest();
 
-      print('🎙️ [VOICE_API] Fetching conversation: $conversationId');
+      Logger.info('🎙️ [VOICE_API] Fetching conversation: $conversationId');
 
       // Get conversation with messages
       final conversationResponse = await _supabaseClient
@@ -405,7 +408,7 @@ class VoiceBuddyRemoteDataSourceImpl implements VoiceBuddyRemoteDataSource {
         'messages': messagesResponse,
       };
 
-      print('🎙️ [VOICE_API] Fetched conversation with '
+      Logger.info('🎙️ [VOICE_API] Fetched conversation with '
           '${(messagesResponse as List).length} messages');
 
       return VoiceConversationModel.fromJson(conversationData);
@@ -421,7 +424,7 @@ class VoiceBuddyRemoteDataSourceImpl implements VoiceBuddyRemoteDataSource {
         code: 'TOKEN_INVALID',
       );
     } catch (e) {
-      print('🚨 [VOICE_API] Unexpected get conversation error: $e');
+      Logger.error('🚨 [VOICE_API] Unexpected get conversation error: $e');
       throw ClientException(
         message: 'Unable to fetch conversation. Please try again later.',
         code: 'GET_CONVERSATION_FAILED',
@@ -440,7 +443,7 @@ class VoiceBuddyRemoteDataSourceImpl implements VoiceBuddyRemoteDataSource {
     try {
       await ApiAuthHelper.validateTokenForRequest();
 
-      print('🎙️ [VOICE_API] Ending conversation: $conversationId');
+      Logger.debug('🎙️ [VOICE_API] Ending conversation: $conversationId');
 
       final response = await _supabaseClient.rpc(
         'complete_voice_conversation',
@@ -452,7 +455,7 @@ class VoiceBuddyRemoteDataSourceImpl implements VoiceBuddyRemoteDataSource {
         },
       );
 
-      print('🎙️ [VOICE_API] Ended conversation: $response');
+      Logger.debug('🎙️ [VOICE_API] Ended conversation: $response');
 
       if (response != null) {
         return VoiceConversationModel.fromJson(
@@ -473,7 +476,7 @@ class VoiceBuddyRemoteDataSourceImpl implements VoiceBuddyRemoteDataSource {
         code: 'TOKEN_INVALID',
       );
     } catch (e) {
-      print('🚨 [VOICE_API] Unexpected end conversation error: $e');
+      Logger.error('🚨 [VOICE_API] Unexpected end conversation error: $e');
       throw ClientException(
         message: 'Unable to end conversation. Please try again later.',
         code: 'END_CONVERSATION_FAILED',
@@ -498,7 +501,8 @@ class VoiceBuddyRemoteDataSourceImpl implements VoiceBuddyRemoteDataSource {
     try {
       await ApiAuthHelper.validateTokenForRequest();
 
-      print('🎙️ [VOICE_API] Adding message to conversation: $conversationId');
+      Logger.debug(
+          '🎙️ [VOICE_API] Adding message to conversation: $conversationId');
 
       final user = _supabaseClient.auth.currentUser;
       if (user == null) {
@@ -543,7 +547,7 @@ class VoiceBuddyRemoteDataSourceImpl implements VoiceBuddyRemoteDataSource {
         'updated_at': DateTime.now().toIso8601String(),
       }).eq('id', conversationId);
 
-      print('🎙️ [VOICE_API] Added message: ${response['id']}');
+      Logger.debug('🎙️ [VOICE_API] Added message: ${response['id']}');
 
       return ConversationMessageModel.fromJson(response);
     } on NetworkException {
@@ -558,7 +562,7 @@ class VoiceBuddyRemoteDataSourceImpl implements VoiceBuddyRemoteDataSource {
         code: 'TOKEN_INVALID',
       );
     } catch (e) {
-      print('🚨 [VOICE_API] Unexpected add message error: $e');
+      Logger.error('🚨 [VOICE_API] Unexpected add message error: $e');
       throw ClientException(
         message: 'Unable to add message. Please try again later.',
         code: 'ADD_MESSAGE_FAILED',

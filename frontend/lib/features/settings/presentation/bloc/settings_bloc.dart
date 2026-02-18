@@ -1,5 +1,4 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter/foundation.dart';
 import '../../../../core/usecases/usecase.dart';
 import '../../../../core/utils/error_handler.dart';
 import '../../../../core/services/theme_service.dart';
@@ -11,6 +10,7 @@ import '../../domain/usecases/get_app_version.dart';
 import '../../domain/repositories/settings_repository.dart';
 import 'settings_event.dart';
 import 'settings_state.dart';
+import '../../../../core/utils/logger.dart';
 
 class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
   final GetSettings getSettings;
@@ -63,10 +63,8 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
 
             // If settings language differs from LanguagePreferenceService, sync it
             if (settings.language != currentLanguage.code) {
-              if (kDebugMode) {
-                print(
-                    'Settings language (${settings.language}) differs from LanguagePreferenceService (${currentLanguage.code}). Syncing...');
-              }
+              Logger.debug(
+                  'Settings language (${settings.language}) differs from LanguagePreferenceService (${currentLanguage.code}). Syncing...');
 
               // Update settings repository with the correct language
               await settingsRepository.updateLanguage(currentLanguage.code);
@@ -80,9 +78,7 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
               return;
             }
           } catch (e) {
-            if (kDebugMode) {
-              print('Error syncing language preference: $e');
-            }
+            Logger.debug('Error syncing language preference: $e');
             // Continue with original settings if sync fails
           }
 
@@ -92,9 +88,7 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
         },
       );
     } catch (e) {
-      if (kDebugMode) {
-        print('Error in _onLoadSettings: $e');
-      }
+      Logger.debug('Error in _onLoadSettings: $e');
       if (!emit.isDone) {
         emit(SettingsError(message: 'Failed to load settings: $e'));
       }
@@ -105,7 +99,7 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
     ThemeModeChanged event,
     Emitter<SettingsState> emit,
   ) async {
-    debugPrint(
+    Logger.debug(
         'SettingsBloc: ThemeModeChanged event received - New theme: ${event.themeMode.mode}');
     if (state is SettingsLoaded) {
       final currentState = state as SettingsLoaded;
@@ -164,9 +158,7 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
           },
         );
       } catch (e) {
-        if (kDebugMode) {
-          print('Error updating language: $e');
-        }
+        Logger.debug('Error updating language: $e');
         emit(SettingsError(message: 'Failed to update language: $e'));
       }
     }

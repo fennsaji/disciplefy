@@ -9,12 +9,16 @@ import '../../../../core/animations/app_animations.dart';
 
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/utils/category_utils.dart';
+import '../../../../core/utils/logger.dart';
 import '../../../../core/di/injection_container.dart';
 import '../../../../core/router/app_router.dart';
 import '../../../../core/services/auth_state_provider.dart';
 import '../../../../core/services/language_preference_service.dart';
+import '../../../../core/services/system_config_service.dart';
 import '../../../../core/models/app_language.dart';
 import '../../../../core/widgets/auth_protected_screen.dart';
+import '../../../../core/widgets/locked_feature_wrapper.dart';
+import '../../../../core/widgets/upgrade_dialog.dart';
 import '../../../../core/extensions/translation_extension.dart';
 import '../../../../core/i18n/translation_keys.dart';
 import '../../domain/entities/recommended_guide_topic.dart';
@@ -29,13 +33,18 @@ import '../../../auth/presentation/widgets/email_verification_banner.dart';
 import '../../../subscription/presentation/bloc/subscription_bloc.dart';
 import '../../../subscription/presentation/bloc/subscription_event.dart';
 import '../../../subscription/presentation/bloc/subscription_state.dart';
+import '../../../subscription/presentation/bloc/usage_stats_bloc.dart';
+import '../../../subscription/presentation/bloc/usage_stats_event.dart';
+import '../../../subscription/presentation/bloc/usage_stats_state.dart';
 import '../../../subscription/presentation/widgets/standard_subscription_banner.dart';
 import '../../../subscription/presentation/widgets/standard_subscription_sheet.dart';
 import '../../../subscription/presentation/widgets/upgrade_required_dialog.dart';
+import '../../../subscription/presentation/services/usage_threshold_service.dart';
 import '../../../tokens/presentation/bloc/token_bloc.dart';
 import '../../../tokens/presentation/bloc/token_state.dart';
 import '../../../tokens/domain/entities/token_status.dart';
 
+import '../widgets/usage_meter_widget.dart';
 import '../bloc/home_bloc.dart';
 import '../bloc/home_event.dart';
 import '../bloc/home_state.dart';
@@ -80,11 +89,18 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
   StreamSubscription<AppLanguage>? _languageSubscription;
   StreamSubscription<AppLanguage>? _studyContentLanguageSubscription;
 
+  // Usage stats bloc for soft paywall system
+  late final UsageStatsBloc _usageStatsBloc;
+  late final UsageThresholdService _usageThresholdService;
+
   @override
   void initState() {
     super.initState();
+    _usageStatsBloc = sl<UsageStatsBloc>();
+    _usageThresholdService = sl<UsageThresholdService>();
     _loadDailyVerse();
     _loadSubscriptionStatus();
+    _loadUsageStats();
     _setupLanguageChangeListener();
     // Fire initial topics load once; HomeBloc is a singleton via DI
     final homeBloc = sl<HomeBloc>();
@@ -113,9 +129,8 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
     // Listen to app language changes (UI language)
     _languageSubscription =
         languageService.languageChanges.listen((newLanguage) {
-      if (kDebugMode) {
-        print('[HOME] App language changed to: ${newLanguage.displayName}');
-      }
+      Logger.debug(
+          '[HOME] App language changed to: ${newLanguage.displayName}');
 
       // When app language changes, study content language is automatically reset to default
       // Refresh the "For You" topics with the new language
@@ -124,19 +139,16 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
         homeBloc.add(const LoadForYouTopics(forceRefresh: true));
         homeBloc.add(const LoadActiveLearningPath(forceRefresh: true));
 
-        if (kDebugMode) {
-          print('[HOME] "For You" content refreshed after app language change');
-        }
+        Logger.debug(
+            '[HOME] "For You" content refreshed after app language change');
       }
     });
 
     // Listen to study content language changes (study guides language)
     _studyContentLanguageSubscription =
         languageService.studyContentLanguageChanges.listen((newLanguage) {
-      if (kDebugMode) {
-        print(
-            '[HOME] Study content language changed to: ${newLanguage.displayName}');
-      }
+      Logger.debug(
+          '[HOME] Study content language changed to: ${newLanguage.displayName}');
 
       // Refresh the "For You" topics with the new study content language
       if (mounted) {
@@ -144,10 +156,8 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
         homeBloc.add(const LoadForYouTopics(forceRefresh: true));
         homeBloc.add(const LoadActiveLearningPath(forceRefresh: true));
 
-        if (kDebugMode) {
-          print(
-              '[HOME] "For You" content refreshed after study content language change');
-        }
+        Logger.debug(
+            '[HOME] "For You" content refreshed after study content language change');
       }
     });
   }
@@ -156,6 +166,11 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
   void _loadSubscriptionStatus() {
     final subscriptionBloc = sl<SubscriptionBloc>();
     subscriptionBloc.add(LoadSubscriptionStatus());
+  }
+
+  /// Fetch usage statistics for soft paywall system
+  void _loadUsageStats() {
+    _usageStatsBloc.add(const FetchUsageStats());
   }
 
   /// Shows the Daily Verse notification prompt if not already shown
@@ -232,17 +247,18 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
 
       if (StudyModePreferences.isRecommended(savedModeRaw)) {
         // ✅ FIX: "Use Recommended" - automatically select Deep Dive for scripture without showing sheet
-        debugPrint('✅ [HOME] Using recommended mode for scripture: Deep Dive');
+        Logger.debug(
+            '✅ [HOME] Using recommended mode for scripture: Deep Dive');
         _navigateToDailyVerseStudy(currentState, StudyMode.deep, false);
       } else if (savedModeRaw != null) {
         // User has a specific saved preference - use it directly without showing sheet
         final savedMode = studyModeFromString(savedModeRaw);
         if (savedMode != null) {
-          debugPrint('✅ [HOME] Using saved study mode: ${savedMode.name}');
+          Logger.debug('✅ [HOME] Using saved study mode: ${savedMode.name}');
           _navigateToDailyVerseStudy(currentState, savedMode, false);
         } else {
           // Invalid mode string - fallback to mode selection sheet
-          debugPrint(
+          Logger.debug(
               '⚠️ [HOME] Invalid study mode string: $savedModeRaw - showing mode selection sheet');
           const recommendedMode = StudyMode.deep;
           final String languageCode;
@@ -269,7 +285,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
         }
       } else {
         // No saved preference (null) - show mode selection sheet with Deep Dive as recommended for scripture
-        debugPrint(
+        Logger.debug(
             '🔍 [HOME] No saved preference - showing mode selection sheet with Deep Dive recommended');
         const recommendedMode = StudyMode.deep; // Scripture → Deep Dive
 
@@ -323,12 +339,13 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
     if (rememberChoice) {
       // ✅ FIX: If user selected the recommended mode, save "recommended" instead of specific mode
       if (recommendedMode != null && mode == recommendedMode) {
-        debugPrint(
+        Logger.debug(
             '✅ [HOME] Saving preference as "recommended" (selected mode matches recommended)');
         sl<LanguagePreferenceService>()
             .saveStudyModePreferenceRaw('recommended');
       } else {
-        debugPrint('✅ [HOME] Saving preference as specific mode: ${mode.name}');
+        Logger.debug(
+            '✅ [HOME] Saving preference as specific mode: ${mode.name}');
         sl<LanguagePreferenceService>().saveStudyModePreference(mode);
       }
     }
@@ -349,7 +366,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
 
     final encodedReference = Uri.encodeComponent(verseReference);
 
-    debugPrint(
+    Logger.debug(
         '🔍 [HOME] Navigating to study guide V2 for daily verse: $verseReference with mode: ${mode.name}');
 
     // Navigate directly to study guide V2 - it will handle generation
@@ -382,6 +399,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
   void dispose() {
     _languageSubscription?.cancel();
     _studyContentLanguageSubscription?.cancel();
+    _usageStatsBloc.close();
     super.dispose();
   }
 
@@ -390,128 +408,163 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
     final screenHeight = MediaQuery.of(context).size.height;
     final isLargeScreen = screenHeight > 700;
 
-    return BlocListener<DailyVerseBloc, DailyVerseState>(
-      bloc: sl<DailyVerseBloc>(),
+    return BlocListener<UsageStatsBloc, UsageStatsState>(
+      bloc: _usageStatsBloc,
       listener: (context, state) {
-        // Trigger notification prompts when daily verse loads successfully
-        if (state is DailyVerseLoaded) {
-          final languageCode = _getLanguageCode(state.currentLanguage);
-          _showDailyVerseNotificationPrompt(languageCode);
-
-          // Also check for streak and show streak notification prompt
-          final streak = state.streak;
-          if (streak != null && streak.currentStreak > 0) {
-            _showStreakNotificationPrompt(languageCode, streak.currentStreak);
-          }
+        // Check and show soft paywall when usage stats load or update
+        if (state is UsageStatsLoaded) {
+          _checkUsageThreshold(context, state.usageStats);
         }
       },
-      child: ListenableBuilder(
-        listenable: sl<AuthStateProvider>(),
-        builder: (context, _) {
-          final authProvider = sl<AuthStateProvider>();
-          final currentUserName = authProvider.currentUserName;
+      child: BlocListener<DailyVerseBloc, DailyVerseState>(
+        bloc: sl<DailyVerseBloc>(),
+        listener: (context, state) {
+          // Trigger notification prompts when daily verse loads successfully
+          if (state is DailyVerseLoaded) {
+            final languageCode = _getLanguageCode(state.currentLanguage);
+            _showDailyVerseNotificationPrompt(languageCode);
 
-          if (kDebugMode) {
-            print(
-                '👤 [HOME] User loaded via AuthStateProvider: $currentUserName');
-            print('👤 [HOME] Auth state: ${authProvider.debugInfo}');
+            // Also check for streak and show streak notification prompt
+            final streak = state.streak;
+            if (streak != null && streak.currentStreak > 0) {
+              _showStreakNotificationPrompt(languageCode, streak.currentStreak);
+            }
           }
+        },
+        child: ListenableBuilder(
+          listenable: sl<AuthStateProvider>(),
+          builder: (context, _) {
+            final authProvider = sl<AuthStateProvider>();
+            final currentUserName = authProvider.currentUserName;
 
-          return Scaffold(
-            backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-            body: SafeArea(
-              child: Column(
-                children: [
-                  // Main content
-                  Expanded(
-                    child: SingleChildScrollView(
-                      padding: const EdgeInsets.symmetric(horizontal: 24),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          SizedBox(height: isLargeScreen ? 32 : 24),
+            if (kDebugMode) {
+              Logger.debug(
+                  '👤 [HOME] User loaded via AuthStateProvider: $currentUserName');
+              Logger.debug('👤 [HOME] Auth state: ${authProvider.debugInfo}');
+            }
 
-                          // App Header with Logo
-                          _buildAppHeader(),
+            return Scaffold(
+              backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+              body: SafeArea(
+                child: Column(
+                  children: [
+                    // Main content
+                    Expanded(
+                      child: SingleChildScrollView(
+                        padding: const EdgeInsets.symmetric(horizontal: 24),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            SizedBox(height: isLargeScreen ? 32 : 24),
 
-                          SizedBox(height: isLargeScreen ? 32 : 24),
+                            // App Header with Logo
+                            _buildAppHeader(),
 
-                          // Welcome Message
-                          _buildWelcomeMessage(currentUserName),
+                            SizedBox(height: isLargeScreen ? 32 : 24),
 
-                          SizedBox(height: isLargeScreen ? 16 : 12),
+                            // Welcome Message
+                            _buildWelcomeMessage(currentUserName),
 
-                          // Email Verification Banner (shown for unverified email users)
-                          BlocProvider.value(
-                            value: sl<AuthBloc>(),
-                            child: const EmailVerificationBanner(),
-                          ),
+                            SizedBox(height: isLargeScreen ? 16 : 12),
 
-                          // Standard Subscription Banner (shown when trial ending/ended)
-                          BlocBuilder<SubscriptionBloc, SubscriptionState>(
-                            bloc: sl<SubscriptionBloc>(),
-                            builder: (context, state) {
-                              if (state is UserSubscriptionStatusLoaded &&
-                                  state.subscriptionStatus
-                                      .shouldShowSubscriptionBanner) {
-                                return Padding(
-                                  padding: EdgeInsets.only(
-                                      top: isLargeScreen ? 16 : 12),
-                                  child: StandardSubscriptionBannerCompact(
-                                    status: state.subscriptionStatus,
-                                    onSubscribe: () =>
-                                        _showStandardSubscriptionSheet(context),
+                            // Email Verification Banner (shown for unverified email users)
+                            BlocProvider.value(
+                              value: sl<AuthBloc>(),
+                              child: const EmailVerificationBanner(),
+                            ),
+
+                            // Standard Subscription Banner (shown when trial ending/ended)
+                            BlocBuilder<SubscriptionBloc, SubscriptionState>(
+                              bloc: sl<SubscriptionBloc>(),
+                              builder: (context, state) {
+                                if (state is UserSubscriptionStatusLoaded &&
+                                    state.subscriptionStatus
+                                        .shouldShowSubscriptionBanner) {
+                                  return Padding(
+                                    padding: EdgeInsets.only(
+                                        top: isLargeScreen ? 16 : 12),
+                                    child: StandardSubscriptionBannerCompact(
+                                      status: state.subscriptionStatus,
+                                      onSubscribe: () =>
+                                          _showStandardSubscriptionSheet(
+                                              context),
+                                    ),
+                                  );
+                                }
+                                return const SizedBox.shrink();
+                              },
+                            ),
+
+                            SizedBox(height: isLargeScreen ? 16 : 12),
+
+                            // Daily Verse Card with click functionality and lock support
+                            LockedFeatureWrapper(
+                              featureKey: 'daily_verse',
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  DailyVerseCard(
+                                    margin: EdgeInsets.zero,
+                                    onTap: _onDailyVerseCardTap,
                                   ),
-                                );
-                              }
-                              return const SizedBox.shrink();
-                            },
-                          ),
+                                  SizedBox(height: isLargeScreen ? 24 : 20),
+                                ],
+                              ),
+                            ),
 
-                          SizedBox(height: isLargeScreen ? 16 : 12),
+                            // Usage Meter (only for free users)
+                            _buildUsageMeter(),
 
-                          // Daily Verse Card with click functionality
-                          DailyVerseCard(
-                            margin: EdgeInsets.zero,
-                            onTap: _onDailyVerseCardTap,
-                          ),
+                            SizedBox(height: isLargeScreen ? 16 : 12),
 
-                          SizedBox(height: isLargeScreen ? 24 : 20),
+                            // Generate Study Guide Button - hide if all study modes and AI Discipler are disabled
+                            if (!_shouldHideGenerateButton()) ...[
+                              _buildGenerateStudyButton(),
+                              SizedBox(height: isLargeScreen ? 32 : 24),
+                            ],
 
-                          // Generate Study Guide Button
-                          _buildGenerateStudyButton(),
+                            // Resume Last Study (conditional)
+                            if (_hasResumeableStudy) ...[
+                              _buildResumeStudyBanner(),
+                              SizedBox(height: isLargeScreen ? 32 : 24),
+                            ],
 
-                          SizedBox(height: isLargeScreen ? 32 : 24),
+                            // Recommended Study Topics
+                            _buildRecommendedTopics(),
 
-                          // Resume Last Study (conditional)
-                          if (_hasResumeableStudy) ...[
-                            _buildResumeStudyBanner(),
                             SizedBox(height: isLargeScreen ? 32 : 24),
                           ],
-
-                          // Recommended Study Topics
-                          _buildRecommendedTopics(),
-
-                          SizedBox(height: isLargeScreen ? 32 : 24),
-                        ],
+                        ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-          ).withHomeProtection();
-        },
+            ).withHomeProtection();
+          },
+        ),
       ),
     );
   }
 
   Widget _buildAppHeader() {
+    // Check if memory_verses feature should be visible (respects display_mode)
+    final tokenBloc = sl<TokenBloc>();
+    final tokenState = tokenBloc.state;
+    String userPlan = 'free';
+    if (tokenState is TokenLoaded) {
+      userPlan = tokenState.tokenStatus.userPlan.name;
+    }
+
+    final systemConfigService = sl<SystemConfigService>();
+    final showMemoryVerses =
+        !systemConfigService.shouldHideFeature('memory_verses', userPlan);
+
     return Row(
       children: [
         _buildLogoWidget(),
         const Spacer(),
-        _buildMemoryVersesIconButton(),
+        if (showMemoryVerses) _buildMemoryVersesIconButton(),
         _buildSettingsButton(),
       ],
     );
@@ -529,33 +582,78 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
     );
   }
 
-  /// Handles tap on Memory Verses button - checks plan and shows upgrade dialog for free users
-  void _handleMemoryVersesTap() {
-    // Get user plan from TokenBloc (more reliable as it's loaded early)
+  /// Checks if Generate Study Guide button should be hidden
+  /// Returns true if ALL study modes AND AI Discipler are disabled
+  bool _shouldHideGenerateButton() {
     final tokenBloc = sl<TokenBloc>();
     final tokenState = tokenBloc.state;
 
-    UserPlan? userPlan;
+    String userPlan = 'free';
     if (tokenState is TokenLoaded) {
-      userPlan = tokenState.tokenStatus.userPlan;
+      userPlan = tokenState.tokenStatus.userPlan.name;
     }
 
-    // Only allow Standard or Premium users
-    final bool hasAccess =
-        userPlan == UserPlan.standard || userPlan == UserPlan.premium;
+    final systemConfigService = sl<SystemConfigService>();
+
+    // Check all study modes
+    final studyModes = [
+      'quick_read_mode',
+      'standard_study_mode',
+      'deep_dive_mode',
+      'lectio_divina_mode',
+      'sermon_outline_mode',
+    ];
+
+    // Check if ALL study modes should be hidden (respects display_mode)
+    final allStudyModesDisabled = studyModes.every(
+      (mode) => systemConfigService.shouldHideFeature(mode, userPlan),
+    );
+
+    // Check if AI Discipler should be hidden (respects display_mode)
+    final aiDisciplerDisabled =
+        systemConfigService.shouldHideFeature('ai_discipler', userPlan);
+
+    // Hide if both ALL study modes should be hidden AND AI Discipler should be hidden
+    return allStudyModesDisabled && aiDisciplerDisabled;
+  }
+
+  /// Handles tap on Memory Verses button - checks feature flag and shows upgrade dialog if disabled
+  void _handleMemoryVersesTap() {
+    // Check if user has access to Memory Verses feature
+    final tokenBloc = sl<TokenBloc>();
+    final tokenState = tokenBloc.state;
+
+    String userPlan = 'free';
+    if (tokenState is TokenLoaded) {
+      userPlan = tokenState.tokenStatus.userPlan.name;
+    }
+
+    final systemConfigService = sl<SystemConfigService>();
+    final hasAccess =
+        systemConfigService.isFeatureEnabled('memory_verses', userPlan);
 
     if (!hasAccess) {
-      UpgradeRequiredDialog.show(
-        context,
-        featureName: 'Memory Verses',
-        featureIcon: Icons.psychology_outlined,
-        featureDescription:
-            'Memorize Bible verses using proven spaced repetition techniques. Track your progress and strengthen your faith through scripture memorization.',
+      // Show upgrade dialog
+      final requiredPlans =
+          systemConfigService.getRequiredPlans('memory_verses');
+      final upgradePlan =
+          systemConfigService.getUpgradePlan('memory_verses', userPlan);
+
+      showModalBottomSheet(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: Colors.transparent,
+        builder: (context) => UpgradeDialog(
+          featureKey: 'memory_verses',
+          currentPlan: userPlan,
+          requiredPlans: requiredPlans,
+          upgradePlan: upgradePlan,
+        ),
       );
       return;
     }
 
-    // User is on Standard or Premium plan - proceed to Memory Verses
+    // User has access - navigate to Memory Verses
     context.go('/memory-verses');
   }
 
@@ -634,6 +732,77 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
           ),
         ],
       );
+
+  /// Build usage meter widget (shows token usage for free users)
+  Widget _buildUsageMeter() {
+    return BlocBuilder<UsageStatsBloc, UsageStatsState>(
+      bloc: _usageStatsBloc,
+      builder: (context, state) {
+        // Only show for loaded state
+        if (state is! UsageStatsLoaded) {
+          return const SizedBox.shrink();
+        }
+
+        final usageStats = state.usageStats;
+
+        // Only show usage meter for free users
+        final isFree = usageStats.currentPlan == 'free';
+        if (!isFree) {
+          return const SizedBox.shrink();
+        }
+
+        // For free plan, show daily token usage
+        final tokensUsed = usageStats.tokensUsed;
+        final tokensTotal = usageStats.tokensTotal;
+
+        return UsageMeterWidget(
+          tokensUsed: tokensUsed,
+          tokensTotal: tokensTotal,
+          onUpgrade: () => context.go('/pricing'),
+        );
+      },
+    );
+  }
+
+  /// Check usage threshold and show soft paywall if needed
+  void _checkUsageThreshold(BuildContext context, dynamic usageStats) {
+    // Use post-frame callback to avoid showing dialog during build
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted) return;
+
+      String userPlan = 'free';
+      int purchasedTokens = 0;
+      try {
+        final tokenState = context.read<TokenBloc>().state;
+        if (tokenState is TokenLoaded) {
+          userPlan = tokenState.tokenStatus.userPlan.name;
+          purchasedTokens = tokenState.tokenStatus.purchasedTokens;
+        }
+      } catch (_) {}
+
+      // Pass currentDate so the service handles daily resets internally.
+      // The service is a singleton and persists across widget rebuilds,
+      // preventing the dialog from re-firing just because the widget was recreated.
+      // Pass purchasedTokens so the dialog is suppressed when the user has
+      // purchased tokens available (daily limit exhausted ≠ truly out of tokens).
+      final showed = await _usageThresholdService.checkAndShowThreshold(
+        context: context,
+        tokensUsed: usageStats.tokensUsed,
+        tokensTotal: usageStats.tokensTotal,
+        streakDays: usageStats.streakDays,
+        userPlan: userPlan,
+        currentDate: usageStats.monthYear as String,
+        purchasedTokens: purchasedTokens,
+      );
+
+      if (showed) {
+        Logger.info(
+          'Soft paywall shown at ${usageStats.percentage}% usage',
+          tag: 'HOME_USAGE_THRESHOLD',
+        );
+      }
+    });
+  }
 
   Widget _buildGenerateStudyButton() {
     return Container(
@@ -827,13 +996,22 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
               ],
             ),
             const SizedBox(height: 16),
-            // Show Learning Path card if available (for all user types)
+            // Show Learning Path card if available with lock support
             if (homeState.activeLearningPath != null)
-              LearningPathCard(
-                path: homeState.activeLearningPath!,
-                compact: false,
-                onTap: () =>
-                    _navigateToLearningPath(homeState.activeLearningPath!.id),
+              LockedFeatureWrapper(
+                featureKey: 'learning_paths',
+                child: LearningPathCard(
+                  path: homeState.activeLearningPath!,
+                  compact: false,
+                  onTap: () =>
+                      _navigateToLearningPath(homeState.activeLearningPath!.id),
+                ),
+              )
+            // Check if learning_paths is locked even when no data
+            else if (_isLearningPathsLocked())
+              LockedFeatureWrapper(
+                featureKey: 'learning_paths',
+                child: _buildPlaceholderLearningPathCard(),
               )
             // Fallback to topics grid only if no learning path is available
             else if (homeState.topicsError != null)
@@ -899,7 +1077,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
     if (_isNavigating) return;
     _isNavigating = true;
 
-    debugPrint('[HOME] Navigating to learning path: $pathId');
+    Logger.debug('[HOME] Navigating to learning path: $pathId');
 
     // Use context.go() to properly update the browser URL
     // Include source=home so back button returns to home screen
@@ -1239,7 +1417,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
     final descriptionParam =
         topic.description.isNotEmpty ? '&description=$encodedDescription' : '';
 
-    debugPrint(
+    Logger.debug(
         '🔍 [HOME] Navigating to study guide V2 for topic: ${topic.title} with mode: ${mode.name}');
 
     // Navigate directly to study guide V2 - it will handle generation
@@ -1254,6 +1432,95 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
         });
       }
     });
+  }
+
+  /// Check if learning_paths feature is locked for current user
+  bool _isLearningPathsLocked() {
+    final tokenBloc = sl<TokenBloc>();
+    final tokenState = tokenBloc.state;
+
+    String userPlan = 'free';
+    if (tokenState is TokenLoaded) {
+      userPlan = tokenState.tokenStatus.userPlan.name;
+    }
+
+    final systemConfigService = sl<SystemConfigService>();
+    return systemConfigService.isFeatureLocked('learning_paths', userPlan);
+  }
+
+  /// Build a placeholder learning path card to show with lock overlay
+  Widget _buildPlaceholderLearningPathCard() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF1F2937) : Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color:
+              isDark ? Colors.white.withOpacity(0.1) : const Color(0xFFE5E7EB),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: AppTheme.primaryColor.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(
+                  Icons.route_outlined,
+                  color: AppTheme.primaryColor,
+                  size: 22,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      context.tr(TranslationKeys.learningPathsTitle),
+                      style: AppFonts.inter(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: isDark ? Colors.white : const Color(0xFF1F2937),
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      context.tr(TranslationKeys.learningPathsSubtitle),
+                      style: AppFonts.inter(
+                        fontSize: 12,
+                        color: isDark
+                            ? Colors.white.withOpacity(0.6)
+                            : const Color(0xFF6B7280),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Text(
+            'Unlock structured learning journeys designed to deepen your faith and biblical understanding.',
+            style: AppFonts.inter(
+              fontSize: 13,
+              color: isDark
+                  ? Colors.white.withOpacity(0.7)
+                  : const Color(0xFF6B7280),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 

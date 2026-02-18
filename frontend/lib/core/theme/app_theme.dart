@@ -12,6 +12,8 @@ import 'package:flutter/material.dart';
 class AppTheme {
   // Disciplefy Brand Colors
   static const Color primaryColor = Color(0xFF4F46E5); // Indigo-600 (WCAG AA)
+  static const Color primaryLightColor =
+      Color(0xFF818CF8); // Indigo-400 (lighter, for dark surfaces)
   static const Color secondaryPurple =
       Color(0xFF8B5CF6); // Violet-500 (for gradients)
 

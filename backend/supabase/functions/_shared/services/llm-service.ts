@@ -18,8 +18,11 @@ import type {
   LLMResponse,
   DailyVerseResponse,
   LLMProvider,
-  LanguageConfig
+  LanguageConfig,
+  LLMUsageMetadata,
+  LLMResponseWithUsage
 } from './llm-types.ts'
+import { CostTrackingContext } from './llm-types.ts'
 
 // Import extracted modules
 import { OpenAIClient, isValidOpenAIKey } from './llm-clients/openai-client.ts'
@@ -69,8 +72,8 @@ export class LLMService {
   private readonly provider: LLMProvider
   private readonly useMockData: boolean
   private readonly availableProviders: Set<LLMProvider>
-  private readonly openaiClient: OpenAIClient | null = null
-  private readonly anthropicClient: AnthropicClient | null = null
+  private openaiClient: OpenAIClient | null = null
+  private anthropicClient: AnthropicClient | null = null
   private readonly supabaseClient: any | null = null
 
   constructor(private readonly config: LLMServiceConfig) {
@@ -86,7 +89,7 @@ export class LLMService {
       return
     }
 
-    // Initialize available providers
+    // Check which providers are available (but don't initialize clients yet - lazy load)
     console.log('[LLM] Configuration check:', {
       hasOpenAI: !!config.openaiApiKey,
       hasAnthropic: !!config.anthropicApiKey,
@@ -96,14 +99,12 @@ export class LLMService {
 
     if (isValidOpenAIKey(config.openaiApiKey)) {
       this.availableProviders.add('openai')
-      this.openaiClient = new OpenAIClient({ apiKey: config.openaiApiKey! })
-      console.log('[LLM] OpenAI provider initialized')
+      console.log('[LLM] OpenAI provider available (will initialize on first use)')
     }
 
     if (isValidAnthropicKey(config.anthropicApiKey)) {
       this.availableProviders.add('anthropic')
-      this.anthropicClient = new AnthropicClient({ apiKey: config.anthropicApiKey! })
-      console.log('[LLM] Anthropic provider initialized')
+      console.log('[LLM] Anthropic provider available (will initialize on first use)')
     }
 
     if (this.availableProviders.size === 0) {
@@ -111,6 +112,7 @@ export class LLMService {
     }
 
     // Set primary provider
+    // v3.3: Prefer Anthropic (Claude Sonnet 4.5) by default for better length compliance
     if (config.provider && this.availableProviders.has(config.provider)) {
       this.provider = config.provider
     } else {
@@ -120,6 +122,36 @@ export class LLMService {
     console.log(`[LLM] Initialized with primary provider: ${this.provider}`)
     console.log(`[LLM] Available providers: ${Array.from(this.availableProviders).join(', ')}`)
     console.log(`[LLM] Language configs loaded: ${getLanguageCount()}`)
+  }
+
+  /**
+   * Lazy-load OpenAI client on first use
+   */
+  private getOpenAIClient(): OpenAIClient {
+    if (!this.openaiClient) {
+      if (!isValidOpenAIKey(this.config.openaiApiKey)) {
+        throw new Error('OpenAI API key not configured')
+      }
+      console.log('[LLM] Lazy-initializing OpenAI client...')
+      this.openaiClient = new OpenAIClient({ apiKey: this.config.openaiApiKey! })
+      console.log('[LLM] OpenAI client initialized')
+    }
+    return this.openaiClient
+  }
+
+  /**
+   * Lazy-load Anthropic client on first use
+   */
+  private getAnthropicClient(): AnthropicClient {
+    if (!this.anthropicClient) {
+      if (!isValidAnthropicKey(this.config.anthropicApiKey)) {
+        throw new Error('Anthropic API key not configured')
+      }
+      console.log('[LLM] Lazy-initializing Anthropic client...')
+      this.anthropicClient = new AnthropicClient({ apiKey: this.config.anthropicApiKey! })
+      console.log('[LLM] Anthropic client initialized')
+    }
+    return this.anthropicClient
   }
 
   /**
@@ -145,11 +177,12 @@ export class LLMService {
    *
    * @param params - Generation parameters (input type, value, language, tier)
    * @yields Raw text chunks from the LLM stream
+   * @returns Usage metadata from the LLM API
    * @throws Error if mock mode is enabled or no provider is available
    */
   async *streamStudyGuide(
     params: LLMGenerationParams
-  ): AsyncGenerator<string, void, unknown> {
+  ): AsyncGenerator<string, LLMUsageMetadata, unknown> {
     this.validateParams(params)
     console.log(`[LLM] Starting streaming study guide for ${params.inputType}: ${params.inputValue}`)
 
@@ -164,7 +197,16 @@ export class LLMService {
         // Small delay to simulate streaming
         await new Promise(resolve => setTimeout(resolve, 50))
       }
-      return
+
+      // Return mock usage
+      return {
+        provider: 'openai',
+        model: 'gpt-4o-mini-2024-07-18',
+        inputTokens: 100,
+        outputTokens: 500,
+        totalTokens: 600,
+        costUsd: 0.0001
+      }
     }
 
     const languageConfig = getLanguageConfigOrDefault(params.language)
@@ -174,20 +216,42 @@ export class LLMService {
     console.log(`[LLM] Streaming with ${selectedProvider} API for language: ${languageConfig.name}${params.forceProvider ? ' (forced)' : ''}`)
 
     try {
-      if (selectedProvider === 'openai' && this.openaiClient) {
-        yield* this.openaiClient.streamStudyGuide(
+      if (selectedProvider === 'openai') {
+        const generator = this.getOpenAIClient().streamStudyGuide(
           prompt.systemMessage,
           prompt.userMessage,
           languageConfig,
           params
         )
-      } else if (selectedProvider === 'anthropic' && this.anthropicClient) {
-        yield* this.anthropicClient.streamStudyGuide(
+        // Manually iterate to capture return value
+        let usage: LLMUsageMetadata | undefined
+        while (true) {
+          const result = await generator.next()
+          if (result.done) {
+            usage = result.value
+            break
+          }
+          yield result.value
+        }
+        return usage!
+      } else if (selectedProvider === 'anthropic') {
+        const generator = this.getAnthropicClient().streamStudyGuide(
           prompt.systemMessage,
           prompt.userMessage,
           languageConfig,
           params
         )
+        // Manually iterate to capture return value
+        let usage: LLMUsageMetadata | undefined
+        while (true) {
+          const result = await generator.next()
+          if (result.done) {
+            usage = result.value
+            break
+          }
+          yield result.value
+        }
+        return usage!
       } else {
         throw new Error(`No streaming client available for provider: ${selectedProvider}`)
       }
@@ -207,39 +271,396 @@ export class LLMService {
   }
 
   /**
+   * Calls LLM for a single sermon pass with a custom prompt.
+   * Used for progressive multi-pass generation to avoid timeout.
+   *
+   * @param prompt - The prompt pair (systemMessage and userMessage)
+   * @param params - Generation parameters
+   * @returns Raw LLM response as string (JSON)
+   */
+  /**
+   * Streams a multi-pass generation using a custom prompt pair.
+   * This allows progressive emission of sections during each pass instead of blocking.
+   *
+   * @param prompt - Custom prompt pair for this pass
+   * @param params - Generation parameters
+   * @yields Raw text chunks from the LLM stream
+   * @returns Usage metadata from the LLM API
+   */
+  async *streamFromPrompt(
+    prompt: { systemMessage: string; userMessage: string },
+    params: LLMGenerationParams
+  ): AsyncGenerator<string, LLMUsageMetadata, unknown> {
+    this.validateParams(params)
+
+    const languageConfig = getLanguageConfigOrDefault(params.language)
+    const selectedProvider = params.forceProvider || this.selectOptimalProvider(params.language)
+
+    console.log(`[LLM-StreamPass] Streaming with ${selectedProvider} for language: ${languageConfig.name}`)
+
+    try {
+      if (selectedProvider === 'openai') {
+        // For multi-pass, disable schema enforcement - let prompt define JSON structure
+        const generator = this.getOpenAIClient().streamStudyGuide(
+          prompt.systemMessage,
+          prompt.userMessage,
+          languageConfig,
+          params,
+          false // useSchema = false for multi-pass prompts
+        )
+        // Manually iterate to capture return value
+        let usage: LLMUsageMetadata | undefined
+        while (true) {
+          const result = await generator.next()
+          if (result.done) {
+            usage = result.value
+            break
+          }
+          yield result.value
+        }
+        return usage!
+      } else if (selectedProvider === 'anthropic') {
+        const generator = this.getAnthropicClient().streamStudyGuide(
+          prompt.systemMessage,
+          prompt.userMessage,
+          languageConfig,
+          params
+        )
+        // Manually iterate to capture return value
+        let usage: LLMUsageMetadata | undefined
+        while (true) {
+          const result = await generator.next()
+          if (result.done) {
+            usage = result.value
+            break
+          }
+          yield result.value
+        }
+        return usage!
+      } else {
+        throw new Error(`No client available for provider: ${selectedProvider}`)
+      }
+    } catch (error) {
+      console.error(`[LLM-StreamPass] ❌ Streaming failed with ${selectedProvider}:`, error)
+      throw error
+    }
+  }
+
+  /**
+   * Non-streaming multi-pass call (DEPRECATED - use streamFromPrompt for better UX).
+   * Blocks until entire pass completes, then returns complete JSON with usage.
+   *
+   * @param prompt - The prompt pair (systemMessage and userMessage)
+   * @param params - Generation parameters
+   * @returns Response with content and usage metadata
+   */
+  async callForSermonPass(
+    prompt: { systemMessage: string; userMessage: string },
+    params: LLMGenerationParams
+  ): Promise<LLMResponseWithUsage<string>> {
+    this.validateParams(params)
+
+    const languageConfig = getLanguageConfigOrDefault(params.language)
+    const selectedProvider = params.forceProvider || this.selectOptimalProvider(params.language)
+
+    console.log(`[LLM-SermonPass] Calling ${selectedProvider} for language: ${languageConfig.name}`)
+
+    try {
+      if (selectedProvider === 'openai') {
+        // Disable JSON schema for multi-pass - prompts define custom field names
+        return await this.getOpenAIClient().callForStudyGuide(
+          prompt.systemMessage,
+          prompt.userMessage,
+          languageConfig,
+          params,
+          false  // useSchema = false for multi-pass
+        )
+      } else if (selectedProvider === 'anthropic') {
+        return await this.getAnthropicClient().callForStudyGuide(
+          prompt.systemMessage,
+          prompt.userMessage,
+          languageConfig,
+          params
+        )
+      } else {
+        throw new Error(`No client available for provider: ${selectedProvider}`)
+      }
+    } catch (error) {
+      console.error(`[LLM-SermonPass] ❌ Call failed with ${selectedProvider}:`, error)
+      throw error
+    }
+  }
+
+  /**
+   * Generates a sermon using multi-pass approach to work within token limits.
+   * Breaks sermon generation into 4 passes:
+   * - Pass 1: Summary + Context + Interpretation (Intro + Point 1)
+   * - Pass 2: Interpretation (Point 2)
+   * - Pass 3: Interpretation (Point 3)
+   * - Pass 4: Conclusion + Altar Call + Supporting Fields
+   *
+   * This helps Hindi/Malayalam sermons achieve better word counts despite token inefficiency.
+   *
+   * @returns Sermon data with aggregated usage metadata
+   */
+  async generateSermonMultiPass(params: LLMGenerationParams): Promise<{ sermon: Record<string, unknown>, usage: LLMUsageMetadata }> {
+    this.validateParams(params)
+    console.log(`[LLM-MultiPass] Starting 4-pass sermon generation for ${params.inputType}: ${params.inputValue}`)
+
+    if (this.useMockData) {
+      const mockSermon = this.getMockStudyGuide() as unknown as Record<string, unknown>
+      const mockUsage: LLMUsageMetadata = {
+        provider: 'openai',
+        model: 'gpt-4o-mini-2024-07-18',
+        inputTokens: 400,
+        outputTokens: 2000,
+        totalTokens: 2400,
+        costUsd: 0.0004
+      }
+      return { sermon: mockSermon, usage: mockUsage }
+    }
+
+    const languageConfig = getLanguageConfigOrDefault(params.language)
+    const selectedProvider = params.forceProvider || this.selectOptimalProvider(params.language)
+    console.log(`[LLM-MultiPass] Using ${selectedProvider} for all passes`)
+
+    // Initialize cost tracking context
+    const costContext = new CostTrackingContext()
+
+    // Import multi-pass utilities
+    const {
+      createSermonPass1Prompt,
+      createSermonPass2Prompt,
+      createSermonPass3Prompt,
+      createSermonPass4Prompt,
+      combineSermonPasses
+    } = await import('./llm-utils/sermon-multipass.ts')
+
+    try {
+      // PASS 1: Summary + Context + Interpretation Part 1
+      console.log(`[LLM-MultiPass] 🔄 Starting Pass 1/4 (Summary + Context + Intro + Point 1)`)
+      const pass1Prompt = createSermonPass1Prompt(params, languageConfig)
+      const pass1Result = selectedProvider === 'openai'
+        ? await this.getOpenAIClient().callForStudyGuide(
+            pass1Prompt.systemMessage,
+            pass1Prompt.userMessage,
+            languageConfig,
+            params
+          )
+        : await this.getAnthropicClient().callForStudyGuide(
+            pass1Prompt.systemMessage,
+            pass1Prompt.userMessage,
+            languageConfig,
+            params
+          )
+
+      costContext.addCall(pass1Result.usage)
+      const pass1Data = JSON.parse(cleanJSONResponse(pass1Result.content))
+      console.log(`[LLM-MultiPass] ✅ Pass 1 complete: ${pass1Result.content.length} chars, ${pass1Result.usage.totalTokens} tokens`)
+
+      // PASS 2: Interpretation Part 2 (Point 2)
+      console.log(`[LLM-MultiPass] 🔄 Starting Pass 2/4 (Point 2)`)
+      const pass2Prompt = createSermonPass2Prompt(params, languageConfig, pass1Data)
+      const pass2Result = selectedProvider === 'openai'
+        ? await this.getOpenAIClient().callForStudyGuide(
+            pass2Prompt.systemMessage,
+            pass2Prompt.userMessage,
+            languageConfig,
+            params
+          )
+        : await this.getAnthropicClient().callForStudyGuide(
+            pass2Prompt.systemMessage,
+            pass2Prompt.userMessage,
+            languageConfig,
+            params
+          )
+
+      costContext.addCall(pass2Result.usage)
+      const pass2Data = JSON.parse(cleanJSONResponse(pass2Result.content))
+      console.log(`[LLM-MultiPass] ✅ Pass 2 complete: ${pass2Result.content.length} chars, ${pass2Result.usage.totalTokens} tokens`)
+
+      // PASS 3: Interpretation Part 3 (Point 3)
+      console.log(`[LLM-MultiPass] 🔄 Starting Pass 3/4 (Point 3)`)
+      const pass3Prompt = createSermonPass3Prompt(params, languageConfig, pass1Data, pass2Data)
+      const pass3Result = selectedProvider === 'openai'
+        ? await this.getOpenAIClient().callForStudyGuide(
+            pass3Prompt.systemMessage,
+            pass3Prompt.userMessage,
+            languageConfig,
+            params
+          )
+        : await this.getAnthropicClient().callForStudyGuide(
+            pass3Prompt.systemMessage,
+            pass3Prompt.userMessage,
+            languageConfig,
+            params
+          )
+
+      costContext.addCall(pass3Result.usage)
+      const pass3Data = JSON.parse(cleanJSONResponse(pass3Result.content))
+      console.log(`[LLM-MultiPass] ✅ Pass 3 complete: ${pass3Result.content.length} chars, ${pass3Result.usage.totalTokens} tokens`)
+
+      // PASS 4: Conclusion + Altar Call + Supporting Fields
+      console.log(`[LLM-MultiPass] 🔄 Starting Pass 4/4 (Conclusion + Altar Call + Extras)`)
+      const pass4Prompt = createSermonPass4Prompt(params, languageConfig, pass1Data)
+      const pass4Result = selectedProvider === 'openai'
+        ? await this.getOpenAIClient().callForStudyGuide(
+            pass4Prompt.systemMessage,
+            pass4Prompt.userMessage,
+            languageConfig,
+            params
+          )
+        : await this.getAnthropicClient().callForStudyGuide(
+            pass4Prompt.systemMessage,
+            pass4Prompt.userMessage,
+            languageConfig,
+            params
+          )
+
+      costContext.addCall(pass4Result.usage)
+      const pass4Data = JSON.parse(cleanJSONResponse(pass4Result.content))
+      console.log(`[LLM-MultiPass] ✅ Pass 4 complete: ${pass4Result.content.length} chars, ${pass4Result.usage.totalTokens} tokens`)
+
+      // Combine all passes into complete sermon
+      const completeSermon = combineSermonPasses(pass1Data, pass2Data, pass3Data, pass4Data)
+
+      // Get aggregated usage
+      const aggregateUsage = costContext.getAggregate()
+      console.log(`[LLM-MultiPass] 🎉 Sermon generation complete!`)
+      console.log(`[LLM-MultiPass] Total interpretation: ${completeSermon.interpretation?.toString().length || 0} chars`)
+      console.log(`[LLM-MultiPass] Total tokens: ${aggregateUsage.totalTokens} (${aggregateUsage.inputTokens} input + ${aggregateUsage.outputTokens} output)`)
+      console.log(`[LLM-MultiPass] Total cost: $${aggregateUsage.costUsd.toFixed(4)}`)
+
+      return { sermon: completeSermon, usage: aggregateUsage }
+
+    } catch (error) {
+      console.error(`[LLM-MultiPass] ❌ Multi-pass generation failed:`, error)
+      throw new Error(`Multi-pass sermon generation failed: ${error instanceof Error ? error.message : String(error)}`)
+    }
+  }
+
+  /**
    * Generates a follow-up response for study guide questions.
+   *
+   * @returns Response text with usage metadata
    */
   async generateFollowUpResponse(
     prompt: { systemMessage: string; userMessage: string },
     language: string
-  ): Promise<string> {
+  ): Promise<{ response: string, usage: LLMUsageMetadata }> {
     console.log(`[LLM] Generating follow-up response for language: ${language}`)
 
     if (this.useMockData) {
-      return this.getMockFollowUpResponse(prompt.userMessage, language)
+      const mockResponse = this.getMockFollowUpResponse(prompt.userMessage, language)
+      const mockUsage: LLMUsageMetadata = {
+        provider: 'anthropic',
+        model: 'claude-sonnet-4-5-20250929',
+        inputTokens: 50,
+        outputTokens: 150,
+        totalTokens: 200,
+        costUsd: 0.0001
+      }
+      return { response: mockResponse, usage: mockUsage }
     }
 
     try {
       const selectedProvider = this.selectOptimalProvider(language)
       console.log(`[LLM] Selected ${selectedProvider} for follow-up response`)
 
-      let rawResponse: string
+      let result: LLMResponseWithUsage<string>
 
-      if (selectedProvider === 'openai' && this.openaiClient) {
-        rawResponse = await this.openaiClient.callForFollowUp(prompt.systemMessage, prompt.userMessage)
-      } else if (this.anthropicClient) {
-        rawResponse = await this.anthropicClient.callForFollowUp(prompt.systemMessage, prompt.userMessage, language)
+      if (selectedProvider === 'openai') {
+        result = await this.getOpenAIClient().callForFollowUp(prompt.systemMessage, prompt.userMessage)
       } else {
-        throw new Error('No client available for follow-up')
+        result = await this.getAnthropicClient().callForFollowUp(prompt.systemMessage, prompt.userMessage, language)
       }
 
-      const sanitizedResponse = sanitizeMarkdownText(rawResponse)
+      const sanitizedResponse = sanitizeMarkdownText(result.content)
       console.log(`[LLM] Follow-up response generated: ${sanitizedResponse.length} characters`)
-      return sanitizedResponse
+      console.log(`[LLM] Usage: ${result.usage.totalTokens} tokens (cost: $${result.usage.costUsd.toFixed(4)})`)
+
+      return { response: sanitizedResponse, usage: result.usage }
 
     } catch (error) {
       console.error(`[LLM] Follow-up response generation failed:`, error)
       throw new Error(`Follow-up generation failed: ${error instanceof Error ? error.message : String(error)}`)
+    }
+  }
+
+  /**
+   * Analyzes the sentiment of a message and returns a score.
+   *
+   * @param message - The feedback message to analyze
+   * @returns Sentiment score from -1.0 (very negative) to 1.0 (very positive)
+   */
+  async analyzeSentiment(message: string): Promise<number> {
+    console.log(`[LLM] Analyzing sentiment for message: "${message.substring(0, 50)}..."`)
+
+    if (this.useMockData) {
+      // Return a random sentiment for mock mode
+      return Math.random() * 2 - 1
+    }
+
+    if (!message || message.trim().length === 0) {
+      console.log('[LLM] Empty message, returning neutral sentiment')
+      return 0
+    }
+
+    try {
+      const systemPrompt = `You are a sentiment analysis expert. Analyze the sentiment of user feedback messages and return ONLY a single number between -1.0 and 1.0.
+
+Score interpretation:
+- 1.0: Very positive (enthusiastic, grateful, highly satisfied)
+- 0.5: Positive (satisfied, pleased)
+- 0.0: Neutral (factual, no clear emotion)
+- -0.5: Negative (disappointed, frustrated)
+- -1.0: Very negative (angry, very dissatisfied)
+
+Return ONLY the numeric score, nothing else.`
+
+      const userPrompt = `Analyze this feedback message and return its sentiment score:\n\n"${message}"`
+
+      // Use the faster Anthropic Haiku model for sentiment analysis (cheaper and faster)
+      const selectedProvider = this.provider === 'anthropic' && this.availableProviders.has('anthropic')
+        ? 'anthropic'
+        : this.selectOptimalProvider('en')
+
+      let result: LLMResponseWithUsage<string>
+
+      if (selectedProvider === 'anthropic') {
+        const client = await this.getAnthropicClient()
+        result = await client.call({
+          systemMessage: systemPrompt,
+          userMessage: userPrompt,
+          temperature: 0.3,
+          maxTokens: 10 // Low token count for just the numeric score
+        })
+      } else {
+        const client = await this.getOpenAIClient()
+        result = await client.call({
+          systemMessage: systemPrompt,
+          userMessage: userPrompt,
+          temperature: 0.3,
+          maxTokens: 10
+        })
+      }
+
+      // Parse the response to extract the numeric score
+      const scoreText = result.content.trim()
+      const score = parseFloat(scoreText)
+
+      if (isNaN(score) || score < -1.0 || score > 1.0) {
+        console.warn(`[LLM] Invalid sentiment score: ${scoreText}, defaulting to 0`)
+        return 0
+      }
+
+      console.log(`[LLM] Sentiment analysis complete: ${score} (${result.usage.totalTokens} tokens, $${result.usage.costUsd.toFixed(6)})`)
+      return score
+
+    } catch (error) {
+      console.error(`[LLM] Sentiment analysis failed:`, error)
+      // Return neutral sentiment on error rather than failing the feedback submission
+      return 0
     }
   }
 
@@ -286,17 +707,15 @@ export class LLMService {
       const selectedProvider = this.selectOptimalProvider(language)
       console.log(`[LLM] Selected ${selectedProvider} for verse reference generation`)
 
-      let rawResponse: string
+      let result: LLMResponseWithUsage<string>
 
-      if (selectedProvider === 'openai' && this.openaiClient) {
-        rawResponse = await this.openaiClient.callForVerse(prompt.systemMessage, prompt.userMessage)
-      } else if (this.anthropicClient) {
-        rawResponse = await this.anthropicClient.callForVerse(prompt.systemMessage, prompt.userMessage)
+      if (selectedProvider === 'openai') {
+        result = await this.getOpenAIClient().callForVerse(prompt.systemMessage, prompt.userMessage)
       } else {
-        throw new Error('No client available for verse generation')
+        result = await this.getAnthropicClient().callForVerse(prompt.systemMessage, prompt.userMessage)
       }
 
-      const parsedReference = parseVerseReferenceResponse(rawResponse)
+      const parsedReference = parseVerseReferenceResponse(result.content)
       console.log(`[LLM] LLM selected reference: ${parsedReference.reference}`)
 
       // Fetch verse text from Bible API
@@ -391,10 +810,10 @@ export class LLMService {
       const selectedProvider = this.selectOptimalProvider(params.language)
       console.log(`[LLM] Selected ${selectedProvider} API for language: ${languageConfig.name}`)
 
-      let rawResponse: string
+      let result: LLMResponseWithUsage<string>
 
       try {
-        rawResponse = await this.callProvider(selectedProvider, prompt, languageConfig, params)
+        result = await this.callProvider(selectedProvider, prompt, languageConfig, params)
       } catch (primaryError) {
         console.error(`[LLM] Primary provider ${selectedProvider} failed:`, primaryError)
 
@@ -402,14 +821,16 @@ export class LLMService {
         const fallbackProvider = this.getFallbackProvider(selectedProvider)
         if (fallbackProvider) {
           console.log(`[LLM] Using fallback provider: ${fallbackProvider}`)
-          rawResponse = await this.callProvider(fallbackProvider, prompt, languageConfig, params)
+          result = await this.callProvider(fallbackProvider, prompt, languageConfig, params)
         } else {
           throw primaryError
         }
       }
 
+      console.log(`[LLM] Usage: ${result.usage.totalTokens} tokens (cost: $${result.usage.costUsd.toFixed(4)})`)
+
       // Parse and validate response
-      const parsedResponse = await this.parseWithRetry(rawResponse, params, languageConfig)
+      const parsedResponse = await this.parseWithRetry(result.content, params, languageConfig)
 
       if (!validateStudyGuideResponse(parsedResponse)) {
         throw new Error('LLM response does not match expected structure')
@@ -430,11 +851,11 @@ export class LLMService {
     prompt: { systemMessage: string; userMessage: string },
     languageConfig: LanguageConfig,
     params: LLMGenerationParams
-  ): Promise<string> {
-    if (provider === 'openai' && this.openaiClient) {
-      return this.openaiClient.callForStudyGuide(prompt.systemMessage, prompt.userMessage, languageConfig, params)
-    } else if (provider === 'anthropic' && this.anthropicClient) {
-      return this.anthropicClient.callForStudyGuide(prompt.systemMessage, prompt.userMessage, languageConfig, params)
+  ): Promise<LLMResponseWithUsage<string>> {
+    if (provider === 'openai') {
+      return this.getOpenAIClient().callForStudyGuide(prompt.systemMessage, prompt.userMessage, languageConfig, params)
+    } else if (provider === 'anthropic') {
+      return this.getAnthropicClient().callForStudyGuide(prompt.systemMessage, prompt.userMessage, languageConfig, params)
     }
     throw new Error(`Provider ${provider} not available`)
   }
@@ -497,8 +918,8 @@ export class LLMService {
         const selectedProvider = this.selectOptimalProvider(params.language)
 
         try {
-          const retryResponse = await this.callProvider(selectedProvider, prompt, adjustedConfig, params)
-          return await this.parseWithRetry(retryResponse, params, adjustedConfig, retryCount + 1)
+          const retryResult = await this.callProvider(selectedProvider, prompt, adjustedConfig, params)
+          return await this.parseWithRetry(retryResult.content, params, adjustedConfig, retryCount + 1)
         } catch (retryError) {
           if (retryCount === 0) {
             try {
@@ -529,17 +950,15 @@ export class LLMService {
       const prompt = createFullVersePrompt(excludeReferences, language)
       const selectedProvider = this.selectOptimalProvider(language)
 
-      let rawResponse: string
+      let result: LLMResponseWithUsage<string>
 
-      if (selectedProvider === 'openai' && this.openaiClient) {
-        rawResponse = await this.openaiClient.callForVerse(prompt.systemMessage, prompt.userMessage)
-      } else if (this.anthropicClient) {
-        rawResponse = await this.anthropicClient.callForVerse(prompt.systemMessage, prompt.userMessage)
+      if (selectedProvider === 'openai') {
+        result = await this.getOpenAIClient().callForVerse(prompt.systemMessage, prompt.userMessage)
       } else {
-        throw new Error('No client available')
+        result = await this.getAnthropicClient().callForVerse(prompt.systemMessage, prompt.userMessage)
       }
 
-      return parseFullVerseResponse(rawResponse)
+      return parseFullVerseResponse(result.content)
     } catch (error) {
       console.error(`[LLM] LLM fallback generation failed:`, error)
       return this.getMockDailyVerse()

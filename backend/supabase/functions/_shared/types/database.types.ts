@@ -82,6 +82,42 @@ export type Database = {
         }
         Relationships: []
       }
+      admin_logs: {
+        Row: {
+          action: string
+          admin_user_id: string | null
+          created_at: string | null
+          details: Json | null
+          id: string
+          ip_address: unknown | null
+          target_id: string | null
+          target_table: string | null
+          user_agent: string | null
+        }
+        Insert: {
+          action: string
+          admin_user_id?: string | null
+          created_at?: string | null
+          details?: Json | null
+          id?: string
+          ip_address?: unknown | null
+          target_id?: string | null
+          target_table?: string | null
+          user_agent?: string | null
+        }
+        Update: {
+          action?: string
+          admin_user_id?: string | null
+          created_at?: string | null
+          details?: Json | null
+          id?: string
+          ip_address?: unknown | null
+          target_id?: string | null
+          target_table?: string | null
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
       analytics_events: {
         Row: {
           created_at: string | null
@@ -115,38 +151,85 @@ export type Database = {
         }
         Relationships: []
       }
-      bible_books: {
+      anonymous_sessions: {
         Row: {
-          abbrev: string
-          chapters: number
-          id: number
-          name: string
-          search_terms: string[]
-          testament: string
+          created_at: string | null
+          device_fingerprint_hash: string | null
+          expires_at: string | null
+          ip_address_hash: string | null
+          is_migrated: boolean | null
+          last_activity: string | null
+          recommended_guide_sessions_count: number | null
+          session_id: string
+          study_guides_count: number | null
         }
         Insert: {
-          abbrev: string
-          chapters: number
-          id: number
-          name: string
-          search_terms?: string[]
-          testament: string
+          created_at?: string | null
+          device_fingerprint_hash?: string | null
+          expires_at?: string | null
+          ip_address_hash?: string | null
+          is_migrated?: boolean | null
+          last_activity?: string | null
+          recommended_guide_sessions_count?: number | null
+          session_id?: string
+          study_guides_count?: number | null
         }
         Update: {
-          abbrev?: string
-          chapters?: number
-          id?: number
-          name?: string
-          search_terms?: string[]
-          testament?: string
+          created_at?: string | null
+          device_fingerprint_hash?: string | null
+          expires_at?: string | null
+          ip_address_hash?: string | null
+          is_migrated?: boolean | null
+          last_activity?: string | null
+          recommended_guide_sessions_count?: number | null
+          session_id?: string
+          study_guides_count?: number | null
         }
         Relationships: []
+      }
+      anonymous_study_guides: {
+        Row: {
+          created_at: string | null
+          expires_at: string | null
+          id: string
+          is_saved: boolean | null
+          session_id: string
+          study_guide_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          is_saved?: boolean | null
+          session_id: string
+          study_guide_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          is_saved?: boolean | null
+          session_id?: string
+          study_guide_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "anonymous_study_guides_study_guide_id_fkey"
+            columns: ["study_guide_id"]
+            isOneToOne: false
+            referencedRelation: "study_guides"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       conversation_messages: {
         Row: {
           content: string
           conversation_id: string
-          created_at: string
+          created_at: string | null
           id: string
           role: string
           tokens_consumed: number | null
@@ -154,7 +237,7 @@ export type Database = {
         Insert: {
           content: string
           conversation_id: string
-          created_at?: string
+          created_at?: string | null
           id?: string
           role: string
           tokens_consumed?: number | null
@@ -162,7 +245,7 @@ export type Database = {
         Update: {
           content?: string
           conversation_id?: string
-          created_at?: string
+          created_at?: string | null
           id?: string
           role?: string
           tokens_consumed?: number | null
@@ -177,67 +260,75 @@ export type Database = {
           },
         ]
       }
-      daily_verse_streaks: {
+      daily_unlocked_modes: {
         Row: {
           created_at: string
-          current_streak: number
-          id: number
-          last_viewed_at: string | null
-          longest_streak: number
-          total_views: number
+          id: string
+          memory_verse_id: string
+          practice_date: string
+          tier_at_time: string
+          unlocked_modes: string[]
           updated_at: string
           user_id: string
         }
         Insert: {
           created_at?: string
-          current_streak?: number
-          id?: number
-          last_viewed_at?: string | null
-          longest_streak?: number
-          total_views?: number
+          id?: string
+          memory_verse_id: string
+          practice_date?: string
+          tier_at_time: string
+          unlocked_modes?: string[]
           updated_at?: string
           user_id: string
         }
         Update: {
           created_at?: string
-          current_streak?: number
-          id?: number
-          last_viewed_at?: string | null
-          longest_streak?: number
-          total_views?: number
+          id?: string
+          memory_verse_id?: string
+          practice_date?: string
+          tier_at_time?: string
+          unlocked_modes?: string[]
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "daily_unlocked_modes_memory_verse_id_fkey"
+            columns: ["memory_verse_id"]
+            isOneToOne: false
+            referencedRelation: "memory_verses"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       daily_verses_cache: {
         Row: {
-          created_at: string
+          created_at: string | null
           date_key: string
           expires_at: string
           id: number
           is_active: boolean | null
-          updated_at: string
+          updated_at: string | null
           uuid: string
           verse_data: Json
         }
         Insert: {
-          created_at?: string
+          created_at?: string | null
           date_key: string
           expires_at: string
           id?: number
           is_active?: boolean | null
-          updated_at?: string
+          updated_at?: string | null
           uuid?: string
           verse_data: Json
         }
         Update: {
-          created_at?: string
+          created_at?: string | null
           date_key?: string
           expires_at?: string
           id?: number
           is_active?: boolean | null
-          updated_at?: string
+          updated_at?: string | null
           uuid?: string
           verse_data?: Json
         }
@@ -246,31 +337,34 @@ export type Database = {
       feedback: {
         Row: {
           category: string | null
+          context_id: string | null
+          context_type: string | null
           created_at: string | null
           id: string
           message: string | null
           sentiment_score: number | null
-          study_guide_id: string | null
           user_id: string | null
           was_helpful: boolean
         }
         Insert: {
           category?: string | null
+          context_id?: string | null
+          context_type?: string | null
           created_at?: string | null
           id?: string
           message?: string | null
           sentiment_score?: number | null
-          study_guide_id?: string | null
           user_id?: string | null
           was_helpful: boolean
         }
         Update: {
           category?: string | null
+          context_id?: string | null
+          context_type?: string | null
           created_at?: string | null
           id?: string
           message?: string | null
           sentiment_score?: number | null
-          study_guide_id?: string | null
           user_id?: string | null
           was_helpful?: boolean
         }
@@ -290,7 +384,7 @@ export type Database = {
           id?: string
           is_milestone?: boolean | null
           learning_path_id: string
-          position?: number
+          position: number
           topic_id: string
         }
         Update: {
@@ -316,36 +410,35 @@ export type Database = {
             referencedRelation: "recommended_topics"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "learning_path_topics_topic_id_fkey"
-            columns: ["topic_id"]
-            isOneToOne: false
-            referencedRelation: "trending_topics_view"
-            referencedColumns: ["id"]
-          },
         ]
       }
       learning_path_translations: {
         Row: {
           created_at: string | null
           description: string
+          id: string
           lang_code: string
           learning_path_id: string
           title: string
+          updated_at: string | null
         }
         Insert: {
           created_at?: string | null
           description: string
+          id?: string
           lang_code: string
           learning_path_id: string
           title: string
+          updated_at?: string | null
         }
         Update: {
           created_at?: string | null
           description?: string
+          id?: string
           lang_code?: string
           learning_path_id?: string
           title?: string
+          updated_at?: string | null
         }
         Relationships: [
           {
@@ -362,13 +455,15 @@ export type Database = {
           color: string | null
           created_at: string | null
           description: string
-          disciple_level: string
+          difficulty_level: string | null
+          disciple_level: string | null
           display_order: number | null
           estimated_days: number | null
           icon_name: string | null
           id: string
           is_active: boolean | null
           is_featured: boolean | null
+          recommended_mode: string | null
           slug: string
           title: string
           total_xp: number | null
@@ -378,13 +473,15 @@ export type Database = {
           color?: string | null
           created_at?: string | null
           description: string
-          disciple_level?: string
+          difficulty_level?: string | null
+          disciple_level?: string | null
           display_order?: number | null
           estimated_days?: number | null
           icon_name?: string | null
           id?: string
           is_active?: boolean | null
           is_featured?: boolean | null
+          recommended_mode?: string | null
           slug: string
           title: string
           total_xp?: number | null
@@ -394,13 +491,15 @@ export type Database = {
           color?: string | null
           created_at?: string | null
           description?: string
-          disciple_level?: string
+          difficulty_level?: string | null
+          disciple_level?: string | null
           display_order?: number | null
           estimated_days?: number | null
           icon_name?: string | null
           id?: string
           is_active?: boolean | null
           is_featured?: boolean | null
+          recommended_mode?: string | null
           slug?: string
           title?: string
           total_xp?: number | null
@@ -408,125 +507,49 @@ export type Database = {
         }
         Relationships: []
       }
-      life_situation_topics: {
+      llm_api_costs: {
         Row: {
-          created_at: string | null
-          display_order: number | null
+          cost_usd: number | null
+          created_at: string
           id: string
-          life_situation_id: string
-          relevance_score: number | null
-          topic_id: string
+          input_tokens: number | null
+          model: string
+          operation_id: string | null
+          output_tokens: number | null
+          provider: string
+          request_id: string | null
         }
         Insert: {
-          created_at?: string | null
-          display_order?: number | null
+          cost_usd?: number | null
+          created_at?: string
           id?: string
-          life_situation_id: string
-          relevance_score?: number | null
-          topic_id: string
+          input_tokens?: number | null
+          model: string
+          operation_id?: string | null
+          output_tokens?: number | null
+          provider: string
+          request_id?: string | null
         }
         Update: {
-          created_at?: string | null
-          display_order?: number | null
+          cost_usd?: number | null
+          created_at?: string
           id?: string
-          life_situation_id?: string
-          relevance_score?: number | null
-          topic_id?: string
+          input_tokens?: number | null
+          model?: string
+          operation_id?: string | null
+          output_tokens?: number | null
+          provider?: string
+          request_id?: string | null
         }
         Relationships: [
           {
-            foreignKeyName: "life_situation_topics_life_situation_id_fkey"
-            columns: ["life_situation_id"]
+            foreignKeyName: "llm_api_costs_operation_id_fkey"
+            columns: ["operation_id"]
             isOneToOne: false
-            referencedRelation: "life_situations"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "life_situation_topics_topic_id_fkey"
-            columns: ["topic_id"]
-            isOneToOne: false
-            referencedRelation: "recommended_topics"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "life_situation_topics_topic_id_fkey"
-            columns: ["topic_id"]
-            isOneToOne: false
-            referencedRelation: "trending_topics_view"
+            referencedRelation: "usage_logs"
             referencedColumns: ["id"]
           },
         ]
-      }
-      life_situation_translations: {
-        Row: {
-          created_at: string | null
-          description: string | null
-          id: string
-          language_code: string
-          life_situation_id: string
-          subtitle: string | null
-          title: string
-        }
-        Insert: {
-          created_at?: string | null
-          description?: string | null
-          id?: string
-          language_code?: string
-          life_situation_id: string
-          subtitle?: string | null
-          title: string
-        }
-        Update: {
-          created_at?: string | null
-          description?: string | null
-          id?: string
-          language_code?: string
-          life_situation_id?: string
-          subtitle?: string | null
-          title?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "life_situation_translations_life_situation_id_fkey"
-            columns: ["life_situation_id"]
-            isOneToOne: false
-            referencedRelation: "life_situations"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      life_situations: {
-        Row: {
-          color_hex: string | null
-          created_at: string | null
-          display_order: number | null
-          icon_name: string
-          id: string
-          is_active: boolean | null
-          slug: string
-          updated_at: string | null
-        }
-        Insert: {
-          color_hex?: string | null
-          created_at?: string | null
-          display_order?: number | null
-          icon_name?: string
-          id?: string
-          is_active?: boolean | null
-          slug: string
-          updated_at?: string | null
-        }
-        Update: {
-          color_hex?: string | null
-          created_at?: string | null
-          display_order?: number | null
-          icon_name?: string
-          id?: string
-          is_active?: boolean | null
-          slug?: string
-          updated_at?: string | null
-        }
-        Relationships: []
       }
       llm_security_events: {
         Row: {
@@ -645,53 +668,6 @@ export type Database = {
         }
         Relationships: []
       }
-      memory_practice_modes: {
-        Row: {
-          average_time_seconds: number | null
-          created_at: string
-          id: string
-          is_favorite: boolean | null
-          memory_verse_id: string
-          mode_type: string
-          success_rate: number | null
-          times_practiced: number | null
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          average_time_seconds?: number | null
-          created_at?: string
-          id?: string
-          is_favorite?: boolean | null
-          memory_verse_id: string
-          mode_type: string
-          success_rate?: number | null
-          times_practiced?: number | null
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          average_time_seconds?: number | null
-          created_at?: string
-          id?: string
-          is_favorite?: boolean | null
-          memory_verse_id?: string
-          mode_type?: string
-          success_rate?: number | null
-          times_practiced?: number | null
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "memory_practice_modes_memory_verse_id_fkey"
-            columns: ["memory_verse_id"]
-            isOneToOne: false
-            referencedRelation: "memory_verses"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       memory_verse_collection_items: {
         Row: {
           added_at: string
@@ -764,50 +740,6 @@ export type Database = {
         }
         Relationships: []
       }
-      memory_verse_mastery: {
-        Row: {
-          confidence_rating: number | null
-          id: string
-          mastery_level: string
-          mastery_percentage: number | null
-          memory_verse_id: string
-          modes_mastered: number | null
-          perfect_recalls: number | null
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          confidence_rating?: number | null
-          id?: string
-          mastery_level?: string
-          mastery_percentage?: number | null
-          memory_verse_id: string
-          modes_mastered?: number | null
-          perfect_recalls?: number | null
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          confidence_rating?: number | null
-          id?: string
-          mastery_level?: string
-          mastery_percentage?: number | null
-          memory_verse_id?: string
-          modes_mastered?: number | null
-          perfect_recalls?: number | null
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "memory_verse_mastery_memory_verse_id_fkey"
-            columns: ["memory_verse_id"]
-            isOneToOne: false
-            referencedRelation: "memory_verses"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       memory_verse_streaks: {
         Row: {
           created_at: string
@@ -863,16 +795,12 @@ export type Database = {
           ease_factor: number
           id: string
           interval_days: number
-          is_fully_mastered: boolean
           language: string
           last_reviewed: string | null
-          mastery_level: string | null
           next_review_date: string
-          preferred_practice_mode: string | null
           repetitions: number
           source_id: string | null
           source_type: string
-          times_perfectly_recalled: number | null
           total_reviews: number
           updated_at: string
           user_id: string
@@ -885,16 +813,12 @@ export type Database = {
           ease_factor?: number
           id?: string
           interval_days?: number
-          is_fully_mastered?: boolean
           language?: string
           last_reviewed?: string | null
-          mastery_level?: string | null
           next_review_date?: string
-          preferred_practice_mode?: string | null
           repetitions?: number
           source_id?: string | null
           source_type: string
-          times_perfectly_recalled?: number | null
           total_reviews?: number
           updated_at?: string
           user_id: string
@@ -907,31 +831,19 @@ export type Database = {
           ease_factor?: number
           id?: string
           interval_days?: number
-          is_fully_mastered?: boolean
           language?: string
           last_reviewed?: string | null
-          mastery_level?: string | null
           next_review_date?: string
-          preferred_practice_mode?: string | null
           repetitions?: number
           source_id?: string | null
           source_type?: string
-          times_perfectly_recalled?: number | null
           total_reviews?: number
           updated_at?: string
           user_id?: string
           verse_reference?: string
           verse_text?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "memory_verses_source_id_fkey"
-            columns: ["source_id"]
-            isOneToOne: false
-            referencedRelation: "daily_verses_cache"
-            referencedColumns: ["uuid"]
-          },
-        ]
+        Relationships: []
       }
       notification_logs: {
         Row: {
@@ -979,22 +891,46 @@ export type Database = {
           user_id?: string | null
           verse_reference?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "notification_logs_topic_id_fkey"
-            columns: ["topic_id"]
-            isOneToOne: false
-            referencedRelation: "recommended_topics"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "notification_logs_topic_id_fkey"
-            columns: ["topic_id"]
-            isOneToOne: false
-            referencedRelation: "trending_topics_view"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
+      }
+      oauth_states: {
+        Row: {
+          created_at: string | null
+          expires_at: string | null
+          id: string
+          ip_address: unknown | null
+          provider: string | null
+          state: string
+          used: boolean | null
+          used_at: string | null
+          user_agent: string | null
+          user_session_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          ip_address?: unknown | null
+          provider?: string | null
+          state: string
+          used?: boolean | null
+          used_at?: string | null
+          user_agent?: string | null
+          user_session_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          ip_address?: unknown | null
+          provider?: string | null
+          state?: string
+          used?: boolean | null
+          used_at?: string | null
+          user_agent?: string | null
+          user_session_id?: string | null
+        }
+        Relationships: []
       }
       otp_requests: {
         Row: {
@@ -1028,50 +964,6 @@ export type Database = {
           phone_number?: string
         }
         Relationships: []
-      }
-      payment_method_usage_history: {
-        Row: {
-          created_at: string | null
-          id: string
-          metadata: Json | null
-          payment_method_id: string
-          transaction_amount: number
-          transaction_id: string | null
-          transaction_type: string
-          used_at: string | null
-          user_id: string
-        }
-        Insert: {
-          created_at?: string | null
-          id?: string
-          metadata?: Json | null
-          payment_method_id: string
-          transaction_amount: number
-          transaction_id?: string | null
-          transaction_type: string
-          used_at?: string | null
-          user_id: string
-        }
-        Update: {
-          created_at?: string | null
-          id?: string
-          metadata?: Json | null
-          payment_method_id?: string
-          transaction_amount?: number
-          transaction_id?: string | null
-          transaction_type?: string
-          used_at?: string | null
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "payment_method_usage_history_payment_method_id_fkey"
-            columns: ["payment_method_id"]
-            isOneToOne: false
-            referencedRelation: "saved_payment_methods"
-            referencedColumns: ["id"]
-          },
-        ]
       }
       payment_preferences: {
         Row: {
@@ -1159,6 +1051,179 @@ export type Database = {
           user_id?: string | null
         }
         Relationships: []
+      }
+      review_sessions: {
+        Row: {
+          id: string
+          user_id: string
+          memory_verse_id: string
+          practice_mode: string
+          review_date: string
+          quality_rating: number
+          confidence_rating: number | null
+          accuracy_percentage: number | null
+          hints_used: number | null
+          new_ease_factor: number
+          new_interval_days: number
+          new_repetitions: number
+          time_spent_seconds: number | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          memory_verse_id: string
+          practice_mode: string
+          review_date?: string
+          quality_rating: number
+          confidence_rating?: number | null
+          accuracy_percentage?: number | null
+          hints_used?: number | null
+          new_ease_factor: number
+          new_interval_days: number
+          new_repetitions: number
+          time_spent_seconds?: number | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          memory_verse_id?: string
+          practice_mode?: string
+          review_date?: string
+          quality_rating?: number
+          confidence_rating?: number | null
+          accuracy_percentage?: number | null
+          hints_used?: number | null
+          new_ease_factor?: number
+          new_interval_days?: number
+          new_repetitions?: number
+          time_spent_seconds?: number | null
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "review_sessions_memory_verse_id_fkey"
+            columns: ["memory_verse_id"]
+            isOneToOne: false
+            referencedRelation: "memory_verses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      promotional_campaigns: {
+        Row: {
+          applicable_plans: string[]
+          applicable_providers: string[]
+          campaign_code: string
+          campaign_name: string
+          created_at: string | null
+          current_use_count: number | null
+          description: string | null
+          discount_type: string
+          discount_value: number
+          id: string
+          is_active: boolean | null
+          max_total_uses: number | null
+          max_uses_per_user: number | null
+          new_users_only: boolean | null
+          updated_at: string | null
+          valid_from: string
+          valid_until: string
+        }
+        Insert: {
+          applicable_plans: string[]
+          applicable_providers: string[]
+          campaign_code: string
+          campaign_name: string
+          created_at?: string | null
+          current_use_count?: number | null
+          description?: string | null
+          discount_type: string
+          discount_value: number
+          id?: string
+          is_active?: boolean | null
+          max_total_uses?: number | null
+          max_uses_per_user?: number | null
+          new_users_only?: boolean | null
+          updated_at?: string | null
+          valid_from: string
+          valid_until: string
+        }
+        Update: {
+          applicable_plans?: string[]
+          applicable_providers?: string[]
+          campaign_code?: string
+          campaign_name?: string
+          created_at?: string | null
+          current_use_count?: number | null
+          description?: string | null
+          discount_type?: string
+          discount_value?: number
+          id?: string
+          is_active?: boolean | null
+          max_total_uses?: number | null
+          max_uses_per_user?: number | null
+          new_users_only?: boolean | null
+          updated_at?: string | null
+          valid_from?: string
+          valid_until?: string
+        }
+        Relationships: []
+      }
+      promotional_redemptions: {
+        Row: {
+          campaign_id: string
+          discount_amount_minor: number
+          final_price_minor: number
+          id: string
+          original_price_minor: number
+          plan_code: string
+          provider: string
+          redeemed_at: string | null
+          subscription_id: string
+          user_id: string
+        }
+        Insert: {
+          campaign_id: string
+          discount_amount_minor: number
+          final_price_minor: number
+          id?: string
+          original_price_minor: number
+          plan_code: string
+          provider: string
+          redeemed_at?: string | null
+          subscription_id: string
+          user_id: string
+        }
+        Update: {
+          campaign_id?: string
+          discount_amount_minor?: number
+          final_price_minor?: number
+          id?: string
+          original_price_minor?: number
+          plan_code?: string
+          provider?: string
+          redeemed_at?: string | null
+          subscription_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "promotional_redemptions_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "promotional_campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "promotional_redemptions_subscription_id_fkey"
+            columns: ["subscription_id"]
+            isOneToOne: false
+            referencedRelation: "subscriptions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       purchase_history: {
         Row: {
@@ -1288,36 +1353,39 @@ export type Database = {
         }
         Relationships: []
       }
-      rate_limit_usage: {
+      rate_limit_rules: {
         Row: {
-          count: number
           created_at: string
+          feature_name: string
           id: string
-          identifier: string
-          last_activity: string
+          is_active: boolean | null
+          max_cost_per_day_usd: number | null
+          max_requests_per_day: number | null
+          max_requests_per_hour: number | null
+          tier: string
           updated_at: string
-          user_type: string
-          window_start: string
         }
         Insert: {
-          count?: number
           created_at?: string
+          feature_name: string
           id?: string
-          identifier: string
-          last_activity?: string
+          is_active?: boolean | null
+          max_cost_per_day_usd?: number | null
+          max_requests_per_day?: number | null
+          max_requests_per_hour?: number | null
+          tier: string
           updated_at?: string
-          user_type: string
-          window_start: string
         }
         Update: {
-          count?: number
           created_at?: string
+          feature_name?: string
           id?: string
-          identifier?: string
-          last_activity?: string
+          is_active?: boolean | null
+          max_cost_per_day_usd?: number | null
+          max_requests_per_day?: number | null
+          max_requests_per_hour?: number | null
+          tier?: string
           updated_at?: string
-          user_type?: string
-          window_start?: string
         }
         Relationships: []
       }
@@ -1342,43 +1410,100 @@ export type Database = {
         }
         Relationships: []
       }
+      recommended_guide_sessions: {
+        Row: {
+          completion_status: boolean | null
+          created_at: string | null
+          current_step: number | null
+          id: string
+          language: string | null
+          step_1_completed_at: string | null
+          step_1_context: string | null
+          step_2_completed_at: string | null
+          step_2_scholar_guide: string | null
+          step_3_completed_at: string | null
+          step_3_group_discussion: string | null
+          step_4_application: string | null
+          step_4_completed_at: string | null
+          topic: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          completion_status?: boolean | null
+          created_at?: string | null
+          current_step?: number | null
+          id?: string
+          language?: string | null
+          step_1_completed_at?: string | null
+          step_1_context?: string | null
+          step_2_completed_at?: string | null
+          step_2_scholar_guide?: string | null
+          step_3_completed_at?: string | null
+          step_3_group_discussion?: string | null
+          step_4_application?: string | null
+          step_4_completed_at?: string | null
+          topic: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          completion_status?: boolean | null
+          created_at?: string | null
+          current_step?: number | null
+          id?: string
+          language?: string | null
+          step_1_completed_at?: string | null
+          step_1_context?: string | null
+          step_2_completed_at?: string | null
+          step_2_scholar_guide?: string | null
+          step_3_completed_at?: string | null
+          step_3_group_discussion?: string | null
+          step_4_application?: string | null
+          step_4_completed_at?: string | null
+          topic?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       recommended_topics: {
         Row: {
           category: string
           created_at: string | null
-          description: string | null
+          description: string
           display_order: number | null
           id: string
+          input_type: string | null
           is_active: boolean | null
-          study_guide_id: string | null
-          tags: string[]
-          title: string | null
+          tags: string[] | null
+          title: string
           updated_at: string | null
           xp_value: number | null
         }
         Insert: {
           category: string
           created_at?: string | null
-          description?: string | null
+          description: string
           display_order?: number | null
           id?: string
+          input_type?: string | null
           is_active?: boolean | null
-          study_guide_id?: string | null
-          tags?: string[]
-          title?: string | null
+          tags?: string[] | null
+          title: string
           updated_at?: string | null
           xp_value?: number | null
         }
         Update: {
           category?: string
           created_at?: string | null
-          description?: string | null
+          description?: string
           display_order?: number | null
           id?: string
+          input_type?: string | null
           is_active?: boolean | null
-          study_guide_id?: string | null
-          tags?: string[]
-          title?: string | null
+          tags?: string[] | null
+          title?: string
           updated_at?: string | null
           xp_value?: number | null
         }
@@ -1387,24 +1512,33 @@ export type Database = {
       recommended_topics_translations: {
         Row: {
           category: string
+          created_at: string | null
           description: string
-          lang_code: string
+          id: string
+          language_code: string
           title: string
           topic_id: string
+          updated_at: string | null
         }
         Insert: {
           category: string
+          created_at?: string | null
           description: string
-          lang_code: string
+          id?: string
+          language_code: string
           title: string
           topic_id: string
+          updated_at?: string | null
         }
         Update: {
           category?: string
+          created_at?: string | null
           description?: string
-          lang_code?: string
+          id?: string
+          language_code?: string
           title?: string
           topic_id?: string
+          updated_at?: string | null
         }
         Relationships: [
           {
@@ -1412,13 +1546,6 @@ export type Database = {
             columns: ["topic_id"]
             isOneToOne: false
             referencedRelation: "recommended_topics"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "recommended_topics_translations_topic_id_fkey"
-            columns: ["topic_id"]
-            isOneToOne: false
-            referencedRelation: "trending_topics_view"
             referencedColumns: ["id"]
           },
         ]
@@ -1461,65 +1588,6 @@ export type Database = {
           },
         ]
       }
-      review_sessions: {
-        Row: {
-          accuracy_percentage: number | null
-          confidence_rating: number | null
-          created_at: string
-          hints_used: number | null
-          id: string
-          memory_verse_id: string
-          new_ease_factor: number
-          new_interval_days: number
-          new_repetitions: number
-          practice_mode: string | null
-          quality_rating: number
-          review_date: string
-          time_spent_seconds: number | null
-          user_id: string
-        }
-        Insert: {
-          accuracy_percentage?: number | null
-          confidence_rating?: number | null
-          created_at?: string
-          hints_used?: number | null
-          id?: string
-          memory_verse_id: string
-          new_ease_factor: number
-          new_interval_days: number
-          new_repetitions: number
-          practice_mode?: string | null
-          quality_rating: number
-          review_date?: string
-          time_spent_seconds?: number | null
-          user_id: string
-        }
-        Update: {
-          accuracy_percentage?: number | null
-          confidence_rating?: number | null
-          created_at?: string
-          hints_used?: number | null
-          id?: string
-          memory_verse_id?: string
-          new_ease_factor?: number
-          new_interval_days?: number
-          new_repetitions?: number
-          practice_mode?: string | null
-          quality_rating?: number
-          review_date?: string
-          time_spent_seconds?: number | null
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "review_sessions_memory_verse_id_fkey"
-            columns: ["memory_verse_id"]
-            isOneToOne: false
-            referencedRelation: "memory_verses"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       saved_payment_methods: {
         Row: {
           brand: string | null
@@ -1534,12 +1602,13 @@ export type Database = {
           is_active: boolean | null
           is_default: boolean | null
           last_four: string | null
-          last_used_at: string | null
+          last_used: string | null
           method_type: string
           provider: string
           security_metadata: Json | null
           token_hash: string | null
           updated_at: string | null
+          usage_count: number | null
           user_id: string | null
         }
         Insert: {
@@ -1555,12 +1624,13 @@ export type Database = {
           is_active?: boolean | null
           is_default?: boolean | null
           last_four?: string | null
-          last_used_at?: string | null
+          last_used?: string | null
           method_type: string
           provider: string
           security_metadata?: Json | null
           token_hash?: string | null
           updated_at?: string | null
+          usage_count?: number | null
           user_id?: string | null
         }
         Update: {
@@ -1576,129 +1646,40 @@ export type Database = {
           is_active?: boolean | null
           is_default?: boolean | null
           last_four?: string | null
-          last_used_at?: string | null
+          last_used?: string | null
           method_type?: string
           provider?: string
           security_metadata?: Json | null
           token_hash?: string | null
           updated_at?: string | null
+          usage_count?: number | null
           user_id?: string | null
-        }
-        Relationships: []
-      }
-      seasonal_topics: {
-        Row: {
-          created_at: string | null
-          end_day: number | null
-          end_month: number | null
-          id: string
-          is_active: boolean | null
-          priority: number | null
-          season: Database["public"]["Enums"]["season_type"]
-          start_day: number | null
-          start_month: number | null
-          topic_id: string
-          updated_at: string | null
-        }
-        Insert: {
-          created_at?: string | null
-          end_day?: number | null
-          end_month?: number | null
-          id?: string
-          is_active?: boolean | null
-          priority?: number | null
-          season: Database["public"]["Enums"]["season_type"]
-          start_day?: number | null
-          start_month?: number | null
-          topic_id: string
-          updated_at?: string | null
-        }
-        Update: {
-          created_at?: string | null
-          end_day?: number | null
-          end_month?: number | null
-          id?: string
-          is_active?: boolean | null
-          priority?: number | null
-          season?: Database["public"]["Enums"]["season_type"]
-          start_day?: number | null
-          start_month?: number | null
-          topic_id?: string
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "seasonal_topics_topic_id_fkey"
-            columns: ["topic_id"]
-            isOneToOne: false
-            referencedRelation: "recommended_topics"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "seasonal_topics_topic_id_fkey"
-            columns: ["topic_id"]
-            isOneToOne: false
-            referencedRelation: "trending_topics_view"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      seasonal_translations: {
-        Row: {
-          created_at: string | null
-          description: string | null
-          icon_name: string | null
-          id: string
-          language_code: string
-          season: Database["public"]["Enums"]["season_type"]
-          subtitle: string | null
-          title: string
-        }
-        Insert: {
-          created_at?: string | null
-          description?: string | null
-          icon_name?: string | null
-          id?: string
-          language_code?: string
-          season: Database["public"]["Enums"]["season_type"]
-          subtitle?: string | null
-          title: string
-        }
-        Update: {
-          created_at?: string | null
-          description?: string | null
-          icon_name?: string | null
-          id?: string
-          language_code?: string
-          season?: Database["public"]["Enums"]["season_type"]
-          subtitle?: string | null
-          title?: string
         }
         Relationships: []
       }
       study_guide_conversations: {
         Row: {
-          created_at: string
+          created_at: string | null
           id: string
           session_id: string | null
           study_guide_id: string
-          updated_at: string
+          updated_at: string | null
           user_id: string | null
         }
         Insert: {
-          created_at?: string
+          created_at?: string | null
           id?: string
           session_id?: string | null
           study_guide_id: string
-          updated_at?: string
+          updated_at?: string | null
           user_id?: string | null
         }
         Update: {
-          created_at?: string
+          created_at?: string | null
           id?: string
           session_id?: string | null
           study_guide_id?: string
-          updated_at?: string
+          updated_at?: string | null
           user_id?: string | null
         }
         Relationships: [
@@ -1714,7 +1695,6 @@ export type Database = {
       study_guides: {
         Row: {
           context: string
-          context_question: string | null
           created_at: string | null
           creator_session_id: string | null
           creator_user_id: string | null
@@ -1724,25 +1704,17 @@ export type Database = {
           input_value: string
           input_value_hash: string
           interpretation: string
-          interpretation_insights: string[] | null
           language: string
           prayer_points: string[]
-          prayer_question: string | null
-          reflection_answers: string[] | null
-          reflection_question: string | null
           reflection_questions: string[]
           related_verses: string[]
-          related_verses_question: string | null
           study_mode: string | null
           summary: string
-          summary_insights: string[] | null
-          summary_question: string | null
           topic_id: string | null
           updated_at: string | null
         }
         Insert: {
           context: string
-          context_question?: string | null
           created_at?: string | null
           creator_session_id?: string | null
           creator_user_id?: string | null
@@ -1752,25 +1724,17 @@ export type Database = {
           input_value: string
           input_value_hash: string
           interpretation: string
-          interpretation_insights?: string[] | null
-          language: string
+          language?: string
           prayer_points: string[]
-          prayer_question?: string | null
-          reflection_answers?: string[] | null
-          reflection_question?: string | null
           reflection_questions: string[]
           related_verses: string[]
-          related_verses_question?: string | null
           study_mode?: string | null
           summary: string
-          summary_insights?: string[] | null
-          summary_question?: string | null
           topic_id?: string | null
           updated_at?: string | null
         }
         Update: {
           context?: string
-          context_question?: string | null
           created_at?: string | null
           creator_session_id?: string | null
           creator_user_id?: string | null
@@ -1780,84 +1744,363 @@ export type Database = {
           input_value?: string
           input_value_hash?: string
           interpretation?: string
-          interpretation_insights?: string[] | null
           language?: string
           prayer_points?: string[]
-          prayer_question?: string | null
-          reflection_answers?: string[] | null
-          reflection_question?: string | null
           reflection_questions?: string[]
           related_verses?: string[]
-          related_verses_question?: string | null
           study_mode?: string | null
           summary?: string
-          summary_insights?: string[] | null
-          summary_question?: string | null
           topic_id?: string | null
           updated_at?: string | null
         }
+        Relationships: []
+      }
+      subscription_history: {
+        Row: {
+          amount_paise: number | null
+          created_at: string | null
+          currency: string | null
+          event_timestamp: string | null
+          event_type: string
+          id: string
+          new_status: string | null
+          notes: string | null
+          old_status: string | null
+          payment_id: string | null
+          provider: string
+          provider_data: Json | null
+          provider_event_id: string | null
+          subscription_id: string
+          user_id: string
+        }
+        Insert: {
+          amount_paise?: number | null
+          created_at?: string | null
+          currency?: string | null
+          event_timestamp?: string | null
+          event_type: string
+          id?: string
+          new_status?: string | null
+          notes?: string | null
+          old_status?: string | null
+          payment_id?: string | null
+          provider: string
+          provider_data?: Json | null
+          provider_event_id?: string | null
+          subscription_id: string
+          user_id: string
+        }
+        Update: {
+          amount_paise?: number | null
+          created_at?: string | null
+          currency?: string | null
+          event_timestamp?: string | null
+          event_type?: string
+          id?: string
+          new_status?: string | null
+          notes?: string | null
+          old_status?: string | null
+          payment_id?: string | null
+          provider?: string
+          provider_data?: Json | null
+          provider_event_id?: string | null
+          subscription_id?: string
+          user_id?: string
+        }
         Relationships: [
           {
-            foreignKeyName: "study_guides_topic_id_fkey"
-            columns: ["topic_id"]
+            foreignKeyName: "subscription_history_subscription_id_fkey"
+            columns: ["subscription_id"]
             isOneToOne: false
-            referencedRelation: "recommended_topics"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "study_guides_topic_id_fkey"
-            columns: ["topic_id"]
-            isOneToOne: false
-            referencedRelation: "trending_topics_view"
+            referencedRelation: "subscriptions"
             referencedColumns: ["id"]
           },
         ]
       }
-      study_reflections: {
+      subscription_invoices: {
         Row: {
-          completed_at: string | null
+          amount_paise: number
+          billing_period_end: string
+          billing_period_start: string
           created_at: string | null
+          currency: string
+          due_date: string | null
           id: string
-          responses: Json
-          study_guide_id: string
-          study_mode: string
-          time_spent_seconds: number | null
+          invoice_number: string
+          issued_at: string | null
+          paid_at: string | null
+          payment_method: string | null
+          provider: string
+          provider_data: Json | null
+          provider_invoice_id: string | null
+          provider_payment_id: string | null
+          status: string
+          subscription_id: string
           updated_at: string | null
           user_id: string
         }
         Insert: {
-          completed_at?: string | null
+          amount_paise: number
+          billing_period_end: string
+          billing_period_start: string
           created_at?: string | null
+          currency?: string
+          due_date?: string | null
           id?: string
-          responses?: Json
-          study_guide_id: string
-          study_mode: string
-          time_spent_seconds?: number | null
+          invoice_number: string
+          issued_at?: string | null
+          paid_at?: string | null
+          payment_method?: string | null
+          provider: string
+          provider_data?: Json | null
+          provider_invoice_id?: string | null
+          provider_payment_id?: string | null
+          status?: string
+          subscription_id: string
           updated_at?: string | null
           user_id: string
         }
         Update: {
-          completed_at?: string | null
+          amount_paise?: number
+          billing_period_end?: string
+          billing_period_start?: string
           created_at?: string | null
+          currency?: string
+          due_date?: string | null
           id?: string
-          responses?: Json
-          study_guide_id?: string
-          study_mode?: string
-          time_spent_seconds?: number | null
+          invoice_number?: string
+          issued_at?: string | null
+          paid_at?: string | null
+          payment_method?: string | null
+          provider?: string
+          provider_data?: Json | null
+          provider_invoice_id?: string | null
+          provider_payment_id?: string | null
+          status?: string
+          subscription_id?: string
           updated_at?: string | null
           user_id?: string
         }
         Relationships: [
           {
-            foreignKeyName: "study_reflections_study_guide_id_fkey"
-            columns: ["study_guide_id"]
+            foreignKeyName: "subscription_invoices_subscription_id_fkey"
+            columns: ["subscription_id"]
             isOneToOne: false
-            referencedRelation: "study_guides"
+            referencedRelation: "subscriptions"
             referencedColumns: ["id"]
           },
         ]
       }
-      subscription_config: {
+      subscription_plan_providers: {
+        Row: {
+          base_price_minor: number
+          created_at: string | null
+          currency: string
+          id: string
+          is_active: boolean | null
+          plan_id: string
+          provider: string
+          provider_metadata: Json | null
+          provider_plan_id: string
+          region: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          base_price_minor: number
+          created_at?: string | null
+          currency?: string
+          id?: string
+          is_active?: boolean | null
+          plan_id: string
+          provider: string
+          provider_metadata?: Json | null
+          provider_plan_id: string
+          region?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          base_price_minor?: number
+          created_at?: string | null
+          currency?: string
+          id?: string
+          is_active?: boolean | null
+          plan_id?: string
+          provider?: string
+          provider_metadata?: Json | null
+          provider_plan_id?: string
+          region?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscription_plan_providers_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "subscription_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      subscription_plans: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          features: Json
+          id: string
+          interval: string
+          is_active: boolean | null
+          is_visible: boolean | null
+          plan_code: string
+          plan_name: string
+          sort_order: number | null
+          tier: number
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          features?: Json
+          id?: string
+          interval: string
+          is_active?: boolean | null
+          is_visible?: boolean | null
+          plan_code: string
+          plan_name: string
+          sort_order?: number | null
+          tier: number
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          features?: Json
+          id?: string
+          interval?: string
+          is_active?: boolean | null
+          is_visible?: boolean | null
+          plan_code?: string
+          plan_name?: string
+          sort_order?: number | null
+          tier?: number
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      subscriptions: {
+        Row: {
+          amount_paise: number | null
+          cancel_at_cycle_end: boolean | null
+          cancellation_reason: string | null
+          cancelled_at: string | null
+          created_at: string | null
+          currency: string | null
+          current_period_end: string | null
+          current_period_start: string | null
+          discounted_price_minor: number | null
+          id: string
+          metadata: Json | null
+          next_billing_at: string | null
+          paid_count: number | null
+          plan_id: string | null
+          plan_type: string | null
+          promotional_campaign_id: string | null
+          provider: string | null
+          provider_customer_id: string | null
+          provider_metadata: Json | null
+          provider_plan_id: string | null
+          provider_subscription_id: string | null
+          razorpay_customer_id: string | null
+          razorpay_plan_id: string | null
+          razorpay_subscription_id: string | null
+          remaining_count: number | null
+          status: string
+          subscription_plan: string | null
+          total_count: number | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          amount_paise?: number | null
+          cancel_at_cycle_end?: boolean | null
+          cancellation_reason?: string | null
+          cancelled_at?: string | null
+          created_at?: string | null
+          currency?: string | null
+          current_period_end?: string | null
+          current_period_start?: string | null
+          discounted_price_minor?: number | null
+          id?: string
+          metadata?: Json | null
+          next_billing_at?: string | null
+          paid_count?: number | null
+          plan_id?: string | null
+          plan_type?: string | null
+          promotional_campaign_id?: string | null
+          provider?: string | null
+          provider_customer_id?: string | null
+          provider_metadata?: Json | null
+          provider_plan_id?: string | null
+          provider_subscription_id?: string | null
+          razorpay_customer_id?: string | null
+          razorpay_plan_id?: string | null
+          razorpay_subscription_id?: string | null
+          remaining_count?: number | null
+          status?: string
+          subscription_plan?: string | null
+          total_count?: number | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          amount_paise?: number | null
+          cancel_at_cycle_end?: boolean | null
+          cancellation_reason?: string | null
+          cancelled_at?: string | null
+          created_at?: string | null
+          currency?: string | null
+          current_period_end?: string | null
+          current_period_start?: string | null
+          discounted_price_minor?: number | null
+          id?: string
+          metadata?: Json | null
+          next_billing_at?: string | null
+          paid_count?: number | null
+          plan_id?: string | null
+          plan_type?: string | null
+          promotional_campaign_id?: string | null
+          provider?: string | null
+          provider_customer_id?: string | null
+          provider_metadata?: Json | null
+          provider_plan_id?: string | null
+          provider_subscription_id?: string | null
+          razorpay_customer_id?: string | null
+          razorpay_plan_id?: string | null
+          razorpay_subscription_id?: string | null
+          remaining_count?: number | null
+          status?: string
+          subscription_plan?: string | null
+          total_count?: number | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscriptions_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "subscription_plans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "subscriptions_promotional_campaign_id_fkey"
+            columns: ["promotional_campaign_id"]
+            isOneToOne: false
+            referencedRelation: "promotional_campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      system_config: {
         Row: {
           created_at: string | null
           description: string | null
@@ -1881,425 +2124,149 @@ export type Database = {
         }
         Relationships: []
       }
-      subscription_history: {
+      token_usage_history: {
         Row: {
+          content_reference: string | null
+          content_title: string | null
           created_at: string
-          event_data: Json | null
-          event_type: string
+          daily_tokens_used: number
+          feature_name: string
           id: string
-          new_status: string
-          notes: string | null
-          payment_amount: number | null
-          payment_id: string | null
-          payment_status: string | null
-          previous_status: string | null
-          subscription_id: string
+          input_type: string | null
+          language: string
+          operation_type: string
+          purchased_tokens_used: number
+          session_id: string | null
+          study_mode: string | null
+          token_cost: number
           user_id: string
+          user_plan: string
         }
         Insert: {
+          content_reference?: string | null
+          content_title?: string | null
           created_at?: string
-          event_data?: Json | null
-          event_type: string
+          daily_tokens_used?: number
+          feature_name: string
           id?: string
-          new_status: string
-          notes?: string | null
-          payment_amount?: number | null
-          payment_id?: string | null
-          payment_status?: string | null
-          previous_status?: string | null
-          subscription_id: string
+          input_type?: string | null
+          language?: string
+          operation_type: string
+          purchased_tokens_used?: number
+          session_id?: string | null
+          study_mode?: string | null
+          token_cost: number
           user_id: string
+          user_plan: string
         }
         Update: {
+          content_reference?: string | null
+          content_title?: string | null
           created_at?: string
-          event_data?: Json | null
-          event_type?: string
+          daily_tokens_used?: number
+          feature_name?: string
           id?: string
-          new_status?: string
-          notes?: string | null
-          payment_amount?: number | null
-          payment_id?: string | null
-          payment_status?: string | null
-          previous_status?: string | null
-          subscription_id?: string
+          input_type?: string | null
+          language?: string
+          operation_type?: string
+          purchased_tokens_used?: number
+          session_id?: string | null
+          study_mode?: string | null
+          token_cost?: number
           user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "subscription_history_subscription_id_fkey"
-            columns: ["subscription_id"]
-            isOneToOne: false
-            referencedRelation: "subscriptions"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      subscription_invoices: {
-        Row: {
-          amount_paise: number
-          billing_period_end: string
-          billing_period_start: string
-          created_at: string
-          currency: string
-          id: string
-          invoice_number: string | null
-          paid_at: string | null
-          payment_method: string | null
-          razorpay_invoice_id: string | null
-          razorpay_payment_id: string
-          status: string
-          subscription_id: string
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          amount_paise: number
-          billing_period_end: string
-          billing_period_start: string
-          created_at?: string
-          currency?: string
-          id?: string
-          invoice_number?: string | null
-          paid_at?: string | null
-          payment_method?: string | null
-          razorpay_invoice_id?: string | null
-          razorpay_payment_id: string
-          status: string
-          subscription_id: string
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          amount_paise?: number
-          billing_period_end?: string
-          billing_period_start?: string
-          created_at?: string
-          currency?: string
-          id?: string
-          invoice_number?: string | null
-          paid_at?: string | null
-          payment_method?: string | null
-          razorpay_invoice_id?: string | null
-          razorpay_payment_id?: string
-          status?: string
-          subscription_id?: string
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "subscription_invoices_subscription_id_fkey"
-            columns: ["subscription_id"]
-            isOneToOne: false
-            referencedRelation: "subscriptions"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      subscriptions: {
-        Row: {
-          amount_paise: number
-          cancel_at_cycle_end: boolean | null
-          cancellation_reason: string | null
-          cancelled_at: string | null
-          created_at: string
-          currency: string
-          current_period_end: string | null
-          current_period_start: string | null
-          id: string
-          next_billing_at: string | null
-          paid_count: number | null
-          plan_type: string
-          razorpay_customer_id: string | null
-          razorpay_plan_id: string
-          razorpay_subscription_id: string
-          remaining_count: number | null
-          status: string
-          subscription_plan: string | null
-          total_count: number | null
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          amount_paise: number
-          cancel_at_cycle_end?: boolean | null
-          cancellation_reason?: string | null
-          cancelled_at?: string | null
-          created_at?: string
-          currency?: string
-          current_period_end?: string | null
-          current_period_start?: string | null
-          id?: string
-          next_billing_at?: string | null
-          paid_count?: number | null
-          plan_type?: string
-          razorpay_customer_id?: string | null
-          razorpay_plan_id: string
-          razorpay_subscription_id: string
-          remaining_count?: number | null
-          status: string
-          subscription_plan?: string | null
-          total_count?: number | null
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          amount_paise?: number
-          cancel_at_cycle_end?: boolean | null
-          cancellation_reason?: string | null
-          cancelled_at?: string | null
-          created_at?: string
-          currency?: string
-          current_period_end?: string | null
-          current_period_start?: string | null
-          id?: string
-          next_billing_at?: string | null
-          paid_count?: number | null
-          plan_type?: string
-          razorpay_customer_id?: string | null
-          razorpay_plan_id?: string
-          razorpay_subscription_id?: string
-          remaining_count?: number | null
-          status?: string
-          subscription_plan?: string | null
-          total_count?: number | null
-          updated_at?: string
-          user_id?: string
+          user_plan?: string
         }
         Relationships: []
       }
-      suggested_verse_translations: {
+      usage_alerts: {
         Row: {
+          alert_type: string
           created_at: string
-          id: string
-          language_code: string
-          localized_reference: string
-          suggested_verse_id: string
-          verse_text: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          language_code: string
-          localized_reference: string
-          suggested_verse_id: string
-          verse_text: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          language_code?: string
-          localized_reference?: string
-          suggested_verse_id?: string
-          verse_text?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "suggested_verse_translations_suggested_verse_id_fkey"
-            columns: ["suggested_verse_id"]
-            isOneToOne: false
-            referencedRelation: "suggested_verses"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      suggested_verses: {
-        Row: {
-          book: string
-          category: string
-          chapter: number
-          created_at: string
-          display_order: number | null
           id: string
           is_active: boolean | null
-          reference: string
-          tags: string[] | null
-          verse_end: number | null
-          verse_start: number
-        }
-        Insert: {
-          book: string
-          category: string
-          chapter: number
-          created_at?: string
-          display_order?: number | null
-          id?: string
-          is_active?: boolean | null
-          reference: string
-          tags?: string[] | null
-          verse_end?: number | null
-          verse_start: number
-        }
-        Update: {
-          book?: string
-          category?: string
-          chapter?: number
-          created_at?: string
-          display_order?: number | null
-          id?: string
-          is_active?: boolean | null
-          reference?: string
-          tags?: string[] | null
-          verse_end?: number | null
-          verse_start?: number
-        }
-        Relationships: []
-      }
-      token_pricing_packages: {
-        Row: {
-          base_price_rupees: number
-          created_at: string
-          discount_percentage: number
-          discounted_price_rupees: number
-          display_order: number
-          id: number
-          is_active: boolean
-          is_popular: boolean
-          token_amount: number
+          notification_channel: string | null
+          threshold_value: number | null
           updated_at: string
         }
         Insert: {
-          base_price_rupees: number
+          alert_type: string
           created_at?: string
-          discount_percentage?: number
-          discounted_price_rupees: number
-          display_order?: number
-          id?: number
-          is_active?: boolean
-          is_popular?: boolean
-          token_amount: number
+          id?: string
+          is_active?: boolean | null
+          notification_channel?: string | null
+          threshold_value?: number | null
           updated_at?: string
         }
         Update: {
-          base_price_rupees?: number
+          alert_type?: string
           created_at?: string
-          discount_percentage?: number
-          discounted_price_rupees?: number
-          display_order?: number
-          id?: number
-          is_active?: boolean
-          is_popular?: boolean
-          token_amount?: number
+          id?: string
+          is_active?: boolean | null
+          notification_channel?: string | null
+          threshold_value?: number | null
           updated_at?: string
         }
         Relationships: []
       }
-      topic_engagement_metrics: {
+      usage_logs: {
         Row: {
-          completion_count: number | null
-          created_at: string | null
-          date: string
+          created_at: string
+          estimated_revenue_inr: number | null
+          feature_name: string
           id: string
-          save_count: number | null
-          share_count: number | null
-          study_count: number | null
-          topic_id: string
-          updated_at: string | null
+          llm_cost_usd: number | null
+          llm_input_tokens: number | null
+          llm_model: string | null
+          llm_output_tokens: number | null
+          llm_provider: string | null
+          operation_type: string
+          profit_margin_inr: number | null
+          request_metadata: Json | null
+          response_metadata: Json | null
+          session_id: string | null
+          tier: string
+          tokens_consumed: number | null
+          user_id: string | null
         }
         Insert: {
-          completion_count?: number | null
-          created_at?: string | null
-          date?: string
+          created_at?: string
+          estimated_revenue_inr?: number | null
+          feature_name: string
           id?: string
-          save_count?: number | null
-          share_count?: number | null
-          study_count?: number | null
-          topic_id: string
-          updated_at?: string | null
+          llm_cost_usd?: number | null
+          llm_input_tokens?: number | null
+          llm_model?: string | null
+          llm_output_tokens?: number | null
+          llm_provider?: string | null
+          operation_type: string
+          profit_margin_inr?: number | null
+          request_metadata?: Json | null
+          response_metadata?: Json | null
+          session_id?: string | null
+          tier: string
+          tokens_consumed?: number | null
+          user_id?: string | null
         }
         Update: {
-          completion_count?: number | null
-          created_at?: string | null
-          date?: string
+          created_at?: string
+          estimated_revenue_inr?: number | null
+          feature_name?: string
           id?: string
-          save_count?: number | null
-          share_count?: number | null
-          study_count?: number | null
-          topic_id?: string
-          updated_at?: string | null
+          llm_cost_usd?: number | null
+          llm_input_tokens?: number | null
+          llm_model?: string | null
+          llm_output_tokens?: number | null
+          llm_provider?: string | null
+          operation_type?: string
+          profit_margin_inr?: number | null
+          request_metadata?: Json | null
+          response_metadata?: Json | null
+          session_id?: string | null
+          tier?: string
+          tokens_consumed?: number | null
+          user_id?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "topic_engagement_metrics_topic_id_fkey"
-            columns: ["topic_id"]
-            isOneToOne: false
-            referencedRelation: "recommended_topics"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "topic_engagement_metrics_topic_id_fkey"
-            columns: ["topic_id"]
-            isOneToOne: false
-            referencedRelation: "trending_topics_view"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      topic_scripture_references: {
-        Row: {
-          book_abbrev: string
-          book_name: string
-          book_number: number
-          chapter_end: number | null
-          chapter_start: number | null
-          created_at: string | null
-          id: string
-          is_primary_reference: boolean | null
-          reference_text: string
-          relevance_score: number | null
-          topic_id: string
-          updated_at: string | null
-          verse_end: number | null
-          verse_start: number | null
-        }
-        Insert: {
-          book_abbrev: string
-          book_name: string
-          book_number: number
-          chapter_end?: number | null
-          chapter_start?: number | null
-          created_at?: string | null
-          id?: string
-          is_primary_reference?: boolean | null
-          reference_text: string
-          relevance_score?: number | null
-          topic_id: string
-          updated_at?: string | null
-          verse_end?: number | null
-          verse_start?: number | null
-        }
-        Update: {
-          book_abbrev?: string
-          book_name?: string
-          book_number?: number
-          chapter_end?: number | null
-          chapter_start?: number | null
-          created_at?: string | null
-          id?: string
-          is_primary_reference?: boolean | null
-          reference_text?: string
-          relevance_score?: number | null
-          topic_id?: string
-          updated_at?: string | null
-          verse_end?: number | null
-          verse_start?: number | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "topic_scripture_references_topic_id_fkey"
-            columns: ["topic_id"]
-            isOneToOne: false
-            referencedRelation: "recommended_topics"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "topic_scripture_references_topic_id_fkey"
-            columns: ["topic_id"]
-            isOneToOne: false
-            referencedRelation: "trending_topics_view"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       user_achievements: {
         Row: {
@@ -2371,44 +2338,35 @@ export type Database = {
       user_learning_path_progress: {
         Row: {
           completed_at: string | null
-          created_at: string | null
           current_topic_position: number | null
           enrolled_at: string | null
           id: string
           last_activity_at: string | null
           learning_path_id: string
-          started_at: string | null
           topics_completed: number | null
           total_xp_earned: number | null
-          updated_at: string | null
           user_id: string
         }
         Insert: {
           completed_at?: string | null
-          created_at?: string | null
           current_topic_position?: number | null
           enrolled_at?: string | null
           id?: string
           last_activity_at?: string | null
           learning_path_id: string
-          started_at?: string | null
           topics_completed?: number | null
           total_xp_earned?: number | null
-          updated_at?: string | null
           user_id: string
         }
         Update: {
           completed_at?: string | null
-          created_at?: string | null
           current_topic_position?: number | null
           enrolled_at?: string | null
           id?: string
           last_activity_at?: string | null
           learning_path_id?: string
-          started_at?: string | null
           topics_completed?: number | null
           total_xp_earned?: number | null
-          updated_at?: string | null
           user_id?: string
         }
         Relationships: [
@@ -2426,46 +2384,40 @@ export type Database = {
           created_at: string | null
           daily_verse_enabled: boolean | null
           id: string
-          memory_verse_reminder_enabled: boolean
+          memory_verse_overdue_enabled: boolean
+          memory_verse_reminder_enabled: boolean | null
           memory_verse_reminder_time: string
           recommended_topic_enabled: boolean | null
-          streak_lost_enabled: boolean
-          streak_milestone_enabled: boolean
-          streak_reminder_enabled: boolean
-          streak_reminder_time: string
+          streak_reminder_enabled: boolean | null
           timezone_offset_minutes: number | null
           updated_at: string | null
-          user_id: string | null
+          user_id: string
         }
         Insert: {
           created_at?: string | null
           daily_verse_enabled?: boolean | null
           id?: string
-          memory_verse_reminder_enabled?: boolean
+          memory_verse_overdue_enabled?: boolean
+          memory_verse_reminder_enabled?: boolean | null
           memory_verse_reminder_time?: string
           recommended_topic_enabled?: boolean | null
-          streak_lost_enabled?: boolean
-          streak_milestone_enabled?: boolean
-          streak_reminder_enabled?: boolean
-          streak_reminder_time?: string
+          streak_reminder_enabled?: boolean | null
           timezone_offset_minutes?: number | null
           updated_at?: string | null
-          user_id?: string | null
+          user_id: string
         }
         Update: {
           created_at?: string | null
           daily_verse_enabled?: boolean | null
           id?: string
-          memory_verse_reminder_enabled?: boolean
+          memory_verse_overdue_enabled?: boolean
+          memory_verse_reminder_enabled?: boolean | null
           memory_verse_reminder_time?: string
           recommended_topic_enabled?: boolean | null
-          streak_lost_enabled?: boolean
-          streak_milestone_enabled?: boolean
-          streak_reminder_enabled?: boolean
-          streak_reminder_time?: string
+          streak_reminder_enabled?: boolean | null
           timezone_offset_minutes?: number | null
           updated_at?: string | null
-          user_id?: string | null
+          user_id?: string
         }
         Relationships: []
       }
@@ -2498,62 +2450,47 @@ export type Database = {
       }
       user_personalization: {
         Row: {
+          biggest_challenge: string | null
           created_at: string | null
-          faith_journey: string | null
+          faith_stage: string | null
           id: string
+          learning_style: string | null
+          life_stage_focus: string | null
           questionnaire_completed: boolean | null
           questionnaire_skipped: boolean | null
-          seeking: string[] | null
-          time_commitment: string | null
+          scoring_results: Json | null
+          spiritual_goals: string[] | null
+          time_availability: string | null
           updated_at: string | null
           user_id: string
         }
         Insert: {
+          biggest_challenge?: string | null
           created_at?: string | null
-          faith_journey?: string | null
+          faith_stage?: string | null
           id?: string
+          learning_style?: string | null
+          life_stage_focus?: string | null
           questionnaire_completed?: boolean | null
           questionnaire_skipped?: boolean | null
-          seeking?: string[] | null
-          time_commitment?: string | null
+          scoring_results?: Json | null
+          spiritual_goals?: string[] | null
+          time_availability?: string | null
           updated_at?: string | null
           user_id: string
         }
         Update: {
+          biggest_challenge?: string | null
           created_at?: string | null
-          faith_journey?: string | null
+          faith_stage?: string | null
           id?: string
+          learning_style?: string | null
+          life_stage_focus?: string | null
           questionnaire_completed?: boolean | null
           questionnaire_skipped?: boolean | null
-          seeking?: string[] | null
-          time_commitment?: string | null
-          updated_at?: string | null
-          user_id?: string
-        }
-        Relationships: []
-      }
-      user_preferences: {
-        Row: {
-          created_at: string | null
-          default_study_mode: string | null
-          id: string
-          preferred_plan: string | null
-          updated_at: string | null
-          user_id: string
-        }
-        Insert: {
-          created_at?: string | null
-          default_study_mode?: string | null
-          id?: string
-          preferred_plan?: string | null
-          updated_at?: string | null
-          user_id: string
-        }
-        Update: {
-          created_at?: string | null
-          default_study_mode?: string | null
-          id?: string
-          preferred_plan?: string | null
+          scoring_results?: Json | null
+          spiritual_goals?: string[] | null
+          time_availability?: string | null
           updated_at?: string | null
           user_id?: string
         }
@@ -2562,14 +2499,8 @@ export type Database = {
       user_profiles: {
         Row: {
           age_group: string | null
-          auto_renew: boolean | null
           created_at: string | null
-          default_study_mode: string | null
-          email_verification_token: string | null
-          email_verification_token_expires_at: string | null
-          email_verified: boolean | null
           first_name: string | null
-          has_used_premium_trial: boolean | null
           id: string
           interests: string[] | null
           is_admin: boolean | null
@@ -2579,27 +2510,15 @@ export type Database = {
           phone_country_code: string | null
           phone_number: string | null
           phone_verified: boolean | null
-          premium_trial_end_at: string | null
-          premium_trial_started_at: string | null
           profile_image_url: string | null
           profile_picture: string | null
-          razorpay_customer_id: string | null
-          subscription_ends_at: string | null
-          subscription_started_at: string | null
-          subscription_status: string | null
           theme_preference: string | null
           updated_at: string | null
         }
         Insert: {
           age_group?: string | null
-          auto_renew?: boolean | null
           created_at?: string | null
-          default_study_mode?: string | null
-          email_verification_token?: string | null
-          email_verification_token_expires_at?: string | null
-          email_verified?: boolean | null
           first_name?: string | null
-          has_used_premium_trial?: boolean | null
           id: string
           interests?: string[] | null
           is_admin?: boolean | null
@@ -2609,27 +2528,15 @@ export type Database = {
           phone_country_code?: string | null
           phone_number?: string | null
           phone_verified?: boolean | null
-          premium_trial_end_at?: string | null
-          premium_trial_started_at?: string | null
           profile_image_url?: string | null
           profile_picture?: string | null
-          razorpay_customer_id?: string | null
-          subscription_ends_at?: string | null
-          subscription_started_at?: string | null
-          subscription_status?: string | null
           theme_preference?: string | null
           updated_at?: string | null
         }
         Update: {
           age_group?: string | null
-          auto_renew?: boolean | null
           created_at?: string | null
-          default_study_mode?: string | null
-          email_verification_token?: string | null
-          email_verification_token_expires_at?: string | null
-          email_verified?: boolean | null
           first_name?: string | null
-          has_used_premium_trial?: boolean | null
           id?: string
           interests?: string[] | null
           is_admin?: boolean | null
@@ -2639,14 +2546,8 @@ export type Database = {
           phone_country_code?: string | null
           phone_number?: string | null
           phone_verified?: boolean | null
-          premium_trial_end_at?: string | null
-          premium_trial_started_at?: string | null
           profile_image_url?: string | null
           profile_picture?: string | null
-          razorpay_customer_id?: string | null
-          subscription_ends_at?: string | null
-          subscription_started_at?: string | null
-          subscription_status?: string | null
           theme_preference?: string | null
           updated_at?: string | null
         }
@@ -2658,7 +2559,6 @@ export type Database = {
           created_at: string | null
           id: string
           is_saved: boolean | null
-          personal_notes: string | null
           scrolled_to_bottom: boolean | null
           study_guide_id: string
           time_spent_seconds: number | null
@@ -2670,7 +2570,6 @@ export type Database = {
           created_at?: string | null
           id?: string
           is_saved?: boolean | null
-          personal_notes?: string | null
           scrolled_to_bottom?: boolean | null
           study_guide_id: string
           time_spent_seconds?: number | null
@@ -2682,7 +2581,6 @@ export type Database = {
           created_at?: string | null
           id?: string
           is_saved?: boolean | null
-          personal_notes?: string | null
           scrolled_to_bottom?: boolean | null
           study_guide_id?: string
           time_spent_seconds?: number | null
@@ -2691,7 +2589,7 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "user_study_guides_new_study_guide_id_fkey"
+            foreignKeyName: "user_study_guides_study_guide_id_fkey"
             columns: ["study_guide_id"]
             isOneToOne: false
             referencedRelation: "study_guides"
@@ -2701,7 +2599,6 @@ export type Database = {
       }
       user_study_streaks: {
         Row: {
-          achievement_xp: number
           created_at: string
           current_streak: number
           id: string
@@ -2712,7 +2609,6 @@ export type Database = {
           user_id: string
         }
         Insert: {
-          achievement_xp?: number
           created_at?: string
           current_streak?: number
           id?: string
@@ -2723,7 +2619,6 @@ export type Database = {
           user_id: string
         }
         Update: {
-          achievement_xp?: number
           created_at?: string
           current_streak?: number
           id?: string
@@ -2773,57 +2668,6 @@ export type Database = {
           user_plan?: string
         }
         Relationships: []
-      }
-      user_topic_progress: {
-        Row: {
-          completed_at: string | null
-          created_at: string | null
-          id: string
-          started_at: string | null
-          time_spent_seconds: number | null
-          topic_id: string
-          updated_at: string | null
-          user_id: string
-          xp_earned: number | null
-        }
-        Insert: {
-          completed_at?: string | null
-          created_at?: string | null
-          id?: string
-          started_at?: string | null
-          time_spent_seconds?: number | null
-          topic_id: string
-          updated_at?: string | null
-          user_id: string
-          xp_earned?: number | null
-        }
-        Update: {
-          completed_at?: string | null
-          created_at?: string | null
-          id?: string
-          started_at?: string | null
-          time_spent_seconds?: number | null
-          topic_id?: string
-          updated_at?: string | null
-          user_id?: string
-          xp_earned?: number | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "user_topic_progress_topic_id_fkey"
-            columns: ["topic_id"]
-            isOneToOne: false
-            referencedRelation: "recommended_topics"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "user_topic_progress_topic_id_fkey"
-            columns: ["topic_id"]
-            isOneToOne: false
-            referencedRelation: "trending_topics_view"
-            referencedColumns: ["id"]
-          },
-        ]
       }
       voice_conversation_messages: {
         Row: {
@@ -3024,6 +2868,9 @@ export type Database = {
           daily_quota_used: number | null
           id: string
           language_usage: Json | null
+          month_year: string
+          monthly_conversations_completed: number
+          monthly_conversations_started: number
           quota_exceeded: boolean | null
           tier_at_time: string
           total_audio_seconds: number | null
@@ -3042,6 +2889,9 @@ export type Database = {
           daily_quota_used?: number | null
           id?: string
           language_usage?: Json | null
+          month_year?: string
+          monthly_conversations_completed?: number
+          monthly_conversations_started?: number
           quota_exceeded?: boolean | null
           tier_at_time: string
           total_audio_seconds?: number | null
@@ -3060,6 +2910,9 @@ export type Database = {
           daily_quota_used?: number | null
           id?: string
           language_usage?: Json | null
+          month_year?: string
+          monthly_conversations_completed?: number
+          monthly_conversations_started?: number
           quota_exceeded?: boolean | null
           tier_at_time?: string
           total_audio_seconds?: number | null
@@ -3074,20 +2927,7 @@ export type Database = {
       }
     }
     Views: {
-      trending_topics_view: {
-        Row: {
-          category: string | null
-          description: string | null
-          id: string | null
-          popularity_score: number | null
-          tags: string[] | null
-          title: string | null
-          total_completions: number | null
-          total_saves: number | null
-          total_studies: number | null
-        }
-        Relationships: []
-      }
+      [_ in never]: never
     }
     Functions: {
       add_purchased_tokens: {
@@ -3098,17 +2938,29 @@ export type Database = {
         }
         Returns: {
           error_message: string
-          new_purchased_balance: number
+          new_balance: number
           success: boolean
         }[]
       }
-      calculate_comprehensive_mastery: {
-        Args: { verse_id_param: string }
-        Returns: boolean
+      apply_promo_discount: {
+        Args: {
+          p_base_price_minor: number
+          p_discount_type: string
+          p_discount_value: number
+        }
+        Returns: number
       }
-      can_start_premium_trial: {
+      calculate_comprehensive_mastery: {
+        Args: { p_memory_verse_id: string }
+        Returns: number
+      }
+      calculate_study_streak: {
         Args: { p_user_id: string }
-        Returns: boolean
+        Returns: number
+      }
+      calculate_user_profitability: {
+        Args: { p_user_id: string }
+        Returns: Json
       }
       check_memory_achievements: {
         Args: { p_user_id: string }
@@ -3118,6 +2970,15 @@ export type Database = {
           out_is_new: boolean
           out_xp_reward: number
         }[]
+      }
+      check_mode_unlock_status: {
+        Args: {
+          p_memory_verse_id: string
+          p_mode: string
+          p_tier: string
+          p_user_id: string
+        }
+        Returns: Json
       }
       check_saved_achievements: {
         Args: { p_user_id: string }
@@ -3135,17 +2996,6 @@ export type Database = {
           achievement_name: string
           is_new: boolean
           xp_reward: number
-        }[]
-      }
-      check_streak_milestones: {
-        Args: { p_user_id: string }
-        Returns: {
-          days_until_next: number
-          milestone_10_reached: boolean
-          milestone_100_reached: boolean
-          milestone_30_reached: boolean
-          milestone_365_reached: boolean
-          next_milestone: number
         }[]
       }
       check_study_achievements: {
@@ -3167,7 +3017,7 @@ export type Database = {
         }[]
       }
       check_voice_quota: {
-        Args: Record<PropertyKey, never> | { p_tier: string; p_user_id: string }
+        Args: Record<PropertyKey, never>
         Returns: Json
       }
       claim_challenge_reward: {
@@ -3178,9 +3028,9 @@ export type Database = {
           xp_awarded: number
         }[]
       }
-      cleanup_expired_daily_verses: {
+      cleanup_expired_oauth_states: {
         Args: Record<PropertyKey, never>
-        Returns: number
+        Returns: undefined
       }
       cleanup_expired_otp_requests: {
         Args: Record<PropertyKey, never>
@@ -3190,22 +3040,9 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: number
       }
-      cleanup_old_rate_limit_records: {
+      cleanup_old_unlocked_modes: {
         Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
-      complete_topic_progress: {
-        Args: {
-          p_time_spent_seconds?: number
-          p_topic_id: string
-          p_user_id: string
-        }
-        Returns: {
-          is_first_completion: boolean
-          progress_id: string
-          topic_title: string
-          xp_earned: number
-        }[]
+        Returns: number
       }
       complete_voice_conversation: {
         Args: {
@@ -3229,14 +3066,12 @@ export type Database = {
         Returns: {
           available_tokens: number
           daily_limit: number
+          daily_tokens_used: number
           error_message: string
           purchased_tokens: number
+          purchased_tokens_used: number
           success: boolean
         }[]
-      }
-      create_otp_request: {
-        Args: { user_ip_address?: unknown; user_phone_number: string }
-        Returns: Json
       }
       create_weekly_memory_challenges: {
         Args: Record<PropertyKey, never>
@@ -3250,37 +3085,27 @@ export type Database = {
         Args: { p_method_id: string; p_user_id: string }
         Returns: boolean
       }
+      detect_usage_anomalies: {
+        Args: { p_threshold_multiplier?: number }
+        Returns: {
+          anomaly_factor: number
+          avg_usage_count: number
+          feature_name: string
+          recent_usage_count: number
+          tier: string
+          user_id: string
+        }[]
+      }
       encrypt_payment_token: {
         Args: { p_key_id?: string; p_token: string }
         Returns: string
       }
       enroll_in_learning_path: {
         Args: { p_learning_path_id: string; p_user_id: string }
-        Returns: {
-          completed_at: string | null
-          created_at: string | null
-          current_topic_position: number | null
-          enrolled_at: string | null
-          id: string
-          last_activity_at: string | null
-          learning_path_id: string
-          started_at: string | null
-          topics_completed: number | null
-          total_xp_earned: number | null
-          updated_at: string | null
-          user_id: string
-        }
-      }
-      finalize_migration: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
+        Returns: string
       }
       generate_input_hash: {
         Args: { input_value: string }
-        Returns: string
-      }
-      generate_invoice_number: {
-        Args: Record<PropertyKey, never>
         Returns: string
       }
       generate_receipt_number: {
@@ -3291,22 +3116,8 @@ export type Database = {
         Args: { p_token: string }
         Returns: string
       }
-      get_all_token_pricing_packages: {
-        Args: Record<PropertyKey, never>
-        Returns: {
-          base_price_rupees: number
-          discount_percentage: number
-          discounted_price_rupees: number
-          is_popular: boolean
-          token_amount: number
-        }[]
-      }
       get_available_learning_paths: {
-        Args: {
-          p_include_enrolled?: boolean
-          p_language?: string
-          p_user_id?: string
-        }
+        Args: { p_language?: string; p_user_id?: string }
         Returns: {
           color: string
           description: string
@@ -3317,32 +3128,12 @@ export type Database = {
           is_featured: boolean
           path_id: string
           progress_percentage: number
+          recommended_mode: string
           slug: string
           title: string
-          topics_count: number
+          total_topics: number
           total_xp: number
         }[]
-      }
-      get_daily_verse_notification_users: {
-        Args: { offset_max: number; offset_min: number }
-        Returns: {
-          fcm_token: string
-          platform: string
-          timezone_offset_minutes: number
-          user_id: string
-        }[]
-      }
-      get_days_until_trial_end: {
-        Args: Record<PropertyKey, never>
-        Returns: number
-      }
-      get_grace_days_remaining: {
-        Args: Record<PropertyKey, never>
-        Returns: number
-      }
-      get_grace_period_end_date: {
-        Args: Record<PropertyKey, never>
-        Returns: string
       }
       get_in_progress_topics: {
         Args: { p_limit?: number; p_user_id: string }
@@ -3361,15 +3152,6 @@ export type Database = {
           xp_value: number
         }[]
       }
-      get_leaderboard: {
-        Args: { limit_count?: number }
-        Returns: {
-          display_name: string
-          rank: number
-          total_xp: number
-          user_id: string
-        }[]
-      }
       get_learning_path_details: {
         Args: { p_language?: string; p_path_id: string; p_user_id?: string }
         Returns: {
@@ -3382,6 +3164,7 @@ export type Database = {
           is_enrolled: boolean
           path_id: string
           progress_percentage: number
+          recommended_mode: string
           slug: string
           title: string
           topics: Json
@@ -3394,6 +3177,7 @@ export type Database = {
         Returns: {
           due_verse_count: number
           fcm_token: string
+          overdue_verse_count: number
           platform: string
           timezone_offset_minutes: number
           user_id: string
@@ -3436,7 +3220,7 @@ export type Database = {
         }[]
       }
       get_or_create_payment_preferences: {
-        Args: Record<PropertyKey, never> | { p_user_id?: string }
+        Args: Record<PropertyKey, never>
         Returns: {
           auto_save_methods: boolean | null
           created_at: string | null
@@ -3452,43 +3236,15 @@ export type Database = {
           user_id: string | null
         }
       }
-      get_or_create_rate_limit_usage: {
-        Args: {
-          p_identifier: string
-          p_user_type: string
-          p_window_start: string
-        }
-        Returns: {
-          count: number
-          id: string
-          identifier: string
-          last_activity: string
-          user_type: string
-          window_start: string
-        }[]
-      }
       get_or_create_study_streak: {
         Args: { p_user_id: string }
         Returns: {
           created_at: string
           current_streak: number
+          id: string
           last_study_date: string
           longest_streak: number
-          streak_id: string
-          streak_user_id: string
           total_study_days: number
-          updated_at: string
-        }[]
-      }
-      get_or_create_user_streak: {
-        Args: { p_user_id: string }
-        Returns: {
-          created_at: string
-          current_streak: number
-          id: number
-          last_viewed_at: string
-          longest_streak: number
-          total_views: number
           updated_at: string
           user_id: string
         }[]
@@ -3506,47 +3262,9 @@ export type Database = {
           user_plan: string
         }[]
       }
-      get_payment_method_recommendations: {
-        Args: { p_transaction_type?: string; p_user_id?: string }
-        Returns: {
-          display_name: string
-          method_type: string
-          payment_method_id: string
-          provider: string
-          recommendation_reason: string
-          recommendation_score: number
-        }[]
-      }
       get_payment_method_token: {
         Args: { p_method_id: string; p_user_id: string }
         Returns: string
-      }
-      get_payment_method_usage_analytics: {
-        Args: { p_days_back?: number; p_user_id?: string }
-        Returns: {
-          display_name: string
-          last_used_at: string
-          method_type: string
-          payment_method_id: string
-          preferred_transaction_types: Json
-          provider: string
-          total_transaction_amount: number
-          total_usage_count: number
-          usage_frequency_score: number
-        }[]
-      }
-      get_payment_preferences_for_user: {
-        Args: { p_user_id?: string }
-        Returns: {
-          auto_save_payment_methods: boolean
-          created_at: string
-          default_payment_type: string
-          enable_one_click_purchase: boolean
-          id: string
-          preferred_wallet: string
-          updated_at: string
-          user_id: string
-        }[]
       }
       get_pending_purchase: {
         Args: { p_order_id: string }
@@ -3564,96 +3282,70 @@ export type Database = {
           user_id: string
         }[]
       }
-      get_premium_trial_status: {
-        Args: { p_user_id: string }
+      get_plan_with_pricing: {
+        Args: { p_plan_code: string; p_provider?: string; p_region?: string }
+        Returns: {
+          base_price_minor: number
+          currency: string
+          features: Json
+          plan_code: string
+          plan_id: string
+          plan_name: string
+          provider: string
+          provider_plan_id: string
+          tier: number
+        }[]
+      }
+      get_profitability_report: {
+        Args: { p_feature_name: string; p_tier: string }
         Returns: Json
       }
-      get_recommended_topic_notification_users: {
-        Args: { offset_max: number; offset_min: number }
-        Returns: {
-          fcm_token: string
-          platform: string
-          timezone_offset_minutes: number
-          user_id: string
-        }[]
-      }
       get_recommended_topics: {
-        Args: {
-          p_category?: string
-          p_difficulty?: string
-          p_limit?: number
-          p_offset?: number
-        }
+        Args:
+          | {
+              p_category?: string
+              p_difficulty_level?: string
+              p_language_code?: string
+              p_limit?: number
+              p_offset?: number
+            }
+          | {
+              p_category?: string
+              p_language_code?: string
+              p_limit?: number
+              p_offset?: number
+            }
         Returns: {
           category: string
           created_at: string
           description: string
           display_order: number
           id: string
+          input_type: string
           tags: string[]
           title: string
-        }[]
-      }
-      get_recommended_topics_by_categories: {
-        Args: { p_categories: string[]; p_limit?: number; p_offset?: number }
-        Returns: {
-          category: string
-          created_at: string
-          description: string
-          display_order: number
-          id: string
-          tags: string[]
-          title: string
+          updated_at: string
         }[]
       }
       get_recommended_topics_categories: {
-        Args: Record<PropertyKey, never>
+        Args: { p_language_code?: string }
         Returns: {
           category: string
+          topic_count: number
         }[]
       }
       get_recommended_topics_count: {
         Args: { p_category?: string }
         Returns: number
       }
-      get_recommended_topics_count_by_categories: {
-        Args: { p_categories: string[] }
-        Returns: number
-      }
-      get_scripture_suggestions: {
-        Args: { p_limit?: number; p_query: string }
-        Returns: {
-          book_abbrev: string
-          book_name: string
-          testament: string
-          topic_count: number
-        }[]
-      }
-      get_standard_trial_end_date: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
-      get_streak_reminder_notification_users: {
-        Args: { target_hour: number; target_minute: number }
-        Returns: {
-          current_streak: number
-          fcm_token: string
-          platform: string
-          timezone_offset_minutes: number
-          user_id: string
-        }[]
-      }
-      get_subscription_status: {
-        Args: { p_user_id: string }
+      get_usage_stats: {
+        Args: {
+          p_end_date: string
+          p_feature_name?: string
+          p_start_date: string
+          p_tier?: string
+        }
         Returns: Json
-      }
-      get_token_price: {
-        Args: { p_token_amount: number }
-        Returns: {
-          base_price: number
-          discount_percentage: number
-          discounted_price: number
-        }[]
       }
       get_user_achievements: {
         Args: { p_language?: string; p_user_id: string }
@@ -3668,18 +3360,6 @@ export type Database = {
           unlocked_at: string
           xp_reward: number
         }[]
-      }
-      get_user_completed_topics_by_category: {
-        Args: { p_user_id: string }
-        Returns: {
-          category: string
-          completed_count: number
-          total_count: number
-        }[]
-      }
-      get_user_created_at: {
-        Args: { p_user_id: string }
-        Returns: string
       }
       get_user_due_verses_count: {
         Args: { p_user_id: string }
@@ -3710,30 +3390,25 @@ export type Database = {
         Returns: {
           color: string
           completed_at: string
-          current_topic_position: number
           description: string
           disciple_level: string
           enrolled_at: string
           estimated_days: number
           icon_name: string
-          is_featured: boolean
+          last_activity_at: string
           path_id: string
           progress_percentage: number
+          recommended_mode: string
           slug: string
-          started_at: string
           title: string
           topics_completed: number
-          topics_count: number
+          total_topics: number
           total_xp: number
         }[]
       }
       get_user_memory_verses_count: {
         Args: { p_user_id: string }
         Returns: number
-      }
-      get_user_onboarding_status: {
-        Args: { user_id: string }
-        Returns: string
       }
       get_user_payment_methods: {
         Args: { p_user_id?: string }
@@ -3752,10 +3427,6 @@ export type Database = {
           provider: string
           usage_count: number
         }[]
-      }
-      get_user_plan_with_subscription: {
-        Args: { p_user_id: string }
-        Returns: string
       }
       get_user_purchase_history: {
         Args: { p_limit?: number; p_offset?: number; p_user_id: string }
@@ -3790,41 +3461,22 @@ export type Database = {
         Args: { p_user_id: string }
         Returns: string
       }
-      get_user_topic_progress: {
-        Args: { p_topic_ids?: string[]; p_user_id: string }
+      get_user_token_usage_history: {
+        Args: { p_limit?: number; p_offset?: number; p_user_id: string }
         Returns: {
-          completed_at: string
-          is_completed: boolean
-          started_at: string
-          time_spent_seconds: number
-          topic_id: string
-          xp_earned: number
-        }[]
-      }
-      get_user_xp_rank: {
-        Args: { p_user_id: string }
-        Returns: {
-          rank: number
-          total_xp: number
-        }[]
-      }
-      get_valid_payment_methods: {
-        Args: { p_user_id?: string }
-        Returns: {
-          brand: string
+          content_reference: string
+          content_title: string
           created_at: string
-          display_name: string
-          expiry_month: number
-          expiry_year: number
+          daily_tokens_used: number
+          feature_name: string
           id: string
-          is_active: boolean
-          is_default: boolean
-          is_expired: boolean
-          last_four: string
-          last_used_at: string
-          method_type: string
-          provider: string
-          token: string
+          input_type: string
+          language: string
+          operation_type: string
+          purchased_tokens_used: number
+          study_mode: string
+          token_cost: number
+          user_plan: string
         }[]
       }
       get_voice_conversation_history: {
@@ -3832,96 +3484,29 @@ export type Database = {
         Returns: Json
       }
       get_voice_preferences: {
-        Args: Record<PropertyKey, never> | { p_user_id: string }
+        Args: Record<PropertyKey, never>
         Returns: Json
       }
       has_active_subscription: {
         Args: { p_user_id: string }
         Returns: boolean
       }
-      increment_rate_limit_usage: {
+      log_usage: {
         Args: {
-          p_identifier: string
-          p_user_type: string
-          p_window_start: string
-        }
-        Returns: number
-      }
-      increment_topic_engagement: {
-        Args: { p_metric_type?: string; p_topic_id: string }
-        Returns: undefined
-      }
-      increment_voice_usage: {
-        Args:
-          | Record<PropertyKey, never>
-          | { p_language: string; p_tier: string; p_user_id: string }
-        Returns: undefined
-      }
-      is_admin: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
-      is_in_grace_period: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
-      is_in_premium_trial: {
-        Args: { p_user_id: string }
-        Returns: boolean
-      }
-      is_standard_trial_active: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
-      log_subscription_event: {
-        Args: {
-          p_event_data?: Json
-          p_event_type: string
-          p_new_status: string
-          p_notes?: string
-          p_payment_amount?: number
-          p_payment_id?: string
-          p_payment_status?: string
-          p_previous_status: string
-          p_subscription_id: string
+          p_feature_name: string
+          p_llm_cost_usd?: number
+          p_llm_input_tokens?: number
+          p_llm_model?: string
+          p_llm_output_tokens?: number
+          p_llm_provider?: string
+          p_operation_type: string
+          p_request_metadata?: Json
+          p_response_metadata?: Json
+          p_tier: string
+          p_tokens_consumed?: number
           p_user_id: string
         }
         Returns: string
-      }
-      log_token_event: {
-        Args: {
-          p_event_data: Json
-          p_event_type: string
-          p_session_id?: string
-          p_user_id: string
-        }
-        Returns: string
-      }
-      migrate_anonymous_data: {
-        Args: Record<PropertyKey, never>
-        Returns: number
-      }
-      migrate_authenticated_data: {
-        Args: Record<PropertyKey, never>
-        Returns: number
-      }
-      normalize_text_for_matching: {
-        Args: { text_input: string }
-        Returns: string
-      }
-      recalculate_learning_path_progress: {
-        Args: { p_learning_path_id: string; p_user_id: string }
-        Returns: undefined
-      }
-      record_payment_method_usage: {
-        Args: {
-          p_metadata?: Json
-          p_method_id: string
-          p_transaction_amount: number
-          p_transaction_type: string
-          p_user_id: string
-        }
-        Returns: boolean
       }
       record_purchase_history: {
         Args: {
@@ -3936,84 +3521,42 @@ export type Database = {
         }
         Returns: string
       }
-      rollback_migration: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
-      rotate_payment_method_encryption_key: {
-        Args: { p_new_key_id: string; p_old_key_id: string }
-        Returns: number
-      }
-      save_payment_method: {
-        Args:
-          | {
-              p_brand?: string
-              p_display_name?: string
-              p_expiry_month?: number
-              p_expiry_year?: number
-              p_is_default?: boolean
-              p_last_four?: string
-              p_method_type: string
-              p_provider: string
-              p_token: string
-              p_user_id: string
-            }
-          | {
-              p_brand?: string
-              p_display_name?: string
-              p_expiry_month?: number
-              p_expiry_year?: number
-              p_is_default?: boolean
-              p_last_four?: string
-              p_method_type: string
-              p_provider: string
-              p_user_id: string
-            }
+      record_token_usage: {
+        Args: {
+          p_content_reference?: string
+          p_content_title?: string
+          p_daily_tokens_used?: number
+          p_feature_name: string
+          p_input_type?: string
+          p_language?: string
+          p_operation_type: string
+          p_purchased_tokens_used?: number
+          p_session_id?: string
+          p_study_mode?: string
+          p_token_cost: number
+          p_user_id: string
+          p_user_plan?: string
+        }
         Returns: string
       }
-      search_topics_by_scripture: {
+      save_payment_method: {
         Args: {
-          p_book_name?: string
-          p_chapter?: number
-          p_limit?: number
-          p_search_query: string
-          p_verse?: number
+          p_brand?: string
+          p_display_name?: string
+          p_expiry_month?: number
+          p_expiry_year?: number
+          p_is_default?: boolean
+          p_last_four?: string
+          p_method_type: string
+          p_provider: string
+          p_token: string
+          p_user_id: string
         }
-        Returns: {
-          book_name: string
-          category: string
-          chapter_start: number
-          description: string
-          is_primary_reference: boolean
-          reference_text: string
-          relevance_score: number
-          tags: string[]
-          title: string
-          topic_id: string
-          verse_start: number
-        }[]
+        Returns: string
       }
       set_default_payment_method: {
         Args: { p_method_id: string; p_user_id: string }
         Returns: boolean
-      }
-      start_premium_trial: {
-        Args: { p_user_id: string }
-        Returns: Json
-      }
-      start_topic_progress: {
-        Args: { p_topic_id: string; p_user_id: string }
-        Returns: {
-          completed_at: string | null
-          created_at: string | null
-          id: string
-          started_at: string | null
-          time_spent_seconds: number | null
-          topic_id: string
-          updated_at: string | null
-          user_id: string
-          xp_earned: number | null
-        }
       }
       store_pending_purchase: {
         Args: {
@@ -4025,13 +3568,14 @@ export type Database = {
         }
         Returns: string
       }
-      test_token_rls_policies: {
-        Args: Record<PropertyKey, never>
-        Returns: {
-          message: string
-          result: boolean
-          test_name: string
-        }[]
+      unlock_practice_mode: {
+        Args: {
+          p_memory_verse_id: string
+          p_mode: string
+          p_tier: string
+          p_user_id: string
+        }
+        Returns: Json
       }
       update_challenge_progress: {
         Args: { p_increment?: number; p_target_type: string; p_user_id: string }
@@ -4042,42 +3586,18 @@ export type Database = {
           xp_reward: number
         }[]
       }
-      update_memory_streak: {
-        Args: { p_user_id: string }
-        Returns: {
-          current_streak: number
-          is_new_record: boolean
-          longest_streak: number
-          milestone_reached: number
-          streak_increased: boolean
-        }[]
-      }
-      update_onboarding_status: {
-        Args: { new_status: string; user_id: string }
-        Returns: Json
-      }
       update_payment_method_usage: {
         Args: { p_method_id: string; p_user_id: string }
         Returns: boolean
       }
       update_payment_preferences: {
-        Args:
-          | {
-              p_auto_save_methods?: boolean
-              p_enable_one_click_purchase?: boolean
-              p_enable_upi_autopay?: boolean
-              p_prefer_mobile_wallets?: boolean
-              p_preferred_method_type?: string
-              p_require_cvv_for_saved_cards?: boolean
-              p_user_id: string
-            }
-          | {
-              p_auto_save_payment_methods?: boolean
-              p_default_payment_type?: string
-              p_enable_one_click_purchase?: boolean
-              p_preferred_wallet?: string
-              p_user_id: string
-            }
+        Args: {
+          p_auto_save_payment_methods?: boolean
+          p_default_payment_type?: string
+          p_enable_one_click_purchase?: boolean
+          p_preferred_wallet?: string
+          p_user_id: string
+        }
         Returns: {
           auto_save_methods: boolean | null
           created_at: string | null
@@ -4111,71 +3631,31 @@ export type Database = {
           streak_increased: boolean
         }[]
       }
-      upsert_topic_time: {
-        Args: {
-          p_time_spent_seconds: number
-          p_topic_id: string
-          p_user_id: string
-        }
-        Returns: {
-          id: string
-          time_spent_seconds: number
-          topic_id: string
-          updated_at: string
-        }[]
-      }
-      use_streak_freeze: {
-        Args: { p_freeze_date: string; p_user_id: string }
-        Returns: {
-          freeze_days_remaining: number
-          message: string
-          success: boolean
-        }[]
-      }
-      user_needs_standard_subscription: {
-        Args: { p_user_id: string }
-        Returns: boolean
-      }
       uuid_generate_v4: {
         Args: Record<PropertyKey, never>
         Returns: string
       }
-      validate_payment_method_ownership: {
-        Args: { p_method_id: string; p_user_id: string }
-        Returns: boolean
+      validate_promo_code: {
+        Args: {
+          p_campaign_code: string
+          p_plan_code?: string
+          p_user_id: string
+        }
+        Returns: {
+          campaign_id: string
+          discount_type: string
+          discount_value: number
+          message: string
+          valid: boolean
+        }[]
       }
       validate_sm2_quality_rating: {
         Args: { rating: number }
         Returns: boolean
       }
-      validate_token_operation_context: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
-      verify_user_otp: {
-        Args: { provided_otp_code: string; user_phone_number: string }
-        Returns: Json
-      }
-      was_eligible_for_trial: {
-        Args: { p_user_id: string }
-        Returns: boolean
-      }
     }
     Enums: {
-      season_type:
-        | "advent"
-        | "christmas"
-        | "lent"
-        | "easter"
-        | "pentecost"
-        | "ordinary_time"
-        | "new_year"
-        | "thanksgiving"
-        | "back_to_school"
-        | "summer"
-        | "fall"
-        | "winter"
-        | "spring"
+      [_ in never]: never
     }
     CompositeTypes: {
       [_ in never]: never
@@ -4305,22 +3785,7 @@ export const Constants = {
     Enums: {},
   },
   public: {
-    Enums: {
-      season_type: [
-        "advent",
-        "christmas",
-        "lent",
-        "easter",
-        "pentecost",
-        "ordinary_time",
-        "new_year",
-        "thanksgiving",
-        "back_to_school",
-        "summer",
-        "fall",
-        "winter",
-        "spring",
-      ],
-    },
+    Enums: {},
   },
 } as const
+

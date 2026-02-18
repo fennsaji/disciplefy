@@ -8,6 +8,8 @@ import '../../../../core/theme/app_theme.dart';
 import '../../../../core/extensions/translation_extension.dart';
 import '../../../../core/i18n/translation_keys.dart';
 import '../../../../core/router/app_routes.dart';
+import '../../../../core/services/pricing_service.dart';
+import '../../../../core/di/injection_container.dart';
 import '../bloc/subscription_bloc.dart';
 import '../bloc/subscription_event.dart';
 import '../bloc/subscription_state.dart';
@@ -429,7 +431,7 @@ class _SubscriptionManagementPageState
                   ),
                   const SizedBox(height: 12),
                   Text(
-                    'After ${_formatTrialDate(trialEndDate)}, you can continue using Standard features for just ₹50/month. We\'ll remind you before the trial ends.',
+                    'After ${_formatTrialDate(trialEndDate)}, you can continue using Standard features for just ${sl<PricingService>().getFormattedPricePerMonth('standard')}. We\'ll remind you before the trial ends.',
                     style: AppFonts.inter(
                       fontSize: 14,
                       color: Theme.of(context)
@@ -671,11 +673,12 @@ class _SubscriptionManagementPageState
   }
 
   Widget _buildPlanDetails(Subscription subscription) {
-    // Format plan type nicely (premium_monthly -> Premium, standard -> Standard)
+    // Format plan type nicely (premium_monthly -> Premium, standard -> Standard, plus -> Plus)
     // Defensive validation: handle null, empty, or malformed planType
     String formattedPlanType = 'Premium';
     final planType = subscription.planType.toLowerCase();
     final isStandardPlan = planType.contains('standard');
+    final isPlusPlan = planType.contains('plus');
 
     if (planType.isNotEmpty) {
       final parts = planType.split('_');
@@ -694,19 +697,35 @@ class _SubscriptionManagementPageState
             context.tr(TranslationKeys.pricingStandardFeature4),
             context.tr(TranslationKeys.pricingStandardFeature5),
           ]
-        : [
-            context.tr(TranslationKeys.pricingPremiumFeature1),
-            context.tr(TranslationKeys.pricingPremiumFeature2),
-            context.tr(TranslationKeys.pricingPremiumFeature3),
-            context.tr(TranslationKeys.pricingPremiumFeature4),
-            context.tr(TranslationKeys.pricingPremiumFeature5),
-          ];
+        : isPlusPlan
+            ? [
+                '50 daily tokens (all study modes)',
+                '10 follow-ups per guide',
+                '10 AI Discipler conversations/month',
+                '10 active memory verses',
+                '3 practice sessions per verse per day',
+                'All 8 practice modes',
+              ]
+            : [
+                context.tr(TranslationKeys.pricingPremiumFeature1),
+                context.tr(TranslationKeys.pricingPremiumFeature2),
+                context.tr(TranslationKeys.pricingPremiumFeature3),
+                context.tr(TranslationKeys.pricingPremiumFeature4),
+                context.tr(TranslationKeys.pricingPremiumFeature5),
+              ];
 
     // Plan icon and color based on type
-    final planIcon =
-        isStandardPlan ? Icons.auto_awesome : Icons.workspace_premium_rounded;
-    final planColor =
-        isStandardPlan ? const Color(0xFF6A4FB6) : AppTheme.primaryColor;
+    const plusColor = Color(0xFFFF9800); // Orange for Plus
+    final planIcon = isStandardPlan
+        ? Icons.auto_awesome
+        : isPlusPlan
+            ? Icons.star_rounded
+            : Icons.workspace_premium_rounded;
+    final planColor = isStandardPlan
+        ? const Color(0xFF6A4FB6)
+        : isPlusPlan
+            ? plusColor
+            : AppTheme.primaryColor;
 
     return Card(
       elevation: 2,

@@ -4,6 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../domain/entities/auth_params.dart';
 import 'authentication_service.dart';
 import 'auth_storage_service.dart';
+import '../../../../core/utils/logger.dart';
 
 /// REFACTORED: Facade pattern for backward compatibility
 /// Now delegates to specialized services following Single Responsibility Principle
@@ -201,10 +202,8 @@ class AuthService {
         final user = currentUser;
         if (user != null && !user.isAnonymous) {
           // New OAuth user signed in - trigger profile sync
-          if (kDebugMode) {
-            print(
-                '🔄 [AUTH SERVICE] OAuth user signed in, triggering profile sync');
-          }
+          Logger.debug(
+              '🔄 [AUTH SERVICE] OAuth user signed in, triggering profile sync');
           await _authService.testOAuthProfileSync();
         }
       }
@@ -218,9 +217,9 @@ class AuthService {
 
     if (currentUser != null && !currentUser!.isAnonymous) {
       if (kDebugMode) {
-        print(
+        Logger.debug(
             '🔄 [AUTH SERVICE] Found existing OAuth user, triggering profile sync');
-        print(
+        Logger.debug(
             '🔄 [AUTH SERVICE] User: ${currentUser!.email} (${currentUser!.id})');
       }
       await _authService.testOAuthProfileSync();

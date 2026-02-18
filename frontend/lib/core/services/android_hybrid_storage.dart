@@ -1,8 +1,8 @@
 import 'dart:async';
-import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../utils/logger.dart';
 
 /// Robust hybrid storage for Android - SharedPreferences PRIMARY + SecureStorage backup
 ///
@@ -45,10 +45,8 @@ class AndroidHybridStorage extends LocalStorage {
     // Migrate any existing data from old backup key to new primary key
     await storage._migrateOldBackupKey();
 
-    if (kDebugMode) {
-      print(
-          '✅ [ANDROID STORAGE] Hybrid storage initialized (SharedPrefs primary)');
-    }
+    Logger.info(
+        '✅ [ANDROID STORAGE] Hybrid storage initialized (SharedPrefs primary)');
 
     return storage;
   }
@@ -64,17 +62,14 @@ class AndroidHybridStorage extends LocalStorage {
         if (newData == null || newData.isEmpty) {
           // Migrate old data to new key
           await _prefs.setString(_prefsKey, oldData);
-          if (kDebugMode) {
-            print('✅ [ANDROID STORAGE] Migrated session from old backup key');
-          }
+          Logger.info(
+              '✅ [ANDROID STORAGE] Migrated session from old backup key');
         }
         // Remove old key after migration
         await _prefs.remove(oldBackupKey);
       }
     } catch (e) {
-      if (kDebugMode) {
-        print('⚠️  [ANDROID STORAGE] Migration from old key failed: $e');
-      }
+      Logger.warning('⚠️  [ANDROID STORAGE] Migration from old key failed: $e');
     }
   }
 
@@ -82,9 +77,7 @@ class AndroidHybridStorage extends LocalStorage {
   Future<void> initialize() async {
     // Sync storages on initialization to recover from any inconsistencies
     await _syncStorages();
-    if (kDebugMode) {
-      print('✅ [ANDROID STORAGE] Storage ready and synced');
-    }
+    Logger.info('✅ [ANDROID STORAGE] Storage ready and synced');
   }
 
   /// Sync both storages - if one has data and other doesn't, copy to the empty one
@@ -96,18 +89,15 @@ class AndroidHybridStorage extends LocalStorage {
     try {
       prefsSession = _prefs.getString(_prefsKey);
     } catch (e) {
-      if (kDebugMode) {
-        print('⚠️  [ANDROID STORAGE] Sync: SharedPrefs read failed: $e');
-      }
+      Logger.warning('⚠️  [ANDROID STORAGE] Sync: SharedPrefs read failed: $e');
     }
 
     // Read from SecureStorage (backup)
     try {
       secureSession = await _secure.read(key: _secureKey);
     } catch (e) {
-      if (kDebugMode) {
-        print('⚠️  [ANDROID STORAGE] Sync: SecureStorage read failed: $e');
-      }
+      Logger.warning(
+          '⚠️  [ANDROID STORAGE] Sync: SecureStorage read failed: $e');
     }
 
     final hasPrefs = prefsSession != null && prefsSession.isNotEmpty;
@@ -118,29 +108,21 @@ class AndroidHybridStorage extends LocalStorage {
       // SharedPrefs has data, SecureStorage doesn't - restore to SecureStorage
       try {
         await _secure.write(key: _secureKey, value: prefsSession);
-        if (kDebugMode) {
-          print(
-              '✅ [ANDROID STORAGE] Sync: Restored SecureStorage from SharedPrefs');
-        }
+        Logger.warning(
+            '✅ [ANDROID STORAGE] Sync: Restored SecureStorage from SharedPrefs');
       } catch (e) {
-        if (kDebugMode) {
-          print(
-              '⚠️  [ANDROID STORAGE] Sync: Could not restore SecureStorage: $e');
-        }
+        Logger.warning(
+            '⚠️  [ANDROID STORAGE] Sync: Could not restore SecureStorage: $e');
       }
     } else if (!hasPrefs && hasSecure) {
       // SecureStorage has data, SharedPrefs doesn't - copy to SharedPrefs
       try {
         await _prefs.setString(_prefsKey, secureSession);
-        if (kDebugMode) {
-          print(
-              '✅ [ANDROID STORAGE] Sync: Copied SecureStorage to SharedPrefs');
-        }
+        Logger.warning(
+            '✅ [ANDROID STORAGE] Sync: Copied SecureStorage to SharedPrefs');
       } catch (e) {
-        if (kDebugMode) {
-          print(
-              '⚠️  [ANDROID STORAGE] Sync: Could not copy to SharedPrefs: $e');
-        }
+        Logger.warning(
+            '⚠️  [ANDROID STORAGE] Sync: Could not copy to SharedPrefs: $e');
       }
     }
   }
@@ -154,33 +136,24 @@ class AndroidHybridStorage extends LocalStorage {
     try {
       await _prefs.setString(_prefsKey, sessionString);
       prefsSuccess = true;
-      if (kDebugMode) {
-        print('✅ [ANDROID STORAGE] Saved to SharedPreferences (primary)');
-      }
+      Logger.warning(
+          '✅ [ANDROID STORAGE] Saved to SharedPreferences (primary)');
     } catch (e) {
-      if (kDebugMode) {
-        print('⚠️  [ANDROID STORAGE] SharedPreferences write failed: $e');
-      }
+      Logger.debug('⚠️  [ANDROID STORAGE] SharedPreferences write failed: $e');
     }
 
     // Write to SecureStorage (backup - may fail due to Keystore issues)
     try {
       await _secure.write(key: _secureKey, value: sessionString);
       secureSuccess = true;
-      if (kDebugMode) {
-        print('✅ [ANDROID STORAGE] Saved to SecureStorage (backup)');
-      }
+      Logger.warning('✅ [ANDROID STORAGE] Saved to SecureStorage (backup)');
     } catch (e) {
-      if (kDebugMode) {
-        print('⚠️  [ANDROID STORAGE] SecureStorage write failed: $e');
-      }
+      Logger.debug('⚠️  [ANDROID STORAGE] SecureStorage write failed: $e');
     }
 
     // At least one storage must succeed
     if (!prefsSuccess && !secureSuccess) {
-      if (kDebugMode) {
-        print('🚨 [ANDROID STORAGE] CRITICAL: Both storages failed!');
-      }
+      Logger.debug('🚨 [ANDROID STORAGE] CRITICAL: Both storages failed!');
     }
   }
 
@@ -190,48 +163,36 @@ class AndroidHybridStorage extends LocalStorage {
     try {
       final session = _prefs.getString(_prefsKey);
       if (session != null && session.isNotEmpty) {
-        if (kDebugMode) {
-          print('✅ [ANDROID STORAGE] Found in SharedPreferences (primary)');
-        }
+        Logger.info('✅ [ANDROID STORAGE] Found in SharedPreferences (primary)');
         // Ensure SecureStorage is synced (background, non-blocking intent)
         _syncSecureStorageBackground(session);
         return session;
       }
     } catch (e) {
-      if (kDebugMode) {
-        print('⚠️  [ANDROID STORAGE] SharedPreferences read failed: $e');
-      }
+      Logger.warning('⚠️  [ANDROID STORAGE] SharedPreferences read failed: $e');
     }
 
     // Fallback to SecureStorage (may have data if SharedPrefs was cleared)
     try {
       final session = await _secure.read(key: _secureKey);
       if (session != null && session.isNotEmpty) {
-        if (kDebugMode) {
-          print('✅ [ANDROID STORAGE] Recovered from SecureStorage (backup)');
-        }
+        Logger.info(
+            '✅ [ANDROID STORAGE] Recovered from SecureStorage (backup)');
         // Restore to SharedPreferences for next time
         try {
           await _prefs.setString(_prefsKey, session);
-          if (kDebugMode) {
-            print('✅ [ANDROID STORAGE] Restored to SharedPreferences');
-          }
+          Logger.warning('✅ [ANDROID STORAGE] Restored to SharedPreferences');
         } catch (e) {
-          if (kDebugMode) {
-            print('⚠️  [ANDROID STORAGE] Could not restore to SharedPrefs: $e');
-          }
+          Logger.debug(
+              '⚠️  [ANDROID STORAGE] Could not restore to SharedPrefs: $e');
         }
         return session;
       }
     } catch (e) {
-      if (kDebugMode) {
-        print('⚠️  [ANDROID STORAGE] SecureStorage read failed: $e');
-      }
+      Logger.error('⚠️  [ANDROID STORAGE] SecureStorage read failed: $e');
     }
 
-    if (kDebugMode) {
-      print('❌ [ANDROID STORAGE] No session found in any storage');
-    }
+    Logger.debug('❌ [ANDROID STORAGE] No session found in any storage');
     return null;
   }
 
@@ -243,16 +204,12 @@ class AndroidHybridStorage extends LocalStorage {
         final existing = await _secure.read(key: _secureKey);
         if (existing != session) {
           await _secure.write(key: _secureKey, value: session);
-          if (kDebugMode) {
-            print(
-                '✅ [ANDROID STORAGE] Background sync to SecureStorage complete');
-          }
+          Logger.warning(
+              '✅ [ANDROID STORAGE] Background sync to SecureStorage complete');
         }
       } catch (e) {
         // Silently fail - SecureStorage is just backup
-        if (kDebugMode) {
-          print('⚠️  [ANDROID STORAGE] Background sync failed: $e');
-        }
+        Logger.debug('⚠️  [ANDROID STORAGE] Background sync failed: $e');
       }
     });
   }
@@ -262,29 +219,19 @@ class AndroidHybridStorage extends LocalStorage {
     // Remove from both storages
     try {
       await _prefs.remove(_prefsKey);
-      if (kDebugMode) {
-        print('✅ [ANDROID STORAGE] Removed from SharedPreferences');
-      }
+      Logger.warning('✅ [ANDROID STORAGE] Removed from SharedPreferences');
     } catch (e) {
-      if (kDebugMode) {
-        print('⚠️  [ANDROID STORAGE] SharedPreferences delete failed: $e');
-      }
+      Logger.debug('⚠️  [ANDROID STORAGE] SharedPreferences delete failed: $e');
     }
 
     try {
       await _secure.delete(key: _secureKey);
-      if (kDebugMode) {
-        print('✅ [ANDROID STORAGE] Removed from SecureStorage');
-      }
+      Logger.warning('✅ [ANDROID STORAGE] Removed from SecureStorage');
     } catch (e) {
-      if (kDebugMode) {
-        print('⚠️  [ANDROID STORAGE] SecureStorage delete failed: $e');
-      }
+      Logger.debug('⚠️  [ANDROID STORAGE] SecureStorage delete failed: $e');
     }
 
-    if (kDebugMode) {
-      print('✅ [ANDROID STORAGE] Session removed from all storages');
-    }
+    Logger.info('✅ [ANDROID STORAGE] Session removed from all storages');
   }
 
   @override
