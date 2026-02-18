@@ -635,17 +635,9 @@ async function handleSubmitMemoryPractice(
     throw new AppError('NOT_FOUND', 'Memory verse not found', 404)
   }
 
-  // ========== NEW: Check practice mode unlock status ==========
-  // Get user's subscription tier — include all non-expired statuses so trial
-  // and pending-cancellation users are not incorrectly downgraded to 'free'.
-  const { data: subscription } = await services.supabaseServiceClient
-    .from('user_subscriptions')
-    .select('tier')
-    .eq('user_id', userContext.userId)
-    .in('status', ['active', 'trial', 'in_progress', 'pending_cancellation'])
-    .maybeSingle()
-
-  const userTier = subscription?.tier || 'free'
+  // ========== Check practice mode unlock status ==========
+  // userPlan is already resolved above via authService.getUserPlan(req) — single source of truth
+  const userTier = userPlan
 
   // Initialize unlock service
   const unlockService = new PracticeModeUnlockService(services.supabaseServiceClient)
@@ -690,20 +682,22 @@ async function handleSubmitMemoryPractice(
       console.log(`[SubmitPractice] Mode ${body.practice_mode} already unlocked for verse ${body.memory_verse_id}`)
       // Continue to SM-2 calculation below
     }
-    // If mode can be unlocked, unlock it now
+    // If mode can be unlocked, unlock it now (must await — Deno terminates on response send)
     else if (unlockStatus.status === 'can_unlock') {
       console.log(`[SubmitPractice] Unlocking mode ${body.practice_mode} for verse ${body.memory_verse_id}`)
 
-      // Unlock mode (fire-and-forget, non-blocking)
-      unlockService.unlockMode(
-        userContext.userId,
-        body.memory_verse_id,
-        body.practice_mode,
-        userTier
-      ).catch(err => {
-        console.error('[SubmitPractice] Failed to unlock mode (non-critical):', err)
-        // Don't block practice submission - mode will unlock on retry
-      })
+      try {
+        await unlockService.unlockMode(
+          userContext.userId,
+          body.memory_verse_id,
+          body.practice_mode,
+          userTier
+        )
+        console.log(`[SubmitPractice] Mode ${body.practice_mode} unlocked successfully`)
+      } catch (err) {
+        // Log but don't block practice submission
+        console.error('[SubmitPractice] Failed to unlock mode:', err)
+      }
 
       // Continue to SM-2 calculation below
     }
