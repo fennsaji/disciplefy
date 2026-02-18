@@ -94,7 +94,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Log admin action
-    await supabase.from('admin_actions').insert({
+    await supabaseAdmin.from('admin_actions').insert({
       admin_user_id: user.id,
       action_type: 'update_gamification_settings',
       target_user_id: null,
@@ -102,7 +102,7 @@ export async function POST(request: NextRequest) {
         masteryThreshold,
         xpPerReview,
         xpMasteryBonus,
-        admin_email: profile.email,
+        admin_user_id: user.id,
       },
     })
 

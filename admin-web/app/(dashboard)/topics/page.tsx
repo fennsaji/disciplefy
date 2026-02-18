@@ -182,6 +182,7 @@ export default function StudyGuidesPage() {
       deep: 'Deep',
       lectio: 'Lectio',
       sermon: 'Sermon',
+      recommended: 'Recommended',
     }
     return labels[mode] || mode
   }
